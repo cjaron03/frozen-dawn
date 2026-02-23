@@ -1,0 +1,22 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:snowball"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.root.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.root.description"
+    },
+    "background": "minecraft:textures/block/blue_ice.png",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

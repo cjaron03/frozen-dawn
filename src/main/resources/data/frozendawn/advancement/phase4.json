@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase3",
+  "display": {
+    "icon": {
+      "id": "frozendawn:frozen_dirt"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.phase4.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.phase4.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

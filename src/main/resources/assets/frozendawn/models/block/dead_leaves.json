@@ -1,0 +1,1 @@
+{ "parent": "minecraft:block/cube_all", "textures": { "all": "frozendawn:block/dead_leaves" }, "render_type": "cutout" }

@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+repo/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.launch
+.metadata
+
+# NeoForge / Minecraft
+run/
+runs/
+logs/
+src/generated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class

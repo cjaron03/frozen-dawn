@@ -1,0 +1,41 @@
+{
+  "itemGroup.frozendawn": "Frozen Dawn",
+
+  "block.frozendawn.dead_grass_block": "Dead Grass Block",
+  "block.frozendawn.frozen_dirt": "Frozen Dirt",
+  "block.frozendawn.frozen_sand": "Frozen Sand",
+  "block.frozendawn.dead_log": "Dead Log",
+  "block.frozendawn.frozen_log": "Frozen Log",
+  "block.frozendawn.dead_leaves": "Dead Leaves",
+  "block.frozendawn.frozen_leaves": "Frozen Leaves",
+  "block.frozendawn.frozen_obsidian": "Frozen Obsidian",
+  "item.frozendawn.ice_shard": "Ice Shard",
+
+  "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
+  "message.frozendawn.freeze.biting": "The cold is biting into you...",
+  "message.frozendawn.freeze.extreme": "Extreme cold! Find shelter or warmth!",
+  "message.frozendawn.freeze.deadly": "You are freezing to death!",
+
+  "command.frozendawn.status.header": "--- Frozen Dawn Status ---",
+  "command.frozendawn.status.day": "  Day: %s / %s",
+  "command.frozendawn.status.phase": "  Phase: %s (%s)",
+  "command.frozendawn.status.temp": "  Temperature: %s\u00b0C",
+  "command.frozendawn.status.sun": "  Sun Scale: %s | Sky Light: %s",
+  "command.frozendawn.status.paused": "  Paused: %s",
+  "command.frozendawn.setday": "Apocalypse set to day %s (Phase %s)",
+  "command.frozendawn.setphase": "Apocalypse set to phase %s (Day %s)",
+  "command.frozendawn.paused": "Apocalypse progression paused",
+  "command.frozendawn.resumed": "Apocalypse progression resumed",
+  "command.frozendawn.reset": "Apocalypse reset to day 0",
+
+  "advancement.frozendawn.root.title": "The Sun Grows Cold",
+  "advancement.frozendawn.root.description": "The apocalypse has begun. Earth drifts from its star.",
+  "advancement.frozendawn.phase2.title": "A Dying World",
+  "advancement.frozendawn.phase2.description": "Phase 2: Water freezes and vegetation begins to die.",
+  "advancement.frozendawn.phase3.title": "The Long Night",
+  "advancement.frozendawn.phase3.description": "Phase 3: Permanent storms rage. The surface grows lethal.",
+  "advancement.frozendawn.phase4.title": "Deep Freeze",
+  "advancement.frozendawn.phase4.description": "Phase 4: Even the earth itself freezes solid.",
+  "advancement.frozendawn.phase5.title": "Eternal Winter",
+  "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth."
+}

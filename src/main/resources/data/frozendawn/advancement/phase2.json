@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:dead_grass_block"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.phase2.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.phase2.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

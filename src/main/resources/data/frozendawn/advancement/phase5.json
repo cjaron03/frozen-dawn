@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase4",
+  "display": {
+    "icon": {
+      "id": "minecraft:blue_ice"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.phase5.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.phase5.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

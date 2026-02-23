@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:dead_grass_block",
+    "frozendawn:frozen_dirt",
+    "frozendawn:frozen_sand"
+  ]
+}

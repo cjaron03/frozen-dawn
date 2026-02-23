@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "frozendawn:ice_shard"
+    }
+  },
+  "result": {
+    "id": "minecraft:blue_ice",
+    "count": 1
+  }
+}

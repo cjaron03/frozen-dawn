@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase2",
+  "display": {
+    "icon": {
+      "id": "minecraft:packed_ice"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.phase3.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.phase3.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
