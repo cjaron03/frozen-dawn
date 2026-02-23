@@ -67,7 +67,7 @@ public class MobFreezeHandler {
 
         float temp = TemperatureManager.getTemperatureAt(
                 level, entity.blockPosition(),
-                state.getCurrentDay(), state.getTotalDays());
+                state.getCurrentDay(), state.getTotalDays(), !isPlayer);
 
         applyFreezeEffects(living, temp, isPlayer);
     }
