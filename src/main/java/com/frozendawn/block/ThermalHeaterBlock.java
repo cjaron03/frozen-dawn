@@ -80,8 +80,4 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
         return 0;
     }
 
-    @Override
-    public int getLightEmission(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
-        return state.getValue(LIT) ? 13 : 0;
-    }
 }

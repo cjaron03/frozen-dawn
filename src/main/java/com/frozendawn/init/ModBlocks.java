@@ -87,7 +87,8 @@ public class ModBlocks {
                     .mapColor(MapColor.STONE)
                     .requiresCorrectToolForDrops()
                     .strength(3.5F)
-                    .sound(SoundType.METAL)));
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0)));
 
     // Insulated Glass: transparent, counts as shelter (roof check)
     public static final DeferredBlock<HalfTransparentBlock> INSULATED_GLASS = BLOCKS.register("insulated_glass",
