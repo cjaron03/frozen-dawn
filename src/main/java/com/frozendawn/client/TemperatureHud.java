@@ -19,6 +19,11 @@ public class TemperatureHud {
         targetTemp = temp;
     }
 
+    /** Current smoothed display temperature, used by FrostOverlay and cold effects. */
+    public static float getDisplayedTemp() {
+        return displayedTemp;
+    }
+
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 1) return;

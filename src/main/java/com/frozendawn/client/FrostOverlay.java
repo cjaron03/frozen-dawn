@@ -2,25 +2,27 @@ package com.frozendawn.client;
 
 import com.frozendawn.config.FrozenDawnConfig;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
  * Renders a frost vignette overlay on the HUD.
- * Intensity increases from phase 2 through phase 5.
- * Registered as a GUI layer via ClientEvents.
+ * Only appears when temperature is below 0C.
+ * Intensity scales with how cold it is.
  */
 public class FrostOverlay {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         if (!FrozenDawnConfig.ENABLE_FROST_OVERLAY.get()) return;
 
-        int phase = ApocalypseClientData.getPhase();
-        if (phase < 2) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && (mc.player.isCreative() || mc.player.isSpectator())) return;
 
-        float progress = ApocalypseClientData.getProgress();
-        // Intensity ramps from 0 at phase 2 start (0.15) to 1 at phase 5 end (1.0)
-        float intensity = Math.min(1f, (progress - 0.15f) / 0.85f);
-        if (intensity <= 0f) return;
+        float temp = TemperatureHud.getDisplayedTemp();
+        if (temp >= 0f) return;
+
+        // Intensity ramps from 0 at 0C to full at -60C
+        float intensity = Math.min(1f, -temp / 60f);
 
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
@@ -38,9 +40,7 @@ public class FrostOverlay {
             int transparent = 0x00AABBEE;
             int borderSize = (int) (height * 0.12f);
 
-            // Top: opaque frost fading down
             graphics.fillGradient(0, 0, width, borderSize, edgeColor, transparent);
-            // Bottom: transparent fading to opaque frost
             graphics.fillGradient(0, height - borderSize, width, height, transparent, edgeColor);
         }
     }

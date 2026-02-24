@@ -23,6 +23,7 @@ import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -106,6 +107,26 @@ public class WorldTickHandler {
         if (FrozenDawnPhaseTracker.getPhase() < 4) return;
         if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         event.setSpawnCancelled(true);
+    }
+
+    /**
+     * Prevent crop growth when temperature is below 0C.
+     * Crops near heat sources (thermal heaters, lava, geothermal cores) can still grow.
+     */
+    @SubscribeEvent
+    public static void onCropGrow(CropGrowEvent.Pre event) {
+        if (FrozenDawnPhaseTracker.getPhase() < 3) return;
+        if (event.getLevel().isClientSide()) return;
+        if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+
+        MinecraftServer server = serverLevel.getServer();
+        ApocalypseState state = ApocalypseState.get(server);
+
+        float temp = TemperatureManager.getTemperatureAt(
+                serverLevel, event.getPos(), state.getCurrentDay(), state.getTotalDays());
+        if (temp < 0f) {
+            event.setResult(CropGrowEvent.Pre.Result.DO_NOT_GROW);
+        }
     }
 
     @SubscribeEvent
