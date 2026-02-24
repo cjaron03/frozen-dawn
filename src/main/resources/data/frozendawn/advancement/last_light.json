@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase5",
+  "display": {
+    "icon": {
+      "id": "frozendawn:geothermal_core"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.last_light.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.last_light.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "placed_core": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

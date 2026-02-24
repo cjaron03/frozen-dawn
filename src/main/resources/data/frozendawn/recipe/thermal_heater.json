@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "ICI",
+    "III"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "frozendawn:thermal_core" }
+  },
+  "result": {
+    "id": "frozendawn:thermal_heater",
+    "count": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/village/village_plains_house"
+    }
+  ],
+  "title": "ORSA Outreach Pamphlet",
+  "author": "ORSA",
+  "chance": 0.20,
+  "pages": [
+    "ORBITAL RESONANCE\nSTABILIZATION AUTHORITY\n\n--- Public Information ---\n\nStabilizing Our Future\n\nORSA is committed to\nensuring long-term climate\nstability through cutting-edge\norbital adjustment technology.",
+    "SHELTER PROTOTYPE PROGRAM\n\nORSA has partnered with\ncommunities worldwide to\ndevelop cold-resistant shelter\ndesigns.\n\nInsulated structures using\nlocally-sourced materials can\nmaintain habitable temps\neven during severe events.",
+    "COMMUNITY BRIEFINGS\n\nRegular climate briefings are\nheld in participating villages.\n\nTopics include:\n- Seasonal preparation\n- Emergency food storage\n- Thermal efficiency\n- Resource sharing protocols",
+    "YOUR FUTURE IS BRIGHT\n\nORSA's network of 2,048\nstabilization nodes ensures\nEarth's orbital parameters\nremain within safe tolerances.\n\nSleep well. We're watching\nthe sky so you don't have to.",
+    "--- Margin Note (handwritten) ---\n\nResonance pattern isn't\ndecaying. Flagged.\n\n-E.V."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SIS",
+    "INI",
+    "SOS"
+  ],
+  "key": {
+    "N": { "item": "minecraft:nether_star" },
+    "I": { "item": "minecraft:blue_ice" },
+    "S": { "item": "frozendawn:ice_shard" },
+    "O": { "item": "frozendawn:frozen_obsidian" }
+  },
+  "result": {
+    "id": "frozendawn:frozen_heart",
+    "count": 1
+  }
+}

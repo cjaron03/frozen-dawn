@@ -1,6 +1,8 @@
 package com.frozendawn.world;
 
+import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -19,8 +21,8 @@ public final class TemperatureManager {
 
     private TemperatureManager() {}
 
-    private static final int MAX_HEAT_RADIUS = 6;     // Full scan for players
-    private static final int MOB_HEAT_RADIUS = 3;     // Reduced scan for mobs (7^3=343 vs 13^3=2197)
+    private static final int MAX_HEAT_RADIUS = 12;    // Geothermal Core needs 12
+    private static final int MOB_HEAT_RADIUS = 3;     // Reduced scan for mobs (7^3=343)
 
     /**
      * Full-precision temperature check (used for players and TaN integration).
@@ -47,13 +49,14 @@ public final class TemperatureManager {
     }
 
     /**
-     * Shelter modifier: +5C if there's a solid block overhead (roof).
-     * Simple check: scan upward up to 4 blocks for a solid block.
+     * Shelter modifier: +5C if there's a solid block or insulated glass overhead (roof).
+     * Simple check: scan upward up to 4 blocks for a solid block or insulated glass.
      */
     public static float getShelterModifier(Level level, BlockPos pos) {
         for (int dy = 1; dy <= 4; dy++) {
-            BlockState above = level.getBlockState(pos.above(dy));
-            if (above.isSolidRender(level, pos.above(dy))) {
+            BlockPos above = pos.above(dy);
+            BlockState aboveState = level.getBlockState(above);
+            if (aboveState.isSolidRender(level, above) || aboveState.is(ModBlocks.INSULATED_GLASS.get())) {
                 return 5.0f;
             }
         }
@@ -76,8 +79,9 @@ public final class TemperatureManager {
                 for (int dz = -radius; dz <= radius; dz++) {
                     int distSq = dx * dx + dy * dy + dz * dz;
 
-                    BlockState state = level.getBlockState(pos.offset(dx, dy, dz));
-                    float warmth = getHeatForBlock(state, distSq, phase);
+                    BlockPos checkPos = pos.offset(dx, dy, dz);
+                    BlockState state = level.getBlockState(checkPos);
+                    float warmth = getHeatForBlock(state, distSq, phase, checkPos);
                     if (warmth > bestWarmth) {
                         bestWarmth = warmth;
                         if (quickScan) return bestWarmth; // Mobs: any heat = safe, done
@@ -93,7 +97,23 @@ public final class TemperatureManager {
      * Returns the warmth provided by a block at the given distance-squared, or 0 if out of range.
      * Uses distSq to avoid Vec3 allocation and sqrt() per block.
      */
-    private static float getHeatForBlock(BlockState state, int distSq, int phase) {
+    private static float getHeatForBlock(BlockState state, int distSq, int phase, BlockPos checkPos) {
+        // Geothermal Core: Y-dependent behavior
+        if (state.is(ModBlocks.GEOTHERMAL_CORE.get())) {
+            if (checkPos.getY() < 0) {
+                // Below Y=0: radius 12 (distSq <= 144), +50C
+                return distSq <= 144 ? 50.0f : 0.0f;
+            } else {
+                // Above Y=0: radius 6 (distSq <= 36), +15C
+                return distSq <= 36 ? 15.0f : 0.0f;
+            }
+        }
+
+        // Thermal Heater (lit): radius 7 (distSq <= 49), +35C
+        if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
+            return distSq <= 49 ? 35.0f : 0.0f;
+        }
+
         // Campfire (lit): radius 5 (distSq <= 25), +25C
         if (state.is(Blocks.CAMPFIRE) && state.getValue(BlockStateProperties.LIT)) {
             return distSq <= 25 ? 25.0f : 0.0f;

@@ -58,10 +58,34 @@ public final class PhaseManager {
 
     /**
      * Returns the temperature offset for the current progression.
-     * Ranges from 0 (phase 1 start) to -120 (phase 5 end).
+     * Ranges from 0 (phase 1 start) to BASE_PHASE5_TEMP (phase 5 end).
+     * Includes false calm rebounds: +3C warmth spikes within 3% of each phase boundary.
      */
     public static float getTemperatureOffset(int currentDay, int totalDays) {
-        return interpolate(TEMP_OFFSET, currentDay, totalDays);
+        float baseTemp = interpolate(TEMP_OFFSET, currentDay, totalDays);
+        float rebound = getFalseCalmRebound(currentDay, totalDays);
+        return baseTemp + rebound;
+    }
+
+    /**
+     * Returns a small warmth spike (+3C max) near phase boundaries.
+     * Creates "false calm" moments where the temperature briefly seems to stabilize.
+     */
+    public static float getFalseCalmRebound(int currentDay, int totalDays) {
+        float progress = getProgress(currentDay, totalDays);
+        float reboundRange = 0.03f; // 3% of total progression
+
+        // Check proximity to each phase boundary (skip first at 0.0)
+        for (int i = 1; i < PHASE_BOUNDS.length - 1; i++) {
+            float boundary = PHASE_BOUNDS[i];
+            float dist = Math.abs(progress - boundary);
+            if (dist < reboundRange) {
+                // Smooth spike: peaks at boundary, fades to zero at reboundRange
+                float intensity = 1.0f - (dist / reboundRange);
+                return 3.0f * intensity;
+            }
+        }
+        return 0.0f;
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.frozendawn;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.integration.TaNCompat;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -22,6 +24,8 @@ public class FrozenDawn {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_TABS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
 

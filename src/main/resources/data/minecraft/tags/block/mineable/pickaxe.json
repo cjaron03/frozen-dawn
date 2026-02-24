@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:thermal_heater",
+    "frozendawn:insulated_glass",
+    "frozendawn:frozen_coal_ore",
+    "frozendawn:geothermal_core",
+    "frozendawn:frozen_obsidian"
+  ]
+}

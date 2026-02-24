@@ -1,21 +1,28 @@
 package com.frozendawn.command;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Admin commands for controlling the apocalypse.
@@ -25,9 +32,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * /frozendawn setphase <1-5> — jump to the start of a phase
  * /frozendawn pause      — toggle progression pause
  * /frozendawn reset      — reset to day 0
+ * /frozendawn preset <name> — apply a config preset (default/cinematic/brutal)
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public class FrozenDawnCommand {
+
+    private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) ->
+            SharedSuggestionProvider.suggest(
+                    Arrays.stream(ConfigPresets.values()).map(p -> p.name().toLowerCase(Locale.ROOT)),
+                    builder);
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -49,6 +62,10 @@ public class FrozenDawnCommand {
                         .executes(FrozenDawnCommand::togglePause))
                 .then(Commands.literal("reset")
                         .executes(FrozenDawnCommand::reset))
+                .then(Commands.literal("preset")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .suggests(PRESET_SUGGESTIONS)
+                                .executes(FrozenDawnCommand::applyPreset)))
         );
     }
 
@@ -119,6 +136,22 @@ public class FrozenDawnCommand {
         syncToClients(state);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.reset"), true);
+        return 1;
+    }
+
+    private static int applyPreset(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "name").toUpperCase(Locale.ROOT);
+        ConfigPresets preset;
+        try {
+            preset = ConfigPresets.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            context.getSource().sendFailure(Component.translatable("command.frozendawn.preset.unknown", name));
+            return 0;
+        }
+
+        preset.apply();
+        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.preset.applied",
+                preset.name().toLowerCase(Locale.ROOT), preset.totalDays, preset.basePhase5Temp), true);
         return 1;
     }
 

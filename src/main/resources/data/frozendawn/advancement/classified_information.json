@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:written_book"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.classified_information.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.classified_information.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "found_book": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

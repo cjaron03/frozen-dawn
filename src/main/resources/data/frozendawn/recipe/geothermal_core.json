@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ODO",
+    "THT",
+    "ODO"
+  ],
+  "key": {
+    "H": { "item": "frozendawn:frozen_heart" },
+    "T": { "item": "frozendawn:thermal_core" },
+    "D": { "item": "minecraft:diamond_block" },
+    "O": { "item": "minecraft:obsidian" }
+  },
+  "result": {
+    "id": "frozendawn:geothermal_core",
+    "count": 1
+  }
+}

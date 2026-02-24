@@ -56,7 +56,9 @@ public final class BlockFreezer {
                 BlockPos pos = new BlockPos(x, y, z);
                 if (!level.isLoaded(pos)) continue;
 
-                transformVolume(level, pos, level.getBlockState(pos), phase);
+                BlockState volumeState = level.getBlockState(pos);
+                transformVolume(level, pos, volumeState, phase);
+                transformSurfaceCoalOre(level, pos, volumeState, phase);
             }
         }
     }
@@ -80,6 +82,16 @@ public final class BlockFreezer {
         // Sand / Red Sand → Frozen Sand (phase 3+)
         if ((state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)) && phase >= 3) {
             level.setBlock(pos, ModBlocks.FROZEN_SAND.get().defaultBlockState(), 3);
+        }
+    }
+
+    private static void transformSurfaceCoalOre(ServerLevel level, BlockPos pos, BlockState state, int phase) {
+        if (!FrozenDawnConfig.ENABLE_FUEL_SCARCITY.get()) return;
+        if (phase < FrozenDawnConfig.FUEL_SCARCITY_PHASE.get()) return;
+        if (pos.getY() < 0) return; // Only surface coal
+
+        if (state.is(Blocks.COAL_ORE) || state.is(Blocks.DEEPSLATE_COAL_ORE)) {
+            level.setBlock(pos, ModBlocks.FROZEN_COAL_ORE.get().defaultBlockState(), 3);
         }
     }
 

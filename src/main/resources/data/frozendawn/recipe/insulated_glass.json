@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NGN",
+    "GIG",
+    "NGN"
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass" },
+    "I": { "item": "minecraft:packed_ice" },
+    "N": { "item": "minecraft:iron_nugget" }
+  },
+  "result": {
+    "id": "frozendawn:insulated_glass",
+    "count": 4
+  }
+}

@@ -1,7 +1,9 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.ThermalHeaterBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -76,4 +78,41 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_BLACK)
                     .requiresCorrectToolForDrops()
                     .strength(50.0F, 1200.0F)));
+
+    // --- Player Agency blocks ---
+
+    // Thermal Heater: right-click fuel, radius 7, +35C when lit
+    public static final DeferredBlock<ThermalHeaterBlock> THERMAL_HEATER = BLOCKS.register("thermal_heater",
+            () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.5F)
+                    .sound(SoundType.METAL)));
+
+    // Insulated Glass: transparent, counts as shelter (roof check)
+    public static final DeferredBlock<HalfTransparentBlock> INSULATED_GLASS = BLOCKS.register("insulated_glass",
+            () -> new HalfTransparentBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(0.5F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)));
+
+    // Frozen Coal Ore: coal ore that freezes in configurable phase, Y >= 0 only
+    public static final DeferredBlock<Block> FROZEN_COAL_ORE = BLOCKS.register("frozen_coal_ore",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F)
+                    .sound(SoundType.STONE)));
+
+    // Geothermal Core: endgame block, massive warm zone, light level 15
+    public static final DeferredBlock<Block> GEOTHERMAL_CORE = BLOCKS.register("geothermal_core",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .requiresCorrectToolForDrops()
+                    .strength(50.0F, 1200.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> 15)));
 }

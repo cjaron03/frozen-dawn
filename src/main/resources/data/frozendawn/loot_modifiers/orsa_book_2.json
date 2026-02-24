@@ -1,0 +1,19 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/desert_pyramid"
+    }
+  ],
+  "title": "ORSA Internal Memo",
+  "author": "ORSA",
+  "chance": 0.18,
+  "pages": [
+    "INTERNAL MEMO\nCLASSIFICATION: RESTRICTED\n\nFROM: Dr. Elena Vasquez\nTO: ORSA Oversight Committee\nRE: Resonance Anomaly\n\nCorrections exceeded\ntolerance by factor of 12.\nFeedback loop forming in\nnodes 1400-1622.",
+    "The orbital adjustment\nalgorithm is overcorrecting.\nEach correction shifts the\nresonance pattern further\nfrom baseline.\n\nRecommendation: Immediate\nshutdown of affected nodes\nfor manual recalibration.",
+    "COMMITTEE RESPONSE:\n\nRequest DENIED.\n\nShutdown would create\nunacceptable gaps in\ncoverage. Continue monitoring.\nSchedule review in 6 months.",
+    "UPDATE - 14 Months Later:\n\nReadings stabilized.\nAll parameters within\nnormal range for 14 months.\n\nBoard declared crisis resolved.\nPublic celebrations held.\nFunding restored to baseline.",
+    "It destabilized yesterday.\nWorse than before.\n\nThe 14-month stability was\nthe system finding a new\nequilibrium. A false one.\n\nWe lost that window.\n\n-E.V."
+  ]
+}

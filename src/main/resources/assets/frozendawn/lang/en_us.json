@@ -9,7 +9,14 @@
   "block.frozendawn.dead_leaves": "Dead Leaves",
   "block.frozendawn.frozen_leaves": "Frozen Leaves",
   "block.frozendawn.frozen_obsidian": "Frozen Obsidian",
+  "block.frozendawn.thermal_heater": "Thermal Heater",
+  "block.frozendawn.insulated_glass": "Insulated Glass",
+  "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
+  "block.frozendawn.geothermal_core": "Geothermal Core",
+
   "item.frozendawn.ice_shard": "Ice Shard",
+  "item.frozendawn.thermal_core": "Thermal Core",
+  "item.frozendawn.frozen_heart": "Frozen Heart",
 
   "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
@@ -27,6 +34,8 @@
   "command.frozendawn.paused": "Apocalypse progression paused",
   "command.frozendawn.resumed": "Apocalypse progression resumed",
   "command.frozendawn.reset": "Apocalypse reset to day 0",
+  "command.frozendawn.preset.applied": "Preset '%s' applied (days: %s, phase5 temp: %s\u00b0C)",
+  "command.frozendawn.preset.unknown": "Unknown preset: %s (valid: default, cinematic, brutal)",
 
   "advancement.frozendawn.root.title": "The Sun Grows Cold",
   "advancement.frozendawn.root.description": "The apocalypse has begun. Earth drifts from its star.",
@@ -37,5 +46,9 @@
   "advancement.frozendawn.phase4.title": "Deep Freeze",
   "advancement.frozendawn.phase4.description": "Phase 4: Even the earth itself freezes solid.",
   "advancement.frozendawn.phase5.title": "Eternal Winter",
-  "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth."
+  "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth.",
+  "advancement.frozendawn.last_light.title": "Last Light",
+  "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
+  "advancement.frozendawn.classified_information.title": "Classified Information",
+  "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?"
 }

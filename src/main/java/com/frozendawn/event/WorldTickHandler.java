@@ -2,6 +2,7 @@ package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.SnowAccumulator;
@@ -12,9 +13,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -78,6 +82,28 @@ public class WorldTickHandler {
     }
 
     @SubscribeEvent
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!event.getPlacedBlock().is(ModBlocks.GEOTHERMAL_CORE.get())) return;
+        if (event.getPos().getY() >= 0) return;
+
+        grantAdvancement(player, "last_light");
+    }
+
+    @SubscribeEvent
+    public static void onItemPickup(ItemEntityPickupEvent.Post event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
+        var stack = event.getOriginalStack();
+        if (!stack.is(Items.WRITTEN_BOOK)) return;
+
+        // Check if this is an ORSA book by checking the author field
+        var bookContent = stack.get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
+        if (bookContent != null && "ORSA".equals(bookContent.author())) {
+            grantAdvancement(player, "classified_information");
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && player.getServer() != null) {
             ApocalypseState state = ApocalypseState.get(player.getServer());
@@ -85,6 +111,22 @@ public class WorldTickHandler {
 
             // Grant any missed phase advancements
             grantPhaseAdvancements(player, state.getPhase());
+        }
+    }
+
+    private static void grantAdvancement(ServerPlayer player, String name) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name);
+        AdvancementHolder holder = server.getAdvancements().get(loc);
+        if (holder == null) return;
+
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        if (!progress.isDone()) {
+            for (String criterion : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(holder, criterion);
+            }
         }
     }
 
