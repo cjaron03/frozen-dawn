@@ -90,6 +90,28 @@ public class WorldTickHandler {
             }
         }
 
+        // Wind chill exhaustion in phase 5 (every 20 ticks = 1 second)
+        if (currentPhase >= 5 && state.getApocalypseTicks() % 20 == 0) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.isCreative() || player.isSpectator()) continue;
+                if (player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) continue;
+                // Only outdoors: above Y=50 and can see sky
+                if (player.blockPosition().getY() < 50) continue;
+                if (!player.level().canSeeSky(player.blockPosition().above())) continue;
+
+                // Sprinting = heavy drain, moving = moderate, standing still = light
+                float exhaustion;
+                if (player.isSprinting()) {
+                    exhaustion = 1.0f;   // heavy: ~equivalent to mining
+                } else if (player.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
+                    exhaustion = 0.4f;   // moderate: walking in blizzard
+                } else {
+                    exhaustion = 0.2f;   // light: standing still, wind saps warmth
+                }
+                player.getFoodData().addExhaustion(exhaustion);
+            }
+        }
+
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
         WeatherHandler.tick(overworld, currentPhase);
