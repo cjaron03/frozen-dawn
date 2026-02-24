@@ -125,15 +125,16 @@ public final class PhaseManager {
      * Higher Y = colder, deeper = warmer (geothermal).
      */
     public static float getDepthModifier(int y) {
-        // Piecewise linear interpolation based on spec
+        // Piecewise linear: surface is cold, deep underground is warm enough to survive
+        // At Y=-64: +80C (counteracts most of phase 5's -120C)
         if (y >= 256) return -10.0f;
         if (y >= 128) return Mth.lerp((y - 128) / 128.0f, -5.0f, -10.0f);
         if (y >= 64)  return Mth.lerp((y - 64) / 64.0f, 0.0f, -5.0f);
-        if (y >= 32)  return Mth.lerp((y - 32) / 32.0f, 8.0f, 0.0f);
-        if (y >= 0)   return Mth.lerp(y / 32.0f, 15.0f, 8.0f);
-        if (y >= -32) return Mth.lerp((y + 32) / 32.0f, 25.0f, 15.0f);
-        if (y >= -64) return Mth.lerp((y + 64) / 32.0f, 35.0f, 25.0f);
-        return 35.0f;
+        if (y >= 32)  return Mth.lerp((y - 32) / 32.0f, 10.0f, 0.0f);
+        if (y >= 0)   return Mth.lerp(y / 32.0f, 25.0f, 10.0f);
+        if (y >= -32) return Mth.lerp((y + 32) / 32.0f, 55.0f, 25.0f);
+        if (y >= -64) return Mth.lerp((y + 64) / 32.0f, 80.0f, 55.0f);
+        return 80.0f;
     }
 
     /**

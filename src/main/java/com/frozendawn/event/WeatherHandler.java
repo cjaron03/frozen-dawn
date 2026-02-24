@@ -52,7 +52,7 @@ public final class WeatherHandler {
 
     /**
      * Phase 2+: Lock weather to rain (phase 2) or thunderstorm (phase 3+).
-     * Any attempt to clear weather (/weather clear, natural cycling) is overridden.
+     * Phase 5: Force permanent midnight — sun and moon are gone, only darkness.
      */
     private static void handleLockedWeather(ServerLevel overworld, int phase) {
         boolean wantThunder = phase >= 3;
@@ -61,6 +61,15 @@ public final class WeatherHandler {
 
         if (needsUpdate) {
             overworld.setWeatherParameters(0, LOCKED_DURATION, true, wantThunder);
+        }
+
+        // Phase 5: lock time to midnight (18000 ticks = midnight)
+        // The thunderstorm + permanent night = no sun, no moon, no clouds visible
+        if (phase >= 5) {
+            long dayTime = overworld.getDayTime() % 24000;
+            if (dayTime < 14000 || dayTime > 22000) {
+                overworld.setDayTime((overworld.getDayTime() / 24000) * 24000 + 18000);
+            }
         }
     }
 }

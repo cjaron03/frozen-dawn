@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,6 +35,12 @@ public class SkyRenderer {
 
         int phase = ApocalypseClientData.getPhase();
         if (phase < 1) return;
+
+        // No apocalypse sky effects underground (below Y=50 or no sky access)
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.level != null
+                && (mc.player.blockPosition().getY() < 50
+                    || !mc.level.canSeeSky(mc.player.blockPosition().above()))) return;
 
         float skyLight = ApocalypseClientData.getSkyLight();
         float sunBrightness = ApocalypseClientData.getSunBrightness();
@@ -73,6 +80,10 @@ public class SkyRenderer {
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
+
+        // Don't reduce visibility underground (below Y=50)
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.player.blockPosition().getY() < 50) return;
 
         float progress = ApocalypseClientData.getProgress();
 

@@ -130,8 +130,8 @@ public final class TemperatureManager {
             return distSq <= 9 ? 15.0f : 0.0f;
         }
 
-        // Lava: radius 4 (distSq <= 16), +30C (until phase 4, when lava starts freezing)
-        if (state.is(Blocks.LAVA) && phase < 4) {
+        // Lava: radius 4 (distSq <= 16), +30C (if lava still exists, it's hot)
+        if (state.is(Blocks.LAVA)) {
             return distSq <= 16 ? 30.0f : 0.0f;
         }
 

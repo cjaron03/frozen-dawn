@@ -14,8 +14,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /**
  * Accumulates snow on sky-visible surfaces based on apocalypse phase.
  *
- * Air (sky access) → Snow Layer 1 → 2 → ... → 8 → Snow Block
- * Rate: 1 layer per 200 ticks (phase 2), 100 (phase 3), 50 (phase 4+)
+ * Snow layers sit AT the heightmap position (snow has noCollission).
+ * Air → Snow Layer 1 → 2 → ... → 7 → Snow Block (phase 5 only).
+ * Max snow block depth: 3 (player height).
  */
 public final class SnowAccumulator {
 
@@ -23,28 +24,28 @@ public final class SnowAccumulator {
 
     private static final int BASE_CHECKS_PER_PLAYER = 32;
     private static final int RADIUS = 64;
+    /** Max snow block stacking depth (3 blocks = player height). */
+    private static final int MAX_SNOW_BLOCK_DEPTH = 3;
 
     public static void tick(ServerLevel level, int phase) {
         if (phase < 2) return;
 
-        // Rate control: interval shrinks exponentially in later phases
         int baseInterval = switch (phase) {
             case 2 -> 200;
             case 3 -> 60;
             case 4 -> 15;
-            default -> 5; // phase 5: near-constant blizzard
+            default -> 5; // phase 5: every 5 ticks
         };
         double rate = FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get();
         int interval = rate > 0 ? Math.max(1, (int) (baseInterval / rate)) : baseInterval;
 
         if (level.getServer().getTickCount() % interval != 0) return;
 
-        // More checks per player in later phases (exponential scaling)
         int checksPerPlayer = switch (phase) {
             case 2 -> BASE_CHECKS_PER_PLAYER;
             case 3 -> BASE_CHECKS_PER_PLAYER * 2;    // 64
             case 4 -> BASE_CHECKS_PER_PLAYER * 4;    // 128
-            default -> BASE_CHECKS_PER_PLAYER * 8;   // 256 (phase 5)
+            default -> BASE_CHECKS_PER_PLAYER * 8;    // 256
         };
 
         RandomSource random = level.getRandom();
@@ -56,37 +57,74 @@ public final class SnowAccumulator {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
 
-                // Find the surface: first air/non-blocking block above ground
                 int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
                 BlockPos snowPos = new BlockPos(x, surfaceY, z);
 
                 if (!level.isLoaded(snowPos)) continue;
                 if (!level.canSeeSky(snowPos)) continue;
 
-                BlockPos belowPos = snowPos.below();
-                BlockState below = level.getBlockState(belowPos);
                 BlockState at = level.getBlockState(snowPos);
 
-                // Increment existing snow layer
-                if (below.is(Blocks.SNOW)) {
-                    int layers = below.getValue(SnowLayerBlock.LAYERS);
-                    if (layers < 8) {
-                        level.setBlock(belowPos, below.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
-                    } else {
-                        // Full 8 layers → snow block
-                        level.setBlock(belowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
+                // Increment existing snow layer — snow sits AT snowPos (not below)
+                // because snow layers have noCollission and don't affect MOTION_BLOCKING heightmap
+                if (at.is(Blocks.SNOW)) {
+                    int layers = at.getValue(SnowLayerBlock.LAYERS);
+                    int maxLayers = switch (phase) {
+                        case 2, 3 -> 2;
+                        case 4 -> 4;
+                        default -> 7; // phase 5: grows to 7 then converts
+                    };
+                    if (layers < maxLayers) {
+                        level.setBlock(snowPos, at.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
+                    } else if (phase >= 5) {
+                        // Convert to snow block, cap at MAX_SNOW_BLOCK_DEPTH
+                        int snowDepth = countSnowBlocksBelow(level, snowPos);
+                        if (snowDepth < MAX_SNOW_BLOCK_DEPTH) {
+                            level.setBlock(snowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
+                        }
                     }
                     continue;
                 }
 
-                // Place new snow layer on solid surface (skip ice — snow breaks on it)
-                if (at.isAir() && below.isFaceSturdy(level, belowPos, Direction.UP)
-                        && !below.is(Blocks.ICE) && !below.is(Blocks.PACKED_ICE)
-                        && !below.is(Blocks.BLUE_ICE) && !below.is(Blocks.FROSTED_ICE)) {
+                // Place new snow layer on a suitable surface
+                BlockPos belowPos = snowPos.below();
+                if (at.isAir() && canPlaceSnowOn(level, belowPos)) {
+                    // Dirt path reverts to dirt when covered (vanilla behavior)
+                    if (level.getBlockState(belowPos).is(Blocks.DIRT_PATH)) {
+                        level.setBlock(belowPos, Blocks.DIRT.defaultBlockState(), 3);
+                    }
                     level.setBlock(snowPos, Blocks.SNOW.defaultBlockState()
                             .setValue(SnowLayerBlock.LAYERS, 1), 3);
                 }
             }
         }
+    }
+
+    /** Count consecutive snow blocks below this position. */
+    private static int countSnowBlocksBelow(ServerLevel level, BlockPos pos) {
+        int depth = 0;
+        BlockPos check = pos.below();
+        while (depth < MAX_SNOW_BLOCK_DEPTH && level.getBlockState(check).is(Blocks.SNOW_BLOCK)) {
+            depth++;
+            check = check.below();
+        }
+        return depth;
+    }
+
+    /** Check if snow can be placed on the block at belowPos. */
+    private static boolean canPlaceSnowOn(ServerLevel level, BlockPos belowPos) {
+        BlockState below = level.getBlockState(belowPos);
+
+        // Skip ice — snow breaks on it
+        if (below.is(Blocks.ICE) || below.is(Blocks.PACKED_ICE)
+                || below.is(Blocks.BLUE_ICE) || below.is(Blocks.FROSTED_ICE)) {
+            return false;
+        }
+
+        // Dirt path has a lowered top face (15/16) so isFaceSturdy returns false,
+        // but snow should still accumulate on it
+        if (below.is(Blocks.DIRT_PATH)) return true;
+
+        return below.isFaceSturdy(level, belowPos, Direction.UP);
     }
 }

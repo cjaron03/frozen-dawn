@@ -29,6 +29,9 @@ public class WeatherParticles {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
+        // No blizzard particles underground
+        if (mc.player.blockPosition().getY() < 50) return;
+
         int particleCount = switch (phase) {
             case 3 -> 4;
             case 4 -> 12;

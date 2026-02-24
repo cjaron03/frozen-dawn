@@ -35,7 +35,8 @@ public class WindAmbience {
         if (mc.level.dimension() != Level.OVERWORLD) return;
 
         int phase = ApocalypseClientData.getPhase();
-        if (phase < 3) {
+        boolean underground = mc.player.blockPosition().getY() < 50;
+        if (phase < 3 || underground) {
             stopAll(mc);
             return;
         }
