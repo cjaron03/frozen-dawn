@@ -24,6 +24,9 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
     ordering="NONE"
     side="BOTH"
 
+[[mixins]]
+    config="frozendawn.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="toughasnails"
     type="optional"

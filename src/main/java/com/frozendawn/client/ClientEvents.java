@@ -20,5 +20,9 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "temperature_hud"),
+                TemperatureHud::render
+        );
     }
 }

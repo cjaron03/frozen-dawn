@@ -5,6 +5,7 @@ import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,39 +18,67 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Lava → Magma Block → Obsidian → Frozen Obsidian
  * Grass Block → Dead Grass → Dirt → Frozen Dirt
  * Sand → Frozen Sand (permafrost)
+ *
+ * Surface checks now scan below canopy (not just heightmap) to freeze
+ * blocks under trees.
  */
 public final class BlockFreezer {
 
     private BlockFreezer() {}
 
-    // Checks per player per tick
-    private static final int SURFACE_CHECKS = 24;
-    private static final int VOLUME_CHECKS = 12;
-    // Horizontal radius around player (blocks)
+    private static final int BASE_SURFACE_CHECKS = 24;
+    private static final int BASE_VOLUME_CHECKS = 12;
     private static final int RADIUS = 64;
 
     public static void tick(ServerLevel level, int phase) {
         if (phase < 2) return;
+
+        int surfaceChecks = switch (phase) {
+            case 2 -> BASE_SURFACE_CHECKS;
+            case 3 -> BASE_SURFACE_CHECKS * 2;
+            case 4 -> BASE_SURFACE_CHECKS * 5;
+            default -> BASE_SURFACE_CHECKS * 10;
+        };
+        int volumeChecks = switch (phase) {
+            case 2 -> BASE_VOLUME_CHECKS;
+            case 3 -> BASE_VOLUME_CHECKS * 2;
+            case 4 -> BASE_VOLUME_CHECKS * 5;
+            default -> BASE_VOLUME_CHECKS * 10;
+        };
 
         RandomSource random = level.getRandom();
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
 
-            // Surface pass: grass, sand, dirt
-            for (int i = 0; i < SURFACE_CHECKS; i++) {
+            // Surface pass: now scans downward from heightmap to find freezable blocks
+            // under tree canopies, not just the top-level surface block
+            for (int i = 0; i < surfaceChecks; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                // getHeight returns Y of first non-solid above surface; below() is the surface block
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
-                BlockPos pos = new BlockPos(x, surfaceY, z);
-                if (!level.isLoaded(pos)) continue;
+                int topY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
 
-                transformSurface(level, pos, level.getBlockState(pos), phase);
+                // Scan downward up to 12 blocks to find freezable ground under trees
+                for (int dy = 0; dy <= 12; dy++) {
+                    BlockPos pos = new BlockPos(x, topY - dy, z);
+                    if (!level.isLoaded(pos)) break;
+                    BlockState state = level.getBlockState(pos);
+
+                    // Skip air, leaves, logs (canopy blocks) - keep scanning down
+                    if (state.isAir() || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+                            || state.is(ModBlocks.DEAD_LEAVES.get()) || state.is(ModBlocks.FROZEN_LEAVES.get())
+                            || state.is(ModBlocks.DEAD_LOG.get()) || state.is(ModBlocks.FROZEN_LOG.get())) {
+                        continue;
+                    }
+
+                    // Found a solid block - try to freeze it
+                    transformSurface(level, pos, state, phase);
+                    break;
+                }
             }
 
             // Volume pass: water, lava, ice chains
-            for (int i = 0; i < VOLUME_CHECKS; i++) {
+            for (int i = 0; i < volumeChecks; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
@@ -64,22 +93,18 @@ public final class BlockFreezer {
     }
 
     private static void transformSurface(ServerLevel level, BlockPos pos, BlockState state, int phase) {
-        // Grass Block → Dead Grass Block (phase 2+)
         if (state.is(Blocks.GRASS_BLOCK) && phase >= 2) {
             level.setBlock(pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState(), 3);
             return;
         }
-        // Dead Grass Block → Dirt (phase 3+)
         if (state.is(ModBlocks.DEAD_GRASS_BLOCK.get()) && phase >= 3) {
             level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
             return;
         }
-        // Dirt → Frozen Dirt (phase 4+)
         if (state.is(Blocks.DIRT) && phase >= 4) {
             level.setBlock(pos, ModBlocks.FROZEN_DIRT.get().defaultBlockState(), 3);
             return;
         }
-        // Sand / Red Sand → Frozen Sand (phase 3+)
         if ((state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)) && phase >= 3) {
             level.setBlock(pos, ModBlocks.FROZEN_SAND.get().defaultBlockState(), 3);
         }
@@ -88,7 +113,7 @@ public final class BlockFreezer {
     private static void transformSurfaceCoalOre(ServerLevel level, BlockPos pos, BlockState state, int phase) {
         if (!FrozenDawnConfig.ENABLE_FUEL_SCARCITY.get()) return;
         if (phase < FrozenDawnConfig.FUEL_SCARCITY_PHASE.get()) return;
-        if (pos.getY() < 0) return; // Only surface coal
+        if (pos.getY() < 0) return;
 
         if (state.is(Blocks.COAL_ORE) || state.is(Blocks.DEEPSLATE_COAL_ORE)) {
             level.setBlock(pos, ModBlocks.FROZEN_COAL_ORE.get().defaultBlockState(), 3);
@@ -96,7 +121,6 @@ public final class BlockFreezer {
     }
 
     private static void transformVolume(ServerLevel level, BlockPos pos, BlockState state, int phase) {
-        // --- Water freezing chain ---
         if (state.is(Blocks.WATER) && phase >= 2) {
             level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
             return;
@@ -110,7 +134,6 @@ public final class BlockFreezer {
             return;
         }
 
-        // --- Lava freezing chain (config-gated) ---
         if (!FrozenDawnConfig.ENABLE_LAVA_FREEZING.get()) return;
 
         if (state.is(Blocks.LAVA) && phase >= 3) {

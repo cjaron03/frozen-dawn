@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.network.ApocalypseDataPayload;
+import com.frozendawn.phase.FrozenDawnPhaseTracker;
 
 /**
  * Client-side cache of apocalypse state received from the server.
@@ -24,6 +25,7 @@ public final class ApocalypseClientData {
         sunScale = payload.sunScale();
         sunBrightness = payload.sunBrightness();
         skyLight = payload.skyLight();
+        FrozenDawnPhaseTracker.setPhase(phase);
     }
 
     public static int getPhase() { return phase; }

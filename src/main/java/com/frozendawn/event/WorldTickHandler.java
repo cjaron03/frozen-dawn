@@ -3,7 +3,10 @@ package com.frozendawn.event;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
+import com.frozendawn.network.TemperaturePayload;
+import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.VegetationDecay;
@@ -16,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -46,6 +50,7 @@ public class WorldTickHandler {
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
+        FrozenDawnPhaseTracker.setPhase(currentPhase);
 
         // Log phase transitions and grant advancements
         if (currentPhase != lastLoggedPhase) {
@@ -73,12 +78,34 @@ public class WorldTickHandler {
             PacketDistributor.sendToAllPlayers(createPayload(state));
         }
 
+        // Send per-player temperature every 40 ticks (~2 seconds)
+        if (state.getApocalypseTicks() % 40 == 0) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.level().dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+                    float temp = TemperatureManager.getTemperatureAt(
+                            player.level(), player.blockPosition(), currentDay, state.getTotalDays());
+                    PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
+                }
+            }
+        }
+
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
         WeatherHandler.tick(overworld, currentPhase);
         BlockFreezer.tick(overworld, currentPhase);
         VegetationDecay.tick(overworld, currentPhase);
         SnowAccumulator.tick(overworld, currentPhase);
+    }
+
+    /**
+     * Suppress all mob spawning in the Overworld at phase 4+.
+     * Both hostile and passive mobs stop appearing.
+     */
+    @SubscribeEvent
+    public static void onMobSpawn(FinalizeSpawnEvent event) {
+        if (FrozenDawnPhaseTracker.getPhase() < 4) return;
+        if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        event.setSpawnCancelled(true);
     }
 
     @SubscribeEvent

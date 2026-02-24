@@ -21,29 +21,38 @@ public final class SnowAccumulator {
 
     private SnowAccumulator() {}
 
-    private static final int CHECKS_PER_PLAYER = 32;
+    private static final int BASE_CHECKS_PER_PLAYER = 32;
     private static final int RADIUS = 64;
 
     public static void tick(ServerLevel level, int phase) {
         if (phase < 2) return;
 
-        // Rate control: only accumulate every N ticks
+        // Rate control: interval shrinks exponentially in later phases
         int baseInterval = switch (phase) {
             case 2 -> 200;
-            case 3 -> 100;
-            default -> 50; // phase 4+
+            case 3 -> 60;
+            case 4 -> 15;
+            default -> 5; // phase 5: near-constant blizzard
         };
         double rate = FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get();
         int interval = rate > 0 ? Math.max(1, (int) (baseInterval / rate)) : baseInterval;
 
         if (level.getServer().getTickCount() % interval != 0) return;
 
+        // More checks per player in later phases (exponential scaling)
+        int checksPerPlayer = switch (phase) {
+            case 2 -> BASE_CHECKS_PER_PLAYER;
+            case 3 -> BASE_CHECKS_PER_PLAYER * 2;    // 64
+            case 4 -> BASE_CHECKS_PER_PLAYER * 4;    // 128
+            default -> BASE_CHECKS_PER_PLAYER * 8;   // 256 (phase 5)
+        };
+
         RandomSource random = level.getRandom();
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
 
-            for (int i = 0; i < CHECKS_PER_PLAYER; i++) {
+            for (int i = 0; i < checksPerPlayer; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
 
@@ -70,8 +79,10 @@ public final class SnowAccumulator {
                     continue;
                 }
 
-                // Place new snow layer on solid surface
-                if (at.isAir() && below.isFaceSturdy(level, belowPos, Direction.UP)) {
+                // Place new snow layer on solid surface (skip ice — snow breaks on it)
+                if (at.isAir() && below.isFaceSturdy(level, belowPos, Direction.UP)
+                        && !below.is(Blocks.ICE) && !below.is(Blocks.PACKED_ICE)
+                        && !below.is(Blocks.BLUE_ICE) && !below.is(Blocks.FROSTED_ICE)) {
                     level.setBlock(snowPos, Blocks.SNOW.defaultBlockState()
                             .setValue(SnowLayerBlock.LAYERS, 1), 3);
                 }

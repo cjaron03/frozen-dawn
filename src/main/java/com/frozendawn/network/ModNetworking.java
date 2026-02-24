@@ -2,6 +2,7 @@ package com.frozendawn.network;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.client.ApocalypseClientData;
+import com.frozendawn.client.TemperatureHud;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -20,6 +21,11 @@ public class ModNetworking {
                 ApocalypseDataPayload.TYPE,
                 ApocalypseDataPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ApocalypseClientData.update(payload))
+        );
+        registrar.playToClient(
+                TemperaturePayload.TYPE,
+                TemperaturePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> TemperatureHud.setTemperature(payload.temperature()))
         );
     }
 }

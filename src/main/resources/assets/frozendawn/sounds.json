@@ -1,0 +1,22 @@
+{
+  "ambient.wind_light": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/wind_light",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.wind_strong": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_strong",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/wind_strong",
+        "stream": true
+      }
+    ]
+  }
+}

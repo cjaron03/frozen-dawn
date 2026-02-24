@@ -50,5 +50,8 @@
   "advancement.frozendawn.last_light.title": "Last Light",
   "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
   "advancement.frozendawn.classified_information.title": "Classified Information",
-  "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?"
+  "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?",
+
+  "subtitle.frozendawn.ambient.wind_light": "Wind howls softly",
+  "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar"
 }

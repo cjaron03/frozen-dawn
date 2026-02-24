@@ -12,14 +12,11 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
  * Spawns ambient snowflake particles around the player in phases 3+.
- * Particle density increases with phase progression.
- * Wind variation via sine wave over game time.
- * Hard cap of 8 particles/tick. Respects Minecraft particle settings.
+ * Phase 3: light snow. Phase 4: heavy. Phase 5: extreme blizzard whiteout.
+ * Phase 5 particles blow nearly sideways with heavy wind.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WeatherParticles {
-
-    private static final int MAX_PARTICLES_PER_TICK = 8;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -27,32 +24,53 @@ public class WeatherParticles {
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
         if (mc.level.dimension() != Level.OVERWORLD) return;
 
-        // Respect Minecraft particle settings
         if (mc.options.particles().get() == net.minecraft.client.ParticleStatus.MINIMAL) return;
 
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // 2/4/6 particles per tick for phases 3/4/5, capped at MAX_PARTICLES_PER_TICK
-        int baseCount = (phase - 2) * 2;
-        int particleCount = Math.min(baseCount, MAX_PARTICLES_PER_TICK);
+        int particleCount = switch (phase) {
+            case 3 -> 4;
+            case 4 -> 12;
+            default -> 40; // phase 5: blizzard whiteout
+        };
 
         RandomSource random = mc.level.random;
         double px = mc.player.getX();
-        double py = mc.player.getEyeY() + 8;
+        double py = mc.player.getEyeY();
         double pz = mc.player.getZ();
 
-        // Wind variation: oscillating intensity via sine wave over game time
         long gameTime = mc.level.getGameTime();
-        float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
-        float windX = windStrength * 0.3f * (float) Math.sin(gameTime * 0.007);
-        float windZ = windStrength * 0.3f * (float) Math.cos(gameTime * 0.011);
 
-        for (int i = 0; i < particleCount; i++) {
-            double x = px + random.nextGaussian() * 16;
-            double y = py + random.nextDouble() * 12;
-            double z = pz + random.nextGaussian() * 16;
-            mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, -0.3, windZ);
+        if (phase >= 5) {
+            // Phase 5: particles blow sideways at surface level, like a ground blizzard
+            float windAngle = (float) (gameTime * 0.005);
+            float windSpeed = 1.5f + 0.5f * (float) Math.sin(gameTime * 0.015);
+            float windX = windSpeed * (float) Math.sin(windAngle);
+            float windZ = windSpeed * (float) Math.cos(windAngle);
+            double fallSpeed = -0.08; // barely falling — almost horizontal
+
+            for (int i = 0; i < particleCount; i++) {
+                // Spawn at player height and slightly above, spread wide
+                double x = px + random.nextGaussian() * 20;
+                double y = py + random.nextGaussian() * 3; // tight vertical band around player
+                double z = pz + random.nextGaussian() * 20;
+                mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
+            }
+        } else {
+            // Phase 3-4: normal falling snow with mild wind
+            float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
+            float windMult = phase >= 4 ? 0.4f : 0.2f;
+            float windX = windStrength * windMult * (float) Math.sin(gameTime * 0.007);
+            float windZ = windStrength * windMult * (float) Math.cos(gameTime * 0.011);
+            double fallSpeed = -0.3;
+
+            for (int i = 0; i < particleCount; i++) {
+                double x = px + random.nextGaussian() * 16;
+                double y = py + 8 + random.nextDouble() * 12;
+                double z = pz + random.nextGaussian() * 16;
+                mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
+            }
         }
     }
 }
