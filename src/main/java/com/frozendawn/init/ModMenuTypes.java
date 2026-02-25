@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.GeothermalCoreMenu;
+import com.frozendawn.item.ThermalContainerMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
@@ -15,4 +16,8 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<GeothermalCoreMenu>> GEOTHERMAL_CORE =
             MENU_TYPES.register("geothermal_core",
                     () -> IMenuTypeExtension.create(GeothermalCoreMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ThermalContainerMenu>> THERMAL_CONTAINER =
+            MENU_TYPES.register("thermal_container",
+                    () -> IMenuTypeExtension.create(ThermalContainerMenu::new));
 }

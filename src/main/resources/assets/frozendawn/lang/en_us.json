@@ -21,6 +21,7 @@
   "item.frozendawn.thermal_core": "Thermal Core",
   "item.frozendawn.frozen_heart": "Frozen Heart",
   "item.frozendawn.orsa_document": "ORSA Document",
+  "item.frozendawn.thermal_container": "Thermal Container",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",
@@ -115,5 +116,12 @@
   "advancement.frozendawn.found_vasik_log.title": "The Scientist's Guilt",
   "advancement.frozendawn.found_vasik_log.description": "Find Dr. Vasik's personal research log.",
   "advancement.frozendawn.found_incident_report.title": "The Whole Truth",
-  "advancement.frozendawn.found_incident_report.description": "Uncover ORSA Technical Incident Report TIR-2042-1171. Now you know everything."
+  "advancement.frozendawn.found_incident_report.description": "Uncover ORSA Technical Incident Report TIR-2042-1171. Now you know everything.",
+
+  "advancement.frozendawn.food_spoiled.title": "Ice Cold Disappointment",
+  "advancement.frozendawn.food_spoiled.description": "Watch helplessly as your food freezes beyond recovery. Should've packed a lunchbox.",
+  "advancement.frozendawn.thermal_container.title": "Meal Prep Champion",
+  "advancement.frozendawn.thermal_container.description": "Craft a Thermal Container. Your lunch is now rated for deep space.",
+
+  "container.frozendawn.thermal_container": "Thermal Container"
 }

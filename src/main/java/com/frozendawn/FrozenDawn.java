@@ -4,6 +4,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
@@ -25,6 +26,7 @@ public class FrozenDawn {
 
     public FrozenDawn(IEventBus modEventBus, ModContainer modContainer) {
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
+        ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_TABS.register(modEventBus);

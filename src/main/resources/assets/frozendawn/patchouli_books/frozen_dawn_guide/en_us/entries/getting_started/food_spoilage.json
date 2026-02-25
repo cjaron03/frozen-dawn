@@ -1,0 +1,48 @@
+{
+  "name": "A Fun Guide to Food Spoilage!",
+  "category": "frozendawn:getting_started",
+  "icon": "minecraft:rotten_flesh",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Your Steak is a Brick",
+      "text": "$(bold)Good news:$() You have food!$(br)$(bold)Bad news:$() It's frozen solid.$(br2)Starting in $(bold)Phase 4$(), any food in your inventory accumulates $(italic)frost ticks$() when the temperature drops below $(bold)-30\u00b0C$(). The colder it gets, the faster your provisions deteriorate.$(br2)$(italic)ORSA Nutritional Advisory: \"Food is only food if you can chew it. A frozen steak is a blunt weapon.\"$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Stage 1: \"Chilled\"",
+      "text": "After $(bold)30 seconds$() below -30\u00b0C, your food becomes $(b)Chilled$().$(br2)$(li)Tooltip shows frost status$(li)Still perfectly edible$(li)You're in denial. It's fine. Everything is fine.$(br2)This is nature's way of telling you to eat now. You will not listen. You never do.$(br2)$(italic)ORSA Tip: If you're saving that steak \"for later,\" later is going to be very disappointing.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Stage 2: \"Frozen\"",
+      "text": "After $(bold)2 minutes$(), your food hits $(1)Frozen$().$(br2)$(li)$(bold)Eating takes 2x longer$() \u2014 try chewing a popsicle-steak$(li)$(bold)Restores half hunger$() \u2014 ice crystals are not nutrition$(br2)You can still eat it. You'll just hate every second. Like reheated leftover pizza, except somehow worse because it's -60\u00b0C and you're crying.$(br2)$(italic)Fun fact: At this temperature, bread has the structural integrity of concrete.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Stage 3: \"Frost-Ruined\"",
+      "text": "After $(bold)5 minutes$(), your food is $(8)Frost-Ruined$().$(br2)$(li)$(bold)Completely inedible$()$(li)$(bold)Permanently damaged$() \u2014 thawing only recovers to Frozen$(br2)This isn't food anymore. It's a memory of food. A cold, crystallized monument to your failure to plan ahead.$(br2)$(italic)ORSA Wellness Tip: Staring at frost-ruined steak for more than 10 seconds may cause existential dread. This is normal.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Thawing & Recovery",
+      "text": "Near heat sources (above $(bold)10\u00b0C$()), food will gradually thaw:$(br2)$(li)$(bold)Mild heat$() (10-30\u00b0C): Slow recovery$(li)$(bold)Strong heat$() (30\u00b0C+): Fast recovery$(br2)Chilled and Frozen food can fully recover to normal if thawed before hitting Frost-Ruined.$(br2)$(bold)IMPORTANT:$() Once food reaches Frost-Ruined, it can only ever thaw back to Frozen. The cell structure is permanently damaged.$(br2)$(italic)Science! It's like frostbite, but for steak.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Thermal Container",
+      "text": "Introducing the $(bold)Thermal Container$() \u2014 ORSA's patented food preservation unit!$(br2)$(li)Holds $(bold)8 food items$()$(li)$(bold)Fully insulates$() from frost ticks$(li)Doesn't stack (it's a lunchbox, not a pocket dimension)$(br2)One inventory slot for food security. That's one slot that isn't holding torches, tools, or false hope.$(br2)$(italic)Kevin from Accounting once tried to fit 9 steaks in one. The lid exploded. He still has the scar.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_container",
+      "text": "Iron for structure, leather for insulation, glass bottle for... science? Look, it works. Don't question ORSA engineering."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Frost-Resistant Foods",
+      "text": "Some foods are naturally immune to frost:$(br2)$(li)$(bold)Golden Apples$() \u2014 gold doesn't freeze (it does, but these are magical, shut up)$(li)$(bold)Enchanted Golden Apples$() \u2014 literally glowing$(li)$(bold)Dried Kelp$() \u2014 already desiccated, nothing left to ruin$(br2)Everything else? $(italic)Fair game.$() Your 64-steak surface sprint strategy just got a lot harder.$(br2)$(bold)ORSA Reminder:$() The thermal container exists for a reason. Use it. Or don't. We're a survival manual, not your mom."
+    }
+  ]
+}

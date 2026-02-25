@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:phase4",
+  "display": {
+    "icon": { "id": "minecraft:rotten_flesh" },
+    "title": { "translate": "advancement.frozendawn.food_spoiled.title" },
+    "description": { "translate": "advancement.frozendawn.food_spoiled.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "food_ruined": { "trigger": "minecraft:impossible" }
+  }
+}

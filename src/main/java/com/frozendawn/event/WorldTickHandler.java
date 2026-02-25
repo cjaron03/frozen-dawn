@@ -46,6 +46,8 @@ public class WorldTickHandler {
     private static final java.util.Map<java.util.UUID, Boolean> habitableCache = new java.util.HashMap<>();
     /** Suffocation timer per player (ticks without air). Resets when in habitable zone. */
     private static final java.util.Map<java.util.UUID, Integer> suffocationTimer = new java.util.HashMap<>();
+    /** Cached per-player temperature for use by FoodFrostHandler. */
+    private static final java.util.Map<java.util.UUID, Float> playerTemperatures = new java.util.HashMap<>();
     /** Ticks to full suffocation death. ~10 seconds of escalating symptoms. */
     private static final int SUFFOCATION_DURATION = 200;
 
@@ -62,6 +64,7 @@ public class WorldTickHandler {
         lastLoggedDay = -1;
         habitableCache.clear();
         suffocationTimer.clear();
+        playerTemperatures.clear();
         WeatherHandler.reset();
         NetherSeveranceHandler.reset();
     }
@@ -116,6 +119,7 @@ public class WorldTickHandler {
                         temp += (temp - 20f) * armorHeatMult;
                     }
 
+                    playerTemperatures.put(player.getUUID(), temp);
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
 
                     // Heat penalty — the ironic counterpart to freezing
@@ -374,7 +378,12 @@ public class WorldTickHandler {
         return false;
     }
 
-    private static void grantAdvancement(ServerPlayer player, String name) {
+    /** Returns the last-calculated temperature for a player (updated every 40 ticks). */
+    public static float getLastTemperature(java.util.UUID playerId) {
+        return playerTemperatures.getOrDefault(playerId, 20f);
+    }
+
+    static void grantAdvancement(ServerPlayer player, String name) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 

@@ -1,0 +1,14 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": { "id": "frozendawn:thermal_container" },
+    "title": { "translate": "advancement.frozendawn.thermal_container.title" },
+    "description": { "translate": "advancement.frozendawn.thermal_container.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "crafted": { "trigger": "minecraft:impossible" }
+  }
+}

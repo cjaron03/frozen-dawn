@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.item.OrsaDocumentItem;
+import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
@@ -35,6 +36,8 @@ public class ModItems {
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ThermalContainerItem> THERMAL_CONTAINER = ITEMS.register("thermal_container",
+            () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
 
     // --- Tier 1: Insulated Clothing (Phase 3) ---
     public static final DeferredItem<ArmorItem> INSULATED_HELMET = ITEMS.register("insulated_helmet",
@@ -108,6 +111,7 @@ public class ModItems {
                         output.accept(ICE_SHARD.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
+                        output.accept(THERMAL_CONTAINER.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
                         output.accept(INSULATED_CHESTPLATE.get());
