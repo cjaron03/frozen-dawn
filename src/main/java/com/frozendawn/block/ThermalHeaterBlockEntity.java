@@ -19,6 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 public class ThermalHeaterBlockEntity extends BlockEntity {
 
     private int burnTimeRemaining = 0;
+    private boolean cachedSheltered = false;
+    private boolean shelterValid = false;
 
     public ThermalHeaterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.THERMAL_HEATER.get(), pos, state);
@@ -64,6 +66,20 @@ public class ThermalHeaterBlockEntity extends BlockEntity {
 
     public boolean isLit() {
         return burnTimeRemaining > 0;
+    }
+
+    /** Returns cached shelter status, computing lazily on first access. */
+    public boolean getCachedSheltered() {
+        if (!shelterValid && level != null) {
+            cachedSheltered = com.frozendawn.world.TemperatureManager.isSheltered(level, worldPosition);
+            shelterValid = true;
+        }
+        return cachedSheltered;
+    }
+
+    /** Invalidate shelter cache when blocks above change. */
+    public void invalidateShelterCache() {
+        shelterValid = false;
     }
 
     private void updateLitState() {

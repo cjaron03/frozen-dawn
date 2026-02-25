@@ -2,6 +2,7 @@ package com.frozendawn.world;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
@@ -84,7 +85,12 @@ public final class TemperatureManager {
         for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
             int distSq = (int) pos.distSqr(heaterPos);
             BlockState state = level.getBlockState(heaterPos);
-            float warmth = getHeaterHeat(level, state, distSq, phase, heaterPos);
+            boolean sheltered = false;
+            BlockEntity heaterBE = level.getBlockEntity(heaterPos);
+            if (heaterBE instanceof ThermalHeaterBlockEntity thbe) {
+                sheltered = thbe.getCachedSheltered();
+            }
+            float warmth = getHeaterHeat(state, distSq, phase, sheltered);
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;
@@ -142,22 +148,24 @@ public final class TemperatureManager {
      * Returns warmth from a registered thermal heater at the given distance-squared.
      * In phase 5+, exposed heaters (no roof) have 60% radius (distSq × 0.36).
      * This ensures Diamond exposed (r≈8.4) > Base enclosed (r=7).
+     *
+     * @param sheltered  Cached shelter status from the heater's block entity.
      */
-    private static float getHeaterHeat(Level level, BlockState state, int distSq, int phase, BlockPos heaterPos) {
+    private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 18 : 49;
+            int maxDistSq = (phase >= 5 && !sheltered) ? 18 : 49;
             return distSq <= maxDistSq ? 35.0f : 0.0f;
         }
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 29 : 81;
+            int maxDistSq = (phase >= 5 && !sheltered) ? 29 : 81;
             return distSq <= maxDistSq ? 50.0f : 0.0f;
         }
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 44 : 121;
+            int maxDistSq = (phase >= 5 && !sheltered) ? 44 : 121;
             return distSq <= maxDistSq ? 65.0f : 0.0f;
         }
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 71 : 196;
+            int maxDistSq = (phase >= 5 && !sheltered) ? 71 : 196;
             return distSq <= maxDistSq ? 80.0f : 0.0f;
         }
         return 0.0f;

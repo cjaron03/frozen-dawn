@@ -33,6 +33,6 @@ public final class HeaterRegistry {
 
     public static Set<BlockPos> getHeaters(Level level) {
         Set<BlockPos> set = heaters.get(level);
-        return set != null ? Collections.unmodifiableSet(set) : Collections.emptySet();
+        return set != null ? set : Collections.emptySet();
     }
 }

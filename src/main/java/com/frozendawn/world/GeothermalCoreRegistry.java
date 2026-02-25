@@ -32,6 +32,6 @@ public final class GeothermalCoreRegistry {
 
     public static Set<BlockPos> getCores(Level level) {
         Set<BlockPos> set = cores.get(level);
-        return set != null ? Collections.unmodifiableSet(set) : Collections.emptySet();
+        return set != null ? set : Collections.emptySet();
     }
 }

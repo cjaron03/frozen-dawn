@@ -5,6 +5,8 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
+import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.SnowAccumulator;
@@ -134,11 +136,34 @@ public class WorldTickHandler {
 
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        invalidateNearbyShelterCaches(event.getLevel(), event.getPos());
+
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (!event.getPlacedBlock().is(ModBlocks.GEOTHERMAL_CORE.get())) return;
         if (event.getPos().getY() >= 0) return;
 
         grantAdvancement(player, "last_light");
+    }
+
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        invalidateNearbyShelterCaches(event.getLevel(), event.getPos());
+    }
+
+    /** Invalidate shelter caches for any heaters within 4 blocks below the changed position. */
+    private static void invalidateNearbyShelterCaches(net.minecraft.world.level.LevelAccessor levelAccessor, net.minecraft.core.BlockPos changedPos) {
+        if (!(levelAccessor instanceof net.minecraft.world.level.Level level)) return;
+        java.util.Set<net.minecraft.core.BlockPos> heaters = HeaterRegistry.getHeaters(level);
+        if (heaters.isEmpty()) return;
+        for (int dy = 1; dy <= 4; dy++) {
+            net.minecraft.core.BlockPos below = changedPos.below(dy);
+            if (heaters.contains(below)) {
+                net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(below);
+                if (be instanceof ThermalHeaterBlockEntity heater) {
+                    heater.invalidateShelterCache();
+                }
+            }
+        }
     }
 
     @SubscribeEvent

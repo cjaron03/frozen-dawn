@@ -98,6 +98,8 @@ final class PlayerTickHandler {
     private static void applyHeatDamage(ServerPlayer player, float temp, float progress) {
         if (player.isCreative() || player.isSpectator() || temp <= 60f) return;
 
+        int armorTier = MobFreezeHandler.getFullSetTier(player);
+
         if (temp >= 120f) {
             DamageSource src = new DamageSource(
                     player.serverLevel().registryAccess()
@@ -110,7 +112,6 @@ final class PlayerTickHandler {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
             player.displayClientMessage(Component.translatable("message.frozendawn.heat.cooking"), true);
             WorldTickHandler.grantAdvancement(player, "too_hot_to_handle");
-            int armorTier = MobFreezeHandler.getFullSetTier(player);
             if (armorTier >= 1 && armorTier <= 2) {
                 WorldTickHandler.grantAdvancement(player, "insulation_both_ways");
             }
@@ -125,7 +126,6 @@ final class PlayerTickHandler {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 1, false, false, false));
             player.displayClientMessage(Component.translatable("message.frozendawn.heat.unbearable"), true);
             WorldTickHandler.grantAdvancement(player, "too_hot_to_handle");
-            int armorTier = MobFreezeHandler.getFullSetTier(player);
             if (armorTier >= 1 && armorTier <= 2) {
                 WorldTickHandler.grantAdvancement(player, "insulation_both_ways");
             }
