@@ -48,6 +48,20 @@ Over 100 in-game days, the world progresses through 6 phases of an apocalyptic f
 - **Breath particles** — Visible below 0°C, stop in phase 6 mid+ (no atmosphere to exhale into)
 - **Camera shivering** — Intensifies with cold, extreme in phase 6
 
+### Armor System
+Three tiers of insulated armor allow players to survive progressively colder surface conditions. Armor suppresses freeze effects (shivering, frost overlay, slowness, damage) when its protection is sufficient, while breath particles remain visible as a cosmetic cold indicator.
+
+| Tier | Name | Cold Resistance | Rated For | Special |
+|------|------|----------------|-----------|---------|
+| **1** | Insulated Clothing | +25°C (+6.25/piece) | Phase 1–3 | Wool + leather craft |
+| **2** | Heavy Insulation | +45°C (+11.25/piece) | Phase 1–4 | Tier 1 + blaze powder, reduces wind chill 50% |
+| **3** | EVA Suit | +120°C (+30/piece) | Phase 1–6 | Tier 2 + Frozen Heart, negates wind chill, blocks suffocation (up to 95% phase 6) |
+
+Armor pieces can be mixed across tiers. Full set bonuses (wind chill, suffocation) require 4 pieces of that tier or higher.
+
+### Nether Severance
+At phase 5+, dimensional links are severed. Existing nether portals break and new ones cannot be lit. Attempting to light a portal with flint & steel grants a hidden advancement: *"Huh. Thought That Works."*
+
 ### Player Agency
 - **Thermal Heater** — Right-click with coal, charcoal, blaze powder, or coal blocks to fuel. Radius 7, +35°C when lit. No GUI — just right-click fuel in. Fuel does NOT burn while chunk is unloaded.
 - **Insulated Glass** — Transparent block that counts as shelter (roof check). Build glass greenhouses that protect from the cold.
@@ -70,7 +84,7 @@ Phase 6 is divided into three sub-stages:
 The Geothermal Core is the endgame objective — a massive heat source requiring resources from every phase:
 - **Below Y=0:** radius 12, +50°C (intended endgame anchor — meaningful warm bubble)
 - **Above Y=0:** radius 6, +15°C (survival aid, not salvation — doesn't trivialize the apocalypse)
-- **Craft chain:** Thermal Core (phase 2-3 resources) + Frozen Heart (nether star + blue ice + ice shards + frozen obsidian) → Geothermal Core (+ diamond blocks + obsidian)
+- **Craft chain:** Thermal Core (phase 2-3 resources) + Frozen Heart (diamond + blue ice + ice shards + frozen obsidian) → Geothermal Core (+ diamond blocks + obsidian)
 - **Design philosophy:** Above Y=0 is a survival aid. Below Y=0 is the intended endgame anchor. Modpack authors should tune `heatSourceMultiplier` to adjust.
 
 ### ORSA Narrative
@@ -85,8 +99,9 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 
 ### Other
 - **12 custom blocks** — Dead Grass, Frozen Dirt, Frozen Sand, Dead/Frozen Logs, Dead/Frozen Leaves, Frozen Obsidian, Thermal Heater, Insulated Glass, Frozen Coal Ore, Geothermal Core
-- **3 custom items** — Ice Shard, Thermal Core, Frozen Heart
-- **8 advancements** — Phase progression (6 phases) + "Last Light" (Geothermal Core placed below Y=0) + "Classified Information" (found an ORSA book)
+- **15 custom items** — Ice Shard, Thermal Core, Frozen Heart, 12 armor pieces (4 per tier)
+- **12 advancements** — Phase progression (6 phases), "Last Light" (Geothermal Core below Y=0), "Classified Information" (ORSA book), 3 armor tier milestones, "Huh. Thought That Works" (hidden — try to light a portal at phase 5+)
+- **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
 - **Tough As Nails integration** — Optional; syncs apocalypse temperatures with TaN's body temperature system
 - **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 16+ config options covering temperature, features, visuals, and gameplay
