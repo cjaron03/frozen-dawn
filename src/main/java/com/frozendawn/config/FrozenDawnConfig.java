@@ -22,6 +22,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue SNOW_ACCUMULATION_RATE;
     public static final ModConfigSpec.BooleanValue ENABLE_FUEL_SCARCITY;
     public static final ModConfigSpec.IntValue FUEL_SCARCITY_PHASE;
+    public static final ModConfigSpec.BooleanValue ENABLE_FUEL_PHASE_SCALING;
     public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
 
     // Client
@@ -86,6 +87,12 @@ public class FrozenDawnConfig {
         FUEL_SCARCITY_PHASE = BUILDER
                 .comment("Phase at which coal ore begins freezing (requires enableFuelScarcity = true)")
                 .defineInRange("fuelScarcityPhase", 4, 2, 5);
+        ENABLE_FUEL_PHASE_SCALING = BUILDER
+                .comment("Enable phase-based fuel consumption scaling for Thermal Heaters.",
+                        "Phases 1-3: 1x, Phase 4: 2x, Phase 5: 4x, Phase 6: 8x.",
+                        "Stacks with tier consumption rate. Geothermal Core is exempt.",
+                        "Disable to remove fuel logistics pressure without affecting cold.")
+                .define("enableFuelPhaseScaling", true);
         ENABLE_LORE_BOOKS = BUILDER
                 .comment("Enable ORSA lore books in structure loot tables.",
                         "When enabled, written books containing the ORSA narrative",

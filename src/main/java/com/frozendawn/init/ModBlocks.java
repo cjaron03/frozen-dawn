@@ -91,7 +91,7 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0)));
 
-    // Iron Thermal Heater: +50C, radius 9, 1.5x fuel efficiency
+    // Iron Thermal Heater: +50C, radius 9, 1.5x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> IRON_THERMAL_HEATER = BLOCKS.register("iron_thermal_heater",
             () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL)
@@ -100,7 +100,7 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0), 1.5f));
 
-    // Gold Thermal Heater: +65C, radius 11, 2x fuel efficiency
+    // Gold Thermal Heater: +65C, radius 11, 2x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> GOLD_THERMAL_HEATER = BLOCKS.register("gold_thermal_heater",
             () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.GOLD)
@@ -109,7 +109,7 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 14 : 0), 2.0f));
 
-    // Diamond Thermal Heater: +80C, radius 14, 3x fuel efficiency
+    // Diamond Thermal Heater: +80C, radius 14, 3x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> DIAMOND_THERMAL_HEATER = BLOCKS.register("diamond_thermal_heater",
             () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.DIAMOND)

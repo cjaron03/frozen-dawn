@@ -1,9 +1,12 @@
 package com.frozendawn.block;
 
+import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,14 +31,34 @@ public class ThermalHeaterBlockEntity extends BlockEntity {
 
     public void serverTick() {
         if (burnTimeRemaining > 0) {
-            burnTimeRemaining--;
+            burnTimeRemaining = Math.max(0, burnTimeRemaining - getPhaseConsumption());
             if (burnTimeRemaining == 0) {
                 updateLitState();
                 setChanged();
-            } else if (burnTimeRemaining % 200 == 0) {
+            } else if (level != null && level.getServer() != null
+                    && level.getServer().getTickCount() % 200 == 0) {
                 setChanged(); // periodic save, not every tick
             }
         }
+    }
+
+    /**
+     * Phase-based fuel consumption multiplier.
+     * Phases 1-3: 1x, Phase 4: 2x, Phase 5: 4x, Phase 6: 8x.
+     * Disabled when FUEL_PHASE_SCALING config is false.
+     */
+    private int getPhaseConsumption() {
+        if (!FrozenDawnConfig.ENABLE_FUEL_PHASE_SCALING.get()) return 1;
+        if (level == null || level.isClientSide()) return 1;
+        MinecraftServer server = level.getServer();
+        if (server == null) return 1;
+        int phase = ApocalypseState.get(server).getPhase();
+        return switch (phase) {
+            case 4 -> 2;
+            case 5 -> 4;
+            case 6 -> 8;
+            default -> 1;
+        };
     }
 
     public boolean isLit() {

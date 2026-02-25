@@ -83,7 +83,7 @@ public final class TemperatureManager {
 
                     BlockPos checkPos = pos.offset(dx, dy, dz);
                     BlockState state = level.getBlockState(checkPos);
-                    float warmth = getHeatForBlock(state, distSq, phase, checkPos);
+                    float warmth = getHeatForBlock(level, state, distSq, phase, checkPos);
                     if (warmth > 0) {
                         totalWarmth += warmth;
                         if (quickScan) return totalWarmth;
@@ -124,25 +124,30 @@ public final class TemperatureManager {
     /**
      * Returns the warmth provided by a block at the given distance-squared, or 0 if out of range.
      * Uses distSq to avoid Vec3 allocation and sqrt() per block.
+     * In phase 5+, exposed heaters (not fully enclosed by solid blocks) have halved radius.
      */
-    private static float getHeatForBlock(BlockState state, int distSq, int phase, BlockPos checkPos) {
+    private static float getHeatForBlock(Level level, BlockState state, int distSq, int phase, BlockPos checkPos) {
         // Geothermal Core is handled via GeothermalCoreRegistry (supports upgraded range up to 32)
 
         // Thermal Heater (lit): radius 7 (distSq <= 49), +35C
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            return distSq <= 49 ? 35.0f : 0.0f;
+            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 12 : 49;
+            return distSq <= maxDistSq ? 35.0f : 0.0f;
         }
         // Iron Thermal Heater (lit): radius 9 (distSq <= 81), +50C
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            return distSq <= 81 ? 50.0f : 0.0f;
+            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 20 : 81;
+            return distSq <= maxDistSq ? 50.0f : 0.0f;
         }
         // Gold Thermal Heater (lit): radius 11 (distSq <= 121), +65C
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            return distSq <= 121 ? 65.0f : 0.0f;
+            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 30 : 121;
+            return distSq <= maxDistSq ? 65.0f : 0.0f;
         }
         // Diamond Thermal Heater (lit): radius 14 (distSq <= 196), +80C
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            return distSq <= 196 ? 80.0f : 0.0f;
+            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 49 : 196;
+            return distSq <= maxDistSq ? 80.0f : 0.0f;
         }
 
         // Campfire (lit): radius 5 (distSq <= 25), +25C
@@ -177,5 +182,18 @@ public final class TemperatureManager {
         }
 
         return 0.0f;
+    }
+
+    /**
+     * Check if a block is fully enclosed — all 6 adjacent faces have solid blocks.
+     * Used to determine if wind exposure halves heater radius in phase 5+.
+     */
+    private static boolean isEnclosed(Level level, BlockPos pos) {
+        return level.getBlockState(pos.above()).isSolidRender(level, pos.above())
+                && level.getBlockState(pos.below()).isSolidRender(level, pos.below())
+                && level.getBlockState(pos.north()).isSolidRender(level, pos.north())
+                && level.getBlockState(pos.south()).isSolidRender(level, pos.south())
+                && level.getBlockState(pos.east()).isSolidRender(level, pos.east())
+                && level.getBlockState(pos.west()).isSolidRender(level, pos.west());
     }
 }
