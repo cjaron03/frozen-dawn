@@ -140,23 +140,24 @@ public final class TemperatureManager {
 
     /**
      * Returns warmth from a registered thermal heater at the given distance-squared.
-     * In phase 5+, exposed heaters (no roof overhead) have halved radius.
+     * In phase 5+, exposed heaters (no roof) have 60% radius (distSq × 0.36).
+     * This ensures Diamond exposed (r≈8.4) > Base enclosed (r=7).
      */
     private static float getHeaterHeat(Level level, BlockState state, int distSq, int phase, BlockPos heaterPos) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 12 : 49;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 18 : 49;
             return distSq <= maxDistSq ? 35.0f : 0.0f;
         }
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 20 : 81;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 29 : 81;
             return distSq <= maxDistSq ? 50.0f : 0.0f;
         }
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 30 : 121;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 44 : 121;
             return distSq <= maxDistSq ? 65.0f : 0.0f;
         }
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 49 : 196;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 71 : 196;
             return distSq <= maxDistSq ? 80.0f : 0.0f;
         }
         return 0.0f;

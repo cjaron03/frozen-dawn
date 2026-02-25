@@ -44,6 +44,10 @@ public final class VegetationDecay {
     private static final int MAX_COLLAPSE_BLOCKS = 64;
     private static final int MAX_SNAP_BLOCKS = 128;
 
+    /** Reusable collections for flood-fill operations (server thread only). */
+    private static final Queue<BlockPos> fillQueue = new ArrayDeque<>();
+    private static final Set<BlockPos> fillVisited = new HashSet<>();
+
     public static void tick(ServerLevel level, int phase) {
         if (phase < 2) return;
         if (!FrozenDawnConfig.ENABLE_VEGETATION_DECAY.get()) return;
@@ -210,14 +214,14 @@ public final class VegetationDecay {
      * removing all connected tree blocks. Drops items naturally.
      */
     private static void collapseTree(ServerLevel level, BlockPos start) {
-        Queue<BlockPos> queue = new ArrayDeque<>();
-        Set<BlockPos> visited = new HashSet<>();
-        queue.add(start);
-        visited.add(start);
+        fillQueue.clear();
+        fillVisited.clear();
+        fillQueue.add(start);
+        fillVisited.add(start);
         int removed = 0;
 
-        while (!queue.isEmpty() && removed < MAX_COLLAPSE_BLOCKS) {
-            BlockPos current = queue.poll();
+        while (!fillQueue.isEmpty() && removed < MAX_COLLAPSE_BLOCKS) {
+            BlockPos current = fillQueue.poll();
             BlockState state = level.getBlockState(current);
 
             boolean isTreeBlock = state.is(ModBlocks.DEAD_LOG.get())
@@ -232,12 +236,12 @@ public final class VegetationDecay {
             level.destroyBlock(current, true);
             removed++;
 
-            if (visited.size() > MAX_COLLAPSE_BLOCKS * 8) break;
+            if (fillVisited.size() > MAX_COLLAPSE_BLOCKS * 8) break;
             for (Direction dir : Direction.values()) {
                 BlockPos neighbor = current.relative(dir);
-                if (!visited.contains(neighbor) && level.isLoaded(neighbor)) {
-                    visited.add(neighbor);
-                    queue.add(neighbor);
+                if (!fillVisited.contains(neighbor) && level.isLoaded(neighbor)) {
+                    fillVisited.add(neighbor);
+                    fillQueue.add(neighbor);
                 }
             }
         }
@@ -253,18 +257,18 @@ public final class VegetationDecay {
         level.destroyBlock(snapPoint, true);
 
         // Then destroy everything above by scanning upward and outward
-        Queue<BlockPos> queue = new ArrayDeque<>();
-        Set<BlockPos> visited = new HashSet<>();
+        fillQueue.clear();
+        fillVisited.clear();
         int removed = 0;
 
         // Start from the block above the snap point
         BlockPos above = snapPoint.above();
-        queue.add(above);
-        visited.add(above);
-        visited.add(snapPoint); // don't go back down through snap point
+        fillQueue.add(above);
+        fillVisited.add(above);
+        fillVisited.add(snapPoint); // don't go back down through snap point
 
-        while (!queue.isEmpty() && removed < MAX_SNAP_BLOCKS) {
-            BlockPos current = queue.poll();
+        while (!fillQueue.isEmpty() && removed < MAX_SNAP_BLOCKS) {
+            BlockPos current = fillQueue.poll();
             BlockState state = level.getBlockState(current);
 
             boolean isTreeBlock = state.is(ModBlocks.DEAD_LOG.get())
@@ -279,21 +283,21 @@ public final class VegetationDecay {
             level.destroyBlock(current, false); // no drops — they shatter
             removed++;
 
-            if (visited.size() > MAX_SNAP_BLOCKS * 8) break;
+            if (fillVisited.size() > MAX_SNAP_BLOCKS * 8) break;
             // Spread upward and sideways (not downward past snap point)
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.DOWN) continue; // don't go below snap
                 BlockPos neighbor = current.relative(dir);
-                if (!visited.contains(neighbor) && level.isLoaded(neighbor)) {
-                    visited.add(neighbor);
-                    queue.add(neighbor);
+                if (!fillVisited.contains(neighbor) && level.isLoaded(neighbor)) {
+                    fillVisited.add(neighbor);
+                    fillQueue.add(neighbor);
                 }
             }
             // Also check directly below for branches that extend down from canopy
             BlockPos below = current.below();
-            if (!visited.contains(below) && level.isLoaded(below) && current.getY() > snapPoint.getY()) {
-                visited.add(below);
-                queue.add(below);
+            if (!fillVisited.contains(below) && level.isLoaded(below) && current.getY() > snapPoint.getY()) {
+                fillVisited.add(below);
+                fillQueue.add(below);
             }
         }
     }
