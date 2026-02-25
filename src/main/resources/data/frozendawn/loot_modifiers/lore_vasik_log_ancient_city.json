@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/ancient_city"
+    }
+  ],
+  "doc_type": "vasik_log",
+  "display_name": "Dr. Vasik's Personal Log",
+  "chance": 0.05
+}

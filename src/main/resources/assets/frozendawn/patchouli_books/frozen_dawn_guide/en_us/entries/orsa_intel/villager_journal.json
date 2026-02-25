@@ -1,0 +1,34 @@
+{
+  "name": "A Villager's Journal",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:writable_book",
+  "sortnum": 2,
+  "advancement": "frozendawn:found_villager_journal",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Day 1",
+      "text": "The snow hasn't stopped in three days. That's not normal for this time of year.$(br2)The animals are restless. The chickens won't leave the coop and the cows just stand there, staring at nothing.$(br2)Old Marta says she's seen weather like this before. I don't believe her."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 8",
+      "text": "Two of the cows died last night. Froze standing up. I've never seen anything like it.$(br2)The crops are black. All of them. Even the potatoes underground rotted.$(br2)Thomas says the traders stopped coming. The road north is buried under ice."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 14",
+      "text": "People came today. ORSA, they called themselves. Wore thick coats with patches on the shoulders.$(br2)They said we need to leave. All of us. Said shuttles are waiting two days east.$(br2)Father said no. Said this is our home. Half the village agreed with him."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 19",
+      "text": "The other half left yesterday. Packed what they could carry and followed the ORSA people east.$(br2)Martha took her cat. Jakob left his dog. We're staying. Twelve of us now.$(br2)Father says the cold will pass.$(br2)The sun looks smaller today. I mentioned it at dinner. Nobody answered."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day ???",
+      "text": "I've lost count.$(br2)The sky is wrong. The sun is a pale dot and it's dark even at noon. Everything is ice.$(br2)There's nobody left to argue with.$(br2)$(italic)Maybe we should have gone.$()"
+    }
+  ]
+}

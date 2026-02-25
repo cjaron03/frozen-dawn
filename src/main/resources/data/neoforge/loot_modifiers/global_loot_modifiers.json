@@ -1,10 +1,17 @@
 {
   "replace": false,
   "entries": [
-    "frozendawn:orsa_book_1",
-    "frozendawn:orsa_book_2",
-    "frozendawn:orsa_book_3",
-    "frozendawn:orsa_book_4",
-    "frozendawn:orsa_book_5"
+    "frozendawn:lore_villager_journal",
+    "frozendawn:lore_villager_journal_desert",
+    "frozendawn:lore_villager_journal_savanna",
+    "frozendawn:lore_villager_journal_snowy",
+    "frozendawn:lore_villager_journal_taiga",
+    "frozendawn:lore_orsa_bulletin_church",
+    "frozendawn:lore_orsa_bulletin_igloo",
+    "frozendawn:lore_vasik_log_dungeon",
+    "frozendawn:lore_vasik_log_mineshaft",
+    "frozendawn:lore_vasik_log_ancient_city",
+    "frozendawn:lore_incident_report_stronghold",
+    "frozendawn:lore_incident_report_end_city"
   ]
 }

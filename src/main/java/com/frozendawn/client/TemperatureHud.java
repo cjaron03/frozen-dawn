@@ -31,7 +31,7 @@ public class TemperatureHud {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         int phase = ApocalypseClientData.getPhase();
-        if (phase < 1) return;
+        if (phase < 0) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;

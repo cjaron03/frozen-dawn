@@ -20,6 +20,7 @@
   "item.frozendawn.ice_shard": "Ice Shard",
   "item.frozendawn.thermal_core": "Thermal Core",
   "item.frozendawn.frozen_heart": "Frozen Heart",
+  "item.frozendawn.orsa_document": "ORSA Document",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",
@@ -102,5 +103,17 @@
   "death.attack.frozendawn.hyperthermia": "%1$s was cooked alive by their own heaters",
 
   "advancement.frozendawn.too_hot_to_handle.title": "Too Hot to Handle",
-  "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you."
+  "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you.",
+
+  "advancement.frozendawn.insulation_both_ways.title": "Insulation Works Both Ways",
+  "advancement.frozendawn.insulation_both_ways.description": "Overheat while wearing insulated armor near your own heaters. You marinated yourself.",
+
+  "advancement.frozendawn.found_villager_journal.title": "A Voice from the Past",
+  "advancement.frozendawn.found_villager_journal.description": "Find a villager's journal in the ruins.",
+  "advancement.frozendawn.found_orsa_bulletin.title": "Public Service Announcement",
+  "advancement.frozendawn.found_orsa_bulletin.description": "Discover an ORSA Public Safety Bulletin.",
+  "advancement.frozendawn.found_vasik_log.title": "The Scientist's Guilt",
+  "advancement.frozendawn.found_vasik_log.description": "Find Dr. Vasik's personal research log.",
+  "advancement.frozendawn.found_incident_report.title": "The Whole Truth",
+  "advancement.frozendawn.found_incident_report.description": "Uncover ORSA Technical Incident Report TIR-2042-1171. Now you know everything."
 }

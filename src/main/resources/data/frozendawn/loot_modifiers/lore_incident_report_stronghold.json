@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/stronghold_library"
+    }
+  ],
+  "doc_type": "incident_report",
+  "display_name": "ORSA Incident Report",
+  "chance": 0.03
+}

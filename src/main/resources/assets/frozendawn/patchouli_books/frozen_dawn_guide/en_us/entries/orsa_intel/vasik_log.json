@@ -1,0 +1,39 @@
+{
+  "name": "Dr. Vasik's Personal Log",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:book",
+  "sortnum": 4,
+  "advancement": "frozendawn:found_vasik_log",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Entry 1",
+      "text": "Elena flagged the resonance decay seven months ago. She showed me the data \u2014 a 0.003% drift in the orbital anchor frequency.$(br2)I told her it was within tolerance.$(br2)She looked at me like I'd said something unforgivable.$(br2)$(italic)She was right.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Entry 2",
+      "text": "The decay isn't linear. It's $(bold)exponential.$()$(br2)I re-ran Elena's models with updated data. The curve isn't slowing down. It's accelerating.$(br2)The committee reviewed our findings and scheduled a follow-up meeting in $(bold)six months.$()$(br2)Six months.$(br)We don't have six months."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Entry 3",
+      "text": "The cascade has begun. Node cluster 1400-1622 went offline simultaneously. The remaining nodes tried to compensate. Overcorrected. Triggered failures in the southern hemisphere array.$(br2)We are past the point of correction. Elena's math was right all along.$(br2)I owe her an apology."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Entry 4",
+      "text": "Evacuation preparations are underway. Project Exodus. Fourteen billion people in seventy-two hours.$(br2)I've packed my notes and my grandmother's ring. There is nothing else worth saving from this office.$(br2)The numbers say this is irreversible. I've checked them nine times."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Entry 5",
+      "text": "Kevin from Logistics says he's going back for one more surface sweep. Says he saw lights in a settlement to the east.$(br2)I told him the shuttles won't wait. He said he knows.$(br2)He took extra thermal blankets.$(br2)I didn't stop him. $(italic)I should have stopped him.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Entry 6",
+      "text": "The shuttle launched twenty minutes ago.$(br2)Kevin isn't here.$(br2)Through the viewport I can see the dark side of Earth growing. The ice is visible from orbit now. Continents I used to know are white.$(br2)Somewhere down there, Kevin is still looking.$(br2)$(italic)\u2014 M.V.$()"
+    }
+  ]
+}

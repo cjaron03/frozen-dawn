@@ -27,12 +27,17 @@
     {
       "type": "patchouli:text",
       "title": "Stage 3: \"I Am Cooked\"",
-      "text": "At $(bold)120\u00b0C+$(), congratulations — you have achieved the internal temperature of a sous vide steak.$(br2)$(li)$(bold)Nausea$() — Your vision swims$(li)$(bold)Slowness II$() — Can barely move$(li)$(bold)2 hearts of damage$() every 2 seconds$(li)Action bar: \"You are literally cooking alive. In an ice age.\"$(br2)If you die here, your death message will read: $(italic)\"%s was cooked alive by their own heaters.\"$()$(br2)We hope the irony provides comfort."
+      "text": "At $(bold)120\u00b0C+$(), congratulations — you have achieved the internal temperature of a sous vide steak.$(br2)$(li)$(bold)Nausea$() — Your vision swims$(li)$(bold)Slowness II$() — Can barely move$(li)$(bold)2 hearts of damage$() every 2 seconds$(li)Action bar: \"You are literally cooking alive. In an ice age.\"$(br2)You survived the death of the sun, the freezing of the oceans, and the collapse of the atmosphere — only to be done in by your own heating infrastructure. Poetic, really."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Armor Problem",
+      "text": "Here's the cruel part: your $(bold)insulated armor$() — the gear keeping you alive in the cold — also $(bold)traps heat.$()$(br2)Insulated clothing adds $(bold)+20%$() heat above 20\u00b0C.$(br)Heated armor adds $(bold)+40%$() heat above 20\u00b0C.$(br)EVA suit adds only $(bold)+8%$() (it has proper cooling).$(br2)So that cozy 80\u00b0C room? In heated armor, it's $(bold)104\u00b0C.$() You are a walking slow cooker.$(br2)$(italic)ORSA Engineering would like to remind you that the armor was designed for cold. Not for standing inside a furnace.$()"
     },
     {
       "type": "patchouli:text",
       "title": "How to Not Die (of Heat)",
-      "text": "$(bold)Step 1:$() Remove heaters. Yes, the ones you spent all game building. Remove some of them.$(br2)$(bold)Step 2:$() Spread them out. Heat stacks, so cluster = death sauna.$(br2)$(bold)Step 3:$() Move away from the heat. Revolutionary, we know.$(br2)$(bold)Step 4:$() Do not, under any circumstances, stand between a Geothermal Core and four Diamond Thermal Heaters. We lost Kevin that way.$(br2)$(italic)In loving memory of Kevin from Accounting, who just wanted to be warm. He was. Very.$()"
+      "text": "$(bold)Step 1:$() Remove heaters. Yes, the ones you spent all game building. Remove some of them.$(br2)$(bold)Step 2:$() Spread them out. Heat stacks, so cluster = death sauna.$(br2)$(bold)Step 3:$() Take off the armor indoors. You don't need heated insulation next to four heaters.$(br2)$(bold)Step 4:$() Do not, under any circumstances, stand between a Geothermal Core and four Diamond Thermal Heaters. Kevin from Accounting tried this. He sends his regards from the burn ward on Mars.$()"
     }
   ]
 }

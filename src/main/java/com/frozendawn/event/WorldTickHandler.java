@@ -26,7 +26,6 @@ import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
-import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
@@ -110,6 +109,13 @@ public class WorldTickHandler {
                 if (player.level().dimension() == net.minecraft.world.level.Level.OVERWORLD) {
                     float temp = TemperatureManager.getTemperatureAt(
                             player.level(), player.blockPosition(), currentDay, state.getTotalDays());
+
+                    // Armor heat trapping: insulated armor amplifies heat above 20C
+                    float armorHeatMult = MobFreezeHandler.getArmorHeatMultiplier(player);
+                    if (temp > 20f && armorHeatMult > 0f) {
+                        temp += (temp - 20f) * armorHeatMult;
+                    }
+
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
 
                     // Heat penalty — the ironic counterpart to freezing
@@ -120,7 +126,9 @@ public class WorldTickHandler {
                                     player.serverLevel().registryAccess()
                                             .lookupOrThrow(Registries.DAMAGE_TYPE)
                                             .getOrThrow(ModDamageTypes.HYPERTHERMIA));
+                            net.minecraft.world.phys.Vec3 motion = player.getDeltaMovement();
                             player.hurt(heatSource, 4.0f);
+                            player.setDeltaMovement(motion);
                             player.addEffect(new MobEffectInstance(
                                     MobEffects.CONFUSION, 80, 0, false, false, false));
                             player.addEffect(new MobEffectInstance(
@@ -128,18 +136,28 @@ public class WorldTickHandler {
                             player.displayClientMessage(
                                     Component.translatable("message.frozendawn.heat.cooking"), true);
                             grantAdvancement(player, "too_hot_to_handle");
+                            int armorTier = MobFreezeHandler.getFullSetTier(player);
+                            if (armorTier >= 1 && armorTier <= 2) {
+                                grantAdvancement(player, "insulation_both_ways");
+                            }
                         } else if (temp >= 90f) {
                             // Severe: 1 heart damage, weakness
                             DamageSource heatSource = new DamageSource(
                                     player.serverLevel().registryAccess()
                                             .lookupOrThrow(Registries.DAMAGE_TYPE)
                                             .getOrThrow(ModDamageTypes.HYPERTHERMIA));
+                            net.minecraft.world.phys.Vec3 motion = player.getDeltaMovement();
                             player.hurt(heatSource, 2.0f);
+                            player.setDeltaMovement(motion);
                             player.addEffect(new MobEffectInstance(
                                     MobEffects.WEAKNESS, 60, 1, false, false, false));
                             player.displayClientMessage(
                                     Component.translatable("message.frozendawn.heat.unbearable"), true);
                             grantAdvancement(player, "too_hot_to_handle");
+                            int armorTier = MobFreezeHandler.getFullSetTier(player);
+                            if (armorTier >= 1 && armorTier <= 2) {
+                                grantAdvancement(player, "insulation_both_ways");
+                            }
                         } else if (temp >= 60f) {
                             // Warning: sweating, mild slowness
                             player.addEffect(new MobEffectInstance(
@@ -309,19 +327,6 @@ public class WorldTickHandler {
         if (event.getPos().getY() >= 0) return;
 
         grantAdvancement(player, "last_light");
-    }
-
-    @SubscribeEvent
-    public static void onItemPickup(ItemEntityPickupEvent.Post event) {
-        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
-        var stack = event.getOriginalStack();
-        if (!stack.is(Items.WRITTEN_BOOK)) return;
-
-        // Check if this is an ORSA book by checking the author field
-        var bookContent = stack.get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
-        if (bookContent != null && bookContent.author().startsWith("ORSA")) {
-            grantAdvancement(player, "classified_information");
-        }
     }
 
     @SubscribeEvent

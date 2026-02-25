@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/igloo_chest"
+    }
+  ],
+  "doc_type": "orsa_bulletin",
+  "display_name": "ORSA Safety Bulletin",
+  "chance": 0.15
+}

@@ -1,0 +1,49 @@
+{
+  "name": "ORSA Incident Report TIR-2042-1171",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:knowledge_book",
+  "sortnum": 5,
+  "advancement": "frozendawn:found_incident_report",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Report TIR-2042-1171",
+      "text": "$(bold)ORSA TECHNICAL INCIDENT REPORT$()$(br)Classification: MAXIMUM$(br)Author: Dr. Elena Vasquez$(br)Division: Science$(br2)RE: Orbital Resonance Cascade Failure \u2014 Complete Analysis"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "1. Incident Timeline",
+      "text": "$(bold)T-14 months:$() Resonance drift detected. 0.003% deviation. Flagged.$(br2)$(bold)T-12 months:$() Committee review. \"Within tolerance.\"$(br2)$(bold)T-7 months:$() Deviation reaches 0.2%. Exponential curve confirmed.$(br2)$(bold)T-4 months:$() Node cluster 1400-1622 fails. Cascade initiated."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Timeline (Continued)",
+      "text": "$(bold)T-3 months:$() Southern hemisphere array collapses. 847/2048 nodes remaining.$(br2)$(bold)T-2 months:$() Orbital drift exceeds +0.01 AU/year. Energy loss 0.4%/yr, compounding.$(br2)$(bold)T-72 hours:$() Project Exodus authorized. Full evacuation.$(br2)$(bold)T-0:$() Earth at ~1.3 AU. All remaining nodes offline."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "2. Failure Analysis",
+      "text": "The resonance stabilization network operates on a feedback principle: each node maintains a portion of the orbital anchor field.$(br2)When nodes fail, surviving nodes increase output to compensate. This additional load accelerates their own degradation.$(br2)The cascade is therefore $(bold)self-reinforcing.$() Each failure makes the next more likely AND more damaging."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Point of No Return",
+      "text": "Mathematical proof of irreversibility was established at T-3 months when active node count dropped below $(bold)1,200.$()$(br2)Below this threshold, no recovery is possible regardless of intervention.$(br2)$(italic)The math is clear. The committee chose not to believe it.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "3. Projected Outcomes",
+      "text": "Earth will continue to drift outward from Sol at an accelerating rate.$(br2)Surface temperature will approach $(bold)-273\u00b0C$() as solar input diminishes to zero.$(br2)Atmospheric gases will condense and freeze.$(br2)No surface habitation is viable. Deep underground geothermal sources are the only remaining energy option."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "4. Recommendations",
+      "text": "$(bold)None.$()$(br2)There are no corrective actions available. The orbital anchor network cannot be rebuilt. The drift cannot be reversed.$(br2)This report is filed for the historical record.$(br2)$(bold)APPENDIX A \u2014 NODE STATUS:$()$(br)2,048 / 2,048 ... $(bold)OFFLINE$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Personal Addendum",
+      "text": "I flagged this fourteen months ago. The data was clear. The committee chose to wait.$(br2)This report is my final act as ORSA Science Director. I have failed in my duty to this planet and its people.$(br2)To whoever finds this:$(br)I am sorry.$(br2)Go deep. Stay warm.$(br2)$(italic)\u2014 Dr. Elena Vasquez$()"
+    }
+  ]
+}

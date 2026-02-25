@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:knowledge_book"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_incident_report.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_incident_report.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

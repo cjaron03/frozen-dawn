@@ -174,6 +174,29 @@ public class MobFreezeHandler {
     }
 
     /**
+     * Returns the heat trapping multiplier from insulated armor.
+     * Each piece adds to the multiplier. In hot environments (above 20C),
+     * the player's effective temperature increases by (temp - 20) * multiplier.
+     * Insulated = 5% per piece, Reinforced = 10%, EVA = 2%.
+     */
+    public static float getArmorHeatMultiplier(Player player) {
+        float mult = 0f;
+        for (ItemStack stack : player.getArmorSlots()) {
+            if (stack.isEmpty()) continue;
+            if (!(stack.getItem() instanceof ArmorItem armorItem)) continue;
+            Holder<ArmorMaterial> mat = armorItem.getMaterial();
+            if (mat == ModArmorMaterials.INSULATED) {
+                mult += 0.05f;
+            } else if (mat == ModArmorMaterials.REINFORCED) {
+                mult += 0.10f;
+            } else if (mat == ModArmorMaterials.EVA) {
+                mult += 0.02f;
+            }
+        }
+        return mult;
+    }
+
+    /**
      * Returns the highest insulation tier the player is wearing a full set of.
      * 0 = no insulation, 1 = insulated, 2 = reinforced, 3 = EVA.
      */

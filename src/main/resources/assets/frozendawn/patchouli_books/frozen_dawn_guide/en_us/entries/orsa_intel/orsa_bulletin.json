@@ -1,0 +1,39 @@
+{
+  "name": "ORSA Public Safety Bulletin",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:name_tag",
+  "sortnum": 3,
+  "advancement": "frozendawn:found_orsa_bulletin",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "PSB-2042-07",
+      "text": "$(bold)ORSA PUBLIC SAFETY BULLETIN$()$(br)Prepared by: ORSA Wellness Division$(br2)$(italic)\"Staying Safe in a Changing Climate!\"$()$(br2)This bulletin contains important information for your family's continued comfort and well-being."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Winter Preparation Tips",
+      "text": "With extended cold seasons, ORSA recommends the following:$(br2)$(li)Insulate your home with available materials$(li)Stockpile fuel sources$(li)Maintain indoor heating at all times$(li)Seal windows and doors$(br2)Remember: a warm home is a happy home!"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Thermal Shelter Guidelines",
+      "text": "For optimal survival \u2014 we mean $(bold)COMFORT$() \u2014 ORSA Engineering has developed Thermal Heater technology.$(br2)Place heaters indoors. Multiple heaters can be used for larger spaces.$(br2)NOTE: Do not exceed the recommended number of heat sources per room.$(br2)$(italic)(There is no recommended number. We forgot to calculate one.)$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Community Resilience",
+      "text": "In these challenging times, communities that work together thrive together!$(br2)Consider organizing:$(br)$(li)Shared resource pools$(li)Neighborhood watch teams$(li)Group sheltering programs$(li)Skill-sharing workshops$(br2)$(italic)NOTE: If your community has been fully evacuated, this section may not apply.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Frequently Asked Questions",
+      "text": "$(bold)Q:$() When will this end?$(br)$(bold)A:$() ORSA is monitoring the situation closely.$(br2)$(bold)Q:$() Can the orbit be fixed?$(br)$(bold)A:$() ORSA is exploring all available options.$(br2)$(bold)Q:$() Should I evacuate?$(br)$(bold)A:$() Please contact your local ORSA representative.$(br2)$(bold)Q:$() Who is Kevin?$(br)$(bold)A:$() See next page."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Who is Kevin?",
+      "text": "Kevin is a member of ORSA's Logistics Division who volunteered for surface sweep operations during Project Exodus.$(br2)Kevin chose not to board the final evacuation shuttle.$(br2)Kevin is believed to still be conducting sweeps.$(br2)If you encounter Kevin, please tell him the shuttle already left.$(br2)$(italic)We would very much like Kevin to stop.$()"
+    }
+  ]
+}
