@@ -28,6 +28,16 @@ public final class ApocalypseClientData {
         FrozenDawnPhaseTracker.setPhase(phase);
     }
 
+    public static void reset() {
+        phase = 0;
+        progress = 0f;
+        tempOffset = 0f;
+        sunScale = 1f;
+        sunBrightness = 1f;
+        skyLight = 1f;
+        FrozenDawnPhaseTracker.setPhase(0);
+    }
+
     public static int getPhase() { return phase; }
     public static float getProgress() { return progress; }
     public static float getTempOffset() { return tempOffset; }

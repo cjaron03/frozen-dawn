@@ -19,6 +19,12 @@ public class TemperatureHud {
         targetTemp = temp;
     }
 
+    /** Reset all state for world transitions. */
+    public static void reset() {
+        displayedTemp = 0f;
+        targetTemp = 0f;
+    }
+
     /** Current smoothed display temperature, used by FrostOverlay and cold effects. */
     public static float getDisplayedTemp() {
         return displayedTemp;

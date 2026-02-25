@@ -115,6 +115,9 @@ public class WindAmbience {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         Minecraft mc = Minecraft.getInstance();
         stopAll(mc);
+        // Reset all client-side apocalypse state so new worlds start fresh
+        ApocalypseClientData.reset();
+        TemperatureHud.reset();
     }
 
     private static void stopAll(Minecraft mc) {
