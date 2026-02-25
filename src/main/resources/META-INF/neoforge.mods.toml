@@ -37,10 +37,3 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.${mod_id}]]
-    modId="toughasnails"
-    type="optional"
-    reason="Integrates apocalypse temperature with TaN's body temperature system"
-    versionRange="[10.0.0,)"
-    ordering="AFTER"
-    side="BOTH"

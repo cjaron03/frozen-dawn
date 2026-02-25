@@ -9,14 +9,11 @@ import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModSounds;
-import com.frozendawn.integration.TaNCompat;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.slf4j.Logger;
 
 @Mod(FrozenDawn.MOD_ID)
@@ -37,14 +34,6 @@ public class FrozenDawn {
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
 
-        modEventBus.addListener(this::commonSetup);
-
         LOGGER.info("Frozen Dawn initialized. The sun grows cold...");
-    }
-
-    private void commonSetup(FMLCommonSetupEvent event) {
-        if (ModList.get().isLoaded("toughasnails")) {
-            TaNCompat.init();
-        }
     }
 }

@@ -88,12 +88,6 @@ publishing {
     }
 }
 
-// Exclude Tough As Nails API stubs from the built jar.
-// These are compile-only shims; at runtime TaN provides the real classes.
-tasks.named('jar', Jar).configure {
-    exclude 'toughasnails/**'
-}
-
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

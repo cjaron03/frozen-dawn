@@ -20,7 +20,6 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
@@ -34,7 +33,6 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  *   -45C    : Slowness III + 2 dmg per check
  *   < -70C  : Slowness IV + 3 dmg per check
  *
- * Players are skipped if Tough As Nails is loaded (TaN handles its own temperature).
  * Creative/spectator players, armor stands, and freeze-immune entities are always exempt.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
@@ -62,8 +60,6 @@ public class MobFreezeHandler {
         if (isPlayer) {
             Player player = (Player) entity;
             if (player.isCreative() || player.isSpectator()) return;
-            // TaN handles player temperature when present
-            if (ModList.get().isLoaded("toughasnails")) return;
         }
 
         ServerLevel level = (ServerLevel) entity.level();

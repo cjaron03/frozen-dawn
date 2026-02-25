@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  *
  * finalTemp = phaseModifier + depthModifier + shelterModifier + heatSourceModifier
  *
- * Used by PlayerTickHandler for exposure damage and TaN integration.
+ * Used by PlayerTickHandler for exposure damage.
  */
 public final class TemperatureManager {
 
@@ -27,7 +27,7 @@ public final class TemperatureManager {
     private static final int MOB_HEAT_RADIUS = 3;     // Reduced scan for mobs (7^3=343)
 
     /**
-     * Full-precision temperature check (used for players and TaN integration).
+     * Full-precision temperature check (used for players).
      */
     public static float getTemperatureAt(Level level, BlockPos pos, int currentDay, int totalDays) {
         return getTemperatureAt(level, pos, currentDay, totalDays, false);

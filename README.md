@@ -103,7 +103,6 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 - **16 custom items** — Ice Shard, Thermal Core, Frozen Heart, Thermal Container, 12 armor pieces (4 per tier)
 - **12 advancements** — Phase progression (6 phases), "Last Light" (Geothermal Core below Y=0), "Classified Information" (ORSA book), 3 armor tier milestones, "Huh. Thought That Works" (hidden — try to light a portal at phase 5+)
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
-- **Tough As Nails integration** — Optional; syncs apocalypse temperatures with TaN's body temperature system
 - **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 17+ config options covering temperature, features, visuals, and gameplay
 
@@ -174,7 +173,6 @@ Edit `config/frozendawn-common.toml` after first launch.
 
 - **Minecraft**: 1.21.1
 - **NeoForge**: 21.1.219+
-- **Tough As Nails**: Optional (10.0.0+) — integrates apocalypse temperature with TaN's body temperature system
 - **Dimensions**: All world systems (freezing, decay, snow, weather) operate in the overworld only. Other dimensions are unaffected.
 - **Servers**: Fully server-authoritative. All temperature calculations, block transformations, and loot modifications run server-side. Client only handles visual effects (sky, particles, overlay).
 
