@@ -1,0 +1,28 @@
+{
+  "name": "Insulated Clothing (Tier 1)",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:insulated_chestplate",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Standard Issue",
+      "text": "$(bold)ORSA Mk.I Thermal Undersuit$()$(br2)Congratulations on your new insulated clothing! This wool-and-leather ensemble was designed by ORSA's finest interns and provides $(bold)cold resistance up to Phase 3$() (-25°C).$(br2)$(italic)NOTICE: This equipment is property of ORSA. Loss, damage, or unauthorized bedazzling will result in fines up to 500 credits.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specifications",
+      "text": "$(bold)Protection:$() Each piece adds +6.25°C cold resistance. Full set provides $(bold)+25°C total$().$(br2)$(bold)Rated for:$() Phase 1-3 surface conditions$(br)$(bold)NOT rated for:$() Phase 4+, lava swimming, bear hugs$(br2)$(bold)Care instructions:$() Do not machine wash. Do not tumble dry. Do not expose to temperatures below -25°C. $(italic)We see the irony.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:insulated_chestplate",
+      "text": "Wool and leather. Your grandmother could make this. She probably should have."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:insulated_helmet",
+      "text": "Keeps your ears warm and your dignity... debatable."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:heavy_insulation",
+  "display": {
+    "icon": {
+      "id": "frozendawn:eva_chestplate"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.eva_suit.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.eva_suit.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "equipped": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

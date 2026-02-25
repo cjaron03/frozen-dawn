@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["SIS","ICI","SHS"],"key":{"S":{"item":"frozendawn:ice_shard"},"I":{"item":"minecraft:blue_ice"},"C":{"item":"frozendawn:reinforced_chestplate"},"H":{"item":"frozendawn:frozen_heart"}},"result":{"id":"frozendawn:eva_chestplate","count":1}}

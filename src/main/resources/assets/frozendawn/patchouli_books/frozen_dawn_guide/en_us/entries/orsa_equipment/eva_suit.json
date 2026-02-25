@@ -1,0 +1,28 @@
+{
+  "name": "EVA Suit (Tier 3)",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:eva_chestplate",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA EVA Survival Suit",
+      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and protection from vacuum suffocation.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specifications",
+      "text": "$(bold)Protection:$() Each piece adds +30°C cold resistance. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from atmospheric suffocation.$(br)$(bold)Limitation:$() Cannot protect in very late Phase 6 (>95% progress). At that point, space wins.$(br2)$(italic)ORSA Legal Dept. reminds you: This suit is on loan. Returning it in pieces counts as \"damaged.\" — Kevin$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Crafting Notes",
+      "text": "The EVA suit requires Tier 2 heavy insulation as a base, ice shards, blue ice, and — for the chestplate — a $(bold)Frozen Heart$() as its power core.$(br2)Yes, you need to find a Frozen Heart first. Yes, that means going to the frozen surface to gather materials. Yes, we see the problem.$(br2)$(italic)ORSA Engineering Dept: \"It builds character.\"$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:eva_chestplate",
+      "text": "The chestplate requires a Frozen Heart core. Don't worry, it's not YOUR heart."
+    }
+  ]
+}

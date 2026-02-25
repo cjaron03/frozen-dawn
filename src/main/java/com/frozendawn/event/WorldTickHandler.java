@@ -53,6 +53,9 @@ public class WorldTickHandler {
     private static final String[] PHASE_ADVANCEMENTS = {
             "root", "phase2", "phase3", "phase4", "phase5", "phase6"
     };
+    private static final String[] ARMOR_ADVANCEMENTS = {
+            null, "insulated_clothing", "heavy_insulation", "eva_suit"
+    };
 
     @SubscribeEvent
     public static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
@@ -101,13 +104,20 @@ public class WorldTickHandler {
             PacketDistributor.sendToAllPlayers(createPayload(state));
         }
 
-        // Send per-player temperature every 40 ticks (~2 seconds)
+        // Send per-player temperature every 40 ticks (~2 seconds) + check armor advancements
         if (state.getApocalypseTicks() % 40 == 0) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.level().dimension() == net.minecraft.world.level.Level.OVERWORLD) {
                     float temp = TemperatureManager.getTemperatureAt(
                             player.level(), player.blockPosition(), currentDay, state.getTotalDays());
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
+                }
+                // Grant armor tier advancements
+                int armorTier = MobFreezeHandler.getFullSetTier(player);
+                for (int i = 1; i <= armorTier && i < ARMOR_ADVANCEMENTS.length; i++) {
+                    if (ARMOR_ADVANCEMENTS[i] != null) {
+                        grantAdvancement(player, ARMOR_ADVANCEMENTS[i]);
+                    }
                 }
             }
         }
@@ -126,14 +136,19 @@ public class WorldTickHandler {
                 if (player.blockPosition().getY() < 50) continue;
                 if (!player.level().canSeeSky(player.blockPosition().above())) continue;
 
+                // Tier 2+ armor reduces wind chill; tier 3 negates it
+                int armorTier = MobFreezeHandler.getFullSetTier(player);
+                if (armorTier >= 3) continue; // EVA suit blocks wind chill
+                float armorReduction = armorTier >= 2 ? 0.5f : (armorTier >= 1 ? 0.75f : 1.0f);
+
                 // Sprinting = heavy drain, moving = moderate, standing still = light
                 float exhaustion;
                 if (player.isSprinting()) {
-                    exhaustion = 1.0f * phaseMult;
+                    exhaustion = 1.0f * phaseMult * armorReduction;
                 } else if (player.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
-                    exhaustion = 0.4f * phaseMult;
+                    exhaustion = 0.4f * phaseMult * armorReduction;
                 } else {
-                    exhaustion = 0.2f * phaseMult;
+                    exhaustion = 0.2f * phaseMult * armorReduction;
                 }
                 player.getFoodData().addExhaustion(exhaustion);
             }
@@ -155,6 +170,12 @@ public class WorldTickHandler {
                 }
                 if (Boolean.TRUE.equals(habitableCache.get(id))) {
                     // Safe zone: reset suffocation timer
+                    suffocationTimer.put(id, 0);
+                    continue;
+                }
+
+                // Full EVA suit protects from suffocation (but not in very late phase 6)
+                if (MobFreezeHandler.getFullSetTier(player) >= 3 && progress < 0.95f) {
                     suffocationTimer.put(id, 0);
                     continue;
                 }

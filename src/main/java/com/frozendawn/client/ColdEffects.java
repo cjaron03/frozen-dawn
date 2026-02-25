@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.event.MobFreezeHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -83,8 +84,8 @@ public class ColdEffects {
     }
 
     /**
-     * Camera shivering when below -5C.
-     * Intensity increases as temperature drops.
+     * Camera shivering when below -5C effective temperature.
+     * Suppressed when armor brings effective temp above -5C.
      * Phase 6: extreme shivering — the cold is beyond survivable.
      */
     @SubscribeEvent
@@ -94,10 +95,12 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         float temp = TemperatureHud.getDisplayedTemp();
-        if (temp >= -5f) return;
+        // Factor in armor cold resistance — no shivering when protected
+        float effectiveTemp = temp + MobFreezeHandler.getArmorColdResistance(mc.player);
+        if (effectiveTemp >= -5f) return;
 
-        // Shiver intensity: 0 at -5C, max at -50C
-        float intensity = Math.min(1f, (-temp - 5f) / 45f);
+        // Shiver intensity: 0 at -5C, max at -50C (based on effective temp)
+        float intensity = Math.min(1f, (-effectiveTemp - 5f) / 45f);
 
         // Phase 6: push intensity higher — extreme shivering
         int phase = ApocalypseClientData.getPhase();

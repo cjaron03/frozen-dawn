@@ -1,6 +1,7 @@
 package com.frozendawn;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
@@ -22,6 +23,7 @@ public class FrozenDawn {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public FrozenDawn(IEventBus modEventBus, ModContainer modContainer) {
+        ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_TABS.register(modEventBus);

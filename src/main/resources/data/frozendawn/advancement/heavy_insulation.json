@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:insulated_clothing",
+  "display": {
+    "icon": {
+      "id": "frozendawn:reinforced_chestplate"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.heavy_insulation.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.heavy_insulation.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "equipped": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

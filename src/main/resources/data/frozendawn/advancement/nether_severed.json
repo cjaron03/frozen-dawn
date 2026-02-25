@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase5",
+  "display": {
+    "icon": {
+      "id": "minecraft:flint_and_steel"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.nether_severed.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.nether_severed.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "attempted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

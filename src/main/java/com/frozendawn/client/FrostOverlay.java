@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.MobFreezeHandler;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,13 +19,16 @@ public class FrostOverlay {
         if (!FrozenDawnConfig.ENABLE_FROST_OVERLAY.get()) return;
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && (mc.player.isCreative() || mc.player.isSpectator())) return;
+        if (mc.player == null) return;
+        if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         float temp = TemperatureHud.getDisplayedTemp();
-        if (temp >= 0f) return;
+        // Factor in armor cold resistance — no frost overlay when protected
+        float effectiveTemp = temp + MobFreezeHandler.getArmorColdResistance(mc.player);
+        if (effectiveTemp >= 0f) return;
 
-        // Intensity ramps from 0 at 0C to full at -60C
-        float intensity = Math.min(1f, -temp / 60f);
+        // Intensity ramps from 0 at 0C to full at -60C (based on effective temp)
+        float intensity = Math.min(1f, -effectiveTemp / 60f);
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();

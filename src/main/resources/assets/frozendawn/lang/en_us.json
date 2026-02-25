@@ -18,6 +18,19 @@
   "item.frozendawn.thermal_core": "Thermal Core",
   "item.frozendawn.frozen_heart": "Frozen Heart",
 
+  "item.frozendawn.insulated_helmet": "Insulated Hood",
+  "item.frozendawn.insulated_chestplate": "Insulated Jacket",
+  "item.frozendawn.insulated_leggings": "Insulated Trousers",
+  "item.frozendawn.insulated_boots": "Insulated Boots",
+  "item.frozendawn.reinforced_helmet": "Heated Hood",
+  "item.frozendawn.reinforced_chestplate": "Heated Jacket",
+  "item.frozendawn.reinforced_leggings": "Heated Trousers",
+  "item.frozendawn.reinforced_boots": "Heated Boots",
+  "item.frozendawn.eva_helmet": "EVA Helmet",
+  "item.frozendawn.eva_chestplate": "EVA Suit",
+  "item.frozendawn.eva_leggings": "EVA Leggings",
+  "item.frozendawn.eva_boots": "EVA Boots",
+
   "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
   "message.frozendawn.freeze.extreme": "Extreme cold! Find shelter or warmth!",
@@ -60,13 +73,22 @@
   "advancement.frozendawn.classified_information.title": "Classified Information",
   "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?",
 
+  "advancement.frozendawn.insulated_clothing.title": "No Frostbite For Me!",
+  "advancement.frozendawn.insulated_clothing.description": "Equip a full set of insulated clothing. Fashion? No. Survival? Barely.",
+  "advancement.frozendawn.heavy_insulation.title": "Won't Sweat Too Much",
+  "advancement.frozendawn.heavy_insulation.description": "Equip a full set of heated insulation. You're basically a walking furnace.",
+  "advancement.frozendawn.eva_suit.title": "One Small Step",
+  "advancement.frozendawn.eva_suit.description": "Equip a full EVA suit. Space called. You answered.",
+
   "subtitle.frozendawn.ambient.wind_light": "Wind howls softly",
   "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar",
 
   "death.attack.frozendawn.atmospheric_suffocation": "%1$s suffocated in the void",
 
   "message.frozendawn.nether_severed": "The dimensional link is dead. The Nether is unreachable.",
-  "message.frozendawn.nether_severed.announce": "\u00a74\u00a7l[DIMENSIONAL SEVERANCE]\u00a7r The Nether connection has been lost. Portals collapse as spacetime fractures beyond repair.",
+
+  "advancement.frozendawn.nether_severed.title": "Huh. Thought That Works",
+  "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
 
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles"
 }

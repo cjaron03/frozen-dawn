@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":[" B ","BOB"," B "],"key":{"B":{"item":"minecraft:blaze_powder"},"O":{"item":"frozendawn:insulated_boots"}},"result":{"id":"frozendawn:reinforced_boots","count":1}}

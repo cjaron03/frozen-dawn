@@ -1,0 +1,28 @@
+{
+  "name": "Heavy Insulation (Tier 2)",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:reinforced_chestplate",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Heavy Thermal Suit",
+      "text": "$(bold)ORSA Mk.II Heated Survival Suit$()$(br2)When wool isn't cutting it anymore, upgrade to the Mk.II! Infused with blaze powder heating elements, this suit provides $(bold)cold resistance up to Phase 4$() (-45°C).$(br2)$(italic)WARNING: Blaze powder is flammable. Do not hug creepers. ORSA accepts no liability for spontaneous combustion.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specifications",
+      "text": "$(bold)Protection:$() Each piece adds +11.25°C cold resistance. Full set provides $(bold)+45°C total$().$(br2)$(bold)Rated for:$() Phase 1-4 surface conditions$(br)$(bold)Bonus:$() Reduces Phase 5+ wind chill by 50%$(br2)$(bold)Requires:$() Tier 1 insulated clothing (yes, you wear it OVER the first suit — fashion is dead, warmth is not)$(br2)$(italic)Warranty void if suit is used as a sleeping bag, oven mitt, or romantic gift.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reinforced_chestplate",
+      "text": "Surround your Tier 1 gear with blaze powder. What could go wrong?"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reinforced_helmet",
+      "text": "Your head is now a portable furnace. You're welcome."
+    }
+  ]
+}

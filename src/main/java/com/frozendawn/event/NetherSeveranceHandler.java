@@ -2,10 +2,14 @@ package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
@@ -22,8 +26,6 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public class NetherSeveranceHandler {
-
-    private static boolean announced = false;
 
     /**
      * Prevent dimension travel to the Nether at phase 5+.
@@ -44,6 +46,7 @@ public class NetherSeveranceHandler {
     /**
      * Prevent flint and steel / fire charge usage near obsidian at phase 5+.
      * This blocks portal creation at the source — no purple blocks ever appear.
+     * Grants a hidden advancement on the first attempt.
      */
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
@@ -61,6 +64,7 @@ public class NetherSeveranceHandler {
                 if (event.getEntity() instanceof ServerPlayer player) {
                     player.displayClientMessage(
                             Component.translatable("message.frozendawn.nether_severed"), true);
+                    grantAdvancement(player, "nether_severed");
                 }
                 return;
             }
@@ -69,22 +73,10 @@ public class NetherSeveranceHandler {
 
     /**
      * Called each server tick from WorldTickHandler.
-     * Announces dimensional severance once and removes any existing portal blocks.
+     * Removes any existing portal blocks at phase 5+.
      */
     public static void tick(ServerLevel overworld, int phase) {
-        if (phase < 5) {
-            announced = false;
-            return;
-        }
-
-        // Announce once when phase 5 begins
-        if (!announced) {
-            announced = true;
-            for (ServerPlayer player : overworld.players()) {
-                player.sendSystemMessage(
-                        Component.translatable("message.frozendawn.nether_severed.announce"));
-            }
-        }
+        if (phase < 5) return;
 
         // Remove portal blocks near players every 10 ticks (half second)
         if (overworld.getGameTime() % 10 == 0) {
@@ -109,7 +101,20 @@ public class NetherSeveranceHandler {
         }
     }
 
+    private static void grantAdvancement(ServerPlayer player, String name) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name);
+        AdvancementHolder holder = server.getAdvancements().get(loc);
+        if (holder == null) return;
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        if (!progress.isDone()) {
+            for (String criterion : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(holder, criterion);
+            }
+        }
+    }
+
     public static void reset() {
-        announced = false;
     }
 }
