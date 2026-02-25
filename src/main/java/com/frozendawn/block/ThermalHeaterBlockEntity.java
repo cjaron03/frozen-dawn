@@ -3,6 +3,7 @@ package com.frozendawn.block;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -73,7 +74,28 @@ public class ThermalHeaterBlockEntity extends BlockEntity {
         boolean shouldBeLit = burnTimeRemaining > 0;
         if (current.getValue(ThermalHeaterBlock.LIT) != shouldBeLit) {
             level.setBlock(worldPosition, current.setValue(ThermalHeaterBlock.LIT, shouldBeLit), 3);
+            if (shouldBeLit) {
+                HeaterRegistry.register(level, worldPosition);
+            } else {
+                HeaterRegistry.unregister(level, worldPosition);
+            }
         }
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide() && burnTimeRemaining > 0) {
+            HeaterRegistry.register(level, worldPosition);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null && !level.isClientSide()) {
+            HeaterRegistry.unregister(level, worldPosition);
+        }
+        super.setRemoved();
     }
 
     @Override

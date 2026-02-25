@@ -288,8 +288,13 @@ public class WorldTickHandler {
         ServerLevel overworld = server.overworld();
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
-        BlockFreezer.tick(overworld, currentPhase, progress);
-        VegetationDecay.tick(overworld, currentPhase);
+        // Stagger heavy systems on alternating ticks to halve peak load
+        long tick = overworld.getGameTime();
+        if (tick % 2 == 0) {
+            BlockFreezer.tick(overworld, currentPhase, progress);
+        } else {
+            VegetationDecay.tick(overworld, currentPhase);
+        }
         SnowAccumulator.tick(overworld, currentPhase, progress);
     }
 

@@ -103,9 +103,11 @@ public class FoodFrostHandler {
                     continue;
                 }
 
-                // Initialize cache from component if we have no cached value
+                // Sync cache from component values periodically to handle slot movement
                 int componentVal = stack.getOrDefault(ModDataComponents.FROST_TICKS.get(), 0);
-                if (cache[i] == 0 && componentVal > 0) {
+                if (periodicSync) {
+                    cache[i] = componentVal;
+                } else if (cache[i] == 0 && componentVal > 0) {
                     cache[i] = componentVal;
                 }
 
@@ -231,7 +233,19 @@ public class FoodFrostHandler {
     private static int getCachedFrost(ServerPlayer player, ItemStack target) {
         int[] cache = frostCache.get(player.getUUID());
         if (cache != null) {
-            for (int i = 0; i < Math.min(cache.length, player.getInventory().getContainerSize()); i++) {
+            // Check active hand slots first (most likely during eating)
+            int mainSlot = player.getInventory().selected;
+            if (mainSlot < cache.length && player.getInventory().getItem(mainSlot) == target && cache[mainSlot] > 0) {
+                return cache[mainSlot];
+            }
+            // Offhand
+            int offSlot = player.getInventory().getContainerSize() - 1;
+            if (offSlot < cache.length && player.getInventory().getItem(offSlot) == target && cache[offSlot] > 0) {
+                return cache[offSlot];
+            }
+            // Fallback: scan remaining slots
+            int invSize = Math.min(cache.length, player.getInventory().getContainerSize());
+            for (int i = 0; i < invSize; i++) {
                 if (player.getInventory().getItem(i) == target && cache[i] > 0) {
                     return cache[i];
                 }

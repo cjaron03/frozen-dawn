@@ -23,8 +23,9 @@ public final class TemperatureManager {
 
     private TemperatureManager() {}
 
-    private static final int MAX_HEAT_RADIUS = 14;    // Diamond Thermal Heater needs 14
-    private static final int MOB_HEAT_RADIUS = 3;     // Reduced scan for mobs (7^3=343)
+    /** Max radius for non-heater heat sources (soul campfire = 6). */
+    private static final int AMBIENT_HEAT_RADIUS = 6;
+    private static final int MOB_HEAT_RADIUS = 3;
 
     /**
      * Full-precision temperature check (used for players).
@@ -70,23 +71,36 @@ public final class TemperatureManager {
 
     /**
      * Heat source modifier: sums warmth from all nearby heat sources (stacking).
+     * Thermal heaters use HeaterRegistry (O(n) where n = lit heaters).
+     * Other heat sources (campfires, lava, etc.) use a small block scan (radius 6).
      *
      * @param quickScan  Reduced radius + early exit on first heat found (for mobs)
      */
     public static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays, boolean quickScan) {
         float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
-        int radius = quickScan ? MOB_HEAT_RADIUS : MAX_HEAT_RADIUS;
 
-        // Scan nearby blocks for heaters, campfires, lava, etc.
+        // --- Registered thermal heaters (no block scan needed) ---
+        for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
+            int distSq = (int) pos.distSqr(heaterPos);
+            BlockState state = level.getBlockState(heaterPos);
+            float warmth = getHeaterHeat(level, state, distSq, phase, heaterPos);
+            if (warmth > 0) {
+                totalWarmth += warmth;
+                if (quickScan) return totalWarmth;
+            }
+        }
+
+        // --- Ambient heat sources: campfires, furnaces, lava, fire (small radius scan) ---
+        int radius = quickScan ? MOB_HEAT_RADIUS : AMBIENT_HEAT_RADIUS;
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     int distSq = dx * dx + dy * dy + dz * dz;
-
-                    BlockPos checkPos = pos.offset(dx, dy, dz);
+                    checkPos.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
                     BlockState state = level.getBlockState(checkPos);
-                    float warmth = getHeatForBlock(level, state, distSq, phase, checkPos);
+                    float warmth = getAmbientHeat(state, distSq);
                     if (warmth > 0) {
                         totalWarmth += warmth;
                         if (quickScan) return totalWarmth;
@@ -95,7 +109,7 @@ public final class TemperatureManager {
             }
         }
 
-        // Check registered geothermal cores (supports range up to 32, beyond block scan radius)
+        // --- Registered geothermal cores (range up to 32, beyond block scan radius) ---
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
             double distSq = pos.distSqr(corePos);
             float coreRange, coreTemp;
@@ -125,78 +139,68 @@ public final class TemperatureManager {
     }
 
     /**
-     * Returns the warmth provided by a block at the given distance-squared, or 0 if out of range.
-     * Uses distSq to avoid Vec3 allocation and sqrt() per block.
-     * In phase 5+, exposed heaters (not fully enclosed by solid blocks) have halved radius.
+     * Returns warmth from a registered thermal heater at the given distance-squared.
+     * In phase 5+, exposed heaters (no roof overhead) have halved radius.
      */
-    private static float getHeatForBlock(Level level, BlockState state, int distSq, int phase, BlockPos checkPos) {
-        // Geothermal Core is handled via GeothermalCoreRegistry (supports upgraded range up to 32)
-
-        // Thermal Heater (lit): radius 7 (distSq <= 49), +35C
+    private static float getHeaterHeat(Level level, BlockState state, int distSq, int phase, BlockPos heaterPos) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 12 : 49;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 12 : 49;
             return distSq <= maxDistSq ? 35.0f : 0.0f;
         }
-        // Iron Thermal Heater (lit): radius 9 (distSq <= 81), +50C
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 20 : 81;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 20 : 81;
             return distSq <= maxDistSq ? 50.0f : 0.0f;
         }
-        // Gold Thermal Heater (lit): radius 11 (distSq <= 121), +65C
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 30 : 121;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 30 : 121;
             return distSq <= maxDistSq ? 65.0f : 0.0f;
         }
-        // Diamond Thermal Heater (lit): radius 14 (distSq <= 196), +80C
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !isEnclosed(level, checkPos)) ? 49 : 196;
+            int maxDistSq = (phase >= 5 && !isSheltered(level, heaterPos)) ? 49 : 196;
             return distSq <= maxDistSq ? 80.0f : 0.0f;
         }
-
-        // Campfire (lit): radius 5 (distSq <= 25), +25C
-        if (state.is(Blocks.CAMPFIRE) && state.getValue(BlockStateProperties.LIT)) {
-            return distSq <= 25 ? 25.0f : 0.0f;
-        }
-
-        // Soul campfire (lit): radius 6 (distSq <= 36), +28C
-        if (state.is(Blocks.SOUL_CAMPFIRE) && state.getValue(BlockStateProperties.LIT)) {
-            return distSq <= 36 ? 28.0f : 0.0f;
-        }
-
-        // Furnace / Blast Furnace / Smoker (lit): radius 3 (distSq <= 9), +15C
-        if ((state.is(Blocks.FURNACE) || state.is(Blocks.BLAST_FURNACE) || state.is(Blocks.SMOKER))
-                && state.getValue(BlockStateProperties.LIT)) {
-            return distSq <= 9 ? 15.0f : 0.0f;
-        }
-
-        // Lava: radius 4 (distSq <= 16), +30C (if lava still exists, it's hot)
-        if (state.is(Blocks.LAVA)) {
-            return distSq <= 16 ? 30.0f : 0.0f;
-        }
-
-        // Magma block: radius 2 (distSq <= 4), +10C
-        if (state.is(Blocks.MAGMA_BLOCK)) {
-            return distSq <= 4 ? 10.0f : 0.0f;
-        }
-
-        // Fire / Soul fire: radius 3 (distSq <= 9), +20C
-        if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) {
-            return distSq <= 9 ? 20.0f : 0.0f;
-        }
-
         return 0.0f;
     }
 
     /**
-     * Check if a block is fully enclosed — all 6 adjacent faces have solid blocks.
+     * Returns warmth from ambient (non-heater) heat sources at the given distance-squared.
+     */
+    private static float getAmbientHeat(BlockState state, int distSq) {
+        if (state.is(Blocks.CAMPFIRE) && state.getValue(BlockStateProperties.LIT)) {
+            return distSq <= 25 ? 25.0f : 0.0f;
+        }
+        if (state.is(Blocks.SOUL_CAMPFIRE) && state.getValue(BlockStateProperties.LIT)) {
+            return distSq <= 36 ? 28.0f : 0.0f;
+        }
+        if ((state.is(Blocks.FURNACE) || state.is(Blocks.BLAST_FURNACE) || state.is(Blocks.SMOKER))
+                && state.getValue(BlockStateProperties.LIT)) {
+            return distSq <= 9 ? 15.0f : 0.0f;
+        }
+        if (state.is(Blocks.LAVA)) {
+            return distSq <= 16 ? 30.0f : 0.0f;
+        }
+        if (state.is(Blocks.MAGMA_BLOCK)) {
+            return distSq <= 4 ? 10.0f : 0.0f;
+        }
+        if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) {
+            return distSq <= 9 ? 20.0f : 0.0f;
+        }
+        return 0.0f;
+    }
+
+    /**
+     * Check if a heater has a roof overhead — reuses shelter detection logic.
+     * Scan upward up to 4 blocks for a solid block or insulated glass.
      * Used to determine if wind exposure halves heater radius in phase 5+.
      */
-    private static boolean isEnclosed(Level level, BlockPos pos) {
-        return level.getBlockState(pos.above()).isSolidRender(level, pos.above())
-                && level.getBlockState(pos.below()).isSolidRender(level, pos.below())
-                && level.getBlockState(pos.north()).isSolidRender(level, pos.north())
-                && level.getBlockState(pos.south()).isSolidRender(level, pos.south())
-                && level.getBlockState(pos.east()).isSolidRender(level, pos.east())
-                && level.getBlockState(pos.west()).isSolidRender(level, pos.west());
+    private static boolean isSheltered(Level level, BlockPos pos) {
+        for (int dy = 1; dy <= 4; dy++) {
+            BlockPos above = pos.above(dy);
+            BlockState aboveState = level.getBlockState(above);
+            if (aboveState.isSolidRender(level, above) || aboveState.is(ModBlocks.INSULATED_GLASS.get())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

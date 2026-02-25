@@ -55,25 +55,28 @@ public final class VegetationDecay {
             default -> BASE_SURFACE_CHECKS * 10;
         };
         // Volume checks scan the tree zone (Y 50-130) — much denser sampling
+        // Phase 5 reduced from 40x to 20x since most trees are already dead
         int volumeChecks = switch (phase) {
             case 2 -> BASE_VOLUME_CHECKS;
             case 3 -> BASE_VOLUME_CHECKS * 4;
             case 4 -> BASE_VOLUME_CHECKS * 15;
-            default -> BASE_VOLUME_CHECKS * 40; // phase 5: 640 checks/player/tick
+            default -> BASE_VOLUME_CHECKS * 20; // phase 5: 320 checks/player/tick
         };
 
         RandomSource random = level.getRandom();
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
+            BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
             for (int i = 0; i < surfaceChecks; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
-                BlockPos pos = new BlockPos(x, surfaceY, z);
-                if (!level.isLoaded(pos)) continue;
+                mutable.set(x, surfaceY, z);
+                if (!level.isLoaded(mutable)) continue;
 
+                BlockPos pos = mutable.immutable();
                 decaySurface(level, pos, level.getBlockState(pos), phase);
             }
 
@@ -82,9 +85,10 @@ public final class VegetationDecay {
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 // Focus Y-range on tree zone (50-130) instead of entire world height
                 int y = 50 + random.nextInt(80);
-                BlockPos pos = new BlockPos(x, y, z);
-                if (!level.isLoaded(pos)) continue;
+                mutable.set(x, y, z);
+                if (!level.isLoaded(mutable)) continue;
 
+                BlockPos pos = mutable.immutable();
                 decayVolume(level, pos, level.getBlockState(pos), phase, random);
             }
         }

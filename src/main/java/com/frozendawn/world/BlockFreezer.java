@@ -51,6 +51,8 @@ public final class BlockFreezer {
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
 
+            BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+
             // Surface pass: now scans downward from heightmap to find freezable blocks
             // under tree canopies, not just the top-level surface block
             for (int i = 0; i < surfaceChecks; i++) {
@@ -60,9 +62,9 @@ public final class BlockFreezer {
 
                 // Scan downward up to 12 blocks to find freezable ground under trees
                 for (int dy = 0; dy <= 12; dy++) {
-                    BlockPos pos = new BlockPos(x, topY - dy, z);
-                    if (!level.isLoaded(pos)) break;
-                    BlockState state = level.getBlockState(pos);
+                    mutable.set(x, topY - dy, z);
+                    if (!level.isLoaded(mutable)) break;
+                    BlockState state = level.getBlockState(mutable);
 
                     // Skip air, leaves, logs (canopy blocks) - keep scanning down
                     if (state.isAir() || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
@@ -72,7 +74,7 @@ public final class BlockFreezer {
                     }
 
                     // Found a solid block - try to freeze it
-                    transformSurface(level, pos, state, phase, progress);
+                    transformSurface(level, mutable.immutable(), state, phase, progress);
                     break;
                 }
             }
@@ -82,12 +84,13 @@ public final class BlockFreezer {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
-                BlockPos pos = new BlockPos(x, y, z);
-                if (!level.isLoaded(pos)) continue;
+                mutable.set(x, y, z);
+                if (!level.isLoaded(mutable)) continue;
 
-                BlockState volumeState = level.getBlockState(pos);
-                transformVolume(level, pos, volumeState, phase, progress);
-                transformSurfaceCoalOre(level, pos, volumeState, phase);
+                BlockState volumeState = level.getBlockState(mutable);
+                BlockPos immutable = mutable.immutable();
+                transformVolume(level, immutable, volumeState, phase, progress);
+                transformSurfaceCoalOre(level, immutable, volumeState, phase);
             }
         }
     }

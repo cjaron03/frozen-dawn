@@ -55,17 +55,19 @@ public final class SnowAccumulator {
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
+            BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
             for (int i = 0; i < checksPerPlayer; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
 
                 int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-                BlockPos snowPos = new BlockPos(x, surfaceY, z);
+                mutable.set(x, surfaceY, z);
 
-                if (!level.isLoaded(snowPos)) continue;
-                if (!level.canSeeSky(snowPos)) continue;
+                if (!level.isLoaded(mutable)) continue;
+                if (!level.canSeeSky(mutable)) continue;
 
+                BlockPos snowPos = mutable.immutable();
                 BlockState at = level.getBlockState(snowPos);
 
                 // Increment existing snow layer — snow sits AT snowPos (not below)
