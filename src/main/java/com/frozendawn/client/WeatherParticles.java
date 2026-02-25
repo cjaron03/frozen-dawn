@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
@@ -13,7 +14,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 /**
  * Spawns ambient snowflake particles around the player in phases 3+.
  * Phase 3: light snow. Phase 4: heavy. Phase 5: extreme blizzard whiteout.
- * Phase 5 particles blow nearly sideways with heavy wind.
+ * Phase 6 early: maximum blizzard (60 particles). Mid: particles fade to 0. Late: none.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WeatherParticles {
@@ -32,11 +33,30 @@ public class WeatherParticles {
         // No blizzard particles underground
         if (mc.player.blockPosition().getY() < 50) return;
 
-        int particleCount = switch (phase) {
-            case 3 -> 4;
-            case 4 -> 12;
-            default -> 40; // phase 5: blizzard whiteout
-        };
+        float progress = ApocalypseClientData.getProgress();
+
+        // Phase 6 late: no particles (vacuum)
+        if (phase >= 6 && progress > 0.85f) return;
+
+        int particleCount;
+        if (phase >= 6) {
+            if (progress <= 0.72f) {
+                // Phase 6 early: extreme blizzard, more than phase 5
+                particleCount = 60;
+            } else {
+                // Phase 6 mid: particles fade out as atmosphere thins
+                float fadeProgress = (progress - 0.72f) / 0.13f;
+                particleCount = (int) Mth.lerp(Math.min(1f, fadeProgress), 60f, 0f);
+            }
+        } else {
+            particleCount = switch (phase) {
+                case 3 -> 4;
+                case 4 -> 12;
+                default -> 40; // phase 5: blizzard whiteout
+            };
+        }
+
+        if (particleCount <= 0) return;
 
         RandomSource random = mc.level.random;
         double px = mc.player.getX();
@@ -46,9 +66,13 @@ public class WeatherParticles {
         long gameTime = mc.level.getGameTime();
 
         if (phase >= 5) {
-            // Phase 5: particles blow sideways at surface level, like a ground blizzard
+            // Phase 5+: particles blow sideways at surface level, like a ground blizzard
             float windAngle = (float) (gameTime * 0.005);
             float windSpeed = 1.5f + 0.5f * (float) Math.sin(gameTime * 0.015);
+            // Phase 6: even stronger wind in early sub-stage
+            if (phase >= 6 && progress <= 0.72f) {
+                windSpeed *= 1.3f;
+            }
             float windX = windSpeed * (float) Math.sin(windAngle);
             float windZ = windSpeed * (float) Math.cos(windAngle);
             double fallSpeed = -0.08; // barely falling — almost horizontal

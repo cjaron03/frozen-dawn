@@ -16,6 +16,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *
  * Below 0C: visible breath (small cloud puffs near mouth).
  * Below -5C: camera shivering that intensifies with cold.
+ * Phase 6 early: extreme shivering (higher intensity).
+ * Phase 6 mid+: breath particles stop (no air to exhale).
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class ColdEffects {
@@ -30,6 +32,14 @@ public class ColdEffects {
 
         float temp = TemperatureHud.getDisplayedTemp();
         if (temp >= 0f) {
+            breathCooldown = 0;
+            return;
+        }
+
+        // Phase 6 mid+: no breath particles — no atmosphere to exhale into
+        int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
+        if (phase >= 6 && progress > 0.72f) {
             breathCooldown = 0;
             return;
         }
@@ -73,6 +83,7 @@ public class ColdEffects {
     /**
      * Camera shivering when below -5C.
      * Intensity increases as temperature drops.
+     * Phase 6: extreme shivering — the cold is beyond survivable.
      */
     @SubscribeEvent
     public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -85,6 +96,12 @@ public class ColdEffects {
 
         // Shiver intensity: 0 at -5C, max at -50C
         float intensity = Math.min(1f, (-temp - 5f) / 45f);
+
+        // Phase 6: push intensity higher — extreme shivering
+        int phase = ApocalypseClientData.getPhase();
+        if (phase >= 6) {
+            intensity = Math.min(1.5f, intensity * 1.5f);
+        }
 
         // Small rapid tremors using game time for variation
         long time = mc.level != null ? mc.level.getGameTime() : 0;

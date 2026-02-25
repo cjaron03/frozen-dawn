@@ -12,17 +12,18 @@ ORSA lore books scattered in world structures tell the full story across 5 docum
 
 ## Overview
 
-Over 100 in-game days, the world progresses through 5 phases of an apocalyptic freeze. Surface temperatures plummet to -120°C, water turns to blue ice, vegetation dies, lava solidifies, and the sky grows dark. Players must adapt — building Thermal Heaters, crafting insulated shelters, and ultimately constructing a Geothermal Core deep underground as their last hope for survival.
+Over 100 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt — building Thermal Heaters, crafting insulated shelters, and ultimately constructing a Geothermal Core deep underground as their last hope for survival.
 
 ## Phases
 
 | Phase | Days | What Happens |
 |-------|------|-------------|
-| **1 — Twilight** | 0–15 | Sun begins dimming, sky shifts to warm amber, rain increases |
-| **2 — Cooling** | 15–35 | Water freezes, grass dies, weather locks to rain, sky desaturates |
-| **3 — The Long Night** | 35–55 | Permanent storms, sand freezes, trees die, fog rolls in, cold blue sky |
-| **4 — Deep Freeze** | 55–75 | Dirt and logs freeze, lava solidifies, coal ore freezes, surface is lethal |
-| **5 — Eternal Winter** | 75–100 | Near-total darkness, obsidian freezes, only deep underground is warm |
+| **1 — Twilight** | 0–10 | Sun begins dimming, sky shifts to warm amber, rain increases |
+| **2 — Cooling** | 10–22 | Water freezes, grass dies, weather locks to rain, sky desaturates |
+| **3 — The Long Night** | 22–34 | Permanent storms, sand freezes, trees die, fog rolls in, cold blue sky |
+| **4 — Deep Freeze** | 34–46 | Dirt and logs freeze, lava solidifies, coal ore freezes, surface is lethal |
+| **5 — Eternal Winter** | 46–60 | Near-total darkness, obsidian freezes, blizzard whiteout, wind chill exhaustion |
+| **6 — Atmospheric Collapse** | 60–100 | Atmosphere freezes and collapses. Stars appear on a black sky. No air to breathe. |
 
 ## Features
 
@@ -30,22 +31,40 @@ Over 100 in-game days, the world progresses through 5 phases of an apocalyptic f
 - **Block transformation chains** — Grass → Dead Grass → Dirt → Frozen Dirt, Water → Ice → Packed Ice → Blue Ice, Lava → Magma → Obsidian → Frozen Obsidian, Coal Ore → Frozen Coal Ore
 - **Temperature system** — Calculated from phase progression, depth (geothermal warmth), shelter, and nearby heat sources
 - **Mob & player freezing** — Slowness and damage scale with cold severity; seek shelter or heat to survive
+- **Atmospheric suffocation** — Phase 6 late: air supply drains outside habitable zones, custom damage type and death message
+- **Wind chill exhaustion** — Phase 5+: outdoor exposure drains food (sprinting = heavy, moving = moderate, standing = light)
 - **Weather control** — Rain locks in phase 2, permanent thunderstorms from phase 3
 - **Snow accumulation** — Layers build up on exposed surfaces, accelerating in later phases
+- **Sound muffling** — Sounds dampen below -15°C; phase 6 late: vacuum cancels all sound on surface
 - **False calm rebounds** — Brief temperature spikes near phase boundaries create moments of false hope
 
 ### Visual Effects
-- **Sky color shifting** — Phase-dependent sky hue from warm amber (phase 1) through cold blue to near-black purple (phase 5)
-- **Fog closure** — Visibility drops from 256 to 48 blocks in phases 3+
+- **Sky color shifting** — Phase-dependent sky hue from warm amber (phase 1) through cold blue to pure black (phase 6)
+- **Fog closure** — Visibility drops from 256 to 12 blocks in phase 5, lifts in phase 6 as atmosphere thins
+- **Star rendering** — Phase 6 mid+: atmosphere collapses, revealing stars on a black sky with brightness scaling
 - **Frost screen overlay** — Blue-white vignette intensifying with cold
 - **Wind variation** — Snowflake particles with oscillating wind patterns, hard-capped at 8/tick
 - **Brightness floors** — Prevents phase 5 from being pure black; moonlight fades gradually
+- **Breath particles** — Visible below 0°C, stop in phase 6 mid+ (no atmosphere to exhale into)
+- **Camera shivering** — Intensifies with cold, extreme in phase 6
 
 ### Player Agency
 - **Thermal Heater** — Right-click with coal, charcoal, blaze powder, or coal blocks to fuel. Radius 7, +35°C when lit. No GUI — just right-click fuel in. Fuel does NOT burn while chunk is unloaded.
 - **Insulated Glass** — Transparent block that counts as shelter (roof check). Build glass greenhouses that protect from the cold.
 - **Thermal Core** — Crafting component (iron + blaze powder + magma cream) used in heaters and the endgame core.
 - **Frozen Coal Ore** — Coal ore freezes in phase 4+ (configurable), Y≥0 only. Drops 1 coal (no fortune), 50% chance ice shard.
+
+### Phase 6: Atmospheric Collapse
+Phase 6 is divided into three sub-stages:
+- **Early (progress ≤ 0.72):** Maximum blizzard, whiteout fog, extreme wind chill
+- **Mid (0.72–0.85):** Wind dies, fog lifts, sky transitions to black, stars fade in
+- **Late (0.85+):** Vacuum — all sounds cancelled on surface, atmospheric suffocation drains air supply, custom death message ("%1$s suffocated in the void")
+
+**Sound in vacuum:** Surface (Y ≥ 0) is complete silence. Sound gradually returns underground: 0% at Y=0, 100% at Y=-32. Deep underground has full sound — rock insulates from the vacuum.
+
+**Geothermal ambience:** Below Y=0 in phase 6, a deep rumbling loop plays (vanilla basalt deltas sound), with volume scaling from 0.3 at Y=0 to 0.7 at Y=-64.
+
+**Habitable zones:** Players near a Geothermal Core below Y=0 have their air supply restored. Everyone else suffocates.
 
 ### Endgame: Geothermal Core
 The Geothermal Core is the endgame objective — a massive heat source requiring resources from every phase:
@@ -67,7 +86,7 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 ### Other
 - **12 custom blocks** — Dead Grass, Frozen Dirt, Frozen Sand, Dead/Frozen Logs, Dead/Frozen Leaves, Frozen Obsidian, Thermal Heater, Insulated Glass, Frozen Coal Ore, Geothermal Core
 - **3 custom items** — Ice Shard, Thermal Core, Frozen Heart
-- **7 advancements** — Phase progression + "Last Light" (Geothermal Core placed below Y=0) + "Classified Information" (found an ORSA book)
+- **8 advancements** — Phase progression (6 phases) + "Last Light" (Geothermal Core placed below Y=0) + "Classified Information" (found an ORSA book)
 - **Tough As Nails integration** — Optional; syncs apocalypse temperatures with TaN's body temperature system
 - **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 16+ config options covering temperature, features, visuals, and gameplay
@@ -87,7 +106,7 @@ All commands require OP level 2.
 |---------|-------------|
 | `/frozendawn status` | Show current day, phase, temperature, and sun state |
 | `/frozendawn setday <n>` | Jump to a specific apocalypse day |
-| `/frozendawn setphase <1-5>` | Jump to the start of a phase |
+| `/frozendawn setphase <1-6> [early\|mid\|late]` | Jump to the start of a phase (sub-stages for phase 6) |
 | `/frozendawn pause` | Toggle apocalypse progression |
 | `/frozendawn reset` | Reset to day 0 |
 | `/frozendawn preset <name>` | Apply a config preset (default, cinematic, brutal) |

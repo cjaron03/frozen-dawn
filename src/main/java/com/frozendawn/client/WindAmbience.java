@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,6 +17,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * Plays long (~65-70s) ambient wind clips with overlapping crossfade.
  * Clips are internally pre-crossfaded so repetition sounds natural.
  * Next clip starts 5s before the current one ends for seamless overlap.
+ *
+ * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WindAmbience {
@@ -35,17 +38,33 @@ public class WindAmbience {
         if (mc.level.dimension() != Level.OVERWORLD) return;
 
         int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
         boolean underground = mc.player.blockPosition().getY() < 50;
-        if (phase < 3 || underground) {
+
+        // Phase 6 late: no wind (vacuum)
+        boolean shouldStop = phase < 3 || underground || (phase >= 6 && progress >= 0.85f);
+        if (shouldStop) {
             stopAll(mc);
             return;
         }
 
-        float targetVolume = switch (phase) {
-            case 3 -> 0.2f;
-            case 4 -> 0.45f;
-            default -> 0.85f;
-        };
+        float targetVolume;
+        if (phase >= 6) {
+            if (progress <= 0.72f) {
+                // Phase 6 early: maximum wind
+                targetVolume = 1.0f;
+            } else {
+                // Phase 6 mid: wind dies as atmosphere thins
+                float fadeProgress = Math.min(1f, (progress - 0.72f) / 0.13f);
+                targetVolume = Mth.lerp(fadeProgress, 1.0f, 0.0f);
+            }
+        } else {
+            targetVolume = switch (phase) {
+                case 3 -> 0.2f;
+                case 4 -> 0.45f;
+                default -> 0.85f;
+            };
+        }
 
         // First play: jump to target so the clip isn't inaudibly quiet
         // (SimpleSoundInstance volume is fixed at creation)
@@ -55,6 +74,12 @@ public class WindAmbience {
             currentVolume = Math.min(targetVolume, currentVolume + 0.005f);
         } else if (currentVolume > targetVolume) {
             currentVolume = Math.max(targetVolume, currentVolume - 0.005f);
+        }
+
+        // If volume faded to near-zero, stop
+        if (currentVolume < 0.01f) {
+            stopAll(mc);
+            return;
         }
 
         if (ticksUntilNext > 0) {

@@ -3,6 +3,7 @@ package com.frozendawn.event;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.network.TemperaturePayload;
@@ -12,10 +13,12 @@ import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -37,9 +40,11 @@ public class WorldTickHandler {
 
     private static int lastLoggedPhase = -1;
     private static int lastLoggedDay = -1;
+    /** Cached habitable zone status per player UUID, updated every 20 ticks. */
+    private static final java.util.Map<java.util.UUID, Boolean> habitableCache = new java.util.HashMap<>();
 
     private static final String[] PHASE_ADVANCEMENTS = {
-            "root", "phase2", "phase3", "phase4", "phase5"
+            "root", "phase2", "phase3", "phase4", "phase5", "phase6"
     };
 
     @SubscribeEvent
@@ -90,8 +95,13 @@ public class WorldTickHandler {
             }
         }
 
-        // Wind chill exhaustion in phase 5 (every 20 ticks = 1 second)
+        float progress = state.getProgress();
+
+        // Wind chill exhaustion in phase 5+ (every 20 ticks = 1 second)
         if (currentPhase >= 5 && state.getApocalypseTicks() % 20 == 0) {
+            // Phase 6 multiplier: wind chill is even harsher
+            float phaseMult = currentPhase >= 6 ? 1.5f : 1.0f;
+
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.isCreative() || player.isSpectator()) continue;
                 if (player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) continue;
@@ -102,22 +112,60 @@ public class WorldTickHandler {
                 // Sprinting = heavy drain, moving = moderate, standing still = light
                 float exhaustion;
                 if (player.isSprinting()) {
-                    exhaustion = 1.0f;   // heavy: ~equivalent to mining
+                    exhaustion = 1.0f * phaseMult;
                 } else if (player.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
-                    exhaustion = 0.4f;   // moderate: walking in blizzard
+                    exhaustion = 0.4f * phaseMult;
                 } else {
-                    exhaustion = 0.2f;   // light: standing still, wind saps warmth
+                    exhaustion = 0.2f * phaseMult;
                 }
                 player.getFoodData().addExhaustion(exhaustion);
             }
         }
 
+        // Phase 6 late: atmospheric suffocation (every tick for responsiveness)
+        if (currentPhase >= 6 && progress > 0.85f) {
+            // Refresh habitable zone cache every 20 ticks (expensive block scan)
+            boolean refreshCache = state.getApocalypseTicks() % 20 == 0;
+
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.isCreative() || player.isSpectator()) continue;
+                if (player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) continue;
+
+                // Check habitable zone (cached, refreshed every 20 ticks)
+                java.util.UUID id = player.getUUID();
+                if (refreshCache) {
+                    habitableCache.put(id, isInHabitableZone(player));
+                }
+                if (Boolean.TRUE.equals(habitableCache.get(id))) {
+                    // Near Geothermal Core underground: restore air
+                    if (player.getAirSupply() < player.getMaxAirSupply()) {
+                        player.setAirSupply(Math.min(player.getMaxAirSupply(), player.getAirSupply() + 4));
+                    }
+                    continue;
+                }
+
+                // Drain air supply — faster than underwater drowning
+                int air = player.getAirSupply();
+                int newAir = Math.max(-20, air - 4);
+                player.setAirSupply(newAir);
+
+                // Apply custom suffocation damage when air is fully depleted
+                if (newAir <= -20) {
+                    DamageSource source = new DamageSource(
+                            player.serverLevel().registryAccess()
+                                    .lookupOrThrow(Registries.DAMAGE_TYPE)
+                                    .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
+                    player.hurt(source, 2.0f);
+                }
+            }
+        }
+
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
-        WeatherHandler.tick(overworld, currentPhase);
+        WeatherHandler.tick(overworld, currentPhase, progress);
         BlockFreezer.tick(overworld, currentPhase);
         VegetationDecay.tick(overworld, currentPhase);
-        SnowAccumulator.tick(overworld, currentPhase);
+        SnowAccumulator.tick(overworld, currentPhase, progress);
     }
 
     /**
@@ -182,6 +230,28 @@ public class WorldTickHandler {
             // Grant any missed phase advancements
             grantPhaseAdvancements(player, state.getPhase());
         }
+    }
+
+    /**
+     * Checks if a player is in a habitable zone: below Y=0 and within 16 blocks of a Geothermal Core.
+     */
+    private static boolean isInHabitableZone(ServerPlayer player) {
+        if (player.blockPosition().getY() >= 0) return false;
+
+        net.minecraft.core.BlockPos playerPos = player.blockPosition();
+        int radius = 16;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
+                    net.minecraft.core.BlockPos checkPos = playerPos.offset(dx, dy, dz);
+                    if (player.level().getBlockState(checkPos).is(ModBlocks.GEOTHERMAL_CORE.get())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static void grantAdvancement(ServerPlayer player, String name) {

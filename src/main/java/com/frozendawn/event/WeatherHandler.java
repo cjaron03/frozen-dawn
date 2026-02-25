@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerLevel;
  * Phase 2: Locked rain (snow in cold biomes)
  * Phase 3: Permanent thunderstorm (snowstorm)
  * Phase 4-5: Permanent thunderstorm (blizzard/whiteout)
+ * Phase 6 early: Extreme thunderstorm (worse than phase 5)
+ * Phase 6 mid+: Clear weather (atmosphere thinning — no moisture)
  *
  * Called from WorldTickHandler each tick.
  */
@@ -25,12 +27,12 @@ public final class WeatherHandler {
 
     private static int clearTickCounter = 0;
 
-    public static void tick(ServerLevel overworld, int phase) {
+    public static void tick(ServerLevel overworld, int phase, float progress) {
         if (phase <= 0) return;
 
         switch (phase) {
             case 1 -> handlePhase1(overworld);
-            default -> handleLockedWeather(overworld, phase);
+            default -> handleLockedWeather(overworld, phase, progress);
         }
     }
 
@@ -52,19 +54,25 @@ public final class WeatherHandler {
 
     /**
      * Phase 2+: Lock weather to rain (phase 2) or thunderstorm (phase 3+).
-     * Phase 5: Force permanent midnight — sun and moon are gone, only darkness.
+     * Phase 5+: Force permanent midnight.
+     * Phase 6 mid+ (progress > 0.72): Clear weather — atmosphere too thin for precipitation.
      */
-    private static void handleLockedWeather(ServerLevel overworld, int phase) {
-        boolean wantThunder = phase >= 3;
+    private static void handleLockedWeather(ServerLevel overworld, int phase, float progress) {
+        // Phase 6 mid+: atmosphere thinning, clear weather
+        if (phase >= 6 && progress > 0.72f) {
+            if (overworld.isRaining()) {
+                overworld.setWeatherParameters(LOCKED_DURATION, 0, false, false);
+            }
+        } else {
+            boolean wantThunder = phase >= 3;
+            boolean needsUpdate = !overworld.isRaining() || (wantThunder && !overworld.isThundering());
 
-        boolean needsUpdate = !overworld.isRaining() || (wantThunder && !overworld.isThundering());
-
-        if (needsUpdate) {
-            overworld.setWeatherParameters(0, LOCKED_DURATION, true, wantThunder);
+            if (needsUpdate) {
+                overworld.setWeatherParameters(0, LOCKED_DURATION, true, wantThunder);
+            }
         }
 
-        // Phase 5: lock time to midnight (18000 ticks = midnight)
-        // The thunderstorm + permanent night = no sun, no moon, no clouds visible
+        // Phase 5+: lock time to midnight (18000 ticks = midnight)
         if (phase >= 5) {
             long dayTime = overworld.getDayTime() % 24000;
             if (dayTime < 14000 || dayTime > 22000) {

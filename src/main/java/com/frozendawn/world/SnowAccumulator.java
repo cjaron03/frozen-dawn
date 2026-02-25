@@ -27,14 +27,17 @@ public final class SnowAccumulator {
     /** Max snow block stacking depth (3 blocks = player height). */
     private static final int MAX_SNOW_BLOCK_DEPTH = 3;
 
-    public static void tick(ServerLevel level, int phase) {
+    public static void tick(ServerLevel level, int phase, float progress) {
         if (phase < 2) return;
+
+        // Phase 6 mid+: no more snow — atmosphere too thin for precipitation
+        if (phase >= 6 && progress > 0.72f) return;
 
         int baseInterval = switch (phase) {
             case 2 -> 200;
             case 3 -> 60;
             case 4 -> 15;
-            default -> 5; // phase 5: every 5 ticks
+            default -> 5; // phase 5+: every 5 ticks
         };
         double rate = FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get();
         int interval = rate > 0 ? Math.max(1, (int) (baseInterval / rate)) : baseInterval;

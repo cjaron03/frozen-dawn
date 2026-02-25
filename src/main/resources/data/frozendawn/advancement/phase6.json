@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase5",
+  "display": {
+    "icon": {
+      "id": "minecraft:barrier"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.phase6.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.phase6.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "phase_reached": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

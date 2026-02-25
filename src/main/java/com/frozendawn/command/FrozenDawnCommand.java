@@ -29,7 +29,7 @@ import java.util.Locale;
  *
  * /frozendawn status     — show current state
  * /frozendawn setday <n> — jump to a specific day
- * /frozendawn setphase <1-5> — jump to the start of a phase
+ * /frozendawn setphase <1-6> [early|mid|late] — jump to the start of a phase (sub-stages for phase 6)
  * /frozendawn pause      — toggle progression pause
  * /frozendawn reset      — reset to day 0
  * /frozendawn preset <name> — apply a config preset (default/cinematic/brutal)
@@ -41,6 +41,9 @@ public class FrozenDawnCommand {
             SharedSuggestionProvider.suggest(
                     Arrays.stream(ConfigPresets.values()).map(p -> p.name().toLowerCase(Locale.ROOT)),
                     builder);
+
+    private static final SuggestionProvider<CommandSourceStack> SUBSTAGE_SUGGESTIONS = (context, builder) ->
+            SharedSuggestionProvider.suggest(Arrays.asList("early", "mid", "late"), builder);
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -56,8 +59,11 @@ public class FrozenDawnCommand {
                         .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
                                 .executes(FrozenDawnCommand::setDay)))
                 .then(Commands.literal("setphase")
-                        .then(Commands.argument("phase", IntegerArgumentType.integer(1, 5))
-                                .executes(FrozenDawnCommand::setPhase)))
+                        .then(Commands.argument("phase", IntegerArgumentType.integer(1, 6))
+                                .executes(FrozenDawnCommand::setPhase)
+                                .then(Commands.argument("substage", StringArgumentType.word())
+                                        .suggests(SUBSTAGE_SUGGESTIONS)
+                                        .executes(FrozenDawnCommand::setPhaseSubstage))))
                 .then(Commands.literal("pause")
                         .executes(FrozenDawnCommand::togglePause))
                 .then(Commands.literal("reset")
@@ -73,9 +79,9 @@ public class FrozenDawnCommand {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
 
-        String[] phaseNames = {"", "Twilight", "Cooling", "The Long Night", "Deep Freeze", "Eternal Winter"};
+        String[] phaseNames = {"", "Twilight", "Cooling", "The Long Night", "Deep Freeze", "Eternal Winter", "Atmospheric Collapse"};
         int phase = state.getPhase();
-        String phaseName = phase >= 1 && phase <= 5 ? phaseNames[phase] : "Unknown";
+        String phaseName = phase >= 1 && phase <= 6 ? phaseNames[phase] : "Unknown";
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.header"), false);
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.day",
@@ -116,6 +122,38 @@ public class FrozenDawnCommand {
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase",
                 phase, targetDay), true);
+        return 1;
+    }
+
+    private static int setPhaseSubstage(CommandContext<CommandSourceStack> context) {
+        int phase = IntegerArgumentType.getInteger(context, "phase");
+        String substage = StringArgumentType.getString(context, "substage").toLowerCase(Locale.ROOT);
+        MinecraftServer server = context.getSource().getServer();
+        ApocalypseState state = ApocalypseState.get(server);
+
+        if (phase != 6) {
+            context.getSource().sendFailure(Component.literal("Sub-stages are only available for phase 6"));
+            return 0;
+        }
+
+        // Phase 6 sub-stages: early=0.60, mid=0.72, late=0.85
+        float targetProgress = switch (substage) {
+            case "early" -> 0.60f;
+            case "mid" -> 0.72f;
+            case "late" -> 0.85f;
+            default -> {
+                context.getSource().sendFailure(Component.literal("Unknown sub-stage: " + substage + " (valid: early, mid, late)"));
+                yield -1f;
+            }
+        };
+        if (targetProgress < 0) return 0;
+
+        int targetDay = (int) (targetProgress * state.getTotalDays());
+        state.setApocalypseTicks((long) targetDay * 24000L);
+        syncToClients(state);
+
+        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase.substage",
+                substage, targetDay), true);
         return 1;
     }
 

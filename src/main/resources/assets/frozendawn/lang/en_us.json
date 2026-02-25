@@ -31,6 +31,7 @@
   "command.frozendawn.status.paused": "  Paused: %s",
   "command.frozendawn.setday": "Apocalypse set to day %s (Phase %s)",
   "command.frozendawn.setphase": "Apocalypse set to phase %s (Day %s)",
+  "command.frozendawn.setphase.substage": "Apocalypse set to phase 6 %s (Day %s)",
   "command.frozendawn.paused": "Apocalypse progression paused",
   "command.frozendawn.resumed": "Apocalypse progression resumed",
   "command.frozendawn.reset": "Apocalypse reset to day 0",
@@ -47,11 +48,16 @@
   "advancement.frozendawn.phase4.description": "Phase 4: Even the earth itself freezes solid.",
   "advancement.frozendawn.phase5.title": "Eternal Winter",
   "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth.",
+  "advancement.frozendawn.phase6.title": "The Last Breath",
+  "advancement.frozendawn.phase6.description": "Phase 6: The atmosphere freezes and collapses. There is no air left to breathe. ...did you need oxygen?",
   "advancement.frozendawn.last_light.title": "Last Light",
   "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
   "advancement.frozendawn.classified_information.title": "Classified Information",
   "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?",
 
   "subtitle.frozendawn.ambient.wind_light": "Wind howls softly",
-  "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar"
+  "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar",
+
+  "death.attack.frozendawn.atmospheric_suffocation": "%1$s suffocated in the void",
+  "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles"
 }

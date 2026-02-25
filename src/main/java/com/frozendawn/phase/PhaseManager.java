@@ -7,33 +7,34 @@ import net.minecraft.util.Mth;
  * All methods are stateless - they derive values from (currentDay, totalDays).
  *
  * Phase boundaries (as fraction of totalDays):
- *   Phase 1: 0.00 - 0.15  (days 0-15   @ 100 total)
- *   Phase 2: 0.15 - 0.35  (days 15-35  @ 100 total)
- *   Phase 3: 0.35 - 0.55  (days 35-55  @ 100 total)
- *   Phase 4: 0.55 - 0.75  (days 55-75  @ 100 total)
- *   Phase 5: 0.75 - 1.00  (days 75-100 @ 100 total)
+ *   Phase 1: 0.00 - 0.10  (days 0-10   @ 100 total)
+ *   Phase 2: 0.10 - 0.22  (days 10-22  @ 100 total)
+ *   Phase 3: 0.22 - 0.34  (days 22-34  @ 100 total)
+ *   Phase 4: 0.34 - 0.46  (days 34-46  @ 100 total)
+ *   Phase 5: 0.46 - 0.60  (days 46-60  @ 100 total)
+ *   Phase 6: 0.60 - 1.00  (days 60-100 @ 100 total) — Atmospheric Collapse
  */
 public final class PhaseManager {
 
     private PhaseManager() {}
 
-    // Phase boundary fractions (6 entries = 5 segments)
-    private static final float[] PHASE_BOUNDS = {0.0f, 0.15f, 0.35f, 0.55f, 0.75f, 1.0f};
+    // Phase boundary fractions (7 entries = 6 segments)
+    private static final float[] PHASE_BOUNDS = {0.0f, 0.10f, 0.22f, 0.34f, 0.46f, 0.60f, 1.0f};
 
     // Sun distance multiplier at each boundary
-    private static final float[] SUN_DISTANCE = {1.0f, 0.8f, 0.5f, 0.25f, 0.1f, 0.02f};
+    private static final float[] SUN_DISTANCE = {1.0f, 0.8f, 0.5f, 0.25f, 0.1f, 0.02f, 0.0f};
 
     // Temperature offset (Celsius) at each boundary
-    private static final float[] TEMP_OFFSET = {0f, -10f, -25f, -45f, -70f, -120f};
+    private static final float[] TEMP_OFFSET = {0f, -10f, -25f, -45f, -70f, -120f, -273f};
 
     // Sun brightness at each boundary
-    private static final float[] SUN_BRIGHTNESS = {1.0f, 0.9f, 0.7f, 0.45f, 0.2f, 0.05f};
+    private static final float[] SUN_BRIGHTNESS = {1.0f, 0.9f, 0.7f, 0.45f, 0.2f, 0.05f, 0.0f};
 
     // Sky light multiplier at each boundary
-    private static final float[] SKY_LIGHT = {1.0f, 1.0f, 0.85f, 0.6f, 0.3f, 0.05f};
+    private static final float[] SKY_LIGHT = {1.0f, 1.0f, 0.85f, 0.6f, 0.3f, 0.05f, 0.01f};
 
     // Day length multiplier at each boundary
-    private static final float[] DAY_LENGTH = {1.0f, 0.95f, 0.8f, 0.6f, 0.4f, 0.2f};
+    private static final float[] DAY_LENGTH = {1.0f, 0.95f, 0.8f, 0.6f, 0.4f, 0.2f, 0.0f};
 
     /**
      * Returns overall progress as a 0.0-1.0 float.
@@ -44,7 +45,7 @@ public final class PhaseManager {
     }
 
     /**
-     * Returns the current phase (1-5).
+     * Returns the current phase (1-6).
      */
     public static int getPhase(int currentDay, int totalDays) {
         float progress = getProgress(currentDay, totalDays);
@@ -53,7 +54,7 @@ public final class PhaseManager {
                 return i;
             }
         }
-        return 5;
+        return 6;
     }
 
     /**
@@ -142,7 +143,7 @@ public final class PhaseManager {
      */
     public static int getPhaseStartDay(int phase, int totalDays) {
         if (phase < 1) return 0;
-        if (phase > 5) return totalDays;
+        if (phase > 6) return totalDays;
         return (int) (PHASE_BOUNDS[phase - 1] * totalDays);
     }
 
