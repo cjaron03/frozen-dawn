@@ -40,6 +40,9 @@ public final class TemperatureManager {
      *                   Use for mobs where exact best-warmth isn't needed.
      */
     public static float getTemperatureAt(Level level, BlockPos pos, int currentDay, int totalDays, boolean quickScan) {
+        // Clamp inputs to prevent bad interpolation from corrupted world data
+        currentDay = Math.max(0, currentDay);
+        totalDays = Math.max(1, totalDays);
         float phaseTemp = PhaseManager.getTemperatureOffset(currentDay, totalDays);
         float depthTemp = PhaseManager.getDepthModifier(pos.getY())
                 * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();

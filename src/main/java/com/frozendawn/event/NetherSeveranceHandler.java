@@ -71,27 +71,43 @@ public class NetherSeveranceHandler {
         }
     }
 
+    private static boolean initialSweepDone = false;
+
     /**
      * Called each server tick from WorldTickHandler.
-     * Removes any existing portal blocks at phase 5+.
+     * Removes existing portal blocks when phase 5 begins, then relies on
+     * creation prevention (onRightClick) with a small safety scan as backup.
      */
     public static void tick(ServerLevel overworld, int phase) {
-        if (phase < 5) return;
+        if (phase < 5) {
+            initialSweepDone = false;
+            return;
+        }
 
-        // Remove portal blocks near players every 10 ticks (half second)
-        if (overworld.getGameTime() % 10 == 0) {
+        // One-time sweep: remove all portals near players when entering phase 5
+        if (!initialSweepDone) {
             for (ServerPlayer player : overworld.players()) {
-                removePortalBlocks(overworld, player.blockPosition());
+                removePortalBlocks(overworld, player.blockPosition(), 48);
+            }
+            initialSweepDone = true;
+            return;
+        }
+
+        // Safety net: small scan near players every 200 ticks (10 seconds)
+        if (overworld.getGameTime() % 200 == 0) {
+            for (ServerPlayer player : overworld.players()) {
+                removePortalBlocks(overworld, player.blockPosition(), 8);
             }
         }
     }
 
-    private static void removePortalBlocks(ServerLevel level, BlockPos center) {
-        int radius = 48;
+    private static void removePortalBlocks(ServerLevel level, BlockPos center, int radius) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int minY = Math.max(level.getMinBuildHeight(), center.getY() - 64);
+        int maxY = Math.min(level.getMaxBuildHeight(), center.getY() + 64);
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                for (int y = level.getMinBuildHeight(); y < level.getMaxBuildHeight(); y++) {
+                for (int y = minY; y < maxY; y++) {
                     pos.set(center.getX() + dx, y, center.getZ() + dz);
                     if (level.getBlockState(pos).is(Blocks.NETHER_PORTAL)) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
@@ -116,5 +132,6 @@ public class NetherSeveranceHandler {
     }
 
     public static void reset() {
+        initialSweepDone = false;
     }
 }

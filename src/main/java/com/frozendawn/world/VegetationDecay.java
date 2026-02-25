@@ -228,6 +228,7 @@ public final class VegetationDecay {
             level.destroyBlock(current, true);
             removed++;
 
+            if (visited.size() > MAX_COLLAPSE_BLOCKS * 8) break;
             for (Direction dir : Direction.values()) {
                 BlockPos neighbor = current.relative(dir);
                 if (!visited.contains(neighbor) && level.isLoaded(neighbor)) {
@@ -274,6 +275,7 @@ public final class VegetationDecay {
             level.destroyBlock(current, false); // no drops — they shatter
             removed++;
 
+            if (visited.size() > MAX_SNAP_BLOCKS * 8) break;
             // Spread upward and sideways (not downward past snap point)
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.DOWN) continue; // don't go below snap

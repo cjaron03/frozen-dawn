@@ -39,7 +39,12 @@ public class ApocalypseState extends SavedData {
 
     public static ApocalypseState load(CompoundTag tag, HolderLookup.Provider registries) {
         ApocalypseState state = new ApocalypseState();
-        state.apocalypseTicks = tag.getLong("apocalypseTicks");
+        long ticks = tag.getLong("apocalypseTicks");
+        if (ticks < 0) {
+            FrozenDawn.LOGGER.warn("Corrupted apocalypseTicks ({}), clamping to 0", ticks);
+            ticks = 0;
+        }
+        state.apocalypseTicks = ticks;
         state.initialized = tag.getBoolean("initialized");
         return state;
     }
