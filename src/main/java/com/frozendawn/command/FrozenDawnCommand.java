@@ -59,7 +59,7 @@ public class FrozenDawnCommand {
                         .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
                                 .executes(FrozenDawnCommand::setDay)))
                 .then(Commands.literal("setphase")
-                        .then(Commands.argument("phase", IntegerArgumentType.integer(1, 6))
+                        .then(Commands.argument("phase", IntegerArgumentType.integer(0, 6))
                                 .executes(FrozenDawnCommand::setPhase)
                                 .then(Commands.argument("substage", StringArgumentType.word())
                                         .suggests(SUBSTAGE_SUGGESTIONS)
@@ -79,9 +79,9 @@ public class FrozenDawnCommand {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
 
-        String[] phaseNames = {"", "Twilight", "Cooling", "The Long Night", "Deep Freeze", "Eternal Winter", "Atmospheric Collapse"};
+        String[] phaseNames = {"Normal", "Twilight", "Cooling", "The Long Night", "Deep Freeze", "Eternal Winter", "Atmospheric Collapse"};
         int phase = state.getPhase();
-        String phaseName = phase >= 1 && phase <= 6 ? phaseNames[phase] : "Unknown";
+        String phaseName = phase >= 0 && phase <= 6 ? phaseNames[phase] : "Unknown";
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.header"), false);
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.day",

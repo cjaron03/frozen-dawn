@@ -15,7 +15,9 @@ import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -38,6 +40,16 @@ public class LevelRendererMixin {
         if (FrozenDawnPhaseTracker.getPhase() >= 5) {
             ci.cancel();
         }
+    }
+
+    /**
+     * Scales the sun quad size (vanilla 30.0F) based on apocalypse sun scale.
+     * Phase 0: full size. Phase 1-2: dramatically smaller. Phase 3+: tiny.
+     */
+    @ModifyConstant(method = "renderSky", constant = @Constant(floatValue = 30.0F))
+    private float frozendawn$scaleSun(float original) {
+        float sunScale = ApocalypseClientData.getSunScale();
+        return original * sunScale;
     }
 
     @Inject(method = "renderSky", at = @At("HEAD"), cancellable = true)

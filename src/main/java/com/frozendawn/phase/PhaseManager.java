@@ -7,8 +7,9 @@ import net.minecraft.util.Mth;
  * All methods are stateless - they derive values from (currentDay, totalDays).
  *
  * Phase boundaries (as fraction of totalDays):
- *   Phase 1: 0.00 - 0.10  (days 0-10   @ 100 total)
- *   Phase 2: 0.10 - 0.22  (days 10-22  @ 100 total)
+ *   Phase 0: 0.00 - 0.05  (days 0-5    @ 100 total) — Normal Minecraft
+ *   Phase 1: 0.05 - 0.12  (days 5-12   @ 100 total) — Sun shrinks dramatically
+ *   Phase 2: 0.12 - 0.22  (days 12-22  @ 100 total) — Sun even smaller
  *   Phase 3: 0.22 - 0.34  (days 22-34  @ 100 total)
  *   Phase 4: 0.34 - 0.46  (days 34-46  @ 100 total)
  *   Phase 5: 0.46 - 0.60  (days 46-60  @ 100 total)
@@ -18,23 +19,23 @@ public final class PhaseManager {
 
     private PhaseManager() {}
 
-    // Phase boundary fractions (7 entries = 6 segments)
-    private static final float[] PHASE_BOUNDS = {0.0f, 0.10f, 0.22f, 0.34f, 0.46f, 0.60f, 1.0f};
+    // Phase boundary fractions (8 entries = 7 segments, phases 0-6)
+    private static final float[] PHASE_BOUNDS = {0.0f, 0.05f, 0.12f, 0.22f, 0.34f, 0.46f, 0.60f, 1.0f};
 
-    // Sun distance multiplier at each boundary
-    private static final float[] SUN_DISTANCE = {1.0f, 0.8f, 0.5f, 0.25f, 0.1f, 0.02f, 0.0f};
+    // Sun distance multiplier at each boundary — dramatic shrinkage in phase 1 (last time sun is visible)
+    private static final float[] SUN_DISTANCE = {1.0f, 0.35f, 0.12f, 0.06f, 0.04f, 0.03f, 0.02f, 0.0f};
 
     // Temperature offset (Celsius) at each boundary
-    private static final float[] TEMP_OFFSET = {0f, -10f, -25f, -45f, -70f, -120f, -273f};
+    private static final float[] TEMP_OFFSET = {0f, 0f, -10f, -25f, -45f, -70f, -120f, -273f};
 
     // Sun brightness at each boundary
-    private static final float[] SUN_BRIGHTNESS = {1.0f, 0.9f, 0.7f, 0.45f, 0.2f, 0.05f, 0.0f};
+    private static final float[] SUN_BRIGHTNESS = {1.0f, 1.0f, 0.9f, 0.7f, 0.45f, 0.2f, 0.05f, 0.0f};
 
     // Sky light multiplier at each boundary
-    private static final float[] SKY_LIGHT = {1.0f, 1.0f, 0.85f, 0.6f, 0.3f, 0.05f, 0.01f};
+    private static final float[] SKY_LIGHT = {1.0f, 1.0f, 1.0f, 0.85f, 0.6f, 0.3f, 0.05f, 0.01f};
 
     // Day length multiplier at each boundary
-    private static final float[] DAY_LENGTH = {1.0f, 0.95f, 0.8f, 0.6f, 0.4f, 0.2f, 0.0f};
+    private static final float[] DAY_LENGTH = {1.0f, 1.0f, 0.95f, 0.8f, 0.6f, 0.4f, 0.2f, 0.0f};
 
     /**
      * Returns overall progress as a 0.0-1.0 float.
@@ -45,13 +46,14 @@ public final class PhaseManager {
     }
 
     /**
-     * Returns the current phase (1-6).
+     * Returns the current phase (0-6).
+     * Phase 0 is normal Minecraft before the apocalypse begins.
      */
     public static int getPhase(int currentDay, int totalDays) {
         float progress = getProgress(currentDay, totalDays);
         for (int i = 1; i < PHASE_BOUNDS.length; i++) {
             if (progress < PHASE_BOUNDS[i]) {
-                return i;
+                return i - 1;
             }
         }
         return 6;
@@ -142,9 +144,9 @@ public final class PhaseManager {
      * Returns the starting day of a given phase.
      */
     public static int getPhaseStartDay(int phase, int totalDays) {
-        if (phase < 1) return 0;
+        if (phase < 0) return 0;
         if (phase > 6) return totalDays;
-        return (int) (PHASE_BOUNDS[phase - 1] * totalDays);
+        return (int) (PHASE_BOUNDS[phase] * totalDays);
     }
 
     /**
