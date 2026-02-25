@@ -6,6 +6,8 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+logoFile="logo.png"
+authors="Jaron Cabral"
 description='''
 Earth becomes a rogue planet. The sun recedes, the world freezes, and survival shifts underground.
 '''
