@@ -1,13 +1,14 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -16,7 +17,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
  * Plays long (~65-70s) ambient wind clips with overlapping crossfade.
- * Clips are internally pre-crossfaded so repetition sounds natural.
+ * Uses TickableWindSound for smooth per-frame volume transitions (no hard cuts).
  * Next clip starts 5s before the current one ends for seamless overlap.
  *
  * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence.
@@ -28,9 +29,9 @@ public class WindAmbience {
     private static final int STRONG_DURATION = 1260; // 63s in ticks
     private static final int OVERLAP = 100;          // 5s overlap (matches file fade-out)
 
-    private static SoundInstance currentSound = null;
+    private static TickableWindSound currentSound = null;
     private static int ticksUntilNext = 0;
-    private static float currentVolume = 0f;
+    private static int creakCooldown = 0;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -52,10 +53,8 @@ public class WindAmbience {
         float targetVolume;
         if (phase >= 6) {
             if (progress <= 0.72f) {
-                // Phase 6 early: maximum wind
                 targetVolume = 1.0f;
             } else {
-                // Phase 6 mid: wind dies as atmosphere thins
                 float fadeProgress = Math.min(1f, (progress - 0.72f) / 0.13f);
                 targetVolume = Mth.lerp(fadeProgress, 1.0f, 0.0f);
             }
@@ -67,20 +66,36 @@ public class WindAmbience {
             };
         }
 
-        // First play: jump to target so the clip isn't inaudibly quiet
-        // (SimpleSoundInstance volume is fixed at creation)
-        if (currentVolume == 0f) {
-            currentVolume = targetVolume;
-        } else if (currentVolume < targetVolume) {
-            currentVolume = Math.min(targetVolume, currentVolume + 0.005f);
-        } else if (currentVolume > targetVolume) {
-            currentVolume = Math.max(targetVolume, currentVolume - 0.005f);
+        // Muffle wind when sheltered (roof overhead)
+        boolean sheltered = isSheltered(mc);
+        if (sheltered) {
+            targetVolume *= 0.25f;
         }
 
-        // If volume faded to near-zero, stop
-        if (currentVolume < 0.01f) {
+        // Update volume on the currently playing sound — it fades smoothly per-frame
+        if (currentSound != null && !currentSound.isStopped()) {
+            currentSound.setTargetVolume(targetVolume);
+        }
+
+        // If target is near-zero and no sound playing, bail
+        if (targetVolume < 0.01f && (currentSound == null || currentSound.isStopped())) {
             stopAll(mc);
             return;
+        }
+
+        // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
+        if (sheltered && phase >= 4) {
+            if (creakCooldown > 0) {
+                creakCooldown--;
+            } else if (mc.level.random.nextFloat() < 0.015f) {
+                float pitch = 0.7f + mc.level.random.nextFloat() * 0.4f;
+                float vol = 0.3f + mc.level.random.nextFloat() * 0.2f;
+                mc.level.playLocalSound(
+                        mc.player.getX(), mc.player.getY(), mc.player.getZ(),
+                        ModSounds.SHELTER_CREAK.get(), SoundSource.AMBIENT,
+                        vol, pitch, false);
+                creakCooldown = 80 + mc.level.random.nextInt(160); // 4-12s between creaks
+            }
         }
 
         if (ticksUntilNext > 0) {
@@ -88,26 +103,16 @@ public class WindAmbience {
             if (ticksUntilNext > 0) return;
         }
 
-        // Start next clip (old one still playing — they overlap for 5s)
+        // Start next clip — old one still playing for 5s overlap
         boolean strong = phase >= 4;
         float pitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
+        int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
-        currentSound = new SimpleSoundInstance(
-                strong ? ModSounds.WIND_STRONG.get().getLocation() : ModSounds.WIND_LIGHT.get().getLocation(),
-                SoundSource.AMBIENT,
-                currentVolume,
-                pitch,
-                SoundInstance.createUnseededRandom(),
-                false,
-                0,
-                SoundInstance.Attenuation.NONE,
-                0.0, 0.0, 0.0,
-                true
-        );
+        currentSound = new TickableWindSound(
+                strong ? ModSounds.WIND_STRONG.get() : ModSounds.WIND_LIGHT.get(),
+                targetVolume, pitch, clipDuration);
         mc.getSoundManager().play(currentSound);
 
-        // Schedule next clip to start OVERLAP ticks before this one ends
-        int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
         ticksUntilNext = clipDuration - OVERLAP;
     }
 
@@ -115,9 +120,21 @@ public class WindAmbience {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         Minecraft mc = Minecraft.getInstance();
         stopAll(mc);
-        // Reset all client-side apocalypse state so new worlds start fresh
         ApocalypseClientData.reset();
         TemperatureHud.reset();
+    }
+
+    /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
+    private static boolean isSheltered(Minecraft mc) {
+        BlockPos pos = mc.player.blockPosition();
+        for (int dy = 1; dy <= 4; dy++) {
+            BlockPos above = pos.above(dy);
+            BlockState state = mc.level.getBlockState(above);
+            if (state.isSolidRender(mc.level, above) || state.is(ModBlocks.INSULATED_GLASS.get())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void stopAll(Minecraft mc) {
@@ -126,6 +143,6 @@ public class WindAmbience {
             currentSound = null;
         }
         ticksUntilNext = 0;
-        currentVolume = 0f;
+        creakCooldown = 0;
     }
 }

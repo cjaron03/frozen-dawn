@@ -18,5 +18,17 @@
         "stream": true
       }
     ]
+  },
+  "ambient.shelter_creak": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.shelter_creak",
+    "sounds": [
+      "frozendawn:ambient/creak1",
+      "frozendawn:ambient/creak2",
+      "frozendawn:ambient/creak3",
+      "frozendawn:ambient/creak4",
+      "frozendawn:ambient/creak5",
+      "frozendawn:ambient/creak6"
+    ]
   }
 }

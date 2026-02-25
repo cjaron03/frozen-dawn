@@ -35,7 +35,8 @@ Over 100 in-game days, the world progresses through 6 phases of an apocalyptic f
 - **Wind chill exhaustion** — Phase 5+: outdoor exposure drains food (sprinting = heavy, moving = moderate, standing = light)
 - **Weather control** — Rain locks in phase 2, permanent thunderstorms from phase 3
 - **Snow accumulation** — Layers build up on exposed surfaces, accelerating in later phases
-- **Sound muffling** — Sounds dampen below -15°C; phase 6 late: vacuum cancels all sound on surface
+- **Sound muffling** — Sounds dampen below -15°C; phase 6 late: vacuum cancels all sound on surface. Wind muffles smoothly indoors with shelter creaking sounds.
+- **Shelter mechanics** — Roof overhead (within 4 blocks) suppresses snow particles, muffles wind, and triggers structural creaking. In phase 5+, exposed heaters (not enclosed on all 6 faces) have halved radius.
 - **False calm rebounds** — Brief temperature spikes near phase boundaries create moments of false hope
 
 ### Visual Effects
@@ -63,7 +64,7 @@ Armor pieces can be mixed across tiers. Full set bonuses (wind chill, suffocatio
 At phase 5+, dimensional links are severed. Existing nether portals break and new ones cannot be lit. Attempting to light a portal with flint & steel grants a hidden advancement: *"Huh. Thought That Works."*
 
 ### Player Agency
-- **Thermal Heater** — Right-click with coal, charcoal, blaze powder, or coal blocks to fuel. Radius 7, +35°C when lit. No GUI — just right-click fuel in. Fuel does NOT burn while chunk is unloaded.
+- **Thermal Heater** — Right-click with coal, charcoal, blaze powder, or coal blocks to fuel. Radius 7, +35°C when lit. No GUI — just right-click fuel in. Fuel does NOT burn while chunk is unloaded. Higher tiers produce more heat but burn fuel faster (1.5x/2x/3x). Phase 4+ multiplies fuel consumption further (2x/4x/8x). Geothermal Core is exempt.
 - **Insulated Glass** — Transparent block that counts as shelter (roof check). Build glass greenhouses that protect from the cold.
 - **Thermal Core** — Crafting component (iron + blaze powder + magma cream) used in heaters and the endgame core.
 - **Frozen Coal Ore** — Coal ore freezes in phase 4+ (configurable), Y≥0 only. Drops 1 coal (no fortune), 50% chance ice shard.
@@ -99,12 +100,12 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 
 ### Other
 - **12 custom blocks** — Dead Grass, Frozen Dirt, Frozen Sand, Dead/Frozen Logs, Dead/Frozen Leaves, Frozen Obsidian, Thermal Heater, Insulated Glass, Frozen Coal Ore, Geothermal Core
-- **15 custom items** — Ice Shard, Thermal Core, Frozen Heart, 12 armor pieces (4 per tier)
+- **16 custom items** — Ice Shard, Thermal Core, Frozen Heart, Thermal Container, 12 armor pieces (4 per tier)
 - **12 advancements** — Phase progression (6 phases), "Last Light" (Geothermal Core below Y=0), "Classified Information" (ORSA book), 3 armor tier milestones, "Huh. Thought That Works" (hidden — try to light a portal at phase 5+)
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
 - **Tough As Nails integration** — Optional; syncs apocalypse temperatures with TaN's body temperature system
 - **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
-- **Fully configurable** — 16+ config options covering temperature, features, visuals, and gameplay
+- **Fully configurable** — 17+ config options covering temperature, features, visuals, and gameplay
 
 ## Installation
 
@@ -152,6 +153,7 @@ Edit `config/frozendawn-common.toml` after first launch.
 | `enableMobFreezing` | true | Toggle mob/player freeze effects |
 | `enableLavaFreezing` | true | Toggle lava solidification |
 | `snowAccumulationRate` | 1.0 | Snow buildup speed (preset-managed) |
+| `enableFuelPhaseScaling` | true | Toggle phase-based fuel consumption scaling (P4: 2x, P5: 4x, P6: 8x) |
 | `enableFuelScarcity` | true | Toggle coal ore freezing |
 | `fuelScarcityPhase` | 4 | Phase when coal ore starts freezing (2-5) |
 | `enableLoreBooks` | true | Toggle ORSA book injection into loot |

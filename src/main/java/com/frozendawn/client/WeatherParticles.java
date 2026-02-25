@@ -1,11 +1,14 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.init.ModBlocks;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -30,8 +33,9 @@ public class WeatherParticles {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // No blizzard particles underground
+        // No blizzard particles underground or inside shelters
         if (mc.player.blockPosition().getY() < 50) return;
+        if (isSheltered(mc)) return;
 
         float progress = ApocalypseClientData.getProgress();
 
@@ -99,5 +103,18 @@ public class WeatherParticles {
                 mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
             }
         }
+    }
+
+    /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
+    private static boolean isSheltered(Minecraft mc) {
+        BlockPos pos = mc.player.blockPosition();
+        for (int dy = 1; dy <= 4; dy++) {
+            BlockPos above = pos.above(dy);
+            BlockState state = mc.level.getBlockState(above);
+            if (state.isSolidRender(mc.level, above) || state.is(ModBlocks.INSULATED_GLASS.get())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
