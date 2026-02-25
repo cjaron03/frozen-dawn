@@ -6,6 +6,7 @@ import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
+import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.integration.TaNCompat;
 import com.mojang.logging.LogUtils;
@@ -28,6 +29,7 @@ public class FrozenDawn {
         ModItems.ITEMS.register(modEventBus);
         ModItems.CREATIVE_TABS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
 

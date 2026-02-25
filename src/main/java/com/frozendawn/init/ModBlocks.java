@@ -1,6 +1,7 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HalfTransparentBlock;
@@ -90,6 +91,33 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0)));
 
+    // Iron Thermal Heater: +50C, radius 9, 1.5x fuel efficiency
+    public static final DeferredBlock<ThermalHeaterBlock> IRON_THERMAL_HEATER = BLOCKS.register("iron_thermal_heater",
+            () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0), 1.5f));
+
+    // Gold Thermal Heater: +65C, radius 11, 2x fuel efficiency
+    public static final DeferredBlock<ThermalHeaterBlock> GOLD_THERMAL_HEATER = BLOCKS.register("gold_thermal_heater",
+            () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.GOLD)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 14 : 0), 2.0f));
+
+    // Diamond Thermal Heater: +80C, radius 14, 3x fuel efficiency
+    public static final DeferredBlock<ThermalHeaterBlock> DIAMOND_THERMAL_HEATER = BLOCKS.register("diamond_thermal_heater",
+            () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DIAMOND)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 15 : 0), 3.0f));
+
     // Insulated Glass: transparent, counts as shelter (roof check)
     public static final DeferredBlock<HalfTransparentBlock> INSULATED_GLASS = BLOCKS.register("insulated_glass",
             () -> new HalfTransparentBlock(BlockBehaviour.Properties.of()
@@ -108,9 +136,9 @@ public class ModBlocks {
                     .strength(4.0F)
                     .sound(SoundType.STONE)));
 
-    // Geothermal Core: endgame block, massive warm zone, light level 15
-    public static final DeferredBlock<Block> GEOTHERMAL_CORE = BLOCKS.register("geothermal_core",
-            () -> new Block(BlockBehaviour.Properties.of()
+    // Geothermal Core: endgame block, upgradeable warm zone + O2 production, light level 15
+    public static final DeferredBlock<GeothermalCoreBlock> GEOTHERMAL_CORE = BLOCKS.register("geothermal_core",
+            () -> new GeothermalCoreBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_ORANGE)
                     .requiresCorrectToolForDrops()
                     .strength(50.0F, 1200.0F)

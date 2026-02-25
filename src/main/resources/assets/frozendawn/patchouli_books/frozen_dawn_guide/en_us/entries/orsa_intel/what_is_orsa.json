@@ -1,0 +1,38 @@
+{
+  "name": "What is ORSA?",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:spyglass",
+  "sortnum": -1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA — Who Are We?",
+      "text": "The $(bold)Orbital Resonance Stabilization Authority$() (ORSA) was founded as a joint initiative between the United Nations and the world's leading space agencies.$(br2)Our mission: monitor and maintain Earth's orbital parameters using a global network of $(bold)2,048 resonance stabilization nodes.$()$(br2)For decades, we kept Earth exactly where it needed to be. On track. On time. In orbit.$(br2)$(italic)That part worked great.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What Went Wrong",
+      "text": "Short answer: $(bold)we don't know.$()$(br2)Long answer: The resonance pattern that keeps Earth anchored to its orbital track began to decay. Slowly at first — a fraction of a fraction of a degree. Our systems flagged it. We investigated. We found nothing.$(br2)Then the decay accelerated.$(br2)By the time our models caught up with reality, Earth had already begun to drift. The stabilization nodes couldn't compensate. They weren't designed for this. $(italic)Nothing$() was designed for this."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Evacuation",
+      "text": "When the models confirmed the drift was irreversible, ORSA pivoted from stabilization to evacuation. $(bold)Project Exodus$() — the largest coordinated operation in human history.$(br2)Every transport, every shuttle, every vessel capable of atmospheric escape was mobilized. Mars colonies expanded overnight. Lunar stations tripled capacity.$(br2)$(bold)14 billion people were evacuated in 72 hours.$()$(br2)All but one, apparently."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Divisions",
+      "text": "$(bold)Science Division$()$(br)Modeled the phase progression timeline. Their projections have been... uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored the survival guides you're reading. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin worked here. Kevin went back for you. Kevin is on Mars now wondering if you're okay.$(br2)$(bold)Engineering Division$()$(br)Designed the thermal heaters, insulated clothing, and geothermal cores found in this manual."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Field Documents",
+      "text": "Before evacuation, ORSA distributed field documents to outposts, villages, and shelters worldwide. These $(bold)written books$() can still be found in structures across the surface.$(br2)They contain research notes, internal memos, supply manifests, and occasionally the personal observations of ORSA scientists who knew what was coming.$(br2)$(italic)If you find one, read it. Some of them contain information that was never meant to go public.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "A Final Note",
+      "text": "To whoever is reading this:$(br2)We are sorry. We were supposed to prevent this. We had the technology, the funding, the mandate. And it wasn't enough.$(br2)This guide is the last thing we could give you. Every recipe, every blueprint, every sarcastic aside from the Wellness Division — it's all we have left to offer.$(br2)Stay underground. Stay warm. Stay alive.$(br2)$(italic)— Dr. Elena Vasquez$()$(br)$(italic)ORSA Director, Science Division$()$(br)$(italic)(The one who flagged the resonance decay.$()$(br)$(italic)Nobody listened.)$()"
+    }
+  ]
+}

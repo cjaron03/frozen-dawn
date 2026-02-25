@@ -104,13 +104,50 @@ public class WorldTickHandler {
             PacketDistributor.sendToAllPlayers(createPayload(state));
         }
 
-        // Send per-player temperature every 40 ticks (~2 seconds) + check armor advancements
+        // Send per-player temperature every 40 ticks (~2 seconds) + check armor advancements + heat damage
         if (state.getApocalypseTicks() % 40 == 0) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.level().dimension() == net.minecraft.world.level.Level.OVERWORLD) {
                     float temp = TemperatureManager.getTemperatureAt(
                             player.level(), player.blockPosition(), currentDay, state.getTotalDays());
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
+
+                    // Heat penalty — the ironic counterpart to freezing
+                    if (!player.isCreative() && !player.isSpectator() && temp > 60f) {
+                        if (temp >= 120f) {
+                            // Extreme: 2 hearts damage, nausea, heavy slowness
+                            DamageSource heatSource = new DamageSource(
+                                    player.serverLevel().registryAccess()
+                                            .lookupOrThrow(Registries.DAMAGE_TYPE)
+                                            .getOrThrow(ModDamageTypes.HYPERTHERMIA));
+                            player.hurt(heatSource, 4.0f);
+                            player.addEffect(new MobEffectInstance(
+                                    MobEffects.CONFUSION, 80, 0, false, false, false));
+                            player.addEffect(new MobEffectInstance(
+                                    MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
+                            player.displayClientMessage(
+                                    Component.translatable("message.frozendawn.heat.cooking"), true);
+                            grantAdvancement(player, "too_hot_to_handle");
+                        } else if (temp >= 90f) {
+                            // Severe: 1 heart damage, weakness
+                            DamageSource heatSource = new DamageSource(
+                                    player.serverLevel().registryAccess()
+                                            .lookupOrThrow(Registries.DAMAGE_TYPE)
+                                            .getOrThrow(ModDamageTypes.HYPERTHERMIA));
+                            player.hurt(heatSource, 2.0f);
+                            player.addEffect(new MobEffectInstance(
+                                    MobEffects.WEAKNESS, 60, 1, false, false, false));
+                            player.displayClientMessage(
+                                    Component.translatable("message.frozendawn.heat.unbearable"), true);
+                            grantAdvancement(player, "too_hot_to_handle");
+                        } else if (temp >= 60f) {
+                            // Warning: sweating, mild slowness
+                            player.addEffect(new MobEffectInstance(
+                                    MobEffects.WEAKNESS, 60, 0, false, false, false));
+                            player.displayClientMessage(
+                                    Component.translatable("message.frozendawn.heat.sweating"), true);
+                        }
+                    }
                 }
                 // Grant armor tier advancements
                 int armorTier = MobFreezeHandler.getFullSetTier(player);
@@ -309,24 +346,24 @@ public class WorldTickHandler {
     /**
      * Checks if a player is in a habitable zone.
      * Any enclosed space (can't see sky) has trapped air — safe from suffocation.
-     * On the exposed surface, only areas near a Geothermal Core are habitable.
+     * On the exposed surface, only areas near a Geothermal Core with O2 production are habitable.
      */
     private static boolean isInHabitableZone(ServerPlayer player) {
         // Under a roof / underground = trapped air = safe
         if (!player.level().canSeeSky(player.blockPosition().above())) return true;
 
-        // Exposed to sky: only safe near a Geothermal Core
+        // Exposed to sky: check registered geothermal cores for O2 range
         net.minecraft.core.BlockPos playerPos = player.blockPosition();
-        int radius = 16;
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
-                    net.minecraft.core.BlockPos checkPos = playerPos.offset(dx, dy, dz);
-                    if (player.level().getBlockState(checkPos).is(ModBlocks.GEOTHERMAL_CORE.get())) {
-                        return true;
-                    }
-                }
+        for (net.minecraft.core.BlockPos corePos : com.frozendawn.world.GeothermalCoreRegistry.getCores(player.level())) {
+            int o2Range;
+            net.minecraft.world.level.block.entity.BlockEntity be = player.level().getBlockEntity(corePos);
+            if (be instanceof com.frozendawn.block.GeothermalCoreBlockEntity core) {
+                o2Range = core.getEffectiveO2Range();
+            } else {
+                o2Range = com.frozendawn.block.GeothermalCoreBlockEntity.BASE_O2_RANGE;
+            }
+            if (playerPos.distSqr(corePos) <= (long) o2Range * o2Range) {
+                return true;
             }
         }
         return false;

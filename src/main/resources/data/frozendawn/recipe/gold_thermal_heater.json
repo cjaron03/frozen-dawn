@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["GGG", "GHG", "GGG"],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "H": { "item": "frozendawn:thermal_heater" }
+  },
+  "result": { "id": "frozendawn:gold_thermal_heater", "count": 1 }
+}

@@ -21,6 +21,9 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FROZEN_LEAVES = ITEMS.registerSimpleBlockItem("frozen_leaves", ModBlocks.FROZEN_LEAVES);
     public static final DeferredItem<BlockItem> FROZEN_OBSIDIAN = ITEMS.registerSimpleBlockItem("frozen_obsidian", ModBlocks.FROZEN_OBSIDIAN);
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
+    public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
+    public static final DeferredItem<BlockItem> GOLD_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("gold_thermal_heater", ModBlocks.GOLD_THERMAL_HEATER);
+    public static final DeferredItem<BlockItem> DIAMOND_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("diamond_thermal_heater", ModBlocks.DIAMOND_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> INSULATED_GLASS = ITEMS.registerSimpleBlockItem("insulated_glass", ModBlocks.INSULATED_GLASS);
     public static final DeferredItem<BlockItem> FROZEN_COAL_ORE = ITEMS.registerSimpleBlockItem("frozen_coal_ore", ModBlocks.FROZEN_COAL_ORE);
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
@@ -93,6 +96,9 @@ public class ModItems {
                         output.accept(FROZEN_COAL_ORE.get());
                         // Player agency
                         output.accept(THERMAL_HEATER.get());
+                        output.accept(IRON_THERMAL_HEATER.get());
+                        output.accept(GOLD_THERMAL_HEATER.get());
+                        output.accept(DIAMOND_THERMAL_HEATER.get());
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
                         // Items

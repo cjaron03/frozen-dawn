@@ -1,6 +1,7 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -13,5 +14,16 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ThermalHeaterBlockEntity>> THERMAL_HEATER =
             BLOCK_ENTITIES.register("thermal_heater",
-                    () -> BlockEntityType.Builder.of(ThermalHeaterBlockEntity::new, ModBlocks.THERMAL_HEATER.get()).build(null));
+                    () -> BlockEntityType.Builder.of(ThermalHeaterBlockEntity::new,
+                            ModBlocks.THERMAL_HEATER.get(),
+                            ModBlocks.IRON_THERMAL_HEATER.get(),
+                            ModBlocks.GOLD_THERMAL_HEATER.get(),
+                            ModBlocks.DIAMOND_THERMAL_HEATER.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GeothermalCoreBlockEntity>> GEOTHERMAL_CORE =
+            BLOCK_ENTITIES.register("geothermal_core",
+                    () -> BlockEntityType.Builder.of(GeothermalCoreBlockEntity::new,
+                            ModBlocks.GEOTHERMAL_CORE.get()
+                    ).build(null));
 }

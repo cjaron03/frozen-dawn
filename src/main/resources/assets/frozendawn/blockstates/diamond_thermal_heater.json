@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "frozendawn:block/diamond_thermal_heater" },
+    "lit=true": { "model": "frozendawn:block/diamond_thermal_heater_lit" }
+  }
+}

@@ -10,6 +10,9 @@
   "block.frozendawn.frozen_leaves": "Frozen Leaves",
   "block.frozendawn.frozen_obsidian": "Frozen Obsidian",
   "block.frozendawn.thermal_heater": "Thermal Heater",
+  "block.frozendawn.iron_thermal_heater": "Iron Thermal Heater",
+  "block.frozendawn.gold_thermal_heater": "Gold Thermal Heater",
+  "block.frozendawn.diamond_thermal_heater": "Diamond Thermal Heater",
   "block.frozendawn.insulated_glass": "Insulated Glass",
   "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
   "block.frozendawn.geothermal_core": "Geothermal Core",
@@ -90,5 +93,14 @@
   "advancement.frozendawn.nether_severed.title": "Huh. Thought That Works",
   "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
 
-  "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles"
+  "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
+
+  "message.frozendawn.heat.sweating": "You're sweating... in a frozen apocalypse. Really?",
+  "message.frozendawn.heat.unbearable": "The heat is unbearable! Maybe fewer heaters?",
+  "message.frozendawn.heat.cooking": "You are literally cooking alive. In an ice age.",
+
+  "death.attack.frozendawn.hyperthermia": "%1$s was cooked alive by their own heaters",
+
+  "advancement.frozendawn.too_hot_to_handle.title": "Too Hot to Handle",
+  "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you."
 }

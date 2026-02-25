@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["DDD", "DHD", "DDD"],
+  "key": {
+    "D": { "item": "minecraft:diamond" },
+    "H": { "item": "frozendawn:thermal_heater" }
+  },
+  "result": { "id": "frozendawn:diamond_thermal_heater", "count": 1 }
+}

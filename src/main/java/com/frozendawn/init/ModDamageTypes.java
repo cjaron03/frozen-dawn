@@ -11,4 +11,8 @@ public class ModDamageTypes {
     public static final ResourceKey<DamageType> ATMOSPHERIC_SUFFOCATION =
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "atmospheric_suffocation"));
+
+    public static final ResourceKey<DamageType> HYPERTHERMIA =
+            ResourceKey.create(Registries.DAMAGE_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "hyperthermia"));
 }

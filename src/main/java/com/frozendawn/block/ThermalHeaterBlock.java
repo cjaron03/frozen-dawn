@@ -22,15 +22,22 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A player-craftable heater block. Right-click with fuel to add burn time.
- * When lit: radius 7, +35C heat source. No GUI, no hopper interaction.
+ * Base: radius 7, +35C. Tiered variants have higher output and fuel efficiency.
+ * No GUI, no hopper interaction.
  * Fuel does NOT burn while chunk is unloaded (vanilla BlockEntity default).
  */
 public class ThermalHeaterBlock extends Block implements EntityBlock {
 
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
+    private final float fuelMultiplier;
 
     public ThermalHeaterBlock(Properties properties) {
+        this(properties, 1.0f);
+    }
+
+    public ThermalHeaterBlock(Properties properties, float fuelMultiplier) {
         super(properties);
+        this.fuelMultiplier = fuelMultiplier;
         registerDefaultState(stateDefinition.any().setValue(LIT, false));
     }
 
@@ -57,7 +64,7 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
-        int burnTime = getFuelBurnTime(stack);
+        int burnTime = (int) (getFuelBurnTime(stack) * fuelMultiplier);
         if (burnTime <= 0) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         if (!level.isClientSide()) {

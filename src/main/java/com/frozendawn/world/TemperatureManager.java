@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModBlocks;
@@ -7,6 +8,7 @@ import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
@@ -21,7 +23,7 @@ public final class TemperatureManager {
 
     private TemperatureManager() {}
 
-    private static final int MAX_HEAT_RADIUS = 12;    // Geothermal Core needs 12
+    private static final int MAX_HEAT_RADIUS = 14;    // Diamond Thermal Heater needs 14
     private static final int MOB_HEAT_RADIUS = 3;     // Reduced scan for mobs (7^3=343)
 
     /**
@@ -64,16 +66,16 @@ public final class TemperatureManager {
     }
 
     /**
-     * Heat source modifier: find the strongest heat source within range.
-     * Returns the warmth value of the best source (not additive).
+     * Heat source modifier: sums warmth from all nearby heat sources (stacking).
      *
      * @param quickScan  Reduced radius + early exit on first heat found (for mobs)
      */
     public static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays, boolean quickScan) {
-        float bestWarmth = 0.0f;
+        float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
         int radius = quickScan ? MOB_HEAT_RADIUS : MAX_HEAT_RADIUS;
 
+        // Scan nearby blocks for heaters, campfires, lava, etc.
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
@@ -82,15 +84,41 @@ public final class TemperatureManager {
                     BlockPos checkPos = pos.offset(dx, dy, dz);
                     BlockState state = level.getBlockState(checkPos);
                     float warmth = getHeatForBlock(state, distSq, phase, checkPos);
-                    if (warmth > bestWarmth) {
-                        bestWarmth = warmth;
-                        if (quickScan) return bestWarmth; // Mobs: any heat = safe, done
+                    if (warmth > 0) {
+                        totalWarmth += warmth;
+                        if (quickScan) return totalWarmth;
                     }
                 }
             }
         }
 
-        return bestWarmth;
+        // Check registered geothermal cores (supports range up to 32, beyond block scan radius)
+        for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
+            double distSq = pos.distSqr(corePos);
+            float coreRange, coreTemp;
+
+            BlockEntity be = level.getBlockEntity(corePos);
+            if (be instanceof GeothermalCoreBlockEntity core) {
+                coreRange = core.getEffectiveRange();
+                coreTemp = core.getEffectiveTemp();
+            } else {
+                coreRange = GeothermalCoreBlockEntity.BASE_RANGE;
+                coreTemp = GeothermalCoreBlockEntity.BASE_TEMP;
+            }
+
+            // Above Y=0: halve effectiveness
+            if (corePos.getY() >= 0) {
+                coreRange /= 2;
+                coreTemp /= 2;
+            }
+
+            if (distSq <= coreRange * coreRange) {
+                totalWarmth += coreTemp;
+                if (quickScan) return totalWarmth;
+            }
+        }
+
+        return totalWarmth;
     }
 
     /**
@@ -98,20 +126,23 @@ public final class TemperatureManager {
      * Uses distSq to avoid Vec3 allocation and sqrt() per block.
      */
     private static float getHeatForBlock(BlockState state, int distSq, int phase, BlockPos checkPos) {
-        // Geothermal Core: Y-dependent behavior
-        if (state.is(ModBlocks.GEOTHERMAL_CORE.get())) {
-            if (checkPos.getY() < 0) {
-                // Below Y=0: radius 12 (distSq <= 144), +50C
-                return distSq <= 144 ? 50.0f : 0.0f;
-            } else {
-                // Above Y=0: radius 6 (distSq <= 36), +15C
-                return distSq <= 36 ? 15.0f : 0.0f;
-            }
-        }
+        // Geothermal Core is handled via GeothermalCoreRegistry (supports upgraded range up to 32)
 
         // Thermal Heater (lit): radius 7 (distSq <= 49), +35C
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             return distSq <= 49 ? 35.0f : 0.0f;
+        }
+        // Iron Thermal Heater (lit): radius 9 (distSq <= 81), +50C
+        if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
+            return distSq <= 81 ? 50.0f : 0.0f;
+        }
+        // Gold Thermal Heater (lit): radius 11 (distSq <= 121), +65C
+        if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
+            return distSq <= 121 ? 65.0f : 0.0f;
+        }
+        // Diamond Thermal Heater (lit): radius 14 (distSq <= 196), +80C
+        if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
+            return distSq <= 196 ? 80.0f : 0.0f;
         }
 
         // Campfire (lit): radius 5 (distSq <= 25), +25C

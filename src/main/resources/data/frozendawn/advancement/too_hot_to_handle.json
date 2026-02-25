@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:lava_bucket"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.too_hot_to_handle.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.too_hot_to_handle.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
