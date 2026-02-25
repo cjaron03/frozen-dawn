@@ -30,7 +30,7 @@ public final class BlockFreezer {
     private static final int BASE_VOLUME_CHECKS = 12;
     private static final int RADIUS = 64;
 
-    public static void tick(ServerLevel level, int phase) {
+    public static void tick(ServerLevel level, int phase, float progress) {
         if (phase < 2) return;
 
         int surfaceChecks = switch (phase) {
@@ -72,7 +72,7 @@ public final class BlockFreezer {
                     }
 
                     // Found a solid block - try to freeze it
-                    transformSurface(level, pos, state, phase);
+                    transformSurface(level, pos, state, phase, progress);
                     break;
                 }
             }
@@ -86,13 +86,24 @@ public final class BlockFreezer {
                 if (!level.isLoaded(pos)) continue;
 
                 BlockState volumeState = level.getBlockState(pos);
-                transformVolume(level, pos, volumeState, phase);
+                transformVolume(level, pos, volumeState, phase, progress);
                 transformSurfaceCoalOre(level, pos, volumeState, phase);
             }
         }
     }
 
-    private static void transformSurface(ServerLevel level, BlockPos pos, BlockState state, int phase) {
+    private static void transformSurface(ServerLevel level, BlockPos pos, BlockState state, int phase, float progress) {
+        // Phase 6 late: exposed snow/snow blocks slowly compact into ice
+        // 10% chance per check — gradual transformation, not instant
+        // (existing ice → packed ice → blue ice chain handles the rest)
+        if (phase >= 6 && progress >= 0.85f && level.canSeeSky(pos.above())) {
+            if ((state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK))
+                    && level.getRandom().nextFloat() < 0.10f) {
+                level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
+                return;
+            }
+        }
+
         if (state.is(Blocks.GRASS_BLOCK) && phase >= 2) {
             level.setBlock(pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState(), 3);
             return;
@@ -120,7 +131,17 @@ public final class BlockFreezer {
         }
     }
 
-    private static void transformVolume(ServerLevel level, BlockPos pos, BlockState state, int phase) {
+    private static void transformVolume(ServerLevel level, BlockPos pos, BlockState state, int phase, float progress) {
+        // Phase 6 late: surface ice sublimates (solid → gas in vacuum)
+        // Water also boils off instantly. Underground ice is unaffected.
+        if (phase >= 6 && progress >= 0.85f && level.canSeeSky(pos.above())) {
+            if (state.is(Blocks.WATER) || state.is(Blocks.ICE)
+                    || state.is(Blocks.PACKED_ICE) || state.is(Blocks.BLUE_ICE)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                return;
+            }
+        }
+
         if (state.is(Blocks.WATER) && phase >= 2) {
             level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
             return;

@@ -163,7 +163,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
         WeatherHandler.tick(overworld, currentPhase, progress);
-        BlockFreezer.tick(overworld, currentPhase);
+        BlockFreezer.tick(overworld, currentPhase, progress);
         VegetationDecay.tick(overworld, currentPhase);
         SnowAccumulator.tick(overworld, currentPhase, progress);
     }
