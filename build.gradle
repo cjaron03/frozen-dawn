@@ -12,6 +12,7 @@ version = mod_version
 group = mod_group_id
 
 repositories {
+    maven { url "https://maven.blamejared.com" }
 }
 
 base {
@@ -53,6 +54,7 @@ configurations {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    implementation "vazkii.patchouli:Patchouli:1.21.1-92-NEOFORGE"
 }
 
 tasks.withType(ProcessResources).configureEach {

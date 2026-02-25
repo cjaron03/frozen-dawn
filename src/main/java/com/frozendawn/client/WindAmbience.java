@@ -11,6 +11,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
@@ -108,6 +109,12 @@ public class WindAmbience {
         // Schedule next clip to start OVERLAP ticks before this one ends
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
         ticksUntilNext = clipDuration - OVERLAP;
+    }
+
+    @SubscribeEvent
+    public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        Minecraft mc = Minecraft.getInstance();
+        stopAll(mc);
     }
 
     private static void stopAll(Minecraft mc) {

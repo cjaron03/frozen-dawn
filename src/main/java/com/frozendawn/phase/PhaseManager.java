@@ -66,6 +66,10 @@ public final class PhaseManager {
      */
     public static float getTemperatureOffset(int currentDay, int totalDays) {
         float baseTemp = interpolate(TEMP_OFFSET, currentDay, totalDays);
+        // Scale by config: default array assumes -120C at phase 5 end
+        float configTemp = com.frozendawn.config.FrozenDawnConfig.BASE_PHASE5_TEMP.get();
+        float scale = configTemp / -120f;
+        baseTemp *= scale;
         float rebound = getFalseCalmRebound(currentDay, totalDays);
         return baseTemp + rebound;
     }

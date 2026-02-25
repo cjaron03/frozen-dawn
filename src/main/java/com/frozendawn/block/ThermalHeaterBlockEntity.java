@@ -31,8 +31,10 @@ public class ThermalHeaterBlockEntity extends BlockEntity {
             burnTimeRemaining--;
             if (burnTimeRemaining == 0) {
                 updateLitState();
+                setChanged();
+            } else if (burnTimeRemaining % 200 == 0) {
+                setChanged(); // periodic save, not every tick
             }
-            setChanged();
         }
     }
 

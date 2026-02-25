@@ -64,5 +64,9 @@
   "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar",
 
   "death.attack.frozendawn.atmospheric_suffocation": "%1$s suffocated in the void",
+
+  "message.frozendawn.nether_severed": "The dimensional link is dead. The Nether is unreachable.",
+  "message.frozendawn.nether_severed.announce": "\u00a74\u00a7l[DIMENSIONAL SEVERANCE]\u00a7r The Nether connection has been lost. Portals collapse as spacetime fractures beyond repair.",
+
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles"
 }

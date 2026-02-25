@@ -1,0 +1,25 @@
+{
+  "name": "Ice Shards",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:ice_shard",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Ice Shards",
+      "text": "Crystalline shards dropped by Frozen Coal Ore, which forms on the surface starting in Phase 4.$(br2)Ice shards are a key crafting material for packed ice, blue ice, and the Frozen Heart. Mine frozen coal ore to collect them."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:packed_ice_from_shards",
+      "title": "Packed Ice",
+      "text": "4 ice shards in a square."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:blue_ice_from_shards",
+      "title": "Blue Ice",
+      "text": "9 ice shards fill the grid."
+    }
+  ]
+}

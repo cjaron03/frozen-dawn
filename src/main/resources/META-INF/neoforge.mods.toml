@@ -28,6 +28,14 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
     config="frozendawn.mixins.json"
 
 [[dependencies.${mod_id}]]
+    modId="patchouli"
+    type="optional"
+    reason="Adds in-game guide book with rendered recipes"
+    versionRange="[1.21.1-90,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="toughasnails"
     type="optional"
     reason="Integrates apocalypse temperature with TaN's body temperature system"

@@ -55,11 +55,21 @@ public class WorldTickHandler {
     };
 
     @SubscribeEvent
+    public static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        lastLoggedPhase = -1;
+        lastLoggedDay = -1;
+        habitableCache.clear();
+        suffocationTimer.clear();
+        WeatherHandler.reset();
+        NetherSeveranceHandler.reset();
+    }
+
+    @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         MinecraftServer server = event.getServer();
         ApocalypseState state = ApocalypseState.get(server);
 
-        state.tick();
+        state.tick(server);
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
@@ -197,6 +207,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
         WeatherHandler.tick(overworld, currentPhase, progress);
+        NetherSeveranceHandler.tick(overworld, currentPhase);
         BlockFreezer.tick(overworld, currentPhase, progress);
         VegetationDecay.tick(overworld, currentPhase);
         SnowAccumulator.tick(overworld, currentPhase, progress);
@@ -250,7 +261,7 @@ public class WorldTickHandler {
 
         // Check if this is an ORSA book by checking the author field
         var bookContent = stack.get(net.minecraft.core.component.DataComponents.WRITTEN_BOOK_CONTENT);
-        if (bookContent != null && "ORSA".equals(bookContent.author())) {
+        if (bookContent != null && bookContent.author().startsWith("ORSA")) {
             grantAdvancement(player, "classified_information");
         }
     }
@@ -263,6 +274,14 @@ public class WorldTickHandler {
 
             // Grant any missed phase advancements
             grantPhaseAdvancements(player, state.getPhase());
+
+            // Give Patchouli guide book on first join
+            net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
+            if (!persistentData.getBoolean("frozendawn:received_books")) {
+                persistentData.putBoolean("frozendawn:received_books", true);
+                net.minecraft.world.item.ItemStack guide = StarterBooks.createGuideBook();
+                if (guide != null) player.getInventory().add(guide);
+            }
         }
     }
 

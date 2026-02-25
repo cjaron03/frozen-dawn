@@ -1,0 +1,18 @@
+{
+  "name": "Insulated Glass",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:insulated_glass",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Insulated Glass",
+      "text": "Transparent glass that retains heat. Use for windows in your sealed shelter — lets you watch the world freeze without freezing yourself.$(br2)Craft 4 at a time. Build sealed rooms using insulated glass and solid blocks to trap warmth from heaters."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:insulated_glass",
+      "text": "Glass and packed ice, reinforced with iron nuggets."
+    }
+  ]
+}

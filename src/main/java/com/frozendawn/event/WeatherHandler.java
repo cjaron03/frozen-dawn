@@ -27,6 +27,10 @@ public final class WeatherHandler {
 
     private static int clearTickCounter = 0;
 
+    public static void reset() {
+        clearTickCounter = 0;
+    }
+
     public static void tick(ServerLevel overworld, int phase, float progress) {
         if (phase <= 0) return;
 

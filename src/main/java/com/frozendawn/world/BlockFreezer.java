@@ -165,7 +165,7 @@ public final class BlockFreezer {
             level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), 3);
             return;
         }
-        if (state.is(Blocks.OBSIDIAN) && phase >= 5) {
+        if (state.is(Blocks.OBSIDIAN) && phase >= 4) {
             level.setBlock(pos, ModBlocks.FROZEN_OBSIDIAN.get().defaultBlockState(), 3);
         }
     }

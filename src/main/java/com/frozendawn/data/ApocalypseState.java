@@ -52,23 +52,26 @@ public class ApocalypseState extends SavedData {
     }
 
     /**
-     * Called once per server tick to advance the apocalypse.
+     * Called once per server tick to sync apocalypse with world time.
      */
-    public void tick() {
+    public void tick(MinecraftServer server) {
+        ServerLevel overworld = server.overworld();
         if (!initialized) {
             initialized = true;
             // Apply starting day offset from config
             int startDay = FrozenDawnConfig.STARTING_DAY.get();
-            if (startDay > 0 && apocalypseTicks == 0) {
-                apocalypseTicks = (long) startDay * 24000L;
+            if (startDay > 0 && overworld.getDayTime() < (long) startDay * 24000L) {
+                overworld.setDayTime((long) startDay * 24000L);
                 FrozenDawn.LOGGER.info("Apocalypse fast-forwarded to day {}", startDay);
             }
+            setDirty();
         }
 
         if (!FrozenDawnConfig.PAUSE_PROGRESSION.get()) {
-            apocalypseTicks++;
-            setDirty();
+            // Sync with world time — sleeping advances the apocalypse
+            apocalypseTicks = overworld.getDayTime();
         }
+        // When paused, apocalypseTicks stays frozen at the last value
     }
 
     // --- Getters ---
@@ -115,9 +118,11 @@ public class ApocalypseState extends SavedData {
 
     /**
      * Set the apocalypse tick count directly (used by admin commands).
+     * Also sets world time to keep everything in sync.
      */
-    public void setApocalypseTicks(long ticks) {
+    public void setApocalypseTicks(long ticks, MinecraftServer server) {
         this.apocalypseTicks = Math.max(0, ticks);
+        server.overworld().setDayTime(this.apocalypseTicks);
         this.initialized = true;
         setDirty();
     }

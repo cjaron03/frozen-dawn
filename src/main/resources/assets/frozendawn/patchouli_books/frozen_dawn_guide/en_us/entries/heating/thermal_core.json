@@ -1,0 +1,18 @@
+{
+  "name": "Thermal Core",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermal_core",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Thermal Core",
+      "text": "The heart of all ORSA heating devices. This compact heat cell uses blaze powder and magma cream to generate sustained warmth.$(br2)Required for crafting the Thermal Heater and Geothermal Core. Gather blaze rods from the Nether early — you won't want to go there later."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_core",
+      "text": "Surround an iron ingot with blaze powder on three sides, magma cream below."
+    }
+  ]
+}

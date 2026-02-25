@@ -1,0 +1,38 @@
+{
+  "name": "Projected Earth Timeline",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:clock",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "CLASSIFIED",
+      "text": "$(bold)ORSA-UN JOINT ASSESSMENT$()$(br2)RE: Projected conditions following orbital destabilization$(br2)The following is our best estimate of what Earth will experience as it drifts from the Sun.$(br2)Timeline assumes ~100 day progression."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 0-1",
+      "text": "$(bold)Phase 0: \"The Last Normal Days\"$()$(br)Days 0-5. No immediate effects. Sun appears normal. Use this time to gather resources and prepare underground shelter.$(br2)$(bold)Phase 1: \"Twilight\"$()$(br)Days 5-12. Sun visibly shrinks. Rain becomes frequent. Temperatures begin to drop."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 2-3",
+      "text": "$(bold)Phase 2: \"Cooling\"$()$(br)Days 12-22. Temp: -10°C. Permanent rain/snow. Water begins to freeze. Vegetation starts dying.$(br2)$(bold)Phase 3: \"The Long Night\"$()$(br)Days 22-34. Temp: -25°C. Permanent thunderstorms. Lava begins to cool. Fog rolls in."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 4-5",
+      "text": "$(bold)Phase 4: \"Deep Freeze\"$()$(br)Days 34-46. Temp: -45°C. Surface is lethal. Obsidian freezes. Coal ore crystallizes. Dense fog, near darkness.$(br2)$(bold)Phase 5: \"Eternal Winter\"$()$(br)Days 46-60. Temp: -70°C to -120°C. Permanent midnight. Blizzard whiteout. Nether portals collapse — dimensional lines severed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 6",
+      "text": "$(bold)Phase 6: \"Atmospheric Collapse\"$()$(br)Days 60-100. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum conditions. Stars visible. No sound on surface. Ice sublimates. Suffocation without shelter."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Survival Recommendations",
+      "text": "$(li)Establish underground base below Y=0$(li)Secure heat sources BEFORE Phase 3$(li)Build a Geothermal Core for late-game$(li)Any roofed structure traps breathable air$(li)Deeper = warmer$(br2)Good luck.$(br)$(italic)— ORSA Science Division$()"
+    }
+  ]
+}

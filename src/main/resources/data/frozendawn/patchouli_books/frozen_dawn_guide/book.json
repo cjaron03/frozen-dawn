@@ -1,0 +1,8 @@
+{
+  "name": "ORSA Field Survival Manual",
+  "landing_text": "A comprehensive guide to surviving Earth's orbital destabilization, compiled by the ORSA Engineering Corps. Contains crafting recipes, phase timelines, and survival strategies.",
+  "version": 1,
+  "creative_tab": "frozendawn.frozen_dawn_tab",
+  "model": "patchouli:book_brown",
+  "use_resource_pack": true
+}

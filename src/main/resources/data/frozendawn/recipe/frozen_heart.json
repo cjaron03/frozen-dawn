@@ -7,7 +7,7 @@
     "SOS"
   ],
   "key": {
-    "N": { "item": "minecraft:nether_star" },
+    "N": { "item": "minecraft:diamond" },
     "I": { "item": "minecraft:blue_ice" },
     "S": { "item": "frozendawn:ice_shard" },
     "O": { "item": "frozendawn:frozen_obsidian" }

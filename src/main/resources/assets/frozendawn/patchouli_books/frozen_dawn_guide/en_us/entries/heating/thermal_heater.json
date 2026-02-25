@@ -1,0 +1,18 @@
+{
+  "name": "Thermal Heater",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermal_heater",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Thermal Heater",
+      "text": "A fuel-burning heater that radiates warmth in its vicinity. Right-click with coal, wood, or other fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters stack their warmth."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_heater",
+      "text": "Surround a Thermal Core with 8 iron ingots."
+    }
+  ]
+}

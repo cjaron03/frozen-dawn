@@ -1,0 +1,18 @@
+{
+  "name": "Frozen Heart",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:frozen_heart",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Frozen Heart",
+      "text": "A late-game power source that harnesses the extreme cold itself. Requires a diamond, frozen obsidian (forms on surface in Phase 4+), blue ice, and ice shards.$(br2)The Frozen Heart is the key component of the Geothermal Core — your endgame heat source."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:frozen_heart",
+      "text": "A diamond at the center, surrounded by blue ice, ice shards, and frozen obsidian."
+    }
+  ]
+}

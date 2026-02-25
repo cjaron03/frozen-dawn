@@ -1,0 +1,18 @@
+{
+  "name": "Geothermal Core",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:geothermal_core",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Geothermal Core",
+      "text": "The ultimate heat source. Warms a 16-block radius with no fuel required — permanent, infinite heat.$(br2)Place deep underground for maximum effect. This is your endgame survival device: the only thing standing between you and absolute zero."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:geothermal_core",
+      "text": "A Frozen Heart at the center, flanked by Thermal Cores, surrounded by diamond blocks and obsidian."
+    }
+  ]
+}

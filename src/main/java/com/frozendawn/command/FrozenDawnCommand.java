@@ -103,7 +103,7 @@ public class FrozenDawnCommand {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
 
-        state.setApocalypseTicks((long) day * 24000L);
+        state.setApocalypseTicks((long) day * 24000L, server);
         syncToClients(state);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setday",
@@ -117,7 +117,7 @@ public class FrozenDawnCommand {
         ApocalypseState state = ApocalypseState.get(server);
 
         int targetDay = PhaseManager.getPhaseStartDay(phase, state.getTotalDays());
-        state.setApocalypseTicks((long) targetDay * 24000L);
+        state.setApocalypseTicks((long) targetDay * 24000L, server);
         syncToClients(state);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase",
@@ -149,7 +149,7 @@ public class FrozenDawnCommand {
         if (targetProgress < 0) return 0;
 
         int targetDay = (int) (targetProgress * state.getTotalDays());
-        state.setApocalypseTicks((long) targetDay * 24000L);
+        state.setApocalypseTicks((long) targetDay * 24000L, server);
         syncToClients(state);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase.substage",
@@ -170,7 +170,7 @@ public class FrozenDawnCommand {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
 
-        state.setApocalypseTicks(0);
+        state.setApocalypseTicks(0, server);
         syncToClients(state);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.reset"), true);
