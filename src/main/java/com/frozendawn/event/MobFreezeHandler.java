@@ -38,7 +38,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public class MobFreezeHandler {
 
-    private static final int MOB_CHECK_INTERVAL = 60;    // ~3 seconds
+    private static final int MOB_CHECK_INTERVAL = 100;   // ~5 seconds
     private static final int PLAYER_CHECK_INTERVAL = 40;  // ~2 seconds
 
     @SubscribeEvent

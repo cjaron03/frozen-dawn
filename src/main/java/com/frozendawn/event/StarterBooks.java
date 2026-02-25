@@ -82,7 +82,7 @@ public final class StarterBooks {
                 "I went back. Three times. I checked every shelter, " +
                 "every basement, every locked door I could find.\n\n" +
                 "I'm sorry.\n\n" +
-                "\u2014 K."));
+                "\u2014 Kevin, Logistics Division"));
 
         WrittenBookContent content = new WrittenBookContent(
                 Filterable.passThrough("UN Emergency Evacuation Notice"),

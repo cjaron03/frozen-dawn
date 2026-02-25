@@ -194,7 +194,7 @@ public final class TemperatureManager {
      * Scan upward up to 4 blocks for a solid block or insulated glass.
      * Used to determine if wind exposure halves heater radius in phase 5+.
      */
-    private static boolean isSheltered(Level level, BlockPos pos) {
+    public static boolean isSheltered(Level level, BlockPos pos) {
         for (int dy = 1; dy <= 4; dy++) {
             BlockPos above = pos.above(dy);
             BlockState aboveState = level.getBlockState(above);

@@ -153,10 +153,6 @@ public class FoodFrostHandler {
     /** Clear cache on server stop. */
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
-        // Flush all remaining caches
-        for (var entry : frostCache.entrySet()) {
-            // Players should already be disconnected, but clear anyway
-        }
         frostCache.clear();
         preFoodLevels.clear();
     }

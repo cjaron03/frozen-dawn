@@ -1,14 +1,12 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.init.ModBlocks;
+import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -107,14 +105,6 @@ public class WeatherParticles {
 
     /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
     private static boolean isSheltered(Minecraft mc) {
-        BlockPos pos = mc.player.blockPosition();
-        for (int dy = 1; dy <= 4; dy++) {
-            BlockPos above = pos.above(dy);
-            BlockState state = mc.level.getBlockState(above);
-            if (state.isSolidRender(mc.level, above) || state.is(ModBlocks.INSULATED_GLASS.get())) {
-                return true;
-            }
-        }
-        return false;
+        return TemperatureManager.isSheltered(mc.level, mc.player.blockPosition());
     }
 }
