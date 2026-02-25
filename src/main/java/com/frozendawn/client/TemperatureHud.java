@@ -5,9 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
- * TaN-style temperature HUD overlay.
- * Displays current temperature as a colored bar + numeric value
- * above the hotbar on the left side.
+ * Compact temperature HUD in the top-left corner.
+ * Shows a small color-coded thermometer bar with temperature text.
  */
 public class TemperatureHud {
 
@@ -42,68 +41,71 @@ public class TemperatureHud {
         float lerpSpeed = 0.1f;
         displayedTemp += (targetTemp - displayedTemp) * lerpSpeed;
 
-        int screenWidth = graphics.guiWidth();
-        int screenHeight = graphics.guiHeight();
+        String tempText = String.format("%.0f\u00B0C", displayedTemp);
+        int textWidth = mc.font.width(tempText);
 
-        // Position: above hotbar, left side
-        int barWidth = 60;
-        int barHeight = 5;
-        int x = screenWidth / 2 - 91; // Align with left edge of hotbar
-        int y = screenHeight - 48;     // Above hotbar
+        // Layout: [4px bar] [2px gap] [text] — all inside a padded background
+        int barWidth = 3;
+        int gap = 3;
+        int padding = 4;
+        int innerWidth = barWidth + gap + textWidth;
+        int innerHeight = 9; // font height
+        int totalWidth = innerWidth + padding * 2;
+        int totalHeight = innerHeight + padding * 2;
 
-        // Background
-        graphics.fill(x - 1, y - 1, x + barWidth + 1, y + barHeight + 1, 0x80000000);
+        // Position: top-left, offset from corner
+        int x = 6;
+        int y = 6;
 
-        // Temperature bar fill
-        // Map temp range: +35 (hot) to -120 (cold), clamp to 0-1
-        float normalized = Math.clamp((displayedTemp + 120f) / 155f, 0f, 1f);
-        int fillWidth = (int) (barWidth * normalized);
+        // Background — rounded look via layered fills
+        int bgColor = 0xAA0E0E0E;
+        // Main body
+        graphics.fill(x + 1, y, x + totalWidth - 1, y + totalHeight, bgColor);
+        // Top/bottom rounded edges
+        graphics.fill(x, y + 1, x + totalWidth, y + totalHeight - 1, bgColor);
 
+        // Thermometer bar — vertical color strip on the left
+        int barX = x + padding;
+        int barY = y + padding;
         int barColor = getTemperatureColor(displayedTemp);
-        if (fillWidth > 0) {
-            graphics.fill(x, y, x + fillWidth, y + barHeight, barColor);
-        }
+        graphics.fill(barX, barY, barX + barWidth, barY + innerHeight, barColor);
 
         // Temperature text
-        String tempText = String.format("%.0f\u00B0C", displayedTemp);
-        int textColor = getTemperatureColor(displayedTemp) | 0xFF000000;
-        graphics.drawString(mc.font, tempText, x, y - 10, textColor, true);
+        int textX = barX + barWidth + gap;
+        int textY = barY + 1;
+        int textColor = getTextColor(displayedTemp);
+        graphics.drawString(mc.font, tempText, textX, textY, textColor, false);
     }
 
     /**
-     * Returns an ARGB color based on temperature.
-     * Hot (>0): red/orange
-     * Cool (0 to -25): yellow/white
-     * Cold (-25 to -70): cyan/blue
-     * Deadly (<-70): deep blue/purple
+     * Returns bar color based on temperature.
      */
     private static int getTemperatureColor(float temp) {
         int r, g, b;
         if (temp > 0) {
-            // Warm: orange to red
             float t = Math.min(temp / 35f, 1f);
-            r = 255;
-            g = (int) (200 * (1 - t));
-            b = 50;
+            r = 255; g = (int) (180 * (1 - t)); b = 50;
         } else if (temp > -25) {
-            // Cool: white to cyan
             float t = Math.min(-temp / 25f, 1f);
-            r = (int) (255 * (1 - t * 0.6f));
-            g = (int) (255 * (1 - t * 0.1f));
-            b = 255;
+            r = (int) (255 * (1 - t * 0.5f)); g = (int) (255 * (1 - t * 0.1f)); b = 255;
         } else if (temp > -70) {
-            // Cold: cyan to blue
             float t = Math.min((-temp - 25f) / 45f, 1f);
-            r = (int) (100 * (1 - t));
-            g = (int) (230 * (1 - t * 0.7f));
-            b = 255;
+            r = (int) (130 * (1 - t)); g = (int) (230 * (1 - t * 0.6f)); b = 255;
         } else {
-            // Deadly: deep blue-purple
             float t = Math.min((-temp - 70f) / 50f, 1f);
-            r = (int) (80 * t);
-            g = (int) (70 * (1 - t));
-            b = (int) (255 * (1 - t * 0.3f));
+            r = (int) (100 * t); g = (int) (90 * (1 - t)); b = (int) (255 * (1 - t * 0.2f));
         }
         return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    /**
+     * Returns text color — white-ish but tinted toward the temperature color.
+     */
+    private static int getTextColor(float temp) {
+        if (temp > 10) return 0xFFFFCC99;  // warm cream
+        if (temp > 0) return 0xFFE8E8E8;   // neutral
+        if (temp > -25) return 0xFFD0DDFF;  // cool blue-white
+        if (temp > -70) return 0xFF99BBFF;  // cold blue
+        return 0xFF8888DD;                   // deadly purple
     }
 }
