@@ -23,6 +23,11 @@
   "message.frozendawn.freeze.extreme": "Extreme cold! Find shelter or warmth!",
   "message.frozendawn.freeze.deadly": "You are freezing to death!",
 
+  "message.frozendawn.suffocate.lightheaded": "You feel lightheaded... the air is thinning.",
+  "message.frozendawn.suffocate.nausea": "Your vision swims. You can't breathe.",
+  "message.frozendawn.suffocate.fading": "Your limbs go numb. Everything is fading...",
+  "message.frozendawn.suffocate.dying": "There is no air. You are suffocating.",
+
   "command.frozendawn.status.header": "--- Frozen Dawn Status ---",
   "command.frozendawn.status.day": "  Day: %s / %s",
   "command.frozendawn.status.phase": "  Phase: %s (%s)",

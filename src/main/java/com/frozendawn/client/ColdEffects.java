@@ -36,10 +36,12 @@ public class ColdEffects {
             return;
         }
 
-        // Phase 6 mid+: no breath particles — no atmosphere to exhale into
+        // Phase 6 mid+ exposed to sky: no breath particles — no atmosphere to exhale
+        // Under a roof/underground there's trapped air, so breath is visible
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress > 0.72f) {
+        if (phase >= 6 && progress > 0.72f
+                && mc.level.canSeeSky(mc.player.blockPosition().above())) {
             breathCooldown = 0;
             return;
         }

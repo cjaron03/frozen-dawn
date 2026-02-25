@@ -36,7 +36,7 @@ public class WeatherParticles {
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 6 late: no particles (vacuum)
-        if (phase >= 6 && progress > 0.85f) return;
+        if (phase >= 6 && progress >= 0.85f) return;
 
         int particleCount;
         if (phase >= 6) {

@@ -69,10 +69,15 @@ public class MobFreezeHandler {
                 level, entity.blockPosition(),
                 state.getCurrentDay(), state.getTotalDays(), !isPlayer);
 
-        applyFreezeEffects(living, temp, isPlayer);
+        applyFreezeEffects(living, temp, isPlayer, state);
     }
 
-    private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer) {
+    private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
+        // Phase 6 late, exposed to sky: skip freeze — suffocation replaces freezing
+        // Under a roof/underground there's trapped air, so cold still applies
+        if (isPlayer && state.getPhase() >= 6 && state.getProgress() >= 0.85f
+                && entity.level().canSeeSky(entity.blockPosition().above())) return;
+
         // Warm enough — thaw out
         if (temp >= 0f) {
             if (entity.getTicksFrozen() > 0) {

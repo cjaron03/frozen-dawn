@@ -18,7 +18,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -42,6 +45,10 @@ public class WorldTickHandler {
     private static int lastLoggedDay = -1;
     /** Cached habitable zone status per player UUID, updated every 20 ticks. */
     private static final java.util.Map<java.util.UUID, Boolean> habitableCache = new java.util.HashMap<>();
+    /** Suffocation timer per player (ticks without air). Resets when in habitable zone. */
+    private static final java.util.Map<java.util.UUID, Integer> suffocationTimer = new java.util.HashMap<>();
+    /** Ticks to full suffocation death. ~10 seconds of escalating symptoms. */
+    private static final int SUFFOCATION_DURATION = 200;
 
     private static final String[] PHASE_ADVANCEMENTS = {
             "root", "phase2", "phase3", "phase4", "phase5", "phase6"
@@ -123,7 +130,8 @@ public class WorldTickHandler {
         }
 
         // Phase 6 late: atmospheric suffocation (every tick for responsiveness)
-        if (currentPhase >= 6 && progress > 0.85f) {
+        // Uses own timer — no vanilla air supply (no bubble HUD)
+        if (currentPhase >= 6 && progress >= 0.85f) {
             // Refresh habitable zone cache every 20 ticks (expensive block scan)
             boolean refreshCache = state.getApocalypseTicks() % 20 == 0;
 
@@ -131,31 +139,57 @@ public class WorldTickHandler {
                 if (player.isCreative() || player.isSpectator()) continue;
                 if (player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) continue;
 
-                // Check habitable zone (cached, refreshed every 20 ticks)
                 java.util.UUID id = player.getUUID();
                 if (refreshCache) {
                     habitableCache.put(id, isInHabitableZone(player));
                 }
                 if (Boolean.TRUE.equals(habitableCache.get(id))) {
-                    // Near Geothermal Core underground: restore air
-                    if (player.getAirSupply() < player.getMaxAirSupply()) {
-                        player.setAirSupply(Math.min(player.getMaxAirSupply(), player.getAirSupply() + 4));
-                    }
+                    // Safe zone: reset suffocation timer
+                    suffocationTimer.put(id, 0);
                     continue;
                 }
 
-                // Drain air supply — faster than underwater drowning
-                int air = player.getAirSupply();
-                int newAir = Math.max(-20, air - 4);
-                player.setAirSupply(newAir);
+                // Advance suffocation timer
+                int ticks = suffocationTimer.getOrDefault(id, 0) + 1;
+                suffocationTimer.put(id, ticks);
+                float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
 
-                // Apply custom suffocation damage when air is fully depleted
-                if (newAir <= -20) {
+                // Escalating symptoms
+                if (suffProgress >= 0.15f) {
+                    // Vision tunneling
+                    player.addEffect(new MobEffectInstance(
+                            MobEffects.DARKNESS, 60, 0, false, false, false));
+                    player.displayClientMessage(
+                            Component.translatable("message.frozendawn.suffocate.lightheaded"), true);
+                }
+                if (suffProgress >= 0.40f) {
+                    // Nausea + moderate slowness
+                    player.addEffect(new MobEffectInstance(
+                            MobEffects.CONFUSION, 100, 0, false, false, false));
+                    player.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
+                    player.displayClientMessage(
+                            Component.translatable("message.frozendawn.suffocate.nausea"), true);
+                }
+                if (suffProgress >= 0.70f) {
+                    // Severe slowness — can barely move
+                    player.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
+                    player.displayClientMessage(
+                            Component.translatable("message.frozendawn.suffocate.fading"), true);
+                }
+
+                // Damage phase: every 20 ticks once timer is past the threshold
+                if (suffProgress >= 1.0f && ticks % 20 == 0) {
+                    player.displayClientMessage(
+                            Component.translatable("message.frozendawn.suffocate.dying"), true);
                     DamageSource source = new DamageSource(
                             player.serverLevel().registryAccess()
                                     .lookupOrThrow(Registries.DAMAGE_TYPE)
                                     .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
+                    net.minecraft.world.phys.Vec3 motion = player.getDeltaMovement();
                     player.hurt(source, 2.0f);
+                    player.setDeltaMovement(motion);
                 }
             }
         }
@@ -233,11 +267,15 @@ public class WorldTickHandler {
     }
 
     /**
-     * Checks if a player is in a habitable zone: below Y=0 and within 16 blocks of a Geothermal Core.
+     * Checks if a player is in a habitable zone.
+     * Any enclosed space (can't see sky) has trapped air — safe from suffocation.
+     * On the exposed surface, only areas near a Geothermal Core are habitable.
      */
     private static boolean isInHabitableZone(ServerPlayer player) {
-        if (player.blockPosition().getY() >= 0) return false;
+        // Under a roof / underground = trapped air = safe
+        if (!player.level().canSeeSky(player.blockPosition().above())) return true;
 
+        // Exposed to sky: only safe near a Geothermal Core
         net.minecraft.core.BlockPos playerPos = player.blockPosition();
         int radius = 16;
         for (int dx = -radius; dx <= radius; dx++) {
