@@ -110,7 +110,7 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 ## Installation
 
 1. Install [NeoForge for Minecraft 1.21.1](https://neoforged.net/)
-2. Download `frozendawn-0.1.0.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
+2. Download `frozendawn-0.9.1.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
 3. Drop the jar into your `.minecraft/mods/` folder
 4. Launch Minecraft with the NeoForge profile
 
@@ -186,7 +186,7 @@ cd frozen-dawn
 ./gradlew build
 ```
 
-The built jar will be at `build/libs/frozendawn-0.1.0.jar`.
+The built jar will be at `build/libs/frozendawn-0.9.1.jar`.
 
 For development testing: `./gradlew runClient` launches a Minecraft instance with the mod loaded and source-level debugging.
 
