@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -164,6 +165,8 @@ public class MobFreezeHandler {
                 total += 11.25f;  // 45°C / 4
             } else if (mat == ModArmorMaterials.EVA) {
                 total += 30.0f;   // 120°C / 4
+            } else if (mat == ModArmorMaterials.ACHERONITE) {
+                total += 20.0f;   // 80°C / 4
             }
         }
         return total;
@@ -187,6 +190,8 @@ public class MobFreezeHandler {
                 mult += 0.10f;
             } else if (mat == ModArmorMaterials.EVA) {
                 mult += 0.02f;
+            } else if (mat == ModArmorMaterials.ACHERONITE) {
+                mult += 0.03f;
             }
         }
         return mult;
@@ -197,7 +202,7 @@ public class MobFreezeHandler {
      * 0 = no insulation, 1 = insulated, 2 = reinforced, 3 = EVA.
      */
     public static int getFullSetTier(Player player) {
-        int tier1 = 0, tier2 = 0, tier3 = 0;
+        int tier1 = 0, tier2 = 0, tier3 = 0, tierAch = 0;
         for (ItemStack stack : player.getArmorSlots()) {
             if (stack.isEmpty()) continue;
             if (!(stack.getItem() instanceof ArmorItem armorItem)) continue;
@@ -205,10 +210,26 @@ public class MobFreezeHandler {
             if (mat == ModArmorMaterials.INSULATED) tier1++;
             else if (mat == ModArmorMaterials.REINFORCED) tier2++;
             else if (mat == ModArmorMaterials.EVA) tier3++;
+            else if (mat == ModArmorMaterials.ACHERONITE) tierAch++;
         }
+        if (tierAch == 4) return 4;
         if (tier3 == 4) return 3;
-        if (tier2 + tier3 >= 4) return 2;
-        if (tier1 + tier2 + tier3 >= 4) return 1;
+        if (tier2 + tier3 + tierAch >= 4) return 2;
+        if (tier1 + tier2 + tier3 + tierAch >= 4) return 1;
         return 0;
+    }
+
+    /** Returns true if the player is wearing a full set of Acheronite armor. */
+    public static boolean hasFullAcheronite(Player player) {
+        return getFullSetTier(player) == 4;
+    }
+
+    /** Returns true if the player has frostbite immunity (lined EVA chestplate or full Acheronite). */
+    public static boolean hasFrostbiteImmunity(Player player) {
+        if (hasFullAcheronite(player)) return true;
+        for (ItemStack stack : player.getArmorSlots()) {
+            if (stack.is(ModItems.LINED_EVA_CHESTPLATE.get())) return true;
+        }
+        return false;
     }
 }

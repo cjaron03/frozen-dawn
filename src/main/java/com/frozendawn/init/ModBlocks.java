@@ -1,6 +1,8 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.AcheroniteCrystalBlock;
+import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import net.minecraft.world.level.block.Block;
@@ -144,4 +146,36 @@ public class ModBlocks {
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 15)));
+
+    // --- Acheronite ---
+
+    // Acheronite Crystal: 4 growth stages, forms on frozen substrates in phase 5+
+    public static final DeferredBlock<AcheroniteCrystalBlock> ACHERONITE_CRYSTAL = BLOCKS.register("acheronite_crystal",
+            () -> new AcheroniteCrystalBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(1.5F, 1.5F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.AMETHYST_CLUSTER)
+                    .noOcclusion()
+                    .lightLevel(state -> switch (state.getValue(AcheroniteCrystalBlock.AGE)) {
+                        case 0 -> 3; case 1 -> 5; case 2 -> 7; default -> 10;
+                    })
+                    .pushReaction(PushReaction.DESTROY)));
+
+    // Acheron Forge: processes shards into refined acheronite, requires Y<0 + heat
+    public static final DeferredBlock<AcheronForgeBlock> ACHERON_FORGE = BLOCKS.register("acheron_forge",
+            () -> new AcheronForgeBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN)
+                    .requiresCorrectToolForDrops()
+                    .strength(50.0F, 1200.0F)
+                    .sound(SoundType.METAL)));
+
+    // Acheronite Block: decorative, passive warmth aura, counts as shelter
+    public static final DeferredBlock<Block> ACHERONITE_BLOCK = BLOCKS.register("acheronite_block",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .requiresCorrectToolForDrops()
+                    .strength(50.0F, 1200.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> 5)));
 }

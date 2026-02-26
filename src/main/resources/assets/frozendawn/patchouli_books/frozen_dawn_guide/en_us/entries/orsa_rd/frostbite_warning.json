@@ -1,0 +1,23 @@
+{
+  "name": "Frostbite Warning",
+  "category": "frozendawn:getting_started",
+  "icon": "minecraft:powder_snow_bucket",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "SAFETY BULLETIN #41",
+      "text": "$(bold)ORSA ORBITAL SAFETY DIVISION$()$(br)$(bold)RE: STOP TOUCHING THE CRYSTALS$()$(br2)Orbital thermal imaging has detected you handling raw Acheronite Shards without proper protection. The shards are $(bold)-189°C$(). This is not a suggestion. This is thermodynamics.$(br2)$(italic)We can see your body temperature dropping from orbit. Please stop. — ORSA Monitoring$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Frostbite Stages",
+      "text": "$(bold)Holding in hand:$()$(br)$(li)$(bold)Stage 1:$() Numbness, Slowness I. \"My fingers feel funny.\"$(li)$(bold)Stage 2:$() Spreading cold, Slowness II. \"I can't feel my arms.\"$(li)$(bold)Stage 3:$() Tissue damage, Slowness II + direct damage. \"I can't feel anything.\"$(li)After 30 seconds: Mining Fatigue II. Good luck mining with frozen hands.$(br2)$(bold)In inventory:$() Same stages, but 3x slower. The cold seeps through your pack. Insulation only delays the inevitable."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Protection",
+      "text": "$(bold)Grace periods by armor:$()$(br)$(li)No armor: 10 seconds. Orbital command is shaking their heads.$(li)Tier 1 (Insulated): 25 seconds.$(li)Tier 2 (Heated): 45 seconds.$(li)Tier 3 (EVA): 90 seconds.$(li)Acheronite or Lined EVA: $(bold)Immune.$() Fight ice with ice.$(br2)$(bold)Recovery:$() Put the shard down. The cold fades slowly. Emphasis on $(italic)slowly$().$(br2)$(italic)ORSA Medical (Orbital) reminds you: You are the only person on the planet. There is no one to help you if you lose your fingers. Act accordingly.$()"
+    }
+  ]
+}

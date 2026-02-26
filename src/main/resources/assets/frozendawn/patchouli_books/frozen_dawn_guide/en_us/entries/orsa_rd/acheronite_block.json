@@ -1,0 +1,25 @@
+{
+  "name": "Acheronite Block",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:acheronite_block",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Orbital Scan #0084",
+      "text": "$(bold)Subject: Concentrated Acheronite Storage$()$(br2)9 Refined Acheronite ingots compressed into a single block. It radiates a $(bold)+10°C warmth aura$() in a 3-block radius. Yes, the coldest material on Earth somehow keeps things warm when you put enough of it together.$(br2)$(italic)\"That doesn't make any sense.\"$(br)\"Neither does the sun abandoning you, and yet here we are.\" — ORSA Orbital$(br2)Use it as compact storage or as a supplementary heat source. It won't replace a Thermal Heater, but it'll keep your toes from falling off. Orbital scans confirm your toes are still attached. For now."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_block",
+      "title": "Acheronite Block",
+      "text": "9 ingots in a grid. Congratulations, you've made a very expensive, very cold brick that somehow radiates warmth. ORSA physics at its finest."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:refined_acheronite_from_block",
+      "title": "Back to Ingots",
+      "text": "Changed your mind? Place the block in a crafting grid to get your 9 ingots back. No refunds on the existential dread."
+    }
+  ]
+}

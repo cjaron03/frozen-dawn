@@ -1,0 +1,23 @@
+{
+  "name": "Acheronite Crystals",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:acheronite_shard",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Orbital Scan #0071",
+      "text": "$(bold)Subject: Unidentified Crystalline Growth$()$(br2)Starting in Phase 5, orbital imaging detected strange formations emerging from frozen substrates — frozen dirt, frozen sand, even frozen obsidian.$(br2)ORSA has designated them $(bold)Acheronite Crystals$(). Named after the river Acheron. River of the dead. Because naming things after doom is apparently how orbital command copes with watching a planet die from a safe distance.$(br2)$(italic)Field Operative — you are the only one close enough to study these. Congratulations. Try not to touch them.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Formation & Growth",
+      "text": "Crystals form naturally on frozen substrates when temperatures drop below $(bold)-60°C$(). They begin as small buds and grow through $(bold)4 stages$() over time.$(br2)$(li)$(bold)Stage 0:$() Tiny bud. Basically a frozen pimple.$(li)$(bold)Stage 1:$() Medium growth. Starting to look like something.$(li)$(bold)Stage 2:$() Large cluster. Getting there.$(li)$(bold)Stage 3:$() Full crystal. This is the one you want.$(br2)$(bold)Only Stage 3 crystals drop Acheronite Shards when mined.$() Everything else shatters into nothing. Patience is a virtue. A cold, miserable virtue."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase Behavior",
+      "text": "$(bold)Phase 5:$() Crystals are rare. Finding one feels special. Like finding a twenty dollar bill. Except the bill is -189°C and will give you frostbite.$(br2)$(bold)Phase 6:$() Crystals become much more common and grow faster. The landscape fills with them. It's beautiful, in a \"the world is dead and these are its tombstones\" kind of way.$(br2)$(bold)Harvesting:$() Mine with any pickaxe. Fortune enchantment increases shard yield. Orbital command $(italic)strongly recommends$() not holding the shards with your bare hands. See: $(l:orsa_rd/frostbite_warning)Frostbite Warning$(/l)."
+    }
+  ]
+}

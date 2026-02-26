@@ -1,6 +1,10 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.item.AcheronitePickaxeItem;
+import com.frozendawn.item.AcheroniteShardItem;
+import com.frozendawn.item.AcheroniteShovelItem;
+import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
@@ -81,6 +85,48 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.BOOTS,
                     new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(25))));
 
+    // --- Acheronite Materials ---
+    public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
+            () -> new AcheroniteShardItem(new Item.Properties()));
+    public static final DeferredItem<Item> REFINED_ACHERONITE = ITEMS.registerSimpleItem("refined_acheronite");
+
+    // --- Acheronite Block Items ---
+    public static final DeferredItem<BlockItem> ACHERON_FORGE = ITEMS.registerSimpleBlockItem("acheron_forge", ModBlocks.ACHERON_FORGE);
+    public static final DeferredItem<BlockItem> ACHERONITE_BLOCK = ITEMS.registerSimpleBlockItem("acheronite_block", ModBlocks.ACHERONITE_BLOCK);
+
+    // --- Acheronite Tools ---
+    public static final DeferredItem<AcheroniteSwordItem> ACHERONITE_SWORD = ITEMS.register("acheronite_sword",
+            () -> new AcheroniteSwordItem(ModToolTiers.ACHERONITE,
+                    new Item.Properties().attributes(SwordItem.createAttributes(ModToolTiers.ACHERONITE, 3, -2.4F))));
+    public static final DeferredItem<AcheronitePickaxeItem> ACHERONITE_PICKAXE = ITEMS.register("acheronite_pickaxe",
+            () -> new AcheronitePickaxeItem(ModToolTiers.ACHERONITE,
+                    new Item.Properties().attributes(PickaxeItem.createAttributes(ModToolTiers.ACHERONITE, 1, -2.8F))));
+    public static final DeferredItem<Item> ACHERONITE_AXE = ITEMS.register("acheronite_axe",
+            () -> new AxeItem(ModToolTiers.ACHERONITE,
+                    new Item.Properties().attributes(AxeItem.createAttributes(ModToolTiers.ACHERONITE, 5.0F, -3.0F))));
+    public static final DeferredItem<AcheroniteShovelItem> ACHERONITE_SHOVEL = ITEMS.register("acheronite_shovel",
+            () -> new AcheroniteShovelItem(ModToolTiers.ACHERONITE,
+                    new Item.Properties().attributes(ShovelItem.createAttributes(ModToolTiers.ACHERONITE, 1.5F, -3.0F))));
+
+    // --- Acheronite Armor ---
+    public static final DeferredItem<ArmorItem> ACHERONITE_HELMET = ITEMS.register("acheronite_helmet",
+            () -> new ArmorItem(ModArmorMaterials.ACHERONITE, ArmorItem.Type.HELMET,
+                    new Item.Properties().durability(500)));
+    public static final DeferredItem<ArmorItem> ACHERONITE_CHESTPLATE = ITEMS.register("acheronite_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.ACHERONITE, ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties().durability(650)));
+    public static final DeferredItem<ArmorItem> ACHERONITE_LEGGINGS = ITEMS.register("acheronite_leggings",
+            () -> new ArmorItem(ModArmorMaterials.ACHERONITE, ArmorItem.Type.LEGGINGS,
+                    new Item.Properties().durability(550)));
+    public static final DeferredItem<ArmorItem> ACHERONITE_BOOTS = ITEMS.register("acheronite_boots",
+            () -> new ArmorItem(ModArmorMaterials.ACHERONITE, ArmorItem.Type.BOOTS,
+                    new Item.Properties().durability(500)));
+
+    // --- Acheronite-Lined EVA Chestplate (bootstrap item) ---
+    public static final DeferredItem<ArmorItem> LINED_EVA_CHESTPLATE = ITEMS.register("lined_eva_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(25))));
+
     // --- Creative Tab ---
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FrozenDawn.MOD_ID);
 
@@ -127,5 +173,19 @@ public class ModItems {
                         output.accept(EVA_CHESTPLATE.get());
                         output.accept(EVA_LEGGINGS.get());
                         output.accept(EVA_BOOTS.get());
+                        // Acheronite
+                        output.accept(ACHERONITE_SHARD.get());
+                        output.accept(REFINED_ACHERONITE.get());
+                        output.accept(ACHERON_FORGE.get());
+                        output.accept(ACHERONITE_BLOCK.get());
+                        output.accept(ACHERONITE_SWORD.get());
+                        output.accept(ACHERONITE_PICKAXE.get());
+                        output.accept(ACHERONITE_AXE.get());
+                        output.accept(ACHERONITE_SHOVEL.get());
+                        output.accept(ACHERONITE_HELMET.get());
+                        output.accept(ACHERONITE_CHESTPLATE.get());
+                        output.accept(ACHERONITE_LEGGINGS.get());
+                        output.accept(ACHERONITE_BOOTS.get());
+                        output.accept(LINED_EVA_CHESTPLATE.get());
                     }).build());
 }

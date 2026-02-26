@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "frozendawn:acheronite_block" }
+  ],
+  "result": {
+    "id": "frozendawn:refined_acheronite",
+    "count": 9
+  }
+}

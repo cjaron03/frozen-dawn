@@ -45,6 +45,7 @@ final class PlayerTickHandler {
         habitableCache.clear();
         suffocationTimer.clear();
         playerTemperatures.clear();
+        FrostbiteHandler.reset();
     }
 
     /** Returns the last-calculated temperature for a player (updated every 40 ticks). */
@@ -69,17 +70,34 @@ final class PlayerTickHandler {
                         temp += (temp - 20f) * armorHeatMult;
                     }
 
+                    // Apply frostbite temperature drain for the HUD
+                    temp -= FrostbiteHandler.getTemperatureDrain(player);
+
                     playerTemperatures.put(player.getUUID(), temp);
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
 
                     applyHeatDamage(player, temp, progress);
                 }
-                // Grant armor tier advancements
+                // Grant armor tier advancements (acheronite doesn't count for EVA)
                 int armorTier = MobFreezeHandler.getFullSetTier(player);
-                for (int i = 1; i <= armorTier && i < ARMOR_ADVANCEMENTS.length; i++) {
+                int advCap = armorTier == 4 ? 2 : armorTier; // acheronite caps at tier 2 advancements
+                for (int i = 1; i <= advCap && i < ARMOR_ADVANCEMENTS.length; i++) {
                     if (ARMOR_ADVANCEMENTS[i] != null) {
                         WorldTickHandler.grantAdvancement(player, ARMOR_ADVANCEMENTS[i]);
                     }
+                }
+                // Grant acheronite armor advancement
+                if (MobFreezeHandler.hasFullAcheronite(player)) {
+                    WorldTickHandler.grantAdvancement(player, "acheronite_armor");
+                }
+            }
+        }
+
+        // Frostbite from holding acheronite shards (every tick, phase 5+)
+        if (currentPhase >= 5) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.level().dimension() == Level.OVERWORLD) {
+                    FrostbiteHandler.tick(player);
                 }
             }
         }
@@ -176,7 +194,7 @@ final class PlayerTickHandler {
                 continue;
             }
 
-            if (MobFreezeHandler.getFullSetTier(player) >= 3 && progress < 0.95f) {
+            if (MobFreezeHandler.getFullSetTier(player) == 3 && progress < 0.95f) {
                 suffocationTimer.put(id, 0);
                 continue;
             }

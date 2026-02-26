@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:first_shard",
+  "display": {
+    "icon": {
+      "id": "minecraft:powder_snow_bucket"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.frostbitten.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.frostbitten.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "frostbitten": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RRR",
+    "RRR",
+    "RRR"
+  ],
+  "key": {
+    "R": { "item": "frozendawn:refined_acheronite" }
+  },
+  "result": {
+    "id": "frozendawn:acheronite_block",
+    "count": 1
+  }
+}

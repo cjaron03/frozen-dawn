@@ -1,0 +1,24 @@
+{
+  "name": "Acheron Forge",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:acheron_forge",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Orbital Scan #0074",
+      "text": "$(bold)Subject: Acheronite Refinement Process$()$(br2)Acheronite shards are incredibly cold and incredibly useful, but they're raw. Unstable. You can't make armor out of frozen screaming crystal fragments. Well, you $(italic)can$(), but the results are... unpleasant.$(br2)The $(bold)Acheron Forge$() solves this. Orbital scans suggest geothermal heat can refine raw shards into $(bold)Refined Acheronite$() — a stable, workable material.$(br2)$(italic)This is theoretical. You're the field test. ORSA thanks you for your service. From orbit.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Requirements",
+      "text": "The Acheron Forge needs two things:$(br2)$(li)$(bold)Depth:$() Must be placed below $(bold)Y=0$(). It draws power from geothermal heat. Surface placement will result in a very expensive paperweight.$(li)$(bold)Heat Source:$() A Geothermal Core must be within $(bold)8 blocks$(). No core, no refinement. The forge will helpfully display \"No heat source nearby\" to remind you of your failure.$(br2)Place an Acheronite Shard in the input slot. If conditions are met, the forge will process it into Refined Acheronite. Each shard takes a few seconds.$(br2)$(italic)ORSA Health Advisory: Do not lick the forge. We shouldn't have to transmit this, but here we are.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheron_forge",
+      "title": "Acheron Forge",
+      "text": "Obsidian frame, ice shards for the cooling matrix, and a Thermal Core for the heating element. Fire and ice in one box. ORSA engineering at its finest."
+    }
+  ]
+}

@@ -98,6 +98,13 @@
 
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
 
+  "message.frozendawn.frostbite.cold": "Your fingers are going numb...",
+  "message.frozendawn.frostbite.spreading": "The cold is spreading up your arms!",
+  "message.frozendawn.frostbite.severe": "Frostbite! You can barely hold anything!",
+  "message.frozendawn.frostbite.inventory": "There's something very cold in your inventory...",
+  "message.frozendawn.frostbite.inventory_spreading": "Your pack is radiating cold. It's seeping through.",
+  "message.frozendawn.frostbite.inventory_severe": "The cold from your pack is unbearable!",
+
   "message.frozendawn.heat.sweating": "You're sweating... in a frozen apocalypse. Really?",
   "message.frozendawn.heat.unbearable": "The heat is unbearable! Maybe fewer heaters?",
   "message.frozendawn.heat.cooking": "You are literally cooking alive. In an ice age.",
@@ -124,5 +131,34 @@
   "advancement.frozendawn.thermal_container.title": "Meal Prep Champion",
   "advancement.frozendawn.thermal_container.description": "Craft a Thermal Container. Your lunch is now rated for deep space.",
 
-  "container.frozendawn.thermal_container": "Thermal Container"
+  "container.frozendawn.thermal_container": "Thermal Container",
+
+  "advancement.frozendawn.first_shard.title": "Cold to the Touch",
+  "advancement.frozendawn.first_shard.description": "Pick up an Acheronite Shard. Your fingers regret this already.",
+  "advancement.frozendawn.acheron_forge_crafted.title": "Forged in the Deep",
+  "advancement.frozendawn.acheron_forge_crafted.description": "Craft an Acheron Forge. ORSA R&D would be proud. Or horrified.",
+  "advancement.frozendawn.acheronite_armor.title": "Become the Cold",
+  "advancement.frozendawn.acheronite_armor.description": "Equip a full set of Acheronite armor. You are now the thing everyone is afraid of.",
+  "advancement.frozendawn.lined_eva.title": "Best of Both Worlds",
+  "advancement.frozendawn.lined_eva.description": "Craft an Acheronite-Lined EVA Suit. Space-rated AND frostbite-proof. ORSA engineers wept.",
+  "advancement.frozendawn.frostbitten.title": "Should've Worn Gloves",
+  "advancement.frozendawn.frostbitten.description": "Take frostbite damage from holding an Acheronite Shard. The warning was right there.",
+
+  "block.frozendawn.acheronite_crystal": "Acheronite Crystal",
+  "block.frozendawn.acheron_forge": "Acheron Forge",
+  "block.frozendawn.acheronite_block": "Acheronite Block",
+
+  "item.frozendawn.acheronite_shard": "Acheronite Shard",
+  "item.frozendawn.refined_acheronite": "Refined Acheronite",
+  "item.frozendawn.acheronite_sword": "Acheronite Blade",
+  "item.frozendawn.acheronite_pickaxe": "Acheronite Pickaxe",
+  "item.frozendawn.acheronite_axe": "Acheronite Axe",
+  "item.frozendawn.acheronite_shovel": "Acheronite Shovel",
+  "item.frozendawn.acheronite_helmet": "Acheronite Helmet",
+  "item.frozendawn.acheronite_chestplate": "Acheronite Chestplate",
+  "item.frozendawn.acheronite_leggings": "Acheronite Leggings",
+  "item.frozendawn.acheronite_boots": "Acheronite Boots",
+  "item.frozendawn.lined_eva_chestplate": "Acheronite-Lined EVA Suit",
+
+  "container.frozendawn.acheron_forge": "Acheron Forge"
 }

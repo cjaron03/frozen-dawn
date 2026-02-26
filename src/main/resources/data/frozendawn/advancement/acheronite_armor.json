@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:acheron_forge_crafted",
+  "display": {
+    "icon": {
+      "id": "frozendawn:acheronite_chestplate"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.acheronite_armor.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.acheronite_armor.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "equipped": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

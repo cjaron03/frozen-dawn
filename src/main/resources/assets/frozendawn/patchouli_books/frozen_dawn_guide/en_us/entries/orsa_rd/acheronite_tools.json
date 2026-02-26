@@ -1,0 +1,37 @@
+{
+  "name": "Acheronite Tools",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:acheronite_pickaxe",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Orbital Scan #0076",
+      "text": "$(bold)Subject: Acheronite Tool Applications$()$(br2)Spectral analysis from orbit confirms Refined Acheronite is harder than diamond and colder than ORSA command's decision to leave you down there. Naturally, orbital engineering recommends making weapons out of it.$(br2)Acheronite tools match $(bold)netherite-tier durability$() and are crafted using standard patterns with Refined Acheronite ingots and sticks.$(br2)$(italic)\"Field Operative, please confirm: does the blade cauterize on contact? Orbital imaging can't resolve that clearly.\"$(br)\"Send someone down to check.\"$(br)\"...noted.\"$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_pickaxe",
+      "title": "Acheronite Pickaxe",
+      "text": "Mines through frozen obsidian like butter. Very cold butter."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_sword",
+      "title": "Acheronite Blade",
+      "text": "Enemies shatter on impact. Morale also shatters. Mostly morale."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_axe",
+      "title": "Acheronite Axe",
+      "text": "For chopping dead trees. And anything else that looks at you wrong."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_shovel",
+      "title": "Acheronite Shovel",
+      "text": "Digs through permafrost. Finally, a shovel that matches the terrain's hostility."
+    }
+  ]
+}

@@ -194,6 +194,10 @@ public final class TemperatureManager {
         if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) {
             return distSq <= 9 ? 20.0f : 0.0f;
         }
+        // Acheronite block: passive warmth aura (radius 3, +10C)
+        if (state.is(ModBlocks.ACHERONITE_BLOCK.get())) {
+            return distSq <= 9 ? 10.0f : 0.0f;
+        }
         return 0.0f;
     }
 

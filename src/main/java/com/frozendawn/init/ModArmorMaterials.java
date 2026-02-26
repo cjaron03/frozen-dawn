@@ -68,6 +68,22 @@ public class ModArmorMaterials {
                             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva"))),
                     1.0F, 0.05F));
 
+    /** Acheronite: endgame combat armor, +80C cold resistance, full set grants knockback resistance */
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ACHERONITE =
+            ARMOR_MATERIALS.register("acheronite", () -> new ArmorMaterial(
+                    Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+                        map.put(ArmorItem.Type.HELMET, 4);
+                        map.put(ArmorItem.Type.CHESTPLATE, 9);
+                        map.put(ArmorItem.Type.LEGGINGS, 7);
+                        map.put(ArmorItem.Type.BOOTS, 4);
+                    }),
+                    15,
+                    SoundEvents.ARMOR_EQUIP_NETHERITE,
+                    () -> Ingredient.of(ModItems.REFINED_ACHERONITE),
+                    List.of(new ArmorMaterial.Layer(
+                            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "acheronite"))),
+                    0.0F, 3.5F));
+
     /**
      * Returns the cold resistance bonus (°C) for a given armor material.
      * Full set = 4x this value.
@@ -76,6 +92,7 @@ public class ModArmorMaterials {
         if (material == INSULATED) return 6.25f;   // 25°C / 4
         if (material == REINFORCED) return 11.25f;  // 45°C / 4
         if (material == EVA) return 30.0f;           // 120°C / 4
+        if (material == ACHERONITE) return 20.0f;    // 80°C / 4
         return 0f;
     }
 }

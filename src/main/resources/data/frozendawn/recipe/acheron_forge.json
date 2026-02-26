@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ROR",
+    "OTO",
+    "ROR"
+  ],
+  "key": {
+    "R": { "item": "frozendawn:refined_acheronite" },
+    "O": { "item": "minecraft:obsidian" },
+    "T": { "item": "frozendawn:thermal_core" }
+  },
+  "result": {
+    "id": "frozendawn:acheron_forge",
+    "count": 1
+  }
+}

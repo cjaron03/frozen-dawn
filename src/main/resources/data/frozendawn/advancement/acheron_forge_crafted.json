@@ -1,0 +1,25 @@
+{
+  "parent": "frozendawn:first_shard",
+  "display": {
+    "icon": {
+      "id": "frozendawn:acheron_forge"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.acheron_forge_crafted.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.acheron_forge_crafted.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_forge": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": "frozendawn:acheron_forge" }]
+      }
+    }
+  }
+}

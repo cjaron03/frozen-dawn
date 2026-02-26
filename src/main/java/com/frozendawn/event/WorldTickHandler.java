@@ -8,6 +8,7 @@ import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.VegetationDecay;
@@ -101,6 +102,8 @@ public class WorldTickHandler {
             BlockFreezer.tick(overworld, currentPhase, progress);
         } else {
             VegetationDecay.tick(overworld, currentPhase);
+            AcheroniteGrowth.tick(overworld, currentPhase, progress,
+                    state.getCurrentDay(), state.getTotalDays());
         }
         SnowAccumulator.tick(overworld, currentPhase, progress);
     }

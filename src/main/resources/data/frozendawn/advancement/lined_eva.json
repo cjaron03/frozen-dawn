@@ -1,0 +1,25 @@
+{
+  "parent": "frozendawn:acheron_forge_crafted",
+  "display": {
+    "icon": {
+      "id": "frozendawn:lined_eva_chestplate"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.lined_eva.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.lined_eva.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_lined": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": "frozendawn:lined_eva_chestplate" }]
+      }
+    }
+  }
+}

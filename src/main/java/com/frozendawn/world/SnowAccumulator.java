@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -126,10 +127,30 @@ public final class SnowAccumulator {
             return false;
         }
 
+        // Don't bury acheronite crystals — check block below and nearby
+        if (below.is(ModBlocks.ACHERONITE_CRYSTAL.get())) return false;
+        if (hasCrystalNearby(level, belowPos, 2)) return false;
+
         // Dirt path has a lowered top face (15/16) so isFaceSturdy returns false,
         // but snow should still accumulate on it
         if (below.is(Blocks.DIRT_PATH)) return true;
 
         return below.isFaceSturdy(level, belowPos, Direction.UP);
+    }
+
+    /** Check if there's an acheronite crystal within the given horizontal radius. */
+    private static boolean hasCrystalNearby(ServerLevel level, BlockPos pos, int radius) {
+        BlockPos.MutableBlockPos check = new BlockPos.MutableBlockPos();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    check.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
+                    if (level.getBlockState(check).is(ModBlocks.ACHERONITE_CRYSTAL.get())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [{ "type": "minecraft:item", "name": "frozendawn:acheronite_shard" }],
+      "conditions": [
+        { "condition": "minecraft:survives_explosion" },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "frozendawn:acheronite_crystal",
+          "properties": { "age": "3" }
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [{ "type": "minecraft:item", "name": "frozendawn:acheronite_shard" }],
+      "conditions": [
+        { "condition": "minecraft:survives_explosion" },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "frozendawn:acheronite_crystal",
+          "properties": { "age": "3" }
+        },
+        {
+          "condition": "minecraft:table_bonus",
+          "enchantment": "minecraft:fortune",
+          "chances": [0.0, 0.33, 0.55, 0.77]
+        }
+      ]
+    }
+  ]
+}

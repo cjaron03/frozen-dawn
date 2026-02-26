@@ -8,6 +8,9 @@
     "frozendawn:insulated_glass",
     "frozendawn:frozen_coal_ore",
     "frozendawn:geothermal_core",
-    "frozendawn:frozen_obsidian"
+    "frozendawn:frozen_obsidian",
+    "frozendawn:acheronite_crystal",
+    "frozendawn:acheron_forge",
+    "frozendawn:acheronite_block"
   ]
 }

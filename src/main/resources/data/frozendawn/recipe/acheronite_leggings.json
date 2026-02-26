@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "RRR",
+    "R R",
+    "R R"
+  ],
+  "key": {
+    "R": { "item": "frozendawn:refined_acheronite" }
+  },
+  "result": {
+    "id": "frozendawn:acheronite_leggings",
+    "count": 1
+  }
+}

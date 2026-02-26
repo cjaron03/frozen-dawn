@@ -41,6 +41,7 @@ public class ClientEvents {
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);
         event.register(ModMenuTypes.THERMAL_CONTAINER.get(), ThermalContainerScreen::new);
+        event.register(ModMenuTypes.ACHERON_FORGE.get(), AcheronForgeScreen::new);
     }
 
     /**

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "age=0": { "model": "frozendawn:block/acheronite_crystal_0" },
+    "age=1": { "model": "frozendawn:block/acheronite_crystal_1" },
+    "age=2": { "model": "frozendawn:block/acheronite_crystal_2" },
+    "age=3": { "model": "frozendawn:block/acheronite_crystal_3" }
+  }
+}

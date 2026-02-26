@@ -1,0 +1,25 @@
+{
+  "parent": "frozendawn:phase5",
+  "display": {
+    "icon": {
+      "id": "frozendawn:acheronite_shard"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.first_shard.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.first_shard.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": "frozendawn:acheronite_shard" }]
+      }
+    }
+  }
+}
