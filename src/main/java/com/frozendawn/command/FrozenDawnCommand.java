@@ -99,6 +99,17 @@ public class FrozenDawnCommand {
                 String.format("%.0f%%", state.getSkyLight() * 100)), false);
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.paused",
                 FrozenDawnConfig.PAUSE_PROGRESSION.get() ? "Yes" : "No"), false);
+
+        // Win condition info
+        boolean winEnabled = FrozenDawnConfig.ENABLE_WIN_CONDITION.get();
+        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.win",
+                winEnabled ? "Enabled" : "Disabled"), false);
+        if (winEnabled) {
+            WinConditionState winState = WinConditionState.get(server);
+            context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.win_detail",
+                    winState.isSatellitePlaced() ? "Yes" : "No",
+                    winState.isSchematicUnlocked() ? "Yes" : "No"), false);
+        }
         return 1;
     }
 

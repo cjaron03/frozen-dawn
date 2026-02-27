@@ -178,6 +178,12 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
     public void tryActivate(ServerPlayer player) {
         if (level == null || level.isClientSide()) return;
 
+        // Block activation entirely when win condition is disabled
+        if (!FrozenDawnConfig.ENABLE_WIN_CONDITION.get()) {
+            player.sendSystemMessage(Component.translatable("message.frozendawn.transponder.disabled"));
+            return;
+        }
+
         int state = getBlockState().getValue(TransponderBlock.STATE);
 
         // Any non-IDLE state: open the status UI

@@ -53,6 +53,8 @@
   "command.frozendawn.status.temp": "  Temperature: %s\u00b0C",
   "command.frozendawn.status.sun": "  Sun Scale: %s | Sky Light: %s",
   "command.frozendawn.status.paused": "  Paused: %s",
+  "command.frozendawn.status.win": "  Win Condition: %s",
+  "command.frozendawn.status.win_detail": "  Satellite Placed: %s | Schematic: %s",
   "command.frozendawn.setday": "Apocalypse set to day %s (Phase %s)",
   "command.frozendawn.setphase": "Apocalypse set to phase %s (Day %s)",
   "command.frozendawn.setphase.substage": "Apocalypse set to phase 6 %s (Day %s)",
@@ -189,5 +191,6 @@
   "message.frozendawn.transponder.too_high": "The transponder must be placed below Y=0 to reach the deep relay network.",
   "message.frozendawn.transponder.no_schematic": "You haven't found the transponder schematic yet.",
   "message.frozendawn.transponder.no_core": "No Geothermal Core detected nearby. The transponder needs a power source.",
-  "message.frozendawn.transponder.no_shaft": "Signal blocked. The transponder needs a clear vertical shaft to the sky."
+  "message.frozendawn.transponder.no_shaft": "Signal blocked. The transponder needs a clear vertical shaft to the sky.",
+  "message.frozendawn.transponder.disabled": "The win condition system is disabled. The transponder is non-functional."
 }
