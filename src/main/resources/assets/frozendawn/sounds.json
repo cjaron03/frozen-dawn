@@ -30,5 +30,25 @@
       "frozendawn:ambient/creak5",
       "frozendawn:ambient/creak6"
     ]
+  },
+  "ambient.eva_breathing": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/eva_breathing",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.eva_suffocate": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.eva_suffocate",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/eva_suffocate",
+        "stream": true
+      }
+    ]
   }
 }

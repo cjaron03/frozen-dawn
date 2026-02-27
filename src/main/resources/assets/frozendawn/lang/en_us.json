@@ -100,6 +100,8 @@
   "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
 
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
+  "subtitle.frozendawn.ambient.eva_breathing": "Suit breathing",
+  "subtitle.frozendawn.ambient.eva_suffocate": "Gasping for air",
 
   "message.frozendawn.frostbite.cold": "Your fingers are going numb...",
   "message.frozendawn.frostbite.spreading": "The cold is spreading up your arms!",

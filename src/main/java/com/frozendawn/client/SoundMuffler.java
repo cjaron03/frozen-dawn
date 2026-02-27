@@ -42,6 +42,8 @@ public class SoundMuffler {
         if (phase >= 6 && progress >= 0.85f) {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
+            // EVA sounds play inside the suit / from the player — not carried by air
+            if (original.getLocation().getPath().startsWith("ambient.eva_")) return;
 
             int playerY = mc.player.blockPosition().getY();
             if (playerY >= 0) {
