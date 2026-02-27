@@ -108,10 +108,24 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 
 ## Installation
 
+### Requirements
+- **Minecraft** 1.21.1
+- **NeoForge** 21.1.219+
+- **Java** 21
+- **[Patchouli](https://www.curseforge.com/minecraft/mc-mods/patchouli)** (required)
+
+### Playing
 1. Install [NeoForge for Minecraft 1.21.1](https://neoforged.net/)
-2. Download `frozendawn-0.9.1.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
-3. Drop the jar into your `.minecraft/mods/` folder
-4. Launch Minecraft with the NeoForge profile
+2. Download the latest `frozendawn-x.x.x.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
+3. Download [Patchouli for NeoForge 1.21.1](https://www.curseforge.com/minecraft/mc-mods/patchouli/files?gameVersionTypeId=6&version=1.21.1)
+4. Drop both jars into your `.minecraft/mods/` folder
+5. Launch Minecraft with the NeoForge profile
+
+### Development
+1. Clone the repo: `git clone https://github.com/cjaron03/frozen-dawn.git`
+2. Open in your IDE (IntelliJ recommended) or build from terminal
+3. Patchouli is included as a compile dependency — no manual download needed
+4. Run `./gradlew runClient` to launch a dev instance with the mod loaded
 
 ## Commands
 
@@ -184,9 +198,7 @@ cd frozen-dawn
 ./gradlew build
 ```
 
-The built jar will be at `build/libs/frozendawn-0.9.1.jar`.
-
-For development testing: `./gradlew runClient` launches a Minecraft instance with the mod loaded and source-level debugging.
+The built jar will be in `build/libs/`.
 
 ## License
 
