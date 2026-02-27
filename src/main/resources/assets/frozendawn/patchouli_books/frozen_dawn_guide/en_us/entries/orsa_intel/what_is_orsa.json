@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Divisions",
-      "text": "$(bold)Science Division$()$(br)Modeled the phase progression timeline. Their projections have been... uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored the survival guides you're reading. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin worked here. Kevin went back for you. Kevin is on Mars now wondering if you're okay.$(br2)$(bold)Engineering Division$()$(br)Designed the thermal heaters, insulated clothing, and geothermal cores found in this manual."
+      "text": "$(bold)Science Division$()$(br)Modeled the phase progression timeline. Their projections have been... uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored the survival guides you're reading. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin worked here. Kevin went back for you. Kevin is on Mars now wondering if you're okay.$(br2)$(bold)Engineering Division$()$(br)Designed the thermal heaters, insulated clothing, and geothermal cores found in this manual. Also launched something into orbit before leaving. Nobody talks about that part."
     },
     {
       "type": "patchouli:text",

@@ -42,8 +42,13 @@
     },
     {
       "type": "patchouli:text",
+      "title": "APPENDIX B \u2014 PROJECT LIGHTHOUSE",
+      "text": "$(bold)CLASSIFICATION: MAXIMUM$()$(br2)At my request, Engineering deployed seven relay satellites into high orbit before evacuation. Designation: $(bold)Project Lighthouse.$()$(br2)Each satellite is equipped with a deep-band receiver and a Mars relay transmitter. They will listen indefinitely for a specific transponder frequency broadcast from below the surface.$(br2)A transponder schematic was developed but never deployed. Blueprints were archived in the satellite network's black box systems.$(br2)$(italic)If someone survives long enough to find a schematic and build the transponder, the satellites will relay the signal. Mars will hear it.$()"
+    },
+    {
+      "type": "patchouli:text",
       "title": "Personal Addendum",
-      "text": "I flagged this fourteen months ago. The data was clear. The committee chose to wait.$(br2)This report is my final act as ORSA Science Director. I have failed in my duty to this planet and its people.$(br2)To whoever finds this:$(br)I am sorry.$(br2)Go deep. Stay warm.$(br2)$(italic)\u2014 Dr. Elena Vasquez$()"
+      "text": "I flagged this fourteen months ago. The data was clear. The committee chose to wait.$(br2)This report is my final act as ORSA Science Director. I have failed in my duty to this planet and its people.$(br2)To whoever finds this:$(br)I am sorry.$(br2)Go deep. Stay warm. And if you find the satellites — look up. They're listening.$(br2)$(italic)\u2014 Dr. Elena Vasquez$()"
     }
   ]
 }

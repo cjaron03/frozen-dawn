@@ -13,7 +13,8 @@
     "AUTOMATED EMERGENCY\nBROADCAST\n\nORSA EMERGENCY SYSTEM\nTRANSMISSION ID: FINAL\n\nAll facilities abandoned.\nAll personnel evacuated or\nunaccounted for.\n\nThis is an automated message.",
     "ORBITAL STATUS:\n\nEccentricity: CRITICAL\nSemi-major axis: ~2.3 AU\nRate of change: +0.01 AU/yr\n\nProjected surface equilibrium\ntemperature: -140C\n\nTimeline to equilibrium:\nUnknown. Decades. Maybe less.",
     "SURVIVAL ADVISORY:\n\nSurface habitation is no\nlonger viable.\n\nOnly viable habitat: deep\nunderground. Geothermal\nenergy provides residual\nwarmth independent of\nsolar input.",
-    "FINAL DIRECTIVE:\n\nGo deep.\nStay warm.\n\nDo not attempt to reach\nthe nodes. There is no\nfixing this.\n\nThere is only enduring it.",
-    "This message repeats.\n\n...\n\nThis message repeats.\n\n...\n\nThis message repeats."
+    "RELAY SATELLITE STATUS:\n\nProject Lighthouse: ACTIVE\nSatellites responding: 3/7\nMode: Passive listening\nFrequency: Deep-band\n\nAwaiting surface transponder\nsignal.\n\nNo signal detected.",
+    "FINAL DIRECTIVE:\n\nGo deep.\nStay warm.\n\nIf you find the transponder\nschematics, build it.\nThe satellites are listening.\n\nThere may still be a way\noff this rock.",
+    "This message repeats.\n\n...\n\nThe satellites are listening.\n\n...\n\nThis message repeats."
   ]
 }

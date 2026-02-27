@@ -1,0 +1,29 @@
+{
+  "name": "ORSA Satellite System Log",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:satellite_log",
+  "sortnum": 6,
+  "advancement": "frozendawn:found_satellite_log",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA-SAT SYSTEM LOG",
+      "text": "$(bold)RECOVERED FROM: ORSA Relay Satellite RS-04$()$(br)$(bold)STATUS: CRASHED — impact damage severe$()$(br)$(bold)BLACK BOX: INTACT$()$(br2)The following data was extracted from the satellite's onboard systems. Most of it is corrupted. What remains tells a story ORSA never intended anyone on the surface to read."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Relay Network Status",
+      "text": "$(bold)ORSA RELAY SATELLITE NETWORK$()$(br)Designation: Project Lighthouse$(br2)RS-01: OFFLINE (deorbited Phase 2)$(br)RS-02: $(2)ACTIVE — LISTENING$()$(br)RS-03: OFFLINE (power failure)$(br)RS-04: OFFLINE (you're reading its corpse)$(br)RS-05: $(2)ACTIVE — LISTENING$()$(br)RS-06: OFFLINE (debris collision)$(br)RS-07: $(2)ACTIVE — LISTENING$()$(br2)$(italic)3 of 7 satellites still operational. Passive listening mode. Awaiting transponder signal on deep-band frequency.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mission Parameters",
+      "text": "$(bold)Purpose:$() Receive emergency transponder broadcasts from surface-level deep-band transmitters.$(br2)$(bold)Signal Requirements:$()$(br)$(li)Deep-band frequency (requires below Y=0)$(li)Sustained broadcast (minimum 90 minutes)$(li)Clear vertical transmission path to sky$(li)Geothermal power source for signal strength$(br2)$(bold)Upon receipt:$() Relay signal to Mars Colony emergency response. Estimated relay time: immediate. Estimated response time: $(italic)classified.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Final Log Entry",
+      "text": "$(bold)[RS-04 FINAL LOG — AUTO-GENERATED]$()$(br2)Altitude decay detected. Orbital correction failed. Atmospheric entry in 340 seconds.$(br2)Transferring relay duties to RS-02, RS-05, RS-07.$(br2)$(italic)The remaining satellites will continue listening. If anyone is down there — if anyone builds a transponder — the signal will reach Mars.$(br2)We were supposed to save you.$(br2)This is the best we can do from up here.$(br2)— RS-04, signing off.$()"
+    }
+  ]
+}
