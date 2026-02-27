@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Thermal Heater",
-      "text": "A fuel-burning heater that radiates warmth in its vicinity. Right-click with coal, wood, or other fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters stack their warmth.$(br2)Can be $(l:heating/heater_upgrades)upgraded$(/l) with iron, gold, or diamond for greater output."
+      "text": "A fuel-burning heater that radiates warmth in its vicinity. Right-click with coal, wood, or other fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters stack their warmth.$(br2)Can be $(l:heating/heater_upgrades)upgraded$(/l) with iron, gold, or diamond for greater output.$(br2)$(italic)ORSA FAQ: \"Can I hug the heater?\" No. \"Can I sleep next to the heater?\" Also no. \"Can I name the heater?\" ...we can't stop you, but please seek companionship elsewhere.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_heater",
-      "text": "Surround a Thermal Core with 8 iron ingots."
+      "text": "Surround a Thermal Core with 8 iron ingots. It's essentially an iron box with a hot thing inside. ORSA charged the UN four billion credits for this design."
     }
   ]
 }

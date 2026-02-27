@@ -2,14 +2,19 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
 import net.minecraft.client.color.item.ItemColor;
+import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.component.LodestoneTracker;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -38,10 +43,28 @@ public class ClientEvents {
     }
 
     @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        // Register compass needle property for Acheronite Compass
+        // Uses LodestoneTracker data component — same as vanilla lodestone compass
+        event.enqueueWork(() -> {
+            ItemProperties.register(
+                    ModItems.ACHERONITE_COMPASS.get(),
+                    ResourceLocation.withDefaultNamespace("angle"),
+                    new CompassItemPropertyFunction((level, stack, entity) -> {
+                        LodestoneTracker tracker = stack.get(DataComponents.LODESTONE_TRACKER);
+                        return tracker != null ? tracker.target().orElse(null) : null;
+                    })
+            );
+        });
+    }
+
+    @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);
         event.register(ModMenuTypes.THERMAL_CONTAINER.get(), ThermalContainerScreen::new);
         event.register(ModMenuTypes.ACHERON_FORGE.get(), AcheronForgeScreen::new);
+        event.register(ModMenuTypes.TRANSPONDER.get(), TransponderScreen::new);
+        event.register(ModMenuTypes.THERMAL_HEATER.get(), ThermalHeaterScreen::new);
     }
 
     /**

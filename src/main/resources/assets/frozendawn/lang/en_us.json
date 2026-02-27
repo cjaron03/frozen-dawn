@@ -22,6 +22,7 @@
   "item.frozendawn.frozen_heart": "Frozen Heart",
   "item.frozendawn.orsa_document": "ORSA Document",
   "item.frozendawn.thermal_container": "Thermal Container",
+  "item.frozendawn.orsa_multitool": "ORSA MultiTool",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",
@@ -160,5 +161,33 @@
   "item.frozendawn.acheronite_boots": "Acheronite Boots",
   "item.frozendawn.lined_eva_chestplate": "Acheronite-Lined EVA Suit",
 
-  "container.frozendawn.acheron_forge": "Acheron Forge"
+  "container.frozendawn.acheron_forge": "Acheron Forge",
+
+  "block.frozendawn.frozen_atmosphere": "Frozen Atmosphere",
+  "item.frozendawn.frozen_atmosphere_shard": "Frozen Atmosphere Shard",
+  "message.frozendawn.shard_sublimated": "The shard evaporates in the warmth...",
+
+  "item.frozendawn.acheronite_compass": "Acheronite Compass",
+  "item.frozendawn.transponder_schematic": "ORSA Transponder Schematic",
+  "item.frozendawn.satellite_log": "ORSA Satellite System Log",
+
+  "advancement.frozendawn.found_satellite_log.title": "Sputnik?!",
+  "advancement.frozendawn.found_satellite_log.description": "Find the crashed ORSA relay satellite. It came down hard.",
+  "advancement.frozendawn.found_transponder_schematic.title": "The Blueprint",
+  "advancement.frozendawn.found_transponder_schematic.description": "Archive the ORSA Transponder Schematic. Now build the damn thing.",
+
+  "block.frozendawn.transponder": "ORSA Transponder",
+
+  "advancement.frozendawn.broadcast_complete.title": "Signal Sent",
+  "advancement.frozendawn.broadcast_complete.description": "Complete the transponder broadcast. Someone out there heard you.",
+
+  "message.frozendawn.transponder.activated": "Transponder online. Broadcasting signal... ETA: %s minutes.",
+  "message.frozendawn.transponder.broadcasting": "Signal broadcasting... approximately %s minutes remaining.",
+  "message.frozendawn.transponder.paused_core": "PAUSED — No Geothermal Core detected. %s minutes remaining.",
+  "message.frozendawn.transponder.paused_shaft": "PAUSED — Shaft blocked. Clear the path to the sky. %s minutes remaining.",
+  "message.frozendawn.transponder.complete": "Broadcast complete. The signal has been sent.",
+  "message.frozendawn.transponder.too_high": "The transponder must be placed below Y=0 to reach the deep relay network.",
+  "message.frozendawn.transponder.no_schematic": "You haven't found the transponder schematic yet.",
+  "message.frozendawn.transponder.no_core": "No Geothermal Core detected nearby. The transponder needs a power source.",
+  "message.frozendawn.transponder.no_shaft": "Signal blocked. The transponder needs a clear vertical shaft to the sky."
 }

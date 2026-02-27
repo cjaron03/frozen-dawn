@@ -1,0 +1,18 @@
+{
+  "name": "Thermal Container",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermal_container",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Thermal Container",
+      "text": "An insulated container that keeps hot food warm for extended periods. Any food placed inside will have its spoilage timer paused as long as the container remains intact.$(br2)Essential for stockpiling cooked food before temperatures make farming impossible. Craft one early and keep it stocked.$(br2)$(italic)Think of it as a lunchbox. A very important lunchbox. The most important lunchbox in the history of lunchboxes, because every other lunchbox is frozen solid on a dead planet.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_container",
+      "text": "Iron corners, leather sides, and a glass bottle center. The glass bottle acts as a vacuum seal. ORSA Engineering wanted to use a proprietary locking mechanism, but the budget went to Kevin's search-and-rescue fund."
+    }
+  ]
+}

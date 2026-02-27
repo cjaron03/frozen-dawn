@@ -18,4 +18,11 @@ public class ModDataComponents {
                             .persistent(Codec.INT)
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUBLIMATION_TICKS =
+            DATA_COMPONENTS.register("sublimation_ticks", () ->
+                    DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.INT)
+                            .build());
 }

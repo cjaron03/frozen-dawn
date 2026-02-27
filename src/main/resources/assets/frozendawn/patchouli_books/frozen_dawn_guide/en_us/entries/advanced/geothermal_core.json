@@ -7,17 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Geothermal Core",
-      "text": "The ultimate heat source. Warms a 12-block radius with +50°C and no fuel required — permanent, infinite heat.$(br2)Place deep underground (below Y=0) for full effectiveness. Above Y=0, range and temperature are halved.$(br2)Right-click to open the upgrade interface."
+      "text": "The ultimate heat source. Warms a 12-block radius with +50°C and no fuel required — permanent, infinite heat.$(br2)Place deep underground (below Y=0) for full effectiveness. Above Y=0, range and temperature are halved.$(br2)Right-click to open the upgrade interface.$(br2)$(italic)You've been burning coal like a caveman for thirty days. Now you have a geothermal reactor. ORSA calls this \"career progression.\" You call it \"why didn't you give me this earlier.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:geothermal_core",
-      "text": "A Frozen Heart at the center, flanked by Thermal Cores, surrounded by diamond blocks and obsidian."
+      "text": "A Frozen Heart at the center, flanked by Thermal Cores, surrounded by diamond blocks and obsidian. Expensive? Yes. Worth it? Ask yourself that while your heater runs out of coal at 3 AM."
     },
     {
       "type": "patchouli:text",
       "title": "Upgrading the Core",
-      "text": "The core has three upgradeable stats. Place materials in the upgrade slots — they are consumed permanently.$(br2)$(l:bold)Range$(/l) (max 32 blocks):$(br)$(li)Obsidian: +1 block per$(br)$(li)Diamond Block: +4 blocks per$(br2)$(l:bold)Temperature$(/l) (max +100°C):$(br)$(li)Blaze Powder: +5°C per$(br)$(li)Thermal Core: +10°C per$(br2)$(l:bold)O₂ Production$(/l) (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius"
+      "text": "The core has three upgradeable stats. Place materials in the upgrade slots — they are consumed permanently. No refunds. ORSA does not do refunds.$(br2)$(l:bold)Range$(/l) (max 32 blocks):$(br)$(li)Obsidian: +1 block per$(br)$(li)Diamond Block: +4 blocks per$(br2)$(l:bold)Temperature$(/l) (max +100°C):$(br)$(li)Blaze Powder: +5°C per$(br)$(li)Thermal Core: +10°C per$(br2)$(l:bold)O₂ Production$(/l) (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible. Like, say, literally anything else.$()"
     }
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "name": "Frozen Atmosphere Shard",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:frozen_atmosphere_shard",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Frozen Atmosphere Shard",
+      "text": "In Phase 6, the atmosphere itself begins to freeze and deposit on the surface as thin, crystalline sheets of $(bold)Frozen Atmosphere$().$(br2)Mining these deposits yields $(bold)Frozen Atmosphere Shards$() — shimmering fragments of solidified air. Yes, you are holding the sky in your hands. No, ORSA does not recommend thinking about that."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sublimation Warning",
+      "text": "These shards are $(bold)extremely temperature-sensitive$(). If your body temperature rises above $(bold)-150\u00B0C$(), the shard begins to sublimate — reverting from solid back to gas.$(br2)You have approximately $(bold)7.5 seconds$() before it vanishes entirely. The shard will shimmer and emit snowflake particles as a warning. Then it's gone. Just like that. You are now holding slightly more air than before.$(br2)$(italic)ORSA Wellness reminds you: don't cry over sublimated atmosphere.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Preservation",
+      "text": "To safely transport shards, store them in a $(l:heating/thermal_container)Thermal Container$(/l). The insulated interior halts the sublimation timer entirely.$(br2)$(bold)Recommended procedure:$()$(br)$(li)Mine the shard$(li)Immediately open your Thermal Container$(li)Place the shard inside$(li)Do not panic$(li)If you panicked, see step 4$(br2)Shards stored in a container will remain stable indefinitely. Shards in your regular inventory will not."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Usage",
+      "text": "Frozen Atmosphere Shards are a critical component in crafting the $(l:advanced/transponder)ORSA Transponder$(/l) — the device that may be your only way off this planet.$(br2)You only need one. But given the sublimation issue, ORSA recommends collecting several.$(br2)$(italic)\"We designed a rescue beacon that requires a piece of frozen sky. In hindsight, we could have used copper wire. But here we are.\"$()$(br)$(italic)— Dr. Vasquez, Engineering Review Meeting$()"
+    }
+  ]
+}

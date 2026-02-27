@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Ice Shards",
-      "text": "Crystalline shards dropped by Frozen Coal Ore, which forms on the surface starting in Phase 4.$(br2)Ice shards are a key crafting material for packed ice, blue ice, and the Frozen Heart. Mine frozen coal ore to collect them."
+      "text": "Crystalline shards dropped by Frozen Coal Ore, which forms on the surface starting in Phase 4.$(br2)Ice shards are a key crafting material for packed ice, blue ice, and the Frozen Heart. Mine frozen coal ore to collect them.$(br2)$(italic)Your coal has become ice. The fuel you need to stay warm has frozen into the opposite of warmth. The universe has a sense of humor. ORSA does not find it funny.$()"
     },
     {
       "type": "patchouli:crafting",

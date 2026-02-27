@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Frozen Heart",
-      "text": "A late-game power source that harnesses the extreme cold itself. Requires a diamond, frozen obsidian (forms on surface in Phase 4+), blue ice, and ice shards.$(br2)The Frozen Heart is the key component of the Geothermal Core — your endgame heat source."
+      "text": "A late-game power source that harnesses the extreme cold itself. Requires a diamond, frozen obsidian (forms on surface in Phase 4+), blue ice, and ice shards.$(br2)The Frozen Heart is the key component of the Geothermal Core — your endgame heat source.$(br2)$(italic)ORSA named it the \"Frozen Heart\" because \"Cryogenic Thermal Inversion Matrix\" didn't fit on the label. Also because the Wellness Division thought it was poetic. They were going through a phase.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:frozen_heart",
-      "text": "A diamond at the center, surrounded by blue ice, ice shards, and frozen obsidian."
+      "text": "A diamond at the center, surrounded by blue ice, ice shards, and frozen obsidian. Somehow the combination of \"extremely cold things around a diamond\" produces heat. ORSA Physics gave up trying to explain it and just wrote \"it works\" in the report."
     }
   ]
 }

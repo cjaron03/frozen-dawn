@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RDR",
+    "FTA",
+    "RDR"
+  ],
+  "key": {
+    "R": { "item": "frozendawn:refined_acheronite" },
+    "D": { "item": "minecraft:diamond_block" },
+    "T": { "item": "frozendawn:thermal_core" },
+    "F": { "item": "frozendawn:frozen_heart" },
+    "A": { "item": "frozendawn:frozen_atmosphere_shard" }
+  },
+  "result": {
+    "id": "frozendawn:transponder",
+    "count": 1
+  }
+}

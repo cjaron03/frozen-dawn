@@ -1,15 +1,19 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.item.AcheroniteCompassItem;
 import com.frozendawn.item.AcheronitePickaxeItem;
 import com.frozendawn.item.AcheroniteShardItem;
 import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.AcheroniteSwordItem;
+import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.OrsaDocumentItem;
+import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -42,6 +46,8 @@ public class ModItems {
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<ThermalContainerItem> THERMAL_CONTAINER = ITEMS.register("thermal_container",
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
+            () -> new OrsaMultiToolItem(new Item.Properties().stacksTo(1)));
 
     // --- Tier 1: Insulated Clothing (Phase 3) ---
     public static final DeferredItem<ArmorItem> INSULATED_HELMET = ITEMS.register("insulated_helmet",
@@ -85,6 +91,19 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.BOOTS,
                     new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(25))));
 
+    // --- Win Condition ---
+    public static final DeferredItem<AcheroniteCompassItem> ACHERONITE_COMPASS = ITEMS.register("acheronite_compass",
+            () -> new AcheroniteCompassItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<OrsaDocumentItem> TRANSPONDER_SCHEMATIC = ITEMS.register("transponder_schematic",
+            () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredItem<OrsaDocumentItem> SATELLITE_LOG = ITEMS.register("satellite_log",
+            () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
+
+    // --- Frozen Atmosphere ---
+    public static final DeferredItem<FrozenAtmosphereShardItem> FROZEN_ATMOSPHERE_SHARD = ITEMS.register(
+            "frozen_atmosphere_shard",
+            () -> new FrozenAtmosphereShardItem(new Item.Properties().stacksTo(64)));
+
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
             () -> new AcheroniteShardItem(new Item.Properties()));
@@ -93,6 +112,9 @@ public class ModItems {
     // --- Acheronite Block Items ---
     public static final DeferredItem<BlockItem> ACHERON_FORGE = ITEMS.registerSimpleBlockItem("acheron_forge", ModBlocks.ACHERON_FORGE);
     public static final DeferredItem<BlockItem> ACHERONITE_BLOCK = ITEMS.registerSimpleBlockItem("acheronite_block", ModBlocks.ACHERONITE_BLOCK);
+    public static final DeferredItem<BlockItem> TRANSPONDER = ITEMS.register("transponder",
+            () -> new BlockItem(ModBlocks.TRANSPONDER.get(),
+                    new Item.Properties().rarity(Rarity.EPIC)));
 
     // --- Acheronite Tools ---
     public static final DeferredItem<AcheroniteSwordItem> ACHERONITE_SWORD = ITEMS.register("acheronite_sword",
@@ -158,6 +180,7 @@ public class ModItems {
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(THERMAL_CONTAINER.get());
+                        output.accept(ORSA_MULTITOOL.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
                         output.accept(INSULATED_CHESTPLATE.get());
@@ -187,5 +210,11 @@ public class ModItems {
                         output.accept(ACHERONITE_LEGGINGS.get());
                         output.accept(ACHERONITE_BOOTS.get());
                         output.accept(LINED_EVA_CHESTPLATE.get());
+                        // Frozen Atmosphere
+                        output.accept(FROZEN_ATMOSPHERE_SHARD.get());
+                        // Win Condition
+                        output.accept(ACHERONITE_COMPASS.get());
+                        output.accept(TRANSPONDER_SCHEMATIC.get());
+                        output.accept(TRANSPONDER.get());
                     }).build());
 }

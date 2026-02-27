@@ -24,6 +24,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue FUEL_SCARCITY_PHASE;
     public static final ModConfigSpec.BooleanValue ENABLE_FUEL_PHASE_SCALING;
     public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
+    public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
+    public static final ModConfigSpec.IntValue BROADCAST_TICKS;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
@@ -98,6 +100,16 @@ public class FrozenDawnConfig {
                         "When enabled, written books containing the ORSA narrative",
                         "are injected into village, temple, mineshaft, and stronghold chests.")
                 .define("enableLoreBooks", true);
+        ENABLE_WIN_CONDITION = BUILDER
+                .comment("Enable the win condition system (crashed satellite, transponder, broadcast).",
+                        "When disabled: satellite doesn't spawn, compass spins, schematic doesn't exist.",
+                        "For endless survival players who prefer no endgame goal.")
+                .define("enableWinCondition", true);
+        BROADCAST_TICKS = BUILDER
+                .comment("Duration of the transponder broadcast in ticks.",
+                        "Preset-managed: overwritten by /frozendawn preset command.",
+                        "Default 120000 (~5 in-game days). Brutal: 192000. Cinematic: 72000.")
+                .defineInRange("broadcastTicks", 120000, 6000, 480000);
         BUILDER.pop();
 
         BUILDER.push("client");

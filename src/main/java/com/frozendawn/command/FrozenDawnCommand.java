@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.WinConditionState;
+import net.minecraft.core.BlockPos;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -72,6 +74,8 @@ public class FrozenDawnCommand {
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnCommand::applyPreset)))
+                .then(Commands.literal("satellite")
+                        .executes(FrozenDawnCommand::satellite))
         );
     }
 
@@ -104,7 +108,7 @@ public class FrozenDawnCommand {
         ApocalypseState state = ApocalypseState.get(server);
 
         state.setApocalypseTicks((long) day * 24000L, server);
-        syncToClients(state);
+        syncToClients(state, server);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setday",
                 day, state.getPhase()), true);
@@ -118,7 +122,7 @@ public class FrozenDawnCommand {
 
         int targetDay = PhaseManager.getPhaseStartDay(phase, state.getTotalDays());
         state.setApocalypseTicks((long) targetDay * 24000L, server);
-        syncToClients(state);
+        syncToClients(state, server);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase",
                 phase, targetDay), true);
@@ -150,7 +154,7 @@ public class FrozenDawnCommand {
 
         int targetDay = (int) (targetProgress * state.getTotalDays());
         state.setApocalypseTicks((long) targetDay * 24000L, server);
-        syncToClients(state);
+        syncToClients(state, server);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase.substage",
                 substage, targetDay), true);
@@ -171,7 +175,7 @@ public class FrozenDawnCommand {
         ApocalypseState state = ApocalypseState.get(server);
 
         state.setApocalypseTicks(0, server);
-        syncToClients(state);
+        syncToClients(state, server);
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.reset"), true);
         return 1;
@@ -193,14 +197,31 @@ public class FrozenDawnCommand {
         return 1;
     }
 
-    private static void syncToClients(ApocalypseState state) {
+    private static int satellite(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        WinConditionState winState = WinConditionState.get(server);
+        BlockPos pos = winState.getSatellitePos();
+        if (pos == null) {
+            context.getSource().sendSuccess(() -> Component.literal("  Satellite: not yet initialized"), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Satellite: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
+                    + " | Placed: " + winState.isSatellitePlaced()
+                    + " | Schematic: " + winState.isSchematicUnlocked()), false);
+        }
+        return 1;
+    }
+
+    private static void syncToClients(ApocalypseState state, MinecraftServer server) {
+        WinConditionState winState = WinConditionState.get(server);
         PacketDistributor.sendToAllPlayers(new ApocalypseDataPayload(
                 state.getPhase(),
                 state.getProgress(),
                 state.getTemperatureOffset(),
                 state.getSunScale(),
                 state.getSunBrightness(),
-                state.getSkyLight()
+                state.getSkyLight(),
+                winState.isSchematicUnlocked()
         ));
     }
 }

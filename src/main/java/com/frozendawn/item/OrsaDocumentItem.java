@@ -1,6 +1,7 @@
 package com.frozendawn.item;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.WinConditionState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
@@ -46,6 +47,18 @@ public class OrsaDocumentItem extends Item {
                     case "orsa_bulletin" -> grantAdvancement(serverPlayer, "found_orsa_bulletin");
                     case "vasik_log" -> grantAdvancement(serverPlayer, "found_vasik_log");
                     case "incident_report" -> grantAdvancement(serverPlayer, "found_incident_report");
+                    case "satellite_log" -> grantAdvancement(serverPlayer, "found_satellite_log");
+                    case "transponder_schematic" -> {
+                        grantAdvancement(serverPlayer, "found_transponder_schematic");
+                        // Unlock transponder recipe in Acheron Forge (world-level)
+                        WinConditionState winState = WinConditionState.get(serverPlayer.getServer());
+                        if (!winState.isSchematicUnlocked()) {
+                            winState.setSchematicUnlocked(true);
+                            serverPlayer.displayClientMessage(
+                                    Component.literal("\u00A77[\u00A76Frozen Dawn\u00A77] \u00A7dTransponder schematics unlocked. Check the Acheron Forge."),
+                                    false);
+                        }
+                    }
                 }
 
                 // Grant general classified_information for ORSA-authored docs

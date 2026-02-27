@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Orbital Destabilization",
-      "text": "Earth has been knocked from its orbit and is drifting into deep space. The sun is shrinking in the sky. Temperatures are dropping.$(br2)This manual will help you survive what ORSA scientists have termed a \"Frozen Dawn\" — the slow death of a world losing its star."
+      "text": "Earth has been knocked from its orbit and is drifting into deep space. The sun is shrinking in the sky. Temperatures are dropping.$(br2)This manual will help you survive what ORSA scientists have termed a \"Frozen Dawn\" — the slow death of a world losing its star.$(br2)$(italic)If you're reading this, congratulations — you're alive. The bar is low and you've cleared it. Let's keep that streak going.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Key Survival Rules",
-      "text": "$(li)$(bold)Go underground.$() Deeper = warmer. Below Y=0 is safest.$(li)$(bold)Secure heat early.$() Build Thermal Heaters before Phase 3.$(li)$(bold)Any roof traps air.$() In Phase 6, exposed surface = vacuum. Even a single block overhead protects you.$(li)$(bold)Stockpile fuel.$() Surface coal ore freezes in Phase 4."
+      "text": "$(li)$(bold)Go underground.$() Deeper = warmer. Below Y=0 is safest.$(li)$(bold)Secure heat early.$() Build Thermal Heaters before Phase 3.$(li)$(bold)Any roof traps air.$() In Phase 6, exposed surface = vacuum. Even a single block overhead protects you.$(li)$(bold)Stockpile fuel.$() Surface coal ore freezes in Phase 4.$(br2)$(italic)ORSA Wellness Division has rated your current survival odds at \"non-zero.\" That's the nicest thing they've said about anyone on this planet.$()"
     }
   ]
 }

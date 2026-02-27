@@ -1,8 +1,8 @@
 {
   "name": "Evacuation Notice",
-  "category": "frozendawn:un_notice",
+  "category": "frozendawn:orsa_intel",
   "icon": "minecraft:paper",
-  "sortnum": 0,
+  "sortnum": -2,
   "pages": [
     {
       "type": "patchouli:text",

@@ -1,0 +1,28 @@
+{
+  "name": "ORSA Transponder",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:transponder",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Transponder",
+      "text": "The transponder is ORSA's last-resort emergency beacon. Once activated, it broadcasts a deep-space signal to any surviving relay satellites in orbit.$(br2)Building one requires the $(l:bold)ORSA Transponder Schematic$(/l) — a classified document found in ORSA wreckage. Without it, you won't even know what to build.$(br2)$(italic)\"We hid the only escape plan in a random structure on a dying planet.\" — ORSA Security Division$(br)\"That seems irresponsible.\" — Everyone else$(br)\"We also hid the cafeteria key. We're not great at this.\" — ORSA Security Division$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:transponder",
+      "text": "Requires 4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, a Frozen Heart, and a Frozen Atmosphere Shard. If this sounds expensive, remember what you're building: a phone call to space. Long distance rates apply."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Activation Requirements",
+      "text": "$(li)$(bold)Depth:$() Must be placed below Y=0 to reach the deep relay network.$(br)$(li)$(bold)Power:$() A Geothermal Core must be within 12 blocks.$(br)$(li)$(bold)Sky Access:$() A clear vertical shaft from the transponder to the sky — no solid blocks. Yes, from bedrock to sky. Start digging.$(br)$(li)$(bold)Schematic:$() The ORSA Transponder Schematic must be archived first.$(br2)Once all conditions are met, right-click to activate. The broadcast takes approximately 100 minutes. We recommend a book and a warm beverage. You have neither. Sorry."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "During Broadcast",
+      "text": "A visible beam of light shoots upward through the shaft while broadcasting. The signal can be paused and resumed from the transponder's interface.$(br2)If conditions are lost during broadcast (core removed, shaft blocked), the transponder automatically pauses and plays a warning. It resumes when conditions are restored.$(br2)Snow is automatically cleared from the shaft by the signal energy. The beam vaporizes it. ORSA's most practical feature — designed entirely by accident."
+    }
+  ]
+}

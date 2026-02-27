@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.block.TransponderBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -32,5 +33,11 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("acheron_forge",
                     () -> BlockEntityType.Builder.of(AcheronForgeBlockEntity::new,
                             ModBlocks.ACHERON_FORGE.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TransponderBlockEntity>> TRANSPONDER =
+            BLOCK_ENTITIES.register("transponder",
+                    () -> BlockEntityType.Builder.of(TransponderBlockEntity::new,
+                            ModBlocks.TRANSPONDER.get()
                     ).build(null));
 }

@@ -1,6 +1,6 @@
 {
-  "name": "Advanced Technology",
-  "description": "Late-game devices for surviving the final phases of atmospheric collapse.",
+  "name": "Endgame",
+  "description": "Late-game devices for surviving the final phases of atmospheric collapse — and maybe finding a way out.",
   "icon": "frozendawn:geothermal_core",
-  "sortnum": 2
+  "sortnum": 4
 }

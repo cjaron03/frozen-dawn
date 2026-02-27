@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Insulated Glass",
-      "text": "Transparent glass that retains heat. Use for windows in your sealed shelter — lets you watch the world freeze without freezing yourself.$(br2)Craft 4 at a time. Build sealed rooms using insulated glass and solid blocks to trap warmth from heaters."
+      "text": "Transparent glass that retains heat. Use for windows in your sealed shelter — lets you watch the world freeze without freezing yourself.$(br2)Craft 4 at a time. Build sealed rooms using insulated glass and solid blocks to trap warmth from heaters.$(br2)$(italic)ORSA Wellness Note: Staring out insulated glass at the frozen wasteland for extended periods may cause existential dread, philosophical breakthroughs, or both. This is normal. Look away occasionally.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_glass",
-      "text": "Glass and packed ice, reinforced with iron nuggets."
+      "text": "Glass and packed ice, reinforced with iron nuggets. The ice doesn't melt. Don't ask why. ORSA Physics Division has been arguing about it for months."
     }
   ]
 }

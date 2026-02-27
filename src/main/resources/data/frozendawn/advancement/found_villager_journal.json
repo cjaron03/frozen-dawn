@@ -1,5 +1,5 @@
 {
-  "parent": "frozendawn:root",
+  "parent": "frozendawn:classified_information",
   "display": {
     "icon": {
       "id": "minecraft:writable_book"

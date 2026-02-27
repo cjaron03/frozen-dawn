@@ -3,6 +3,8 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeMenu;
 import com.frozendawn.block.GeothermalCoreMenu;
+import com.frozendawn.block.ThermalHeaterMenu;
+import com.frozendawn.block.TransponderMenu;
 import com.frozendawn.item.ThermalContainerMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -25,4 +27,12 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<AcheronForgeMenu>> ACHERON_FORGE =
             MENU_TYPES.register("acheron_forge",
                     () -> IMenuTypeExtension.create(AcheronForgeMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<TransponderMenu>> TRANSPONDER =
+            MENU_TYPES.register("transponder",
+                    () -> IMenuTypeExtension.create(TransponderMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ThermalHeaterMenu>> THERMAL_HEATER =
+            MENU_TYPES.register("thermal_heater",
+                    () -> IMenuTypeExtension.create(ThermalHeaterMenu::new));
 }

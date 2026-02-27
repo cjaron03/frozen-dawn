@@ -3,8 +3,10 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AcheronForgeBlock;
+import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.TransponderBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -169,6 +171,34 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)));
+
+    // Frozen Atmosphere: thin surface deposit, forms in phase 6 late, sublimates above -150C
+    public static final DeferredBlock<FrozenAtmosphereBlock> FROZEN_ATMOSPHERE = BLOCKS.register("frozen_atmosphere",
+            () -> new FrozenAtmosphereBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(0.3F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .lightLevel(state -> 2)
+                    .pushReaction(PushReaction.DESTROY)));
+
+    // --- Win Condition ---
+
+    // ORSA Transponder: endgame broadcast block, must be below Y=0 near geothermal core
+    public static final DeferredBlock<TransponderBlock> TRANSPONDER = BLOCKS.register("transponder",
+            () -> new TransponderBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN)
+                    .requiresCorrectToolForDrops()
+                    .strength(50.0F, 1200.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> switch (state.getValue(TransponderBlock.STATE)) {
+                        case 1 -> 10; // BROADCASTING
+                        case 2 -> 15; // COMPLETE
+                        case 3 -> 7;  // PAUSED
+                        default -> 0; // IDLE
+                    })));
 
     // Acheronite Block: decorative, passive warmth aura, counts as shelter
     public static final DeferredBlock<Block> ACHERONITE_BLOCK = BLOCKS.register("acheronite_block",

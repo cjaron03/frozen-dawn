@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "state=0": { "model": "frozendawn:block/transponder" },
+    "state=1": { "model": "frozendawn:block/transponder_active" },
+    "state=2": { "model": "frozendawn:block/transponder_complete" },
+    "state=3": { "model": "frozendawn:block/transponder_paused" }
+  }
+}

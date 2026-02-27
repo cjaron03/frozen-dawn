@@ -3,20 +3,29 @@ package com.frozendawn.block;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Block entity for the Thermal Heater. Tracks remaining fuel burn ticks.
  * Stops ticking when chunk unloads (vanilla default) — fuel does NOT burn while unloaded.
  */
-public class ThermalHeaterBlockEntity extends BlockEntity {
+public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvider {
 
     private int burnTimeRemaining = 0;
     private boolean cachedSheltered = false;
@@ -112,6 +121,80 @@ public class ThermalHeaterBlockEntity extends BlockEntity {
             HeaterRegistry.unregister(level, worldPosition);
         }
         super.setRemoved();
+    }
+
+    private int getHeatOutput() {
+        Block block = getBlockState().getBlock();
+        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) return 80;
+        if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) return 65;
+        if (block == ModBlocks.IRON_THERMAL_HEATER.get()) return 50;
+        return 35;
+    }
+
+    private int getBaseRadius() {
+        Block block = getBlockState().getBlock();
+        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) return 14;
+        if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) return 11;
+        if (block == ModBlocks.IRON_THERMAL_HEATER.get()) return 9;
+        return 7;
+    }
+
+    /** ContainerData for syncing heater status to the client UI (simplified). */
+    public ContainerData getMenuData() {
+        return new ContainerData() {
+            @Override
+            public int get(int index) {
+                return switch (index) {
+                    case 0 -> Math.min(9999, burnTimeRemaining / (getPhaseConsumption() * 1200));
+                    case 1 -> isLit() ? 1 : 0;
+                    case 2 -> getCachedSheltered() ? 1 : 0;
+                    default -> 0;
+                };
+            }
+
+            @Override
+            public void set(int index, int value) {}
+
+            @Override
+            public int getCount() { return 3; }
+        };
+    }
+
+    // --- Public getters for ORSA MultiTool diagnostics ---
+
+    public int getPhase() {
+        if (level == null || level.isClientSide() || level.getServer() == null) return 0;
+        return ApocalypseState.get(level.getServer()).getPhase();
+    }
+
+    public int getPublicHeatOutput() { return getHeatOutput(); }
+    public int getPublicBaseRadius() { return getBaseRadius(); }
+    public int getPublicPhaseConsumption() { return getPhaseConsumption(); }
+
+    public int getEffectiveRadius() {
+        int base = getBaseRadius();
+        boolean exposed = !getCachedSheltered() && getPhase() >= 5;
+        return exposed ? (int) (base * 0.6f) : base;
+    }
+
+    public boolean isWindExposed() {
+        return !getCachedSheltered() && getPhase() >= 5;
+    }
+
+    public int getBurnEtaMinutes() {
+        int consumption = getPhaseConsumption();
+        return burnTimeRemaining / (consumption * 1200);
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getBlockState().getBlock().getName();
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInv, Player player) {
+        return new ThermalHeaterMenu(containerId, this);
     }
 
     @Override

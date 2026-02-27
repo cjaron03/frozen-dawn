@@ -94,6 +94,9 @@ public class ColdEffects {
         if (mc.player == null) return;
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
+        // Full EVA suit (tier 3+) is climate-controlled — no shivering
+        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3) return;
+
         float temp = TemperatureHud.getDisplayedTemp();
         // Factor in armor cold resistance — no shivering when protected
         float effectiveTemp = temp + MobFreezeHandler.getArmorColdResistance(mc.player);

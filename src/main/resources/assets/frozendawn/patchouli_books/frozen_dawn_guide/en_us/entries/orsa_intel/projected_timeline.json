@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "CLASSIFIED",
-      "text": "$(bold)ORSA-UN JOINT ASSESSMENT$()$(br2)RE: Projected conditions following orbital destabilization$(br2)The following is our best estimate of what Earth will experience as it drifts from the Sun.$(br2)Timeline assumes ~100 day progression."
+      "text": "$(bold)ORSA-UN JOINT ASSESSMENT$()$(br2)RE: Projected conditions following orbital destabilization$(br2)The following is our best estimate of what Earth will experience as it drifts from the Sun.$(br2)Timeline assumes ~100 day progression.$(br2)$(italic)Note: This document was originally classified. It has been declassified because there is no one left to classify things for.$()"
     },
     {
       "type": "patchouli:text",
@@ -32,7 +32,7 @@
     {
       "type": "patchouli:text",
       "title": "Survival Recommendations",
-      "text": "$(li)Establish underground base below Y=0$(li)Secure heat sources BEFORE Phase 3$(li)Build a Geothermal Core for late-game$(li)Any roofed structure traps breathable air$(li)Deeper = warmer$(br2)Good luck.$(br)$(italic)— ORSA Science Division$()"
+      "text": "$(li)Establish underground base below Y=0$(li)Secure heat sources BEFORE Phase 3$(li)Build a Geothermal Core for late-game$(li)Any roofed structure traps breathable air$(li)Deeper = warmer$(br2)Good luck. You are statistically the unluckiest person alive. But also the luckiest, because you $(italic)are$() alive.$(br2)$(italic)— ORSA Science Division$(br)(We're rooting for you. Quietly. From Mars.)$()"
     }
   ]
 }

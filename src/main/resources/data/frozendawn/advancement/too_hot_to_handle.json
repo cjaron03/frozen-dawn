@@ -1,5 +1,5 @@
 {
-  "parent": "frozendawn:root",
+  "parent": "frozendawn:phase3",
   "display": {
     "icon": {
       "id": "minecraft:lava_bucket"

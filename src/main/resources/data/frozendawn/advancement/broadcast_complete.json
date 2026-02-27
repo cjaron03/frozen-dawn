@@ -1,0 +1,14 @@
+{
+  "parent": "frozendawn:found_transponder_schematic",
+  "display": {
+    "icon": {"id": "frozendawn:transponder"},
+    "title": {"translate": "advancement.frozendawn.broadcast_complete.title"},
+    "description": {"translate": "advancement.frozendawn.broadcast_complete.description"},
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "impossible": {"trigger": "minecraft:impossible"}
+  }
+}

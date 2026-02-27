@@ -1,0 +1,18 @@
+{
+  "name": "ORSA MultiTool",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:orsa_multitool",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA MultiTool",
+      "text": "A handheld diagnostic tool for inspecting ORSA equipment. Right-click any supported device to get a readout of its current status.$(br2)$(bold)Supported devices:$()$(br)$(li)Thermal Heater — heat output, effective radius, fuel ETA, shelter status$(li)Transponder — broadcast state, progress, signal depth$(li)Geothermal Core — operational status, coordinates$(br2)Indispensable for troubleshooting your survival infrastructure.$(br2)$(italic)Orbital command used to monitor all this remotely. Now you have a stick with a redstone sensor. Progress.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_multitool",
+      "text": "Iron tip, redstone sensor, and a stick handle. The original ORSA MultiTool cost $14,000 and had Bluetooth. This one costs a stick and works better."
+    }
+  ]
+}

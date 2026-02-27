@@ -17,21 +17,38 @@ public record ApocalypseDataPayload(
         float tempOffset,
         float sunScale,
         float sunBrightness,
-        float skyLight
+        float skyLight,
+        boolean schematicUnlocked
 ) implements CustomPacketPayload {
 
     public static final Type<ApocalypseDataPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "apocalypse_data"));
 
-    public static final StreamCodec<ByteBuf, ApocalypseDataPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, ApocalypseDataPayload::phase,
-            ByteBufCodecs.FLOAT, ApocalypseDataPayload::progress,
-            ByteBufCodecs.FLOAT, ApocalypseDataPayload::tempOffset,
-            ByteBufCodecs.FLOAT, ApocalypseDataPayload::sunScale,
-            ByteBufCodecs.FLOAT, ApocalypseDataPayload::sunBrightness,
-            ByteBufCodecs.FLOAT, ApocalypseDataPayload::skyLight,
-            ApocalypseDataPayload::new
-    );
+    public static final StreamCodec<ByteBuf, ApocalypseDataPayload> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public ApocalypseDataPayload decode(ByteBuf buf) {
+            int phase = ByteBufCodecs.VAR_INT.decode(buf);
+            float progress = ByteBufCodecs.FLOAT.decode(buf);
+            float tempOffset = ByteBufCodecs.FLOAT.decode(buf);
+            float sunScale = ByteBufCodecs.FLOAT.decode(buf);
+            float sunBrightness = ByteBufCodecs.FLOAT.decode(buf);
+            float skyLight = ByteBufCodecs.FLOAT.decode(buf);
+            boolean schematicUnlocked = ByteBufCodecs.BOOL.decode(buf);
+            return new ApocalypseDataPayload(phase, progress, tempOffset,
+                    sunScale, sunBrightness, skyLight, schematicUnlocked);
+        }
+
+        @Override
+        public void encode(ByteBuf buf, ApocalypseDataPayload payload) {
+            ByteBufCodecs.VAR_INT.encode(buf, payload.phase());
+            ByteBufCodecs.FLOAT.encode(buf, payload.progress());
+            ByteBufCodecs.FLOAT.encode(buf, payload.tempOffset());
+            ByteBufCodecs.FLOAT.encode(buf, payload.sunScale());
+            ByteBufCodecs.FLOAT.encode(buf, payload.sunBrightness());
+            ByteBufCodecs.FLOAT.encode(buf, payload.skyLight());
+            ByteBufCodecs.BOOL.encode(buf, payload.schematicUnlocked());
+        }
+    };
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

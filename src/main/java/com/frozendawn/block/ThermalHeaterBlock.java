@@ -2,7 +2,9 @@ package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -77,6 +79,18 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
             }
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                                Player player, BlockHitResult hitResult) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof ThermalHeaterBlockEntity heater) {
+                serverPlayer.openMenu(heater, pos);
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     private static int getFuelBurnTime(ItemStack stack) {

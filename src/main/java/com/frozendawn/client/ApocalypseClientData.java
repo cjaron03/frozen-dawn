@@ -15,6 +15,7 @@ public final class ApocalypseClientData {
     private static float sunScale = 1f;
     private static float sunBrightness = 1f;
     private static float skyLight = 1f;
+    private static boolean schematicUnlocked = false;
 
     private ApocalypseClientData() {}
 
@@ -25,6 +26,7 @@ public final class ApocalypseClientData {
         sunScale = payload.sunScale();
         sunBrightness = payload.sunBrightness();
         skyLight = payload.skyLight();
+        schematicUnlocked = payload.schematicUnlocked();
         FrozenDawnPhaseTracker.setPhase(phase);
     }
 
@@ -35,6 +37,7 @@ public final class ApocalypseClientData {
         sunScale = 1f;
         sunBrightness = 1f;
         skyLight = 1f;
+        schematicUnlocked = false;
         FrozenDawnPhaseTracker.setPhase(0);
     }
 
@@ -44,4 +47,5 @@ public final class ApocalypseClientData {
     public static float getSunScale() { return sunScale; }
     public static float getSunBrightness() { return sunBrightness; }
     public static float getSkyLight() { return skyLight; }
+    public static boolean isSchematicUnlocked() { return schematicUnlocked; }
 }

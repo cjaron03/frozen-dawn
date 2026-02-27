@@ -1,5 +1,5 @@
 {
-  "parent": "frozendawn:root",
+  "parent": "frozendawn:insulated_clothing",
   "display": {
     "icon": {
       "id": "frozendawn:insulated_chestplate"

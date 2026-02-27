@@ -13,6 +13,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 
+import com.frozendawn.init.ModItems;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,7 +131,7 @@ public class ThermalContainerMenu extends AbstractContainerMenu {
         return stack != null && stack.getItem() instanceof ThermalContainerItem;
     }
 
-    /** Only allows food items (no thermal containers). */
+    /** Allows food items and frozen atmosphere shards (no thermal containers). */
     private static class FoodSlot extends Slot {
         public FoodSlot(Container container, int slot, int x, int y) {
             super(container, slot, x, y);
@@ -137,7 +139,9 @@ public class ThermalContainerMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.has(DataComponents.FOOD) && !(stack.getItem() instanceof ThermalContainerItem);
+            if (stack.getItem() instanceof ThermalContainerItem) return false;
+            return stack.has(DataComponents.FOOD)
+                    || stack.is(ModItems.FROZEN_ATMOSPHERE_SHARD.get());
         }
     }
 }

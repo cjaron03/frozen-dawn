@@ -1,6 +1,6 @@
 {
-  "name": "Heating & Shelter",
-  "description": "Devices and materials for staying warm as temperatures plummet.",
+  "name": "Heating & Tools",
+  "description": "Devices, materials, and diagnostic tools for staying warm and managing survival infrastructure.",
   "icon": "frozendawn:thermal_core",
   "sortnum": 1
 }

@@ -2,6 +2,7 @@ package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
@@ -10,6 +11,8 @@ import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
+import com.frozendawn.world.FrozenAtmosphereFormation;
+import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
@@ -58,6 +61,10 @@ public class WorldTickHandler {
 
         state.tick(server);
 
+        // Initialize satellite coordinates once (no-op if already chosen or disabled)
+        WinConditionState winState = WinConditionState.get(server);
+        winState.initSatellitePosition(server.overworld());
+
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
         FrozenDawnPhaseTracker.setPhase(currentPhase);
@@ -84,7 +91,7 @@ public class WorldTickHandler {
 
         // Sync apocalypse data to all clients every 100 ticks (~5 seconds)
         if (state.getApocalypseTicks() % 100 == 0) {
-            PacketDistributor.sendToAllPlayers(createPayload(state));
+            PacketDistributor.sendToAllPlayers(createPayload(state, winState));
         }
 
         float progress = state.getProgress();
@@ -94,6 +101,7 @@ public class WorldTickHandler {
 
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
+        SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
         // Stagger heavy systems on alternating ticks to halve peak load
@@ -103,6 +111,8 @@ public class WorldTickHandler {
         } else {
             VegetationDecay.tick(overworld, currentPhase);
             AcheroniteGrowth.tick(overworld, currentPhase, progress,
+                    state.getCurrentDay(), state.getTotalDays());
+            FrozenAtmosphereFormation.tick(overworld, currentPhase, progress,
                     state.getCurrentDay(), state.getTotalDays());
         }
         SnowAccumulator.tick(overworld, currentPhase, progress);
@@ -173,7 +183,8 @@ public class WorldTickHandler {
     public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && player.getServer() != null) {
             ApocalypseState state = ApocalypseState.get(player.getServer());
-            PacketDistributor.sendToPlayer(player, createPayload(state));
+            WinConditionState winState = WinConditionState.get(player.getServer());
+            PacketDistributor.sendToPlayer(player, createPayload(state, winState));
 
             grantPhaseAdvancements(player, state.getPhase());
 
@@ -226,14 +237,15 @@ public class WorldTickHandler {
         }
     }
 
-    private static ApocalypseDataPayload createPayload(ApocalypseState state) {
+    private static ApocalypseDataPayload createPayload(ApocalypseState state, WinConditionState winState) {
         return new ApocalypseDataPayload(
                 state.getPhase(),
                 state.getProgress(),
                 state.getTemperatureOffset(),
                 state.getSunScale(),
                 state.getSunBrightness(),
-                state.getSkyLight()
+                state.getSkyLight(),
+                winState.isSchematicUnlocked()
         );
     }
 }
