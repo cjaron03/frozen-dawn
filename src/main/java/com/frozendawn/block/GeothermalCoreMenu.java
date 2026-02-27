@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.item.O2TankItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -22,7 +23,7 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public GeothermalCoreMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, playerInv, new SimpleContainer(3), new SimpleContainerData(3));
+        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(3));
     }
 
     /** Server constructor. */
@@ -35,20 +36,21 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        // 3 upgrade slots
+        // 3 upgrade slots + 1 O2 tank refill slot
         addSlot(new UpgradeSlot(container, 0, 26, 22));   // Range
         addSlot(new UpgradeSlot(container, 1, 26, 46));   // Temp
         addSlot(new UpgradeSlot(container, 2, 26, 70));   // O2
+        addSlot(new O2TankSlot(container, 3, 80, 94));    // O2 Tank Refill
 
-        // Player inventory (3 rows)
+        // Player inventory (3 rows) — shifted down for refill row
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, 102 + row * 18));
+                addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, 130 + row * 18));
             }
         }
         // Hotbar
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInv, col, 8 + col * 18, 160));
+            addSlot(new Slot(playerInv, col, 8 + col * 18, 188));
         }
 
         addDataSlots(data);
@@ -65,10 +67,12 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         if (slot.hasItem()) {
             ItemStack stack = slot.getItem();
             result = stack.copy();
-            if (index < 3) {
-                if (!moveItemStackTo(stack, 3, 39, true)) return ItemStack.EMPTY;
+            if (index < 4) {
+                // From container slots to player inventory
+                if (!moveItemStackTo(stack, 4, 40, true)) return ItemStack.EMPTY;
             } else {
-                if (!moveItemStackTo(stack, 0, 3, false)) return ItemStack.EMPTY;
+                // From player inventory to container slots
+                if (!moveItemStackTo(stack, 0, 4, false)) return ItemStack.EMPTY;
             }
             if (stack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
@@ -105,6 +109,22 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         }
     }
 
+    private static class O2TankSlot extends Slot {
+        public O2TankSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return stack.getItem() instanceof O2TankItem;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+    }
+
     /**
      * Wraps the block entity's item list as a Container for menu access.
      */
@@ -115,7 +135,7 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
             this.entity = entity;
         }
 
-        @Override public int getContainerSize() { return 3; }
+        @Override public int getContainerSize() { return 4; }
         @Override public boolean isEmpty() { return entity.getItems().stream().allMatch(ItemStack::isEmpty); }
         @Override public ItemStack getItem(int slot) { return entity.getItems().get(slot); }
 

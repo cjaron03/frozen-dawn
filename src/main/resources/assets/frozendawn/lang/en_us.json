@@ -23,6 +23,9 @@
   "item.frozendawn.orsa_document": "ORSA Document",
   "item.frozendawn.thermal_container": "Thermal Container",
   "item.frozendawn.orsa_multitool": "ORSA MultiTool",
+  "item.frozendawn.o2_tank": "O2 Canister",
+  "item.frozendawn.o2_tank_mk2": "O2 Canister Mk.II",
+  "item.frozendawn.o2_tank_mk3": "O2 Canister Mk.III",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",

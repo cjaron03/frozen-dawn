@@ -25,4 +25,11 @@ public class ModDataComponents {
                             .persistent(Codec.INT)
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> O2_LEVEL =
+            DATA_COMPONENTS.register("o2_level", () ->
+                    DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.INT)
+                            .build());
 }

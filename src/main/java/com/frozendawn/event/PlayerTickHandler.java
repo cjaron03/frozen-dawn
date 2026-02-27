@@ -2,7 +2,9 @@ package com.frozendawn.event;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
+import com.frozendawn.item.O2TankItem;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.world.TemperatureManager;
@@ -14,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
@@ -194,9 +197,17 @@ final class PlayerTickHandler {
                 continue;
             }
 
-            if (MobFreezeHandler.getFullSetTier(player) == 3 && progress < 0.95f) {
-                suffocationTimer.put(id, 0);
-                continue;
+            // Full EVA suit — check for O2 tank
+            if (MobFreezeHandler.getFullSetTier(player) == 3) {
+                ItemStack tank = findO2Tank(player);
+                if (!tank.isEmpty()) {
+                    int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+                    if (o2 > 0) {
+                        tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
+                        suffocationTimer.put(id, 0);
+                        continue;
+                    }
+                }
             }
 
             int ticks = suffocationTimer.getOrDefault(id, 0) + 1;
@@ -234,6 +245,17 @@ final class PlayerTickHandler {
                 player.setDeltaMovement(motion);
             }
         }
+    }
+
+    private static ItemStack findO2Tank(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() instanceof O2TankItem) {
+                int o2 = stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+                if (o2 > 0) return stack;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     private static boolean isInHabitableZone(ServerPlayer player) {

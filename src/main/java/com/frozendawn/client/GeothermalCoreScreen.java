@@ -2,11 +2,14 @@ package com.frozendawn.client;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.GeothermalCoreMenu;
+import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.item.O2TankItem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +21,7 @@ import java.util.List;
 public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCoreMenu> {
 
     private static final int GUI_W = 176;
-    private static final int GUI_H = 184;
+    private static final int GUI_H = 212;
 
     private static final int BAR_LEFT = 48;
     private static final int BAR_W = 96;
@@ -92,11 +95,6 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
             drawSlotBg(graphics, x + slot.x - 1, y + slot.y - 1);
         }
 
-        // Slot labels
-        graphics.drawString(font, "R", x + 16, y + 26, 0xFF4477AA, false);
-        graphics.drawString(font, "T", x + 16, y + 50, 0xFF4477AA, false);
-        graphics.drawString(font, "O", x + 15, y + 74, 0xFF4477AA, false);
-
         // --- Progress bars ---
         int barX = x + BAR_LEFT;
 
@@ -115,14 +113,27 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         graphics.drawString(font, tempText, barX + BAR_W + 4, y + 49, 0xFFE0E0E0, true);
 
         // O2 bar (green)
-        graphics.drawString(font, "O\u2082", barX, y + 63, 0xFF6688AA, false);
+        graphics.drawString(font, "O2", barX, y + 63, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 72, BAR_W, BAR_H,
                 o2Level, GeothermalCoreBlockEntity.MAX_O2_LEVEL, 0xFF22BB44);
         String o2Text = effectiveO2 + " blk" + (o2Max ? " \u00A76MAX" : "");
         graphics.drawString(font, o2Text, barX + BAR_W + 4, y + 73, 0xFFE0E0E0, true);
 
-        // Divider above inventory
+        // --- O2 Tank Refill Row ---
         graphics.fill(x + 4, y + 90, x + GUI_W - 4, y + 91, 0xFF604830);
+        graphics.drawString(font, "O2 Refill", x + 8, y + 98, 0xFF00CCCC, false);
+        // Show fill % when tank is in the slot
+        Slot tankSlot = menu.slots.get(3);
+        ItemStack tankStack = tankSlot.getItem();
+        if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
+            int tankO2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+            int percent = Math.round(100f * tankO2 / tankItem.getMaxO2());
+            int pColor = percent >= 100 ? 0xFF00FF88 : 0xFF00CCCC;
+            graphics.drawString(font, percent + "%", x + 102, y + 98, pColor, false);
+        }
+
+        // Divider above inventory
+        graphics.fill(x + 4, y + 114, x + GUI_W - 4, y + 115, 0xFF604830);
         graphics.drawString(font, playerInventoryTitle, x + 8, y + inventoryLabelY, 0xFF607080, false);
 
         // --- Side tab button ---
@@ -230,11 +241,19 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         ty += lineH + 6;
 
         // O2
-        graphics.drawString(font, "\u00A7aO\u2082 Zone", tx, ty, 0xFF22BB44, false);
+        graphics.drawString(font, "\u00A7aO2 Zone", tx, ty, 0xFF22BB44, false);
         ty += lineH;
         graphics.drawString(font, "3 levels (Nether Star)", tx + 2, ty, 0xFF778888, false);
         ty += lineH;
         graphics.drawString(font, "16 \u2192 20 \u2192 26 \u2192 32 blk", tx + 2, ty, 0xFF99AABB, false);
+        ty += lineH + 6;
+
+        // O2 Tank Refill
+        graphics.drawString(font, "\u00A73O2 Tank Refill", tx, ty, 0xFF00CCCC, false);
+        ty += lineH;
+        graphics.drawString(font, "Place tank in slot", tx + 2, ty, 0xFF778888, false);
+        ty += lineH;
+        graphics.drawString(font, "\u2022 Auto-refills over time", tx + 2, ty, 0xFF99AABB, false);
     }
 
     @Override
@@ -271,13 +290,26 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
                         }
                     }
                     case 2 -> {
-                        tooltip.add(Component.literal("\u00A7aO\u2082 Production Upgrade"));
+                        tooltip.add(Component.literal("\u00A7aO2 Production Upgrade"));
                         if (o2Max) tooltip.add(Component.literal("\u00A76Fully upgraded!"));
                         else tooltip.add(Component.literal("\u00A77Nether Star \u00A7f\u2192 +1 level"));
                     }
                 }
                 graphics.renderTooltip(font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
                 break;
+            }
+        }
+
+        // O2 tank refill slot tooltip
+        int tankSx = leftPos + 80;
+        int tankSy = topPos + 94;
+        if (mouseX >= tankSx && mouseX < tankSx + 18 && mouseY >= tankSy && mouseY < tankSy + 18) {
+            ItemStack tankStack = menu.slots.get(3).getItem();
+            if (tankStack.isEmpty()) {
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.literal("\u00A73O2 Tank Refill"));
+                tooltip.add(Component.literal("\u00A77Place an O2 Tank here to refill"));
+                graphics.renderTooltip(font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
             }
         }
 

@@ -1,7 +1,9 @@
 package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.O2TankItem;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -41,7 +43,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     private int tempLevel = 0;
     private int o2Level = 0;
 
-    private final NonNullList<ItemStack> items = NonNullList.withSize(3, ItemStack.EMPTY);
+    private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
 
     private final ContainerData data = new ContainerData() {
         @Override
@@ -110,6 +112,17 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             if (o2Stack.is(Items.NETHER_STAR)) {
                 o2Level++;
                 o2Stack.shrink(1);
+                changed = true;
+            }
+        }
+
+        // Slot 3: O2 tank refill — +10 O2/tick (~2 minutes to fill tier 1)
+        ItemStack tankStack = items.get(3);
+        if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
+            int o2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+            int cap = tankItem.getMaxO2();
+            if (o2 < cap) {
+                tankStack.set(ModDataComponents.O2_LEVEL.get(), Math.min(o2 + 10, cap));
                 changed = true;
             }
         }

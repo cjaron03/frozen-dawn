@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +30°C cold resistance. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from atmospheric suffocation.$(br)$(bold)Limitation:$() Cannot protect in very late Phase 6 (>95% progress). At that point, space wins.$(br2)$(italic)ORSA Legal Dept. reminds you: This suit is on loan. Returning it in pieces counts as \"damaged.\" — Kevin$()"
+      "text": "$(bold)Protection:$() Each piece adds +30°C cold resistance. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from atmospheric suffocation.$(br)$(bold)Limitation:$() In late Phase 6, the suit alone isn't enough — you need $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) for breathable air.$(br2)$(italic)ORSA Legal Dept. reminds you: This suit is on loan. Returning it in pieces counts as \"damaged.\" — Kevin$()"
     },
     {
       "type": "patchouli:text",

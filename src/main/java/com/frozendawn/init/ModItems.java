@@ -8,6 +8,7 @@ import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.OrsaDocumentItem;
+import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
@@ -48,6 +49,15 @@ public class ModItems {
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
             () -> new OrsaMultiToolItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<O2TankItem> O2_TANK = ITEMS.register("o2_tank",
+            () -> new O2TankItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER1_MAX), O2TankItem.TIER1_MAX));
+    public static final DeferredItem<O2TankItem> O2_TANK_MK2 = ITEMS.register("o2_tank_mk2",
+            () -> new O2TankItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER2_MAX), O2TankItem.TIER2_MAX));
+    public static final DeferredItem<O2TankItem> O2_TANK_MK3 = ITEMS.register("o2_tank_mk3",
+            () -> new O2TankItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER3_MAX), O2TankItem.TIER3_MAX));
 
     // --- Tier 1: Insulated Clothing (Phase 3) ---
     public static final DeferredItem<ArmorItem> INSULATED_HELMET = ITEMS.register("insulated_helmet",
@@ -181,6 +191,9 @@ public class ModItems {
                         output.accept(FROZEN_HEART.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
+                        output.accept(O2_TANK.get());
+                        output.accept(O2_TANK_MK2.get());
+                        output.accept(O2_TANK_MK3.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
                         output.accept(INSULATED_CHESTPLATE.get());

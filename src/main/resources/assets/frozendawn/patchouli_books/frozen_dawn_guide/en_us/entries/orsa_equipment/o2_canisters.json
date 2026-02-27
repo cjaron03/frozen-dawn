@@ -1,0 +1,48 @@
+{
+  "name": "O2 Canisters",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:o2_tank",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Portable O2 System",
+      "text": "$(bold)ORSA Mk.I-III Compressed Oxygen Canisters$()$(br2)When the atmosphere freezes (Phase 6 late), your $(l:orsa_equipment/eva_suit)EVA suit$(/l) alone can't save you — it needs a supply of breathable air. That's where these come in.$(br2)Carry an O2 Canister in your inventory while wearing a full EVA suit. The suit's sealed air loop does the rest. One tick of breathing, one tick of O2 consumed. Simple.$(br2)$(italic)ORSA Safety Tip: Breathe normally. Hyperventilating does not conserve oxygen. We checked.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "How It Works",
+      "text": "$(bold)Automatic:$() The EVA suit detects the canister in your inventory and draws from it. No button-pressing required. ORSA designed at least one thing correctly.$(br2)$(bold)Multiple tanks:$() Carry more than one canister and they are consumed sequentially. When one empties, the suit switches to the next. Your O2 HUD shows $(bold)combined$() remaining air across all tanks.$(br2)$(bold)Refilling:$() Place any canister in a $(l:advanced/geothermal_core)Geothermal Core's$(/l) O2 slot. It refills at +10 O2/tick. Plan accordingly — higher-tier tanks take longer to fill."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mk.I — O2 Canister",
+      "text": "$(bold)Capacity:$() 60 seconds$(br)$(bold)Bar Color:$() Cyan$(br2)The standard-issue ORSA compressed oxygen canister. Iron construction, glass viewport, thermal core regulator. Holds one minute of breathable air.$(br2)One minute. That's how long ORSA thought you'd need to walk between airlocks. ORSA assumed you'd have airlocks.$(br2)$(italic)\"We allocated the budget for portable airlocks. Kevin in Logistics spent it on a breakroom espresso machine. The espresso machine is frozen now too.\"$()$(br)$(italic)— Internal Memo, ORSA Engineering$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:o2_tank",
+      "text": "Iron, glass, and a Thermal Core. The core regulates gas pressure. Don't ask what happens without it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mk.II — O2 Canister Mk.II",
+      "text": "$(bold)Capacity:$() 120 seconds$(br)$(bold)Bar Color:$() Blue$(br2)Diamond-reinforced casing allows double the compression ratio. Two full minutes of air. Enough time to walk somewhere, realize you forgot something, and walk back.$(br2)The diamond lining was originally considered excessive. Then someone ran out of air 90 seconds into a surface expedition. The requisition form was approved within the hour.$(br2)$(italic)ORSA Procurement notes this is the most expensive air you will ever breathe. Until the Mk.III.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:o2_tank_mk2",
+      "text": "Surround a Mk.I canister with diamonds. Yes, diamonds. For a metal tube full of air. Welcome to the apocalypse economy."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Mk.III — O2 Canister Mk.III",
+      "text": "$(bold)Capacity:$() 180 seconds$(br)$(bold)Bar Color:$() Purple$(br2)The pinnacle of atmospheric containment. $(l:advanced/frozen_atmosphere_shard)Frozen Atmosphere Shards$(/l) and blue ice create a cryogenic compression chamber that holds three minutes of air at absurd density.$(br2)The canister is cold to the touch. Uncomfortably cold. The atmospheric shards want to be gas again and the canister is the only thing between you and them having a very enthusiastic opinion about that.$(br2)$(italic)\"Three minutes doesn't sound like much. But when there's literally no air outside your helmet, three minutes is the difference between life and a very quiet funeral.\"$()$(br)$(italic)— Dr. Vasquez, EVA Training Briefing$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:o2_tank_mk3",
+      "text": "Frozen Atmosphere Shards, blue ice, and a Mk.II canister. You're bottling the sky. ORSA R&D would be proud. Or terrified."
+    }
+  ]
+}

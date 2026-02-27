@@ -33,15 +33,20 @@ public class EvaSuitAmbience {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
         if (mc.level.dimension() != Level.OVERWORLD) return;
+        if (mc.player.isCreative() || mc.player.isSpectator()) {
+            stopAll(mc);
+            return;
+        }
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
 
         boolean inVacuum = phase >= 6 && progress >= 0.85f;
         boolean fullEva = MobFreezeHandler.getFullSetTier(mc.player) == 3;
+        boolean exposedToSurface = mc.level.canSeeSky(mc.player.blockPosition().above());
 
-        // Detect suit removal in vacuum — play suffocation gasp
-        if (inVacuum && wasFullEva && !fullEva) {
+        // Detect suit removal in vacuum on surface — play suffocation gasp
+        if (inVacuum && exposedToSurface && wasFullEva && !fullEva) {
             suffocateSound = SimpleSoundInstance.forUI(
                     ModSounds.EVA_SUFFOCATE.get(), 1.0f, 0.8f);
             mc.getSoundManager().play(suffocateSound);
@@ -53,7 +58,7 @@ public class EvaSuitAmbience {
         }
         wasFullEva = fullEva;
 
-        boolean shouldPlay = fullEva && inVacuum;
+        boolean shouldPlay = fullEva && inVacuum && exposedToSurface;
 
         if (!shouldPlay) {
             stopAll(mc);

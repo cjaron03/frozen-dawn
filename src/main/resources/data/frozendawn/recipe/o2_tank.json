@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["IGI","ITI","III"],"key":{"I":{"item":"minecraft:iron_ingot"},"G":{"item":"minecraft:glass"},"T":{"item":"frozendawn:thermal_core"}},"result":{"id":"frozendawn:o2_tank","count":1}}
