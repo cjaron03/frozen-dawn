@@ -7,6 +7,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -68,6 +69,40 @@ public final class TemperatureManager {
             }
         }
         return 0.0f;
+    }
+
+    /**
+     * Returns true if the position is in an enclosed room: roof within 4 blocks
+     * above AND a solid wall in each cardinal direction within 10 blocks.
+     * A single floating block won't qualify — actual walls + ceiling required.
+     */
+    public static boolean isEnclosed(Level level, BlockPos pos) {
+        // Roof check
+        boolean hasRoof = false;
+        for (int dy = 1; dy <= 4; dy++) {
+            BlockPos above = pos.above(dy);
+            BlockState state = level.getBlockState(above);
+            if (state.isSolidRender(level, above) || state.is(ModBlocks.INSULATED_GLASS.get())) {
+                hasRoof = true;
+                break;
+            }
+        }
+        if (!hasRoof) return false;
+
+        // Wall check: solid block in each cardinal direction within 10 blocks
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            boolean hasWall = false;
+            for (int i = 1; i <= 10; i++) {
+                BlockPos wallPos = pos.relative(dir, i);
+                BlockState state = level.getBlockState(wallPos);
+                if (state.isSolidRender(level, wallPos) || state.is(ModBlocks.INSULATED_GLASS.get())) {
+                    hasWall = true;
+                    break;
+                }
+            }
+            if (!hasWall) return false;
+        }
+        return true;
     }
 
     /**

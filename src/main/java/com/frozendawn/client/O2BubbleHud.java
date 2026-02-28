@@ -99,7 +99,7 @@ public class O2BubbleHud {
         }
 
         // Tier colors
-        int[] tierColors = getTierColors(1); // always cyan
+        int[] tierColors = getTierColors(tier);
 
         // Draw bubbles right-to-left
         for (int i = 0; i < BUBBLE_COUNT; i++) {

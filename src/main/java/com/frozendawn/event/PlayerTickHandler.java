@@ -259,7 +259,7 @@ final class PlayerTickHandler {
     }
 
     private static boolean isInHabitableZone(ServerPlayer player) {
-        if (!player.level().canSeeSky(player.blockPosition().above())) return true;
+        if (TemperatureManager.isEnclosed(player.level(), player.blockPosition())) return true;
 
         BlockPos playerPos = player.blockPosition();
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(player.level())) {
@@ -276,4 +276,5 @@ final class PlayerTickHandler {
         }
         return false;
     }
+
 }

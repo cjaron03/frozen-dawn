@@ -116,7 +116,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             }
         }
 
-        // Slot 3: O2 tank refill — +10 O2/tick (~2 minutes to fill tier 1)
+        // Slot 3: O2 tank refill — +10 O2/tick (~6 seconds to fill tier 1)
         ItemStack tankStack = items.get(3);
         if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
             int o2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);

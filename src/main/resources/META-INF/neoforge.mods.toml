@@ -31,9 +31,17 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
 
 [[dependencies.${mod_id}]]
     modId="patchouli"
-    type="optional"
+    type="required"
     reason="Adds in-game guide book with rendered recipes"
     versionRange="[1.21.1-90,)"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="jei"
+    type="optional"
+    reason="Adds recipe viewing and shift-click transfer"
+    versionRange="[19,)"
+    ordering="AFTER"
+    side="CLIENT"
 

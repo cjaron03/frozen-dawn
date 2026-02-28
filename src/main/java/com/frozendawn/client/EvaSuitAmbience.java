@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundSource;
@@ -43,7 +44,7 @@ public class EvaSuitAmbience {
 
         boolean inVacuum = phase >= 6 && progress >= 0.85f;
         boolean fullEva = MobFreezeHandler.getFullSetTier(mc.player) == 3;
-        boolean exposedToSurface = mc.level.canSeeSky(mc.player.blockPosition().above());
+        boolean exposedToSurface = !TemperatureManager.isEnclosed(mc.level, mc.player.blockPosition());
 
         // Detect suit removal in vacuum on surface — play suffocation gasp
         if (inVacuum && exposedToSurface && wasFullEva && !fullEva) {

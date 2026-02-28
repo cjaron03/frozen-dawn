@@ -6,6 +6,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.world.TemperatureManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.EntityTypeTags;
@@ -80,10 +81,17 @@ public class MobFreezeHandler {
     }
 
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
-        // Phase 6 late, exposed to sky: skip freeze — suffocation replaces freezing
-        // Under a roof/underground there's trapped air, so cold still applies
+        // Phase 6 late, not in an enclosed room: skip freeze — suffocation replaces freezing
+        // Inside an enclosed shelter there's trapped air, so cold still applies
         if (isPlayer && state.getPhase() >= 6 && state.getProgress() >= 0.85f
-                && entity.level().canSeeSky(entity.blockPosition().above())) return;
+                && !TemperatureManager.isEnclosed(entity.level(), entity.blockPosition())) {
+            // Clear residual freeze ticks so vanilla frost overlay doesn't linger
+            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
+            return;
+        }
+
+        // Full EVA suit is climate-controlled — no vanilla freeze visual
+        boolean evaProtected = isPlayer && getFullSetTier((Player) entity) >= 3;
 
         // Warm enough — thaw out
         if (temp >= 0f) {
@@ -99,8 +107,13 @@ public class MobFreezeHandler {
         }
 
         // Build up visual freeze (vanilla frost overlay on entities)
-        int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
-        entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
+        // EVA suit suppresses this — climate-controlled, no frost visual
+        if (evaProtected) {
+            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
+        } else {
+            int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
+            entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
+        }
 
         // Determine severity
         int slowLevel;

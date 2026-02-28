@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -31,6 +32,11 @@ public class ColdEffects {
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
+        // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
+        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3 && mc.player.getTicksFrozen() > 0) {
+            mc.player.setTicksFrozen(0);
+        }
+
         float temp = TemperatureHud.getDisplayedTemp();
         if (temp >= 0f) {
             breathCooldown = 0;
@@ -42,7 +48,7 @@ public class ColdEffects {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         if (phase >= 6 && progress > 0.72f
-                && mc.level.canSeeSky(mc.player.blockPosition().above())) {
+                && !TemperatureManager.isEnclosed(mc.level, mc.player.blockPosition())) {
             breathCooldown = 0;
             return;
         }
