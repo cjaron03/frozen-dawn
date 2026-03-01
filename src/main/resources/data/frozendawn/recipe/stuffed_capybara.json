@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:brown_wool" },
+    { "item": "minecraft:brown_wool" },
+    { "item": "minecraft:orange_wool" },
+    { "item": "minecraft:string" }
+  ],
+  "result": { "id": "frozendawn:stuffed_capybara", "count": 1 }
+}

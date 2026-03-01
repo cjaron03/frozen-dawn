@@ -26,12 +26,15 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
     public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SANITY;
+    public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
+    public static final ModConfigSpec.BooleanValue ENABLE_SANITY_CAMERA;
 
     public static final ModConfigSpec SPEC;
 
@@ -110,6 +113,13 @@ public class FrozenDawnConfig {
                         "Preset-managed: overwritten by /frozendawn preset command.",
                         "Default 120000 (~5 in-game days). Brutal: 192000. Cinematic: 72000.")
                 .defineInRange("broadcastTicks", 120000, 6000, 480000);
+        ENABLE_SANITY = BUILDER
+                .comment("Enable the isolation/sanity system (psychological effects in prolonged isolation)")
+                .define("enableSanity", true);
+        SANITY_SPEED_MULTIPLIER = BUILDER
+                .comment("Multiplier for sanity degradation speed.",
+                        "Preset-managed: overwritten by /frozendawn preset command.")
+                .defineInRange("sanitySpeedMultiplier", 1.0, 0.0, 10.0);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -126,6 +136,10 @@ public class FrozenDawnConfig {
                 .comment("Enable phase-dependent sky color shifting.",
                         "Shifts sky from warm amber (phase 1) to deep purple-black (phase 5).")
                 .define("enableSkyColorShift", true);
+        ENABLE_SANITY_CAMERA = BUILDER
+                .comment("Enable subtle camera effects from the sanity system.",
+                        "Disable if you experience motion sickness. Audio and visual effects still play.")
+                .define("enableSanityCameraEffects", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

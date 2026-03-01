@@ -187,6 +187,7 @@ public class WorldTickHandler {
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
 
             grantPhaseAdvancements(player, state.getPhase());
+            SanityHandler.onPlayerLogin(player);
 
             net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
             if (!persistentData.getBoolean("frozendawn:received_books")) {
@@ -202,7 +203,7 @@ public class WorldTickHandler {
         return PlayerTickHandler.getLastTemperature(playerId);
     }
 
-    static void grantAdvancement(ServerPlayer player, String name) {
+    public static void grantAdvancement(ServerPlayer player, String name) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
 

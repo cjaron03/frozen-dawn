@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": { "id": "minecraft:ender_eye" },
+    "title": { "translate": "advancement.frozendawn.watcher_seen.title" },
+    "description": { "translate": "advancement.frozendawn.watcher_seen.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "saw_watcher": { "trigger": "minecraft:impossible" }
+  }
+}

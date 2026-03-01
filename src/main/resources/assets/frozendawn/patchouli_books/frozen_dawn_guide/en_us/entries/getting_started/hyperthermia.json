@@ -7,37 +7,37 @@
     {
       "type": "patchouli:text",
       "title": "Wait. You're HOT?",
-      "text": "$(bold)How.$()$(br2)The sun has abandoned you. The oceans are frozen. The atmosphere is collapsing. And you — $(italic)you$() — have somehow managed to give yourself $(bold)heat stroke.$()$(br2)The ORSA Wellness Division did not prepare a pamphlet for this. We are improvising.$(br2)$(italic)This document is brought to you by the same people who told you \"just build more heaters.\" We accept no liability.$()"
+      "text": "$(bold)How.$()$(br2)The sun has abandoned you. The oceans are frozen. And you have somehow managed to give yourself $(bold)heat stroke.$()$(br2)The ORSA Wellness Division did not prepare a pamphlet for this. We are improvising.$(br2)$(italic)Brought to you by the people who told you \"just build more heaters.\" We accept no liability.$()"
     },
     {
       "type": "patchouli:text",
       "title": "How Did We Get Here?",
-      "text": "Heat sources $(bold)stack$() in Frozen Dawn. Every heater, campfire, lava pool, and geothermal core near you adds its warmth together.$(br2)One heater? Cozy.$(br)Two heaters? Toasty.$(br)Eight diamond heaters? $(bold)You are an oven.$()$(br2)The temperature HUD in the top-left will tell you exactly how badly you've miscalculated. If the number is red and has three digits, you may want to reconsider your life choices."
+      "text": "Heat sources $(bold)stack$() in Frozen Dawn. Every heater, campfire, lava pool, and geothermal core adds its warmth together.$(br2)One heater? Cozy.$(br)Two heaters? Toasty.$(br)Eight diamond heaters? $(bold)You are an oven.$()$(br2)If the HUD number is red with three digits, reconsider your life choices."
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 1: \"Am I... Sweating?\"",
-      "text": "At $(bold)60\u00b0C+$(), your body is confused. It spent all week freezing and now it's being slow-roasted.$(br2)$(li)$(bold)Weakness I$() — Your attacks are weaker$(li)No damage yet$(li)Action bar: \"You're sweating... in a frozen apocalypse. Really?\"$(br2)The screen tints slightly orange. This is the game judging you.$(br2)$(italic)ORSA Tip: This is a sign to stop. You will not stop. We know.$()"
+      "title": "Stage 1: \"Sweating?\"",
+      "text": "At $(bold)60°C+$(), your body is confused. It spent all week freezing and now it's being slow-roasted.$(br2)$(li)$(bold)Weakness I$() — Weaker attacks$(li)No damage yet$(br2)The screen tints slightly orange. This is the game judging you.$(br2)$(italic)ORSA Tip: This is a sign to stop. You will not stop. We know.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Stage 2: \"This Was a Mistake\"",
-      "text": "At $(bold)90\u00b0C+$(), you have crossed from \"warm\" into \"medium-rare.\"$(br2)$(li)$(bold)Weakness II$() — Much weaker$(li)$(bold)1 heart of damage$() every 2 seconds$(li)Action bar: \"The heat is unbearable! Maybe fewer heaters?\"$(br2)Fun fact: 90\u00b0C is the temperature at which you poach an egg. You are now the egg.$(br2)$(italic)The orange overlay is getting worse. Those are sweat drips. Yes, really.$()"
+      "title": "Stage 2: \"Medium-Rare\"",
+      "text": "At $(bold)90°C+$(), you have crossed from \"warm\" into \"medium-rare.\"$(br2)$(li)$(bold)Weakness II$(li)$(bold)1 heart of damage$() every 2 seconds$(br2)90°C is the temperature at which you poach an egg. You are now the egg.$(br2)$(italic)The orange overlay is getting worse. Those are sweat drips.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 3: \"I Am Cooked\"",
-      "text": "At $(bold)120\u00b0C+$(), congratulations — you have achieved the internal temperature of a sous vide steak.$(br2)$(li)$(bold)Nausea$() — Your vision swims$(li)$(bold)Slowness II$() — Can barely move$(li)$(bold)2 hearts of damage$() every 2 seconds$(li)Action bar: \"You are literally cooking alive. In an ice age.\"$(br2)You survived the death of the sun, the freezing of the oceans, and the collapse of the atmosphere — only to be done in by your own heating infrastructure. Poetic, really."
+      "text": "At $(bold)120°C+$(), you have achieved the internal temperature of a sous vide steak.$(br2)$(li)$(bold)Nausea$() — Vision swims$(li)$(bold)Slowness II$(li)$(bold)2 hearts of damage$() every 2 seconds$(br2)You survived the death of the sun only to be done in by your own heaters. Poetic."
     },
     {
       "type": "patchouli:text",
       "title": "The Armor Problem",
-      "text": "Here's the cruel part: your $(bold)insulated armor$() — the gear keeping you alive in the cold — also $(bold)traps heat.$()$(br2)Insulated clothing adds $(bold)+20%$() heat above 20\u00b0C.$(br)Heated armor adds $(bold)+40%$() heat above 20\u00b0C.$(br)EVA suit adds only $(bold)+8%$() (it has proper cooling).$(br2)So that cozy 80\u00b0C room? In heated armor, it's $(bold)104\u00b0C.$() You are a walking slow cooker.$(br2)$(italic)ORSA Engineering would like to remind you that the armor was designed for cold. Not for standing inside a furnace.$()"
+      "text": "Your $(bold)insulated armor$() — the gear keeping you alive in the cold — also $(bold)traps heat.$()$(br2)$(li)Insulated: $(bold)+20%$() heat above 20°C$(li)Heated: $(bold)+40%$() heat above 20°C$(li)EVA suit: Only $(bold)+8%$() (proper cooling)$(br2)That cozy 80°C room? In heated armor, it's $(bold)104°C.$(br2)$(italic)The armor was designed for cold. Not for standing inside a furnace.$()"
     },
     {
       "type": "patchouli:text",
       "title": "How to Not Die (of Heat)",
-      "text": "$(bold)Step 1:$() Remove heaters. Yes, the ones you spent all game building. Remove some of them.$(br2)$(bold)Step 2:$() Spread them out. Heat stacks, so cluster = death sauna.$(br2)$(bold)Step 3:$() Take off the armor indoors. You don't need heated insulation next to four heaters.$(br2)$(bold)Step 4:$() Do not, under any circumstances, stand between a Geothermal Core and four Diamond Thermal Heaters. Kevin from Accounting tried this. He sends his regards from the burn ward on Mars.$()"
+      "text": "$(bold)1.$() Remove some heaters. Yes, the ones you spent all game building.$(br2)$(bold)2.$() Spread them out. Cluster = death sauna.$(br2)$(bold)3.$() Take off the armor indoors.$(br2)$(bold)4.$() Do NOT stand between a Geothermal Core and four Diamond Heaters. Kevin tried this. He sends regards from the burn ward on Mars."
     }
   ]
 }

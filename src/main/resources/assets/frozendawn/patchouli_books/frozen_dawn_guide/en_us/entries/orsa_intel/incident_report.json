@@ -8,7 +8,7 @@
     {
       "type": "patchouli:text",
       "title": "Report TIR-2042-1171",
-      "text": "$(bold)ORSA TECHNICAL INCIDENT REPORT$()$(br)Classification: MAXIMUM$(br)Author: Dr. Elena Vasquez$(br)Division: Science$(br2)RE: Orbital Resonance Cascade Failure \u2014 Complete Analysis"
+      "text": "$(bold)ORSA TECHNICAL INCIDENT REPORT$()$(br)Classification: MAXIMUM$(br)Author: Dr. Elena Vasquez$(br)Division: Science$(br2)RE: Orbital Resonance Cascade Failure — Complete Analysis"
     },
     {
       "type": "patchouli:text",
@@ -23,32 +23,32 @@
     {
       "type": "patchouli:text",
       "title": "2. Failure Analysis",
-      "text": "The resonance stabilization network operates on a feedback principle: each node maintains a portion of the orbital anchor field.$(br2)When nodes fail, surviving nodes increase output to compensate. This additional load accelerates their own degradation.$(br2)The cascade is therefore $(bold)self-reinforcing.$() Each failure makes the next more likely AND more damaging."
+      "text": "The resonance network operates on a feedback principle: each node maintains a portion of the orbital anchor field.$(br2)When nodes fail, surviving nodes increase output. This additional load accelerates their degradation.$(br2)The cascade is $(bold)self-reinforcing.$() Each failure makes the next more likely AND more damaging."
     },
     {
       "type": "patchouli:text",
       "title": "Point of No Return",
-      "text": "Mathematical proof of irreversibility was established at T-3 months when active node count dropped below $(bold)1,200.$()$(br2)Below this threshold, no recovery is possible regardless of intervention.$(br2)$(italic)The math is clear. The committee chose not to believe it.$()"
+      "text": "Irreversibility was proven at T-3 months when active nodes dropped below $(bold)1,200.$()$(br2)Below this threshold, no recovery is possible regardless of intervention.$(br2)$(italic)The math is clear. The committee chose not to believe it.$()"
     },
     {
       "type": "patchouli:text",
       "title": "3. Projected Outcomes",
-      "text": "Earth will continue to drift outward from Sol at an accelerating rate.$(br2)Surface temperature will approach $(bold)-273\u00b0C$() as solar input diminishes to zero.$(br2)Atmospheric gases will condense and freeze.$(br2)No surface habitation is viable. Deep underground geothermal sources are the only remaining energy option."
+      "text": "Earth will continue to drift outward from Sol at an accelerating rate.$(br2)Surface temperature will approach $(bold)-273°C$() as solar input diminishes to zero.$(br2)Atmospheric gases will condense and freeze.$(br2)No surface habitation is viable. Deep geothermal sources are the only remaining energy option."
     },
     {
       "type": "patchouli:text",
       "title": "4. Recommendations",
-      "text": "$(bold)None.$()$(br2)There are no corrective actions available. The orbital anchor network cannot be rebuilt. The drift cannot be reversed.$(br2)This report is filed for the historical record.$(br2)$(bold)APPENDIX A \u2014 NODE STATUS:$()$(br)2,048 / 2,048 ... $(bold)OFFLINE$()"
+      "text": "$(bold)None.$()$(br2)There are no corrective actions available. The anchor network cannot be rebuilt. The drift cannot be reversed.$(br2)This report is filed for the historical record.$(br2)$(bold)APPENDIX A — NODE STATUS:$()$(br)2,048 / 2,048 ... $(bold)OFFLINE$()"
     },
     {
       "type": "patchouli:text",
-      "title": "APPENDIX B \u2014 PROJECT LIGHTHOUSE",
-      "text": "$(bold)CLASSIFICATION: MAXIMUM$()$(br2)At my request, Engineering deployed seven relay satellites into high orbit before evacuation. Designation: $(bold)Project Lighthouse.$()$(br2)Each satellite is equipped with a deep-band receiver and a Mars relay transmitter. They will listen indefinitely for a specific transponder frequency broadcast from below the surface.$(br2)A transponder schematic was developed but never deployed. Blueprints were archived in the satellite network's black box systems.$(br2)$(italic)If someone survives long enough to find a schematic and build the transponder, the satellites will relay the signal. Mars will hear it.$()"
+      "title": "APPENDIX B — LIGHTHOUSE",
+      "text": "$(bold)CLASSIFICATION: MAXIMUM$()$(br2)At my request, Engineering deployed seven relay satellites before evacuation. Designation: $(bold)Project Lighthouse.$()$(br2)Each satellite listens for a specific transponder frequency from below the surface.$(br2)A transponder schematic was developed but never deployed. Blueprints were archived in the satellite black boxes.$(br2)$(italic)If someone builds the transponder, the satellites will relay the signal. Mars will hear it.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Personal Addendum",
-      "text": "I flagged this fourteen months ago. The data was clear. The committee chose to wait.$(br2)This report is my final act as ORSA Science Director. I have failed in my duty to this planet and its people.$(br2)To whoever finds this:$(br)I am sorry.$(br2)Go deep. Stay warm. And if you find the satellites — look up. They're listening.$(br2)$(italic)\u2014 Dr. Elena Vasquez$()"
+      "text": "I flagged this fourteen months ago. The data was clear. The committee chose to wait.$(br2)This report is my final act as ORSA Science Director. I have failed in my duty to this planet and its people.$(br2)To whoever finds this:$(br)I am sorry.$(br2)Go deep. Stay warm. And if you find the satellites — look up. They're listening.$(br2)$(italic)— Dr. Elena Vasquez$()"
     }
   ]
 }

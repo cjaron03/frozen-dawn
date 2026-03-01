@@ -50,5 +50,29 @@
         "stream": true
       }
     ]
+  },
+  "ambient.sanity_whisper": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.sanity_whisper",
+    "sounds": [
+      "frozendawn:ambient/sanity_whisper1",
+      "frozendawn:ambient/sanity_whisper2"
+    ]
+  },
+  "ambient.sanity_footstep": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.sanity_footstep",
+    "sounds": [
+      "frozendawn:ambient/sanity_footstep1",
+      "frozendawn:ambient/sanity_footstep2"
+    ]
+  },
+  "ambient.sanity_thud": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.sanity_thud",
+    "sounds": [
+      "frozendawn:ambient/sanity_thud1",
+      "frozendawn:ambient/sanity_thud2"
+    ]
   }
 }

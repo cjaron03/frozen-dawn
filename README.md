@@ -12,18 +12,18 @@ ORSA lore books scattered in world structures tell the full story across 5 docum
 
 ## Overview
 
-Over 100 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt — building Thermal Heaters, crafting insulated shelters, and ultimately constructing a Geothermal Core deep underground as their last hope for survival.
+Over 120 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt — building Thermal Heaters, crafting insulated shelters, and ultimately constructing a Geothermal Core deep underground as their last hope for survival.
 
 ## Phases
 
 | Phase | Days | What Happens |
 |-------|------|-------------|
-| **1 — Twilight** | 0–10 | Sun begins dimming, sky shifts to warm amber, rain increases |
-| **2 — Cooling** | 10–22 | Water freezes, grass dies, weather locks to rain, sky desaturates |
-| **3 — The Long Night** | 22–34 | Permanent storms, sand freezes, trees die, fog rolls in, cold blue sky |
-| **4 — Deep Freeze** | 34–46 | Dirt and logs freeze, lava solidifies, coal ore freezes, surface is lethal |
-| **5 — Eternal Winter** | 46–60 | Near-total darkness, obsidian freezes, blizzard whiteout, wind chill exhaustion |
-| **6 — Atmospheric Collapse** | 60–100 | Atmosphere freezes and collapses. Stars appear on a black sky. No air to breathe. |
+| **1 — Twilight** | 6–14 | Sun begins dimming, sky shifts to warm amber, rain increases |
+| **2 — Cooling** | 14–26 | Water freezes, grass dies, weather locks to rain, sky desaturates |
+| **3 — The Long Night** | 26–41 | Permanent storms, sand freezes, trees die, fog rolls in, cold blue sky |
+| **4 — Deep Freeze** | 41–55 | Dirt and logs freeze, lava solidifies, coal ore freezes, surface is lethal |
+| **5 — Eternal Winter** | 55–72 | Near-total darkness, obsidian freezes, blizzard whiteout, wind chill exhaustion |
+| **6 — Atmospheric Collapse** | 72–120 | Atmosphere freezes and collapses. Stars appear on a black sky. No air to breathe. |
 
 ## Features
 
@@ -144,7 +144,7 @@ All commands require OP level 2.
 
 | Preset | Total Days | Phase 5 Temp | Geothermal | Heat Sources | Snow Rate |
 |--------|-----------|-------------|------------|-------------|-----------|
-| **Default** | 100 | -120°C | 1.0x | 1.0x | 1.0x |
+| **Default** | 120 | -120°C | 1.0x | 1.0x | 1.0x |
 | **Cinematic** | 200 | -80°C | 1.5x | 1.5x | 0.5x |
 | **Brutal** | 50 | -160°C | 0.5x | 0.5x | 2.0x |
 
@@ -156,7 +156,7 @@ Edit `config/frozendawn-common.toml` after first launch.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `totalDays` | 100 | Days until phase 5 completes (preset-managed) |
+| `totalDays` | 120 | Days until phase 5 completes (preset-managed) |
 | `startingDay` | 0 | Skip ahead for testing |
 | `pauseProgression` | false | Freeze at current phase |
 | `basePhase5Temp` | -120 | Coldest surface temp in °C (preset-managed) |

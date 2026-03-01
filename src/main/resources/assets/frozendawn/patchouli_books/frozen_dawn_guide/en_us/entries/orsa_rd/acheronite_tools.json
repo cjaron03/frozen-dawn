@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Orbital Scan #0076",
-      "text": "$(bold)Subject: Acheronite Tool Applications$()$(br2)Spectral analysis from orbit confirms Refined Acheronite is harder than diamond and colder than ORSA command's decision to leave you down there. Naturally, orbital engineering recommends making weapons out of it.$(br2)Acheronite tools match $(bold)netherite-tier durability$() and are crafted using standard patterns with Refined Acheronite ingots and sticks.$(br2)$(italic)\"Field Operative, please confirm: does the blade cauterize on contact? Orbital imaging can't resolve that clearly.\"$(br)\"Send someone down to check.\"$(br)\"...noted.\"$()"
+      "text": "$(bold)Subject: Acheronite Tool Applications$()$(br2)Refined Acheronite is harder than diamond and colder than ORSA command's decision to leave you down there. Naturally, orbital engineering recommends making weapons.$(br2)Acheronite tools match $(bold)netherite-tier durability$() and use standard patterns with Refined Acheronite and sticks.$(br2)$(italic)\"Does the blade cauterize on contact?\"$(br)\"Send someone down to check.\"$(br)\"...noted.\"$()"
     },
     {
       "type": "patchouli:crafting",
@@ -31,7 +31,7 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_shovel",
       "title": "Acheronite Shovel",
-      "text": "Digs through permafrost. Finally, a shovel that matches the terrain's hostility."
+      "text": "Digs through permafrost. A shovel that matches the terrain's hostility."
     }
   ]
 }

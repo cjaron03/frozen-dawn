@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:black_wool" },
+    { "item": "minecraft:black_wool" },
+    { "item": "minecraft:white_wool" },
+    { "item": "minecraft:string" }
+  ],
+  "result": { "id": "frozendawn:stuffed_penguin", "count": 1 }
+}

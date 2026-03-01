@@ -7,17 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "ORSA EVA Survival Suit",
-      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and protection from vacuum suffocation.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
+      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and vacuum protection.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +30°C cold resistance. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from atmospheric suffocation.$(br)$(bold)Limitation:$() In late Phase 6, the suit alone isn't enough — you need $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) for breathable air.$(br2)$(italic)ORSA Legal Dept. reminds you: This suit is on loan. Returning it in pieces counts as \"damaged.\" — Kevin$()"
+      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from suffocation.$(br)$(bold)Limitation:$() In late Phase 6, you also need $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) for breathable air.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
     },
     {
       "type": "patchouli:text",
       "title": "Crafting Notes",
-      "text": "The EVA suit requires Tier 2 heavy insulation as a base, ice shards, blue ice, and — for the chestplate — a $(bold)Frozen Heart$() as its power core.$(br2)Yes, you need to find a Frozen Heart first. Yes, that means going to the frozen surface to gather materials. Yes, we see the problem.$(br2)$(italic)ORSA Engineering Dept: \"It builds character.\"$()"
+      "text": "Requires Tier 2 heavy insulation as a base, ice shards, blue ice, and — for the chestplate — a $(bold)Frozen Heart$() power core.$(br2)Yes, you need to brave the frozen surface to gather materials. Yes, we see the problem.$(br2)$(italic)ORSA Engineering: \"It builds character.\"$()"
     },
     {
       "type": "patchouli:crafting",

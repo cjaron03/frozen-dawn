@@ -6,6 +6,7 @@ import com.frozendawn.item.AcheronitePickaxeItem;
 import com.frozendawn.item.AcheroniteShardItem;
 import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.AcheroniteSwordItem;
+import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.O2TankItem;
@@ -113,6 +114,16 @@ public class ModItems {
     public static final DeferredItem<FrozenAtmosphereShardItem> FROZEN_ATMOSPHERE_SHARD = ITEMS.register(
             "frozen_atmosphere_shard",
             () -> new FrozenAtmosphereShardItem(new Item.Properties().stacksTo(64)));
+
+    // --- Comfort Items ---
+    public static final DeferredItem<ComfortItem> STUFFED_PENGUIN = ITEMS.register("stuffed_penguin",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_penguin"));
+    public static final DeferredItem<ComfortItem> STUFFED_CAPYBARA = ITEMS.register("stuffed_capybara",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_capybara"));
+    public static final DeferredItem<ComfortItem> STUFFED_HYRAX = ITEMS.register("stuffed_hyrax",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_hyrax"));
+    public static final DeferredItem<ComfortItem> WILSON = ITEMS.register("wilson",
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson", true));
 
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
@@ -225,6 +236,11 @@ public class ModItems {
                         output.accept(LINED_EVA_CHESTPLATE.get());
                         // Frozen Atmosphere
                         output.accept(FROZEN_ATMOSPHERE_SHARD.get());
+                        // Comfort Items
+                        output.accept(STUFFED_PENGUIN.get());
+                        output.accept(STUFFED_CAPYBARA.get());
+                        output.accept(STUFFED_HYRAX.get());
+                        output.accept(WILSON.get());
                         // Win Condition
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());

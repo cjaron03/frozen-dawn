@@ -1,6 +1,7 @@
 package com.frozendawn.event;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
@@ -49,6 +50,7 @@ final class PlayerTickHandler {
         suffocationTimer.clear();
         playerTemperatures.clear();
         FrostbiteHandler.reset();
+        SanityHandler.reset();
     }
 
     /** Returns the last-calculated temperature for a player (updated every 40 ticks). */
@@ -113,6 +115,14 @@ final class PlayerTickHandler {
         // Atmospheric suffocation (every tick, phase 6 late)
         if (currentPhase >= 6 && progress >= 0.85f) {
             tickSuffocation(server, state, progress);
+        }
+
+        // Sanity/isolation tracking (every tick, phase 3+)
+        float sanitySpeed = (float) FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get().doubleValue();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.level().dimension() == Level.OVERWORLD) {
+                SanityHandler.tick(player, currentPhase, sanitySpeed);
+            }
         }
     }
 

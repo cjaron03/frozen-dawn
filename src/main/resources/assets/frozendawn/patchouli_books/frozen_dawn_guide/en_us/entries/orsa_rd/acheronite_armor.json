@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Orbital Scan #0079",
-      "text": "$(bold)Subject: Acheronite Personal Protection$()$(br2)Orbital analysis suggests the material that's killing you can also protect you. The ORSA tradition of irony continues — from a safe distance.$(br2)Acheronite armor provides $(bold)netherite-level protection$() and — here's the part that makes orbital command laugh — $(bold)complete frostbite immunity$(). The material that gives you frostbite when raw $(italic)prevents$() frostbite when refined.$(br2)$(italic)\"So the cure for the cold... is more cold?\"$(br)\"Refined cold. There's a difference.\"$(br)\"Is there?\"$(br)\"We'll let the field operative decide.\" — ORSA Orbital$()"
+      "text": "$(bold)Subject: Acheronite Personal Protection$()$(br2)The material that's killing you can also protect you. The ORSA tradition of irony continues.$(br2)Acheronite armor provides $(bold)netherite-level protection$() and $(bold)complete frostbite immunity$(). The material that gives you frostbite when raw $(italic)prevents$() it when refined.$(br2)$(italic)\"So the cure for the cold... is more cold?\"$(br)\"Refined cold. There's a difference.\"$(br)\"Is there?\"$()"
     },
     {
       "type": "patchouli:text",
       "title": "Properties",
-      "text": "$(bold)Full set bonus:$()$(br)$(li)Frostbite immunity — carry shards freely$(li)Netherite-tier defense and toughness$(br2)$(bold)WARNING:$() Acheronite armor does $(bold)NOT$() provide atmospheric protection. It will not keep you alive in Phase 6. Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) can do that. This armor is for combat and frostbite protection — not for breathing.$(br2)$(italic)Orbital command would like to remind you: looking cool does not prevent suffocation. Wear your EVA suit.$()"
+      "text": "$(bold)Full set bonus:$()$(br)$(li)Frostbite immunity — carry shards freely$(li)Netherite-tier defense and toughness$(br2)$(bold)WARNING:$() Acheronite armor does $(bold)NOT$() provide atmospheric protection. Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) does that. This armor is for combat and frostbite — not breathing.$(br2)$(italic)Looking cool does not prevent suffocation. Wear your EVA suit.$()"
     },
     {
       "type": "patchouli:crafting",

@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": { "id": "frozendawn:wilson" },
+    "title": { "translate": "advancement.frozendawn.wilson_dropped.title" },
+    "description": { "translate": "advancement.frozendawn.wilson_dropped.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "dropped_wilson": { "trigger": "minecraft:impossible" }
+  }
+}

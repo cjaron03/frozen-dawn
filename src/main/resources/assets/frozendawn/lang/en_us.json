@@ -197,5 +197,25 @@
   "message.frozendawn.transponder.no_schematic": "You haven't found the transponder schematic yet.",
   "message.frozendawn.transponder.no_core": "No Geothermal Core detected nearby. The transponder needs a power source.",
   "message.frozendawn.transponder.no_shaft": "Signal blocked. The transponder needs a clear vertical shaft to the sky.",
-  "message.frozendawn.transponder.disabled": "The win condition system is disabled. The transponder is non-functional."
+  "message.frozendawn.transponder.disabled": "The win condition system is disabled. The transponder is non-functional.",
+
+  "item.frozendawn.stuffed_penguin": "Stuffed Penguin",
+  "item.frozendawn.stuffed_capybara": "Stuffed Capybara",
+  "item.frozendawn.stuffed_hyrax": "Stuffed Hyrax",
+  "item.frozendawn.wilson": "Wilson",
+  "tooltip.frozendawn.stuffed_penguin": "ORSA Wellness Division approved.",
+  "tooltip.frozendawn.stuffed_capybara": "Certified emotional support animal.",
+  "tooltip.frozendawn.stuffed_hyrax": "Closest living relative of the elephant. Somehow.",
+  "tooltip.frozendawn.wilson": "Don't lose him.",
+  "message.frozendawn.wilson_drop": "WILSON!",
+  "advancement.frozendawn.wilson_dropped.title": "WILSON!",
+  "advancement.frozendawn.wilson_dropped.description": "I'm sorry, Wilson. I'm sorry!",
+  "advancement.frozendawn.watcher_seen.title": "Did I take my Pills?",
+  "advancement.frozendawn.watcher_seen.description": "What was that?!",
+
+  "message.frozendawn.sanity.watched": "You feel like you are being watched...",
+
+  "subtitle.frozendawn.ambient.sanity_whisper": "Something whispers",
+  "subtitle.frozendawn.ambient.sanity_footstep": "Distant footsteps",
+  "subtitle.frozendawn.ambient.sanity_thud": "Something shifts"
 }

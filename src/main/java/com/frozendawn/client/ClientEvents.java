@@ -1,7 +1,9 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
 import net.minecraft.client.color.item.ItemColor;
@@ -15,6 +17,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -60,6 +63,11 @@ public class ClientEvents {
                     })
             );
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
     }
 
     @SubscribeEvent

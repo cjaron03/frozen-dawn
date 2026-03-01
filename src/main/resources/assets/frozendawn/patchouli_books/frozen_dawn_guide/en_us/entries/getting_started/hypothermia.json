@@ -7,42 +7,42 @@
     {
       "type": "patchouli:text",
       "title": "Welcome, Survivor!",
-      "text": "$(bold)Congratulations!$() You're reading this, which means you're not dead yet! Let's keep it that way.$(br2)This handy pamphlet — brought to you by the ORSA Wellness Division — will teach you everything you need to know about $(italic)freezing to death!$()$(br2)$(bold)Remember:$() Hypothermia is NOT a personality trait. It's a medical emergency. A very, very slow one."
+      "text": "$(bold)Congratulations!$() You're reading this, which means you're not dead yet! Let's keep it that way.$(br2)This handy pamphlet — brought to you by the ORSA Wellness Division — will teach you everything you need to know about $(italic)freezing to death!$()$(br2)$(bold)Remember:$() Hypothermia is NOT a personality trait. It's a medical emergency. A very slow one."
     },
     {
       "type": "patchouli:text",
       "title": "The Comfort Zone",
-      "text": "At $(bold)0°C and above$(), you're doing great! No effects, no problems. The sun may be disappearing but hey — at least you're warm.$(br2)Between $(bold)0°C and -10°C$(), things get chilly. You might notice your breath. Nothing dangerous yet, but maybe put on a jacket.$(br2)$(italic)ORSA Tip: Denial is the first stage of freezing! If you think \"it's not that bad,\" it's already that bad.$()"
+      "text": "At $(bold)0°C and above$(), you're doing great! No effects, no problems. The sun may be disappearing but at least you're warm.$(br2)Between $(bold)0°C and -10°C$(), things get chilly. Nothing dangerous yet, but maybe put on a jacket.$(br2)$(italic)ORSA Tip: Denial is the first stage of freezing! If you think \"it's not that bad,\" it's already that bad.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 1: \"It's Fine\"",
-      "text": "At $(bold)-10°C$(), your body disagrees with your optimism.$(br2)$(li)$(bold)Slowness I$() — You move noticeably slower$(li)No damage yet$(li)Action bar: \"The air grows dangerously cold...\"$(br2)This is your body's way of saying $(italic)\"Please go inside.\"$() Most people ignore this. Most people die.$(br2)$(bold)Heat sources and going underground help!$()"
+      "text": "At $(bold)-10°C$(), your body disagrees with your optimism.$(br2)$(li)$(bold)Slowness I$() — Noticeably slower$(li)No damage yet$(li)Action bar warning$(br2)This is your body's way of saying $(italic)\"Please go inside.\"$() Most people ignore this. Most people die.$(br2)$(bold)Heat sources and going underground help!$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 2: \"Oh No\"",
-      "text": "At $(bold)-25°C$(), the cold has upgraded from inconvenience to threat.$(br2)$(li)$(bold)Slowness II$() — Significantly slower$(li)$(bold)1 heart of damage$() every 2 seconds$(li)Action bar: \"The cold is biting into you...\"$(br2)Fun fact: At this temperature, exposed skin gets frostbite in under 10 minutes! Your character doesn't have skin stats, but trust us, it hurts.$(br2)$(italic)Seriously, go underground.$()"
+      "text": "At $(bold)-25°C$(), the cold has upgraded from inconvenience to threat.$(br2)$(li)$(bold)Slowness II$(li)$(bold)1 heart of damage$() every 2 seconds$(br2)Fun fact: At this temperature, exposed skin gets frostbite in under 10 minutes! Your character doesn't have skin stats, but trust us, it hurts.$(br2)$(italic)Seriously, go underground.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 3: \"Critical\"",
-      "text": "At $(bold)-45°C$(), you are in immediate mortal danger. Congratulations?$(br2)$(li)$(bold)Slowness III$() — You're barely moving$(li)$(bold)2 hearts of damage$() every 2 seconds$(li)Action bar: \"Extreme cold! Find shelter or warmth!\"$(br2)At this point, your inventory screen should be a will and testament. If you're still on the surface, we admire your commitment to poor decisions."
+      "text": "At $(bold)-45°C$(), you are in immediate mortal danger.$(br2)$(li)$(bold)Slowness III$() — Barely moving$(li)$(bold)2 hearts of damage$() every 2 seconds$(br2)At this point, your inventory screen should be a will and testament. If you're still on the surface, we admire your commitment to poor decisions."
     },
     {
       "type": "patchouli:text",
       "title": "Stage 4: \"Goodbye\"",
-      "text": "At $(bold)-70°C and below$(), medical science has a technical term for your condition: $(bold)dead.$()$(br2)$(li)$(bold)Slowness IV$() — Walking through frozen molasses$(li)$(bold)3 hearts of damage$() every 2 seconds$(li)Action bar: \"You are freezing to death!\"$(br2)This is the point where the game is being very literal with you. There is no stage 5. Stage 5 is a respawn screen."
+      "text": "At $(bold)-70°C and below$(), medical science has a technical term for your condition: $(bold)dead.$()$(br2)$(li)$(bold)Slowness IV$() — Frozen molasses$(li)$(bold)3 hearts of damage$() every 2 seconds$(br2)There is no Stage 5. Stage 5 is a respawn screen."
     },
     {
       "type": "patchouli:text",
       "title": "Wind Chill (Phase 5+)",
-      "text": "Starting in $(bold)Phase 5$(), surface winds drain your hunger even without cold damage.$(br2)$(li)$(bold)Sprinting$() outdoors — Heavy exhaustion$(li)$(bold)Walking$() outdoors — Moderate exhaustion$(li)$(bold)Standing still$() — Light exhaustion$(br2)Only affects you $(bold)above Y=50 with sky exposure$(). Underground and roofed areas are safe.$(br2)$(italic)ORSA Tip: If you're sprinting across the frozen hellscape, you'll starve before you freeze. Efficiency!$()"
+      "text": "Starting in $(bold)Phase 5$(), surface winds drain your hunger even without cold damage.$(br2)$(li)$(bold)Sprinting$() outdoors — Heavy exhaustion$(li)$(bold)Walking$() — Moderate exhaustion$(li)$(bold)Standing still$() — Light exhaustion$(br2)Only affects you $(bold)above Y=50 with sky exposure$(). Underground is safe.$(br2)$(italic)ORSA Tip: You'll starve before you freeze. Efficiency!$()"
     },
     {
       "type": "patchouli:text",
       "title": "Suffocation (Phase 6 Late)",
-      "text": "In $(bold)late Phase 6$(), the atmosphere itself freezes. Exposed surface becomes $(bold)vacuum$().$(br2)Without shelter, you experience:$(br)$(li)Darkness and lightheadedness$(li)Nausea and severe slowness$(li)Vision fading$(li)Death by suffocation$(br2)$(bold)Any roof saves you$() — a single block overhead traps breathable air. Underground is always safe.$(br2)$(italic)Remember: Space is just nature's way of saying \"you should have built a roof.\" — Kevin from Accounting$()"
+      "text": "In $(bold)late Phase 6$(), the atmosphere itself freezes. The surface becomes $(bold)vacuum$().$(br2)$(li)Darkness and lightheadedness$(li)Nausea and severe slowness$(li)Vision fading$(li)Death by suffocation$(br2)$(bold)Any roof saves you$() — a single block overhead traps breathable air.$(br2)$(italic)Space is nature's way of saying \"build a roof.\" — Kevin$()"
     }
   ]
 }

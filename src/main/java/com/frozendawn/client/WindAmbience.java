@@ -120,6 +120,7 @@ public class WindAmbience {
         stopAll(mc);
         ApocalypseClientData.reset();
         TemperatureHud.reset();
+        SanityClientData.reset();
     }
 
     /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */

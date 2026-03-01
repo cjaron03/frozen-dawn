@@ -5,6 +5,7 @@ import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
@@ -31,6 +32,7 @@ public class FrozenDawn {
         ModMenuTypes.MENU_TYPES.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
+        ModEntities.ENTITIES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
 

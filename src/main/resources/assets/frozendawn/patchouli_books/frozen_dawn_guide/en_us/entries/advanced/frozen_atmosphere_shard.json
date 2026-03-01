@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "Usage",
-      "text": "Frozen Atmosphere Shards are a critical component in crafting the $(l:advanced/transponder)ORSA Transponder$(/l) and the $(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l) — the highest-tier portable oxygen supply.$(br2)You'll need several. Between the Transponder, the Mk.III canisters, and the sublimation problem, ORSA recommends a dedicated mining expedition. With a Thermal Container. And a plan.$(br2)$(italic)\"We designed a rescue beacon that requires a piece of frozen sky. In hindsight, we could have used copper wire. But here we are.\"$()$(br)$(italic)— Dr. Vasquez, Engineering Review Meeting$()"
+      "text": "A critical component in crafting the $(l:advanced/transponder)ORSA Transponder$(/l) and the $(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l).$(br2)You'll need several. ORSA recommends a dedicated mining expedition. With a Thermal Container. And a plan.$(br2)$(italic)\"We designed a rescue beacon that requires frozen sky. In hindsight, copper wire would have worked. But here we are.\"$(br)$(italic)— Dr. Vasquez$()"
     }
   ]
 }

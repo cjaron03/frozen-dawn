@@ -7,7 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Upgrading Your Heaters",
-      "text": "As the cold intensifies, basic heaters won't cut it. Surround a Thermal Heater with materials to create upgraded versions with greater heat output and range — but they burn fuel faster.$(br2)$(l:heating/thermal_heater)Base Heater$(/l): +35°C, 7-block radius$(br)$(li)Iron: +50°C, 9-block radius, 1.5x fuel burn$(br)$(li)Gold: +65°C, 11-block radius, 2x fuel burn$(br)$(li)Diamond: +80°C, 14-block radius, 3x fuel burn$(br2)$(bold)Warning:$() In Phase 4+, fuel burns even faster (2x/4x/8x by phase). That Diamond heater eats a coal in under 2 minutes by Phase 5. Budget accordingly.$(br2)$(bold)Shelter matters:$() In Phase 5+, exposed heaters lose half their radius. Enclose all 6 faces with solid blocks to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
+      "text": "As the cold intensifies, basic heaters won't cut it. Surround a $(l:heating/thermal_heater)Thermal Heater$(/l) with materials to create upgraded versions:$(br2)$(li)$(bold)Iron:$() +50°C, 9-block radius, 1.5x fuel$(li)$(bold)Gold:$() +65°C, 11-block radius, 2x fuel$(li)$(bold)Diamond:$() +80°C, 14-block radius, 3x fuel$(br2)$(bold)Warning:$() In Phase 4+, fuel burns faster (2x/4x/8x by phase). Budget accordingly."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shelter & Strategy",
+      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters lose half their radius. Enclose all 6 faces with solid blocks to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
     },
     {
       "type": "patchouli:crafting",
@@ -25,7 +30,7 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:diamond_thermal_heater",
       "title": "Diamond Thermal Heater",
-      "text": "Surround a Thermal Heater with 8 diamonds. The strongest fuel-based heater — massive range, but burns fuel 3x faster. Reserve for your core living area. Yes, that's 8 diamonds on a heater. ORSA Engineering has never heard of the word \"affordable.\""
+      "text": "8 diamonds on a heater. Massive range, 3x fuel burn. ORSA Engineering has never heard of the word \"affordable.\""
     }
   ]
 }

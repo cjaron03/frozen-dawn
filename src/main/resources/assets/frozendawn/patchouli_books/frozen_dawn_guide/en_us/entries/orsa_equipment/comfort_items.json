@@ -1,0 +1,33 @@
+{
+  "name": "Comfort Items",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:stuffed_penguin",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Wellness Protocol",
+      "text": "ORSA recognizes that extended solo operations in hostile environments may result in psychological strain. This is normal. You are not going crazy. Probably.$(br2)Field-tested coping mechanisms include: talking to yourself, naming your tools, and crafting small plush companions from available materials. ORSA does NOT endorse emotional attachment to inanimate objects. ORSA DOES note a 23% reduction in incident reports among personnel who carry one."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:stuffed_penguin",
+      "text": "A plush penguin. Holds up well in cold environments, for obvious reasons."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:stuffed_capybara",
+      "text": "Certified emotional support animal. Does not judge you. Cannot judge you. Is wool."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:stuffed_hyrax",
+      "text": "The closest living relative of the elephant. Somehow. ORSA Zoology Division cannot explain this either."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:wilson",
+      "text": "Don't lose him."
+    }
+  ]
+}

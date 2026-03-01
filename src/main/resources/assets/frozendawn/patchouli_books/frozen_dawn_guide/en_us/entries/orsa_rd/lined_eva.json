@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Orbital Scan #0082",
-      "text": "$(bold)Subject: Best of Both Worlds$()$(br2)Orbital engineering had a thought: \"What if the field operative puts the thing that stops frostbite $(italic)inside$() the thing that stops suffocation?\"$(br2)They ran simulations for three days. The answer was yes.$(br2)The $(bold)Acheronite-Lined EVA Suit$() combines the atmospheric protection of the Mk.III EVA with the frostbite immunity of Acheronite armor. It is, objectively, the best thing ORSA has ever designed. From orbit. Without testing it.$(br2)$(italic)\"Better than the orbital stabilizer?\"$(br)\"The one that failed and caused the apocalypse? Yes. Better than that.\" — ORSA Engineering$()"
+      "text": "$(bold)Subject: Best of Both Worlds$()$(br2)Orbital engineering had a thought: \"What if the thing that stops frostbite goes $(italic)inside$() the thing that stops suffocation?\"$(br2)They ran simulations for three days. The answer was yes.$(br2)The $(bold)Acheronite-Lined EVA Suit$() combines EVA atmospheric protection with Acheronite frostbite immunity. The best thing ORSA has ever designed. From orbit. Without testing it.$(br2)$(italic)\"Better than the orbital stabilizer?\" \"The one that caused the apocalypse? Yes.\"$()"
     },
     {
       "type": "patchouli:text",
       "title": "Properties",
-      "text": "$(bold)Combines:$()$(br)$(li)EVA suit atmospheric protection$(li)Acheronite frostbite immunity$(li)Maximum cold resistance$(br2)This is endgame gear. If you've built this, you've essentially told the apocalypse to go away. It won't, but at least you'll be comfortable while it doesn't.$(br2)$(bold)Note:$() Only the chestplate can be lined. ORSA ran out of simulation time. And funding. The funding mostly went to the coffee machine on the station."
+      "text": "$(bold)Combines:$()$(br)$(li)EVA atmospheric protection$(li)Acheronite frostbite immunity$(li)Maximum cold resistance$(br2)Endgame gear. You've told the apocalypse to go away. It won't, but at least you'll be comfortable.$(br2)$(bold)Note:$() Only the chestplate can be lined. ORSA ran out of simulation time. And funding."
     },
     {
       "type": "patchouli:crafting",

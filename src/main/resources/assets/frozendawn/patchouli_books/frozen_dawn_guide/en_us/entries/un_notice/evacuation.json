@@ -1,0 +1,38 @@
+{
+  "name": "Evacuation Notice",
+  "category": "frozendawn:un_notice",
+  "icon": "minecraft:paper",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "DEAR RESIDENT,",
+      "text": "Due to an ongoing and irreversible orbital destabilization event, Earth has been officially declassified as a \"habitable world.\"$(br2)All citizens have been evacuated via ORSA emergency transports."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Your Evacuation Point",
+      "text": "Our records indicate you were not at your designated evacuation point.$(br2)Your designated evacuation point was:$(br)$(bold)EVERYWHERE.$()$(br2)We are unsure how you missed this."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Our Attempts",
+      "text": "We tried the following:$(br2)$(li)Global emergency sirens$(li)14 billion text messages$(li)A really big sign$(li)Kevin from Logistics went back to look for you personally$(br2)Kevin did not find you.$(br)Kevin is very sorry."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Current Status",
+      "text": "Current Earth status:$(br)  $(italic)Drifting toward deep space$()$(br2)Current Earth population:$(br)  $(italic)1$()$(br2)Current Earth vibes:$(br)  $(italic)Not great$()$(br2)Your ticket has been refunded. (There was no ticket.)"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Survival Advisory",
+      "text": "Go underground.$(br)Find heat.$(br)Do not look at the thermometer for a while.$(br2)If you find any ORSA documents in old structures, read them carefully. They explain how we got here.$(br2)They will not make you feel better."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sincerely,",
+      "text": "On behalf of the United Nations, the Security Council, and Kevin,$(br2)We wish you the absolute best of luck.$(br2)You will need it.$(br2)This letter will not self-destruct because we could not afford that feature.$(br2)$(italic)— The UN$(br)(writing this from Mars)$(br)(Mars is fine)$(br)(please don't think about that too hard)$()"
+    }
+  ]
+}
