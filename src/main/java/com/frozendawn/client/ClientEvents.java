@@ -1,6 +1,8 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.renderer.FrostbittenRenderer;
+import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
@@ -68,6 +70,8 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
+        event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
+        event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
     }
 
     @SubscribeEvent

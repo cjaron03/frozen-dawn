@@ -28,6 +28,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.BooleanValue ENABLE_SANITY;
     public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
+    public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
@@ -120,6 +121,10 @@ public class FrozenDawnConfig {
                 .comment("Multiplier for sanity degradation speed.",
                         "Preset-managed: overwritten by /frozendawn preset command.")
                 .defineInRange("sanitySpeedMultiplier", 1.0, 0.0, 10.0);
+        ENABLE_FROSTBITTEN = BUILDER
+                .comment("Enable Frostbitten mob spawning in Phase 4+.",
+                        "Reanimated frost-covered humanoids that emerge from frozen ground.")
+                .define("enableFrostbitten", true);
         BUILDER.pop();
 
         BUILDER.push("client");

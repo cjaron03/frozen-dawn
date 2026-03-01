@@ -9,8 +9,10 @@ import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
+import com.frozendawn.world.FrostbittenSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
@@ -52,6 +54,7 @@ public class WorldTickHandler {
         PlayerTickHandler.reset();
         WeatherHandler.reset();
         NetherSeveranceHandler.reset();
+        FrostbittenSpawner.reset();
     }
 
     @SubscribeEvent
@@ -116,6 +119,7 @@ public class WorldTickHandler {
                     state.getCurrentDay(), state.getTotalDays());
         }
         SnowAccumulator.tick(overworld, currentPhase, progress);
+        FrostbittenSpawner.tick(overworld, currentPhase, progress);
     }
 
     /**
@@ -125,6 +129,7 @@ public class WorldTickHandler {
     public static void onMobSpawn(FinalizeSpawnEvent event) {
         if (FrozenDawnPhaseTracker.getPhase() < 4) return;
         if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        if (event.getEntity() instanceof FrostbittenEntity) return;
         event.setSpawnCancelled(true);
     }
 

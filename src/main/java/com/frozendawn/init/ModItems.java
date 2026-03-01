@@ -8,6 +8,7 @@ import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
+import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
@@ -114,6 +115,14 @@ public class ModItems {
     public static final DeferredItem<FrozenAtmosphereShardItem> FROZEN_ATMOSPHERE_SHARD = ITEMS.register(
             "frozen_atmosphere_shard",
             () -> new FrozenAtmosphereShardItem(new Item.Properties().stacksTo(64)));
+
+    // --- Frostbitten Mob Drops ---
+    public static final DeferredItem<FrozenMeatItem> FROZEN_MEAT = ITEMS.register("frozen_meat",
+            () -> new FrozenMeatItem(new Item.Properties()
+                    .food(new net.minecraft.world.food.FoodProperties.Builder()
+                            .nutrition(4).saturationModifier(0.3f).build())));
+    public static final DeferredItem<Item> FROSTBITTEN_CORE = ITEMS.register("frostbitten_core",
+            () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
     // --- Comfort Items ---
     public static final DeferredItem<ComfortItem> STUFFED_PENGUIN = ITEMS.register("stuffed_penguin",
@@ -245,5 +254,8 @@ public class ModItems {
                         output.accept(ACHERONITE_COMPASS.get());
                         output.accept(TRANSPONDER_SCHEMATIC.get());
                         output.accept(TRANSPONDER.get());
+                        // Mob Drops
+                        output.accept(FROZEN_MEAT.get());
+                        output.accept(FROSTBITTEN_CORE.get());
                     }).build());
 }

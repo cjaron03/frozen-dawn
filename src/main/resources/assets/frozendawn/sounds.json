@@ -74,5 +74,47 @@
       "frozendawn:ambient/sanity_thud1",
       "frozendawn:ambient/sanity_thud2"
     ]
+  },
+  "entity.frostbitten.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostbitten.ambient",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.ambient", "type": "event" },
+      { "name": "minecraft:entity.stray.ambient", "type": "event" },
+      { "name": "minecraft:entity.husk.ambient", "type": "event" }
+    ]
+  },
+  "entity.frostbitten.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostbitten.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.hurt", "type": "event" },
+      { "name": "minecraft:entity.stray.hurt", "type": "event" },
+      { "name": "minecraft:entity.husk.hurt", "type": "event" }
+    ]
+  },
+  "entity.frostbitten.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostbitten.death",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.death", "type": "event" },
+      { "name": "minecraft:block.glass.break", "type": "event" },
+      { "name": "minecraft:entity.stray.death", "type": "event" }
+    ]
+  },
+  "entity.frostbitten.throw": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostbitten.throw",
+    "sounds": [
+      { "name": "minecraft:entity.snowball.throw", "type": "event" }
+    ]
+  },
+  "entity.frostbitten.emerge": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostbitten.emerge",
+    "sounds": [
+      { "name": "minecraft:block.gravel.break", "type": "event" },
+      { "name": "minecraft:block.rooted_dirt.break", "type": "event" }
+    ]
   }
 }

@@ -217,5 +217,18 @@
 
   "subtitle.frozendawn.ambient.sanity_whisper": "Something whispers",
   "subtitle.frozendawn.ambient.sanity_footstep": "Distant footsteps",
-  "subtitle.frozendawn.ambient.sanity_thud": "Something shifts"
+  "subtitle.frozendawn.ambient.sanity_thud": "Something shifts",
+
+  "entity.frozendawn.frostbitten": "Frostbitten",
+  "entity.frozendawn.heavy_snowball": "Heavy Snowball",
+  "item.frozendawn.frozen_meat": "Frozen Meat",
+  "item.frozendawn.frostbitten_core": "Frostbitten Core",
+
+  "subtitle.frozendawn.entity.frostbitten.ambient": "Frostbitten groans",
+  "subtitle.frozendawn.entity.frostbitten.hurt": "Frostbitten hurts",
+  "subtitle.frozendawn.entity.frostbitten.death": "Frostbitten shatters",
+  "subtitle.frozendawn.entity.frostbitten.throw": "Frostbitten throws",
+  "subtitle.frozendawn.entity.frostbitten.emerge": "Something emerges",
+
+  "death.attack.frozendawn.frostbitten": "%1$s was frozen solid by a Frostbitten"
 }
