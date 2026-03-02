@@ -3,6 +3,7 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
+import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -30,6 +31,13 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("frostbitten"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HollowEntity>> HOLLOW =
+            ENTITIES.register("hollow", () -> EntityType.Builder
+                    .of(HollowEntity::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("hollow"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HeavySnowballEntity>> HEAVY_SNOWBALL =
             ENTITIES.register("heavy_snowball", () -> EntityType.Builder

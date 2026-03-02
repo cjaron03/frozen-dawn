@@ -54,8 +54,13 @@ final class SanityHandler {
      * Called every server tick from PlayerTickHandler.
      */
     static void tick(ServerPlayer player, int phase, float speedMultiplier) {
-        if (player.isCreative() || player.isSpectator()) return;
         if (!FrozenDawnConfig.ENABLE_SANITY.get()) return;
+
+        // Creative/spectator: freeze isolation, reset stage to 0
+        if (player.isCreative() || player.isSpectator()) {
+            updateStage(player, 0, SanityState.get(player.getServer()));
+            return;
+        }
 
         MinecraftServer server = player.getServer();
         if (server == null) return;

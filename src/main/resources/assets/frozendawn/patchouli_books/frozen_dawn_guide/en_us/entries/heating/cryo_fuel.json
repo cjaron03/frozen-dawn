@@ -1,0 +1,18 @@
+{
+  "name": "Cryo Fuel",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:cryo_fuel",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Cryo Fuel",
+      "text": "A crystalline fuel source created by infusing coal with $(l:threats/hollow)Hollow$(/l) Frozen Breath. Burns in Thermal Heaters for $(bold)4x longer than coal$() (96,000 ticks vs. 24,000).$(br2)Yes, you are burning frozen ghost breath to heat your base. Yes, ORSA Thermodynamics Division has written 14 memos about why this shouldn't work. Yes, it works anyway.$(br2)$(italic)\"The energy density of Cryo Fuel exceeds theoretical models by a factor of four. Recommend immediate investigation.\" — Dr. Vasik$(br)$(italic)\"The investigation budget was redirected to evacuation shuttles.\" — ORSA Finance$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:cryo_fuel",
+      "text": "Frozen Breath over Coal. One ghost encounter fuels your heaters for hours. ORSA calls this a \"risk-reward loop.\" Survivors call it \"Tuesday.\""
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Thermal Capacitor",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermal_capacitor",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Thermal Capacitor",
+      "text": "An advanced heater upgrade component. Right-click on any $(l:heating/thermal_heater)Thermal Heater$(/l) to install. One per heater. Consumed on use.$(br2)$(bold)Effects:$()$(br)$(li)Doubles warmth radius$(li)Increases heat output by 50%$(li)Persists through save/load$(li)Cannot be removed once installed$(br2)A single capacitor turns a basic heater (7-block radius, +35°C) into a 14-block radius, +52°C monster. On a Diamond Heater, you're looking at a 28-block radius at +120°C.$(br2)$(italic)ORSA Engineering wanted to call it the \"Thermal Amplitude Redistribution Device.\" Marketing called it a capacitor. Marketing won.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_capacitor",
+      "text": "Refined Acheronite (top/bottom), Thermal Cores (sides), and a Frostbitten Core (center). It costs an arm and a leg. But your arms won't have frostbite anymore, so there's that."
+    }
+  ]
+}

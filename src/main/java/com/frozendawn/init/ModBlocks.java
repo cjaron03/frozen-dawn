@@ -7,10 +7,13 @@ import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.TransponderBlock;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.TorchBlock;
+import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -199,6 +202,26 @@ public class ModBlocks {
                         case 3 -> 7;  // PAUSED
                         default -> 0; // IDLE
                     })));
+
+    // --- Frost Ward Torch ---
+
+    // Frost Ward Torch: light 15, snowflake particles, Hollows flee at 16-block radius
+    public static final DeferredBlock<TorchBlock> FROST_WARD_TORCH = BLOCKS.register("frost_ward_torch",
+            () -> new TorchBlock(ParticleTypes.SNOWFLAKE, BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .instabreak()
+                    .lightLevel(state -> 15)
+                    .sound(SoundType.WOOD)
+                    .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<WallTorchBlock> FROST_WARD_WALL_TORCH = BLOCKS.register("frost_ward_wall_torch",
+            () -> new WallTorchBlock(ParticleTypes.SNOWFLAKE, BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .instabreak()
+                    .lightLevel(state -> 15)
+                    .sound(SoundType.WOOD)
+                    .pushReaction(PushReaction.DESTROY)
+                    .lootFrom(FROST_WARD_TORCH)));
 
     // Acheronite Block: decorative, passive warmth aura, counts as shelter
     public static final DeferredBlock<Block> ACHERONITE_BLOCK = BLOCKS.register("acheronite_block",

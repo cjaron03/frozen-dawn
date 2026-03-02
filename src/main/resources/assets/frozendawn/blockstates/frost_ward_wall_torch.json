@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east": { "model": "frozendawn:block/frost_ward_wall_torch" },
+    "facing=north": { "model": "frozendawn:block/frost_ward_wall_torch", "y": 270 },
+    "facing=south": { "model": "frozendawn:block/frost_ward_wall_torch", "y": 90 },
+    "facing=west": { "model": "frozendawn:block/frost_ward_wall_torch", "y": 180 }
+  }
+}

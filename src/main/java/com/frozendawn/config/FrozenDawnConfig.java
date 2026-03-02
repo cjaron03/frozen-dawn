@@ -29,6 +29,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_SANITY;
     public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
+    public static final ModConfigSpec.BooleanValue ENABLE_HOLLOW;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
@@ -125,6 +126,10 @@ public class FrozenDawnConfig {
                 .comment("Enable Frostbitten mob spawning in Phase 4+.",
                         "Reanimated frost-covered humanoids that emerge from frozen ground.")
                 .define("enableFrostbitten", true);
+        ENABLE_HOLLOW = BUILDER
+                .comment("Enable Hollow mob spawning in Phase 5+.",
+                        "Translucent vapor entities that suppress sound and entomb players in ice.")
+                .define("enableHollow", true);
         BUILDER.pop();
 
         BUILDER.push("client");

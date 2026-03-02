@@ -1,0 +1,14 @@
+{
+  "parent": "frozendawn:phase4",
+  "display": {
+    "icon": { "id": "frozendawn:frost_ward_torch" },
+    "title": { "translate": "advancement.frozendawn.later_casper.title" },
+    "description": { "translate": "advancement.frozendawn.later_casper.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "hollow_fled": { "trigger": "minecraft:impossible" }
+  }
+}

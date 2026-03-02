@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "F",
+    "S"
+  ],
+  "key": {
+    "F": { "item": "frozendawn:frozen_breath" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "result": {
+    "id": "frozendawn:frost_ward_torch",
+    "count": 4
+  }
+}

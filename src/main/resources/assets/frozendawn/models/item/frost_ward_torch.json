@@ -1,0 +1,1 @@
+{ "parent": "minecraft:item/generated", "textures": { "layer0": "frozendawn:block/frost_ward_torch" } }

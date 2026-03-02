@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.HollowEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -12,5 +13,6 @@ public class ModEntityAttributes {
     @SubscribeEvent
     public static void onRegisterAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.FROSTBITTEN.get(), FrostbittenEntity.createAttributes().build());
+        event.put(ModEntities.HOLLOW.get(), HollowEntity.createAttributes().build());
     }
 }

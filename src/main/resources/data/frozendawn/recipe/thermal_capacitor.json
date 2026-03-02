@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " R ",
+    "TFT",
+    " R "
+  ],
+  "key": {
+    "R": { "item": "frozendawn:refined_acheronite" },
+    "T": { "item": "frozendawn:thermal_core" },
+    "F": { "item": "frozendawn:frostbitten_core" }
+  },
+  "result": {
+    "id": "frozendawn:thermal_capacitor",
+    "count": 1
+  }
+}

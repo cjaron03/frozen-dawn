@@ -230,5 +230,30 @@
   "subtitle.frozendawn.entity.frostbitten.throw": "Frostbitten throws",
   "subtitle.frozendawn.entity.frostbitten.emerge": "Something emerges",
 
-  "death.attack.frozendawn.frostbitten": "%1$s was frozen solid by a Frostbitten"
+  "death.attack.frozendawn.frostbitten": "%1$s was frozen solid by a Frostbitten",
+
+  "entity.frozendawn.hollow": "Hollow",
+  "item.frozendawn.frozen_breath": "Frozen Breath",
+  "subtitle.frozendawn.entity.hollow.ambient": "Hollow breathes",
+  "subtitle.frozendawn.entity.hollow.hurt": "Hollow hurts",
+  "subtitle.frozendawn.entity.hollow.death": "Hollow dissipates",
+  "subtitle.frozendawn.entity.hollow.grab": "Hollow grabs",
+  "subtitle.frozendawn.entity.hollow.entomb": "Ice entombs",
+  "death.attack.hollow": "%1$s was entombed by the cold",
+  "death.attack.frozendawn.hollow_freeze": "%1$s was frozen by a Hollow",
+
+  "item.frozendawn.cryo_fuel": "Cryo Fuel",
+  "block.frozendawn.frost_ward_torch": "Frost Ward Torch",
+  "item.frozendawn.thermal_capacitor": "Thermal Capacitor",
+
+  "message.frozendawn.capacitor.installed": "Thermal Capacitor installed! Warmth radius doubled.",
+  "message.frozendawn.capacitor.already_installed": "This heater already has a Thermal Capacitor.",
+
+  "item.frozendawn.frostbitten_spawn_egg": "Frostbitten Spawn Egg",
+  "item.frozendawn.hollow_spawn_egg": "Hollow Spawn Egg",
+
+  "advancement.frozendawn.later_casper.title": "Later, Casper",
+  "advancement.frozendawn.later_casper.description": "Cause a Hollow to flee from a Frost Ward Torch. Who's haunting who now?",
+  "advancement.frozendawn.cryo_fuel_heater.title": "How Does This Even Work?",
+  "advancement.frozendawn.cryo_fuel_heater.description": "Burn frozen ghost breath to heat your base. ORSA Thermodynamics Division has concerns."
 }

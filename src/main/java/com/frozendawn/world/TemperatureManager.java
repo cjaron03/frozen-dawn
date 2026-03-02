@@ -121,11 +121,13 @@ public final class TemperatureManager {
             int distSq = (int) pos.distSqr(heaterPos);
             BlockState state = level.getBlockState(heaterPos);
             boolean sheltered = false;
+            boolean hasCapacitor = false;
             BlockEntity heaterBE = level.getBlockEntity(heaterPos);
             if (heaterBE instanceof ThermalHeaterBlockEntity thbe) {
                 sheltered = thbe.getCachedSheltered();
+                hasCapacitor = thbe.hasCapacitor();
             }
-            float warmth = getHeaterHeat(state, distSq, phase, sheltered);
+            float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor);
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;
@@ -186,22 +188,30 @@ public final class TemperatureManager {
      *
      * @param sheltered  Cached shelter status from the heater's block entity.
      */
-    private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered) {
+    private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered, boolean hasCapacitor) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int maxDistSq = (phase >= 5 && !sheltered) ? 18 : 49;
-            return distSq <= maxDistSq ? 35.0f : 0.0f;
+            if (hasCapacitor) maxDistSq *= 4; // doubled radius → 4x distSq
+            float heat = hasCapacitor ? 52.5f : 35.0f;
+            return distSq <= maxDistSq ? heat : 0.0f;
         }
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int maxDistSq = (phase >= 5 && !sheltered) ? 29 : 81;
-            return distSq <= maxDistSq ? 50.0f : 0.0f;
+            if (hasCapacitor) maxDistSq *= 4;
+            float heat = hasCapacitor ? 75.0f : 50.0f;
+            return distSq <= maxDistSq ? heat : 0.0f;
         }
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int maxDistSq = (phase >= 5 && !sheltered) ? 44 : 121;
-            return distSq <= maxDistSq ? 65.0f : 0.0f;
+            if (hasCapacitor) maxDistSq *= 4;
+            float heat = hasCapacitor ? 97.5f : 65.0f;
+            return distSq <= maxDistSq ? heat : 0.0f;
         }
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int maxDistSq = (phase >= 5 && !sheltered) ? 71 : 196;
-            return distSq <= maxDistSq ? 80.0f : 0.0f;
+            if (hasCapacitor) maxDistSq *= 4;
+            float heat = hasCapacitor ? 120.0f : 80.0f;
+            return distSq <= maxDistSq ? heat : 0.0f;
         }
         return 0.0f;
     }

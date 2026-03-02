@@ -17,6 +17,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.Rarity;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -123,6 +124,27 @@ public class ModItems {
                             .nutrition(4).saturationModifier(0.3f).build())));
     public static final DeferredItem<Item> FROSTBITTEN_CORE = ITEMS.register("frostbitten_core",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
+
+    // --- Hollow Mob Drops ---
+    public static final DeferredItem<Item> FROZEN_BREATH = ITEMS.register("frozen_breath",
+            () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(16)));
+
+    // --- Hollow Drop Crafts ---
+    public static final DeferredItem<Item> CRYO_FUEL = ITEMS.register("cryo_fuel",
+            () -> new Item(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<StandingAndWallBlockItem> FROST_WARD_TORCH_ITEM = ITEMS.register("frost_ward_torch",
+            () -> new StandingAndWallBlockItem(ModBlocks.FROST_WARD_TORCH.get(), ModBlocks.FROST_WARD_WALL_TORCH.get(),
+                    new Item.Properties(), net.minecraft.core.Direction.DOWN));
+    public static final DeferredItem<Item> THERMAL_CAPACITOR = ITEMS.register("thermal_capacitor",
+            () -> new Item(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)));
+
+    // --- Spawn Eggs ---
+    public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROSTBITTEN, 0x8FBCD4, 0x3B5998,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> HOLLOW_SPAWN_EGG = ITEMS.register("hollow_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.HOLLOW, 0xCCDDEE, 0x667788,
+                    new Item.Properties()));
 
     // --- Comfort Items ---
     public static final DeferredItem<ComfortItem> STUFFED_PENGUIN = ITEMS.register("stuffed_penguin",
@@ -257,5 +279,13 @@ public class ModItems {
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
                         output.accept(FROSTBITTEN_CORE.get());
+                        output.accept(FROZEN_BREATH.get());
+                        // Hollow Drop Crafts
+                        output.accept(CRYO_FUEL.get());
+                        output.accept(FROST_WARD_TORCH_ITEM.get());
+                        output.accept(THERMAL_CAPACITOR.get());
+                        // Spawn Eggs
+                        output.accept(FROSTBITTEN_SPAWN_EGG.get());
+                        output.accept(HOLLOW_SPAWN_EGG.get());
                     }).build());
 }

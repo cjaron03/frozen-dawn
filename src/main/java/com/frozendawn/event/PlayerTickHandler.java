@@ -8,6 +8,7 @@ import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.world.GeothermalCoreRegistry;
+import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -77,6 +78,14 @@ final class PlayerTickHandler {
 
                     // Apply frostbite temperature drain for the HUD
                     temp -= FrostbiteHandler.getTemperatureDrain(player);
+
+                    // Hollow grab: massive temperature plunge
+                    for (var passenger : player.getPassengers()) {
+                        if (passenger instanceof HollowEntity) {
+                            temp -= 40f;
+                            break;
+                        }
+                    }
 
                     playerTemperatures.put(player.getUUID(), temp);
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));

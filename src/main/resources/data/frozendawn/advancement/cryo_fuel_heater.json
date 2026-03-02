@@ -1,0 +1,14 @@
+{
+  "parent": "frozendawn:phase4",
+  "display": {
+    "icon": { "id": "frozendawn:cryo_fuel" },
+    "title": { "translate": "advancement.frozendawn.cryo_fuel_heater.title" },
+    "description": { "translate": "advancement.frozendawn.cryo_fuel_heater.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "used_cryo_fuel": { "trigger": "minecraft:impossible" }
+  }
+}

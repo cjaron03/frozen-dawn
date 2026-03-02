@@ -1,0 +1,18 @@
+{
+  "name": "Hollow",
+  "category": "frozendawn:threats",
+  "icon": "frozendawn:hollow_spawn_egg",
+  "sortnum": 2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THREAT REPORT: HOLLOW",
+      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Spectral Cryogenic Entity$(br)$(bold)Threat Level:$() High$(br2)Orbital sensors detected anomalous cold signatures moving through solid matter. Initial assessment: instrument malfunction. Revised assessment: no, those are real.$(br2)Hollows are translucent, smoke-like entities that phase through blocks. They do not walk. They drift. They do not attack. They $(italic)grab you and freeze you to death.$()$(br2)$(italic)ORSA acknowledges this is deeply unsettling. Counseling is not available at this time.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Combat Assessment",
+      "text": "$(bold)Behavior:$()$(br)$(li)Phases through all blocks (noPhysics)$(li)Grabs players, applies Slowness IV + freeze buildup$(li)Entombs grabbed players in packed ice$(li)Immune to projectiles and freezing$(li)Takes half damage from non-Acheronite melee$(br2)$(bold)Weaknesses:$()$(br)$(li)Fire damage is fully effective$(li)Acheronite weapons deal full damage$(li)Swinging while grabbed breaks free$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cause rapid flee at 16-block radius$(li)Heaters burn them within 8 blocks$(br2)$(bold)Drops:$() $(l:heating/cryo_fuel)Frozen Breath$(/l)$(br2)$(italic)If you hear breathing behind you and there's nobody there: run.$()"
+    }
+  ]
+}

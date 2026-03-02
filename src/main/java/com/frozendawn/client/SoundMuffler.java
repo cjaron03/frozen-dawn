@@ -1,16 +1,20 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.HollowEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Muffles game sounds when temperature drops below -15C.
@@ -31,6 +35,38 @@ public class SoundMuffler {
 
         SoundInstance original = event.getSound();
         if (original == null) return;
+
+        // Hollow proximity: distance-based sound suppression within 6 blocks
+        // Hollow's own sounds always pass through; everything else fades with distance
+        SoundSource source = original.getSource();
+        String soundPath = original.getLocation().getPath();
+        boolean isHollowSound = original.getLocation().getNamespace().equals(FrozenDawn.MOD_ID)
+                && soundPath.startsWith("entity.hollow.");
+
+        if (!isHollowSound && source != SoundSource.MASTER && source != SoundSource.MUSIC) {
+            AABB hollowScanBox = mc.player.getBoundingBox().inflate(6.0);
+            List<HollowEntity> nearbyHollows = mc.player.level().getEntitiesOfClass(
+                    HollowEntity.class, hollowScanBox);
+            if (!nearbyHollows.isEmpty()) {
+                // Find closest Hollow
+                double closestDist = Double.MAX_VALUE;
+                for (HollowEntity hollow : nearbyHollows) {
+                    double d = mc.player.distanceTo(hollow);
+                    if (d < closestDist) closestDist = d;
+                }
+                // Fade: full volume at 6 blocks, silence at 0 blocks
+                float muffleIntensity = 1.0f - (float) Math.min(closestDist / 6.0, 1.0);
+                if (muffleIntensity > 0.95f) {
+                    event.setSound(null);
+                    return;
+                }
+                if (muffleIntensity > 0.01f) {
+                    float vol = 1.0f - muffleIntensity;
+                    event.setSound(new MuffledSound(original, vol, 1.0f - muffleIntensity * 0.15f));
+                    return;
+                }
+            }
+        }
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();

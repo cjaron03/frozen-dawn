@@ -44,6 +44,13 @@ public class SanityEffects {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
 
+        // No sanity effects in creative or spectator
+        if (mc.player.isCreative() || mc.player.isSpectator()) {
+            discardAllShadows();
+            discardWatcher();
+            return;
+        }
+
         int stage = SanityClientData.getStage();
         if (stage <= 0) {
             discardAllShadows();

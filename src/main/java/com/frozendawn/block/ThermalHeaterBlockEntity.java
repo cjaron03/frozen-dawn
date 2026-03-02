@@ -30,6 +30,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     private int burnTimeRemaining = 0;
     private boolean cachedSheltered = false;
     private boolean shelterValid = false;
+    private boolean hasCapacitor = false;
 
     public ThermalHeaterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.THERMAL_HEATER.get(), pos, state);
@@ -123,20 +124,33 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         super.setRemoved();
     }
 
+    public boolean hasCapacitor() {
+        return hasCapacitor;
+    }
+
+    public void installCapacitor() {
+        this.hasCapacitor = true;
+        setChanged();
+    }
+
     private int getHeatOutput() {
         Block block = getBlockState().getBlock();
-        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) return 80;
-        if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) return 65;
-        if (block == ModBlocks.IRON_THERMAL_HEATER.get()) return 50;
-        return 35;
+        int base;
+        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) base = 80;
+        else if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) base = 65;
+        else if (block == ModBlocks.IRON_THERMAL_HEATER.get()) base = 50;
+        else base = 35;
+        return hasCapacitor ? (int) (base * 1.5f) : base;
     }
 
     private int getBaseRadius() {
         Block block = getBlockState().getBlock();
-        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) return 14;
-        if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) return 11;
-        if (block == ModBlocks.IRON_THERMAL_HEATER.get()) return 9;
-        return 7;
+        int base;
+        if (block == ModBlocks.DIAMOND_THERMAL_HEATER.get()) base = 14;
+        else if (block == ModBlocks.GOLD_THERMAL_HEATER.get()) base = 11;
+        else if (block == ModBlocks.IRON_THERMAL_HEATER.get()) base = 9;
+        else base = 7;
+        return hasCapacitor ? base * 2 : base;
     }
 
     /** ContainerData for syncing heater status to the client UI (simplified). */
@@ -201,11 +215,13 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("BurnTime", burnTimeRemaining);
+        tag.putBoolean("HasCapacitor", hasCapacitor);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         burnTimeRemaining = tag.getInt("BurnTime");
+        hasCapacitor = tag.getBoolean("HasCapacitor");
     }
 }

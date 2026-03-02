@@ -1,0 +1,18 @@
+{
+  "name": "Frostbitten",
+  "category": "frozendawn:threats",
+  "icon": "frozendawn:frostbitten_spawn_egg",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THREAT REPORT: FROSTBITTEN",
+      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Hostile Cryogenic Humanoid$(br)$(bold)Threat Level:$() Moderate$(br2)Field Report: Humanoid entities composed primarily of compacted ice and flash-frozen tissue. Origin unknown. They were not here before Phase 4. They are here now. We did not budget for this.$(br2)$(italic)Exhibit A: Orbital thermal scan showing 200+ heat signatures that shouldn't exist. Exhibit B: Our confused faces.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Combat Assessment",
+      "text": "$(bold)Behavior:$()$(br)$(li)Hurls heavy snowballs that deal significant damage$(li)Melee attacks apply freeze$(li)Spawns on the surface in Phase 4+$(li)Avoids well-lit areas$(br2)$(bold)Weaknesses:$()$(br)$(li)Fire damage is fully effective$(li)Acheronite weapons deal bonus damage$(li)Light level 10+ causes them to avoid an area$(br2)$(bold)Drops:$() $(l:threats/frozen_meat)Frozen Meat$(/l), $(l:heating/cryo_fuel)Frostbitten Core$(/l)$(br2)$(italic)ORSA recommends not engaging in melee unless you enjoy hypothermia.$()"
+    }
+  ]
+}

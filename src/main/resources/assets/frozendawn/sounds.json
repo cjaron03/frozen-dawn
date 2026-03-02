@@ -116,5 +116,42 @@
       { "name": "minecraft:block.gravel.break", "type": "event" },
       { "name": "minecraft:block.rooted_dirt.break", "type": "event" }
     ]
+  },
+  "entity.hollow.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.hollow.ambient",
+    "sounds": [
+      { "name": "minecraft:entity.blaze.ambient", "type": "event" }
+    ]
+  },
+  "entity.hollow.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.hollow.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.blaze.hurt", "type": "event" }
+    ]
+  },
+  "entity.hollow.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.hollow.death",
+    "sounds": [
+      { "name": "minecraft:entity.blaze.death", "type": "event" }
+    ]
+  },
+  "entity.hollow.grab": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.hollow.grab",
+    "sounds": [
+      { "name": "minecraft:block.glass.break", "type": "event" },
+      { "name": "minecraft:block.amethyst_block.break", "type": "event" }
+    ]
+  },
+  "entity.hollow.entomb": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.hollow.entomb",
+    "sounds": [
+      { "name": "minecraft:block.packed_ice.place", "type": "event" },
+      { "name": "minecraft:block.glass.place", "type": "event" }
+    ]
   }
 }

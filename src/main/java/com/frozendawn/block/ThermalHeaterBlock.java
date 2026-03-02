@@ -1,8 +1,13 @@
 package com.frozendawn.block;
 
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -66,15 +71,40 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
+        // Thermal Capacitor install
+        if (stack.is(ModItems.THERMAL_CAPACITOR.get())) {
+            if (!level.isClientSide()) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof ThermalHeaterBlockEntity heater) {
+                    if (heater.hasCapacitor()) {
+                        player.displayClientMessage(Component.translatable("message.frozendawn.capacitor.already_installed"), true);
+                    } else {
+                        heater.installCapacitor();
+                        if (!player.getAbilities().instabuild) {
+                            stack.shrink(1);
+                        }
+                        level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.6f, 1.2f);
+                        player.displayClientMessage(Component.translatable("message.frozendawn.capacitor.installed"), true);
+                    }
+                }
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        }
+
         int burnTime = (int) (getFuelBurnTime(stack) / fuelMultiplier);
         if (burnTime <= 0) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         if (!level.isClientSide()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof ThermalHeaterBlockEntity heater) {
+                // Check before shrink since shrink may empty the stack
+                boolean isCryoFuel = stack.is(ModItems.CRYO_FUEL.get());
                 heater.addFuel(burnTime);
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
+                }
+                if (isCryoFuel && player instanceof ServerPlayer serverPlayer) {
+                    WorldTickHandler.grantAdvancement(serverPlayer, "cryo_fuel_heater");
                 }
             }
         }
@@ -94,6 +124,7 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
     }
 
     private static int getFuelBurnTime(ItemStack stack) {
+        if (stack.is(ModItems.CRYO_FUEL.get())) return 96000;
         if (stack.is(Items.COAL)) return 24000;
         if (stack.is(Items.CHARCOAL)) return 24000;
         if (stack.is(Items.BLAZE_POWDER)) return 12000;
