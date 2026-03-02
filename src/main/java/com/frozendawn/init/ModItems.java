@@ -10,8 +10,10 @@ import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.OrsaDocumentItem;
+import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
+import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -138,12 +140,23 @@ public class ModItems {
     public static final DeferredItem<Item> THERMAL_CAPACITOR = ITEMS.register("thermal_capacitor",
             () -> new Item(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)));
 
+    // --- Returned Mob Drops ---
+    public static final DeferredItem<RemnantEmberItem> REMNANT_EMBER = ITEMS.register("remnant_ember",
+            () -> new RemnantEmberItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
+                    .component(ModDataComponents.WARMTH_REMAINING.get(), RemnantEmberItem.MAX_WARMTH)));
+    public static final DeferredItem<Item> TATTERED_CLOTHING_SCRAP = ITEMS.registerSimpleItem("tattered_clothing_scrap");
+    public static final DeferredItem<OrsaIdBadgeItem> ORSA_ID_BADGE = ITEMS.register("orsa_id_badge",
+            () -> new OrsaIdBadgeItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FROSTBITTEN, 0x8FBCD4, 0x3B5998,
                     new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> HOLLOW_SPAWN_EGG = ITEMS.register("hollow_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.HOLLOW, 0xCCDDEE, 0x667788,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> RETURNED_SPAWN_EGG = ITEMS.register("returned_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.RETURNED, 0x4A5568, 0x2D3748,
                     new Item.Properties()));
 
     // --- Comfort Items ---
@@ -280,6 +293,9 @@ public class ModItems {
                         output.accept(FROZEN_MEAT.get());
                         output.accept(FROSTBITTEN_CORE.get());
                         output.accept(FROZEN_BREATH.get());
+                        output.accept(REMNANT_EMBER.get());
+                        output.accept(TATTERED_CLOTHING_SCRAP.get());
+                        output.accept(ORSA_ID_BADGE.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());
@@ -287,5 +303,6 @@ public class ModItems {
                         // Spawn Eggs
                         output.accept(FROSTBITTEN_SPAWN_EGG.get());
                         output.accept(HOLLOW_SPAWN_EGG.get());
+                        output.accept(RETURNED_SPAWN_EGG.get());
                     }).build());
 }

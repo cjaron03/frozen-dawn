@@ -11,11 +11,13 @@ import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.FrostbittenSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.HollowSpawner;
+import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.VegetationDecay;
@@ -58,6 +60,7 @@ public class WorldTickHandler {
         NetherSeveranceHandler.reset();
         FrostbittenSpawner.reset();
         HollowSpawner.reset();
+        ReturnedSpawner.reset();
     }
 
     @SubscribeEvent
@@ -124,6 +127,7 @@ public class WorldTickHandler {
         SnowAccumulator.tick(overworld, currentPhase, progress);
         FrostbittenSpawner.tick(overworld, currentPhase, progress);
         HollowSpawner.tick(overworld, currentPhase, progress);
+        ReturnedSpawner.tick(overworld, currentPhase, progress);
     }
 
     /**
@@ -135,6 +139,7 @@ public class WorldTickHandler {
         if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         if (event.getEntity() instanceof FrostbittenEntity) return;
         if (event.getEntity() instanceof HollowEntity) return;
+        if (event.getEntity() instanceof ReturnedEntity) return;
         event.setSpawnCancelled(true);
     }
 

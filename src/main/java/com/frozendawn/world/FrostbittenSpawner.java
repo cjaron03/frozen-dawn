@@ -26,21 +26,22 @@ public class FrostbittenSpawner {
         RandomSource random = level.random;
 
         // Phase-based spawn chance and density
+        float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
         float spawnChance;
         int maxNearby;
         int groupSize;
         if (currentPhase == 4) {
-            spawnChance = 0.25f;
-            maxNearby = 4;
-            groupSize = 2; // 1-2
+            spawnChance = Math.min(0.8f, 0.25f * mobMult);
+            maxNearby = Math.max(1, (int) (4 * mobMult));
+            groupSize = Math.max(1, (int) (2 * mobMult));
         } else if (currentPhase == 5) {
-            spawnChance = 0.65f;
-            maxNearby = 12;
-            groupSize = 4; // 1-4, like vanilla zombies
+            spawnChance = Math.min(0.8f, 0.65f * mobMult);
+            maxNearby = Math.max(1, (int) (12 * mobMult));
+            groupSize = Math.max(1, (int) (4 * mobMult));
         } else {
-            spawnChance = 0.12f;
-            maxNearby = 3;
-            groupSize = 2;
+            spawnChance = Math.min(0.8f, 0.12f * mobMult);
+            maxNearby = Math.max(1, (int) (3 * mobMult));
+            groupSize = Math.max(1, (int) (2 * mobMult));
         }
 
         for (ServerPlayer player : level.players()) {
@@ -105,6 +106,9 @@ public class FrostbittenSpawner {
             if (!level.getBlockState(surface).isAir()) continue;
             if (!level.getBlockState(surface.above()).isAir()) continue;
 
+            // Must have sky access or be underground (below Y=60)
+            if (!level.canSeeSky(surface) && surface.getY() >= 60) continue;
+
             return surface;
         }
         return null;
@@ -124,6 +128,9 @@ public class FrostbittenSpawner {
             if (!level.getBlockState(candidate.above()).isAir()) continue;
             BlockPos below = candidate.below();
             if (!level.getBlockState(below).isSolidRender(level, below)) continue;
+
+            // Must have sky access or be underground (below Y=60)
+            if (!level.canSeeSky(candidate) && candidate.getY() >= 60) continue;
 
             return candidate;
         }

@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:remnant_ember"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.they_remember.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.they_remember.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

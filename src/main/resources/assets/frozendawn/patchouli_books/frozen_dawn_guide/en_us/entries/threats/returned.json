@@ -1,0 +1,18 @@
+{
+  "name": "The Returned",
+  "category": "frozendawn:threats",
+  "icon": "frozendawn:returned_spawn_egg",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THREAT REPORT: THE RETURNED",
+      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Reanimated Cryogenic Humanoid$(br)$(bold)Threat Level:$() Severe$(br2)They were us. Former ORSA personnel, civilians, anyone who froze and didn't stay dead. The cold brought them back wrong. Three distinct behavioral variants have been observed in the field.$(br2)$(italic)HR has formally requested we stop calling them 'colleagues.' Request denied — the paperwork is still technically valid.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Variant A: The Hunter",
+      "text": "$(bold)Behavior:$() The most dangerous variant. Hunters are intelligent stalkers that remember how the living world works.$(br)$(li)Opens and breaks wooden doors$(li)Extinguishes lit Thermal Heaters$(li)Destroys torches and light sources$(li)Sees through invisibility$(li)Spawns rarely but invades player bases$(br2)$(bold)Counter Strategies:$()$(br)$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons are effective$(li)Seal entrances with blocks, not doors$(li)Keep backup heaters hidden$(br2)$(bold)Drops:$() $(item)Remnant Ember$(), $(item)Tattered Clothing Scrap$(), $(item)ORSA ID Badge$() (rare)$(br2)$(italic)Do not read the ID badges. You might recognize the name.$()"
+    }
+  ]
+}

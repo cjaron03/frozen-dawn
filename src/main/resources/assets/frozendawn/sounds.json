@@ -153,5 +153,40 @@
       { "name": "minecraft:block.packed_ice.place", "type": "event" },
       { "name": "minecraft:block.glass.place", "type": "event" }
     ]
+  },
+  "entity.returned.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.returned.ambient",
+    "sounds": [
+      { "name": "minecraft:entity.villager.ambient", "type": "event" },
+      { "name": "minecraft:entity.villager.ambient", "type": "event" },
+      { "name": "minecraft:entity.villager.ambient", "type": "event" }
+    ]
+  },
+  "entity.returned.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.returned.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.villager.hurt", "type": "event" },
+      { "name": "minecraft:entity.villager.hurt", "type": "event" }
+    ]
+  },
+  "entity.returned.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.returned.death",
+    "sounds": [
+      { "name": "minecraft:entity.villager.death", "type": "event" }
+    ]
+  },
+  "entity.returned.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.returned.step",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" }
+    ]
   }
 }

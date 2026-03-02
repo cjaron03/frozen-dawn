@@ -31,6 +31,7 @@ public class HollowSpawner {
         // Phase 6 early (0-0.4): ramps 20% → 40%
         // Phase 6 mid (0.4-0.7): peaks at 50%
         // Phase 6 late (0.7-0.85): tapers to 25% then stops at 0.85
+        float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
         float spawnChance;
         if (currentPhase == 5) {
             spawnChance = 0.15f;
@@ -48,16 +49,18 @@ public class HollowSpawner {
                 spawnChance = 0.50f * (1.0f - taper);
             }
         }
+        spawnChance = Math.min(0.8f, spawnChance * mobMult);
+        int maxHollow = Math.max(1, (int) (4 * mobMult));
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
 
             if (random.nextFloat() > spawnChance) continue;
 
-            // Density cap: max 4 within 48 blocks
+            // Density cap: max 4 within 48 blocks (scaled by multiplier)
             int nearbyCount = level.getEntitiesOfClass(HollowEntity.class,
                     player.getBoundingBox().inflate(48.0)).size();
-            if (nearbyCount >= 4) continue;
+            if (nearbyCount >= maxHollow) continue;
 
             BlockPos spawnPos = findSpawnPos(level, player, random);
             if (spawnPos == null) continue;

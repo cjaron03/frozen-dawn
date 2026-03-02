@@ -5,12 +5,12 @@ package com.frozendawn.config;
  *
  * Preset-managed fields (overwritten unconditionally):
  *   TOTAL_DAYS, BASE_PHASE5_TEMP, GEOTHERMAL_STRENGTH, HEAT_SOURCE_MULTIPLIER,
- *   SNOW_ACCUMULATION_RATE, BROADCAST_TICKS, SANITY_SPEED_MULTIPLIER
+ *   SNOW_ACCUMULATION_RATE, BROADCAST_TICKS, SANITY_SPEED_MULTIPLIER, MOB_SPAWN_MULTIPLIER
  */
 public enum ConfigPresets {
-    DEFAULT(120, -120, 1.0, 1.0, 1.0, 120000, 1.0),
-    CINEMATIC(200, -80, 1.5, 1.5, 0.5, 72000, 0.5),
-    BRUTAL(50, -160, 0.5, 0.5, 2.0, 192000, 2.0);
+    DEFAULT(120, -120, 1.0, 1.0, 1.0, 120000, 1.0, 1.0),
+    CINEMATIC(200, -80, 1.5, 1.5, 0.5, 72000, 0.5, 0.5),
+    BRUTAL(50, -160, 0.5, 0.5, 2.0, 192000, 2.0, 2.0);
 
     public final int totalDays;
     public final int basePhase5Temp;
@@ -19,10 +19,11 @@ public enum ConfigPresets {
     public final double snowAccumulationRate;
     public final int broadcastTicks;
     public final double sanitySpeedMultiplier;
+    public final double mobSpawnMultiplier;
 
     ConfigPresets(int totalDays, int basePhase5Temp, double geothermalStrength,
                   double heatSourceMultiplier, double snowAccumulationRate, int broadcastTicks,
-                  double sanitySpeedMultiplier) {
+                  double sanitySpeedMultiplier, double mobSpawnMultiplier) {
         this.totalDays = totalDays;
         this.basePhase5Temp = basePhase5Temp;
         this.geothermalStrength = geothermalStrength;
@@ -30,6 +31,7 @@ public enum ConfigPresets {
         this.snowAccumulationRate = snowAccumulationRate;
         this.broadcastTicks = broadcastTicks;
         this.sanitySpeedMultiplier = sanitySpeedMultiplier;
+        this.mobSpawnMultiplier = mobSpawnMultiplier;
     }
 
     /**
@@ -43,5 +45,6 @@ public enum ConfigPresets {
         FrozenDawnConfig.SNOW_ACCUMULATION_RATE.set(snowAccumulationRate);
         FrozenDawnConfig.BROADCAST_TICKS.set(broadcastTicks);
         FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.set(sanitySpeedMultiplier);
+        FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.set(mobSpawnMultiplier);
     }
 }

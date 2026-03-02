@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.HollowRenderer;
+import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
@@ -74,6 +75,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), HollowRenderer::new);
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
+        event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
     }
 
     @SubscribeEvent

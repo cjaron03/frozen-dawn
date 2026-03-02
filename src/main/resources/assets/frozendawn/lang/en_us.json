@@ -255,5 +255,28 @@
   "advancement.frozendawn.later_casper.title": "Later, Casper",
   "advancement.frozendawn.later_casper.description": "Cause a Hollow to flee from a Frost Ward Torch. Who's haunting who now?",
   "advancement.frozendawn.cryo_fuel_heater.title": "How Does This Even Work?",
-  "advancement.frozendawn.cryo_fuel_heater.description": "Burn frozen ghost breath to heat your base. ORSA Thermodynamics Division has concerns."
+  "advancement.frozendawn.cryo_fuel_heater.description": "Burn frozen ghost breath to heat your base. ORSA Thermodynamics Division has concerns.",
+
+  "entity.frozendawn.returned": "Returned Hunter",
+  "item.frozendawn.remnant_ember": "Remnant Ember",
+  "item.frozendawn.tattered_clothing_scrap": "Tattered Clothing Scrap",
+  "item.frozendawn.orsa_id_badge": "ORSA ID Badge",
+  "item.frozendawn.returned_spawn_egg": "Returned Hunter Spawn Egg",
+
+  "tooltip.frozendawn.remnant_ember": "Hold in offhand for warmth.",
+  "tooltip.frozendawn.remnant_ember.warmth": "Warmth: %1$d:%2$02d remaining",
+
+  "message.frozendawn.remnant_ember.burned_out": "Your Remnant Ember has burned out.",
+
+  "subtitle.frozendawn.entity.returned.ambient": "Returned murmurs",
+  "subtitle.frozendawn.entity.returned.hurt": "Returned cries out",
+  "subtitle.frozendawn.entity.returned.death": "Returned collapses",
+  "subtitle.frozendawn.entity.returned.step": "Returned footsteps",
+
+  "death.attack.frozendawn.returned": "%1$s was killed by a Returned",
+
+  "advancement.frozendawn.they_remember.title": "They Remember",
+  "advancement.frozendawn.they_remember.description": "A Returned extinguished your heater. They still know what fire does.",
+  "advancement.frozendawn.returned_killed.title": "Rest Now",
+  "advancement.frozendawn.returned_killed.description": "Kill one of the Returned. Whatever they were, they're at peace now."
 }

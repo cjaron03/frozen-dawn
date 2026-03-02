@@ -6,6 +6,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.entity.HollowEntity;
@@ -74,6 +75,15 @@ final class PlayerTickHandler {
                     float armorHeatMult = MobFreezeHandler.getArmorHeatMultiplier(player);
                     if (temp > 20f && armorHeatMult > 0f) {
                         temp += (temp - 20f) * armorHeatMult;
+                    }
+
+                    // Remnant Ember offhand warmth bonus
+                    ItemStack offhand = player.getOffhandItem();
+                    if (offhand.getItem() instanceof RemnantEmberItem) {
+                        int warmth = offhand.getOrDefault(ModDataComponents.WARMTH_REMAINING.get(), 0);
+                        if (warmth > 0) {
+                            temp += 10.0f;
+                        }
                     }
 
                     // Apply frostbite temperature drain for the HUD

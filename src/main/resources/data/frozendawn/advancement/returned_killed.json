@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:returned_spawn_egg"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.returned_killed.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.returned_killed.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

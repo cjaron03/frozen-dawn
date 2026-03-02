@@ -42,6 +42,13 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         setChanged();
     }
 
+    /** Extinguish the heater by setting burn time to 0. Used by Returned AI. */
+    public void extinguish() {
+        burnTimeRemaining = 0;
+        updateLitState();
+        setChanged();
+    }
+
     public void serverTick() {
         if (burnTimeRemaining > 0) {
             burnTimeRemaining = Math.max(0, burnTimeRemaining - getPhaseConsumption());

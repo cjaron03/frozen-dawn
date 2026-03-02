@@ -28,8 +28,10 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.BooleanValue ENABLE_SANITY;
     public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue MOB_SPAWN_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
     public static final ModConfigSpec.BooleanValue ENABLE_HOLLOW;
+    public static final ModConfigSpec.BooleanValue ENABLE_RETURNED;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
@@ -122,6 +124,11 @@ public class FrozenDawnConfig {
                 .comment("Multiplier for sanity degradation speed.",
                         "Preset-managed: overwritten by /frozendawn preset command.")
                 .defineInRange("sanitySpeedMultiplier", 1.0, 0.0, 10.0);
+        MOB_SPAWN_MULTIPLIER = BUILDER
+                .comment("Multiplier for hostile mob spawn rates (Frostbitten, Hollow, Returned).",
+                        "Preset-managed: overwritten by /frozendawn preset command.",
+                        "Affects spawn chance and density caps. Higher = more frequent, larger groups.")
+                .defineInRange("mobSpawnMultiplier", 1.0, 0.0, 5.0);
         ENABLE_FROSTBITTEN = BUILDER
                 .comment("Enable Frostbitten mob spawning in Phase 4+.",
                         "Reanimated frost-covered humanoids that emerge from frozen ground.")
@@ -130,6 +137,10 @@ public class FrozenDawnConfig {
                 .comment("Enable Hollow mob spawning in Phase 5+.",
                         "Translucent vapor entities that suppress sound and entomb players in ice.")
                 .define("enableHollow", true);
+        ENABLE_RETURNED = BUILDER
+                .comment("Enable Returned mob spawning in Phase 6+.",
+                        "Intelligent reanimated ORSA personnel that open doors, break lights, and extinguish heaters.")
+                .define("enableReturned", true);
         BUILDER.pop();
 
         BUILDER.push("client");
