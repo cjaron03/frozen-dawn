@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:mirrored_fragment"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.not_a_shadow.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.not_a_shadow.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

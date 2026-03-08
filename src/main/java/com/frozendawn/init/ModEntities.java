@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
 import net.minecraft.core.registries.Registries;
@@ -46,6 +48,20 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("returned"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MimicEntity>> MIMIC =
+            ENTITIES.register("mimic", () -> EntityType.Builder
+                    .of(MimicEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(16)
+                    .build("mimic"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ArchitectEntity>> ARCHITECT =
+            ENTITIES.register("architect", () -> EntityType.Builder
+                    .of(ArchitectEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("architect"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HeavySnowballEntity>> HEAVY_SNOWBALL =
             ENTITIES.register("heavy_snowball", () -> EntityType.Builder

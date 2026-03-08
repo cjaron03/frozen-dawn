@@ -5,6 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -45,6 +46,11 @@ public class AcheroniteCrystalBlock extends Block {
             case 2 -> SHAPE_2;
             default -> SHAPE_3;
         };
+    }
+
+    @Override
+    public boolean isPathfindable(BlockState state, PathComputationType type) {
+        return false;
     }
 
     @Override

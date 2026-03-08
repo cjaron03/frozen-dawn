@@ -32,6 +32,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
     public static final ModConfigSpec.BooleanValue ENABLE_HOLLOW;
     public static final ModConfigSpec.BooleanValue ENABLE_RETURNED;
+    public static final ModConfigSpec.BooleanValue ENABLE_MIMIC;
+    public static final ModConfigSpec.BooleanValue ENABLE_ARCHITECT;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
@@ -141,6 +143,14 @@ public class FrozenDawnConfig {
                 .comment("Enable Returned mob spawning in Phase 6+.",
                         "Intelligent reanimated ORSA personnel that open doors, break lights, and extinguish heaters.")
                 .define("enableReturned", true);
+        ENABLE_MIMIC = BUILDER
+                .comment("Enable Returned Mimic spawning in Phase 6+ (progress > 50%).",
+                        "Disguises itself as a shadow figure, then attacks when approached.")
+                .define("enableMimic", true);
+        ENABLE_ARCHITECT = BUILDER
+                .comment("Enable Returned Architect spawning in Phase 6+.",
+                        "Intelligent mob that breaks through player-built walls and scaffolds over defenses.")
+                .define("enableArchitect", true);
         BUILDER.pop();
 
         BUILDER.push("client");

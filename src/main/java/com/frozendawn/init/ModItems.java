@@ -13,6 +13,7 @@ import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
+import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
@@ -148,6 +149,10 @@ public class ModItems {
     public static final DeferredItem<OrsaIdBadgeItem> ORSA_ID_BADGE = ITEMS.register("orsa_id_badge",
             () -> new OrsaIdBadgeItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
+    // --- Mimic Mob Drops ---
+    public static final DeferredItem<MirroredFragmentItem> MIRRORED_FRAGMENT = ITEMS.register("mirrored_fragment",
+            () -> new MirroredFragmentItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FROSTBITTEN, 0x8FBCD4, 0x3B5998,
@@ -157,6 +162,12 @@ public class ModItems {
                     new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> RETURNED_SPAWN_EGG = ITEMS.register("returned_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.RETURNED, 0x4A5568, 0x2D3748,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> MIMIC_SPAWN_EGG = ITEMS.register("mimic_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.MIMIC, 0x1A1A2E, 0x8B0000,
+                    new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ARCHITECT_SPAWN_EGG = ITEMS.register("architect_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ARCHITECT, 0x4A5568, 0x5B7A9E,
                     new Item.Properties()));
 
     // --- Comfort Items ---
@@ -296,6 +307,7 @@ public class ModItems {
                         output.accept(REMNANT_EMBER.get());
                         output.accept(TATTERED_CLOTHING_SCRAP.get());
                         output.accept(ORSA_ID_BADGE.get());
+                        output.accept(MIRRORED_FRAGMENT.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());
@@ -304,5 +316,7 @@ public class ModItems {
                         output.accept(FROSTBITTEN_SPAWN_EGG.get());
                         output.accept(HOLLOW_SPAWN_EGG.get());
                         output.accept(RETURNED_SPAWN_EGG.get());
+                        output.accept(MIMIC_SPAWN_EGG.get());
+                        output.accept(ARCHITECT_SPAWN_EGG.get());
                     }).build());
 }

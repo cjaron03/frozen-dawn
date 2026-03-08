@@ -9,14 +9,19 @@ import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.FrostbittenSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.HollowSpawner;
+import com.frozendawn.world.ArchitectSpawner;
+import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
@@ -24,9 +29,12 @@ import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -35,6 +43,10 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Drives the apocalypse forward each server tick.
@@ -46,6 +58,11 @@ public class WorldTickHandler {
 
     private static int lastLoggedPhase = -1;
     private static int lastLoggedDay = -1;
+    /**
+     * BreakEvent fires before the block is actually removed. Queue a one-tick-later
+     * notification so Architect D* Lite always sees final world state.
+     */
+    private static final Map<ResourceKey<Level>, Set<BlockPos>> pendingArchitectBreakUpdates = new HashMap<>();
 
     private static final String[] PHASE_ADVANCEMENTS = {
             "root", "phase2", "phase3", "phase4", "phase5", "phase6"
@@ -55,12 +72,15 @@ public class WorldTickHandler {
     public static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
         lastLoggedPhase = -1;
         lastLoggedDay = -1;
+        pendingArchitectBreakUpdates.clear();
         PlayerTickHandler.reset();
         WeatherHandler.reset();
         NetherSeveranceHandler.reset();
         FrostbittenSpawner.reset();
         HollowSpawner.reset();
         ReturnedSpawner.reset();
+        MimicSpawner.reset();
+        ArchitectSpawner.reset();
     }
 
     @SubscribeEvent
@@ -128,6 +148,13 @@ public class WorldTickHandler {
         FrostbittenSpawner.tick(overworld, currentPhase, progress);
         HollowSpawner.tick(overworld, currentPhase, progress);
         ReturnedSpawner.tick(overworld, currentPhase, progress);
+        MimicSpawner.tick(overworld, currentPhase, progress);
+        ArchitectSpawner.tick(overworld, currentPhase, progress);
+
+        flushPendingArchitectBreakUpdates(server);
+
+        // Prune player-placed block tracker periodically
+        PlayerPlacedBlockTracker.get(server).prune(overworld);
     }
 
     /**
@@ -140,6 +167,8 @@ public class WorldTickHandler {
         if (event.getEntity() instanceof FrostbittenEntity) return;
         if (event.getEntity() instanceof HollowEntity) return;
         if (event.getEntity() instanceof ReturnedEntity) return;
+        if (event.getEntity() instanceof MimicEntity) return;
+        if (event.getEntity() instanceof ArchitectEntity) return;
         event.setSpawnCancelled(true);
     }
 
@@ -164,18 +193,62 @@ public class WorldTickHandler {
 
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+        if (event.isCanceled()) return;
         invalidateNearbyShelterCaches(event.getLevel(), event.getPos());
 
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!event.getPlacedBlock().is(ModBlocks.GEOTHERMAL_CORE.get())) return;
-        if (event.getPos().getY() >= 0) return;
+        // Track player-placed blocks for Architect pathfinding
+        if (event.getEntity() instanceof ServerPlayer player) {
+            if (player.level() instanceof ServerLevel serverLevel) {
+                PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(serverLevel.getServer());
+                tracker.markPlaced(event.getPos());
+            }
 
-        grantAdvancement(player, "last_light");
+            if (event.getPlacedBlock().is(ModBlocks.GEOTHERMAL_CORE.get())
+                    && event.getPos().getY() < 0) {
+                grantAdvancement(player, "last_light");
+            }
+        }
+
+        notifyNearbyArchitects(event.getLevel(), event.getPos());
     }
 
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.isCanceled()) return;
         invalidateNearbyShelterCaches(event.getLevel(), event.getPos());
+
+        // Remove from player-placed tracker
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(serverLevel.getServer());
+            tracker.markRemoved(event.getPos());
+            queueArchitectBreakUpdate(serverLevel, event.getPos());
+        }
+    }
+
+    /** Notify Architect entities within 64 blocks of a block change so D* Lite can update costs. */
+    private static void notifyNearbyArchitects(net.minecraft.world.level.LevelAccessor levelAccessor, net.minecraft.core.BlockPos pos) {
+        if (!(levelAccessor instanceof ServerLevel serverLevel)) return;
+        net.minecraft.world.phys.AABB searchBox = new net.minecraft.world.phys.AABB(pos).inflate(64);
+        for (ArchitectEntity architect : serverLevel.getEntitiesOfClass(ArchitectEntity.class, searchBox)) {
+            architect.getDStarPathfinder().onBlockChanged(pos, serverLevel);
+        }
+    }
+
+    private static void queueArchitectBreakUpdate(ServerLevel level, BlockPos pos) {
+        pendingArchitectBreakUpdates
+                .computeIfAbsent(level.dimension(), key -> new HashSet<>())
+                .add(pos.immutable());
+    }
+
+    private static void flushPendingArchitectBreakUpdates(MinecraftServer server) {
+        if (pendingArchitectBreakUpdates.isEmpty()) return;
+        for (ServerLevel level : server.getAllLevels()) {
+            Set<BlockPos> queued = pendingArchitectBreakUpdates.remove(level.dimension());
+            if (queued == null || queued.isEmpty()) continue;
+            for (BlockPos pos : queued) {
+                notifyNearbyArchitects(level, pos);
+            }
+        }
     }
 
     /** Invalidate shelter caches for any heaters within 4 blocks below the changed position. */

@@ -19,19 +19,21 @@ import java.util.List;
 public class ReturnedExtinguishHeaterGoal extends MoveToBlockGoal {
 
     public ReturnedExtinguishHeaterGoal(PathfinderMob mob) {
-        super(mob, 1.0, 8);
+        super(mob, 1.2, 16);
     }
 
     @Override
     protected boolean isValidTarget(LevelReader level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
-        return be instanceof ThermalHeaterBlockEntity heater && heater.isLit();
+        if (!(be instanceof ThermalHeaterBlockEntity heater) || !heater.isLit()) return false;
+        // Only target heaters the mob can actually see — don't path toward walled-off heaters
+        return hasLineOfSight(pos);
     }
 
     @Override
     public void tick() {
         super.tick();
-        if (isReachedTarget()) {
+        if (isReachedTarget() && hasLineOfSight(blockPos)) {
             BlockEntity be = mob.level().getBlockEntity(blockPos);
             if (be instanceof ThermalHeaterBlockEntity heater && heater.isLit()) {
                 heater.extinguish();
@@ -56,5 +58,19 @@ public class ReturnedExtinguishHeaterGoal extends MoveToBlockGoal {
     @Override
     public double acceptedDistance() {
         return 2.0;
+    }
+
+    private boolean hasLineOfSight(BlockPos pos) {
+        net.minecraft.world.phys.Vec3 eyePos = mob.getEyePosition();
+        net.minecraft.world.phys.Vec3 targetCenter = new net.minecraft.world.phys.Vec3(
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        net.minecraft.world.level.ClipContext ctx = new net.minecraft.world.level.ClipContext(
+                eyePos, targetCenter,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE,
+                mob);
+        net.minecraft.world.phys.BlockHitResult hit = mob.level().clip(ctx);
+        return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS
+                || hit.getBlockPos().equals(pos);
     }
 }

@@ -278,5 +278,39 @@
   "advancement.frozendawn.they_remember.title": "They Remember",
   "advancement.frozendawn.they_remember.description": "A Returned extinguished your heater. They still know what fire does.",
   "advancement.frozendawn.returned_killed.title": "Rest Now",
-  "advancement.frozendawn.returned_killed.description": "Kill one of the Returned. Whatever they were, they're at peace now."
+  "advancement.frozendawn.returned_killed.description": "Kill one of the Returned. Whatever they were, they're at peace now.",
+
+  "entity.frozendawn.mimic": "Returned Mimic",
+  "item.frozendawn.mirrored_fragment": "Mirrored Fragment",
+  "item.frozendawn.mimic_spawn_egg": "Returned Mimic Spawn Egg",
+  "tooltip.frozendawn.mirrored_fragment": "A shard that shows a face not your own.",
+  "tooltip.frozendawn.mirrored_fragment.use": "Right-click to restore sanity.",
+  "message.frozendawn.mirrored_fragment.used": "The fragment shatters. Your mind clears.",
+  "message.frozendawn.mirrored_fragment.no_effect": "Your mind is already clear.",
+
+  "subtitle.frozendawn.entity.mimic.hurt": "Something wails",
+  "subtitle.frozendawn.entity.mimic.death": "Something dissolves",
+  "subtitle.frozendawn.entity.mimic.attack": "Something shrieks",
+  "subtitle.frozendawn.entity.mimic.stare": "You feel watched",
+
+  "death.attack.frozendawn.mimic": "%1$s was killed by a Returned Mimic",
+
+  "advancement.frozendawn.not_a_shadow.title": "Not a Shadow",
+  "advancement.frozendawn.not_a_shadow.description": "You've learned to stop ignoring the shapes in the dark.",
+
+  "entity.frozendawn.architect": "Returned Architect",
+  "item.frozendawn.architect_spawn_egg": "Returned Architect Spawn Egg",
+
+  "subtitle.frozendawn.entity.architect.mine": "Something is mining",
+  "subtitle.frozendawn.entity.architect.ambient": "Something creaks nearby",
+  "subtitle.frozendawn.entity.architect.observe": "Something is watching",
+  "subtitle.frozendawn.entity.architect.hurt": "Returned Architect hurts",
+  "subtitle.frozendawn.entity.architect.death": "Returned Architect dies",
+  "subtitle.frozendawn.entity.architect.ice_place": "Ice forms",
+  "subtitle.frozendawn.entity.architect.land": "Something lands heavily",
+
+  "death.attack.frozendawn.architect": "%1$s was disassembled by a Returned Architect",
+
+  "advancement.frozendawn.disassembled.title": "Disassembled",
+  "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose."
 }

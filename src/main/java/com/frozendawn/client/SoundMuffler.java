@@ -36,10 +36,16 @@ public class SoundMuffler {
         SoundInstance original = event.getSound();
         if (original == null) return;
 
-        // Hollow proximity: distance-based sound suppression within 6 blocks
-        // Hollow's own sounds always pass through; everything else fades with distance
+        // All Frozen Dawn mob sounds are immune from ALL sound suppression
         SoundSource source = original.getSource();
         String soundPath = original.getLocation().getPath();
+        if (original.getLocation().getNamespace().equals(FrozenDawn.MOD_ID)
+                && soundPath.startsWith("entity.")) {
+            return; // Always plays at full volume
+        }
+
+        // Hollow proximity: distance-based sound suppression within 6 blocks
+        // Hollow's own sounds always pass through; everything else fades with distance
         boolean isHollowSound = original.getLocation().getNamespace().equals(FrozenDawn.MOD_ID)
                 && soundPath.startsWith("entity.hollow.");
 

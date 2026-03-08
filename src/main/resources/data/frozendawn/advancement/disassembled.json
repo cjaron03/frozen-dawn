@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:architect_spawn_egg"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.disassembled.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.disassembled.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

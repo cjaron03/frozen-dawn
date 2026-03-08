@@ -29,7 +29,7 @@ public class ReturnedBreakLightGoal extends Goal {
 
     public ReturnedBreakLightGoal(Monster mob) {
         this.mob = mob;
-        this.searchRange = 8;
+        this.searchRange = 16;
         this.speed = 1.0;
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
@@ -81,8 +81,8 @@ public class ReturnedBreakLightGoal extends Goal {
         double distSq = mob.position().distanceToSqr(
                 targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5);
 
-        // Close enough to break — 2.5 block reach
-        if (distSq < 6.25) {
+        // Close enough to break — 2.5 block reach + line of sight check
+        if (distSq < 6.25 && hasLineOfSight(targetPos)) {
             BlockState state = mob.level().getBlockState(targetPos);
             if (isBreakableLightSource(state)) {
                 mob.level().destroyBlock(targetPos, true);
@@ -141,7 +141,7 @@ public class ReturnedBreakLightGoal extends Goal {
                 mobPos.offset(-searchRange, -2, -searchRange),
                 mobPos.offset(searchRange, 4, searchRange))) {
             BlockState state = level.getBlockState(pos);
-            if (isBreakableLightSource(state)) {
+            if (isBreakableLightSource(state) && hasLineOfSight(pos)) {
                 double distSq = mobPos.distSqr(pos);
                 if (distSq < closestDistSq) {
                     closestDistSq = distSq;
@@ -150,6 +150,21 @@ public class ReturnedBreakLightGoal extends Goal {
             }
         }
         return closest;
+    }
+
+    private boolean hasLineOfSight(BlockPos pos) {
+        net.minecraft.world.phys.Vec3 eyePos = mob.getEyePosition();
+        net.minecraft.world.phys.Vec3 targetCenter = new net.minecraft.world.phys.Vec3(
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        net.minecraft.world.level.ClipContext ctx = new net.minecraft.world.level.ClipContext(
+                eyePos, targetCenter,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE,
+                mob);
+        net.minecraft.world.phys.BlockHitResult hit = mob.level().clip(ctx);
+        // Hit the target block itself or missed entirely = clear line of sight
+        return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS
+                || hit.getBlockPos().equals(pos);
     }
 
     private boolean isBreakableLightSource(BlockState state) {

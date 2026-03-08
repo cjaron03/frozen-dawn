@@ -188,5 +188,88 @@
       { "name": "minecraft:entity.zombie.step", "type": "event" },
       { "name": "minecraft:entity.zombie.step", "type": "event" }
     ]
+  },
+  "entity.mimic.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.mimic.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.ghast.hurt", "type": "event", "volume": 1.0 }
+    ]
+  },
+  "entity.mimic.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.mimic.death",
+    "sounds": [
+      { "name": "minecraft:entity.ghast.death", "type": "event", "volume": 1.0 }
+    ]
+  },
+  "entity.mimic.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.mimic.attack",
+    "sounds": [
+      { "name": "minecraft:entity.ghast.scream", "type": "event", "volume": 1.0 }
+    ]
+  },
+  "entity.mimic.stare": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.mimic.stare",
+    "sounds": [
+      { "name": "minecraft:ambient.cave", "type": "event", "volume": 1.0 }
+    ]
+  },
+  "entity.architect.mine": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.mine",
+    "sounds": [
+      { "name": "minecraft:block.stone.hit", "type": "event" },
+      { "name": "minecraft:block.stone.hit", "type": "event" },
+      { "name": "minecraft:block.wood.hit", "type": "event" }
+    ]
+  },
+  "entity.architect.ambient": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "minecraft:ambient.soul_sand_valley.mood", "type": "event", "volume": 0.4 },
+      { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.3, "pitch": 0.5 }
+    ]
+  },
+  "entity.architect.observe": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.5, "pitch": 0.4 },
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.4, "pitch": 0.5 }
+    ]
+  },
+  "entity.architect.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.warden.hurt", "type": "event", "volume": 0.6, "pitch": 1.5 },
+      { "name": "minecraft:entity.phantom.hurt", "type": "event", "volume": 0.5, "pitch": 0.6 }
+    ]
+  },
+  "entity.architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.death",
+    "sounds": [
+      { "name": "minecraft:entity.horse.death", "type": "event", "volume": 0.8, "pitch": 0.55 },
+      { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.25, "pitch": 0.55 }
+    ]
+  },
+  "entity.architect.ice_place": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.ice_place",
+    "sounds": [
+      { "name": "minecraft:block.packed_ice.place", "type": "event", "volume": 0.7 },
+      { "name": "minecraft:block.glass.place", "type": "event", "volume": 0.3, "pitch": 1.5 }
+    ]
+  },
+  "entity.architect.land": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.land",
+    "sounds": [
+      { "name": "minecraft:entity.iron_golem.damage", "type": "event", "volume": 0.6, "pitch": 0.7 },
+      { "name": "minecraft:block.stone.break", "type": "event", "volume": 0.5, "pitch": 0.6 }
+    ]
   }
 }
