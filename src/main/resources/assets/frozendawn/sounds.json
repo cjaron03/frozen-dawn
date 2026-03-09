@@ -228,6 +228,7 @@
   },
   "entity.architect.ambient": {
     "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.ambient",
     "sounds": [
       { "name": "minecraft:ambient.soul_sand_valley.mood", "type": "event", "volume": 0.4 },
       { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.3, "pitch": 0.5 }
@@ -235,6 +236,7 @@
   },
   "entity.architect.observe": {
     "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.observe",
     "sounds": [
       { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.5, "pitch": 0.4 },
       { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.4, "pitch": 0.5 }
