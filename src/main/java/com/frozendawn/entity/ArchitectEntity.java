@@ -3,6 +3,7 @@ package com.frozendawn.entity;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
+import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
@@ -48,6 +49,8 @@ import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -150,30 +153,44 @@ public class ArchitectEntity extends Monster {
     private int pathRecalcCooldown = 0;
     /** Consecutive APPROACH ticks where D* reports UNREACHABLE. */
     private int unreachableTicks = 0;
-    /** Consecutive APPROACH ticks where D* returns the same WALK step from the same origin. */
+    /** Consecutive APPROACH ticks where movement toward the committed WALK corridor stalls. */
     private int walkStuckTicks = 0;
     @Nullable private BlockPos lastWalkStepPos = null;
     @Nullable private BlockPos lastWalkFromPos = null;
-    @Nullable private BlockPos committedWalkStepPos = null;
-    @Nullable private BlockPos walkNavWaypoint = null;
-    @Nullable private BlockPos lastReverseWalkCandidate = null;
+    @Nullable private BlockPos currentWalkCellPos = null;
+    @Nullable private BlockPos previousWalkCellPos = null;
+    @Nullable private BlockPos committedWalkWaypoint = null;
+    @Nullable private BlockPos committedWalkFirstStepPos = null;
+    @Nullable private BlockPos committedWalkStartPos = null;
+    @Nullable private BlockPos committedWalkBacktrackPos = null;
+    @Nullable private BlockPos committedWalkTargetSnapshot = null;
+    @Nullable private Vec3 committedWalkStartVec = null;
+    private final List<BlockPos> committedWalkCorridor = new ArrayList<>();
+    private int committedWalkCorridorIndex = 0;
+    @Nullable private BlockPos pendingWalkBacktrackPos = null;
+    @Nullable private BlockPos lastCompletedWalkWaypointPos = null;
+    @Nullable private BlockPos lastCompletedWalkBacktrackPos = null;
     @Nullable private BlockPos lastUnstickBreakCandidate = null;
-    private int reverseWalkCandidateTicks = 0;
     private int repeatedUnstickBreakAttempts = 0;
     private int committedWalkTicks = 0;
-    private int walkNavRepathCooldown = 0;
-    private int walkNavStallTicks = 0;
-    private double walkNavLastDistSqr = Double.MAX_VALUE;
-    private boolean walkNavDirectChase = false;
+    private int committedWalkAgeTicks = 0;
+    private int committedWalkNoProgressTicks = 0;
+    private double committedWalkLastDistSqr = Double.MAX_VALUE;
     private static final int WALK_STUCK_BREAK_TICKS = 16;
     private static final int WALK_STUCK_REINIT_TICKS = 48;
-    private static final int WALK_COMMIT_TICKS = 10;
-    private static final int REVERSE_WALK_SUPPRESS_TICKS = 4;
+    private static final int WALK_COMMIT_TICKS = 12;
+    private static final int WALK_COMMIT_NO_PROGRESS_TICKS = 6;
+    private static final int WALK_COMMIT_DEADMAN_TICKS = 8;
+    private static final double WALK_COMMIT_PROGRESS_EPSILON = 0.10;
+    private static final double WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR = 0.20;
+    private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 9.0;
+    private static final int WALK_TARGET_SHIFT_VERTICAL = 1;
+    private static final float WALK_MAX_ROTATE = 35.0F;
     private static final int MAX_REPEAT_UNSTICK_BREAK_ATTEMPTS = 3;
     private static final int WALK_NAV_CORRIDOR_MAX_STEPS = 8;
     private static final double WALK_NAV_MAX_DISTANCE = 10.0;
-    private static final int WALK_NAV_REPATH_TICKS = 5;
-    private static final int WALK_NAV_STALL_TICKS = 16;
+    private static final double DIRECT_APPROACH_PATH_HORIZONTAL_RANGE = 8.0;
+    private static final double DIRECT_APPROACH_PATH_VERTICAL_RANGE = 4.0;
     private static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     private static final int FALLBACK_BREAK_COOLDOWN_TICKS = 10;
     private int fallbackBreakCooldown = 0;
@@ -198,7 +215,7 @@ public class ArchitectEntity extends Monster {
     private static final int MIN_ACTION_HOLD = 5;
     /** While true, no current target; Architect should roam/ruin and only reacquire players at observe radius. */
     private boolean roamingAfterTargetLoss = false;
-    private static final double OBSERVE_REACQUIRE_RANGE = 42.0;
+    private static final double OBSERVE_REACQUIRE_RANGE = 72.0;
     private static final int ROAM_REPATH_MIN_TICKS = 25;
     private static final int ROAM_REPATH_VARIANCE_TICKS = 30;
     private static final long SLOW_SUPER_AISTEP_LOG_US = 50_000;
@@ -232,6 +249,7 @@ public class ArchitectEntity extends Monster {
 
     public ArchitectEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
+        this.moveControl = new ArchitectMoveControl(this, WALK_MAX_ROTATE);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -315,8 +333,8 @@ public class ArchitectEntity extends Monster {
         long superStart = System.nanoTime();
         super.aiStep();
         long superUs = (System.nanoTime() - superStart) / 1000;
-        if (superUs > SLOW_SUPER_AISTEP_LOG_US) {
-            LOGGER.info("[Architect] super.aiStep() took " + superUs + "us (nav recompute?)");
+        if (superUs > SLOW_SUPER_AISTEP_LOG_US && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect] super.aiStep() took {}us (nav recompute?)", superUs);
         }
         if (level().isClientSide()) return;
 
@@ -418,8 +436,8 @@ public class ArchitectEntity extends Monster {
         long actionStart = System.nanoTime();
         executeAction(target);
         long actionUs = (System.nanoTime() - actionStart) / 1000;
-        if (actionUs > SLOW_EXEC_ACTION_LOG_US) {
-            LOGGER.info("[Architect] executeAction(" + currentAction + ") took " + actionUs + "us");
+        if (actionUs > SLOW_EXEC_ACTION_LOG_US && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect] executeAction({}) took {}us", currentAction, actionUs);
         }
 
         emitActionTelegraphParticles(target);
@@ -435,8 +453,7 @@ public class ArchitectEntity extends Monster {
                 && meleeCommitTicks > 0
                 && currentAction != ACTION_RETREAT
                 && getHealth() > getMaxHealth() * 0.35f
-                && isTargetWithinMeleeCommitGeometry(target)
-                && (hasLineOfSight(target) || distanceTo(target) < MELEE_COMMIT_LOS_GRACE_RANGE)) {
+                && canCommitToMelee(target)) {
             if (currentAction != ACTION_ATTACK_MELEE) {
                 onActionChange(currentAction, ACTION_ATTACK_MELEE);
                 actionHoldTicks = 0;
@@ -471,12 +488,17 @@ public class ArchitectEntity extends Monster {
         }
 
         if (bestAction != currentAction) {
-            LOGGER.info("[Architect] SCORING: observe=" + String.format("%.2f", scores[ACTION_OBSERVE])
-                    + " approach=" + String.format("%.2f", scores[ACTION_APPROACH])
-                    + " melee=" + String.format("%.2f", scores[ACTION_ATTACK_MELEE])
-                    + " retreat=" + String.format("%.2f", scores[ACTION_RETREAT])
-                    + " HP=" + String.format("%.1f", getHealth()) + "/" + String.format("%.0f", getMaxHealth())
-                    + " winner=" + bestAction + " (was " + currentAction + ")");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect] SCORING: observe={} approach={} melee={} retreat={} HP={}/{} winner={} (was {})",
+                        String.format("%.2f", scores[ACTION_OBSERVE]),
+                        String.format("%.2f", scores[ACTION_APPROACH]),
+                        String.format("%.2f", scores[ACTION_ATTACK_MELEE]),
+                        String.format("%.2f", scores[ACTION_RETREAT]),
+                        String.format("%.1f", getHealth()),
+                        String.format("%.0f", getMaxHealth()),
+                        bestAction,
+                        currentAction);
+            }
             onActionChange(currentAction, bestAction);
             actionHoldTicks = 0;
         }
@@ -524,9 +546,7 @@ public class ArchitectEntity extends Monster {
 
     private float scoreAttackMelee(@Nullable LivingEntity target) {
         if (target == null) return 0f;
-        // Must have line of sight to engage melee — otherwise APPROACH handles it
-        if (!hasLineOfSight(target)) return 0f;
-        if (!isTargetWithinMeleeEngageGeometry(target)) return 0f;
+        if (!canStartMelee(target)) return 0f;
         float dist = distanceTo(target);
         float score = 0.8f;
         // Smooth falloff instead of hard cutoff — commits to melee within 6 blocks
@@ -796,11 +816,14 @@ public class ArchitectEntity extends Monster {
 
             float totalCost = walkCost + breachCost;
 
-            LOGGER.info("[Architect] PROBE " + dir + ": breach="
-                    + String.format("%.1f", breachCost) + " walk="
-                    + String.format("%.1f", walkCost) + " total="
-                    + String.format("%.1f", totalCost)
-                    + " blocks=" + breachBlocks);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect] PROBE {}: breach={} walk={} total={} blocks={}",
+                        dir,
+                        String.format("%.1f", breachCost),
+                        String.format("%.1f", walkCost),
+                        String.format("%.1f", totalCost),
+                        breachBlocks);
+            }
 
             if (totalCost < bestTotalCost) {
                 bestTotalCost = totalCost;
@@ -810,9 +833,11 @@ public class ArchitectEntity extends Monster {
 
         if (bestApproach != null) {
             preferredEntryPoint = bestApproach;
-            LOGGER.info("[Architect] OBSERVE probe: best entry at "
-                    + preferredEntryPoint + " totalCost="
-                    + String.format("%.1f", bestTotalCost));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect] OBSERVE probe: best entry at {} totalCost={}",
+                        preferredEntryPoint,
+                        String.format("%.1f", bestTotalCost));
+            }
         }
     }
 
@@ -835,6 +860,8 @@ public class ArchitectEntity extends Monster {
             approachLastKnownPos();
             return;
         }
+
+        recordWalkCellHistory();
 
         // Proactively open nearby wooden doors before movement dispatch.
         keepNearbyWoodenDoorsOpen();
@@ -892,16 +919,25 @@ public class ArchitectEntity extends Monster {
             reevalCooldown = 0;
         }
 
+        if (tryContinueCommittedWalk(target)) {
+            return;
+        }
+
+        if (canDirectChaseApproach(target)) {
+            executeDirectApproachChase(target);
+            return;
+        }
+
         // --- D* Lite initialization / goal update ---
         BlockPos targetPos = target.blockPosition();
         if (dstar.needsReinitialize(targetPos)) {
             dstar.setSurfaceY(surfaceY);
             dstar.initialize(targetPos, blockPosition(), level());
             dstar.computePartial(2000, level());
-            LOGGER.info("[Architect] D* Lite initialized: goal=" + targetPos
-                    + " start=" + blockPosition()
-                    + " cells=" + dstar.getCellCount()
-                    + " complete=" + dstar.isSearchComplete());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect] D* Lite initialized: goal={} start={} cells={} complete={}",
+                        targetPos, blockPosition(), dstar.getCellCount(), dstar.isSearchComplete());
+            }
         }
 
         // Ensure search is complete
@@ -927,11 +963,8 @@ public class ArchitectEntity extends Monster {
         invalidateStaleApproachBreakTarget(step, target);
 
         if (step.type() == DStarLitePathfinder.StepType.UNREACHABLE) {
-            BlockPos stuckWalkStep = committedWalkStepPos;
+            BlockPos stuckWalkStep = getCommittedWalkSteeringTarget();
             clearWalkNavigationState(true);
-            if (continueCommittedWalk()) {
-                return;
-            }
             if (stuckWalkStep != null) {
                 trackWalkStep(stuckWalkStep);
                 if (handleWalkStuck(stuckWalkStep, target)) {
@@ -944,9 +977,9 @@ public class ArchitectEntity extends Monster {
             if (unreachableTicks >= UNREACHABLE_BREAK_DELAY_TICKS) {
                 fallbackWallBreak(target);
             }
-            if (tickCount % 20 == 0) {
-                LOGGER.info("[Architect] D* Lite: UNREACHABLE, g=" + String.format("%.1f", dstar.getStartG())
-                        + " cells=" + dstar.getCellCount());
+            if (tickCount % 20 == 0 && LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect] D* Lite: UNREACHABLE, g={} cells={}",
+                        String.format("%.1f", dstar.getStartG()), dstar.getCellCount());
             }
             // Safety valve: if we stay unreachable for too long, hard-refresh from current start.
             if (unreachableTicks >= 40) {
@@ -1066,14 +1099,15 @@ public class ArchitectEntity extends Monster {
         }
 
         // Periodic logging
-        if (tickCount % 20 == 0) {
-            LOGGER.info("[Architect] action=APPROACH"
-                    + " dist=" + String.format("%.1f", distanceTo(target))
-                    + " mining=" + blockBreaker.isMining()
-                    + " ice=" + scaffoldIce.size() + "/" + MAX_SCAFFOLD_ICE
-                    + " pos=" + blockPosition()
-                    + " step=" + step.type()
-                    + " cells=" + dstar.getCellCount());
+        if (tickCount % 20 == 0 && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect] action=APPROACH dist={} mining={} ice={}/{} pos={} step={} cells={}",
+                    String.format("%.1f", distanceTo(target)),
+                    blockBreaker.isMining(),
+                    scaffoldIce.size(),
+                    MAX_SCAFFOLD_ICE,
+                    blockPosition(),
+                    step.type(),
+                    dstar.getCellCount());
         }
     }
 
@@ -1312,12 +1346,25 @@ public class ArchitectEntity extends Monster {
         walkStuckTicks = 0;
         lastWalkStepPos = null;
         lastWalkFromPos = null;
-        resetReverseWalkTracker();
     }
 
-    private void resetReverseWalkTracker() {
-        lastReverseWalkCandidate = null;
-        reverseWalkCandidateTicks = 0;
+    private void recordWalkCellHistory() {
+        BlockPos current = blockPosition();
+        if (currentWalkCellPos == null) {
+            currentWalkCellPos = current.immutable();
+            return;
+        }
+        if (!current.equals(currentWalkCellPos)) {
+            previousWalkCellPos = currentWalkCellPos;
+            currentWalkCellPos = current.immutable();
+        }
+    }
+
+    private void resetWalkCellHistory() {
+        currentWalkCellPos = null;
+        previousWalkCellPos = null;
+        lastCompletedWalkWaypointPos = null;
+        lastCompletedWalkBacktrackPos = null;
     }
 
     private void resetUnstickBreakTracker() {
@@ -1325,63 +1372,216 @@ public class ArchitectEntity extends Monster {
         repeatedUnstickBreakAttempts = 0;
     }
 
-    private void commitWalkStep(BlockPos stepPos) {
-        if (committedWalkStepPos == null || !committedWalkStepPos.equals(stepPos)) {
-            committedWalkStepPos = stepPos.immutable();
+    private void commitWalkStep(List<BlockPos> corridorNodes, @Nullable LivingEntity target) {
+        if (corridorNodes.isEmpty()) {
+            return;
         }
+
+        committedWalkCorridor.clear();
+        for (BlockPos node : corridorNodes) {
+            committedWalkCorridor.add(node.immutable());
+        }
+        committedWalkCorridorIndex = 0;
+        committedWalkFirstStepPos = committedWalkCorridor.get(0);
+        committedWalkWaypoint = committedWalkCorridor.get(committedWalkCorridor.size() - 1);
+        committedWalkStartPos = blockPosition().immutable();
+        committedWalkBacktrackPos = pendingWalkBacktrackPos != null
+                ? pendingWalkBacktrackPos.immutable()
+                : committedWalkStartPos;
+        committedWalkStartVec = position();
+        committedWalkTargetSnapshot = target != null ? target.blockPosition().immutable() : null;
         committedWalkTicks = WALK_COMMIT_TICKS;
+        committedWalkAgeTicks = 0;
+        committedWalkNoProgressTicks = 0;
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        committedWalkLastDistSqr = steeringTarget != null
+                ? distanceToWaypointSqr(steeringTarget)
+                : Double.MAX_VALUE;
+        pendingWalkBacktrackPos = null;
+        resetWalkStuckTracker();
     }
 
     private void clearCommittedWalk() {
-        committedWalkStepPos = null;
+        committedWalkWaypoint = null;
+        committedWalkFirstStepPos = null;
+        committedWalkStartPos = null;
+        committedWalkBacktrackPos = null;
+        committedWalkTargetSnapshot = null;
+        committedWalkStartVec = null;
+        committedWalkCorridor.clear();
+        committedWalkCorridorIndex = 0;
         committedWalkTicks = 0;
+        committedWalkAgeTicks = 0;
+        committedWalkNoProgressTicks = 0;
+        committedWalkLastDistSqr = Double.MAX_VALUE;
+        pendingWalkBacktrackPos = null;
+    }
+
+    private void invalidateCommittedWalk(String reason, @Nullable LivingEntity target) {
+        if (committedWalkWaypoint == null) {
+            return;
+        }
+        LOGGER.info("[Architect] WALK corridor invalidated: reason={} current={} firstStep={} waypoint={} age={} ttlLeft={} targetSnapshot={} targetNow={}",
+                reason, blockPosition(), committedWalkFirstStepPos, committedWalkWaypoint,
+                committedWalkAgeTicks, committedWalkTicks, committedWalkTargetSnapshot,
+                target != null ? target.blockPosition() : null);
+        clearCommittedWalk();
+    }
+
+    @Nullable
+    private BlockPos getCommittedWalkSteeringTarget() {
+        if (committedWalkCorridor.isEmpty()) {
+            return committedWalkWaypoint;
+        }
+        if (committedWalkCorridorIndex < 0) {
+            committedWalkCorridorIndex = 0;
+        }
+        if (committedWalkCorridorIndex >= committedWalkCorridor.size()) {
+            committedWalkCorridorIndex = committedWalkCorridor.size() - 1;
+        }
+        return committedWalkCorridor.get(committedWalkCorridorIndex);
+    }
+
+    private boolean advanceCommittedWalkProgress() {
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        while (steeringTarget != null) {
+            double distSqr = distanceToWaypointSqr(steeringTarget);
+            if (!hasReachedWalkWaypoint(steeringTarget, distSqr)) {
+                return true;
+            }
+
+            if (committedWalkCorridorIndex < committedWalkCorridor.size() - 1) {
+                committedWalkCorridorIndex++;
+                committedWalkNoProgressTicks = 0;
+                committedWalkLastDistSqr = Double.MAX_VALUE;
+                steeringTarget = getCommittedWalkSteeringTarget();
+                continue;
+            }
+
+            if (committedWalkWaypoint != null) {
+                lastCompletedWalkWaypointPos = committedWalkWaypoint.immutable();
+            }
+            lastCompletedWalkBacktrackPos = committedWalkBacktrackPos != null
+                    ? committedWalkBacktrackPos.immutable()
+                    : committedWalkStartPos != null ? committedWalkStartPos.immutable() : null;
+            clearCommittedWalk();
+            return false;
+        }
+        return false;
     }
 
     private boolean continueCommittedWalk() {
-        if (committedWalkStepPos == null || committedWalkTicks <= 0) return false;
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        if (steeringTarget == null || committedWalkTicks <= 0) return false;
 
-        BlockState feetState = level().getBlockState(committedWalkStepPos);
-        BlockState headState = level().getBlockState(committedWalkStepPos.above());
-        if ((feetState.isSolid() && !feetState.is(BlockTags.WOODEN_DOORS))
-                || (headState.isSolid() && !headState.is(BlockTags.WOODEN_DOORS))) {
-            clearCommittedWalk();
-            return false;
-        }
-
-        double tx = committedWalkStepPos.getX() + 0.5;
-        double ty = committedWalkStepPos.getY();
-        double tz = committedWalkStepPos.getZ() + 0.5;
-        double distSqr = position().distanceToSqr(tx, ty, tz);
-        if (distSqr <= 0.35) {
-            clearCommittedWalk();
-            return false;
+        double tx = steeringTarget.getX() + 0.5;
+        double ty = steeringTarget.getY();
+        double tz = steeringTarget.getZ() + 0.5;
+        double horizontalDistSqr = (tx - getX()) * (tx - getX()) + (tz - getZ()) * (tz - getZ());
+        if (steeringTarget.getY() > getY() + 0.1 && horizontalDistSqr <= 1.25 && onGround()) {
+            getJumpControl().jump();
         }
 
         committedWalkTicks--;
+        committedWalkAgeTicks++;
+        // Follow D* corridors with raw MoveControl so edge/scaffold approach cells
+        // do not get vetoed by vanilla navigation before the scaffold action can fire.
+        getNavigation().stop();
         getMoveControl().setWantedPosition(tx, ty, tz, 1.0);
         getLookControl().setLookAt(tx, ty + 1.0, tz, 30f, 30f);
         return true;
     }
 
-    private boolean shouldContinueCommittedWalk(BlockPos proposedStepPos) {
-        if (committedWalkStepPos == null || committedWalkTicks <= 0) return false;
-        return proposedStepPos.equals(committedWalkStepPos);
+    private boolean shouldContinueCommittedWalk(@Nullable LivingEntity target) {
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        if (steeringTarget == null) return false;
+        if (committedWalkTicks <= 0) {
+            invalidateCommittedWalk("TTL", target);
+            return false;
+        }
+
+        BlockState feetState = level().getBlockState(steeringTarget);
+        BlockState headState = level().getBlockState(steeringTarget.above());
+        if ((feetState.isSolid() && !feetState.is(BlockTags.WOODEN_DOORS))
+                || (headState.isSolid() && !headState.is(BlockTags.WOODEN_DOORS))) {
+            invalidateCommittedWalk("BLOCKED", target);
+            return false;
+        }
+
+        if (target != null && committedWalkTargetSnapshot != null) {
+            BlockPos targetPos = target.blockPosition();
+            if (horizontalDistanceSqr(targetPos, committedWalkTargetSnapshot) > WALK_TARGET_SHIFT_HORIZONTAL_SQR
+                    || Math.abs(targetPos.getY() - committedWalkTargetSnapshot.getY()) > WALK_TARGET_SHIFT_VERTICAL) {
+                invalidateCommittedWalk("TARGET_SHIFT", target);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Nullable
     private BlockPos getImmediateBacktrackPos() {
-        BlockPos from = blockPosition();
-        if (lastWalkStepPos == null || lastWalkFromPos == null) return null;
-        if (!from.equals(lastWalkStepPos)) return null;
-        return lastWalkFromPos;
+        BlockPos current = blockPosition();
+        if (lastCompletedWalkWaypointPos != null
+                && lastCompletedWalkBacktrackPos != null
+                && current.equals(lastCompletedWalkWaypointPos)) {
+            return lastCompletedWalkBacktrackPos;
+        }
+        if (currentWalkCellPos == null || previousWalkCellPos == null) return null;
+        if (!current.equals(currentWalkCellPos)) return null;
+        return previousWalkCellPos;
     }
 
-    private boolean isImmediateReverseWalk(BlockPos proposedStepPos) {
-        BlockPos from = blockPosition();
-        return lastWalkStepPos != null
-                && lastWalkFromPos != null
-                && proposedStepPos.equals(lastWalkFromPos)
-                && from.equals(lastWalkStepPos);
+    private boolean tryContinueCommittedWalk(@Nullable LivingEntity target) {
+        if (!shouldContinueCommittedWalk(target)) {
+            return false;
+        }
+
+        if (!advanceCommittedWalkProgress()) {
+            return false;
+        }
+
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        if (steeringTarget == null) {
+            return false;
+        }
+
+        double distSqr = distanceToWaypointSqr(steeringTarget);
+        if (distSqr + WALK_COMMIT_PROGRESS_EPSILON < committedWalkLastDistSqr) {
+            committedWalkLastDistSqr = distSqr;
+            committedWalkNoProgressTicks = 0;
+        } else {
+            committedWalkNoProgressTicks++;
+        }
+
+        if (committedWalkNoProgressTicks >= WALK_COMMIT_NO_PROGRESS_TICKS) {
+            walkStuckTicks = Math.max(walkStuckTicks, WALK_STUCK_BREAK_TICKS);
+            BlockPos stuckTarget = steeringTarget;
+            invalidateCommittedWalk("STUCK", target);
+            if (stuckTarget != null && handleWalkStuck(stuckTarget, target)) {
+                return true;
+            }
+            return false;
+        }
+
+        if (committedWalkStartVec != null
+                && committedWalkAgeTicks >= WALK_COMMIT_DEADMAN_TICKS
+                && position().distanceToSqr(committedWalkStartVec) < WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR) {
+            walkStuckTicks = Math.max(walkStuckTicks, WALK_STUCK_BREAK_TICKS);
+            BlockPos stuckTarget = steeringTarget;
+            invalidateCommittedWalk("DEADMAN", target);
+            if (stuckTarget != null && handleWalkStuck(stuckTarget, target)) {
+                return true;
+            }
+            return false;
+        }
+
+        if (!continueCommittedWalk()) {
+            return false;
+        }
+
+        return true;
     }
 
     private void invalidateStaleApproachBreakTarget(DStarLitePathfinder.NextStep step, @Nullable LivingEntity target) {
@@ -1405,7 +1605,10 @@ public class ArchitectEntity extends Monster {
                 && Math.abs(bt.getX() - blockPosition().getX()) <= 3
                 && Math.abs(bt.getZ() - blockPosition().getZ()) <= 3;
 
-        if (!continuingBreak && !continuingDropInBreak) {
+        boolean continuingWalkBreak = step.type() == DStarLitePathfinder.StepType.WALK
+                && shouldContinueWalkObstructionBreak(step, bt);
+
+        if (!continuingBreak && !continuingDropInBreak && !continuingWalkBreak) {
             blockBreaker.clearTarget();
             if (bt.equals(ceilingBreachPos)) {
                 ceilingBreachPos = null;
@@ -1436,48 +1639,38 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean attemptWalkUnstickBreak(BlockPos stepPos) {
-        BlockPos from = blockPosition();
-        Direction toward = getPrimaryHorizontalDirection(from, stepPos);
-        boolean steppingDown = stepPos.getY() < from.getY();
-
-        Set<BlockPos> candidates = new LinkedHashSet<>(8);
-        // 1) Clear our own headroom first (common jam in drop-in shafts).
-        candidates.add(from.above());
-        // 2) Clear the cell in front at feet/head.
-        if (toward != null) {
-            BlockPos front = from.relative(toward);
-            candidates.add(front);
-            candidates.add(front.above());
-            // Down-step jams often come from the overhang above the opening.
-            if (steppingDown) {
-                candidates.add(front.above().above());
-            }
-        }
-        // 3) Clear destination only if it is immediately adjacent.
-        if (Math.abs(stepPos.getX() - from.getX()) <= 1
-                && Math.abs(stepPos.getY() - from.getY()) <= 1
-                && Math.abs(stepPos.getZ() - from.getZ()) <= 1) {
-            candidates.add(stepPos);
-            candidates.add(stepPos.above());
-        }
-
         BlockPos blockedCandidate = repeatedUnstickBreakAttempts >= MAX_REPEAT_UNSTICK_BREAK_ATTEMPTS
                 ? lastUnstickBreakCandidate
                 : null;
 
-        for (BlockPos candidate : candidates) {
-            if (blockedCandidate != null && blockedCandidate.equals(candidate)) {
-                continue;
+        BlockPos candidate = findWalkUnstickBreakCandidate(stepPos, blockedCandidate);
+        if (candidate != null) {
+            if (candidate.equals(lastUnstickBreakCandidate)) {
+                repeatedUnstickBreakAttempts++;
+            } else {
+                lastUnstickBreakCandidate = candidate.immutable();
+                repeatedUnstickBreakAttempts = 1;
             }
-            if (isBreakableBlock(candidate)) {
-                if (candidate.equals(lastUnstickBreakCandidate)) {
+            blockBreaker.setTarget(candidate);
+            LOGGER.info("[Architect] WALK stuck: breaking {} to unjam move toward {}", candidate, stepPos);
+            return true;
+        }
+
+        if (!committedWalkCorridor.isEmpty()) {
+            int fromIndex = Math.max(0, Math.min(committedWalkCorridorIndex, committedWalkCorridor.size()));
+            BlockPos corridorBreakTarget = findWalkCorridorBreakTarget(
+                    committedWalkCorridor.subList(fromIndex, committedWalkCorridor.size()));
+            if (corridorBreakTarget != null
+                    && (blockedCandidate == null || !blockedCandidate.equals(corridorBreakTarget))) {
+                if (corridorBreakTarget.equals(lastUnstickBreakCandidate)) {
                     repeatedUnstickBreakAttempts++;
                 } else {
-                    lastUnstickBreakCandidate = candidate.immutable();
+                    lastUnstickBreakCandidate = corridorBreakTarget.immutable();
                     repeatedUnstickBreakAttempts = 1;
                 }
-                blockBreaker.setTarget(candidate);
-                LOGGER.info("[Architect] WALK stuck: breaking {} to unjam move toward {}", candidate, stepPos);
+                blockBreaker.setTarget(corridorBreakTarget);
+                LOGGER.info("[Architect] WALK stuck: breaking corridor obstruction {} while following {}",
+                        corridorBreakTarget, stepPos);
                 return true;
             }
         }
@@ -1497,134 +1690,118 @@ public class ArchitectEntity extends Monster {
             dstar.initialize(target.blockPosition(), blockPosition(), level());
             dstar.computePartial(1000, level());
             walkStuckTicks = 0;
-            LOGGER.info("[Architect] WALK stuck fallback: refreshed D* around {}", blockPosition());
+            LOGGER.info("[Architect] WALK stuck-trigger replan: refreshed D* around {}", blockPosition());
             return true;
         }
         return false;
     }
 
     private void executeVanillaWalkStep(DStarLitePathfinder.NextStep step, @Nullable LivingEntity target) {
-        clearWalkNavigationState(true);
-
+        BlockPos startPos = blockPosition();
         BlockPos stepPos = step.pos();
-        boolean directChase = target != null
-                && hasLineOfSight(target)
-                && verticalDistanceTo(target) <= 2.0
-                && !blockBreaker.hasTarget();
-
-        if (directChase && target != null) {
-            clearCommittedWalk();
-            resetReverseWalkTracker();
-            trackWalkStep(stepPos);
-            if (handleWalkStuck(stepPos, target)) {
-                return;
-            }
-            getNavigation().stop();
-            getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), 1.0);
-            getLookControl().setLookAt(target, 30f, 30f);
-            if (tickCount % 20 == 0) {
-                LOGGER.info("[Architect] D* WALK direct-chase to target at ({}, {}, {}) from {}",
-                        String.format("%.1f", target.getX()),
-                        String.format("%.1f", target.getY()),
-                        String.format("%.1f", target.getZ()),
-                        blockPosition());
-            }
+        List<BlockPos> corridorNodes = buildWalkCorridorNodes(startPos, step);
+        if (corridorNodes.isEmpty()) {
+            corridorNodes = List.of(stepPos.immutable());
+        }
+        if (isReverseOnlyWalkCorridor(startPos, step, corridorNodes)) {
+            handleReverseOnlyWalkCorridor(stepPos, target);
             return;
         }
-
-        if (shouldContinueCommittedWalk(stepPos)) {
-            trackWalkStep(stepPos);
-            if (handleWalkStuck(stepPos, target)) {
-                clearCommittedWalk();
-                return;
-            }
-            if (continueCommittedWalk()) {
-                if (tickCount % 20 == 0) {
-                    LOGGER.info("[Architect] D* WALK to {} from {}", stepPos, blockPosition());
-                }
-                return;
-            }
-        }
-
-        if (isImmediateReverseWalk(stepPos)) {
-            trackWalkStep(stepPos);
-
-            // Instead of stopping dead (which perpetuates the oscillation),
-            // keep the committed walk alive or look further ahead.
-            if (committedWalkStepPos != null && committedWalkTicks > 0) {
-                double tx = committedWalkStepPos.getX() + 0.5;
-                double ty = committedWalkStepPos.getY();
-                double tz = committedWalkStepPos.getZ() + 0.5;
-                double distSqr = position().distanceToSqr(tx, ty, tz);
-
-                if (distSqr > 0.25) {
-                    // Still in transit to committed position — keep pushing there
-                    getMoveControl().setWantedPosition(tx, ty, tz, 1.0);
-                    committedWalkTicks = Math.max(committedWalkTicks, WALK_COMMIT_TICKS);
-                    if (!handleWalkStuck(stepPos, target)) {
-                        return;
-                    }
-                    clearCommittedWalk();
-                    return;
-                }
-
-                // Arrived at committed position but D* wants to reverse — look further ahead
-                DStarLitePathfinder.NextStep ahead = dstar.peekNextStep(
-                        committedWalkStepPos, level(), stepPos);
-                if (ahead.type() == DStarLitePathfinder.StepType.WALK
-                        && !ahead.pos().equals(stepPos)
-                        && !ahead.pos().equals(blockPosition())) {
-                    commitWalkStep(ahead.pos());
-                    if (continueCommittedWalk()) {
-                        return;
-                    }
-                }
-            } else if (lastWalkFromPos != null) {
-                // No committed walk, but we know our current forward position (lastWalkFromPos
-                // is our position after trackWalkStep updated it). Look ahead from there.
-                DStarLitePathfinder.NextStep ahead = dstar.peekNextStep(
-                        lastWalkFromPos, level(), stepPos);
-                if (ahead.type() == DStarLitePathfinder.StepType.WALK
-                        && !ahead.pos().equals(stepPos)
-                        && !ahead.pos().equals(blockPosition())) {
-                    commitWalkStep(ahead.pos());
-                    if (continueCommittedWalk()) {
-                        return;
-                    }
-                }
-            }
-
-            handleWalkStuck(stepPos, target);
-            clearCommittedWalk();
+        BlockPos corridorBreakTarget = findWalkCorridorBreakTarget(corridorNodes);
+        if (corridorBreakTarget != null) {
+            startWalkCorridorBreak(corridorBreakTarget);
             return;
         }
-
-        trackWalkStep(stepPos);
-        if (handleWalkStuck(stepPos, target)) {
-            clearCommittedWalk();
-            return;
-        }
-
-        commitWalkStep(stepPos);
+        BlockPos waypoint = corridorNodes.get(corridorNodes.size() - 1);
+        commitWalkStep(corridorNodes, target);
         if (!continueCommittedWalk()) {
             clearCommittedWalk();
             return;
         }
 
-        if (tickCount % 20 == 0) {
-            LOGGER.info("[Architect] D* WALK to {} from {}", stepPos, blockPosition());
-        }
     }
 
-    @Nullable
-    private BlockPos buildWalkCorridorWaypoint(BlockPos startPos, DStarLitePathfinder.NextStep firstStep) {
+    private boolean canDirectChaseApproach(@Nullable LivingEntity target) {
+        if (target == null || blockBreaker.hasTarget() || !hasLineOfSight(target)) {
+            return false;
+        }
+        if (horizontalDistanceTo(target) > DIRECT_APPROACH_PATH_HORIZONTAL_RANGE
+                || verticalDistanceTo(target) > DIRECT_APPROACH_PATH_VERTICAL_RANGE) {
+            return false;
+        }
+        return hasCleanReachableApproachPath(target);
+    }
+
+    private void executeDirectApproachChase(LivingEntity target) {
+        clearCommittedWalk();
+        resetWalkStuckTracker();
+        unreachableTicks = 0;
+        getNavigation().moveTo(target, 1.0);
+        getLookControl().setLookAt(target, 30f, 30f);
+    }
+
+    private boolean hasCleanReachableApproachPath(LivingEntity target) {
+        Path path = getNavigation().createPath(target, 1);
+        if (path == null || !path.canReach()) {
+            return false;
+        }
+        for (int i = 0; i < path.getNodeCount(); i++) {
+            if (path.getNode(i).type == PathType.BLOCKED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean canStartMelee(LivingEntity target) {
+        if (!hasLineOfSight(target) || !isTargetWithinMeleeEngageGeometry(target)) {
+            return false;
+        }
+        if (horizontalDistanceTo(target) <= 2.25 && verticalDistanceTo(target) <= 1.25) {
+            return true;
+        }
+        return hasCleanReachableApproachPath(target);
+    }
+
+    private boolean canCommitToMelee(LivingEntity target) {
+        if (!isTargetWithinMeleeCommitGeometry(target)) {
+            return false;
+        }
+        if (!hasLineOfSight(target) && distanceTo(target) >= MELEE_COMMIT_LOS_GRACE_RANGE) {
+            return false;
+        }
+        if (horizontalDistanceTo(target) <= 2.25 && verticalDistanceTo(target) <= 1.25) {
+            return true;
+        }
+        return hasCleanReachableApproachPath(target);
+    }
+
+    private List<BlockPos> buildWalkCorridorNodes(BlockPos startPos, DStarLitePathfinder.NextStep firstStep) {
+        return buildWalkCorridorNodes(startPos, firstStep, true);
+    }
+
+    private List<BlockPos> previewWalkCorridorNodes(BlockPos startPos, DStarLitePathfinder.NextStep firstStep) {
+        return buildWalkCorridorNodes(startPos, firstStep, false);
+    }
+
+    private List<BlockPos> buildWalkCorridorNodes(BlockPos startPos, DStarLitePathfinder.NextStep firstStep,
+                                                  boolean updatePendingWalkBacktrack) {
+        List<BlockPos> corridor = new ArrayList<>(WALK_NAV_CORRIDOR_MAX_STEPS);
         if (firstStep.type() != DStarLitePathfinder.StepType.WALK) {
-            return firstStep.pos();
+            if (updatePendingWalkBacktrack) {
+                pendingWalkBacktrackPos = startPos.immutable();
+            }
+            corridor.add(firstStep.pos().immutable());
+            return corridor;
         }
 
         BlockPos waypoint = firstStep.pos().immutable();
+        corridor.add(waypoint);
         BlockPos current = waypoint;
         BlockPos previous = startPos;
+        if (updatePendingWalkBacktrack) {
+            pendingWalkBacktrackPos = startPos.immutable();
+        }
         Set<Long> visited = new HashSet<>();
         visited.add(startPos.asLong());
         visited.add(waypoint.asLong());
@@ -1658,51 +1835,117 @@ public class ArchitectEntity extends Monster {
             previous = current;
             current = nextPos.immutable();
             waypoint = current;
+            if (updatePendingWalkBacktrack) {
+                pendingWalkBacktrackPos = previous.immutable();
+            }
+            corridor.add(current);
             visited.add(current.asLong());
         }
 
-        return waypoint;
+        return corridor;
     }
 
-    private boolean handleVanillaWalkNavigationStall(BlockPos stepPos, @Nullable LivingEntity target, BlockPos waypoint) {
-        double distSqr = distanceToWaypointSqr(waypoint);
-        if (hasReachedWalkWaypoint(waypoint, distSqr)) {
-            walkNavLastDistSqr = distSqr;
-            walkNavStallTicks = 0;
-            return false;
-        }
-
-        if (distSqr + 0.10 < walkNavLastDistSqr) {
-            walkNavLastDistSqr = distSqr;
-            walkNavStallTicks = 0;
-            return false;
-        }
-
-        if (getNavigation().isInProgress()) {
-            walkNavStallTicks++;
-        } else {
-            walkNavStallTicks += 2;
-        }
-
-        if (walkNavStallTicks < WALK_NAV_STALL_TICKS) {
-            return false;
-        }
-
-        clearWalkNavigationState(true);
-        walkStuckTicks = Math.max(walkStuckTicks, WALK_STUCK_REINIT_TICKS);
-        if (handleWalkStuck(stepPos, target)) {
+    private boolean shouldContinueWalkObstructionBreak(DStarLitePathfinder.NextStep step, BlockPos breakTarget) {
+        BlockPos immediateCandidate = findWalkUnstickBreakCandidate(step.pos(), null);
+        if (immediateCandidate != null && breakTarget.equals(immediateCandidate)) {
             return true;
         }
 
-        if (target != null) {
-            dstar.onLocalBlockChanged(blockPosition(), level());
-            dstar.setSurfaceY(surfaceY);
-            dstar.initialize(target.blockPosition(), blockPosition(), level());
-            dstar.computePartial(1000, level());
-            LOGGER.info("[Architect] WALK nav stall fallback: refreshed D* around {}", blockPosition());
+        List<BlockPos> corridorNodes = previewWalkCorridorNodes(blockPosition(), step);
+        if (corridorNodes.isEmpty()) {
+            corridorNodes = List.of(step.pos().immutable());
         }
-        walkStuckTicks = 0;
-        return true;
+        BlockPos corridorCandidate = findWalkCorridorBreakTarget(corridorNodes);
+        return corridorCandidate != null && breakTarget.equals(corridorCandidate);
+    }
+
+    @Nullable
+    private BlockPos findWalkUnstickBreakCandidate(BlockPos stepPos, @Nullable BlockPos blockedCandidate) {
+        BlockPos from = blockPosition();
+        Direction toward = getPrimaryHorizontalDirection(from, stepPos);
+        boolean steppingDown = stepPos.getY() < from.getY();
+
+        Set<BlockPos> candidates = new LinkedHashSet<>(8);
+        candidates.add(from.above());
+        if (toward != null) {
+            BlockPos front = from.relative(toward);
+            candidates.add(front);
+            candidates.add(front.above());
+            if (steppingDown) {
+                candidates.add(front.above().above());
+            }
+        }
+        if (Math.abs(stepPos.getX() - from.getX()) <= 1
+                && Math.abs(stepPos.getY() - from.getY()) <= 1
+                && Math.abs(stepPos.getZ() - from.getZ()) <= 1) {
+            candidates.add(stepPos);
+            candidates.add(stepPos.above());
+        }
+
+        for (BlockPos candidate : candidates) {
+            if (blockedCandidate != null && blockedCandidate.equals(candidate)) {
+                continue;
+            }
+            if (isBreakableBlock(candidate)) {
+                return candidate.immutable();
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private BlockPos findWalkCorridorBreakTarget(List<BlockPos> corridorNodes) {
+        for (BlockPos node : corridorNodes) {
+            if (isBreakableBlock(node)) {
+                return node.immutable();
+            }
+
+            BlockPos headroom = node.above();
+            if (isBreakableBlock(headroom)) {
+                return headroom.immutable();
+            }
+        }
+        return null;
+    }
+
+    private void startWalkCorridorBreak(BlockPos breakTarget) {
+        clearWalkNavigationState(true);
+        clearCommittedWalk();
+        resetWalkStuckTracker();
+        resetUnstickBreakTracker();
+        wallBreakAttempts++;
+        blockBreaker.setTarget(breakTarget.immutable());
+        LOGGER.info("[Architect] WALK corridor requires breach at {}", breakTarget);
+        walkToBreakTarget();
+    }
+
+    @Nullable
+    private BlockPos buildWalkCorridorWaypoint(BlockPos startPos, DStarLitePathfinder.NextStep firstStep) {
+        List<BlockPos> corridor = buildWalkCorridorNodes(startPos, firstStep);
+        if (corridor.isEmpty()) {
+            return null;
+        }
+        return corridor.get(corridor.size() - 1);
+    }
+
+    private boolean isReverseOnlyWalkCorridor(BlockPos startPos, DStarLitePathfinder.NextStep firstStep,
+                                              List<BlockPos> corridorNodes) {
+        if (firstStep.type() != DStarLitePathfinder.StepType.WALK || corridorNodes.size() != 1) {
+            return false;
+        }
+
+        BlockPos firstNode = corridorNodes.get(0);
+        DStarLitePathfinder.NextStep continuation = dstar.peekNextStep(firstNode, level(), startPos);
+        return continuation.type() == DStarLitePathfinder.StepType.WALK
+                && continuation.pos().equals(startPos);
+    }
+
+    private boolean handleReverseOnlyWalkCorridor(BlockPos stepPos, @Nullable LivingEntity target) {
+        clearWalkNavigationState(true);
+        clearCommittedWalk();
+        trackWalkStep(stepPos);
+
+        return handleWalkStuck(stepPos, target);
     }
 
     private double distanceToWaypointSqr(BlockPos waypoint) {
@@ -1712,16 +1955,17 @@ public class ArchitectEntity extends Monster {
                 waypoint.getZ() + 0.5);
     }
 
+    private double horizontalDistanceSqr(BlockPos from, BlockPos to) {
+        double dx = from.getX() - to.getX();
+        double dz = from.getZ() - to.getZ();
+        return dx * dx + dz * dz;
+    }
+
     private boolean hasReachedWalkWaypoint(BlockPos waypoint, double distSqr) {
-        return blockPosition().equals(waypoint) || distSqr <= 0.36;
+        return blockPosition().equals(waypoint);
     }
 
     private void clearWalkNavigationState(boolean stopNavigation) {
-        walkNavWaypoint = null;
-        walkNavRepathCooldown = 0;
-        walkNavStallTicks = 0;
-        walkNavLastDistSqr = Double.MAX_VALUE;
-        walkNavDirectChase = false;
         if (stopNavigation) {
             getNavigation().stop();
         }
@@ -1825,11 +2069,6 @@ public class ArchitectEntity extends Monster {
                 || vDist > MELEE_COMMIT_VERTICAL_RANGE
                 || (!hasLos && hDist > MELEE_COMMIT_LOS_GRACE_RANGE)) {
             meleeCommitTicks = 0;
-            if (tickCount % 20 == 0)
-                LOGGER.info("[Architect] MELEE bail: target=" + (target != null)
-                        + " hDist=" + (target != null ? String.format("%.1f", hDist) : "N/A")
-                        + " vDist=" + (target != null ? String.format("%.1f", vDist) : "N/A")
-                        + " LOS=" + hasLos);
             triggerReeval();
             return;
         }
@@ -1839,17 +2078,6 @@ public class ArchitectEntity extends Monster {
         if (getHealth() > getMaxHealth() * 0.35f) {
             meleeCommitTicks = Math.max(meleeCommitTicks, MELEE_COMMIT_TICKS);
         }
-
-        // Use horizontal distance for movement decisions — prevents getting stuck
-        // when target is 1 block above/below (Y gap tricks 3D distance into strafe range
-        // but entity can't actually reach via deltaMovement).
-        if (tickCount % 20 == 0)
-            LOGGER.info("[Architect] MELEE: hDist=" + String.format("%.2f", hDist)
-                    + " dist3d=" + String.format("%.2f", dist3d)
-                    + " backoff=" + backoffTicks
-                    + " LOS=" + hasLos
-                    + " attackAnim=" + attackAnim
-                    + " pos=" + blockPosition());
 
         // Backoff after landing a hit — sprint backwards briefly
         // Check ground behind before backing off to avoid walking off edges/bridges
@@ -1915,17 +2143,6 @@ public class ArchitectEntity extends Monster {
         }
 
         float dist = target != null ? distanceTo(target) : 999;
-
-        if (tickCount % 20 == 0) {
-            LOGGER.info("[Architect] action=RETREAT phase=" + retreatPhase
-                    + " dist=" + String.format("%.1f", dist)
-                    + " HP=" + String.format("%.1f", getHealth()) + "/" + String.format("%.0f", getMaxHealth())
-                    + " cover=" + retreatCoverBuilt
-                    + " drinking=" + isDrinkingPotion
-                    + " healCD=" + healCooldown
-                    + " tacticalIce=" + tacticalIce.size()
-                    + " pos=" + blockPosition());
-        }
 
         switch (retreatPhase) {
             case 0 -> { // Phase 0: Run away until RETREAT_DISTANCE reached
@@ -2036,6 +2253,7 @@ public class ArchitectEntity extends Monster {
         clearWalkNavigationState(true);
         clearCommittedWalk();
         resetWalkStuckTracker();
+        resetWalkCellHistory();
         resetUnstickBreakTracker();
         if (oldAction != ACTION_APPROACH) blockBreaker.clearTarget();
         if (oldAction == ACTION_APPROACH) {
@@ -2080,7 +2298,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean shouldPreferMeleeOverApproach(LivingEntity target) {
-        return hasLineOfSight(target) && isTargetWithinMeleeEngageGeometry(target);
+        return canStartMelee(target);
     }
 
     private void enterRoamModeAfterTargetLoss() {

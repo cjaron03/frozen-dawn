@@ -496,8 +496,6 @@ public class DStarLitePathfinder {
             return;
         }
 
-        LOGGER.info("[D*Lite] onBlockChanged at {} r={} — cells before: {}", pos, seedRadius, cells.size());
-
         // Seed the changed block and nearby cells into the incremental search.
         // External/player world changes use a larger radius; local Architect-driven
         // churn uses a tighter radius to avoid ballooning the cell map mid-chase.
@@ -514,7 +512,6 @@ public class DStarLitePathfinder {
                 }
             }
         }
-        LOGGER.info("[D*Lite] onBlockChanged done — cells after: {}, queue size: {}", cells.size(), queue.size());
         searchComplete = false;
     }
 

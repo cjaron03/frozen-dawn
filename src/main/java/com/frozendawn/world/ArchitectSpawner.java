@@ -23,7 +23,7 @@ public class ArchitectSpawner {
 
         RandomSource random = level.random;
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float spawnChance = Math.min(0.8f, 0.005f * mobMult);
+        float spawnChance = Math.min(0.8f, 0.02f * mobMult);
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
