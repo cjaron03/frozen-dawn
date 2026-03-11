@@ -19,7 +19,7 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_sword",
       "title": "Acheronite Blade",
-      "text": "Enemies shatter on impact. Morale also shatters. Mostly morale."
+      "text": "Enemies shatter on impact. Morale also shatters. Mostly morale.$(br2)Recovered $(l:orsa_rd/soul_harvesting)Architect Souls$(/l) can be fused into the blade later, if your ethics have fully frozen over."
     },
     {
       "type": "patchouli:crafting",

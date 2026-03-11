@@ -305,7 +305,13 @@
   "advancement.frozendawn.not_a_shadow.description": "You've learned to stop ignoring the shapes in the dark.",
 
   "entity.frozendawn.architect": "Returned Architect",
+  "item.frozendawn.architect_soul": "Architect Soul",
   "item.frozendawn.architect_spawn_egg": "Returned Architect Spawn Egg",
+  "item.frozendawn.soul_harvest_blade": "Soul-Harvest Blade",
+  "tooltip.frozendawn.architect_soul": "A frozen human will wrapped in geometry.",
+  "tooltip.frozendawn.architect_soul.use": "Can be fused with an Acheronite Blade.",
+  "tooltip.frozendawn.soul_harvest_blade": "Soul Harvesting: +3 damage against Frozen Dawn hostiles.",
+  "tooltip.frozendawn.soul_harvest_blade.flavor": "The blade remembers what the dead were building.",
 
   "subtitle.frozendawn.entity.architect.mine": "Something is mining",
   "subtitle.frozendawn.entity.architect.ambient": "Something creaks nearby",

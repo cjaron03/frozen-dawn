@@ -6,9 +6,11 @@ import com.frozendawn.item.AcheronitePickaxeItem;
 import com.frozendawn.item.AcheroniteShardItem;
 import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.AcheroniteSwordItem;
+import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.O2TankItem;
@@ -153,6 +155,10 @@ public class ModItems {
     public static final DeferredItem<MirroredFragmentItem> MIRRORED_FRAGMENT = ITEMS.register("mirrored_fragment",
             () -> new MirroredFragmentItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
+    // --- Architect Mob Drops ---
+    public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
+            () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FROSTBITTEN, 0x8FBCD4, 0x3B5998,
@@ -196,6 +202,10 @@ public class ModItems {
     public static final DeferredItem<AcheroniteSwordItem> ACHERONITE_SWORD = ITEMS.register("acheronite_sword",
             () -> new AcheroniteSwordItem(ModToolTiers.ACHERONITE,
                     new Item.Properties().attributes(SwordItem.createAttributes(ModToolTiers.ACHERONITE, 3, -2.4F))));
+    public static final DeferredItem<SoulHarvestBladeItem> SOUL_HARVEST_BLADE = ITEMS.register("soul_harvest_blade",
+            () -> new SoulHarvestBladeItem(ModToolTiers.ACHERONITE,
+                    new Item.Properties().rarity(Rarity.EPIC)
+                            .attributes(SwordItem.createAttributes(ModToolTiers.ACHERONITE, 3, -2.4F))));
     public static final DeferredItem<AcheronitePickaxeItem> ACHERONITE_PICKAXE = ITEMS.register("acheronite_pickaxe",
             () -> new AcheronitePickaxeItem(ModToolTiers.ACHERONITE,
                     new Item.Properties().attributes(PickaxeItem.createAttributes(ModToolTiers.ACHERONITE, 1, -2.8F))));
@@ -281,6 +291,7 @@ public class ModItems {
                         output.accept(ACHERON_FORGE.get());
                         output.accept(ACHERONITE_BLOCK.get());
                         output.accept(ACHERONITE_SWORD.get());
+                        output.accept(SOUL_HARVEST_BLADE.get());
                         output.accept(ACHERONITE_PICKAXE.get());
                         output.accept(ACHERONITE_AXE.get());
                         output.accept(ACHERONITE_SHOVEL.get());
@@ -308,6 +319,7 @@ public class ModItems {
                         output.accept(TATTERED_CLOTHING_SCRAP.get());
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
+                        output.accept(ARCHITECT_SOUL.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());

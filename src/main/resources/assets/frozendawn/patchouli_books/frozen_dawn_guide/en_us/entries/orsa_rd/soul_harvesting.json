@@ -1,0 +1,24 @@
+{
+  "name": "Soul Harvesting",
+  "category": "frozendawn:orsa_rd",
+  "icon": "frozendawn:architect_soul",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Orbital Scan #0088",
+      "text": "$(bold)Subject: Residual Consciousness Capture$()$(br2)Post-mortem recovery of a Returned Architect has occasionally yielded a stable cryogenic core containing what ORSA legal refuses to call a soul. It is black, cold, and still thinks in straight lines.$(br2)Field note: the core only persists in approximately $(bold)50%$() of clean kills. The other half collapses into soot, static, and what one intern described as 'geometry flavored grief.'$(br2)$(italic)ORSA would like it on record that weaponizing the dead was not the original proposal. It was the second proposal. The first one exploded.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Applications",
+      "text": "$(bold)Acquisition:$() Neutralized Returned Architects have a $(bold)50%$() chance to yield an $(item)Architect Soul$().$(br2)$(bold)Use:$() Reforge an $(item)Acheronite Blade$() with the soul, one $(item)Frozen Breath$(), and one $(item)Refined Acheronite$() to create a $(item)Soul-Harvest Blade$().$(br2)$(bold)Effect:$() The upgraded blade deals $(bold)+3 damage$() to documented Frozen Dawn hostiles: Frostbitten, Hollows, the Returned, Mimics, and other Architects.$(br2)$(italic)ORSA notes that if you're binding a frozen human will into a sword, you can at least spring for proper fittings.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:soul_harvest_blade",
+      "title": "Soul-Harvest Blade",
+      "text": "Bind the Architect Soul into an Acheronite Blade, stabilize it with Frozen Breath, then pretend the extra Refined Acheronite is a moral sealant. ORSA assures you the screaming is mostly metaphorical."
+    }
+  ]
+}

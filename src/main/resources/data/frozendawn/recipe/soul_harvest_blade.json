@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "frozendawn:acheronite_sword"
+    },
+    {
+      "item": "frozendawn:architect_soul"
+    },
+    {
+      "item": "frozendawn:frozen_breath"
+    },
+    {
+      "item": "frozendawn:refined_acheronite"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:soul_harvest_blade",
+    "count": 1
+  }
+}
