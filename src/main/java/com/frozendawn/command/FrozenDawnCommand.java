@@ -1,5 +1,6 @@
 package com.frozendawn.command;
 
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.FrozenDawnConfig;
@@ -20,9 +21,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -183,8 +186,11 @@ public class FrozenDawnCommand {
     }
 
     private static int togglePause(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
         boolean newValue = !FrozenDawnConfig.PAUSE_PROGRESSION.get();
         FrozenDawnConfig.PAUSE_PROGRESSION.set(newValue);
+        persistConfigOverrides();
+        syncToClients(ApocalypseState.get(server), server);
 
         context.getSource().sendSuccess(() -> Component.translatable(
                 newValue ? "command.frozendawn.paused" : "command.frozendawn.resumed"), true);
@@ -203,6 +209,8 @@ public class FrozenDawnCommand {
     }
 
     private static int applyPreset(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        ApocalypseState state = ApocalypseState.get(server);
         String name = StringArgumentType.getString(context, "name").toUpperCase(Locale.ROOT);
         ConfigPresets preset;
         try {
@@ -213,6 +221,8 @@ public class FrozenDawnCommand {
         }
 
         preset.apply();
+        persistConfigOverrides();
+        syncToClients(state, server);
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.preset.applied",
                 preset.name().toLowerCase(Locale.ROOT), preset.totalDays, preset.basePhase5Temp), true);
         return 1;
@@ -244,5 +254,24 @@ public class FrozenDawnCommand {
                 state.getSkyLight(),
                 winState.isSchematicUnlocked()
         ));
+    }
+
+    private static void persistConfigOverrides() {
+        Path configPath = FMLPaths.CONFIGDIR.get().resolve("frozendawn-common.toml");
+        try (CommentedFileConfig config = CommentedFileConfig.builder(configPath).sync().build()) {
+            config.load();
+            config.set("general.totalDays", FrozenDawnConfig.TOTAL_DAYS.get());
+            config.set("general.pauseProgression", FrozenDawnConfig.PAUSE_PROGRESSION.get());
+            config.set("temperature.basePhase5Temp", FrozenDawnConfig.BASE_PHASE5_TEMP.get());
+            config.set("temperature.geothermalStrength", FrozenDawnConfig.GEOTHERMAL_STRENGTH.get());
+            config.set("temperature.heatSourceMultiplier", FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get());
+            config.set("gameplay.snowAccumulationRate", FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get());
+            config.set("gameplay.broadcastTicks", FrozenDawnConfig.BROADCAST_TICKS.get());
+            config.set("gameplay.sanitySpeedMultiplier", FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get());
+            config.set("gameplay.mobSpawnMultiplier", FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get());
+            config.save();
+        } catch (Exception e) {
+            FrozenDawn.LOGGER.error("Failed to persist Frozen Dawn config overrides to {}", configPath, e);
+        }
     }
 }

@@ -132,6 +132,9 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_WATCHED = SOUNDS.register("entity.architect.watched",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.watched")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_DRINK = SOUNDS.register("entity.architect.drink",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.drink")));
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_HURT = SOUNDS.register("entity.architect.hurt",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.hurt")));

@@ -248,6 +248,12 @@
       { "name": "minecraft:ambient.cave", "type": "event", "volume": 1.35, "pitch": 0.95 }
     ]
   },
+  "entity.architect.drink": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "minecraft:entity.witch.drink", "type": "event", "volume": 0.85, "pitch": 0.95 }
+    ]
+  },
   "entity.architect.hurt": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.hurt",

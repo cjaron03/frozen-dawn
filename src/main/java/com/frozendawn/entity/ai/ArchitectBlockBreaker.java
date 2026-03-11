@@ -4,6 +4,7 @@ import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -114,9 +115,8 @@ public class ArchitectBlockBreaker {
 
         // Play hit sound + swing arm every 4 ticks
         if (soundCooldown <= 0) {
-            SoundType soundType = state.getSoundType();
-            level.playSound(null, targetPos, soundType.getHitSound(),
-                    SoundSource.HOSTILE, 0.5f, 0.8f + mob.getRandom().nextFloat() * 0.4f);
+            level.playSound(null, targetPos, ModSounds.ARCHITECT_MINE.get(),
+                    SoundSource.HOSTILE, 0.55f, 0.9f + mob.getRandom().nextFloat() * 0.2f);
             mob.swing(InteractionHand.MAIN_HAND);
             soundCooldown = 4;
         } else {
@@ -134,6 +134,8 @@ public class ArchitectBlockBreaker {
         // Block breaks
         if (breakProgress >= breakTime) {
             level.destroyBlockProgress(mob.getId(), targetPos, -1);
+            level.playSound(null, targetPos, ModSounds.ARCHITECT_MINE.get(),
+                    SoundSource.HOSTILE, 0.8f, 0.75f + mob.getRandom().nextFloat() * 0.15f);
             level.destroyBlock(targetPos, true);
 
             // Remove from player-placed tracker

@@ -258,6 +258,8 @@ public class ArchitectEntity extends Monster {
     public ArchitectEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.moveControl = new ArchitectMoveControl(this, WALK_MAX_ROTATE);
+        setCustomName(Component.literal("The Architect"));
+        setCustomNameVisible(true);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -2197,10 +2199,25 @@ public class ArchitectEntity extends Monster {
                     retreatCoverBuilt = 0;
                     return;
                 }
-                if (pathRecalcCooldown <= 0 && target != null) {
-                    Vec3 away = position().subtract(target.position()).normalize().scale(RETREAT_DISTANCE);
-                    getNavigation().moveTo(getX() + away.x, getY(), getZ() + away.z, 1.3);
-                    pathRecalcCooldown = 20;
+                Vec3 away = position().subtract(target.position());
+                if (away.lengthSqr() < 1.0e-4) {
+                    away = new Vec3(random.nextDouble() - 0.5, 0.0, random.nextDouble() - 0.5);
+                }
+                away = away.normalize();
+                getMoveControl().setWantedPosition(
+                        getX() + away.x * 2.0,
+                        getY(),
+                        getZ() + away.z * 2.0,
+                        1.3
+                );
+                if (pathRecalcCooldown <= 0) {
+                    getNavigation().moveTo(
+                            getX() + away.x * RETREAT_DISTANCE,
+                            getY(),
+                            getZ() + away.z * RETREAT_DISTANCE,
+                            1.3
+                    );
+                    pathRecalcCooldown = 10;
                 }
                 pathRecalcCooldown--;
             }
@@ -2427,6 +2444,7 @@ public class ArchitectEntity extends Monster {
         ItemStack potion = PotionContents.createItemStack(Items.POTION, Potions.STRONG_HEALING);
         setItemSlot(EquipmentSlot.MAINHAND, potion);
         getNavigation().stop();
+        playSound(ModSounds.ARCHITECT_DRINK.get(), 0.8f, 0.95f + random.nextFloat() * 0.1f);
     }
 
     private void finishDrinking() {
