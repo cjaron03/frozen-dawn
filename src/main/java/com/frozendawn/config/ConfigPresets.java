@@ -47,4 +47,24 @@ public enum ConfigPresets {
         FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.set(sanitySpeedMultiplier);
         FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.set(mobSpawnMultiplier);
     }
+
+    public static ConfigPresets detectCurrentPreset() {
+        for (ConfigPresets preset : values()) {
+            if (matchesCurrentConfig(preset)) {
+                return preset;
+            }
+        }
+        return null;
+    }
+
+    private static boolean matchesCurrentConfig(ConfigPresets preset) {
+        return FrozenDawnConfig.TOTAL_DAYS.get() == preset.totalDays
+                && FrozenDawnConfig.BASE_PHASE5_TEMP.get() == preset.basePhase5Temp
+                && Double.compare(FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), preset.geothermalStrength) == 0
+                && Double.compare(FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get(), preset.heatSourceMultiplier) == 0
+                && Double.compare(FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get(), preset.snowAccumulationRate) == 0
+                && FrozenDawnConfig.BROADCAST_TICKS.get() == preset.broadcastTicks
+                && Double.compare(FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get(), preset.sanitySpeedMultiplier) == 0
+                && Double.compare(FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get(), preset.mobSpawnMultiplier) == 0;
+    }
 }

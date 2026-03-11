@@ -82,35 +82,45 @@ public class FrozenDawnCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
+        ConfigPresets activePreset = ConfigPresets.detectCurrentPreset();
 
         String[] phaseNames = {"Normal", "Twilight", "Cooling", "The Long Night", "Deep Freeze", "Eternal Winter", "Atmospheric Collapse"};
         int phase = state.getPhase();
         String phaseName = phase >= 0 && phase <= 6 ? phaseNames[phase] : "Unknown";
+        boolean paused = FrozenDawnConfig.PAUSE_PROGRESSION.get();
 
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.header"), false);
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.day",
-                state.getCurrentDay(), state.getTotalDays()), false);
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.phase",
-                phase, phaseName), false);
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.temp",
-                String.format("%.1f", state.getTemperatureOffset())), false);
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.sun",
-                String.format("%.2f", state.getSunScale()),
-                String.format("%.0f%%", state.getSkyLight() * 100)), false);
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.paused",
-                FrozenDawnConfig.PAUSE_PROGRESSION.get() ? "Yes" : "No"), false);
+        context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Status ---"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Day: " + state.getCurrentDay() + " / " + state.getTotalDays()), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Phase: " + phase + " (" + phaseName + ")"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Preset: " + formatPresetName(activePreset)), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Temperature: " + String.format(Locale.ROOT, "%.1f", state.getTemperatureOffset()) + "C"), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Sun Scale: " + String.format(Locale.ROOT, "%.2f", state.getSunScale())
+                        + " | Sky Light: " + String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100)), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Progression: " + (paused ? "Paused" : "Running")), false);
 
         // Win condition info
         boolean winEnabled = FrozenDawnConfig.ENABLE_WIN_CONDITION.get();
-        context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.win",
-                winEnabled ? "Enabled" : "Disabled"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  Win Condition: " + (winEnabled ? "Enabled" : "Disabled")), false);
         if (winEnabled) {
             WinConditionState winState = WinConditionState.get(server);
-            context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.status.win_detail",
-                    winState.isSatellitePlaced() ? "Yes" : "No",
-                    winState.isSchematicUnlocked() ? "Yes" : "No"), false);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Satellite Placed: " + yesNo(winState.isSatellitePlaced())
+                            + " | Schematic: " + yesNo(winState.isSchematicUnlocked())), false);
         }
         return 1;
+    }
+
+    private static String formatPresetName(ConfigPresets preset) {
+        if (preset == null) {
+            return "Custom";
+        }
+        String lower = preset.name().toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+    }
+
+    private static String yesNo(boolean value) {
+        return value ? "Yes" : "No";
     }
 
     private static int setDay(CommandContext<CommandSourceStack> context) {

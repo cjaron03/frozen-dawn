@@ -1,10 +1,13 @@
 package com.frozendawn.entity.ai;
 
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
@@ -138,6 +141,7 @@ public class ArchitectBlockBreaker {
                 MinecraftServer server = serverLevel.getServer();
                 PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(server);
                 tracker.markRemoved(targetPos);
+                grantNearbyBreakAdvancement(serverLevel, targetPos);
             }
 
             clearTarget();
@@ -258,5 +262,21 @@ public class ArchitectBlockBreaker {
     public float getMiningProgress() {
         if (targetPos == null || breakTime <= 0) return 0f;
         return (float) breakProgress / breakTime;
+    }
+
+    private void grantNearbyBreakAdvancement(ServerLevel level, BlockPos brokenPos) {
+        if (!(mob instanceof ArchitectEntity)) {
+            return;
+        }
+
+        for (ServerPlayer player : level.players()) {
+            if (!player.isSpectator()
+                    && player.distanceToSqr(
+                    brokenPos.getX() + 0.5,
+                    brokenPos.getY() + 0.5,
+                    brokenPos.getZ() + 0.5) <= 16.0) {
+                WorldTickHandler.grantAdvancement(player, "architect_singleplayer");
+            }
+        }
     }
 }

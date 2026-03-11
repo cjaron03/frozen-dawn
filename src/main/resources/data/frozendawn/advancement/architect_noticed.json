@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "minecraft:ender_eye"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.architect_noticed.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.architect_noticed.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "noticed": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

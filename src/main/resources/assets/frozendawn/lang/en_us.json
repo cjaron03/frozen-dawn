@@ -44,6 +44,7 @@
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
   "message.frozendawn.freeze.extreme": "Extreme cold! Find shelter or warmth!",
   "message.frozendawn.freeze.deadly": "You are freezing to death!",
+  "message.frozendawn.architect_watched": "You feel eyes on you...",
 
   "message.frozendawn.suffocate.lightheaded": "You feel lightheaded... the air is thinning.",
   "message.frozendawn.suffocate.nausea": "Your vision swims. You can't breathe.",
@@ -55,6 +56,7 @@
   "command.frozendawn.status.phase": "  Phase: %s (%s)",
   "command.frozendawn.status.temp": "  Temperature: %s\u00b0C",
   "command.frozendawn.status.sun": "  Sun Scale: %s | Sky Light: %s",
+  "command.frozendawn.status.preset": "  Preset: %s",
   "command.frozendawn.status.paused": "  Paused: %s",
   "command.frozendawn.status.win": "  Win Condition: %s",
   "command.frozendawn.status.win_detail": "  Satellite Placed: %s | Schematic: %s",
@@ -212,6 +214,10 @@
   "advancement.frozendawn.wilson_dropped.description": "I'm sorry, Wilson. I'm sorry!",
   "advancement.frozendawn.watcher_seen.title": "Did I take my Pills?",
   "advancement.frozendawn.watcher_seen.description": "What was that?!",
+  "advancement.frozendawn.architect_noticed.title": "Why is it looking at me like that",
+  "advancement.frozendawn.architect_noticed.description": "You have been noticed",
+  "advancement.frozendawn.architect_singleplayer.title": "I thought I was in singleplayer",
+  "advancement.frozendawn.architect_singleplayer.description": "Whats that sound?",
 
   "message.frozendawn.sanity.watched": "You feel like you are being watched...",
 

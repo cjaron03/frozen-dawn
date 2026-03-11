@@ -42,6 +42,9 @@ public class ArchitectSpawner {
             if (architect != null) {
                 // Pre-seed observation data before adding to world
                 architect.preSeedObservation(level, player);
+                if (!player.isCreative()) {
+                    architect.armSpawnObserveCue(player);
+                }
 
                 level.addFreshEntity(architect);
                 FrozenDawn.LOGGER.info("[Architect] Spawned near {} at phase {} ({})",

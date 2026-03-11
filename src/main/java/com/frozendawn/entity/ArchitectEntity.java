@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
@@ -16,11 +17,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.FluidTags;
@@ -90,7 +95,7 @@ public class ArchitectEntity extends Monster {
     // --- Ice Budgets (separate to prevent conflicts) ---
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
-    private static final int MAX_SCAFFOLD_ICE = 16;
+    private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 6;
 
     // --- Utility AI State ---
@@ -103,6 +108,7 @@ public class ArchitectEntity extends Monster {
     private int observeTicks = 0;
     private static final int MIN_OBSERVE_TICKS = 600;
     private static final int MAX_OBSERVE_TICKS = 1200;
+    private static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
     @Nullable private BlockPos weakestWallDirection;
     private final List<BlockPos> entrancePositions = new ArrayList<>();
     private final List<BlockPos> lightSources = new ArrayList<>();
@@ -110,6 +116,8 @@ public class ArchitectEntity extends Monster {
     @Nullable private BlockPos lastObservedPos;
     @Nullable private BlockPos preferredEntryPoint;
     private boolean probing = false;
+    @Nullable private UUID pendingSpawnCuePlayerId = null;
+    private boolean pendingSpawnCuePlayed = false;
 
     // --- Combat State ---
     private int strafeDir = 1;
@@ -316,6 +324,11 @@ public class ArchitectEntity extends Monster {
         findWeakestWall(level, playerPos);
     }
 
+    public void armSpawnObserveCue(ServerPlayer player) {
+        pendingSpawnCuePlayerId = player.getUUID();
+        pendingSpawnCuePlayed = false;
+    }
+
     // ========================
     //  UTILITY AI
     // ========================
@@ -359,6 +372,8 @@ public class ArchitectEntity extends Monster {
             lastKnownPlayerPos = target.blockPosition();
             lastSeenTick = tickCount;
         }
+
+        maybeTriggerSpawnObserveCue(target);
 
         if (healCooldown > 0) healCooldown--;
         if (trapCooldown > 0) trapCooldown--;
@@ -675,6 +690,7 @@ public class ArchitectEntity extends Monster {
 
         // Raycast probe: run at tick 60 (3s in) and tick 300 (15s in, mid-observe)
         if ((observeTicks == 60 || observeTicks == 300)) {
+            awardObserveProbeAdvancement(target);
             probeOptimalEntry(target);
         }
 
@@ -728,6 +744,34 @@ public class ArchitectEntity extends Monster {
             pathRecalcCooldown = ROAM_REPATH_MIN_TICKS + random.nextInt(ROAM_REPATH_VARIANCE_TICKS);
         }
         pathRecalcCooldown--;
+    }
+
+    private void awardObserveProbeAdvancement(LivingEntity target) {
+        if (target instanceof ServerPlayer player) {
+            WorldTickHandler.grantAdvancement(player, "architect_noticed");
+        }
+    }
+
+    private void maybeTriggerSpawnObserveCue(@Nullable LivingEntity target) {
+        if (pendingSpawnCuePlayed || pendingSpawnCuePlayerId == null || currentAction != ACTION_OBSERVE) {
+            return;
+        }
+        if (!(target instanceof ServerPlayer player)) {
+            return;
+        }
+        if (!pendingSpawnCuePlayerId.equals(player.getUUID())) {
+            return;
+        }
+        if (distanceToSqr(player) > SPAWN_OBSERVE_CUE_RANGE_SQR) {
+            return;
+        }
+
+        pendingSpawnCuePlayed = true;
+        pendingSpawnCuePlayerId = null;
+        level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                ModSounds.ARCHITECT_WATCHED.get(), SoundSource.HOSTILE,
+                1.0f, 0.9f + random.nextFloat() * 0.2f);
+        player.displayClientMessage(Component.translatable("message.frozendawn.architect_watched"), true);
     }
 
     private void precomputeDStarDuringObserve(LivingEntity target) {

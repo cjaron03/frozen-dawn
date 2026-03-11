@@ -242,6 +242,12 @@
       { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.4, "pitch": 0.5 }
     ]
   },
+  "entity.architect.watched": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "minecraft:ambient.cave", "type": "event", "volume": 1.35, "pitch": 0.95 }
+    ]
+  },
   "entity.architect.hurt": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.hurt",

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_pickaxe"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.architect_singleplayer.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.architect_singleplayer.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "heard_breaking": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
