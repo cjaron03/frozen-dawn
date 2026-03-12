@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Locale;
@@ -47,6 +48,7 @@ public final class SurveyorLensOverlay {
         if (SurveyorLensVision.isThermalModeVisible()) {
             float thermalStrength = SurveyorLensVision.getThermalModeStrength();
             drawThermalWash(graphics, mc, width, height, thermalStrength);
+            drawThermalSourceGlows(graphics, mc, width, height, thermalStrength, deltaTracker.getGameTimeDeltaPartialTick(false));
             if (SurveyorLensVision.isThermalBooting()) {
                 drawBootSequence(graphics, mc, width, height, thermalStrength);
             } else {
@@ -56,11 +58,18 @@ public final class SurveyorLensOverlay {
     }
 
     private static void drawThermalWash(GuiGraphics graphics, Minecraft mc, int width, int height, float thermalStrength) {
-        int coldAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 58.0F);
-        graphics.fill(0, 0, width, height, (coldAlpha << 24) | 0x1A2A34);
+        int blackoutAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 108.0F);
+        graphics.fill(0, 0, width, height, (blackoutAlpha << 24) | 0x060A0D);
 
-        int hazeAlpha = (int) (thermalStrength * 36.0F);
-        graphics.fill(0, 0, width, height, (hazeAlpha << 24) | 0x466978);
+        int coldAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 120.0F);
+        graphics.fill(0, 0, width, height, (coldAlpha << 24) | 0x0E2434);
+
+        int hazeAlpha = (int) (thermalStrength * 56.0F);
+        graphics.fill(0, 0, width, height, (hazeAlpha << 24) | 0x365D73);
+
+        int coldLiftAlpha = (int) (thermalStrength * 28.0F);
+        graphics.fillGradient(0, 0, width, height / 2, (coldLiftAlpha << 24) | 0x87AFC1, 0x0087AFC1);
+        graphics.fillGradient(0, height / 2, width, height, 0x00365D73, ((int) (thermalStrength * 38.0F) << 24) | 0x102739);
 
         int edgeAlpha = (int) (thermalStrength * 120.0F);
         int edgeColor = (edgeAlpha << 24) | 0x0A1118;
@@ -75,8 +84,17 @@ public final class SurveyorLensOverlay {
         long time = mc.level != null ? mc.level.getGameTime() : 0L;
         int scanAlphaBase = (int) (thermalStrength * 28.0F);
         for (int y = 0; y < height; y += 3) {
-            int lineAlpha = scanAlphaBase + (((y + (int) (time * 2L)) / 3) % 3 == 0 ? 6 : 0);
-            graphics.fill(0, y, width, y + 1, (lineAlpha << 24) | 0x6B8A98);
+            int lineAlpha = scanAlphaBase + (((y + (int) (time * 2L)) / 3) % 3 == 0 ? 10 : 0);
+            graphics.fill(0, y, width, y + 1, (lineAlpha << 24) | 0x6E95A9);
+        }
+
+        int bandCount = 5;
+        for (int i = 0; i < bandCount; i++) {
+            float bandPhase = ((time * 0.04F) + (i * 0.19F)) % 1.0F;
+            int bandY = (int) (bandPhase * height);
+            int bandHeight = 6 + (i % 3);
+            int bandAlpha = (int) (thermalStrength * (14 + i * 4));
+            graphics.fillGradient(0, bandY, width, bandY + bandHeight, 0x00000000, (bandAlpha << 24) | 0x7097A8);
         }
 
         int frameAlpha = (int) (thermalStrength * 170.0F);
@@ -121,6 +139,71 @@ public final class SurveyorLensOverlay {
             graphics.drawString(mc.font, direction + " // " + primary.distanceBlocks() + "M", panelX + 7, panelY + 38, 0x9DC8D6, false);
         } else {
             graphics.drawString(mc.font, "NO THERMAL ANCHORS", panelX + 7, panelY + 31, 0x6E8A94, false);
+        }
+    }
+
+    private static void drawThermalSourceGlows(GuiGraphics graphics, Minecraft mc, int width, int height, float thermalStrength, float partialTick) {
+        if (mc.player == null) {
+            return;
+        }
+
+        List<SurveyorLensScanner.HeatSignature> signatures = SurveyorLensVision.getCachedSignatures();
+        if (signatures.isEmpty()) {
+            return;
+        }
+
+        Vec3 eyePos = mc.gameRenderer.getMainCamera().getPosition();
+        Vec3 forward = mc.player.getViewVector(partialTick).normalize();
+        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+        if (right.lengthSqr() < 1.0E-5D) {
+            right = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3 up = right.cross(forward).normalize();
+
+        float aspect = width / (float) height;
+        float tanHalfFov = (float) Math.tan(Math.toRadians(mc.options.fov().get() * 0.5D));
+        long time = mc.level != null ? mc.level.getGameTime() : 0L;
+
+        for (int i = 0; i < signatures.size(); i++) {
+            SurveyorLensScanner.HeatSignature signature = signatures.get(i);
+            Vec3 toSource = new Vec3(
+                    signature.pos().getX() + 0.5D,
+                    signature.pos().getY() + 0.85D,
+                    signature.pos().getZ() + 0.5D
+            ).subtract(eyePos);
+            double forwardDist = toSource.dot(forward);
+            double sideDist = toSource.dot(right);
+            double upDist = toSource.dot(up);
+
+            float heatLevel = heatLevel(signature.sourceType());
+            float pulse = 0.85F + 0.15F * Mth.sin((time + i * 7L) * 0.25F);
+            int color = sourceColor(signature.sourceType());
+            int coreColor = sourceCoreColor(signature.sourceType());
+            float intensity = thermalStrength * heatLevel * pulse;
+
+            if (forwardDist > 0.15D) {
+                float xNdc = (float) (sideDist / (forwardDist * tanHalfFov * aspect));
+                float yNdc = (float) (upDist / (forwardDist * tanHalfFov));
+                boolean onScreen = Math.abs(xNdc) <= 1.08F && Math.abs(yNdc) <= 1.08F;
+
+                int screenX = Mth.floor((xNdc * 0.5F + 0.5F) * width);
+                int screenY = Mth.floor((0.5F - yNdc * 0.5F) * height);
+
+                if (onScreen) {
+                    int radius = sourceRadius(signature, i == 0);
+                    drawGlow(graphics, screenX, screenY, radius, color, coreColor, intensity, i == 0);
+                    continue;
+                }
+
+                drawEdgeCue(graphics, width, height, xNdc, yNdc, color, intensity, i == 0);
+                continue;
+            }
+
+            float xHint = sideDist >= 0.0D ? 1.15F : -1.15F;
+            float yHint = upDist >= 0.0D ? -0.25F : 0.25F;
+            drawEdgeCue(graphics, width, height, xHint, yHint, color, intensity * 0.9F, i == 0);
         }
     }
 
@@ -176,6 +259,95 @@ public final class SurveyorLensOverlay {
         graphics.pose().scale(scale, scale, 1.0F);
         graphics.blit(ORSA_LOGO, 0, 0, 0, 0, 16, 16, 16, 16);
         graphics.pose().popPose();
+    }
+
+    private static void drawGlow(GuiGraphics graphics, int centerX, int centerY, int radius, int color, int coreColor, float intensity, boolean primary) {
+        int outerAlpha = (int) (intensity * (primary ? 88.0F : 62.0F));
+        int midAlpha = (int) (intensity * (primary ? 132.0F : 98.0F));
+        int coreAlpha = (int) (intensity * (primary ? 220.0F : 180.0F));
+
+        int outerRadius = radius + (primary ? 6 : 3);
+        int midRadius = (int) (radius * 0.62F);
+        int coreRadius = Math.max(2, (int) (radius * 0.22F));
+
+        graphics.fill(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius, rgba(color, outerAlpha / 255.0F));
+        graphics.fill(centerX - midRadius, centerY - midRadius, centerX + midRadius, centerY + midRadius, rgba(color, midAlpha / 255.0F));
+        graphics.fill(centerX - coreRadius, centerY - coreRadius, centerX + coreRadius, centerY + coreRadius, rgba(coreColor, coreAlpha / 255.0F));
+
+        if (primary) {
+            int ringRadius = outerRadius + 5;
+            int ringAlpha = (int) (intensity * 92.0F);
+            int ringColor = rgba(coreColor, ringAlpha / 255.0F);
+            graphics.fill(centerX - ringRadius, centerY - 1, centerX + ringRadius, centerY + 1, ringColor);
+            graphics.fill(centerX - 1, centerY - ringRadius, centerX + 1, centerY + ringRadius, ringColor);
+        }
+    }
+
+    private static void drawEdgeCue(GuiGraphics graphics, int width, int height, float xNdc, float yNdc, int color, float intensity, boolean primary) {
+        int inset = 16;
+        int x = Mth.clamp((int) ((xNdc * 0.5F + 0.5F) * width), inset, width - inset);
+        int y = Mth.clamp((int) ((0.5F - yNdc * 0.5F) * height), inset, height - inset);
+        int halfLength = primary ? 16 : 10;
+        int thickness = primary ? 3 : 2;
+        int alpha = (int) (intensity * (primary ? 210.0F : 150.0F));
+        int cueColor = rgba(color, alpha / 255.0F);
+        graphics.fill(x - halfLength, y - thickness, x + halfLength, y + thickness, cueColor);
+        graphics.fill(x - thickness, y - halfLength, x + thickness, y + halfLength, cueColor);
+    }
+
+    private static int sourceRadius(SurveyorLensScanner.HeatSignature signature, boolean primary) {
+        int base = switch (signature.sourceType()) {
+            case GEOTHERMAL_CORE -> 34;
+            case TRANSPONDER -> 26;
+            case ACHERON_FORGE -> 30;
+            case THERMAL_HEATER -> 24;
+            case ACHERONITE_BLOCK -> 20;
+            case LAVA -> 22;
+            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 16;
+            case FIRE, CAMPFIRE, LANTERN, TORCH -> 14;
+        };
+        int distancePenalty = Math.min(signature.distanceBlocks() / 10, 6);
+        int adjusted = Math.max(8, base - distancePenalty);
+        return primary ? adjusted + 3 : adjusted;
+    }
+
+    private static float heatLevel(SurveyorLensScanner.HeatSourceType sourceType) {
+        return switch (sourceType) {
+            case GEOTHERMAL_CORE -> 1.0F;
+            case ACHERON_FORGE -> 0.94F;
+            case THERMAL_HEATER -> 0.86F;
+            case LAVA -> 0.82F;
+            case TRANSPONDER -> 0.76F;
+            case ACHERONITE_BLOCK -> 0.68F;
+            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0.58F;
+            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0.46F;
+        };
+    }
+
+    private static int sourceColor(SurveyorLensScanner.HeatSourceType sourceType) {
+        return switch (sourceType) {
+            case GEOTHERMAL_CORE -> 0xFFF09A;
+            case ACHERON_FORGE -> 0xFFB03B;
+            case THERMAL_HEATER -> 0xFF9A2F;
+            case LAVA -> 0xFF8624;
+            case TRANSPONDER -> 0xFFD86B;
+            case ACHERONITE_BLOCK -> 0xFFAA52;
+            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0xFF983B;
+            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0xFF8A2A;
+        };
+    }
+
+    private static int sourceCoreColor(SurveyorLensScanner.HeatSourceType sourceType) {
+        return switch (sourceType) {
+            case GEOTHERMAL_CORE -> 0xFFFFFF;
+            case ACHERON_FORGE -> 0xFFF2C4;
+            case THERMAL_HEATER -> 0xFFEAB9;
+            case LAVA -> 0xFFE0A1;
+            case TRANSPONDER -> 0xFFF0BE;
+            case ACHERONITE_BLOCK -> 0xFFD7A4;
+            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0xFFD9A8;
+            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0xFFD29C;
+        };
     }
 
     private static int centeredX(Minecraft mc, int width, String text) {
