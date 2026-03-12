@@ -46,6 +46,10 @@ public class ClientEvents {
                 HeatOverlay::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "surveyor_lens_overlay"),
+                SurveyorLensOverlay::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "temperature_hud"),
                 TemperatureHud::render
         );

@@ -5,6 +5,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.world.GeothermalCoreRegistry;
+import com.frozendawn.world.TransponderRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -52,6 +53,22 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
 
     public TransponderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TRANSPONDER.get(), pos, state);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null) {
+            TransponderRegistry.register(level, worldPosition);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null) {
+            TransponderRegistry.unregister(level, worldPosition);
+        }
+        super.setRemoved();
     }
 
     public void serverTick() {

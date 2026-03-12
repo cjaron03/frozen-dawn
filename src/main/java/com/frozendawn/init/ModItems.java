@@ -17,6 +17,7 @@ import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
+import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -158,6 +159,8 @@ public class ModItems {
     // --- Architect Mob Drops ---
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    public static final DeferredItem<SurveyorLensItem> SURVEYOR_LENS = ITEMS.register("surveyor_lens",
+            () -> new SurveyorLensItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
@@ -320,6 +323,7 @@ public class ModItems {
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());
+                        output.accept(SURVEYOR_LENS.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());

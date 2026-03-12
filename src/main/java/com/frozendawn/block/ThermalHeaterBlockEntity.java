@@ -31,6 +31,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     private boolean cachedSheltered = false;
     private boolean shelterValid = false;
     private boolean hasCapacitor = false;
+    private boolean clientRegistryLit = false;
 
     public ThermalHeaterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.THERMAL_HEATER.get(), pos, state);
@@ -59,6 +60,19 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
                     && level.getServer().getTickCount() % 200 == 0) {
                 setChanged(); // periodic save, not every tick
             }
+        }
+    }
+
+    public void clientTick() {
+        if (level == null || !level.isClientSide()) return;
+        boolean shouldBeRegistered = getBlockState().getValue(ThermalHeaterBlock.LIT);
+        if (shouldBeRegistered != clientRegistryLit) {
+            if (shouldBeRegistered) {
+                HeaterRegistry.register(level, worldPosition);
+            } else {
+                HeaterRegistry.unregister(level, worldPosition);
+            }
+            clientRegistryLit = shouldBeRegistered;
         }
     }
 
@@ -118,14 +132,17 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide() && burnTimeRemaining > 0) {
-            HeaterRegistry.register(level, worldPosition);
+        if (level != null) {
+            clientRegistryLit = getBlockState().getValue(ThermalHeaterBlock.LIT);
+            if (clientRegistryLit) {
+                HeaterRegistry.register(level, worldPosition);
+            }
         }
     }
 
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide()) {
+        if (level != null) {
             HeaterRegistry.unregister(level, worldPosition);
         }
         super.setRemoved();

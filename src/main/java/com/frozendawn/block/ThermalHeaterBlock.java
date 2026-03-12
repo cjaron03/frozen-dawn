@@ -62,10 +62,10 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) return null;
-        return type == ModBlockEntities.THERMAL_HEATER.get()
-                ? (lvl, pos, st, be) -> ((ThermalHeaterBlockEntity) be).serverTick()
-                : null;
+        if (type != ModBlockEntities.THERMAL_HEATER.get()) return null;
+        return level.isClientSide()
+                ? (lvl, pos, st, be) -> ((ThermalHeaterBlockEntity) be).clientTick()
+                : (lvl, pos, st, be) -> ((ThermalHeaterBlockEntity) be).serverTick();
     }
 
     @Override

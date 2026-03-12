@@ -29,6 +29,21 @@
           "weight": 40
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:surveyor_lens",
+          "conditions": [
+            {
+              "condition": "minecraft:random_chance",
+              "chance": 0.18
+            }
+          ]
+        }
+      ]
     }
   ]
 }

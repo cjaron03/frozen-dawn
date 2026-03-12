@@ -169,14 +169,14 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide()) {
+        if (level != null) {
             GeothermalCoreRegistry.register(level, worldPosition);
         }
     }
 
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide()) {
+        if (level != null) {
             GeothermalCoreRegistry.unregister(level, worldPosition);
         }
         super.setRemoved();

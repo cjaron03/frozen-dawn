@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.world.AcheronForgeRegistry;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import net.minecraft.core.BlockPos;
@@ -60,6 +61,22 @@ public class AcheronForgeBlockEntity extends BlockEntity implements MenuProvider
 
     public AcheronForgeBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ACHERON_FORGE.get(), pos, state);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null) {
+            AcheronForgeRegistry.register(level, worldPosition);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null) {
+            AcheronForgeRegistry.unregister(level, worldPosition);
+        }
+        super.setRemoved();
     }
 
     public void serverTick() {
