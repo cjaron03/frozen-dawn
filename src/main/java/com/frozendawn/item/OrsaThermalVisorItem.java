@@ -24,5 +24,7 @@ public class OrsaThermalVisorItem extends ArmorItem {
                 .withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.translatable("tooltip.frozendawn.orsa_thermal_visor.o2")
                 .withStyle(ChatFormatting.BLUE));
+        tooltip.add(Component.translatable("tooltip.frozendawn.orsa_thermal_visor.mode")
+                .withStyle(ChatFormatting.YELLOW));
     }
 }
