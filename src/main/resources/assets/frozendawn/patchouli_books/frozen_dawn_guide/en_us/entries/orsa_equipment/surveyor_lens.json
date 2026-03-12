@@ -12,7 +12,24 @@
     {
       "type": "patchouli:text",
       "title": "Field Use",
-      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)It still does not detect lava, bad decisions, or Kevin from Logistics.$()"
+      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:calibrated_surveyor_lens",
+      "title": "Calibrated Array",
+      "text": "$(bold)Upgrade:$() Lens + $(l:orsa_rd/soul_harvesting)Architect Soul$(/l) + 4 $(item)Refined Acheronite$() + diamond. ORSA insists this is calibration, not occult possession.$(br2)$(bold)Result:$() Longer range, more markers, and enough filtering to separate real infrastructure from torch-and-lava clutter."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Thermal Visor",
+      "text": "$(bold)Wearable optics:$() Two calibrated lenses, one scrap of insulated cloth, and an iron housing turned into a proper visor.$(br2)Worn on the head, it keeps the thermal overlay running hands-free and adds meaningful cold protection.$(br2)$(italic)ORSA called the rebreather 'field sufficient.' Legal made them remove 'probably.'$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_thermal_visor",
+      "title": "Visor Assembly",
+      "text": "$(bold)Result:$() Passive thermal vision while worn, +20C cold resistance, and a brief emergency air buffer in vacuum.$(br2)Pair it with an EVA body rig and oxygen to stretch tank life noticeably longer."
     }
   ]
 }

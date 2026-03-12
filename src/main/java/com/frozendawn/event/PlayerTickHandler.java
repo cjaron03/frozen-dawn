@@ -226,20 +226,28 @@ final class PlayerTickHandler {
                 continue;
             }
 
-            // Full EVA suit — check for O2 tank
+            boolean thermalVisor = MobFreezeHandler.hasThermalVisor(player);
+            boolean visorRig = MobFreezeHandler.hasThermalVisorRig(player);
+
+            // Full EVA suit or visor-mated EVA rig — check for O2 tank
             if (MobFreezeHandler.getFullSetTier(player) == 3) {
                 ItemStack tank = findO2Tank(player);
                 if (!tank.isEmpty()) {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
-                        tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
+                        if (!visorRig || state.getApocalypseTicks() % 2 == 0) {
+                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
+                        }
                         suffocationTimer.put(id, 0);
                         continue;
                     }
                 }
             }
 
-            int ticks = suffocationTimer.getOrDefault(id, 0) + 1;
+            int ticks = suffocationTimer.getOrDefault(id, 0);
+            if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
+                ticks++;
+            }
             suffocationTimer.put(id, ticks);
             float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
 

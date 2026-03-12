@@ -84,6 +84,22 @@ public class ModArmorMaterials {
                             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "acheronite"))),
                     0.0F, 3.5F));
 
+    /** ORSA Thermal Visor: scouting helmet that mates to the EVA body rig and thermal optics. */
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> THERMAL_VISOR =
+            ARMOR_MATERIALS.register("thermal_visor", () -> new ArmorMaterial(
+                    Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+                        map.put(ArmorItem.Type.HELMET, 3);
+                        map.put(ArmorItem.Type.CHESTPLATE, 0);
+                        map.put(ArmorItem.Type.LEGGINGS, 0);
+                        map.put(ArmorItem.Type.BOOTS, 0);
+                    }),
+                    12,
+                    SoundEvents.ARMOR_EQUIP_IRON,
+                    () -> Ingredient.of(ModItems.REFINED_ACHERONITE),
+                    List.of(new ArmorMaterial.Layer(
+                            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thermal_visor"))),
+                    0.5F, 0.0F));
+
     /**
      * Returns the cold resistance bonus (°C) for a given armor material.
      * Full set = 4x this value.
@@ -93,6 +109,7 @@ public class ModArmorMaterials {
         if (material == REINFORCED) return 11.25f;  // 45°C / 4
         if (material == EVA) return 30.0f;           // 120°C / 4
         if (material == ACHERONITE) return 20.0f;    // 80°C / 4
+        if (material == THERMAL_VISOR) return 20.0f; // visor-specific bonus
         return 0f;
     }
 }

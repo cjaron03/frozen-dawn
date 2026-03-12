@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "L L",
+    " T ",
+    " I "
+  ],
+  "key": {
+    "L": {
+      "item": "frozendawn:calibrated_surveyor_lens"
+    },
+    "T": {
+      "item": "frozendawn:tattered_clothing_scrap"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "id": "frozendawn:orsa_thermal_visor",
+    "count": 1
+  }
+}

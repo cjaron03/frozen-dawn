@@ -13,11 +13,13 @@ import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
+import com.frozendawn.item.OrsaThermalVisorItem;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.SurveyorLensItem;
+import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -160,7 +162,14 @@ public class ModItems {
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<SurveyorLensItem> SURVEYOR_LENS = ITEMS.register("surveyor_lens",
-            () -> new SurveyorLensItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+            () -> new SurveyorLensItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    SurveyorLensScanner.LensProfile.STANDARD));
+    public static final DeferredItem<SurveyorLensItem> CALIBRATED_SURVEYOR_LENS = ITEMS.register("calibrated_surveyor_lens",
+            () -> new SurveyorLensItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC),
+                    SurveyorLensScanner.LensProfile.CALIBRATED));
+    public static final DeferredItem<OrsaThermalVisorItem> ORSA_THERMAL_VISOR = ITEMS.register("orsa_thermal_visor",
+            () -> new OrsaThermalVisorItem(ModArmorMaterials.THERMAL_VISOR, ArmorItem.Type.HELMET,
+                    new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(25)).rarity(Rarity.EPIC)));
 
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
@@ -324,6 +333,8 @@ public class ModItems {
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());
                         output.accept(SURVEYOR_LENS.get());
+                        output.accept(CALIBRATED_SURVEYOR_LENS.get());
+                        output.accept(ORSA_THERMAL_VISOR.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());

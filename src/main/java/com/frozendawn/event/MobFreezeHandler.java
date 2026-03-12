@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ArmorItem;
@@ -180,6 +181,8 @@ public class MobFreezeHandler {
                 total += 30.0f;   // 120°C / 4
             } else if (mat == ModArmorMaterials.ACHERONITE) {
                 total += 20.0f;   // 80°C / 4
+            } else if (mat == ModArmorMaterials.THERMAL_VISOR) {
+                total += 20.0f;   // Visor grants a strong head-slot thermal bonus
             }
         }
         return total;
@@ -205,6 +208,8 @@ public class MobFreezeHandler {
                 mult += 0.02f;
             } else if (mat == ModArmorMaterials.ACHERONITE) {
                 mult += 0.03f;
+            } else if (mat == ModArmorMaterials.THERMAL_VISOR) {
+                mult += 0.02f;
             }
         }
         return mult;
@@ -212,7 +217,7 @@ public class MobFreezeHandler {
 
     /**
      * Returns the highest insulation tier the player is wearing a full set of.
-     * 0 = no insulation, 1 = insulated, 2 = reinforced, 3 = EVA.
+     * 0 = no insulation, 1 = insulated, 2 = reinforced, 3 = EVA / visor rig.
      */
     public static int getFullSetTier(Player player) {
         int tier1 = 0, tier2 = 0, tier3 = 0, tierAch = 0;
@@ -226,10 +231,26 @@ public class MobFreezeHandler {
             else if (mat == ModArmorMaterials.ACHERONITE) tierAch++;
         }
         if (tierAch == 4) return 4;
+        if (hasThermalVisorRig(player)) return 3;
         if (tier3 == 4) return 3;
         if (tier2 + tier3 + tierAch >= 4) return 2;
         if (tier1 + tier2 + tier3 + tierAch >= 4) return 1;
         return 0;
+    }
+
+    public static boolean hasThermalVisor(Player player) {
+        return player.getItemBySlot(EquipmentSlot.HEAD).is(ModItems.ORSA_THERMAL_VISOR.get());
+    }
+
+    public static boolean hasThermalVisorRig(Player player) {
+        return hasThermalVisor(player)
+                && isEvaArmor(player.getItemBySlot(EquipmentSlot.CHEST))
+                && isEvaArmor(player.getItemBySlot(EquipmentSlot.LEGS))
+                && isEvaArmor(player.getItemBySlot(EquipmentSlot.FEET));
+    }
+
+    private static boolean isEvaArmor(ItemStack stack) {
+        return stack.getItem() instanceof ArmorItem armorItem && armorItem.getMaterial() == ModArmorMaterials.EVA;
     }
 
     /** Returns true if the player is wearing a full set of Acheronite armor. */

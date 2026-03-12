@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "frozendawn:surveyor_lens"
+    },
+    {
+      "item": "frozendawn:architect_soul"
+    },
+    {
+      "item": "frozendawn:refined_acheronite"
+    },
+    {
+      "item": "frozendawn:refined_acheronite"
+    },
+    {
+      "item": "frozendawn:refined_acheronite"
+    },
+    {
+      "item": "frozendawn:refined_acheronite"
+    },
+    {
+      "item": "minecraft:diamond"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:calibrated_surveyor_lens",
+    "count": 1
+  }
+}
