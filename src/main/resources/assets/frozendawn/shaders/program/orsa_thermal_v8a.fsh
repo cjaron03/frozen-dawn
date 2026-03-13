@@ -123,22 +123,30 @@ void main() {
     float warmBias = max(scene.r - max(scene.g, scene.b), 0.0);
     float coldBias = max(scene.b - scene.r, 0.0);
     float coldGlow = max(blueLift, cyanLift * 1.10);
+    float cryoMaterial = smoothstep(0.14, 0.42, coldGlow + coldBias * 0.75);
+    cryoMaterial *= smoothstep(0.08, 0.34, stableBase + localMean * 0.35);
+    float splatHeat = max(scene.r - scene.b * 0.45, 0.0);
+    splatHeat += max(scene.g - scene.b * 0.70, 0.0) * 0.40;
+    splatHeat = clamp(splatHeat, 0.0, 1.0);
 
-    float structureHeat = pow(stableBase, 1.04);
-    structureHeat += edge * 0.18;
+    float structureHeat = pow(stableBase, 1.02);
+    structureHeat += edge * 0.08;
     structureHeat += warmBias * 0.01;
-    structureHeat -= coldBias * 0.42;
-    structureHeat -= coldGlow * 0.30;
-    structureHeat -= detailOutlier * 0.20;
+    structureHeat -= coldBias * 0.58;
+    structureHeat -= coldGlow * 0.62;
+    structureHeat -= cryoMaterial * 0.72;
+    structureHeat -= detailOutlier * 0.26;
     structureHeat = clamp(structureHeat, 0.0, 1.0);
 
-    // Restore the readable purple/magenta thermal backbone, but keep it
-    // constrained to the cold/mid bands. Actual warm/hot regions must still
-    // come from the real heat-source fields below.
-    float sceneHeat = 0.12 + structureHeat * 0.22 + AmbientBaseline * 0.30;
-    sceneHeat += edge * 0.05;
-    sceneHeat -= coldGlow * 0.05;
-    sceneHeat = clamp(sceneHeat, 0.08, 0.42);
+    // Keep the readable scene backbone, but keep the no-anchor world in the
+    // cold end of the palette. Warm bands should come primarily from actual
+    // thermal splats rather than from bright/luminous scene detail.
+    float sceneHeat = 0.012 + structureHeat * 0.052 + AmbientBaseline * 0.070;
+    sceneHeat += edge * 0.010;
+    sceneHeat -= coldGlow * 0.14;
+    sceneHeat -= coldBias * 0.08;
+    sceneHeat -= cryoMaterial * 0.18;
+    sceneHeat = clamp(sceneHeat, 0.0, 0.11);
 
     float sourceBias = 0.0;
     sourceBias += heatFieldContribution(texCoord, HeatField0X, HeatField0Y, HeatField0Radius, HeatField0Intensity);
@@ -156,7 +164,11 @@ void main() {
     coldBiasField += heatFieldContribution(texCoord, ColdField4X, ColdField4Y, ColdField4Radius, ColdField4Intensity);
     coldBiasField += heatFieldContribution(texCoord, ColdField5X, ColdField5Y, ColdField5Radius, ColdField5Intensity);
 
-    sceneHeat = clamp(sceneHeat + clamp(sourceBias, 0.0, 0.24) - clamp(coldBiasField, 0.0, 0.28), 0.0, 1.0);
+    float hotLift = smoothstep(0.10, 0.34, sourceBias) * 0.16;
+    sceneHeat = clamp(sceneHeat + clamp(sourceBias, 0.0, 0.38) + hotLift - clamp(coldBiasField, 0.0, 0.28), 0.0, 1.0);
+    sceneHeat += smoothstep(0.30, 0.82, splatHeat) * 0.56;
+    sceneHeat += smoothstep(0.58, 0.96, splatHeat) * 0.18;
+    sceneHeat = clamp(sceneHeat, 0.0, 1.0);
 
     vec3 thermal = thermalPalette(sceneHeat);
     float structure = clamp(stableBase * 0.45 + edge * 0.45, 0.0, 1.0);
