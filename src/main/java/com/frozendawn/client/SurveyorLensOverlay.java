@@ -47,31 +47,30 @@ public final class SurveyorLensOverlay {
 
         if (SurveyorLensVision.isThermalModeVisible()) {
             float thermalStrength = SurveyorLensVision.getThermalModeStrength();
+            SurveyorLensVision.syncThermalShaderUniforms(deltaTracker.getGameTimeDeltaPartialTick(false));
             drawThermalWash(graphics, mc, width, height, thermalStrength);
-            drawThermalSourceGlows(graphics, mc, width, height, thermalStrength, deltaTracker.getGameTimeDeltaPartialTick(false));
             if (SurveyorLensVision.isThermalBooting()) {
                 drawBootSequence(graphics, mc, width, height, thermalStrength);
             } else {
-                drawThermalHud(graphics, mc, width, thermalStrength);
+                float hudStrength = thermalStrength;
+                if (SurveyorLensVision.isThermalShuttingDown()) {
+                    float shutdownProgress = SurveyorLensVision.getThermalShutdownProgress();
+                    hudStrength *= (1.0F - shutdownProgress);
+                    drawShutdownFade(graphics, mc, width, height, shutdownProgress);
+                }
+
+                if (hudStrength > 0.01F) {
+                    drawThermalHud(graphics, mc, width, hudStrength);
+                }
             }
         }
     }
 
     private static void drawThermalWash(GuiGraphics graphics, Minecraft mc, int width, int height, float thermalStrength) {
-        int blackoutAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 108.0F);
-        graphics.fill(0, 0, width, height, (blackoutAlpha << 24) | 0x060A0D);
+        int vignetteAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 54.0F);
+        graphics.fill(0, 0, width, height, (vignetteAlpha << 24) | 0x04070B);
 
-        int coldAlpha = (int) (Mth.clamp(thermalStrength, 0.15F, 1.0F) * 120.0F);
-        graphics.fill(0, 0, width, height, (coldAlpha << 24) | 0x0E2434);
-
-        int hazeAlpha = (int) (thermalStrength * 56.0F);
-        graphics.fill(0, 0, width, height, (hazeAlpha << 24) | 0x365D73);
-
-        int coldLiftAlpha = (int) (thermalStrength * 28.0F);
-        graphics.fillGradient(0, 0, width, height / 2, (coldLiftAlpha << 24) | 0x87AFC1, 0x0087AFC1);
-        graphics.fillGradient(0, height / 2, width, height, 0x00365D73, ((int) (thermalStrength * 38.0F) << 24) | 0x102739);
-
-        int edgeAlpha = (int) (thermalStrength * 120.0F);
+        int edgeAlpha = (int) (thermalStrength * 88.0F);
         int edgeColor = (edgeAlpha << 24) | 0x0A1118;
         int transparent = 0x000A1118;
         int borderSize = (int) (height * 0.15F);
@@ -82,7 +81,7 @@ public final class SurveyorLensOverlay {
         graphics.fillGradient(width - sideBorder, 0, width, height, transparent, edgeColor);
 
         long time = mc.level != null ? mc.level.getGameTime() : 0L;
-        int scanAlphaBase = (int) (thermalStrength * 28.0F);
+        int scanAlphaBase = (int) (thermalStrength * 24.0F);
         for (int y = 0; y < height; y += 3) {
             int lineAlpha = scanAlphaBase + (((y + (int) (time * 2L)) / 3) % 3 == 0 ? 10 : 0);
             graphics.fill(0, y, width, y + 1, (lineAlpha << 24) | 0x6E95A9);
@@ -93,7 +92,7 @@ public final class SurveyorLensOverlay {
             float bandPhase = ((time * 0.04F) + (i * 0.19F)) % 1.0F;
             int bandY = (int) (bandPhase * height);
             int bandHeight = 6 + (i % 3);
-            int bandAlpha = (int) (thermalStrength * (14 + i * 4));
+            int bandAlpha = (int) (thermalStrength * (9 + i * 3));
             graphics.fillGradient(0, bandY, width, bandY + bandHeight, 0x00000000, (bandAlpha << 24) | 0x7097A8);
         }
 
@@ -142,71 +141,6 @@ public final class SurveyorLensOverlay {
         }
     }
 
-    private static void drawThermalSourceGlows(GuiGraphics graphics, Minecraft mc, int width, int height, float thermalStrength, float partialTick) {
-        if (mc.player == null) {
-            return;
-        }
-
-        List<SurveyorLensScanner.HeatSignature> signatures = SurveyorLensVision.getCachedSignatures();
-        if (signatures.isEmpty()) {
-            return;
-        }
-
-        Vec3 eyePos = mc.gameRenderer.getMainCamera().getPosition();
-        Vec3 forward = mc.player.getViewVector(partialTick).normalize();
-        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
-        if (right.lengthSqr() < 1.0E-5D) {
-            right = new Vec3(1.0D, 0.0D, 0.0D);
-        } else {
-            right = right.normalize();
-        }
-        Vec3 up = right.cross(forward).normalize();
-
-        float aspect = width / (float) height;
-        float tanHalfFov = (float) Math.tan(Math.toRadians(mc.options.fov().get() * 0.5D));
-        long time = mc.level != null ? mc.level.getGameTime() : 0L;
-
-        for (int i = 0; i < signatures.size(); i++) {
-            SurveyorLensScanner.HeatSignature signature = signatures.get(i);
-            Vec3 toSource = new Vec3(
-                    signature.pos().getX() + 0.5D,
-                    signature.pos().getY() + 0.85D,
-                    signature.pos().getZ() + 0.5D
-            ).subtract(eyePos);
-            double forwardDist = toSource.dot(forward);
-            double sideDist = toSource.dot(right);
-            double upDist = toSource.dot(up);
-
-            float heatLevel = heatLevel(signature.sourceType());
-            float pulse = 0.85F + 0.15F * Mth.sin((time + i * 7L) * 0.25F);
-            int color = sourceColor(signature.sourceType());
-            int coreColor = sourceCoreColor(signature.sourceType());
-            float intensity = thermalStrength * heatLevel * pulse;
-
-            if (forwardDist > 0.15D) {
-                float xNdc = (float) (sideDist / (forwardDist * tanHalfFov * aspect));
-                float yNdc = (float) (upDist / (forwardDist * tanHalfFov));
-                boolean onScreen = Math.abs(xNdc) <= 1.08F && Math.abs(yNdc) <= 1.08F;
-
-                int screenX = Mth.floor((xNdc * 0.5F + 0.5F) * width);
-                int screenY = Mth.floor((0.5F - yNdc * 0.5F) * height);
-
-                if (onScreen) {
-                    int radius = sourceRadius(signature, i == 0);
-                    drawGlow(graphics, screenX, screenY, radius, color, coreColor, intensity, i == 0);
-                    continue;
-                }
-
-                drawEdgeCue(graphics, width, height, xNdc, yNdc, color, intensity, i == 0);
-                continue;
-            }
-
-            float xHint = sideDist >= 0.0D ? 1.15F : -1.15F;
-            float yHint = upDist >= 0.0D ? -0.25F : 0.25F;
-            drawEdgeCue(graphics, width, height, xHint, yHint, color, intensity * 0.9F, i == 0);
-        }
-    }
-
     private static void drawBootSequence(GuiGraphics graphics, Minecraft mc, int width, int height, float thermalStrength) {
         float progress = SurveyorLensVision.getThermalBootProgress();
         float transfer = Mth.clamp((progress - 0.68F) / 0.32F, 0.0F, 1.0F);
@@ -245,6 +179,38 @@ public final class SurveyorLensOverlay {
             int subTextAlpha = rgba(0x7CA2AE, 1.0F - transfer);
             graphics.drawString(mc.font, "THERMAL LINK // INITIALIZING", centeredX(mc, width, "THERMAL LINK // INITIALIZING"), panelY + 50, textAlpha, false);
             graphics.drawString(mc.font, "Synchronizing visor sensors...", centeredX(mc, width, "Synchronizing visor sensors..."), panelY + 62, subTextAlpha, false);
+        }
+    }
+
+    private static void drawShutdownFade(GuiGraphics graphics, Minecraft mc, int width, int height, float progress) {
+        float eased = 1.0F - progress;
+        eased *= eased;
+        int fadeAlpha = (int) (eased * 120.0F);
+        if (fadeAlpha > 0) {
+            graphics.fill(0, 0, width, height, (fadeAlpha << 24) | 0x020507);
+        }
+
+        int vignetteAlpha = (int) (eased * 56.0F);
+        if (vignetteAlpha > 0) {
+            int vignetteColor = (vignetteAlpha << 24) | 0x050A0D;
+            int transparent = 0x00050A0D;
+            int borderSize = (int) (height * 0.18F);
+            int sideBorder = (int) (width * 0.10F);
+            graphics.fillGradient(0, 0, width, borderSize, vignetteColor, transparent);
+            graphics.fillGradient(0, height - borderSize, width, height, transparent, vignetteColor);
+            graphics.fillGradient(0, 0, sideBorder, height, vignetteColor, transparent);
+            graphics.fillGradient(width - sideBorder, 0, width, height, transparent, vignetteColor);
+        }
+
+        float textVisibility = Mth.clamp(1.0F - progress * 0.8F, 0.0F, 1.0F);
+        if (textVisibility > 0.02F) {
+            String text = "SHUTTING DOWN...";
+            int textColor = rgba(0xA7E8F4, textVisibility);
+            int shadowColor = rgba(0x10242C, textVisibility * 0.72F);
+            int x = centeredX(mc, width, text);
+            int y = height / 2 - 6;
+            graphics.drawString(mc.font, text, x + 1, y + 1, shadowColor, false);
+            graphics.drawString(mc.font, text, x, y, textColor, false);
         }
     }
 
@@ -293,61 +259,6 @@ public final class SurveyorLensOverlay {
         int cueColor = rgba(color, alpha / 255.0F);
         graphics.fill(x - halfLength, y - thickness, x + halfLength, y + thickness, cueColor);
         graphics.fill(x - thickness, y - halfLength, x + thickness, y + halfLength, cueColor);
-    }
-
-    private static int sourceRadius(SurveyorLensScanner.HeatSignature signature, boolean primary) {
-        int base = switch (signature.sourceType()) {
-            case GEOTHERMAL_CORE -> 34;
-            case TRANSPONDER -> 26;
-            case ACHERON_FORGE -> 30;
-            case THERMAL_HEATER -> 24;
-            case ACHERONITE_BLOCK -> 20;
-            case LAVA -> 22;
-            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 16;
-            case FIRE, CAMPFIRE, LANTERN, TORCH -> 14;
-        };
-        int distancePenalty = Math.min(signature.distanceBlocks() / 10, 6);
-        int adjusted = Math.max(8, base - distancePenalty);
-        return primary ? adjusted + 3 : adjusted;
-    }
-
-    private static float heatLevel(SurveyorLensScanner.HeatSourceType sourceType) {
-        return switch (sourceType) {
-            case GEOTHERMAL_CORE -> 1.0F;
-            case ACHERON_FORGE -> 0.94F;
-            case THERMAL_HEATER -> 0.86F;
-            case LAVA -> 0.82F;
-            case TRANSPONDER -> 0.76F;
-            case ACHERONITE_BLOCK -> 0.68F;
-            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0.58F;
-            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0.46F;
-        };
-    }
-
-    private static int sourceColor(SurveyorLensScanner.HeatSourceType sourceType) {
-        return switch (sourceType) {
-            case GEOTHERMAL_CORE -> 0xFFF09A;
-            case ACHERON_FORGE -> 0xFFB03B;
-            case THERMAL_HEATER -> 0xFF9A2F;
-            case LAVA -> 0xFF8624;
-            case TRANSPONDER -> 0xFFD86B;
-            case ACHERONITE_BLOCK -> 0xFFAA52;
-            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0xFF983B;
-            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0xFF8A2A;
-        };
-    }
-
-    private static int sourceCoreColor(SurveyorLensScanner.HeatSourceType sourceType) {
-        return switch (sourceType) {
-            case GEOTHERMAL_CORE -> 0xFFFFFF;
-            case ACHERON_FORGE -> 0xFFF2C4;
-            case THERMAL_HEATER -> 0xFFEAB9;
-            case LAVA -> 0xFFE0A1;
-            case TRANSPONDER -> 0xFFF0BE;
-            case ACHERONITE_BLOCK -> 0xFFD7A4;
-            case SOUL_FIRE, SOUL_CAMPFIRE, SOUL_LANTERN, SOUL_TORCH -> 0xFFD9A8;
-            case FIRE, CAMPFIRE, LANTERN, TORCH -> 0xFFD29C;
-        };
     }
 
     private static int centeredX(Minecraft mc, int width, String text) {

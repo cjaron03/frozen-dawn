@@ -247,6 +247,15 @@ public final class TemperatureManager {
     }
 
     /**
+     * Returns the base heat value a block would contribute at its own position.
+     * This is used by client-side thermal rendering so heat signatures can match
+     * the same source strengths the survival simulation uses.
+     */
+    public static float getAmbientSignatureHeat(BlockState state) {
+        return getAmbientHeat(state, 0);
+    }
+
+    /**
      * Check if a heater has a roof overhead — reuses shelter detection logic.
      * Scan upward up to 4 blocks for a solid block or insulated glass.
      * Used to determine if wind exposure halves heater radius in phase 5+.

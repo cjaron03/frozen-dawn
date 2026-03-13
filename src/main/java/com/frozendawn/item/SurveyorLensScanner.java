@@ -1,8 +1,11 @@
 package com.frozendawn.item;
 
+import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.AcheronForgeRegistry;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.world.HeaterRegistry;
@@ -15,6 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -62,16 +66,16 @@ public final class SurveyorLensScanner {
         List<HeatSignature> signatures = new ArrayList<>();
 
         for (BlockPos pos : HeaterRegistry.getHeaters(level)) {
-            addSignature(signatures, origin, pos, HeatSourceType.THERMAL_HEATER, profile.infrastructureRangeSqr());
+            addSignature(signatures, level, origin, pos, HeatSourceType.THERMAL_HEATER, profile.infrastructureRangeSqr());
         }
         for (BlockPos pos : GeothermalCoreRegistry.getCores(level)) {
-            addSignature(signatures, origin, pos, HeatSourceType.GEOTHERMAL_CORE, profile.infrastructureRangeSqr());
+            addSignature(signatures, level, origin, pos, HeatSourceType.GEOTHERMAL_CORE, profile.infrastructureRangeSqr());
         }
         for (BlockPos pos : TransponderRegistry.getTransponders(level)) {
-            addSignature(signatures, origin, pos, HeatSourceType.TRANSPONDER, profile.infrastructureRangeSqr());
+            addSignature(signatures, level, origin, pos, HeatSourceType.TRANSPONDER, profile.infrastructureRangeSqr());
         }
         for (BlockPos pos : AcheronForgeRegistry.getForges(level)) {
-            addSignature(signatures, origin, pos, HeatSourceType.ACHERON_FORGE, profile.infrastructureRangeSqr());
+            addSignature(signatures, level, origin, pos, HeatSourceType.ACHERON_FORGE, profile.infrastructureRangeSqr());
         }
 
         if (profile.detectsAmbientHeat()) {
@@ -103,13 +107,13 @@ public final class SurveyorLensScanner {
                         continue;
                     }
 
-                    addSignature(signatures, origin, mutablePos, sourceType, profile.ambientRangeSqr());
+                    addSignature(signatures, level, origin, mutablePos, sourceType, profile.ambientRangeSqr());
                 }
             }
         }
     }
 
-    private static void addSignature(List<HeatSignature> signatures, Vec3 origin, BlockPos pos, HeatSourceType sourceType, double maxDistanceSqr) {
+    private static void addSignature(List<HeatSignature> signatures, Level level, Vec3 origin, BlockPos pos, HeatSourceType sourceType, double maxDistanceSqr) {
         double distanceSqr = origin.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
         if (distanceSqr > maxDistanceSqr) {
             return;
@@ -120,7 +124,8 @@ public final class SurveyorLensScanner {
                 sourceType,
                 distanceSqr,
                 Mth.floor(Math.sqrt(distanceSqr)),
-                describeDirection(origin, pos)
+                describeDirection(origin, pos),
+                resolveHeatValue(level, pos, sourceType)
         );
 
         int clusterRadius = sourceType.clusterRadius();
@@ -145,6 +150,37 @@ public final class SurveyorLensScanner {
         }
 
         signatures.add(newSignature);
+    }
+
+    private static float resolveHeatValue(Level level, BlockPos pos, HeatSourceType sourceType) {
+        BlockState state = level.getBlockState(pos);
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+
+        return switch (sourceType) {
+            case GEOTHERMAL_CORE -> {
+                if (blockEntity instanceof GeothermalCoreBlockEntity core) {
+                    yield core.getEffectiveTemp();
+                }
+                yield GeothermalCoreBlockEntity.BASE_TEMP;
+            }
+            case THERMAL_HEATER -> {
+                if (blockEntity instanceof ThermalHeaterBlockEntity heater) {
+                    yield heater.getPublicHeatOutput();
+                }
+                if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get())) {
+                    yield 80.0F;
+                }
+                if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get())) {
+                    yield 65.0F;
+                }
+                if (state.is(ModBlocks.IRON_THERMAL_HEATER.get())) {
+                    yield 50.0F;
+                }
+                yield 35.0F;
+            }
+            case ACHERON_FORGE, TRANSPONDER -> 0.0F;
+            default -> TemperatureManager.getAmbientSignatureHeat(state);
+        };
     }
 
     private static Component describeDirection(Vec3 origin, BlockPos pos) {
@@ -325,7 +361,7 @@ public final class SurveyorLensScanner {
     }
 
     public record HeatSignature(BlockPos pos, HeatSourceType sourceType, double distanceSqr,
-                                int distanceBlocks, Component direction) {
+                                int distanceBlocks, Component direction, float heatValue) {
         public Component displayName() {
             return sourceType.displayName();
         }

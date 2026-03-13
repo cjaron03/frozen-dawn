@@ -8,7 +8,8 @@
   ],
   "client": [
     "LevelRendererMixin",
-    "HumanoidArmorLayerMixin"
+    "HumanoidArmorLayerMixin",
+    "GameRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
