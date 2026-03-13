@@ -106,6 +106,22 @@ All books are discoverable without beating the game. No End Cities or Ancient Ci
 - **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 17+ config options covering temperature, features, visuals, and gameplay
 
+## Hostile Ecosystem
+
+Frozen Dawn now has a layered hostile roster built around pressure, escalation, and base defense rather than simple combat encounters.
+
+- **Frostbitten** — phase 4+ surface attackers that hurl packed snow and punish exposed travel
+- **Hollow** — spectral cold entities that phase through walls, grab players, and entomb them in ice
+- **Returned Hunter** — rare intelligent humanoid invaders that break lights, extinguish heaters, and force base defense
+- **Returned Mimic** — deceptive observation predators that masquerade as harmless shadow figures before attacking
+- **Architect** — a rare boss-tier siege enemy that observes your shelter, mines through defenses, scaffolds with ice, retreats to heal, and now drops the Architect Soul / Surveyor gear progression path
+- **Frostmites** — late-phase thermal parasites that swarm players and heaters, steadily draining warmth and degrading infrastructure
+
+The intended pressure curve is asymmetrical:
+- **Architect** is the rare, intelligent, structural threat
+- **Frostmites** are the common, dumb, thermal threat
+- the rest of the roster fills the space between direct combat, environmental pressure, and base attrition
+
 ## Installation
 
 ### Requirements
