@@ -11,10 +11,13 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.TorchBlock;
+import net.minecraft.world.level.block.WallSkullBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -186,6 +189,24 @@ public class ModBlocks {
                     .isSuffocating((state, level, pos) -> false)
                     .lightLevel(state -> 2)
                     .pushReaction(PushReaction.DESTROY)));
+
+    // Architect Mask: placeable Architect head trophy
+    public static final DeferredBlock<SkullBlock> ARCHITECT_MASK = BLOCKS.register("architect_mask",
+            () -> new SkullBlock(
+                    ModSkullTypes.ARCHITECT,
+                    BlockBehaviour.Properties.of()
+                            .instrument(NoteBlockInstrument.CUSTOM_HEAD)
+                            .strength(1.0F)
+                            .pushReaction(PushReaction.DESTROY)
+            ));
+    public static final DeferredBlock<WallSkullBlock> ARCHITECT_WALL_MASK = BLOCKS.register("architect_wall_mask",
+            () -> new WallSkullBlock(
+                    ModSkullTypes.ARCHITECT,
+                    BlockBehaviour.Properties.of()
+                            .strength(1.0F)
+                            .dropsLike(ARCHITECT_MASK.get())
+                            .pushReaction(PushReaction.DESTROY)
+            ));
 
     // --- Win Condition ---
 

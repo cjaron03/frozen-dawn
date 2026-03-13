@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "frozendawn:block/architect_wall_mask" },
+    "facing=south": { "model": "frozendawn:block/architect_wall_mask" },
+    "facing=east": { "model": "frozendawn:block/architect_wall_mask" },
+    "facing=west": { "model": "frozendawn:block/architect_wall_mask" }
+  }
+}

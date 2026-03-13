@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "rotation=0": { "model": "frozendawn:block/architect_mask" },
+    "rotation=1": { "model": "frozendawn:block/architect_mask" },
+    "rotation=2": { "model": "frozendawn:block/architect_mask" },
+    "rotation=3": { "model": "frozendawn:block/architect_mask" },
+    "rotation=4": { "model": "frozendawn:block/architect_mask" },
+    "rotation=5": { "model": "frozendawn:block/architect_mask" },
+    "rotation=6": { "model": "frozendawn:block/architect_mask" },
+    "rotation=7": { "model": "frozendawn:block/architect_mask" },
+    "rotation=8": { "model": "frozendawn:block/architect_mask" },
+    "rotation=9": { "model": "frozendawn:block/architect_mask" },
+    "rotation=10": { "model": "frozendawn:block/architect_mask" },
+    "rotation=11": { "model": "frozendawn:block/architect_mask" },
+    "rotation=12": { "model": "frozendawn:block/architect_mask" },
+    "rotation=13": { "model": "frozendawn:block/architect_mask" },
+    "rotation=14": { "model": "frozendawn:block/architect_mask" },
+    "rotation=15": { "model": "frozendawn:block/architect_mask" }
+  }
+}

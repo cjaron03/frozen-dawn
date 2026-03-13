@@ -5,6 +5,7 @@ import com.frozendawn.item.AcheroniteCompassItem;
 import com.frozendawn.item.AcheronitePickaxeItem;
 import com.frozendawn.item.AcheroniteShardItem;
 import com.frozendawn.item.AcheroniteShovelItem;
+import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.ComfortItem;
@@ -161,6 +162,12 @@ public class ModItems {
     // --- Architect Mob Drops ---
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    public static final DeferredItem<ArchitectMaskItem> ARCHITECT_MASK = ITEMS.register("architect_mask",
+            () -> new ArchitectMaskItem(
+                    ModBlocks.ARCHITECT_MASK.get(),
+                    ModBlocks.ARCHITECT_WALL_MASK.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)
+            ));
     public static final DeferredItem<SurveyorLensItem> SURVEYOR_LENS = ITEMS.register("surveyor_lens",
             () -> new SurveyorLensItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
                     SurveyorLensScanner.LensProfile.STANDARD));
@@ -332,6 +339,7 @@ public class ModItems {
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());
+                        output.accept(ARCHITECT_MASK.get());
                         output.accept(SURVEYOR_LENS.get());
                         output.accept(CALIBRATED_SURVEYOR_LENS.get());
                         output.accept(ORSA_THERMAL_VISOR.get());

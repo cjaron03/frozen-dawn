@@ -12,6 +12,10 @@ import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.init.ModSkullTypes;
+import net.minecraft.client.model.SkullModel;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -90,6 +94,18 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onCreateSkullModels(EntityRenderersEvent.CreateSkullModels event) {
+        event.registerSkullModel(
+                ModSkullTypes.ARCHITECT,
+                new SkullModel(event.getEntityModelSet().bakeLayer(ModelLayers.ZOMBIE_HEAD))
+        );
+        SkullBlockRenderer.SKIN_BY_TYPE.put(
+                ModSkullTypes.ARCHITECT,
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/architect_head.png")
+        );
     }
 
     @SubscribeEvent

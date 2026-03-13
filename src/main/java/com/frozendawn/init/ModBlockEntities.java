@@ -7,9 +7,13 @@ import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TransponderBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+@EventBusSubscriber(modid = FrozenDawn.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, FrozenDawn.MOD_ID);
@@ -40,4 +44,9 @@ public class ModBlockEntities {
                     () -> BlockEntityType.Builder.of(TransponderBlockEntity::new,
                             ModBlocks.TRANSPONDER.get()
                     ).build(null));
+
+    @SubscribeEvent
+    public static void onBlockEntityValidBlocks(BlockEntityTypeAddBlocksEvent event) {
+        event.modify(BlockEntityType.SKULL, ModBlocks.ARCHITECT_MASK.get(), ModBlocks.ARCHITECT_WALL_MASK.get());
+    }
 }

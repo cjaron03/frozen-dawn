@@ -306,6 +306,8 @@
 
   "entity.frozendawn.architect": "Returned Architect",
   "item.frozendawn.architect_soul": "Architect Soul",
+  "item.frozendawn.architect_mask": "Architect Mask",
+  "block.frozendawn.architect_mask": "Architect Mask",
   "item.frozendawn.surveyor_lens": "Surveyor Lens",
   "item.frozendawn.calibrated_surveyor_lens": "Calibrated Surveyor Lens",
   "item.frozendawn.orsa_thermal_visor": "ORSA Thermal Visor",
@@ -313,6 +315,8 @@
   "item.frozendawn.soul_harvest_blade": "Soul-Harvest Blade",
   "tooltip.frozendawn.architect_soul": "A frozen human will wrapped in geometry.",
   "tooltip.frozendawn.architect_soul.use": "Can be fused with an Acheronite Blade.",
+  "tooltip.frozendawn.architect_mask": "A trophy cut from the cold's engineer.",
+  "tooltip.frozendawn.architect_mask.flavor": "ORSA recommends not asking what, exactly, is still looking back.",
   "tooltip.frozendawn.surveyor_lens": "A reclaimed optic tuned to thermal anchors.",
   "tooltip.frozendawn.surveyor_lens.use": "Hold or offhand for passive thermal vision. Right-click to ping nearby signatures.",
   "tooltip.frozendawn.calibrated_surveyor_lens": "A field optic recalibrated to cut through thermal clutter.",
