@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.world.HeaterRegistry;
@@ -27,11 +28,17 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvider {
 
+    private static final int MAX_GLOW_STAGE = 4;
+    private static final int FROSTMITE_HEAT_DRAIN_STEP_INTERVAL = 10;
+    private static final float MAX_FROSTMITE_HEAT_PENALTY = 50.0f;
+    private static final float FROSTMITE_HEAT_PENALTY_PER_MITE_PER_STEP = 1.5f;
+    private static final float FROSTMITE_HEAT_RECOVERY_PER_STEP = 2.0f;
     private int burnTimeRemaining = 0;
     private boolean cachedSheltered = false;
     private boolean shelterValid = false;
     private boolean hasCapacitor = false;
     private boolean clientRegistryLit = false;
+    private float frostmiteHeatPenalty = 0.0f;
 
     public ThermalHeaterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.THERMAL_HEATER.get(), pos, state);
@@ -51,15 +58,39 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     }
 
     public void serverTick() {
+        tickFrostmiteHeatPenalty();
         if (burnTimeRemaining > 0) {
-            burnTimeRemaining = Math.max(0, burnTimeRemaining - getPhaseConsumption());
+            int totalDrain = getPhaseConsumption() + getFrostmiteFuelDrain();
+            burnTimeRemaining = Math.max(0, burnTimeRemaining - totalDrain);
             if (burnTimeRemaining == 0) {
-                updateLitState();
                 setChanged();
             } else if (level != null && level.getServer() != null
                     && level.getServer().getTickCount() % 200 == 0) {
                 setChanged(); // periodic save, not every tick
             }
+        }
+        updateLitState();
+    }
+
+    private void tickFrostmiteHeatPenalty() {
+        if (level == null || level.isClientSide() || level.getServer() == null) {
+            return;
+        }
+        if (level.getServer().getTickCount() % FROSTMITE_HEAT_DRAIN_STEP_INTERVAL != 0) {
+            return;
+        }
+
+        int attached = FrostmiteEntity.countLatchedToHeater(level, worldPosition);
+        float previous = frostmiteHeatPenalty;
+        if (isLit() && attached > 0) {
+            frostmiteHeatPenalty = Math.min(MAX_FROSTMITE_HEAT_PENALTY,
+                    frostmiteHeatPenalty + attached * FROSTMITE_HEAT_PENALTY_PER_MITE_PER_STEP);
+        } else {
+            frostmiteHeatPenalty = Math.max(0.0f, frostmiteHeatPenalty - FROSTMITE_HEAT_RECOVERY_PER_STEP);
+        }
+
+        if (Math.abs(frostmiteHeatPenalty - previous) > 0.001f) {
+            setChanged();
         }
     }
 
@@ -119,14 +150,40 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
 
         BlockState current = getBlockState();
         boolean shouldBeLit = burnTimeRemaining > 0;
-        if (current.getValue(ThermalHeaterBlock.LIT) != shouldBeLit) {
-            level.setBlock(worldPosition, current.setValue(ThermalHeaterBlock.LIT, shouldBeLit), 3);
-            if (shouldBeLit) {
-                HeaterRegistry.register(level, worldPosition);
-            } else {
-                HeaterRegistry.unregister(level, worldPosition);
+        int desiredGlowStage = getDesiredGlowStage(shouldBeLit);
+        boolean litChanged = current.getValue(ThermalHeaterBlock.LIT) != shouldBeLit;
+        boolean glowChanged = current.getValue(ThermalHeaterBlock.GLOW_STAGE) != desiredGlowStage;
+        if (litChanged || glowChanged) {
+            level.setBlock(worldPosition,
+                    current.setValue(ThermalHeaterBlock.LIT, shouldBeLit)
+                            .setValue(ThermalHeaterBlock.GLOW_STAGE, desiredGlowStage),
+                    3);
+            if (litChanged) {
+                if (shouldBeLit) {
+                    HeaterRegistry.register(level, worldPosition);
+                } else {
+                    HeaterRegistry.unregister(level, worldPosition);
+                }
             }
         }
+    }
+
+    private int getDesiredGlowStage(boolean shouldBeLit) {
+        if (!shouldBeLit || level == null) return 0;
+
+        int attached = FrostmiteEntity.countLatchedToHeater(level, worldPosition);
+        if (attached <= 0) return MAX_GLOW_STAGE;
+        if (attached <= 2) return 3;
+        if (attached <= 4) return 2;
+        if (attached <= 7) return 1;
+        return 0;
+    }
+
+    private int getFrostmiteFuelDrain() {
+        if (level == null || !isLit()) {
+            return 0;
+        }
+        return FrostmiteEntity.getHeaterFuelDrain(level, worldPosition);
     }
 
     @Override
@@ -208,11 +265,16 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     public int getPublicHeatOutput() { return getHeatOutput(); }
     public int getPublicBaseRadius() { return getBaseRadius(); }
     public int getPublicPhaseConsumption() { return getPhaseConsumption(); }
+    public float getFrostmiteHeatPenalty() { return frostmiteHeatPenalty; }
 
     public int getEffectiveRadius() {
         int base = getBaseRadius();
         boolean exposed = !getCachedSheltered() && getPhase() >= 5;
-        return exposed ? (int) (base * 0.6f) : base;
+        int effective = exposed ? (int) (base * 0.6f) : base;
+        if (level != null) {
+            effective -= FrostmiteEntity.getHeaterRadiusPenalty(level, worldPosition);
+        }
+        return Math.max(2, effective);
     }
 
     public boolean isWindExposed() {
@@ -240,6 +302,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         super.saveAdditional(tag, registries);
         tag.putInt("BurnTime", burnTimeRemaining);
         tag.putBoolean("HasCapacitor", hasCapacitor);
+        tag.putFloat("FrostmiteHeatPenalty", frostmiteHeatPenalty);
     }
 
     @Override
@@ -247,5 +310,6 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         super.loadAdditional(tag, registries);
         burnTimeRemaining = tag.getInt("BurnTime");
         hasCapacitor = tag.getBoolean("HasCapacitor");
+        frostmiteHeatPenalty = tag.getFloat("FrostmiteHeatPenalty");
     }
 }

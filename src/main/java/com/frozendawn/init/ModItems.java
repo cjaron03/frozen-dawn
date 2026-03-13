@@ -182,6 +182,9 @@ public class ModItems {
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FROSTBITTEN, 0x8FBCD4, 0x3B5998,
                     new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> FROSTMITE_SPAWN_EGG = ITEMS.register("frostmite_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROSTMITE, 0xD9F5FF, 0x4FD8FF,
+                    new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> HOLLOW_SPAWN_EGG = ITEMS.register("hollow_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.HOLLOW, 0xCCDDEE, 0x667788,
                     new Item.Properties()));
@@ -349,6 +352,7 @@ public class ModItems {
                         output.accept(THERMAL_CAPACITOR.get());
                         // Spawn Eggs
                         output.accept(FROSTBITTEN_SPAWN_EGG.get());
+                        output.accept(FROSTMITE_SPAWN_EGG.get());
                         output.accept(HOLLOW_SPAWN_EGG.get());
                         output.accept(RETURNED_SPAWN_EGG.get());
                         output.accept(MIMIC_SPAWN_EGG.get());

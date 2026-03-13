@@ -8,6 +8,7 @@ import com.frozendawn.init.ModItems;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -69,13 +70,18 @@ public class MobFreezeHandler {
         ApocalypseState state = ApocalypseState.get(level.getServer());
         if (state.getPhase() < 2) return;
 
-        float temp = TemperatureManager.getTemperatureAt(
-                level, entity.blockPosition(),
-                state.getCurrentDay(), state.getTotalDays(), !isPlayer);
+        float temp;
+        if (entity instanceof ServerPlayer serverPlayer) {
+            temp = PlayerTickHandler.getFreezeResolvedTemperature(serverPlayer, state);
+        } else {
+            temp = TemperatureManager.getTemperatureAt(
+                    level, entity.blockPosition(),
+                    state.getCurrentDay(), state.getTotalDays(), !isPlayer);
 
-        // Apply cold resistance from insulated armor (players only)
-        if (isPlayer) {
-            temp += getArmorColdResistance((Player) entity);
+            // Apply cold resistance from insulated armor (players only)
+            if (isPlayer) {
+                temp += getArmorColdResistance((Player) entity);
+            }
         }
 
         applyFreezeEffects(living, temp, isPlayer, state);

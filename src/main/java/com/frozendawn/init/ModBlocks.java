@@ -26,6 +26,12 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FrozenDawn.MOD_ID);
 
+    private static int heaterLight(net.minecraft.world.level.block.state.BlockState state, int maxLight) {
+        if (!state.getValue(ThermalHeaterBlock.LIT)) return 0;
+        int glowStage = state.getValue(ThermalHeaterBlock.GLOW_STAGE);
+        return Math.max(1, Math.round(maxLight * ((glowStage + 1) / 5.0f)));
+    }
+
     // Grass Block -> Dead Grass Block (phase 2+). Drops dirt.
     public static final DeferredBlock<Block> DEAD_GRASS_BLOCK = BLOCKS.register("dead_grass_block",
             () -> new Block(BlockBehaviour.Properties.of()
@@ -99,7 +105,7 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .strength(3.5F)
                     .sound(SoundType.METAL)
-                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0)));
+                    .lightLevel(state -> heaterLight(state, 13))));
 
     // Iron Thermal Heater: +50C, radius 9, 1.5x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> IRON_THERMAL_HEATER = BLOCKS.register("iron_thermal_heater",
@@ -108,7 +114,7 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .strength(4.0F)
                     .sound(SoundType.METAL)
-                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 13 : 0), 1.5f));
+                    .lightLevel(state -> heaterLight(state, 13)), 1.5f));
 
     // Gold Thermal Heater: +65C, radius 11, 2x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> GOLD_THERMAL_HEATER = BLOCKS.register("gold_thermal_heater",
@@ -117,7 +123,7 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .strength(4.0F)
                     .sound(SoundType.METAL)
-                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 14 : 0), 2.0f));
+                    .lightLevel(state -> heaterLight(state, 14)), 2.0f));
 
     // Diamond Thermal Heater: +80C, radius 14, 3x fuel consumption
     public static final DeferredBlock<ThermalHeaterBlock> DIAMOND_THERMAL_HEATER = BLOCKS.register("diamond_thermal_heater",
@@ -126,7 +132,7 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .strength(5.0F)
                     .sound(SoundType.METAL)
-                    .lightLevel(state -> state.getValue(ThermalHeaterBlock.LIT) ? 15 : 0), 3.0f));
+                    .lightLevel(state -> heaterLight(state, 15)), 3.0f));
 
     // Insulated Glass: transparent, counts as shelter (roof check)
     public static final DeferredBlock<HalfTransparentBlock> INSULATED_GLASS = BLOCKS.register("insulated_glass",

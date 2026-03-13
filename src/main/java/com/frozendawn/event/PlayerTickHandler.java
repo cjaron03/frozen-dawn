@@ -9,6 +9,7 @@ import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.world.GeothermalCoreRegistry;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
@@ -41,8 +42,14 @@ final class PlayerTickHandler {
     private static final Map<UUID, Boolean> habitableCache = new HashMap<>();
     private static final Map<UUID, Integer> suffocationTimer = new HashMap<>();
     private static final Map<UUID, Float> playerTemperatures = new HashMap<>();
+    private static final Map<UUID, Float> frostmiteTemperatureDrain = new HashMap<>();
 
     private static final int SUFFOCATION_DURATION = 200;
+    private static final int FROSTMITE_DRAIN_STEP_INTERVAL = 10;
+    private static final int TEMPERATURE_SYNC_INTERVAL = 10;
+    private static final float MAX_FROSTMITE_TEMP_DRAIN = 50.0f;
+    private static final float FROSTMITE_DRAIN_PER_MITE_PER_STEP = 1.5f;
+    private static final float FROSTMITE_DRAIN_RECOVERY_PER_STEP = 2.0f;
     private static final String[] ARMOR_ADVANCEMENTS = {
             null, "insulated_clothing", "heavy_insulation", "eva_suit"
     };
@@ -51,56 +58,54 @@ final class PlayerTickHandler {
         habitableCache.clear();
         suffocationTimer.clear();
         playerTemperatures.clear();
+        frostmiteTemperatureDrain.clear();
         FrostbiteHandler.reset();
         SanityHandler.reset();
     }
 
-    /** Returns the last-calculated temperature for a player (updated every 40 ticks). */
+    /** Returns the last-calculated temperature for a player (updated every 20 ticks). */
     static float getLastTemperature(UUID playerId) {
         return playerTemperatures.getOrDefault(playerId, 20f);
+    }
+
+    static float getFrostmiteTemperatureDrain(ServerPlayer player) {
+        return frostmiteTemperatureDrain.getOrDefault(player.getUUID(), 0.0f);
+    }
+
+    static float getDisplayedTemperature(ServerPlayer player, ApocalypseState state) {
+        float temp = TemperatureManager.getTemperatureAt(
+                player.level(), player.blockPosition(), state.getCurrentDay(), state.getTotalDays());
+        return applyPlayerTemperatureAdjustments(player, temp);
+    }
+
+    static float getFreezeResolvedTemperature(ServerPlayer player, ApocalypseState state) {
+        return getDisplayedTemperature(player, state) + MobFreezeHandler.getArmorColdResistance(player);
     }
 
     /**
      * Called every server tick from WorldTickHandler.
      */
     static void tick(MinecraftServer server, ApocalypseState state, int currentPhase, int currentDay, float progress) {
-        // Temperature sync + heat damage + armor advancements (every 40 ticks)
+        if (state.getApocalypseTicks() % FROSTMITE_DRAIN_STEP_INTERVAL == 0) {
+            tickFrostmiteDrain(server);
+        }
+
+        // Temperature sync (fast enough that Frostmite drain is clearly visible on the HUD)
+        if (state.getApocalypseTicks() % TEMPERATURE_SYNC_INTERVAL == 0) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (player.level().dimension() == Level.OVERWORLD) {
+                    float temp = getDisplayedTemperature(player, state);
+                    playerTemperatures.put(player.getUUID(), temp);
+                    PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
+                }
+            }
+        }
+
+        // Heat damage + armor advancements (every 40 ticks)
         if (state.getApocalypseTicks() % 40 == 0) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.level().dimension() == Level.OVERWORLD) {
-                    float temp = TemperatureManager.getTemperatureAt(
-                            player.level(), player.blockPosition(), currentDay, state.getTotalDays());
-
-                    // Armor heat trapping: insulated armor amplifies heat above 20C
-                    float armorHeatMult = MobFreezeHandler.getArmorHeatMultiplier(player);
-                    if (temp > 20f && armorHeatMult > 0f) {
-                        temp += (temp - 20f) * armorHeatMult;
-                    }
-
-                    // Remnant Ember offhand warmth bonus
-                    ItemStack offhand = player.getOffhandItem();
-                    if (offhand.getItem() instanceof RemnantEmberItem) {
-                        int warmth = offhand.getOrDefault(ModDataComponents.WARMTH_REMAINING.get(), 0);
-                        if (warmth > 0) {
-                            temp += 10.0f;
-                        }
-                    }
-
-                    // Apply frostbite temperature drain for the HUD
-                    temp -= FrostbiteHandler.getTemperatureDrain(player);
-
-                    // Hollow grab: massive temperature plunge
-                    for (var passenger : player.getPassengers()) {
-                        if (passenger instanceof HollowEntity) {
-                            temp -= 40f;
-                            break;
-                        }
-                    }
-
-                    playerTemperatures.put(player.getUUID(), temp);
-                    PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
-
-                    applyHeatDamage(player, temp, progress);
+                    applyHeatDamage(player, getDisplayedTemperature(player, state), progress);
                 }
                 // Grant armor tier advancements (acheronite doesn't count for EVA)
                 int armorTier = MobFreezeHandler.getFullSetTier(player);
@@ -143,6 +148,62 @@ final class PlayerTickHandler {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
             }
         }
+    }
+
+    private static void tickFrostmiteDrain(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            UUID id = player.getUUID();
+            int attached = Math.min(6, FrostmiteEntity.countLatchedToPlayer(player));
+            int armorTier = MobFreezeHandler.getFullSetTier(player);
+
+            if (player.level().dimension() != Level.OVERWORLD
+                    || player.isCreative()
+                    || player.isSpectator()
+                    || armorTier >= 3) {
+                frostmiteTemperatureDrain.put(id, 0.0f);
+                continue;
+            }
+
+            float current = frostmiteTemperatureDrain.getOrDefault(id, 0.0f);
+            if (attached > 0) {
+                current = Math.min(MAX_FROSTMITE_TEMP_DRAIN,
+                        current + attached * FROSTMITE_DRAIN_PER_MITE_PER_STEP);
+            } else {
+                current = Math.max(0.0f, current - FROSTMITE_DRAIN_RECOVERY_PER_STEP);
+            }
+
+            frostmiteTemperatureDrain.put(id, current);
+        }
+    }
+
+    private static float applyPlayerTemperatureAdjustments(ServerPlayer player, float temp) {
+        // Armor heat trapping: insulated armor amplifies heat above 20C
+        float armorHeatMult = MobFreezeHandler.getArmorHeatMultiplier(player);
+        if (temp > 20f && armorHeatMult > 0f) {
+            temp += (temp - 20f) * armorHeatMult;
+        }
+
+        // Remnant Ember offhand warmth bonus
+        ItemStack offhand = player.getOffhandItem();
+        if (offhand.getItem() instanceof RemnantEmberItem) {
+            int warmth = offhand.getOrDefault(ModDataComponents.WARMTH_REMAINING.get(), 0);
+            if (warmth > 0) {
+                temp += 10.0f;
+            }
+        }
+
+        temp -= FrostbiteHandler.getTemperatureDrain(player);
+        temp -= getFrostmiteTemperatureDrain(player);
+
+        // Hollow grab: massive temperature plunge
+        for (var passenger : player.getPassengers()) {
+            if (passenger instanceof HollowEntity) {
+                temp -= 40f;
+                break;
+            }
+        }
+
+        return temp;
     }
 
     private static void applyHeatDamage(ServerPlayer player, float temp, float progress) {

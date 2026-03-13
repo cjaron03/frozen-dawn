@@ -1,0 +1,18 @@
+{
+  "name": "Frostmite",
+  "category": "frozendawn:threats",
+  "icon": "frozendawn:frostmite_spawn_egg",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THREAT REPORT: FROSTMITE",
+      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Cryogenic Parasite$(br)$(bold)Threat Level:$() Variable$(br2)Individually, Frostmites are an irritation with legs. In groups, they are a thermal failure event. They do not fight fair, and more importantly, they do not appear to understand the concept of stopping once they have located a warm body or a functioning heater.$(br2)$(italic)ORSA recommends refraining from describing them as 'just ice silverfish.' That statement has preceded several regrettable deaths.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Swarm Assessment",
+      "text": "$(bold)Behavior:$()$(br)$(li)Latches onto players and steadily drags ambient temperature downward$(li)Multiple Frostmites stack their drain effect up to a severe cap$(li)Will also swarm active Thermal Heaters, reducing warmth, dimming glow, and chewing through fuel$(li)Spawns naturally in later phases and bursts from infested cold blocks when mined$(li)Fast, erratic movement makes individual targets annoying to swat$(br2)$(bold)Counter Strategies:$()$(br)$(li)Do not let them stack. One is manageable. Ten is an obituary.$(li)Active heaters can bait them away from you, but then you must protect the heater$(li)Full EVA suits block player heat drain entirely$(li)If mining packed or blue ice in late phases, assume something small and hostile lives inside it$(br2)$(bold)Drops:$() $(item)Snowball$()$(br2)$(italic)ORSA engineering note: If your heater suddenly seems weaker and covered in tiny moving frost, congratulations. You are now operating a communal buffet.$()"
+    }
+  ]
+}

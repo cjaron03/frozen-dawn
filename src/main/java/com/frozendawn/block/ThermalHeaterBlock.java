@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 public class ThermalHeaterBlock extends Block implements EntityBlock {
 
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
+    public static final IntegerProperty GLOW_STAGE = IntegerProperty.create("glow_stage", 0, 4);
     private final float fuelMultiplier;
 
     public ThermalHeaterBlock(Properties properties) {
@@ -45,12 +47,12 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
     public ThermalHeaterBlock(Properties properties, float fuelMultiplier) {
         super(properties);
         this.fuelMultiplier = fuelMultiplier;
-        registerDefaultState(stateDefinition.any().setValue(LIT, false));
+        registerDefaultState(stateDefinition.any().setValue(LIT, false).setValue(GLOW_STAGE, 0));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIT);
+        builder.add(LIT, GLOW_STAGE);
     }
 
     @Nullable

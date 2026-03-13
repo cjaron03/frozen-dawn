@@ -4,6 +4,7 @@ import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -122,12 +123,16 @@ public final class TemperatureManager {
             BlockState state = level.getBlockState(heaterPos);
             boolean sheltered = false;
             boolean hasCapacitor = false;
+            int radiusPenalty = 0;
+            float heatPenalty = 0.0f;
             BlockEntity heaterBE = level.getBlockEntity(heaterPos);
             if (heaterBE instanceof ThermalHeaterBlockEntity thbe) {
                 sheltered = thbe.getCachedSheltered();
                 hasCapacitor = thbe.hasCapacitor();
+                radiusPenalty = FrostmiteEntity.getHeaterRadiusPenalty(level, heaterPos);
+                heatPenalty = thbe.getFrostmiteHeatPenalty();
             }
-            float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor);
+            float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty);
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;
@@ -188,30 +193,39 @@ public final class TemperatureManager {
      *
      * @param sheltered  Cached shelter status from the heater's block entity.
      */
-    private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered, boolean hasCapacitor) {
+    private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered, boolean hasCapacitor,
+                                       int radiusPenalty, float heatPenalty) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !sheltered) ? 18 : 49;
-            if (hasCapacitor) maxDistSq *= 4; // doubled radius → 4x distSq
+            int baseRadius = hasCapacitor ? 14 : 7;
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            baseRadius = Math.max(2, baseRadius - radiusPenalty);
+            int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 52.5f : 35.0f;
-            return distSq <= maxDistSq ? heat : 0.0f;
+            return distSq <= maxDistSq ? Math.max(0.0f, heat - heatPenalty) : 0.0f;
         }
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !sheltered) ? 29 : 81;
-            if (hasCapacitor) maxDistSq *= 4;
+            int baseRadius = hasCapacitor ? 18 : 9;
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            baseRadius = Math.max(2, baseRadius - radiusPenalty);
+            int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 75.0f : 50.0f;
-            return distSq <= maxDistSq ? heat : 0.0f;
+            return distSq <= maxDistSq ? Math.max(0.0f, heat - heatPenalty) : 0.0f;
         }
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !sheltered) ? 44 : 121;
-            if (hasCapacitor) maxDistSq *= 4;
+            int baseRadius = hasCapacitor ? 22 : 11;
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            baseRadius = Math.max(2, baseRadius - radiusPenalty);
+            int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 97.5f : 65.0f;
-            return distSq <= maxDistSq ? heat : 0.0f;
+            return distSq <= maxDistSq ? Math.max(0.0f, heat - heatPenalty) : 0.0f;
         }
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
-            int maxDistSq = (phase >= 5 && !sheltered) ? 71 : 196;
-            if (hasCapacitor) maxDistSq *= 4;
+            int baseRadius = hasCapacitor ? 28 : 14;
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            baseRadius = Math.max(2, baseRadius - radiusPenalty);
+            int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 120.0f : 80.0f;
-            return distSq <= maxDistSq ? heat : 0.0f;
+            return distSq <= maxDistSq ? Math.max(0.0f, heat - heatPenalty) : 0.0f;
         }
         return 0.0f;
     }

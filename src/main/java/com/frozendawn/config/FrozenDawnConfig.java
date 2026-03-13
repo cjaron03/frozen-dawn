@@ -30,6 +30,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue MOB_SPAWN_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
+    public static final ModConfigSpec.BooleanValue ENABLE_FROSTMITE;
     public static final ModConfigSpec.BooleanValue ENABLE_HOLLOW;
     public static final ModConfigSpec.BooleanValue ENABLE_RETURNED;
     public static final ModConfigSpec.BooleanValue ENABLE_MIMIC;
@@ -127,7 +128,7 @@ public class FrozenDawnConfig {
                         "Preset-managed: overwritten by /frozendawn preset command.")
                 .defineInRange("sanitySpeedMultiplier", 1.0, 0.0, 10.0);
         MOB_SPAWN_MULTIPLIER = BUILDER
-                .comment("Multiplier for hostile mob spawn rates (Frostbitten, Hollow, Returned).",
+                .comment("Multiplier for hostile mob spawn rates (Frostbitten, Frostmites, Hollow, Returned, Architect).",
                         "Preset-managed: overwritten by /frozendawn preset command.",
                         "Affects spawn chance and density caps. Higher = more frequent, larger groups.")
                 .defineInRange("mobSpawnMultiplier", 1.0, 0.0, 5.0);
@@ -135,6 +136,10 @@ public class FrozenDawnConfig {
                 .comment("Enable Frostbitten mob spawning in Phase 4+.",
                         "Reanimated frost-covered humanoids that emerge from frozen ground.")
                 .define("enableFrostbitten", true);
+        ENABLE_FROSTMITE = BUILDER
+                .comment("Enable Frostmite spawning and infestations in late phases.",
+                        "Tiny heat-draining ice parasites that swarm players and heaters.")
+                .define("enableFrostmite", true);
         ENABLE_HOLLOW = BUILDER
                 .comment("Enable Hollow mob spawning in Phase 5+.",
                         "Translucent vapor entities that suppress sound and entomb players in ice.")

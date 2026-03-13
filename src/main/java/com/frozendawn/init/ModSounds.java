@@ -64,6 +64,23 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostbitten.emerge")));
 
+    // --- Frostmite Mob ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_AMBIENT = SOUNDS.register("entity.frostmite.ambient",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostmite.ambient")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_HURT = SOUNDS.register("entity.frostmite.hurt",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostmite.hurt")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_DEATH = SOUNDS.register("entity.frostmite.death",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostmite.death")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_STEP = SOUNDS.register("entity.frostmite.step",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostmite.step")));
+
     // --- Hollow Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> HOLLOW_AMBIENT = SOUNDS.register("entity.hollow.ambient",
             () -> SoundEvent.createVariableRangeEvent(

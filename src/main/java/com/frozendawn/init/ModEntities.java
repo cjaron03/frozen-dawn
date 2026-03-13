@@ -1,6 +1,7 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HollowEntity;
@@ -34,6 +35,13 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("frostbitten"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<FrostmiteEntity>> FROSTMITE =
+            ENTITIES.register("frostmite", () -> EntityType.Builder
+                    .of(FrostmiteEntity::new, MobCategory.MONSTER)
+                    .sized(0.45f, 0.3f)
+                    .clientTrackingRange(8)
+                    .build("frostmite"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HollowEntity>> HOLLOW =
             ENTITIES.register("hollow", () -> EntityType.Builder

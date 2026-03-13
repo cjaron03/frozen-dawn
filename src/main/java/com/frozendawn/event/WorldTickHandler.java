@@ -12,12 +12,14 @@ import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.FrostbittenSpawner;
+import com.frozendawn.world.FrostmiteSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.HollowSpawner;
 import com.frozendawn.world.ArchitectSpawner;
@@ -77,6 +79,7 @@ public class WorldTickHandler {
         WeatherHandler.reset();
         NetherSeveranceHandler.reset();
         FrostbittenSpawner.reset();
+        FrostmiteSpawner.reset();
         HollowSpawner.reset();
         ReturnedSpawner.reset();
         MimicSpawner.reset();
@@ -146,6 +149,7 @@ public class WorldTickHandler {
         }
         SnowAccumulator.tick(overworld, currentPhase, progress);
         FrostbittenSpawner.tick(overworld, currentPhase, progress);
+        FrostmiteSpawner.tick(overworld, currentPhase, progress);
         HollowSpawner.tick(overworld, currentPhase, progress);
         ReturnedSpawner.tick(overworld, currentPhase, progress);
         MimicSpawner.tick(overworld, currentPhase, progress);
@@ -165,6 +169,7 @@ public class WorldTickHandler {
         if (FrozenDawnPhaseTracker.getPhase() < 4) return;
         if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         if (event.getEntity() instanceof FrostbittenEntity) return;
+        if (event.getEntity() instanceof FrostmiteEntity) return;
         if (event.getEntity() instanceof HollowEntity) return;
         if (event.getEntity() instanceof ReturnedEntity) return;
         if (event.getEntity() instanceof MimicEntity) return;
@@ -222,6 +227,9 @@ public class WorldTickHandler {
             PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(serverLevel.getServer());
             tracker.markRemoved(event.getPos());
             queueArchitectBreakUpdate(serverLevel, event.getPos());
+            if (event.getPlayer() instanceof ServerPlayer player) {
+                FrostmiteSpawner.trySpawnInfestedBreak(serverLevel, event.getPos(), serverLevel.getBlockState(event.getPos()), player);
+            }
         }
     }
 

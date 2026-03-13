@@ -117,6 +117,38 @@
       { "name": "minecraft:block.rooted_dirt.break", "type": "event" }
     ]
   },
+  "entity.frostmite.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostmite.ambient",
+    "sounds": [
+      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.55, "pitch": 0.62 },
+      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.45, "pitch": 0.54 }
+    ]
+  },
+  "entity.frostmite.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostmite.hurt",
+    "sounds": [
+      { "name": "minecraft:entity.silverfish.hurt", "type": "event", "volume": 0.65, "pitch": 0.60 },
+      { "name": "minecraft:block.glass.hit", "type": "event", "volume": 0.30, "pitch": 0.90 }
+    ]
+  },
+  "entity.frostmite.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostmite.death",
+    "sounds": [
+      { "name": "minecraft:entity.silverfish.death", "type": "event", "volume": 0.60, "pitch": 0.58 },
+      { "name": "minecraft:block.glass.break", "type": "event", "volume": 0.55, "pitch": 1.25 },
+      { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.60, "pitch": 0.88 }
+    ]
+  },
+  "entity.frostmite.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.frostmite.step",
+    "sounds": [
+      { "name": "minecraft:entity.silverfish.step", "type": "event", "volume": 0.18, "pitch": 0.72 }
+    ]
+  },
   "entity.hollow.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.hollow.ambient",
