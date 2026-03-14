@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": { "id": "minecraft:paper" },
+    "title": { "translate": "advancement.frozendawn.found_newspaper_weather.title" },
+    "description": { "translate": "advancement.frozendawn.found_newspaper_weather.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": { "trigger": "minecraft:impossible" }
+  }
+}

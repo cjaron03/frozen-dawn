@@ -61,6 +61,8 @@ public class MobFreezeHandler {
         // Skip entities that shouldn't be affected
         if (entity instanceof ArmorStand) return;
         if (entity.getType().is(EntityTypeTags.FREEZE_IMMUNE_ENTITY_TYPES)) return;
+        // "The Thing" easter egg — naming a mob "MacReady" makes it immune to freezing
+        if (isMacReady(entity)) return;
         if (isPlayer) {
             Player player = (Player) entity;
             if (player.isCreative() || player.isSpectator()) return;
@@ -262,6 +264,16 @@ public class MobFreezeHandler {
     /** Returns true if the player is wearing a full set of Acheronite armor. */
     public static boolean hasFullAcheronite(Player player) {
         return getFullSetTier(player) == 4;
+    }
+
+    /**
+     * "The Thing" easter egg — naming any mob "MacReady" with a name tag
+     * makes it immune to freezing. No tooltip, no advancement, no indication.
+     */
+    public static boolean isMacReady(Entity entity) {
+        if (entity instanceof Player) return false;
+        Component name = entity.getCustomName();
+        return name != null && "MacReady".equals(name.getString());
     }
 
     /** Returns true if the player has frostbite immunity (lined EVA chestplate or full Acheronite). */

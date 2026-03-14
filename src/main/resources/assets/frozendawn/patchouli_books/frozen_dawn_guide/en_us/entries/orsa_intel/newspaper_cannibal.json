@@ -1,0 +1,29 @@
+{
+  "name": "The Grandview Gazette",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:paper",
+  "sortnum": 10,
+  "advancement": "frozendawn:found_newspaper_cannibal",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THE GRANDVIEW GAZETTE",
+      "text": "$(bold)Vol. 47, No. 312$()$(br2)A 38-year-old Grandview woman was arrested yesterday after police discovered what officers described as \"a scene of significant concern\" in her Pine Street residence.$(br2)The welfare check was prompted by neighbors who reported a persistent odor emanating from the home for over a week."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Investigation Details",
+      "text": "Officers found evidence of what the department described as \"unlawful handling of human remains.\"$(br2)Neighbors described the suspect as \"sweet\" and \"always bringing food to the block parties.\"$(br2)Her single statement to officers: $(italic)\"Better have a full stomach before the snow falls!\"$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Casserole",
+      "text": "One neighbor, who asked to remain anonymous, told the Gazette:$(br2)$(italic)\"She brought us a casserole last week. I ate the whole thing. I've been trying not to think about that.\"$()$(br2)Remains of at least two individuals were found in a basement chest freezer."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Charges & Context",
+      "text": "The suspect has been charged with two counts of abuse of a corpse and one count of second-degree murder.$(br2)She was formerly employed as a line cook at the Grandview Diner, which closed in October due to \"challenging operating conditions.\"$(br2)Sources within the DA's office privately questioned whether the court system would still be operational by spring.$(br2)Temperatures in Grandview have not risen above -20\u00b0F in six weeks."
+    }
+  ]
+}

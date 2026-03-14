@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": { "id": "minecraft:ender_eye" },
+    "title": { "translate": "advancement.frozendawn.edge_of_space.title" },
+    "description": { "translate": "advancement.frozendawn.edge_of_space.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": { "trigger": "minecraft:impossible" }
+  }
+}

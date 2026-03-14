@@ -1,12 +1,7 @@
 package com.frozendawn.item;
 
-import com.frozendawn.FrozenDawn;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -38,24 +33,13 @@ public class ComfortItem extends Item {
     @Override
     public boolean onDroppedByPlayer(ItemStack item, Player player) {
         if (isWilson && player instanceof ServerPlayer serverPlayer) {
-            grantAdvancement(serverPlayer, "wilson_dropped");
+            // Don't grant advancement immediately — track the item entity and check
+            // if it enters lava. If it does, suppress "WILSON!" and schedule a
+            // delayed sanity whisper instead. See EasterEggHandler.
+            // The ItemEntity hasn't been created yet at this point, so we need to
+            // defer tracking via an entity join event in EasterEggHandler.
+            serverPlayer.getPersistentData().putBoolean("frozendawn:wilson_just_dropped", true);
         }
         return super.onDroppedByPlayer(item, player);
-    }
-
-    private static void grantAdvancement(ServerPlayer player, String name) {
-        MinecraftServer server = player.getServer();
-        if (server == null) return;
-
-        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name);
-        AdvancementHolder holder = server.getAdvancements().get(loc);
-        if (holder == null) return;
-
-        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
-        if (!progress.isDone()) {
-            for (String criterion : progress.getRemainingCriteria()) {
-                player.getAdvancements().award(holder, criterion);
-            }
-        }
     }
 }

@@ -12,6 +12,14 @@
     "frozendawn:lore_vasik_log_mineshaft",
     "frozendawn:lore_vasik_log_ancient_city",
     "frozendawn:lore_incident_report_stronghold",
-    "frozendawn:lore_incident_report_end_city"
+    "frozendawn:lore_incident_report_end_city",
+    "frozendawn:lore_newspaper_cannibal",
+    "frozendawn:lore_newspaper_cannibal_snowy",
+    "frozendawn:lore_newspaper_conspiracy",
+    "frozendawn:lore_newspaper_conspiracy_library",
+    "frozendawn:lore_newspaper_weather",
+    "frozendawn:lore_newspaper_weather_pillager",
+    "frozendawn:lore_newspaper_missing",
+    "frozendawn:lore_newspaper_missing_savanna"
   ]
 }

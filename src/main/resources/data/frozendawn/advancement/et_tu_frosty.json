@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": { "id": "minecraft:snowball" },
+    "title": { "translate": "advancement.frozendawn.et_tu_frosty.title" },
+    "description": { "translate": "advancement.frozendawn.et_tu_frosty.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": { "trigger": "minecraft:impossible" }
+  }
+}

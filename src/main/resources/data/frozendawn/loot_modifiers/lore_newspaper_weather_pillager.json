@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/pillager_outpost"
+    }
+  ],
+  "doc_type": "newspaper_weather",
+  "display_name": "Faded Weather Page",
+  "chance": 0.12
+}

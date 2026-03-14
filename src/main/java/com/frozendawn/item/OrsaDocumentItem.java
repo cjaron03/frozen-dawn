@@ -59,10 +59,15 @@ public class OrsaDocumentItem extends Item {
                                     false);
                         }
                     }
+                    // News bulletins — civilian journalism, no classified_information
+                    case "newspaper_cannibal" -> grantAdvancement(serverPlayer, "found_newspaper_cannibal");
+                    case "newspaper_conspiracy" -> grantAdvancement(serverPlayer, "found_newspaper_conspiracy");
+                    case "newspaper_weather" -> grantAdvancement(serverPlayer, "found_newspaper_weather");
+                    case "newspaper_missing" -> grantAdvancement(serverPlayer, "found_newspaper_missing");
                 }
 
-                // Grant general classified_information for ORSA-authored docs
-                if (!docType.equals("villager_journal")) {
+                // Grant general classified_information for ORSA-authored docs only
+                if (!docType.equals("villager_journal") && !docType.startsWith("newspaper_")) {
                     grantAdvancement(serverPlayer, "classified_information");
                 }
 

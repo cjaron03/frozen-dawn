@@ -1,0 +1,29 @@
+{
+  "name": "The Northern Star Independent",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:paper",
+  "sortnum": 11,
+  "advancement": "frozendawn:found_newspaper_conspiracy",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "THE NORTHERN STAR",
+      "text": "$(bold)\"The News They Won't Print\"$()$(br)$(italic)Issue #204 (Final)$()$(br2)Editor's Note:$(br2)This is the final issue of The Northern Star Independent. Our printing equipment is frozen solid. I am writing this by hand and will photocopy it at the library, assuming the library still has power."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "11 Years of Warnings",
+      "text": "For eleven years I have published warnings about solar instability and orbital drift. I published 204 issues of this newsletter.$(br2)I was called a \"dangerous crank\" by a planetary scientist on television. My hard drive was wiped during a DHS visit. My subscriber count dropped from 43 to 12.$(br2)In 2013, NASA quietly revised their orbital mechanics dataset. The revision was consistent with everything I had published since 2003."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Truth Mattered",
+      "text": "$(italic)I am not writing this to gloat. I am writing this because the truth mattered to me more than anything else in my life, and I need it written down somewhere that I was right.$(br2)Even if no one reads it.$(br2)Especially if no one reads it.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cessation Notice",
+      "text": "$(italic)The Northern Star Independent is ceasing publication.$(br2)Not because I have nothing left to say, but because the ink is freezing in the pen.$()"
+    }
+  ]
+}

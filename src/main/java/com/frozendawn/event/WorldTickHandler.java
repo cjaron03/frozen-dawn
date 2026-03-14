@@ -84,6 +84,7 @@ public class WorldTickHandler {
         ReturnedSpawner.reset();
         MimicSpawner.reset();
         ArchitectSpawner.reset();
+        EasterEggHandler.reset();
     }
 
     @SubscribeEvent
@@ -156,6 +157,13 @@ public class WorldTickHandler {
         ArchitectSpawner.tick(overworld, currentPhase, progress);
 
         flushPendingArchitectBreakUpdates(server);
+
+        // Easter egg delayed sounds (every tick)
+        EasterEggHandler.tickDelayedSounds(server);
+        // Easter egg Wilson drop tracking (every 20 ticks)
+        if (tick % 20 == 0) {
+            EasterEggHandler.tickWilsonDrops(server);
+        }
 
         // Prune player-placed block tracker periodically
         PlayerPlacedBlockTracker.get(server).prune(overworld);

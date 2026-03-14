@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/village/village_snowy_house"
+    }
+  ],
+  "doc_type": "newspaper_cannibal",
+  "display_name": "Tattered Newspaper Clipping",
+  "chance": 0.15
+}

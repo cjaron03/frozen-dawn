@@ -1,0 +1,24 @@
+{
+  "name": "Grandview Missing Persons",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:paper",
+  "sortnum": 13,
+  "advancement": "frozendawn:found_newspaper_missing",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "MISSING PERSONS",
+      "text": "$(bold)GRANDVIEW COMMUNITY BOARD$()$(br)$(bold)MISSING PERSONS \u2014 ACTIVE CASES$()$(br2)26 names listed. Highlights follow.$(br2)$(bold)Sarah & Emma Delvecchio$()$(br)Car found on I-91 with full tank, both doors open. No footprints in the surrounding snow."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "More Cases",
+      "text": "$(bold)The Kowalski Family$() (4 members)$(br)Residence empty. Dinner on the table. Dinner frozen solid. No note.$(br2)$(bold)Officer Dale Wyatt$()$(br)Patrol vehicle found idling on Route 7. Radio on. Coffee in the cupholder. Officer Wyatt was not in the vehicle.$(br2)$(bold)Rev. Patricia Solomon$()$(br)Note found on pulpit: $(italic)\"I'm sorry. I don't think He's listening anymore.\"$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Going South",
+      "text": "Multiple families left notes reading $(italic)\"Going south.\"$()$(br2)Roads south have been impassable since January 8.$(br2)$(italic)[Handwritten at the bottom of the flyer:]$()$(br2)$(bold)There are 26 names on this board. There were 4,200 people in this town.$()$(br2)GPD non-emergency line estimated wait time: 4 hours."
+    }
+  ]
+}

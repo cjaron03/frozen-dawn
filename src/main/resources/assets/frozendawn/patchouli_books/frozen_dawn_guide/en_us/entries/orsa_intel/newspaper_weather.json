@@ -1,0 +1,24 @@
+{
+  "name": "Channel 9 Weather",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:paper",
+  "sortnum": 12,
+  "advancement": "frozendawn:found_newspaper_weather",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "CHANNEL 9 FIRST ALERT",
+      "text": "$(bold)CHANNEL 9 FIRST ALERT WEATHER$()$(br2)Chief Meteorologist Patti Langmore's final forecast.$(br2)$(bold)Today:$() High of -37\u00b0F. Winds 45 mph, gusting to 70.$(br2)For reference, the record low for this date was -12\u00b0F, set in 1987.$(br2)$(italic)\"So we are just SHATTERING that.\"$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Nitrogen Precipitation",
+      "text": "Patti also mentioned \"nitrogen precipitation,\" which she described as \"apparently a thing that can happen now.\"$(br2)$(bold)Model Comparison:$()$(br)$(li)European model shows return to seasonal norms$(li)GFS shows decline to -60\u00b0F$(li)Canadian model stopped updating three days ago$(br2)$(italic)\"I'm going with the European model because it makes me feel better.\"$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Technical Difficulties",
+      "text": "$(bold)Server Note:$()$(br2)$(italic)\"Our servers are in the basement and the basement flooded and then the flood froze. IT is working on it.\"$()$(br2)This was the final Channel 9 weather broadcast. The station lost power the following morning."
+    }
+  ]
+}

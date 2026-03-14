@@ -1,6 +1,7 @@
 package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.HolderLookup;
@@ -9,6 +10,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+
+import java.util.Locale;
 
 /**
  * Persistent world data tracking the apocalypse progression.
@@ -19,10 +22,16 @@ public class ApocalypseState extends SavedData {
 
     private long apocalypseTicks;
     private boolean initialized;
+    private String presetName = "default";
+
+    /** Transient — tracks whether we've applied the stored preset this session. */
+    private transient boolean presetAppliedThisSession;
 
     public ApocalypseState() {
         this.apocalypseTicks = 0;
         this.initialized = false;
+        this.presetName = "default";
+        this.presetAppliedThisSession = false;
     }
 
     /**
@@ -46,6 +55,10 @@ public class ApocalypseState extends SavedData {
         }
         state.apocalypseTicks = ticks;
         state.initialized = tag.getBoolean("initialized");
+        if (tag.contains("presetName")) {
+            state.presetName = tag.getString("presetName");
+        }
+        state.presetAppliedThisSession = false;
         return state;
     }
 
@@ -53,6 +66,7 @@ public class ApocalypseState extends SavedData {
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putLong("apocalypseTicks", apocalypseTicks);
         tag.putBoolean("initialized", initialized);
+        tag.putString("presetName", presetName);
         return tag;
     }
 
@@ -63,6 +77,8 @@ public class ApocalypseState extends SavedData {
         ServerLevel overworld = server.overworld();
         if (!initialized) {
             initialized = true;
+            // New world — apply DEFAULT preset so previous world's preset doesn't bleed over
+            applyStoredPreset();
             // Apply starting day offset from config
             int startDay = FrozenDawnConfig.STARTING_DAY.get();
             if (startDay > 0 && overworld.getDayTime() < (long) startDay * 24000L) {
@@ -70,6 +86,9 @@ public class ApocalypseState extends SavedData {
                 FrozenDawn.LOGGER.info("Apocalypse fast-forwarded to day {}", startDay);
             }
             setDirty();
+        } else if (!presetAppliedThisSession) {
+            // Existing world loaded — re-apply the stored preset to the global config
+            applyStoredPreset();
         }
 
         if (!FrozenDawnConfig.PAUSE_PROGRESSION.get()) {
@@ -77,6 +96,36 @@ public class ApocalypseState extends SavedData {
             apocalypseTicks = overworld.getDayTime();
         }
         // When paused, apocalypseTicks stays frozen at the last value
+    }
+
+    /**
+     * Apply the stored preset name to the global config.
+     */
+    private void applyStoredPreset() {
+        presetAppliedThisSession = true;
+        try {
+            ConfigPresets preset = ConfigPresets.valueOf(presetName.toUpperCase(Locale.ROOT));
+            preset.apply();
+            FrozenDawn.LOGGER.info("Applied stored preset '{}' for this world", presetName);
+        } catch (IllegalArgumentException e) {
+            // Unknown preset name (custom or corrupted) — leave config as-is
+            FrozenDawn.LOGGER.warn("Unknown stored preset '{}', leaving config unchanged", presetName);
+        }
+    }
+
+    // --- Preset ---
+
+    public String getPresetName() {
+        return presetName;
+    }
+
+    /**
+     * Store the preset name in world data. Called when /frozendawn preset is used.
+     */
+    public void setPresetName(String name) {
+        this.presetName = name.toLowerCase(Locale.ROOT);
+        this.presetAppliedThisSession = true;
+        setDirty();
     }
 
     // --- Getters ---

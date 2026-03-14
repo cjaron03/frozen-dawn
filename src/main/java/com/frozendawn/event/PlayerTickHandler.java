@@ -146,6 +146,8 @@ final class PlayerTickHandler {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
+                // Easter egg per-player tick checks (fires in all game modes)
+                EasterEggHandler.tickPerPlayer(player, currentPhase, progress);
             }
         }
     }

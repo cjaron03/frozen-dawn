@@ -351,5 +351,34 @@
   "death.attack.frozendawn.architect": "%1$s was disassembled by a Returned Architect",
 
   "advancement.frozendawn.disassembled.title": "Disassembled",
-  "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose."
+  "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose.",
+
+  "advancement.frozendawn.found_newspaper_cannibal.title": "Local News",
+  "advancement.frozendawn.found_newspaper_cannibal.description": "Find a tattered newspaper clipping. Some stories age poorly.",
+  "advancement.frozendawn.found_newspaper_conspiracy.title": "He Was Right",
+  "advancement.frozendawn.found_newspaper_conspiracy.description": "Find a crumpled newsletter page. 204 issues. 12 subscribers.",
+  "advancement.frozendawn.found_newspaper_weather.title": "Final Forecast",
+  "advancement.frozendawn.found_newspaper_weather.description": "Find a faded weather page. She went with the European model.",
+  "advancement.frozendawn.found_newspaper_missing.title": "4,200 People",
+  "advancement.frozendawn.found_newspaper_missing.description": "Find a torn community board flyer. 26 names on the board.",
+
+  "advancement.frozendawn.et_tu_frosty.title": "Et Tu, Frosty?",
+  "advancement.frozendawn.et_tu_frosty.description": "He was never on your side.",
+  "advancement.frozendawn.edge_of_space.title": "Edge of Space",
+  "advancement.frozendawn.edge_of_space.description": "One small step.",
+  "advancement.frozendawn.stubborn.title": "Stubborn",
+  "advancement.frozendawn.stubborn.description": "The simulation didn't account for this.",
+  "advancement.frozendawn.how.title": "How.",
+  "advancement.frozendawn.how.description": "No, seriously. How.",
+
+  "message.frozendawn.ee.fridge": "At least the beer's cold.",
+  "message.frozendawn.ee.torch": "That's not going to help.",
+  "message.frozendawn.ee.this_is_fine": "This is fine.",
+  "message.frozendawn.ee.bed_wake": "It didn't get warmer.",
+  "message.frozendawn.ee.karman": "The Karman line is lower than you'd think.",
+  "message.frozendawn.ee.stubborn": "You weren't supposed to survive this long.",
+  "message.frozendawn.ee.how": "How.",
+  "message.frozendawn.ee.fire_safety": "ORSA Fire Safety Division would like a word.",
+  "message.frozendawn.ee.lovecraft": "Ph'nglui mglw'nafh.",
+  "message.frozendawn.ee.eyes_up": "Eyes up."
 }

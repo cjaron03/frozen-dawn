@@ -221,6 +221,7 @@ public class FrozenDawnCommand {
         }
 
         preset.apply();
+        state.setPresetName(preset.name());
         persistConfigOverrides();
         syncToClients(state, server);
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.preset.applied",

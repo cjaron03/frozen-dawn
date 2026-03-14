@@ -1,0 +1,12 @@
+{
+  "type": "frozendawn:lore_book",
+  "conditions": [
+    {
+      "condition": "neoforge:loot_table_id",
+      "loot_table_id": "minecraft:chests/abandoned_mineshaft"
+    }
+  ],
+  "doc_type": "newspaper_conspiracy",
+  "display_name": "Crumpled Newsletter Page",
+  "chance": 0.12
+}

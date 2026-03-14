@@ -1,0 +1,14 @@
+{
+  "name": "\u00a7cRECALLED \u2014 PSB-2042-07",
+  "category": "frozendawn:orsa_intel",
+  "icon": "minecraft:barrier",
+  "sortnum": 4,
+  "advancement": "frozendawn:phase4",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "DOCUMENT RECALL NOTICE",
+      "text": "$(#c00)$(bold)ORSA DOCUMENT RECALL$()$(br2)$(#c00)Document: PSB-2042-07$()$(br)$(#c00)\"Staying Safe in a Changing Climate\"$()$(br2)This document has been recalled.$(br2)The information contained in the ORSA Public Safety Bulletin is no longer accurate. Surface conditions have exceeded all projected models.$(br2)$(italic)There are no updated safety guidelines.$()"
+    }
+  ]
+}
