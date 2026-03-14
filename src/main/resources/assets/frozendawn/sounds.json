@@ -310,6 +310,159 @@
       { "name": "minecraft:block.glass.place", "type": "event", "volume": 0.3, "pitch": 1.5 }
     ]
   },
+  "music.menu": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/menu_music",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.moog_city_2": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/menu/moog_city_2",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.mutation": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/menu/mutation",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.dreiton": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/creative/dreiton",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.haunt_muskie": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/creative/haunt_muskie",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.taswell": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/creative/taswell",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.clark": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/clark",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.dry_hands": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/dry_hands",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.living_mice": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/living_mice",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.mice_on_venus": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/mice_on_venus",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.minecraft": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/minecraft",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.one_more_day": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/one_more_day",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.oxygene": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/oxygene",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.subwoofer_lullaby": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/subwoofer_lullaby",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.sweden": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/sweden",
+        "stream": true
+      }
+    ]
+  },
+  "music.sad.wet_hands": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "minecraft:music/game/wet_hands",
+        "stream": true
+      }
+    ]
+  },
+  "music.phase4_guest_1": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/phase4_guest_1",
+        "stream": true
+      }
+    ]
+  },
   "entity.architect.land": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.land",

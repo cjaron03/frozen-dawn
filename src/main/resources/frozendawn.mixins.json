@@ -8,9 +8,19 @@
     "IceBlockMixin"
   ],
   "client": [
+    "DisplayWindowMixin",
+    "GenericMessageScreenMixin",
     "LevelRendererMixin",
     "HumanoidArmorLayerMixin",
-    "GameRendererAccessor"
+    "GameRendererAccessor",
+    "TitleScreenMixin",
+    "LoadingOverlayMixin",
+    "LogoRendererMixin",
+    "MusicManagerMixin",
+    "SplashManagerMixin",
+    "ReceivingLevelScreenMixin",
+    "ScreenMixin",
+    "NeoForgeLoadingOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

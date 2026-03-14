@@ -11,6 +11,11 @@ public class ModSounds {
     public static final DeferredRegister<SoundEvent> SOUNDS =
             DeferredRegister.create(Registries.SOUND_EVENT, FrozenDawn.MOD_ID);
 
+    private static DeferredHolder<SoundEvent, SoundEvent> register(String id) {
+        return SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
+    }
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));
@@ -42,6 +47,29 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_THUD = SOUNDS.register("ambient.sanity_thud",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.sanity_thud")));
+
+    // --- Menu Music ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> MENU_MUSIC = SOUNDS.register("music.menu",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "music.menu")));
+
+    // Curated melancholy gameplay music.
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MOOG_CITY_2 = register("music.sad.moog_city_2");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MUTATION = register("music.sad.mutation");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_DREITON = register("music.sad.dreiton");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_HAUNT_MUSKIE = register("music.sad.haunt_muskie");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_TASWELL = register("music.sad.taswell");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_CLARK = register("music.sad.clark");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_DRY_HANDS = register("music.sad.dry_hands");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_LIVING_MICE = register("music.sad.living_mice");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MICE_ON_VENUS = register("music.sad.mice_on_venus");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MINECRAFT = register("music.sad.minecraft");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_ONE_MORE_DAY = register("music.sad.one_more_day");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_OXYGENE = register("music.sad.oxygene");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_SUBWOOFER_LULLABY = register("music.sad.subwoofer_lullaby");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_SWEDEN = register("music.sad.sweden");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAD_WET_HANDS = register("music.sad.wet_hands");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PHASE4_GUEST_1 = register("music.phase4_guest_1");
 
     // --- Frostbitten Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> FROSTBITTEN_AMBIENT = SOUNDS.register("entity.frostbitten.ambient",
