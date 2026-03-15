@@ -1,6 +1,7 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.event.StarterBooks;
 import com.frozendawn.item.AcheroniteCompassItem;
 import com.frozendawn.item.AcheronitePickaxeItem;
 import com.frozendawn.item.AcheroniteShardItem;
@@ -289,6 +290,10 @@ public class ModItems {
                         output.accept(FROZEN_HEART.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
+                        ItemStack guideBook = StarterBooks.createGuideBook();
+                        if (guideBook != null) {
+                            output.accept(guideBook);
+                        }
                         output.accept(O2_TANK.get());
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());

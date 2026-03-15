@@ -1,5 +1,6 @@
 package com.frozendawn.mixin;
 
+import com.frozendawn.client.MenuTheme;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,6 +45,8 @@ public class LogoRendererMixin {
                 ? LogoRenderer.EASTER_EGG_LOGO
                 : LogoRenderer.MINECRAFT_LOGO;
         graphics.blit(logo, logoX, y, 0.0F, 0.0F, 256, 44, 256, 64);
+
+        MenuTheme.renderLogoSnowCollision(graphics, logoX, y, effectiveAlpha);
 
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
 
