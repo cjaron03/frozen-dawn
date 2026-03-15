@@ -1,0 +1,59 @@
+{
+  "ambientocclusion": false,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "minecraft:block/snow",
+    "snow": "minecraft:block/snow",
+    "crystal": "frozendawn:block/acheronite_crystal_2"
+  },
+  "elements": [
+    {
+      "from": [1, 0, 1],
+      "to": [15, 15, 15],
+      "faces": {
+        "down": { "uv": [1, 1, 15, 15], "texture": "#snow" },
+        "up": { "uv": [1, 1, 15, 15], "texture": "#snow" },
+        "north": { "uv": [1, 1, 15, 16], "texture": "#snow" },
+        "south": { "uv": [1, 1, 15, 16], "texture": "#snow" },
+        "west": { "uv": [1, 1, 15, 16], "texture": "#snow" },
+        "east": { "uv": [1, 1, 15, 16], "texture": "#snow" }
+      }
+    },
+    {
+      "from": [7, 6, 6],
+      "to": [9, 16, 10],
+      "faces": {
+        "down": { "uv": [6, 6, 10, 8], "texture": "#crystal" },
+        "up": { "uv": [6, 0, 10, 4], "texture": "#crystal" },
+        "north": { "uv": [6, 6, 10, 16], "texture": "#crystal" },
+        "south": { "uv": [6, 6, 10, 16], "texture": "#crystal" },
+        "west": { "uv": [6, 6, 10, 16], "texture": "#crystal" },
+        "east": { "uv": [6, 6, 10, 16], "texture": "#crystal" }
+      }
+    },
+    {
+      "from": [5, 8, 7],
+      "to": [11, 13, 9],
+      "faces": {
+        "down": { "uv": [4, 8, 12, 10], "texture": "#crystal" },
+        "up": { "uv": [4, 0, 12, 2], "texture": "#crystal" },
+        "north": { "uv": [4, 8, 12, 13], "texture": "#crystal" },
+        "south": { "uv": [4, 8, 12, 13], "texture": "#crystal" },
+        "west": { "uv": [4, 8, 12, 13], "texture": "#crystal" },
+        "east": { "uv": [4, 8, 12, 13], "texture": "#crystal" }
+      }
+    },
+    {
+      "from": [8, 9, 8],
+      "to": [12, 14, 12],
+      "faces": {
+        "down": { "uv": [8, 9, 12, 13], "texture": "#crystal" },
+        "up": { "uv": [8, 0, 12, 4], "texture": "#crystal" },
+        "north": { "uv": [8, 9, 12, 14], "texture": "#crystal" },
+        "south": { "uv": [8, 9, 12, 14], "texture": "#crystal" },
+        "west": { "uv": [8, 9, 12, 14], "texture": "#crystal" },
+        "east": { "uv": [8, 9, 12, 14], "texture": "#crystal" }
+      }
+    }
+  ]
+}

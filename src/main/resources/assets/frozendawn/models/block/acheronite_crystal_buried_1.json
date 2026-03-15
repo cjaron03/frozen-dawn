@@ -1,0 +1,47 @@
+{
+  "ambientocclusion": false,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "minecraft:block/snow",
+    "snow": "minecraft:block/snow",
+    "crystal": "frozendawn:block/acheronite_crystal_1"
+  },
+  "elements": [
+    {
+      "from": [1, 0, 1],
+      "to": [15, 14, 15],
+      "faces": {
+        "down": { "uv": [1, 1, 15, 15], "texture": "#snow" },
+        "up": { "uv": [1, 1, 15, 15], "texture": "#snow" },
+        "north": { "uv": [1, 2, 15, 16], "texture": "#snow" },
+        "south": { "uv": [1, 2, 15, 16], "texture": "#snow" },
+        "west": { "uv": [1, 2, 15, 16], "texture": "#snow" },
+        "east": { "uv": [1, 2, 15, 16], "texture": "#snow" }
+      }
+    },
+    {
+      "from": [7, 9, 6],
+      "to": [9, 16, 10],
+      "faces": {
+        "down": { "uv": [6, 9, 10, 11], "texture": "#crystal" },
+        "up": { "uv": [6, 0, 10, 4], "texture": "#crystal" },
+        "north": { "uv": [6, 9, 10, 16], "texture": "#crystal" },
+        "south": { "uv": [6, 9, 10, 16], "texture": "#crystal" },
+        "west": { "uv": [6, 9, 10, 16], "texture": "#crystal" },
+        "east": { "uv": [6, 9, 10, 16], "texture": "#crystal" }
+      }
+    },
+    {
+      "from": [6, 10, 7],
+      "to": [10, 13, 9],
+      "faces": {
+        "down": { "uv": [6, 10, 10, 12], "texture": "#crystal" },
+        "up": { "uv": [6, 0, 10, 2], "texture": "#crystal" },
+        "north": { "uv": [6, 10, 10, 13], "texture": "#crystal" },
+        "south": { "uv": [6, 10, 10, 13], "texture": "#crystal" },
+        "west": { "uv": [6, 10, 10, 13], "texture": "#crystal" },
+        "east": { "uv": [6, 10, 10, 13], "texture": "#crystal" }
+      }
+    }
+  ]
+}

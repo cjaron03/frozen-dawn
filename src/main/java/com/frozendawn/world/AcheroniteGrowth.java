@@ -39,7 +39,6 @@ public final class AcheroniteGrowth {
     private static final float P6_FORMATION_CHANCE = 0.06f;   // 6% — landscape fills in
     private static final int P6_GROWTH_CHECKS = 20;
     private static final float P6_GROWTH_CHANCE = 0.35f;      // fast growth
-
     public static void tick(ServerLevel level, int phase, float progress, int currentDay, int totalDays) {
         if (phase < 5) return;
 
@@ -75,20 +74,23 @@ public final class AcheroniteGrowth {
                     // Check air above for crystal placement
                     BlockPos crystalPos = mutable.above();
                     BlockState aboveState = level.getBlockState(crystalPos);
-                    if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW)) break;
+                    if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
+                        break;
+                    }
 
                     float temp = TemperatureManager.getTemperatureAt(level, crystalPos, currentDay, totalDays);
                     if (temp > FORMATION_TEMP_THRESHOLD) break;
                     if (random.nextFloat() >= formationChance) break;
 
-                    // Clear snow at crystal position if needed, then place
-                    if (aboveState.is(Blocks.SNOW)) {
+                    boolean buried = aboveState.is(Blocks.SNOW) || aboveState.is(Blocks.SNOW_BLOCK);
+
+                    if (buried) {
                         level.destroyBlock(crystalPos, false);
                     }
                     level.setBlock(crystalPos,
                             ModBlocks.ACHERONITE_CRYSTAL.get().defaultBlockState()
-                                    .setValue(AcheroniteCrystalBlock.AGE, 0), 3);
-                    clearSnowAround(level, crystalPos, 2);
+                                    .setValue(AcheroniteCrystalBlock.AGE, 0)
+                                    .setValue(AcheroniteCrystalBlock.BURIED, buried), 3);
                     break;
                 }
             }
@@ -113,7 +115,8 @@ public final class AcheroniteGrowth {
 
                 level.setBlock(mutable.immutable(),
                         ModBlocks.ACHERONITE_CRYSTAL.get().defaultBlockState()
-                                .setValue(AcheroniteCrystalBlock.AGE, 0), 3);
+                                .setValue(AcheroniteCrystalBlock.AGE, 0)
+                                .setValue(AcheroniteCrystalBlock.BURIED, false), 3);
             }
 
             // Surface growth: scan down from heightmap to find existing crystals
@@ -133,6 +136,13 @@ public final class AcheroniteGrowth {
                     }
 
                     int age = state.getValue(AcheroniteCrystalBlock.AGE);
+                    boolean buried = state.getValue(AcheroniteCrystalBlock.BURIED);
+                    if (buried && !AcheroniteCrystalBlock.hasSnowCover(level, mutable)) {
+                        state = state.setValue(AcheroniteCrystalBlock.BURIED, false);
+                        level.setBlock(mutable.immutable(), state, 3);
+                        buried = false;
+                    }
+
                     if (age >= 3) break;
 
                     float temp = TemperatureManager.getTemperatureAt(level, mutable, currentDay, totalDays);
@@ -140,27 +150,18 @@ public final class AcheroniteGrowth {
                     if (random.nextFloat() >= growthChance) break;
 
                     BlockPos crystalPos = mutable.immutable();
-                    level.setBlock(crystalPos,
-                            state.setValue(AcheroniteCrystalBlock.AGE, age + 1), 3);
-                    clearSnowAround(level, crystalPos, 2);
-                    break;
-                }
-            }
-        }
-    }
+                    int nextAge = Math.min(3, age + 1);
+                    BlockState nextState = buried
+                            ? state.setValue(AcheroniteCrystalBlock.AGE, nextAge)
+                                    .setValue(AcheroniteCrystalBlock.BURIED, nextAge < 3)
+                            : state.setValue(AcheroniteCrystalBlock.AGE, nextAge);
 
-    /** Clears snow layers and snow blocks within a horizontal radius around a crystal. */
-    private static void clearSnowAround(ServerLevel level, BlockPos center, int radius) {
-        BlockPos.MutableBlockPos check = new BlockPos.MutableBlockPos();
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                // Check at crystal Y and one above (snow could be at either level)
-                for (int dy = 0; dy <= 1; dy++) {
-                    check.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                    BlockState s = level.getBlockState(check);
-                    if (s.is(Blocks.SNOW) || s.is(Blocks.SNOW_BLOCK)) {
-                        level.destroyBlock(check.immutable(), false);
+                    if (nextAge == 3 && buried && promoteMatureCrystal(level, crystalPos, nextState)) {
+                        break;
                     }
+
+                    level.setBlock(crystalPos, nextState, 3);
+                    break;
                 }
             }
         }
@@ -172,5 +173,35 @@ public final class AcheroniteGrowth {
                 || state.is(ModBlocks.FROZEN_OBSIDIAN.get())
                 || state.is(Blocks.BLUE_ICE)
                 || state.is(Blocks.PACKED_ICE);
+    }
+
+    private static boolean promoteMatureCrystal(ServerLevel level, BlockPos crystalPos, BlockState matureState) {
+        int currentDepth = AcheroniteCrystalBlock.getSnowSupportDepth(level, crystalPos);
+        int desiredDepth = Math.min(
+                3,
+                SnowAccumulator.getLocalSnowDepthForCrystal(level, crystalPos)
+        );
+        if (currentDepth >= desiredDepth) {
+            return false;
+        }
+
+        BlockPos currentPos = crystalPos;
+        while (currentDepth < desiredDepth) {
+            BlockPos abovePos = currentPos.above();
+            BlockState aboveState = level.getBlockState(abovePos);
+            if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
+                return false;
+            }
+
+            if (!aboveState.isAir()) {
+                level.destroyBlock(abovePos, false);
+            }
+
+            level.setBlock(currentPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
+            level.setBlock(abovePos, matureState.setValue(AcheroniteCrystalBlock.BURIED, false), 3);
+            currentPos = abovePos;
+            currentDepth++;
+        }
+        return true;
     }
 }

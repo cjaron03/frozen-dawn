@@ -402,6 +402,9 @@ public final class SurveyorLensVision {
                         case 2 -> 1.08F;
                         default -> 1.32F;
                     };
+                    if (state.getValue(AcheroniteCrystalBlock.BURIED)) {
+                        strength += 0.14F;
+                    }
                     addColdAnchor(anchors, mutablePos, strength);
                 }
             }

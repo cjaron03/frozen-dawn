@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
@@ -26,6 +27,8 @@ public final class SnowAccumulator {
     private static final int RADIUS = 64;
     /** Max snow block stacking depth (3 blocks = player height). */
     private static final int MAX_SNOW_BLOCK_DEPTH = 3;
+    /** Acheronite should protrude through the drift instead of riding the full snow cap. */
+    private static final int MAX_ACHERONITE_SNOW_SUPPORT_DEPTH = 2;
 
     public static void tick(ServerLevel level, int phase, float progress) {
         if (phase < 2) return;
@@ -87,6 +90,11 @@ public final class SnowAccumulator {
                 BlockPos snowPos = mutable.immutable();
                 BlockState at = level.getBlockState(snowPos);
                 BlockFreezer.refreshStructuralStress(level, groundPos, phase, progress);
+
+                if (at.is(ModBlocks.ACHERONITE_CRYSTAL.get())) {
+                    accumulateOnAcheronite(level, snowPos, at);
+                    continue;
+                }
 
                 if (at.is(Blocks.SNOW)) {
                     int layers = at.getValue(SnowLayerBlock.LAYERS);
@@ -158,26 +166,86 @@ public final class SnowAccumulator {
             return false;
         }
 
-        // Don't bury acheronite crystals — check block below and nearby
+        // Keep snow from replacing a crystal directly, but allow it to build around them.
         if (below.is(ModBlocks.ACHERONITE_CRYSTAL.get())) return false;
-        if (hasCrystalNearby(level, belowPos, 2)) return false;
 
         return SurfaceColumnScanner.canSupportSnow(level, belowPos, below);
     }
 
-    /** Check if there's an acheronite crystal within the given horizontal radius. */
-    private static boolean hasCrystalNearby(ServerLevel level, BlockPos pos, int radius) {
-        BlockPos.MutableBlockPos check = new BlockPos.MutableBlockPos();
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    check.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
-                    if (level.getBlockState(check).is(ModBlocks.ACHERONITE_CRYSTAL.get())) {
-                        return true;
-                    }
-                }
+    private static void accumulateOnAcheronite(ServerLevel level, BlockPos crystalPos, BlockState crystalState) {
+        BlockPos currentPos = crystalPos;
+        BlockState currentState = crystalState;
+
+        int currentDepth = AcheroniteCrystalBlock.getSnowSupportDepth(level, currentPos);
+        int maxSupportDepth = currentState.getValue(AcheroniteCrystalBlock.AGE) >= 3
+                ? MAX_SNOW_BLOCK_DEPTH
+                : MAX_ACHERONITE_SNOW_SUPPORT_DEPTH;
+        int targetDepth = Math.min(maxSupportDepth, getLocalSnowDepthForCrystal(level, currentPos));
+        while (currentDepth > targetDepth) {
+            BlockPos loweredPos = currentPos.below();
+            BlockState loweredState = level.getBlockState(loweredPos);
+            if (!loweredState.is(Blocks.SNOW_BLOCK)) {
+                break;
             }
+
+            level.setBlock(currentPos, Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(loweredPos, currentState, 3);
+            currentPos = loweredPos;
+            currentState = level.getBlockState(currentPos);
+            currentDepth--;
         }
-        return false;
+
+        while (currentDepth < targetDepth) {
+            BlockPos nextPos = currentPos.above();
+            BlockState aboveState = level.getBlockState(nextPos);
+            if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
+                break;
+            }
+
+            if (!aboveState.isAir()) {
+                level.destroyBlock(nextPos, false);
+            }
+
+            level.setBlock(currentPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
+            BlockState liftedState = currentState.setValue(
+                    AcheroniteCrystalBlock.BURIED,
+                    currentState.getValue(AcheroniteCrystalBlock.AGE) < 3
+            );
+            level.setBlock(nextPos, liftedState, 3);
+            currentPos = nextPos;
+            currentState = level.getBlockState(currentPos);
+            currentDepth++;
+        }
+
+        boolean shouldBeBuried = currentState.getValue(AcheroniteCrystalBlock.AGE) < 3
+                && (currentDepth > 0 || AcheroniteCrystalBlock.hasSnowCover(level, currentPos));
+        if (currentState.getValue(AcheroniteCrystalBlock.BURIED) != shouldBeBuried) {
+            level.setBlock(currentPos, currentState.setValue(AcheroniteCrystalBlock.BURIED, shouldBeBuried), 3);
+        }
+    }
+
+    static int getLocalSnowDepthForCrystal(ServerLevel level, BlockPos crystalPos) {
+        int maxDepth = AcheroniteCrystalBlock.getSnowSupportDepth(level, crystalPos);
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos neighborPos = crystalPos.relative(direction);
+            maxDepth = Math.max(maxDepth, getSnowDepthAtColumn(level, neighborPos.getX(), neighborPos.getZ()));
+        }
+        return maxDepth;
+    }
+
+    private static int getSnowDepthAtColumn(ServerLevel level, int x, int z) {
+        BlockPos supportPos = SurfaceColumnScanner.findSnowSupportBelowCover(
+                level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
+        if (supportPos == null) {
+            return 0;
+        }
+
+        int depth = 0;
+        BlockPos.MutableBlockPos cursor = supportPos.above().mutable();
+        while (level.getBlockState(cursor).is(Blocks.SNOW_BLOCK) && depth < MAX_SNOW_BLOCK_DEPTH) {
+            depth++;
+            cursor.move(Direction.UP);
+        }
+        return depth;
     }
 }

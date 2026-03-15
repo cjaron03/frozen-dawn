@@ -1,6 +1,7 @@
 package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.data.WinConditionState;
@@ -33,6 +34,7 @@ import com.frozendawn.world.StructureStressTracker;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -40,6 +42,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -236,6 +239,19 @@ public class WorldTickHandler {
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.isCanceled()) return;
         invalidateNearbyShelterCaches(event.getLevel(), event.getPos());
+
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            BlockState state = serverLevel.getBlockState(event.getPos());
+            if (state.is(ModBlocks.ACHERONITE_CRYSTAL.get()) && state.getValue(AcheroniteCrystalBlock.BURIED)) {
+                if (!AcheroniteCrystalBlock.hasSnowCover(serverLevel, event.getPos())) {
+                    serverLevel.setBlock(event.getPos(), state.setValue(AcheroniteCrystalBlock.BURIED, false), 3);
+                } else {
+                    serverLevel.setBlock(event.getPos(), state.setValue(AcheroniteCrystalBlock.BURIED, false), 3);
+                }
+                event.setCanceled(true);
+                return;
+            }
+        }
 
         // Remove from player-placed tracker
         if (event.getLevel() instanceof ServerLevel serverLevel) {

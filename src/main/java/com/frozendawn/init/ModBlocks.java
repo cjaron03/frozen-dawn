@@ -206,8 +206,14 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .sound(SoundType.AMETHYST_CLUSTER)
                     .noOcclusion()
-                    .lightLevel(state -> switch (state.getValue(AcheroniteCrystalBlock.AGE)) {
-                        case 0 -> 3; case 1 -> 5; case 2 -> 7; default -> 10;
+                    .lightLevel(state -> {
+                        int base = switch (state.getValue(AcheroniteCrystalBlock.AGE)) {
+                            case 0 -> 3;
+                            case 1 -> 5;
+                            case 2 -> 7;
+                            default -> 10;
+                        };
+                        return state.getValue(AcheroniteCrystalBlock.BURIED) ? Math.min(12, base + 2) : base;
                     })
                     .pushReaction(PushReaction.DESTROY)));
 
