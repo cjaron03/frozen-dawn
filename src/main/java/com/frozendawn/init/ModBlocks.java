@@ -5,6 +5,7 @@ import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
+import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.TransponderBlock;
 import net.minecraft.core.particles.ParticleTypes;
@@ -53,6 +54,29 @@ public class ModBlocks {
                     .strength(0.75F)
                     .sound(SoundType.STONE)));
 
+    // Exposed cobblestone ruins frost over in phase 4+. More brittle than normal cobble.
+    public static final DeferredBlock<Block> FROZEN_COBBLESTONE = BLOCKS.register("frozen_cobblestone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .requiresCorrectToolForDrops()
+                    .strength(1.7F, 6.0F)
+                    .sound(SoundType.STONE)));
+
+    // Exposed masonry follows after cobble to give ruins a colder silhouette.
+    public static final DeferredBlock<Block> FROZEN_STONE_BRICKS = BLOCKS.register("frozen_stone_bricks",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .requiresCorrectToolForDrops()
+                    .strength(1.8F, 6.0F)
+                    .sound(SoundType.STONE)));
+
+    // Exposed plank structures glaze over before they start to splinter apart.
+    public static final DeferredBlock<Block> FROZEN_PLANKS = BLOCKS.register("frozen_planks",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(1.5F, 4.0F)
+                    .sound(SoundType.WOOD)));
+
     // Logs -> Dead Log (phase 3+). Drops 2-4 sticks. Grey, cracked.
     public static final DeferredBlock<RotatedPillarBlock> DEAD_LOG = BLOCKS.register("dead_log",
             () -> new RotatedPillarBlock(BlockBehaviour.Properties.of()
@@ -83,6 +107,17 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.ICE)
                     .strength(0.1F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .pushReaction(PushReaction.DESTROY)));
+
+    // Hanging ice spike that forms under frozen overhangs in phase 4+.
+    public static final DeferredBlock<IcicleBlock> ICICLE = BLOCKS.register("icicle",
+            () -> new IcicleBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.ICE)
+                    .strength(0.15F)
                     .sound(SoundType.GLASS)
                     .noOcclusion()
                     .isViewBlocking((state, level, pos) -> false)

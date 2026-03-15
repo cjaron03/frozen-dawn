@@ -2,12 +2,14 @@ package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
+import com.frozendawn.world.IcicleFormation;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
@@ -27,6 +29,7 @@ import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
+import com.frozendawn.world.StructureStressTracker;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
@@ -85,6 +88,7 @@ public class WorldTickHandler {
         MimicSpawner.reset();
         ArchitectSpawner.reset();
         EasterEggHandler.reset();
+        StructureStressTracker.reset();
     }
 
     @SubscribeEvent
@@ -149,12 +153,15 @@ public class WorldTickHandler {
                     state.getCurrentDay(), state.getTotalDays());
         }
         SnowAccumulator.tick(overworld, currentPhase, progress);
+        IcicleFormation.tick(overworld, currentPhase, progress);
         FrostbittenSpawner.tick(overworld, currentPhase, progress);
         FrostmiteSpawner.tick(overworld, currentPhase, progress);
         HollowSpawner.tick(overworld, currentPhase, progress);
         ReturnedSpawner.tick(overworld, currentPhase, progress);
         MimicSpawner.tick(overworld, currentPhase, progress);
         ArchitectSpawner.tick(overworld, currentPhase, progress);
+        StructureStressTracker.prune(overworld);
+        RoofCollapseSnowTracker.get(server).prune(overworld);
 
         flushPendingArchitectBreakUpdates(server);
 

@@ -10,7 +10,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Accumulates snow on sky-visible surfaces based on apocalypse phase.
@@ -62,40 +61,50 @@ public final class SnowAccumulator {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
 
-                int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-                mutable.set(x, surfaceY, z);
+                BlockPos groundPos = SurfaceColumnScanner.findSnowSupportBelowCover(
+                        level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
+                if (groundPos == null) continue;
 
-                if (!level.isLoaded(mutable)) continue;
-                if (!level.canSeeSky(mutable)) continue;
+                BlockPos baseSnowPos = groundPos.above();
+                if (!isOpenToSnow(level, baseSnowPos)) {
+                    continue;
+                }
+
+                mutable.set(baseSnowPos);
+                int snowBlockDepth = 0;
+                while (level.getBlockState(mutable).is(Blocks.SNOW_BLOCK)) {
+                    snowBlockDepth++;
+                    if (snowBlockDepth >= MAX_SNOW_BLOCK_DEPTH) {
+                        break;
+                    }
+                    mutable.move(Direction.UP);
+                }
+
+                if (snowBlockDepth >= MAX_SNOW_BLOCK_DEPTH) {
+                    continue;
+                }
 
                 BlockPos snowPos = mutable.immutable();
                 BlockState at = level.getBlockState(snowPos);
+                BlockFreezer.refreshStructuralStress(level, groundPos, phase, progress);
 
-                // Increment existing snow layer — snow sits AT snowPos (not below)
-                // because snow layers have noCollission and don't affect MOTION_BLOCKING heightmap
                 if (at.is(Blocks.SNOW)) {
                     int layers = at.getValue(SnowLayerBlock.LAYERS);
                     int maxLayers = switch (phase) {
                         case 2, 3 -> 2;
                         case 4 -> 4;
-                        default -> 7; // phase 5: grows to 7 then converts
+                        default -> 7;
                     };
                     if (layers < maxLayers) {
                         level.setBlock(snowPos, at.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
                     } else if (phase >= 5) {
-                        // Convert to snow block, cap at MAX_SNOW_BLOCK_DEPTH
-                        int snowDepth = countSnowBlocksBelow(level, snowPos);
-                        if (snowDepth < MAX_SNOW_BLOCK_DEPTH) {
-                            level.setBlock(snowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
-                        }
+                        level.setBlock(snowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
                     }
                     continue;
                 }
 
-                // Place new snow layer on a suitable surface
                 BlockPos belowPos = snowPos.below();
                 if (at.isAir() && canPlaceSnowOn(level, belowPos)) {
-                    // Dirt path reverts to dirt when covered (vanilla behavior)
                     if (level.getBlockState(belowPos).is(Blocks.DIRT_PATH)) {
                         level.setBlock(belowPos, Blocks.DIRT.defaultBlockState(), 3);
                     }
@@ -106,15 +115,37 @@ public final class SnowAccumulator {
         }
     }
 
-    /** Count consecutive snow blocks below this position. */
-    private static int countSnowBlocksBelow(ServerLevel level, BlockPos pos) {
-        int depth = 0;
-        BlockPos check = pos.below();
-        while (depth < MAX_SNOW_BLOCK_DEPTH && level.getBlockState(check).is(Blocks.SNOW_BLOCK)) {
-            depth++;
-            check = check.below();
+    private static boolean isOpenToSnow(ServerLevel level, BlockPos snowPos) {
+        BlockPos.MutableBlockPos cursor = snowPos.mutable();
+        while (true) {
+            BlockState state = level.getBlockState(cursor);
+            if (!state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK)) {
+                break;
+            }
+            cursor.move(Direction.UP);
         }
-        return depth;
+
+        BlockPos exposurePos = cursor.immutable();
+        if (level.canSeeSky(exposurePos)) {
+            return true;
+        }
+
+        BlockState above = level.getBlockState(exposurePos);
+        if (!above.isAir() && SurfaceColumnScanner.canSupportSnow(level, exposurePos, above)) {
+            return false;
+        }
+
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            BlockPos neighbor = snowPos.relative(direction);
+            if (!level.getBlockState(neighbor).isAir()) {
+                continue;
+            }
+            if (level.canSeeSky(neighbor)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Check if snow can be placed on the block at belowPos. */
@@ -131,11 +162,7 @@ public final class SnowAccumulator {
         if (below.is(ModBlocks.ACHERONITE_CRYSTAL.get())) return false;
         if (hasCrystalNearby(level, belowPos, 2)) return false;
 
-        // Dirt path has a lowered top face (15/16) so isFaceSturdy returns false,
-        // but snow should still accumulate on it
-        if (below.is(Blocks.DIRT_PATH)) return true;
-
-        return below.isFaceSturdy(level, belowPos, Direction.UP);
+        return SurfaceColumnScanner.canSupportSnow(level, belowPos, below);
     }
 
     /** Check if there's an acheronite crystal within the given horizontal radius. */

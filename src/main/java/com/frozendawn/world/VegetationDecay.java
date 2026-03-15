@@ -14,10 +14,11 @@ import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -76,11 +77,9 @@ public final class VegetationDecay {
             for (int i = 0; i < surfaceChecks; i++) {
                 int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
                 int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
-                mutable.set(x, surfaceY, z);
-                if (!level.isLoaded(mutable)) continue;
-
-                BlockPos pos = mutable.immutable();
+                BlockPos pos = SurfaceColumnScanner.findGroundBelowCover(
+                        level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
+                if (pos == null) continue;
                 decaySurface(level, pos, level.getBlockState(pos), phase);
             }
 
@@ -133,6 +132,35 @@ public final class VegetationDecay {
             return;
         }
 
+        if (state.is(Blocks.SUGAR_CANE) && phase >= 2) {
+            destroyVerticalPlantColumn(level, pos, Blocks.SUGAR_CANE);
+            return;
+        }
+
+        if (state.is(Blocks.BAMBOO) && phase >= 2) {
+            destroyVerticalPlantColumn(level, pos, Blocks.BAMBOO);
+            return;
+        }
+
+        if (state.is(Blocks.CACTUS) && phase >= 2) {
+            destroyVerticalPlantColumn(level, pos, Blocks.CACTUS);
+            return;
+        }
+
+        if (state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT)) {
+            if (phase >= 2) {
+                destroyKelpColumn(level, pos);
+            }
+            return;
+        }
+
+        if (state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) || state.is(Blocks.LILY_PAD)) {
+            if (phase >= 2) {
+                level.destroyBlock(pos, false);
+            }
+            return;
+        }
+
         if (state.getBlock() instanceof CropBlock && phase >= 3) {
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
             return;
@@ -168,6 +196,14 @@ public final class VegetationDecay {
             if (random.nextFloat() < fallChance) {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
             }
+            return;
+        }
+
+        if ((state.is(Blocks.VINE)
+                || state.is(Blocks.CAVE_VINES)
+                || state.is(Blocks.CAVE_VINES_PLANT)
+                || state.is(Blocks.HANGING_ROOTS)) && phase >= 3) {
+            level.destroyBlock(pos, false);
             return;
         }
 
@@ -219,6 +255,7 @@ public final class VegetationDecay {
         fillQueue.add(start);
         fillVisited.add(start);
         int removed = 0;
+        List<BlockPos> removedTreeBlocks = new ArrayList<>();
 
         while (!fillQueue.isEmpty() && removed < MAX_COLLAPSE_BLOCKS) {
             BlockPos current = fillQueue.poll();
@@ -235,6 +272,7 @@ public final class VegetationDecay {
 
             level.destroyBlock(current, true);
             removed++;
+            removedTreeBlocks.add(current.immutable());
 
             if (fillVisited.size() > MAX_COLLAPSE_BLOCKS * 8) break;
             for (Direction dir : Direction.values()) {
@@ -245,6 +283,8 @@ public final class VegetationDecay {
                 }
             }
         }
+
+        clearDetachedSnow(level, removedTreeBlocks, MAX_COLLAPSE_BLOCKS * 6);
     }
 
     /**
@@ -260,6 +300,8 @@ public final class VegetationDecay {
         fillQueue.clear();
         fillVisited.clear();
         int removed = 0;
+        List<BlockPos> removedTreeBlocks = new ArrayList<>();
+        removedTreeBlocks.add(snapPoint.immutable());
 
         // Start from the block above the snap point
         BlockPos above = snapPoint.above();
@@ -282,6 +324,7 @@ public final class VegetationDecay {
 
             level.destroyBlock(current, false); // no drops — they shatter
             removed++;
+            removedTreeBlocks.add(current.immutable());
 
             if (fillVisited.size() > MAX_SNAP_BLOCKS * 8) break;
             // Spread upward and sideways (not downward past snap point)
@@ -300,5 +343,85 @@ public final class VegetationDecay {
                 fillQueue.add(below);
             }
         }
+
+        clearDetachedSnow(level, removedTreeBlocks, MAX_SNAP_BLOCKS * 6);
+    }
+
+    private static void clearDetachedSnow(ServerLevel level, List<BlockPos> removedTreeBlocks, int maxSnowBlocks) {
+        if (removedTreeBlocks.isEmpty()) {
+            return;
+        }
+
+        Queue<BlockPos> snowQueue = new ArrayDeque<>();
+        Set<BlockPos> visitedSnow = new HashSet<>();
+
+        for (BlockPos treePos : removedTreeBlocks) {
+            enqueueSnowSeed(level, snowQueue, visitedSnow, treePos.above());
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                enqueueSnowSeed(level, snowQueue, visitedSnow, treePos.above().relative(dir));
+            }
+        }
+
+        int removedSnow = 0;
+        while (!snowQueue.isEmpty() && removedSnow < maxSnowBlocks) {
+            BlockPos current = snowQueue.poll();
+            BlockState state = level.getBlockState(current);
+            if (!state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK)) {
+                continue;
+            }
+            if (!SurfaceColumnScanner.isDetachedSnow(level, current)) {
+                continue;
+            }
+
+            level.destroyBlock(current, false);
+            removedSnow++;
+
+            for (Direction dir : Direction.values()) {
+                BlockPos neighbor = current.relative(dir);
+                enqueueSnowSeed(level, snowQueue, visitedSnow, neighbor);
+            }
+        }
+    }
+
+    private static void enqueueSnowSeed(ServerLevel level, Queue<BlockPos> snowQueue,
+                                        Set<BlockPos> visitedSnow, BlockPos pos) {
+        if (!level.isLoaded(pos) || !visitedSnow.add(pos.immutable())) {
+            return;
+        }
+
+        BlockState state = level.getBlockState(pos);
+        if (state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK)) {
+            snowQueue.add(pos.immutable());
+        }
+    }
+
+    private static void destroyVerticalPlantColumn(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.Block plant) {
+        BlockPos.MutableBlockPos cursor = pos.mutable();
+
+        while (level.getBlockState(cursor.below()).is(plant)) {
+            cursor.move(Direction.DOWN);
+        }
+
+        while (level.getBlockState(cursor).is(plant)) {
+            level.destroyBlock(cursor, true);
+            cursor.move(Direction.UP);
+        }
+    }
+
+    private static void destroyKelpColumn(ServerLevel level, BlockPos pos) {
+        BlockPos.MutableBlockPos cursor = pos.mutable();
+
+        while (isKelp(level.getBlockState(cursor.below()))) {
+            cursor.move(Direction.DOWN);
+        }
+
+        while (isKelp(level.getBlockState(cursor))) {
+            level.destroyBlock(cursor, false);
+            cursor.move(Direction.UP);
+        }
+    }
+
+    private static boolean isKelp(BlockState state) {
+        return state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT);
     }
 }

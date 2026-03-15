@@ -39,10 +39,14 @@ public class ModItems {
     public static final DeferredItem<BlockItem> DEAD_GRASS_BLOCK = ITEMS.registerSimpleBlockItem("dead_grass_block", ModBlocks.DEAD_GRASS_BLOCK);
     public static final DeferredItem<BlockItem> FROZEN_DIRT = ITEMS.registerSimpleBlockItem("frozen_dirt", ModBlocks.FROZEN_DIRT);
     public static final DeferredItem<BlockItem> FROZEN_SAND = ITEMS.registerSimpleBlockItem("frozen_sand", ModBlocks.FROZEN_SAND);
+    public static final DeferredItem<BlockItem> FROZEN_COBBLESTONE = ITEMS.registerSimpleBlockItem("frozen_cobblestone", ModBlocks.FROZEN_COBBLESTONE);
+    public static final DeferredItem<BlockItem> FROZEN_STONE_BRICKS = ITEMS.registerSimpleBlockItem("frozen_stone_bricks", ModBlocks.FROZEN_STONE_BRICKS);
+    public static final DeferredItem<BlockItem> FROZEN_PLANKS = ITEMS.registerSimpleBlockItem("frozen_planks", ModBlocks.FROZEN_PLANKS);
     public static final DeferredItem<BlockItem> DEAD_LOG = ITEMS.registerSimpleBlockItem("dead_log", ModBlocks.DEAD_LOG);
     public static final DeferredItem<BlockItem> FROZEN_LOG = ITEMS.registerSimpleBlockItem("frozen_log", ModBlocks.FROZEN_LOG);
     public static final DeferredItem<BlockItem> DEAD_LEAVES = ITEMS.registerSimpleBlockItem("dead_leaves", ModBlocks.DEAD_LEAVES);
     public static final DeferredItem<BlockItem> FROZEN_LEAVES = ITEMS.registerSimpleBlockItem("frozen_leaves", ModBlocks.FROZEN_LEAVES);
+    public static final DeferredItem<BlockItem> ICICLE = ITEMS.registerSimpleBlockItem("icicle", ModBlocks.ICICLE);
     public static final DeferredItem<BlockItem> FROZEN_OBSIDIAN = ITEMS.registerSimpleBlockItem("frozen_obsidian", ModBlocks.FROZEN_OBSIDIAN);
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
@@ -271,10 +275,14 @@ public class ModItems {
                         output.accept(DEAD_GRASS_BLOCK.get());
                         output.accept(FROZEN_DIRT.get());
                         output.accept(FROZEN_SAND.get());
+                        output.accept(FROZEN_COBBLESTONE.get());
+                        output.accept(FROZEN_STONE_BRICKS.get());
+                        output.accept(FROZEN_PLANKS.get());
                         output.accept(DEAD_LOG.get());
                         output.accept(FROZEN_LOG.get());
                         output.accept(DEAD_LEAVES.get());
                         output.accept(FROZEN_LEAVES.get());
+                        output.accept(ICICLE.get());
                         output.accept(FROZEN_OBSIDIAN.get());
                         output.accept(FROZEN_COAL_ORE.get());
                         // Player agency
