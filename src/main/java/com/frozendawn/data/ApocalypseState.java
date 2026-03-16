@@ -23,6 +23,7 @@ public class ApocalypseState extends SavedData {
     private long apocalypseTicks;
     private boolean initialized;
     private String presetName = "default";
+    private boolean difficultyLocked;
 
     /** Transient — tracks whether we've applied the stored preset this session. */
     private transient boolean presetAppliedThisSession;
@@ -31,6 +32,7 @@ public class ApocalypseState extends SavedData {
         this.apocalypseTicks = 0;
         this.initialized = false;
         this.presetName = "default";
+        this.difficultyLocked = false;
         this.presetAppliedThisSession = false;
     }
 
@@ -58,6 +60,7 @@ public class ApocalypseState extends SavedData {
         if (tag.contains("presetName")) {
             state.presetName = tag.getString("presetName");
         }
+        state.difficultyLocked = tag.getBoolean("difficultyLocked");
         state.presetAppliedThisSession = false;
         return state;
     }
@@ -67,6 +70,7 @@ public class ApocalypseState extends SavedData {
         tag.putLong("apocalypseTicks", apocalypseTicks);
         tag.putBoolean("initialized", initialized);
         tag.putString("presetName", presetName);
+        tag.putBoolean("difficultyLocked", difficultyLocked);
         return tag;
     }
 
@@ -125,6 +129,15 @@ public class ApocalypseState extends SavedData {
     public void setPresetName(String name) {
         this.presetName = name.toLowerCase(Locale.ROOT);
         this.presetAppliedThisSession = true;
+        setDirty();
+    }
+
+    public boolean isDifficultyLocked() {
+        return difficultyLocked;
+    }
+
+    public void setDifficultyLocked(boolean difficultyLocked) {
+        this.difficultyLocked = difficultyLocked;
         setDirty();
     }
 

@@ -8,6 +8,7 @@ import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
+import com.frozendawn.network.OpenDifficultySelectionPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.IcicleFormation;
@@ -321,6 +322,9 @@ public class WorldTickHandler {
                 persistentData.putBoolean("frozendawn:received_books", true);
                 net.minecraft.world.item.ItemStack guide = StarterBooks.createGuideBook();
                 if (guide != null) player.getInventory().add(guide);
+            }
+            if (!state.isDifficultyLocked()) {
+                PacketDistributor.sendToPlayer(player, new OpenDifficultySelectionPayload());
             }
         }
     }
