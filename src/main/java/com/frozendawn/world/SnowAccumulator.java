@@ -69,6 +69,10 @@ public final class SnowAccumulator {
                 if (groundPos == null) continue;
 
                 BlockPos baseSnowPos = groundPos.above();
+                if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, baseSnowPos)) {
+                    clearColdDepositionAt(level, baseSnowPos);
+                    continue;
+                }
                 if (!isOpenToSnow(level, baseSnowPos)) {
                     continue;
                 }
@@ -247,5 +251,22 @@ public final class SnowAccumulator {
             cursor.move(Direction.UP);
         }
         return depth;
+    }
+
+    private static void clearColdDepositionAt(ServerLevel level, BlockPos baseSnowPos) {
+        BlockPos.MutableBlockPos cursor = baseSnowPos.mutable();
+        for (int dy = 0; dy <= MAX_SNOW_BLOCK_DEPTH + 3; dy++) {
+            BlockState state = level.getBlockState(cursor);
+            if (state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK)
+                    || state.is(Blocks.POWDER_SNOW) || state.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
+                level.destroyBlock(cursor.immutable(), false);
+                cursor.move(Direction.UP);
+                continue;
+            }
+            if (!state.isAir()) {
+                break;
+            }
+            cursor.move(Direction.UP);
+        }
     }
 }

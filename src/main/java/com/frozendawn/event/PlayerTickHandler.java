@@ -8,6 +8,7 @@ import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.TemperaturePayload;
+import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
@@ -362,6 +363,7 @@ final class PlayerTickHandler {
         if (TemperatureManager.isEnclosed(player.level(), player.blockPosition())) return true;
 
         BlockPos playerPos = player.blockPosition();
+        if (BlastPitWarmZoneRegistry.isInsideWarmZone(player.level(), playerPos)) return true;
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(player.level())) {
             int o2Range;
             BlockEntity be = player.level().getBlockEntity(corePos);

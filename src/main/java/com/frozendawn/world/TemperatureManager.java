@@ -7,6 +7,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -53,8 +54,12 @@ public final class TemperatureManager {
         float shelterTemp = getShelterModifier(level, pos);
         float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan)
                 * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
+        float finalTemp = phaseTemp + depthTemp + shelterTemp + heatTemp;
 
-        return phaseTemp + depthTemp + shelterTemp + heatTemp;
+        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
+            return Math.max(finalTemp, 24.0f);
+        }
+        return finalTemp;
     }
 
     /**

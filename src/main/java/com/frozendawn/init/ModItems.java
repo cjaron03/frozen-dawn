@@ -55,6 +55,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> INSULATED_GLASS = ITEMS.registerSimpleBlockItem("insulated_glass", ModBlocks.INSULATED_GLASS);
     public static final DeferredItem<BlockItem> FROZEN_COAL_ORE = ITEMS.registerSimpleBlockItem("frozen_coal_ore", ModBlocks.FROZEN_COAL_ORE);
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
+    public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
@@ -292,6 +293,7 @@ public class ModItems {
                         output.accept(DIAMOND_THERMAL_HEATER.get());
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
+                        output.accept(ORSA_SUPPLY_CRATE.get());
                         // Items
                         output.accept(ICE_SHARD.get());
                         output.accept(THERMAL_CORE.get());

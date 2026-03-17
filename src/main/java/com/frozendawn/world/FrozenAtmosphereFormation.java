@@ -45,6 +45,7 @@ public final class FrozenAtmosphereFormation {
                     int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
                     mutable.set(x, surfaceY, z);
                     if (!level.isLoaded(mutable)) continue;
+                    if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, mutable)) continue;
 
                     // Must have sky access
                     if (!level.canSeeSky(mutable)) continue;
@@ -63,6 +64,7 @@ public final class FrozenAtmosphereFormation {
 
                         // Check the position above for placement
                         BlockPos placePos = mutable.above();
+                        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
                         BlockState aboveState = level.getBlockState(placePos);
                         if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW)) break;
 
@@ -116,7 +118,7 @@ public final class FrozenAtmosphereFormation {
                     }
 
                     float temp = TemperatureManager.getTemperatureAt(level, mutable, currentDay, totalDays);
-                    if (temp > SUBLIMATION_TEMP) {
+                    if (temp > SUBLIMATION_TEMP || BlastPitWarmZoneRegistry.isInsideWarmZone(level, mutable)) {
                         level.destroyBlock(mutable, false);
                     }
                     break;

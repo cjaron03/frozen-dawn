@@ -48,5 +48,6 @@ public class ModBlockEntities {
     @SubscribeEvent
     public static void onBlockEntityValidBlocks(BlockEntityTypeAddBlocksEvent event) {
         event.modify(BlockEntityType.SKULL, ModBlocks.ARCHITECT_MASK.get(), ModBlocks.ARCHITECT_WALL_MASK.get());
+        event.modify(BlockEntityType.BARREL, ModBlocks.ORSA_SUPPLY_CRATE.get());
     }
 }

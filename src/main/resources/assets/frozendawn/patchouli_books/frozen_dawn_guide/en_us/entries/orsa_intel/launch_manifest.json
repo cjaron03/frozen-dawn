@@ -1,0 +1,24 @@
+{
+  "name": "ORSA Launch Manifest",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 7,
+  "advancement": "frozendawn:found_launch_manifest",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "SITE: ECHO-7",
+      "text": "$(bold)ORSA LAUNCH MANIFEST$()$(br)Prepared by: ORSA Evacuation Logistics$(br2)Launch window sealed at 03:14.$(br)Heat bloom remains unsafe.$(br2)Evacuee count cleared: $(6)2,184$()$(br)Holdovers recorded: $(c)713$()$(br2)Names withheld under ORSA emergency protocol."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Ground Directive",
+      "text": "\"If the pit is still warm, build here. The cold never fully took the stone.$(br2)The walls won't save you.$(br)The weather won't stop.$(br)But the ground remembers fire.\"$(br2)This was not written for the evacuation list. It was written for whoever came after."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Handwritten Addendum",
+      "text": "$(italic)We left too many behind.$()$(br2)$(italic)If anyone finds this, the site still works better than the surface around it. Use the heat. Make it count.$()$(br2)- K"
+    }
+  ]
+}

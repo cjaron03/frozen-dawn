@@ -5,6 +5,7 @@ import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import net.minecraft.core.BlockPos;
 import com.frozendawn.phase.PhaseManager;
@@ -72,6 +73,8 @@ public class FrozenDawnCommand {
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnCommand::applyPreset)))
+                .then(Commands.literal("blastpit")
+                        .executes(FrozenDawnCommand::blastPit))
                 .then(Commands.literal("satellite")
                         .executes(FrozenDawnCommand::satellite))
         );
@@ -105,6 +108,14 @@ public class FrozenDawnCommand {
             context.getSource().sendSuccess(() -> Component.literal(
                     "  Satellite Placed: " + yesNo(winState.isSatellitePlaced())
                             + " | Schematic: " + yesNo(winState.isSchematicUnlocked())), false);
+        }
+
+        OrsaStructureState orsaState = OrsaStructureState.get(server);
+        BlockPos blastPitPos = orsaState.getBlastPitPos();
+        if (blastPitPos != null) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Blast Pit: (" + blastPitPos.getX() + ", " + blastPitPos.getY() + ", " + blastPitPos.getZ() + ")"
+                            + " | Placed: " + yesNo(orsaState.isBlastPitPlaced())), false);
         }
         return 1;
     }
@@ -235,6 +246,20 @@ public class FrozenDawnCommand {
                     "  Satellite: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
                     + " | Placed: " + winState.isSatellitePlaced()
                     + " | Schematic: " + winState.isSchematicUnlocked()), false);
+        }
+        return 1;
+    }
+
+    private static int blastPit(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        OrsaStructureState state = OrsaStructureState.get(server);
+        BlockPos pos = state.getBlastPitPos();
+        if (pos == null) {
+            context.getSource().sendSuccess(() -> Component.literal("  Blast Pit: not yet initialized"), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Blast Pit: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
+                            + " | Placed: " + state.isBlastPitPlaced()), false);
         }
         return 1;
     }

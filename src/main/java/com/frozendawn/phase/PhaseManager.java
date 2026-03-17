@@ -150,7 +150,8 @@ public final class PhaseManager {
     public static int getPhaseStartDay(int phase, int totalDays) {
         if (phase < 0) return 0;
         if (phase > 6) return totalDays;
-        return (int) (PHASE_BOUNDS[phase] * totalDays);
+        if (phase == 0) return 0;
+        return Math.min(totalDays, Mth.ceil(PHASE_BOUNDS[phase] * totalDays));
     }
 
     /**

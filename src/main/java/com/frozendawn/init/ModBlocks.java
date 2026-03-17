@@ -6,10 +6,13 @@ import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
+import com.frozendawn.block.OrsaSupplyCrateBlock;
+import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.TransponderBlock;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SkullBlock;
@@ -130,6 +133,20 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_BLACK)
                     .requiresCorrectToolForDrops()
                     .strength(50.0F, 1200.0F)));
+
+    public static final DeferredBlock<ScorchedGroundBlock> SCORCHED_GROUND = BLOCKS.register("scorched_ground",
+            () -> new ScorchedGroundBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.CALCITE)
+                    .lightLevel(state -> 5)
+                    .noLootTable()));
+
+    public static final DeferredBlock<OrsaSupplyCrateBlock> ORSA_SUPPLY_CRATE = BLOCKS.register("orsa_supply_crate",
+            () -> new OrsaSupplyCrateBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.5F)
+                    .sound(SoundType.NETHERITE_BLOCK)));
 
     // --- Player Agency blocks ---
 

@@ -3,6 +3,7 @@ package com.frozendawn.event;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
@@ -27,6 +28,8 @@ import com.frozendawn.world.FrostmiteSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.HollowSpawner;
 import com.frozendawn.world.ArchitectSpawner;
+import com.frozendawn.world.BlastPitPlacement;
+import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
@@ -93,6 +96,7 @@ public class WorldTickHandler {
         ArchitectSpawner.reset();
         EasterEggHandler.reset();
         StructureStressTracker.reset();
+        BlastPitWarmZoneRegistry.reset();
     }
 
     @SubscribeEvent
@@ -105,6 +109,8 @@ public class WorldTickHandler {
         // Initialize satellite coordinates once (no-op if already chosen or disabled)
         WinConditionState winState = WinConditionState.get(server);
         winState.initSatellitePosition(server.overworld());
+        OrsaStructureState orsaStructureState = OrsaStructureState.get(server);
+        orsaStructureState.initBlastPitPosition(server.overworld());
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
@@ -142,6 +148,7 @@ public class WorldTickHandler {
 
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
+        BlastPitPlacement.tickPlacement(overworld);
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);

@@ -48,6 +48,7 @@ public class OrsaDocumentItem extends Item {
                     case "vasik_log" -> grantAdvancement(serverPlayer, "found_vasik_log");
                     case "incident_report" -> grantAdvancement(serverPlayer, "found_incident_report");
                     case "satellite_log" -> grantAdvancement(serverPlayer, "found_satellite_log");
+                    case "launch_manifest" -> grantAdvancement(serverPlayer, "found_launch_manifest");
                     case "transponder_schematic" -> {
                         grantAdvancement(serverPlayer, "found_transponder_schematic");
                         // Unlock transponder recipe in Acheron Forge (world-level)

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "frozendawn:block/orsa_supply_crate_front",
+    "down": "frozendawn:block/orsa_supply_crate_bottom",
+    "up": "frozendawn:block/orsa_supply_crate_top",
+    "north": "frozendawn:block/orsa_supply_crate_front",
+    "south": "frozendawn:block/orsa_supply_crate_front",
+    "east": "frozendawn:block/orsa_supply_crate_side",
+    "west": "frozendawn:block/orsa_supply_crate_side"
+  }
+}
