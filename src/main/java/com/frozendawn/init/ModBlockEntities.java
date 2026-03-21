@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.block.TransponderBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -43,6 +44,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("transponder",
                     () -> BlockEntityType.Builder.of(TransponderBlockEntity::new,
                             ModBlocks.TRANSPONDER.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TowerAntennaConsoleBlockEntity>> TOWER_ANTENNA_CONSOLE =
+            BLOCK_ENTITIES.register("tower_antenna_console",
+                    () -> BlockEntityType.Builder.of(TowerAntennaConsoleBlockEntity::new,
+                            ModBlocks.TOWER_ANTENNA_CONSOLE.get()
                     ).build(null));
 
     @SubscribeEvent

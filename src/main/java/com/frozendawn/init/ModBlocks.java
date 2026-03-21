@@ -9,6 +9,7 @@ import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Block;
@@ -147,6 +148,14 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(2.5F)
                     .sound(SoundType.NETHERITE_BLOCK)));
+
+    public static final DeferredBlock<TowerAntennaConsoleBlock> TOWER_ANTENNA_CONSOLE = BLOCKS.register("tower_antenna_console",
+            () -> new TowerAntennaConsoleBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .lightLevel(state -> 6)));
 
     // --- Player Agency blocks ---
 

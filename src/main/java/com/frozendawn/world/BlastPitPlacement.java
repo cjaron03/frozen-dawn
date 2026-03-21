@@ -11,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.Filterable;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
@@ -34,6 +33,7 @@ public final class BlastPitPlacement {
 
     private static final int OUTER_RADIUS = 20;
     private static final int CRATER_CLEAR_HEIGHT = 12;
+    private static final int DRY_BUFFER = 12;
     private static volatile boolean pendingPlacement;
 
     private BlastPitPlacement() {
@@ -41,13 +41,10 @@ public final class BlastPitPlacement {
 
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
-        if (event.getLevel().isClientSide() || pendingPlacement) {
+        if (event.getLevel().isClientSide()) {
             return;
         }
-        if (!(event.getLevel() instanceof ServerLevel level)) {
-            return;
-        }
-        if (level.dimension() != ServerLevel.OVERWORLD) {
+        if (!(event.getLevel() instanceof ServerLevel level) || level.dimension() != ServerLevel.OVERWORLD) {
             return;
         }
 
@@ -55,24 +52,21 @@ public final class BlastPitPlacement {
         if (state.isBlastPitPlaced()) {
             return;
         }
-
-        BlockPos targetPos = state.getBlastPitPos();
-        if (targetPos == null) {
+        BlockPos target = state.getBlastPitTargetPos();
+        if (target == null) {
             return;
         }
-
-        int chunkX = targetPos.getX() >> 4;
-        int chunkZ = targetPos.getZ() >> 4;
-        if (event.getChunk().getPos().x != chunkX || event.getChunk().getPos().z != chunkZ) {
-            return;
+        if (event.getChunk().getPos().x == (target.getX() >> 4) && event.getChunk().getPos().z == (target.getZ() >> 4)) {
+            pendingPlacement = true;
         }
-
-        pendingPlacement = true;
     }
 
     public static void tickPlacement(ServerLevel overworld) {
+        if (overworld.players().isEmpty()) {
+            return;
+        }
         OrsaStructureState state = OrsaStructureState.get(overworld.getServer());
-        BlockPos targetPos = state.getBlastPitPos();
+        BlockPos targetPos = state.getBlastPitTargetPos();
         if (state.isBlastPitPlaced()) {
             if (targetPos != null) {
                 BlastPitWarmZoneRegistry.register(overworld, targetPos);
@@ -83,35 +77,29 @@ public final class BlastPitPlacement {
             return;
         }
 
+        if (targetPos != null && isPlacementAreaLoaded(overworld, targetPos)) {
+            pendingPlacement = true;
+        }
         if (!pendingPlacement) {
             return;
         }
-        pendingPlacement = false;
-
-        if (targetPos == null || !overworld.isLoaded(targetPos)) {
-            pendingPlacement = true;
+        if (targetPos == null) {
             return;
         }
-
-        if (!state.resolveBlastPitY(overworld)) {
-            pendingPlacement = true;
+        if (!isPlacementAreaLoaded(overworld, targetPos)) {
             return;
         }
-
-        BlockPos resolvedPos = state.getBlastPitPos();
-        BlockPos placePos = findStablePlacement(overworld, resolvedPos);
-        if (placePos == null) {
-            FrozenDawn.LOGGER.warn("Blast Pit target at ({}, {}, {}) failed plains/flatness validation; rerolling",
-                    resolvedPos.getX(), resolvedPos.getY(), resolvedPos.getZ());
-            state.rerollBlastPitPosition(overworld);
-            return;
-        }
-
-        state.setBlastPitPos(placePos);
-        placeStructure(overworld, placePos);
+        placeStructure(overworld, targetPos);
+        state.setBlastPitPos(targetPos);
         state.setBlastPitPlaced(true);
-        BlastPitWarmZoneRegistry.register(overworld, placePos);
-        FrozenDawn.LOGGER.info("ORSA Blast Pit placed at ({}, {}, {})", placePos.getX(), placePos.getY(), placePos.getZ());
+        pendingPlacement = false;
+        BlastPitWarmZoneRegistry.register(overworld, targetPos);
+        FrozenDawn.LOGGER.info("ORSA Blast Pit placed at ({}, {}, {})", targetPos.getX(), targetPos.getY(), targetPos.getZ());
+    }
+
+    public static BlockPos ensureBlastPitResolved(ServerLevel overworld) {
+        OrsaStructureState state = OrsaStructureState.get(overworld.getServer());
+        return state.getBlastPitPos() != null ? state.getBlastPitPos() : state.getBlastPitTargetPos();
     }
 
     /**
@@ -382,86 +370,22 @@ public final class BlastPitPlacement {
         }
     }
 
-    private static BlockPos findStablePlacement(ServerLevel level, BlockPos targetPos) {
-        BlockPos direct = surfaceCandidate(level, targetPos.getX(), targetPos.getZ());
-        if (isUsableSurface(level, direct)) {
-            return direct;
-        }
+    private static boolean isPlacementAreaLoaded(ServerLevel level, BlockPos target) {
+        int radius = OUTER_RADIUS + DRY_BUFFER + 8;
+        int minX = target.getX() - radius;
+        int maxX = target.getX() + radius;
+        int minZ = target.getZ() - radius;
+        int maxZ = target.getZ() + radius;
 
-        for (int radius = 8; radius <= 96; radius += 8) {
-            for (int dx = -radius; dx <= radius; dx += 8) {
-                BlockPos north = surfaceCandidate(level, targetPos.getX() + dx, targetPos.getZ() - radius);
-                if (isUsableSurface(level, north)) return north;
-                BlockPos south = surfaceCandidate(level, targetPos.getX() + dx, targetPos.getZ() + radius);
-                if (isUsableSurface(level, south)) return south;
-            }
-            for (int dz = -radius + 8; dz <= radius - 8; dz += 8) {
-                BlockPos west = surfaceCandidate(level, targetPos.getX() - radius, targetPos.getZ() + dz);
-                if (isUsableSurface(level, west)) return west;
-                BlockPos east = surfaceCandidate(level, targetPos.getX() + radius, targetPos.getZ() + dz);
-                if (isUsableSurface(level, east)) return east;
-            }
-        }
-
-        return null;
-    }
-
-    private static BlockPos surfaceCandidate(ServerLevel level, int x, int z) {
-        BlockPos probe = new BlockPos(x, 0, z);
-        if (!level.isLoaded(probe)) {
-            return null;
-        }
-        int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-        return new BlockPos(x, surfaceY, z);
-    }
-
-    private static boolean isUsableSurface(ServerLevel level, BlockPos pos) {
-        if (pos == null) {
-            return false;
-        }
-        if (!isEligibleBlastPitBiome(level, pos)) {
-            return false;
-        }
-        BlockPos groundPos = pos.below();
-        if (!level.getFluidState(groundPos).isEmpty()) {
-            return false;
-        }
-        if (!level.getFluidState(pos).isEmpty()) {
-            return false;
-        }
-        BlockState groundState = level.getBlockState(groundPos);
-        return !groundState.isAir()
-                && groundState.getFluidState().isEmpty()
-                && isFlatEnough(level, pos);
-    }
-
-    private static boolean isEligibleBlastPitBiome(ServerLevel level, BlockPos pos) {
-        return level.getBiome(pos).unwrapKey().map(key ->
-                key.equals(Biomes.PLAINS)
-        ).orElse(false);
-    }
-
-    private static boolean isFlatEnough(ServerLevel level, BlockPos pos) {
-        int minY = Integer.MAX_VALUE;
-        int maxY = Integer.MIN_VALUE;
-        int radiusSq = OUTER_RADIUS * OUTER_RADIUS;
-        for (int dx = -OUTER_RADIUS; dx <= OUTER_RADIUS; dx++) {
-            for (int dz = -OUTER_RADIUS; dz <= OUTER_RADIUS; dz++) {
-                if ((dx * dx) + (dz * dz) > radiusSq) {
-                    continue;
-                }
-                BlockPos sample = surfaceCandidate(level, pos.getX() + dx, pos.getZ() + dz);
-                if (sample == null) {
+        for (int x = minX; x <= maxX; x += 16) {
+            for (int z = minZ; z <= maxZ; z += 16) {
+                if (!level.isLoaded(new BlockPos(x, level.getMinBuildHeight(), z))) {
                     return false;
                 }
-                if (!isEligibleBlastPitBiome(level, sample)) {
-                    return false;
-                }
-                minY = Math.min(minY, sample.getY());
-                maxY = Math.max(maxY, sample.getY());
             }
         }
-        return maxY - minY <= 6;
+
+        return level.isLoaded(new BlockPos(maxX, level.getMinBuildHeight(), maxZ));
     }
 
     private static ItemStack createLaunchManifestDocument() {

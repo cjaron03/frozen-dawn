@@ -9,6 +9,7 @@ import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
+import com.frozendawn.world.TowerEncounterController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -126,6 +127,8 @@ public class ArchitectEntity extends Monster {
     @Nullable private BlockPos lastKnownPlayerPos;
     private int lastSeenTick = 0;
     private static final int PLAYER_MEMORY_TICKS = 200;
+    private boolean towerEncounter = false;
+    private long towerEncounterId = Long.MIN_VALUE;
 
     // --- Retreat / Healing ---
     private int healCooldown = 0;
@@ -415,6 +418,9 @@ public class ArchitectEntity extends Monster {
 
         // --- Despawn timer ---
         if (target == null) {
+            if (towerEncounter) {
+                despawnTimer = 0;
+            } else {
             boolean playerNearby = !level().getEntitiesOfClass(Player.class,
                     getBoundingBox().inflate(48.0), p -> !p.isSpectator()).isEmpty();
             if (playerNearby) {
@@ -426,6 +432,7 @@ public class ArchitectEntity extends Monster {
                     discard();
                     return;
                 }
+            }
             }
         } else {
             despawnTimer = 0;
@@ -2808,6 +2815,9 @@ public class ArchitectEntity extends Monster {
         if (ticks >= 30) {
             cleanupAllIce();
             blockBreaker.onDeath();
+            if (towerEncounter && level() instanceof ServerLevel serverLevel) {
+                TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+            }
             remove(RemovalReason.KILLED);
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
@@ -2830,6 +2840,13 @@ public class ArchitectEntity extends Monster {
     public float getMiningProgress() { return blockBreaker.getMiningProgress(); }
     public boolean hasQueuedScaffoldStep() { return scaffoldTarget != null || scaffoldDelay > 0; }
     public boolean isRetreatRecovering() { return currentAction == ACTION_RETREAT && (retreatPhase >= 1 || isDrinkingPotion); }
+    public boolean isTowerEncounter() { return towerEncounter; }
+    public long getTowerEncounterId() { return towerEncounterId; }
+    public void setTowerEncounter(long towerId) {
+        towerEncounter = true;
+        towerEncounterId = towerId;
+        despawnTimer = 0;
+    }
     public boolean isProbing() {
         return probing;
     }
@@ -2889,6 +2906,8 @@ public class ArchitectEntity extends Monster {
         tag.putBoolean("AcheroniteEncountered", acheroniteEncountered);
         tag.putInt("HealCooldown", healCooldown);
         tag.putInt("SurfaceY", surfaceY);
+        tag.putBoolean("TowerEncounter", towerEncounter);
+        tag.putLong("TowerEncounterId", towerEncounterId);
 
         ListTag scaffoldList = new ListTag();
         for (BlockPos pos : scaffoldIce) scaffoldList.add(LongTag.valueOf(pos.asLong()));
@@ -2919,6 +2938,8 @@ public class ArchitectEntity extends Monster {
         acheroniteEncountered = tag.getBoolean("AcheroniteEncountered");
         healCooldown = tag.getInt("HealCooldown");
         surfaceY = tag.getInt("SurfaceY");
+        towerEncounter = tag.getBoolean("TowerEncounter");
+        towerEncounterId = tag.contains("TowerEncounterId") ? tag.getLong("TowerEncounterId") : Long.MIN_VALUE;
         if (surfaceY == 0) surfaceY = blockPosition().getY(); // migration for existing entities
 
         scaffoldIce.clear();

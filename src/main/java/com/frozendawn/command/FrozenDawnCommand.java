@@ -7,6 +7,8 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
+import com.frozendawn.world.BlastPitPlacement;
+import com.frozendawn.world.TowerPlacement;
 import net.minecraft.core.BlockPos;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -75,6 +77,10 @@ public class FrozenDawnCommand {
                                 .executes(FrozenDawnCommand::applyPreset)))
                 .then(Commands.literal("blastpit")
                         .executes(FrozenDawnCommand::blastPit))
+                .then(Commands.literal("towers")
+                        .executes(FrozenDawnCommand::towers))
+                .then(Commands.literal("landmarks")
+                        .executes(FrozenDawnCommand::landmarks))
                 .then(Commands.literal("satellite")
                         .executes(FrozenDawnCommand::satellite))
         );
@@ -114,9 +120,14 @@ public class FrozenDawnCommand {
         BlockPos blastPitPos = orsaState.getBlastPitPos();
         if (blastPitPos != null) {
             context.getSource().sendSuccess(() -> Component.literal(
-                    "  Blast Pit: (" + blastPitPos.getX() + ", " + blastPitPos.getY() + ", " + blastPitPos.getZ() + ")"
+                    "  Blast Pit: final (" + blastPitPos.getX() + ", " + blastPitPos.getY() + ", " + blastPitPos.getZ() + ")"
                             + " | Placed: " + yesNo(orsaState.isBlastPitPlaced())), false);
+        } else if (orsaState.getBlastPitTargetPos() != null) {
+            BlockPos anchor = orsaState.getBlastPitTargetPos();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Blast Pit: final anchor (" + anchor.getX() + ", " + anchor.getY() + ", " + anchor.getZ() + ") | awaiting chunk load"), false);
         }
+        context.getSource().sendSuccess(() -> Component.literal("  Towers: " + orsaState.getTowers().size()), false);
         return 1;
     }
 
@@ -255,13 +266,72 @@ public class FrozenDawnCommand {
         OrsaStructureState state = OrsaStructureState.get(server);
         BlockPos pos = state.getBlastPitPos();
         if (pos == null) {
-            context.getSource().sendSuccess(() -> Component.literal("  Blast Pit: not yet initialized"), false);
+            if (state.getBlastPitTargetPos() != null) {
+                BlockPos anchor = state.getBlastPitTargetPos();
+                context.getSource().sendSuccess(() -> Component.literal(
+                        "  Blast Pit: final anchor (" + anchor.getX() + ", " + anchor.getY() + ", " + anchor.getZ() + ") | awaiting chunk load"), false);
+            } else {
+                context.getSource().sendSuccess(() -> Component.literal("  Blast Pit: not yet initialized"), false);
+            }
         } else {
             context.getSource().sendSuccess(() -> Component.literal(
-                    "  Blast Pit: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
+                    "  Blast Pit: final (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
                             + " | Placed: " + state.isBlastPitPlaced()), false);
         }
         return 1;
+    }
+
+    private static int towers(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        OrsaStructureState state = OrsaStructureState.get(server);
+        if (state.getTowers().isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal("  Towers: not yet initialized"), false);
+            return 1;
+        }
+
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        OrsaStructureState.TowerRecord nearest = state.getNearestTower(origin);
+        context.getSource().sendSuccess(() -> Component.literal("  Towers: " + state.getTowers().size()), false);
+        if (nearest != null && nearest.pos() != null) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Nearest Tower: final (" + nearest.pos().getX() + ", " + nearest.pos().getY() + ", " + nearest.pos().getZ() + ")"
+                            + " | Placed: " + nearest.placed()
+                            + " | Architect: " + yesNo(nearest.architectTriggered())
+                            + " | Aligned: " + yesNo(nearest.aligned())
+                            + " | Reward: " + yesNo(nearest.rewardGranted())), false);
+        } else if (nearest != null) {
+            BlockPos anchor = nearest.plannedPos();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Nearest Tower: final anchor (" + anchor.getX() + ", " + anchor.getY() + ", " + anchor.getZ() + ") | awaiting chunk load"
+                            + " | Architect: " + yesNo(nearest.architectTriggered())
+                            + " | Aligned: " + yesNo(nearest.aligned())
+                            + " | Reward: " + yesNo(nearest.rewardGranted())), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal("  Nearest Tower: not yet initialized"), false);
+        }
+        return 1;
+    }
+
+    private static int landmarks(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        refreshLandmarks(server);
+        context.getSource().sendSuccess(() -> Component.literal("--- Landmark Refresh ---"), false);
+        blastPit(context);
+        towers(context);
+        return 1;
+    }
+
+    private static void refreshLandmarks(MinecraftServer server) {
+        var overworld = server.overworld();
+        OrsaStructureState state = OrsaStructureState.get(server);
+        for (int i = 0; i < 2; i++) {
+            if (state.getBlastPitTargetPos() == null) {
+                state.initBlastPitPosition(overworld);
+            }
+            if (state.getTowers().size() < 6) {
+                state.initTowerPositions(overworld);
+            }
+        }
     }
 
 }

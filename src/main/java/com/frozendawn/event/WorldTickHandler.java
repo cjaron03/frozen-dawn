@@ -35,6 +35,8 @@ import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.StructureStressTracker;
+import com.frozendawn.world.TowerEncounterController;
+import com.frozendawn.world.TowerPlacement;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
@@ -97,6 +99,7 @@ public class WorldTickHandler {
         EasterEggHandler.reset();
         StructureStressTracker.reset();
         BlastPitWarmZoneRegistry.reset();
+        TowerPlacement.reset();
     }
 
     @SubscribeEvent
@@ -106,11 +109,12 @@ public class WorldTickHandler {
 
         state.tick(server);
 
-        // Initialize satellite coordinates once (no-op if already chosen or disabled)
+        // Initialize satellite coordinates once (no-op if already chosen or disabled).
         WinConditionState winState = WinConditionState.get(server);
         winState.initSatellitePosition(server.overworld());
         OrsaStructureState orsaStructureState = OrsaStructureState.get(server);
         orsaStructureState.initBlastPitPosition(server.overworld());
+        orsaStructureState.initTowerPositions(server.overworld());
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
@@ -148,12 +152,16 @@ public class WorldTickHandler {
 
         // Drive world systems in the overworld
         ServerLevel overworld = server.overworld();
-        BlastPitPlacement.tickPlacement(overworld);
+        long tick = overworld.getGameTime();
+        if ((tick & 1L) == 0L) {
+            BlastPitPlacement.tickPlacement(overworld);
+        } else {
+            TowerPlacement.tickPlacement(overworld);
+        }
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
         // Stagger heavy systems on alternating ticks to halve peak load
-        long tick = overworld.getGameTime();
         if (tick % 2 == 0) {
             BlockFreezer.tick(overworld, currentPhase, progress);
         } else {
@@ -170,6 +178,7 @@ public class WorldTickHandler {
         HollowSpawner.tick(overworld, currentPhase, progress);
         ReturnedSpawner.tick(overworld, currentPhase, progress);
         MimicSpawner.tick(overworld, currentPhase, progress);
+        TowerEncounterController.tick(overworld);
         ArchitectSpawner.tick(overworld, currentPhase, progress);
         StructureStressTracker.prune(overworld);
         RoofCollapseSnowTracker.get(server).prune(overworld);

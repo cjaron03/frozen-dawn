@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "frozendawn:block/tower_antenna_console" },
+    "facing=south": { "model": "frozendawn:block/tower_antenna_console", "y": 180 },
+    "facing=west": { "model": "frozendawn:block/tower_antenna_console", "y": 270 },
+    "facing=east": { "model": "frozendawn:block/tower_antenna_console", "y": 90 }
+  }
+}

@@ -5,9 +5,11 @@ import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.TemperatureHud;
+import com.frozendawn.client.TowerTerminalScreen;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -49,12 +51,30 @@ public class ModNetworking {
                 OpenDifficultySelectionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> Minecraft.getInstance().setScreen(new DifficultySelectionScreen()))
         );
+        registrar.playToClient(
+                OpenTowerTerminalPayload.TYPE,
+                OpenTowerTerminalPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() ->
+                        TowerTerminalScreen.openOrUpdate(Minecraft.getInstance(), payload))
+        );
         registrar.playToServer(
                 WatcherSeenPayload.TYPE,
                 WatcherSeenPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) {
                         WorldTickHandler.grantAdvancement(sp, "watcher_seen");
+                    }
+                })
+        );
+        registrar.playToServer(
+                SubmitTowerTerminalPayload.TYPE,
+                SubmitTowerTerminalPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (!(context.player() instanceof ServerPlayer sp)) {
+                        return;
+                    }
+                    if (sp.level().getBlockEntity(payload.pos()) instanceof TowerAntennaConsoleBlockEntity console) {
+                        console.submitAction(sp, payload.nonce(), payload.actionType(), payload.actionIndex(), payload.typedGuess());
                     }
                 })
         );

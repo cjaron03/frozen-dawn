@@ -27,6 +27,7 @@ public class ArchitectSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
+            if (TowerEncounterController.isTowerEncounterNearby(level, player.blockPosition(), 80.0)) continue;
             if (random.nextFloat() > spawnChance) continue;
 
             // Density cap: max 1 within 96 blocks
