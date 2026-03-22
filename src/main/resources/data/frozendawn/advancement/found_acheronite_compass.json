@@ -1,0 +1,28 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:acheronite_compass"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_acheronite_compass.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_acheronite_compass.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "frozendawn:acheronite_compass"
+    ]
+  }
+}

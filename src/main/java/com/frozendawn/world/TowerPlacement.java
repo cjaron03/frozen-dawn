@@ -4,10 +4,13 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -141,6 +144,7 @@ public final class TowerPlacement {
             if (!player.addItem(compass)) {
                 player.drop(compass, false);
             }
+            grantAdvancement(player, "found_acheronite_compass");
             state.setTowerRewardGranted(towerId, true);
         }
 
@@ -155,19 +159,34 @@ public final class TowerPlacement {
             return;
         }
         BlockPos blastPit = BlastPitPlacement.ensureBlastPitResolved(level);
-        player.sendSystemMessage(Component.literal("ORSA uplink stabilized. Satellite locator recovered."));
+        player.sendSystemMessage(Component.literal("ORSA uplink stabilized."));
         if (blastPit != null) {
             player.sendSystemMessage(Component.literal(
-                    "Nearest ORSA Blast Pit: X " + blastPit.getX() + " Y " + blastPit.getY() + " Z " + blastPit.getZ()));
+                    "ORSA shuttle launched at X " + blastPit.getX() + " Y " + blastPit.getY() + " Z " + blastPit.getZ()));
         } else {
-            player.sendSystemMessage(Component.literal("Nearest ORSA Blast Pit: resolving final anchor..."));
+            player.sendSystemMessage(Component.literal("ORSA shuttle launch site: resolving final anchor..."));
         }
         if (includeRewardMessage) {
-            player.sendSystemMessage(Component.literal("You recover an Acheronite Compass from the tower cache."));
+            player.sendSystemMessage(Component.literal("Tower cache unlocked: Acheronite Compass recovered."));
         }
     }
 
     public static void reset() {
         pendingTowerPlacements.clear();
+    }
+
+    private static void grantAdvancement(ServerPlayer player, String name) {
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name);
+        AdvancementHolder holder = player.server.getAdvancements().get(loc);
+        if (holder == null) {
+            return;
+        }
+
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        if (!progress.isDone()) {
+            for (String criterion : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(holder, criterion);
+            }
+        }
     }
 }

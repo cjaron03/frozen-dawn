@@ -1,0 +1,25 @@
+{
+  "name": "Acheronite Compass",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:acheronite_compass",
+  "sortnum": 5,
+  "advancement": "frozendawn:found_acheronite_compass",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Direction Finder",
+      "text": "$(bold)Recovered designation:$() Acheronite Compass.$(br2)Tower uplink staff used this instrument to reacquire the crashed ORSA relay satellite without wandering the continent like confused interns.$(br2)Once the tower hands you one, the needle binds itself to the relay wreck in the Overworld.$(br2)$(italic)If it spins in circles, congratulations: either the satellite is unresolved or ORSA has lost another orbiting asset.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Notes",
+      "text": "$(bold)Use:$() Keep it in hand like a normal compass. The lodestone tracking core points at the crashed relay satellite that carries the transponder lead.$(br2)$(bold)Recovery protocol:$() Tower quartermasters finally admitted people lose things under blizzards, in ravines, and inside exploding backpacks.$(br2)If you misplace the original unit, the recovery recipe unlocks after first issue."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:acheronite_compass",
+      "title": "Recovery Assembly",
+      "text": "$(bold)Recipe:$() A vanilla compass, two $(item)Acheronite Shards$(), one $(item)Thermal Core$(), and an $(item)Ice Shard$().$(br2)ORSA insists this is a recovery build. Finance insists it is a training fee."
+    }
+  ]
+}

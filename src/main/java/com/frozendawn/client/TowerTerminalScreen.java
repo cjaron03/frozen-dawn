@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,21 +21,16 @@ public class TowerTerminalScreen extends Screen {
     private static final int LINE_HEIGHT = 9;
     private static final int ADDRESS_GAP = 6;
     private static final int SEGMENT_GAP = 18;
-    private static final int PANEL_MIN_W = 420;
-    private static final int PANEL_MAX_W = 820;
-    private static final int PANEL_MIN_H = 260;
+    private static final int PANEL_MIN_W = 560;
+    private static final int PANEL_MAX_W = 760;
+    private static final int PANEL_MIN_H = 320;
     private static final int PANEL_MAX_H = 500;
     private static final int PANEL_PAD = 18;
     private static final int BOX_PAD = 10;
     private static final int BOX_GAP = 12;
-    private static final int STATUS_LINE_GAP = 2;
-    private static final List<String> HELP_LINES = List.of(
-            "Type a cyan word already on the board.",
-            "Enter submits. Backspace edits the prompt.",
-            "Likeness = matching letters in the same slots.",
-            "Bracket pairs can remove a dud or reset tries."
-    );
-
+    private static final int PROGRESS_BAR_H = 14;
+    private static final int ALIGN_TICKS_TOTAL = 20 * 30;
+    private static final int LOCKOUT_TICKS_TOTAL = 20 * 60;
     private final BlockPos consolePos;
     private long nonce;
     private TowerTerminalPuzzle.Board board;
@@ -44,47 +38,46 @@ public class TowerTerminalScreen extends Screen {
     private int state;
     private long removedMask;
     private long usedPairMask;
+    private int alignTicksRemaining;
+    private int lockoutTicksRemaining;
     private List<String> auditLines = new ArrayList<>();
-    private final List<TokenHitbox> pairHitboxes = new ArrayList<>();
+    private final List<TokenHitbox> interactiveHitboxes = new ArrayList<>();
 
     private int panelX;
     private int panelY;
     private int panelW;
     private int panelH;
-    private boolean compactLayout;
-    private boolean ultraCompactLayout;
     private int charStep = CHAR_STEP;
+    private int segmentGap = SEGMENT_GAP;
+    private int titleY;
+    private int attemptsY;
+    private int headerBottomY;
     private int boardX;
     private int boardY;
-    private int promptX;
-    private int promptY;
-    private int promptW;
-    private int promptH;
-    private int leftBoxX;
-    private int leftBoxY;
-    private int leftBoxW;
-    private int leftBoxH;
-    private int rightBoxX;
-    private int rightBoxY;
-    private int rightBoxW;
-    private int rightBoxH;
+    private int boardBottom;
+    private int boardLineHeight;
+    private int boardCenterX;
+    private int scaledCharStep;
+    private int scaledAddressWidth;
+    private int scaledAddressGap;
+    private int scaledSegmentWidth;
+    private int scaledSegmentGap;
+    private int scaledGroupWidth;
+    private int boardRenderedWidth;
+    private int auditX;
+    private int auditY;
+    private int auditW;
+    private int auditH;
     private int segmentWidth;
     private int addressWidth;
-    private int titleY;
-    private int subtitleY;
-    private int attemptsY;
-    private int headerBottom;
-    private int footerTop;
-    private int footerY;
-    private int blinkTicks;
     private int closeTicks = -1;
-    private int localStatusTicks;
-    private String typedGuess = "";
-    private String localStatus = "";
-    private int localStatusColor = 0xFF7FC7DD;
-    private boolean showHeaderSubtitle;
-    private boolean showHelpBox;
-    private boolean showAuditBox;
+    private int blinkTicks;
+    private String terminalInput = "";
+    private float headerScale = 0.82f;
+    private float boardScale = 0.78f;
+    private float auditScale = 0.78f;
+    private int headerLineHeight;
+    private int auditLineHeight;
 
     public TowerTerminalScreen(OpenTowerTerminalPayload payload) {
         super(Component.literal("ORSA UPLINK TERMINAL"));
@@ -99,24 +92,20 @@ public class TowerTerminalScreen extends Screen {
     public void applySnapshot(OpenTowerTerminalPayload payload) {
         long previousNonce = this.nonce;
         this.nonce = payload.nonce();
-        this.board = TowerTerminalPuzzle.create(payload.nonce());
+        this.board = payload.nonce() == 0L ? null : TowerTerminalPuzzle.create(payload.nonce());
         this.triesLeft = payload.triesLeft();
         this.state = payload.state();
         this.removedMask = payload.removedMask();
         this.usedPairMask = payload.usedPairMask();
+        this.alignTicksRemaining = payload.alignTicksRemaining();
+        this.lockoutTicksRemaining = payload.lockoutTicksRemaining();
         this.auditLines = payload.auditLog().isBlank()
                 ? new ArrayList<>()
                 : new ArrayList<>(Arrays.asList(payload.auditLog().split("\n")));
-        if (state == OpenTowerTerminalPayload.STATE_SOLVED || state == OpenTowerTerminalPayload.STATE_LOCKED_OUT) {
-            closeTicks = 20;
-        } else {
-            closeTicks = -1;
+        this.closeTicks = state == OpenTowerTerminalPayload.STATE_COMPLETE ? 30 : -1;
+        if (payload.nonce() != previousNonce || state != OpenTowerTerminalPayload.STATE_ACTIVE) {
+            this.terminalInput = "";
         }
-        if (state != OpenTowerTerminalPayload.STATE_ACTIVE || previousNonce != this.nonce) {
-            typedGuess = "";
-        }
-        localStatus = "";
-        localStatusTicks = 0;
         if (minecraft != null && minecraft.screen == this) {
             recalculateLayout();
             rebuildHitboxes();
@@ -126,16 +115,16 @@ public class TowerTerminalScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        panelW = Math.min(PANEL_MAX_W, width - 12);
+        int maxUsableW = Math.max(320, width - 12);
+        int maxUsableH = Math.max(220, height - 12);
+        panelW = Math.min(PANEL_MAX_W, maxUsableW);
+        panelH = Math.min(PANEL_MAX_H, maxUsableH);
         if (panelW < PANEL_MIN_W) {
-            panelW = Math.max(320, width - 8);
+            panelW = maxUsableW;
         }
-        panelH = Math.min(PANEL_MAX_H, height - 12);
         if (panelH < PANEL_MIN_H) {
-            panelH = Math.max(240, height - 8);
+            panelH = maxUsableH;
         }
-        panelW = Math.min(panelW, width - 8);
-        panelH = Math.min(panelH, height - 8);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
         recalculateLayout();
@@ -143,111 +132,89 @@ public class TowerTerminalScreen extends Screen {
     }
 
     private void recalculateLayout() {
-        compactLayout = panelW < 700 || panelH < 420;
-        ultraCompactLayout = panelW < 600 || panelH < 320;
-        charStep = ultraCompactLayout ? 4 : 5;
-
-        addressWidth = font.width("0xF1B0");
+        charStep = CHAR_STEP;
+        segmentGap = SEGMENT_GAP;
+        addressWidth = font.width("0xF000");
         segmentWidth = TowerTerminalPuzzle.SEGMENT_LENGTH * charStep;
-        int lineWidth = (addressWidth + ADDRESS_GAP + segmentWidth) * 2 + SEGMENT_GAP;
-
-        boardX = panelX + Math.max(PANEL_PAD, (panelW - lineWidth) / 2);
-
-        titleY = panelY + 12;
-        int headerGap = ultraCompactLayout ? 3 : 4;
-        showHeaderSubtitle = !ultraCompactLayout;
-        if (showHeaderSubtitle) {
-            subtitleY = titleY + LINE_HEIGHT + headerGap;
-            attemptsY = subtitleY + LINE_HEIGHT + headerGap;
-        } else {
-            subtitleY = -1;
-            attemptsY = titleY + LINE_HEIGHT + headerGap;
-        }
-        headerBottom = attemptsY + LINE_HEIGHT + 7;
-        boardY = headerBottom + (ultraCompactLayout ? 5 : compactLayout ? 8 : 10);
-
-        promptX = panelX + PANEL_PAD;
-        promptW = panelW - PANEL_PAD * 2;
-        promptH = ultraCompactLayout ? 36 : compactLayout ? 40 : 46;
-        promptY = boardY + TowerTerminalPuzzle.ROWS * LINE_HEIGHT + (ultraCompactLayout ? 5 : compactLayout ? 8 : 12);
-
-        int footerBandHeight = measureFooterBandHeight();
-        footerTop = panelY + panelH - footerBandHeight;
-        int footerTextHeight = Math.max(1, font.split(currentFooter(), promptW).size()) * LINE_HEIGHT;
-        footerY = footerTop + Math.max(4, (footerBandHeight - footerTextHeight) / 2);
-
-        layoutBottomPanels(promptY + promptH + (ultraCompactLayout ? 5 : 8),
-                footerTop - (ultraCompactLayout ? 4 : 8));
-    }
-
-    private void layoutBottomPanels(int topY, int bottomY) {
-        showHelpBox = false;
-        showAuditBox = false;
-        leftBoxX = promptX;
-        leftBoxY = topY;
-        leftBoxW = 0;
-        leftBoxH = 0;
-        rightBoxX = promptX;
-        rightBoxY = topY;
-        rightBoxW = 0;
-        rightBoxH = 0;
-
-        int availableHeight = bottomY - topY;
-        if (availableHeight <= 0) {
-            return;
-        }
 
         int contentWidth = panelW - PANEL_PAD * 2;
-        int twoColumnWidth = (contentWidth - BOX_GAP) / 2;
-        int minAuditHeight = ultraCompactLayout ? 52 : compactLayout ? 60 : 72;
-        int helpHeight = measureInfoBoxHeight(HELP_LINES, twoColumnWidth);
-        if (twoColumnWidth >= 160 && availableHeight >= Math.max(minAuditHeight, helpHeight)) {
-            showHelpBox = true;
-            showAuditBox = true;
-            leftBoxW = twoColumnWidth;
-            rightBoxW = contentWidth - twoColumnWidth - BOX_GAP;
-            leftBoxH = availableHeight;
-            rightBoxH = availableHeight;
-            rightBoxX = promptX + leftBoxW + BOX_GAP;
-            return;
+        int lineWidth = (addressWidth + ADDRESS_GAP + segmentWidth) * 2 + segmentGap;
+        while (lineWidth > contentWidth && charStep > 4) {
+            charStep--;
+            segmentWidth = TowerTerminalPuzzle.SEGMENT_LENGTH * charStep;
+            lineWidth = (addressWidth + ADDRESS_GAP + segmentWidth) * 2 + segmentGap;
         }
-
-        if (availableHeight >= minAuditHeight) {
-            showAuditBox = true;
-            rightBoxW = contentWidth;
-            rightBoxH = availableHeight;
+        if (lineWidth > contentWidth) {
+            segmentGap = Math.max(8, contentWidth - (addressWidth + ADDRESS_GAP + segmentWidth) * 2);
+            lineWidth = (addressWidth + ADDRESS_GAP + segmentWidth) * 2 + segmentGap;
         }
-    }
+        headerScale = 0.82f;
+        boardScale = Math.max(0.64f, Math.min(0.76f, (contentWidth - 6.0f) / (float) lineWidth));
+        auditScale = Math.max(0.66f, Math.min(0.78f, boardScale + 0.02f));
+        headerLineHeight = scaledLineHeight(headerScale);
+        boardLineHeight = scaledLineHeight(boardScale);
+        auditLineHeight = scaledLineHeight(auditScale);
+        scaledCharStep = Math.max(3, Math.round(charStep * boardScale));
+        scaledAddressWidth = Math.round(addressWidth * boardScale);
+        scaledAddressGap = Math.max(3, Math.round(ADDRESS_GAP * boardScale));
+        scaledSegmentWidth = Math.round(segmentWidth * boardScale);
+        scaledSegmentGap = Math.max(6, Math.round(segmentGap * boardScale));
+        scaledGroupWidth = scaledAddressWidth + scaledAddressGap + scaledSegmentWidth;
+        boardRenderedWidth = scaledGroupWidth * 2 + scaledSegmentGap;
 
-    private int measureFooterBandHeight() {
-        int lines = Math.max(1, font.split(currentFooter(), promptW).size());
-        int paddedHeight = lines * LINE_HEIGHT + (ultraCompactLayout ? 10 : 12);
-        return Math.max(ultraCompactLayout ? 22 : 24, paddedHeight);
-    }
+        titleY = panelY + 10;
+        attemptsY = titleY + headerLineHeight + 6;
+        headerBottomY = attemptsY + headerLineHeight + 8;
+        boardCenterX = panelX + panelW / 2;
+        boardX = boardCenterX - boardRenderedWidth / 2;
+        int boardContentHeight = TowerTerminalPuzzle.ROWS * boardLineHeight;
 
-    private int measureInfoBoxHeight(List<String> lines, int width) {
-        int textWidth = Math.max(40, width - BOX_PAD * 2);
-        int height = 22 + BOX_PAD;
-        for (String line : lines) {
-            height += font.split(Component.literal(line), textWidth).size() * LINE_HEIGHT;
-            height += STATUS_LINE_GAP;
-        }
-        return height;
+        int boardAreaTop = headerBottomY + 12;
+        int bottomMargin = 14;
+        int desiredAuditH = Math.max(120, Math.min(160, panelH / 3));
+        int boardAreaBottom = panelY + panelH - bottomMargin - desiredAuditH - 14;
+        int boardAreaHeight = Math.max(boardContentHeight, boardAreaBottom - boardAreaTop);
+        boardY = boardAreaTop + Math.max(0, (boardAreaHeight - boardContentHeight) / 2);
+        boardBottom = boardY + boardContentHeight;
+
+        auditX = panelX + PANEL_PAD;
+        auditW = contentWidth;
+        auditY = boardBottom + 8;
+        int availableAuditH = Math.max(96, panelY + panelH - bottomMargin - auditY);
+        auditH = Math.min(availableAuditH, desiredAuditHeight(auditW - BOX_PAD * 2));
     }
 
     private void rebuildHitboxes() {
-        pairHitboxes.clear();
-        if (board == null) {
+        interactiveHitboxes.clear();
+        if (board == null || state != OpenTowerTerminalPayload.STATE_ACTIVE) {
             return;
         }
 
+        for (TowerTerminalPuzzle.WordToken token : board.wordTokens()) {
+            if (((removedMask >> token.wordIndex()) & 1L) != 0L) {
+                continue;
+            }
+            SegmentLayout layout = segmentLayout(token.segmentIndex());
+            interactiveHitboxes.add(new TokenHitbox(
+                    layout.textX() + token.start() * scaledCharStep,
+                    layout.y(),
+                    Math.max(8, token.length() * scaledCharStep),
+                    boardLineHeight,
+                    token.wordIndex(),
+                    true));
+        }
         for (TowerTerminalPuzzle.PairToken token : board.pairTokens()) {
             if (((usedPairMask >> token.pairIndex()) & 1L) != 0L) {
                 continue;
             }
             SegmentLayout layout = segmentLayout(token.segmentIndex());
-            pairHitboxes.add(new TokenHitbox(layout.textX() + token.start() * charStep, layout.y(),
-                    token.length() * charStep, LINE_HEIGHT, token.pairIndex()));
+            interactiveHitboxes.add(new TokenHitbox(
+                    layout.textX() + token.start() * scaledCharStep,
+                    layout.y(),
+                    Math.max(8, token.length() * scaledCharStep),
+                    boardLineHeight,
+                    token.pairIndex(),
+                    false));
         }
     }
 
@@ -255,11 +222,11 @@ public class TowerTerminalScreen extends Screen {
     public void tick() {
         super.tick();
         blinkTicks++;
-        if (localStatusTicks > 0) {
-            localStatusTicks--;
-            if (localStatusTicks == 0) {
-                localStatus = "";
-            }
+        if (state == OpenTowerTerminalPayload.STATE_ALIGNING && alignTicksRemaining > 0) {
+            alignTicksRemaining--;
+        }
+        if (state == OpenTowerTerminalPayload.STATE_LOCKED_OUT && lockoutTicksRemaining > 0) {
+            lockoutTicksRemaining--;
         }
         if (closeTicks > 0) {
             closeTicks--;
@@ -273,124 +240,110 @@ public class TowerTerminalScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
         renderFrame(graphics);
+        drawCenteredScaledString(graphics, title, panelX + panelW / 2, titleY, headerScale, 0xFFE4F7FF);
 
-        graphics.drawCenteredString(font, title, panelX + panelW / 2, titleY, 0xFFE4F7FF);
-        if (showHeaderSubtitle) {
-            graphics.drawCenteredString(font, Component.literal("Type a board word, then press Enter."),
-                    panelX + panelW / 2, subtitleY, 0xFF87C5D8);
+        if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
+            renderAttempts(graphics);
+            renderBoard(graphics, mouseX, mouseY);
+            renderAudit(graphics);
+            return;
         }
-        graphics.drawCenteredString(font, Component.literal("ATTEMPTS: " + "*".repeat(Math.max(triesLeft, 0))),
-                panelX + panelW / 2, attemptsY, triesLeft > 1 ? 0xFFB7F1FF : 0xFFFF8B8B);
 
-        renderBoard(graphics, mouseX, mouseY);
-        renderPrompt(graphics);
-        renderHelp(graphics);
+        renderStatePanel(graphics);
         renderAudit(graphics);
-        renderFooter(graphics);
     }
 
     private void renderFrame(GuiGraphics graphics) {
         graphics.fillGradient(0, 0, width, height, 0xD0081018, 0xE004090E);
         graphics.fill(panelX - 3, panelY - 3, panelX + panelW + 3, panelY + panelH + 3, 0x4054C6F6);
         graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xFF081018);
-        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, headerBottom, 0xFF10202E);
-        graphics.fill(panelX + 2, headerBottom, panelX + panelW - 2, headerBottom + 1, 0xFF58BDE4);
-        graphics.fill(panelX + 2, footerTop, panelX + panelW - 2, footerTop + 1, 0xFF1B3341);
+        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, headerBottomY - 2, 0xFF10202E);
+        graphics.fill(panelX + 2, headerBottomY - 2, panelX + panelW - 2, headerBottomY - 1, 0xFF58BDE4);
         graphics.fill(panelX + 2, panelY + 2, panelX + 3, panelY + panelH - 2, 0xFF294D60);
         graphics.fill(panelX + panelW - 3, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, 0xFF0A1720);
     }
 
+    private void renderAttempts(GuiGraphics graphics) {
+        drawCenteredScaledString(graphics,
+                Component.literal("ATTEMPTS: " + "*".repeat(Math.max(triesLeft, 0))),
+                panelX + panelW / 2,
+                attemptsY,
+                headerScale,
+                triesLeft > 1 ? 0xFFB7F1FF : 0xFFFF8B8B);
+    }
+
     private void renderBoard(GuiGraphics graphics, int mouseX, int mouseY) {
-        TokenHitbox hovered = hoveredToken(mouseX, mouseY);
-        if (hovered != null) {
-            graphics.fill(hovered.x(), hovered.y() - 1, hovered.x() + hovered.width(), hovered.y() + hovered.height(), 0x4435A7D1);
-        }
-
-        for (int row = 0; row < TowerTerminalPuzzle.ROWS; row++) {
-            renderSegment(graphics, row * 2);
-            renderSegment(graphics, row * 2 + 1);
-        }
-    }
-
-    private void renderSegment(GuiGraphics graphics, int segmentIndex) {
-        SegmentLayout layout = segmentLayout(segmentIndex);
-        graphics.drawString(font, layout.address(), layout.addressX(), layout.y(), 0xFF5E8B9D, false);
-        String rendered = board.renderSegment(segmentIndex, removedMask, usedPairMask);
-        for (int i = 0; i < rendered.length(); i++) {
-            graphics.drawString(font, String.valueOf(rendered.charAt(i)), layout.textX() + i * charStep, layout.y(), 0xFFB6EEF8, false);
+        for (int segmentIndex = 0; segmentIndex < TowerTerminalPuzzle.SEGMENTS; segmentIndex++) {
+            SegmentLayout layout = segmentLayout(segmentIndex);
+            drawScaledString(graphics, layout.address(), layout.addressX(), layout.y(), boardScale, 0xFF5E8B9D);
+            String rendered = board.renderSegment(segmentIndex, removedMask, usedPairMask);
+            for (int i = 0; i < rendered.length(); i++) {
+                int color = glyphColor(segmentIndex, i);
+                drawScaledString(graphics, String.valueOf(rendered.charAt(i)),
+                        layout.textX() + i * scaledCharStep, layout.y(), boardScale, color);
+            }
         }
     }
 
-    private void renderPrompt(GuiGraphics graphics) {
-        graphics.fill(promptX, promptY, promptX + promptW, promptY + promptH, 0xFF0D1820);
-        graphics.fill(promptX, promptY, promptX + promptW, promptY + 1, 0xFF4CB7E3);
-        graphics.fill(promptX, promptY + promptH - 1, promptX + promptW, promptY + promptH, 0xFF0A1219);
-        graphics.drawString(font, Component.literal("TYPE WORD / ENTER TO SUBMIT"), promptX + BOX_PAD, promptY + 4, 0xFFD9F4FF, false);
-
-        String cursor = (blinkTicks / 8) % 2 == 0 ? "_" : " ";
-        String shownGuess = typedGuess.isEmpty() ? cursor : typedGuess + cursor;
-        graphics.drawString(font, Component.literal("> " + shownGuess), promptX + BOX_PAD, promptY + 16, 0xFFB6EEF8, false);
-        String countLabel = typedGuess.length() + "/" + board.wordLength();
-        graphics.drawString(font, Component.literal(countLabel),
-                promptX + promptW - BOX_PAD - font.width(countLabel), promptY + 16, 0xFF79AFC0, false);
-
-        if (!localStatus.isEmpty()) {
-            graphics.drawCenteredString(font, Component.literal(localStatus), promptX + promptW / 2, promptY + promptH - 12, localStatusColor);
-        } else if (ultraCompactLayout) {
-            graphics.drawCenteredString(font, Component.literal("Type a cyan board word from the grid."),
-                    promptX + promptW / 2, promptY + promptH - 12, 0xFF7FC7DD);
-        } else {
-            graphics.drawCenteredString(font, Component.literal("Type any cyan board word. Brackets are optional."), promptX + promptW / 2, promptY + promptH - 12, 0xFF7FC7DD);
-        }
-    }
-
-    private void renderHelp(GuiGraphics graphics) {
-        if (!showHelpBox) {
-            return;
-        }
-        renderInfoBox(graphics, leftBoxX, leftBoxY, leftBoxW, leftBoxH, "HOW TO HACK", 0xFF63BBE4, 0xFF0E1720, HELP_LINES);
+    private int glyphColor(int segmentIndex, int charIndex) {
+        return 0xFF5F91A3;
     }
 
     private void renderAudit(GuiGraphics graphics) {
-        if (!showAuditBox) {
-            return;
-        }
-        renderInfoBox(graphics, rightBoxX, rightBoxY, rightBoxW, rightBoxH, "AUDIT LOG", 0xFFD9F4FF, 0xFF0C141B, null);
+        renderInfoBox(graphics, auditX, auditY, auditW, auditH, "AUDIT LOG", 0xFFD9F4FF, 0xFF0C141B, null);
 
-        int y = rightBoxY + 22;
-        if (auditLines.isEmpty()) {
-            graphics.drawString(font, Component.literal("awaiting input..."), rightBoxX + BOX_PAD, y, 0xFF84A8B5, false);
-            return;
-        }
-
-        int limitY = rightBoxY + rightBoxH - BOX_PAD - LINE_HEIGHT;
-        boolean truncated = false;
+        int y = auditY + 24;
+        int inputY = auditY + auditH - BOX_PAD - auditLineHeight;
+        int maxY = inputY - 8;
         for (String line : auditLines) {
-            for (FormattedCharSequence wrapped : font.split(Component.literal(line), rightBoxW - BOX_PAD * 2)) {
-                if (y > limitY) {
-                    truncated = true;
-                    break;
-                }
-                graphics.drawString(font, wrapped, rightBoxX + BOX_PAD, y, 0xFF9FD5E4, false);
-                y += LINE_HEIGHT;
-            }
-            if (truncated) {
-                break;
-            }
-            y += STATUS_LINE_GAP;
+            y = drawWrappedScaledLine(graphics, Component.literal(line), auditX + BOX_PAD, y,
+                    auditW - BOX_PAD * 2, maxY, 0xFF9FD5E4, auditScale);
+            y += 1;
         }
-        if (truncated) {
-            graphics.drawString(font, Component.literal("..."), rightBoxX + BOX_PAD, limitY, 0xFF678996, false);
+
+        if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
+            String cursor = (blinkTicks / 8) % 2 == 0 ? "_" : "";
+            drawScaledString(graphics, Component.literal("> " + terminalInput + cursor),
+                    auditX + BOX_PAD, inputY, auditScale, 0xFFBDF8FF);
         }
     }
 
-    private void renderFooter(GuiGraphics graphics) {
-        int color = currentFooterColor();
-        int y = footerY;
-        for (FormattedCharSequence line : font.split(currentFooter(), promptW)) {
-            graphics.drawString(font, line, panelX + panelW / 2 - font.width(line) / 2, y, color, false);
-            y += LINE_HEIGHT;
+    private void renderStatePanel(GuiGraphics graphics) {
+        int boxX = panelX + PANEL_PAD;
+        int boxY = panelY + 66;
+        int boxW = panelW - PANEL_PAD * 2;
+        int boxH = Math.max(110, auditY - boxY - 12);
+
+        graphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, 0xFF0D1820);
+        graphics.fill(boxX, boxY, boxX + boxW, boxY + 1, 0xFF4CB7E3);
+        graphics.fill(boxX, boxY + boxH - 1, boxX + boxW, boxY + boxH, 0xFF0A1219);
+
+        if (state == OpenTowerTerminalPayload.STATE_LOCKED_OUT) {
+            graphics.drawCenteredString(font, Component.literal("TERMINAL LOCKED"), boxX + boxW / 2, boxY + 18, 0xFFFF8B8B);
+            graphics.drawCenteredString(font, Component.literal("Please contact an administrator."), boxX + boxW / 2, boxY + 36, 0xFFB7C7D0);
+            String reset = "RESET IN " + Math.max(1, (lockoutTicksRemaining + 19) / 20) + "s";
+            graphics.drawCenteredString(font, Component.literal(reset), boxX + boxW / 2, boxY + 56, 0xFF87C5D8);
+            return;
         }
+
+        if (state == OpenTowerTerminalPayload.STATE_ALIGNING) {
+            graphics.drawCenteredString(font, Component.literal("TRANSMISSION IN PROGRESS"), boxX + boxW / 2, boxY + 18, 0xFF9DF4B6);
+            graphics.drawCenteredString(font, Component.literal("Maintaining ORSA uplink lock..."), boxX + boxW / 2, boxY + 36, 0xFFB7C7D0);
+            renderProgressBar(graphics, boxX + 28, boxY + 58, boxW - 56, Math.max(0, 1.0f - (float) alignTicksRemaining / ALIGN_TICKS_TOTAL));
+            String time = String.format("%02d:%02d", Math.max(0, alignTicksRemaining) / 20 / 60, (Math.max(0, alignTicksRemaining) / 20) % 60);
+            graphics.drawCenteredString(font, Component.literal("TIME TO TRANSMISSION  " + time), boxX + boxW / 2, boxY + 78, 0xFFB6EEF8);
+            return;
+        }
+
+        graphics.drawCenteredString(font, Component.literal("TRANSMISSION COMPLETE"), boxX + boxW / 2, boxY + 30, 0xFF9DF4B6);
+        graphics.drawCenteredString(font, Component.literal("Tower cache released ORSA locator data."), boxX + boxW / 2, boxY + 50, 0xFFB7C7D0);
+    }
+
+    private void renderProgressBar(GuiGraphics graphics, int x, int y, int w, float progress) {
+        int clamped = Math.max(0, Math.min(w, Math.round(w * progress)));
+        graphics.fill(x, y, x + w, y + PROGRESS_BAR_H, 0xFF071218);
+        graphics.fill(x + 1, y + 1, x + w - 1, y + PROGRESS_BAR_H - 1, 0xFF10202E);
+        graphics.fill(x + 2, y + 2, x + 2 + clamped, y + PROGRESS_BAR_H - 2, 0xFF59CBEA);
     }
 
     private void renderInfoBox(GuiGraphics graphics, int x, int y, int w, int h, String title, int accent, int fill, List<String> lines) {
@@ -405,34 +358,14 @@ public class TowerTerminalScreen extends Screen {
             return;
         }
 
-        int currentY = y + 22;
+        int currentY = y + 24;
         for (String line : lines) {
             currentY = drawWrappedLine(graphics, Component.literal(line), x + BOX_PAD, currentY, w - BOX_PAD * 2, y + h - BOX_PAD, 0xFFD4EEF7);
-            currentY += STATUS_LINE_GAP;
+            currentY += 1;
             if (currentY > y + h - BOX_PAD) {
                 break;
             }
         }
-    }
-
-    private Component currentFooter() {
-        if (state == OpenTowerTerminalPayload.STATE_SOLVED) {
-            return Component.literal("PASSWORD ACCEPTED // ALIGNMENT STARTING");
-        }
-        if (state == OpenTowerTerminalPayload.STATE_LOCKED_OUT) {
-            return Component.literal("TERMINAL LOCKED // REOPEN CONSOLE");
-        }
-        return Component.literal("ENTER SUBMITS // BRACKET PAIRS ARE OPTIONAL");
-    }
-
-    private int currentFooterColor() {
-        if (state == OpenTowerTerminalPayload.STATE_SOLVED) {
-            return 0xFF9DF4B6;
-        }
-        if (state == OpenTowerTerminalPayload.STATE_LOCKED_OUT) {
-            return 0xFFFF8B8B;
-        }
-        return 0xFF7FC7DD;
     }
 
     private int drawWrappedLine(GuiGraphics graphics, Component line, int x, int y, int width, int maxY, int color) {
@@ -446,81 +379,83 @@ public class TowerTerminalScreen extends Screen {
         return y;
     }
 
+    private int desiredAuditHeight(int contentWidth) {
+        int scaledWidth = Math.max(24, (int) Math.floor(contentWidth / auditScale));
+        int wrappedLines = 0;
+        for (String line : auditLines) {
+            wrappedLines += Math.max(1, font.split(Component.literal(line), scaledWidth).size());
+        }
+        int visibleLines = Math.max(state == OpenTowerTerminalPayload.STATE_ACTIVE ? 4 : 3,
+                Math.min(8, wrappedLines + (state == OpenTowerTerminalPayload.STATE_ACTIVE ? 1 : 0)));
+        int contentHeight = 24 + BOX_PAD + visibleLines * auditLineHeight + BOX_PAD + 6;
+        return Math.max(110, contentHeight);
+    }
+
+    private int drawWrappedScaledLine(GuiGraphics graphics, Component line, int x, int y, int width, int maxY, int color, float scale) {
+        int scaledWidth = Math.max(24, (int) Math.floor(width / scale));
+        for (FormattedCharSequence wrapped : font.split(line, scaledWidth)) {
+            if (y > maxY) {
+                return y;
+            }
+            drawScaledString(graphics, wrapped, x, y, scale, color);
+            y += scaledLineHeight(scale);
+        }
+        return y;
+    }
+
+    private void drawCenteredScaledString(GuiGraphics graphics, Component text, int centerX, int y, float scale, int color) {
+        int width = Math.round(font.width(text) * scale);
+        drawScaledString(graphics, text, centerX - width / 2, y, scale, color);
+    }
+
+    private void drawScaledString(GuiGraphics graphics, Component text, int x, int y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0);
+        graphics.pose().scale(scale, scale, 1.0f);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private void drawScaledString(GuiGraphics graphics, String text, int x, int y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0);
+        graphics.pose().scale(scale, scale, 1.0f);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private void drawScaledString(GuiGraphics graphics, FormattedCharSequence text, int x, int y, float scale, int color) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0);
+        graphics.pose().scale(scale, scale, 1.0f);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    private int scaledLineHeight(float scale) {
+        return Math.max(6, Math.round(LINE_HEIGHT * scale));
+    }
+
     private SegmentLayout segmentLayout(int segmentIndex) {
         int row = segmentIndex / 2;
         boolean right = (segmentIndex % 2) == 1;
         int addressBase = right ? 0xF1B0 : 0xF000;
-        int x = boardX + (right ? addressWidth + ADDRESS_GAP + segmentWidth + SEGMENT_GAP : 0);
-        int y = boardY + row * LINE_HEIGHT;
+        int textOffset = scaledAddressWidth + scaledAddressGap;
+        int x = right
+                ? boardCenterX + scaledSegmentGap / 2
+                : boardCenterX - scaledSegmentGap / 2 - scaledGroupWidth;
+        int y = boardY + row * boardLineHeight;
         String address = String.format("0x%04X", addressBase + row * 0x10);
-        return new SegmentLayout(x, y, address, x + addressWidth + ADDRESS_GAP);
+        return new SegmentLayout(x, y, address, x + textOffset);
     }
 
     private TokenHitbox hoveredToken(double mouseX, double mouseY) {
-        for (TokenHitbox hitbox : pairHitboxes) {
+        for (TokenHitbox hitbox : interactiveHitboxes) {
             if (hitbox.contains(mouseX, mouseY)) {
                 return hitbox;
             }
         }
         return null;
-    }
-
-    private boolean submitTypedGuess() {
-        if (state != OpenTowerTerminalPayload.STATE_ACTIVE || board == null) {
-            return false;
-        }
-        if (typedGuess.length() != board.wordLength()) {
-            localStatus = "Need a " + board.wordLength() + "-letter board word.";
-            localStatusColor = 0xFFFF8B8B;
-            localStatusTicks = 60;
-            return true;
-        }
-
-        PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
-                consolePos,
-                nonce,
-                SubmitTowerTerminalPayload.ACTION_TYPED_GUESS,
-                -1,
-                typedGuess
-        ));
-        typedGuess = "";
-        localStatus = "TRANSMITTING...";
-        localStatusColor = 0xFF9DF4B6;
-        localStatusTicks = 40;
-        return true;
-    }
-
-    @Override
-    public boolean charTyped(char codePoint, int modifiers) {
-        if (state != OpenTowerTerminalPayload.STATE_ACTIVE || board == null) {
-            return super.charTyped(codePoint, modifiers);
-        }
-
-        if (isAsciiLetter(codePoint) && typedGuess.length() < board.wordLength()) {
-            typedGuess = typedGuess + Character.toUpperCase(codePoint);
-            localStatus = "";
-            localStatusTicks = 0;
-            return true;
-        }
-        return super.charTyped(codePoint, modifiers);
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (state == OpenTowerTerminalPayload.STATE_ACTIVE && board != null) {
-            if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
-                if (!typedGuess.isEmpty()) {
-                    typedGuess = typedGuess.substring(0, typedGuess.length() - 1);
-                }
-                localStatus = "";
-                localStatusTicks = 0;
-                return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                return submitTypedGuess();
-            }
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -537,11 +472,49 @@ public class TowerTerminalScreen extends Screen {
         PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
                 consolePos,
                 nonce,
-                SubmitTowerTerminalPayload.ACTION_USE_PAIR,
+                hitbox.word() ? SubmitTowerTerminalPayload.ACTION_TYPED_GUESS : SubmitTowerTerminalPayload.ACTION_USE_PAIR,
                 hitbox.index(),
                 ""
         ));
+        terminalInput = "";
         return true;
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
+            if (Character.isLetter(codePoint) && board != null && terminalInput.length() < board.wordLength()) {
+                terminalInput += Character.toUpperCase(codePoint);
+            }
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
+            if (keyCode == 259) {
+                if (!terminalInput.isEmpty()) {
+                    terminalInput = terminalInput.substring(0, terminalInput.length() - 1);
+                }
+                return true;
+            }
+            if (keyCode == 257 || keyCode == 335) {
+                if (!terminalInput.isBlank()) {
+                    PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
+                            consolePos,
+                            nonce,
+                            SubmitTowerTerminalPayload.ACTION_TYPED_GUESS,
+                            -1,
+                            terminalInput
+                    ));
+                    terminalInput = "";
+                }
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -560,13 +533,9 @@ public class TowerTerminalScreen extends Screen {
     private record SegmentLayout(int addressX, int y, String address, int textX) {
     }
 
-    private record TokenHitbox(int x, int y, int width, int height, int index) {
+    private record TokenHitbox(int x, int y, int width, int height, int index, boolean word) {
         boolean contains(double mouseX, double mouseY) {
             return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
         }
-    }
-
-    private static boolean isAsciiLetter(char codePoint) {
-        return (codePoint >= 'a' && codePoint <= 'z') || (codePoint >= 'A' && codePoint <= 'Z');
     }
 }

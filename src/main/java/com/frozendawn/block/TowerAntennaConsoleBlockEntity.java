@@ -22,12 +22,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 public class TowerAntennaConsoleBlockEntity extends BlockEntity {
 
     private static final int ALIGN_TICKS_TOTAL = 20 * 30;
+    private static final int LOCKOUT_TICKS_TOTAL = 20 * 60;
     private static final int TERMINAL_SESSION_TTL_TICKS = 20 * 90;
     private static final double MAX_HORIZONTAL_DISTANCE_SQ = 4.5D * 4.5D;
     private static final double MAX_VERTICAL_DISTANCE = 3.5D;
@@ -41,6 +41,7 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
     private long terminalNonce;
     private int terminalTicksRemaining;
     private int terminalTriesLeft;
+    private int terminalLockoutTicksRemaining;
     private long terminalRemovedMask;
     private long terminalUsedPairMask;
     private TowerTerminalPuzzle.Board terminalBoard;
@@ -91,12 +92,12 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             return;
         }
 
-        if (terminalPlayerId != null && terminalTicksRemaining > 0) {
+        if (terminalPlayerId != null && (terminalTicksRemaining > 0 || terminalLockoutTicksRemaining > 0)) {
             if (!terminalPlayerId.equals(player.getUUID())) {
                 player.displayClientMessage(Component.literal("Terminal is currently in use."), true);
                 return;
             }
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+            sendSnapshot(player, currentTerminalState());
             return;
         }
 
@@ -132,9 +133,13 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             player.displayClientMessage(Component.literal("Terminal session expired. Reopen the console."), true);
             return;
         }
+        if (terminalLockoutTicksRemaining > 0) {
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT);
+            return;
+        }
 
         if (actionType == SubmitTowerTerminalPayload.ACTION_TYPED_GUESS) {
-            handleTypedGuess(serverLevel, player, typedGuess);
+            handleWordSelection(serverLevel, player, actionIndex, typedGuess);
             return;
         }
         if (actionType == SubmitTowerTerminalPayload.ACTION_USE_PAIR) {
@@ -147,7 +152,18 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             return;
         }
 
-        if (terminalTicksRemaining > 0) {
+        if (terminalPlayerId != null && terminalLockoutTicksRemaining > 0) {
+            terminalLockoutTicksRemaining--;
+            if (terminalLockoutTicksRemaining <= 0) {
+                ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(terminalPlayerId);
+                if (player != null && !player.isDeadOrDying() && player.level() == serverLevel && isPlayerInRange(player)) {
+                    beginTerminalSession(player, serverLevel.getRandom());
+                    sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+                } else {
+                    clearTerminalSession();
+                }
+            }
+        } else if (terminalTicksRemaining > 0) {
             terminalTicksRemaining--;
             if (terminalTicksRemaining <= 0) {
                 clearTerminalSession();
@@ -180,10 +196,12 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
 
         if (alignTicksRemaining <= 0) {
             long resolvedTowerId = resolveTowerId(serverLevel);
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_COMPLETE);
             TowerPlacement.completeAlignment(serverLevel, resolvedTowerId, player);
             serverLevel.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.9f, 1.15f);
             aligningPlayerId = null;
             alignTicksRemaining = 0;
+            clearTerminalSession();
             setChanged();
         }
     }
@@ -199,12 +217,12 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         String guess = terminalBoard.candidates().get(wordIndex);
         appendAudit("> " + guess);
         if (wordIndex == terminalBoard.passwordIndex()) {
-            appendAudit("PASSWORD ACCEPTED");
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_SOLVED);
-            clearTerminalSession();
+            appendAudit("> Exact match. Signal uplink accepted.");
             aligningPlayerId = player.getUUID();
             alignTicksRemaining = ALIGN_TICKS_TOTAL;
+            terminalTicksRemaining = 0;
             setChanged();
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ALIGNING);
             level.playSound(null, worldPosition, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.75f, 1.25f);
             player.displayClientMessage(Component.literal("Signal handshake accepted. Alignment started."), true);
             return;
@@ -212,43 +230,53 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
 
         int likeness = TowerTerminalPuzzle.likeness(guess, terminalBoard.password());
         terminalTriesLeft--;
-        appendAudit("ENTRY DENIED");
-        appendAudit("LIKENESS=" + likeness);
+        appendAudit("> Entry denied. " + likeness + "/" + terminalBoard.wordLength() + " correct.");
         level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 0.8f, 0.7f);
 
         if (terminalTriesLeft <= 0) {
-            appendAudit("LOCKOUT ENGAGED");
+            terminalLockoutTicksRemaining = LOCKOUT_TICKS_TOTAL;
+            terminalTicksRemaining = 0;
+            appendAudit("Please contact an administrator.");
+            appendAudit("TERMINAL LOCKED");
             sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT);
-            clearTerminalSession();
             return;
         }
 
         sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
     }
 
-    private void handleTypedGuess(ServerLevel level, ServerPlayer player, String guess) {
-        if (terminalBoard == null || guess == null) {
+    private void handleWordSelection(ServerLevel level, ServerPlayer player, int wordIndex, String typedGuess) {
+        if (terminalBoard == null) {
             return;
         }
 
-        String normalized = guess.trim().toUpperCase(Locale.ROOT);
-        if (normalized.length() != terminalBoard.wordLength()) {
-            player.displayClientMessage(Component.literal("Type a " + terminalBoard.wordLength() + "-letter board word."), true);
+        int resolvedIndex = wordIndex;
+        if (resolvedIndex < 0 || resolvedIndex >= terminalBoard.candidates().size()) {
+            String normalizedGuess = typedGuess == null ? "" : typedGuess.trim().toUpperCase();
+            if (normalizedGuess.isEmpty()) {
+                return;
+            }
+            resolvedIndex = -1;
+            for (int i = 0; i < terminalBoard.candidates().size(); i++) {
+                if (((terminalRemovedMask >> i) & 1L) != 0L) {
+                    continue;
+                }
+                if (terminalBoard.candidates().get(i).equals(normalizedGuess)) {
+                    resolvedIndex = i;
+                    break;
+                }
+            }
+            if (resolvedIndex < 0) {
+                appendAudit("> " + normalizedGuess);
+                appendAudit("> Unknown token.");
+                sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+                return;
+            }
+        }
+        if (((terminalRemovedMask >> resolvedIndex) & 1L) != 0L) {
             return;
         }
-
-        int wordIndex = terminalBoard.candidates().indexOf(normalized);
-        if (wordIndex < 0) {
-            player.displayClientMessage(Component.literal("That word is not on this board."), true);
-            return;
-        }
-
-        if (((terminalRemovedMask >> wordIndex) & 1L) != 0L) {
-            player.displayClientMessage(Component.literal("That word has already been removed."), true);
-            return;
-        }
-
-        handleWordGuess(level, player, wordIndex);
+        handleWordGuess(level, player, resolvedIndex);
     }
 
     private void handlePairUse(ServerLevel level, ServerPlayer player, int pairIndex) {
@@ -263,14 +291,14 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         terminalUsedPairMask |= (1L << pairIndex);
         if (token.reward() == TowerTerminalPuzzle.PairReward.RESET_ATTEMPTS) {
             terminalTriesLeft = TowerTerminalPuzzle.MAX_ATTEMPTS;
-            appendAudit("ATTEMPTS RESET");
+            appendAudit("> Allowance replenished.");
         } else {
             int removed = removeOneDud();
             if (removed >= 0) {
-                appendAudit("DUD REMOVED");
+                appendAudit("> Dud removed.");
             } else {
                 terminalTriesLeft = TowerTerminalPuzzle.MAX_ATTEMPTS;
-                appendAudit("ATTEMPTS RESET");
+                appendAudit("> Allowance replenished.");
             }
         }
 
@@ -308,6 +336,8 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
                 state,
                 terminalRemovedMask,
                 terminalUsedPairMask,
+                alignTicksRemaining,
+                terminalLockoutTicksRemaining,
                 audit
         ));
     }
@@ -344,8 +374,13 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
     }
 
     private void cancelAlignment(ServerLevel level) {
+        ServerPlayer player = aligningPlayerId == null ? null : level.getServer().getPlayerList().getPlayer(aligningPlayerId);
         aligningPlayerId = null;
         alignTicksRemaining = 0;
+        if (player != null) {
+            clearTerminalSession();
+            player.displayClientMessage(Component.literal("Signal uplink lost."), true);
+        }
         setChanged();
         level.playSound(null, worldPosition, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 0.75f, 0.9f);
     }
@@ -358,6 +393,7 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         }
         terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
         terminalTriesLeft = TowerTerminalPuzzle.MAX_ATTEMPTS;
+        terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
         terminalBoard = TowerTerminalPuzzle.create(terminalNonce);
@@ -370,7 +406,7 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
     private boolean hasActiveSession(ServerPlayer player, long nonce) {
         return terminalBoard != null
                 && terminalPlayerId != null
-                && terminalTicksRemaining > 0
+                && (terminalTicksRemaining > 0 || terminalLockoutTicksRemaining > 0 || isAligning())
                 && terminalPlayerId.equals(player.getUUID())
                 && nonce == terminalNonce;
     }
@@ -380,11 +416,22 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         terminalNonce = 0L;
         terminalTicksRemaining = 0;
         terminalTriesLeft = 0;
+        terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
         terminalBoard = null;
         terminalAuditLog.clear();
         setChanged();
+    }
+
+    private int currentTerminalState() {
+        if (isAligning()) {
+            return OpenTowerTerminalPayload.STATE_ALIGNING;
+        }
+        if (terminalLockoutTicksRemaining > 0) {
+            return OpenTowerTerminalPayload.STATE_LOCKED_OUT;
+        }
+        return OpenTowerTerminalPayload.STATE_ACTIVE;
     }
 
     @Override

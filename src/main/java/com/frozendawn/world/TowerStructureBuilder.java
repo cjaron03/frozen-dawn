@@ -36,7 +36,7 @@ public final class TowerStructureBuilder {
     private static final int TOWER_OFFSET_X = HUB_HALF + 8;
     private static final int TOWER_HALF = 3;
     private static final int HATCH_HALF = 1;
-    private static final int SCAFFOLD_HALF = HATCH_HALF;
+    private static final int SCAFFOLD_HALF = 0;
     private static final int TOWER_HEIGHT = 28;
     private static final int PLATFORM_INTERVAL = 6;
     private static final int TOP_ROOM_HALF = 4;
@@ -65,7 +65,7 @@ public final class TowerStructureBuilder {
         buildTopControlRoom(level, cy, cz, tx, towerId);
         buildAntenna(level, tx, cz, antennaStartY);
 
-        placePenguinDisplay(level, new BlockPos(cx, cy + 1, cz - HUB_HALF + 1));
+        placePenguinDisplay(level, new BlockPos(cx - HUB_HALF + 2, cy + 1, cz - HUB_HALF + 1));
         clearEntities(level, structureBounds(cx, cy, cz, tx));
     }
 
@@ -350,6 +350,9 @@ public final class TowerStructureBuilder {
         level.setBlock(displayBase, Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
         level.setBlock(displayBase.south(), Blocks.POLISHED_BLACKSTONE_SLAB.defaultBlockState(), 3);
         level.setBlock(backingPos, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState(), 3);
+        level.setBlock(backingPos.above(), Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), 3);
+        level.setBlock(backingPos.west(), Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), 3);
+        level.setBlock(backingPos.east(), Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), 3);
         level.setBlock(framePos, Blocks.AIR.defaultBlockState(), 3);
 
         AABB frameBox = new AABB(displayBase.getX() - 1, displayBase.getY(), displayBase.getZ() - 1,

@@ -207,6 +207,8 @@
   "item.frozendawn.acheronite_compass": "Acheronite Compass",
   "item.frozendawn.transponder_schematic": "ORSA Transponder Schematic",
   "item.frozendawn.satellite_log": "ORSA Satellite System Log",
+  "advancement.frozendawn.found_acheronite_compass.title": "Recovered Tracking Hardware",
+  "advancement.frozendawn.found_acheronite_compass.description": "Recover an Acheronite Compass from an ORSA tower. Directions sold separately.",
 
   "advancement.frozendawn.found_satellite_log.title": "Sputnik?!",
   "advancement.frozendawn.found_satellite_log.description": "Find the crashed ORSA relay satellite. It came down hard.",
