@@ -1,0 +1,29 @@
+{
+  "name": "ORSA Field Report",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 8,
+  "advancement": "frozendawn:found_camp_field_report",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "CAMP ECHO-4",
+      "text": "$(bold)ORSA FIELD REPORT$()$(br)Filed by: Sgt. Maren Holt$(br)Camp Designation: ECHO-4$(br2)Day 6. Radio contact with Tower Bravo lost at 0400. Interference consistent with atmospheric degradation. Switching to automated beacon protocol.$(br2)Supply levels nominal. Morale holding."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 9",
+      "text": "Snow accumulation exceeding projections by 340%. Tent B collapsed overnight. Relocated Cpl. Vasquez to the command tent.$(br2)Radio still broadcasting on loop. No acknowledgment from any tower. Beginning to suspect we are the only camp still operational.$(br2)Food stores adequate for 12 more days at current rationing."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 12",
+      "text": "Temperature dropped 18 degrees in six hours. Equipment freezing in place. The radio is the only thing still drawing power.$(br2)Vasquez says he heard voices on the frequency last night. I checked the logs. Nothing but static.$(br2)$(italic)I told him it was interference. I don't know if I believe that.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Final Entry",
+      "text": "Day 14. Orders received: fall back to nearest tower for extraction.$(br2)Problem: nearest tower is 2km through whiteout conditions. Compass is unreliable. Wind chill below survivable threshold without EVA gear we don't have.$(br2)Leaving the radio on automated loop. If you're reading this, the radio still works. Follow the signal.$(br2)$(italic)- Holt$()"
+    }
+  ]
+}

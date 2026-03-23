@@ -21,6 +21,8 @@
   "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
   "block.frozendawn.geothermal_core": "Geothermal Core",
   "block.frozendawn.orsa_supply_crate": "ORSA Supply Crate",
+  "block.frozendawn.camp_radio": "ORSA Field Radio",
+  "block.frozendawn.orsa_flag": "ORSA Flag",
   "block.frozendawn.tower_antenna_console": "Tower Antenna Console",
 
   "item.frozendawn.ice_shard": "Ice Shard",
@@ -381,6 +383,9 @@
   "subtitle.frozendawn.entity.architect.ice_place": "Ice forms",
   "subtitle.frozendawn.entity.architect.land": "Something lands heavily",
 
+  "subtitle.frozendawn.radio.static": "Radio static crackles",
+  "subtitle.frozendawn.radio.signal_lock": "Radio signal acquired",
+
   "death.attack.frozendawn.architect": "%1$s was disassembled by a Returned Architect",
 
   "advancement.frozendawn.disassembled.title": "Disassembled",
@@ -403,6 +408,13 @@
   "advancement.frozendawn.stubborn.description": "The simulation didn't account for this.",
   "advancement.frozendawn.how.title": "How.",
   "advancement.frozendawn.how.description": "No, seriously. How.",
+
+  "advancement.frozendawn.found_camp_field_report.title": "Field Report",
+  "advancement.frozendawn.found_camp_field_report.description": "Find an ORSA field report. They were here. They left in a hurry.",
+  "advancement.frozendawn.found_camp_personal_note.title": "Still No Extraction",
+  "advancement.frozendawn.found_camp_personal_note.description": "Find a personal note in an ORSA camp. Day 14.",
+  "advancement.frozendawn.found_camp_radio.title": "Signal Received",
+  "advancement.frozendawn.found_camp_radio.description": "Pick up a tower location from an ORSA field radio. Follow the signal.",
 
   "message.frozendawn.ee.fridge": "At least the beer's cold.",
   "message.frozendawn.ee.torch": "That's not going to help.",

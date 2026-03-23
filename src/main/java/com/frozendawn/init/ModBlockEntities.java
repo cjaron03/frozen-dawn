@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeBlockEntity;
+import com.frozendawn.block.CampRadioBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
@@ -44,6 +45,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("transponder",
                     () -> BlockEntityType.Builder.of(TransponderBlockEntity::new,
                             ModBlocks.TRANSPONDER.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CampRadioBlockEntity>> CAMP_RADIO =
+            BLOCK_ENTITIES.register("camp_radio",
+                    () -> BlockEntityType.Builder.of(CampRadioBlockEntity::new,
+                            ModBlocks.CAMP_RADIO.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TowerAntennaConsoleBlockEntity>> TOWER_ANTENNA_CONSOLE =

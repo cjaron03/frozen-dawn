@@ -1,0 +1,19 @@
+{
+  "name": "Crumpled Note",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 9,
+  "advancement": "frozendawn:found_camp_personal_note",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Day 14",
+      "text": "$(italic)Still no extraction.$(br2)Holt left this morning. Took the compass and the last of the ration packs. Said she'd send someone back.$(br2)I told her the radio's still broadcasting. She said it doesn't matter if nobody's listening.$(br2)She's probably right.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Day 17",
+      "text": "$(italic)The snow is up to the table now. I can hear the radio through it. Still looping. Same coordinates. Same voice.$(br2)Funny thing \u2014 I never noticed before, but the voice on the recording isn't any of us. It's not Holt. It's not Command. I don't know whose voice it is.$(br2)It just keeps reading coordinates.$(br2)I think I'll follow them tomorrow.$()"
+    }
+  ]
+}

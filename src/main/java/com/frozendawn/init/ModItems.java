@@ -56,6 +56,8 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FROZEN_COAL_ORE = ITEMS.registerSimpleBlockItem("frozen_coal_ore", ModBlocks.FROZEN_COAL_ORE);
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
+    public static final DeferredItem<BlockItem> CAMP_RADIO = ITEMS.registerSimpleBlockItem("camp_radio", ModBlocks.CAMP_RADIO);
+    public static final DeferredItem<BlockItem> ORSA_FLAG = ITEMS.registerSimpleBlockItem("orsa_flag", ModBlocks.ORSA_FLAG);
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
 
     // --- Items ---
@@ -295,6 +297,8 @@ public class ModItems {
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
                         output.accept(ORSA_SUPPLY_CRATE.get());
+                        output.accept(CAMP_RADIO.get());
+                        output.accept(ORSA_FLAG.get());
                         output.accept(TOWER_ANTENNA_CONSOLE.get());
                         // Items
                         output.accept(ICE_SHARD.get());

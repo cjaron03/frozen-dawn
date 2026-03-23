@@ -8,7 +8,9 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
+import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.TowerPlacement;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -81,6 +83,8 @@ public class FrozenDawnCommand {
                         .executes(FrozenDawnCommand::towers))
                 .then(Commands.literal("landmarks")
                         .executes(FrozenDawnCommand::landmarks))
+                .then(Commands.literal("camps")
+                        .executes(FrozenDawnCommand::camps))
                 .then(Commands.literal("satellite")
                         .executes(FrozenDawnCommand::satellite))
         );
@@ -318,6 +322,60 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("--- Landmark Refresh ---"), false);
         blastPit(context);
         towers(context);
+        camps(context);
+        return 1;
+    }
+
+    private static int camps(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        OrsaStructureState state = OrsaStructureState.get(server);
+        ServerLevel overworld = server.overworld();
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        long seed = overworld.getSeed();
+
+        int originRegionX = Math.floorDiv(origin.getX() >> 4, 24);
+        int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 24);
+        BlockPos nearestCamp = null;
+        double nearestDistSq = Double.MAX_VALUE;
+
+        // Scan 7x7 region grid using exact same logic as CampPlacement
+        for (int drx = -3; drx <= 3; drx++) {
+            for (int drz = -3; drz <= 3; drz++) {
+                int regionX = originRegionX + drx;
+                int regionZ = originRegionZ + drz;
+
+                int[] pos = CampPlacement.getCampBlockPos(seed, regionX, regionZ);
+                if (pos == null) {
+                    continue;
+                }
+
+                // Same biome + footprint check as placement uses
+                if (!CampPlacement.isEligibleCampSite(overworld, pos[0], pos[1])) {
+                    continue;
+                }
+
+                double distSq = (pos[0] - origin.getX()) * (long) (pos[0] - origin.getX())
+                        + (pos[1] - origin.getZ()) * (long) (pos[1] - origin.getZ());
+                if (distSq < nearestDistSq) {
+                    nearestDistSq = distSq;
+                    nearestCamp = new BlockPos(pos[0], 0, pos[1]);
+                }
+            }
+        }
+
+        if (nearestCamp != null) {
+            int dist = (int) Math.sqrt(nearestDistSq);
+            final BlockPos camp = nearestCamp;
+            int cx = camp.getX() >> 4;
+            int cz = camp.getZ() >> 4;
+            boolean built = state.isCampBuilt(cx, cz);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Nearest Camp: (" + camp.getX() + ", " + camp.getZ() + ")"
+                            + " | ~" + dist + " blocks"
+                            + (built ? " | Built" : " | Awaiting chunk load")), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal("  Camps: none eligible in nearby regions"), false);
+        }
         return 1;
     }
 

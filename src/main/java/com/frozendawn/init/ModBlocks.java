@@ -6,6 +6,8 @@ import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
+import com.frozendawn.block.CampRadioBlock;
+import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
@@ -148,6 +150,24 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(2.5F)
                     .sound(SoundType.NETHERITE_BLOCK)));
+
+    public static final DeferredBlock<CampRadioBlock> CAMP_RADIO = BLOCKS.register("camp_radio",
+            () -> new CampRadioBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.5F)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .lightLevel(state -> 3)));
+
+    public static final DeferredBlock<OrsaFlagBlock> ORSA_FLAG = BLOCKS.register("orsa_flag",
+            () -> new OrsaFlagBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SNOW)
+                    .strength(0.5F)
+                    .sound(SoundType.WOOL)
+                    .noOcclusion()
+                    .lightLevel(state -> 2)));
 
     public static final DeferredBlock<TowerAntennaConsoleBlock> TOWER_ANTENNA_CONSOLE = BLOCKS.register("tower_antenna_console",
             () -> new TowerAntennaConsoleBlock(BlockBehaviour.Properties.of()

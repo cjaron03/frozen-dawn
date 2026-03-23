@@ -60,6 +60,8 @@ public class OrsaDocumentItem extends Item {
                                     false);
                         }
                     }
+                    case "camp_field_report" -> grantAdvancement(serverPlayer, "found_camp_field_report");
+                    case "camp_personal_note" -> grantAdvancement(serverPlayer, "found_camp_personal_note");
                     // News bulletins — civilian journalism, no classified_information
                     case "newspaper_cannibal" -> grantAdvancement(serverPlayer, "found_newspaper_cannibal");
                     case "newspaper_conspiracy" -> grantAdvancement(serverPlayer, "found_newspaper_conspiracy");

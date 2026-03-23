@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -57,6 +58,8 @@ public final class OrsaStructureState extends SavedData {
     private int blastPitSelectionPass;
     private int towerInitPass;
     private final List<TowerRecord> towers = new ArrayList<>();
+    private final Set<Long> evaluatedCamps = new HashSet<>();
+    private final Set<Long> builtCamps = new HashSet<>();
     private transient BlastPitSearchState blastPitSearch;
     private transient TowerSearchState towerSearch;
 
@@ -110,6 +113,21 @@ public final class OrsaStructureState extends SavedData {
             }
         }
         state.towers.sort(Comparator.comparingLong(TowerRecord::id));
+
+        if (tag.contains("placedCamps")) {
+            long[] campArray = tag.getLongArray("placedCamps");
+            for (long packed : campArray) {
+                state.evaluatedCamps.add(packed);
+            }
+        }
+        if (tag.contains("builtCamps")) {
+            long[] campArray = tag.getLongArray("builtCamps");
+            for (long packed : campArray) {
+                state.builtCamps.add(packed);
+                state.evaluatedCamps.add(packed);
+            }
+        }
+
         return state;
     }
 
@@ -134,6 +152,14 @@ public final class OrsaStructureState extends SavedData {
             towerList.add(tower.save());
         }
         tag.put("towers", towerList);
+
+        if (!evaluatedCamps.isEmpty()) {
+            tag.putLongArray("placedCamps", evaluatedCamps.stream().mapToLong(Long::longValue).toArray());
+        }
+        if (!builtCamps.isEmpty()) {
+            tag.putLongArray("builtCamps", builtCamps.stream().mapToLong(Long::longValue).toArray());
+        }
+
         return tag;
     }
 
@@ -489,6 +515,30 @@ public final class OrsaStructureState extends SavedData {
             }
             return Integer.compare(this.pos.getZ(), other.pos.getZ());
         }
+    }
+
+    public boolean isCampEvaluated(int chunkX, int chunkZ) {
+        return evaluatedCamps.contains(packCampChunkPos(chunkX, chunkZ));
+    }
+
+    public boolean isCampBuilt(int chunkX, int chunkZ) {
+        return builtCamps.contains(packCampChunkPos(chunkX, chunkZ));
+    }
+
+    public void markCampEvaluated(int chunkX, int chunkZ) {
+        evaluatedCamps.add(packCampChunkPos(chunkX, chunkZ));
+        setDirty();
+    }
+
+    public void markCampBuilt(int chunkX, int chunkZ) {
+        long key = packCampChunkPos(chunkX, chunkZ);
+        evaluatedCamps.add(key);
+        builtCamps.add(key);
+        setDirty();
+    }
+
+    private static long packCampChunkPos(int chunkX, int chunkZ) {
+        return ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
     }
 
     public BlockPos getBlastPitPos() {

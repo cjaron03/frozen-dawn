@@ -193,4 +193,36 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_LAND = SOUNDS.register("entity.architect.land",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.land")));
+
+    // --- Camp Radio ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_BURST = register("radio.static_burst");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_MEDIUM = register("radio.static_medium");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_AMBIENT = register("radio.static_ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_HEAVY = register("radio.static_heavy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_SIGNAL_LOCK = register("radio.signal_lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_CUTOFF = register("radio.cutoff");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TOWER = register("radio.voice.tower");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_SIGNAL = register("radio.voice.signal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_AT = register("radio.voice.at");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_COORDINATES = register("radio.voice.coordinates");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NEGATIVE = register("radio.voice.negative");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_X_COORD = register("radio.voice.x_coord");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_Z_COORD = register("radio.voice.z_coord");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_ZERO = register("radio.voice.zero");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_ONE = register("radio.voice.one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TWO = register("radio.voice.two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_THREE = register("radio.voice.three");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_FOUR = register("radio.voice.four");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_FIVE = register("radio.voice.five");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_SIX = register("radio.voice.six");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_SEVEN = register("radio.voice.seven");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_EIGHT = register("radio.voice.eight");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NINE = register("radio.voice.nine");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_HUNDRED = register("radio.voice.hundred");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_THOUSAND = register("radio.voice.thousand");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_ORSA = register("radio.voice.orsa");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_FIELD_UNIT = register("radio.voice.field_unit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_REPEAT = register("radio.voice.repeat");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_UNABLE = register("radio.voice.unable");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NO_LOCK = register("radio.voice.no_lock");
 }

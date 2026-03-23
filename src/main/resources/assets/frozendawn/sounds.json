@@ -479,5 +479,56 @@
       { "name": "minecraft:entity.iron_golem.damage", "type": "event", "volume": 0.6, "pitch": 0.7 },
       { "name": "minecraft:block.stone.break", "type": "event", "volume": 0.5, "pitch": 0.6 }
     ]
-  }
+  },
+  "radio.static_burst": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.radio.static",
+    "sounds": [ "frozendawn:radio/static_burst" ]
+  },
+  "radio.static_medium": {
+    "category": "ambient",
+    "sounds": [ "frozendawn:radio/static_medium" ]
+  },
+  "radio.static_ambient": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.radio.static",
+    "sounds": [ "frozendawn:radio/static_ambient" ]
+  },
+  "radio.static_heavy": {
+    "category": "ambient",
+    "sounds": [ "frozendawn:radio/static_heavy" ]
+  },
+  "radio.signal_lock": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.radio.signal_lock",
+    "sounds": [ "frozendawn:radio/signal_lock" ]
+  },
+  "radio.cutoff": {
+    "category": "ambient",
+    "sounds": [ "frozendawn:radio/radio_cutoff" ]
+  },
+  "radio.voice.tower": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_tower" ] },
+  "radio.voice.signal": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_signal" ] },
+  "radio.voice.at": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_at" ] },
+  "radio.voice.coordinates": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_coordinates" ] },
+  "radio.voice.negative": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_negative" ] },
+  "radio.voice.x_coord": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_x_coord" ] },
+  "radio.voice.z_coord": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_z_coord" ] },
+  "radio.voice.zero": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_zero" ] },
+  "radio.voice.one": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_one" ] },
+  "radio.voice.two": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_two" ] },
+  "radio.voice.three": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_three" ] },
+  "radio.voice.four": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_four" ] },
+  "radio.voice.five": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_five" ] },
+  "radio.voice.six": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_six" ] },
+  "radio.voice.seven": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_seven" ] },
+  "radio.voice.eight": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_eight" ] },
+  "radio.voice.nine": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_nine" ] },
+  "radio.voice.hundred": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_hundred" ] },
+  "radio.voice.thousand": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_thousand" ] },
+  "radio.voice.orsa": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_orsa" ] },
+  "radio.voice.field_unit": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_field_unit" ] },
+  "radio.voice.repeat": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_repeat" ] },
+  "radio.voice.unable": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_unable" ] },
+  "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] }
 }

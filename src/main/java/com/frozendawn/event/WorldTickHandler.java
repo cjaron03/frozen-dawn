@@ -36,6 +36,7 @@ import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.StructureStressTracker;
 import com.frozendawn.world.TowerEncounterController;
+import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.TowerPlacement;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
@@ -100,6 +101,7 @@ public class WorldTickHandler {
         StructureStressTracker.reset();
         BlastPitWarmZoneRegistry.reset();
         TowerPlacement.reset();
+        CampPlacement.reset();
     }
 
     @SubscribeEvent
@@ -158,6 +160,7 @@ public class WorldTickHandler {
         } else {
             TowerPlacement.tickPlacement(overworld);
         }
+        CampPlacement.tickPlacement(overworld);
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
