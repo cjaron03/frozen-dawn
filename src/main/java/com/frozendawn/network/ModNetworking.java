@@ -1,18 +1,12 @@
 package com.frozendawn.network;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.client.ApocalypseClientData;
-import com.frozendawn.client.DifficultySelectionScreen;
-import com.frozendawn.client.SanityClientData;
-import com.frozendawn.client.TemperatureHud;
-import com.frozendawn.client.TowerTerminalScreen;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +18,8 @@ import java.util.Locale;
 
 /**
  * Registers custom network payloads on the MOD bus.
+ * Client-side handlers are isolated in {@link ClientHandlers} so the server
+ * never tries to load client-only classes (Minecraft, Screen, etc.).
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModNetworking {
@@ -31,32 +27,35 @@ public class ModNetworking {
     @SubscribeEvent
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
+
+        // Client-bound packets — handlers delegate to ClientHandlers (only loaded on client)
         registrar.playToClient(
                 ApocalypseDataPayload.TYPE,
                 ApocalypseDataPayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> ApocalypseClientData.update(payload))
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleApocalypseData(payload))
         );
         registrar.playToClient(
                 TemperaturePayload.TYPE,
                 TemperaturePayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> TemperatureHud.setTemperature(payload.temperature()))
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleTemperature(payload))
         );
         registrar.playToClient(
                 SanityStagePayload.TYPE,
                 SanityStagePayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> SanityClientData.setStage(payload.stage()))
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSanityStage(payload))
         );
         registrar.playToClient(
                 OpenDifficultySelectionPayload.TYPE,
                 OpenDifficultySelectionPayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> Minecraft.getInstance().setScreen(new DifficultySelectionScreen()))
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleOpenDifficultySelection)
         );
         registrar.playToClient(
                 OpenTowerTerminalPayload.TYPE,
                 OpenTowerTerminalPayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() ->
-                        TowerTerminalScreen.openOrUpdate(Minecraft.getInstance(), payload))
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenTowerTerminal(payload))
         );
+
+        // Server-bound packets
         registrar.playToServer(
                 WatcherSeenPayload.TYPE,
                 WatcherSeenPayload.STREAM_CODEC,

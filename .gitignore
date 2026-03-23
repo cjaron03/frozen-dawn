@@ -25,3 +25,7 @@ Thumbs.db
 
 # Java
 *.class
+
+# Personal Claude Code config
+CLAUDE.local.md
+.claude/settings.local.json

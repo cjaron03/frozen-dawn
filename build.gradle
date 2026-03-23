@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.140'
     id 'idea'
+    id 'com.diffplug.spotless' version '7.0.2'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -111,6 +112,15 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+spotless {
+    java {
+        target 'src/main/java/**/*.java'
+        trimTrailingWhitespace()
+        endWithNewline()
+        leadingTabsToSpaces(4)
+    }
 }
 
 idea {
