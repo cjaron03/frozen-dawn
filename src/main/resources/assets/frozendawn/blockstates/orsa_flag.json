@@ -1,5 +1,8 @@
 {
   "variants": {
-    "": { "model": "frozendawn:block/orsa_flag" }
+    "facing=north": { "model": "frozendawn:block/orsa_flag" },
+    "facing=south": { "model": "frozendawn:block/orsa_flag", "y": 180 },
+    "facing=west":  { "model": "frozendawn:block/orsa_flag", "y": 270 },
+    "facing=east":  { "model": "frozendawn:block/orsa_flag", "y": 90 }
   }
 }

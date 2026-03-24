@@ -8,7 +8,9 @@ import com.frozendawn.client.renderer.HollowRenderer;
 import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
+import com.frozendawn.client.renderer.OrsaFlagRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
+import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
@@ -96,6 +98,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
     }
 
     @SubscribeEvent
