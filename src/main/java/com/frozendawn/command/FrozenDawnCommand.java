@@ -27,6 +27,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -326,6 +328,8 @@ public class FrozenDawnCommand {
         return 1;
     }
 
+    private static final double CAMP_SKIP_RADIUS_SQ = 5.0 * 5.0;
+
     private static int camps(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         OrsaStructureState state = OrsaStructureState.get(server);
@@ -335,8 +339,10 @@ public class FrozenDawnCommand {
 
         int originRegionX = Math.floorDiv(origin.getX() >> 4, 24);
         int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 24);
-        BlockPos nearestCamp = null;
-        double nearestDistSq = Double.MAX_VALUE;
+
+        // Collect all eligible camps with distances
+        record CampCandidate(BlockPos pos, double distSq) {}
+        List<CampCandidate> candidates = new java.util.ArrayList<>();
 
         // Scan 7x7 region grid using exact same logic as CampPlacement
         for (int drx = -3; drx <= 3; drx++) {
@@ -356,16 +362,23 @@ public class FrozenDawnCommand {
 
                 double distSq = (pos[0] - origin.getX()) * (long) (pos[0] - origin.getX())
                         + (pos[1] - origin.getZ()) * (long) (pos[1] - origin.getZ());
-                if (distSq < nearestDistSq) {
-                    nearestDistSq = distSq;
-                    nearestCamp = new BlockPos(pos[0], 0, pos[1]);
-                }
+                candidates.add(new CampCandidate(new BlockPos(pos[0], 0, pos[1]), distSq));
             }
         }
 
-        if (nearestCamp != null) {
-            int dist = (int) Math.sqrt(nearestDistSq);
-            final BlockPos camp = nearestCamp;
+        // Sort by distance, skip camps within 5 blocks
+        candidates.sort(Comparator.comparingDouble(CampCandidate::distSq));
+        CampCandidate chosen = null;
+        for (CampCandidate c : candidates) {
+            if (c.distSq() > CAMP_SKIP_RADIUS_SQ) {
+                chosen = c;
+                break;
+            }
+        }
+
+        if (chosen != null) {
+            int dist = (int) Math.sqrt(chosen.distSq());
+            final BlockPos camp = chosen.pos();
             int cx = camp.getX() >> 4;
             int cz = camp.getZ() >> 4;
             boolean built = state.isCampBuilt(cx, cz);
