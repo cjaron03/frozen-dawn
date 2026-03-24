@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,6 +60,11 @@ public class OrsaFlagBlock extends Block implements EntityBlock {
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos,
                                         CollisionContext context) {
         return getShape(state, level, pos, context);
+    }
+
+    @Override
+    protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return Shapes.empty();
     }
 
     @Override

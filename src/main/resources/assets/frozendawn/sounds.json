@@ -31,6 +31,15 @@
       "frozendawn:ambient/creak6"
     ]
   },
+  "ambient.flag_flutter": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.ambient.flag_flutter",
+    "sounds": [
+      { "name": "minecraft:block.wool.hit", "type": "event", "volume": 0.60, "pitch": 1.30 },
+      { "name": "minecraft:block.wool.place", "type": "event", "volume": 0.45, "pitch": 1.22 },
+      { "name": "minecraft:item.armor.equip_elytra", "type": "event", "volume": 0.25, "pitch": 1.40 }
+    ]
+  },
   "ambient.eva_breathing": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_breathing",

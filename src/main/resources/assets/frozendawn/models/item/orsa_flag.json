@@ -1,3 +1,6 @@
 {
-  "parent": "frozendawn:block/orsa_flag"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "frozendawn:item/orsa_flag"
+  }
 }

@@ -3,6 +3,8 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaFlagBlockEntity;
+import com.frozendawn.client.ApocalypseClientData;
+import com.frozendawn.client.BlizzardWindHelper;
 import com.frozendawn.client.FlagPhysicsHelper;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -12,7 +14,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -21,8 +22,7 @@ import org.joml.Matrix4f;
 /**
  * Renders the ORSA flag with animated cloth segments.
  * Pole is rendered from a simple brown color; cloth uses phase-appropriate
- * 32x64 textures that degrade from clean to frozen across the apocalypse.
- * Each flag deterministically picks intact or torn variant based on position.
+ * landscape textures that degrade from clean to frozen across the apocalypse.
  */
 public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity> {
 
@@ -35,16 +35,6 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_frosted.png");
     private static final ResourceLocation TEX_FROZEN =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_frozen.png");
-
-    // Phase-based textures: torn variants
-    private static final ResourceLocation TEX_TORN_CLEAN =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_torn_clean.png");
-    private static final ResourceLocation TEX_TORN_WEATHERED =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_torn_weathered.png");
-    private static final ResourceLocation TEX_TORN_FROSTED =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_torn_frosted.png");
-    private static final ResourceLocation TEX_TORN_FROZEN =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/block/orsa_flag_torn_frozen.png");
 
     // Pole dimensions (in block units, 1.0 = 16 pixels)
     private static final float POLE_WIDTH = 1.0f / 16.0f;
@@ -83,7 +73,7 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
         poseStack.translate(-0.5, 0.0, -0.5);
 
         // Render pole with solid color (uses white texture tinted by vertex color)
-        ResourceLocation clothTexture = getTextureForPhase(entity.getBlockPos());
+        ResourceLocation clothTexture = getTextureForPhase();
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(clothTexture));
 
         renderPole(poseStack, consumer, packedLight, packedOverlay);
@@ -95,16 +85,12 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
         poseStack.popPose();
     }
 
-    private static ResourceLocation getTextureForPhase(BlockPos pos) {
+    private static ResourceLocation getTextureForPhase() {
         int phase = FrozenDawnPhaseTracker.getPhase();
-        // ~30% of flags are torn, determined by position hash
-        long hash = pos.asLong() * 6364136223846793005L + 1442695040888963407L;
-        boolean torn = Math.floorMod(hash >> 16, 100) < 30;
-
-        if (phase >= 5) return torn ? TEX_TORN_FROZEN : TEX_FROZEN;       // phase 5-6: frozen solid
-        if (phase >= 4) return torn ? TEX_TORN_FROSTED : TEX_FROSTED;    // phase 4: frosted
-        if (phase >= 3) return torn ? TEX_TORN_WEATHERED : TEX_WEATHERED; // phase 3: weathered
-        return torn ? TEX_TORN_CLEAN : TEX_CLEAN;                        // phase 0-2: clean
+        if (phase >= 5) return TEX_FROZEN;       // phase 5-6: frozen solid
+        if (phase >= 4) return TEX_FROSTED;      // phase 4: frosted
+        if (phase >= 3) return TEX_WEATHERED;    // phase 3: weathered
+        return TEX_CLEAN;                        // phase 0-2: clean
     }
 
     private void renderPole(PoseStack poseStack, VertexConsumer consumer, int light, int overlay) {
@@ -149,17 +135,6 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
         poseStack.popPose();
     }
 
-    /**
-     * Computes the blizzard wind angle in degrees, matching the formula in
-     * {@link com.frozendawn.client.WeatherParticles}. Returns 0 for phases below 5.
-     */
-    private static float getWindYaw(long gameTime, int phase) {
-        if (phase < 5) return 0.0f;
-        // Same rotating wind angle as WeatherParticles: gameTime * 0.005
-        float windAngleRad = gameTime * 0.005f;
-        return (float) Math.toDegrees(windAngleRad);
-    }
-
     private void renderCloth(PoseStack poseStack, VertexConsumer consumer, int light, int overlay,
                              OrsaFlagBlockEntity entity, float partialTick, long gameTime) {
         poseStack.pushPose();
@@ -168,10 +143,12 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
         poseStack.translate(POLE_X + POLE_WIDTH - CLOTH_HOIST_OVERLAP, CLOTH_ATTACH_Y, 8.0f / 16.0f);
 
         // In phase 5+, pivot cloth to follow blizzard wind direction
-        int phase = FrozenDawnPhaseTracker.getPhase();
-        if (phase >= 5) {
-            float windYaw = getWindYaw(gameTime, phase);
-            poseStack.mulPose(Axis.YP.rotationDegrees(windYaw));
+        int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
+        if (BlizzardWindHelper.hasSurfaceBlizzard(phase, progress)) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(
+                    BlizzardWindHelper.getFlagYawDegrees(phase, progress, gameTime)
+            ));
         }
 
         float[] curveX = new float[FlagPhysicsHelper.SEGMENTS + 1];

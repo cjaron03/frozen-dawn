@@ -38,7 +38,7 @@ public class WeatherParticles {
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 6 late: no particles (vacuum)
-        if (phase >= 6 && progress >= 0.85f) return;
+        if (!BlizzardWindHelper.hasSurfaceBlizzard(phase, progress) && phase >= 5) return;
 
         int particleCount;
         if (phase >= 6) {
@@ -69,14 +69,8 @@ public class WeatherParticles {
 
         if (phase >= 5) {
             // Phase 5+: particles blow sideways at surface level, like a ground blizzard
-            float windAngle = (float) (gameTime * 0.005);
-            float windSpeed = 1.5f + 0.5f * (float) Math.sin(gameTime * 0.015);
-            // Phase 6: even stronger wind in early sub-stage
-            if (phase >= 6 && progress <= 0.72f) {
-                windSpeed *= 1.3f;
-            }
-            float windX = windSpeed * (float) Math.sin(windAngle);
-            float windZ = windSpeed * (float) Math.cos(windAngle);
+            float windX = BlizzardWindHelper.getWindX(phase, progress, gameTime);
+            float windZ = BlizzardWindHelper.getWindZ(phase, progress, gameTime);
             double fallSpeed = -0.08; // barely falling — almost horizontal
 
             for (int i = 0; i < particleCount; i++) {
