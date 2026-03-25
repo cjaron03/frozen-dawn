@@ -69,19 +69,15 @@ public final class MonitoringStationPlacement {
         for (Long key : Set.copyOf(pendingStationPlacements)) {
             int chunkX = unpackChunkX(key);
             int chunkZ = unpackChunkZ(key);
+            int blockX = (chunkX << 4) + 8;
+            int blockZ = (chunkZ << 4) + 8;
 
             if (state.isStationEvaluated(chunkX, chunkZ)) {
                 pendingStationPlacements.remove(key);
                 continue;
             }
 
-            int blockX = (chunkX << 4) + 8;
-            int blockZ = (chunkZ << 4) + 8;
-
-            BlockPos spawn = overworld.getSharedSpawnPos();
-            double distSq = (blockX - spawn.getX()) * (long) (blockX - spawn.getX())
-                    + (blockZ - spawn.getZ()) * (long) (blockZ - spawn.getZ());
-            if (distSq < (long) MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE) {
+            if (!isOutsideSpawnBuffer(overworld, blockX, blockZ)) {
                 pendingStationPlacements.remove(key);
                 state.markStationEvaluated(chunkX, chunkZ);
                 continue;
@@ -112,6 +108,19 @@ public final class MonitoringStationPlacement {
             FrozenDawn.LOGGER.info("Monitoring Station placed at ({}, {}, {})",
                     stationCenter.getX(), stationCenter.getY(), stationCenter.getZ());
         }
+    }
+
+    public static void queueStationPlacement(ServerLevel level, int chunkX, int chunkZ) {
+        MonitoringStationState state = MonitoringStationState.get(level.getServer());
+        if (!state.isStationEvaluated(chunkX, chunkZ)) {
+            pendingStationPlacements.add(packChunkPos(chunkX, chunkZ));
+        }
+    }
+
+    public static boolean isOutsideSpawnBuffer(ServerLevel level, int blockX, int blockZ) {
+        BlockPos spawn = level.getSharedSpawnPos();
+        double distSq = horizontalDistSq(blockX, blockZ, spawn.getX(), spawn.getZ());
+        return distSq >= (long) MIN_SPAWN_DISTANCE * MIN_SPAWN_DISTANCE;
     }
 
     @Nullable
