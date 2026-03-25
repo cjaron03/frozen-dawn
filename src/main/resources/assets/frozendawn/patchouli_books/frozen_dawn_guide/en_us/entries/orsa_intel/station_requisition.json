@@ -1,0 +1,19 @@
+{
+  "name": "Replacement Thermocouple Request",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 14,
+  "advancement": "frozendawn:found_station_requisition",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Supply Request",
+      "text": "$(bold)REPLACEMENT REQUISITION$()$(br)Filed by: Civilian station staff$(br2)Requested items: thermocouple assemblies, anemometer bearings, insulated cable, generator belts.$(br2)Reason: equipment operating outside rated limits after the June 20 orbital event."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Disposition",
+      "text": "Stamped three times: $(italic)PENDING$(), $(italic)DEFERRED$(), $(italic)NO ROUTE AVAILABLE$().$(br2)ORSA bolted its terminal into the station, demanded clean data, then stopped resupplying the people taking the readings.$(br2)The weather mattered. The meteorologists apparently did not."
+    }
+  ]
+}

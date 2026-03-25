@@ -1,0 +1,19 @@
+{
+  "name": "Relay Diagnostics Printout",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 16,
+  "advancement": "frozendawn:found_station_relay_diagnostics",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Diagnostic Summary",
+      "text": "$(bold)RELAY DIAGNOSTICS$()$(br2)Outbound signal: nominal$(br)Remote acknowledgment: absent$(br)Queue depth: critical$(br)Local archive seal: active$(br2)Recommendation: continue recording. Preserve station cache for later retrieval."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Implication",
+      "text": "The station was never meant to be self-rescue capable.$(br2)Its final instruction is archival: keep measuring, keep transmitting, keep preserving the record.$(br2)Even after ORSA stopped speaking back, the protocol still expected someone to stay and watch the weather."
+    }
+  ]
+}

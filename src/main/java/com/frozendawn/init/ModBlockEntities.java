@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeBlockEntity;
 import com.frozendawn.block.CampRadioBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
+import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.OrsaFlagBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
@@ -58,6 +59,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("tower_antenna_console",
                     () -> BlockEntityType.Builder.of(TowerAntennaConsoleBlockEntity::new,
                             ModBlocks.TOWER_ANTENNA_CONSOLE.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MonitoringStationTerminalBlockEntity>> MONITORING_STATION_TERMINAL =
+            BLOCK_ENTITIES.register("monitoring_station_terminal",
+                    () -> BlockEntityType.Builder.of(MonitoringStationTerminalBlockEntity::new,
+                            ModBlocks.MONITORING_STATION_TERMINAL.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OrsaFlagBlockEntity>> ORSA_FLAG =

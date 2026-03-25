@@ -5,10 +5,12 @@ import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.CampPlacement;
+import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.TowerPlacement;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
@@ -87,6 +89,8 @@ public class FrozenDawnCommand {
                         .executes(FrozenDawnCommand::landmarks))
                 .then(Commands.literal("camps")
                         .executes(FrozenDawnCommand::camps))
+                .then(Commands.literal("stations")
+                        .executes(FrozenDawnCommand::stations))
                 .then(Commands.literal("satellite")
                         .executes(FrozenDawnCommand::satellite))
         );
@@ -325,10 +329,12 @@ public class FrozenDawnCommand {
         blastPit(context);
         towers(context);
         camps(context);
+        stations(context);
         return 1;
     }
 
     private static final double CAMP_SKIP_RADIUS_SQ = 5.0 * 5.0;
+    private static final double STATION_SKIP_RADIUS_SQ = 5.0 * 5.0;
 
     private static int camps(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
@@ -388,6 +394,69 @@ public class FrozenDawnCommand {
                             + (built ? " | Built" : " | Awaiting chunk load")), false);
         } else {
             context.getSource().sendSuccess(() -> Component.literal("  Camps: none eligible in nearby regions"), false);
+        }
+        return 1;
+    }
+
+    private static int stations(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        ServerLevel overworld = server.overworld();
+        MonitoringStationState state = MonitoringStationState.get(server);
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        long seed = overworld.getSeed();
+
+        int originRegionX = Math.floorDiv(origin.getX() >> 4, 32);
+        int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 32);
+
+        record StationCandidate(BlockPos pos, double distSq, boolean built) {}
+        List<StationCandidate> candidates = new java.util.ArrayList<>();
+
+        for (int drx = -3; drx <= 3; drx++) {
+            for (int drz = -3; drz <= 3; drz++) {
+                int regionX = originRegionX + drx;
+                int regionZ = originRegionZ + drz;
+
+                int[] pos = MonitoringStationPlacement.getStationBlockPos(seed, regionX, regionZ);
+                if (pos == null) {
+                    continue;
+                }
+
+                if (!MonitoringStationPlacement.isEligibleStationSite(overworld, pos[0], pos[1])) {
+                    continue;
+                }
+
+                int chunkX = pos[0] >> 4;
+                int chunkZ = pos[1] >> 4;
+                boolean built = state.isStationBuilt(chunkX, chunkZ);
+                BlockPos displayPos = built && state.getStationCenter(chunkX, chunkZ) != null
+                        ? state.getStationCenter(chunkX, chunkZ)
+                        : new BlockPos(pos[0], 0, pos[1]);
+
+                double distSq = (displayPos.getX() - origin.getX()) * (long) (displayPos.getX() - origin.getX())
+                        + (displayPos.getZ() - origin.getZ()) * (long) (displayPos.getZ() - origin.getZ());
+                candidates.add(new StationCandidate(displayPos, distSq, built));
+            }
+        }
+
+        candidates.sort(Comparator.comparingDouble(StationCandidate::distSq));
+        StationCandidate chosen = null;
+        for (StationCandidate candidate : candidates) {
+            if (candidate.distSq() > STATION_SKIP_RADIUS_SQ) {
+                chosen = candidate;
+                break;
+            }
+        }
+
+        if (chosen != null) {
+            int dist = (int) Math.sqrt(chosen.distSq());
+            final BlockPos station = chosen.pos();
+            final boolean built = chosen.built();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Nearest Monitoring Station: (" + station.getX() + ", " + station.getZ() + ")"
+                            + " | ~" + dist + " blocks"
+                            + (built ? " | Built" : " | Awaiting chunk load")), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal("  Monitoring Stations: none eligible in nearby regions"), false);
         }
         return 1;
     }

@@ -7,6 +7,7 @@ import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
+import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
@@ -176,6 +177,14 @@ public class ModBlocks {
                     .strength(3.0F)
                     .sound(SoundType.NETHERITE_BLOCK)
                     .lightLevel(state -> 6)));
+
+    public static final DeferredBlock<MonitoringStationTerminalBlock> MONITORING_STATION_TERMINAL = BLOCKS.register("monitoring_station_terminal",
+            () -> new MonitoringStationTerminalBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .lightLevel(state -> 4)));
 
     // --- Player Agency blocks ---
 

@@ -1,0 +1,21 @@
+{
+  "textures": {
+    "particle": "minecraft:block/gray_concrete",
+    "front": "frozendawn:block/monitoring_station_terminal_front",
+    "case": "minecraft:block/gray_concrete"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "texture": "#front" },
+        "south": { "texture": "#case" },
+        "west": { "texture": "#case" },
+        "east": { "texture": "#case" },
+        "up": { "texture": "#case" },
+        "down": { "texture": "#case" }
+      }
+    }
+  ]
+}

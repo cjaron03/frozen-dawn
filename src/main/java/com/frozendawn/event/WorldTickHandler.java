@@ -31,6 +31,7 @@ import com.frozendawn.world.ArchitectSpawner;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.MimicSpawner;
+import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
@@ -42,6 +43,7 @@ import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -102,6 +104,7 @@ public class WorldTickHandler {
         BlastPitWarmZoneRegistry.reset();
         TowerPlacement.reset();
         CampPlacement.reset();
+        MonitoringStationPlacement.reset();
     }
 
     @SubscribeEvent
@@ -161,6 +164,7 @@ public class WorldTickHandler {
             TowerPlacement.tickPlacement(overworld);
         }
         CampPlacement.tickPlacement(overworld);
+        MonitoringStationPlacement.tickPlacement(overworld);
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
@@ -269,6 +273,14 @@ public class WorldTickHandler {
                     serverLevel.setBlock(event.getPos(), state.setValue(AcheroniteCrystalBlock.BURIED, false), 3);
                 }
                 event.setCanceled(true);
+                return;
+            }
+
+            if (MonitoringStationPlacement.findLockedStationCovering(serverLevel, event.getPos()) != null) {
+                event.setCanceled(true);
+                if (event.getPlayer() instanceof ServerPlayer player) {
+                    player.displayClientMessage(Component.literal("The sealed archive is still locked by the ORSA terminal."), true);
+                }
                 return;
             }
         }

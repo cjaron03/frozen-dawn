@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:classified_information",
+  "display": {
+    "icon": {
+      "id": "minecraft:name_tag"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_station_maintenance_bulletin.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_station_maintenance_bulletin.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

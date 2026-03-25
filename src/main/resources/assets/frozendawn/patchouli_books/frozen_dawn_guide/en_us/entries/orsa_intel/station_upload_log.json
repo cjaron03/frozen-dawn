@@ -1,0 +1,19 @@
+{
+  "name": "Weather Upload Log",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 13,
+  "advancement": "frozendawn:found_station_upload_log",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Ground Truth Feed",
+      "text": "$(bold)ORSA WEATHER INGEST NODE$()$(br)Monitoring Station Upload Log$(br2)Handshake accepted. Surface observations queued for orbital correction models.$(br2)Priority fields: temperature, wind shear, snowfall rate, atmospheric opacity.$(br2)Civilian operators instructed to maintain hourly submissions until relieved."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "No Reply",
+      "text": "Three weeks after the evacuation wave, uploads continue leaving the station with no acknowledgment returning.$(br2)The terminal still accepts packets. ORSA never answers.$(br2)Someone kept logging data long after the network on the other end went silent."
+    }
+  ]
+}

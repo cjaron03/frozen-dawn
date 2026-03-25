@@ -62,6 +62,10 @@ public class OrsaDocumentItem extends Item {
                     }
                     case "camp_field_report" -> grantAdvancement(serverPlayer, "found_camp_field_report");
                     case "camp_personal_note" -> grantAdvancement(serverPlayer, "found_camp_personal_note");
+                    case "station_upload_log" -> grantAdvancement(serverPlayer, "found_station_upload_log");
+                    case "station_requisition" -> grantAdvancement(serverPlayer, "found_station_requisition");
+                    case "station_maintenance_bulletin" -> grantAdvancement(serverPlayer, "found_station_maintenance_bulletin");
+                    case "station_relay_diagnostics" -> grantAdvancement(serverPlayer, "found_station_relay_diagnostics");
                     // News bulletins — civilian journalism, no classified_information
                     case "newspaper_cannibal" -> grantAdvancement(serverPlayer, "found_newspaper_cannibal");
                     case "newspaper_conspiracy" -> grantAdvancement(serverPlayer, "found_newspaper_conspiracy");

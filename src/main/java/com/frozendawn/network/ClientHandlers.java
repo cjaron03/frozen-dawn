@@ -2,9 +2,11 @@ package com.frozendawn.network;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
+import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.TowerTerminalScreen;
+import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -34,5 +36,16 @@ public final class ClientHandlers {
 
     public static void handleOpenTowerTerminal(OpenTowerTerminalPayload payload) {
         TowerTerminalScreen.openOrUpdate(Minecraft.getInstance(), payload);
+    }
+
+    public static void handleOpenMonitoringTerminal(OpenMonitoringTerminalPayload payload) {
+        MonitoringTerminalScreen.openOrUpdate(Minecraft.getInstance(), payload);
+    }
+
+    public static void handleOpenMeteorologistJournal(OpenMeteorologistJournalPayload payload) {
+        BookViewScreen.BookAccess access = BookViewScreen.BookAccess.fromItem(payload.stack());
+        if (access != null) {
+            Minecraft.getInstance().setScreen(new BookViewScreen(access));
+        }
     }
 }

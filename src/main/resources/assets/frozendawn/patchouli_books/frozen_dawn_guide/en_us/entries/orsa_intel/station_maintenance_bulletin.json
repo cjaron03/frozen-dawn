@@ -1,0 +1,19 @@
+{
+  "name": "Ingest Node Maintenance Bulletin",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 15,
+  "advancement": "frozendawn:found_station_maintenance_bulletin",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Bulletin ORSA-WX-12",
+      "text": "$(bold)FIELD MAINTENANCE BULLETIN$()$(br2)All monitoring stations receiving an ORSA ingest node are to continue manual instrument calibration even after remote lockout or communications degradation.$(br2)Ground-truth observations remain mission critical for correction modeling."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Note",
+      "text": "The bulletin is written like a reminder to replace printer toner.$(br2)It never acknowledges that the stations were staffed by civilian meteorologists stranded in a dying world.$(br2)The wording assumes the data stream will outlive the people producing it."
+    }
+  ]
+}

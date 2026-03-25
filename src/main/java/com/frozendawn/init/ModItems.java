@@ -12,6 +12,7 @@ import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
@@ -59,6 +60,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> CAMP_RADIO = ITEMS.registerSimpleBlockItem("camp_radio", ModBlocks.CAMP_RADIO);
     public static final DeferredItem<BlockItem> ORSA_FLAG = ITEMS.registerSimpleBlockItem("orsa_flag", ModBlocks.ORSA_FLAG);
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
+    public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
@@ -66,6 +68,8 @@ public class ModItems {
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<MeteorologistJournalItem> METEOROLOGIST_JOURNAL = ITEMS.register("meteorologist_journal",
+            () -> new MeteorologistJournalItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<ThermalContainerItem> THERMAL_CONTAINER = ITEMS.register("thermal_container",
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
@@ -300,10 +304,12 @@ public class ModItems {
                         output.accept(CAMP_RADIO.get());
                         output.accept(ORSA_FLAG.get());
                         output.accept(TOWER_ANTENNA_CONSOLE.get());
+                        output.accept(MONITORING_STATION_TERMINAL.get());
                         // Items
                         output.accept(ICE_SHARD.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
+                        output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
                         ItemStack guideBook = StarterBooks.createGuideBook();

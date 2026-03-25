@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.ChatFormatting;
@@ -54,6 +55,16 @@ public class ModNetworking {
                 OpenTowerTerminalPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenTowerTerminal(payload))
         );
+        registrar.playToClient(
+                OpenMonitoringTerminalPayload.TYPE,
+                OpenMonitoringTerminalPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenMonitoringTerminal(payload))
+        );
+        registrar.playToClient(
+                OpenMeteorologistJournalPayload.TYPE,
+                OpenMeteorologistJournalPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenMeteorologistJournal(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(
@@ -74,6 +85,18 @@ public class ModNetworking {
                     }
                     if (sp.level().getBlockEntity(payload.pos()) instanceof TowerAntennaConsoleBlockEntity console) {
                         console.submitAction(sp, payload.nonce(), payload.actionType(), payload.actionIndex(), payload.typedGuess());
+                    }
+                })
+        );
+        registrar.playToServer(
+                SubmitMonitoringTerminalPayload.TYPE,
+                SubmitMonitoringTerminalPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (!(context.player() instanceof ServerPlayer sp)) {
+                        return;
+                    }
+                    if (sp.level().getBlockEntity(payload.pos()) instanceof MonitoringStationTerminalBlockEntity terminal) {
+                        terminal.submitAction(sp, payload.nonce(), payload.actionType(), payload.actionIndex(), payload.typedGuess());
                     }
                 })
         );
