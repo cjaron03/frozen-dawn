@@ -28,6 +28,7 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class MonitoringStationStructureBuilder {
 
@@ -36,7 +37,12 @@ public final class MonitoringStationStructureBuilder {
 
     // The bundled template is authored around a logical station center at local (9, 0, 9).
     private static final BlockPos TEMPLATE_CENTER_OFFSET = new BlockPos(9, 0, 9);
-    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(3, 2, 9);
+    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(8, 2, 7);
+    private static final Direction WEATHER_CHART_FACING = Direction.SOUTH;
+    private static final List<BlockPos> LEGACY_WEATHER_CHART_LOCAL_POSITIONS = List.of(
+            new BlockPos(3, 2, 8),
+            new BlockPos(3, 2, 9)
+    );
 
     private static final int MIN_X = -9;
     private static final int MAX_X = 8;
@@ -134,7 +140,7 @@ public final class MonitoringStationStructureBuilder {
             barrel.setChanged();
         }
 
-        placeWeatherChart(level, origin.offset(WEATHER_CHART_LOCAL_POS), Direction.WEST);
+        ensureWeatherChart(level, center);
     }
 
     private static void gradeTerrain(ServerLevel level, int cx, int cy, int cz) {
@@ -194,18 +200,82 @@ public final class MonitoringStationStructureBuilder {
         }
     }
 
-    private static void placeWeatherChart(ServerLevel level, BlockPos pos, Direction facing) {
-        AABB frameBox = new AABB(pos).inflate(1.5);
-        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            existing.discard();
+    public static void ensureWeatherChart(ServerLevel level, BlockPos center) {
+        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
+        BlockPos chartPos = origin.offset(WEATHER_CHART_LOCAL_POS);
+
+        if (hasExpectedWeatherChart(level, chartPos, WEATHER_CHART_FACING)) {
+            return;
         }
 
+        int removedFrames = removeWeatherChartFrames(level, chartPos);
+        for (BlockPos legacyPos : LEGACY_WEATHER_CHART_LOCAL_POSITIONS) {
+            removedFrames += removeWeatherChartFrames(level, origin.offset(legacyPos));
+        }
+
+        if (placeWeatherChart(level, center, chartPos, WEATHER_CHART_FACING)) {
+            FrozenDawn.LOGGER.info("Monitoring Station weather chart repaired at ({}, {}, {}) after removing {} stale frame(s)",
+                    center.getX(), center.getY(), center.getZ(), removedFrames);
+        } else {
+            BlockPos supportPos = chartPos.relative(WEATHER_CHART_FACING.getOpposite());
+            FrozenDawn.LOGGER.warn("Monitoring Station weather chart repair failed at ({}, {}, {}); target frame pos {} facing {} support {} state {}",
+                    center.getX(), center.getY(), center.getZ(), chartPos, WEATHER_CHART_FACING,
+                    supportPos, level.getBlockState(supportPos));
+        }
+    }
+
+    public static boolean hasWeatherChart(ServerLevel level, BlockPos center) {
+        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
+        return hasExpectedWeatherChart(level, origin.offset(WEATHER_CHART_LOCAL_POS), WEATHER_CHART_FACING);
+    }
+
+    public static boolean hasStationMarker(ServerLevel level, BlockPos centerGuess) {
+        for (int dx = MIN_X; dx <= MAX_X; dx++) {
+            for (int dz = MIN_Z; dz <= MAX_Z; dz++) {
+                for (int dy = -2; dy <= ROOF_Y + 2; dy++) {
+                    BlockPos pos = centerGuess.offset(dx, dy, dz);
+                    if (level.getBlockState(pos).is(ModBlocks.MONITORING_STATION_TERMINAL.get())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasExpectedWeatherChart(ServerLevel level, BlockPos pos, Direction facing) {
+        AABB frameBox = new AABB(pos).inflate(0.25);
+        for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            ItemStack item = frame.getItem();
+            if (frame.getPos().equals(pos)
+                    && frame.getDirection() == facing
+                    && item.is(Items.FILLED_MAP)
+                    && Objects.equals(item.get(DataComponents.CUSTOM_NAME), Component.literal("Surface Synoptic Chart"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int removeWeatherChartFrames(ServerLevel level, BlockPos pos) {
+        AABB frameBox = new AABB(pos).inflate(1.5);
+        int removed = 0;
+        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            existing.discard();
+            removed++;
+        }
+        return removed;
+    }
+
+    private static boolean placeWeatherChart(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
         ItemFrame frame = new ItemFrame(level, pos, facing);
-        frame.setItem(createWeatherChartItem(), false);
+        frame.setItem(MonitoringStationWeatherChart.create(level, center), false);
         frame.setInvulnerable(true);
         if (frame.survives()) {
             level.addFreshEntity(frame);
+            return true;
         }
+        return false;
     }
 
     private static int getCurrentPhase(ServerLevel level) {
@@ -240,16 +310,6 @@ public final class MonitoringStationStructureBuilder {
         loot.add(createOrsaDocument("Relay Diagnostics Printout", "station_relay_diagnostics"));
         loot.add(createJournal(center));
         return loot;
-    }
-
-    private static ItemStack createWeatherChartItem() {
-        ItemStack stack = new ItemStack(Items.MAP);
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal("Surface Synoptic Chart"));
-        stack.set(DataComponents.LORE, new ItemLore(List.of(
-                Component.literal("Pinned with the last usable observations."),
-                Component.literal("The corners are curled from daily use.")
-        )));
-        return stack;
     }
 
     private static ItemStack createWeatherReportItem(String title, String... lines) {

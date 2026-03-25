@@ -1,13 +1,17 @@
 package com.frozendawn.client;
 
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.OpenTowerTerminalPayload;
 import com.frozendawn.network.SubmitTowerTerminalPayload;
 import com.frozendawn.terminal.TowerTerminalPuzzle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -31,6 +35,10 @@ public class TowerTerminalScreen extends Screen {
     private static final int PROGRESS_BAR_H = 14;
     private static final int ALIGN_TICKS_TOTAL = 20 * 30;
     private static final int LOCKOUT_TICKS_TOTAL = 20 * 60;
+    private static final int BOOT_DURATION = 65;
+    private static final ResourceLocation ORSA_LOGO =
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
+
     private final BlockPos consolePos;
     private long nonce;
     private TowerTerminalPuzzle.Board board;
@@ -72,6 +80,8 @@ public class TowerTerminalScreen extends Screen {
     private int addressWidth;
     private int closeTicks = -1;
     private int blinkTicks;
+    private int bootTicks;
+    private boolean bootSoundPlayed;
     private String terminalInput = "";
     private float headerScale = 0.82f;
     private float boardScale = 0.78f;
@@ -222,6 +232,14 @@ public class TowerTerminalScreen extends Screen {
     public void tick() {
         super.tick();
         blinkTicks++;
+        if (bootTicks < BOOT_DURATION) {
+            bootTicks++;
+            if (bootTicks == 8 && !bootSoundPlayed) {
+                bootSoundPlayed = true;
+                Minecraft.getInstance().getSoundManager().play(
+                        SimpleSoundInstance.forUI(ModSounds.TERMINAL_BOOT_ORSA.get(), 1.0f));
+            }
+        }
         if (state == OpenTowerTerminalPayload.STATE_ALIGNING && alignTicksRemaining > 0) {
             alignTicksRemaining--;
         }
@@ -242,6 +260,11 @@ public class TowerTerminalScreen extends Screen {
         renderFrame(graphics);
         drawCenteredScaledString(graphics, title, panelX + panelW / 2, titleY, headerScale, 0xFFE4F7FF);
 
+        if (bootTicks < BOOT_DURATION) {
+            renderBootSequence(graphics);
+            return;
+        }
+
         if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
             renderAttempts(graphics);
             renderBoard(graphics, mouseX, mouseY);
@@ -261,6 +284,59 @@ public class TowerTerminalScreen extends Screen {
         graphics.fill(panelX + 2, headerBottomY - 2, panelX + panelW - 2, headerBottomY - 1, 0xFF58BDE4);
         graphics.fill(panelX + 2, panelY + 2, panelX + 3, panelY + panelH - 2, 0xFF294D60);
         graphics.fill(panelX + panelW - 3, panelY + 2, panelX + panelW - 2, panelY + panelH - 2, 0xFF0A1720);
+    }
+
+    private static final String[] BOOT_LINES = {
+            "[  OK  ] POST COMPLETE",
+            "[  OK  ] MEMORY 64K ... VERIFIED",
+            "[  OK  ] ORSA KERNEL v4.3.07-UPLK",
+            "[  OK  ] ANTENNA ARRAY INITIALIZED",
+            "[  OK  ] SATELLITE HANDSHAKE COMPLETE",
+            "[  OK  ] ENCRYPTION LAYER ACTIVE",
+            "[  OK  ] UPLINK CHANNEL OPEN",
+            "[READY ] TERMINAL AWAITING INPUT",
+    };
+
+    private void renderBootSequence(GuiGraphics graphics) {
+        int centerX = panelX + panelW / 2;
+        int contentTop = headerBottomY + 8;
+        int contentBottom = panelY + panelH - 14;
+
+        // 3D-spinning ORSA logo (Y-axis rotation faked via X-scale)
+        int logoSize = 32;
+        int logoCenterX = centerX;
+        int logoCenterY = contentTop + 26;
+        float angle = bootTicks * (720.0f / BOOT_DURATION);
+        float xSquash = (float) Math.cos(Math.toRadians(angle));
+        float logoScale = logoSize / 16.0f;
+        graphics.pose().pushPose();
+        graphics.pose().translate(logoCenterX, logoCenterY, 0);
+        graphics.pose().scale(xSquash * logoScale, logoScale, 1.0f);
+        graphics.blit(ORSA_LOGO, -8, -8, 0, 0, 16, 16, 16, 16);
+        graphics.pose().popPose();
+
+        // Kernel boot lines
+        int textX = panelX + PANEL_PAD + 4;
+        int textY = logoCenterY + logoSize / 2 + 10;
+        int lineStep = headerLineHeight + 2;
+        for (int i = 0; i < BOOT_LINES.length; i++) {
+            int showAt = 4 + i * 6;
+            if (bootTicks >= showAt) {
+                int color = BOOT_LINES[i].startsWith("[READY") ? 0xFF9DF4B6 : 0xFF5E8B9D;
+                String prefix = BOOT_LINES[i].substring(0, 8);
+                String body = BOOT_LINES[i].substring(8);
+                drawScaledString(graphics, prefix, textX, textY + i * lineStep, headerScale, 0xFF4CB7E3);
+                drawScaledString(graphics, body, textX + (int) (font.width(prefix) * headerScale), textY + i * lineStep, headerScale, color);
+            }
+        }
+
+        // Progress bar
+        int barX = panelX + 40;
+        int barW = panelW - 80;
+        int barY = contentBottom - 6;
+        float barProgress = Math.max(0.0f, Math.min(1.0f, (bootTicks - 4.0f) / (BOOT_DURATION - 8.0f)));
+        graphics.fill(barX, barY, barX + barW, barY + 3, 0xFF0D1E2A);
+        graphics.fill(barX, barY, barX + (int) (barW * barProgress), barY + 3, 0xFF4CB7E3);
     }
 
     private void renderAttempts(GuiGraphics graphics) {

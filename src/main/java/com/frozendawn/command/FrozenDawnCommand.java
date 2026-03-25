@@ -408,7 +408,7 @@ public class FrozenDawnCommand {
         int originRegionX = Math.floorDiv(origin.getX() >> 4, 32);
         int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 32);
 
-        record StationCandidate(BlockPos pos, double distSq, boolean built) {}
+        record StationCandidate(BlockPos pos, double distSq, boolean built, int chunkX, int chunkZ) {}
         List<StationCandidate> candidates = new java.util.ArrayList<>();
 
         for (int drx = -3; drx <= 3; drx++) {
@@ -424,17 +424,21 @@ public class FrozenDawnCommand {
                 if (!MonitoringStationPlacement.isEligibleStationSite(overworld, pos[0], pos[1])) {
                     continue;
                 }
+                if (!MonitoringStationPlacement.isOutsideSpawnBuffer(overworld, pos[0], pos[1])) {
+                    continue;
+                }
 
                 int chunkX = pos[0] >> 4;
                 int chunkZ = pos[1] >> 4;
                 boolean built = state.isStationBuilt(chunkX, chunkZ);
-                BlockPos displayPos = built && state.getStationCenter(chunkX, chunkZ) != null
-                        ? state.getStationCenter(chunkX, chunkZ)
-                        : new BlockPos(pos[0], 0, pos[1]);
+                if (!built && state.isStationEvaluated(chunkX, chunkZ)) {
+                    continue;
+                }
+                BlockPos displayPos = new BlockPos(pos[0], 0, pos[1]);
 
                 double distSq = (displayPos.getX() - origin.getX()) * (long) (displayPos.getX() - origin.getX())
                         + (displayPos.getZ() - origin.getZ()) * (long) (displayPos.getZ() - origin.getZ());
-                candidates.add(new StationCandidate(displayPos, distSq, built));
+                candidates.add(new StationCandidate(displayPos, distSq, built, chunkX, chunkZ));
             }
         }
 
@@ -448,6 +452,9 @@ public class FrozenDawnCommand {
         }
 
         if (chosen != null) {
+            if (!chosen.built()) {
+                MonitoringStationPlacement.queueStationPlacement(overworld, chosen.chunkX(), chosen.chunkZ());
+            }
             int dist = (int) Math.sqrt(chosen.distSq());
             final BlockPos station = chosen.pos();
             final boolean built = chosen.built();

@@ -198,6 +198,9 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.land")));
 
+    // --- Terminal Boot ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");
+
     // --- Camp Radio ---
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_BURST = register("radio.static_burst");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_MEDIUM = register("radio.static_medium");
