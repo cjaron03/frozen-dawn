@@ -10,9 +10,11 @@ import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.CampPlacement;
+import com.frozendawn.world.MonitoringStationCalendar;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.TowerPlacement;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -25,6 +27,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -93,6 +96,8 @@ public class FrozenDawnCommand {
                         .executes(FrozenDawnCommand::stations))
                 .then(Commands.literal("satellite")
                         .executes(FrozenDawnCommand::satellite))
+                .then(Commands.literal("calendar")
+                        .executes(FrozenDawnCommand::calendar))
         );
     }
 
@@ -465,6 +470,22 @@ public class FrozenDawnCommand {
         } else {
             context.getSource().sendSuccess(() -> Component.literal("  Monitoring Stations: none eligible in nearby regions"), false);
         }
+        return 1;
+    }
+
+    private static int calendar(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Must be run by a player"));
+            return 0;
+        }
+        ServerLevel level = source.getLevel();
+        BlockPos pos = player.blockPosition();
+        ItemStack calendarMap = MonitoringStationCalendar.create(level, pos);
+        if (!player.getInventory().add(calendarMap)) {
+            player.drop(calendarMap, false);
+        }
+        source.sendSuccess(() -> Component.literal("Gave Station Calendar map"), true);
         return 1;
     }
 

@@ -37,12 +37,14 @@ public final class MonitoringStationStructureBuilder {
 
     // The bundled template is authored around a logical station center at local (9, 0, 9).
     private static final BlockPos TEMPLATE_CENTER_OFFSET = new BlockPos(9, 0, 9);
-    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(8, 2, 7);
+    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(7, 2, 6);
     private static final Direction WEATHER_CHART_FACING = Direction.SOUTH;
     private static final List<BlockPos> LEGACY_WEATHER_CHART_LOCAL_POSITIONS = List.of(
             new BlockPos(3, 2, 8),
             new BlockPos(3, 2, 9)
     );
+    private static final BlockPos CALENDAR_LOCAL_POS = new BlockPos(13, 2, 12);
+    private static final Direction CALENDAR_FACING = Direction.WEST;
 
     private static final int MIN_X = -9;
     private static final int MAX_X = 8;
@@ -141,6 +143,7 @@ public final class MonitoringStationStructureBuilder {
         }
 
         ensureWeatherChart(level, center);
+        ensureCalendar(level, center);
     }
 
     private static void gradeTerrain(ServerLevel level, int cx, int cy, int cz) {
@@ -270,6 +273,61 @@ public final class MonitoringStationStructureBuilder {
     private static boolean placeWeatherChart(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
         ItemFrame frame = new ItemFrame(level, pos, facing);
         frame.setItem(MonitoringStationWeatherChart.create(level, center), false);
+        frame.setInvulnerable(true);
+        if (frame.survives()) {
+            level.addFreshEntity(frame);
+            return true;
+        }
+        return false;
+    }
+
+    public static void ensureCalendar(ServerLevel level, BlockPos center) {
+        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
+        BlockPos calPos = origin.offset(CALENDAR_LOCAL_POS);
+
+        if (hasExpectedCalendar(level, calPos, CALENDAR_FACING)) {
+            return;
+        }
+
+        // Remove any sign block at the calendar position
+        if (!level.getBlockState(calPos).isAir()) {
+            level.setBlock(calPos, Blocks.AIR.defaultBlockState(), 2);
+        }
+
+        // Remove any existing item frames
+        AABB frameBox = new AABB(calPos).inflate(0.5);
+        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            existing.discard();
+        }
+
+        if (placeCalendar(level, center, calPos, CALENDAR_FACING)) {
+            FrozenDawn.LOGGER.info("Monitoring Station calendar placed at ({}, {}, {})",
+                    calPos.getX(), calPos.getY(), calPos.getZ());
+        } else {
+            BlockPos supportPos = calPos.relative(CALENDAR_FACING.getOpposite());
+            FrozenDawn.LOGGER.warn("Monitoring Station calendar placement failed at ({}, {}, {}); target frame pos {} facing {} support {} state {}",
+                    center.getX(), center.getY(), center.getZ(), calPos, CALENDAR_FACING,
+                    supportPos, level.getBlockState(supportPos));
+        }
+    }
+
+    private static boolean hasExpectedCalendar(ServerLevel level, BlockPos pos, Direction facing) {
+        AABB frameBox = new AABB(pos).inflate(0.25);
+        for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            ItemStack item = frame.getItem();
+            if (frame.getPos().equals(pos)
+                    && frame.getDirection() == facing
+                    && item.is(Items.FILLED_MAP)
+                    && Objects.equals(item.get(DataComponents.CUSTOM_NAME), Component.literal("Station Calendar"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean placeCalendar(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
+        ItemFrame frame = new ItemFrame(level, pos, facing);
+        frame.setItem(MonitoringStationCalendar.create(level, center), false);
         frame.setInvulnerable(true);
         if (frame.survives()) {
             level.addFreshEntity(frame);
