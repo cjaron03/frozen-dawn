@@ -16,6 +16,7 @@ public record SubmitMonitoringTerminalPayload(BlockPos pos, long nonce, int acti
     public static final int ACTION_ARCHIVE_PREVIOUS = 2;
     public static final int ACTION_ARCHIVE_NEXT = 3;
     public static final int ACTION_ARCHIVE_OPEN_PAGE = 4;
+    public static final int ACTION_ARCHIVE_AUTH = 5;
 
     public static final Type<SubmitMonitoringTerminalPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "submit_monitoring_terminal"));

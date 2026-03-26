@@ -13,7 +13,7 @@ public record OpenMonitoringTerminalPayload(BlockPos pos, long nonce, int triesL
                                             int alignTicksRemaining, int lockoutTicksRemaining,
                                             String auditLog, String archiveTitle,
                                             String archiveBody, int archivePage,
-                                            int archivePageCount)
+                                            int archivePageCount, boolean archivePasswordPrompt)
         implements CustomPacketPayload {
 
     public static final int STATE_ACTIVE = 0;
@@ -41,9 +41,10 @@ public record OpenMonitoringTerminalPayload(BlockPos pos, long nonce, int triesL
             String archiveBody = ByteBufCodecs.STRING_UTF8.decode(buffer);
             int archivePage = ByteBufCodecs.VAR_INT.decode(buffer);
             int archivePageCount = ByteBufCodecs.VAR_INT.decode(buffer);
+            boolean archivePasswordPrompt = ByteBufCodecs.BOOL.decode(buffer);
             return new OpenMonitoringTerminalPayload(pos, nonce, triesLeft, state, removedMask, usedPairMask,
                     alignTicksRemaining, lockoutTicksRemaining, auditLog, archiveTitle, archiveBody,
-                    archivePage, archivePageCount);
+                    archivePage, archivePageCount, archivePasswordPrompt);
         }
 
         @Override
@@ -61,6 +62,7 @@ public record OpenMonitoringTerminalPayload(BlockPos pos, long nonce, int triesL
             ByteBufCodecs.STRING_UTF8.encode(buffer, value.archiveBody());
             ByteBufCodecs.VAR_INT.encode(buffer, value.archivePage());
             ByteBufCodecs.VAR_INT.encode(buffer, value.archivePageCount());
+            ByteBufCodecs.BOOL.encode(buffer, value.archivePasswordPrompt());
         }
     };
 

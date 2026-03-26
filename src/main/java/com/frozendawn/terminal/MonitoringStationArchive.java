@@ -19,9 +19,12 @@ public final class MonitoringStationArchive {
             "HISTORICAL DATA",
             "NETWORK STATUS",
             "INSTRUMENT STATUS",
-            "LOCAL EVENT LOGS"
+            "LOCAL EVENT LOGS",
+            "ORSA EMPLOYEE ONLY"
     };
     public static final int PAGE_COUNT = PAGE_TITLES.length;
+    public static final int EMPLOYEE_ONLY_PAGE = PAGE_COUNT - 1;
+    public static final String EMPLOYEE_ARCHIVE_PASSWORD = "PEANUTBUTTER";
 
     private static final LocalDate APOCALYPSE_START = LocalDate.of(2042, 6, 20);
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("MMM dd", Locale.US);
@@ -34,7 +37,8 @@ public final class MonitoringStationArchive {
     private MonitoringStationArchive() {
     }
 
-    public static Snapshot create(ServerLevel level, BlockPos stationCenter, int rawPageIndex) {
+    public static Snapshot create(ServerLevel level, BlockPos stationCenter, int rawPageIndex,
+                                  boolean employeeArchiveUnlocked, String employeeAuthStatus) {
         ApocalypseState state = ApocalypseState.get(level.getServer());
         int pageIndex = Math.floorMod(rawPageIndex, PAGE_COUNT);
         int totalDays = Math.max(1, state.getTotalDays());
@@ -45,12 +49,16 @@ public final class MonitoringStationArchive {
 
         String title = PAGE_TITLES[pageIndex];
 
+        boolean passwordPrompt = pageIndex == EMPLOYEE_ONLY_PAGE && !employeeArchiveUnlocked;
         List<String> bodyLines = switch (pageIndex) {
             case 0 -> buildTelemetryPage(stationCenter, stationSeed, currentDay, totalDays, currentDate);
             case 1 -> buildHistoricalPage(stationSeed, totalDays);
             case 2 -> buildNetworkPage(stationSeed, currentDay, currentDate);
             case 3 -> buildInstrumentPage(stationSeed, currentDay, currentDate);
-            default -> buildEventPage(stationSeed, currentDay, currentDate);
+            case 4 -> buildEventPage(stationSeed, currentDay, currentDate);
+            default -> employeeArchiveUnlocked
+                    ? buildEmployeeTowerPage(stationSeed)
+                    : buildEmployeePromptPage(employeeAuthStatus);
         };
 
         List<String> auditLines = buildFooterLines(stationSeed, currentDate, pageIndex, transferSite);
@@ -59,7 +67,8 @@ public final class MonitoringStationArchive {
                 String.join("\n", bodyLines),
                 String.join("\n", auditLines),
                 pageIndex,
-                PAGE_COUNT
+                PAGE_COUNT,
+                passwordPrompt
         );
     }
 
@@ -180,6 +189,32 @@ public final class MonitoringStationArchive {
         return lines;
     }
 
+    private static List<String> buildEmployeePromptPage(String authStatus) {
+        List<String> lines = new ArrayList<>();
+        lines.add("OFFICIAL ORSA EMPLOYEE ONLY");
+        lines.add("RELAY TARGET ARCHIVE RESTRICTED");
+        lines.add("COMMUNICATION TOWER HANDSHAKE LOGS REQUIRE AUTH");
+        if (authStatus != null && !authStatus.isBlank()) {
+            lines.add(authStatus);
+        }
+        lines.add("ENTER ACCESS PHRASE BELOW");
+        return lines;
+    }
+
+    private static List<String> buildEmployeeTowerPage(long stationSeed) {
+        List<String> lines = new ArrayList<>();
+        Random random = new Random(stationSeed ^ 0x434F4D4D544F5752L);
+        lines.add("OFFICIAL ORSA EMPLOYEE ONLY");
+        lines.add("UPLINK TARGET: ORSA COMMUNICATION TOWER");
+        lines.add("STATUS: OFFLINE");
+        lines.add("LAST HANDSHAKE: SEP 20");
+        lines.add(String.format(Locale.US, "DATA QUEUED: %d UNSENT REPORTS", 12 + random.nextInt(11)));
+        lines.add("RELAY NOTE:");
+        lines.add("WEATHER INGEST PAYLOADS REMAIN BUFFERED AT THIS NODE");
+        lines.add("COMM TOWER ACKNOWLEDGEMENT CHANNEL HAS BEEN SILENT");
+        return lines;
+    }
+
     private static List<String> buildFooterLines(long stationSeed, LocalDate currentDate, int pageIndex, CampDirective transferSite) {
         List<String> lines = new ArrayList<>();
         Random random = new Random(stationSeed ^ 0x464F4F5445524CL);
@@ -277,7 +312,8 @@ public final class MonitoringStationArchive {
         return letter + "-" + String.format(Locale.US, "%02d", number);
     }
 
-    public record Snapshot(String title, String body, String auditLog, int pageIndex, int pageCount) {
+    public record Snapshot(String title, String body, String auditLog, int pageIndex, int pageCount,
+                           boolean passwordPrompt) {
     }
 
     private record Metrics(int highC, int lowC, int windKts, int gustKts, double precipMm, int snowCm,

@@ -413,6 +413,7 @@ public final class MonitoringStationStructureBuilder {
         loot.add(new ItemStack(Items.COMPARATOR, 1));
         loot.add(createOrsaDocument("ORSA Ingest Node Maintenance Bulletin", "station_maintenance_bulletin"));
         loot.add(createOrsaDocument("Relay Diagnostics Printout", "station_relay_diagnostics"));
+        loot.add(createEmployeeRelayNote());
         loot.add(createJournal(center));
         return loot;
     }
@@ -435,6 +436,17 @@ public final class MonitoringStationStructureBuilder {
         tag.putString("doc_type", docType);
         doc.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return doc;
+    }
+
+    private static ItemStack createEmployeeRelayNote() {
+        ItemStack note = new ItemStack(Items.PAPER);
+        note.set(DataComponents.CUSTOM_NAME, Component.literal("ORSA Relay Note"));
+        note.set(DataComponents.LORE, new ItemLore(List.of(
+                Component.literal("Password for the employee archive is PEANUTBUTTER."),
+                Component.literal("If I forget it again, I deserve to walk back to the tower."),
+                Component.literal("- R. Hale, ORSA field systems")
+        )));
+        return note;
     }
 
     private static ItemStack createJournal(BlockPos center) {

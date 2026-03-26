@@ -55,6 +55,7 @@ public class MonitoringTerminalScreen extends Screen {
     private String archiveTitle = "";
     private int archivePage;
     private int archivePageCount;
+    private boolean archivePasswordPrompt;
     private final List<TokenHitbox> interactiveHitboxes = new ArrayList<>();
 
     private int panelX;
@@ -88,6 +89,7 @@ public class MonitoringTerminalScreen extends Screen {
     private int bootTicks;
     private boolean bootSoundPlayed;
     private String terminalInput = "";
+    private String archivePasswordInput = "";
     private int archiveDirectoryScroll;
     private int archiveDetailScroll;
     private float headerScale = 0.82f;
@@ -109,6 +111,7 @@ public class MonitoringTerminalScreen extends Screen {
     public void applySnapshot(OpenMonitoringTerminalPayload payload) {
         long previousNonce = this.nonce;
         int previousArchivePage = this.archivePage;
+        boolean previousPasswordPrompt = this.archivePasswordPrompt;
         this.nonce = payload.nonce();
         this.board = payload.nonce() == 0L ? null : MonitoringTerminalPuzzle.create(payload.nonce());
         this.triesLeft = payload.triesLeft();
@@ -125,12 +128,16 @@ public class MonitoringTerminalScreen extends Screen {
                 : new ArrayList<>(Arrays.asList(payload.archiveBody().split("\n")));
         this.archivePage = payload.archivePage();
         this.archivePageCount = payload.archivePageCount();
+        this.archivePasswordPrompt = payload.archivePasswordPrompt();
         if (payload.archivePage() != previousArchivePage) {
             this.archiveDetailScroll = 0;
         }
         this.closeTicks = state == OpenMonitoringTerminalPayload.STATE_COMPLETE ? 30 : -1;
         if (payload.nonce() != previousNonce || state != OpenMonitoringTerminalPayload.STATE_ACTIVE) {
             this.terminalInput = "";
+        }
+        if (payload.archivePage() != previousArchivePage || !archivePasswordPrompt || archivePasswordPrompt != previousPasswordPrompt) {
+            this.archivePasswordInput = "";
         }
         if (minecraft != null && minecraft.screen == this) {
             recalculateLayout();
@@ -472,12 +479,15 @@ public class MonitoringTerminalScreen extends Screen {
 
             List<FormattedCharSequence> wrappedBody = archiveWrappedBody(layout);
             int contentY = layout.detailContentY() - archiveDetailScroll;
+            int detailMaxY = archivePasswordPrompt
+                    ? layout.detailContentY() + layout.detailContentH() - auditLineHeight - 10
+                    : layout.detailContentY() + layout.detailContentH();
             graphics.enableScissor(layout.detailContentX(), layout.detailContentY(),
                     layout.detailContentX() + layout.detailContentW(),
                     layout.detailContentY() + layout.detailContentH());
             for (FormattedCharSequence line : wrappedBody) {
                 if (contentY + auditLineHeight >= layout.detailContentY() - 2
-                        && contentY <= layout.detailContentY() + layout.detailContentH()) {
+                        && contentY <= detailMaxY) {
                     drawScaledString(graphics, line, layout.detailContentX(), contentY, auditScale, 0xFFD4E5DC);
                 }
                 contentY += auditLineHeight;
@@ -486,6 +496,12 @@ public class MonitoringTerminalScreen extends Screen {
             renderArchiveScrollbar(graphics, layout.detailScrollbarX(), layout.detailContentY(),
                     layout.detailContentH(), archiveDetailScroll, detailScrollMax(layout),
                     detailVisibleHeight(layout), 0xFF2C463C, 0xFFAEE8B5);
+            if (archivePasswordPrompt) {
+                int promptY = layout.detailY() + layout.detailH() - BOX_PAD - auditLineHeight - 2;
+                String cursor = (blinkTicks / 8) % 2 == 0 ? "_" : "";
+                drawScaledString(graphics, Component.literal("PASSWORD: " + archivePasswordInput + cursor),
+                        layout.detailContentX(), promptY, auditScale, 0xFFF5F7EE);
+            }
             return;
         }
 
@@ -687,8 +703,9 @@ public class MonitoringTerminalScreen extends Screen {
     }
 
     private int detailScrollMax(ArchiveLayout layout) {
+        int reservedPromptHeight = archivePasswordPrompt ? auditLineHeight + 10 : 0;
         int contentHeight = archiveWrappedBody(layout).size() * auditLineHeight;
-        return Math.max(0, contentHeight - detailVisibleHeight(layout));
+        return Math.max(0, contentHeight - (detailVisibleHeight(layout) - reservedPromptHeight));
     }
 
     private List<FormattedCharSequence> archiveWrappedBody(ArchiveLayout layout) {
@@ -782,6 +799,13 @@ public class MonitoringTerminalScreen extends Screen {
             return true;
         }
         if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            if (archivePasswordPrompt) {
+                if (Character.isLetterOrDigit(codePoint) && archivePasswordInput.length() < 24) {
+                    archivePasswordInput += Character.toUpperCase(codePoint);
+                    return true;
+                }
+                return true;
+            }
             if (codePoint == '[') {
                 sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
                 return true;
@@ -818,6 +842,19 @@ public class MonitoringTerminalScreen extends Screen {
             }
         }
         if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            if (archivePasswordPrompt) {
+                if (keyCode == 259) {
+                    if (!archivePasswordInput.isEmpty()) {
+                        archivePasswordInput = archivePasswordInput.substring(0, archivePasswordInput.length() - 1);
+                    }
+                    return true;
+                }
+                if (keyCode == 257 || keyCode == 335) {
+                    sendArchiveAuthAction();
+                    return true;
+                }
+                return true;
+            }
             if (keyCode == 263 || keyCode == 65) {
                 sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
                 return true;
@@ -861,6 +898,17 @@ public class MonitoringTerminalScreen extends Screen {
                 pageIndex,
                 ""
         ));
+    }
+
+    private void sendArchiveAuthAction() {
+        PacketDistributor.sendToServer(new SubmitMonitoringTerminalPayload(
+                consolePos,
+                nonce,
+                SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_AUTH,
+                archivePage,
+                archivePasswordInput
+        ));
+        archivePasswordInput = "";
     }
 
     private record SegmentLayout(int addressX, int y, String address, int textX) {
