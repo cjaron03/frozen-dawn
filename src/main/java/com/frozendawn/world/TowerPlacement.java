@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class TowerPlacement {
 
-    private static final int FOOTPRINT_RADIUS = 18;
+    private static final int FOOTPRINT_RADIUS = 20;
     private static final int DRY_BUFFER = 12;
     private static final Set<Long> pendingTowerPlacements = ConcurrentHashMap.newKeySet();
 
