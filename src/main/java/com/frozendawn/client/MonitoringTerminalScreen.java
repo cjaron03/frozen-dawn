@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.OpenMonitoringTerminalPayload;
 import com.frozendawn.network.SubmitMonitoringTerminalPayload;
+import com.frozendawn.terminal.MonitoringStationArchive;
 import com.frozendawn.terminal.MonitoringTerminalPuzzle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -31,6 +32,8 @@ public class MonitoringTerminalScreen extends Screen {
     private static final int PANEL_MAX_H = 500;
     private static final int PANEL_PAD = 18;
     private static final int BOX_PAD = 10;
+    private static final int ARCHIVE_GAP = 12;
+    private static final int ARCHIVE_DIRECTORY_W = 176;
     private static final int LOCKOUT_TICKS_TOTAL = 20 * 45;
     private static final int BOOT_DURATION = 65;
     private static final ResourceLocation ORSA_LOGO =
@@ -45,7 +48,12 @@ public class MonitoringTerminalScreen extends Screen {
     private long usedPairMask;
     private int lockoutTicksRemaining;
     private List<String> auditLines = new ArrayList<>();
+    private List<String> archiveBodyLines = new ArrayList<>();
+    private String archiveTitle = "";
+    private int archivePage;
+    private int archivePageCount;
     private final List<TokenHitbox> interactiveHitboxes = new ArrayList<>();
+    private final List<ArchiveEntryHitbox> archiveEntryHitboxes = new ArrayList<>();
 
     private int panelX;
     private int panelY;
@@ -106,6 +114,12 @@ public class MonitoringTerminalScreen extends Screen {
         this.auditLines = payload.auditLog().isBlank()
                 ? new ArrayList<>()
                 : new ArrayList<>(Arrays.asList(payload.auditLog().split("\n")));
+        this.archiveTitle = payload.archiveTitle();
+        this.archiveBodyLines = payload.archiveBody().isBlank()
+                ? new ArrayList<>()
+                : new ArrayList<>(Arrays.asList(payload.archiveBody().split("\n")));
+        this.archivePage = payload.archivePage();
+        this.archivePageCount = payload.archivePageCount();
         this.closeTicks = state == OpenMonitoringTerminalPayload.STATE_COMPLETE ? 30 : -1;
         if (payload.nonce() != previousNonce || state != OpenMonitoringTerminalPayload.STATE_ACTIVE) {
             this.terminalInput = "";
@@ -170,25 +184,43 @@ public class MonitoringTerminalScreen extends Screen {
         attemptsY = titleY + headerLineHeight + 6;
         headerBottomY = attemptsY + headerLineHeight + 8;
         boardCenterX = panelX + panelW / 2;
-        int boardContentHeight = MonitoringTerminalPuzzle.ROWS * boardLineHeight;
-
-        int boardAreaTop = headerBottomY + 12;
         int bottomMargin = 14;
-        int desiredAuditH = Math.max(120, Math.min(160, panelH / 3));
-        int boardAreaBottom = panelY + panelH - bottomMargin - desiredAuditH - 14;
-        int boardAreaHeight = Math.max(boardContentHeight, boardAreaBottom - boardAreaTop);
-        boardY = boardAreaTop + Math.max(0, (boardAreaHeight - boardContentHeight) / 2);
-        boardBottom = boardY + boardContentHeight;
-
+        int contentTop = headerBottomY + 12;
         auditX = panelX + PANEL_PAD;
         auditW = contentWidth;
-        auditY = boardBottom + 8;
-        int availableAuditH = Math.max(96, panelY + panelH - bottomMargin - auditY);
-        auditH = Math.min(availableAuditH, desiredAuditHeight(auditW - BOX_PAD * 2));
+        int maxAuditH = Math.max(84, panelY + panelH - bottomMargin - contentTop - 96);
+        auditH = Math.min(maxAuditH, desiredAuditHeight(auditW - BOX_PAD * 2));
+        auditY = panelY + panelH - bottomMargin - auditH;
+
+        if (state == OpenMonitoringTerminalPayload.STATE_ACTIVE) {
+            int boardContentHeight = MonitoringTerminalPuzzle.ROWS * boardLineHeight;
+            int boardAreaTop = contentTop;
+            int boardAreaBottom = auditY - 14;
+            int boardAreaHeight = Math.max(boardContentHeight, boardAreaBottom - boardAreaTop);
+            boardY = boardAreaTop + Math.max(0, (boardAreaHeight - boardContentHeight) / 2);
+            boardBottom = boardY + boardContentHeight;
+        } else {
+            boardY = contentTop;
+            boardBottom = auditY - 8;
+        }
     }
 
     private void rebuildHitboxes() {
         interactiveHitboxes.clear();
+        archiveEntryHitboxes.clear();
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            ArchiveLayout layout = archiveLayout();
+            int rowY = layout.directoryY() + 24;
+            int rowHeight = archiveRowHeight();
+            int rowX = layout.directoryX() + BOX_PAD - 2;
+            int rowW = layout.directoryW() - BOX_PAD * 2 + 4;
+            int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
+            for (int i = 0; i < pageTotal; i++) {
+                archiveEntryHitboxes.add(new ArchiveEntryHitbox(rowX, rowY, rowW, rowHeight, i));
+                rowY += rowHeight + 4;
+            }
+            return;
+        }
         if (board == null || state != OpenMonitoringTerminalPayload.STATE_ACTIVE) {
             return;
         }
@@ -262,7 +294,7 @@ public class MonitoringTerminalScreen extends Screen {
             return;
         }
 
-        renderStatePanel(graphics);
+        renderStatePanel(graphics, mouseX, mouseY);
         renderAudit(graphics);
     }
 
@@ -351,14 +383,23 @@ public class MonitoringTerminalScreen extends Screen {
     }
 
     private void renderAudit(GuiGraphics graphics) {
-        renderInfoBox(graphics, auditX, auditY, auditW, auditH, "TERMINAL LOG", 0xFFE6EFE9, 0xFF101618);
+        String title = state == OpenMonitoringTerminalPayload.STATE_ARCHIVE ? "URGENT ORSA DIRECTIVE" : "TERMINAL LOG";
+        int accent = state == OpenMonitoringTerminalPayload.STATE_ARCHIVE ? 0xFFF2C38A : 0xFFE6EFE9;
+        renderInfoBox(graphics, auditX, auditY, auditW, auditH, title, accent, 0xFF101618);
 
         int y = auditY + 24;
         int inputY = auditY + auditH - BOX_PAD - auditLineHeight;
         int maxY = inputY - 8;
         for (String line : auditLines) {
+            int color = 0xFFD4E5DC;
+            if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE
+                    && (line.startsWith("TRANSFER DIRECTIVE")
+                    || line.startsWith("DESIGNATED TRANSFER SITE")
+                    || line.startsWith("COORDS"))) {
+                color = 0xFFF5E0B1;
+            }
             y = drawWrappedScaledLine(graphics, Component.literal(line), auditX + BOX_PAD, y,
-                    auditW - BOX_PAD * 2, maxY, 0xFFD4E5DC, auditScale);
+                    auditW - BOX_PAD * 2, maxY, color, auditScale);
             y += 1;
         }
 
@@ -369,7 +410,7 @@ public class MonitoringTerminalScreen extends Screen {
         }
     }
 
-    private void renderStatePanel(GuiGraphics graphics) {
+    private void renderStatePanel(GuiGraphics graphics, int mouseX, int mouseY) {
         int boxX = panelX + PANEL_PAD;
         int boxY = panelY + 66;
         int boxW = panelW - PANEL_PAD * 2;
@@ -384,6 +425,51 @@ public class MonitoringTerminalScreen extends Screen {
             graphics.drawCenteredString(font, Component.literal("Automatic reset pending."), boxX + boxW / 2, boxY + 36, 0xFFD4E5DC);
             String reset = "RESET IN " + Math.max(1, (lockoutTicksRemaining + 19) / 20) + "s";
             graphics.drawCenteredString(font, Component.literal(reset), boxX + boxW / 2, boxY + 56, 0xFFCBE7D8);
+            return;
+        }
+
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            ArchiveLayout layout = archiveLayout();
+            renderInfoBox(graphics, layout.directoryX(), layout.directoryY(), layout.directoryW(), layout.directoryH(),
+                    "DIRECTORY", 0xFFAEE8B5, 0xFF12191B);
+            renderInfoBox(graphics, layout.detailX(), layout.detailY(), layout.detailW(), layout.detailH(),
+                    archiveTitle.isBlank() ? "ARCHIVE DATA" : archiveTitle, 0xFFAEE8B5, 0xFF12191B);
+
+            int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
+            int rowY = layout.directoryY() + 24;
+            int rowHeight = archiveRowHeight();
+            for (int i = 0; i < pageTotal; i++) {
+                String label = i < MonitoringStationArchive.PAGE_TITLES.length
+                        ? MonitoringStationArchive.PAGE_TITLES[i]
+                        : "ARCHIVE PAGE " + (i + 1);
+                boolean selected = i == archivePage;
+                boolean hovered = hoveredArchiveEntry(mouseX, mouseY, i);
+                int rowX = layout.directoryX() + BOX_PAD - 2;
+                int rowW = layout.directoryW() - BOX_PAD * 2 + 4;
+                int fill = selected ? 0xFF223630 : (hovered ? 0xFF182324 : 0x00000000);
+                if (fill != 0) {
+                    graphics.fill(rowX, rowY - 1, rowX + rowW, rowY + rowHeight - 1, fill);
+                }
+                String prefix = selected ? "> " : "  ";
+                drawScaledString(graphics, Component.literal(prefix + label),
+                        layout.directoryX() + BOX_PAD, rowY + 2, auditScale,
+                        selected ? 0xFFF5F7EE : 0xFFD4E5DC);
+                rowY += rowHeight + 4;
+            }
+            drawScaledString(graphics, Component.literal("CLICK ENTRY TO OPEN"),
+                    layout.directoryX() + BOX_PAD,
+                    layout.directoryY() + layout.directoryH() - BOX_PAD - auditLineHeight,
+                    auditScale,
+                    0xFF7D978D);
+
+            int contentX = layout.detailX() + BOX_PAD;
+            int contentY = layout.detailY() + 24;
+            int maxY = layout.detailY() + layout.detailH() - BOX_PAD - 2;
+            for (String line : archiveBodyLines) {
+                contentY = drawWrappedScaledLine(graphics, Component.literal(line), contentX, contentY,
+                        layout.detailW() - BOX_PAD * 2, maxY, 0xFFD4E5DC, auditScale);
+                contentY += 1;
+            }
             return;
         }
 
@@ -405,6 +491,10 @@ public class MonitoringTerminalScreen extends Screen {
         int wrappedLines = 0;
         for (String line : auditLines) {
             wrappedLines += Math.max(1, font.split(Component.literal(line), scaledWidth).size());
+        }
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            int contentHeight = 24 + BOX_PAD + wrappedLines * auditLineHeight + BOX_PAD + 4;
+            return Math.max(92, contentHeight);
         }
         int visibleLines = Math.max(state == OpenMonitoringTerminalPayload.STATE_ACTIVE ? 4 : 3,
                 Math.min(8, wrappedLines + (state == OpenMonitoringTerminalPayload.STATE_ACTIVE ? 1 : 0)));
@@ -479,8 +569,45 @@ public class MonitoringTerminalScreen extends Screen {
         return null;
     }
 
+    private ArchiveEntryHitbox hoveredArchiveEntry(double mouseX, double mouseY) {
+        for (ArchiveEntryHitbox hitbox : archiveEntryHitboxes) {
+            if (hitbox.contains(mouseX, mouseY)) {
+                return hitbox;
+            }
+        }
+        return null;
+    }
+
+    private boolean hoveredArchiveEntry(double mouseX, double mouseY, int pageIndex) {
+        ArchiveEntryHitbox hitbox = hoveredArchiveEntry(mouseX, mouseY);
+        return hitbox != null && hitbox.pageIndex() == pageIndex;
+    }
+
+    private ArchiveLayout archiveLayout() {
+        int boxX = panelX + PANEL_PAD;
+        int boxY = panelY + 66;
+        int boxW = panelW - PANEL_PAD * 2;
+        int boxH = Math.max(110, auditY - boxY - 12);
+        int directoryW = Math.min(ARCHIVE_DIRECTORY_W, Math.max(150, boxW / 3));
+        int detailX = boxX + directoryW + ARCHIVE_GAP;
+        int detailW = Math.max(180, boxX + boxW - detailX);
+        return new ArchiveLayout(boxX, boxY, directoryW, boxH, detailX, boxY, detailW, boxH);
+    }
+
+    private int archiveRowHeight() {
+        return Math.max(14, auditLineHeight + 4);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            ArchiveEntryHitbox entry = hoveredArchiveEntry(mouseX, mouseY);
+            if (entry != null) {
+                sendArchiveOpenAction(entry.pageIndex());
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
         if (state != OpenMonitoringTerminalPayload.STATE_ACTIVE || board == null) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
@@ -509,6 +636,16 @@ public class MonitoringTerminalScreen extends Screen {
             }
             return true;
         }
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            if (codePoint == '[') {
+                sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
+                return true;
+            }
+            if (codePoint == ']') {
+                sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_NEXT);
+                return true;
+            }
+        }
         return super.charTyped(codePoint, modifiers);
     }
 
@@ -535,6 +672,16 @@ public class MonitoringTerminalScreen extends Screen {
                 return true;
             }
         }
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            if (keyCode == 263 || keyCode == 65) {
+                sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
+                return true;
+            }
+            if (keyCode == 262 || keyCode == 68) {
+                sendArchiveAction(SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_NEXT);
+                return true;
+            }
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -551,7 +698,37 @@ public class MonitoringTerminalScreen extends Screen {
         minecraft.setScreen(new MonitoringTerminalScreen(payload));
     }
 
+    private void sendArchiveAction(int actionType) {
+        PacketDistributor.sendToServer(new SubmitMonitoringTerminalPayload(
+                consolePos,
+                nonce,
+                actionType,
+                0,
+                ""
+        ));
+    }
+
+    private void sendArchiveOpenAction(int pageIndex) {
+        PacketDistributor.sendToServer(new SubmitMonitoringTerminalPayload(
+                consolePos,
+                nonce,
+                SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_OPEN_PAGE,
+                pageIndex,
+                ""
+        ));
+    }
+
     private record SegmentLayout(int addressX, int y, String address, int textX) {
+    }
+
+    private record ArchiveLayout(int directoryX, int directoryY, int directoryW, int directoryH,
+                                 int detailX, int detailY, int detailW, int detailH) {
+    }
+
+    private record ArchiveEntryHitbox(int x, int y, int width, int height, int pageIndex) {
+        boolean contains(double mouseX, double mouseY) {
+            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+        }
     }
 
     private record TokenHitbox(int x, int y, int width, int height, int index, boolean word) {

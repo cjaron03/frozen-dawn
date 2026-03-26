@@ -4,6 +4,7 @@ import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.network.OpenMonitoringTerminalPayload;
 import com.frozendawn.network.SubmitMonitoringTerminalPayload;
+import com.frozendawn.terminal.MonitoringStationArchive;
 import com.frozendawn.terminal.MonitoringTerminalPuzzle;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.MonitoringStationStructureBuilder;
@@ -32,6 +33,8 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
     private static final double MAX_HORIZONTAL_DISTANCE_SQ = 4.5D * 4.5D;
     private static final double MAX_VERTICAL_DISTANCE = 3.5D;
     private static final int AUDIT_LOG_LIMIT = 8;
+    private static final int MODE_PUZZLE = 0;
+    private static final int MODE_ARCHIVE = 1;
 
     private BlockPos stationCenter;
 
@@ -43,6 +46,8 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
     private long terminalRemovedMask;
     private long terminalUsedPairMask;
     private MonitoringTerminalPuzzle.Board terminalBoard;
+    private int terminalMode = MODE_PUZZLE;
+    private int terminalArchivePage;
     private final List<String> terminalAuditLog = new ArrayList<>();
 
     public MonitoringStationTerminalBlockEntity(BlockPos pos, BlockState state) {
@@ -70,17 +75,18 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
             return;
         }
 
-        if (isStationUnlocked(serverLevel, resolvedStationCenter)) {
-            player.displayClientMessage(Component.literal("Archive seal already disengaged."), true);
-            return;
-        }
-
         if (terminalPlayerId != null && (terminalTicksRemaining > 0 || terminalLockoutTicksRemaining > 0)) {
             if (!terminalPlayerId.equals(player.getUUID())) {
                 player.displayClientMessage(Component.literal("Terminal is currently in use."), true);
                 return;
             }
             sendSnapshot(player, currentTerminalState());
+            return;
+        }
+
+        if (isStationUnlocked(serverLevel, resolvedStationCenter)) {
+            beginArchiveSession(player, serverLevel.getRandom());
+            sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ARCHIVE);
             return;
         }
 
@@ -98,12 +104,24 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
             player.sendSystemMessage(Component.literal("No station archive is linked to this terminal."));
             return;
         }
-        if (isStationUnlocked(serverLevel, resolvedStationCenter)) {
-            player.displayClientMessage(Component.literal("Archive seal already disengaged."), true);
-            return;
-        }
         if (!isPlayerInRange(player)) {
             player.displayClientMessage(Component.literal("Move back to the station terminal."), true);
+            return;
+        }
+        if (isStationUnlocked(serverLevel, resolvedStationCenter)) {
+            if (!hasActiveSession(player, nonce)) {
+                player.displayClientMessage(Component.literal("Terminal session expired. Reopen the console."), true);
+                return;
+            }
+            if (actionType == SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_PREVIOUS) {
+                handleArchiveNavigation(serverLevel, player, -1);
+            } else if (actionType == SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_NEXT) {
+                handleArchiveNavigation(serverLevel, player, 1);
+            } else if (actionType == SubmitMonitoringTerminalPayload.ACTION_ARCHIVE_OPEN_PAGE) {
+                handleArchiveOpenPage(serverLevel, player, actionIndex);
+            } else {
+                sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ARCHIVE);
+            }
             return;
         }
         if (!hasActiveSession(player, nonce)) {
@@ -188,10 +206,10 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
             MonitoringStationState stationState = MonitoringStationState.get(level.getServer());
             stationState.markStationUnlocked(resolvedStationCenter.getX() >> 4, resolvedStationCenter.getZ() >> 4);
             MonitoringStationStructureBuilder.unlockBackRoom(level, resolvedStationCenter);
-            sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_COMPLETE);
             level.playSound(null, worldPosition, SoundEvents.IRON_DOOR_OPEN, SoundSource.BLOCKS, 1.0f, 1.05f);
             player.displayClientMessage(Component.literal("Back room unsealed."), true);
-            clearTerminalSession();
+            beginArchiveSession(player, level.getRandom());
+            sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ARCHIVE);
             return;
         }
 
@@ -239,6 +257,26 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
         sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ACTIVE);
     }
 
+    private void handleArchiveNavigation(ServerLevel level, ServerPlayer player, int delta) {
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = Math.floorMod(terminalArchivePage + delta, MonitoringStationArchive.PAGE_COUNT);
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalLockoutTicksRemaining = 0;
+        terminalBoard = null;
+        sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ARCHIVE);
+        level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.35f, 1.35f);
+    }
+
+    private void handleArchiveOpenPage(ServerLevel level, ServerPlayer player, int pageIndex) {
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = Math.floorMod(pageIndex, MonitoringStationArchive.PAGE_COUNT);
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalLockoutTicksRemaining = 0;
+        terminalBoard = null;
+        sendSnapshot(player, OpenMonitoringTerminalPayload.STATE_ARCHIVE);
+        level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.35f, 1.1f);
+    }
+
     private int removeOneDud() {
         if (terminalBoard == null) {
             return -1;
@@ -271,6 +309,8 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
         terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
+        terminalMode = MODE_PUZZLE;
+        terminalArchivePage = 0;
         terminalBoard = MonitoringTerminalPuzzle.create(terminalNonce);
         terminalAuditLog.clear();
         appendAudit("STATION ARCHIVE SEAL ACTIVE");
@@ -278,15 +318,49 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    private void beginArchiveSession(ServerPlayer player, RandomSource random) {
+        terminalPlayerId = player.getUUID();
+        terminalNonce = random.nextLong();
+        if (terminalNonce == 0L) {
+            terminalNonce = 1L;
+        }
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalTriesLeft = 0;
+        terminalLockoutTicksRemaining = 0;
+        terminalRemovedMask = 0L;
+        terminalUsedPairMask = 0L;
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = 0;
+        terminalBoard = null;
+        terminalAuditLog.clear();
+        setChanged();
+    }
+
     private boolean hasActiveSession(ServerPlayer player, long nonce) {
-        return terminalBoard != null
-                && terminalPlayerId != null
+        return terminalPlayerId != null
                 && (terminalTicksRemaining > 0 || terminalLockoutTicksRemaining > 0)
                 && terminalPlayerId.equals(player.getUUID())
                 && nonce == terminalNonce;
     }
 
     private void sendSnapshot(ServerPlayer player, int state) {
+        String auditLog = String.join("\n", terminalAuditLog);
+        String archiveTitle = "";
+        String archiveBody = "";
+        int archivePage = 0;
+        int archivePageCount = 0;
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE
+                && level instanceof ServerLevel serverLevel) {
+            BlockPos resolvedStationCenter = resolveStationCenter(serverLevel);
+            if (resolvedStationCenter != null) {
+                MonitoringStationArchive.Snapshot archive = MonitoringStationArchive.create(serverLevel, resolvedStationCenter, terminalArchivePage);
+                auditLog = archive.auditLog();
+                archiveTitle = archive.title();
+                archiveBody = archive.body();
+                archivePage = archive.pageIndex();
+                archivePageCount = archive.pageCount();
+            }
+        }
         PacketDistributor.sendToPlayer(player, new OpenMonitoringTerminalPayload(
                 worldPosition,
                 terminalNonce,
@@ -296,7 +370,11 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
                 terminalUsedPairMask,
                 0,
                 terminalLockoutTicksRemaining,
-                String.join("\n", terminalAuditLog)
+                auditLog,
+                archiveTitle,
+                archiveBody,
+                archivePage,
+                archivePageCount
         ));
     }
 
@@ -312,6 +390,9 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
     }
 
     private int currentTerminalState() {
+        if (terminalMode == MODE_ARCHIVE) {
+            return OpenMonitoringTerminalPayload.STATE_ARCHIVE;
+        }
         return terminalLockoutTicksRemaining > 0
                 ? OpenMonitoringTerminalPayload.STATE_LOCKED_OUT
                 : OpenMonitoringTerminalPayload.STATE_ACTIVE;
@@ -325,6 +406,8 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
         terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
+        terminalMode = MODE_PUZZLE;
+        terminalArchivePage = 0;
         terminalBoard = null;
         terminalAuditLog.clear();
         setChanged();
