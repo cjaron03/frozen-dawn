@@ -45,6 +45,14 @@ public final class MonitoringStationStructureBuilder {
     );
     private static final BlockPos CALENDAR_LOCAL_POS = new BlockPos(13, 2, 12);
     private static final Direction CALENDAR_FACING = Direction.WEST;
+    private static final BlockPos HYRAX_FRAME_LOCAL_POS = new BlockPos(10, 2, 2);
+    private static final Direction HYRAX_FRAME_FACING = Direction.SOUTH;
+    private static final List<BlockPos> LOCKED_BARS_LOCAL_POSITIONS = List.of(
+            new BlockPos(11, 1, 5),
+            new BlockPos(12, 1, 5),
+            new BlockPos(11, 2, 5),
+            new BlockPos(12, 2, 5)
+    );
 
     private static final int MIN_X = -9;
     private static final int MAX_X = 8;
@@ -52,10 +60,6 @@ public final class MonitoringStationStructureBuilder {
     private static final int MAX_Z = 8;
     private static final int ROOF_Y = 5;
     private static final int PARTITION_Z = -3;
-    private static final int UNLOCK_MIN_X = 3;
-    private static final int UNLOCK_MAX_X = 4;
-    private static final int LOCKED_BARS_MIN_Y = 1;
-    private static final int LOCKED_BARS_MAX_Y = 2;
 
     private static final String[] JOURNAL_VARIANTS = {
             "Day 34. Everyone else left. Someone has to keep the instruments calibrated.",
@@ -96,14 +100,9 @@ public final class MonitoringStationStructureBuilder {
     }
 
     public static void unlockBackRoom(ServerLevel level, BlockPos center) {
-        int cx = center.getX();
-        int cy = center.getY();
-        int cz = center.getZ();
-
-        for (int dx = UNLOCK_MIN_X; dx <= UNLOCK_MAX_X; dx++) {
-            for (int dy = LOCKED_BARS_MIN_Y; dy <= LOCKED_BARS_MAX_Y; dy++) {
-                level.setBlock(new BlockPos(cx + dx, cy + dy, cz + PARTITION_Z), Blocks.AIR.defaultBlockState(), 3);
-            }
+        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
+        for (BlockPos localPos : LOCKED_BARS_LOCAL_POSITIONS) {
+            level.setBlock(origin.offset(localPos), Blocks.AIR.defaultBlockState(), 3);
         }
     }
 
@@ -144,6 +143,7 @@ public final class MonitoringStationStructureBuilder {
 
         ensureWeatherChart(level, center);
         ensureCalendar(level, center);
+        ensureHyraxFrame(level, center);
     }
 
     private static void gradeTerrain(ServerLevel level, int cx, int cy, int cz) {
@@ -261,11 +261,13 @@ public final class MonitoringStationStructureBuilder {
     }
 
     private static int removeWeatherChartFrames(ServerLevel level, BlockPos pos) {
-        AABB frameBox = new AABB(pos).inflate(1.5);
+        AABB frameBox = new AABB(pos).inflate(0.35);
         int removed = 0;
         for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            existing.discard();
-            removed++;
+            if (existing.getPos().equals(pos)) {
+                existing.discard();
+                removed++;
+            }
         }
         return removed;
     }
@@ -328,6 +330,51 @@ public final class MonitoringStationStructureBuilder {
     private static boolean placeCalendar(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
         ItemFrame frame = new ItemFrame(level, pos, facing);
         frame.setItem(MonitoringStationCalendar.create(level, center), false);
+        frame.setInvulnerable(true);
+        if (frame.survives()) {
+            level.addFreshEntity(frame);
+            return true;
+        }
+        return false;
+    }
+
+    public static void ensureHyraxFrame(ServerLevel level, BlockPos center) {
+        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
+        BlockPos hyraxPos = origin.offset(HYRAX_FRAME_LOCAL_POS);
+
+        if (hasExpectedHyraxFrame(level, hyraxPos, HYRAX_FRAME_FACING)) {
+            return;
+        }
+
+        removeFramesAt(level, hyraxPos);
+        placeHyraxFrame(level, hyraxPos, HYRAX_FRAME_FACING);
+    }
+
+    private static boolean hasExpectedHyraxFrame(ServerLevel level, BlockPos pos, Direction facing) {
+        AABB frameBox = new AABB(pos).inflate(0.25);
+        for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            ItemStack item = frame.getItem();
+            if (frame.getPos().equals(pos)
+                    && frame.getDirection() == facing
+                    && item.is(ModItems.STUFFED_HYRAX.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void removeFramesAt(ServerLevel level, BlockPos pos) {
+        AABB frameBox = new AABB(pos).inflate(0.35);
+        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
+            if (existing.getPos().equals(pos)) {
+                existing.discard();
+            }
+        }
+    }
+
+    private static boolean placeHyraxFrame(ServerLevel level, BlockPos pos, Direction facing) {
+        ItemFrame frame = new ItemFrame(level, pos, facing);
+        frame.setItem(new ItemStack(ModItems.STUFFED_HYRAX.get()), false);
         frame.setInvulnerable(true);
         if (frame.survives()) {
             level.addFreshEntity(frame);
