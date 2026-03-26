@@ -34,6 +34,9 @@ public class MonitoringTerminalScreen extends Screen {
     private static final int BOX_PAD = 10;
     private static final int ARCHIVE_GAP = 12;
     private static final int ARCHIVE_DIRECTORY_W = 176;
+    private static final int ARCHIVE_TOP_GAP = 8;
+    private static final int ARCHIVE_SCROLLBAR_W = 6;
+    private static final int ARCHIVE_SCROLLBAR_GAP = 6;
     private static final int LOCKOUT_TICKS_TOTAL = 20 * 45;
     private static final int BOOT_DURATION = 65;
     private static final ResourceLocation ORSA_LOGO =
@@ -53,7 +56,6 @@ public class MonitoringTerminalScreen extends Screen {
     private int archivePage;
     private int archivePageCount;
     private final List<TokenHitbox> interactiveHitboxes = new ArrayList<>();
-    private final List<ArchiveEntryHitbox> archiveEntryHitboxes = new ArrayList<>();
 
     private int panelX;
     private int panelY;
@@ -86,6 +88,8 @@ public class MonitoringTerminalScreen extends Screen {
     private int bootTicks;
     private boolean bootSoundPlayed;
     private String terminalInput = "";
+    private int archiveDirectoryScroll;
+    private int archiveDetailScroll;
     private float headerScale = 0.82f;
     private float boardScale = 0.78f;
     private float auditScale = 0.78f;
@@ -104,6 +108,7 @@ public class MonitoringTerminalScreen extends Screen {
 
     public void applySnapshot(OpenMonitoringTerminalPayload payload) {
         long previousNonce = this.nonce;
+        int previousArchivePage = this.archivePage;
         this.nonce = payload.nonce();
         this.board = payload.nonce() == 0L ? null : MonitoringTerminalPuzzle.create(payload.nonce());
         this.triesLeft = payload.triesLeft();
@@ -120,12 +125,16 @@ public class MonitoringTerminalScreen extends Screen {
                 : new ArrayList<>(Arrays.asList(payload.archiveBody().split("\n")));
         this.archivePage = payload.archivePage();
         this.archivePageCount = payload.archivePageCount();
+        if (payload.archivePage() != previousArchivePage) {
+            this.archiveDetailScroll = 0;
+        }
         this.closeTicks = state == OpenMonitoringTerminalPayload.STATE_COMPLETE ? 30 : -1;
         if (payload.nonce() != previousNonce || state != OpenMonitoringTerminalPayload.STATE_ACTIVE) {
             this.terminalInput = "";
         }
         if (minecraft != null && minecraft.screen == this) {
             recalculateLayout();
+            clampArchiveScrolls();
             rebuildHitboxes();
         }
     }
@@ -203,22 +212,12 @@ public class MonitoringTerminalScreen extends Screen {
             boardY = contentTop;
             boardBottom = auditY - 8;
         }
+        clampArchiveScrolls();
     }
 
     private void rebuildHitboxes() {
         interactiveHitboxes.clear();
-        archiveEntryHitboxes.clear();
         if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
-            ArchiveLayout layout = archiveLayout();
-            int rowY = layout.directoryY() + 24;
-            int rowHeight = archiveRowHeight();
-            int rowX = layout.directoryX() + BOX_PAD - 2;
-            int rowW = layout.directoryW() - BOX_PAD * 2 + 4;
-            int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
-            for (int i = 0; i < pageTotal; i++) {
-                archiveEntryHitboxes.add(new ArchiveEntryHitbox(rowX, rowY, rowW, rowHeight, i));
-                rowY += rowHeight + 4;
-            }
             return;
         }
         if (board == null || state != OpenMonitoringTerminalPayload.STATE_ACTIVE) {
@@ -436,40 +435,57 @@ public class MonitoringTerminalScreen extends Screen {
                     archiveTitle.isBlank() ? "ARCHIVE DATA" : archiveTitle, 0xFFAEE8B5, 0xFF12191B);
 
             int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
-            int rowY = layout.directoryY() + 24;
+            int rowY = layout.directoryContentY() - archiveDirectoryScroll;
             int rowHeight = archiveRowHeight();
+            graphics.enableScissor(layout.directoryContentX(), layout.directoryContentY(),
+                    layout.directoryContentX() + layout.directoryContentW(),
+                    layout.directoryContentY() + layout.directoryContentH());
             for (int i = 0; i < pageTotal; i++) {
-                String label = i < MonitoringStationArchive.PAGE_TITLES.length
-                        ? MonitoringStationArchive.PAGE_TITLES[i]
-                        : "ARCHIVE PAGE " + (i + 1);
-                boolean selected = i == archivePage;
-                boolean hovered = hoveredArchiveEntry(mouseX, mouseY, i);
-                int rowX = layout.directoryX() + BOX_PAD - 2;
-                int rowW = layout.directoryW() - BOX_PAD * 2 + 4;
-                int fill = selected ? 0xFF223630 : (hovered ? 0xFF182324 : 0x00000000);
-                if (fill != 0) {
-                    graphics.fill(rowX, rowY - 1, rowX + rowW, rowY + rowHeight - 1, fill);
+                int rowBottom = rowY + rowHeight;
+                if (rowBottom >= layout.directoryContentY() - 2
+                        && rowY <= layout.directoryContentY() + layout.directoryContentH()) {
+                    String label = i < MonitoringStationArchive.PAGE_TITLES.length
+                            ? MonitoringStationArchive.PAGE_TITLES[i]
+                            : "ARCHIVE PAGE " + (i + 1);
+                    boolean selected = i == archivePage;
+                    boolean hovered = hoveredArchiveEntry(mouseX, mouseY, i);
+                    int rowX = layout.directoryContentX() - 2;
+                    int rowW = layout.directoryContentW() + 4;
+                    int fill = selected ? 0xFF223630 : (hovered ? 0xFF182324 : 0x00000000);
+                    if (fill != 0) {
+                        graphics.fill(rowX, rowY - 1, rowX + rowW, rowBottom - 1, fill);
+                        if (selected) {
+                            graphics.fill(rowX, rowY - 1, rowX + 3, rowBottom - 1, 0xFFAEE8B5);
+                        }
+                    }
+                    String prefix = selected ? "> " : "  ";
+                    drawScaledString(graphics, Component.literal(prefix + label),
+                            layout.directoryContentX(), rowY + 2, auditScale,
+                            selected ? 0xFFF5F7EE : 0xFFD4E5DC);
                 }
-                String prefix = selected ? "> " : "  ";
-                drawScaledString(graphics, Component.literal(prefix + label),
-                        layout.directoryX() + BOX_PAD, rowY + 2, auditScale,
-                        selected ? 0xFFF5F7EE : 0xFFD4E5DC);
-                rowY += rowHeight + 4;
+                rowY += rowHeight + 2;
             }
-            drawScaledString(graphics, Component.literal("CLICK ENTRY TO OPEN"),
-                    layout.directoryX() + BOX_PAD,
-                    layout.directoryY() + layout.directoryH() - BOX_PAD - auditLineHeight,
-                    auditScale,
-                    0xFF7D978D);
+            graphics.disableScissor();
+            renderArchiveScrollbar(graphics, layout.directoryScrollbarX(), layout.directoryContentY(),
+                    layout.directoryContentH(), archiveDirectoryScroll, directoryScrollMax(layout),
+                    directoryVisibleHeight(layout), 0xFF2C463C, 0xFFAEE8B5);
 
-            int contentX = layout.detailX() + BOX_PAD;
-            int contentY = layout.detailY() + 24;
-            int maxY = layout.detailY() + layout.detailH() - BOX_PAD - 2;
-            for (String line : archiveBodyLines) {
-                contentY = drawWrappedScaledLine(graphics, Component.literal(line), contentX, contentY,
-                        layout.detailW() - BOX_PAD * 2, maxY, 0xFFD4E5DC, auditScale);
-                contentY += 1;
+            List<FormattedCharSequence> wrappedBody = archiveWrappedBody(layout);
+            int contentY = layout.detailContentY() - archiveDetailScroll;
+            graphics.enableScissor(layout.detailContentX(), layout.detailContentY(),
+                    layout.detailContentX() + layout.detailContentW(),
+                    layout.detailContentY() + layout.detailContentH());
+            for (FormattedCharSequence line : wrappedBody) {
+                if (contentY + auditLineHeight >= layout.detailContentY() - 2
+                        && contentY <= layout.detailContentY() + layout.detailContentH()) {
+                    drawScaledString(graphics, line, layout.detailContentX(), contentY, auditScale, 0xFFD4E5DC);
+                }
+                contentY += auditLineHeight;
             }
+            graphics.disableScissor();
+            renderArchiveScrollbar(graphics, layout.detailScrollbarX(), layout.detailContentY(),
+                    layout.detailContentH(), archiveDetailScroll, detailScrollMax(layout),
+                    detailVisibleHeight(layout), 0xFF2C463C, 0xFFAEE8B5);
             return;
         }
 
@@ -494,7 +510,7 @@ public class MonitoringTerminalScreen extends Screen {
         }
         if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
             int contentHeight = 24 + BOX_PAD + wrappedLines * auditLineHeight + BOX_PAD + 4;
-            return Math.max(92, contentHeight);
+            return Math.max(82, Math.min(96, contentHeight));
         }
         int visibleLines = Math.max(state == OpenMonitoringTerminalPayload.STATE_ACTIVE ? 4 : 3,
                 Math.min(8, wrappedLines + (state == OpenMonitoringTerminalPayload.STATE_ACTIVE ? 1 : 0)));
@@ -569,41 +585,146 @@ public class MonitoringTerminalScreen extends Screen {
         return null;
     }
 
-    private ArchiveEntryHitbox hoveredArchiveEntry(double mouseX, double mouseY) {
-        for (ArchiveEntryHitbox hitbox : archiveEntryHitboxes) {
-            if (hitbox.contains(mouseX, mouseY)) {
-                return hitbox;
-            }
-        }
-        return null;
+    private boolean hoveredArchiveEntry(double mouseX, double mouseY, int pageIndex) {
+        return archiveEntryAt(mouseX, mouseY) == pageIndex;
     }
 
-    private boolean hoveredArchiveEntry(double mouseX, double mouseY, int pageIndex) {
-        ArchiveEntryHitbox hitbox = hoveredArchiveEntry(mouseX, mouseY);
-        return hitbox != null && hitbox.pageIndex() == pageIndex;
+    private int archiveEntryAt(double mouseX, double mouseY) {
+        if (state != OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            return -1;
+        }
+        ArchiveLayout layout = archiveLayout();
+        int minX = layout.directoryContentX() - 2;
+        int maxX = layout.directoryContentX() + layout.directoryContentW() + 2;
+        int minY = layout.directoryContentY();
+        int maxY = layout.directoryContentY() + layout.directoryContentH();
+        if (mouseX < minX || mouseX >= maxX || mouseY < minY || mouseY >= maxY) {
+            return -1;
+        }
+
+        int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
+        int rowHeight = archiveRowHeight();
+        int rowStride = rowHeight + 2;
+        double localY = mouseY - layout.directoryContentY() + archiveDirectoryScroll;
+        int rowIndex = (int) Math.floor(localY / rowStride);
+        if (rowIndex < 0 || rowIndex >= pageTotal) {
+            return -1;
+        }
+        double rowOffset = localY - rowIndex * rowStride;
+        return rowOffset <= rowHeight ? rowIndex : -1;
+    }
+
+    private boolean isInsideDirectoryPane(ArchiveLayout layout, double mouseX, double mouseY) {
+        return mouseX >= layout.directoryX() && mouseX < layout.directoryX() + layout.directoryW()
+                && mouseY >= layout.directoryY() && mouseY < layout.directoryY() + layout.directoryH();
+    }
+
+    private boolean isInsideDetailPane(ArchiveLayout layout, double mouseX, double mouseY) {
+        return mouseX >= layout.detailX() && mouseX < layout.detailX() + layout.detailW()
+                && mouseY >= layout.detailY() && mouseY < layout.detailY() + layout.detailH();
     }
 
     private ArchiveLayout archiveLayout() {
         int boxX = panelX + PANEL_PAD;
-        int boxY = panelY + 66;
+        int boxY = headerBottomY + ARCHIVE_TOP_GAP;
         int boxW = panelW - PANEL_PAD * 2;
         int boxH = Math.max(110, auditY - boxY - 12);
         int directoryW = Math.min(ARCHIVE_DIRECTORY_W, Math.max(150, boxW / 3));
-        int detailX = boxX + directoryW + ARCHIVE_GAP;
+        int detailX = boxX + directoryW - 1;
         int detailW = Math.max(180, boxX + boxW - detailX);
-        return new ArchiveLayout(boxX, boxY, directoryW, boxH, detailX, boxY, detailW, boxH);
+        int contentTop = boxY + 24;
+        int contentBottom = boxY + boxH - BOX_PAD;
+        int contentHeight = Math.max(24, contentBottom - contentTop);
+        int directoryScrollbarX = boxX + directoryW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
+        int directoryContentX = boxX + BOX_PAD;
+        int directoryContentW = Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
+        int detailScrollbarX = detailX + detailW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
+        int detailContentX = detailX + BOX_PAD;
+        int detailContentW = Math.max(100, detailScrollbarX - ARCHIVE_SCROLLBAR_GAP - detailContentX);
+        return new ArchiveLayout(boxX, boxY, directoryW, boxH, detailX, boxY, detailW, boxH,
+                directoryContentX, contentTop, directoryContentW, contentHeight, directoryScrollbarX,
+                detailContentX, contentTop, detailContentW, contentHeight, detailScrollbarX);
+    }
+
+    private void clampArchiveScrolls() {
+        if (state != OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            archiveDirectoryScroll = 0;
+            archiveDetailScroll = 0;
+            return;
+        }
+        ArchiveLayout layout = archiveLayout();
+        archiveDirectoryScroll = clamp(archiveDirectoryScroll, 0, directoryScrollMax(layout));
+        ensureSelectedArchiveEntryVisible(layout);
+        archiveDirectoryScroll = clamp(archiveDirectoryScroll, 0, directoryScrollMax(layout));
+        archiveDetailScroll = clamp(archiveDetailScroll, 0, detailScrollMax(layout));
+    }
+
+    private void ensureSelectedArchiveEntryVisible(ArchiveLayout layout) {
+        int rowStride = archiveRowHeight() + 2;
+        int rowTop = archivePage * rowStride;
+        int rowBottom = rowTop + archiveRowHeight();
+        int visibleTop = archiveDirectoryScroll;
+        int visibleBottom = archiveDirectoryScroll + directoryVisibleHeight(layout);
+        if (rowTop < visibleTop) {
+            archiveDirectoryScroll = rowTop;
+        } else if (rowBottom > visibleBottom) {
+            archiveDirectoryScroll = rowBottom - directoryVisibleHeight(layout);
+        }
+    }
+
+    private int directoryVisibleHeight(ArchiveLayout layout) {
+        return layout.directoryContentH();
+    }
+
+    private int detailVisibleHeight(ArchiveLayout layout) {
+        return layout.detailContentH();
+    }
+
+    private int directoryScrollMax(ArchiveLayout layout) {
+        int pageTotal = archivePageCount > 0 ? archivePageCount : MonitoringStationArchive.PAGE_COUNT;
+        int contentHeight = Math.max(0, pageTotal * (archiveRowHeight() + 2) - 2);
+        return Math.max(0, contentHeight - directoryVisibleHeight(layout));
+    }
+
+    private int detailScrollMax(ArchiveLayout layout) {
+        int contentHeight = archiveWrappedBody(layout).size() * auditLineHeight;
+        return Math.max(0, contentHeight - detailVisibleHeight(layout));
+    }
+
+    private List<FormattedCharSequence> archiveWrappedBody(ArchiveLayout layout) {
+        List<FormattedCharSequence> wrapped = new ArrayList<>();
+        for (String line : archiveBodyLines) {
+            wrapped.addAll(font.split(Component.literal(line), Math.max(24, (int) Math.floor(layout.detailContentW() / auditScale))));
+        }
+        return wrapped;
+    }
+
+    private void renderArchiveScrollbar(GuiGraphics graphics, int x, int y, int height, int scroll, int maxScroll,
+                                        int visibleHeight, int trackColor, int thumbColor) {
+        if (maxScroll <= 0) {
+            return;
+        }
+        graphics.fill(x, y, x + ARCHIVE_SCROLLBAR_W, y + height, trackColor);
+        int thumbHeight = Math.max(16, Math.round((visibleHeight / (float) (visibleHeight + maxScroll)) * height));
+        int thumbTravel = Math.max(1, height - thumbHeight);
+        int thumbY = y + Math.round((scroll / (float) maxScroll) * thumbTravel);
+        graphics.fill(x, thumbY, x + ARCHIVE_SCROLLBAR_W, thumbY + thumbHeight, thumbColor);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private int archiveRowHeight() {
-        return Math.max(14, auditLineHeight + 4);
+        return Math.max(12, auditLineHeight + 2);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
-            ArchiveEntryHitbox entry = hoveredArchiveEntry(mouseX, mouseY);
-            if (entry != null) {
-                sendArchiveOpenAction(entry.pageIndex());
+            int entryIndex = archiveEntryAt(mouseX, mouseY);
+            if (entryIndex >= 0) {
+                sendArchiveOpenAction(entryIndex);
                 return true;
             }
             return super.mouseClicked(mouseX, mouseY, button);
@@ -626,6 +747,30 @@ public class MonitoringTerminalScreen extends Screen {
         ));
         terminalInput = "";
         return true;
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (state == OpenMonitoringTerminalPayload.STATE_ARCHIVE) {
+            ArchiveLayout layout = archiveLayout();
+            int delta = (int) Math.round(-scrollY * Math.max(10, auditLineHeight * 2));
+            if (delta == 0) {
+                delta = scrollY > 0 ? -Math.max(10, auditLineHeight * 2) : Math.max(10, auditLineHeight * 2);
+            }
+            boolean handled = false;
+            if (isInsideDetailPane(layout, mouseX, mouseY) && detailScrollMax(layout) > 0) {
+                archiveDetailScroll = clamp(archiveDetailScroll + delta, 0, detailScrollMax(layout));
+                handled = true;
+            } else if (isInsideDirectoryPane(layout, mouseX, mouseY) && directoryScrollMax(layout) > 0) {
+                archiveDirectoryScroll = clamp(archiveDirectoryScroll + delta, 0, directoryScrollMax(layout));
+                handled = true;
+            }
+            if (handled) {
+                rebuildHitboxes();
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
@@ -722,13 +867,11 @@ public class MonitoringTerminalScreen extends Screen {
     }
 
     private record ArchiveLayout(int directoryX, int directoryY, int directoryW, int directoryH,
-                                 int detailX, int detailY, int detailW, int detailH) {
-    }
-
-    private record ArchiveEntryHitbox(int x, int y, int width, int height, int pageIndex) {
-        boolean contains(double mouseX, double mouseY) {
-            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
-        }
+                                 int detailX, int detailY, int detailW, int detailH,
+                                 int directoryContentX, int directoryContentY, int directoryContentW, int directoryContentH,
+                                 int directoryScrollbarX,
+                                 int detailContentX, int detailContentY, int detailContentW, int detailContentH,
+                                 int detailScrollbarX) {
     }
 
     private record TokenHitbox(int x, int y, int width, int height, int index, boolean word) {

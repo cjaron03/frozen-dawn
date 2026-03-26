@@ -146,7 +146,7 @@ public final class MonitoringStationArchive {
         lines.add("THERMOMETER A: FAILED BELOW -80C");
         lines.add("THERMOMETER B: HAND-CORRECTED / +/- 2C");
         lines.add(String.format(Locale.US, "ANEMOMETER: ICING FAULT %02d / OVERSPEED EVENTS 3", 12 + random.nextInt(10)));
-        lines.add(String.format(Locale.US, "BAROMETER: CAL DRIFT +%1.1F MB", 0.4f + random.nextFloat() * 1.2f));
+        lines.add(String.format(Locale.US, "BAROMETER: CAL DRIFT +%.1f MB", 0.4f + random.nextFloat() * 1.2f));
         lines.add("PRECIP GAUGE HEATER: OFFLINE");
         lines.add("SNOW STAKE CAMERA: LENS OBSCURED");
         lines.add("LAST FIELD CAL: " + lastCalDate.format(DATE_FULL).toUpperCase(Locale.US));
