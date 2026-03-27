@@ -1,0 +1,19 @@
+{
+  "name": "Recorded Audio Transcript",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 18,
+  "advancement": "frozendawn:found_vehicle_transcript_failed",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Whiteout Transfer",
+      "text": "$(bold)RECORDED AUDIO TRANSCRIPT$()$(br)Recovered from an evac vehicle.$(br)Permission: not required$(br2)VOICE 1: Terminal directive says camp transfer. No pickup, no escort, just coordinates and a warning banner.$(br2)VOICE 2: Leon said ORSA wanted the station data more than the people in it.$(br2)VOICE 3: If that's true, why are we going to their camp at all?"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "End Of Recording",
+      "text": "VOICE 1: Because staying there meant freezing in place.$(br2)VOICE 2: And this is different?$(br2)VOICE 3: Stop. Kill the lights. I can't see the road, I can't see the camp, and nobody is answering.$(br2)The last seconds are wind, a stalled engine, and someone saying the camp never sent anyone."
+    }
+  ]
+}

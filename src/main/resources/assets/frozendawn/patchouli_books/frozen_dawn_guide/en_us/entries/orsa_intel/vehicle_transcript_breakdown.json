@@ -1,0 +1,19 @@
+{
+  "name": "Recorded Audio Transcript",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 17,
+  "advancement": "frozendawn:found_vehicle_transcript_breakdown",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Transfer Run",
+      "text": "$(bold)RECORDED AUDIO TRANSCRIPT$()$(br)Recovered from an evac vehicle.$(br)Permission: not required$(br2)VOICE 1: ORSA bolted that terminal into the station wall and then told us to drive ourselves to camp when the uplink died.$(br2)VOICE 2: They left Leon with the instruments.$(br)VOICE 1: He chose that. Said the logs mattered. I think he just knew this truck was worse odds."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Breakdown",
+      "text": "VOICE 3: Temperature gauge is gone. Wind's coming through the firewall.$(br2)VOICE 2: Camp should be close enough to signal us.$(br2)VOICE 1: Camp isn't sending anyone. ORSA isn't sending anyone. That's the pattern.$(br2)The final audio is engine knock, rising argument, and the sound of the vehicle coasting into silence."
+    }
+  ]
+}

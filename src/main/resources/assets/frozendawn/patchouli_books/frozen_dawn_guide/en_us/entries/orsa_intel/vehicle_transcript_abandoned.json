@@ -1,0 +1,19 @@
+{
+  "name": "Recorded Audio Transcript",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 16,
+  "advancement": "frozendawn:found_vehicle_transcript_abandoned",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Cabin Mic",
+      "text": "$(bold)RECORDED AUDIO TRANSCRIPT$()$(br)Recovered from an evac vehicle.$(br)Permission: not required$(br2)VOICE 1: The terminal said report to the field camp. Exact words. Transfer pending, priority red.$(br2)VOICE 2: And Leon stays behind?$(br)VOICE 1: He said the lead meteorologist doesn't get to leave first. Said somebody has to keep the station honest until ORSA finally answers."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Last Heard",
+      "text": "VOICE 3: Weather's dropping again. We should already see the camp by now.$(br2)VOICE 2: If they're really doing transfers, they'll send someone back for him.$(br2)VOICE 1: If they're really doing transfers.$(br2)The recording ends with the vehicle still moving and someone claiming they can almost make out tents through the snow."
+    }
+  ]
+}

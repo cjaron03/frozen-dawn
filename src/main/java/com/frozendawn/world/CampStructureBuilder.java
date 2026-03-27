@@ -47,7 +47,7 @@ public final class CampStructureBuilder {
     private CampStructureBuilder() {
     }
 
-    public static void place(ServerLevel level, BlockPos center) {
+    public static void place(ServerLevel level, BlockPos center, boolean hasLinkedVehicle) {
         int phase = getCurrentPhase(level);
         int cx = center.getX();
         int cy = center.getY();
@@ -72,7 +72,7 @@ public final class CampStructureBuilder {
         placeTent(level, cx + 1, cy, cz + 2, Direction.NORTH, phase);
 
         // Supply crates
-        placeSupplyCrates(level, cx, cy, cz, phase);
+        placeSupplyCrates(level, cx, cy, cz, phase, hasLinkedVehicle);
 
         // Flag pole
         placeFlagPole(level, cx - 5, cy, cz, phase);
@@ -222,19 +222,19 @@ public final class CampStructureBuilder {
                 Blocks.CRAFTING_TABLE.defaultBlockState(), 3);
     }
 
-    private static void placeSupplyCrates(ServerLevel level, int cx, int cy, int cz, int phase) {
+    private static void placeSupplyCrates(ServerLevel level, int cx, int cy, int cz, int phase, boolean hasLinkedVehicle) {
         // Crate 1: food + supplies (west of radio)
         BlockPos crate1Pos = new BlockPos(cx - 2, cy, cz + 1);
-        placeCrateWithLoot(level, crate1Pos, Direction.EAST, phase, true);
+        placeCrateWithLoot(level, crate1Pos, Direction.EAST, phase, true, hasLinkedVehicle);
 
         // Crate 2: tools + materials (east of radio)
         BlockPos crate2Pos = new BlockPos(cx + 3, cy, cz - 2);
-        placeCrateWithLoot(level, crate2Pos, Direction.WEST, phase, false);
+        placeCrateWithLoot(level, crate2Pos, Direction.WEST, phase, false, hasLinkedVehicle);
     }
 
     private static void placeCrateWithLoot(ServerLevel level, BlockPos pos,
                                            Direction facing, int phase,
-                                           boolean foodCrate) {
+                                           boolean foodCrate, boolean hasLinkedVehicle) {
         // Phase 5+: crate may be buried under snow, skip placement
         if (phase >= 5) {
             return;
@@ -258,7 +258,7 @@ public final class CampStructureBuilder {
                 crate.setItem(0, new ItemStack(Items.STONE_PICKAXE));
                 crate.setItem(1, new ItemStack(Items.STONE_AXE));
                 crate.setItem(4, new ItemStack(Items.IRON_INGOT, 3));
-                crate.setItem(9, createPersonalNoteDocument());
+                crate.setItem(9, hasLinkedVehicle ? createTransferLogDocument() : createPersonalNoteDocument());
                 crate.setItem(13, new ItemStack(Items.STRING, 4));
                 crate.setItem(18, new ItemStack(Items.FLINT_AND_STEEL));
             }
@@ -391,5 +391,23 @@ public final class CampStructureBuilder {
         tag.putString("doc_type", "camp_personal_note");
         doc.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return doc;
+    }
+
+    private static ItemStack createTransferLogDocument() {
+        ItemStack doc = new ItemStack(ModItems.ORSA_DOCUMENT.get());
+        doc.set(DataComponents.CUSTOM_NAME, Component.literal("Camp Transfer Exception Log"));
+        CompoundTag tag = new CompoundTag();
+        tag.putString("doc_type", "camp_transfer_log");
+        doc.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        return doc;
+    }
+
+    public static void syncTransferDocument(ServerLevel level, BlockPos center, boolean hasLinkedVehicle) {
+        BlockPos cratePos = new BlockPos(center.getX() + 3, center.getY(), center.getZ() - 2);
+        if (!(level.getBlockEntity(cratePos) instanceof BarrelBlockEntity crate)) {
+            return;
+        }
+        crate.setItem(9, hasLinkedVehicle ? createTransferLogDocument() : createPersonalNoteDocument());
+        crate.setChanged();
     }
 }

@@ -5,6 +5,7 @@ import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.CampSatelliteState;
 import com.frozendawn.data.CargoDropState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
@@ -12,6 +13,7 @@ import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.CargoDropPlacement;
+import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.TowerPlacement;
 import net.minecraft.server.level.ServerLevel;
@@ -392,10 +394,42 @@ public class FrozenDawnCommand {
             int cx = camp.getX() >> 4;
             int cz = camp.getZ() >> 4;
             boolean built = state.isCampBuilt(cx, cz);
+            CampSatelliteState satelliteState = CampSatelliteState.get(server);
+            boolean hasLinkedVehicle;
+            BlockPos vehiclePos = null;
+            if (built) {
+                if (!satelliteState.hasDecision(cx, cz)) {
+                    BlockPos resolvedCampCenter = FrozenEvacVehiclePlacement.resolveCampCenter(
+                            overworld,
+                            camp.getX(),
+                            camp.getZ()
+                    );
+                    FrozenEvacVehiclePlacement.ensureCampSatellite(overworld, resolvedCampCenter);
+                }
+                hasLinkedVehicle = satelliteState.hasLinkedVehicle(cx, cz);
+                vehiclePos = satelliteState.getVehicleCenter(cx, cz);
+            } else {
+                int previewY = overworld.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                        camp.getX(), camp.getZ());
+                FrozenEvacVehiclePlacement.VehiclePlan vehiclePlan = FrozenEvacVehiclePlacement.createVehiclePlan(
+                        overworld,
+                        new BlockPos(camp.getX(), previewY, camp.getZ())
+                );
+                hasLinkedVehicle = vehiclePlan != null;
+                if (vehiclePlan != null) {
+                    vehiclePos = vehiclePlan.center();
+                }
+            }
+            final BlockPos finalVehiclePos = vehiclePos;
             context.getSource().sendSuccess(() -> Component.literal(
                     "  Nearest Camp: (" + camp.getX() + ", " + camp.getZ() + ")"
                             + " | ~" + dist + " blocks"
-                            + (built ? " | Built" : " | Awaiting chunk load")), false);
+                            + (built ? " | Built" : " | Awaiting chunk load")
+                            + (hasLinkedVehicle ? " | Adjacent evac vehicle"
+                            + (finalVehiclePos != null
+                            ? " at (" + finalVehiclePos.getX() + ", " + finalVehiclePos.getZ() + ")"
+                            : "")
+                            : "")), false);
         } else {
             context.getSource().sendSuccess(() -> Component.literal("  Camps: none eligible in nearby regions"), false);
         }

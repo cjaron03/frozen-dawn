@@ -1,0 +1,19 @@
+{
+  "name": "Camp Transfer Log",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 11,
+  "advancement": "frozendawn:found_camp_transfer_log",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Transfer Exception",
+      "text": "$(bold)ORSA CAMP TRANSFER LOG$()$(br)Filed by: Acting Camp Lead$(br2)Assigned civilian transfer personnel from a nearby monitoring station did not report by the end of the weather window.$(br2)Terminal directive acknowledged. Arrival never confirmed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "No Contact",
+      "text": "No visual contact on the south approach. No second pickup dispatched. Radio response from the transfer party ended before camp-side confirmation.$(br2)The staff were marked delayed, then nonresponsive, because there was no category for what came after."
+    }
+  ]
+}

@@ -126,7 +126,8 @@ public final class CampPlacement {
 
             // Place the camp
             BlockPos campCenter = new BlockPos(blockX, surfaceY, blockZ);
-            CampStructureBuilder.place(overworld, campCenter);
+            boolean hasLinkedVehicle = FrozenEvacVehiclePlacement.ensureCampSatellite(overworld, campCenter);
+            CampStructureBuilder.place(overworld, campCenter, hasLinkedVehicle);
             state.markCampBuilt(chunkX, chunkZ);
             pendingCampPlacements.remove(key);
 
