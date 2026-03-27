@@ -337,7 +337,7 @@ public class FrozenDawnCommand {
     }
 
     private static final double CAMP_SKIP_RADIUS_SQ = 5.0 * 5.0;
-    private static final double CARGO_SKIP_RADIUS_SQ = 5.0 * 5.0;
+    private static final double CARGO_SKIP_RADIUS_SQ = 20.0 * 20.0;
     private static final double STATION_SKIP_RADIUS_SQ = 5.0 * 5.0;
 
     private static int camps(CommandContext<CommandSourceStack> context) {
@@ -438,7 +438,12 @@ public class FrozenDawnCommand {
                     continue;
                 }
 
-                BlockPos displayPos = new BlockPos(pos[0], 0, pos[1]);
+                BlockPos displayPos = built
+                        ? state.getCargoDropCenter(chunkX, chunkZ)
+                        : CargoDropPlacement.getCargoDropDisplayPos(seed, new BlockPos(pos[0], 0, pos[1]));
+                if (displayPos == null) {
+                    displayPos = new BlockPos(pos[0], 0, pos[1]);
+                }
                 double distSq = (displayPos.getX() - origin.getX()) * (long) (displayPos.getX() - origin.getX())
                         + (displayPos.getZ() - origin.getZ()) * (long) (displayPos.getZ() - origin.getZ());
                 candidates.add(new CargoCandidate(displayPos, distSq, built));

@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.CargoDropState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +21,7 @@ public final class CargoDropPlacement {
     private static final int MIN_SPAWN_DISTANCE = 250;
     private static final int PLACEMENT_BUFFER = 12;
     private static final int DROP_RADIUS = 16;
+    private static final int DISPLAY_OFFSET = 3;
 
     private static final Set<Long> pendingCargoDropPlacements = ConcurrentHashMap.newKeySet();
     private static long cachedWorldSeed = Long.MIN_VALUE;
@@ -98,7 +100,7 @@ public final class CargoDropPlacement {
 
             BlockPos cargoCenter = new BlockPos(blockX, surfaceY, blockZ);
             CargoDropStructureBuilder.place(overworld, cargoCenter);
-            state.markCargoDropBuilt(chunkX, chunkZ, cargoCenter);
+            state.markCargoDropBuilt(chunkX, chunkZ, getCargoDropDisplayPos(overworld.getSeed(), cargoCenter));
             pendingCargoDropPlacements.remove(key);
 
             FrozenDawn.LOGGER.info("Cargo Drop placed at ({}, {}, {})",
@@ -135,6 +137,11 @@ public final class CargoDropPlacement {
         return new int[] {(cargoChunk[0] << 4) + 8, (cargoChunk[1] << 4) + 8};
     }
 
+    public static BlockPos getCargoDropDisplayPos(long seed, BlockPos anchor) {
+        Direction facing = getCargoFacing(seed, anchor.getX(), anchor.getZ());
+        return anchor.relative(facing, -DISPLAY_OFFSET);
+    }
+
     public static boolean isEligibleCargoDropSite(ServerLevel level, int cx, int cz) {
         if (!LandmarkBiomeRules.isEligibleLandmarkBiome(level, cx, cz)) {
             return false;
@@ -169,6 +176,16 @@ public final class CargoDropPlacement {
         return h ^ (h >>> 16);
     }
 
+    private static Direction getCargoFacing(long seed, int x, int z) {
+        long hash = cargoHash(seed, x, z);
+        return switch (Math.floorMod((int) (hash >> 8), 4)) {
+            case 0 -> Direction.NORTH;
+            case 1 -> Direction.EAST;
+            case 2 -> Direction.SOUTH;
+            default -> Direction.WEST;
+        };
+    }
+
     private static boolean isPlacementAreaLoaded(ServerLevel level, int centerX, int centerZ) {
         int radius = DROP_RADIUS + PLACEMENT_BUFFER;
         int minX = centerX - radius;
@@ -191,6 +208,13 @@ public final class CargoDropPlacement {
             cachedWorldSeed = level.getSeed();
         }
         return cachedWorldSeed;
+    }
+
+    private static long cargoHash(long seed, int x, int z) {
+        long h = seed ^ 0x434152474F44524FL; // "CARGODRO"
+        h = h * 6364136223846793005L + x * 1442695040888963407L;
+        h = h * 6364136223846793005L + z * 7664345821815920749L;
+        return h ^ (h >>> 23);
     }
 
     private static double horizontalDistSq(int x1, int z1, int x2, int z2) {

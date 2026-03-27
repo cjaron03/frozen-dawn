@@ -32,9 +32,6 @@ import java.util.List;
 public final class CargoDropStructureBuilder {
 
     private static final int DROP_RADIUS = 16;
-    private static final BlockState CONTAINER_SHELL = Blocks.WHITE_CONCRETE.defaultBlockState();
-    private static final BlockState CONTAINER_FRAME = Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState();
-    private static final BlockState CONTAINER_STRIPE = Blocks.ORANGE_CONCRETE.defaultBlockState();
     private static final Direction[] HORIZONTAL_DIRECTIONS = {
             Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
     };
@@ -59,7 +56,7 @@ public final class CargoDropStructureBuilder {
         shapeImpactZone(level, center, facing, preset, random);
         scatterDebris(level, center, facing, random);
         placeSkidMarks(level, center, facing);
-        placeContainer(level, center, facing, preset);
+        placeContainer(level, center, facing, preset, lootProfile);
         placeCrates(level, center, facing, preset, lootProfile, random);
         placeParachute(level, center, facing, preset, phase, random);
         applyPhaseBurial(level, center, facing, phase, random);
@@ -175,7 +172,9 @@ public final class CargoDropStructureBuilder {
         }
     }
 
-    private static void placeContainer(ServerLevel level, BlockPos center, Direction facing, DropPreset preset) {
+    private static void placeContainer(ServerLevel level, BlockPos center, Direction facing,
+                                       DropPreset preset, LootProfile lootProfile) {
+        ContainerPalette palette = paletteFor(lootProfile);
         for (int i = 0; i < preset.floorOffsets().length; i++) {
             int forward = i - 3;
             int floorOffset = preset.floorOffsets()[i];
@@ -183,7 +182,7 @@ public final class CargoDropStructureBuilder {
             for (int right = -2; right <= 2; right++) {
                 BlockPos floorPos = toWorld(center, facing, right, floorOffset, forward);
                 ensureSupportBelow(level, floorPos);
-                level.setBlock(floorPos, Math.abs(right) == 2 ? CONTAINER_FRAME : CONTAINER_SHELL, 3);
+                level.setBlock(floorPos, Math.abs(right) == 2 ? palette.floorEdge() : palette.floorCenter(), 3);
 
                 for (int y = 1; y <= 2; y++) {
                     BlockPos innerPos = toWorld(center, facing, right, floorOffset + y, forward);
@@ -193,14 +192,22 @@ public final class CargoDropStructureBuilder {
                 }
 
                 BlockPos roofPos = toWorld(center, facing, right, floorOffset + 3, forward);
-                level.setBlock(roofPos, Math.abs(right) == 2 ? CONTAINER_FRAME : CONTAINER_SHELL, 3);
+                level.setBlock(roofPos, Math.abs(right) == 2 ? palette.frame() : palette.shell(), 3);
             }
 
             for (int y = 1; y <= 2; y++) {
                 level.setBlock(toWorld(center, facing, -2, floorOffset + y, forward),
-                        y == 2 ? CONTAINER_STRIPE : CONTAINER_FRAME, 3);
+                        y == 2 ? palette.stripe() : palette.frame(), 3);
                 level.setBlock(toWorld(center, facing, 2, floorOffset + y, forward),
-                        y == 2 ? CONTAINER_STRIPE : CONTAINER_FRAME, 3);
+                        y == 2 ? palette.stripe() : palette.frame(), 3);
+            }
+
+            if (forward <= 2) {
+                level.setBlock(toWorld(center, facing, 0, floorOffset + 3, forward), palette.roofRib(), 3);
+            }
+            if (forward >= -1 && forward <= 2) {
+                level.setBlock(toWorld(center, facing, -1, floorOffset + 2, forward), palette.shellShade(), 3);
+                level.setBlock(toWorld(center, facing, 1, floorOffset + 2, forward), palette.shellShade(), 3);
             }
 
             if (forward < 3) {
@@ -208,31 +215,43 @@ public final class CargoDropStructureBuilder {
             }
         }
 
-        placeOpenEnd(level, center, facing, preset.floorOffsets()[0]);
-        placeNoseEnd(level, center, facing, preset.floorOffsets()[preset.floorOffsets().length - 1]);
+        placeOpenEnd(level, center, facing, preset.floorOffsets()[0], palette);
+        placeNoseEnd(level, center, facing, preset.floorOffsets()[preset.floorOffsets().length - 1], palette);
+        placeOpenEndDebris(level, center, facing, preset.floorOffsets()[0], palette);
     }
 
-    private static void placeOpenEnd(ServerLevel level, BlockPos center, Direction facing, int floorOffset) {
+    private static void placeOpenEnd(ServerLevel level, BlockPos center, Direction facing, int floorOffset,
+                                     ContainerPalette palette) {
         int forward = -3;
         for (int y = 1; y <= 2; y++) {
-            level.setBlock(toWorld(center, facing, -2, floorOffset + y, forward), CONTAINER_FRAME, 3);
-            level.setBlock(toWorld(center, facing, 2, floorOffset + y, forward), CONTAINER_FRAME, 3);
+            level.setBlock(toWorld(center, facing, -2, floorOffset + y, forward), palette.frame(), 3);
+            level.setBlock(toWorld(center, facing, 2, floorOffset + y, forward), palette.frame(), 3);
         }
-        level.setBlock(toWorld(center, facing, -1, floorOffset + 3, forward), CONTAINER_SHELL, 3);
-        level.setBlock(toWorld(center, facing, 1, floorOffset + 3, forward), CONTAINER_SHELL, 3);
+        level.setBlock(toWorld(center, facing, -1, floorOffset + 3, forward), palette.shell(), 3);
+        level.setBlock(toWorld(center, facing, 1, floorOffset + 3, forward), palette.shell(), 3);
+        level.setBlock(toWorld(center, facing, 0, floorOffset + 3, forward), palette.stripe(), 3);
     }
 
-    private static void placeNoseEnd(ServerLevel level, BlockPos center, Direction facing, int floorOffset) {
+    private static void placeNoseEnd(ServerLevel level, BlockPos center, Direction facing, int floorOffset,
+                                     ContainerPalette palette) {
         int forward = 3;
         for (int right = -2; right <= 2; right++) {
             for (int y = 1; y <= 2; y++) {
                 if (right == 2 && y == 2) {
                     continue;
                 }
-                BlockState state = Math.abs(right) == 2 ? CONTAINER_FRAME : CONTAINER_SHELL;
+                BlockState state = Math.abs(right) == 2 ? palette.frame() : palette.shell();
                 level.setBlock(toWorld(center, facing, right, floorOffset + y, forward), state, 3);
             }
         }
+        level.setBlock(toWorld(center, facing, 0, floorOffset + 2, forward), palette.accent(), 3);
+    }
+
+    private static void placeOpenEndDebris(ServerLevel level, BlockPos center, Direction facing, int floorOffset,
+                                           ContainerPalette palette) {
+        level.setBlock(toWorld(center, facing, -1, floorOffset, -4), palette.brokenDoor(), 3);
+        level.setBlock(toWorld(center, facing, 1, floorOffset, -4), palette.brokenDoor(), 3);
+        level.setBlock(toWorld(center, facing, 0, floorOffset + 1, -4), palette.accent(), 3);
     }
 
     private static void placeSideCorrugation(ServerLevel level, BlockPos center, Direction facing, int floorOffset, int forward) {
@@ -610,7 +629,50 @@ public final class CargoDropStructureBuilder {
         return h ^ (h >>> 23);
     }
 
+    private static ContainerPalette paletteFor(LootProfile lootProfile) {
+        return switch (lootProfile) {
+            case JACKPOT -> new ContainerPalette(
+                    Blocks.WHITE_CONCRETE.defaultBlockState(),
+                    Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.YELLOW_CONCRETE.defaultBlockState(),
+                    Blocks.GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.RED_CONCRETE.defaultBlockState(),
+                    Blocks.SMOOTH_STONE.defaultBlockState(),
+                    Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+            );
+            case USEFUL -> new ContainerPalette(
+                    Blocks.WHITE_CONCRETE.defaultBlockState(),
+                    Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.ORANGE_CONCRETE.defaultBlockState(),
+                    Blocks.GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.ORANGE_TERRACOTTA.defaultBlockState(),
+                    Blocks.SMOOTH_STONE.defaultBlockState(),
+                    Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+            );
+            case BUREAUCRATIC -> new ContainerPalette(
+                    Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.GRAY_CONCRETE.defaultBlockState(),
+                    Blocks.BLUE_CONCRETE.defaultBlockState(),
+                    Blocks.WHITE_CONCRETE.defaultBlockState(),
+                    Blocks.BLUE_TERRACOTTA.defaultBlockState(),
+                    Blocks.POLISHED_ANDESITE.defaultBlockState(),
+                    Blocks.POLISHED_ANDESITE_SLAB.defaultBlockState()
+            );
+        };
+    }
+
     private record DropPreset(int[] floorOffsets, int craterDepth, int canopyHeight, int canopySideBias) {
+    }
+
+    private record ContainerPalette(BlockState shell, BlockState frame, BlockState stripe, BlockState shellShade,
+                                    BlockState accent, BlockState floorCenter, BlockState floorEdge) {
+        BlockState roofRib() {
+            return stripe;
+        }
+
+        BlockState brokenDoor() {
+            return floorEdge;
+        }
     }
 
     private enum LootProfile {
