@@ -18,6 +18,7 @@ import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
@@ -55,10 +56,12 @@ public final class CargoDropStructureBuilder {
         clearSnowAndBrush(level, center, facing);
         shapeImpactZone(level, center, facing, preset, random);
         scatterDebris(level, center, facing, random);
-        placeSkidMarks(level, center, facing);
+        placeSkidMarks(level, center, facing, seed);
         placeContainer(level, center, facing, preset, lootProfile);
+        applyReentryScarring(level, center, facing, preset, random);
         placeCrates(level, center, facing, preset, lootProfile, random);
         placeParachute(level, center, facing, preset, phase, random);
+        placeHotImpactDebris(level, center, facing, phase, seed, random);
         applyPhaseBurial(level, center, facing, phase, random);
     }
 
@@ -159,17 +162,82 @@ public final class CargoDropStructureBuilder {
         }
     }
 
-    private static void placeSkidMarks(ServerLevel level, BlockPos center, Direction facing) {
-        for (int forward = -8; forward <= -4; forward++) {
-            for (int right = -1; right <= 1; right++) {
+    private static void placeSkidMarks(ServerLevel level, BlockPos center, Direction facing, long seed) {
+        for (int forward = -33; forward <= -3; forward++) {
+            int distanceFromPod = Math.abs(forward + 3);
+            int width = distanceFromPod <= 3 ? 3
+                    : distanceFromPod <= 10 ? 2
+                    : distanceFromPod <= 24 ? 1
+                    : 0;
+
+            for (int right = -width; right <= width; right++) {
+                long hash = cargoHash(seed, center.getX() + right * 13 + forward * 31, center.getZ() + right * 29 - forward * 17);
+                if (width > 0 && Math.abs(right) == width && Math.floorMod((int) (hash >>> 9), 100) < 25) {
+                    continue;
+                }
+
                 BlockPos pos = toWorld(center, facing, right, 0, forward);
                 int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
                 if (surfaceY <= level.getMinBuildHeight()) {
                     continue;
                 }
-                level.setBlock(new BlockPos(pos.getX(), surfaceY, pos.getZ()), Blocks.DIRT_PATH.defaultBlockState(), 3);
+
+                BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
+                BlockState state = trailSurfaceState(hash, distanceFromPod, Math.abs(right));
+                level.setBlock(surfacePos, state, 3);
+            }
+
+            if (distanceFromPod >= 2 && distanceFromPod <= 18) {
+                placeTrailGouge(level, center, facing, seed, forward, -(width + 1));
+                placeTrailGouge(level, center, facing, seed, forward, width + 1);
             }
         }
+    }
+
+    private static void placeTrailGouge(ServerLevel level, BlockPos center, Direction facing, long seed, int forward, int right) {
+        long hash = cargoHash(seed, center.getX() + right * 41 + forward * 7, center.getZ() + right * 19 - forward * 23);
+        if (Math.floorMod((int) (hash >>> 15), 100) < 45) {
+            return;
+        }
+
+        BlockPos pos = toWorld(center, facing, right, 0, forward);
+        int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
+        if (surfaceY <= level.getMinBuildHeight()) {
+            return;
+        }
+
+        BlockPos surfacePos = new BlockPos(pos.getX(), surfaceY, pos.getZ());
+        level.setBlock(surfacePos, Math.floorMod((int) (hash >>> 22), 2) == 0
+                ? Blocks.COARSE_DIRT.defaultBlockState()
+                : Blocks.GRAVEL.defaultBlockState(), 3);
+    }
+
+    private static BlockState trailSurfaceState(long hash, int distanceFromPod, int absRight) {
+        if (distanceFromPod <= 2 && absRight <= 1) {
+            return Math.floorMod((int) (hash >>> 18), 3) == 0
+                    ? Blocks.PACKED_MUD.defaultBlockState()
+                    : Blocks.DIRT_PATH.defaultBlockState();
+        }
+        if (distanceFromPod <= 8) {
+            return switch (Math.floorMod((int) (hash >>> 11), 4)) {
+                case 0 -> Blocks.COARSE_DIRT.defaultBlockState();
+                case 1 -> Blocks.PACKED_MUD.defaultBlockState();
+                case 2 -> Blocks.GRAVEL.defaultBlockState();
+                default -> Blocks.DIRT_PATH.defaultBlockState();
+            };
+        }
+        if (distanceFromPod <= 18) {
+            return switch (Math.floorMod((int) (hash >>> 8), 5)) {
+                case 0 -> Blocks.COARSE_DIRT.defaultBlockState();
+                case 1 -> Blocks.GRAVEL.defaultBlockState();
+                case 2 -> Blocks.DIRT_PATH.defaultBlockState();
+                case 3 -> Blocks.PACKED_MUD.defaultBlockState();
+                default -> Blocks.ROOTED_DIRT.defaultBlockState();
+            };
+        }
+        return Math.floorMod((int) (hash >>> 7), 3) == 0
+                ? Blocks.GRAVEL.defaultBlockState()
+                : Blocks.DIRT_PATH.defaultBlockState();
     }
 
     private static void placeContainer(ServerLevel level, BlockPos center, Direction facing,
@@ -252,6 +320,26 @@ public final class CargoDropStructureBuilder {
         level.setBlock(toWorld(center, facing, -1, floorOffset, -4), palette.brokenDoor(), 3);
         level.setBlock(toWorld(center, facing, 1, floorOffset, -4), palette.brokenDoor(), 3);
         level.setBlock(toWorld(center, facing, 0, floorOffset + 1, -4), palette.accent(), 3);
+    }
+
+    private static void applyReentryScarring(ServerLevel level, BlockPos center, Direction facing,
+                                             DropPreset preset, RandomSource random) {
+        int noseFloor = preset.floorOffsets()[preset.floorOffsets().length - 1];
+        BlockState charred = Blocks.BLACK_CONCRETE.defaultBlockState();
+        BlockState scorched = Blocks.GRAY_CONCRETE.defaultBlockState();
+        LocalPlacement[] scorchedPanels = {
+                new LocalPlacement(-1, noseFloor + 2, 3, charred),
+                new LocalPlacement(1, noseFloor + 2, 3, charred),
+                new LocalPlacement(-1, noseFloor + 3, 2, scorched),
+                new LocalPlacement(1, noseFloor + 3, 2, scorched),
+                new LocalPlacement(0, noseFloor + 3, 1, scorched)
+        };
+
+        for (LocalPlacement local : scorchedPanels) {
+            if (random.nextInt(100) < 80) {
+                level.setBlock(toWorld(center, facing, local.right(), local.up(), local.forward()), local.state(), 3);
+            }
+        }
     }
 
     private static void placeSideCorrugation(ServerLevel level, BlockPos center, Direction facing, int floorOffset, int forward) {
@@ -407,6 +495,39 @@ public final class CargoDropStructureBuilder {
         for (int right : new int[]{-1, 1}) {
             level.setBlock(toWorld(center, facing, right, canopyHeight - 1, -2), Blocks.COBWEB.defaultBlockState(), 3);
             level.setBlock(toWorld(center, facing, right, canopyHeight - 2, -1), Blocks.COBWEB.defaultBlockState(), 3);
+        }
+    }
+
+    private static void placeHotImpactDebris(ServerLevel level, BlockPos center, Direction facing, int phase,
+                                             long seed, RandomSource random) {
+        boolean guaranteedHotImpact = phase <= 2;
+        boolean lingeringHotImpact = phase <= 4 && Math.floorMod((int) (seed >>> 34), 100) < 35;
+        if ((!guaranteedHotImpact && !lingeringHotImpact) || phase >= 5) {
+            return;
+        }
+
+        int pieces = phase <= 2 ? 4 + random.nextInt(2) : 1 + random.nextInt(2);
+        for (int i = 0; i < pieces; i++) {
+            int right = -2 + random.nextInt(5);
+            int forward = 4 + random.nextInt(4);
+            BlockPos pos = toWorld(center, facing, right, 0, forward);
+            int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
+            if (surfaceY <= level.getMinBuildHeight()) {
+                continue;
+            }
+
+            BlockPos ground = new BlockPos(pos.getX(), surfaceY, pos.getZ());
+            BlockPos above = ground.above();
+            if (!level.getBlockState(ground).isSolid() || !level.getBlockState(above).isAir()) {
+                continue;
+            }
+
+            level.setBlock(ground, Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
+            if (phase <= 2 || (phase <= 4 && random.nextInt(4) == 0)) {
+                BlockState campfire = Blocks.CAMPFIRE.defaultBlockState()
+                        .setValue(CampfireBlock.LIT, phase <= 2);
+                level.setBlock(above, campfire, 3);
+            }
         }
     }
 
