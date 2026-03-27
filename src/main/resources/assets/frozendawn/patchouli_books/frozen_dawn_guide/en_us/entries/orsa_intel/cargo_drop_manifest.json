@@ -1,0 +1,19 @@
+{
+  "name": "ORSA Cargo Manifest",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 15,
+  "advancement": "frozendawn:found_cargo_drop_manifest",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "FAILED DELIVERY",
+      "text": "$(bold)ORSA CARGO MANIFEST$()$(br)Recovered from a failed field airdrop.$(br2)Not every crate carried what was promised. Some still held thermal cores and food. Some held routine supplies. Some appear to have carried nothing but administrative paperwork in bulk."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Logistics Pattern",
+      "text": "The drop tags suggest ORSA kept dispatching resupply packages long after many field teams had already gone silent.$(br2)Either the network was lagging behind reality, or somebody in logistics decided the form mattered more than whether anyone was left to sign for it."
+    }
+  ]
+}

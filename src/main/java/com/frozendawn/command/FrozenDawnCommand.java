@@ -5,11 +5,13 @@ import com.frozendawn.config.ConfigPresets;
 import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.CargoDropState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.CampPlacement;
+import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.TowerPlacement;
 import net.minecraft.server.level.ServerLevel;
@@ -329,11 +331,13 @@ public class FrozenDawnCommand {
         blastPit(context);
         towers(context);
         camps(context);
+        cargoDrops(context);
         stations(context);
         return 1;
     }
 
     private static final double CAMP_SKIP_RADIUS_SQ = 5.0 * 5.0;
+    private static final double CARGO_SKIP_RADIUS_SQ = 5.0 * 5.0;
     private static final double STATION_SKIP_RADIUS_SQ = 5.0 * 5.0;
 
     private static int camps(CommandContext<CommandSourceStack> context) {
@@ -394,6 +398,72 @@ public class FrozenDawnCommand {
                             + (built ? " | Built" : " | Awaiting chunk load")), false);
         } else {
             context.getSource().sendSuccess(() -> Component.literal("  Camps: none eligible in nearby regions"), false);
+        }
+        return 1;
+    }
+
+    private static int cargoDrops(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        ServerLevel overworld = server.overworld();
+        CargoDropState state = CargoDropState.get(server);
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        long seed = overworld.getSeed();
+
+        int originRegionX = Math.floorDiv(origin.getX() >> 4, 28);
+        int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 28);
+
+        record CargoCandidate(BlockPos pos, double distSq, boolean built) {}
+        List<CargoCandidate> candidates = new java.util.ArrayList<>();
+
+        for (int drx = -4; drx <= 4; drx++) {
+            for (int drz = -4; drz <= 4; drz++) {
+                int regionX = originRegionX + drx;
+                int regionZ = originRegionZ + drz;
+
+                int[] pos = CargoDropPlacement.getCargoDropBlockPos(seed, regionX, regionZ);
+                if (pos == null) {
+                    continue;
+                }
+                if (!CargoDropPlacement.isEligibleCargoDropSite(overworld, pos[0], pos[1])) {
+                    continue;
+                }
+                if (!CargoDropPlacement.isOutsideSpawnBuffer(overworld, pos[0], pos[1])) {
+                    continue;
+                }
+
+                int chunkX = pos[0] >> 4;
+                int chunkZ = pos[1] >> 4;
+                boolean built = state.isCargoDropBuilt(chunkX, chunkZ);
+                if (!built && state.isCargoDropEvaluated(chunkX, chunkZ)) {
+                    continue;
+                }
+
+                BlockPos displayPos = new BlockPos(pos[0], 0, pos[1]);
+                double distSq = (displayPos.getX() - origin.getX()) * (long) (displayPos.getX() - origin.getX())
+                        + (displayPos.getZ() - origin.getZ()) * (long) (displayPos.getZ() - origin.getZ());
+                candidates.add(new CargoCandidate(displayPos, distSq, built));
+            }
+        }
+
+        candidates.sort(Comparator.comparingDouble(CargoCandidate::distSq));
+        CargoCandidate chosen = null;
+        for (CargoCandidate candidate : candidates) {
+            if (candidate.distSq() > CARGO_SKIP_RADIUS_SQ) {
+                chosen = candidate;
+                break;
+            }
+        }
+
+        if (chosen != null) {
+            int dist = (int) Math.sqrt(chosen.distSq());
+            final BlockPos cargo = chosen.pos();
+            final boolean built = chosen.built();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  Nearest Cargo Drop: (" + cargo.getX() + ", " + cargo.getZ() + ")"
+                            + " | ~" + dist + " blocks"
+                            + (built ? " | Built" : " | Awaiting chunk load")), false);
+        } else {
+            context.getSource().sendSuccess(() -> Component.literal("  Cargo Drops: none eligible in nearby regions"), false);
         }
         return 1;
     }

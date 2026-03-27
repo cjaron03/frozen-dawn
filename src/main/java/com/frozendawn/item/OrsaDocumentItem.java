@@ -62,6 +62,7 @@ public class OrsaDocumentItem extends Item {
                     }
                     case "camp_field_report" -> grantAdvancement(serverPlayer, "found_camp_field_report");
                     case "camp_personal_note" -> grantAdvancement(serverPlayer, "found_camp_personal_note");
+                    case "cargo_drop_manifest" -> grantAdvancement(serverPlayer, "found_cargo_drop_manifest");
                     case "station_upload_log" -> grantAdvancement(serverPlayer, "found_station_upload_log");
                     case "station_requisition" -> grantAdvancement(serverPlayer, "found_station_requisition");
                     case "station_maintenance_bulletin" -> grantAdvancement(serverPlayer, "found_station_maintenance_bulletin");

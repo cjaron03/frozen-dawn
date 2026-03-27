@@ -218,6 +218,8 @@
   "advancement.frozendawn.found_satellite_log.title": "Sputnik?!",
   "advancement.frozendawn.found_satellite_log.description": "Find the crashed ORSA relay satellite. It came down hard.",
   "advancement.frozendawn.found_launch_manifest.title": "The Burn List",
+  "advancement.frozendawn.found_cargo_drop_manifest.title": "Return to Sender",
+  "advancement.frozendawn.found_cargo_drop_manifest.description": "Archive a failed ORSA cargo manifest. Some drops carried hope. Some carried paperwork.",
   "advancement.frozendawn.found_launch_manifest.description": "Archive the ORSA launch manifest from the blast pit. The numbers do not add up.",
   "block.frozendawn.scorched_ground": "Scorched Ground",
   "advancement.frozendawn.found_transponder_schematic.title": "The Blueprint",

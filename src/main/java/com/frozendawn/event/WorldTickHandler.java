@@ -30,6 +30,7 @@ import com.frozendawn.world.HollowSpawner;
 import com.frozendawn.world.ArchitectSpawner;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
+import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
@@ -104,6 +105,7 @@ public class WorldTickHandler {
         BlastPitWarmZoneRegistry.reset();
         TowerPlacement.reset();
         CampPlacement.reset();
+        CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
     }
 
@@ -164,6 +166,7 @@ public class WorldTickHandler {
             TowerPlacement.tickPlacement(overworld);
         }
         CampPlacement.tickPlacement(overworld);
+        CargoDropPlacement.tickPlacement(overworld);
         MonitoringStationPlacement.tickPlacement(overworld);
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
