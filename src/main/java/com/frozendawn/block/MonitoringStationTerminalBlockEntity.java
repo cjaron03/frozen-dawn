@@ -71,7 +71,7 @@ public class MonitoringStationTerminalBlockEntity extends BlockEntity {
             player.sendSystemMessage(Component.literal("No station archive is linked to this terminal."));
             return;
         }
-        MonitoringStationStructureBuilder.ensureHyraxFrame(serverLevel, resolvedStationCenter);
+        MonitoringStationStructureBuilder.refreshMapFrames(serverLevel, resolvedStationCenter);
 
         if (!isPlayerInRange(player)) {
             player.displayClientMessage(Component.literal("Move closer to the wall terminal."), true);

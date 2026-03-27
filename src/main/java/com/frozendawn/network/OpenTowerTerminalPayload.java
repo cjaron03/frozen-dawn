@@ -11,13 +11,16 @@ import net.minecraft.resources.ResourceLocation;
 public record OpenTowerTerminalPayload(BlockPos pos, long nonce, int triesLeft, int state,
                                        long removedMask, long usedPairMask,
                                        int alignTicksRemaining, int lockoutTicksRemaining,
-                                       String auditLog)
+                                       String auditLog, String archiveTitle,
+                                       String archiveBody, int archivePage,
+                                       int archivePageCount, boolean archivePasswordPrompt)
         implements CustomPacketPayload {
 
     public static final int STATE_ACTIVE = 0;
     public static final int STATE_ALIGNING = 1;
     public static final int STATE_LOCKED_OUT = 2;
     public static final int STATE_COMPLETE = 3;
+    public static final int STATE_ARCHIVE = 4;
 
     public static final Type<OpenTowerTerminalPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "open_tower_terminal"));
@@ -34,8 +37,14 @@ public record OpenTowerTerminalPayload(BlockPos pos, long nonce, int triesLeft, 
             int alignTicksRemaining = ByteBufCodecs.VAR_INT.decode(buffer);
             int lockoutTicksRemaining = ByteBufCodecs.VAR_INT.decode(buffer);
             String auditLog = ByteBufCodecs.STRING_UTF8.decode(buffer);
+            String archiveTitle = ByteBufCodecs.STRING_UTF8.decode(buffer);
+            String archiveBody = ByteBufCodecs.STRING_UTF8.decode(buffer);
+            int archivePage = ByteBufCodecs.VAR_INT.decode(buffer);
+            int archivePageCount = ByteBufCodecs.VAR_INT.decode(buffer);
+            boolean archivePasswordPrompt = ByteBufCodecs.BOOL.decode(buffer);
             return new OpenTowerTerminalPayload(pos, nonce, triesLeft, state, removedMask, usedPairMask,
-                    alignTicksRemaining, lockoutTicksRemaining, auditLog);
+                    alignTicksRemaining, lockoutTicksRemaining, auditLog, archiveTitle, archiveBody,
+                    archivePage, archivePageCount, archivePasswordPrompt);
         }
 
         @Override
@@ -49,6 +58,11 @@ public record OpenTowerTerminalPayload(BlockPos pos, long nonce, int triesLeft, 
             ByteBufCodecs.VAR_INT.encode(buffer, value.alignTicksRemaining());
             ByteBufCodecs.VAR_INT.encode(buffer, value.lockoutTicksRemaining());
             ByteBufCodecs.STRING_UTF8.encode(buffer, value.auditLog());
+            ByteBufCodecs.STRING_UTF8.encode(buffer, value.archiveTitle());
+            ByteBufCodecs.STRING_UTF8.encode(buffer, value.archiveBody());
+            ByteBufCodecs.VAR_INT.encode(buffer, value.archivePage());
+            ByteBufCodecs.VAR_INT.encode(buffer, value.archivePageCount());
+            ByteBufCodecs.BOOL.encode(buffer, value.archivePasswordPrompt());
         }
     };
 

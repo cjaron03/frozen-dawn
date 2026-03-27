@@ -28,7 +28,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public final class MonitoringStationStructureBuilder {
 
@@ -37,21 +36,15 @@ public final class MonitoringStationStructureBuilder {
 
     // The bundled template is authored around a logical station center at local (9, 0, 9).
     private static final BlockPos TEMPLATE_CENTER_OFFSET = new BlockPos(9, 0, 9);
-    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(7, 2, 6);
+    private static final BlockPos WEATHER_CHART_LOCAL_POS = new BlockPos(6, 3, 5);
     private static final Direction WEATHER_CHART_FACING = Direction.SOUTH;
-    private static final List<BlockPos> LEGACY_WEATHER_CHART_LOCAL_POSITIONS = List.of(
-            new BlockPos(3, 2, 8),
-            new BlockPos(3, 2, 9)
-    );
-    private static final BlockPos CALENDAR_LOCAL_POS = new BlockPos(13, 2, 12);
+    private static final BlockPos CALENDAR_LOCAL_POS = new BlockPos(12, 3, 11);
     private static final Direction CALENDAR_FACING = Direction.WEST;
-    private static final BlockPos HYRAX_FRAME_LOCAL_POS = new BlockPos(10, 2, 2);
-    private static final Direction HYRAX_FRAME_FACING = Direction.SOUTH;
     private static final List<BlockPos> LOCKED_BARS_LOCAL_POSITIONS = List.of(
-            new BlockPos(11, 1, 5),
-            new BlockPos(12, 1, 5),
-            new BlockPos(11, 2, 5),
-            new BlockPos(12, 2, 5)
+            new BlockPos(10, 2, 4),
+            new BlockPos(11, 2, 4),
+            new BlockPos(10, 3, 4),
+            new BlockPos(11, 3, 4)
     );
 
     private static final int MIN_X = -9;
@@ -102,7 +95,10 @@ public final class MonitoringStationStructureBuilder {
     public static void unlockBackRoom(ServerLevel level, BlockPos center) {
         BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
         for (BlockPos localPos : LOCKED_BARS_LOCAL_POSITIONS) {
-            level.setBlock(origin.offset(localPos), Blocks.AIR.defaultBlockState(), 3);
+            BlockPos worldPos = origin.offset(localPos);
+            if (level.getBlockState(worldPos).is(Blocks.IRON_BARS)) {
+                level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
+            }
         }
     }
 
@@ -141,9 +137,7 @@ public final class MonitoringStationStructureBuilder {
             barrel.setChanged();
         }
 
-        ensureWeatherChart(level, center);
-        ensureCalendar(level, center);
-        ensureHyraxFrame(level, center);
+        refreshMapFrames(level, center);
     }
 
     private static void gradeTerrain(ServerLevel level, int cx, int cy, int cz) {
@@ -203,35 +197,6 @@ public final class MonitoringStationStructureBuilder {
         }
     }
 
-    public static void ensureWeatherChart(ServerLevel level, BlockPos center) {
-        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
-        BlockPos chartPos = origin.offset(WEATHER_CHART_LOCAL_POS);
-
-        if (hasExpectedWeatherChart(level, chartPos, WEATHER_CHART_FACING)) {
-            return;
-        }
-
-        int removedFrames = removeWeatherChartFrames(level, chartPos);
-        for (BlockPos legacyPos : LEGACY_WEATHER_CHART_LOCAL_POSITIONS) {
-            removedFrames += removeWeatherChartFrames(level, origin.offset(legacyPos));
-        }
-
-        if (placeWeatherChart(level, center, chartPos, WEATHER_CHART_FACING)) {
-            FrozenDawn.LOGGER.info("Monitoring Station weather chart repaired at ({}, {}, {}) after removing {} stale frame(s)",
-                    center.getX(), center.getY(), center.getZ(), removedFrames);
-        } else {
-            BlockPos supportPos = chartPos.relative(WEATHER_CHART_FACING.getOpposite());
-            FrozenDawn.LOGGER.warn("Monitoring Station weather chart repair failed at ({}, {}, {}); target frame pos {} facing {} support {} state {}",
-                    center.getX(), center.getY(), center.getZ(), chartPos, WEATHER_CHART_FACING,
-                    supportPos, level.getBlockState(supportPos));
-        }
-    }
-
-    public static boolean hasWeatherChart(ServerLevel level, BlockPos center) {
-        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
-        return hasExpectedWeatherChart(level, origin.offset(WEATHER_CHART_LOCAL_POS), WEATHER_CHART_FACING);
-    }
-
     public static boolean hasStationMarker(ServerLevel level, BlockPos centerGuess) {
         for (int dx = MIN_X; dx <= MAX_X; dx++) {
             for (int dz = MIN_Z; dz <= MAX_Z; dz++) {
@@ -246,141 +211,23 @@ public final class MonitoringStationStructureBuilder {
         return false;
     }
 
-    private static boolean hasExpectedWeatherChart(ServerLevel level, BlockPos pos, Direction facing) {
-        AABB frameBox = new AABB(pos).inflate(0.25);
-        for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            ItemStack item = frame.getItem();
-            if (frame.getPos().equals(pos)
-                    && frame.getDirection() == facing
-                    && item.is(Items.FILLED_MAP)
-                    && Objects.equals(item.get(DataComponents.CUSTOM_NAME), Component.literal("Surface Synoptic Chart"))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static int removeWeatherChartFrames(ServerLevel level, BlockPos pos) {
-        AABB frameBox = new AABB(pos).inflate(0.35);
-        int removed = 0;
-        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            if (existing.getPos().equals(pos)) {
-                existing.discard();
-                removed++;
-            }
-        }
-        return removed;
-    }
-
-    private static boolean placeWeatherChart(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
-        ItemFrame frame = new ItemFrame(level, pos, facing);
-        frame.setItem(MonitoringStationWeatherChart.create(level, center), false);
-        frame.setInvulnerable(true);
-        if (frame.survives()) {
-            level.addFreshEntity(frame);
-            return true;
-        }
-        return false;
-    }
-
-    public static void ensureCalendar(ServerLevel level, BlockPos center) {
+    public static void refreshMapFrames(ServerLevel level, BlockPos center) {
         BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
-        BlockPos calPos = origin.offset(CALENDAR_LOCAL_POS);
-
-        if (hasExpectedCalendar(level, calPos, CALENDAR_FACING)) {
-            return;
-        }
-
-        // Remove any sign block at the calendar position
-        if (!level.getBlockState(calPos).isAir()) {
-            level.setBlock(calPos, Blocks.AIR.defaultBlockState(), 2);
-        }
-
-        // Remove any existing item frames
-        AABB frameBox = new AABB(calPos).inflate(0.5);
-        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            existing.discard();
-        }
-
-        if (placeCalendar(level, center, calPos, CALENDAR_FACING)) {
-            FrozenDawn.LOGGER.info("Monitoring Station calendar placed at ({}, {}, {})",
-                    calPos.getX(), calPos.getY(), calPos.getZ());
-        } else {
-            BlockPos supportPos = calPos.relative(CALENDAR_FACING.getOpposite());
-            FrozenDawn.LOGGER.warn("Monitoring Station calendar placement failed at ({}, {}, {}); target frame pos {} facing {} support {} state {}",
-                    center.getX(), center.getY(), center.getZ(), calPos, CALENDAR_FACING,
-                    supportPos, level.getBlockState(supportPos));
-        }
+        refreshFrameItem(level, origin.offset(WEATHER_CHART_LOCAL_POS), WEATHER_CHART_FACING,
+                MonitoringStationWeatherChart.create(level, center));
+        refreshFrameItem(level, origin.offset(CALENDAR_LOCAL_POS), CALENDAR_FACING,
+                MonitoringStationCalendar.create(level, center));
     }
 
-    private static boolean hasExpectedCalendar(ServerLevel level, BlockPos pos, Direction facing) {
+    private static void refreshFrameItem(ServerLevel level, BlockPos pos, Direction facing, ItemStack item) {
         AABB frameBox = new AABB(pos).inflate(0.25);
         for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            ItemStack item = frame.getItem();
-            if (frame.getPos().equals(pos)
-                    && frame.getDirection() == facing
-                    && item.is(Items.FILLED_MAP)
-                    && Objects.equals(item.get(DataComponents.CUSTOM_NAME), Component.literal("Station Calendar"))) {
-                return true;
+            if (frame.getPos().equals(pos) && frame.getDirection() == facing) {
+                frame.setItem(item, false);
+                frame.setInvulnerable(true);
+                return;
             }
         }
-        return false;
-    }
-
-    private static boolean placeCalendar(ServerLevel level, BlockPos center, BlockPos pos, Direction facing) {
-        ItemFrame frame = new ItemFrame(level, pos, facing);
-        frame.setItem(MonitoringStationCalendar.create(level, center), false);
-        frame.setInvulnerable(true);
-        if (frame.survives()) {
-            level.addFreshEntity(frame);
-            return true;
-        }
-        return false;
-    }
-
-    public static void ensureHyraxFrame(ServerLevel level, BlockPos center) {
-        BlockPos origin = center.subtract(TEMPLATE_CENTER_OFFSET);
-        BlockPos hyraxPos = origin.offset(HYRAX_FRAME_LOCAL_POS);
-
-        if (hasExpectedHyraxFrame(level, hyraxPos, HYRAX_FRAME_FACING)) {
-            return;
-        }
-
-        removeFramesAt(level, hyraxPos);
-        placeHyraxFrame(level, hyraxPos, HYRAX_FRAME_FACING);
-    }
-
-    private static boolean hasExpectedHyraxFrame(ServerLevel level, BlockPos pos, Direction facing) {
-        AABB frameBox = new AABB(pos).inflate(0.25);
-        for (ItemFrame frame : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            ItemStack item = frame.getItem();
-            if (frame.getPos().equals(pos)
-                    && frame.getDirection() == facing
-                    && item.is(ModItems.STUFFED_HYRAX.get())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void removeFramesAt(ServerLevel level, BlockPos pos) {
-        AABB frameBox = new AABB(pos).inflate(0.35);
-        for (ItemFrame existing : level.getEntitiesOfClass(ItemFrame.class, frameBox)) {
-            if (existing.getPos().equals(pos)) {
-                existing.discard();
-            }
-        }
-    }
-
-    private static boolean placeHyraxFrame(ServerLevel level, BlockPos pos, Direction facing) {
-        ItemFrame frame = new ItemFrame(level, pos, facing);
-        frame.setItem(new ItemStack(ModItems.STUFFED_HYRAX.get()), false);
-        frame.setInvulnerable(true);
-        if (frame.survives()) {
-            level.addFreshEntity(frame);
-            return true;
-        }
-        return false;
     }
 
     private static int getCurrentPhase(ServerLevel level) {

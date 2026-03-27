@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.OpenTowerTerminalPayload;
 import com.frozendawn.network.SubmitTowerTerminalPayload;
+import com.frozendawn.terminal.TowerArchive;
 import com.frozendawn.terminal.TowerTerminalPuzzle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -31,7 +32,10 @@ public class TowerTerminalScreen extends Screen {
     private static final int PANEL_MAX_H = 500;
     private static final int PANEL_PAD = 18;
     private static final int BOX_PAD = 10;
-    private static final int BOX_GAP = 12;
+    private static final int ARCHIVE_TOP_GAP = 8;
+    private static final int ARCHIVE_DIRECTORY_W = 176;
+    private static final int ARCHIVE_SCROLLBAR_W = 6;
+    private static final int ARCHIVE_SCROLLBAR_GAP = 6;
     private static final int PROGRESS_BAR_H = 14;
     private static final int ALIGN_TICKS_TOTAL = 20 * 30;
     private static final int LOCKOUT_TICKS_TOTAL = 20 * 60;
@@ -49,6 +53,11 @@ public class TowerTerminalScreen extends Screen {
     private int alignTicksRemaining;
     private int lockoutTicksRemaining;
     private List<String> auditLines = new ArrayList<>();
+    private List<String> archiveBodyLines = new ArrayList<>();
+    private String archiveTitle = "";
+    private int archivePage;
+    private int archivePageCount;
+    private boolean archivePasswordPrompt;
     private final List<TokenHitbox> interactiveHitboxes = new ArrayList<>();
 
     private int panelX;
@@ -60,7 +69,6 @@ public class TowerTerminalScreen extends Screen {
     private int titleY;
     private int attemptsY;
     private int headerBottomY;
-    private int boardX;
     private int boardY;
     private int boardBottom;
     private int boardLineHeight;
@@ -83,6 +91,9 @@ public class TowerTerminalScreen extends Screen {
     private int bootTicks;
     private boolean bootSoundPlayed;
     private String terminalInput = "";
+    private String archivePasswordInput = "";
+    private int archiveDirectoryScroll;
+    private int archiveDetailScroll;
     private float headerScale = 0.82f;
     private float boardScale = 0.78f;
     private float auditScale = 0.78f;
@@ -101,6 +112,8 @@ public class TowerTerminalScreen extends Screen {
 
     public void applySnapshot(OpenTowerTerminalPayload payload) {
         long previousNonce = this.nonce;
+        int previousArchivePage = this.archivePage;
+        boolean previousPasswordPrompt = this.archivePasswordPrompt;
         this.nonce = payload.nonce();
         this.board = payload.nonce() == 0L ? null : TowerTerminalPuzzle.create(payload.nonce());
         this.triesLeft = payload.triesLeft();
@@ -112,12 +125,26 @@ public class TowerTerminalScreen extends Screen {
         this.auditLines = payload.auditLog().isBlank()
                 ? new ArrayList<>()
                 : new ArrayList<>(Arrays.asList(payload.auditLog().split("\n")));
+        this.archiveTitle = payload.archiveTitle();
+        this.archiveBodyLines = payload.archiveBody().isBlank()
+                ? new ArrayList<>()
+                : new ArrayList<>(Arrays.asList(payload.archiveBody().split("\n")));
+        this.archivePage = payload.archivePage();
+        this.archivePageCount = payload.archivePageCount();
+        this.archivePasswordPrompt = payload.archivePasswordPrompt();
+        if (payload.archivePage() != previousArchivePage) {
+            this.archiveDetailScroll = 0;
+        }
         this.closeTicks = state == OpenTowerTerminalPayload.STATE_COMPLETE ? 30 : -1;
         if (payload.nonce() != previousNonce || state != OpenTowerTerminalPayload.STATE_ACTIVE) {
             this.terminalInput = "";
         }
+        if (payload.archivePage() != previousArchivePage || !archivePasswordPrompt || archivePasswordPrompt != previousPasswordPrompt) {
+            this.archivePasswordInput = "";
+        }
         if (minecraft != null && minecraft.screen == this) {
             recalculateLayout();
+            clampArchiveScrolls();
             rebuildHitboxes();
         }
     }
@@ -176,26 +203,33 @@ public class TowerTerminalScreen extends Screen {
         attemptsY = titleY + headerLineHeight + 6;
         headerBottomY = attemptsY + headerLineHeight + 8;
         boardCenterX = panelX + panelW / 2;
-        boardX = boardCenterX - boardRenderedWidth / 2;
-        int boardContentHeight = TowerTerminalPuzzle.ROWS * boardLineHeight;
-
-        int boardAreaTop = headerBottomY + 12;
         int bottomMargin = 14;
-        int desiredAuditH = Math.max(120, Math.min(160, panelH / 3));
-        int boardAreaBottom = panelY + panelH - bottomMargin - desiredAuditH - 14;
-        int boardAreaHeight = Math.max(boardContentHeight, boardAreaBottom - boardAreaTop);
-        boardY = boardAreaTop + Math.max(0, (boardAreaHeight - boardContentHeight) / 2);
-        boardBottom = boardY + boardContentHeight;
-
+        int contentTop = headerBottomY + 12;
         auditX = panelX + PANEL_PAD;
         auditW = contentWidth;
-        auditY = boardBottom + 8;
-        int availableAuditH = Math.max(96, panelY + panelH - bottomMargin - auditY);
-        auditH = Math.min(availableAuditH, desiredAuditHeight(auditW - BOX_PAD * 2));
+        int maxAuditH = Math.max(84, panelY + panelH - bottomMargin - contentTop - 96);
+        auditH = Math.min(maxAuditH, desiredAuditHeight(auditW - BOX_PAD * 2));
+        auditY = panelY + panelH - bottomMargin - auditH;
+
+        if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
+            int boardContentHeight = TowerTerminalPuzzle.ROWS * boardLineHeight;
+            int boardAreaTop = contentTop;
+            int boardAreaBottom = auditY - 14;
+            int boardAreaHeight = Math.max(boardContentHeight, boardAreaBottom - boardAreaTop);
+            boardY = boardAreaTop + Math.max(0, (boardAreaHeight - boardContentHeight) / 2);
+            boardBottom = boardY + boardContentHeight;
+        } else {
+            boardY = contentTop;
+            boardBottom = auditY - 8;
+        }
+        clampArchiveScrolls();
     }
 
     private void rebuildHitboxes() {
         interactiveHitboxes.clear();
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            return;
+        }
         if (board == null || state != OpenTowerTerminalPayload.STATE_ACTIVE) {
             return;
         }
@@ -267,12 +301,12 @@ public class TowerTerminalScreen extends Screen {
 
         if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
             renderAttempts(graphics);
-            renderBoard(graphics, mouseX, mouseY);
+            renderBoard(graphics);
             renderAudit(graphics);
             return;
         }
 
-        renderStatePanel(graphics);
+        renderStatePanel(graphics, mouseX, mouseY);
         renderAudit(graphics);
     }
 
@@ -302,7 +336,6 @@ public class TowerTerminalScreen extends Screen {
         int contentTop = headerBottomY + 8;
         int contentBottom = panelY + panelH - 14;
 
-        // 3D-spinning ORSA logo (Y-axis rotation faked via X-scale)
         int logoSize = 32;
         int logoCenterX = centerX;
         int logoCenterY = contentTop + 26;
@@ -315,7 +348,6 @@ public class TowerTerminalScreen extends Screen {
         graphics.blit(ORSA_LOGO, -8, -8, 0, 0, 16, 16, 16, 16);
         graphics.pose().popPose();
 
-        // Kernel boot lines
         int textX = panelX + PANEL_PAD + 4;
         int textY = logoCenterY + logoSize / 2 + 10;
         int lineStep = headerLineHeight + 2;
@@ -330,7 +362,6 @@ public class TowerTerminalScreen extends Screen {
             }
         }
 
-        // Progress bar
         int barX = panelX + 40;
         int barW = panelW - 80;
         int barY = contentBottom - 6;
@@ -348,32 +379,35 @@ public class TowerTerminalScreen extends Screen {
                 triesLeft > 1 ? 0xFFB7F1FF : 0xFFFF8B8B);
     }
 
-    private void renderBoard(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderBoard(GuiGraphics graphics) {
         for (int segmentIndex = 0; segmentIndex < TowerTerminalPuzzle.SEGMENTS; segmentIndex++) {
             SegmentLayout layout = segmentLayout(segmentIndex);
             drawScaledString(graphics, layout.address(), layout.addressX(), layout.y(), boardScale, 0xFF5E8B9D);
             String rendered = board.renderSegment(segmentIndex, removedMask, usedPairMask);
             for (int i = 0; i < rendered.length(); i++) {
-                int color = glyphColor(segmentIndex, i);
                 drawScaledString(graphics, String.valueOf(rendered.charAt(i)),
-                        layout.textX() + i * scaledCharStep, layout.y(), boardScale, color);
+                        layout.textX() + i * scaledCharStep, layout.y(), boardScale, 0xFF9FD5E4);
             }
         }
     }
 
-    private int glyphColor(int segmentIndex, int charIndex) {
-        return 0xFF5F91A3;
-    }
-
     private void renderAudit(GuiGraphics graphics) {
-        renderInfoBox(graphics, auditX, auditY, auditW, auditH, "AUDIT LOG", 0xFFD9F4FF, 0xFF0C141B, null);
+        String title = state == OpenTowerTerminalPayload.STATE_ARCHIVE ? "PRIORITY ROUTING" : "AUDIT LOG";
+        renderInfoBox(graphics, auditX, auditY, auditW, auditH, title, 0xFFD9F4FF, 0xFF0C141B);
 
         int y = auditY + 24;
         int inputY = auditY + auditH - BOX_PAD - auditLineHeight;
         int maxY = inputY - 8;
         for (String line : auditLines) {
+            int color = 0xFF9FD5E4;
+            if (state == OpenTowerTerminalPayload.STATE_ARCHIVE
+                    && (line.startsWith("ORSA PRIORITY")
+                    || line.startsWith("LAST HANDSHAKE")
+                    || line.startsWith("QUEUE DEPTH"))) {
+                color = 0xFFD9F4FF;
+            }
             y = drawWrappedScaledLine(graphics, Component.literal(line), auditX + BOX_PAD, y,
-                    auditW - BOX_PAD * 2, maxY, 0xFF9FD5E4, auditScale);
+                    auditW - BOX_PAD * 2, maxY, color, auditScale);
             y += 1;
         }
 
@@ -384,11 +418,82 @@ public class TowerTerminalScreen extends Screen {
         }
     }
 
-    private void renderStatePanel(GuiGraphics graphics) {
+    private void renderStatePanel(GuiGraphics graphics, int mouseX, int mouseY) {
         int boxX = panelX + PANEL_PAD;
-        int boxY = panelY + 66;
+        int boxY = headerBottomY + ARCHIVE_TOP_GAP;
         int boxW = panelW - PANEL_PAD * 2;
         int boxH = Math.max(110, auditY - boxY - 12);
+
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            ArchiveLayout layout = archiveLayout();
+            renderInfoBox(graphics, layout.directoryX(), layout.directoryY(), layout.directoryW(), layout.directoryH(),
+                    "DIRECTORY", 0xFFB7F1FF, 0xFF0D1820);
+            renderInfoBox(graphics, layout.detailX(), layout.detailY(), layout.detailW(), layout.detailH(),
+                    archiveTitle.isBlank() ? "ARCHIVE DATA" : archiveTitle, 0xFFB7F1FF, 0xFF0D1820);
+
+            int pageTotal = archivePageCount > 0 ? archivePageCount : TowerArchive.PAGE_COUNT;
+            int rowY = layout.directoryContentY() - archiveDirectoryScroll;
+            int rowHeight = archiveRowHeight();
+            graphics.enableScissor(layout.directoryContentX(), layout.directoryContentY(),
+                    layout.directoryContentX() + layout.directoryContentW(),
+                    layout.directoryContentY() + layout.directoryContentH());
+            for (int i = 0; i < pageTotal; i++) {
+                int rowBottom = rowY + rowHeight;
+                if (rowBottom >= layout.directoryContentY() - 2
+                        && rowY <= layout.directoryContentY() + layout.directoryContentH()) {
+                    String label = i < TowerArchive.PAGE_TITLES.length
+                            ? TowerArchive.PAGE_TITLES[i]
+                            : "ARCHIVE PAGE " + (i + 1);
+                    boolean selected = i == archivePage;
+                    boolean hovered = hoveredArchiveEntry(mouseX, mouseY, i);
+                    int rowX = layout.directoryContentX() - 2;
+                    int rowW = layout.directoryContentW() + 4;
+                    int fill = selected ? 0xFF18303C : (hovered ? 0xFF122028 : 0x00000000);
+                    if (fill != 0) {
+                        graphics.fill(rowX, rowY - 1, rowX + rowW, rowBottom - 1, fill);
+                        if (selected) {
+                            graphics.fill(rowX, rowY - 1, rowX + 3, rowBottom - 1, 0xFF58BDE4);
+                        }
+                    }
+                    String prefix = selected ? "> " : "  ";
+                    drawScaledString(graphics, Component.literal(prefix + label),
+                            layout.directoryContentX(), rowY + 2, auditScale,
+                            selected ? 0xFFF5F7EE : 0xFFCAE6EF);
+                }
+                rowY += rowHeight + 2;
+            }
+            graphics.disableScissor();
+            renderArchiveScrollbar(graphics, layout.directoryScrollbarX(), layout.directoryContentY(),
+                    layout.directoryContentH(), archiveDirectoryScroll, directoryScrollMax(layout),
+                    directoryVisibleHeight(layout), 0xFF18303C, 0xFF58BDE4);
+
+            List<FormattedCharSequence> wrappedBody = archiveWrappedBody(layout);
+            int contentY = layout.detailContentY() - archiveDetailScroll;
+            int detailMaxY = archivePasswordPrompt
+                    ? layout.detailContentY() + layout.detailContentH() - auditLineHeight - 10
+                    : layout.detailContentY() + layout.detailContentH();
+            graphics.enableScissor(layout.detailContentX(), layout.detailContentY(),
+                    layout.detailContentX() + layout.detailContentW(),
+                    layout.detailContentY() + layout.detailContentH());
+            for (FormattedCharSequence line : wrappedBody) {
+                if (contentY + auditLineHeight >= layout.detailContentY() - 2
+                        && contentY <= detailMaxY) {
+                    drawScaledString(graphics, line, layout.detailContentX(), contentY, auditScale, 0xFFD4EEF7);
+                }
+                contentY += auditLineHeight;
+            }
+            graphics.disableScissor();
+            renderArchiveScrollbar(graphics, layout.detailScrollbarX(), layout.detailContentY(),
+                    layout.detailContentH(), archiveDetailScroll, detailScrollMax(layout),
+                    detailVisibleHeight(layout), 0xFF18303C, 0xFF58BDE4);
+            if (archivePasswordPrompt) {
+                int promptY = layout.detailY() + layout.detailH() - BOX_PAD - auditLineHeight - 2;
+                String cursor = (blinkTicks / 8) % 2 == 0 ? "_" : "";
+                drawScaledString(graphics, Component.literal("AUTH: " + archivePasswordInput + cursor),
+                        layout.detailContentX(), promptY, auditScale, 0xFFF5F7EE);
+            }
+            return;
+        }
 
         graphics.fill(boxX, boxY, boxX + boxW, boxY + boxH, 0xFF0D1820);
         graphics.fill(boxX, boxY, boxX + boxW, boxY + 1, 0xFF4CB7E3);
@@ -405,7 +510,8 @@ public class TowerTerminalScreen extends Screen {
         if (state == OpenTowerTerminalPayload.STATE_ALIGNING) {
             graphics.drawCenteredString(font, Component.literal("TRANSMISSION IN PROGRESS"), boxX + boxW / 2, boxY + 18, 0xFF9DF4B6);
             graphics.drawCenteredString(font, Component.literal("Maintaining ORSA uplink lock..."), boxX + boxW / 2, boxY + 36, 0xFFB7C7D0);
-            renderProgressBar(graphics, boxX + 28, boxY + 58, boxW - 56, Math.max(0, 1.0f - (float) alignTicksRemaining / ALIGN_TICKS_TOTAL));
+            renderProgressBar(graphics, boxX + 28, boxY + 58, boxW - 56,
+                    Math.max(0, 1.0f - (float) alignTicksRemaining / ALIGN_TICKS_TOTAL));
             String time = String.format("%02d:%02d", Math.max(0, alignTicksRemaining) / 20 / 60, (Math.max(0, alignTicksRemaining) / 20) % 60);
             graphics.drawCenteredString(font, Component.literal("TIME TO TRANSMISSION  " + time), boxX + boxW / 2, boxY + 78, 0xFFB6EEF8);
             return;
@@ -422,37 +528,13 @@ public class TowerTerminalScreen extends Screen {
         graphics.fill(x + 2, y + 2, x + 2 + clamped, y + PROGRESS_BAR_H - 2, 0xFF59CBEA);
     }
 
-    private void renderInfoBox(GuiGraphics graphics, int x, int y, int w, int h, String title, int accent, int fill, List<String> lines) {
+    private void renderInfoBox(GuiGraphics graphics, int x, int y, int w, int h, String title, int accent, int fill) {
         graphics.fill(x, y, x + w, y + h, fill);
         graphics.fill(x, y, x + w, y + 1, accent);
         graphics.fill(x, y, x + 1, y + h, accent);
         graphics.fill(x + w - 1, y, x + w, y + h, 0xFF0A1720);
         graphics.fill(x, y + h - 1, x + w, y + h, 0xFF0A1720);
         graphics.drawString(font, Component.literal(title), x + BOX_PAD, y + 7, accent, false);
-
-        if (lines == null) {
-            return;
-        }
-
-        int currentY = y + 24;
-        for (String line : lines) {
-            currentY = drawWrappedLine(graphics, Component.literal(line), x + BOX_PAD, currentY, w - BOX_PAD * 2, y + h - BOX_PAD, 0xFFD4EEF7);
-            currentY += 1;
-            if (currentY > y + h - BOX_PAD) {
-                break;
-            }
-        }
-    }
-
-    private int drawWrappedLine(GuiGraphics graphics, Component line, int x, int y, int width, int maxY, int color) {
-        for (FormattedCharSequence wrapped : font.split(line, width)) {
-            if (y > maxY) {
-                return y;
-            }
-            graphics.drawString(font, wrapped, x, y, color, false);
-            y += LINE_HEIGHT;
-        }
-        return y;
     }
 
     private int desiredAuditHeight(int contentWidth) {
@@ -460,6 +542,10 @@ public class TowerTerminalScreen extends Screen {
         int wrappedLines = 0;
         for (String line : auditLines) {
             wrappedLines += Math.max(1, font.split(Component.literal(line), scaledWidth).size());
+        }
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            int contentHeight = 24 + BOX_PAD + wrappedLines * auditLineHeight + BOX_PAD + 4;
+            return Math.max(82, Math.min(96, contentHeight));
         }
         int visibleLines = Math.max(state == OpenTowerTerminalPayload.STATE_ACTIVE ? 4 : 3,
                 Math.min(8, wrappedLines + (state == OpenTowerTerminalPayload.STATE_ACTIVE ? 1 : 0)));
@@ -534,8 +620,151 @@ public class TowerTerminalScreen extends Screen {
         return null;
     }
 
+    private boolean hoveredArchiveEntry(double mouseX, double mouseY, int pageIndex) {
+        return archiveEntryAt(mouseX, mouseY) == pageIndex;
+    }
+
+    private int archiveEntryAt(double mouseX, double mouseY) {
+        if (state != OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            return -1;
+        }
+        ArchiveLayout layout = archiveLayout();
+        int minX = layout.directoryContentX() - 2;
+        int maxX = layout.directoryContentX() + layout.directoryContentW() + 2;
+        int minY = layout.directoryContentY();
+        int maxY = layout.directoryContentY() + layout.directoryContentH();
+        if (mouseX < minX || mouseX >= maxX || mouseY < minY || mouseY >= maxY) {
+            return -1;
+        }
+
+        int pageTotal = archivePageCount > 0 ? archivePageCount : TowerArchive.PAGE_COUNT;
+        int rowHeight = archiveRowHeight();
+        int rowStride = rowHeight + 2;
+        double localY = mouseY - layout.directoryContentY() + archiveDirectoryScroll;
+        int rowIndex = (int) Math.floor(localY / rowStride);
+        if (rowIndex < 0 || rowIndex >= pageTotal) {
+            return -1;
+        }
+        double rowOffset = localY - rowIndex * rowStride;
+        return rowOffset <= rowHeight ? rowIndex : -1;
+    }
+
+    private boolean isInsideDirectoryPane(ArchiveLayout layout, double mouseX, double mouseY) {
+        return mouseX >= layout.directoryX() && mouseX < layout.directoryX() + layout.directoryW()
+                && mouseY >= layout.directoryY() && mouseY < layout.directoryY() + layout.directoryH();
+    }
+
+    private boolean isInsideDetailPane(ArchiveLayout layout, double mouseX, double mouseY) {
+        return mouseX >= layout.detailX() && mouseX < layout.detailX() + layout.detailW()
+                && mouseY >= layout.detailY() && mouseY < layout.detailY() + layout.detailH();
+    }
+
+    private ArchiveLayout archiveLayout() {
+        int boxX = panelX + PANEL_PAD;
+        int boxY = headerBottomY + ARCHIVE_TOP_GAP;
+        int boxW = panelW - PANEL_PAD * 2;
+        int boxH = Math.max(110, auditY - boxY - 12);
+        int directoryW = Math.min(ARCHIVE_DIRECTORY_W, Math.max(150, boxW / 3));
+        int detailX = boxX + directoryW - 1;
+        int detailW = Math.max(180, boxX + boxW - detailX);
+        int contentTop = boxY + 24;
+        int contentBottom = boxY + boxH - BOX_PAD;
+        int contentHeight = Math.max(24, contentBottom - contentTop);
+        int directoryScrollbarX = boxX + directoryW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
+        int directoryContentX = boxX + BOX_PAD;
+        int directoryContentW = Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
+        int detailScrollbarX = detailX + detailW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
+        int detailContentX = detailX + BOX_PAD;
+        int detailContentW = Math.max(100, detailScrollbarX - ARCHIVE_SCROLLBAR_GAP - detailContentX);
+        return new ArchiveLayout(boxX, boxY, directoryW, boxH, detailX, boxY, detailW, boxH,
+                directoryContentX, contentTop, directoryContentW, contentHeight, directoryScrollbarX,
+                detailContentX, contentTop, detailContentW, contentHeight, detailScrollbarX);
+    }
+
+    private void clampArchiveScrolls() {
+        if (state != OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            archiveDirectoryScroll = 0;
+            archiveDetailScroll = 0;
+            return;
+        }
+        ArchiveLayout layout = archiveLayout();
+        archiveDirectoryScroll = clamp(archiveDirectoryScroll, 0, directoryScrollMax(layout));
+        ensureSelectedArchiveEntryVisible(layout);
+        archiveDirectoryScroll = clamp(archiveDirectoryScroll, 0, directoryScrollMax(layout));
+        archiveDetailScroll = clamp(archiveDetailScroll, 0, detailScrollMax(layout));
+    }
+
+    private void ensureSelectedArchiveEntryVisible(ArchiveLayout layout) {
+        int rowStride = archiveRowHeight() + 2;
+        int rowTop = archivePage * rowStride;
+        int rowBottom = rowTop + archiveRowHeight();
+        int visibleTop = archiveDirectoryScroll;
+        int visibleBottom = archiveDirectoryScroll + directoryVisibleHeight(layout);
+        if (rowTop < visibleTop) {
+            archiveDirectoryScroll = rowTop;
+        } else if (rowBottom > visibleBottom) {
+            archiveDirectoryScroll = rowBottom - directoryVisibleHeight(layout);
+        }
+    }
+
+    private int directoryVisibleHeight(ArchiveLayout layout) {
+        return layout.directoryContentH();
+    }
+
+    private int detailVisibleHeight(ArchiveLayout layout) {
+        return layout.detailContentH();
+    }
+
+    private int directoryScrollMax(ArchiveLayout layout) {
+        int pageTotal = archivePageCount > 0 ? archivePageCount : TowerArchive.PAGE_COUNT;
+        int contentHeight = Math.max(0, pageTotal * (archiveRowHeight() + 2) - 2);
+        return Math.max(0, contentHeight - directoryVisibleHeight(layout));
+    }
+
+    private int detailScrollMax(ArchiveLayout layout) {
+        int reservedPromptHeight = archivePasswordPrompt ? auditLineHeight + 10 : 0;
+        int contentHeight = archiveWrappedBody(layout).size() * auditLineHeight;
+        return Math.max(0, contentHeight - (detailVisibleHeight(layout) - reservedPromptHeight));
+    }
+
+    private List<FormattedCharSequence> archiveWrappedBody(ArchiveLayout layout) {
+        List<FormattedCharSequence> wrapped = new ArrayList<>();
+        for (String line : archiveBodyLines) {
+            wrapped.addAll(font.split(Component.literal(line), Math.max(24, (int) Math.floor(layout.detailContentW() / auditScale))));
+        }
+        return wrapped;
+    }
+
+    private void renderArchiveScrollbar(GuiGraphics graphics, int x, int y, int height, int scroll, int maxScroll,
+                                        int visibleHeight, int trackColor, int thumbColor) {
+        if (maxScroll <= 0) {
+            return;
+        }
+        graphics.fill(x, y, x + ARCHIVE_SCROLLBAR_W, y + height, trackColor);
+        int thumbHeight = Math.max(16, Math.round((visibleHeight / (float) (visibleHeight + maxScroll)) * height));
+        int thumbTravel = Math.max(1, height - thumbHeight);
+        int thumbY = y + Math.round((scroll / (float) maxScroll) * thumbTravel);
+        graphics.fill(x, thumbY, x + ARCHIVE_SCROLLBAR_W, thumbY + thumbHeight, thumbColor);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private int archiveRowHeight() {
+        return Math.max(12, auditLineHeight + 2);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            int entryIndex = archiveEntryAt(mouseX, mouseY);
+            if (entryIndex >= 0) {
+                sendArchiveOpenAction(entryIndex);
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
         if (state != OpenTowerTerminalPayload.STATE_ACTIVE || board == null) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
@@ -557,12 +786,53 @@ public class TowerTerminalScreen extends Screen {
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            ArchiveLayout layout = archiveLayout();
+            int delta = (int) Math.round(-scrollY * Math.max(10, auditLineHeight * 2));
+            if (delta == 0) {
+                delta = scrollY > 0 ? -Math.max(10, auditLineHeight * 2) : Math.max(10, auditLineHeight * 2);
+            }
+            boolean handled = false;
+            if (isInsideDetailPane(layout, mouseX, mouseY) && detailScrollMax(layout) > 0) {
+                archiveDetailScroll = clamp(archiveDetailScroll + delta, 0, detailScrollMax(layout));
+                handled = true;
+            } else if (isInsideDirectoryPane(layout, mouseX, mouseY) && directoryScrollMax(layout) > 0) {
+                archiveDirectoryScroll = clamp(archiveDirectoryScroll + delta, 0, directoryScrollMax(layout));
+                handled = true;
+            }
+            if (handled) {
+                rebuildHitboxes();
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
     public boolean charTyped(char codePoint, int modifiers) {
         if (state == OpenTowerTerminalPayload.STATE_ACTIVE) {
             if (Character.isLetter(codePoint) && board != null && terminalInput.length() < board.wordLength()) {
                 terminalInput += Character.toUpperCase(codePoint);
             }
             return true;
+        }
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            if (archivePasswordPrompt) {
+                if (Character.isLetterOrDigit(codePoint) && archivePasswordInput.length() < 24) {
+                    archivePasswordInput += Character.toUpperCase(codePoint);
+                    return true;
+                }
+                return true;
+            }
+            if (codePoint == '[') {
+                sendArchiveAction(SubmitTowerTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
+                return true;
+            }
+            if (codePoint == ']') {
+                sendArchiveAction(SubmitTowerTerminalPayload.ACTION_ARCHIVE_NEXT);
+                return true;
+            }
         }
         return super.charTyped(codePoint, modifiers);
     }
@@ -590,6 +860,29 @@ public class TowerTerminalScreen extends Screen {
                 return true;
             }
         }
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            if (archivePasswordPrompt) {
+                if (keyCode == 259) {
+                    if (!archivePasswordInput.isEmpty()) {
+                        archivePasswordInput = archivePasswordInput.substring(0, archivePasswordInput.length() - 1);
+                    }
+                    return true;
+                }
+                if (keyCode == 257 || keyCode == 335) {
+                    sendArchiveAuthAction();
+                    return true;
+                }
+                return true;
+            }
+            if (keyCode == 263 || keyCode == 65) {
+                sendArchiveAction(SubmitTowerTerminalPayload.ACTION_ARCHIVE_PREVIOUS);
+                return true;
+            }
+            if (keyCode == 262 || keyCode == 68) {
+                sendArchiveAction(SubmitTowerTerminalPayload.ACTION_ARCHIVE_NEXT);
+                return true;
+            }
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -606,7 +899,46 @@ public class TowerTerminalScreen extends Screen {
         minecraft.setScreen(new TowerTerminalScreen(payload));
     }
 
+    private void sendArchiveAction(int actionType) {
+        PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
+                consolePos,
+                nonce,
+                actionType,
+                0,
+                ""
+        ));
+    }
+
+    private void sendArchiveOpenAction(int pageIndex) {
+        PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
+                consolePos,
+                nonce,
+                SubmitTowerTerminalPayload.ACTION_ARCHIVE_OPEN_PAGE,
+                pageIndex,
+                ""
+        ));
+    }
+
+    private void sendArchiveAuthAction() {
+        PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
+                consolePos,
+                nonce,
+                SubmitTowerTerminalPayload.ACTION_ARCHIVE_AUTH,
+                archivePage,
+                archivePasswordInput
+        ));
+        archivePasswordInput = "";
+    }
+
     private record SegmentLayout(int addressX, int y, String address, int textX) {
+    }
+
+    private record ArchiveLayout(int directoryX, int directoryY, int directoryW, int directoryH,
+                                 int detailX, int detailY, int detailW, int detailH,
+                                 int directoryContentX, int directoryContentY, int directoryContentW, int directoryContentH,
+                                 int directoryScrollbarX,
+                                 int detailContentX, int detailContentY, int detailContentW, int detailContentH,
+                                 int detailScrollbarX) {
     }
 
     private record TokenHitbox(int x, int y, int width, int height, int index, boolean word) {

@@ -4,6 +4,7 @@ import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.network.OpenTowerTerminalPayload;
 import com.frozendawn.network.SubmitTowerTerminalPayload;
+import com.frozendawn.terminal.TowerArchive;
 import com.frozendawn.terminal.TowerTerminalPuzzle;
 import com.frozendawn.world.TowerPlacement;
 import net.minecraft.core.BlockPos;
@@ -32,6 +33,8 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
     private static final double MAX_HORIZONTAL_DISTANCE_SQ = 4.5D * 4.5D;
     private static final double MAX_VERTICAL_DISTANCE = 3.5D;
     private static final int AUDIT_LOG_LIMIT = 8;
+    private static final int MODE_PUZZLE = 0;
+    private static final int MODE_ARCHIVE = 1;
 
     private long towerId = Long.MIN_VALUE;
     private UUID aligningPlayerId;
@@ -45,6 +48,10 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
     private long terminalRemovedMask;
     private long terminalUsedPairMask;
     private TowerTerminalPuzzle.Board terminalBoard;
+    private int terminalMode = MODE_PUZZLE;
+    private int terminalArchivePage;
+    private boolean terminalCommandArchiveUnlocked;
+    private String terminalCommandAuthStatus = "";
     private final List<String> terminalAuditLog = new ArrayList<>();
 
     public TowerAntennaConsoleBlockEntity(BlockPos pos, BlockState state) {
@@ -73,11 +80,6 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             return;
         }
 
-        if (tower.rewardGranted()) {
-            TowerPlacement.sendAlignmentResults(serverLevel, tower.id(), player, false);
-            return;
-        }
-
         if (isAligning()) {
             if (player.getUUID().equals(aligningPlayerId)) {
                 player.displayClientMessage(Component.literal("Alignment already in progress."), true);
@@ -97,12 +99,18 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
                 player.displayClientMessage(Component.literal("Terminal is currently in use."), true);
                 return;
             }
-            sendSnapshot(player, currentTerminalState());
+            sendSnapshot(player, currentTerminalState(), tower);
+            return;
+        }
+
+        if (tower.rewardGranted()) {
+            beginArchiveSession(player, serverLevel.getRandom());
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
             return;
         }
 
         beginTerminalSession(player, serverLevel.getRandom());
-        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE, tower);
     }
 
     public void submitAction(ServerPlayer player, long nonce, int actionType, int actionIndex, String typedGuess) {
@@ -117,16 +125,32 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             player.sendSystemMessage(Component.literal("No tower signal lock available from this console."));
             return;
         }
-        if (tower.rewardGranted()) {
-            TowerPlacement.sendAlignmentResults(serverLevel, tower.id(), player, false);
-            return;
-        }
-        if (isAligning()) {
-            player.displayClientMessage(Component.literal("Console is already aligning."), true);
-            return;
-        }
         if (!isPlayerInRange(player)) {
             player.displayClientMessage(Component.literal("Move back to the console terminal."), true);
+            return;
+        }
+
+        if (tower.rewardGranted()) {
+            if (!hasActiveSession(player, nonce)) {
+                player.displayClientMessage(Component.literal("Terminal session expired. Reopen the console."), true);
+                return;
+            }
+            if (actionType == SubmitTowerTerminalPayload.ACTION_ARCHIVE_PREVIOUS) {
+                handleArchiveNavigation(serverLevel, player, tower, -1);
+            } else if (actionType == SubmitTowerTerminalPayload.ACTION_ARCHIVE_NEXT) {
+                handleArchiveNavigation(serverLevel, player, tower, 1);
+            } else if (actionType == SubmitTowerTerminalPayload.ACTION_ARCHIVE_OPEN_PAGE) {
+                handleArchiveOpenPage(serverLevel, player, tower, actionIndex);
+            } else if (actionType == SubmitTowerTerminalPayload.ACTION_ARCHIVE_AUTH) {
+                handleArchiveAuth(serverLevel, player, tower, typedGuess);
+            } else {
+                sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+            }
+            return;
+        }
+
+        if (isAligning()) {
+            player.displayClientMessage(Component.literal("Console is already aligning."), true);
             return;
         }
         if (!hasActiveSession(player, nonce)) {
@@ -134,16 +158,16 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             return;
         }
         if (terminalLockoutTicksRemaining > 0) {
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT);
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT, tower);
             return;
         }
 
         if (actionType == SubmitTowerTerminalPayload.ACTION_TYPED_GUESS) {
-            handleWordSelection(serverLevel, player, actionIndex, typedGuess);
+            handleWordSelection(serverLevel, player, tower, actionIndex, typedGuess);
             return;
         }
         if (actionType == SubmitTowerTerminalPayload.ACTION_USE_PAIR) {
-            handlePairUse(serverLevel, player, actionIndex);
+            handlePairUse(serverLevel, player, tower, actionIndex);
         }
     }
 
@@ -158,7 +182,11 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
                 ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(terminalPlayerId);
                 if (player != null && !player.isDeadOrDying() && player.level() == serverLevel && isPlayerInRange(player)) {
                     beginTerminalSession(player, serverLevel.getRandom());
-                    sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+                    long resolvedTowerId = resolveTowerId(serverLevel);
+                    OrsaStructureState.TowerRecord tower = OrsaStructureState.get(serverLevel.getServer()).getTowerById(resolvedTowerId);
+                    if (tower != null) {
+                        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE, tower);
+                    }
                 } else {
                     clearTerminalSession();
                 }
@@ -196,7 +224,10 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
 
         if (alignTicksRemaining <= 0) {
             long resolvedTowerId = resolveTowerId(serverLevel);
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_COMPLETE);
+            OrsaStructureState.TowerRecord tower = OrsaStructureState.get(serverLevel.getServer()).getTowerById(resolvedTowerId);
+            if (tower != null) {
+                sendSnapshot(player, OpenTowerTerminalPayload.STATE_COMPLETE, tower);
+            }
             TowerPlacement.completeAlignment(serverLevel, resolvedTowerId, player);
             serverLevel.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.9f, 1.15f);
             aligningPlayerId = null;
@@ -206,46 +237,8 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         }
     }
 
-    private void handleWordGuess(ServerLevel level, ServerPlayer player, int wordIndex) {
-        if (terminalBoard == null || wordIndex < 0 || wordIndex >= terminalBoard.candidates().size()) {
-            return;
-        }
-        if (((terminalRemovedMask >> wordIndex) & 1L) != 0L) {
-            return;
-        }
-
-        String guess = terminalBoard.candidates().get(wordIndex);
-        appendAudit("> " + guess);
-        if (wordIndex == terminalBoard.passwordIndex()) {
-            appendAudit("> Exact match. Signal uplink accepted.");
-            aligningPlayerId = player.getUUID();
-            alignTicksRemaining = ALIGN_TICKS_TOTAL;
-            terminalTicksRemaining = 0;
-            setChanged();
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ALIGNING);
-            level.playSound(null, worldPosition, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.75f, 1.25f);
-            player.displayClientMessage(Component.literal("Signal handshake accepted. Alignment started."), true);
-            return;
-        }
-
-        int likeness = TowerTerminalPuzzle.likeness(guess, terminalBoard.password());
-        terminalTriesLeft--;
-        appendAudit("> Entry denied. " + likeness + "/" + terminalBoard.wordLength() + " correct.");
-        level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 0.8f, 0.7f);
-
-        if (terminalTriesLeft <= 0) {
-            terminalLockoutTicksRemaining = LOCKOUT_TICKS_TOTAL;
-            terminalTicksRemaining = 0;
-            appendAudit("Please contact an administrator.");
-            appendAudit("TERMINAL LOCKED");
-            sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT);
-            return;
-        }
-
-        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
-    }
-
-    private void handleWordSelection(ServerLevel level, ServerPlayer player, int wordIndex, String typedGuess) {
+    private void handleWordSelection(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower,
+                                     int wordIndex, String typedGuess) {
         if (terminalBoard == null) {
             return;
         }
@@ -269,17 +262,56 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
             if (resolvedIndex < 0) {
                 appendAudit("> " + normalizedGuess);
                 appendAudit("> Unknown token.");
-                sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+                sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE, tower);
                 return;
             }
         }
         if (((terminalRemovedMask >> resolvedIndex) & 1L) != 0L) {
             return;
         }
-        handleWordGuess(level, player, resolvedIndex);
+        handleWordGuess(level, player, tower, resolvedIndex);
     }
 
-    private void handlePairUse(ServerLevel level, ServerPlayer player, int pairIndex) {
+    private void handleWordGuess(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower, int wordIndex) {
+        if (terminalBoard == null || wordIndex < 0 || wordIndex >= terminalBoard.candidates().size()) {
+            return;
+        }
+        if (((terminalRemovedMask >> wordIndex) & 1L) != 0L) {
+            return;
+        }
+
+        String guess = terminalBoard.candidates().get(wordIndex);
+        appendAudit("> " + guess);
+        if (wordIndex == terminalBoard.passwordIndex()) {
+            appendAudit("> Exact match. Signal uplink accepted.");
+            aligningPlayerId = player.getUUID();
+            alignTicksRemaining = ALIGN_TICKS_TOTAL;
+            terminalTicksRemaining = 0;
+            setChanged();
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ALIGNING, tower);
+            level.playSound(null, worldPosition, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.75f, 1.25f);
+            player.displayClientMessage(Component.literal("Signal handshake accepted. Alignment started."), true);
+            return;
+        }
+
+        int likeness = TowerTerminalPuzzle.likeness(guess, terminalBoard.password());
+        terminalTriesLeft--;
+        appendAudit("> Entry denied. " + likeness + "/" + terminalBoard.wordLength() + " correct.");
+        level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 0.8f, 0.7f);
+
+        if (terminalTriesLeft <= 0) {
+            terminalLockoutTicksRemaining = LOCKOUT_TICKS_TOTAL;
+            terminalTicksRemaining = 0;
+            appendAudit("Please contact an administrator.");
+            appendAudit("TERMINAL LOCKED");
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_LOCKED_OUT, tower);
+            return;
+        }
+
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE, tower);
+    }
+
+    private void handlePairUse(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower, int pairIndex) {
         if (terminalBoard == null) {
             return;
         }
@@ -303,7 +335,58 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         }
 
         level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 0.65f, 1.2f);
-        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE);
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ACTIVE, tower);
+    }
+
+    private void handleArchiveNavigation(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower, int delta) {
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = Math.floorMod(terminalArchivePage + delta, TowerArchive.PAGE_COUNT);
+        terminalCommandAuthStatus = "";
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalLockoutTicksRemaining = 0;
+        terminalBoard = null;
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+        level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.35f, 1.35f);
+    }
+
+    private void handleArchiveOpenPage(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower, int pageIndex) {
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = Math.floorMod(pageIndex, TowerArchive.PAGE_COUNT);
+        if (terminalArchivePage != TowerArchive.COMMAND_PAGE) {
+            terminalCommandAuthStatus = "";
+        }
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalLockoutTicksRemaining = 0;
+        terminalBoard = null;
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+        level.playSound(null, worldPosition, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.35f, 1.1f);
+    }
+
+    private void handleArchiveAuth(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower, String typedGuess) {
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = TowerArchive.COMMAND_PAGE;
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalLockoutTicksRemaining = 0;
+        terminalBoard = null;
+
+        String normalizedGuess = typedGuess == null ? "" : typedGuess.trim().toUpperCase();
+        if (normalizedGuess.isEmpty()) {
+            terminalCommandAuthStatus = "AUTHORIZATION STRING REQUIRED";
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+            return;
+        }
+
+        if (TowerArchive.COMMAND_ARCHIVE_PASSWORD.equals(normalizedGuess)) {
+            terminalCommandArchiveUnlocked = true;
+            terminalCommandAuthStatus = "";
+            sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+            level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 0.55f, 1.35f);
+            return;
+        }
+
+        terminalCommandAuthStatus = "ACCESS DENIED / COMMAND PERSONNEL ONLY";
+        sendSnapshot(player, OpenTowerTerminalPayload.STATE_ARCHIVE, tower);
+        level.playSound(null, worldPosition, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 0.6f, 0.7f);
     }
 
     private int removeOneDud() {
@@ -327,8 +410,44 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         return removed;
     }
 
-    private void sendSnapshot(ServerPlayer player, int state) {
+    private void sendSnapshot(ServerPlayer player, int state, OrsaStructureState.TowerRecord tower) {
         String audit = String.join("\n", terminalAuditLog);
+        String archiveTitle = "";
+        String archiveBody = "";
+        int archivePage = 0;
+        int archivePageCount = 0;
+        if (state == OpenTowerTerminalPayload.STATE_ARCHIVE && level instanceof ServerLevel serverLevel && tower != null) {
+            TowerArchive.Snapshot archive = TowerArchive.create(
+                    serverLevel,
+                    tower,
+                    terminalArchivePage,
+                    terminalCommandArchiveUnlocked,
+                    terminalCommandAuthStatus
+            );
+            audit = archive.auditLog();
+            archiveTitle = archive.title();
+            archiveBody = archive.body();
+            archivePage = archive.pageIndex();
+            archivePageCount = archive.pageCount();
+            PacketDistributor.sendToPlayer(player, new OpenTowerTerminalPayload(
+                    worldPosition,
+                    terminalNonce,
+                    terminalTriesLeft,
+                    state,
+                    terminalRemovedMask,
+                    terminalUsedPairMask,
+                    alignTicksRemaining,
+                    terminalLockoutTicksRemaining,
+                    audit,
+                    archiveTitle,
+                    archiveBody,
+                    archivePage,
+                    archivePageCount,
+                    archive.passwordPrompt()
+            ));
+            return;
+        }
+
         PacketDistributor.sendToPlayer(player, new OpenTowerTerminalPayload(
                 worldPosition,
                 terminalNonce,
@@ -338,7 +457,12 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
                 terminalUsedPairMask,
                 alignTicksRemaining,
                 terminalLockoutTicksRemaining,
-                audit
+                audit,
+                archiveTitle,
+                archiveBody,
+                archivePage,
+                archivePageCount,
+                false
         ));
     }
 
@@ -396,6 +520,10 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
+        terminalMode = MODE_PUZZLE;
+        terminalArchivePage = 0;
+        terminalCommandArchiveUnlocked = false;
+        terminalCommandAuthStatus = "";
         terminalBoard = TowerTerminalPuzzle.create(terminalNonce);
         terminalAuditLog.clear();
         appendAudit("SIGNAL LOCKOUT ACTIVE");
@@ -403,9 +531,28 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    private void beginArchiveSession(ServerPlayer player, RandomSource random) {
+        terminalPlayerId = player.getUUID();
+        terminalNonce = random.nextLong();
+        if (terminalNonce == 0L) {
+            terminalNonce = 1L;
+        }
+        terminalTicksRemaining = TERMINAL_SESSION_TTL_TICKS;
+        terminalTriesLeft = 0;
+        terminalLockoutTicksRemaining = 0;
+        terminalRemovedMask = 0L;
+        terminalUsedPairMask = 0L;
+        terminalMode = MODE_ARCHIVE;
+        terminalArchivePage = 0;
+        terminalCommandArchiveUnlocked = false;
+        terminalCommandAuthStatus = "";
+        terminalBoard = null;
+        terminalAuditLog.clear();
+        setChanged();
+    }
+
     private boolean hasActiveSession(ServerPlayer player, long nonce) {
-        return terminalBoard != null
-                && terminalPlayerId != null
+        return terminalPlayerId != null
                 && (terminalTicksRemaining > 0 || terminalLockoutTicksRemaining > 0 || isAligning())
                 && terminalPlayerId.equals(player.getUUID())
                 && nonce == terminalNonce;
@@ -419,12 +566,19 @@ public class TowerAntennaConsoleBlockEntity extends BlockEntity {
         terminalLockoutTicksRemaining = 0;
         terminalRemovedMask = 0L;
         terminalUsedPairMask = 0L;
+        terminalMode = MODE_PUZZLE;
+        terminalArchivePage = 0;
+        terminalCommandArchiveUnlocked = false;
+        terminalCommandAuthStatus = "";
         terminalBoard = null;
         terminalAuditLog.clear();
         setChanged();
     }
 
     private int currentTerminalState() {
+        if (terminalMode == MODE_ARCHIVE) {
+            return OpenTowerTerminalPayload.STATE_ARCHIVE;
+        }
         if (isAligning()) {
             return OpenTowerTerminalPayload.STATE_ALIGNING;
         }
