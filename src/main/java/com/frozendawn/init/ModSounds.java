@@ -32,6 +32,10 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.flag_flutter")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> ALARM_BEACON = SOUNDS.register("blocks.alarm_beacon",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "blocks.alarm_beacon")));
+
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_BREATHING = SOUNDS.register("ambient.eva_breathing",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_breathing")));

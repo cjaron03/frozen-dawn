@@ -59,6 +59,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
     public static final DeferredItem<BlockItem> CAMP_RADIO = ITEMS.registerSimpleBlockItem("camp_radio", ModBlocks.CAMP_RADIO);
     public static final DeferredItem<BlockItem> ORSA_FLAG = ITEMS.registerSimpleBlockItem("orsa_flag", ModBlocks.ORSA_FLAG);
+    public static final DeferredItem<BlockItem> ALARM_BEACON = ITEMS.registerSimpleBlockItem("alarm_beacon", ModBlocks.ALARM_BEACON);
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
 
@@ -303,6 +304,7 @@ public class ModItems {
                         output.accept(ORSA_SUPPLY_CRATE.get());
                         output.accept(CAMP_RADIO.get());
                         output.accept(ORSA_FLAG.get());
+                        output.accept(ALARM_BEACON.get());
                         output.accept(TOWER_ANTENNA_CONSOLE.get());
                         output.accept(MONITORING_STATION_TERMINAL.get());
                         // Items

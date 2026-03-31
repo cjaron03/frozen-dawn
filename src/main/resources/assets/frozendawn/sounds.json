@@ -40,6 +40,17 @@
       { "name": "minecraft:item.armor.equip_elytra", "type": "event", "volume": 0.25, "pitch": 1.40 }
     ]
   },
+  "blocks.alarm_beacon": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.alarm_beacon",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/alarm_beacon",
+        "volume": 1.0,
+        "stream": true
+      }
+    ]
+  },
   "ambient.eva_breathing": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_breathing",

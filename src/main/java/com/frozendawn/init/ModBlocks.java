@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
+import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
@@ -169,6 +170,14 @@ public class ModBlocks {
                     .sound(SoundType.WOOL)
                     .noOcclusion()
                     .lightLevel(state -> 2)));
+
+    public static final DeferredBlock<AlarmBeaconBlock> ALARM_BEACON = BLOCKS.register("alarm_beacon",
+            () -> new AlarmBeaconBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_RED)
+                    .strength(2.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .lightLevel(state -> 0)));
 
     public static final DeferredBlock<TowerAntennaConsoleBlock> TOWER_ANTENNA_CONSOLE = BLOCKS.register("tower_antenna_console",
             () -> new TowerAntennaConsoleBlock(BlockBehaviour.Properties.of()

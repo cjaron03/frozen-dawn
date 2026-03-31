@@ -6,6 +6,7 @@ import com.frozendawn.client.renderer.FrostmiteRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.HollowRenderer;
 import com.frozendawn.client.renderer.ArchitectRenderer;
+import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -99,6 +100,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
     }
 
     @SubscribeEvent

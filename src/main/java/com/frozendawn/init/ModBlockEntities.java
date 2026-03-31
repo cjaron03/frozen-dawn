@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeBlockEntity;
+import com.frozendawn.block.AlarmBeaconBlockEntity;
 import com.frozendawn.block.CampRadioBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
@@ -71,6 +72,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("orsa_flag",
                     () -> BlockEntityType.Builder.of(OrsaFlagBlockEntity::new,
                             ModBlocks.ORSA_FLAG.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AlarmBeaconBlockEntity>> ALARM_BEACON =
+            BLOCK_ENTITIES.register("alarm_beacon",
+                    () -> BlockEntityType.Builder.of(AlarmBeaconBlockEntity::new,
+                            ModBlocks.ALARM_BEACON.get()
                     ).build(null));
 
     @SubscribeEvent

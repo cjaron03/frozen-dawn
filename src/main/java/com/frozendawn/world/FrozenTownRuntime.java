@@ -2,8 +2,13 @@ package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.FrozenTownState;
+import com.frozendawn.block.AlarmBeaconBlock;
+import com.frozendawn.block.OrsaFlagBlock;
+import com.frozendawn.block.OrsaFlagBlockEntity;
+import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -20,6 +25,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -29,6 +35,7 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -75,12 +82,14 @@ public final class FrozenTownRuntime {
         for (Long packed : Set.copyOf(pendingTownChunks)) {
             int chunkX = unpackChunkX(packed);
             int chunkZ = unpackChunkZ(packed);
-            if (state.isChunkProcessed(chunkX, chunkZ)) {
-                pendingTownChunks.remove(packed);
+            if (!level.isLoaded(new BlockPos(chunkX << 4, level.getMinBuildHeight(), chunkZ << 4))) {
                 continue;
             }
 
-            if (!level.isLoaded(new BlockPos(chunkX << 4, level.getMinBuildHeight(), chunkZ << 4))) {
+            LevelChunk chunk = level.getChunk(chunkX, chunkZ);
+            if (state.isChunkProcessed(chunkX, chunkZ)) {
+                ensureTownAlarms(level, chunk);
+                pendingTownChunks.remove(packed);
                 continue;
             }
 
@@ -90,7 +99,6 @@ public final class FrozenTownRuntime {
                 continue;
             }
 
-            LevelChunk chunk = level.getChunk(chunkX, chunkZ);
             processTownChunk(level, chunk);
             state.markChunkProcessed(chunkX, chunkZ);
             pendingTownChunks.remove(packed);
@@ -115,11 +123,28 @@ public final class FrozenTownRuntime {
     }
 
     private static void processTownChunk(ServerLevel level, LevelChunk chunk) {
+        ensureTownAlarms(level, chunk);
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (blockEntity instanceof BarrelBlockEntity barrel) {
                 fillTownContainer(level, barrel);
             } else if (blockEntity instanceof SignBlockEntity sign) {
                 updateTownSign(level, sign);
+            }
+        }
+    }
+
+    private static void ensureTownAlarms(ServerLevel level, LevelChunk chunk) {
+        Set<BlockPos> flagPositions = new LinkedHashSet<>();
+        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+            if (blockEntity instanceof OrsaFlagBlockEntity flag) {
+                flagPositions.add(flag.getBlockPos().immutable());
+            }
+        }
+        scanForTownFlags(level, chunk.getPos(), flagPositions);
+        for (BlockPos flagPos : flagPositions) {
+            BlockState state = level.getBlockState(flagPos);
+            if (state.is(ModBlocks.ORSA_FLAG.get())) {
+                ensureTownAlarm(level, flagPos, state);
             }
         }
     }
@@ -168,6 +193,88 @@ public final class FrozenTownRuntime {
                 .setMessage(2, Component.literal("X:" + directive.pos().getX()))
                 .setMessage(3, Component.literal("Z:" + directive.pos().getZ())), true);
         sign.setChanged();
+    }
+
+    private static void ensureTownAlarm(ServerLevel level, BlockPos flagPos, BlockState flagState) {
+        for (BlockPos scanPos : BlockPos.betweenClosed(flagPos.offset(-4, -1, -4), flagPos.offset(4, 2, 4))) {
+            if (level.getBlockState(scanPos).is(ModBlocks.ALARM_BEACON.get())) {
+                return;
+            }
+        }
+
+        Direction facing = flagState.hasProperty(OrsaFlagBlock.FACING)
+                ? flagState.getValue(OrsaFlagBlock.FACING)
+                : Direction.NORTH;
+        Direction[] directions = {
+                facing.getCounterClockWise(),
+                facing.getClockWise(),
+                facing.getOpposite(),
+                facing
+        };
+
+        for (int distance = 1; distance <= 2; distance++) {
+            for (Direction direction : directions) {
+                BlockPos candidatePos = flagPos.relative(direction, distance);
+                if (placeTownAlarm(level, candidatePos, direction.getOpposite())) {
+                    return;
+                }
+            }
+        }
+
+        for (Direction first : directions) {
+            for (Direction second : directions) {
+                if (first == second || first == second.getOpposite()) {
+                    continue;
+                }
+                BlockPos candidatePos = flagPos.relative(first).relative(second);
+                if (placeTownAlarm(level, candidatePos, facing)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private static boolean placeTownAlarm(ServerLevel level, BlockPos pos, Direction facing) {
+        if (!canPlaceTownAlarm(level, pos)) {
+            return false;
+        }
+        level.setBlock(pos, ModBlocks.ALARM_BEACON.get().defaultBlockState()
+                .setValue(AlarmBeaconBlock.FACING, facing), 3);
+        return true;
+    }
+
+    private static void scanForTownFlags(ServerLevel level, ChunkPos chunkPos, Set<BlockPos> out) {
+        int minX = chunkPos.getMinBlockX() - 8;
+        int maxX = chunkPos.getMaxBlockX() + 8;
+        int minZ = chunkPos.getMinBlockZ() - 8;
+        int maxZ = chunkPos.getMaxBlockZ() + 8;
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight() - 1;
+
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!level.hasChunkAt(new BlockPos(x, minY, z))) {
+                    continue;
+                }
+                for (int y = minY; y <= maxY; y++) {
+                    cursor.set(x, y, z);
+                    if (level.getBlockState(cursor).is(ModBlocks.ORSA_FLAG.get())) {
+                        out.add(cursor.immutable());
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean canPlaceTownAlarm(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        BlockState above = level.getBlockState(pos.above());
+        return (state.isAir() || state.canBeReplaced())
+                && (above.isAir() || above.canBeReplaced())
+                && level.getFluidState(pos).isEmpty()
+                && level.getFluidState(pos.above()).isEmpty()
+                && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);
     }
 
     @Nullable
