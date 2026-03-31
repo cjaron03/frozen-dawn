@@ -50,27 +50,40 @@ public final class FrozenEvacVehicleStructureBuilder {
 
     private static void gradeSite(ServerLevel level, BlockPos center, Direction facing) {
         int groundY = center.getY() - 1;
-        for (int right = -4; right <= 4; right++) {
-            for (int forward = -6; forward <= 6; forward++) {
+        for (int right = -3; right <= 3; right++) {
+            for (int forward = -4; forward <= 4; forward++) {
                 BlockPos column = toWorld(center, facing, right, 0, forward);
-                BlockPos surface = new BlockPos(column.getX(), groundY, column.getZ());
+                int currentTop = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                        column.getX(), column.getZ()) - 1;
+                boolean core = Math.abs(right) <= 2 && Math.abs(forward) <= 3;
+                int desiredY = core
+                        ? groundY
+                        : Math.max(groundY - 1, Math.min(currentTop, groundY + 1));
+                BlockPos surface = new BlockPos(column.getX(), desiredY, column.getZ());
 
-                for (int y = groundY; y >= groundY - 3; y--) {
+                for (int y = desiredY; y >= desiredY - 3; y--) {
                     BlockPos fillPos = new BlockPos(column.getX(), y, column.getZ());
                     if (!level.getBlockState(fillPos).isSolid()) {
                         level.setBlock(fillPos, Blocks.DIRT.defaultBlockState(), 3);
                     }
                 }
 
-                for (int y = groundY + 1; y <= groundY + 5; y++) {
-                    BlockPos clearPos = new BlockPos(column.getX(), y, column.getZ());
-                    if (!level.getBlockState(clearPos).isAir()) {
-                        level.removeBlock(clearPos, false);
+                if (core) {
+                    for (int y = desiredY + 1; y <= desiredY + 4; y++) {
+                        BlockPos clearPos = new BlockPos(column.getX(), y, column.getZ());
+                        if (!level.getBlockState(clearPos).isAir()) {
+                            level.removeBlock(clearPos, false);
+                        }
                     }
-                }
-
-                if (Math.abs(right) <= 3 && Math.abs(forward) <= 4) {
                     level.setBlock(surface, Blocks.DIRT.defaultBlockState(), 3);
+                } else {
+                    for (int y = desiredY + 1; y <= desiredY + 2; y++) {
+                        BlockPos clearPos = new BlockPos(column.getX(), y, column.getZ());
+                        BlockState state = level.getBlockState(clearPos);
+                        if (isSoftBrush(state)) {
+                            level.removeBlock(clearPos, false);
+                        }
+                    }
                 }
             }
         }
@@ -143,15 +156,25 @@ public final class FrozenEvacVehicleStructureBuilder {
 
     private static void placeVehicleShell(ServerLevel level, BlockPos center, Direction facing,
                                           FrozenEvacVehiclePlacement.VehicleVariant variant) {
-        BlockState body = Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState();
-        BlockState trim = Blocks.GRAY_CONCRETE.defaultBlockState();
-        BlockState windows = Blocks.TINTED_GLASS.defaultBlockState();
+        BlockState body = switch (variant) {
+            case ABANDONED_EMPTY -> Blocks.WHITE_CONCRETE.defaultBlockState();
+            case ROADSIDE_BREAKDOWN -> Blocks.LIGHT_BLUE_CONCRETE.defaultBlockState();
+            case FAILED_TRANSFER -> Blocks.GRAY_CONCRETE.defaultBlockState();
+        };
+        BlockState trim = switch (variant) {
+            case ABANDONED_EMPTY -> Blocks.LIGHT_GRAY_CONCRETE.defaultBlockState();
+            case ROADSIDE_BREAKDOWN -> Blocks.DEEPSLATE_TILES.defaultBlockState();
+            case FAILED_TRANSFER -> Blocks.POLISHED_DEEPSLATE.defaultBlockState();
+        };
+        BlockState windows = variant == FrozenEvacVehiclePlacement.VehicleVariant.FAILED_TRANSFER
+                ? Blocks.GRAY_STAINED_GLASS.defaultBlockState()
+                : Blocks.TINTED_GLASS.defaultBlockState();
         BlockState wheels = Blocks.BLACK_CONCRETE.defaultBlockState();
         BlockState roof = Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM);
         BlockState hatch = Blocks.IRON_TRAPDOOR.defaultBlockState()
                 .setValue(TrapDoorBlock.FACING, facing.getOpposite())
                 .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
-                .setValue(TrapDoorBlock.OPEN, true);
+                .setValue(TrapDoorBlock.OPEN, variant != FrozenEvacVehiclePlacement.VehicleVariant.ABANDONED_EMPTY);
 
         for (int right = -1; right <= 1; right++) {
             for (int forward = -2; forward <= 2; forward++) {
@@ -189,12 +212,7 @@ public final class FrozenEvacVehicleStructureBuilder {
         level.setBlock(toWorld(center, facing, 0, 1, 3), Blocks.STONE_SLAB.defaultBlockState()
                 .setValue(SlabBlock.TYPE, SlabType.BOTTOM), 3);
 
-        if (variant == FrozenEvacVehiclePlacement.VehicleVariant.ROADSIDE_BREAKDOWN) {
-            level.setBlock(toWorld(center, facing, 0, 2, 2), Blocks.IRON_TRAPDOOR.defaultBlockState()
-                    .setValue(TrapDoorBlock.FACING, facing)
-                    .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
-                    .setValue(TrapDoorBlock.OPEN, true), 3);
-        }
+        applyVariantShellDetails(level, center, facing, variant);
     }
 
     private static void placeLootCrate(ServerLevel level, BlockPos center, Direction facing, BlockPos campCenter,
@@ -252,24 +270,93 @@ public final class FrozenEvacVehicleStructureBuilder {
 
     private static void placeProps(ServerLevel level, BlockPos center, Direction facing, int phase,
                                    FrozenEvacVehiclePlacement.VehicleVariant variant) {
-        level.setBlock(toWorld(center, facing, -2, 0, -3), Blocks.WHITE_CARPET.defaultBlockState(), 3);
-        level.setBlock(toWorld(center, facing, -1, 0, -4), Blocks.WHITE_CARPET.defaultBlockState(), 3);
-        level.setBlock(toWorld(center, facing, 2, 0, -2), Blocks.SPRUCE_TRAPDOOR.defaultBlockState()
-                .setValue(TrapDoorBlock.OPEN, false)
-                .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
-                .setValue(TrapDoorBlock.FACING, facing.getClockWise()), 3);
-
-        if (variant == FrozenEvacVehiclePlacement.VehicleVariant.ROADSIDE_BREAKDOWN) {
-            level.setBlock(toWorld(center, facing, 2, 0, 2), Blocks.COBBLESTONE_WALL.defaultBlockState(), 3);
-            level.setBlock(toWorld(center, facing, -2, 0, 1), Blocks.GRAY_CARPET.defaultBlockState(), 3);
-        }
-
-        if (variant == FrozenEvacVehiclePlacement.VehicleVariant.FAILED_TRANSFER) {
-            if (phase >= 3) {
-                level.setBlock(toWorld(center, facing, 0, 1, 0), Blocks.SKELETON_SKULL.defaultBlockState(), 3);
-            } else {
+        switch (variant) {
+            case ABANDONED_EMPTY -> {
+                level.setBlock(toWorld(center, facing, -2, 0, -3), Blocks.WHITE_CARPET.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -1, 0, -4), Blocks.WHITE_CARPET.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 2, 0, -2), Blocks.SPRUCE_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.OPEN, false)
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.FACING, facing.getClockWise()), 3);
+            }
+            case ROADSIDE_BREAKDOWN -> {
+                level.setBlock(toWorld(center, facing, 2, 0, 2), Blocks.COBBLESTONE_WALL.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 2, 0, 1), Blocks.IRON_BARS.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -2, 0, 1), Blocks.GRAY_CARPET.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -2, 0, 2), Blocks.TRIPWIRE_HOOK.defaultBlockState()
+                        .setValue(net.minecraft.world.level.block.TripWireHookBlock.FACING, facing.getCounterClockWise()), 3);
+            }
+            case FAILED_TRANSFER -> {
                 level.setBlock(toWorld(center, facing, 1, 0, -3), Blocks.BROWN_CARPET.defaultBlockState(), 3);
                 level.setBlock(toWorld(center, facing, 1, 0, -4), Blocks.GRAY_CARPET.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -2, 0, -3), Blocks.GRAY_CARPET.defaultBlockState(), 3);
+                if (phase >= 3) {
+                    level.setBlock(toWorld(center, facing, 0, 1, 0), Blocks.SKELETON_SKULL.defaultBlockState(), 3);
+                }
+            }
+        }
+    }
+
+    private static void applyVariantShellDetails(ServerLevel level, BlockPos center, Direction facing,
+                                                 FrozenEvacVehiclePlacement.VehicleVariant variant) {
+        switch (variant) {
+            case ABANDONED_EMPTY -> {
+                BlockState rack = Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing)
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, false);
+                level.setBlock(toWorld(center, facing, -1, 3, -1), rack, 3);
+                level.setBlock(toWorld(center, facing, 1, 3, -1), rack, 3);
+                level.setBlock(toWorld(center, facing, -1, 3, 0), rack, 3);
+                level.setBlock(toWorld(center, facing, 1, 3, 0), rack, 3);
+                level.setBlock(toWorld(center, facing, 0, 1, 3), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.TOP), 3);
+                level.setBlock(toWorld(center, facing, -2, 1, 1), Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing.getCounterClockWise())
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, true), 3);
+                level.setBlock(toWorld(center, facing, 2, 1, 1), Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing.getClockWise())
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, true), 3);
+            }
+            case ROADSIDE_BREAKDOWN -> {
+                level.setBlock(toWorld(center, facing, 0, 2, 2), Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing)
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, true), 3);
+                level.setBlock(toWorld(center, facing, 0, 1, 2), Blocks.POLISHED_ANDESITE.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 0, 2), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 0, 3), Blocks.COBBLESTONE_WALL.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 1, 1), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 2, 1), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 1, 0), Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing.getClockWise())
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, true), 3);
+                level.setBlock(toWorld(center, facing, -1, 3, -1), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.TOP), 3);
+                level.setBlock(toWorld(center, facing, 0, 3, -1), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.TOP), 3);
+                level.setBlock(toWorld(center, facing, 1, 3, -1), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.TOP), 3);
+            }
+            case FAILED_TRANSFER -> {
+                level.setBlock(toWorld(center, facing, 0, 1, 1), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -1, 2, 0), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 0, 2, 0), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 0, 2, -1), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, 1, 1, -2), Blocks.IRON_TRAPDOOR.defaultBlockState()
+                        .setValue(TrapDoorBlock.FACING, facing.getCounterClockWise())
+                        .setValue(TrapDoorBlock.HALF, Half.BOTTOM)
+                        .setValue(TrapDoorBlock.OPEN, true), 3);
+                level.setBlock(toWorld(center, facing, -1, 1, -2), Blocks.IRON_BARS.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -1, 0, 3), Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -1, 0, 4), Blocks.COBBLESTONE_WALL.defaultBlockState(), 3);
+                level.setBlock(toWorld(center, facing, -2, 0, 2), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.BOTTOM), 3);
+                level.setBlock(toWorld(center, facing, -2, 0, 3), Blocks.SMOOTH_STONE_SLAB.defaultBlockState()
+                        .setValue(SlabBlock.TYPE, SlabType.BOTTOM), 3);
             }
         }
     }
@@ -430,6 +517,19 @@ public final class FrozenEvacVehicleStructureBuilder {
             }
             level.setBlock(below, Blocks.DIRT.defaultBlockState(), 3);
         }
+    }
+
+    private static boolean isSoftBrush(BlockState state) {
+        return state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) || state.is(Blocks.POWDER_SNOW)
+                || state.is(Blocks.SHORT_GRASS) || state.is(Blocks.TALL_GRASS)
+                || state.is(Blocks.FERN) || state.is(Blocks.LARGE_FERN)
+                || state.is(Blocks.DEAD_BUSH) || state.is(Blocks.OAK_LEAVES)
+                || state.is(Blocks.SPRUCE_LEAVES) || state.is(Blocks.BIRCH_LEAVES)
+                || state.is(Blocks.JUNGLE_LEAVES) || state.is(Blocks.ACACIA_LEAVES)
+                || state.is(Blocks.DARK_OAK_LEAVES) || state.is(Blocks.MANGROVE_LEAVES)
+                || state.is(Blocks.OAK_LOG) || state.is(Blocks.SPRUCE_LOG)
+                || state.is(Blocks.BIRCH_LOG) || state.is(Blocks.JUNGLE_LOG)
+                || state.is(Blocks.ACACIA_LOG) || state.is(Blocks.DARK_OAK_LOG);
     }
 
     private static BlockPos toWorld(BlockPos origin, Direction facing, int right, int up, int forward) {

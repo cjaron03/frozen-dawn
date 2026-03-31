@@ -32,6 +32,8 @@ public final class FrozenEvacVehiclePlacement {
     private static final int FORCED_MAX_HEIGHT_VARIATION = 12;
     private static final int SEARCH_ANGLE_STEPS = 32;
     private static final int ROLL_PERCENT = 50;
+    private static final int FALLBACK_SEARCH_ANGLE_STEPS = 64;
+    private static final int FALLBACK_MAX_DISTANCE = 112;
 
     private static final Set<Long> pendingVehiclePlacements = ConcurrentHashMap.newKeySet();
 
@@ -180,13 +182,11 @@ public final class FrozenEvacVehiclePlacement {
 
         Candidate chosen = best != null ? best : (looseBest != null ? looseBest : forcedBest);
         if (chosen == null) {
-            int x = campCenter.getX() + Mth.floor(Math.cos(baseAngle) * 46.0D);
-            int z = campCenter.getZ() + Mth.floor(Math.sin(baseAngle) * 46.0D);
-            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-            if (y <= level.getMinBuildHeight() + 3) {
-                y = Math.max(level.getMinBuildHeight() + 4, campCenter.getY());
+            Candidate dryFallback = findDryFallback(level, campCenter, baseAngle, seed);
+            if (dryFallback != null) {
+                return new VehiclePlan(dryFallback.center(), variant);
             }
-            return new VehiclePlan(new BlockPos(x, y, z), variant);
+            return null;
         }
         return new VehiclePlan(chosen.center(), variant);
     }
@@ -217,6 +217,9 @@ public final class FrozenEvacVehiclePlacement {
                 return null;
             }
             int topY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, worldPos.getX(), worldPos.getZ());
+            if (isWetFootprint(level, worldPos.getX(), topY, worldPos.getZ())) {
+                return null;
+            }
             minY = Math.min(minY, topY);
             maxY = Math.max(maxY, topY);
             surfaceBias += surfaceBias(level.getBlockState(new BlockPos(worldPos.getX(), topY - 1, worldPos.getZ())));
@@ -227,11 +230,14 @@ public final class FrozenEvacVehiclePlacement {
             return null;
         }
 
+        int placementY = placementY(sampleY, minY, maxY);
+
         int score = heightVariation * 20;
         score += Math.abs(distance - 52) * 2;
         score += surfaceBias;
+        score += Math.abs(placementY - sampleY) * 3;
         score += Math.floorMod((int) (seed + angleIndex * 17L + x * 7L - z * 13L), 9);
-        return new Candidate(new BlockPos(x, sampleY, z), score);
+        return new Candidate(new BlockPos(x, placementY, z), score);
     }
 
     @Nullable
@@ -260,6 +266,9 @@ public final class FrozenEvacVehiclePlacement {
                 return null;
             }
             int topY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, worldPos.getX(), worldPos.getZ());
+            if (isWetFootprint(level, worldPos.getX(), topY, worldPos.getZ())) {
+                return null;
+            }
             minY = Math.min(minY, topY);
             maxY = Math.max(maxY, topY);
             surfaceBias += surfaceBias(level.getBlockState(new BlockPos(worldPos.getX(), topY - 1, worldPos.getZ())));
@@ -270,11 +279,14 @@ public final class FrozenEvacVehiclePlacement {
             return null;
         }
 
+        int placementY = placementY(sampleY, minY, maxY);
+
         int score = 100 + heightVariation * 18;
         score += Math.abs(distance - 50);
         score += surfaceBias;
+        score += Math.abs(placementY - sampleY) * 3;
         score += Math.floorMod((int) (seed + angleIndex * 13L + x * 5L - z * 11L), 11);
-        return new Candidate(new BlockPos(x, sampleY, z), score);
+        return new Candidate(new BlockPos(x, placementY, z), score);
     }
 
     @Nullable
@@ -306,6 +318,9 @@ public final class FrozenEvacVehiclePlacement {
         for (int[] sample : samples) {
             BlockPos worldPos = toWorld(new BlockPos(x, sampleY, z), facing, sample[0], 0, sample[1]);
             int topY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, worldPos.getX(), worldPos.getZ());
+            if (isWetFootprint(level, worldPos.getX(), topY, worldPos.getZ())) {
+                return null;
+            }
             minY = Math.min(minY, topY);
             maxY = Math.max(maxY, topY);
             surfaceBias += surfaceBias(level.getBlockState(new BlockPos(worldPos.getX(), topY - 1, worldPos.getZ())));
@@ -316,12 +331,61 @@ public final class FrozenEvacVehiclePlacement {
             return null;
         }
 
+        int placementY = placementY(sampleY, minY, maxY);
+
         int score = 200 + heightVariation * 12;
         score += Math.abs(distance - 48);
         score += surfaceBias;
-        score += Math.abs(sampleY - campCenter.getY());
+        score += Math.abs(placementY - campCenter.getY());
         score += Math.floorMod((int) (seed + angleIndex * 7L + x * 3L - z * 5L), 13);
-        return new Candidate(new BlockPos(x, sampleY, z), score);
+        return new Candidate(new BlockPos(x, placementY, z), score);
+    }
+
+    @Nullable
+    private static Candidate findDryFallback(ServerLevel level, BlockPos campCenter, double baseAngle, long seed) {
+        Candidate best = null;
+        for (int angleIndex = 0; angleIndex < FALLBACK_SEARCH_ANGLE_STEPS; angleIndex++) {
+            double angle = baseAngle + angleIndex * ((Math.PI * 2.0D) / FALLBACK_SEARCH_ANGLE_STEPS);
+            for (int distance = VEHICLE_MIN_DISTANCE; distance <= FALLBACK_MAX_DISTANCE; distance += 2) {
+                int x = campCenter.getX() + Mth.floor(Math.cos(angle) * distance);
+                int z = campCenter.getZ() + Mth.floor(Math.sin(angle) * distance);
+                int topY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                if (topY <= level.getMinBuildHeight() + 3 || isWetFootprint(level, x, topY, z)) {
+                    continue;
+                }
+
+                int score = Math.abs(distance - 48) * 3
+                        + Math.abs(topY - campCenter.getY())
+                        + Math.floorMod((int) (seed + angleIndex * 19L + x * 3L - z * 7L), 17);
+                Candidate candidate = new Candidate(new BlockPos(x, topY, z), score);
+                if (best == null || candidate.score() < best.score()) {
+                    best = candidate;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static int placementY(int sampleY, int minY, int maxY) {
+        return Mth.clamp((minY + maxY + 1) / 2, minY, maxY);
+    }
+
+    private static boolean isWetFootprint(ServerLevel level, int x, int topY, int z) {
+        if (topY <= level.getMinBuildHeight() + 1) {
+            return true;
+        }
+
+        BlockPos below = new BlockPos(x, topY - 1, z);
+        BlockPos at = new BlockPos(x, topY, z);
+        if (!level.getFluidState(below).isEmpty() || !level.getFluidState(at).isEmpty()) {
+            return true;
+        }
+        BlockState belowState = level.getBlockState(below);
+        BlockState atState = level.getBlockState(at);
+        return belowState.liquid() || atState.liquid()
+                || belowState.is(Blocks.WATER) || atState.is(Blocks.WATER)
+                || belowState.is(Blocks.KELP) || belowState.is(Blocks.KELP_PLANT)
+                || belowState.is(Blocks.SEAGRASS) || belowState.is(Blocks.TALL_SEAGRASS);
     }
 
     private static int surfaceBias(BlockState state) {
