@@ -16,19 +16,27 @@ import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.TowerPlacement;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.Registries;
 import com.frozendawn.phase.PhaseManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -50,6 +58,11 @@ import java.util.Locale;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public class FrozenDawnCommand {
 
+    private static final ResourceKey<Structure> FROZEN_TOWN = ResourceKey.create(
+            Registries.STRUCTURE,
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frozen_town")
+    );
+
     private static final SuggestionProvider<CommandSourceStack> PRESET_SUGGESTIONS = (context, builder) ->
             SharedSuggestionProvider.suggest(
                     Arrays.stream(ConfigPresets.values()).map(p -> p.name().toLowerCase(Locale.ROOT)),
@@ -66,8 +79,18 @@ public class FrozenDawnCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("frozendawn")
                 .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("status")
-                        .executes(FrozenDawnCommand::status))
+                .executes(FrozenDawnCommand::help)
+                .then(Commands.literal("help")
+                        .executes(FrozenDawnCommand::help))
+                .then(worldCommands())
+                .then(locateCommands())
+                .then(winCommands())
+        );
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
+        return Commands.literal("world")
+                .then(Commands.literal("status").executes(FrozenDawnCommand::status))
                 .then(Commands.literal("setday")
                         .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
                                 .executes(FrozenDawnCommand::setDay)))
@@ -77,27 +100,37 @@ public class FrozenDawnCommand {
                                 .then(Commands.argument("substage", StringArgumentType.word())
                                         .suggests(SUBSTAGE_SUGGESTIONS)
                                         .executes(FrozenDawnCommand::setPhaseSubstage))))
-                .then(Commands.literal("pause")
-                        .executes(FrozenDawnCommand::togglePause))
-                .then(Commands.literal("reset")
-                        .executes(FrozenDawnCommand::reset))
+                .then(Commands.literal("pause").executes(FrozenDawnCommand::togglePause))
+                .then(Commands.literal("reset").executes(FrozenDawnCommand::reset))
                 .then(Commands.literal("preset")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
-                                .executes(FrozenDawnCommand::applyPreset)))
-                .then(Commands.literal("blastpit")
-                        .executes(FrozenDawnCommand::blastPit))
-                .then(Commands.literal("towers")
-                        .executes(FrozenDawnCommand::towers))
-                .then(Commands.literal("landmarks")
-                        .executes(FrozenDawnCommand::landmarks))
-                .then(Commands.literal("camps")
-                        .executes(FrozenDawnCommand::camps))
-                .then(Commands.literal("stations")
-                        .executes(FrozenDawnCommand::stations))
-                .then(Commands.literal("satellite")
-                        .executes(FrozenDawnCommand::satellite))
-        );
+                                .executes(FrozenDawnCommand::applyPreset)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> locateCommands() {
+        return Commands.literal("locate")
+                .then(Commands.literal("all").executes(FrozenDawnCommand::locateAll))
+                .then(Commands.literal("orsa").executes(FrozenDawnCommand::locateOrsa))
+                .then(Commands.literal("towns").executes(FrozenDawnCommand::towns));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> winCommands() {
+        return Commands.literal("win")
+                .then(Commands.literal("satellite").executes(FrozenDawnCommand::satellite));
+    }
+
+    private static int help(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Commands ---"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world status"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setday <day>"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setphase <phase> [early|mid|late]"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world pause | reset | preset <name>"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate towns"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate all"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn win satellite"), false);
+        return 1;
     }
 
     private static int status(CommandContext<CommandSourceStack> context) {
@@ -326,15 +359,22 @@ public class FrozenDawnCommand {
         return 1;
     }
 
-    private static int landmarks(CommandContext<CommandSourceStack> context) {
+    private static int locateOrsa(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         refreshLandmarks(server);
-        context.getSource().sendSuccess(() -> Component.literal("--- Landmark Refresh ---"), false);
+        context.getSource().sendSuccess(() -> Component.literal("--- ORSA Locate ---"), false);
         blastPit(context);
         towers(context);
         camps(context);
         cargoDrops(context);
         stations(context);
+        return 1;
+    }
+
+    private static int locateAll(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal("--- Locate Summary ---"), false);
+        locateOrsa(context);
+        towns(context);
         return 1;
     }
 
@@ -574,6 +614,37 @@ public class FrozenDawnCommand {
         } else {
             context.getSource().sendSuccess(() -> Component.literal("  Monitoring Stations: none eligible in nearby regions"), false);
         }
+        return 1;
+    }
+
+    private static int towns(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        Holder<Structure> holder = level.registryAccess()
+                .registryOrThrow(Registries.STRUCTURE)
+                .getHolder(FROZEN_TOWN)
+                .orElse(null);
+        if (holder == null) {
+            context.getSource().sendFailure(Component.literal("  Frozen Town structure is not registered"));
+            return 0;
+        }
+
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        Pair<BlockPos, Holder<Structure>> result = level.getChunkSource()
+                .getGenerator()
+                .findNearestMapStructure(level, HolderSet.direct(holder), origin, 200, false);
+
+        if (result == null) {
+            context.getSource().sendSuccess(() -> Component.literal("  Frozen Towns: none found within search radius"), false);
+            return 1;
+        }
+
+        BlockPos town = result.getFirst();
+        int dx = town.getX() - origin.getX();
+        int dz = town.getZ() - origin.getZ();
+        int dist = (int) Math.sqrt(dx * (long) dx + dz * (long) dz);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Nearest Frozen Town: (" + town.getX() + ", " + town.getZ() + ")"
+                        + " | ~" + dist + " blocks"), false);
         return 1;
     }
 

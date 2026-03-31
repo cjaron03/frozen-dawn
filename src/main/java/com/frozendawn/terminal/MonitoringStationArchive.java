@@ -1,7 +1,7 @@
 package com.frozendawn.terminal;
 
 import com.frozendawn.data.ApocalypseState;
-import com.frozendawn.world.CampPlacement;
+import com.frozendawn.world.CampDirectiveHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
@@ -45,7 +45,7 @@ public final class MonitoringStationArchive {
         int currentDay = Math.max(0, Math.min(state.getCurrentDay(), totalDays));
         LocalDate currentDate = APOCALYPSE_START.plusDays(currentDay);
         long stationSeed = level.getSeed() ^ stationCenter.asLong() ^ 0x574558415243484CL;
-        CampDirective transferSite = findNearestCamp(level, stationCenter);
+        CampDirectiveHelper.CampDirective transferSite = CampDirectiveHelper.findNearestCamp(level, stationCenter);
 
         String title = PAGE_TITLES[pageIndex];
 
@@ -215,7 +215,8 @@ public final class MonitoringStationArchive {
         return lines;
     }
 
-    private static List<String> buildFooterLines(long stationSeed, LocalDate currentDate, int pageIndex, CampDirective transferSite) {
+    private static List<String> buildFooterLines(long stationSeed, LocalDate currentDate, int pageIndex,
+                                                 CampDirectiveHelper.CampDirective transferSite) {
         List<String> lines = new ArrayList<>();
         Random random = new Random(stationSeed ^ 0x464F4F5445524CL);
         LocalDate lastLoginDate = currentDate.minusDays(1L + random.nextInt(4));
@@ -276,42 +277,6 @@ public final class MonitoringStationArchive {
         return Math.sin(day * frequency + (seed & 0xFF) * 0.071D) * amplitude;
     }
 
-    private static CampDirective findNearestCamp(ServerLevel level, BlockPos origin) {
-        long seed = level.getSeed();
-        int originRegionX = Math.floorDiv(origin.getX() >> 4, 24);
-        int originRegionZ = Math.floorDiv(origin.getZ() >> 4, 24);
-        CampDirective nearest = null;
-        double nearestDistSq = Double.MAX_VALUE;
-
-        for (int drx = -4; drx <= 4; drx++) {
-            for (int drz = -4; drz <= 4; drz++) {
-                int regionX = originRegionX + drx;
-                int regionZ = originRegionZ + drz;
-                int[] pos = CampPlacement.getCampBlockPos(seed, regionX, regionZ);
-                if (pos == null || !CampPlacement.isEligibleCampSite(level, pos[0], pos[1])) {
-                    continue;
-                }
-
-                double distSq = origin.distSqr(new BlockPos(pos[0], origin.getY(), pos[1]));
-                if (distSq < nearestDistSq) {
-                    nearestDistSq = distSq;
-                    nearest = new CampDirective(
-                            new BlockPos(pos[0], 0, pos[1]),
-                            formatCampDesignation(regionX, regionZ)
-                    );
-                }
-            }
-        }
-
-        return nearest;
-    }
-
-    private static String formatCampDesignation(int regionX, int regionZ) {
-        char letter = (char) ('A' + Math.floorMod(regionX, 26));
-        int number = Math.floorMod(regionZ, 99) + 1;
-        return letter + "-" + String.format(Locale.US, "%02d", number);
-    }
-
     public record Snapshot(String title, String body, String auditLog, int pageIndex, int pageCount,
                            boolean passwordPrompt) {
     }
@@ -320,6 +285,4 @@ public final class MonitoringStationArchive {
                            int pressureMb, String windDir, String precipType) {
     }
 
-    private record CampDirective(BlockPos pos, String designation) {
-    }
 }

@@ -32,6 +32,7 @@ import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
+import com.frozendawn.world.FrozenTownRuntime;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
@@ -52,6 +53,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -109,6 +111,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
+        FrozenTownRuntime.reset();
     }
 
     @SubscribeEvent
@@ -171,6 +174,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.tickPlacement(overworld);
         CargoDropPlacement.tickPlacement(overworld);
         MonitoringStationPlacement.tickPlacement(overworld);
+        FrozenTownRuntime.tickProcessing(overworld);
         SatellitePlacement.tickPlacement(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
@@ -214,6 +218,17 @@ public class WorldTickHandler {
      */
     @SubscribeEvent
     public static void onMobSpawn(FinalizeSpawnEvent event) {
+        if (event.getEntity().level() instanceof ServerLevel serverLevel
+                && FrozenTownRuntime.shouldSuppressHostileSpawn(
+                serverLevel,
+                event.getEntity().blockPosition(),
+                event.getSpawnType() == MobSpawnType.NATURAL,
+                event.getEntity()
+        )) {
+            event.setSpawnCancelled(true);
+            return;
+        }
+
         if (FrozenDawnPhaseTracker.getPhase() < 4) return;
         if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         if (event.getEntity() instanceof FrostbittenEntity) return;

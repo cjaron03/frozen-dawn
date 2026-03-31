@@ -419,7 +419,7 @@ public final class FrozenEvacVehicleStructureBuilder {
     }
 
     private static ItemStack createTransferOrder(BlockPos campCenter) {
-        String designation = formatCampDesignation(campCenter);
+        String designation = CampDirectiveHelper.formatCampDesignation(campCenter);
         return createPaperNote(
                 "Transfer Order",
                 "DIRECTIVE: REPORT TO FIELD CAMP " + designation,
@@ -429,7 +429,7 @@ public final class FrozenEvacVehicleStructureBuilder {
     }
 
     private static ItemStack createPickupDelayNotice(BlockPos campCenter) {
-        String designation = formatCampDesignation(campCenter);
+        String designation = CampDirectiveHelper.formatCampDesignation(campCenter);
         return createPaperNote(
                 "Pickup Delay Notice",
                 "Transfer pickup delayed due to whiteout conditions.",
@@ -439,7 +439,7 @@ public final class FrozenEvacVehicleStructureBuilder {
     }
 
     private static ItemStack createStationClosureMemo(BlockPos campCenter) {
-        String designation = formatCampDesignation(campCenter);
+        String designation = CampDirectiveHelper.formatCampDesignation(campCenter);
         return createPaperNote(
                 "Closure Memo",
                 "All civilian observers to report to Field Camp " + designation + ".",
@@ -485,14 +485,6 @@ public final class FrozenEvacVehicleStructureBuilder {
         }
         stack.set(DataComponents.LORE, new ItemLore(lore));
         return stack;
-    }
-
-    private static String formatCampDesignation(BlockPos campCenter) {
-        int regionX = Math.floorDiv(campCenter.getX() >> 4, 24);
-        int regionZ = Math.floorDiv(campCenter.getZ() >> 4, 24);
-        char letter = (char) ('A' + Math.floorMod(regionX, 26));
-        int number = Math.floorMod(regionZ, 99) + 1;
-        return letter + "-" + String.format(Locale.US, "%02d", number);
     }
 
     private static Direction directionToward(BlockPos from, BlockPos to) {

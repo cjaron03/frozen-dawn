@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:jigsaw",
+  "biomes": "#frozendawn:has_structure/frozen_town",
+  "max_distance_from_center": 112,
+  "project_start_to_heightmap": "WORLD_SURFACE_WG",
+  "size": 9,
+  "spawn_overrides": {},
+  "start_height": {
+    "absolute": 0
+  },
+  "start_pool": "frozendawn:frozen_town/town_centers",
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin",
+  "use_expansion_hack": true
+}

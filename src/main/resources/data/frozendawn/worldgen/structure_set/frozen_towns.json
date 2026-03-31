@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 842337451,
+    "separation": 12,
+    "spacing": 46
+  },
+  "structures": [
+    {
+      "structure": "frozendawn:frozen_town",
+      "weight": 1
+    }
+  ]
+}
