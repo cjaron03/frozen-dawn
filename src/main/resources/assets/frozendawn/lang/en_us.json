@@ -24,6 +24,7 @@
   "block.frozendawn.camp_radio": "ORSA Field Radio",
   "block.frozendawn.orsa_flag": "ORSA Flag",
   "block.frozendawn.alarm_beacon": "Emergency Alarm Beacon",
+  "block.frozendawn.wall_alarm_beacon": "Wall Emergency Alarm Beacon",
   "block.frozendawn.tower_antenna_console": "Tower Antenna Console",
   "block.frozendawn.monitoring_station_terminal": "Monitoring Station Terminal",
 

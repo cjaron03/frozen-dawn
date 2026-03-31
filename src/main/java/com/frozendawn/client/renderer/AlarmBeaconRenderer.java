@@ -40,6 +40,7 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         poseStack.pushPose();
         float beamIntensity = entity.getBeamIntensity(partialTick);
+        boolean wallMounted = entity.isWallMounted();
 
         poseStack.pushPose();
         Direction facing = entity.getBlockState().getValue(AlarmBeaconBlock.FACING);
@@ -53,42 +54,43 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
         poseStack.mulPose(Axis.YP.rotationDegrees(yRot));
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        renderScaledBlock(poseStack, bufferSource, BASE_STATE, 3f / 16f, 0.0f, 3f / 16f,
-                10f / 16f, 4f / 16f, 10f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 4f / 16f, 4f / 16f, 4f / 16f,
-                8f / 16f, 1f / 16f, 8f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 5f / 16f, 5f / 16f, 5f / 16f,
-                6f / 16f, 5f / 16f, 6f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 4f / 16f, 10f / 16f, 4f / 16f,
-                8f / 16f, 1f / 16f, 8f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 7f / 16f, 4f / 16f, 1f / 16f,
-                2f / 16f, 3f / 16f, 2f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 6f / 16f, 4f / 16f, 2f / 16f,
-                4f / 16f, 2f / 16f, 2f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 7f / 16f, 6f / 16f, 7f / 16f,
-                2f / 16f, 5f / 16f, 2f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 6f / 16f, 11f / 16f, 6f / 16f,
-                4f / 16f, 1f / 16f, 4f / 16f, packedLight, packedOverlay);
-
         int emissiveLight = beamIntensity > 0.04f ? 0x00F000F0 : packedLight;
 
-        poseStack.pushPose();
-        poseStack.translate(0.5, 0.0, 0.5);
-        float spin = entity.getCombinedYawDegrees(partialTick) - baseYaw(facing);
-        poseStack.mulPose(Axis.YP.rotationDegrees(spin));
-        poseStack.translate(-0.5, 0.0, -0.5);
-
-        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 6f / 16f, 11f / 16f, 1f / 16f,
-                4f / 16f, 1f / 16f, 7f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, beamIntensity > 0.08f ? ACTIVE_LENS_STATE : INACTIVE_LENS_STATE, 6f / 16f, 11f / 16f, 0f,
-                4f / 16f, 2f / 16f, 3f / 16f, emissiveLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, beamIntensity > 0.12f ? ACTIVE_CAP_STATE : INACTIVE_CAP_STATE, 6f / 16f, 13f / 16f, 1f / 16f,
-                4f / 16f, 1f / 16f, 4f / 16f, emissiveLight, packedOverlay);
-
-        if (beamIntensity > 0.03f) {
-            renderLensGlow(poseStack, bufferSource, beamIntensity);
+        if (wallMounted) {
+            renderWallMountHousing(poseStack, bufferSource, packedLight, packedOverlay, beamIntensity, emissiveLight);
+        } else {
+            renderPedestalHousing(poseStack, bufferSource, packedLight, packedOverlay);
         }
-        poseStack.popPose();
+
+        if (!wallMounted) {
+            poseStack.pushPose();
+            poseStack.translate(0.5, 0.0, 0.5);
+            float spin = entity.getCombinedYawDegrees(partialTick) - baseYaw(facing);
+            poseStack.mulPose(Axis.YP.rotationDegrees(spin));
+            poseStack.translate(-0.5, 0.0, -0.5);
+
+            renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 6f / 16f, 11f / 16f, 1f / 16f,
+                    4f / 16f, 1f / 16f, 7f / 16f, packedLight, packedOverlay);
+            renderScaledBlock(poseStack, bufferSource, beamIntensity > 0.08f ? ACTIVE_LENS_STATE : INACTIVE_LENS_STATE,
+                    6f / 16f, 11f / 16f, 0f,
+                    4f / 16f, 2f / 16f, 3f / 16f, emissiveLight, packedOverlay);
+            renderScaledBlock(poseStack, bufferSource, beamIntensity > 0.12f ? ACTIVE_CAP_STATE : INACTIVE_CAP_STATE,
+                    6f / 16f, 13f / 16f, 1f / 16f,
+                    4f / 16f, 1f / 16f, 4f / 16f, emissiveLight, packedOverlay);
+
+            if (beamIntensity > 0.03f) {
+                renderLensGlow(poseStack, bufferSource, beamIntensity, false);
+            }
+            poseStack.popPose();
+        } else if (beamIntensity > 0.03f) {
+            poseStack.pushPose();
+            poseStack.translate(8.0f / 16.0f, 0.0f, 1.0f / 16.0f);
+            float spin = entity.getCombinedYawDegrees(partialTick) - baseYaw(facing);
+            poseStack.mulPose(Axis.YP.rotationDegrees(spin));
+            poseStack.translate(-8.0f / 16.0f, 0.0f, -1.0f / 16.0f);
+            renderLensGlow(poseStack, bufferSource, beamIntensity, true);
+            poseStack.popPose();
+        }
 
         poseStack.popPose();
         poseStack.popPose();
@@ -113,18 +115,54 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
         poseStack.popPose();
     }
 
-    private void renderLensGlow(PoseStack poseStack, MultiBufferSource bufferSource, float beamIntensity) {
+    private void renderPedestalHousing(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        renderScaledBlock(poseStack, bufferSource, BASE_STATE, 3f / 16f, 0.0f, 3f / 16f,
+                10f / 16f, 4f / 16f, 10f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 4f / 16f, 4f / 16f, 4f / 16f,
+                8f / 16f, 1f / 16f, 8f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 5f / 16f, 5f / 16f, 5f / 16f,
+                6f / 16f, 5f / 16f, 6f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 4f / 16f, 10f / 16f, 4f / 16f,
+                8f / 16f, 1f / 16f, 8f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 7f / 16f, 4f / 16f, 1f / 16f,
+                2f / 16f, 3f / 16f, 2f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 6f / 16f, 4f / 16f, 2f / 16f,
+                4f / 16f, 2f / 16f, 2f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 7f / 16f, 6f / 16f, 7f / 16f,
+                2f / 16f, 5f / 16f, 2f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 6f / 16f, 11f / 16f, 6f / 16f,
+                4f / 16f, 1f / 16f, 4f / 16f, packedLight, packedOverlay);
+    }
+
+    private void renderWallMountHousing(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay,
+                                        float beamIntensity, int emissiveLight) {
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 4f / 16f, 4f / 16f, 13f / 16f,
+                8f / 16f, 8f / 16f, 3f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 7f / 16f, 7f / 16f, 9f / 16f,
+                2f / 16f, 2f / 16f, 4f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 5f / 16f, 5f / 16f, 3f / 16f,
+                6f / 16f, 6f / 16f, 6f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, DARK_STATE, 6f / 16f, 6f / 16f, 2f / 16f,
+                4f / 16f, 4f / 16f, 4f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, TRIM_STATE, 5f / 16f, 5f / 16f, 0f,
+                6f / 16f, 6f / 16f, 2f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, beamIntensity > 0.08f ? ACTIVE_LENS_STATE : INACTIVE_LENS_STATE,
+                6f / 16f, 6f / 16f, -1f / 16f,
+                4f / 16f, 4f / 16f, 2f / 16f, emissiveLight, packedOverlay);
+    }
+
+    private void renderLensGlow(PoseStack poseStack, MultiBufferSource bufferSource, float beamIntensity, boolean wallMounted) {
         VertexConsumer glow = bufferSource.getBuffer(RenderType.entityTranslucentEmissive(GLOW_TEXTURE));
         PoseStack.Pose poseEntry = poseStack.last();
         Matrix4f pose = poseEntry.pose();
 
         float lensLeft = 6.0f / 16.0f;
         float lensRight = 10.0f / 16.0f;
-        float lensBottom = 11.0f / 16.0f;
-        float lensTop = 13.0f / 16.0f;
+        float lensBottom = wallMounted ? 6.0f / 16.0f : 11.0f / 16.0f;
+        float lensTop = wallMounted ? 10.0f / 16.0f : 13.0f / 16.0f;
         float lensCenterX = (lensLeft + lensRight) * 0.5f;
         float lensCenterY = (lensBottom + lensTop) * 0.5f;
-        float lensFrontZ = -0.01f;
+        float lensFrontZ = wallMounted ? -0.07f : -0.01f;
 
         int haloAlpha = Math.max(18, Math.min(96, Math.round(beamIntensity * 74.0f)));
         int coreAlpha = Math.max(40, Math.min(210, Math.round(beamIntensity * 174.0f)));
@@ -143,16 +181,16 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
             addTaperedBeamSlice(glow, poseEntry, pose,
                     lensCenterX - 0.045f, lensCenterY - 0.04f, lensFrontZ - 0.02f,
                     lensCenterX + 0.045f, lensCenterY + 0.04f, lensFrontZ - 0.02f,
-                    lensCenterX - 0.11f, lensCenterY - 0.10f, lensFrontZ - 0.24f,
-                    lensCenterX + 0.11f, lensCenterY + 0.10f, lensFrontZ - 0.24f,
+                    lensCenterX - (wallMounted ? 0.09f : 0.11f), lensCenterY - (wallMounted ? 0.08f : 0.10f), lensFrontZ - (wallMounted ? 0.20f : 0.24f),
+                    lensCenterX + (wallMounted ? 0.09f : 0.11f), lensCenterY + (wallMounted ? 0.08f : 0.10f), lensFrontZ - (wallMounted ? 0.20f : 0.24f),
                     164, 16, 16, beamAlpha);
         }
         if (beamCoreAlpha > 0) {
             addTaperedBeamSlice(glow, poseEntry, pose,
                     lensCenterX - 0.018f, lensCenterY - 0.03f, lensFrontZ - 0.015f,
                     lensCenterX + 0.018f, lensCenterY + 0.03f, lensFrontZ - 0.015f,
-                    lensCenterX - 0.05f, lensCenterY - 0.07f, lensFrontZ - 0.18f,
-                    lensCenterX + 0.05f, lensCenterY + 0.07f, lensFrontZ - 0.18f,
+                    lensCenterX - (wallMounted ? 0.04f : 0.05f), lensCenterY - (wallMounted ? 0.055f : 0.07f), lensFrontZ - (wallMounted ? 0.14f : 0.18f),
+                    lensCenterX + (wallMounted ? 0.04f : 0.05f), lensCenterY + (wallMounted ? 0.055f : 0.07f), lensFrontZ - (wallMounted ? 0.14f : 0.18f),
                     230, 54, 42, beamCoreAlpha);
         }
     }

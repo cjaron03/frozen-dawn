@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,lit=false": { "model": "frozendawn:block/alarm_beacon" },
+    "facing=east,lit=false": { "model": "frozendawn:block/alarm_beacon", "y": 90 },
+    "facing=south,lit=false": { "model": "frozendawn:block/alarm_beacon", "y": 180 },
+    "facing=west,lit=false": { "model": "frozendawn:block/alarm_beacon", "y": 270 },
+    "facing=north,lit=true": { "model": "frozendawn:block/alarm_beacon" },
+    "facing=east,lit=true": { "model": "frozendawn:block/alarm_beacon", "y": 90 },
+    "facing=south,lit=true": { "model": "frozendawn:block/alarm_beacon", "y": 180 },
+    "facing=west,lit=true": { "model": "frozendawn:block/alarm_beacon", "y": 270 }
+  }
+}

@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.block.AlarmBeaconBlockEntity;
+import com.frozendawn.init.ModBlocks;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,6 +10,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -24,6 +26,8 @@ public final class AlarmLightSweepSolver {
     private static final float[] YAW_WEIGHTS = {1.0f, 0.92f, 0.92f, 0.78f, 0.78f, 0.58f, 0.58f, 0.42f, 0.42f};
     private static final float[] PITCH_BIASES = {0.08f, 0.22f, 0.36f};
     private static final float[] PITCH_WEIGHTS = {1.0f, 0.80f, 0.60f};
+    private static final float[] WALL_PITCH_BIASES = {0.18f, 0.34f, 0.50f, 0.66f};
+    private static final float[] WALL_PITCH_WEIGHTS = {1.0f, 0.88f, 0.68f, 0.46f};
     private static final float MIN_INTENSITY = 0.06f;
     private static final double SAMPLE_STEP = 0.72;
     private static final int GROUND_SEARCH_DEPTH = 3;
@@ -43,6 +47,8 @@ public final class AlarmLightSweepSolver {
             return new SweepResult(worldLights, dynamicLights, List.of());
         }
 
+        float[] pitchBiases = beacon.isWallMounted() ? WALL_PITCH_BIASES : PITCH_BIASES;
+        float[] pitchWeights = beacon.isWallMounted() ? WALL_PITCH_WEIGHTS : PITCH_WEIGHTS;
         Vec3 headPos = beacon.getHeadWorldPos();
         Vec3 forward = beacon.getBeamDirection(partialTick).normalize();
         Vec3 right = new Vec3(-forward.z, 0.0, forward.x).normalize();
@@ -53,22 +59,16 @@ public final class AlarmLightSweepSolver {
             Vec3 horizontalDir = forward.scale(Mth.cos(yawRadians)).add(right.scale(Mth.sin(yawRadians))).normalize();
             float yawWeight = YAW_WEIGHTS[yawIndex];
 
-            for (int pitchIndex = 0; pitchIndex < PITCH_BIASES.length; pitchIndex++) {
-                float pitchBias = PITCH_BIASES[pitchIndex];
-                float pitchWeight = PITCH_WEIGHTS[pitchIndex];
+            for (int pitchIndex = 0; pitchIndex < pitchBiases.length; pitchIndex++) {
+                float pitchBias = pitchBiases[pitchIndex];
+                float pitchWeight = pitchWeights[pitchIndex];
                 Vec3 rayDir = horizontalDir.scale(1.0 - pitchBias).add(0.0, -pitchBias, 0.0).normalize();
                 Vec3 rayEnd = headPos.add(rayDir.scale(range));
 
                 sampleGroundSweep(level, beacon.getBlockPos(), headPos, rayDir, range, beamIntensity, yawWeight,
                         pitchWeight, worldLights, dynamicLights, paints);
 
-                BlockHitResult hit = level.clip(new ClipContext(
-                        headPos,
-                        rayEnd,
-                        ClipContext.Block.COLLIDER,
-                        ClipContext.Fluid.NONE,
-                        CollisionContext.empty()
-                ));
+                BlockHitResult hit = clipIgnoringAlarmObjects(level, headPos, rayEnd);
                 if (hit.getType() != HitResult.Type.BLOCK || hit.getDirection() == Direction.DOWN) {
                     continue;
                 }
@@ -163,10 +163,62 @@ public final class AlarmLightSweepSolver {
 
     private static boolean isSweepSurface(Level level, BlockPos pos, Direction face) {
         var state = level.getBlockState(pos);
-        if (state.isAir() || !state.getFluidState().isEmpty()) {
+        if (state.isAir() || !state.getFluidState().isEmpty() || isIgnoredAlarmObject(state)) {
             return false;
         }
+        if (face == Direction.UP) {
+            VoxelShape shape = getSurfaceShape(level, pos);
+            return !shape.isEmpty() && shape.max(Direction.Axis.Y) > 0.05;
+        }
         return state.isFaceSturdy(level, pos, face);
+    }
+
+    private static VoxelShape getSurfaceShape(Level level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        VoxelShape shape = state.getShape(level, pos);
+        if (!shape.isEmpty()) {
+            return shape;
+        }
+        return state.getCollisionShape(level, pos);
+    }
+
+    private static BlockHitResult clipIgnoringAlarmObjects(Level level, Vec3 start, Vec3 end) {
+        Vec3 rayDir = end.subtract(start);
+        if (rayDir.lengthSqr() < 1.0E-6) {
+            return BlockHitResult.miss(end, Direction.NORTH, BlockPos.containing(end));
+        }
+
+        Vec3 normalizedDir = rayDir.normalize();
+        Vec3 currentStart = start;
+        for (int attempts = 0; attempts < 8; attempts++) {
+            BlockHitResult hit = level.clip(new ClipContext(
+                    currentStart,
+                    end,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
+                    CollisionContext.empty()
+            ));
+            if (hit.getType() != HitResult.Type.BLOCK) {
+                return hit;
+            }
+            if (!isIgnoredAlarmObject(level.getBlockState(hit.getBlockPos()))) {
+                return hit;
+            }
+
+            currentStart = hit.getLocation().add(normalizedDir.scale(0.08));
+            if (currentStart.distanceToSqr(end) < 0.01) {
+                break;
+            }
+        }
+
+        Direction missDirection = Direction.getNearest(normalizedDir.x, normalizedDir.y, normalizedDir.z);
+        return BlockHitResult.miss(end, missDirection, BlockPos.containing(end));
+    }
+
+    private static boolean isIgnoredAlarmObject(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(ModBlocks.ALARM_BEACON.get())
+                || state.is(ModBlocks.WALL_ALARM_BEACON.get())
+                || state.is(ModBlocks.ORSA_FLAG.get());
     }
 
     private static void addDynamicContribution(Long2IntOpenHashMap dynamicLights, BlockPos surfacePos, Direction face, int dynamicLevel) {

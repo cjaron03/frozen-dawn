@@ -77,7 +77,8 @@ public class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AlarmBeaconBlockEntity>> ALARM_BEACON =
             BLOCK_ENTITIES.register("alarm_beacon",
                     () -> BlockEntityType.Builder.of(AlarmBeaconBlockEntity::new,
-                            ModBlocks.ALARM_BEACON.get()
+                            ModBlocks.ALARM_BEACON.get(),
+                            ModBlocks.WALL_ALARM_BEACON.get()
                     ).build(null));
 
     @SubscribeEvent

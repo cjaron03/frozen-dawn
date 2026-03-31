@@ -54,6 +54,9 @@ public final class FrozenTownRuntime {
     );
 
     private static final Set<Long> pendingTownChunks = ConcurrentHashMap.newKeySet();
+    private static final float WALL_ALARM_CHANCE = 0.32f;
+    private static final int WALL_ALARM_MIN_RADIUS = 5;
+    private static final int WALL_ALARM_MAX_RADIUS = 14;
 
     private FrozenTownRuntime() {
     }
@@ -145,6 +148,7 @@ public final class FrozenTownRuntime {
             BlockState state = level.getBlockState(flagPos);
             if (state.is(ModBlocks.ORSA_FLAG.get())) {
                 ensureTownAlarm(level, flagPos, state);
+                ensureWallMountedTownAlarm(level, flagPos);
             }
         }
     }
@@ -275,6 +279,145 @@ public final class FrozenTownRuntime {
                 && level.getFluidState(pos).isEmpty()
                 && level.getFluidState(pos.above()).isEmpty()
                 && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);
+    }
+
+    private static void ensureWallMountedTownAlarm(ServerLevel level, BlockPos flagPos) {
+        if (!shouldPlaceWallAlarm(level, flagPos) || hasNearbyWallAlarm(level, flagPos)) {
+            return;
+        }
+
+        WallAlarmCandidate candidate = findWallAlarmCandidate(level, flagPos);
+        if (candidate == null) {
+            return;
+        }
+
+        level.setBlock(candidate.pos(), ModBlocks.WALL_ALARM_BEACON.get().defaultBlockState()
+                .setValue(AlarmBeaconBlock.FACING, candidate.facing()), 3);
+    }
+
+    private static boolean shouldPlaceWallAlarm(ServerLevel level, BlockPos flagPos) {
+        RandomSource random = RandomSource.create(level.getSeed() ^ flagPos.asLong() ^ 0x57A11F2DL);
+        return random.nextFloat() < WALL_ALARM_CHANCE;
+    }
+
+    private static boolean hasNearbyWallAlarm(ServerLevel level, BlockPos flagPos) {
+        for (BlockPos scanPos : BlockPos.betweenClosed(flagPos.offset(-16, -2, -16), flagPos.offset(16, 8, 16))) {
+            if (level.getBlockState(scanPos).is(ModBlocks.WALL_ALARM_BEACON.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    private static WallAlarmCandidate findWallAlarmCandidate(ServerLevel level, BlockPos flagPos) {
+        WallAlarmCandidate best = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
+
+        for (int y = flagPos.getY() + 1; y <= flagPos.getY() + 6; y++) {
+            for (int x = flagPos.getX() - WALL_ALARM_MAX_RADIUS; x <= flagPos.getX() + WALL_ALARM_MAX_RADIUS; x++) {
+                for (int z = flagPos.getZ() - WALL_ALARM_MAX_RADIUS; z <= flagPos.getZ() + WALL_ALARM_MAX_RADIUS; z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (!level.hasChunkAt(pos)) {
+                        continue;
+                    }
+
+                    double horizontalDistance = Math.hypot(x - flagPos.getX(), z - flagPos.getZ());
+                    if (horizontalDistance < WALL_ALARM_MIN_RADIUS || horizontalDistance > WALL_ALARM_MAX_RADIUS) {
+                        continue;
+                    }
+
+                    for (Direction facing : Direction.Plane.HORIZONTAL) {
+                        if (!canPlaceWallAlarm(level, pos, facing)) {
+                            continue;
+                        }
+
+                        double alignment = centerFacingAlignment(flagPos, pos, facing);
+                        if (alignment < 0.45) {
+                            continue;
+                        }
+
+                        int openness = forwardAirDepth(level, pos, facing, 3);
+                        if (openness < 2) {
+                            continue;
+                        }
+
+                        BlockPos anchorPos = pos.relative(facing.getOpposite());
+                        BlockState anchorState = level.getBlockState(anchorPos);
+                        double score = openness * 3.0
+                                + alignment * 6.0
+                                - Math.abs(horizontalDistance - 8.5) * 0.35
+                                - Math.abs(y - (flagPos.getY() + 3)) * 0.4
+                                + facadeBonus(anchorState);
+
+                        if (score > bestScore) {
+                            bestScore = score;
+                            best = new WallAlarmCandidate(pos.immutable(), facing);
+                        }
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static boolean canPlaceWallAlarm(ServerLevel level, BlockPos pos, Direction facing) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.isAir() || state.canBeReplaced()) || !level.getFluidState(pos).isEmpty()) {
+            return false;
+        }
+
+        BlockPos anchorPos = pos.relative(facing.getOpposite());
+        BlockState anchorState = level.getBlockState(anchorPos);
+        if (!anchorState.isFaceSturdy(level, anchorPos, facing)) {
+            return false;
+        }
+
+        BlockPos frontPos = pos.relative(facing);
+        return (level.getBlockState(frontPos).isAir() || level.getBlockState(frontPos).canBeReplaced())
+                && level.getFluidState(frontPos).isEmpty();
+    }
+
+    private static double centerFacingAlignment(BlockPos center, BlockPos pos, Direction facing) {
+        double dx = center.getX() - pos.getX();
+        double dz = center.getZ() - pos.getZ();
+        double length = Math.hypot(dx, dz);
+        if (length < 0.001) {
+            return 0.0;
+        }
+        return ((dx / length) * facing.getStepX()) + ((dz / length) * facing.getStepZ());
+    }
+
+    private static int forwardAirDepth(ServerLevel level, BlockPos pos, Direction facing, int depth) {
+        int clear = 0;
+        BlockPos.MutableBlockPos cursor = pos.mutable();
+        for (int i = 1; i <= depth; i++) {
+            cursor.set(pos).move(facing, i);
+            BlockState state = level.getBlockState(cursor);
+            if (!(state.isAir() || state.canBeReplaced()) || !level.getFluidState(cursor).isEmpty()) {
+                break;
+            }
+            clear++;
+        }
+        return clear;
+    }
+
+    private static double facadeBonus(BlockState state) {
+        if (state.is(net.minecraft.world.level.block.Blocks.POLISHED_BLACKSTONE_BRICKS)
+                || state.is(net.minecraft.world.level.block.Blocks.DEEPSLATE_BRICKS)
+                || state.is(net.minecraft.world.level.block.Blocks.STONE_BRICKS)) {
+            return 1.6;
+        }
+        if (state.is(net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS)
+                || state.is(net.minecraft.world.level.block.Blocks.OAK_PLANKS)
+                || state.is(net.minecraft.world.level.block.Blocks.DARK_OAK_PLANKS)) {
+            return 1.0;
+        }
+        return 0.0;
+    }
+
+    private record WallAlarmCandidate(BlockPos pos, Direction facing) {
     }
 
     @Nullable

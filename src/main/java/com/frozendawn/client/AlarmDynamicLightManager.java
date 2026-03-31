@@ -15,6 +15,7 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -210,20 +211,26 @@ public final class AlarmDynamicLightManager {
         poseStack.pushPose();
         poseStack.translate(worldPos.x - cameraPos.x, worldPos.y - cameraPos.y, worldPos.z - cameraPos.z);
         Matrix4f pose = poseStack.last().pose();
+        float surfaceY = getSurfaceTopHeight(currentLevel, paint.pos());
+        if (surfaceY <= 0.01f) {
+            poseStack.popPose();
+            return false;
+        }
 
         boolean rendered = false;
         if (outerA > 0) {
-            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.015f, 214, 32, 24, outerA);
+            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.015f, surfaceY, 214, 32, 24, outerA);
         }
         if (coreA > 0) {
-            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.12f, 255, 120, 96, coreA);
+            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.12f, surfaceY, 255, 120, 96, coreA);
         }
 
         poseStack.popPose();
         return rendered;
     }
 
-    private static boolean addFaceQuad(BufferBuilder buffer, Matrix4f pose, Direction face, float inset, int r, int g, int b, int a) {
+    private static boolean addFaceQuad(BufferBuilder buffer, Matrix4f pose, Direction face, float inset, float surfaceY,
+                                       int r, int g, int b, int a) {
         if (a <= 0) {
             return false;
         }
@@ -234,10 +241,10 @@ public final class AlarmDynamicLightManager {
 
         switch (face) {
             case UP -> {
-                buffer.addVertex(pose, min, 1.0f + o, min).setColor(r, g, b, a);
-                buffer.addVertex(pose, max, 1.0f + o, min).setColor(r, g, b, a);
-                buffer.addVertex(pose, max, 1.0f + o, max).setColor(r, g, b, a);
-                buffer.addVertex(pose, min, 1.0f + o, max).setColor(r, g, b, a);
+                buffer.addVertex(pose, min, surfaceY + o, min).setColor(r, g, b, a);
+                buffer.addVertex(pose, max, surfaceY + o, min).setColor(r, g, b, a);
+                buffer.addVertex(pose, max, surfaceY + o, max).setColor(r, g, b, a);
+                buffer.addVertex(pose, min, surfaceY + o, max).setColor(r, g, b, a);
                 return true;
             }
             case NORTH -> {
@@ -276,6 +283,18 @@ public final class AlarmDynamicLightManager {
 
     private static int alphaInt(float alpha) {
         return Math.max(0, Math.min(255, Math.round(alpha * 255.0f)));
+    }
+
+    private static float getSurfaceTopHeight(ClientLevel level, BlockPos pos) {
+        var state = level.getBlockState(pos);
+        VoxelShape shape = state.getShape(level, pos);
+        if (shape.isEmpty()) {
+            shape = state.getCollisionShape(level, pos);
+        }
+        if (shape.isEmpty()) {
+            return 1.0f;
+        }
+        return (float) shape.max(Direction.Axis.Y);
     }
 
     private record SurfaceKey(BlockPos pos, Direction face) {

@@ -206,6 +206,11 @@ public class AlarmBeaconBlockEntity extends BlockEntity {
     }
 
     public Vec3 getHeadWorldPos() {
+        if (isWallMounted()) {
+            Vec3 forward = getBeamDirection(0.0f);
+            return new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 0.50, worldPosition.getZ() + 0.5)
+                    .add(forward.scale(0.62));
+        }
         return new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.14, worldPosition.getZ() + 0.5);
     }
 
@@ -232,6 +237,10 @@ public class AlarmBeaconBlockEntity extends BlockEntity {
     private static float positiveDegrees(float degrees) {
         float wrapped = degrees % 360.0f;
         return wrapped < 0.0f ? wrapped + 360.0f : wrapped;
+    }
+
+    public boolean isWallMounted() {
+        return getBlockState().getBlock() instanceof WallAlarmBeaconBlock;
     }
 
     @Override
