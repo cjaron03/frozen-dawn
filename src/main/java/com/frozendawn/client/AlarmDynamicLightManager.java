@@ -186,6 +186,10 @@ public final class AlarmDynamicLightManager {
 
     private static boolean addSurfacePaint(BufferBuilder buffer, PoseStack poseStack, RenderLevelStageEvent event,
                                            Vec3 cameraPos, AlarmLightSweepSolver.SurfacePaint paint) {
+        if (paint.face() != Direction.UP) {
+            return false;
+        }
+
         float strength = paint.strength();
         if (strength <= 0.05f) {
             return false;
@@ -209,10 +213,10 @@ public final class AlarmDynamicLightManager {
 
         boolean rendered = false;
         if (outerA > 0) {
-            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.015f, 255, 104, 86, outerA);
+            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.015f, 214, 32, 24, outerA);
         }
         if (coreA > 0) {
-            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.12f, 255, 238, 214, coreA);
+            rendered |= addFaceQuad(buffer, pose, paint.face(), 0.12f, 255, 120, 96, coreA);
         }
 
         poseStack.popPose();

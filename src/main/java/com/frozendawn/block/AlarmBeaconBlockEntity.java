@@ -23,7 +23,7 @@ public class AlarmBeaconBlockEntity extends BlockEntity {
 
     private static final int ACTIVE_PHASE_MAX = 4;
     private static final int RUNDOWN_TICKS = 20;
-    private static final float MAX_SPIN_VELOCITY = 18.0f; // 360 degrees / 20 ticks
+    private static final float MAX_SPIN_VELOCITY = 12.0f; // 360 degrees / 30 ticks, smoother visual sweep
     private static final float SPIN_DECELERATION = MAX_SPIN_VELOCITY / RUNDOWN_TICKS;
 
     private float spinAngle;

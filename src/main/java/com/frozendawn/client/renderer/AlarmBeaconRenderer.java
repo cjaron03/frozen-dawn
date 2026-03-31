@@ -118,14 +118,43 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
         PoseStack.Pose poseEntry = poseStack.last();
         Matrix4f pose = poseEntry.pose();
 
-        int haloAlpha = Math.max(32, Math.min(150, Math.round(beamIntensity * 124.0f)));
-        int coreAlpha = Math.max(18, Math.min(220, Math.round(beamIntensity * 188.0f)));
+        float lensLeft = 6.0f / 16.0f;
+        float lensRight = 10.0f / 16.0f;
+        float lensBottom = 11.0f / 16.0f;
+        float lensTop = 13.0f / 16.0f;
+        float lensCenterX = (lensLeft + lensRight) * 0.5f;
+        float lensCenterY = (lensBottom + lensTop) * 0.5f;
+        float lensFrontZ = -0.01f;
 
-        // Keep the source hot and local to the siren head. No projected bar or beam geometry.
-        addFlatQuad(glow, poseEntry, pose, -0.18f, 0.78f, -0.02f, 0.18f, 1.02f, -0.02f,
-                255, 60, 44, haloAlpha);
-        addFlatQuad(glow, poseEntry, pose, -0.10f, 0.84f, -0.005f, 0.10f, 0.96f, -0.005f,
-                255, 108, 80, coreAlpha);
+        int haloAlpha = Math.max(18, Math.min(96, Math.round(beamIntensity * 74.0f)));
+        int coreAlpha = Math.max(40, Math.min(210, Math.round(beamIntensity * 174.0f)));
+        int beamAlpha = Math.max(0, Math.min(68, Math.round(beamIntensity * 54.0f)));
+        int beamCoreAlpha = Math.max(0, Math.min(104, Math.round(beamIntensity * 76.0f)));
+
+        // Keep the source hot and local to the siren head, then add a very short tapered beam.
+        addFlatQuad(glow, poseEntry, pose, lensCenterX - 0.15f, lensCenterY - 0.07f, lensFrontZ,
+                lensCenterX + 0.15f, lensCenterY + 0.07f, lensFrontZ,
+                180, 18, 18, haloAlpha);
+        addFlatQuad(glow, poseEntry, pose, lensCenterX - 0.075f, lensCenterY - 0.035f, lensFrontZ + 0.006f,
+                lensCenterX + 0.075f, lensCenterY + 0.035f, lensFrontZ + 0.006f,
+                255, 72, 56, coreAlpha);
+
+        if (beamAlpha > 0) {
+            addTaperedBeamSlice(glow, poseEntry, pose,
+                    lensCenterX - 0.045f, lensCenterY - 0.04f, lensFrontZ - 0.02f,
+                    lensCenterX + 0.045f, lensCenterY + 0.04f, lensFrontZ - 0.02f,
+                    lensCenterX - 0.11f, lensCenterY - 0.10f, lensFrontZ - 0.24f,
+                    lensCenterX + 0.11f, lensCenterY + 0.10f, lensFrontZ - 0.24f,
+                    164, 16, 16, beamAlpha);
+        }
+        if (beamCoreAlpha > 0) {
+            addTaperedBeamSlice(glow, poseEntry, pose,
+                    lensCenterX - 0.018f, lensCenterY - 0.03f, lensFrontZ - 0.015f,
+                    lensCenterX + 0.018f, lensCenterY + 0.03f, lensFrontZ - 0.015f,
+                    lensCenterX - 0.05f, lensCenterY - 0.07f, lensFrontZ - 0.18f,
+                    lensCenterX + 0.05f, lensCenterY + 0.07f, lensFrontZ - 0.18f,
+                    230, 54, 42, beamCoreAlpha);
+        }
     }
 
     private void addFlatQuad(VertexConsumer consumer, PoseStack.Pose poseEntry, Matrix4f pose,
@@ -144,6 +173,27 @@ public class AlarmBeaconRenderer implements BlockEntityRenderer<AlarmBeaconBlock
         addVertex(consumer, poseEntry, pose, x1, y1, z1, r, g, b, a, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f);
         addVertex(consumer, poseEntry, pose, x1, y0, z0, r, g, b, a, 1.0f, 1.0f, 0.0f, -1.0f, 0.0f);
         addVertex(consumer, poseEntry, pose, x0, y0, z0, r, g, b, a, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f);
+    }
+
+    private void addTaperedBeamSlice(VertexConsumer consumer, PoseStack.Pose poseEntry, Matrix4f pose,
+                                     float nearX0, float nearY0, float nearZ,
+                                     float nearX1, float nearY1, float nearZ1,
+                                     float farX0, float farY0, float farZ,
+                                     float farX1, float farY1, float farZ1,
+                                     int r, int g, int b, int a) {
+        if (a <= 0) {
+            return;
+        }
+
+        addVertex(consumer, poseEntry, pose, nearX0, nearY0, nearZ, r, g, b, a, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
+        addVertex(consumer, poseEntry, pose, nearX1, nearY1, nearZ1, r, g, b, a, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f);
+        addVertex(consumer, poseEntry, pose, farX1, farY1, farZ1, r, g, b, 0, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        addVertex(consumer, poseEntry, pose, farX0, farY0, farZ, r, g, b, 0, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+
+        addVertex(consumer, poseEntry, pose, farX0, farY0, farZ, r, g, b, 0, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f);
+        addVertex(consumer, poseEntry, pose, farX1, farY1, farZ1, r, g, b, 0, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f);
+        addVertex(consumer, poseEntry, pose, nearX1, nearY1, nearZ1, r, g, b, a, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f);
+        addVertex(consumer, poseEntry, pose, nearX0, nearY0, nearZ, r, g, b, a, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f);
     }
 
     private void addVertex(VertexConsumer consumer, PoseStack.Pose poseEntry, Matrix4f pose,
