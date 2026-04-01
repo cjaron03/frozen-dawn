@@ -114,13 +114,17 @@ public final class AlarmLightSweepSolver {
         int steps = Math.max(1, Mth.ceil(range / SAMPLE_STEP));
         for (int step = 1; step <= steps; step++) {
             double distance = Math.min(range, step * SAMPLE_STEP);
+            Vec3 samplePoint = headPos.add(rayDir.scale(distance));
+            if (isObstructed(level, headPos, samplePoint, distance)) {
+                break;
+            }
+
             float distanceWeight = Mth.clamp((float) (1.0 - (distance / range) * 0.72f), 0.18f, 1.0f);
             float contribution = beamIntensity * yawWeight * pitchWeight * distanceWeight;
             if (contribution <= 0.10f) {
                 continue;
             }
 
-            Vec3 samplePoint = headPos.add(rayDir.scale(distance));
             addGroundContribution(level, beaconPos, samplePoint, contribution, worldLights, dynamicLights, paints);
         }
     }
@@ -213,6 +217,14 @@ public final class AlarmLightSweepSolver {
 
         Direction missDirection = Direction.getNearest(normalizedDir.x, normalizedDir.y, normalizedDir.z);
         return BlockHitResult.miss(end, missDirection, BlockPos.containing(end));
+    }
+
+    private static boolean isObstructed(Level level, Vec3 start, Vec3 end, double targetDistance) {
+        BlockHitResult hit = clipIgnoringAlarmObjects(level, start, end);
+        if (hit.getType() != HitResult.Type.BLOCK) {
+            return false;
+        }
+        return start.distanceTo(hit.getLocation()) + 0.08 < targetDistance;
     }
 
     private static boolean isIgnoredAlarmObject(net.minecraft.world.level.block.state.BlockState state) {

@@ -16,6 +16,7 @@ public final class FrozenTownState extends SavedData {
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_frozen_towns";
 
     private final Set<Long> processedChunks = new HashSet<>();
+    private final Set<Long> configuredFlags = new HashSet<>();
 
     public static FrozenTownState get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
@@ -32,6 +33,11 @@ public final class FrozenTownState extends SavedData {
                 state.processedChunks.add(packed);
             }
         }
+        if (tag.contains("configuredFlags")) {
+            for (long packed : tag.getLongArray("configuredFlags")) {
+                state.configuredFlags.add(packed);
+            }
+        }
         return state;
     }
 
@@ -39,6 +45,9 @@ public final class FrozenTownState extends SavedData {
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         if (!processedChunks.isEmpty()) {
             tag.putLongArray("processedChunks", processedChunks.stream().mapToLong(Long::longValue).toArray());
+        }
+        if (!configuredFlags.isEmpty()) {
+            tag.putLongArray("configuredFlags", configuredFlags.stream().mapToLong(Long::longValue).toArray());
         }
         return tag;
     }
@@ -49,6 +58,16 @@ public final class FrozenTownState extends SavedData {
 
     public void markChunkProcessed(int chunkX, int chunkZ) {
         if (processedChunks.add(packChunkPos(chunkX, chunkZ))) {
+            setDirty();
+        }
+    }
+
+    public boolean isFlagConfigured(long flagPos) {
+        return configuredFlags.contains(flagPos);
+    }
+
+    public void markFlagConfigured(long flagPos) {
+        if (configuredFlags.add(flagPos)) {
             setDirty();
         }
     }

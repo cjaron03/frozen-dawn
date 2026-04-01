@@ -1,0 +1,6 @@
+{
+  "parent": "frozendawn:block/emergency_light_base",
+  "textures": {
+    "lens": "minecraft:block/light_gray_concrete"
+  }
+}

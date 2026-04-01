@@ -3,8 +3,8 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
-import com.frozendawn.block.WallAlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
+import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
@@ -16,6 +16,8 @@ import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
+import com.frozendawn.block.WallAlarmBeaconBlock;
+import com.frozendawn.block.WallEmergencyLightBlock;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BarrelBlock;
@@ -187,6 +189,22 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()
                     .lightLevel(state -> 0)));
+
+    public static final DeferredBlock<EmergencyLightBlock> EMERGENCY_LIGHT = BLOCKS.register("emergency_light",
+            () -> new EmergencyLightBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(EmergencyLightBlock::lightLevelForStage)));
+
+    public static final DeferredBlock<WallEmergencyLightBlock> WALL_EMERGENCY_LIGHT = BLOCKS.register("wall_emergency_light",
+            () -> new WallEmergencyLightBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(EmergencyLightBlock::lightLevelForStage)));
 
     public static final DeferredBlock<TowerAntennaConsoleBlock> TOWER_ANTENNA_CONSOLE = BLOCKS.register("tower_antenna_console",
             () -> new TowerAntennaConsoleBlock(BlockBehaviour.Properties.of()
