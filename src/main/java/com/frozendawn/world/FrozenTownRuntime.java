@@ -27,8 +27,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -54,9 +56,13 @@ public final class FrozenTownRuntime {
     );
 
     private static final Set<Long> pendingTownChunks = ConcurrentHashMap.newKeySet();
-    private static final float WALL_ALARM_CHANCE = 0.32f;
-    private static final int WALL_ALARM_MIN_RADIUS = 5;
-    private static final int WALL_ALARM_MAX_RADIUS = 14;
+    private static final float EXTRA_WALL_ALARM_CHANCE = 0.34f;
+    private static final int BASE_WALL_ALARM_COUNT = 5;
+    private static final int MAX_WALL_ALARM_COUNT = 6;
+    private static final int WALL_ALARM_MIN_RADIUS = 9;
+    private static final int WALL_ALARM_MAX_RADIUS = 24;
+    private static final int WALL_ALARM_MIN_SEPARATION = 8;
+    private static final int CENTRAL_WALL_ALARM_EXCLUSION_RADIUS = 8;
 
     private FrozenTownRuntime() {
     }
@@ -148,7 +154,7 @@ public final class FrozenTownRuntime {
             BlockState state = level.getBlockState(flagPos);
             if (state.is(ModBlocks.ORSA_FLAG.get())) {
                 ensureTownAlarm(level, flagPos, state);
-                ensureWallMountedTownAlarm(level, flagPos);
+                ensureWallMountedTownAlarms(level, flagPos);
             }
         }
     }
@@ -281,49 +287,132 @@ public final class FrozenTownRuntime {
                 && level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);
     }
 
-    private static void ensureWallMountedTownAlarm(ServerLevel level, BlockPos flagPos) {
-        if (!shouldPlaceWallAlarm(level, flagPos) || hasNearbyWallAlarm(level, flagPos)) {
+    private static void ensureWallMountedTownAlarms(ServerLevel level, BlockPos flagPos) {
+        clearCentralWallAlarms(level, flagPos);
+
+        BoundingBox townBounds = getFrozenTownBounds(level, flagPos);
+        int existing = countNearbyWallAlarms(level, townBounds, flagPos);
+        List<WallAlarmAnchor> anchors = collectWallAlarmAnchors(level, flagPos, townBounds);
+        int desired = desiredWallAlarmCount(level, flagPos);
+        if (existing >= desired) {
             return;
         }
 
-        WallAlarmCandidate candidate = findWallAlarmCandidate(level, flagPos);
-        if (candidate == null) {
-            return;
+        for (WallAlarmAnchor anchor : anchors) {
+            if (existing >= desired) {
+                return;
+            }
+
+            WallAlarmCandidate candidate = findWallAlarmCandidate(level, flagPos, anchor, townBounds);
+            if (candidate == null) {
+                continue;
+            }
+
+            placeWallAlarm(level, candidate);
+            existing++;
         }
 
-        level.setBlock(candidate.pos(), ModBlocks.WALL_ALARM_BEACON.get().defaultBlockState()
-                .setValue(AlarmBeaconBlock.FACING, candidate.facing()), 3);
+        while (existing < desired) {
+            WallAlarmCandidate fallback = findWallAlarmCandidate(level, flagPos, null, townBounds);
+            if (fallback == null) {
+                return;
+            }
+
+            placeWallAlarm(level, fallback);
+            existing++;
+        }
     }
 
-    private static boolean shouldPlaceWallAlarm(ServerLevel level, BlockPos flagPos) {
+    private static int desiredWallAlarmCount(ServerLevel level, BlockPos flagPos) {
         RandomSource random = RandomSource.create(level.getSeed() ^ flagPos.asLong() ^ 0x57A11F2DL);
-        return random.nextFloat() < WALL_ALARM_CHANCE;
+        int desired = BASE_WALL_ALARM_COUNT;
+        if (random.nextFloat() < EXTRA_WALL_ALARM_CHANCE) {
+            desired++;
+        }
+        return Math.min(desired, MAX_WALL_ALARM_COUNT);
     }
 
-    private static boolean hasNearbyWallAlarm(ServerLevel level, BlockPos flagPos) {
-        for (BlockPos scanPos : BlockPos.betweenClosed(flagPos.offset(-16, -2, -16), flagPos.offset(16, 8, 16))) {
+    private static int countNearbyWallAlarms(ServerLevel level, @Nullable BoundingBox townBounds, BlockPos flagPos) {
+        int count = 0;
+        if (townBounds != null) {
+            for (ChunkPos chunkPos : townBounds.intersectingChunks().toList()) {
+                BlockPos chunkOrigin = new BlockPos(chunkPos.getMinBlockX(), level.getMinBuildHeight(), chunkPos.getMinBlockZ());
+                if (!level.hasChunkAt(chunkOrigin)) {
+                    continue;
+                }
+                LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+                for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                    if (blockEntity.getBlockState().is(ModBlocks.WALL_ALARM_BEACON.get())
+                            && contains(townBounds, blockEntity.getBlockPos())) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        for (BlockPos scanPos : BlockPos.betweenClosed(flagPos.offset(-WALL_ALARM_MAX_RADIUS, -2, -WALL_ALARM_MAX_RADIUS),
+                flagPos.offset(WALL_ALARM_MAX_RADIUS, 8, WALL_ALARM_MAX_RADIUS))) {
             if (level.getBlockState(scanPos).is(ModBlocks.WALL_ALARM_BEACON.get())) {
-                return true;
+                count++;
             }
         }
-        return false;
+        return count;
+    }
+
+    private static void clearCentralWallAlarms(ServerLevel level, BlockPos flagPos) {
+        List<BlockPos> toRemove = new ArrayList<>();
+        for (BlockPos scanPos : BlockPos.betweenClosed(
+                flagPos.offset(-CENTRAL_WALL_ALARM_EXCLUSION_RADIUS, -2, -CENTRAL_WALL_ALARM_EXCLUSION_RADIUS),
+                flagPos.offset(CENTRAL_WALL_ALARM_EXCLUSION_RADIUS, 8, CENTRAL_WALL_ALARM_EXCLUSION_RADIUS))) {
+            if (level.getBlockState(scanPos).is(ModBlocks.WALL_ALARM_BEACON.get())) {
+                toRemove.add(scanPos.immutable());
+            }
+        }
+
+        for (BlockPos pos : toRemove) {
+            level.removeBlock(pos, false);
+        }
     }
 
     @Nullable
-    private static WallAlarmCandidate findWallAlarmCandidate(ServerLevel level, BlockPos flagPos) {
+    private static WallAlarmCandidate findWallAlarmCandidate(ServerLevel level, BlockPos flagPos,
+                                                             @Nullable WallAlarmAnchor anchor,
+                                                             @Nullable BoundingBox townBounds) {
         WallAlarmCandidate best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
-        for (int y = flagPos.getY() + 1; y <= flagPos.getY() + 6; y++) {
-            for (int x = flagPos.getX() - WALL_ALARM_MAX_RADIUS; x <= flagPos.getX() + WALL_ALARM_MAX_RADIUS; x++) {
-                for (int z = flagPos.getZ() - WALL_ALARM_MAX_RADIUS; z <= flagPos.getZ() + WALL_ALARM_MAX_RADIUS; z++) {
+        int minX = anchor != null ? anchor.pos().getX() - anchor.searchRadius() : flagPos.getX() - WALL_ALARM_MAX_RADIUS;
+        int maxX = anchor != null ? anchor.pos().getX() + anchor.searchRadius() : flagPos.getX() + WALL_ALARM_MAX_RADIUS;
+        int minZ = anchor != null ? anchor.pos().getZ() - anchor.searchRadius() : flagPos.getZ() - WALL_ALARM_MAX_RADIUS;
+        int maxZ = anchor != null ? anchor.pos().getZ() + anchor.searchRadius() : flagPos.getZ() + WALL_ALARM_MAX_RADIUS;
+        int minY = anchor != null ? Math.max(flagPos.getY() + 1, anchor.pos().getY() - 1) : flagPos.getY() + 1;
+        int maxY = anchor != null ? Math.min(flagPos.getY() + 7, anchor.pos().getY() + 3) : flagPos.getY() + 6;
+        if (townBounds != null) {
+            minX = Math.max(minX, townBounds.minX());
+            maxX = Math.min(maxX, townBounds.maxX());
+            minZ = Math.max(minZ, townBounds.minZ());
+            maxZ = Math.min(maxZ, townBounds.maxZ());
+            minY = Math.max(minY, townBounds.minY());
+            maxY = Math.min(maxY, townBounds.maxY());
+        }
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (!level.hasChunkAt(pos)) {
                         continue;
                     }
 
                     double horizontalDistance = Math.hypot(x - flagPos.getX(), z - flagPos.getZ());
-                    if (horizontalDistance < WALL_ALARM_MIN_RADIUS || horizontalDistance > WALL_ALARM_MAX_RADIUS) {
+                    if (horizontalDistance < WALL_ALARM_MIN_RADIUS) {
+                        continue;
+                    }
+                    if (townBounds == null && horizontalDistance > WALL_ALARM_MAX_RADIUS) {
+                        continue;
+                    }
+                    if (anchor != null && pos.distSqr(anchor.pos()) > anchor.searchRadius() * anchor.searchRadius()) {
                         continue;
                     }
 
@@ -331,9 +420,13 @@ public final class FrozenTownRuntime {
                         if (!canPlaceWallAlarm(level, pos, facing)) {
                             continue;
                         }
+                        if (hasWallAlarmNear(level, pos, WALL_ALARM_MIN_SEPARATION)) {
+                            continue;
+                        }
 
                         double alignment = centerFacingAlignment(flagPos, pos, facing);
-                        if (alignment < 0.45) {
+                        double minAlignment = anchor != null ? 0.45 : 0.12;
+                        if (alignment < minAlignment) {
                             continue;
                         }
 
@@ -344,15 +437,22 @@ public final class FrozenTownRuntime {
 
                         BlockPos anchorPos = pos.relative(facing.getOpposite());
                         BlockState anchorState = level.getBlockState(anchorPos);
+                        double targetDistance = anchor != null ? 14.0 : 16.0;
                         double score = openness * 3.0
                                 + alignment * 6.0
-                                - Math.abs(horizontalDistance - 8.5) * 0.35
+                                - Math.abs(horizontalDistance - targetDistance) * 0.35
                                 - Math.abs(y - (flagPos.getY() + 3)) * 0.4
                                 + facadeBonus(anchorState);
+                        if (anchor != null) {
+                            double anchorDistance = Math.hypot(pos.getX() - anchor.pos().getX(), pos.getZ() - anchor.pos().getZ());
+                            score += anchor.priority() * 3.2
+                                    - anchorDistance * 0.9
+                                    - Math.abs(y - anchor.pos().getY()) * 0.3;
+                        }
 
                         if (score > bestScore) {
                             bestScore = score;
-                            best = new WallAlarmCandidate(pos.immutable(), facing);
+                            best = new WallAlarmCandidate(pos.immutable(), facing, score);
                         }
                     }
                 }
@@ -360,6 +460,108 @@ public final class FrozenTownRuntime {
         }
 
         return best;
+    }
+
+    private static void placeWallAlarm(ServerLevel level, WallAlarmCandidate candidate) {
+        level.setBlock(candidate.pos(), ModBlocks.WALL_ALARM_BEACON.get().defaultBlockState()
+                .setValue(AlarmBeaconBlock.FACING, candidate.facing()), 3);
+    }
+
+    private static boolean hasWallAlarmNear(ServerLevel level, BlockPos pos, int radius) {
+        for (BlockPos scanPos : BlockPos.betweenClosed(pos.offset(-radius, -2, -radius), pos.offset(radius, 6, radius))) {
+            if (level.getBlockState(scanPos).is(ModBlocks.WALL_ALARM_BEACON.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<WallAlarmAnchor> collectWallAlarmAnchors(ServerLevel level, BlockPos flagPos,
+                                                                 @Nullable BoundingBox townBounds) {
+        List<WallAlarmAnchor> anchors = new ArrayList<>();
+        Set<Long> seen = new LinkedHashSet<>();
+        if (townBounds != null) {
+            townBounds.intersectingChunks().forEach(chunkPos -> collectWallAlarmAnchorsFromChunk(level, chunkPos, townBounds, seen, anchors));
+        } else {
+            int chunkRadius = (WALL_ALARM_MAX_RADIUS + 15) >> 4;
+            int centerChunkX = flagPos.getX() >> 4;
+            int centerChunkZ = flagPos.getZ() >> 4;
+            for (int chunkX = centerChunkX - chunkRadius; chunkX <= centerChunkX + chunkRadius; chunkX++) {
+                for (int chunkZ = centerChunkZ - chunkRadius; chunkZ <= centerChunkZ + chunkRadius; chunkZ++) {
+                    collectWallAlarmAnchorsFromChunk(level, new ChunkPos(chunkX, chunkZ), null, seen, anchors);
+                }
+            }
+        }
+
+        anchors.sort((left, right) -> {
+            int priorityCompare = Integer.compare(right.priority(), left.priority());
+            if (priorityCompare != 0) {
+                return priorityCompare;
+            }
+            return Double.compare(right.pos().distSqr(flagPos), left.pos().distSqr(flagPos));
+        });
+        return anchors;
+    }
+
+    private static void collectWallAlarmAnchorsFromChunk(ServerLevel level, ChunkPos chunkPos,
+                                                         @Nullable BoundingBox townBounds,
+                                                         Set<Long> seen,
+                                                         List<WallAlarmAnchor> anchors) {
+        BlockPos chunkOrigin = new BlockPos(chunkPos.getMinBlockX(), level.getMinBuildHeight(), chunkPos.getMinBlockZ());
+        if (!level.hasChunkAt(chunkOrigin)) {
+            return;
+        }
+
+        LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+            if (townBounds != null && !contains(townBounds, blockEntity.getBlockPos())) {
+                continue;
+            }
+
+            WallAlarmAnchor anchor = wallAlarmAnchorFor(blockEntity);
+            if (anchor == null || !seen.add(blockEntity.getBlockPos().asLong())) {
+                continue;
+            }
+            anchors.add(new WallAlarmAnchor(blockEntity.getBlockPos().immutable(), anchor.priority(), anchor.searchRadius()));
+        }
+    }
+
+    @Nullable
+    private static WallAlarmAnchor wallAlarmAnchorFor(BlockEntity blockEntity) {
+        if (blockEntity instanceof BarrelBlockEntity barrel) {
+            Component customName = barrel.getCustomName();
+            if (customName == null) {
+                return null;
+            }
+            return wallAlarmAnchorForRole(customName.getString(), barrel.getBlockPos());
+        }
+        if (blockEntity instanceof SignBlockEntity sign) {
+            String line0 = sign.getFrontText().getMessage(0, false).getString();
+            if ("Town Hall".equalsIgnoreCase(line0)) {
+                return new WallAlarmAnchor(sign.getBlockPos().immutable(), 10, 8);
+            }
+            if ("Fire Station".equalsIgnoreCase(line0)) {
+                return new WallAlarmAnchor(sign.getBlockPos().immutable(), 9, 8);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static WallAlarmAnchor wallAlarmAnchorForRole(String role, BlockPos pos) {
+        return switch (role) {
+            case "Town Records", "Filing Cabinet" -> new WallAlarmAnchor(pos.immutable(), 10, 8);
+            case "School Supplies", "Library Cart" -> new WallAlarmAnchor(pos.immutable(), 9, 8);
+            case "Fire Locker" -> new WallAlarmAnchor(pos.immutable(), 9, 8);
+            case "Church Office", "Offering Plate" -> new WallAlarmAnchor(pos.immutable(), 8, 8);
+            case "Fuel Locker", "Garage Stock" -> new WallAlarmAnchor(pos.immutable(), 8, 9);
+            case "Medicine Cabinet", "Back Room Stock" -> new WallAlarmAnchor(pos.immutable(), 7, 8);
+            case "Hardware Shelf", "Tool Cage" -> new WallAlarmAnchor(pos.immutable(), 6, 8);
+            case "Grocery Shelf", "Cold Case" -> new WallAlarmAnchor(pos.immutable(), 5, 8);
+            case "Apartment Cupboard" -> new WallAlarmAnchor(pos.immutable(), 4, 8);
+            case "Basement Storage" -> new WallAlarmAnchor(pos.immutable(), 3, 8);
+            default -> null;
+        };
     }
 
     private static boolean canPlaceWallAlarm(ServerLevel level, BlockPos pos, Direction facing) {
@@ -370,7 +572,7 @@ public final class FrozenTownRuntime {
 
         BlockPos anchorPos = pos.relative(facing.getOpposite());
         BlockState anchorState = level.getBlockState(anchorPos);
-        if (!anchorState.isFaceSturdy(level, anchorPos, facing)) {
+        if (!anchorState.isFaceSturdy(level, anchorPos, facing) || !isWallAlarmMountBlock(anchorState)) {
             return false;
         }
 
@@ -404,25 +606,51 @@ public final class FrozenTownRuntime {
     }
 
     private static double facadeBonus(BlockState state) {
-        if (state.is(net.minecraft.world.level.block.Blocks.POLISHED_BLACKSTONE_BRICKS)
-                || state.is(net.minecraft.world.level.block.Blocks.DEEPSLATE_BRICKS)
-                || state.is(net.minecraft.world.level.block.Blocks.STONE_BRICKS)) {
+        if (state.is(Blocks.POLISHED_BLACKSTONE_BRICKS)
+                || state.is(Blocks.DEEPSLATE_BRICKS)
+                || state.is(Blocks.STONE_BRICKS)
+                || state.is(Blocks.STONE)
+                || state.is(Blocks.SMOOTH_STONE)) {
             return 1.6;
         }
-        if (state.is(net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS)
-                || state.is(net.minecraft.world.level.block.Blocks.OAK_PLANKS)
-                || state.is(net.minecraft.world.level.block.Blocks.DARK_OAK_PLANKS)) {
+        if (state.is(Blocks.SPRUCE_PLANKS)
+                || state.is(Blocks.OAK_PLANKS)
+                || state.is(Blocks.DARK_OAK_PLANKS)
+                || state.is(Blocks.BRICKS)) {
             return 1.0;
         }
         return 0.0;
     }
 
-    private record WallAlarmCandidate(BlockPos pos, Direction facing) {
+    private static boolean isWallAlarmMountBlock(BlockState state) {
+        return facadeBonus(state) > 0.0;
+    }
+
+    private record WallAlarmCandidate(BlockPos pos, Direction facing, double score) {
+    }
+
+    private record WallAlarmAnchor(BlockPos pos, int priority, int searchRadius) {
     }
 
     @Nullable
     private static Structure getFrozenTownStructure(ServerLevel level) {
         return level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(FROZEN_TOWN.location());
+    }
+
+    @Nullable
+    private static BoundingBox getFrozenTownBounds(ServerLevel level, BlockPos pos) {
+        Structure structure = getFrozenTownStructure(level);
+        if (structure == null) {
+            return null;
+        }
+        StructureStart start = level.structureManager().getStructureWithPieceAt(pos, structure);
+        return start != null && start.isValid() ? start.getBoundingBox() : null;
+    }
+
+    private static boolean contains(BoundingBox bounds, BlockPos pos) {
+        return pos.getX() >= bounds.minX() && pos.getX() <= bounds.maxX()
+                && pos.getY() >= bounds.minY() && pos.getY() <= bounds.maxY()
+                && pos.getZ() >= bounds.minZ() && pos.getZ() <= bounds.maxZ();
     }
 
     private static boolean chunkHasFrozenTown(ServerLevel level, ChunkPos chunkPos) {
