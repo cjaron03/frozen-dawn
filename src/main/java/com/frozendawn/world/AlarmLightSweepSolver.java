@@ -5,6 +5,7 @@ import com.frozendawn.init.ModBlocks;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -82,6 +83,9 @@ public final class AlarmLightSweepSolver {
 
                 BlockPos surfacePos = hit.getBlockPos();
                 Direction hitFace = hit.getDirection();
+                if (!isSweepSurface(level, surfacePos, hitFace)) {
+                    continue;
+                }
                 BlockPos lightPos = surfacePos.relative(hitFace);
                 if (!isValidLightCell(level, lightPos, beacon.getBlockPos())) {
                     continue;
@@ -230,7 +234,10 @@ public final class AlarmLightSweepSolver {
     private static boolean isIgnoredAlarmObject(net.minecraft.world.level.block.state.BlockState state) {
         return state.is(ModBlocks.ALARM_BEACON.get())
                 || state.is(ModBlocks.WALL_ALARM_BEACON.get())
-                || state.is(ModBlocks.ORSA_FLAG.get());
+                || state.is(ModBlocks.ORSA_FLAG.get())
+                || state.is(ModBlocks.EMERGENCY_LIGHT.get())
+                || state.is(ModBlocks.WALL_EMERGENCY_LIGHT.get())
+                || state.is(BlockTags.ALL_SIGNS);
     }
 
     private static void addDynamicContribution(Long2IntOpenHashMap dynamicLights, BlockPos surfacePos, Direction face, int dynamicLevel) {
