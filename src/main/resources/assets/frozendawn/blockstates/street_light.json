@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "power_stage=0": { "model": "frozendawn:block/street_light_stage0" },
+    "power_stage=1": { "model": "frozendawn:block/street_light_stage1" },
+    "power_stage=2": { "model": "frozendawn:block/street_light_stage2" },
+    "power_stage=3": { "model": "frozendawn:block/street_light_stage3" }
+  }
+}

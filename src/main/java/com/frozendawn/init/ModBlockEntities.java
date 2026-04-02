@@ -86,7 +86,8 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("emergency_light",
                     () -> BlockEntityType.Builder.of(EmergencyLightBlockEntity::new,
                             ModBlocks.EMERGENCY_LIGHT.get(),
-                            ModBlocks.WALL_EMERGENCY_LIGHT.get()
+                            ModBlocks.WALL_EMERGENCY_LIGHT.get(),
+                            ModBlocks.STREET_LIGHT.get()
                     ).build(null));
 
     @SubscribeEvent

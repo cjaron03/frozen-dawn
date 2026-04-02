@@ -13,6 +13,7 @@ import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
+import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
@@ -200,6 +201,14 @@ public class ModBlocks {
 
     public static final DeferredBlock<WallEmergencyLightBlock> WALL_EMERGENCY_LIGHT = BLOCKS.register("wall_emergency_light",
             () -> new WallEmergencyLightBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(EmergencyLightBlock::lightLevelForStage)));
+
+    public static final DeferredBlock<StreetLightBlock> STREET_LIGHT = BLOCKS.register("street_light",
+            () -> new StreetLightBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GRAY)
                     .strength(0.8F)
                     .sound(SoundType.GLASS)

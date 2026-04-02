@@ -1,0 +1,46 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "body": "minecraft:block/iron_block",
+    "trim": "minecraft:block/smooth_stone",
+    "lens": "minecraft:block/sea_lantern"
+  },
+  "elements": [
+    {
+      "from": [6, 0, 6],
+      "to": [10, 7, 10],
+      "faces": {
+        "down": { "texture": "#body", "uv": [6, 6, 10, 10] },
+        "up": { "texture": "#trim", "uv": [6, 6, 10, 10] },
+        "north": { "texture": "#body", "uv": [6, 9, 10, 16] },
+        "south": { "texture": "#body", "uv": [6, 9, 10, 16] },
+        "west": { "texture": "#body", "uv": [6, 9, 10, 16] },
+        "east": { "texture": "#body", "uv": [6, 9, 10, 16] }
+      }
+    },
+    {
+      "from": [4, 7, 4],
+      "to": [12, 13, 12],
+      "faces": {
+        "down": { "texture": "#trim", "uv": [4, 4, 12, 12] },
+        "up": { "texture": "#trim", "uv": [4, 4, 12, 12] },
+        "north": { "texture": "#lens", "uv": [4, 3, 12, 9] },
+        "south": { "texture": "#lens", "uv": [4, 3, 12, 9] },
+        "west": { "texture": "#lens", "uv": [4, 3, 12, 9] },
+        "east": { "texture": "#lens", "uv": [4, 3, 12, 9] }
+      }
+    },
+    {
+      "from": [3, 13, 3],
+      "to": [13, 16, 13],
+      "faces": {
+        "down": { "texture": "#trim", "uv": [3, 3, 13, 13] },
+        "up": { "texture": "#trim", "uv": [3, 3, 13, 13] },
+        "north": { "texture": "#body", "uv": [3, 0, 13, 3] },
+        "south": { "texture": "#body", "uv": [3, 0, 13, 3] },
+        "west": { "texture": "#body", "uv": [3, 0, 13, 3] },
+        "east": { "texture": "#body", "uv": [3, 0, 13, 3] }
+      }
+    }
+  ]
+}

@@ -12,11 +12,29 @@
     {
       "element": {
         "element_type": "minecraft:legacy_single_pool_element",
+        "location": "frozendawn:frozen_town/roads/straight_light_01",
+        "processors": "minecraft:empty",
+        "projection": "terrain_matching"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:legacy_single_pool_element",
         "location": "frozendawn:frozen_town/roads/sidewalk_01",
         "processors": "minecraft:empty",
         "projection": "terrain_matching"
       },
       "weight": 5
+    },
+    {
+      "element": {
+        "element_type": "minecraft:legacy_single_pool_element",
+        "location": "frozendawn:frozen_town/roads/sidewalk_light_01",
+        "processors": "minecraft:empty",
+        "projection": "terrain_matching"
+      },
+      "weight": 1
     },
     {
       "element": {
@@ -30,6 +48,15 @@
     {
       "element": {
         "element_type": "minecraft:legacy_single_pool_element",
+        "location": "frozendawn:frozen_town/roads/t_intersection_light_01",
+        "processors": "minecraft:empty",
+        "projection": "terrain_matching"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:legacy_single_pool_element",
         "location": "frozendawn:frozen_town/roads/crossroad_01",
         "processors": "minecraft:empty",
         "projection": "terrain_matching"
@@ -39,11 +66,29 @@
     {
       "element": {
         "element_type": "minecraft:legacy_single_pool_element",
+        "location": "frozendawn:frozen_town/roads/crossroad_light_01",
+        "processors": "minecraft:empty",
+        "projection": "terrain_matching"
+      },
+      "weight": 1
+    },
+    {
+      "element": {
+        "element_type": "minecraft:legacy_single_pool_element",
         "location": "frozendawn:frozen_town/roads/culdesac_01",
         "processors": "minecraft:empty",
         "projection": "terrain_matching"
       },
       "weight": 2
+    },
+    {
+      "element": {
+        "element_type": "minecraft:legacy_single_pool_element",
+        "location": "frozendawn:frozen_town/roads/culdesac_light_01",
+        "processors": "minecraft:empty",
+        "projection": "terrain_matching"
+      },
+      "weight": 1
     },
     {
       "element": {
