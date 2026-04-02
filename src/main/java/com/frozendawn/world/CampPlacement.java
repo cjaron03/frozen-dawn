@@ -3,12 +3,21 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.OrsaStructureState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 
+import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,6 +36,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class CampPlacement {
 
+    private static final ResourceKey<Structure> FROZEN_TOWN = ResourceKey.create(
+            Registries.STRUCTURE,
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frozen_town")
+    );
+
     /** Region size in chunks. Each region gets 0 or 1 camp. */
     private static final int REGION_SIZE = 24;
     /** Minimum distance from world spawn (in blocks) before camps can appear. */
@@ -35,6 +49,10 @@ public final class CampPlacement {
     private static final int PLACEMENT_BUFFER = 8;
     /** Camp footprint radius (blocks). */
     private static final int CAMP_RADIUS = 6;
+    /** Extra exclusion padding around a town footprint so camps do not crowd its edge. */
+    private static final int TOWN_EXCLUSION_BUFFER = 32;
+    /** Chunk search radius for nearby frozen-town starts. */
+    private static final int TOWN_SEARCH_CHUNK_RADIUS = 10;
 
     private static final Set<Long> pendingCampPlacements = ConcurrentHashMap.newKeySet();
     private static long cachedWorldSeed = Long.MIN_VALUE;
@@ -124,8 +142,14 @@ public final class CampPlacement {
                 continue;
             }
 
-            // Place the camp
             BlockPos campCenter = new BlockPos(blockX, surfaceY, blockZ);
+            if (isTooCloseToFrozenTown(overworld, campCenter)) {
+                pendingCampPlacements.remove(key);
+                state.markCampEvaluated(chunkX, chunkZ);
+                continue;
+            }
+
+            // Place the camp
             boolean hasLinkedVehicle = FrozenEvacVehiclePlacement.ensureCampSatellite(overworld, campCenter);
             CampStructureBuilder.place(overworld, campCenter, hasLinkedVehicle);
             state.markCampBuilt(chunkX, chunkZ);
@@ -225,6 +249,45 @@ public final class CampPlacement {
             cachedWorldSeed = level.getSeed();
         }
         return cachedWorldSeed;
+    }
+
+    @Nullable
+    private static Structure getFrozenTownStructure(ServerLevel level) {
+        return level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(FROZEN_TOWN.location());
+    }
+
+    private static boolean isTooCloseToFrozenTown(ServerLevel level, BlockPos campCenter) {
+        Structure structure = getFrozenTownStructure(level);
+        if (structure == null) {
+            return false;
+        }
+
+        ChunkPos chunkPos = new ChunkPos(campCenter);
+        Set<StructureStart> starts = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (int dx = -TOWN_SEARCH_CHUNK_RADIUS; dx <= TOWN_SEARCH_CHUNK_RADIUS; dx++) {
+            for (int dz = -TOWN_SEARCH_CHUNK_RADIUS; dz <= TOWN_SEARCH_CHUNK_RADIUS; dz++) {
+                starts.addAll(level.structureManager().startsForStructure(
+                        new ChunkPos(chunkPos.x + dx, chunkPos.z + dz),
+                        candidate -> candidate == structure
+                ));
+            }
+        }
+
+        int exclusion = CAMP_RADIUS + TOWN_EXCLUSION_BUFFER;
+        for (StructureStart start : starts) {
+            if (start == null || !start.isValid()) {
+                continue;
+            }
+            var bounds = start.getBoundingBox();
+            if (campCenter.getX() >= bounds.minX() - exclusion
+                    && campCenter.getX() <= bounds.maxX() + exclusion
+                    && campCenter.getZ() >= bounds.minZ() - exclusion
+                    && campCenter.getZ() <= bounds.maxZ() + exclusion) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static long packChunkPos(int chunkX, int chunkZ) {
