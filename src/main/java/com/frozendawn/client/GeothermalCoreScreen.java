@@ -166,7 +166,7 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
 
         // --- Guide panel ---
         if (guideOpen) {
-            drawGuidePanel(graphics, x + GUI_W + TAB_W - 1, y);
+            drawGuidePanel(graphics, x + GUI_W + TAB_W - 1, y, hasSurfacePenalty);
         }
     }
 
@@ -226,7 +226,7 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
                 tabY + (TAB_H - 8) / 2, iconColor, false);
     }
 
-    private void drawGuidePanel(GuiGraphics graphics, int px, int py) {
+    private void drawGuidePanel(GuiGraphics graphics, int px, int py, boolean hasSurfacePenalty) {
         int h = GUI_H;
 
         graphics.fill(px, py, px + GUIDE_W, py + h, 0xFF141A1F);
@@ -244,8 +244,10 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         ty += lineH + 2;
         graphics.fill(tx, ty, px + GUIDE_W - 6, ty + 1, 0xFF604830);
         ty += 5;
-        graphics.drawString(font, "Surface warmth: 50%", tx, ty, 0xFFCCAA66, false);
-        ty += lineH + 4;
+        if (hasSurfacePenalty) {
+            graphics.drawString(font, "Surface warmth: 50%", tx, ty, 0xFFCCAA66, false);
+            ty += lineH + 4;
+        }
 
         // Range
         graphics.drawString(font, "\u00A7bRange", tx, ty, 0xFF3388DD, false);
