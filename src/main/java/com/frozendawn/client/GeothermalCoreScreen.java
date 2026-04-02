@@ -6,6 +6,7 @@ import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,6 +14,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -47,6 +49,15 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         super.init();
         leftPos = (width - imageWidth) / 2;
         topPos = (height - imageHeight) / 2;
+    }
+
+    public List<Rect2i> getJeiExtraAreas() {
+        List<Rect2i> extraAreas = new ArrayList<>();
+        extraAreas.add(new Rect2i(leftPos + GUI_W - 1, topPos + 18, TAB_W, TAB_H));
+        if (guideOpen) {
+            extraAreas.add(new Rect2i(leftPos + GUI_W + TAB_W - 1, topPos, GUIDE_W, GUI_H));
+        }
+        return Collections.unmodifiableList(extraAreas);
     }
 
     @Override
