@@ -2,7 +2,6 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
-import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -43,12 +42,10 @@ public class ColdEffects {
             return;
         }
 
-        // Phase 6 mid+ exposed to sky: no breath particles — no atmosphere to exhale
-        // Under a roof/underground there's trapped air, so breath is visible
+        // Phase 6 late without breathable air: no breath particles — no atmosphere to exhale
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress > 0.72f
-                && !TemperatureManager.isEnclosed(mc.level, mc.player.blockPosition())) {
+        if (phase >= 6 && progress >= 0.85f && !ApocalypseClientData.isBreathable()) {
             breathCooldown = 0;
             return;
         }

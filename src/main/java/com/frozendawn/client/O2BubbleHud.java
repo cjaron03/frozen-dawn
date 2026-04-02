@@ -3,7 +3,6 @@ package com.frozendawn.client;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
-import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -43,7 +42,7 @@ public class O2BubbleHud {
         if (mc.options.hideGui) return;
         if (player.level().dimension() != Level.OVERWORLD) return;
         if (MobFreezeHandler.getFullSetTier(player) != 3) return;
-        if (TemperatureManager.isInHabitableZone(player.level(), player.blockPosition())) return;
+        if (ApocalypseClientData.isBreathable()) return;
 
         // Sum O2 across all tanks in inventory; use highest tier for color
         int totalO2 = 0;

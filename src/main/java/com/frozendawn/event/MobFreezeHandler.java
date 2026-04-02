@@ -90,10 +90,11 @@ public class MobFreezeHandler {
     }
 
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
-        // Phase 6 late, not in an enclosed room: skip freeze — suffocation replaces freezing
-        // Inside an enclosed shelter there's trapped air, so cold still applies
-        if (isPlayer && state.getPhase() >= 6 && state.getProgress() >= 0.85f
-                && !TemperatureManager.isEnclosed(entity.level(), entity.blockPosition())) {
+        // Phase 6 late without breathable air: skip freeze — suffocation replaces freezing
+        if (entity instanceof ServerPlayer serverPlayer
+                && state.getPhase() >= 6
+                && state.getProgress() >= 0.85f
+                && !PlayerTickHandler.isPlayerBreathable(serverPlayer)) {
             // Clear residual freeze ticks so vanilla frost overlay doesn't linger
             if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
             return;

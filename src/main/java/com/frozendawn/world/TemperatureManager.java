@@ -16,6 +16,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
+
 /**
  * Calculates temperature at any world position.
  *
@@ -30,6 +35,9 @@ public final class TemperatureManager {
     /** Max radius for non-heater heat sources (soul campfire = 6). */
     private static final int AMBIENT_HEAT_RADIUS = 6;
     private static final int MOB_HEAT_RADIUS = 3;
+    private static final int BREATHABLE_MAX_VISITED = 12_000;
+    private static final int BREATHABLE_MAX_HORIZONTAL = 48;
+    private static final int BREATHABLE_MAX_VERTICAL = 24;
 
     /**
      * Full-precision temperature check (used for players).
@@ -112,14 +120,17 @@ public final class TemperatureManager {
     }
 
     /**
-     * Returns true if the position has breathable air for late phase 6 oxygen checks.
-     * This matches the server's current suffocation-safe zones: enclosed rooms,
-     * blast pit warm zones, and geothermal core O2 range.
+     * Returns true when the position has breathable air according to the shared
+     * late-phase vacuum authority: intentional ORSA support systems or a sealed room.
      */
-    public static boolean isInHabitableZone(Level level, BlockPos pos) {
-        if (isEnclosed(level, pos)) return true;
+    public static boolean hasBreathableAir(Level level, BlockPos pos) {
+        if (level.dimension() != Level.OVERWORLD) return false;
         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) return true;
+        if (isInsideGeothermalO2Range(level, pos)) return true;
+        return isInsideSealedRoom(level, pos);
+    }
 
+    private static boolean isInsideGeothermalO2Range(Level level, BlockPos pos) {
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
             int o2Range;
             BlockEntity be = level.getBlockEntity(corePos);
@@ -132,8 +143,75 @@ public final class TemperatureManager {
                 return true;
             }
         }
-
         return false;
+    }
+
+    private static boolean isInsideSealedRoom(Level level, BlockPos origin) {
+        if (!level.isLoaded(origin) || !isBreathablePassage(level, origin)) {
+            return false;
+        }
+
+        Queue<BlockPos> open = new ArrayDeque<>();
+        Set<BlockPos> visited = new HashSet<>();
+        BlockPos start = origin.immutable();
+        open.add(start);
+        visited.add(start);
+
+        while (!open.isEmpty()) {
+            BlockPos current = open.remove();
+
+            if (!level.isLoaded(current)) {
+                return false;
+            }
+            if (!isWithinBreathableBounds(origin, current)) {
+                return false;
+            }
+            if (level.canSeeSky(current)) {
+                return false;
+            }
+
+            for (Direction direction : Direction.values()) {
+                BlockPos next = current.relative(direction);
+                if (visited.contains(next)) {
+                    continue;
+                }
+                if (!level.isLoaded(next)) {
+                    return false;
+                }
+                if (!isWithinBreathableBounds(origin, next)) {
+                    return false;
+                }
+                if (!isBreathablePassage(level, next)) {
+                    continue;
+                }
+                if (visited.size() >= BREATHABLE_MAX_VISITED) {
+                    return false;
+                }
+
+                BlockPos immutable = next.immutable();
+                visited.add(immutable);
+                open.add(immutable);
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isWithinBreathableBounds(BlockPos origin, BlockPos pos) {
+        int dx = Math.abs(pos.getX() - origin.getX());
+        int dy = Math.abs(pos.getY() - origin.getY());
+        int dz = Math.abs(pos.getZ() - origin.getZ());
+        return dx <= BREATHABLE_MAX_HORIZONTAL
+                && dz <= BREATHABLE_MAX_HORIZONTAL
+                && dy <= BREATHABLE_MAX_VERTICAL;
+    }
+
+    private static boolean isBreathablePassage(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.getFluidState().isEmpty()) {
+            return false;
+        }
+        return state.isAir() || !state.blocksMotion() || state.getCollisionShape(level, pos).isEmpty();
     }
 
     /**

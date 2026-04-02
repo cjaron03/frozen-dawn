@@ -16,6 +16,7 @@ public final class ApocalypseClientData {
     private static float sunBrightness = 1f;
     private static float skyLight = 1f;
     private static boolean schematicUnlocked = false;
+    private static boolean breathable = false;
 
     private ApocalypseClientData() {}
 
@@ -38,6 +39,7 @@ public final class ApocalypseClientData {
         sunBrightness = 1f;
         skyLight = 1f;
         schematicUnlocked = false;
+        breathable = false;
         FrozenDawnPhaseTracker.setPhase(0);
     }
 
@@ -48,4 +50,9 @@ public final class ApocalypseClientData {
     public static float getSunBrightness() { return sunBrightness; }
     public static float getSkyLight() { return skyLight; }
     public static boolean isSchematicUnlocked() { return schematicUnlocked; }
+    public static boolean isBreathable() { return breathable; }
+
+    public static void setBreathable(boolean breathableState) {
+        breathable = breathableState;
+    }
 }

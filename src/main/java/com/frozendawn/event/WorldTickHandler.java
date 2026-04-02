@@ -365,6 +365,7 @@ public class WorldTickHandler {
             ApocalypseState state = ApocalypseState.get(player.getServer());
             WinConditionState winState = WinConditionState.get(player.getServer());
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
+            PlayerTickHandler.syncBreathableState(player);
 
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);
