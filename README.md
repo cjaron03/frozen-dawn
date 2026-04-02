@@ -88,6 +88,15 @@ The Geothermal Core is the endgame objective — a massive heat source requiring
 - **Craft chain:** Thermal Core (phase 2-3 resources) + Frozen Heart (diamond + blue ice + ice shards + frozen obsidian) → Geothermal Core (+ diamond blocks + obsidian)
 - **Design philosophy:** Above Y=0 is a survival aid. Below Y=0 is the intended endgame anchor. Modpack authors should tune `heatSourceMultiplier` to adjust.
 
+### World Generation
+- **Frozen Towns** — Large jigsaw towns with squares, civic/commercial/residential layouts, authored sirens, street lights, rooftop PA speakers, and phase-aware emergency infrastructure
+- **ORSA field camps** — Deterministic evacuation camps with radios, documents, flags, and linked evac-vehicle support when the site allows it
+- **Monitoring Stations** — Civilian relay outposts built through the same deferred landmark pipeline as camps, with their own locate support
+- **Cargo drops** — Regional supply landmarks that can appear alongside the broader ORSA landmark network
+- **ORSA landmarks** — Communication towers and the blast pit remain part of the seeded landmark layer for exploration and late-run discovery
+- **Conflict-safe placement** — ORSA camps now yield to Frozen Town footprints so the two landmark systems do not generate on top of each other
+- **Fresh chunk rule** — Town lighting, PA speakers, authored sirens, and roof revisions are structure-authored; players need fresh towns or newly generated chunks to see the full update
+
 ### ORSA Narrative
 5 lore books found in world structures tell the story of ORSA and humanity's failed attempt to stabilize Earth's orbit:
 1. **Village houses (20%)** — ORSA Outreach Pamphlet (optimism)
@@ -99,11 +108,11 @@ The Geothermal Core is the endgame objective — a massive heat source requiring
 All books are discoverable without beating the game. No End Cities or Ancient Cities required.
 
 ### Other
-- **12 custom blocks** — Dead Grass, Frozen Dirt, Frozen Sand, Dead/Frozen Logs, Dead/Frozen Leaves, Frozen Obsidian, Thermal Heater, Insulated Glass, Frozen Coal Ore, Geothermal Core
-- **16 custom items** — Ice Shard, Thermal Core, Frozen Heart, Thermal Container, 12 armor pieces (4 per tier)
-- **12 advancements** — Phase progression (6 phases), "Last Light" (Geothermal Core below Y=0), "Classified Information" (ORSA book), 3 armor tier milestones, "Huh. Thought That Works" (hidden — try to light a portal at phase 5+)
+- **Custom survival + world blocks/items** — Frozen terrain variants, ORSA props, thermal progression components, armor tiers, town infrastructure, and landmark rewards
+- **Advancements + Patchouli support** — Phase milestones, hidden discoveries, progression unlocks, and the in-game "Frozen Dawn Field Guide"
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
-- **Config presets** — `/frozendawn preset default|cinematic|brutal` for quick difficulty tuning
+- **Admin tooling** — world-state controls, locate helpers, and win-condition inspection through the `/frozendawn` command tree
+- **Config presets** — `/frozendawn world preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 17+ config options covering temperature, features, visuals, and gameplay
 
 ## Hostile Ecosystem
@@ -137,6 +146,8 @@ The intended pressure curve is asymmetrical:
 4. Drop both jars into your `.minecraft/mods/` folder
 5. Launch Minecraft with the NeoForge profile
 
+Fresh towns and other authored landmark changes require newly generated chunks to appear in an existing world.
+
 ### Development
 1. Clone the repo: `git clone https://github.com/cjaron03/frozen-dawn.git`
 2. Open in your IDE (IntelliJ recommended) or build from terminal
@@ -147,14 +158,37 @@ The intended pressure curve is asymmetrical:
 
 All commands require OP level 2.
 
+### Root
+
 | Command | Description |
 |---------|-------------|
-| `/frozendawn status` | Show current day, phase, temperature, and sun state |
-| `/frozendawn setday <n>` | Jump to a specific apocalypse day |
-| `/frozendawn setphase <1-6> [early\|mid\|late]` | Jump to the start of a phase (sub-stages for phase 6) |
-| `/frozendawn pause` | Toggle apocalypse progression |
-| `/frozendawn reset` | Reset to day 0 |
-| `/frozendawn preset <name>` | Apply a config preset (default, cinematic, brutal) |
+| `/frozendawn` | Show the command help summary |
+| `/frozendawn help` | Show the command help summary |
+
+### World Controls
+
+| Command | Description |
+|---------|-------------|
+| `/frozendawn world status` | Show current day, phase, preset, temperature, sun state, and major landmark/win-condition status |
+| `/frozendawn world setday <day>` | Jump to a specific apocalypse day |
+| `/frozendawn world setphase <0-6> [early\|mid\|late]` | Jump to a phase; sub-stages are only used for phase 6 |
+| `/frozendawn world pause` | Toggle apocalypse progression |
+| `/frozendawn world reset` | Reset the apocalypse back to day 0 |
+| `/frozendawn world preset <default\|cinematic\|brutal>` | Apply a built-in difficulty preset |
+
+### Locate
+
+| Command | Description |
+|---------|-------------|
+| `/frozendawn locate all` | Show a combined landmark summary including ORSA points of interest and Frozen Towns |
+| `/frozendawn locate orsa` | Show the nearest ORSA landmark set: blast pit, towers, camps, cargo drops, and monitoring stations |
+| `/frozendawn locate towns` | Find the nearest Frozen Town |
+
+### Win Condition
+
+| Command | Description |
+|---------|-------------|
+| `/frozendawn win satellite` | Show the current satellite win-condition position/state |
 
 ## Config Presets
 
@@ -205,6 +239,7 @@ Edit `config/frozendawn-common.toml` after first launch.
 - **NeoForge**: 21.1.219+
 - **Dimensions**: All world systems (freezing, decay, snow, weather) operate in the overworld only. Other dimensions are unaffected.
 - **Servers**: Fully server-authoritative. All temperature calculations, block transformations, and loot modifications run server-side. Client only handles visual effects (sky, particles, overlay).
+- **Worldgen updates**: Authored structures such as Frozen Town revisions, PA speakers, street lights, and roof changes appear only in fresh towns/newly generated chunks.
 
 ## Building from Source
 
