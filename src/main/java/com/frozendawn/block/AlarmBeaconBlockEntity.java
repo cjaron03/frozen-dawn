@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.client.AlarmBeaconRegistry;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.world.AlarmLightSweepSolver;
@@ -64,6 +65,7 @@ public class AlarmBeaconBlockEntity extends BlockEntity {
         }
 
         tickSimulation(getBlockState().getValue(AlarmBeaconBlock.ACTIVE));
+        AlarmBeaconRegistry.track(this);
     }
 
     private void tickSimulation(boolean shouldBePowered) {
@@ -241,6 +243,22 @@ public class AlarmBeaconBlockEntity extends BlockEntity {
 
     public boolean isWallMounted() {
         return getBlockState().getBlock() instanceof WallAlarmBeaconBlock;
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null && level.isClientSide()) {
+            AlarmBeaconRegistry.untrack(this);
+        }
+        super.setRemoved();
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        if (level != null && level.isClientSide()) {
+            AlarmBeaconRegistry.untrack(this);
+        }
+        super.onChunkUnloaded();
     }
 
     @Override

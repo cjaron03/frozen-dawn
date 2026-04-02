@@ -63,6 +63,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("emergency_light", ModBlocks.EMERGENCY_LIGHT);
     public static final DeferredItem<BlockItem> WALL_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("wall_emergency_light", ModBlocks.WALL_EMERGENCY_LIGHT);
     public static final DeferredItem<BlockItem> STREET_LIGHT = ITEMS.registerSimpleBlockItem("street_light", ModBlocks.STREET_LIGHT);
+    public static final DeferredItem<BlockItem> TOWN_PA_SPEAKER = ITEMS.registerSimpleBlockItem("town_pa_speaker", ModBlocks.TOWN_PA_SPEAKER);
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
 

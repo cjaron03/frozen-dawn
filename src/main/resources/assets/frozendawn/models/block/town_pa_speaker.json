@@ -1,0 +1,47 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "mount": "minecraft:block/iron_block",
+    "body": "minecraft:block/light_gray_concrete",
+    "horn": "minecraft:block/gray_concrete",
+    "mouth": "minecraft:block/black_concrete"
+  },
+  "elements": [
+    {
+      "from": [6.5, 0.0, 6.5],
+      "to": [9.5, 4.0, 9.5],
+      "faces": {
+        "down": { "texture": "#mount" },
+        "up": { "texture": "#mount" },
+        "north": { "texture": "#mount" },
+        "south": { "texture": "#mount" },
+        "west": { "texture": "#mount" },
+        "east": { "texture": "#mount" }
+      }
+    },
+    {
+      "from": [5.0, 4.0, 6.0],
+      "to": [11.0, 9.0, 11.0],
+      "faces": {
+        "down": { "texture": "#body" },
+        "up": { "texture": "#body" },
+        "north": { "texture": "#body" },
+        "south": { "texture": "#body" },
+        "west": { "texture": "#body" },
+        "east": { "texture": "#body" }
+      }
+    },
+    {
+      "from": [4.0, 5.0, 1.0],
+      "to": [12.0, 11.0, 6.0],
+      "faces": {
+        "down": { "texture": "#horn" },
+        "up": { "texture": "#horn" },
+        "north": { "texture": "#mouth" },
+        "south": { "texture": "#horn" },
+        "west": { "texture": "#horn" },
+        "east": { "texture": "#horn" }
+      }
+    }
+  ]
+}

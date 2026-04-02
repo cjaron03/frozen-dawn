@@ -55,10 +55,6 @@ public final class FrozenTownRuntime {
     );
 
     private static final Set<Long> pendingTownChunks = ConcurrentHashMap.newKeySet();
-    private static final double SLOW_STRUCTURE_LOOKUP_MS = 10.0;
-    private static final double SLOW_FLAG_SCAN_MS = 20.0;
-    private static final double SLOW_TOWN_CHUNK_PROCESS_MS = 35.0;
-
     private FrozenTownRuntime() {
     }
 
@@ -126,39 +122,20 @@ public final class FrozenTownRuntime {
     }
 
     private static void processTownChunk(ServerLevel level, LevelChunk chunk) {
-        long startNanos = System.nanoTime();
-        int flags = ensureTownAlarms(level, chunk);
-        int barrels = 0;
-        int signs = 0;
+        ensureTownAlarms(level, chunk);
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (blockEntity instanceof BarrelBlockEntity barrel) {
-                barrels++;
                 fillTownContainer(level, barrel);
             } else if (blockEntity instanceof SignBlockEntity sign) {
-                signs++;
                 updateTownSign(level, sign);
             }
         }
-
-        double elapsedMs = elapsedSinceMs(startNanos);
-        if (elapsedMs >= SLOW_TOWN_CHUNK_PROCESS_MS) {
-            FrozenDawn.LOGGER.info("[TownDebug] processed chunk={} blockEntities={} flags={} barrels={} signs={} took={}ms",
-                    chunk.getPos(),
-                    chunk.getBlockEntities().size(),
-                    flags,
-                    barrels,
-                    signs,
-                    formatMillis(elapsedMs));
-        }
     }
 
-    private static int ensureTownAlarms(ServerLevel level, LevelChunk chunk) {
-        long startNanos = System.nanoTime();
+    private static void ensureTownAlarms(ServerLevel level, LevelChunk chunk) {
         Set<BlockPos> flagPositions = new LinkedHashSet<>();
-        int blockEntityFlags = 0;
         for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
             if (blockEntity instanceof OrsaFlagBlockEntity flag) {
-                blockEntityFlags++;
                 flagPositions.add(flag.getBlockPos().immutable());
             }
         }
@@ -169,18 +146,6 @@ public final class FrozenTownRuntime {
                 ensureTownAlarm(level, flagPos, flagState);
             }
         }
-
-        double elapsedMs = elapsedSinceMs(startNanos);
-        if (elapsedMs >= SLOW_FLAG_SCAN_MS) {
-            FrozenDawn.LOGGER.info("[TownDebug] ensure alarms chunk={} blockEntities={} initialFlags={} scannedFlags={} totalFlags={} took={}ms",
-                    chunk.getPos(),
-                    chunk.getBlockEntities().size(),
-                    blockEntityFlags,
-                    Math.max(0, flagPositions.size() - blockEntityFlags),
-                    flagPositions.size(),
-                    formatMillis(elapsedMs));
-        }
-        return flagPositions.size();
     }
 
     private static void fillTownContainer(ServerLevel level, BarrelBlockEntity barrel) {
@@ -278,8 +243,6 @@ public final class FrozenTownRuntime {
     }
 
     private static void scanForTownFlags(ServerLevel level, ChunkPos chunkPos, Set<BlockPos> out) {
-        long startNanos = System.nanoTime();
-        int initialCount = out.size();
         int minX = chunkPos.getMinBlockX() - 8;
         int maxX = chunkPos.getMaxBlockX() + 8;
         int minZ = chunkPos.getMinBlockZ() - 8;
@@ -304,19 +267,6 @@ public final class FrozenTownRuntime {
                 }
             }
         }
-
-        double elapsedMs = elapsedSinceMs(startNanos);
-        if (elapsedMs >= SLOW_FLAG_SCAN_MS) {
-            int columns = (maxX - minX + 1) * (maxZ - minZ + 1);
-            FrozenDawn.LOGGER.info("[TownDebug] flag scan chunk={} columns={} yRange={}..{} newFlags={} totalFlags={} took={}ms",
-                    chunkPos,
-                    columns,
-                    globalMinY,
-                    globalMaxY,
-                    Math.max(0, out.size() - initialCount),
-                    out.size(),
-                    formatMillis(elapsedMs));
-        }
     }
 
     private static boolean canPlaceTownAlarm(ServerLevel level, BlockPos pos) {
@@ -335,32 +285,11 @@ public final class FrozenTownRuntime {
     }
 
     private static boolean chunkHasFrozenTown(ServerLevel level, ChunkPos chunkPos) {
-        long startNanos = System.nanoTime();
         Structure structure = getFrozenTownStructure(level);
         if (structure == null) {
             return false;
         }
-        boolean hasTown = !level.structureManager().startsForStructure(chunkPos, candidate -> candidate == structure).isEmpty();
-        double elapsedMs = elapsedSinceMs(startNanos);
-        if (elapsedMs >= SLOW_STRUCTURE_LOOKUP_MS) {
-            FrozenDawn.LOGGER.info("[TownDebug] structure lookup chunk={} hasTown={} took={}ms",
-                    chunkPos,
-                    hasTown,
-                    formatMillis(elapsedMs));
-        }
-        return hasTown;
-    }
-
-    private static double elapsedSinceMs(long startNanos) {
-        return nanosToMs(System.nanoTime() - startNanos);
-    }
-
-    private static double nanosToMs(long nanos) {
-        return nanos / 1_000_000.0;
-    }
-
-    private static String formatMillis(double millis) {
-        return String.format(Locale.ROOT, "%.2f", millis);
+        return !level.structureManager().startsForStructure(chunkPos, candidate -> candidate == structure).isEmpty();
     }
 
     private static List<ItemStack> createResidentialLoot(RandomSource random) {

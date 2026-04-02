@@ -9,7 +9,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -22,14 +21,11 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class AlarmBeaconAmbience {
 
-    private static final int SEARCH_INTERVAL = 10;
-    private static final int SEARCH_RADIUS_CHUNKS = 5;
     private static final double MAX_DISTANCE = 88.0;
     private static final double MAX_DISTANCE_SQR = MAX_DISTANCE * MAX_DISTANCE;
 
     private static TickableAlarmSound currentSound;
     private static BlockPos currentBeaconPos;
-    private static int searchCooldown;
 
     private AlarmBeaconAmbience() {
     }
@@ -43,10 +39,6 @@ public final class AlarmBeaconAmbience {
         if (mc.level.dimension() != Level.OVERWORLD) {
             stopAll(mc);
             return;
-        }
-
-        if (searchCooldown > 0) {
-            searchCooldown--;
         }
 
         AlarmBeaconBlockEntity beacon = resolveCurrentBeacon(mc.level, mc.player.position());
@@ -64,6 +56,9 @@ public final class AlarmBeaconAmbience {
         double distanceFalloff = Math.max(0.0, 1.0 - (distance / MAX_DISTANCE));
         float targetVolume = (float) ((0.12 + (distanceFalloff * 0.88)) * soundStrength * occlusion);
         float targetPitch = (0.76f + (0.28f * soundStrength)) * (0.92f + (0.08f * occlusion));
+
+        targetVolume *= TownPABroadcastTracker.getAlarmVolumeDuck(mc.level, mc.player.getEyePosition());
+        targetPitch *= TownPABroadcastTracker.getAlarmPitchDuck(mc.level, mc.player.getEyePosition());
 
         if (targetVolume <= 0.01f) {
             fadeOut();
@@ -88,54 +83,20 @@ public final class AlarmBeaconAmbience {
 
     private static AlarmBeaconBlockEntity resolveCurrentBeacon(ClientLevel level, Vec3 playerPos) {
         if (currentBeaconPos != null) {
-            AlarmBeaconBlockEntity current = getBeacon(level, currentBeaconPos);
+            AlarmBeaconBlockEntity current = AlarmBeaconRegistry.getBeacon(level, currentBeaconPos);
             if (current != null
                     && current.isEffectivelyRunning(1.0f)
                     && playerPos.distanceToSqr(current.getHeadWorldPos()) <= MAX_DISTANCE_SQR) {
-                if (searchCooldown > 0) {
-                    return current;
-                }
+                return current;
             }
         }
 
-        AlarmBeaconBlockEntity best = findNearestBeacon(level, BlockPos.containing(playerPos));
-        searchCooldown = SEARCH_INTERVAL;
-        return best;
-    }
-
-    private static AlarmBeaconBlockEntity findNearestBeacon(ClientLevel level, BlockPos playerPos) {
-        AlarmBeaconBlockEntity bestBeacon = null;
-        double bestDistance = MAX_DISTANCE_SQR;
-        int originChunkX = playerPos.getX() >> 4;
-        int originChunkZ = playerPos.getZ() >> 4;
-
-        for (int chunkX = originChunkX - SEARCH_RADIUS_CHUNKS; chunkX <= originChunkX + SEARCH_RADIUS_CHUNKS; chunkX++) {
-            for (int chunkZ = originChunkZ - SEARCH_RADIUS_CHUNKS; chunkZ <= originChunkZ + SEARCH_RADIUS_CHUNKS; chunkZ++) {
-                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
-                if (chunk == null) {
-                    continue;
-                }
-                for (var blockEntity : chunk.getBlockEntities().values()) {
-                    if (!(blockEntity instanceof AlarmBeaconBlockEntity beacon) || !beacon.isEffectivelyRunning(1.0f)) {
-                        continue;
-                    }
-                    double distance = playerPos.distSqr(BlockPos.containing(beacon.getHeadWorldPos()));
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        bestBeacon = beacon;
-                    }
-                }
-            }
-        }
-
-        return bestBeacon;
-    }
-
-    private static AlarmBeaconBlockEntity getBeacon(ClientLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos)) {
+        var beacons = AlarmBeaconRegistry.findNearestActiveBeacons(level, playerPos, 1.0f, 1, MAX_DISTANCE_SQR);
+        if (beacons.isEmpty()) {
+            currentBeaconPos = null;
             return null;
         }
-        return level.getBlockEntity(pos) instanceof AlarmBeaconBlockEntity beacon ? beacon : null;
+        return beacons.getFirst();
     }
 
     private static float computeOcclusion(ClientLevel level, Vec3 eyePos, Vec3 targetPos, BlockPos playerPos) {
@@ -173,6 +134,5 @@ public final class AlarmBeaconAmbience {
             currentSound = null;
         }
         currentBeaconPos = null;
-        searchCooldown = 0;
     }
 }

@@ -15,6 +15,7 @@ import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
 import com.frozendawn.block.WallAlarmBeaconBlock;
@@ -214,6 +215,13 @@ public class ModBlocks {
                     .sound(SoundType.GLASS)
                     .noOcclusion()
                     .lightLevel(EmergencyLightBlock::lightLevelForStage)));
+
+    public static final DeferredBlock<TownPASpeakerBlock> TOWN_PA_SPEAKER = BLOCKS.register("town_pa_speaker",
+            () -> new TownPASpeakerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(1.2F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
 
     public static final DeferredBlock<TowerAntennaConsoleBlock> TOWER_ANTENNA_CONSOLE = BLOCKS.register("tower_antenna_console",
             () -> new TowerAntennaConsoleBlock(BlockBehaviour.Properties.of()

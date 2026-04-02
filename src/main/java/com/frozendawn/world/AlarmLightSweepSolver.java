@@ -238,6 +238,7 @@ public final class AlarmLightSweepSolver {
                 || state.is(ModBlocks.EMERGENCY_LIGHT.get())
                 || state.is(ModBlocks.WALL_EMERGENCY_LIGHT.get())
                 || state.is(ModBlocks.STREET_LIGHT.get())
+                || state.is(ModBlocks.TOWN_PA_SPEAKER.get())
                 || state.is(BlockTags.ALL_SIGNS);
     }
 

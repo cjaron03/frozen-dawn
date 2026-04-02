@@ -41,7 +41,6 @@ import java.util.Map;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class AlarmDynamicLightManager {
 
-    private static final int SEARCH_RADIUS_CHUNKS = 5;
     private static final int MAX_BEACONS = 2;
     private static final double MAX_DISTANCE_SQR = 88.0 * 88.0;
 
@@ -61,7 +60,8 @@ public final class AlarmDynamicLightManager {
 
         ClientLevel level = mc.level;
         Vec3 playerPos = mc.player.position();
-        List<AlarmBeaconBlockEntity> beacons = findNearestActiveBeacons(level, playerPos, partialTick);
+        List<AlarmBeaconBlockEntity> beacons = AlarmBeaconRegistry.findNearestActiveBeacons(
+                level, playerPos, partialTick, MAX_BEACONS, MAX_DISTANCE_SQR);
         if (beacons.isEmpty()) {
             clear();
             return;
@@ -142,35 +142,6 @@ public final class AlarmDynamicLightManager {
         RenderSystem.enableCull();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
-    }
-
-    private static List<AlarmBeaconBlockEntity> findNearestActiveBeacons(ClientLevel level, Vec3 playerPos, float partialTick) {
-        int originChunkX = BlockPos.containing(playerPos).getX() >> 4;
-        int originChunkZ = BlockPos.containing(playerPos).getZ() >> 4;
-        List<AlarmBeaconBlockEntity> candidates = new ArrayList<>();
-
-        for (int chunkX = originChunkX - SEARCH_RADIUS_CHUNKS; chunkX <= originChunkX + SEARCH_RADIUS_CHUNKS; chunkX++) {
-            for (int chunkZ = originChunkZ - SEARCH_RADIUS_CHUNKS; chunkZ <= originChunkZ + SEARCH_RADIUS_CHUNKS; chunkZ++) {
-                LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
-                if (chunk == null) {
-                    continue;
-                }
-                for (var blockEntity : chunk.getBlockEntities().values()) {
-                    if (!(blockEntity instanceof AlarmBeaconBlockEntity beacon) || !beacon.isEffectivelyRunning(partialTick)) {
-                        continue;
-                    }
-                    if (playerPos.distanceToSqr(beacon.getHeadWorldPos()) <= MAX_DISTANCE_SQR) {
-                        candidates.add(beacon);
-                    }
-                }
-            }
-        }
-
-        candidates.sort(Comparator.comparingDouble(beacon -> playerPos.distanceToSqr(beacon.getHeadWorldPos())));
-        if (candidates.size() > MAX_BEACONS) {
-            return new ArrayList<>(candidates.subList(0, MAX_BEACONS));
-        }
-        return candidates;
     }
 
     private static void clear() {

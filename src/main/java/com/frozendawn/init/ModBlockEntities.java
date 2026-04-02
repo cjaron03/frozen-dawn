@@ -9,6 +9,7 @@ import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.OrsaFlagBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.block.TownPASpeakerBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.block.TransponderBlockEntity;
 import net.minecraft.core.registries.Registries;
@@ -88,6 +89,12 @@ public class ModBlockEntities {
                             ModBlocks.EMERGENCY_LIGHT.get(),
                             ModBlocks.WALL_EMERGENCY_LIGHT.get(),
                             ModBlocks.STREET_LIGHT.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TownPASpeakerBlockEntity>> TOWN_PA_SPEAKER =
+            BLOCK_ENTITIES.register("town_pa_speaker",
+                    () -> BlockEntityType.Builder.of(TownPASpeakerBlockEntity::new,
+                            ModBlocks.TOWN_PA_SPEAKER.get()
                     ).build(null));
 
     @SubscribeEvent

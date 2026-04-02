@@ -28,6 +28,7 @@
   "block.frozendawn.emergency_light": "Emergency Light",
   "block.frozendawn.wall_emergency_light": "Wall Emergency Light",
   "block.frozendawn.street_light": "Street Light",
+  "block.frozendawn.town_pa_speaker": "Town PA Speaker",
   "block.frozendawn.tower_antenna_console": "Tower Antenna Console",
   "block.frozendawn.monitoring_station_terminal": "Monitoring Station Terminal",
 
@@ -135,6 +136,7 @@
   "subtitle.frozendawn.ambient.shelter_creak": "Shelter creaks",
   "subtitle.frozendawn.ambient.flag_flutter": "Flag flaps",
   "subtitle.frozendawn.blocks.alarm_beacon": "Alarm blares",
+  "subtitle.frozendawn.blocks.town_pa": "Emergency message echoes",
 
   "death.attack.frozendawn.atmospheric_suffocation": "%1$s suffocated in the void",
 

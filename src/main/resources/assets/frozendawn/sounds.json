@@ -51,6 +51,28 @@
       }
     ]
   },
+  "blocks.town_pa_clear": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.town_pa",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/town_pa_clear",
+        "volume": 1.0,
+        "stream": true
+      }
+    ]
+  },
+  "blocks.town_pa_degraded": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.town_pa",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/town_pa_degraded",
+        "volume": 1.0,
+        "stream": true
+      }
+    ]
+  },
   "ambient.eva_breathing": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_breathing",

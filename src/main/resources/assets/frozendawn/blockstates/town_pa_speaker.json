@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "frozendawn:block/town_pa_speaker" },
+    "facing=east": { "model": "frozendawn:block/town_pa_speaker", "y": 90 },
+    "facing=south": { "model": "frozendawn:block/town_pa_speaker", "y": 180 },
+    "facing=west": { "model": "frozendawn:block/town_pa_speaker", "y": 270 }
+  }
+}
