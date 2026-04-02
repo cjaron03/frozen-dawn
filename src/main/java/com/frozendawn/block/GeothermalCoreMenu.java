@@ -3,6 +3,7 @@ package com.frozendawn.block;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.item.O2TankItem;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -15,26 +16,32 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.Nullable;
 
 public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     private final Container container;
     private final ContainerData data;
+    @Nullable
+    private final BlockPos corePos;
 
     /** Client constructor (from network). */
     public GeothermalCoreMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(3));
+        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(3),
+                buf != null ? buf.readBlockPos() : null);
     }
 
     /** Server constructor. */
     public GeothermalCoreMenu(int containerId, Inventory playerInv, GeothermalCoreBlockEntity entity) {
-        this(containerId, playerInv, new CoreContainer(entity), entity.getData());
+        this(containerId, playerInv, new CoreContainer(entity), entity.getData(), entity.getBlockPos());
     }
 
-    private GeothermalCoreMenu(int containerId, Inventory playerInv, Container container, ContainerData data) {
+    private GeothermalCoreMenu(int containerId, Inventory playerInv, Container container, ContainerData data,
+                               @Nullable BlockPos corePos) {
         super(ModMenuTypes.GEOTHERMAL_CORE.get(), containerId);
         this.container = container;
         this.data = data;
+        this.corePos = corePos;
 
         // 3 upgrade slots + 1 O2 tank refill slot
         addSlot(new UpgradeSlot(container, 0, 26, 22));   // Range
@@ -58,6 +65,11 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     public ContainerData getData() {
         return data;
+    }
+
+    @Nullable
+    public BlockPos getCorePos() {
+        return corePos;
     }
 
     @Override

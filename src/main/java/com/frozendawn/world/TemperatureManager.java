@@ -279,11 +279,8 @@ public final class TemperatureManager {
                 coreTemp = GeothermalCoreBlockEntity.BASE_TEMP;
             }
 
-            // Above Y=0: halve effectiveness
-            if (corePos.getY() >= 0) {
-                coreRange /= 2;
-                coreTemp /= 2;
-            }
+            coreRange = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(coreRange, corePos);
+            coreTemp = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(coreTemp, corePos);
 
             if (distSq <= coreRange * coreRange) {
                 totalWarmth += coreTemp;

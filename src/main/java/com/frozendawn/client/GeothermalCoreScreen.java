@@ -6,6 +6,7 @@ import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -13,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Geothermal Core GUI — dark tech style with a side tab for upgrade guide.
@@ -78,9 +80,15 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         int rangeLevel = data.get(0);
         int tempLevel = data.get(1);
         int o2Level = data.get(2);
+        BlockPos corePos = menu.getCorePos();
+        boolean hasSurfacePenalty = corePos != null && GeothermalCoreBlockEntity.hasSurfaceWarmthPenalty(corePos);
 
-        int effectiveRange = GeothermalCoreBlockEntity.BASE_RANGE + rangeLevel;
-        int effectiveTemp = (int) (GeothermalCoreBlockEntity.BASE_TEMP + tempLevel * 5.0f);
+        float effectiveRange = GeothermalCoreBlockEntity.BASE_RANGE + rangeLevel;
+        float effectiveTemp = GeothermalCoreBlockEntity.BASE_TEMP + tempLevel * 5.0f;
+        if (corePos != null) {
+            effectiveRange = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(effectiveRange, corePos);
+            effectiveTemp = GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(effectiveTemp, corePos);
+        }
         int effectiveO2 = switch (o2Level) {
             case 1 -> 20; case 2 -> 26; case 3 -> GeothermalCoreBlockEntity.MAX_O2_RANGE;
             default -> GeothermalCoreBlockEntity.BASE_O2_RANGE;
@@ -102,14 +110,14 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         graphics.drawString(font, "Range", barX, y + 15, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 24, BAR_W, BAR_H,
                 rangeLevel, GeothermalCoreBlockEntity.MAX_RANGE_LEVEL, 0xFF3388DD);
-        String rangeText = effectiveRange + " blk" + (rangeMax ? " \u00A76MAX" : "");
+        String rangeText = formatDisplayValue(effectiveRange) + " blk" + (rangeMax ? " \u00A76MAX" : "");
         graphics.drawString(font, rangeText, barX + BAR_W + 4, y + 25, 0xFFE0E0E0, true);
 
         // Temp bar (orange)
         graphics.drawString(font, "Heat", barX, y + 39, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 48, BAR_W, BAR_H,
                 tempLevel, GeothermalCoreBlockEntity.MAX_TEMP_LEVEL, 0xFFDD6622);
-        String tempText = "+" + effectiveTemp + "\u00B0C" + (tempMax ? " \u00A76MAX" : "");
+        String tempText = "+" + formatDisplayValue(effectiveTemp) + "\u00B0C" + (tempMax ? " \u00A76MAX" : "");
         graphics.drawString(font, tempText, barX + BAR_W + 4, y + 49, 0xFFE0E0E0, true);
 
         // O2 bar (green)
@@ -118,6 +126,12 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
                 o2Level, GeothermalCoreBlockEntity.MAX_O2_LEVEL, 0xFF22BB44);
         String o2Text = effectiveO2 + " blk" + (o2Max ? " \u00A76MAX" : "");
         graphics.drawString(font, o2Text, barX + BAR_W + 4, y + 73, 0xFFE0E0E0, true);
+
+        if (hasSurfacePenalty) {
+            String penaltyText = "Surface penalty: " + getSurfacePenaltyPercent() + "%";
+            graphics.drawString(font, penaltyText, x + (GUI_W - font.width(penaltyText)) / 2, y + 80,
+                    0xFFCCAA66, false);
+        }
 
         // --- O2 Tank Refill Row ---
         graphics.fill(x + 4, y + 90, x + GUI_W - 4, y + 91, 0xFF604830);
@@ -219,11 +233,13 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         ty += lineH + 2;
         graphics.fill(tx, ty, px + GUIDE_W - 6, ty + 1, 0xFF604830);
         ty += 5;
+        graphics.drawString(font, "Surface warmth: 50%", tx, ty, 0xFFCCAA66, false);
+        ty += lineH + 4;
 
         // Range
         graphics.drawString(font, "\u00A7bRange", tx, ty, 0xFF3388DD, false);
         ty += lineH;
-        graphics.drawString(font, "Base: 12 \u2192 Max: 32", tx + 2, ty, 0xFF778888, false);
+        graphics.drawString(font, "Below 0: 12 \u2192 32", tx + 2, ty, 0xFF778888, false);
         ty += lineH;
         graphics.drawString(font, "\u2022 Obsidian: +1 block", tx + 2, ty, 0xFF99AABB, false);
         ty += lineH;
@@ -233,7 +249,7 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         // Temperature
         graphics.drawString(font, "\u00A76Temperature", tx, ty, 0xFFDD6622, false);
         ty += lineH;
-        graphics.drawString(font, "+50 \u2192 +100\u00B0C", tx + 2, ty, 0xFF778888, false);
+        graphics.drawString(font, "Below 0: +50 \u2192 +100\u00B0C", tx + 2, ty, 0xFF778888, false);
         ty += lineH;
         graphics.drawString(font, "\u2022 Blaze Powder: +5\u00B0C", tx + 2, ty, 0xFF99AABB, false);
         ty += lineH;
@@ -314,5 +330,16 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         }
 
         renderTooltip(graphics, mouseX, mouseY);
+    }
+
+    private static String formatDisplayValue(float value) {
+        if (Math.abs(value - Math.round(value)) < 0.001f) {
+            return Integer.toString(Math.round(value));
+        }
+        return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private static int getSurfacePenaltyPercent() {
+        return Math.round((1.0f - GeothermalCoreBlockEntity.SURFACE_WARMTH_MULTIPLIER) * 100.0f);
     }
 }
