@@ -24,11 +24,11 @@ import java.util.Locale;
  */
 public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCoreMenu> {
 
-    private static final int GUI_W = 176;
+    private static final int GUI_W = 196;
     private static final int GUI_H = 212;
 
     private static final int BAR_LEFT = 48;
-    private static final int BAR_W = 96;
+    private static final int BAR_W = 86;
     private static final int BAR_H = 10;
 
     private static final int TAB_W = 20;
@@ -116,27 +116,28 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
 
         // --- Progress bars ---
         int barX = x + BAR_LEFT;
+        int valueRightX = x + GUI_W - 8;
 
         // Range bar (blue)
         graphics.drawString(font, "Range", barX, y + 15, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 24, BAR_W, BAR_H,
                 rangeLevel, GeothermalCoreBlockEntity.MAX_RANGE_LEVEL, 0xFF3388DD);
         String rangeText = formatDisplayValue(effectiveRange) + " blk" + (rangeMax ? " \u00A76MAX" : "");
-        graphics.drawString(font, rangeText, barX + BAR_W + 4, y + 25, 0xFFE0E0E0, true);
+        graphics.drawString(font, rangeText, valueRightX - font.width(rangeText), y + 25, 0xFFE0E0E0, true);
 
         // Temp bar (orange)
         graphics.drawString(font, "Heat", barX, y + 39, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 48, BAR_W, BAR_H,
                 tempLevel, GeothermalCoreBlockEntity.MAX_TEMP_LEVEL, 0xFFDD6622);
         String tempText = "+" + formatDisplayValue(effectiveTemp) + "\u00B0C" + (tempMax ? " \u00A76MAX" : "");
-        graphics.drawString(font, tempText, barX + BAR_W + 4, y + 49, 0xFFE0E0E0, true);
+        graphics.drawString(font, tempText, valueRightX - font.width(tempText), y + 49, 0xFFE0E0E0, true);
 
         // O2 bar (green)
         graphics.drawString(font, "O2", barX, y + 63, 0xFF6688AA, false);
         drawUpgradeBar(graphics, barX, y + 72, BAR_W, BAR_H,
                 o2Level, GeothermalCoreBlockEntity.MAX_O2_LEVEL, 0xFF22BB44);
         String o2Text = effectiveO2 + " blk" + (o2Max ? " \u00A76MAX" : "");
-        graphics.drawString(font, o2Text, barX + BAR_W + 4, y + 73, 0xFFE0E0E0, true);
+        graphics.drawString(font, o2Text, valueRightX - font.width(o2Text), y + 73, 0xFFE0E0E0, true);
 
         if (hasSurfacePenalty) {
             String penaltyText = "Surface penalty: " + getSurfacePenaltyPercent() + "%";
