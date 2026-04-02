@@ -1,13 +1,16 @@
 package com.frozendawn.client;
 
+import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 /**
  * Custom O2 bubble bar HUD. Shows 10 bubbles above the hunger bar (right side)
@@ -38,6 +41,9 @@ public class O2BubbleHud {
         Player player = mc.player;
         if (player == null || player.isCreative() || player.isSpectator()) return;
         if (mc.options.hideGui) return;
+        if (player.level().dimension() != Level.OVERWORLD) return;
+        if (MobFreezeHandler.getFullSetTier(player) != 3) return;
+        if (TemperatureManager.isInHabitableZone(player.level(), player.blockPosition())) return;
 
         // Sum O2 across all tanks in inventory; use highest tier for color
         int totalO2 = 0;

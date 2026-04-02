@@ -99,8 +99,12 @@ public class MobFreezeHandler {
             return;
         }
 
-        // Full EVA suit is climate-controlled — no vanilla freeze visual
-        boolean evaProtected = isPlayer && getFullSetTier((Player) entity) >= 3;
+        // Full tier-3 EVA / visor rig is climate-controlled — no freeze buildup or damage.
+        boolean climateControlled = isPlayer && getFullSetTier((Player) entity) == 3;
+        if (climateControlled) {
+            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
+            return;
+        }
 
         // Warm enough — thaw out
         if (temp >= 0f) {
@@ -116,13 +120,8 @@ public class MobFreezeHandler {
         }
 
         // Build up visual freeze (vanilla frost overlay on entities)
-        // EVA suit suppresses this — climate-controlled, no frost visual
-        if (evaProtected) {
-            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
-        } else {
-            int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
-            entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
-        }
+        int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
+        entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
 
         // Determine severity
         int slowLevel;

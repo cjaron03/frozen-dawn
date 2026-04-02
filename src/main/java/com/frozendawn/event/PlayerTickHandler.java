@@ -1,6 +1,5 @@
 package com.frozendawn.event;
 
-import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
@@ -8,12 +7,9 @@ import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.TemperaturePayload;
-import com.frozendawn.world.BlastPitWarmZoneRegistry;
-import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -23,7 +19,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -46,6 +41,7 @@ final class PlayerTickHandler {
     private static final Map<UUID, Float> frostmiteTemperatureDrain = new HashMap<>();
 
     private static final int SUFFOCATION_DURATION = 200;
+    private static final float SUFFOCATION_DAMAGE = 4.0f;
     private static final int FROSTMITE_DRAIN_STEP_INTERVAL = 10;
     private static final int TEMPERATURE_SYNC_INTERVAL = 10;
     private static final float MAX_FROSTMITE_TEMP_DRAIN = 50.0f;
@@ -283,7 +279,7 @@ final class PlayerTickHandler {
 
             UUID id = player.getUUID();
             if (refreshCache) {
-                habitableCache.put(id, isInHabitableZone(player));
+                habitableCache.put(id, TemperatureManager.isInHabitableZone(player.level(), player.blockPosition()));
             }
             if (Boolean.TRUE.equals(habitableCache.get(id))) {
                 suffocationTimer.put(id, 0);
@@ -342,7 +338,7 @@ final class PlayerTickHandler {
                                 .lookupOrThrow(Registries.DAMAGE_TYPE)
                                 .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
                 Vec3 motion = player.getDeltaMovement();
-                player.hurt(source, 2.0f);
+                player.hurt(source, SUFFOCATION_DAMAGE);
                 player.setDeltaMovement(motion);
             }
         }
@@ -357,26 +353,6 @@ final class PlayerTickHandler {
             }
         }
         return ItemStack.EMPTY;
-    }
-
-    private static boolean isInHabitableZone(ServerPlayer player) {
-        if (TemperatureManager.isEnclosed(player.level(), player.blockPosition())) return true;
-
-        BlockPos playerPos = player.blockPosition();
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(player.level(), playerPos)) return true;
-        for (BlockPos corePos : GeothermalCoreRegistry.getCores(player.level())) {
-            int o2Range;
-            BlockEntity be = player.level().getBlockEntity(corePos);
-            if (be instanceof GeothermalCoreBlockEntity core) {
-                o2Range = core.getEffectiveO2Range();
-            } else {
-                o2Range = GeothermalCoreBlockEntity.BASE_O2_RANGE;
-            }
-            if (playerPos.distSqr(corePos) <= (long) o2Range * o2Range) {
-                return true;
-            }
-        }
-        return false;
     }
 
 }

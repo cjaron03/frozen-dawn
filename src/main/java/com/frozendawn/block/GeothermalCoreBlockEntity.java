@@ -10,6 +10,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -127,7 +128,12 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             }
         }
 
-        if (changed) setChanged();
+        if (changed) {
+            setChanged();
+            if (level != null) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
+        }
     }
 
     public int getEffectiveRange() {
@@ -198,5 +204,20 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tempLevel = tag.getInt("TempLevel");
         o2Level = tag.getInt("O2Level");
         ContainerHelper.loadAllItems(tag, items, registries);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putInt("RangeLevel", rangeLevel);
+        tag.putInt("TempLevel", tempLevel);
+        tag.putInt("O2Level", o2Level);
+        return tag;
+    }
+
+    @Nullable
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

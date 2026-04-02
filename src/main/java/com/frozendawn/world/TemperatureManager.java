@@ -112,6 +112,31 @@ public final class TemperatureManager {
     }
 
     /**
+     * Returns true if the position has breathable air for late phase 6 oxygen checks.
+     * This matches the server's current suffocation-safe zones: enclosed rooms,
+     * blast pit warm zones, and geothermal core O2 range.
+     */
+    public static boolean isInHabitableZone(Level level, BlockPos pos) {
+        if (isEnclosed(level, pos)) return true;
+        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) return true;
+
+        for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
+            int o2Range;
+            BlockEntity be = level.getBlockEntity(corePos);
+            if (be instanceof GeothermalCoreBlockEntity core) {
+                o2Range = core.getEffectiveO2Range();
+            } else {
+                o2Range = GeothermalCoreBlockEntity.BASE_O2_RANGE;
+            }
+            if (pos.distSqr(corePos) <= (long) o2Range * o2Range) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Heat source modifier: sums warmth from all nearby heat sources (stacking).
      * Thermal heaters use HeaterRegistry (O(n) where n = lit heaters).
      * Other heat sources (campfires, lava, etc.) use a small block scan (radius 6).

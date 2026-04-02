@@ -33,7 +33,7 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
-        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3 && mc.player.getTicksFrozen() > 0) {
+        if (MobFreezeHandler.getFullSetTier(mc.player) == 3 && mc.player.getTicksFrozen() > 0) {
             mc.player.setTicksFrozen(0);
         }
 
@@ -101,7 +101,7 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         // Full EVA suit (tier 3+) is climate-controlled — no shivering
-        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3) return;
+        if (MobFreezeHandler.getFullSetTier(mc.player) == 3) return;
 
         float temp = TemperatureHud.getDisplayedTemp();
         // Factor in armor cold resistance — no shivering when protected
