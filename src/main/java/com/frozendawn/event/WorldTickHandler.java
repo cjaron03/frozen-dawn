@@ -4,7 +4,6 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
-import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
@@ -28,6 +27,7 @@ import com.frozendawn.world.FrostmiteSpawner;
 import com.frozendawn.world.FrozenAtmosphereFormation;
 import com.frozendawn.world.HollowSpawner;
 import com.frozendawn.world.ArchitectSpawner;
+import com.frozendawn.world.BlastPitPlanner;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.CargoDropPlacement;
@@ -41,6 +41,7 @@ import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.StructureStressTracker;
 import com.frozendawn.world.TowerEncounterController;
 import com.frozendawn.world.CampPlacement;
+import com.frozendawn.world.TowerPlanner;
 import com.frozendawn.world.TowerPlacement;
 import com.frozendawn.world.VegetationDecay;
 import net.minecraft.advancements.AdvancementHolder;
@@ -107,6 +108,8 @@ public class WorldTickHandler {
         EasterEggHandler.reset();
         StructureStressTracker.reset();
         BlastPitWarmZoneRegistry.reset();
+        BlastPitPlanner.reset();
+        TowerPlanner.reset();
         TowerPlacement.reset();
         CampPlacement.reset();
         FrozenEvacVehiclePlacement.reset();
@@ -125,9 +128,8 @@ public class WorldTickHandler {
         // Initialize satellite coordinates once (no-op if already chosen or disabled).
         WinConditionState winState = WinConditionState.get(server);
         winState.initSatellitePosition(server.overworld());
-        OrsaStructureState orsaStructureState = OrsaStructureState.get(server);
-        orsaStructureState.initBlastPitPosition(server.overworld());
-        orsaStructureState.initTowerPositions(server.overworld());
+        BlastPitPlanner.ensurePlanned(server.overworld());
+        TowerPlanner.ensurePlanned(server.overworld());
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();

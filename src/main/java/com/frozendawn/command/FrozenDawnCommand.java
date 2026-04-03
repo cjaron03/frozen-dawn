@@ -11,10 +11,12 @@ import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.world.BlastPitPlacement;
+import com.frozendawn.world.BlastPitPlanner;
 import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
+import com.frozendawn.world.TowerPlanner;
 import com.frozendawn.world.TowerPlacement;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.server.level.ServerLevel;
@@ -651,14 +653,9 @@ public class FrozenDawnCommand {
 
     private static void refreshLandmarks(MinecraftServer server) {
         var overworld = server.overworld();
-        OrsaStructureState state = OrsaStructureState.get(server);
         for (int i = 0; i < 2; i++) {
-            if (state.getBlastPitTargetPos() == null) {
-                state.initBlastPitPosition(overworld);
-            }
-            if (state.getTowers().size() < 6) {
-                state.initTowerPositions(overworld);
-            }
+            BlastPitPlanner.ensurePlanned(overworld);
+            TowerPlanner.ensurePlanned(overworld);
         }
     }
 
