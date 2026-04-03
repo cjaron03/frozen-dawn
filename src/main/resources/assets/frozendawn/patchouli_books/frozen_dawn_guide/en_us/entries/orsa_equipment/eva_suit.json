@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "ORSA EVA Survival Suit",
-      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and vacuum protection.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
+      "text": "$(bold)ORSA Mk.III Extra-Vehicular Activity Suit$()$(br2)The pinnacle of ORSA engineering. Sealed air loop, cryogenic insulation, and a Frozen Heart power core. Provides $(bold)cold resistance through Phase 5-6$() and keeps you functional in late Phase 6 only when you also have breathable air or O2 support.$(br2)$(italic)This suit costs more than your house. Your old house. The one that's now a glacier.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface conditions$(br)$(bold)Bonus:$() Negates wind chill. Full set protects from suffocation.$(br)$(bold)Limitation:$() In late Phase 6, you also need $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) for breathable air.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
+      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface cold$(br)$(bold)Bonus:$() Negates wind chill.$(br)$(bold)Limitation:$() In late Phase 6, a full EVA suit still needs breathable air: stay inside a sealed room or habitable oxygen zone, or carry $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) to survive outside.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
     },
     {
       "type": "patchouli:text",
@@ -23,6 +23,21 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_chestplate",
       "text": "The chestplate requires a Frozen Heart core. Don't worry, it's not YOUR heart."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:eva_helmet",
+      "text": "Blue ice, ice shards, and a reinforced helmet. Breathing easier starts at the top."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:eva_leggings",
+      "text": "Mobility matters when the surface is trying to kill you. These keep up."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:eva_boots",
+      "text": "Seal the suit from the ground up. Vacuum is a terrible thing to step into."
     }
   ]
 }

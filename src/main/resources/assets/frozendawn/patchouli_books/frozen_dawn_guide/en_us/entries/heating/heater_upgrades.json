@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "Shelter & Strategy",
-      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters lose half their radius. Enclose all 6 faces with solid blocks to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
+      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters keep only $(bold)0.6x radius$() — a 40% range loss, not half. Put a real roof over them to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
     },
     {
       "type": "patchouli:crafting",
