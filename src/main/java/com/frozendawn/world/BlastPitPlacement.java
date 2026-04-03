@@ -110,8 +110,7 @@ public final class BlastPitPlacement {
         FrozenDawn.LOGGER.warn("Blast Pit target at ({}, {}, {}) {}. Rerolling before placement.",
                 target.getX(), target.getY(), target.getZ(), reason);
         pendingPlacement = false;
-        state.rerollBlastPitPosition(level);
-        state.initBlastPitPosition(level);
+        BlastPitPlanner.reroll(level);
     }
 
     public static BlockPos ensureBlastPitResolved(ServerLevel overworld) {
