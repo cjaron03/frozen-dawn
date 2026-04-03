@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,7 +35,7 @@ public class O2BubbleHud {
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase < 6 || progress < 0.85f) return;
+        if (!PhaseManager.isVacuumActive(phase, progress)) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;

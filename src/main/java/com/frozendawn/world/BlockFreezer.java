@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -110,7 +111,7 @@ public final class BlockFreezer {
         // Phase 6 late: exposed snow/snow blocks slowly compact into ice
         // 10% chance per check — gradual transformation, not instant
         // (existing ice → packed ice → blue ice chain handles the rest)
-        if (phase >= 6 && progress >= 0.85f && level.canSeeSky(pos.above())) {
+        if (PhaseManager.isVacuumActive(phase, progress) && level.canSeeSky(pos.above())) {
             if ((state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK))
                     && level.getRandom().nextFloat() < 0.10f) {
                 level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
@@ -446,7 +447,7 @@ public final class BlockFreezer {
     private static void transformVolume(ServerLevel level, BlockPos pos, BlockState state, int phase, float progress) {
         // Phase 6 late: surface ice sublimates (solid → gas in vacuum)
         // Water also boils off instantly. Underground ice is unaffected.
-        if (phase >= 6 && progress >= 0.85f && level.canSeeSky(pos.above())) {
+        if (PhaseManager.isVacuumActive(phase, progress) && level.canSeeSky(pos.above())) {
             if (state.is(Blocks.WATER) || state.is(Blocks.ICE)
                     || state.is(Blocks.PACKED_ICE) || state.is(Blocks.BLUE_ICE)) {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);

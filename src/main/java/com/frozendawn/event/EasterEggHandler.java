@@ -6,6 +6,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
@@ -92,7 +93,7 @@ public class EasterEggHandler {
         }
 
         // "The Karman Line" — Y=0-1, phase 6, atmosphere gone
-        if (phase >= 6 && progress >= 0.85f && gameTick % 40 == 0) {
+        if (PhaseManager.isVacuumActive(phase, progress) && gameTick % 40 == 0) {
             tickKarmanLine(player);
         }
 

@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -42,7 +43,7 @@ public class WindAmbience {
         boolean underground = mc.player.blockPosition().getY() < 50;
 
         // Phase 6 late: no wind (vacuum)
-        boolean shouldStop = phase < 3 || underground || (phase >= 6 && progress >= 0.85f);
+        boolean shouldStop = phase < 3 || underground || PhaseManager.isVacuumActive(phase, progress);
         if (shouldStop) {
             stopAll(mc);
             return;
@@ -50,10 +51,10 @@ public class WindAmbience {
 
         float targetVolume;
         if (phase >= 6) {
-            if (progress <= 0.72f) {
+            if (PhaseManager.isPhase6Early(phase, progress)) {
                 targetVolume = 1.0f;
             } else {
-                float fadeProgress = Math.min(1f, (progress - 0.72f) / 0.13f);
+                float fadeProgress = PhaseManager.getPhase6MidFadeProgress(progress);
                 targetVolume = Mth.lerp(fadeProgress, 1.0f, 0.0f);
             }
         } else {

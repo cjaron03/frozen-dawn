@@ -5,6 +5,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -92,8 +93,7 @@ public class MobFreezeHandler {
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
         // Phase 6 late without breathable air: skip freeze — suffocation replaces freezing
         if (entity instanceof ServerPlayer serverPlayer
-                && state.getPhase() >= 6
-                && state.getProgress() >= 0.85f
+                && PhaseManager.isVacuumActive(state.getPhase(), state.getProgress())
                 && !PlayerTickHandler.isPlayerBreathable(serverPlayer)) {
             // Clear residual freeze ticks so vanilla frost overlay doesn't linger
             if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);

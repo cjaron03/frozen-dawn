@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
@@ -22,7 +23,7 @@ import java.util.List;
  * Volume decreases and pitch lowers as temperature drops.
  * Skips music, UI sounds, and our own wind ambience.
  *
- * Phase 6 late (progress >= 0.85): vacuum — all carried sounds are cancelled.
+ * Phase 6 late (vacuum): all carried sounds are cancelled.
  * Only music, UI, and in-suit EVA sounds survive.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
@@ -38,7 +39,7 @@ public class SoundMuffler {
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress >= 0.85f && !ApocalypseClientData.isBreathable()) {
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (original.getLocation().getPath().startsWith("ambient.eva_")) return;

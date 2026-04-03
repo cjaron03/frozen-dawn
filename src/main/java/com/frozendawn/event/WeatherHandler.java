@@ -1,5 +1,6 @@
 package com.frozendawn.event;
 
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.server.level.ServerLevel;
 
 /**
@@ -59,11 +60,11 @@ public final class WeatherHandler {
     /**
      * Phase 2+: Lock weather to rain (phase 2) or thunderstorm (phase 3+).
      * Phase 5+: Force permanent midnight.
-     * Phase 6 mid+ (progress > 0.72): Clear weather — atmosphere too thin for precipitation.
+     * Phase 6 mid+ (progress >= 0.72): Clear weather — atmosphere too thin for precipitation.
      */
     private static void handleLockedWeather(ServerLevel overworld, int phase, float progress) {
         // Phase 6 mid+: atmosphere thinning, clear weather
-        if (phase >= 6 && progress > 0.72f) {
+        if (PhaseManager.isPhase6MidOrLater(phase, progress)) {
             if (overworld.isRaining()) {
                 overworld.setWeatherParameters(LOCKED_DURATION, 0, false, false);
             }

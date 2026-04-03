@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -204,7 +205,7 @@ public final class SadMusicController {
     }
 
     private static boolean shouldMuteAllMusic() {
-        return ApocalypseClientData.getPhase() >= 6 && ApocalypseClientData.getProgress() >= 0.85f;
+        return PhaseManager.isVacuumActive(ApocalypseClientData.getPhase(), ApocalypseClientData.getProgress());
     }
 
     private static boolean shouldPlayForestTrack(Minecraft mc) {

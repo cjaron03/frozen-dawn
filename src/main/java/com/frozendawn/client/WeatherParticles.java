@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
@@ -38,16 +39,16 @@ public class WeatherParticles {
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 6 late: no particles (vacuum)
-        if (!BlizzardWindHelper.hasSurfaceBlizzard(phase, progress) && phase >= 5) return;
+        if (PhaseManager.isVacuumActive(phase, progress)) return;
 
         int particleCount;
         if (phase >= 6) {
-            if (progress <= 0.72f) {
+            if (PhaseManager.isPhase6Early(phase, progress)) {
                 // Phase 6 early: extreme blizzard, more than phase 5
                 particleCount = 60;
             } else {
                 // Phase 6 mid: particles fade out as atmosphere thins
-                float fadeProgress = (progress - 0.72f) / 0.13f;
+                float fadeProgress = PhaseManager.getPhase6MidFadeProgress(progress);
                 particleCount = (int) Mth.lerp(Math.min(1f, fadeProgress), 60f, 0f);
             }
         } else {

@@ -8,6 +8,7 @@ import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
@@ -153,7 +154,7 @@ final class PlayerTickHandler {
         }
 
         // Atmospheric suffocation (every tick, phase 6 late)
-        if (currentPhase >= 6 && progress >= 0.85f) {
+        if (PhaseManager.isVacuumActive(currentPhase, progress)) {
             tickSuffocation(server, state, progress);
         }
 

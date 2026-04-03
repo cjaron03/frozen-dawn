@@ -5,6 +5,7 @@ import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.world.entity.player.Player;
@@ -54,7 +55,7 @@ public class EvaSuitAmbience {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
 
-        boolean inVacuum = phase >= 6 && progress >= 0.85f;
+        boolean inVacuum = PhaseManager.isVacuumActive(phase, progress);
         boolean fullEva = MobFreezeHandler.getFullSetTier(mc.player) == 3;
         boolean hasUsableO2 = hasUsableO2Tank(mc.player);
         boolean vacuumExposure = inVacuum && !ApocalypseClientData.isBreathable();

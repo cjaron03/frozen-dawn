@@ -2,6 +2,7 @@ package com.frozendawn.mixin;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.AlarmDynamicLightManager;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -31,8 +32,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * Hides clouds and celestial bodies (sun/moon) in phase 5+.
  *
  * Phase 5: blizzard whiteout — clouds aren't visible anyway, moon hidden by storm.
- * Phase 6 early (progress ≤ 0.72): same blizzard whiteout.
- * Phase 6 mid+ (progress > 0.72): atmosphere thins, stars become visible on black sky.
+ * Phase 6 early (progress < 0.72): same blizzard whiteout.
+ * Phase 6 mid+ (progress >= 0.72): atmosphere thins, stars become visible on black sky.
  */
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
@@ -77,7 +78,7 @@ public class LevelRendererMixin {
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 5 + phase 6 early: full cancel (blizzard whiteout)
-        if (phase == 5 || progress <= 0.72f) {
+        if (PhaseManager.isBlizzardActive(phase, progress)) {
             ci.cancel();
             return;
         }
@@ -112,8 +113,8 @@ public class LevelRendererMixin {
                                    float partialTick, Runnable skyFogSetup) {
         float progress = ApocalypseClientData.getProgress();
 
-        // Star brightness: fades in from 0 at progress=0.72 to 1.0 at progress=0.90
-        float starAlpha = Math.min(1.0f, (progress - 0.72f) / 0.18f);
+        // Star brightness: fades in across the shared phase-6 mid window.
+        float starAlpha = PhaseManager.getPhase6MidFadeProgress(progress);
 
         if (starAlpha <= 0.0f || starBuffer == null) return;
 

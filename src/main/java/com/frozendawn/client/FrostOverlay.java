@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,12 +41,13 @@ public class FrostOverlay {
         int height = graphics.guiHeight();
 
         // Phase 6: transition from blue-white frost to grey-black (frozen atmosphere)
-        if (phase >= 6) {
+        if (PhaseManager.isPhase6Active(phase)) {
             // Full intensity in phase 6
             intensity = 1f;
 
             // Transition from blue-white to grey-black as atmosphere collapses
-            float darkTransition = Math.min(1f, (progress - 0.60f) / 0.25f);
+            float darkTransition = Math.min(1f, (progress - PhaseManager.PHASE6_START)
+                    / PhaseManager.PHASE6_PRE_VACUUM_LENGTH);
 
             int tintAlpha = (int) Mth.lerp(darkTransition, 40f, 60f);
             int tintR = (int) Mth.lerp(darkTransition, 0xCC, 0x22);

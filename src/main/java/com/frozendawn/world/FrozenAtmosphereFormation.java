@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -14,7 +15,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Handles Frozen Atmosphere deposit formation on the surface during phase 6 late.
  * Also handles block sublimation: removes deposits if temperature rises above -150C.
  *
- * Formation requires: phase 6, progress > 0.85, direct sky access, temp below -150C.
+ * Formation requires: phase 6, progress >= 0.85, direct sky access, temp below -150C.
  */
 public final class FrozenAtmosphereFormation {
 
@@ -31,7 +32,7 @@ public final class FrozenAtmosphereFormation {
 
     public static void tick(ServerLevel level, int phase, float progress, int currentDay, int totalDays) {
         RandomSource random = level.getRandom();
-        boolean canForm = phase >= 6 && progress >= 0.85f;
+        boolean canForm = PhaseManager.isVacuumActive(phase, progress);
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();

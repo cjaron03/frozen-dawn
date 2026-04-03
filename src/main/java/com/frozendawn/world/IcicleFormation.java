@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,7 +21,7 @@ public final class IcicleFormation {
 
     public static void tick(ServerLevel level, int phase, float progress) {
         if (phase < 4) return;
-        if (phase >= 6 && progress > 0.72f) return;
+        if (PhaseManager.isPhase6MidOrLater(phase, progress)) return;
 
         int interval = switch (phase) {
             case 4 -> 80;

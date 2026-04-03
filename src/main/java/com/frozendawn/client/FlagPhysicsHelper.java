@@ -1,5 +1,6 @@
 package com.frozendawn.client;
 
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 
@@ -36,10 +37,10 @@ public final class FlagPhysicsHelper {
             case 4    -> new FlagPhysicsTuning(0.29f, 0.88f, 12.0f, 9.5f, 6.8f, 0.23f, 0.78f, 0.88f, 2.3f, 5.4f, 0.56f, 3.2f);
             case 5    -> new FlagPhysicsTuning(0.39f, 0.88f, 16.0f, 18.0f, 13.0f, 0.36f, 0.98f, 0.84f, 3.0f, 12.5f, 0.86f, 9.5f);
             default   -> {
-                if (progress <= BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END) {
+                if (PhaseManager.isPhase6Early(phase, progress)) {
                     yield new FlagPhysicsTuning(0.43f, 0.86f, 20.0f, 21.0f, 15.5f, 0.42f, 1.10f, 0.80f, 3.8f, 15.0f, 1.02f, 12.5f);
                 }
-                if (progress < BlizzardWindHelper.PHASE6_WIND_END) {
+                if (!PhaseManager.isVacuumActive(phase, progress)) {
                     yield new FlagPhysicsTuning(0.42f, 0.93f, 3.0f, 3.0f, 1.6f, 0.18f, 0.24f, 0.96f, 0.6f, 1.2f, 0.34f, 0.9f);
                 }
                 yield new FlagPhysicsTuning(0.54f, 0.96f, 0.45f, 0.0f, 0.0f, 0.0f, 0.0f, 0.996f, 0.18f, 0.0f, 0.0f, 0.0f);
@@ -48,13 +49,13 @@ public final class FlagPhysicsHelper {
     }
 
     public static float computeWindStrength(BlockPos pos, int phase, float progress, long gameTime, float impulseStrength) {
-        if (phase >= 6 && progress >= BlizzardWindHelper.PHASE6_WIND_END) {
+        if (PhaseManager.isVacuumActive(phase, progress)) {
             return impulseStrength * 0.35f; // late vacuum — only residual impulse moves the flag
         }
 
         if (phase >= 5) {
             float stormStrength = BlizzardWindHelper.getNormalizedSurfaceWindStrength(phase, progress, gameTime);
-            boolean phase6Early = phase >= 6 && progress <= BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END;
+            boolean phase6Early = PhaseManager.isPhase6Early(phase, progress);
             float gustScale = phase6Early ? 0.38f : phase == 5 ? 0.30f : 0.16f;
             float gust = gustScale * Mth.sin(gameTime * 0.13f + pos.getX() * 0.09f + pos.getZ() * 0.07f);
             float base = phase6Early
@@ -109,7 +110,7 @@ public final class FlagPhysicsHelper {
         FlagPhysicsTuning tuning = getTuning(phase, progress);
         float wind = computeWindStrength(pos, phase, progress, gameTime, impulseStrength);
         float time = gameTime + (pos.getX() * 0.17f) + (pos.getZ() * 0.11f);
-        boolean phase6Early = phase >= 6 && progress <= BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END;
+        boolean phase6Early = PhaseManager.isPhase6Early(phase, progress);
         boolean stormChaos = phase == 5 || phase6Early;
         float gustPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.16f : phase == 5 ? 0.12f : 0.08f) + pos.getX() * 0.03f - pos.getZ() * 0.04f);
         float stormPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.33f : phase == 5 ? 0.26f : 0.17f) + pos.getX() * 0.11f + pos.getZ() * 0.09f);

@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -18,7 +19,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  * Below 0C: visible breath (small cloud puffs near mouth).
  * Below -5C: camera shivering that intensifies with cold.
  * Phase 6 early: extreme shivering (higher intensity).
- * Phase 6 mid+: breath particles stop (no air to exhale).
+ * Phase 6 late without breathable air: breath particles stop.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class ColdEffects {
@@ -45,7 +46,7 @@ public class ColdEffects {
         // Phase 6 late without breathable air: no breath particles — no atmosphere to exhale
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress >= 0.85f && !ApocalypseClientData.isBreathable()) {
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
             breathCooldown = 0;
             return;
         }
@@ -110,7 +111,7 @@ public class ColdEffects {
 
         // Phase 6: push intensity higher — extreme shivering
         int phase = ApocalypseClientData.getPhase();
-        if (phase >= 6) {
+        if (PhaseManager.isPhase6Active(phase)) {
             intensity = Math.min(1.5f, intensity * 1.5f);
         }
 

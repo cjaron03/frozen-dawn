@@ -36,6 +36,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -228,11 +229,11 @@ public class FrozenDawnCommand {
             return 0;
         }
 
-        // Phase 6 sub-stages: early=0.60, mid=0.72, late=0.85
+        // Phase 6 sub-stages: early=start, mid=atmosphere thinning, late=vacuum onset
         float targetProgress = switch (substage) {
-            case "early" -> 0.60f;
-            case "mid" -> 0.72f;
-            case "late" -> 0.85f;
+            case "early" -> PhaseManager.PHASE6_START;
+            case "mid" -> PhaseManager.PHASE6_MID_START;
+            case "late" -> PhaseManager.PHASE6_VACUUM_START;
             default -> {
                 context.getSource().sendFailure(Component.literal("Unknown sub-stage: " + substage + " (valid: early, mid, late)"));
                 yield -1f;
@@ -240,7 +241,7 @@ public class FrozenDawnCommand {
         };
         if (targetProgress < 0) return 0;
 
-        int targetDay = (int) (targetProgress * state.getTotalDays());
+        int targetDay = Math.min(state.getTotalDays(), Mth.ceil(targetProgress * state.getTotalDays()));
         state.setApocalypseTicks((long) targetDay * 24000L, server);
         DifficultyPresetManager.syncToClients(server, state);
 
