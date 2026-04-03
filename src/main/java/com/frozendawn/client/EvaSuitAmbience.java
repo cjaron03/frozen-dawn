@@ -1,15 +1,10 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.event.MobFreezeHandler;
-import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModSounds;
-import com.frozendawn.item.O2TankItem;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -56,10 +51,9 @@ public class EvaSuitAmbience {
         float progress = ApocalypseClientData.getProgress();
 
         boolean inVacuum = PhaseManager.isVacuumActive(phase, progress);
-        boolean fullEva = MobFreezeHandler.getFullSetTier(mc.player) == 3;
-        boolean hasUsableO2 = hasUsableO2Tank(mc.player);
+        AirStatusTelemetry.State airState = AirStatusTelemetry.resolve(mc.player);
         boolean vacuumExposure = inVacuum && !ApocalypseClientData.isBreathable();
-        boolean canUseO2 = vacuumExposure && fullEva && hasUsableO2;
+        boolean canUseO2 = vacuumExposure && airState == AirStatusTelemetry.State.EVA_SUPPLY;
         boolean suffocating = vacuumExposure && !canUseO2;
 
         if (suffocating) {
@@ -112,16 +106,5 @@ public class EvaSuitAmbience {
             mc.getSoundManager().stop(suffocateSound);
             suffocateSound = null;
         }
-    }
-
-    private static boolean hasUsableO2Tank(Player player) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (stack.getItem() instanceof O2TankItem
-                    && stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0) > 0) {
-                return true;
-            }
-        }
-        return false;
     }
 }

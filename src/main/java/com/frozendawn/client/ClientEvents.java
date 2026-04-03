@@ -63,6 +63,10 @@ public class ClientEvents {
                 TemperatureHud::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "air_status_hud"),
+                AirStatusHud::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "o2_bubble_hud"),
                 O2BubbleHud::render
         );

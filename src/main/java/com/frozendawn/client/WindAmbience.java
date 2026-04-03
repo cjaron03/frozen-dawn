@@ -106,6 +106,7 @@ public class WindAmbience {
         stopAll(mc);
         ApocalypseClientData.reset();
         TemperatureHud.reset();
+        AirStatusHud.reset();
         SanityClientData.reset();
     }
 
