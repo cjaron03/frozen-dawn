@@ -4,6 +4,7 @@ import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.FlagPhysicsHelper;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -58,7 +59,9 @@ public class OrsaFlagBlockEntity extends BlockEntity {
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress >= com.frozendawn.client.BlizzardWindHelper.PHASE6_WIND_END) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
+        boolean phase6Early = phase6Stage == PhaseManager.Phase6Stage.EARLY;
+        if (phase6Stage == PhaseManager.Phase6Stage.VACUUM) {
             return;
         }
         if (flutterSoundCooldown > 0) {
@@ -84,7 +87,7 @@ public class OrsaFlagBlockEntity extends BlockEntity {
         float phaseBoost = switch (phase) {
             case 4 -> 1.20f;
             case 5 -> 2.00f;
-            case 6 -> progress <= com.frozendawn.client.BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END ? 2.35f : 0.75f;
+            case 6 -> phase6Early ? 2.35f : 0.75f;
             default -> 1.0f;
         };
         float distanceFactor = 1.0f - Mth.clamp(
@@ -95,10 +98,10 @@ public class OrsaFlagBlockEntity extends BlockEntity {
         float volume = Mth.clamp(
                 (0.05f + motionStrength * 0.19f) * distanceFactor * phaseBoost,
                 0.04f,
-                phase >= 6 && progress <= com.frozendawn.client.BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END ? 0.48f
+                phase == 6 && phase6Early ? 0.48f
                         : phase >= 5 ? 0.42f : 0.34f
         );
-        float pitchBase = phase >= 6 && progress <= com.frozendawn.client.BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END
+        float pitchBase = phase == 6 && phase6Early
                 ? 0.92f
                 : phase >= 4 ? 0.96f : 1.04f;
         float pitch = pitchBase + (level.random.nextFloat() - 0.5f) * 0.18f;
@@ -117,13 +120,13 @@ public class OrsaFlagBlockEntity extends BlockEntity {
         int minCooldown = switch (phase) {
             case 4 -> 6;
             case 5 -> 2;
-            case 6 -> progress <= com.frozendawn.client.BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END ? 1 : 10;
+            case 6 -> phase6Early ? 1 : 10;
             default -> 9;
         };
         int maxCooldown = switch (phase) {
             case 4 -> 14;
             case 5 -> 6;
-            case 6 -> progress <= com.frozendawn.client.BlizzardWindHelper.PHASE6_FULL_BLIZZARD_END ? 4 : 18;
+            case 6 -> phase6Early ? 4 : 18;
             default -> 20;
         };
         float normalizedMotion = Mth.clamp(motionStrength / 1.5f, 0.0f, 1.0f);

@@ -23,6 +23,16 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_helmet",
       "text": "Keeps your ears warm and your dignity... debatable."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:insulated_leggings",
+      "text": "Wool-lined trousers for survivors who prefer their knees unfrozen."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:insulated_boots",
+      "text": "Cold feet end expeditions fast. These help you keep walking."
     }
   ]
 }

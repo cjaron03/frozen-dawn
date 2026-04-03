@@ -1,13 +1,13 @@
 package com.frozendawn.client;
 
-import com.frozendawn.init.ModDataComponents;
-import com.frozendawn.item.O2TankItem;
+import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 /**
  * Custom O2 bubble bar HUD. Shows 10 bubbles above the hunger bar (right side)
@@ -32,34 +32,26 @@ public class O2BubbleHud {
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase < 6 || progress < 0.85f) return;
+        if (!PhaseManager.isVacuumActive(phase, progress)) return;
 
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || player.isCreative() || player.isSpectator()) return;
         if (mc.options.hideGui) return;
+        if (player.level().dimension() != Level.OVERWORLD) return;
+        if (MobFreezeHandler.getFullSetTier(player) != 3) return;
+        if (ApocalypseClientData.isBreathable()) return;
 
-        // Sum O2 across all tanks in inventory; use highest tier for color
-        int totalO2 = 0;
-        int totalMaxO2 = 0;
-        int bestTier = 0;
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (stack.getItem() instanceof O2TankItem tankItem) {
-                totalO2 += stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-                totalMaxO2 += tankItem.getMaxO2();
-                bestTier = Math.max(bestTier, tankItem.getTier());
-            }
-        }
-        if (bestTier == 0) return; // no tanks in inventory
+        AirStatusTelemetry.TankTelemetry tankTelemetry = AirStatusTelemetry.getTankTelemetry(player);
+        if (!tankTelemetry.hasAnyTank()) return;
 
-        int o2Level = totalO2;
-        int tier = bestTier;
-        int maxO2 = totalMaxO2;
+        int o2Level = tankTelemetry.totalO2();
+        int tier = tankTelemetry.bestTier();
+        int maxO2 = tankTelemetry.maxO2();
 
         tickCounter++;
 
-        int o2PerBubble = maxO2 / BUBBLE_COUNT;
+        int o2PerBubble = Math.max(1, maxO2 / BUBBLE_COUNT);
 
         // Position: right side, above hunger bar
         int screenWidth = mc.getWindow().getGuiScaledWidth();
@@ -90,7 +82,7 @@ public class O2BubbleHud {
         if (popTimer > 0) popTimer--;
 
         // Low O2 pulse (≤20%)
-        float o2Ratio = (float) o2Level / maxO2;
+        float o2Ratio = tankTelemetry.fillRatio();
         boolean lowO2 = o2Ratio <= 0.2f && o2Level > 0;
         float pulseAlpha = 1.0f;
         if (lowO2) {

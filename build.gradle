@@ -13,6 +13,11 @@ tasks.named('wrapper', Wrapper).configure {
 version = mod_version
 group = mod_group_id
 
+def enableEnhancedClassRedefinition = providers
+        .gradleProperty('fdEnableEnhancedClassRedefinition')
+        .map { it.toBoolean() }
+        .getOrElse(false)
+
 repositories {
     maven { url "https://maven.blamejared.com" }
 }
@@ -35,6 +40,18 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            if (enableEnhancedClassRedefinition) {
+                jvmArgument '-XX:+AllowEnhancedClassRedefinition'
+            }
+        }
+
+        clientDebug {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006'
+            if (enableEnhancedClassRedefinition) {
+                jvmArgument '-XX:+AllowEnhancedClassRedefinition'
+            }
         }
 
         server {

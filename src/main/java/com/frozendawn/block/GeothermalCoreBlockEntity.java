@@ -10,6 +10,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvider {
 
+    public static final float SURFACE_WARMTH_MULTIPLIER = 0.5f;
     public static final int BASE_RANGE = 12;
     public static final int MAX_RANGE = 32;
     public static final float BASE_TEMP = 50.0f;
@@ -127,7 +129,12 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             }
         }
 
-        if (changed) setChanged();
+        if (changed) {
+            setChanged();
+            if (level != null) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
+        }
     }
 
     public int getEffectiveRange() {
@@ -145,6 +152,18 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             case 3 -> MAX_O2_RANGE;
             default -> BASE_O2_RANGE;
         };
+    }
+
+    public static boolean hasSurfaceWarmthPenalty(BlockPos pos) {
+        return pos.getY() >= 0;
+    }
+
+    public static float getWarmthMultiplier(BlockPos pos) {
+        return hasSurfaceWarmthPenalty(pos) ? SURFACE_WARMTH_MULTIPLIER : 1.0f;
+    }
+
+    public static float applySurfaceWarmthPenalty(float value, BlockPos pos) {
+        return value * getWarmthMultiplier(pos);
     }
 
     public NonNullList<ItemStack> getItems() {
@@ -198,5 +217,20 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tempLevel = tag.getInt("TempLevel");
         o2Level = tag.getInt("O2Level");
         ContainerHelper.loadAllItems(tag, items, registries);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putInt("RangeLevel", rangeLevel);
+        tag.putInt("TempLevel", tempLevel);
+        tag.putInt("O2Level", o2Level);
+        return tag;
+    }
+
+    @Nullable
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

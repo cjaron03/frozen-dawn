@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +20,7 @@ public class HollowSpawner {
         if (currentPhase < 5) return;
         if (!FrozenDawnConfig.ENABLE_HOLLOW.get()) return;
         // Stop spawning in phase 6 late (atmosphere gone — even vapors freeze solid)
-        if (currentPhase >= 6 && progress >= 0.85f) return;
+        if (PhaseManager.isVacuumActive(currentPhase, progress)) return;
 
         long gameTick = level.getGameTime();
         if (gameTick % 200 != 0) return; // Every 10 seconds
@@ -28,24 +29,27 @@ public class HollowSpawner {
 
         // Phase-based spawn chance:
         // Phase 5: 15% — introductory encounters
-        // Phase 6 early (0-0.4): ramps 20% → 40%
-        // Phase 6 mid (0.4-0.7): peaks at 50%
-        // Phase 6 late (0.7-0.85): tapers to 25% then stops at 0.85
+        // Phase 6 early local window (0.0-0.4): ramps 20% → 40%
+        // Phase 6 mid local window (0.4-0.7): peaks at 50%
+        // Phase 6 late local window (0.7-1.0): tapers to 0% at vacuum onset
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
         float spawnChance;
         if (currentPhase == 5) {
             spawnChance = 0.15f;
         } else {
-            // Phase 6 — ramp/peak/taper based on progress
-            if (progress < 0.4f) {
+            float phase6Progress = PhaseManager.getPhase6PreVacuumLocalProgress(progress);
+
+            // Phase 6 — ramp/peak/taper based on pre-vacuum local progress
+            if (phase6Progress < PhaseManager.HOLLOW_PHASE6_RAMP_END) {
                 // Early: ramp 0.20 → 0.40
-                spawnChance = 0.20f + (progress / 0.4f) * 0.20f;
-            } else if (progress < 0.7f) {
+                spawnChance = 0.20f + (phase6Progress / PhaseManager.HOLLOW_PHASE6_RAMP_END) * 0.20f;
+            } else if (phase6Progress < PhaseManager.HOLLOW_PHASE6_PEAK_END) {
                 // Mid: peak at 0.50
                 spawnChance = 0.50f;
             } else {
-                // Late: taper 0.50 → 0.0 from 0.7 to 0.85
-                float taper = (progress - 0.7f) / 0.15f;
+                // Late: taper 0.50 → 0.0 from local progress 0.70 to 1.00 (overall vacuum start at 0.85)
+                float taper = (phase6Progress - PhaseManager.HOLLOW_PHASE6_PEAK_END)
+                        / (1.0f - PhaseManager.HOLLOW_PHASE6_PEAK_END);
                 spawnChance = 0.50f * (1.0f - taper);
             }
         }

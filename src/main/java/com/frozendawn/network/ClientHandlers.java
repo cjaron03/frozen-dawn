@@ -26,6 +26,10 @@ public final class ClientHandlers {
         TemperatureHud.setTemperature(payload.temperature());
     }
 
+    public static void handleBreathableState(BreathableStatePayload payload) {
+        ApocalypseClientData.setBreathable(payload.breathable());
+    }
+
     public static void handleSanityStage(SanityStagePayload payload) {
         SanityClientData.setStage(payload.stage());
     }

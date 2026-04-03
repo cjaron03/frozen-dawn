@@ -145,7 +145,7 @@ public class OrsaFlagRenderer implements BlockEntityRenderer<OrsaFlagBlockEntity
         // In phase 5+, pivot cloth to follow blizzard wind direction
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (BlizzardWindHelper.hasSurfaceBlizzard(phase, progress)) {
+        if (BlizzardWindHelper.hasSurfaceStorm(phase, progress)) {
             poseStack.mulPose(Axis.YP.rotationDegrees(
                     BlizzardWindHelper.getFlagYawDegrees(phase, progress, gameTime)
             ));

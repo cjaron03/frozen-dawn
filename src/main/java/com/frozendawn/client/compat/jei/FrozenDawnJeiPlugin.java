@@ -3,10 +3,13 @@ package com.frozendawn.client.compat.jei;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeMenu;
 import com.frozendawn.block.GeothermalCoreMenu;
+import com.frozendawn.client.GeothermalCoreScreen;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
+import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -72,6 +75,17 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 AcheronForgeCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.GEOTHERMAL_CORE.get()),
                 GeothermalCoreCategory.RECIPE_TYPE);
+    }
+
+    @Override
+    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(GeothermalCoreScreen.class,
+                new IGuiContainerHandler<>() {
+                    @Override
+                    public List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(GeothermalCoreScreen screen) {
+                        return screen.getJeiExtraAreas();
+                    }
+                });
     }
 
     @Override

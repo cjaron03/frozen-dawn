@@ -17,10 +17,26 @@ import net.minecraft.util.Mth;
  */
 public final class PhaseManager {
 
+    public enum Phase6Stage {
+        INACTIVE,
+        EARLY,
+        MID,
+        VACUUM
+    }
+
     private PhaseManager() {}
 
+    public static final float PHASE6_START = 0.60f;
+    public static final float PHASE6_MID_START = 0.72f;
+    public static final float PHASE6_VACUUM_START = 0.85f;
+    public static final float PHASE6_END = 1.00f;
+    public static final float PHASE6_LENGTH = PHASE6_END - PHASE6_START;
+    public static final float PHASE6_PRE_VACUUM_LENGTH = PHASE6_VACUUM_START - PHASE6_START;
+    public static final float HOLLOW_PHASE6_RAMP_END = 0.40f;
+    public static final float HOLLOW_PHASE6_PEAK_END = 0.70f;
+
     // Phase boundary fractions (8 entries = 7 segments, phases 0-6)
-    private static final float[] PHASE_BOUNDS = {0.0f, 0.05f, 0.12f, 0.22f, 0.34f, 0.46f, 0.60f, 1.0f};
+    private static final float[] PHASE_BOUNDS = {0.0f, 0.05f, 0.12f, 0.22f, 0.34f, 0.46f, PHASE6_START, PHASE6_END};
 
     // Sun distance multiplier at each boundary — dramatic shrinkage in phase 1 (last time sun is visible)
     private static final float[] SUN_DISTANCE = {1.0f, 0.35f, 0.12f, 0.06f, 0.04f, 0.03f, 0.02f, 0.0f};
@@ -57,6 +73,56 @@ public final class PhaseManager {
             }
         }
         return 6;
+    }
+
+    public static boolean isPhase6Active(int phase) {
+        return phase >= 6;
+    }
+
+    public static Phase6Stage getPhase6Stage(int phase, float progress) {
+        if (!isPhase6Active(phase)) {
+            return Phase6Stage.INACTIVE;
+        }
+        if (progress < PHASE6_MID_START) {
+            return Phase6Stage.EARLY;
+        }
+        if (progress < PHASE6_VACUUM_START) {
+            return Phase6Stage.MID;
+        }
+        return Phase6Stage.VACUUM;
+    }
+
+    public static boolean isPhase6Early(int phase, float progress) {
+        return getPhase6Stage(phase, progress) == Phase6Stage.EARLY;
+    }
+
+    public static boolean isPhase6MidOrLater(int phase, float progress) {
+        Phase6Stage stage = getPhase6Stage(phase, progress);
+        return stage == Phase6Stage.MID || stage == Phase6Stage.VACUUM;
+    }
+
+    public static boolean isVacuumActive(int phase, float progress) {
+        return getPhase6Stage(phase, progress) == Phase6Stage.VACUUM;
+    }
+
+    public static boolean isBlizzardActive(int phase, float progress) {
+        return phase == 5 || isPhase6Early(phase, progress);
+    }
+
+    public static float getPhase6LocalProgress(float progress) {
+        return Mth.clamp((progress - PHASE6_START) / PHASE6_LENGTH, 0.0f, 1.0f);
+    }
+
+    public static float getPhase6PreVacuumLocalProgress(float progress) {
+        return Mth.clamp((progress - PHASE6_START) / PHASE6_PRE_VACUUM_LENGTH, 0.0f, 1.0f);
+    }
+
+    public static float getPhase6MidFadeProgress(float progress) {
+        return Mth.clamp(
+                (progress - PHASE6_MID_START) / (PHASE6_VACUUM_START - PHASE6_MID_START),
+                0.0f,
+                1.0f
+        );
     }
 
     /**

@@ -96,11 +96,15 @@ public final class FrozenEvacVehiclePlacement {
     }
 
     public static void tickPlacement(ServerLevel overworld) {
-        if (overworld.players().isEmpty() || pendingVehiclePlacements.isEmpty()) {
+        if (overworld.players().isEmpty()) {
             return;
         }
 
         CampSatelliteState state = CampSatelliteState.get(overworld.getServer());
+        enqueueLoadedVehiclePlacements(overworld, state);
+        if (pendingVehiclePlacements.isEmpty()) {
+            return;
+        }
 
         for (Long campKey : Set.copyOf(pendingVehiclePlacements)) {
             int campChunkX = unpackChunkX(campKey);
@@ -135,6 +139,25 @@ public final class FrozenEvacVehiclePlacement {
             FrozenDawn.LOGGER.info("Frozen Evac Vehicle placed at ({}, {}, {}) for camp ({}, {})",
                     vehicleCenter.getX(), vehicleCenter.getY(), vehicleCenter.getZ(),
                     campCenter.getX(), campCenter.getZ());
+        }
+    }
+
+    private static void enqueueLoadedVehiclePlacements(ServerLevel level, CampSatelliteState state) {
+        for (long campKey : state.getPendingVehicleCampKeys()) {
+            if (pendingVehiclePlacements.contains(campKey)) {
+                continue;
+            }
+
+            int campChunkX = unpackChunkX(campKey);
+            int campChunkZ = unpackChunkZ(campKey);
+            BlockPos vehicleCenter = state.getVehicleCenter(campChunkX, campChunkZ);
+            if (vehicleCenter == null) {
+                continue;
+            }
+
+            if (isPlacementAreaLoaded(level, vehicleCenter.getX(), vehicleCenter.getZ())) {
+                pendingVehiclePlacements.add(campKey);
+            }
         }
     }
 

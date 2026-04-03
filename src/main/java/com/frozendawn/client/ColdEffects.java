@@ -2,7 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
-import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -19,7 +19,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  * Below 0C: visible breath (small cloud puffs near mouth).
  * Below -5C: camera shivering that intensifies with cold.
  * Phase 6 early: extreme shivering (higher intensity).
- * Phase 6 mid+: breath particles stop (no air to exhale).
+ * Phase 6 late without breathable air: breath particles stop.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class ColdEffects {
@@ -33,7 +33,7 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
-        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3 && mc.player.getTicksFrozen() > 0) {
+        if (MobFreezeHandler.getFullSetTier(mc.player) == 3 && mc.player.getTicksFrozen() > 0) {
             mc.player.setTicksFrozen(0);
         }
 
@@ -43,12 +43,10 @@ public class ColdEffects {
             return;
         }
 
-        // Phase 6 mid+ exposed to sky: no breath particles — no atmosphere to exhale
-        // Under a roof/underground there's trapped air, so breath is visible
+        // Phase 6 late without breathable air: no breath particles — no atmosphere to exhale
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (phase >= 6 && progress > 0.72f
-                && !TemperatureManager.isEnclosed(mc.level, mc.player.blockPosition())) {
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
             breathCooldown = 0;
             return;
         }
@@ -101,7 +99,7 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         // Full EVA suit (tier 3+) is climate-controlled — no shivering
-        if (MobFreezeHandler.getFullSetTier(mc.player) >= 3) return;
+        if (MobFreezeHandler.getFullSetTier(mc.player) == 3) return;
 
         float temp = TemperatureHud.getDisplayedTemp();
         // Factor in armor cold resistance — no shivering when protected
@@ -113,7 +111,7 @@ public class ColdEffects {
 
         // Phase 6: push intensity higher — extreme shivering
         int phase = ApocalypseClientData.getPhase();
-        if (phase >= 6) {
+        if (PhaseManager.isPhase6Active(phase)) {
             intensity = Math.min(1.5f, intensity * 1.5f);
         }
 

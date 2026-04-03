@@ -5,6 +5,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -90,17 +91,21 @@ public class MobFreezeHandler {
     }
 
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
-        // Phase 6 late, not in an enclosed room: skip freeze — suffocation replaces freezing
-        // Inside an enclosed shelter there's trapped air, so cold still applies
-        if (isPlayer && state.getPhase() >= 6 && state.getProgress() >= 0.85f
-                && !TemperatureManager.isEnclosed(entity.level(), entity.blockPosition())) {
+        // Phase 6 late without breathable air: skip freeze — suffocation replaces freezing
+        if (entity instanceof ServerPlayer serverPlayer
+                && PhaseManager.isVacuumActive(state.getPhase(), state.getProgress())
+                && !PlayerTickHandler.isPlayerBreathable(serverPlayer)) {
             // Clear residual freeze ticks so vanilla frost overlay doesn't linger
             if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
             return;
         }
 
-        // Full EVA suit is climate-controlled — no vanilla freeze visual
-        boolean evaProtected = isPlayer && getFullSetTier((Player) entity) >= 3;
+        // Full tier-3 EVA / visor rig is climate-controlled — no freeze buildup or damage.
+        boolean climateControlled = isPlayer && getFullSetTier((Player) entity) == 3;
+        if (climateControlled) {
+            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
+            return;
+        }
 
         // Warm enough — thaw out
         if (temp >= 0f) {
@@ -116,13 +121,8 @@ public class MobFreezeHandler {
         }
 
         // Build up visual freeze (vanilla frost overlay on entities)
-        // EVA suit suppresses this — climate-controlled, no frost visual
-        if (evaProtected) {
-            if (entity.getTicksFrozen() > 0) entity.setTicksFrozen(0);
-        } else {
-            int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
-            entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
-        }
+        int maxFreeze = entity.getTicksRequiredToFreeze() + 20;
+        entity.setTicksFrozen(Math.min(maxFreeze, entity.getTicksFrozen() + 3));
 
         // Determine severity
         int slowLevel;

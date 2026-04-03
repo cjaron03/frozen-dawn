@@ -12,7 +12,9 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class CampSatelliteState extends SavedData {
@@ -96,6 +98,17 @@ public final class CampSatelliteState extends SavedData {
     public Long getCampKeyForVehicleChunk(int vehicleChunkX, int vehicleChunkZ) {
         rebuildIndexesIfNeeded();
         return vehicleChunkToCamp.get(packChunkPos(vehicleChunkX, vehicleChunkZ));
+    }
+
+    public List<Long> getPendingVehicleCampKeys() {
+        List<Long> pendingKeys = new ArrayList<>();
+        for (Map.Entry<Long, VehicleRecord> entry : campVehicles.entrySet()) {
+            VehicleRecord record = entry.getValue();
+            if (record.hasVehicle() && !record.vehicleBuilt()) {
+                pendingKeys.add(entry.getKey());
+            }
+        }
+        return pendingKeys;
     }
 
     public void markNoVehicle(int campChunkX, int campChunkZ, BlockPos campCenter) {

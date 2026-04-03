@@ -42,7 +42,7 @@
     {
       "type": "patchouli:text",
       "title": "Suffocation (Phase 6 Late)",
-      "text": "In $(bold)late Phase 6$(), the atmosphere itself freezes. The surface becomes $(bold)vacuum$().$(br2)$(li)Darkness and lightheadedness$(li)Nausea and severe slowness$(li)Vision fading$(li)Death by suffocation$(br2)$(bold)Any roof saves you$() — a single block overhead traps breathable air.$(br2)$(italic)Space is nature's way of saying \"build a roof.\" — Kevin$()"
+      "text": "In $(bold)late Phase 6$(), the atmosphere itself freezes. The surface becomes $(bold)vacuum$().$(br2)$(li)Darkness and lightheadedness$(li)Nausea and severe slowness$(li)Vision fading$(li)Death by suffocation$(br2)$(bold)Only sealed shelter or ORSA oxygen zones save you$() — you need a sealed room, or a habitable zone from a Geothermal Core or Blast Pit. One overhead block does not trap air.$(br2)$(italic)Space is nature's way of saying \"build a real shelter.\" — Kevin$()"
     }
   ]
 }

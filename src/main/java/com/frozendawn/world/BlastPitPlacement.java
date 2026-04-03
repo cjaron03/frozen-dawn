@@ -89,12 +89,28 @@ public final class BlastPitPlacement {
         if (!isPlacementAreaLoaded(overworld, targetPos)) {
             return;
         }
+        if (!isValidBlastPitPlacementSite(overworld, targetPos)) {
+            rerollInvalidBlastPitTarget(overworld, state, targetPos, "overlaps Frozen Town exclusion");
+            return;
+        }
         placeStructure(overworld, targetPos);
         state.setBlastPitPos(targetPos);
         state.setBlastPitPlaced(true);
         pendingPlacement = false;
         BlastPitWarmZoneRegistry.register(overworld, targetPos);
         FrozenDawn.LOGGER.info("ORSA Blast Pit placed at ({}, {}, {})", targetPos.getX(), targetPos.getY(), targetPos.getZ());
+    }
+
+    private static boolean isValidBlastPitPlacementSite(ServerLevel level, BlockPos target) {
+        return isPlacementAreaLoaded(level, target)
+                && !FrozenTownPlacementGuard.overlapsFrozenTownExclusion(level, target, OUTER_RADIUS);
+    }
+
+    private static void rerollInvalidBlastPitTarget(ServerLevel level, OrsaStructureState state, BlockPos target, String reason) {
+        FrozenDawn.LOGGER.warn("Blast Pit target at ({}, {}, {}) {}. Rerolling before placement.",
+                target.getX(), target.getY(), target.getZ(), reason);
+        pendingPlacement = false;
+        BlastPitPlanner.reroll(level);
     }
 
     public static BlockPos ensureBlastPitResolved(ServerLevel overworld) {

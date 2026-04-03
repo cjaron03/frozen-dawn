@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -41,28 +42,13 @@ public class WindAmbience {
         float progress = ApocalypseClientData.getProgress();
         boolean underground = mc.player.blockPosition().getY() < 50;
 
-        // Phase 6 late: no wind (vacuum)
-        boolean shouldStop = phase < 3 || underground || (phase >= 6 && progress >= 0.85f);
+        boolean shouldStop = shouldStopWind(phase, progress, underground);
         if (shouldStop) {
             stopAll(mc);
             return;
         }
 
-        float targetVolume;
-        if (phase >= 6) {
-            if (progress <= 0.72f) {
-                targetVolume = 1.0f;
-            } else {
-                float fadeProgress = Math.min(1f, (progress - 0.72f) / 0.13f);
-                targetVolume = Mth.lerp(fadeProgress, 1.0f, 0.0f);
-            }
-        } else {
-            targetVolume = switch (phase) {
-                case 3 -> 0.2f;
-                case 4 -> 0.45f;
-                default -> 0.85f;
-            };
-        }
+        float targetVolume = getTargetWindVolume(phase, progress);
 
         // Muffle wind when sheltered (roof overhead)
         boolean sheltered = isSheltered(mc);
@@ -120,6 +106,7 @@ public class WindAmbience {
         stopAll(mc);
         ApocalypseClientData.reset();
         TemperatureHud.reset();
+        AirStatusHud.reset();
         SanityClientData.reset();
     }
 
@@ -135,5 +122,25 @@ public class WindAmbience {
         }
         ticksUntilNext = 0;
         creakCooldown = 0;
+    }
+
+    private static boolean shouldStopWind(int phase, float progress, boolean underground) {
+        return phase < 3 || underground || PhaseManager.isVacuumActive(phase, progress);
+    }
+
+    private static float getTargetWindVolume(int phase, float progress) {
+        if (phase < 6) {
+            return switch (phase) {
+                case 3 -> 0.2f;
+                case 4 -> 0.45f;
+                default -> 0.85f;
+            };
+        }
+
+        return switch (PhaseManager.getPhase6Stage(phase, progress)) {
+            case EARLY -> 1.0f;
+            case MID -> Mth.lerp(PhaseManager.getPhase6MidFadeProgress(progress), 1.0f, 0.0f);
+            case VACUUM, INACTIVE -> 0.0f;
+        };
     }
 }

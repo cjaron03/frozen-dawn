@@ -10,6 +10,12 @@ import net.minecraft.client.gui.GuiGraphics;
  */
 public class TemperatureHud {
 
+    static final int HUD_X = 6;
+    static final int HUD_Y = 6;
+    static final int PADDING = 4;
+    static final int INNER_HEIGHT = 9;
+    static final int TOTAL_HEIGHT = INNER_HEIGHT + PADDING * 2;
+
     private static float displayedTemp = 0f;
     private static float targetTemp = 0f;
 
@@ -47,15 +53,15 @@ public class TemperatureHud {
         // Layout: [4px bar] [2px gap] [text] — all inside a padded background
         int barWidth = 3;
         int gap = 3;
-        int padding = 4;
+        int padding = PADDING;
         int innerWidth = barWidth + gap + textWidth;
-        int innerHeight = 9; // font height
+        int innerHeight = INNER_HEIGHT;
         int totalWidth = innerWidth + padding * 2;
-        int totalHeight = innerHeight + padding * 2;
+        int totalHeight = TOTAL_HEIGHT;
 
         // Position: top-left, offset from corner
-        int x = 6;
-        int y = 6;
+        int x = HUD_X;
+        int y = HUD_Y;
 
         // Background — rounded look via layered fills
         int bgColor = 0xAA0E0E0E;

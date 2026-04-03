@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
@@ -38,11 +39,8 @@ public class SkyRenderer {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 1) return;
 
-        // No apocalypse sky effects underground (below Y=50 or no sky access)
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.level != null
-                && (mc.player.blockPosition().getY() < 50
-                    || !mc.level.canSeeSky(mc.player.blockPosition().above()))) return;
+        if (isUndergroundOrCovered(mc)) return;
 
         float skyLight = ApocalypseClientData.getSkyLight();
         float sunBrightness = ApocalypseClientData.getSunBrightness();
@@ -59,18 +57,16 @@ public class SkyRenderer {
             float targetG = PHASE_COLORS[idx][1] * brightness;
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
-            // Phase 5: blend fog color toward white-grey for blizzard whiteout
-            // Phase 6 early: same whiteout, transitions to black as atmosphere thins
-            if (phase == 5 || (phase >= 6 && progress <= 0.72f)) {
-                float whiteout = 0.4f;
-                targetR = Mth.lerp(whiteout, targetR, 0.15f);
-                targetG = Mth.lerp(whiteout, targetG, 0.15f);
-                targetB = Mth.lerp(whiteout, targetB, 0.18f);
+            float whiteoutMix = getWhiteoutMix(phase, progress);
+            if (whiteoutMix > 0.0f) {
+                targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
+                targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
+                targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
             }
 
             // Phase 6 mid+: transition from whiteout to pure black
-            if (phase >= 6 && progress > 0.72f) {
-                float blackTransition = Math.min(1f, (progress - 0.72f) / 0.13f);
+            if (PhaseManager.isPhase6MidOrLater(phase, progress)) {
+                float blackTransition = PhaseManager.getPhase6MidFadeProgress(progress);
                 targetR = Mth.lerp(blackTransition, targetR, 0.0f);
                 targetG = Mth.lerp(blackTransition, targetG, 0.0f);
                 targetB = Mth.lerp(blackTransition, targetB, 0.005f);
@@ -99,27 +95,7 @@ public class SkyRenderer {
 
         float progress = ApocalypseClientData.getProgress();
 
-        float visibility;
-        if (phase >= 6) {
-            if (progress <= 0.72f) {
-                // Phase 6 early: same as late phase 5, extreme blizzard (12 blocks)
-                visibility = 12f;
-            } else {
-                // Phase 6 mid+: fog LIFTS as atmosphere thins (no air = no fog)
-                float liftProgress = Math.min(1f, (progress - 0.72f) / 0.13f);
-                visibility = Mth.lerp(liftProgress, 12f, 256f);
-            }
-        } else if (phase >= 5) {
-            // Phase 5: extreme blizzard, visibility drops to 12 blocks
-            float phase5Progress = Math.min(1f, (progress - 0.46f) / 0.14f);
-            visibility = Mth.lerp(phase5Progress, 48f, 12f);
-        } else if (phase >= 4) {
-            float phase4Progress = Math.min(1f, (progress - 0.34f) / 0.12f);
-            visibility = Mth.lerp(phase4Progress, 128f, 48f);
-        } else {
-            float phase3Progress = Math.min(1f, (progress - 0.22f) / 0.12f);
-            visibility = Mth.lerp(phase3Progress, 256f, 128f);
-        }
+        float visibility = getTargetVisibility(phase, progress);
 
         float currentFar = event.getFarPlaneDistance();
         if (visibility < currentFar) {
@@ -127,5 +103,43 @@ public class SkyRenderer {
             event.setNearPlaneDistance(visibility * 0.05f);
             event.setCanceled(true);
         }
+    }
+
+    private static boolean isUndergroundOrCovered(Minecraft mc) {
+        return mc.player != null
+                && mc.level != null
+                && (mc.player.blockPosition().getY() < 50
+                || !mc.level.canSeeSky(mc.player.blockPosition().above()));
+    }
+
+    private static float getWhiteoutMix(int phase, float progress) {
+        if (phase == 5) {
+            return 0.4f;
+        }
+        if (!PhaseManager.isPhase6Active(phase)) {
+            return 0.0f;
+        }
+        return 0.4f * BlizzardWindHelper.getSurfaceStormFade(phase, progress);
+    }
+
+    private static float getTargetVisibility(int phase, float progress) {
+        if (phase >= 6) {
+            return switch (PhaseManager.getPhase6Stage(phase, progress)) {
+                case EARLY -> 12f;
+                case MID -> Mth.lerp(PhaseManager.getPhase6MidFadeProgress(progress), 12f, 256f);
+                case VACUUM, INACTIVE -> 256f;
+            };
+        }
+        if (phase >= 5) {
+            float phase5Progress = Math.min(1f, (progress - 0.46f) / 0.14f);
+            return Mth.lerp(phase5Progress, 48f, 12f);
+        }
+        if (phase >= 4) {
+            float phase4Progress = Math.min(1f, (progress - 0.34f) / 0.12f);
+            return Mth.lerp(phase4Progress, 128f, 48f);
+        }
+
+        float phase3Progress = Math.min(1f, (progress - 0.22f) / 0.12f);
+        return Mth.lerp(phase3Progress, 256f, 128f);
     }
 }

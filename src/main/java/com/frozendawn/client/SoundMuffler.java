@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
@@ -22,8 +23,8 @@ import java.util.List;
  * Volume decreases and pitch lowers as temperature drops.
  * Skips music, UI sounds, and our own wind ambience.
  *
- * Phase 6 late (progress >= 0.85): vacuum — ALL sounds cancelled (no air to carry them).
- * Only music and UI sounds survive.
+ * Phase 6 late (vacuum): all carried sounds are cancelled.
+ * Only music, UI, and in-suit EVA sounds survive.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class SoundMuffler {
@@ -35,6 +36,16 @@ public class SoundMuffler {
 
         SoundInstance original = event.getSound();
         if (original == null) return;
+
+        int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
+            if (original.getSource() == SoundSource.MUSIC) return;
+            if (original.getSource() == SoundSource.MASTER) return;
+            if (original.getLocation().getPath().startsWith("ambient.eva_")) return;
+            event.setSound(null);
+            return;
+        }
 
         // All Frozen Dawn mob sounds are immune from ALL sound suppression
         SoundSource source = original.getSource();
@@ -72,32 +83,6 @@ public class SoundMuffler {
                     return;
                 }
             }
-        }
-
-        int phase = ApocalypseClientData.getPhase();
-        float progress = ApocalypseClientData.getProgress();
-
-        // Phase 6 late: vacuum — cancel or muffle sounds based on depth
-        // Surface (Y >= 0): total silence — no air to carry sound
-        // Underground (Y 0 to -32): sound gradually returns — rock insulates from vacuum
-        // Deep underground (Y <= -32): full volume — geothermal warmth means breathable air
-        if (phase >= 6 && progress >= 0.85f) {
-            if (original.getSource() == SoundSource.MUSIC) return;
-            if (original.getSource() == SoundSource.MASTER) return;
-            // EVA sounds play inside the suit / from the player — not carried by air
-            if (original.getLocation().getPath().startsWith("ambient.eva_")) return;
-
-            int playerY = mc.player.blockPosition().getY();
-            if (playerY >= 0) {
-                // Surface: complete vacuum silence
-                event.setSound(null);
-            } else if (playerY > -32) {
-                // Transition zone: sound fades in from 0% at Y=0 to 100% at Y=-32
-                float volumeMult = (float) -playerY / 32f;
-                event.setSound(new MuffledSound(original, volumeMult, 1.0f));
-            }
-            // Below Y=-32: sounds play normally
-            return;
         }
 
         // Cold-based muffling is a survival mechanic — skip for creative/spectator

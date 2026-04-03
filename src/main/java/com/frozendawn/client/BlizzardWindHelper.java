@@ -1,5 +1,6 @@
 package com.frozendawn.client;
 
+import com.frozendawn.phase.PhaseManager;
 import net.minecraft.util.Mth;
 
 /**
@@ -8,31 +9,32 @@ import net.minecraft.util.Mth;
  */
 public final class BlizzardWindHelper {
 
-    public static final float PHASE6_FULL_BLIZZARD_END = 0.72f;
-    public static final float PHASE6_WIND_END = 0.85f;
-
     private BlizzardWindHelper() {}
 
-    public static boolean hasSurfaceBlizzard(int phase, float progress) {
-        return phase >= 5 && !(phase >= 6 && progress >= PHASE6_WIND_END);
+    public static boolean hasSurfaceStorm(int phase, float progress) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
+        return phase == 5 || phase6Stage == PhaseManager.Phase6Stage.EARLY || phase6Stage == PhaseManager.Phase6Stage.MID;
+    }
+
+    public static boolean hasWhiteoutBlizzard(int phase, float progress) {
+        return PhaseManager.isBlizzardActive(phase, progress);
     }
 
     public static float getWindAngleRad(long gameTime) {
         return gameTime * 0.005f;
     }
 
-    public static float getWindFade(int phase, float progress) {
+    public static float getSurfaceStormFade(int phase, float progress) {
         if (phase < 5) {
             return 0.0f;
         }
-        if (phase < 6 || progress <= PHASE6_FULL_BLIZZARD_END) {
+        if (hasWhiteoutBlizzard(phase, progress)) {
             return 1.0f;
         }
-        if (progress >= PHASE6_WIND_END) {
+        if (PhaseManager.isVacuumActive(phase, progress)) {
             return 0.0f;
         }
-        float fadeProgress = (progress - PHASE6_FULL_BLIZZARD_END) / (PHASE6_WIND_END - PHASE6_FULL_BLIZZARD_END);
-        return 1.0f - Mth.clamp(fadeProgress, 0.0f, 1.0f);
+        return 1.0f - PhaseManager.getPhase6MidFadeProgress(progress);
     }
 
     public static float getSurfaceWindSpeed(int phase, float progress, long gameTime) {
@@ -41,17 +43,17 @@ public final class BlizzardWindHelper {
         }
 
         float windSpeed = 1.5f + 0.5f * Mth.sin(gameTime * 0.015f);
-        if (phase >= 6 && progress <= PHASE6_FULL_BLIZZARD_END) {
+        if (PhaseManager.isPhase6Early(phase, progress)) {
             windSpeed *= 1.3f;
         }
-        return windSpeed * getWindFade(phase, progress);
+        return windSpeed * getSurfaceStormFade(phase, progress);
     }
 
     public static float getNormalizedSurfaceWindStrength(int phase, float progress, long gameTime) {
         if (phase < 5) {
             return 0.0f;
         }
-        float maxWindSpeed = phase >= 6 && progress <= PHASE6_FULL_BLIZZARD_END ? 2.6f : 2.0f;
+        float maxWindSpeed = PhaseManager.isPhase6Early(phase, progress) ? 2.6f : 2.0f;
         return Mth.clamp(getSurfaceWindSpeed(phase, progress, gameTime) / maxWindSpeed, 0.0f, 1.0f);
     }
 

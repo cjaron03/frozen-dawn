@@ -23,6 +23,16 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_helmet",
       "text": "Your head is now a portable furnace. You're welcome."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reinforced_leggings",
+      "text": "More blaze powder, more heat, fewer regrets about leaving your legs exposed."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reinforced_boots",
+      "text": "For when ordinary boots are no longer enough and the snow wants your toes."
     }
   ]
 }

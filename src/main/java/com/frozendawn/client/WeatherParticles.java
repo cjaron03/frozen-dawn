@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
@@ -38,25 +39,9 @@ public class WeatherParticles {
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 6 late: no particles (vacuum)
-        if (!BlizzardWindHelper.hasSurfaceBlizzard(phase, progress) && phase >= 5) return;
+        if (PhaseManager.isVacuumActive(phase, progress)) return;
 
-        int particleCount;
-        if (phase >= 6) {
-            if (progress <= 0.72f) {
-                // Phase 6 early: extreme blizzard, more than phase 5
-                particleCount = 60;
-            } else {
-                // Phase 6 mid: particles fade out as atmosphere thins
-                float fadeProgress = (progress - 0.72f) / 0.13f;
-                particleCount = (int) Mth.lerp(Math.min(1f, fadeProgress), 60f, 0f);
-            }
-        } else {
-            particleCount = switch (phase) {
-                case 3 -> 4;
-                case 4 -> 12;
-                default -> 40; // phase 5: blizzard whiteout
-            };
-        }
+        int particleCount = getParticleCount(phase, progress);
 
         if (particleCount <= 0) return;
 
@@ -100,5 +85,21 @@ public class WeatherParticles {
     /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
     private static boolean isSheltered(Minecraft mc) {
         return TemperatureManager.isSheltered(mc.level, mc.player.blockPosition());
+    }
+
+    private static int getParticleCount(int phase, float progress) {
+        if (phase < 6) {
+            return switch (phase) {
+                case 3 -> 4;
+                case 4 -> 12;
+                default -> 40;
+            };
+        }
+
+        return switch (PhaseManager.getPhase6Stage(phase, progress)) {
+            case EARLY -> 60;
+            case MID -> (int) Mth.lerp(PhaseManager.getPhase6MidFadeProgress(progress), 60f, 0f);
+            case VACUUM, INACTIVE -> 0;
+        };
     }
 }

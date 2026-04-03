@@ -1,15 +1,14 @@
 package com.frozendawn.event;
 
-import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.RemnantEmberItem;
+import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
-import com.frozendawn.world.BlastPitWarmZoneRegistry;
-import com.frozendawn.world.GeothermalCoreRegistry;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
@@ -23,7 +22,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -40,12 +38,13 @@ final class PlayerTickHandler {
 
     private PlayerTickHandler() {}
 
-    private static final Map<UUID, Boolean> habitableCache = new HashMap<>();
+    private static final Map<UUID, Boolean> breathableCache = new HashMap<>();
     private static final Map<UUID, Integer> suffocationTimer = new HashMap<>();
     private static final Map<UUID, Float> playerTemperatures = new HashMap<>();
     private static final Map<UUID, Float> frostmiteTemperatureDrain = new HashMap<>();
 
     private static final int SUFFOCATION_DURATION = 200;
+    private static final float SUFFOCATION_DAMAGE = 4.0f;
     private static final int FROSTMITE_DRAIN_STEP_INTERVAL = 10;
     private static final int TEMPERATURE_SYNC_INTERVAL = 10;
     private static final float MAX_FROSTMITE_TEMP_DRAIN = 50.0f;
@@ -56,7 +55,7 @@ final class PlayerTickHandler {
     };
 
     static void reset() {
-        habitableCache.clear();
+        breathableCache.clear();
         suffocationTimer.clear();
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
@@ -81,6 +80,23 @@ final class PlayerTickHandler {
 
     static float getFreezeResolvedTemperature(ServerPlayer player, ApocalypseState state) {
         return getDisplayedTemperature(player, state) + MobFreezeHandler.getArmorColdResistance(player);
+    }
+
+    static void syncBreathableState(ServerPlayer player) {
+        boolean breathable = computeBreathableState(player);
+        breathableCache.put(player.getUUID(), breathable);
+        PacketDistributor.sendToPlayer(player, new BreathableStatePayload(breathable));
+    }
+
+    static boolean isPlayerBreathable(ServerPlayer player) {
+        Boolean cached = breathableCache.get(player.getUUID());
+        if (cached != null) {
+            return cached;
+        }
+
+        boolean breathable = computeBreathableState(player);
+        breathableCache.put(player.getUUID(), breathable);
+        return breathable;
     }
 
     /**
@@ -138,7 +154,7 @@ final class PlayerTickHandler {
         }
 
         // Atmospheric suffocation (every tick, phase 6 late)
-        if (currentPhase >= 6 && progress >= 0.85f) {
+        if (PhaseManager.isVacuumActive(currentPhase, progress)) {
             tickSuffocation(server, state, progress);
         }
 
@@ -282,10 +298,10 @@ final class PlayerTickHandler {
             if (player.level().dimension() != Level.OVERWORLD) continue;
 
             UUID id = player.getUUID();
-            if (refreshCache) {
-                habitableCache.put(id, isInHabitableZone(player));
+            if (refreshCache || !breathableCache.containsKey(id)) {
+                refreshBreathableState(player);
             }
-            if (Boolean.TRUE.equals(habitableCache.get(id))) {
+            if (Boolean.TRUE.equals(breathableCache.get(id))) {
                 suffocationTimer.put(id, 0);
                 continue;
             }
@@ -342,7 +358,7 @@ final class PlayerTickHandler {
                                 .lookupOrThrow(Registries.DAMAGE_TYPE)
                                 .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
                 Vec3 motion = player.getDeltaMovement();
-                player.hurt(source, 2.0f);
+                player.hurt(source, SUFFOCATION_DAMAGE);
                 player.setDeltaMovement(motion);
             }
         }
@@ -359,24 +375,23 @@ final class PlayerTickHandler {
         return ItemStack.EMPTY;
     }
 
-    private static boolean isInHabitableZone(ServerPlayer player) {
-        if (TemperatureManager.isEnclosed(player.level(), player.blockPosition())) return true;
-
-        BlockPos playerPos = player.blockPosition();
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(player.level(), playerPos)) return true;
-        for (BlockPos corePos : GeothermalCoreRegistry.getCores(player.level())) {
-            int o2Range;
-            BlockEntity be = player.level().getBlockEntity(corePos);
-            if (be instanceof GeothermalCoreBlockEntity core) {
-                o2Range = core.getEffectiveO2Range();
-            } else {
-                o2Range = GeothermalCoreBlockEntity.BASE_O2_RANGE;
-            }
-            if (playerPos.distSqr(corePos) <= (long) o2Range * o2Range) {
-                return true;
-            }
+    private static void refreshBreathableState(ServerPlayer player) {
+        boolean breathable = computeBreathableState(player);
+        Boolean previous = breathableCache.put(player.getUUID(), breathable);
+        if (previous == null || previous.booleanValue() != breathable) {
+            PacketDistributor.sendToPlayer(player, new BreathableStatePayload(breathable));
         }
-        return false;
+    }
+
+    private static boolean computeBreathableState(ServerPlayer player) {
+        if (player.level().dimension() != Level.OVERWORLD) {
+            return false;
+        }
+        return TemperatureManager.hasBreathableAir(player.level(), getBreathableCheckPos(player));
+    }
+
+    private static BlockPos getBreathableCheckPos(ServerPlayer player) {
+        return BlockPos.containing(player.getX(), player.getEyeY(), player.getZ());
     }
 
 }
