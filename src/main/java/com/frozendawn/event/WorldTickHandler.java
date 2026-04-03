@@ -2,12 +2,12 @@ package com.frozendawn.event;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
-import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.network.OpenDifficultySelectionPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
@@ -18,9 +18,9 @@ import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.FrostmiteEntity;
-import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
 import com.frozendawn.world.FrostbittenSpawner;
@@ -53,6 +53,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -214,7 +215,8 @@ public class WorldTickHandler {
     }
 
     /**
-     * Suppress all mob spawning in the Overworld at phase 4+.
+     * Applies apocalypse natural-spawn suppression without affecting breeding, eggs,
+     * scripted spawns, or structure-authored encounters.
      */
     @SubscribeEvent
     public static void onMobSpawn(FinalizeSpawnEvent event) {
@@ -229,15 +231,44 @@ public class WorldTickHandler {
             return;
         }
 
-        if (FrozenDawnPhaseTracker.getPhase() < 4) return;
-        if (event.getEntity().level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
-        if (event.getEntity() instanceof FrostbittenEntity) return;
-        if (event.getEntity() instanceof FrostmiteEntity) return;
-        if (event.getEntity() instanceof HollowEntity) return;
-        if (event.getEntity() instanceof ReturnedEntity) return;
-        if (event.getEntity() instanceof MimicEntity) return;
-        if (event.getEntity() instanceof ArchitectEntity) return;
-        event.setSpawnCancelled(true);
+        if (shouldSuppressNaturalPassiveSpawn(event) || shouldSuppressNaturalHostileSpawn(event)) {
+            event.setSpawnCancelled(true);
+        }
+    }
+
+    private static boolean shouldSuppressNaturalPassiveSpawn(FinalizeSpawnEvent event) {
+        if (!FrozenDawnConfig.ENABLE_NATURAL_PASSIVE_SPAWN_SUPPRESSION.get()) return false;
+        if (FrozenDawnPhaseTracker.getPhase() < 4) return false;
+        if (event.getSpawnType() != MobSpawnType.NATURAL) return false;
+        if (event.getEntity().level().dimension() != Level.OVERWORLD) return false;
+
+        return isNaturalPassiveCategory(event.getEntity().getType().getCategory());
+    }
+
+    private static boolean shouldSuppressNaturalHostileSpawn(FinalizeSpawnEvent event) {
+        if (!FrozenDawnConfig.ENABLE_NATURAL_HOSTILE_SPAWN_SUPPRESSION.get()) return false;
+        if (FrozenDawnPhaseTracker.getPhase() < 4) return false;
+        if (event.getSpawnType() != MobSpawnType.NATURAL) return false;
+        if (event.getEntity().level().dimension() != Level.OVERWORLD) return false;
+        if (isFrozenDawnManagedHostile(event.getEntity())) return false;
+
+        return event.getEntity().getType().getCategory() == MobCategory.MONSTER;
+    }
+
+    private static boolean isNaturalPassiveCategory(MobCategory category) {
+        return category == MobCategory.CREATURE
+                || category == MobCategory.WATER_CREATURE
+                || category == MobCategory.WATER_AMBIENT
+                || category == MobCategory.AXOLOTLS
+                || category == MobCategory.UNDERGROUND_WATER_CREATURE;
+    }
+
+    private static boolean isFrozenDawnManagedHostile(net.minecraft.world.entity.Entity entity) {
+        return entity instanceof FrostbittenEntity
+                || entity instanceof FrostmiteEntity
+                || entity instanceof ReturnedEntity
+                || entity instanceof MimicEntity
+                || entity instanceof ArchitectEntity;
     }
 
     /**

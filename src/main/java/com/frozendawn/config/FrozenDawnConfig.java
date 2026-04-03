@@ -23,11 +23,10 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_FUEL_SCARCITY;
     public static final ModConfigSpec.IntValue FUEL_SCARCITY_PHASE;
     public static final ModConfigSpec.BooleanValue ENABLE_FUEL_PHASE_SCALING;
-    public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
-    public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
-    public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.BooleanValue ENABLE_SANITY;
     public static final ModConfigSpec.DoubleValue SANITY_SPEED_MULTIPLIER;
+    public static final ModConfigSpec.BooleanValue ENABLE_NATURAL_PASSIVE_SPAWN_SUPPRESSION;
+    public static final ModConfigSpec.BooleanValue ENABLE_NATURAL_HOSTILE_SPAWN_SUPPRESSION;
     public static final ModConfigSpec.DoubleValue MOB_SPAWN_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTBITTEN;
     public static final ModConfigSpec.BooleanValue ENABLE_FROSTMITE;
@@ -35,9 +34,11 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_RETURNED;
     public static final ModConfigSpec.BooleanValue ENABLE_MIMIC;
     public static final ModConfigSpec.BooleanValue ENABLE_ARCHITECT;
+    public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
+    public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
+    public static final ModConfigSpec.IntValue BROADCAST_TICKS;
 
     // Client
-    public static final ModConfigSpec.BooleanValue ENABLE_SUN_SHRINKING;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
@@ -48,9 +49,10 @@ public class FrozenDawnConfig {
     static {
         BUILDER.push("general");
         TOTAL_DAYS = BUILDER
-                .comment("Total in-game days until phase 5 is complete.",
+                .comment("Total in-game days until phase 6 atmospheric collapse is complete.",
+                        "Fresh worlds start on the Default preset unless a different preset is selected.",
                         "Preset-managed: overwritten by /frozendawn preset command.")
-                .defineInRange("totalDays", 100, 10, 1000);
+                .defineInRange("totalDays", 120, 10, 1000);
         STARTING_DAY = BUILDER
                 .comment("Skip ahead to this day for testing (0 = normal start)")
                 .defineInRange("startingDay", 0, 0, 1000);
@@ -78,7 +80,8 @@ public class FrozenDawnConfig {
 
         BUILDER.push("gameplay");
         ENABLE_VEGETATION_DECAY = BUILDER
-                .comment("Enable vegetation freezing and decay")
+                .comment("Environment and survival pressure.",
+                        "Enable vegetation freezing and decay")
                 .define("enableVegetationDecay", true);
         ENABLE_MOB_FREEZING = BUILDER
                 .comment("Enable mob freezing on cold surfaces")
@@ -105,21 +108,6 @@ public class FrozenDawnConfig {
                         "Stacks with tier consumption rate. Geothermal Core is exempt.",
                         "Disable to remove fuel logistics pressure without affecting cold.")
                 .define("enableFuelPhaseScaling", true);
-        ENABLE_LORE_BOOKS = BUILDER
-                .comment("Enable ORSA lore books in structure loot tables.",
-                        "When enabled, written books containing the ORSA narrative",
-                        "are injected into village, temple, mineshaft, and stronghold chests.")
-                .define("enableLoreBooks", true);
-        ENABLE_WIN_CONDITION = BUILDER
-                .comment("Enable the win condition system (crashed satellite, transponder, broadcast).",
-                        "When disabled: satellite doesn't spawn, compass spins, schematic doesn't exist.",
-                        "For endless survival players who prefer no endgame goal.")
-                .define("enableWinCondition", true);
-        BROADCAST_TICKS = BUILDER
-                .comment("Duration of the transponder broadcast in ticks.",
-                        "Preset-managed: overwritten by /frozendawn preset command.",
-                        "Default 120000 (~5 in-game days). Brutal: 192000. Cinematic: 72000.")
-                .defineInRange("broadcastTicks", 120000, 6000, 480000);
         ENABLE_SANITY = BUILDER
                 .comment("Enable the isolation/sanity system (psychological effects in prolonged isolation)")
                 .define("enableSanity", true);
@@ -127,10 +115,21 @@ public class FrozenDawnConfig {
                 .comment("Multiplier for sanity degradation speed.",
                         "Preset-managed: overwritten by /frozendawn preset command.")
                 .defineInRange("sanitySpeedMultiplier", 1.0, 0.0, 10.0);
+        ENABLE_NATURAL_PASSIVE_SPAWN_SUPPRESSION = BUILDER
+                .comment("Natural spawn suppression and hostile roster.",
+                        "Suppress natural passive spawns in the Overworld from phase 4 onward.",
+                        "Affects only natural passive categories (land animals and peaceful water life).",
+                        "Does not affect breeding, spawn eggs, scripted spawns, or structure spawns.")
+                .define("enableNaturalPassiveSpawnSuppression", true);
+        ENABLE_NATURAL_HOSTILE_SPAWN_SUPPRESSION = BUILDER
+                .comment("Suppress natural non-Frozen-Dawn hostile spawns in the Overworld from phase 4 onward.",
+                        "Frozen Dawn hostile spawners still run normally.",
+                        "Does not affect spawn eggs, scripted spawns, or structure spawns.")
+                .define("enableNaturalHostileSpawnSuppression", true);
         MOB_SPAWN_MULTIPLIER = BUILDER
-                .comment("Multiplier for hostile mob spawn rates (Frostbitten, Frostmites, Hollow, Returned, Architect).",
+                .comment("Multiplier for Frozen Dawn hostile spawn rates (Frostbitten, Frostmites, Hollow, Returned, Mimics, Architects).",
                         "Preset-managed: overwritten by /frozendawn preset command.",
-                        "Affects spawn chance and density caps. Higher = more frequent, larger groups.")
+                        "Affects spawn chance, density caps, and group size where applicable.")
                 .defineInRange("mobSpawnMultiplier", 1.0, 0.0, 5.0);
         ENABLE_FROSTBITTEN = BUILDER
                 .comment("Enable Frostbitten mob spawning in Phase 4+.",
@@ -156,12 +155,25 @@ public class FrozenDawnConfig {
                 .comment("Enable Returned Architect spawning in Phase 6+.",
                         "Intelligent mob that breaks through player-built walls and scaffolds over defenses.")
                 .define("enableArchitect", true);
+        ENABLE_LORE_BOOKS = BUILDER
+                .comment("World narrative and endgame progression.",
+                        "Enable ORSA lore books in structure loot tables.",
+                        "When enabled, written books containing the ORSA narrative",
+                        "are injected into village, temple, mineshaft, and stronghold chests.")
+                .define("enableLoreBooks", true);
+        ENABLE_WIN_CONDITION = BUILDER
+                .comment("Enable the win condition system (crashed satellite, transponder, broadcast).",
+                        "When disabled: satellite doesn't spawn, compass spins, schematic doesn't exist.",
+                        "For endless survival players who prefer no endgame goal.")
+                .define("enableWinCondition", true);
+        BROADCAST_TICKS = BUILDER
+                .comment("Duration of the transponder broadcast in ticks.",
+                        "Preset-managed: overwritten by /frozendawn preset command.",
+                        "Default 120000 (~5 in-game days). Brutal: 192000. Cinematic: 72000.")
+                .defineInRange("broadcastTicks", 120000, 6000, 480000);
         BUILDER.pop();
 
         BUILDER.push("client");
-        ENABLE_SUN_SHRINKING = BUILDER
-                .comment("Enable sun shrinking visual effect")
-                .define("enableSunShrinking", true);
         ENABLE_SKY_DARKENING = BUILDER
                 .comment("Enable progressive sky darkening and fog")
                 .define("enableSkyDarkening", true);
@@ -170,7 +182,7 @@ public class FrozenDawnConfig {
                 .define("enableFrostOverlay", true);
         ENABLE_SKY_COLOR_SHIFT = BUILDER
                 .comment("Enable phase-dependent sky color shifting.",
-                        "Shifts sky from warm amber (phase 1) to deep purple-black (phase 5).")
+                        "Shifts sky from warm amber (phase 1) through cold blue to black during phase 6 atmospheric collapse.")
                 .define("enableSkyColorShift", true);
         ENABLE_SANITY_CAMERA = BUILDER
                 .comment("Enable subtle camera effects from the sanity system.",
