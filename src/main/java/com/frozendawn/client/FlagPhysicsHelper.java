@@ -30,41 +30,36 @@ public final class FlagPhysicsHelper {
     private FlagPhysicsHelper() {}
 
     public static FlagPhysicsTuning getTuning(int phase, float progress) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
         return switch (phase) {
             case 0, 1 -> new FlagPhysicsTuning(0.19f, 0.81f, 20.0f, 13.5f, 8.5f, 0.22f, 1.12f, 0.79f, 5.5f, 5.0f, 0.42f, 1.5f);
             case 2    -> new FlagPhysicsTuning(0.21f, 0.83f, 18.0f, 11.2f, 7.2f, 0.20f, 1.02f, 0.82f, 4.5f, 4.4f, 0.39f, 1.2f);
             case 3    -> new FlagPhysicsTuning(0.24f, 0.85f, 15.0f, 9.0f, 5.8f, 0.19f, 0.90f, 0.85f, 3.6f, 3.6f, 0.36f, 1.0f);
             case 4    -> new FlagPhysicsTuning(0.29f, 0.88f, 12.0f, 9.5f, 6.8f, 0.23f, 0.78f, 0.88f, 2.3f, 5.4f, 0.56f, 3.2f);
             case 5    -> new FlagPhysicsTuning(0.39f, 0.88f, 16.0f, 18.0f, 13.0f, 0.36f, 0.98f, 0.84f, 3.0f, 12.5f, 0.86f, 9.5f);
-            default   -> {
-                if (PhaseManager.isPhase6Early(phase, progress)) {
-                    yield new FlagPhysicsTuning(0.43f, 0.86f, 20.0f, 21.0f, 15.5f, 0.42f, 1.10f, 0.80f, 3.8f, 15.0f, 1.02f, 12.5f);
-                }
-                if (!PhaseManager.isVacuumActive(phase, progress)) {
-                    yield new FlagPhysicsTuning(0.42f, 0.93f, 3.0f, 3.0f, 1.6f, 0.18f, 0.24f, 0.96f, 0.6f, 1.2f, 0.34f, 0.9f);
-                }
-                yield new FlagPhysicsTuning(0.54f, 0.96f, 0.45f, 0.0f, 0.0f, 0.0f, 0.0f, 0.996f, 0.18f, 0.0f, 0.0f, 0.0f);
-            }
+            default   -> getPhase6Tuning(phase6Stage);
         };
     }
 
     public static float computeWindStrength(BlockPos pos, int phase, float progress, long gameTime, float impulseStrength) {
-        if (PhaseManager.isVacuumActive(phase, progress)) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
+        if (phase6Stage == PhaseManager.Phase6Stage.VACUUM) {
             return impulseStrength * 0.35f; // late vacuum — only residual impulse moves the flag
         }
 
         if (phase >= 5) {
             float stormStrength = BlizzardWindHelper.getNormalizedSurfaceWindStrength(phase, progress, gameTime);
-            boolean phase6Early = PhaseManager.isPhase6Early(phase, progress);
-            float gustScale = phase6Early ? 0.38f : phase == 5 ? 0.30f : 0.16f;
+            boolean phase6Early = phase6Stage == PhaseManager.Phase6Stage.EARLY;
+            boolean phase5Storm = phase == 5;
+            float gustScale = phase6Early ? 0.38f : phase5Storm ? 0.30f : 0.16f;
             float gust = gustScale * Mth.sin(gameTime * 0.13f + pos.getX() * 0.09f + pos.getZ() * 0.07f);
             float base = phase6Early
                     ? 1.18f + stormStrength * 0.96f
-                    : phase == 5
+                    : phase5Storm
                     ? 1.00f + stormStrength * 0.72f
                     : stormStrength;
-            float impulseScale = phase6Early ? 0.96f : phase == 5 ? 0.82f : 0.60f;
-            float maxWind = phase6Early ? 2.30f : phase == 5 ? 1.85f : 1.35f;
+            float impulseScale = phase6Early ? 0.96f : phase5Storm ? 0.82f : 0.60f;
+            float maxWind = phase6Early ? 2.30f : phase5Storm ? 1.85f : 1.35f;
             return Mth.clamp(base + gust + impulseStrength * impulseScale, 0.0f, maxWind);
         }
 
@@ -107,20 +102,22 @@ public final class FlagPhysicsHelper {
                                        BlockPos pos, long gameTime, float impulseStrength) {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
         FlagPhysicsTuning tuning = getTuning(phase, progress);
         float wind = computeWindStrength(pos, phase, progress, gameTime, impulseStrength);
         float time = gameTime + (pos.getX() * 0.17f) + (pos.getZ() * 0.11f);
-        boolean phase6Early = PhaseManager.isPhase6Early(phase, progress);
-        boolean stormChaos = phase == 5 || phase6Early;
-        float gustPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.16f : phase == 5 ? 0.12f : 0.08f) + pos.getX() * 0.03f - pos.getZ() * 0.04f);
-        float stormPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.33f : phase == 5 ? 0.26f : 0.17f) + pos.getX() * 0.11f + pos.getZ() * 0.09f);
+        boolean phase6Early = phase6Stage == PhaseManager.Phase6Stage.EARLY;
+        boolean phase5Storm = phase == 5;
+        boolean stormChaos = phase5Storm || phase6Early;
+        float gustPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.16f : phase5Storm ? 0.12f : 0.08f) + pos.getX() * 0.03f - pos.getZ() * 0.04f);
+        float stormPulse = 0.5f + 0.5f * Mth.sin(time * (phase6Early ? 0.33f : phase5Storm ? 0.26f : 0.17f) + pos.getX() * 0.11f + pos.getZ() * 0.09f);
 
         for (int i = 0; i < SEGMENTS; i++) {
             float previousAngle = (i == 0) ? 0.0f : angles[i - 1];
             float t = i / (float) (SEGMENTS - 1);
             float tipFactor = 0.20f + t * tuning.tipInfluence();
             float freeEdgeFactor = t * t;
-            float phaseViolence = phase6Early ? 1.80f : phase == 5 ? 1.45f : 1.0f;
+            float phaseViolence = phase6Early ? 1.80f : phase5Storm ? 1.45f : 1.0f;
 
             // Flags usually hold a prevailing lean away from the pole, then flutter around that baseline.
             float leanTarget = wind * tuning.baseLeanDeg() * tipFactor * (stormChaos ? phase6Early ? 1.18f : 1.12f : 1.0f);
@@ -128,7 +125,7 @@ public final class FlagPhysicsHelper {
             float flutterTarget = flutterWave * tuning.flutterDeg() * wind * (0.30f + tipFactor * 0.70f) * phaseViolence;
             float rippleWave = Mth.sin(time * tuning.rippleSpeed() - i * 1.50f + gustPulse * 1.2f);
             float rippleTarget = rippleWave * tuning.rippleDeg() * wind * (0.12f + freeEdgeFactor * 0.88f) * (0.55f + gustPulse * 0.45f) * phaseViolence;
-            float snapWave = Mth.sin(time * (tuning.rippleSpeed() * (phase6Early ? 2.40f : phase == 5 ? 2.10f : 1.70f)) - i * 2.20f + 0.8f);
+            float snapWave = Mth.sin(time * (tuning.rippleSpeed() * (phase6Early ? 2.40f : phase5Storm ? 2.10f : 1.70f)) - i * 2.20f + 0.8f);
             float snapTarget = snapWave * tuning.snapDeg() * wind * freeEdgeFactor
                     * (phase >= 4 ? 0.55f + stormPulse * 0.45f : 0.25f + gustPulse * 0.35f)
                     * phaseViolence;
@@ -170,5 +167,13 @@ public final class FlagPhysicsHelper {
         }
         float averageVelocity = velocityEnergy / SEGMENTS;
         return Mth.clamp((averageVelocity / 0.26f) + tipDeflection + (segmentShear / 18.0f), 0.0f, 1.5f);
+    }
+
+    private static FlagPhysicsTuning getPhase6Tuning(PhaseManager.Phase6Stage phase6Stage) {
+        return switch (phase6Stage) {
+            case EARLY -> new FlagPhysicsTuning(0.43f, 0.86f, 20.0f, 21.0f, 15.5f, 0.42f, 1.10f, 0.80f, 3.8f, 15.0f, 1.02f, 12.5f);
+            case MID -> new FlagPhysicsTuning(0.42f, 0.93f, 3.0f, 3.0f, 1.6f, 0.18f, 0.24f, 0.96f, 0.6f, 1.2f, 0.34f, 0.9f);
+            case VACUUM, INACTIVE -> new FlagPhysicsTuning(0.54f, 0.96f, 0.45f, 0.0f, 0.0f, 0.0f, 0.0f, 0.996f, 0.18f, 0.0f, 0.0f, 0.0f);
+        };
     }
 }

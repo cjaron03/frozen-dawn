@@ -59,8 +59,9 @@ public class OrsaFlagBlockEntity extends BlockEntity {
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        boolean phase6Early = PhaseManager.isPhase6Early(phase, progress);
-        if (PhaseManager.isVacuumActive(phase, progress)) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
+        boolean phase6Early = phase6Stage == PhaseManager.Phase6Stage.EARLY;
+        if (phase6Stage == PhaseManager.Phase6Stage.VACUUM) {
             return;
         }
         if (flutterSoundCooldown > 0) {

@@ -11,19 +11,24 @@ public final class BlizzardWindHelper {
 
     private BlizzardWindHelper() {}
 
-    public static boolean hasSurfaceBlizzard(int phase, float progress) {
-        return phase == 5 || (PhaseManager.isPhase6Active(phase) && !PhaseManager.isVacuumActive(phase, progress));
+    public static boolean hasSurfaceStorm(int phase, float progress) {
+        PhaseManager.Phase6Stage phase6Stage = PhaseManager.getPhase6Stage(phase, progress);
+        return phase == 5 || phase6Stage == PhaseManager.Phase6Stage.EARLY || phase6Stage == PhaseManager.Phase6Stage.MID;
+    }
+
+    public static boolean hasWhiteoutBlizzard(int phase, float progress) {
+        return PhaseManager.isBlizzardActive(phase, progress);
     }
 
     public static float getWindAngleRad(long gameTime) {
         return gameTime * 0.005f;
     }
 
-    public static float getWindFade(int phase, float progress) {
+    public static float getSurfaceStormFade(int phase, float progress) {
         if (phase < 5) {
             return 0.0f;
         }
-        if (PhaseManager.isBlizzardActive(phase, progress)) {
+        if (hasWhiteoutBlizzard(phase, progress)) {
             return 1.0f;
         }
         if (PhaseManager.isVacuumActive(phase, progress)) {
@@ -41,7 +46,7 @@ public final class BlizzardWindHelper {
         if (PhaseManager.isPhase6Early(phase, progress)) {
             windSpeed *= 1.3f;
         }
-        return windSpeed * getWindFade(phase, progress);
+        return windSpeed * getSurfaceStormFade(phase, progress);
     }
 
     public static float getNormalizedSurfaceWindStrength(int phase, float progress, long gameTime) {

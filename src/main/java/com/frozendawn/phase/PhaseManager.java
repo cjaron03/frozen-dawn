@@ -17,6 +17,13 @@ import net.minecraft.util.Mth;
  */
 public final class PhaseManager {
 
+    public enum Phase6Stage {
+        INACTIVE,
+        EARLY,
+        MID,
+        VACUUM
+    }
+
     private PhaseManager() {}
 
     public static final float PHASE6_START = 0.60f;
@@ -72,16 +79,30 @@ public final class PhaseManager {
         return phase >= 6;
     }
 
+    public static Phase6Stage getPhase6Stage(int phase, float progress) {
+        if (!isPhase6Active(phase)) {
+            return Phase6Stage.INACTIVE;
+        }
+        if (progress < PHASE6_MID_START) {
+            return Phase6Stage.EARLY;
+        }
+        if (progress < PHASE6_VACUUM_START) {
+            return Phase6Stage.MID;
+        }
+        return Phase6Stage.VACUUM;
+    }
+
     public static boolean isPhase6Early(int phase, float progress) {
-        return isPhase6Active(phase) && progress < PHASE6_MID_START;
+        return getPhase6Stage(phase, progress) == Phase6Stage.EARLY;
     }
 
     public static boolean isPhase6MidOrLater(int phase, float progress) {
-        return isPhase6Active(phase) && progress >= PHASE6_MID_START;
+        Phase6Stage stage = getPhase6Stage(phase, progress);
+        return stage == Phase6Stage.MID || stage == Phase6Stage.VACUUM;
     }
 
     public static boolean isVacuumActive(int phase, float progress) {
-        return isPhase6Active(phase) && progress >= PHASE6_VACUUM_START;
+        return getPhase6Stage(phase, progress) == Phase6Stage.VACUUM;
     }
 
     public static boolean isBlizzardActive(int phase, float progress) {
