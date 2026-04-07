@@ -34,6 +34,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
@@ -157,6 +158,7 @@ public class ArchitectEntity extends Monster {
     private static final double WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR = 0.20;
     private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 9.0;
     private static final int WALK_TARGET_SHIFT_VERTICAL = 1;
+    private static final int WALK_CORRIDOR_LOOKAHEAD_STEPS = 2;
     private static final float WALK_MAX_ROTATE = 35.0F;
     private static final int MAX_REPEAT_UNSTICK_BREAK_ATTEMPTS = 3;
     private static final int WALK_NAV_CORRIDOR_MAX_STEPS = 8;
@@ -943,6 +945,58 @@ public class ArchitectEntity extends Monster {
         return approachState.committedWalkCorridor.get(approachState.committedWalkCorridorIndex);
     }
 
+    private Vec3 getCommittedWalkMoveTarget(BlockPos steeringTarget) {
+        BlockPos moveTarget = steeringTarget;
+        if (!approachState.committedWalkCorridor.isEmpty()) {
+            int corridorIndex = Math.max(0, Math.min(
+                    approachState.committedWalkCorridorIndex,
+                    approachState.committedWalkCorridor.size() - 1));
+            BlockPos cursor = steeringTarget;
+            Direction runDirection = null;
+            int lookaheadSteps = 0;
+
+            for (int i = corridorIndex + 1;
+                 i < approachState.committedWalkCorridor.size() && lookaheadSteps < WALK_CORRIDOR_LOOKAHEAD_STEPS;
+                 i++) {
+                BlockPos candidate = approachState.committedWalkCorridor.get(i);
+                if (candidate.getY() != cursor.getY()) {
+                    break;
+                }
+
+                Direction segmentDirection = getPrimaryHorizontalDirection(cursor, candidate);
+                if (segmentDirection == null) {
+                    break;
+                }
+
+                if (runDirection == null) {
+                    runDirection = segmentDirection;
+                } else if (segmentDirection != runDirection) {
+                    break;
+                }
+
+                moveTarget = candidate;
+                cursor = candidate;
+                lookaheadSteps++;
+            }
+        }
+
+        return new Vec3(
+                moveTarget.getX() + 0.5,
+                steeringTarget.getY(),
+                moveTarget.getZ() + 0.5);
+    }
+
+    private Vec3 getCommittedWalkLookTarget(Vec3 moveTarget) {
+        Vec3 horizontalDelta = new Vec3(moveTarget.x - getX(), 0.0, moveTarget.z - getZ());
+        if (horizontalDelta.lengthSqr() < 1.0E-4) {
+            return new Vec3(getX(), getEyeY(), getZ());
+        }
+
+        Vec3 forward = horizontalDelta.normalize().scale(Math.min(1.25, horizontalDelta.length()));
+        double lookY = getEyeY() + Mth.clamp(moveTarget.y - getY(), -0.15, 0.35);
+        return new Vec3(getX() + forward.x, lookY, getZ() + forward.z);
+    }
+
     private boolean advanceCommittedWalkProgress() {
         BlockPos steeringTarget = getCommittedWalkSteeringTarget();
         while (steeringTarget != null) {
@@ -975,10 +1029,10 @@ public class ArchitectEntity extends Monster {
         BlockPos steeringTarget = getCommittedWalkSteeringTarget();
         if (steeringTarget == null || approachState.committedWalkTicks <= 0) return false;
 
-        double tx = steeringTarget.getX() + 0.5;
-        double ty = steeringTarget.getY();
-        double tz = steeringTarget.getZ() + 0.5;
-        double horizontalDistSqr = (tx - getX()) * (tx - getX()) + (tz - getZ()) * (tz - getZ());
+        Vec3 moveTarget = getCommittedWalkMoveTarget(steeringTarget);
+        Vec3 lookTarget = getCommittedWalkLookTarget(moveTarget);
+        double horizontalDistSqr = (moveTarget.x - getX()) * (moveTarget.x - getX())
+                + (moveTarget.z - getZ()) * (moveTarget.z - getZ());
         if (steeringTarget.getY() > getY() + 0.1 && horizontalDistSqr <= 1.25 && onGround()) {
             getJumpControl().jump();
         }
@@ -988,8 +1042,8 @@ public class ArchitectEntity extends Monster {
         // Follow D* corridors with raw MoveControl so edge/scaffold approach cells
         // do not get vetoed by vanilla navigation before the scaffold action can fire.
         getNavigation().stop();
-        getMoveControl().setWantedPosition(tx, ty, tz, 1.0);
-        getLookControl().setLookAt(tx, ty + 1.0, tz, 30f, 30f);
+        getMoveControl().setWantedPosition(moveTarget.x, moveTarget.y, moveTarget.z, 1.0);
+        getLookControl().setLookAt(lookTarget.x, lookTarget.y, lookTarget.z, 40f, 30f);
         return true;
     }
 
