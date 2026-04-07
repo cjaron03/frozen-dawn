@@ -111,9 +111,9 @@ public class ArchitectEntity extends Monster {
     private final ArchitectCombatState combatState = new ArchitectCombatState();
 
     // --- Observation Data ---
-    private static final int MIN_OBSERVE_TICKS = 600;
-    private static final int MAX_OBSERVE_TICKS = 1200;
-    private static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
+    static final int MIN_OBSERVE_TICKS = 600;
+    static final int MAX_OBSERVE_TICKS = 1200;
+    static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
 
     private static final int PLAYER_MEMORY_TICKS = 200;
     private boolean towerEncounter = false;
@@ -133,6 +133,8 @@ public class ArchitectEntity extends Monster {
             new ArchitectApproachController(this, approachState, blockBreaker);
     private final ArchitectCombatController combatController =
             new ArchitectCombatController(this, combatState, blockBreaker);
+    private final ArchitectObservationController observationController =
+            new ArchitectObservationController(this, observationMemory, approachState, approachController, blockBreaker);
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -178,8 +180,8 @@ public class ArchitectEntity extends Monster {
     /** Ticks since last action change. Prevents rapid flip-flopping. */
     private static final int MIN_ACTION_HOLD = 5;
     private static final double OBSERVE_REACQUIRE_RANGE = 72.0;
-    private static final int ROAM_REPATH_MIN_TICKS = 25;
-    private static final int ROAM_REPATH_VARIANCE_TICKS = 30;
+    static final int ROAM_REPATH_MIN_TICKS = 25;
+    static final int ROAM_REPATH_VARIANCE_TICKS = 30;
     private static final long SLOW_SUPER_AISTEP_LOG_US = 50_000;
     private static final long SLOW_EXEC_ACTION_LOG_US = 50_000;
     // --- Smooth step-off (lerp instead of teleport) ---
@@ -316,8 +318,29 @@ public class ArchitectEntity extends Monster {
         brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
     }
 
+    void transitionToObserveAction() {
+        transitionToAction(ACTION_OBSERVE);
+    }
+
+    void resetActionHoldTicks() {
+        brainState.setActionHoldTicks(0);
+    }
+
+    void setRoamingAfterTargetLoss(boolean roamingAfterTargetLoss) {
+        brainState.setRoamingAfterTargetLoss(roamingAfterTargetLoss);
+    }
+
+    void resetRetreatState() {
+        combatState.retreatPhase = 0;
+        combatState.retreatCoverBuilt = 0;
+    }
+
     int nextRandomInt(int bound) {
         return random.nextInt(bound);
+    }
+
+    float nextRandomFloat() {
+        return random.nextFloat();
     }
 
     double nextRandomCenteredDouble() {
@@ -386,18 +409,18 @@ public class ArchitectEntity extends Monster {
 
         if (target == null) {
             if (!brainState.isRoamingAfterTargetLoss()) {
-                enterRoamModeAfterTargetLoss();
+                observationController.enterRoamModeAfterTargetLoss();
             }
         } else {
             if (brainState.isRoamingAfterTargetLoss() && target instanceof Player player) {
-                restartObserveForPlayer(player);
+                observationController.restartObserveForPlayer(player);
             }
             brainState.setRoamingAfterTargetLoss(false);
             observationMemory.setLastKnownPlayerPos(target.blockPosition());
             observationMemory.setLastSeenTick(tickCount);
         }
 
-        maybeTriggerSpawnObserveCue(target);
+        observationController.maybeTriggerSpawnObserveCue(target);
 
         if (combatState.healCooldown > 0) combatState.healCooldown--;
         if (trapCooldown > 0) trapCooldown--;
@@ -561,12 +584,12 @@ public class ArchitectEntity extends Monster {
 
     private void executeAction(@Nullable LivingEntity target) {
         if (target == null) {
-            executeRoamAndRuin();
+            observationController.executeRoamAndRuin();
             return;
         }
 
         switch (getBrainAction()) {
-            case ACTION_OBSERVE -> executeObserve(target);
+            case ACTION_OBSERVE -> observationController.executeObserve(target);
             case ACTION_APPROACH -> approachController.executeApproach(target);
             case ACTION_ATTACK_MELEE -> combatController.executeAttackMelee(target);
             case ACTION_RETREAT -> combatController.executeRetreat(target);
@@ -574,145 +597,6 @@ public class ArchitectEntity extends Monster {
             case ACTION_TRAP_SET -> executeTrapSet(target);
             case ACTION_PEEK -> executePeek(target);
         }
-    }
-
-    private void executeObserve(@Nullable LivingEntity target) {
-        if (target == null) {
-            approachState.dstarPrecomputed = false;
-            return;
-        }
-
-        // Keep D* Lite warm during observation so APPROACH can react immediately.
-        approachController.precomputeDStarDuringObserve(target);
-
-        float dist = distanceTo(target);
-        // Only recalculate path every 20 ticks
-        if (pathRecalcCooldown <= 0) {
-            if (dist < 28) {
-                Vec3 away = position().subtract(target.position()).normalize().scale(0.8);
-                getNavigation().moveTo(getX() + away.x * 10, getY(), getZ() + away.z * 10, 0.8);
-            } else if (dist > 42) {
-                getNavigation().moveTo(target, 0.8);
-            } else {
-                getNavigation().stop();
-            }
-            pathRecalcCooldown = 20;
-        }
-        pathRecalcCooldown--;
-        // Always stare at the target during OBSERVE — the creep factor
-        getLookControl().setLookAt(target, 30f, 30f);
-
-        observationMemory.incrementObserveTicks();
-
-        // OBSERVE particles: soul particles drift up from head — "it's thinking"
-        if (level() instanceof ServerLevel serverLevel && tickCount % 10 == 0) {
-            serverLevel.sendParticles(ParticleTypes.SOUL,
-                    getX(), getY() + 1.8, getZ(),
-                    1, 0.15, 0.1, 0.15, 0.01);
-            if (tickCount % 20 == 0) {
-                serverLevel.sendParticles(ParticleTypes.ENCHANT,
-                        getX(), getY() + 1.65, getZ(),
-                        2, 0.25, 0.15, 0.25, 0.05);
-            }
-        }
-
-        // Slow ticking sound during observation — unsettling metronome
-        if (tickCount % 60 == 0) {
-            playSound(ModSounds.ARCHITECT_OBSERVE.get(), 0.6f, 0.8f + random.nextFloat() * 0.3f);
-        }
-
-        // Environment scan every 40 ticks
-        if (observationMemory.getObserveTicks() % 40 == 0 && level() instanceof ServerLevel serverLevel) {
-            BlockPos playerPos = target.blockPosition();
-            scanEntrances(serverLevel, playerPos);
-            observationMemory.setLastObservedPos(playerPos);
-        }
-
-        // Raycast probe: run at tick 60 (3s in) and tick 300 (15s in, mid-observe)
-        if (observationMemory.getObserveTicks() == 60 || observationMemory.getObserveTicks() == 300) {
-            awardObserveProbeAdvancement(target);
-        }
-
-        if (dist < 20 && target.hasLineOfSight(this) && isPlayerFacing(target)) {
-            observationMemory.setHasObserved(true);
-            observationMemory.setObserveDirty(false);
-            // Particle burst — "decision made"
-            if (level() instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.SOUL, getX(), getY() + 1.8, getZ(),
-                        8, 0.3, 0.2, 0.3, 0.03);
-                sl.sendParticles(ParticleTypes.ENCHANT, getX(), getY() + 1.6, getZ(),
-                        10, 0.35, 0.25, 0.35, 0.08);
-            }
-            triggerReeval();
-            return;
-        }
-
-        int targetDuration = MIN_OBSERVE_TICKS + random.nextInt(MAX_OBSERVE_TICKS - MIN_OBSERVE_TICKS);
-        if (observationMemory.getObserveTicks() >= targetDuration) {
-            observationMemory.setHasObserved(true);
-            observationMemory.setObserveDirty(false);
-            // Particle burst — "decision made"
-            if (level() instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.SOUL, getX(), getY() + 1.8, getZ(),
-                        8, 0.3, 0.2, 0.3, 0.03);
-                sl.sendParticles(ParticleTypes.ENCHANT, getX(), getY() + 1.6, getZ(),
-                        10, 0.35, 0.25, 0.35, 0.08);
-            }
-            triggerReeval();
-        }
-    }
-
-    /**
-     * No active target: prowl nearby between encounters.
-     */
-    private void executeRoamAndRuin() {
-        keepNearbyWoodenDoorsOpen();
-        blockBreaker.clearTarget();
-
-        // Wander to nearby random positions.
-        if (pathRecalcCooldown <= 0 || !getNavigation().isInProgress()) {
-            Vec3 roamPos = DefaultRandomPos.getPos(this, 12, 4);
-            if (roamPos != null) {
-                getNavigation().moveTo(roamPos.x, roamPos.y, roamPos.z, 0.9);
-                getLookControl().setLookAt(roamPos.x, roamPos.y, roamPos.z);
-            } else {
-                double dx = (random.nextDouble() - 0.5) * 12.0;
-                double dz = (random.nextDouble() - 0.5) * 12.0;
-                getNavigation().moveTo(getX() + dx, getY(), getZ() + dz, 0.9);
-            }
-            pathRecalcCooldown = ROAM_REPATH_MIN_TICKS + random.nextInt(ROAM_REPATH_VARIANCE_TICKS);
-        }
-        pathRecalcCooldown--;
-    }
-
-    private void awardObserveProbeAdvancement(LivingEntity target) {
-        if (target instanceof ServerPlayer player) {
-            WorldTickHandler.grantAdvancement(player, "architect_noticed");
-        }
-    }
-
-    private void maybeTriggerSpawnObserveCue(@Nullable LivingEntity target) {
-        if (observationMemory.isPendingSpawnCuePlayed()
-                || observationMemory.getPendingSpawnCuePlayerId() == null
-                || getBrainAction() != ACTION_OBSERVE) {
-            return;
-        }
-        if (!(target instanceof ServerPlayer player)) {
-            return;
-        }
-        if (!observationMemory.getPendingSpawnCuePlayerId().equals(player.getUUID())) {
-            return;
-        }
-        if (distanceToSqr(player) > SPAWN_OBSERVE_CUE_RANGE_SQR) {
-            return;
-        }
-
-        observationMemory.setPendingSpawnCuePlayed(true);
-        observationMemory.setPendingSpawnCuePlayerId(null);
-        level().playSound(null, player.getX(), player.getY(), player.getZ(),
-                ModSounds.ARCHITECT_WATCHED.get(), SoundSource.HOSTILE,
-                1.0f, 0.9f + random.nextFloat() * 0.2f);
-        player.displayClientMessage(Component.translatable("message.frozendawn.architect_watched"), true);
     }
 
     void approachLastKnownPos() {
@@ -1759,35 +1643,6 @@ public class ArchitectEntity extends Monster {
         return canStartMelee(target);
     }
 
-    private void enterRoamModeAfterTargetLoss() {
-        brainState.setRoamingAfterTargetLoss(true);
-        resetObserveCycle();
-        combatState.retreatPhase = 0;
-        combatState.retreatCoverBuilt = 0;
-        clearWalkNavigationState(true);
-        blockBreaker.clearTarget();
-        pathRecalcCooldown = 0;
-        LOGGER.info("[Architect] Lost target — entering roam/ruin mode");
-    }
-
-    private void restartObserveForPlayer(Player player) {
-        resetObserveCycle();
-        transitionToAction(ACTION_OBSERVE);
-        brainState.setActionHoldTicks(0);
-        brainState.setReevalCooldown(0);
-        LOGGER.info("[Architect] Player reacquired at "
-                + String.format("%.1f", distanceTo(player))
-                + " blocks — restarting OBSERVE");
-    }
-
-    private void resetObserveCycle() {
-        observationMemory.setHasObserved(false);
-        observationMemory.setObserveDirty(false);
-        observationMemory.setObserveTicks(0);
-        observationMemory.setLastObservedPos(null);
-        approachState.dstarPrecomputed = false;
-    }
-
     // ========================
     //  COMBAT
     // ========================
@@ -1975,7 +1830,7 @@ public class ArchitectEntity extends Monster {
     //  OBSERVATION HELPERS
     // ========================
 
-    private void scanEntrances(ServerLevel level, BlockPos center) {
+    void scanEntrances(ServerLevel level, BlockPos center) {
         observationMemory.entrancePositions().clear();
         int radius = 16;
         for (int dx = -radius; dx <= radius; dx += 2) {
@@ -2044,7 +1899,7 @@ public class ArchitectEntity extends Monster {
         return null;
     }
 
-    private boolean isPlayerFacing(LivingEntity entity) {
+    boolean isPlayerFacing(LivingEntity entity) {
         Vec3 lookVec = entity.getLookAngle().normalize();
         Vec3 toMob = position().subtract(entity.position()).normalize();
         return lookVec.dot(toMob) > 0.5;
