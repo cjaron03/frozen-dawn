@@ -1,5 +1,9 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.ArchitectBrainState;
+import com.frozendawn.entity.architect.ArchitectObservationMemory;
+import com.frozendawn.entity.architect.ArchitectPersistence;
+import com.frozendawn.entity.architect.ArchitectRenderFlags;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
@@ -15,9 +19,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.LongTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -48,11 +49,8 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.BaseTorchBlock;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.DoorBlock;
-import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.pathfinder.Path;
@@ -83,6 +81,10 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_BUILDING_ICE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_RENDER_FLAGS =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> DATA_MINING_PROGRESS =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.FLOAT);
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -99,33 +101,19 @@ public class ArchitectEntity extends Monster {
     private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 6;
 
-    // --- Utility AI State ---
-    private int reevalCooldown = 0;
-    private int currentAction = ACTION_OBSERVE;
+    // --- Authoritative Server State ---
+    private final ArchitectBrainState brainState = new ArchitectBrainState(ACTION_OBSERVE);
+    private final ArchitectObservationMemory observationMemory = new ArchitectObservationMemory();
 
     // --- Observation Data ---
-    private boolean hasObserved = false;
-    private boolean observeDirty = false;
-    private int observeTicks = 0;
     private static final int MIN_OBSERVE_TICKS = 600;
     private static final int MAX_OBSERVE_TICKS = 1200;
     private static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
-    @Nullable private BlockPos weakestWallDirection;
-    private final List<BlockPos> entrancePositions = new ArrayList<>();
-    private final List<BlockPos> lightSources = new ArrayList<>();
-    private boolean playerUnderground = false;
-    @Nullable private BlockPos lastObservedPos;
-    @Nullable private BlockPos preferredEntryPoint;
-    private boolean probing = false;
-    @Nullable private UUID pendingSpawnCuePlayerId = null;
-    private boolean pendingSpawnCuePlayed = false;
 
     // --- Combat State ---
     private int strafeDir = 1;
     private int strafeChangeCooldown = 0;
     private int backoffTicks = 0;
-    @Nullable private BlockPos lastKnownPlayerPos;
-    private int lastSeenTick = 0;
     private static final int PLAYER_MEMORY_TICKS = 200;
     private boolean towerEncounter = false;
     private long towerEncounterId = Long.MIN_VALUE;
@@ -146,10 +134,8 @@ public class ArchitectEntity extends Monster {
     private int lastDamageTick = 0;
     private static final int BURST_WINDOW = 60; // 3 seconds
 
-    // --- Adaptive Learning (persisted in NBT) ---
+    // --- Adaptive Learning ---
     private int rangedHitsReceived = 0;
-    private int wallBreakAttempts = 0;
-    private boolean acheroniteEncountered = false;
 
     // --- Block Breaker ---
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
@@ -220,12 +206,8 @@ public class ArchitectEntity extends Monster {
     private static final double MELEE_DODGE_SPEED = 0.10;
     private static final double MELEE_AIR_CONTROL_SCALE = 0.35;
     private static final double MELEE_MAX_HORIZONTAL_SPEED = 0.12;
-    private int meleeCommitTicks = 0;
     /** Ticks since last action change. Prevents rapid flip-flopping. */
-    private int actionHoldTicks = 0;
     private static final int MIN_ACTION_HOLD = 5;
-    /** While true, no current target; Architect should roam/ruin and only reacquire players at observe radius. */
-    private boolean roamingAfterTargetLoss = false;
     private static final double OBSERVE_REACQUIRE_RANGE = 72.0;
     private static final int ROAM_REPATH_MIN_TICKS = 25;
     private static final int ROAM_REPATH_VARIANCE_TICKS = 30;
@@ -295,11 +277,54 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_DEATH_TICKS, 0);
         builder.define(DATA_ACTION, ACTION_OBSERVE);
         builder.define(DATA_BUILDING_ICE, false);
+        builder.define(DATA_RENDER_FLAGS, 0);
+        builder.define(DATA_MINING_PROGRESS, 0.0f);
     }
 
     @Override
     protected void registerGoals() {
         // No goals: all behavior driven by utility AI in aiStep()
+    }
+
+    public int getBrainAction() {
+        return brainState.getCurrentAction();
+    }
+
+    private void setBrainAction(int action) {
+        brainState.setCurrentAction(action);
+        entityData.set(DATA_ACTION, action);
+    }
+
+    private void transitionToAction(int newAction) {
+        int oldAction = getBrainAction();
+        if (oldAction != newAction) {
+            onActionChange(oldAction, newAction);
+            brainState.setActionHoldTicks(0);
+        }
+        setBrainAction(newAction);
+    }
+
+    private boolean isBuildingIceNow() {
+        return getBrainAction() == ACTION_FORTIFY
+                || getBrainAction() == ACTION_TRAP_SET
+                || (getBrainAction() == ACTION_RETREAT && retreatPhase == 1)
+                || (getBrainAction() == ACTION_APPROACH && !scaffoldIce.isEmpty());
+    }
+
+    private int getRenderFlagsNow() {
+        int flags = 0;
+        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.MINING, blockBreaker.isMining());
+        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.QUEUED_SCAFFOLD, scaffoldTarget != null || scaffoldDelay > 0);
+        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.RETREAT_RECOVERING,
+                getBrainAction() == ACTION_RETREAT && (retreatPhase >= 1 || isDrinkingPotion));
+        return flags;
+    }
+
+    private void syncRenderState() {
+        entityData.set(DATA_ACTION, getBrainAction());
+        entityData.set(DATA_BUILDING_ICE, isBuildingIceNow());
+        entityData.set(DATA_RENDER_FLAGS, getRenderFlagsNow());
+        entityData.set(DATA_MINING_PROGRESS, blockBreaker.getMiningProgress());
     }
 
     // ========================
@@ -322,16 +347,13 @@ public class ArchitectEntity extends Monster {
      */
     public void preSeedObservation(ServerLevel level, Player nearestPlayer) {
         BlockPos playerPos = nearestPlayer.blockPosition();
-        lastObservedPos = playerPos;
+        observationMemory.setLastObservedPos(playerPos);
         scanEntrances(level, playerPos);
-        scanLightSources(level, playerPos);
-        playerUnderground = playerPos.getY() < level.getSeaLevel() - 10;
-        findWeakestWall(level, playerPos);
     }
 
     public void armSpawnObserveCue(ServerPlayer player) {
-        pendingSpawnCuePlayerId = player.getUUID();
-        pendingSpawnCuePlayed = false;
+        observationMemory.setPendingSpawnCuePlayerId(player.getUUID());
+        observationMemory.setPendingSpawnCuePlayed(false);
     }
 
     // ========================
@@ -366,16 +388,16 @@ public class ArchitectEntity extends Monster {
         LivingEntity target = findTarget();
 
         if (target == null) {
-            if (!roamingAfterTargetLoss) {
+            if (!brainState.isRoamingAfterTargetLoss()) {
                 enterRoamModeAfterTargetLoss();
             }
         } else {
-            if (roamingAfterTargetLoss && target instanceof Player player) {
+            if (brainState.isRoamingAfterTargetLoss() && target instanceof Player player) {
                 restartObserveForPlayer(player);
             }
-            roamingAfterTargetLoss = false;
-            lastKnownPlayerPos = target.blockPosition();
-            lastSeenTick = tickCount;
+            brainState.setRoamingAfterTargetLoss(false);
+            observationMemory.setLastKnownPlayerPos(target.blockPosition());
+            observationMemory.setLastSeenTick(tickCount);
         }
 
         maybeTriggerSpawnObserveCue(target);
@@ -383,7 +405,9 @@ public class ArchitectEntity extends Monster {
         if (healCooldown > 0) healCooldown--;
         if (trapCooldown > 0) trapCooldown--;
         if (fallbackBreakCooldown > 0) fallbackBreakCooldown--;
-        if (meleeCommitTicks > 0) meleeCommitTicks--;
+        if (brainState.getMeleeCommitTicks() > 0) {
+            brainState.setMeleeCommitTicks(brainState.getMeleeCommitTicks() - 1);
+        }
         // Decay burst damage tracker outside window
         if (tickCount - lastDamageTick > BURST_WINDOW) recentDamage = 0f;
 
@@ -394,12 +418,13 @@ public class ArchitectEntity extends Monster {
                 finishDrinking();
             }
             // Fully commits to drinking — no cancellation. Player can punish this.
+            syncRenderState();
             return;
         }
 
         // --- Keep wooden doors open while pushing toward a target ---
-        if (currentAction == ACTION_APPROACH
-                || currentAction == ACTION_ATTACK_MELEE
+        if (getBrainAction() == ACTION_APPROACH
+                || getBrainAction() == ACTION_ATTACK_MELEE
                 || horizontalCollision) {
             keepNearbyWoodenDoorsOpen();
         }
@@ -444,16 +469,16 @@ public class ArchitectEntity extends Monster {
         boolean miningLock = blockBreaker.isMining()
                 && getHealth() > getMaxHealth() * 0.3f;
 
-        reevalCooldown--;
-        actionHoldTicks++;
-        if (reevalCooldown <= 0 && !miningLock) {
+        brainState.setReevalCooldown(brainState.getReevalCooldown() - 1);
+        brainState.setActionHoldTicks(brainState.getActionHoldTicks() + 1);
+        if (brainState.getReevalCooldown() <= 0 && !miningLock) {
             // Prevent rapid flip-flopping: hold current action for at least MIN_ACTION_HOLD ticks.
             // Retreat bypasses this — survival is always urgent.
-            boolean holdLock = actionHoldTicks < MIN_ACTION_HOLD
+            boolean holdLock = brainState.getActionHoldTicks() < MIN_ACTION_HOLD
                     && getHealth() > getMaxHealth() * 0.5f;
             if (!holdLock) {
                 evaluateActions(target);
-                reevalCooldown = 5;
+                brainState.setReevalCooldown(5);
             }
         }
 
@@ -461,30 +486,26 @@ public class ArchitectEntity extends Monster {
         executeAction(target);
         long actionUs = (System.nanoTime() - actionStart) / 1000;
         if (actionUs > SLOW_EXEC_ACTION_LOG_US && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[Architect] executeAction({}) took {}us", currentAction, actionUs);
+            LOGGER.debug("[Architect] executeAction({}) took {}us", getBrainAction(), actionUs);
         }
 
         emitActionTelegraphParticles(target);
 
         // Only sprint when fleeing
-        setSprinting(target != null && currentAction == ACTION_RETREAT && retreatPhase == 0);
+        setSprinting(target != null && getBrainAction() == ACTION_RETREAT && retreatPhase == 0);
 
         updateHeldItem();
+        syncRenderState();
     }
 
     private void evaluateActions(@Nullable LivingEntity target) {
         if (target != null
-                && meleeCommitTicks > 0
-                && currentAction != ACTION_RETREAT
+                && brainState.getMeleeCommitTicks() > 0
+                && getBrainAction() != ACTION_RETREAT
                 && getHealth() > getMaxHealth() * 0.35f
                 && canCommitToMelee(target)) {
-            if (currentAction != ACTION_ATTACK_MELEE) {
-                onActionChange(currentAction, ACTION_ATTACK_MELEE);
-                actionHoldTicks = 0;
-            }
+            transitionToAction(ACTION_ATTACK_MELEE);
             primeMeleeHandoff();
-            currentAction = ACTION_ATTACK_MELEE;
-            entityData.set(DATA_ACTION, currentAction);
             return;
         }
 
@@ -504,14 +525,14 @@ public class ArchitectEntity extends Monster {
             // Keep some unpredictability, but lower variance to reduce action thrash.
             scores[i] *= 0.95f + random.nextFloat() * 0.1f;
             // Hysteresis: current action gets a bonus to prevent flip-flopping
-            if (i == currentAction) scores[i] *= 1.2f;
+            if (i == getBrainAction()) scores[i] *= 1.2f;
             if (scores[i] > bestScore) {
                 bestScore = scores[i];
                 bestAction = i;
             }
         }
 
-        if (bestAction != currentAction) {
+        if (bestAction != getBrainAction()) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("[Architect] SCORING: observe={} approach={} melee={} retreat={} HP={}/{} winner={} (was {})",
                         String.format("%.2f", scores[ACTION_OBSERVE]),
@@ -521,20 +542,17 @@ public class ArchitectEntity extends Monster {
                         String.format("%.1f", getHealth()),
                         String.format("%.0f", getMaxHealth()),
                         bestAction,
-                        currentAction);
+                        getBrainAction());
             }
-            onActionChange(currentAction, bestAction);
-            actionHoldTicks = 0;
+            transitionToAction(bestAction);
         }
         if (bestAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
-        currentAction = bestAction;
-        entityData.set(DATA_ACTION, currentAction);
     }
 
     private void triggerReeval() {
-        reevalCooldown = 0;
+        brainState.setReevalCooldown(0);
         pathRecalcCooldown = 0;
     }
 
@@ -542,11 +560,11 @@ public class ArchitectEntity extends Monster {
 
     private float scoreObserve(@Nullable LivingEntity target) {
         if (target == null) return 0.1f;
-        if (hasObserved && !observeDirty) return 0f;
+        if (observationMemory.hasObserved() && !observationMemory.isObserveDirty()) return 0f;
         float score = 0.9f;
-        if (!hasObserved) score *= 2.0f;
+        if (!observationMemory.hasObserved()) score *= 2.0f;
         if (getHealth() < getMaxHealth() * 0.7f) return 0f;
-        if (observeDirty) score *= 0.7f;
+        if (observationMemory.isObserveDirty()) score *= 0.7f;
         // Don't observe if already close — commit to attack
         float dist = distanceTo(target);
         if (dist < 16) return 0f;
@@ -563,7 +581,7 @@ public class ArchitectEntity extends Monster {
         if (shouldPreferMeleeOverApproach(target)) score *= 0.3f;
         if (getHealth() < getMaxHealth() * 0.5f) score *= 0.5f;
         if (target.hasLineOfSight(this)) score *= 0.8f;
-        if (hasObserved) score *= 1.2f;
+        if (observationMemory.hasObserved()) score *= 1.2f;
         if (rangedHitsReceived > 3) score *= 1.3f;
         return score;
     }
@@ -608,7 +626,7 @@ public class ArchitectEntity extends Monster {
     private float scoreTrapSet(@Nullable LivingEntity target) {
         if (target == null) return 0f;
         if (trapCooldown > 0) return 0f;
-        if (entrancePositions.isEmpty()) return 0f;
+        if (observationMemory.entrancePositions().isEmpty()) return 0f;
         float score = 0.35f;
         if (isPlayerInsideBase(target)) score *= 1.3f;
         if (tacticalIce.size() >= MAX_TACTICAL_ICE) return 0f;
@@ -631,7 +649,7 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
-        switch (currentAction) {
+        switch (getBrainAction()) {
             case ACTION_OBSERVE -> executeObserve(target);
             case ACTION_APPROACH -> executeApproach(target);
             case ACTION_ATTACK_MELEE -> executeAttackMelee(target);
@@ -668,7 +686,7 @@ public class ArchitectEntity extends Monster {
         // Always stare at the target during OBSERVE — the creep factor
         getLookControl().setLookAt(target, 30f, 30f);
 
-        observeTicks++;
+        observationMemory.incrementObserveTicks();
 
         // OBSERVE particles: soul particles drift up from head — "it's thinking"
         if (level() instanceof ServerLevel serverLevel && tickCount % 10 == 0) {
@@ -688,24 +706,20 @@ public class ArchitectEntity extends Monster {
         }
 
         // Environment scan every 40 ticks
-        if (observeTicks % 40 == 0 && level() instanceof ServerLevel serverLevel) {
+        if (observationMemory.getObserveTicks() % 40 == 0 && level() instanceof ServerLevel serverLevel) {
             BlockPos playerPos = target.blockPosition();
             scanEntrances(serverLevel, playerPos);
-            scanLightSources(serverLevel, playerPos);
-            playerUnderground = playerPos.getY() < level().getSeaLevel() - 10;
-            findWeakestWall(serverLevel, playerPos);
-            lastObservedPos = playerPos;
+            observationMemory.setLastObservedPos(playerPos);
         }
 
         // Raycast probe: run at tick 60 (3s in) and tick 300 (15s in, mid-observe)
-        if ((observeTicks == 60 || observeTicks == 300)) {
+        if (observationMemory.getObserveTicks() == 60 || observationMemory.getObserveTicks() == 300) {
             awardObserveProbeAdvancement(target);
-            probeOptimalEntry(target);
         }
 
         if (dist < 20 && target.hasLineOfSight(this) && isPlayerFacing(target)) {
-            hasObserved = true;
-            observeDirty = false;
+            observationMemory.setHasObserved(true);
+            observationMemory.setObserveDirty(false);
             // Particle burst — "decision made"
             if (level() instanceof ServerLevel sl) {
                 sl.sendParticles(ParticleTypes.SOUL, getX(), getY() + 1.8, getZ(),
@@ -718,9 +732,9 @@ public class ArchitectEntity extends Monster {
         }
 
         int targetDuration = MIN_OBSERVE_TICKS + random.nextInt(MAX_OBSERVE_TICKS - MIN_OBSERVE_TICKS);
-        if (observeTicks >= targetDuration) {
-            hasObserved = true;
-            observeDirty = false;
+        if (observationMemory.getObserveTicks() >= targetDuration) {
+            observationMemory.setHasObserved(true);
+            observationMemory.setObserveDirty(false);
             // Particle burst — "decision made"
             if (level() instanceof ServerLevel sl) {
                 sl.sendParticles(ParticleTypes.SOUL, getX(), getY() + 1.8, getZ(),
@@ -762,21 +776,23 @@ public class ArchitectEntity extends Monster {
     }
 
     private void maybeTriggerSpawnObserveCue(@Nullable LivingEntity target) {
-        if (pendingSpawnCuePlayed || pendingSpawnCuePlayerId == null || currentAction != ACTION_OBSERVE) {
+        if (observationMemory.isPendingSpawnCuePlayed()
+                || observationMemory.getPendingSpawnCuePlayerId() == null
+                || getBrainAction() != ACTION_OBSERVE) {
             return;
         }
         if (!(target instanceof ServerPlayer player)) {
             return;
         }
-        if (!pendingSpawnCuePlayerId.equals(player.getUUID())) {
+        if (!observationMemory.getPendingSpawnCuePlayerId().equals(player.getUUID())) {
             return;
         }
         if (distanceToSqr(player) > SPAWN_OBSERVE_CUE_RANGE_SQR) {
             return;
         }
 
-        pendingSpawnCuePlayed = true;
-        pendingSpawnCuePlayerId = null;
+        observationMemory.setPendingSpawnCuePlayed(true);
+        observationMemory.setPendingSpawnCuePlayerId(null);
         level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 ModSounds.ARCHITECT_WATCHED.get(), SoundSource.HOSTILE,
                 1.0f, 0.9f + random.nextFloat() * 0.2f);
@@ -802,99 +818,6 @@ public class ArchitectEntity extends Monster {
             dstarPrecomputed = true;
         }
     }
-
-    /**
-     * Raycast probe during OBSERVE: for each cardinal direction, cast a ray
-     * from outside the base inward toward the target. Sum the tool-aware breach
-     * cost of every solid block in the ray. Add walk distance from mob to the
-     * approach point. Pick the cheapest total.
-     *
-     * No A*, no heuristic bias. Four raycasts, exact optimal answer every time.
-     */
-    private void probeOptimalEntry(LivingEntity target) {
-        BlockPos targetPos = target.blockPosition();
-
-        float bestTotalCost = Float.MAX_VALUE;
-        BlockPos bestApproach = null;
-
-        Direction[] dirs = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST };
-
-        for (Direction dir : dirs) {
-            // Start 20 blocks out from target in this direction
-            BlockPos start = targetPos.relative(dir, 20);
-            Direction inward = dir.getOpposite();
-
-            float breachCost = 0;
-            int breachBlocks = 0;
-            boolean reachedInside = false;
-
-            // Walk the ray inward toward target
-            for (int i = 0; i < 20; i++) {
-                BlockPos check = start.relative(inward, i);
-                BlockState state = level().getBlockState(check);
-
-                if (state.isAir()) {
-                    // If we've breached at least one block, we're inside
-                    if (breachBlocks > 0) {
-                        reachedInside = true;
-                        break;
-                    }
-                    continue; // Still outside, keep walking
-                }
-
-                if (isImmuneBlock(state, check)) {
-                    breachCost = Float.MAX_VALUE; // Impassable
-                    break;
-                }
-
-                float hardness = state.getDestroySpeed(level(), check);
-                if (hardness < 0 || hardness >= 25.0F) {
-                    breachCost = Float.MAX_VALUE; // Unbreakable
-                    break;
-                }
-
-                // Tool-aware breach cost — ×2 for feet + headroom blocks
-                float blockCost = ArchitectBlockBreaker.getEffectiveBreakTime(
-                        state, check, level()) * BREACH_COST_MULTIPLIER;
-                breachCost += blockCost * 2;
-                breachBlocks++;
-            }
-
-            if (!reachedInside || breachCost >= Float.MAX_VALUE) continue;
-
-            // Walk cost: Manhattan distance from mob to approach point
-            BlockPos approachPoint = targetPos.relative(dir, breachBlocks + 1);
-            float walkCost = (float)(Math.abs(getX() - approachPoint.getX())
-                    + Math.abs(getZ() - approachPoint.getZ()));
-
-            float totalCost = walkCost + breachCost;
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[Architect] PROBE {}: breach={} walk={} total={} blocks={}",
-                        dir,
-                        String.format("%.1f", breachCost),
-                        String.format("%.1f", walkCost),
-                        String.format("%.1f", totalCost),
-                        breachBlocks);
-            }
-
-            if (totalCost < bestTotalCost) {
-                bestTotalCost = totalCost;
-                bestApproach = approachPoint;
-            }
-        }
-
-        if (bestApproach != null) {
-            preferredEntryPoint = bestApproach;
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[Architect] OBSERVE probe: best entry at {} totalCost={}",
-                        preferredEntryPoint,
-                        String.format("%.1f", bestTotalCost));
-            }
-        }
-    }
-
-    private static final float BREACH_COST_MULTIPLIER = 5.0F;
 
     private boolean isImmuneBlock(BlockState state, BlockPos pos) {
         return state.is(ModBlocks.ACHERONITE_BLOCK.get())
@@ -969,7 +892,7 @@ public class ArchitectEntity extends Monster {
 
         if (shouldPreferMeleeOverApproach(target)) {
             primeMeleeHandoff();
-            reevalCooldown = 0;
+            brainState.setReevalCooldown(0);
         }
 
         if (tryContinueCommittedWalk(target)) {
@@ -1070,7 +993,6 @@ public class ArchitectEntity extends Monster {
                     if (blockDist <= 4.5 * 4.5) {
                         blockBreaker.setTarget(breakTarget);
                         getNavigation().stop();
-                        wallBreakAttempts++;
                         LOGGER.info("[Architect] D* BREACH at " + breakTarget
                                 + " (" + level().getBlockState(breakTarget).getBlock() + ")");
                     } else {
@@ -1165,7 +1087,8 @@ public class ArchitectEntity extends Monster {
     }
 
     private void approachLastKnownPos() {
-        if (lastKnownPlayerPos != null && tickCount - lastSeenTick < PLAYER_MEMORY_TICKS) {
+        BlockPos lastKnownPlayerPos = observationMemory.getLastKnownPlayerPos();
+        if (lastKnownPlayerPos != null && tickCount - observationMemory.getLastSeenTick() < PLAYER_MEMORY_TICKS) {
             if (pathRecalcCooldown <= 0) {
                 getNavigation().moveTo(lastKnownPlayerPos.getX() + 0.5,
                         lastKnownPlayerPos.getY(), lastKnownPlayerPos.getZ() + 0.5, 1.0);
@@ -1284,7 +1207,6 @@ public class ArchitectEntity extends Monster {
 
         if (blockDist <= 4.5 * 4.5) {
             blockBreaker.setTarget(wallBlock);
-            wallBreakAttempts++;
             lastFallbackBreakPos = wallBlock.immutable();
             fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
         } else {
@@ -1670,7 +1592,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean shouldContinueApproachBreak(@Nullable LivingEntity target, BlockPos expectedBreakTarget) {
-        if (currentAction != ACTION_APPROACH || target == null) return false;
+        if (getBrainAction() != ACTION_APPROACH || target == null) return false;
 
         BlockPos targetPos = target.blockPosition();
         if (dstar.needsReinitialize(targetPos)) return false;
@@ -1966,7 +1888,6 @@ public class ArchitectEntity extends Monster {
         clearCommittedWalk();
         resetWalkStuckTracker();
         resetUnstickBreakTracker();
-        wallBreakAttempts++;
         blockBreaker.setTarget(breakTarget.immutable());
         LOGGER.info("[Architect] WALK corridor requires breach at {}", breakTarget);
         walkToBreakTarget();
@@ -2121,7 +2042,7 @@ public class ArchitectEntity extends Monster {
                 || hDist > MELEE_COMMIT_HORIZONTAL_RANGE
                 || vDist > MELEE_COMMIT_VERTICAL_RANGE
                 || (!hasLos && hDist > MELEE_COMMIT_LOS_GRACE_RANGE)) {
-            meleeCommitTicks = 0;
+            brainState.setMeleeCommitTicks(0);
             triggerReeval();
             return;
         }
@@ -2129,7 +2050,7 @@ public class ArchitectEntity extends Monster {
         blockBreaker.clearTarget();
         getLookControl().setLookAt(target, 30f, 30f);
         if (getHealth() > getMaxHealth() * 0.35f) {
-            meleeCommitTicks = Math.max(meleeCommitTicks, MELEE_COMMIT_TICKS);
+            brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
         }
 
         // Backoff after landing a hit — sprint backwards briefly
@@ -2280,11 +2201,11 @@ public class ArchitectEntity extends Monster {
 
     private void executeTrapSet(@Nullable LivingEntity target) {
         blockBreaker.clearTarget();
-        if (target == null || entrancePositions.isEmpty()) { triggerReeval(); return; }
+        if (target == null || observationMemory.entrancePositions().isEmpty()) { triggerReeval(); return; }
 
         BlockPos bestEntrance = null;
         double bestDist = 0;
-        for (BlockPos entrance : entrancePositions) {
+        for (BlockPos entrance : observationMemory.entrancePositions()) {
             double d = distanceToSqr(entrance.getX(), entrance.getY(), entrance.getZ());
             if (d > bestDist) { bestDist = d; bestEntrance = entrance; }
         }
@@ -2315,7 +2236,7 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void onActionChange(int oldAction, int newAction) {
-        if (oldAction == ACTION_OBSERVE) observeTicks = 0;
+        if (oldAction == ACTION_OBSERVE) observationMemory.setObserveTicks(0);
         if (oldAction == ACTION_PEEK) peekTicks = 0;
         if (oldAction == ACTION_APPROACH) unreachableTicks = 0;
         clearWalkNavigationState(true);
@@ -2338,7 +2259,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private void primeMeleeHandoff() {
-        meleeCommitTicks = Math.max(meleeCommitTicks, MELEE_COMMIT_TICKS);
+        brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
         clearWalkNavigationState(true);
         clearCommittedWalk();
         blockBreaker.clearTarget();
@@ -2370,7 +2291,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private void enterRoamModeAfterTargetLoss() {
-        roamingAfterTargetLoss = true;
+        brainState.setRoamingAfterTargetLoss(true);
         resetObserveCycle();
         retreatPhase = 0;
         retreatCoverBuilt = 0;
@@ -2382,24 +2303,19 @@ public class ArchitectEntity extends Monster {
 
     private void restartObserveForPlayer(Player player) {
         resetObserveCycle();
-        if (currentAction != ACTION_OBSERVE) {
-            onActionChange(currentAction, ACTION_OBSERVE);
-        }
-        currentAction = ACTION_OBSERVE;
-        entityData.set(DATA_ACTION, currentAction);
-        actionHoldTicks = 0;
-        reevalCooldown = 0;
+        transitionToAction(ACTION_OBSERVE);
+        brainState.setActionHoldTicks(0);
+        brainState.setReevalCooldown(0);
         LOGGER.info("[Architect] Player reacquired at "
                 + String.format("%.1f", distanceTo(player))
                 + " blocks — restarting OBSERVE");
     }
 
     private void resetObserveCycle() {
-        hasObserved = false;
-        observeDirty = false;
-        observeTicks = 0;
-        preferredEntryPoint = null;
-        lastObservedPos = null;
+        observationMemory.setHasObserved(false);
+        observationMemory.setObserveDirty(false);
+        observationMemory.setObserveTicks(0);
+        observationMemory.setLastObservedPos(null);
         dstarPrecomputed = false;
     }
 
@@ -2473,7 +2389,7 @@ public class ArchitectEntity extends Monster {
     private void emitActionTelegraphParticles(@Nullable LivingEntity target) {
         if (!(level() instanceof ServerLevel serverLevel)) return;
 
-        switch (currentAction) {
+        switch (getBrainAction()) {
             case ACTION_APPROACH -> {
                 if (blockBreaker.isMining() && tickCount % 4 == 0) {
                     BlockPos targetPos = blockBreaker.getTarget();
@@ -2622,9 +2538,9 @@ public class ArchitectEntity extends Monster {
     private void updateHeldItem() {
         if (isDrinkingPotion) return;
 
-        boolean building = entityData.get(DATA_BUILDING_ICE);
+        boolean building = isBuildingIceNow();
 
-        switch (currentAction) {
+        switch (getBrainAction()) {
             case ACTION_ATTACK_MELEE ->
                     setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
             case ACTION_APPROACH -> {
@@ -2647,12 +2563,6 @@ public class ArchitectEntity extends Monster {
             }
             default -> setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
         }
-
-        entityData.set(DATA_BUILDING_ICE,
-                currentAction == ACTION_FORTIFY
-                        || currentAction == ACTION_TRAP_SET
-                        || (currentAction == ACTION_RETREAT && retreatPhase == 1)
-                        || (currentAction == ACTION_APPROACH && !scaffoldIce.isEmpty()));
     }
 
     // ========================
@@ -2660,7 +2570,7 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void scanEntrances(ServerLevel level, BlockPos center) {
-        entrancePositions.clear();
+        observationMemory.entrancePositions().clear();
         int radius = 16;
         for (int dx = -radius; dx <= radius; dx += 2) {
             for (int dz = -radius; dz <= radius; dz += 2) {
@@ -2678,7 +2588,7 @@ public class ArchitectEntity extends Monster {
                                 break;
                             }
                         }
-                        if (nearWall) entrancePositions.add(check.immutable());
+                        if (nearWall) observationMemory.entrancePositions().add(check.immutable());
                         break;
                     }
                 }
@@ -2686,61 +2596,18 @@ public class ArchitectEntity extends Monster {
         }
     }
 
-    private void scanLightSources(ServerLevel level, BlockPos center) {
-        lightSources.clear();
-        int radius = 12;
-        for (BlockPos pos : BlockPos.betweenClosed(
-                center.offset(-radius, -4, -radius),
-                center.offset(radius, 4, radius))) {
-            if (isLightSource(level.getBlockState(pos))) {
-                lightSources.add(pos.immutable());
-            }
-        }
-    }
-
-    private void findWeakestWall(ServerLevel level, BlockPos playerPos) {
-        net.minecraft.core.Direction[] dirs = {
-                net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH,
-                net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.WEST
-        };
-        int leastSolid = Integer.MAX_VALUE;
-        int bestDir = 0;
-        for (int d = 0; d < 4; d++) {
-            int solidCount = 0;
-            BlockPos.MutableBlockPos probe = playerPos.mutable();
-            for (int i = 1; i <= 10; i++) {
-                probe.move(dirs[d]);
-                if (level.getBlockState(probe).isSolid()) solidCount++;
-            }
-            if (solidCount < leastSolid) { leastSolid = solidCount; bestDir = d; }
-        }
-        weakestWallDirection = playerPos.relative(dirs[bestDir], 5);
-    }
-
     /**
      * Called when player places blocks near last observed position.
      * Threshold: 5+ changes within 16 blocks.
      */
     public void onNearbyBlockChange(BlockPos changedPos, int changeCount) {
+        BlockPos lastObservedPos = observationMemory.getLastObservedPos();
         if (lastObservedPos != null && changeCount >= 5
                 && changedPos.closerToCenterThan(lastObservedPos.getCenter(), 16.0)) {
-            observeDirty = true;
+            observationMemory.setObserveDirty(true);
         }
         // Notify D* Lite of world changes so it updates costs incrementally
         dstar.onBlockChanged(changedPos, level());
-    }
-
-    private boolean isLightSource(BlockState state) {
-        if (state.is(ModBlocks.FROST_WARD_TORCH.get()) || state.is(ModBlocks.FROST_WARD_WALL_TORCH.get())) {
-            return false;
-        }
-        return state.getBlock() instanceof BaseTorchBlock
-                || state.getBlock() instanceof LanternBlock
-                || state.getBlock() instanceof CampfireBlock
-                || state.is(Blocks.GLOWSTONE)
-                || state.is(Blocks.SHROOMLIGHT)
-                || state.is(Blocks.SEA_LANTERN)
-                || state.is(Blocks.JACK_O_LANTERN);
     }
 
     // ========================
@@ -2754,7 +2621,7 @@ public class ArchitectEntity extends Monster {
     @Nullable
     private LivingEntity findTarget() {
         double range = getDetectionRange();
-        double playerRange = roamingAfterTargetLoss ? OBSERVE_REACQUIRE_RANGE : range;
+        double playerRange = brainState.isRoamingAfterTargetLoss() ? OBSERVE_REACQUIRE_RANGE : range;
         // Find nearest survival/adventure player (exclude creative & spectator)
         Player nearestPlayer = level().getNearestPlayer(this, playerRange);
         if (nearestPlayer != null && !nearestPlayer.isCreative() && !nearestPlayer.isSpectator()) {
@@ -2836,19 +2703,22 @@ public class ArchitectEntity extends Monster {
     public void setTextureVariant(int variant) { entityData.set(DATA_TEXTURE_VARIANT, variant); }
     public int getDeathTicks() { return entityData.get(DATA_DEATH_TICKS); }
     public int getCurrentAction() { return entityData.get(DATA_ACTION); }
-    public boolean isMiningBlock() { return blockBreaker.isMining(); }
-    public float getMiningProgress() { return blockBreaker.getMiningProgress(); }
-    public boolean hasQueuedScaffoldStep() { return scaffoldTarget != null || scaffoldDelay > 0; }
-    public boolean isRetreatRecovering() { return currentAction == ACTION_RETREAT && (retreatPhase >= 1 || isDrinkingPotion); }
+    public boolean isMiningBlock() {
+        return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.MINING);
+    }
+    public float getMiningProgress() { return entityData.get(DATA_MINING_PROGRESS); }
+    public boolean hasQueuedScaffoldStep() {
+        return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.QUEUED_SCAFFOLD);
+    }
+    public boolean isRetreatRecovering() {
+        return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.RETREAT_RECOVERING);
+    }
     public boolean isTowerEncounter() { return towerEncounter; }
     public long getTowerEncounterId() { return towerEncounterId; }
     public void setTowerEncounter(long towerId) {
         towerEncounter = true;
         towerEncounterId = towerId;
         despawnTimer = 0;
-    }
-    public boolean isProbing() {
-        return probing;
     }
 
     public int getSurfaceY() { return surfaceY; }
@@ -2897,28 +2767,19 @@ public class ArchitectEntity extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putInt("TextureVariant", getTextureVariant());
         tag.putInt("DespawnTimer", despawnTimer);
-        tag.putInt("CurrentAction", currentAction);
-        tag.putBoolean("HasObserved", hasObserved);
-        tag.putBoolean("ObserveDirty", observeDirty);
-        tag.putBoolean("PlayerUnderground", playerUnderground);
+        tag.putInt("CurrentAction", getBrainAction());
+        tag.putBoolean("HasObserved", observationMemory.hasObserved());
+        tag.putBoolean("ObserveDirty", observationMemory.isObserveDirty());
         tag.putInt("RangedHitsReceived", rangedHitsReceived);
-        tag.putInt("WallBreakAttempts", wallBreakAttempts);
-        tag.putBoolean("AcheroniteEncountered", acheroniteEncountered);
         tag.putInt("HealCooldown", healCooldown);
         tag.putInt("SurfaceY", surfaceY);
         tag.putBoolean("TowerEncounter", towerEncounter);
         tag.putLong("TowerEncounterId", towerEncounterId);
 
-        ListTag scaffoldList = new ListTag();
-        for (BlockPos pos : scaffoldIce) scaffoldList.add(LongTag.valueOf(pos.asLong()));
-        tag.put("ScaffoldIce", scaffoldList);
-
-        ListTag tacticalList = new ListTag();
-        for (BlockPos pos : tacticalIce) tacticalList.add(LongTag.valueOf(pos.asLong()));
-        tag.put("TacticalIce", tacticalList);
-
-        if (lastKnownPlayerPos != null) tag.putLong("LastKnownPlayerPos", lastKnownPlayerPos.asLong());
-        if (lastObservedPos != null) tag.putLong("LastObservedPos", lastObservedPos.asLong());
+        ArchitectPersistence.putBlockPosList(tag, "ScaffoldIce", scaffoldIce);
+        ArchitectPersistence.putBlockPosList(tag, "TacticalIce", tacticalIce);
+        ArchitectPersistence.putOptionalBlockPos(tag, "LastKnownPlayerPos", observationMemory.getLastKnownPlayerPos());
+        ArchitectPersistence.putOptionalBlockPos(tag, "LastObservedPos", observationMemory.getLastObservedPos());
     }
 
     @Override
@@ -2926,34 +2787,26 @@ public class ArchitectEntity extends Monster {
         super.readAdditionalSaveData(tag);
         setTextureVariant(tag.getInt("TextureVariant"));
         despawnTimer = tag.getInt("DespawnTimer");
-        currentAction = tag.getInt("CurrentAction");
+        setBrainAction(tag.getInt("CurrentAction"));
         // Delay first pathfinding after world load to prevent freeze
         pathRecalcCooldown = 40;
-        reevalCooldown = 40;
-        hasObserved = tag.getBoolean("HasObserved");
-        observeDirty = tag.getBoolean("ObserveDirty");
-        playerUnderground = tag.getBoolean("PlayerUnderground");
+        brainState.setReevalCooldown(40);
+        brainState.setActionHoldTicks(0);
+        observationMemory.setHasObserved(tag.getBoolean("HasObserved"));
+        observationMemory.setObserveDirty(tag.getBoolean("ObserveDirty"));
+        observationMemory.setObserveTicks(0);
         rangedHitsReceived = tag.getInt("RangedHitsReceived");
-        wallBreakAttempts = tag.getInt("WallBreakAttempts");
-        acheroniteEncountered = tag.getBoolean("AcheroniteEncountered");
         healCooldown = tag.getInt("HealCooldown");
         surfaceY = tag.getInt("SurfaceY");
         towerEncounter = tag.getBoolean("TowerEncounter");
         towerEncounterId = tag.contains("TowerEncounterId") ? tag.getLong("TowerEncounterId") : Long.MIN_VALUE;
         if (surfaceY == 0) surfaceY = blockPosition().getY(); // migration for existing entities
 
-        scaffoldIce.clear();
-        ListTag scaffoldList = tag.getList("ScaffoldIce", Tag.TAG_LONG);
-        for (int i = 0; i < scaffoldList.size(); i++) {
-            scaffoldIce.add(BlockPos.of(((LongTag) scaffoldList.get(i)).getAsLong()));
-        }
-        tacticalIce.clear();
-        ListTag tacticalList = tag.getList("TacticalIce", Tag.TAG_LONG);
-        for (int i = 0; i < tacticalList.size(); i++) {
-            tacticalIce.add(BlockPos.of(((LongTag) tacticalList.get(i)).getAsLong()));
-        }
-        if (tag.contains("LastKnownPlayerPos")) lastKnownPlayerPos = BlockPos.of(tag.getLong("LastKnownPlayerPos"));
-        if (tag.contains("LastObservedPos")) lastObservedPos = BlockPos.of(tag.getLong("LastObservedPos"));
+        ArchitectPersistence.readBlockPosList(tag, "ScaffoldIce", scaffoldIce);
+        ArchitectPersistence.readBlockPosList(tag, "TacticalIce", tacticalIce);
+        observationMemory.setLastKnownPlayerPos(ArchitectPersistence.getOptionalBlockPos(tag, "LastKnownPlayerPos"));
+        observationMemory.setLastObservedPos(ArchitectPersistence.getOptionalBlockPos(tag, "LastObservedPos"));
+        syncRenderState();
     }
 
     // ========================

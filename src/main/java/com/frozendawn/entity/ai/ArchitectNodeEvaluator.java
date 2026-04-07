@@ -94,9 +94,8 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         // This replaces the old setAllowBreach() call which was overwritten by
         // prepare() running after the flag was set (prepare runs inside moveTo).
         if (mob instanceof com.frozendawn.entity.ArchitectEntity architect) {
-            this.allowBreach = architect.getCurrentAction()
-                    == com.frozendawn.entity.ArchitectEntity.ACTION_APPROACH
-                    || architect.isProbing();
+            this.allowBreach = architect.getBrainAction()
+                    == com.frozendawn.entity.ArchitectEntity.ACTION_APPROACH;
             this.surfaceY = architect.getSurfaceY();
         } else {
             this.allowBreach = false;

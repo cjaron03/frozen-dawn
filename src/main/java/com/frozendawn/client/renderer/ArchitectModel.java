@@ -24,6 +24,14 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
 
         int action = entity.getCurrentAction();
         float sway = Mth.sin(ageInTicks * 0.08f) * 0.06f;
+        this.hat.visible = false;
+
+        // During active mining, preserve vanilla humanoid swing exactly instead of
+        // layering a custom pose over it.
+        if (action == ArchitectEntity.ACTION_APPROACH && entity.isMiningBlock()) {
+            return;
+        }
+
         this.body.xRot = 0.0f;
         this.body.yRot = 0.0f;
         this.body.zRot = 0.0f;
@@ -32,7 +40,6 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftArm.yRot = 0.0f;
         this.rightArm.zRot = 0.0f;
         this.leftArm.zRot = 0.0f;
-        this.hat.visible = false;
 
         if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
             this.head.zRot = sway * 0.75f;
@@ -45,16 +52,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             this.rightArm.xRot -= 0.15f;
             this.leftArm.xRot -= 0.15f;
 
-            if (entity.isMiningBlock()) {
-                float miningSwing = Mth.sin(ageInTicks * 0.9f)
-                        * 0.35f
-                        * Mth.clamp(entity.getMiningProgress() + 0.35f, 0.35f, 1.0f);
-                this.head.xRot += 0.18f;
-                this.rightArm.xRot = -1.35f + miningSwing;
-                this.rightArm.yRot = -0.22f;
-                this.leftArm.xRot = -0.35f - miningSwing * 0.25f;
-                this.leftArm.yRot = 0.18f;
-            } else if (entity.hasQueuedScaffoldStep()) {
+            if (entity.hasQueuedScaffoldStep()) {
                 this.rightArm.xRot = -0.95f;
                 this.leftArm.xRot = -0.55f;
                 this.rightArm.yRot = -0.08f;
