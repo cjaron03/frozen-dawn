@@ -166,7 +166,6 @@ public class ArchitectEntity extends Monster {
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     private static final int FALLBACK_BREAK_COOLDOWN_TICKS = 10;
     static final int MELEE_COMMIT_TICKS = 12;
-    private static final float MELEE_COMMIT_KEEP_RANGE = 5.8f;
     static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
     private static final double MELEE_ENGAGE_HORIZONTAL_RANGE = 4.75;
     static final double MELEE_COMMIT_HORIZONTAL_RANGE = 5.25;
@@ -1993,47 +1992,36 @@ public class ArchitectEntity extends Monster {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        tag.putInt("TextureVariant", getTextureVariant());
-        tag.putInt("DespawnTimer", despawnTimer);
-        tag.putInt("CurrentAction", getBrainAction());
-        tag.putBoolean("HasObserved", observationMemory.hasObserved());
-        tag.putBoolean("ObserveDirty", observationMemory.isObserveDirty());
-        tag.putInt("RangedHitsReceived", combatState.rangedHitsReceived);
-        tag.putInt("HealCooldown", combatState.healCooldown);
-        tag.putInt("SurfaceY", approachState.surfaceY);
-        tag.putBoolean("TowerEncounter", towerEncounter);
-        tag.putLong("TowerEncounterId", towerEncounterId);
-
-        ArchitectPersistence.putBlockPosList(tag, "ScaffoldIce", scaffoldIce);
-        ArchitectPersistence.putBlockPosList(tag, "TacticalIce", tacticalIce);
-        ArchitectPersistence.putOptionalBlockPos(tag, "LastKnownPlayerPos", observationMemory.getLastKnownPlayerPos());
-        ArchitectPersistence.putOptionalBlockPos(tag, "LastObservedPos", observationMemory.getLastObservedPos());
+        ArchitectPersistence.writeCoreState(
+                tag,
+                getTextureVariant(),
+                despawnTimer,
+                getBrainAction(),
+                towerEncounter,
+                towerEncounterId
+        );
+        ArchitectPersistence.writeObservationMemory(tag, observationMemory);
+        ArchitectPersistence.writeCombatState(tag, combatState);
+        ArchitectPersistence.writeApproachState(tag, approachState, scaffoldIce, tacticalIce);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        setTextureVariant(tag.getInt("TextureVariant"));
-        despawnTimer = tag.getInt("DespawnTimer");
-        setBrainAction(tag.getInt("CurrentAction"));
+        ArchitectPersistence.CoreState coreState = ArchitectPersistence.readCoreState(tag);
+        setTextureVariant(coreState.textureVariant());
+        despawnTimer = coreState.despawnTimer();
+        setBrainAction(coreState.currentAction());
         // Delay first pathfinding after world load to prevent freeze
         pathRecalcCooldown = 40;
         brainState.setReevalCooldown(40);
         brainState.setActionHoldTicks(0);
-        observationMemory.setHasObserved(tag.getBoolean("HasObserved"));
-        observationMemory.setObserveDirty(tag.getBoolean("ObserveDirty"));
-        observationMemory.setObserveTicks(0);
-        combatState.rangedHitsReceived = tag.getInt("RangedHitsReceived");
-        combatState.healCooldown = tag.getInt("HealCooldown");
-        approachState.surfaceY = tag.getInt("SurfaceY");
-        towerEncounter = tag.getBoolean("TowerEncounter");
-        towerEncounterId = tag.contains("TowerEncounterId") ? tag.getLong("TowerEncounterId") : Long.MIN_VALUE;
+        ArchitectPersistence.readObservationMemory(tag, observationMemory);
+        ArchitectPersistence.readCombatState(tag, combatState);
+        ArchitectPersistence.readApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        towerEncounter = coreState.towerEncounter();
+        towerEncounterId = coreState.towerEncounterId();
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
-
-        ArchitectPersistence.readBlockPosList(tag, "ScaffoldIce", scaffoldIce);
-        ArchitectPersistence.readBlockPosList(tag, "TacticalIce", tacticalIce);
-        observationMemory.setLastKnownPlayerPos(ArchitectPersistence.getOptionalBlockPos(tag, "LastKnownPlayerPos"));
-        observationMemory.setLastObservedPos(ArchitectPersistence.getOptionalBlockPos(tag, "LastObservedPos"));
         syncRenderState();
     }
 
