@@ -135,6 +135,8 @@ public class ArchitectEntity extends Monster {
             new ArchitectCombatController(this, combatState, blockBreaker);
     private final ArchitectObservationController observationController =
             new ArchitectObservationController(this, observationMemory, approachState, approachController, blockBreaker);
+    private final ArchitectTacticsController tacticsController =
+            new ArchitectTacticsController(this, observationMemory, blockBreaker);
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -333,6 +335,18 @@ public class ArchitectEntity extends Monster {
     void resetRetreatState() {
         combatState.retreatPhase = 0;
         combatState.retreatCoverBuilt = 0;
+    }
+
+    void setTrapCooldown(int ticks) {
+        trapCooldown = ticks;
+    }
+
+    int incrementPeekTicks() {
+        return ++peekTicks;
+    }
+
+    void resetPeekTicks() {
+        peekTicks = 0;
     }
 
     int nextRandomInt(int bound) {
@@ -593,9 +607,9 @@ public class ArchitectEntity extends Monster {
             case ACTION_APPROACH -> approachController.executeApproach(target);
             case ACTION_ATTACK_MELEE -> combatController.executeAttackMelee(target);
             case ACTION_RETREAT -> combatController.executeRetreat(target);
-            case ACTION_FORTIFY -> executeFortify(target);
-            case ACTION_TRAP_SET -> executeTrapSet(target);
-            case ACTION_PEEK -> executePeek(target);
+            case ACTION_FORTIFY -> tacticsController.executeFortify(target);
+            case ACTION_TRAP_SET -> tacticsController.executeTrapSet(target);
+            case ACTION_PEEK -> tacticsController.executePeek(target);
         }
     }
 
@@ -1535,53 +1549,6 @@ public class ArchitectEntity extends Monster {
         }
 
         setDeltaMovement(blended.x, current.y, blended.z);
-    }
-
-    private void executeFortify(@Nullable LivingEntity target) {
-        blockBreaker.clearTarget();
-        if (target == null) { triggerReeval(); return; }
-
-        Vec3 toPlayer = target.position().subtract(position()).normalize();
-        BlockPos wallPos = blockPosition().offset(
-                (int) Math.round(toPlayer.x * 2), 0,
-                (int) Math.round(toPlayer.z * 2));
-        if (placeTacticalIce(wallPos)) {
-            placeTacticalIce(wallPos.above());
-        }
-        getLookControl().setLookAt(target, 30f, 30f);
-        if (tickCount % 60 == 0) triggerReeval();
-    }
-
-    private void executeTrapSet(@Nullable LivingEntity target) {
-        blockBreaker.clearTarget();
-        if (target == null || observationMemory.entrancePositions().isEmpty()) { triggerReeval(); return; }
-
-        BlockPos bestEntrance = null;
-        double bestDist = 0;
-        for (BlockPos entrance : observationMemory.entrancePositions()) {
-            double d = distanceToSqr(entrance.getX(), entrance.getY(), entrance.getZ());
-            if (d > bestDist) { bestDist = d; bestEntrance = entrance; }
-        }
-
-        if (bestEntrance != null) {
-            if (distanceToSqr(bestEntrance.getX(), bestEntrance.getY(), bestEntrance.getZ()) > 4) {
-                getNavigation().moveTo(bestEntrance.getX() + 0.5,
-                        bestEntrance.getY(), bestEntrance.getZ() + 0.5, 1.0);
-            } else {
-                placeTacticalIce(bestEntrance);
-                placeTacticalIce(bestEntrance.above());
-                trapCooldown = 400;
-                triggerReeval();
-            }
-        }
-    }
-
-    private void executePeek(@Nullable LivingEntity target) {
-        blockBreaker.clearTarget();
-        getNavigation().stop();
-        if (target != null) getLookControl().setLookAt(target, 30f, 30f);
-        peekTicks++;
-        if (peekTicks >= 30) { peekTicks = 0; triggerReeval(); }
     }
 
     // ========================
