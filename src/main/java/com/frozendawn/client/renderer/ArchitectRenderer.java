@@ -63,7 +63,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         poseStack.pushPose();
         int action = entity.getCurrentAction();
         if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
-            float sway = Mth.sin((entity.tickCount + partialTick) * 0.06f) * 2.5f;
+            float sway = Mth.sin((entity.tickCount + partialTick) * 0.035f) * 0.9f;
             poseStack.mulPose(Axis.YP.rotationDegrees(sway));
         }
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);

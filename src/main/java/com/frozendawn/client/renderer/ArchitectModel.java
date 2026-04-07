@@ -40,13 +40,13 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftArm.yRot = 0.0f;
         this.rightArm.zRot = 0.0f;
         this.leftArm.zRot = 0.0f;
+        this.rightLeg.yRot = 0.0f;
+        this.leftLeg.yRot = 0.0f;
+        this.rightLeg.zRot = 0.0f;
+        this.leftLeg.zRot = 0.0f;
 
         if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
-            this.head.zRot = sway * 0.75f;
-            this.rightArm.xRot = -0.40f + sway * 0.7f;
-            this.leftArm.xRot = -0.40f - sway * 0.7f;
-            this.rightArm.zRot = 0.08f;
-            this.leftArm.zRot = -0.08f;
+            applyObservePose(ageInTicks, sway);
         } else if (action == ArchitectEntity.ACTION_APPROACH) {
             this.head.xRot += 0.02f;
             this.rightArm.xRot -= 0.15f;
@@ -79,5 +79,33 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.yRot = 0.20f;
             }
         }
+    }
+
+    private void applyObservePose(float ageInTicks, float sway) {
+        float breath = Mth.sin(ageInTicks * 0.09f);
+        float settle = Mth.sin(ageInTicks * 0.045f + 0.7f);
+        float shoulderDrift = Mth.sin(ageInTicks * 0.06f + 1.1f) * 0.035f;
+        float torsoLag = Mth.clamp(this.head.yRot * 0.35f, -0.35f, 0.35f);
+
+        this.body.xRot = -0.03f + breath * 0.018f;
+        this.body.yRot = torsoLag;
+        this.body.zRot = settle * 0.028f;
+
+        this.head.xRot += 0.025f + breath * 0.012f;
+        this.head.zRot = sway * 0.45f + settle * 0.018f;
+
+        this.rightArm.xRot = -0.22f + breath * 0.035f + shoulderDrift;
+        this.leftArm.xRot = -0.34f - breath * 0.02f;
+        this.rightArm.yRot = -0.10f + torsoLag * 0.65f;
+        this.leftArm.yRot = 0.14f + torsoLag * 0.65f;
+        this.rightArm.zRot = 0.10f + settle * 0.035f;
+        this.leftArm.zRot = -0.16f - settle * 0.03f;
+
+        this.rightLeg.xRot = -0.04f + breath * 0.01f;
+        this.leftLeg.xRot = 0.05f - breath * 0.008f;
+        this.rightLeg.yRot = torsoLag * 0.12f;
+        this.leftLeg.yRot = torsoLag * 0.12f;
+        this.rightLeg.zRot = -0.035f + settle * 0.015f;
+        this.leftLeg.zRot = 0.035f - settle * 0.015f;
     }
 }
