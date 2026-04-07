@@ -121,7 +121,7 @@ public class ArchitectEntity extends Monster {
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
-    private static final double RETREAT_DISTANCE = 16.0;
+    static final double RETREAT_DISTANCE = 16.0;
 
     // --- Burst Damage Tracking ---
     /** Damage taken in the last BURST_WINDOW ticks. Used to boost retreat scoring. */
@@ -131,6 +131,8 @@ public class ArchitectEntity extends Monster {
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
     private final ArchitectApproachController approachController =
             new ArchitectApproachController(this, approachState, blockBreaker);
+    private final ArchitectCombatController combatController =
+            new ArchitectCombatController(this, combatState, blockBreaker);
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -159,18 +161,18 @@ public class ArchitectEntity extends Monster {
     private static final double DIRECT_APPROACH_PATH_VERTICAL_RANGE = 4.0;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     private static final int FALLBACK_BREAK_COOLDOWN_TICKS = 10;
-    private static final int MELEE_COMMIT_TICKS = 12;
+    static final int MELEE_COMMIT_TICKS = 12;
     private static final float MELEE_COMMIT_KEEP_RANGE = 5.8f;
-    private static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
+    static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
     private static final double MELEE_ENGAGE_HORIZONTAL_RANGE = 4.75;
-    private static final double MELEE_COMMIT_HORIZONTAL_RANGE = 5.25;
+    static final double MELEE_COMMIT_HORIZONTAL_RANGE = 5.25;
     private static final double MELEE_ENGAGE_VERTICAL_RANGE = 1.75;
-    private static final double MELEE_COMMIT_VERTICAL_RANGE = 2.25;
-    private static final double MELEE_STRAFE_SPEED = 0.10;
-    private static final double MELEE_PULL_SPEED_NEAR = -0.04;
-    private static final double MELEE_PULL_SPEED_FAR = 0.025;
-    private static final double MELEE_BACKOFF_SPEED = 0.11;
-    private static final double MELEE_DODGE_SPEED = 0.10;
+    static final double MELEE_COMMIT_VERTICAL_RANGE = 2.25;
+    static final double MELEE_STRAFE_SPEED = 0.10;
+    static final double MELEE_PULL_SPEED_NEAR = -0.04;
+    static final double MELEE_PULL_SPEED_FAR = 0.025;
+    static final double MELEE_BACKOFF_SPEED = 0.11;
+    static final double MELEE_DODGE_SPEED = 0.10;
     private static final double MELEE_AIR_CONTROL_SCALE = 0.35;
     private static final double MELEE_MAX_HORIZONTAL_SPEED = 0.12;
     /** Ticks since last action change. Prevents rapid flip-flopping. */
@@ -284,6 +286,42 @@ public class ArchitectEntity extends Monster {
 
     int getMaxScaffoldIce() {
         return MAX_SCAFFOLD_ICE;
+    }
+
+    int getTacticalIceCount() {
+        return tacticalIce.size();
+    }
+
+    int getMaxTacticalIce() {
+        return MAX_TACTICAL_ICE;
+    }
+
+    boolean isPathRecalcReady() {
+        return pathRecalcCooldown <= 0;
+    }
+
+    void setPathRecalcCooldown(int ticks) {
+        pathRecalcCooldown = ticks;
+    }
+
+    void decrementPathRecalcCooldown() {
+        pathRecalcCooldown--;
+    }
+
+    void clearMeleeCommit() {
+        brainState.setMeleeCommitTicks(0);
+    }
+
+    void refreshMeleeCommit() {
+        brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
+    }
+
+    int nextRandomInt(int bound) {
+        return random.nextInt(bound);
+    }
+
+    double nextRandomCenteredDouble() {
+        return random.nextDouble() - 0.5;
     }
 
     // ========================
@@ -514,7 +552,7 @@ public class ArchitectEntity extends Monster {
         }
     }
 
-    private void triggerReeval() {
+    void triggerReeval() {
         brainState.setReevalCooldown(0);
         pathRecalcCooldown = 0;
     }
@@ -530,8 +568,8 @@ public class ArchitectEntity extends Monster {
         switch (getBrainAction()) {
             case ACTION_OBSERVE -> executeObserve(target);
             case ACTION_APPROACH -> approachController.executeApproach(target);
-            case ACTION_ATTACK_MELEE -> executeAttackMelee(target);
-            case ACTION_RETREAT -> executeRetreat(target);
+            case ACTION_ATTACK_MELEE -> combatController.executeAttackMelee(target);
+            case ACTION_RETREAT -> combatController.executeRetreat(target);
             case ACTION_FORTIFY -> executeFortify(target);
             case ACTION_TRAP_SET -> executeTrapSet(target);
             case ACTION_PEEK -> executePeek(target);
@@ -1596,7 +1634,7 @@ public class ArchitectEntity extends Monster {
                 || state.is(Blocks.SOUL_FIRE);
     }
 
-    private void applyCombatHorizontalMotion(double x, double z) {
+    void applyCombatHorizontalMotion(double x, double z) {
         double scale = onGround() ? 1.0 : MELEE_AIR_CONTROL_SCALE;
         Vec3 desired = new Vec3(x * scale, 0, z * scale);
         double desiredLen = desired.horizontalDistance();
@@ -1613,157 +1651,6 @@ public class ArchitectEntity extends Monster {
         }
 
         setDeltaMovement(blended.x, current.y, blended.z);
-    }
-
-    private void executeAttackMelee(@Nullable LivingEntity target) {
-        double hDist = target != null ? horizontalDistanceTo(target) : Double.MAX_VALUE;
-        double vDist = target != null ? verticalDistanceTo(target) : Double.MAX_VALUE;
-        float dist3d = target != null ? distanceTo(target) : Float.MAX_VALUE;
-        boolean hasLos = target != null && hasLineOfSight(target);
-        if (target == null
-                || hDist > MELEE_COMMIT_HORIZONTAL_RANGE
-                || vDist > MELEE_COMMIT_VERTICAL_RANGE
-                || (!hasLos && hDist > MELEE_COMMIT_LOS_GRACE_RANGE)) {
-            brainState.setMeleeCommitTicks(0);
-            triggerReeval();
-            return;
-        }
-
-        blockBreaker.clearTarget();
-        getLookControl().setLookAt(target, 30f, 30f);
-        if (getHealth() > getMaxHealth() * 0.35f) {
-            brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
-        }
-
-        // Backoff after landing a hit — sprint backwards briefly
-        // Check ground behind before backing off to avoid walking off edges/bridges
-        if (combatState.backoffTicks > 0) {
-            combatState.backoffTicks--;
-            Vec3 away = position().subtract(target.position()).normalize();
-            BlockPos behind = blockPosition().offset(
-                    (int) Math.round(away.x * 2), 0, (int) Math.round(away.z * 2));
-            boolean groundBehind = level().getBlockState(behind.below()).isSolid();
-            if (groundBehind) {
-                // Safe to back off
-                applyCombatHorizontalMotion(away.x * MELEE_BACKOFF_SPEED, away.z * MELEE_BACKOFF_SPEED);
-            } else {
-                // No ground behind — sideways dodge instead of suicidal backoff
-                double dodgeX = -away.z * combatState.strafeDir * MELEE_DODGE_SPEED;
-                double dodgeZ = away.x * combatState.strafeDir * MELEE_DODGE_SPEED;
-                applyCombatHorizontalMotion(dodgeX, dodgeZ);
-            }
-            getNavigation().stop();
-            return;
-        }
-
-        // Strafe direction change
-        combatState.strafeChangeCooldown--;
-        if (combatState.strafeChangeCooldown <= 0) {
-            combatState.strafeDir = -combatState.strafeDir;
-            combatState.strafeChangeCooldown = 30 + random.nextInt(30);
-        }
-
-        if (hDist > 3.0) {
-            // Close in — path directly toward target (handles step-ups via navigation)
-            getNavigation().moveTo(target, 1.0);
-        } else {
-            // In melee range — circle strafe using movement control (smoother than moveTo)
-            getNavigation().stop();
-            Vec3 toTarget = target.position().subtract(position()).normalize();
-            // Perpendicular strafe vector
-            double strafeX = -toTarget.z * combatState.strafeDir * MELEE_STRAFE_SPEED;
-            double strafeZ = toTarget.x * combatState.strafeDir * MELEE_STRAFE_SPEED;
-            // Slight pull toward target to maintain distance
-            double pullStrength = hDist < 2.0 ? MELEE_PULL_SPEED_NEAR : MELEE_PULL_SPEED_FAR;
-            applyCombatHorizontalMotion(
-                    strafeX + toTarget.x * pullStrength,
-                    strafeZ + toTarget.z * pullStrength);
-
-            // Attack when close enough — require LOS to prevent hitting through walls
-            if (dist3d < 2.8 && attackAnim == 0 && hasLineOfSight(target)) {
-                swing(InteractionHand.MAIN_HAND);
-                doHurtTarget(target);
-                combatState.backoffTicks = 6 + random.nextInt(4);
-            }
-        }
-    }
-
-    private void executeRetreat(@Nullable LivingEntity target) {
-        blockBreaker.clearTarget();
-
-        // No target — nothing to retreat from. Reset state so next evaluation picks a new action.
-        if (target == null && !combatState.isDrinkingPotion) {
-            combatState.retreatPhase = 0;
-            combatState.retreatCoverBuilt = 0;
-            return;
-        }
-
-        float dist = target != null ? distanceTo(target) : 999;
-
-        switch (combatState.retreatPhase) {
-            case 0 -> { // Phase 0: Run away until RETREAT_DISTANCE reached
-                if (dist >= RETREAT_DISTANCE || target == null) {
-                    LOGGER.info("[Architect] RETREAT: reached safe distance (" + String.format("%.1f", dist) + "), building cover");
-                    getNavigation().stop();
-                    combatState.retreatPhase = 1;
-                    combatState.retreatCoverBuilt = 0;
-                    return;
-                }
-                Vec3 away = position().subtract(target.position());
-                if (away.lengthSqr() < 1.0e-4) {
-                    away = new Vec3(random.nextDouble() - 0.5, 0.0, random.nextDouble() - 0.5);
-                }
-                away = away.normalize();
-                getMoveControl().setWantedPosition(
-                        getX() + away.x * 2.0,
-                        getY(),
-                        getZ() + away.z * 2.0,
-                        1.3
-                );
-                if (pathRecalcCooldown <= 0) {
-                    getNavigation().moveTo(
-                            getX() + away.x * RETREAT_DISTANCE,
-                            getY(),
-                            getZ() + away.z * RETREAT_DISTANCE,
-                            1.3
-                    );
-                    pathRecalcCooldown = 10;
-                }
-                pathRecalcCooldown--;
-            }
-            case 1 -> { // Phase 1: Build ice cover between self and player
-                getNavigation().stop();
-                if (target != null && combatState.retreatCoverBuilt < 3 && tacticalIce.size() < MAX_TACTICAL_ICE) {
-                    Vec3 towardPlayer = target.position().subtract(position()).normalize();
-                    BlockPos wallPos = blockPosition().offset(
-                            (int) Math.round(towardPlayer.x * (1 + combatState.retreatCoverBuilt)),
-                            0,
-                            (int) Math.round(towardPlayer.z * (1 + combatState.retreatCoverBuilt)));
-                    if (placeTacticalIce(wallPos)) {
-                        placeTacticalIce(wallPos.above());
-                        LOGGER.info("[Architect] RETREAT: placed ice wall #" + combatState.retreatCoverBuilt + " at " + wallPos);
-                        combatState.retreatCoverBuilt++;
-                    } else {
-                        combatState.retreatCoverBuilt++;
-                    }
-                } else {
-                    LOGGER.info("[Architect] RETREAT: cover complete (" + combatState.retreatCoverBuilt + " walls), entering heal phase");
-                    combatState.retreatPhase = 2;
-                }
-            }
-            case 2 -> { // Phase 2: Heal — commits fully, no cancellation
-                getNavigation().stop();
-                if (combatState.healCooldown <= 0 && !combatState.isDrinkingPotion && getHealth() < getMaxHealth() * 0.75f) {
-                    LOGGER.info("[Architect] RETREAT: starting to drink healing potion (HP=" + String.format("%.1f", getHealth()) + ")");
-                    startDrinking();
-                } else if (combatState.isDrinkingPotion) {
-                    // Let drinking continue (handled in aiStep) — never cancel
-                } else {
-                    LOGGER.info("[Architect] RETREAT: heal phase complete (HP=" + String.format("%.1f", getHealth()) + "), re-evaluating");
-                    triggerReeval();
-                }
-            }
-        }
     }
 
     private void executeFortify(@Nullable LivingEntity target) {
@@ -1848,13 +1735,13 @@ public class ArchitectEntity extends Monster {
         approachState.ceilingBreachPos = null;
     }
 
-    private double horizontalDistanceTo(LivingEntity target) {
+    double horizontalDistanceTo(LivingEntity target) {
         double dx = getX() - target.getX();
         double dz = getZ() - target.getZ();
         return Math.sqrt(dx * dx + dz * dz);
     }
 
-    private double verticalDistanceTo(LivingEntity target) {
+    double verticalDistanceTo(LivingEntity target) {
         return Math.abs(getY() - target.getY());
     }
 
@@ -1943,7 +1830,7 @@ public class ArchitectEntity extends Monster {
     //  HEALING POTION
     // ========================
 
-    private void startDrinking() {
+    void startDrinking() {
         combatState.isDrinkingPotion = true;
         combatState.drinkTicks = 0;
         ItemStack potion = PotionContents.createItemStack(Items.POTION, Potions.STRONG_HEALING);
@@ -2021,7 +1908,7 @@ public class ArchitectEntity extends Monster {
         return true;
     }
 
-    private boolean placeTacticalIce(BlockPos pos) {
+    boolean placeTacticalIce(BlockPos pos) {
         if (!canPlaceIce(pos)) return false;
 
         while (tacticalIce.size() >= MAX_TACTICAL_ICE) {
