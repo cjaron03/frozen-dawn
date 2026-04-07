@@ -375,6 +375,7 @@ public class ArchitectEntity extends Monster {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, groupData);
         setTextureVariant(level.getRandom().nextInt(5));
         approachState.surfaceY = blockPosition().getY();
+        ensureAmbientHelmet();
         return data;
     }
 
@@ -417,6 +418,7 @@ public class ArchitectEntity extends Monster {
 
         // Defensive: fix surfaceY if it wasn't set (NBT load before positioning)
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY();
+        ensureAmbientHelmet();
 
         long gameTick = level().getGameTime();
 
@@ -1819,6 +1821,14 @@ public class ArchitectEntity extends Monster {
         );
     }
 
+    private void ensureAmbientHelmet() {
+        if (!getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+            return;
+        }
+        setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        setDropChance(EquipmentSlot.HEAD, 0.0F);
+    }
+
     // ========================
     //  ICE PLACEMENT
     // ========================
@@ -2038,6 +2048,9 @@ public class ArchitectEntity extends Monster {
                 serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
                         getX(), smokeY - 0.15, getZ(), 2, 0.06, 0.08, 0.06, 0.005);
             }
+            if (ticks >= 22) {
+                emitDeathSoulRise(serverLevel, ticks);
+            }
         }
         if (ticks >= 30) {
             cleanupAllIce();
@@ -2047,11 +2060,115 @@ public class ArchitectEntity extends Monster {
             }
             remove(RemovalReason.KILLED);
             if (level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
-                        getX(), getY() + 1.4, getZ(), 28, 0.18, 0.65, 0.18, 0.02);
-                serverLevel.sendParticles(ParticleTypes.SMOKE,
-                        getX(), getY() + 0.9, getZ(), 40, 0.25, 0.95, 0.25, 0.02);
+                emitDeathSmokeBurst(serverLevel);
+                emitDeathSoulRelease(serverLevel);
             }
+        }
+    }
+
+    private void emitDeathSmokeBurst(ServerLevel serverLevel) {
+        for (int i = 0; i < 18; i++) {
+            emitDeathSmokeParticle(serverLevel, ParticleTypes.LARGE_SMOKE, 0.18, 0.34, 0.10, 0.28);
+        }
+        for (int i = 0; i < 34; i++) {
+            emitDeathSmokeParticle(serverLevel, ParticleTypes.SMOKE, 0.24, 0.46, 0.06, 0.22);
+        }
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
+                getX(), getY() + 1.0, getZ(), 12, 0.12, 0.18, 0.12, 0.08);
+    }
+
+    private void emitDeathSmokeParticle(ServerLevel serverLevel, net.minecraft.core.particles.ParticleOptions particleType,
+                                        double horizontalMin, double horizontalMax,
+                                        double verticalMin, double verticalMax) {
+        double angle = random.nextDouble() * (Math.PI * 2.0);
+        double horizontalSpeed = horizontalMin + random.nextDouble() * (horizontalMax - horizontalMin);
+        double verticalSpeed = verticalMin + random.nextDouble() * (verticalMax - verticalMin);
+        double spawnY = getY() + 0.6 + random.nextDouble() * 0.9;
+        serverLevel.sendParticles(
+                particleType,
+                getX(),
+                spawnY,
+                getZ(),
+                0,
+                Math.cos(angle) * horizontalSpeed,
+                verticalSpeed,
+                Math.sin(angle) * horizontalSpeed,
+                1.0
+        );
+    }
+
+    private void emitDeathSoulRise(ServerLevel serverLevel, int ticks) {
+        float progress = Mth.clamp((ticks - 21) / 9.0f, 0.0f, 1.0f);
+        double baseY = getY() + 0.95 + progress * 1.55;
+        double radius = 0.24 * (1.0 - progress * 0.55);
+        double angleBase = ticks * 0.65;
+
+        for (int i = 0; i < 2; i++) {
+            double angle = angleBase + i * Math.PI;
+            double px = getX() + Math.cos(angle) * radius;
+            double pz = getZ() + Math.sin(angle) * radius;
+            serverLevel.sendParticles(
+                    ParticleTypes.SOUL,
+                    px,
+                    baseY + i * 0.08,
+                    pz,
+                    0,
+                    Math.cos(angle) * 0.03,
+                    0.16 + progress * 0.05,
+                    Math.sin(angle) * 0.03,
+                    1.0
+            );
+        }
+
+        if (ticks % 2 == 0) {
+            serverLevel.sendParticles(
+                    ParticleTypes.SOUL_FIRE_FLAME,
+                    getX(),
+                    baseY + 0.12,
+                    getZ(),
+                    0,
+                    Math.cos(angleBase + Math.PI * 0.5) * 0.018,
+                    0.14 + progress * 0.04,
+                    Math.sin(angleBase + Math.PI * 0.5) * 0.018,
+                    1.0
+            );
+        }
+    }
+
+    private void emitDeathSoulRelease(ServerLevel serverLevel) {
+        double originY = getY() + 1.05;
+        for (int i = 0; i < 8; i++) {
+            double angle = random.nextDouble() * (Math.PI * 2.0);
+            double horizontalSpeed = 0.03 + random.nextDouble() * 0.05;
+            double verticalSpeed = 0.34 + random.nextDouble() * 0.16;
+            serverLevel.sendParticles(
+                    ParticleTypes.SOUL,
+                    getX(),
+                    originY,
+                    getZ(),
+                    0,
+                    Math.cos(angle) * horizontalSpeed,
+                    verticalSpeed,
+                    Math.sin(angle) * horizontalSpeed,
+                    1.0
+            );
+        }
+
+        for (int i = 0; i < 4; i++) {
+            double angle = random.nextDouble() * (Math.PI * 2.0);
+            double horizontalSpeed = 0.015 + random.nextDouble() * 0.03;
+            double verticalSpeed = 0.42 + random.nextDouble() * 0.18;
+            serverLevel.sendParticles(
+                    ParticleTypes.SOUL_FIRE_FLAME,
+                    getX(),
+                    originY + 0.1,
+                    getZ(),
+                    0,
+                    Math.cos(angle) * horizontalSpeed,
+                    verticalSpeed,
+                    Math.sin(angle) * horizontalSpeed,
+                    1.0
+            );
         }
     }
 
