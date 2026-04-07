@@ -27,6 +27,8 @@ import javax.annotation.Nullable;
 final class ArchitectObservationController {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final float OBSERVE_MIN_STANDOFF = 28.0f;
+    private static final float OBSERVE_MAX_STANDOFF = 42.0f;
 
     private final ArchitectEntity architect;
     private final ArchitectObservationMemory observationMemory;
@@ -57,8 +59,13 @@ final class ArchitectObservationController {
         approachController.precomputeDStarDuringObserve(target);
 
         float dist = architect.distanceTo(target);
+        boolean hasLineOfSight = target.hasLineOfSight(architect);
+        if (shouldHoldObservePosition(dist, hasLineOfSight)) {
+            architect.getNavigation().stop();
+        }
+
         if (architect.isPathRecalcReady()) {
-            if (dist < 28) {
+            if (dist < OBSERVE_MIN_STANDOFF) {
                 Vec3 away = architect.position().subtract(target.position()).normalize().scale(0.8);
                 architect.getNavigation().moveTo(
                         architect.getX() + away.x * 10,
@@ -66,7 +73,7 @@ final class ArchitectObservationController {
                         architect.getZ() + away.z * 10,
                         0.8
                 );
-            } else if (dist > 42) {
+            } else if (dist > OBSERVE_MAX_STANDOFF) {
                 architect.getNavigation().moveTo(target, 0.8);
             } else {
                 architect.getNavigation().stop();
@@ -107,7 +114,7 @@ final class ArchitectObservationController {
             awardObserveProbeAdvancement(target);
         }
 
-        if (dist < 20 && target.hasLineOfSight(architect) && architect.isPlayerFacing(target)) {
+        if (dist < 20 && hasLineOfSight && architect.isPlayerFacing(target)) {
             markObserveComplete();
             return;
         }
@@ -117,6 +124,10 @@ final class ArchitectObservationController {
         if (observationMemory.getObserveTicks() >= targetDuration) {
             markObserveComplete();
         }
+    }
+
+    private boolean shouldHoldObservePosition(float dist, boolean hasLineOfSight) {
+        return hasLineOfSight && dist >= OBSERVE_MIN_STANDOFF && dist <= OBSERVE_MAX_STANDOFF;
     }
 
     void executeRoamAndRuin() {
