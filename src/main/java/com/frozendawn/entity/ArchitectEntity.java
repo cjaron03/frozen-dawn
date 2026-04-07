@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.entity.architect.ArchitectBrainState;
+import com.frozendawn.entity.architect.ArchitectDecisionEngine;
 import com.frozendawn.entity.architect.ArchitectFxController;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
 import com.frozendawn.entity.architect.ArchitectPersistence;
@@ -139,6 +140,7 @@ public class ArchitectEntity extends Monster {
 
     // --- Block Breaker ---
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
+    private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
     // --- Despawn ---
@@ -511,28 +513,32 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
-        float bestScore = -1;
-        int bestAction = ACTION_OBSERVE;
-        float[] scores = new float[7];
-
-        scores[ACTION_OBSERVE] = scoreObserve(target);
-        scores[ACTION_APPROACH] = scoreApproach(target);
-        scores[ACTION_ATTACK_MELEE] = scoreAttackMelee(target);
-        scores[ACTION_RETREAT] = scoreRetreat(target);
-        scores[ACTION_FORTIFY] = scoreFortify(target);
-        scores[ACTION_TRAP_SET] = scoreTrapSet(target);
-        scores[ACTION_PEEK] = scorePeek(target);
-
-        for (int i = 0; i < scores.length; i++) {
-            // Keep some unpredictability, but lower variance to reduce action thrash.
-            scores[i] *= 0.95f + random.nextFloat() * 0.1f;
-            // Hysteresis: current action gets a bonus to prevent flip-flopping
-            if (i == getBrainAction()) scores[i] *= 1.2f;
-            if (scores[i] > bestScore) {
-                bestScore = scores[i];
-                bestAction = i;
-            }
-        }
+        ArchitectDecisionEngine.Decision decision = decisionEngine.evaluate(
+                new ArchitectDecisionEngine.Context(
+                        getBrainAction(),
+                        target != null,
+                        target != null ? distanceTo(target) : Float.MAX_VALUE,
+                        observationMemory.hasObserved(),
+                        observationMemory.isObserveDirty(),
+                        getHealth(),
+                        getMaxHealth(),
+                        target != null && shouldPreferMeleeOverApproach(target),
+                        target != null && target.hasLineOfSight(this),
+                        target != null && canStartMelee(target),
+                        rangedHitsReceived,
+                        healCooldown,
+                        recentDamage,
+                        tacticalIce.size(),
+                        MAX_TACTICAL_ICE,
+                        trapCooldown,
+                        !observationMemory.entrancePositions().isEmpty(),
+                        target != null && isPlayerInsideBase(target),
+                        target != null && isNearCorner()
+                ),
+                random
+        );
+        int bestAction = decision.bestAction();
+        float[] scores = decision.scores();
 
         if (bestAction != getBrainAction()) {
             if (LOGGER.isDebugEnabled()) {
@@ -556,91 +562,6 @@ public class ArchitectEntity extends Monster {
     private void triggerReeval() {
         brainState.setReevalCooldown(0);
         pathRecalcCooldown = 0;
-    }
-
-    // --- SCORING ---
-
-    private float scoreObserve(@Nullable LivingEntity target) {
-        if (target == null) return 0.1f;
-        if (observationMemory.hasObserved() && !observationMemory.isObserveDirty()) return 0f;
-        float score = 0.9f;
-        if (!observationMemory.hasObserved()) score *= 2.0f;
-        if (getHealth() < getMaxHealth() * 0.7f) return 0f;
-        if (observationMemory.isObserveDirty()) score *= 0.7f;
-        // Don't observe if already close — commit to attack
-        float dist = distanceTo(target);
-        if (dist < 16) return 0f;
-        return score;
-    }
-
-    private float scoreApproach(@Nullable LivingEntity target) {
-        if (target == null) return 0.1f;
-        float dist = distanceTo(target);
-        float score = 0.6f;
-        if (dist > 16) score *= 1.2f;
-        // Hand off to ATTACK_MELEE only when close AND we can see the target.
-        // If close but behind a wall, keep approaching (mining through).
-        if (shouldPreferMeleeOverApproach(target)) score *= 0.3f;
-        if (getHealth() < getMaxHealth() * 0.5f) score *= 0.5f;
-        if (target.hasLineOfSight(this)) score *= 0.8f;
-        if (observationMemory.hasObserved()) score *= 1.2f;
-        if (rangedHitsReceived > 3) score *= 1.3f;
-        return score;
-    }
-
-    private float scoreAttackMelee(@Nullable LivingEntity target) {
-        if (target == null) return 0f;
-        if (!canStartMelee(target)) return 0f;
-        float dist = distanceTo(target);
-        float score = 0.8f;
-        // Smooth falloff instead of hard cutoff — commits to melee within 6 blocks
-        if (dist < 3) score *= 1.5f;
-        else if (dist < 4.75f) score *= 1.0f;
-        else score *= 0.2f;
-        // Low HP: increasingly hesitant to fight
-        if (getHealth() < getMaxHealth() * 0.5f) score *= 0.6f;
-        if (getHealth() < getMaxHealth() * 0.3f) score *= 0.6f;
-        return score;
-    }
-
-    private float scoreRetreat(@Nullable LivingEntity target) {
-        if (target == null) return 0f;
-        float score = 0.2f;
-        float healthPct = getHealth() / getMaxHealth();
-        // Only retreat if we can actually heal — otherwise fight it out
-        if (healCooldown > 0) return 0f;
-        if (healthPct < 0.5f) score *= 2.0f;
-        if (healthPct < 0.3f) score *= 1.5f;
-        if (healthPct < 0.6f) score *= 1.3f;
-        // Burst damage: taking heavy hits recently strongly favors retreat
-        if (recentDamage > getMaxHealth() * 0.3f) score *= 1.5f;
-        return score;
-    }
-
-    private float scoreFortify(@Nullable LivingEntity target) {
-        float score = 0.15f;
-        if (rangedHitsReceived > 3) score *= 1.5f;
-        if (tacticalIce.size() >= MAX_TACTICAL_ICE) score *= 0.3f;
-        if (target != null && target.hasLineOfSight(this) && distanceTo(target) > 8) score *= 1.3f;
-        return score;
-    }
-
-    private float scoreTrapSet(@Nullable LivingEntity target) {
-        if (target == null) return 0f;
-        if (trapCooldown > 0) return 0f;
-        if (observationMemory.entrancePositions().isEmpty()) return 0f;
-        float score = 0.35f;
-        if (isPlayerInsideBase(target)) score *= 1.3f;
-        if (tacticalIce.size() >= MAX_TACTICAL_ICE) return 0f;
-        return score;
-    }
-
-    private float scorePeek(@Nullable LivingEntity target) {
-        if (target == null) return 0f;
-        float score = 0.3f;
-        if (isNearCorner()) score *= 1.5f;
-        else return 0f;
-        return score;
     }
 
     // --- ACTION EXECUTION ---
