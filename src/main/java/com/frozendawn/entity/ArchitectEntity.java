@@ -1,6 +1,8 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.frozendawn.entity.architect.ArchitectBrainState;
+import com.frozendawn.entity.architect.ArchitectCombatState;
 import com.frozendawn.entity.architect.ArchitectDecisionEngine;
 import com.frozendawn.entity.architect.ArchitectFxController;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
@@ -11,7 +13,6 @@ import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
-import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
@@ -107,38 +108,24 @@ public class ArchitectEntity extends Monster {
     private final ArchitectBrainState brainState = new ArchitectBrainState(ACTION_OBSERVE);
     private final ArchitectObservationMemory observationMemory = new ArchitectObservationMemory();
     private final ArchitectApproachState approachState = new ArchitectApproachState();
+    private final ArchitectCombatState combatState = new ArchitectCombatState();
 
     // --- Observation Data ---
     private static final int MIN_OBSERVE_TICKS = 600;
     private static final int MAX_OBSERVE_TICKS = 1200;
     private static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
 
-    // --- Combat State ---
-    private int strafeDir = 1;
-    private int strafeChangeCooldown = 0;
-    private int backoffTicks = 0;
     private static final int PLAYER_MEMORY_TICKS = 200;
     private boolean towerEncounter = false;
     private long towerEncounterId = Long.MIN_VALUE;
 
-    // --- Retreat / Healing ---
-    private int healCooldown = 0;
-    private boolean isDrinkingPotion = false;
-    private int drinkTicks = 0;
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
     private static final double RETREAT_DISTANCE = 16.0;
-    private int retreatPhase = 0; // 0=running, 1=building cover, 2=healing
-    private int retreatCoverBuilt = 0;
 
     // --- Burst Damage Tracking ---
     /** Damage taken in the last BURST_WINDOW ticks. Used to boost retreat scoring. */
-    private float recentDamage = 0f;
-    private int lastDamageTick = 0;
     private static final int BURST_WINDOW = 60; // 3 seconds
-
-    // --- Adaptive Learning ---
-    private int rangedHitsReceived = 0;
 
     // --- Block Breaker ---
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
@@ -264,15 +251,15 @@ public class ArchitectEntity extends Monster {
     private boolean isBuildingIceNow() {
         return getBrainAction() == ACTION_FORTIFY
                 || getBrainAction() == ACTION_TRAP_SET
-                || (getBrainAction() == ACTION_RETREAT && retreatPhase == 1)
+                || (getBrainAction() == ACTION_RETREAT && combatState.retreatPhase == 1)
                 || (getBrainAction() == ACTION_APPROACH && !scaffoldIce.isEmpty());
     }
 
     private int getRenderFlagsNow() {
         return fxController.buildRenderFlags(
                 getBrainAction(),
-                isDrinkingPotion,
-                retreatPhase,
+                combatState.isDrinkingPotion,
+                combatState.retreatPhase,
                 approachState.scaffoldTarget,
                 approachState.scaffoldDelay
         );
@@ -360,19 +347,19 @@ public class ArchitectEntity extends Monster {
 
         maybeTriggerSpawnObserveCue(target);
 
-        if (healCooldown > 0) healCooldown--;
+        if (combatState.healCooldown > 0) combatState.healCooldown--;
         if (trapCooldown > 0) trapCooldown--;
         if (approachState.fallbackBreakCooldown > 0) approachState.fallbackBreakCooldown--;
         if (brainState.getMeleeCommitTicks() > 0) {
             brainState.setMeleeCommitTicks(brainState.getMeleeCommitTicks() - 1);
         }
         // Decay burst damage tracker outside window
-        if (tickCount - lastDamageTick > BURST_WINDOW) recentDamage = 0f;
+        if (tickCount - combatState.lastDamageTick > BURST_WINDOW) combatState.recentDamage = 0f;
 
         // --- Potion drinking ---
-        if (isDrinkingPotion) {
-            drinkTicks++;
-            if (drinkTicks >= DRINK_DURATION) {
+        if (combatState.isDrinkingPotion) {
+            combatState.drinkTicks++;
+            if (combatState.drinkTicks >= DRINK_DURATION) {
                 finishDrinking();
             }
             // Fully commits to drinking — no cancellation. Player can punish this.
@@ -450,7 +437,7 @@ public class ArchitectEntity extends Monster {
         emitActionTelegraphParticles(target);
 
         // Only sprint when fleeing
-        setSprinting(target != null && getBrainAction() == ACTION_RETREAT && retreatPhase == 0);
+        setSprinting(target != null && getBrainAction() == ACTION_RETREAT && combatState.retreatPhase == 0);
 
         updateHeldItem();
         syncRenderState();
@@ -479,9 +466,9 @@ public class ArchitectEntity extends Monster {
                         target != null && shouldPreferMeleeOverApproach(target),
                         target != null && target.hasLineOfSight(this),
                         target != null && canStartMelee(target),
-                        rangedHitsReceived,
-                        healCooldown,
-                        recentDamage,
+                        combatState.rangedHitsReceived,
+                        combatState.healCooldown,
+                        combatState.recentDamage,
                         tacticalIce.size(),
                         MAX_TACTICAL_ICE,
                         trapCooldown,
@@ -1917,8 +1904,8 @@ public class ArchitectEntity extends Monster {
 
         // Backoff after landing a hit — sprint backwards briefly
         // Check ground behind before backing off to avoid walking off edges/bridges
-        if (backoffTicks > 0) {
-            backoffTicks--;
+        if (combatState.backoffTicks > 0) {
+            combatState.backoffTicks--;
             Vec3 away = position().subtract(target.position()).normalize();
             BlockPos behind = blockPosition().offset(
                     (int) Math.round(away.x * 2), 0, (int) Math.round(away.z * 2));
@@ -1928,8 +1915,8 @@ public class ArchitectEntity extends Monster {
                 applyCombatHorizontalMotion(away.x * MELEE_BACKOFF_SPEED, away.z * MELEE_BACKOFF_SPEED);
             } else {
                 // No ground behind — sideways dodge instead of suicidal backoff
-                double dodgeX = -away.z * strafeDir * MELEE_DODGE_SPEED;
-                double dodgeZ = away.x * strafeDir * MELEE_DODGE_SPEED;
+                double dodgeX = -away.z * combatState.strafeDir * MELEE_DODGE_SPEED;
+                double dodgeZ = away.x * combatState.strafeDir * MELEE_DODGE_SPEED;
                 applyCombatHorizontalMotion(dodgeX, dodgeZ);
             }
             getNavigation().stop();
@@ -1937,10 +1924,10 @@ public class ArchitectEntity extends Monster {
         }
 
         // Strafe direction change
-        strafeChangeCooldown--;
-        if (strafeChangeCooldown <= 0) {
-            strafeDir = -strafeDir;
-            strafeChangeCooldown = 30 + random.nextInt(30);
+        combatState.strafeChangeCooldown--;
+        if (combatState.strafeChangeCooldown <= 0) {
+            combatState.strafeDir = -combatState.strafeDir;
+            combatState.strafeChangeCooldown = 30 + random.nextInt(30);
         }
 
         if (hDist > 3.0) {
@@ -1951,8 +1938,8 @@ public class ArchitectEntity extends Monster {
             getNavigation().stop();
             Vec3 toTarget = target.position().subtract(position()).normalize();
             // Perpendicular strafe vector
-            double strafeX = -toTarget.z * strafeDir * MELEE_STRAFE_SPEED;
-            double strafeZ = toTarget.x * strafeDir * MELEE_STRAFE_SPEED;
+            double strafeX = -toTarget.z * combatState.strafeDir * MELEE_STRAFE_SPEED;
+            double strafeZ = toTarget.x * combatState.strafeDir * MELEE_STRAFE_SPEED;
             // Slight pull toward target to maintain distance
             double pullStrength = hDist < 2.0 ? MELEE_PULL_SPEED_NEAR : MELEE_PULL_SPEED_FAR;
             applyCombatHorizontalMotion(
@@ -1963,7 +1950,7 @@ public class ArchitectEntity extends Monster {
             if (dist3d < 2.8 && attackAnim == 0 && hasLineOfSight(target)) {
                 swing(InteractionHand.MAIN_HAND);
                 doHurtTarget(target);
-                backoffTicks = 6 + random.nextInt(4);
+                combatState.backoffTicks = 6 + random.nextInt(4);
             }
         }
     }
@@ -1972,21 +1959,21 @@ public class ArchitectEntity extends Monster {
         blockBreaker.clearTarget();
 
         // No target — nothing to retreat from. Reset state so next evaluation picks a new action.
-        if (target == null && !isDrinkingPotion) {
-            retreatPhase = 0;
-            retreatCoverBuilt = 0;
+        if (target == null && !combatState.isDrinkingPotion) {
+            combatState.retreatPhase = 0;
+            combatState.retreatCoverBuilt = 0;
             return;
         }
 
         float dist = target != null ? distanceTo(target) : 999;
 
-        switch (retreatPhase) {
+        switch (combatState.retreatPhase) {
             case 0 -> { // Phase 0: Run away until RETREAT_DISTANCE reached
                 if (dist >= RETREAT_DISTANCE || target == null) {
                     LOGGER.info("[Architect] RETREAT: reached safe distance (" + String.format("%.1f", dist) + "), building cover");
                     getNavigation().stop();
-                    retreatPhase = 1;
-                    retreatCoverBuilt = 0;
+                    combatState.retreatPhase = 1;
+                    combatState.retreatCoverBuilt = 0;
                     return;
                 }
                 Vec3 away = position().subtract(target.position());
@@ -2013,30 +2000,30 @@ public class ArchitectEntity extends Monster {
             }
             case 1 -> { // Phase 1: Build ice cover between self and player
                 getNavigation().stop();
-                if (target != null && retreatCoverBuilt < 3 && tacticalIce.size() < MAX_TACTICAL_ICE) {
+                if (target != null && combatState.retreatCoverBuilt < 3 && tacticalIce.size() < MAX_TACTICAL_ICE) {
                     Vec3 towardPlayer = target.position().subtract(position()).normalize();
                     BlockPos wallPos = blockPosition().offset(
-                            (int) Math.round(towardPlayer.x * (1 + retreatCoverBuilt)),
+                            (int) Math.round(towardPlayer.x * (1 + combatState.retreatCoverBuilt)),
                             0,
-                            (int) Math.round(towardPlayer.z * (1 + retreatCoverBuilt)));
+                            (int) Math.round(towardPlayer.z * (1 + combatState.retreatCoverBuilt)));
                     if (placeTacticalIce(wallPos)) {
                         placeTacticalIce(wallPos.above());
-                        LOGGER.info("[Architect] RETREAT: placed ice wall #" + retreatCoverBuilt + " at " + wallPos);
-                        retreatCoverBuilt++;
+                        LOGGER.info("[Architect] RETREAT: placed ice wall #" + combatState.retreatCoverBuilt + " at " + wallPos);
+                        combatState.retreatCoverBuilt++;
                     } else {
-                        retreatCoverBuilt++;
+                        combatState.retreatCoverBuilt++;
                     }
                 } else {
-                    LOGGER.info("[Architect] RETREAT: cover complete (" + retreatCoverBuilt + " walls), entering heal phase");
-                    retreatPhase = 2;
+                    LOGGER.info("[Architect] RETREAT: cover complete (" + combatState.retreatCoverBuilt + " walls), entering heal phase");
+                    combatState.retreatPhase = 2;
                 }
             }
             case 2 -> { // Phase 2: Heal — commits fully, no cancellation
                 getNavigation().stop();
-                if (healCooldown <= 0 && !isDrinkingPotion && getHealth() < getMaxHealth() * 0.75f) {
+                if (combatState.healCooldown <= 0 && !combatState.isDrinkingPotion && getHealth() < getMaxHealth() * 0.75f) {
                     LOGGER.info("[Architect] RETREAT: starting to drink healing potion (HP=" + String.format("%.1f", getHealth()) + ")");
                     startDrinking();
-                } else if (isDrinkingPotion) {
+                } else if (combatState.isDrinkingPotion) {
                     // Let drinking continue (handled in aiStep) — never cancel
                 } else {
                     LOGGER.info("[Architect] RETREAT: heal phase complete (HP=" + String.format("%.1f", getHealth()) + "), re-evaluating");
@@ -2112,8 +2099,8 @@ public class ArchitectEntity extends Monster {
             approachState.stepOffTarget = null;
             approachState.stepOffStart = null;
         }
-        if (oldAction == ACTION_RETREAT && isDrinkingPotion) cancelDrinking();
-        if (newAction == ACTION_RETREAT) { retreatPhase = 0; retreatCoverBuilt = 0; }
+        if (oldAction == ACTION_RETREAT && combatState.isDrinkingPotion) cancelDrinking();
+        if (newAction == ACTION_RETREAT) { combatState.retreatPhase = 0; combatState.retreatCoverBuilt = 0; }
         if (newAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
@@ -2155,8 +2142,8 @@ public class ArchitectEntity extends Monster {
     private void enterRoamModeAfterTargetLoss() {
         brainState.setRoamingAfterTargetLoss(true);
         resetObserveCycle();
-        retreatPhase = 0;
-        retreatCoverBuilt = 0;
+        combatState.retreatPhase = 0;
+        combatState.retreatCoverBuilt = 0;
         clearWalkNavigationState(true);
         blockBreaker.clearTarget();
         pathRecalcCooldown = 0;
@@ -2203,16 +2190,16 @@ public class ArchitectEntity extends Monster {
         boolean hurt = super.hurt(source, amount);
         if (hurt && !level().isClientSide()) {
             if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
-                rangedHitsReceived++;
+                combatState.rangedHitsReceived++;
             }
             // Track burst damage for retreat scoring
-            if (tickCount - lastDamageTick > BURST_WINDOW) {
-                recentDamage = 0f; // Reset if outside burst window
+            if (tickCount - combatState.lastDamageTick > BURST_WINDOW) {
+                combatState.recentDamage = 0f; // Reset if outside burst window
             }
-            recentDamage += amount;
-            lastDamageTick = tickCount;
+            combatState.recentDamage += amount;
+            combatState.lastDamageTick = tickCount;
             // Don't cancel potion or re-evaluate during heal — fully commits
-            if (!isDrinkingPotion) {
+            if (!combatState.isDrinkingPotion) {
                 triggerReeval();
             }
         }
@@ -2224,8 +2211,8 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void startDrinking() {
-        isDrinkingPotion = true;
-        drinkTicks = 0;
+        combatState.isDrinkingPotion = true;
+        combatState.drinkTicks = 0;
         ItemStack potion = PotionContents.createItemStack(Items.POTION, Potions.STRONG_HEALING);
         setItemSlot(EquipmentSlot.MAINHAND, potion);
         getNavigation().stop();
@@ -2233,9 +2220,9 @@ public class ArchitectEntity extends Monster {
     }
 
     private void finishDrinking() {
-        isDrinkingPotion = false;
-        drinkTicks = 0;
-        healCooldown = HEAL_COOLDOWN_TICKS;
+        combatState.isDrinkingPotion = false;
+        combatState.drinkTicks = 0;
+        combatState.healCooldown = HEAL_COOLDOWN_TICKS;
         float targetHealth = getMaxHealth() * 0.75f;
         if (getHealth() < targetHealth) setHealth(targetHealth);
         setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
@@ -2243,8 +2230,8 @@ public class ArchitectEntity extends Monster {
     }
 
     private void cancelDrinking() {
-        isDrinkingPotion = false;
-        drinkTicks = 0;
+        combatState.isDrinkingPotion = false;
+        combatState.drinkTicks = 0;
         setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
     }
 
@@ -2252,8 +2239,8 @@ public class ArchitectEntity extends Monster {
         fxController.emitActionTelegraphParticles(
                 target,
                 getBrainAction(),
-                isDrinkingPotion,
-                retreatPhase,
+                combatState.isDrinkingPotion,
+                combatState.retreatPhase,
                 approachState.scaffoldTarget
         );
     }
@@ -2358,9 +2345,9 @@ public class ArchitectEntity extends Monster {
     private void updateHeldItem() {
         fxController.updateHeldItem(
                 getBrainAction(),
-                isDrinkingPotion,
+                combatState.isDrinkingPotion,
                 isBuildingIceNow(),
-                retreatPhase
+                combatState.retreatPhase
         );
     }
 
@@ -2569,8 +2556,8 @@ public class ArchitectEntity extends Monster {
         tag.putInt("CurrentAction", getBrainAction());
         tag.putBoolean("HasObserved", observationMemory.hasObserved());
         tag.putBoolean("ObserveDirty", observationMemory.isObserveDirty());
-        tag.putInt("RangedHitsReceived", rangedHitsReceived);
-        tag.putInt("HealCooldown", healCooldown);
+        tag.putInt("RangedHitsReceived", combatState.rangedHitsReceived);
+        tag.putInt("HealCooldown", combatState.healCooldown);
         tag.putInt("SurfaceY", approachState.surfaceY);
         tag.putBoolean("TowerEncounter", towerEncounter);
         tag.putLong("TowerEncounterId", towerEncounterId);
@@ -2594,8 +2581,8 @@ public class ArchitectEntity extends Monster {
         observationMemory.setHasObserved(tag.getBoolean("HasObserved"));
         observationMemory.setObserveDirty(tag.getBoolean("ObserveDirty"));
         observationMemory.setObserveTicks(0);
-        rangedHitsReceived = tag.getInt("RangedHitsReceived");
-        healCooldown = tag.getInt("HealCooldown");
+        combatState.rangedHitsReceived = tag.getInt("RangedHitsReceived");
+        combatState.healCooldown = tag.getInt("HealCooldown");
         approachState.surfaceY = tag.getInt("SurfaceY");
         towerEncounter = tag.getBoolean("TowerEncounter");
         towerEncounterId = tag.contains("TowerEncounterId") ? tag.getLong("TowerEncounterId") : Long.MIN_VALUE;
