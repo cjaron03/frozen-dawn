@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.entity.architect.ArchitectBrainState;
+import com.frozendawn.entity.architect.ArchitectFxController;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
 import com.frozendawn.entity.architect.ArchitectPersistence;
 import com.frozendawn.entity.architect.ArchitectRenderFlags;
@@ -16,7 +17,6 @@ import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -139,6 +139,7 @@ public class ArchitectEntity extends Monster {
 
     // --- Block Breaker ---
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
+    private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
     // --- Despawn ---
     private int despawnTimer = 0;
@@ -312,12 +313,13 @@ public class ArchitectEntity extends Monster {
     }
 
     private int getRenderFlagsNow() {
-        int flags = 0;
-        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.MINING, blockBreaker.isMining());
-        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.QUEUED_SCAFFOLD, scaffoldTarget != null || scaffoldDelay > 0);
-        flags = ArchitectRenderFlags.set(flags, ArchitectRenderFlags.RETREAT_RECOVERING,
-                getBrainAction() == ACTION_RETREAT && (retreatPhase >= 1 || isDrinkingPotion));
-        return flags;
+        return fxController.buildRenderFlags(
+                getBrainAction(),
+                isDrinkingPotion,
+                retreatPhase,
+                scaffoldTarget,
+                scaffoldDelay
+        );
     }
 
     private void syncRenderState() {
@@ -2387,55 +2389,13 @@ public class ArchitectEntity extends Monster {
     }
 
     private void emitActionTelegraphParticles(@Nullable LivingEntity target) {
-        if (!(level() instanceof ServerLevel serverLevel)) return;
-
-        switch (getBrainAction()) {
-            case ACTION_APPROACH -> {
-                if (blockBreaker.isMining() && tickCount % 4 == 0) {
-                    BlockPos targetPos = blockBreaker.getTarget();
-                    if (targetPos != null) {
-                        BlockState state = level().getBlockState(targetPos);
-                        serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                                targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                                5, 0.25, 0.25, 0.25, 0.02);
-                        serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-                                targetPos.getX() + 0.5, targetPos.getY() + 0.6, targetPos.getZ() + 0.5,
-                                2, 0.18, 0.12, 0.18, 0.01);
-                    }
-                } else if (scaffoldTarget != null && tickCount % 4 == 0) {
-                    serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-                            getX(), getY() + 0.2, getZ(),
-                            3, 0.2, 0.05, 0.2, 0.01);
-                }
-            }
-            case ACTION_ATTACK_MELEE -> {
-                if (target != null
-                        && hasLineOfSight(target)
-                        && distanceTo(target) < 5.0f
-                        && tickCount % 8 == 0) {
-                    Vec3 toward = target.position().subtract(position());
-                    Vec3 forward = toward.lengthSqr() > 1.0e-4 ? toward.normalize() : Vec3.ZERO;
-                    serverLevel.sendParticles(ParticleTypes.CRIT,
-                            getX() + forward.x * 0.55, getY() + 1.15, getZ() + forward.z * 0.55,
-                            3, 0.15, 0.2, 0.15, 0.01);
-                    serverLevel.sendParticles(ParticleTypes.CLOUD,
-                            getX() + forward.x * 0.3, getY() + 1.0, getZ() + forward.z * 0.3,
-                            2, 0.1, 0.1, 0.1, 0.005);
-                }
-            }
-            case ACTION_RETREAT -> {
-                if ((retreatPhase == 1 || isDrinkingPotion) && tickCount % 12 == 0) {
-                    serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-                            getX(), getY() + 1.0, getZ(),
-                            4, 0.25, 0.3, 0.25, 0.01);
-                    serverLevel.sendParticles(ParticleTypes.CLOUD,
-                            getX(), getY() + 0.9, getZ(),
-                            2, 0.18, 0.12, 0.18, 0.003);
-                }
-            }
-            default -> {
-            }
-        }
+        fxController.emitActionTelegraphParticles(
+                target,
+                getBrainAction(),
+                isDrinkingPotion,
+                retreatPhase,
+                scaffoldTarget
+        );
     }
 
     // ========================
@@ -2536,33 +2496,12 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void updateHeldItem() {
-        if (isDrinkingPotion) return;
-
-        boolean building = isBuildingIceNow();
-
-        switch (getBrainAction()) {
-            case ACTION_ATTACK_MELEE ->
-                    setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
-            case ACTION_APPROACH -> {
-                if (blockBreaker.isMining()) {
-                    // Tool is set by block breaker
-                } else if (building) {
-                    setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Blocks.PACKED_ICE));
-                } else {
-                    setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                }
-            }
-            case ACTION_FORTIFY, ACTION_TRAP_SET ->
-                    setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Blocks.PACKED_ICE));
-            case ACTION_RETREAT -> {
-                if (retreatPhase == 1) {
-                    setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Blocks.PACKED_ICE));
-                } else {
-                    setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                }
-            }
-            default -> setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        }
+        fxController.updateHeldItem(
+                getBrainAction(),
+                isDrinkingPotion,
+                isBuildingIceNow(),
+                retreatPhase
+        );
     }
 
     // ========================
