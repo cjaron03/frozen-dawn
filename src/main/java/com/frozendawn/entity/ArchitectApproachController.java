@@ -54,6 +54,7 @@ final class ArchitectApproachController {
     }
 
     void executeApproach(@Nullable LivingEntity target) {
+        approachState.sprintRequested = false;
         if (target == null) {
             approachState.unreachableTicks = 0;
             architect.approachLastKnownPos();

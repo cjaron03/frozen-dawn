@@ -159,7 +159,9 @@ public class ArchitectEntity extends Monster {
     private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 9.0;
     private static final int WALK_TARGET_SHIFT_VERTICAL = 1;
     private static final int WALK_CORRIDOR_LOOKAHEAD_STEPS = 2;
+    private static final int WALK_SPRINT_STRAIGHT_STEPS = 2;
     private static final float WALK_MAX_ROTATE = 35.0F;
+    private static final double APPROACH_SPRINT_SPEED = 1.15;
     private static final int MAX_REPEAT_UNSTICK_BREAK_ATTEMPTS = 3;
     private static final int WALK_NAV_CORRIDOR_MAX_STEPS = 8;
     private static final double WALK_NAV_MAX_DISTANCE = 10.0;
@@ -517,6 +519,7 @@ public class ArchitectEntity extends Monster {
             }
         }
 
+        approachState.sprintRequested = false;
         long actionStart = System.nanoTime();
         executeAction(target);
         long actionUs = (System.nanoTime() - actionStart) / 1000;
@@ -526,8 +529,7 @@ public class ArchitectEntity extends Monster {
 
         emitActionTelegraphParticles(target);
 
-        // Only sprint when fleeing
-        setSprinting(target != null && getBrainAction() == ACTION_RETREAT && combatState.retreatPhase == 0);
+        setSprinting(shouldSprintRetreat(target) || approachState.sprintRequested);
 
         updateHeldItem();
         syncRenderState();
@@ -997,6 +999,73 @@ public class ArchitectEntity extends Monster {
         return new Vec3(getX() + forward.x, lookY, getZ() + forward.z);
     }
 
+    private boolean shouldSprintRetreat(@Nullable LivingEntity target) {
+        return target != null && getBrainAction() == ACTION_RETREAT && combatState.retreatPhase == 0;
+    }
+
+    private boolean canSprintApproachBase(@Nullable LivingEntity target) {
+        if (target == null || getBrainAction() != ACTION_APPROACH) {
+            return false;
+        }
+        if (blockBreaker.hasTarget()
+                || blockBreaker.isMining()
+                || approachState.scaffoldTarget != null
+                || approachState.stepOffTarget != null
+                || approachState.ceilingBreachPos != null) {
+            return false;
+        }
+        return !isTargetWithinMeleeEngageGeometry(target);
+    }
+
+    private boolean hasStraightCommittedWalkSprintLane() {
+        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
+        if (steeringTarget == null || approachState.committedWalkCorridor.isEmpty()) {
+            return false;
+        }
+
+        int corridorIndex = Math.max(0, Math.min(
+                approachState.committedWalkCorridorIndex,
+                approachState.committedWalkCorridor.size() - 1));
+        BlockPos cursor = steeringTarget;
+        Direction runDirection = null;
+        int straightSteps = 0;
+
+        for (int i = corridorIndex + 1; i < approachState.committedWalkCorridor.size(); i++) {
+            BlockPos candidate = approachState.committedWalkCorridor.get(i);
+            if (candidate.getY() != cursor.getY()) {
+                break;
+            }
+
+            Direction segmentDirection = getPrimaryHorizontalDirection(cursor, candidate);
+            if (segmentDirection == null) {
+                break;
+            }
+
+            if (runDirection == null) {
+                runDirection = segmentDirection;
+            } else if (segmentDirection != runDirection) {
+                break;
+            }
+
+            cursor = candidate;
+            straightSteps++;
+        }
+
+        return straightSteps >= WALK_SPRINT_STRAIGHT_STEPS;
+    }
+
+    private boolean shouldSprintCommittedWalk(@Nullable LivingEntity target) {
+        return canSprintApproachBase(target) && hasStraightCommittedWalkSprintLane();
+    }
+
+    private boolean shouldSprintDirectApproach(@Nullable LivingEntity target) {
+        return canSprintApproachBase(target) && target != null && hasLineOfSight(target);
+    }
+
+    private double getApproachTravelSpeed() {
+        return approachState.sprintRequested ? APPROACH_SPRINT_SPEED : 1.0;
+    }
+
     private boolean advanceCommittedWalkProgress() {
         BlockPos steeringTarget = getCommittedWalkSteeringTarget();
         while (steeringTarget != null) {
@@ -1042,7 +1111,7 @@ public class ArchitectEntity extends Monster {
         // Follow D* corridors with raw MoveControl so edge/scaffold approach cells
         // do not get vetoed by vanilla navigation before the scaffold action can fire.
         getNavigation().stop();
-        getMoveControl().setWantedPosition(moveTarget.x, moveTarget.y, moveTarget.z, 1.0);
+        getMoveControl().setWantedPosition(moveTarget.x, moveTarget.y, moveTarget.z, getApproachTravelSpeed());
         getLookControl().setLookAt(lookTarget.x, lookTarget.y, lookTarget.z, 40f, 30f);
         return true;
     }
@@ -1089,16 +1158,20 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean tryContinueCommittedWalk(@Nullable LivingEntity target) {
+        approachState.sprintRequested = shouldSprintCommittedWalk(target);
         if (!shouldContinueCommittedWalk(target)) {
+            approachState.sprintRequested = false;
             return false;
         }
 
         if (!advanceCommittedWalkProgress()) {
+            approachState.sprintRequested = false;
             return false;
         }
 
         BlockPos steeringTarget = getCommittedWalkSteeringTarget();
         if (steeringTarget == null) {
+            approachState.sprintRequested = false;
             return false;
         }
 
@@ -1114,6 +1187,7 @@ public class ArchitectEntity extends Monster {
             approachState.walkStuckTicks = Math.max(approachState.walkStuckTicks, WALK_STUCK_BREAK_TICKS);
             BlockPos stuckTarget = steeringTarget;
             invalidateCommittedWalk("STUCK", target);
+            approachState.sprintRequested = false;
             if (stuckTarget != null && handleWalkStuck(stuckTarget, target)) {
                 return true;
             }
@@ -1126,6 +1200,7 @@ public class ArchitectEntity extends Monster {
             approachState.walkStuckTicks = Math.max(approachState.walkStuckTicks, WALK_STUCK_BREAK_TICKS);
             BlockPos stuckTarget = steeringTarget;
             invalidateCommittedWalk("DEADMAN", target);
+            approachState.sprintRequested = false;
             if (stuckTarget != null && handleWalkStuck(stuckTarget, target)) {
                 return true;
             }
@@ -1133,6 +1208,7 @@ public class ArchitectEntity extends Monster {
         }
 
         if (!continueCommittedWalk()) {
+            approachState.sprintRequested = false;
             return false;
         }
 
@@ -1269,7 +1345,9 @@ public class ArchitectEntity extends Monster {
         }
         BlockPos waypoint = corridorNodes.get(corridorNodes.size() - 1);
         commitWalkStep(corridorNodes, target);
+        approachState.sprintRequested = shouldSprintCommittedWalk(target);
         if (!continueCommittedWalk()) {
+            approachState.sprintRequested = false;
             clearCommittedWalk();
             return;
         }
@@ -1291,7 +1369,8 @@ public class ArchitectEntity extends Monster {
         clearCommittedWalk();
         resetWalkStuckTracker();
         approachState.unreachableTicks = 0;
-        getNavigation().moveTo(target, 1.0);
+        approachState.sprintRequested = shouldSprintDirectApproach(target);
+        getNavigation().moveTo(target, getApproachTravelSpeed());
         getLookControl().setLookAt(target, 30f, 30f);
     }
 

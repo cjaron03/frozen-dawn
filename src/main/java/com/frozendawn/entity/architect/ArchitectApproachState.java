@@ -48,4 +48,5 @@ public final class ArchitectApproachState {
     @Nullable public BlockPos scaffoldTarget;
     public final DStarLitePathfinder dstar = new DStarLitePathfinder();
     public boolean dstarPrecomputed;
+    public boolean sprintRequested;
 }
