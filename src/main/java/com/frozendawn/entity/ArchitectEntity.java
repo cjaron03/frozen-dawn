@@ -8,8 +8,14 @@ import com.frozendawn.entity.architect.ArchitectFxController;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
 import com.frozendawn.entity.architect.ArchitectPersistence;
 import com.frozendawn.entity.architect.ArchitectRenderFlags;
+import com.frozendawn.entity.architect.ArchitectActionTransitionSupport;
 import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
+import com.frozendawn.entity.architect.ArchitectDeathFx;
+import com.frozendawn.entity.architect.ArchitectIcePlacement;
 import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
+import com.frozendawn.entity.architect.ArchitectObservationSupport;
+import com.frozendawn.entity.architect.ArchitectTargetingSupport;
+import com.frozendawn.entity.architect.ArchitectTickSupport;
 import com.frozendawn.entity.architect.ArchitectWalkBreakPlanner;
 import com.frozendawn.entity.architect.ArchitectWalkCorridorState;
 import com.frozendawn.entity.architect.ArchitectWalkMotionPlanner;
@@ -59,7 +65,6 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -177,7 +182,6 @@ public class ArchitectEntity extends Monster {
     private static final double DIRECT_APPROACH_PATH_HORIZONTAL_RANGE = 8.0;
     private static final double DIRECT_APPROACH_PATH_VERTICAL_RANGE = 4.0;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
-    private static final int FALLBACK_BREAK_COOLDOWN_TICKS = 10;
     static final int MELEE_COMMIT_TICKS = 12;
     static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
     private static final double MELEE_ENGAGE_HORIZONTAL_RANGE = 4.75;
@@ -453,14 +457,15 @@ public class ArchitectEntity extends Monster {
 
         observationController.maybeTriggerSpawnObserveCue(target);
 
-        if (combatState.healCooldown > 0) combatState.healCooldown--;
-        if (trapCooldown > 0) trapCooldown--;
-        if (approachState.fallbackBreakCooldown > 0) approachState.fallbackBreakCooldown--;
-        if (brainState.getMeleeCommitTicks() > 0) {
-            brainState.setMeleeCommitTicks(brainState.getMeleeCommitTicks() - 1);
+        ArchitectTickSupport.applyPerTickCooldowns(combatState, approachState, brainState);
+        if (trapCooldown > 0) {
+            trapCooldown--;
         }
-        // Decay burst damage tracker outside window
-        if (tickCount - combatState.lastDamageTick > BURST_WINDOW) combatState.recentDamage = 0f;
+        combatState.recentDamage = ArchitectTickSupport.decayRecentDamageOutsideBurst(
+                tickCount,
+                combatState.lastDamageTick,
+                BURST_WINDOW,
+                combatState.recentDamage);
 
         // --- Potion drinking ---
         if (combatState.isDrinkingPotion) {
@@ -493,26 +498,19 @@ public class ArchitectEntity extends Monster {
         }
 
         // --- Despawn timer ---
-        if (target == null) {
-            if (towerEncounter) {
-                despawnTimer = 0;
-            } else {
-            boolean playerNearby = !level().getEntitiesOfClass(Player.class,
-                    getBoundingBox().inflate(48.0), p -> !p.isSpectator()).isEmpty();
-            if (playerNearby) {
-                despawnTimer = 0;
-            } else {
-                despawnTimer++;
-                if (despawnTimer >= DESPAWN_TIMEOUT) {
-                    cleanupAllIce();
-                    discard();
-                    return;
-                }
-            }
-            }
-        } else {
-            despawnTimer = 0;
+        int nextDespawnTimer = ArchitectTickSupport.nextDespawnTimer(
+                level(),
+                getBoundingBox(),
+                towerEncounter,
+                target != null,
+                despawnTimer,
+                DESPAWN_TIMEOUT);
+        if (nextDespawnTimer < 0) {
+            cleanupAllIce();
+            discard();
+            return;
         }
+        despawnTimer = nextDespawnTimer;
 
         // --- Utility AI scoring ---
         // Don't re-evaluate while actively mining — commit to the block
@@ -642,57 +640,6 @@ public class ArchitectEntity extends Monster {
         }
     }
 
-    boolean continueBreaking(LivingEntity target) {
-        BlockPos bt = blockBreaker.getTarget();
-        if (bt == null) return false;
-
-        double blockDist = position().distanceToSqr(
-                bt.getX() + 0.5, bt.getY() + 0.5, bt.getZ() + 0.5);
-
-        if (blockDist <= 4.5 * 4.5) {
-            getNavigation().stop();
-            // Look at the block being mined
-            getLookControl().setLookAt(bt.getX() + 0.5, bt.getY() + 0.5, bt.getZ() + 0.5);
-            boolean broke = blockBreaker.tick();
-            if (broke) {
-                resetUnstickBreakTracker();
-                // Ceiling breach drop-through: teleport mob into the hole so it
-                // falls inside the structure, not off the edge.
-                if (approachState.ceilingBreachPos != null && bt.equals(approachState.ceilingBreachPos)) {
-                    teleportTo(bt.getX() + 0.5, bt.getY(), bt.getZ() + 0.5);
-                    getNavigation().stop();
-                    approachState.ceilingBreachPos = null;
-                    clearCommittedWalk();
-                    playSound(ModSounds.ARCHITECT_LAND.get(), 0.8f, 0.7f + random.nextFloat() * 0.3f);
-                    LOGGER.info("[Architect] Ceiling breach complete — dropping through " + bt);
-                    pathRecalcCooldown = 0;
-                    approachState.dstar.onLocalBlockChanged(bt, level());
-                    triggerReeval();
-                    return true;
-                }
-
-                pathRecalcCooldown = 0;
-                approachState.dstar.onLocalBlockChanged(bt, level());
-
-                // Chain headroom: clear the block above for 2-high clearance.
-                BlockPos above = bt.above();
-                if (above.getY() <= blockPosition().getY() + 1
-                        && isBreakableBlock(above)
-                        && shouldContinueApproachBreak(target, above)) {
-                    blockBreaker.setTarget(above);
-                    LOGGER.info("[Architect] Chaining headroom break at " + above);
-                    return true; // Continue mining before repathing
-                }
-
-                triggerReeval();
-            }
-            return true;
-        }
-
-        blockBreaker.clearTarget();
-        return false;
-    }
-
     boolean walkToBreakTarget() {
         BlockPos bt = blockBreaker.getTarget();
         if (bt == null) return false;
@@ -711,132 +658,6 @@ public class ArchitectEntity extends Monster {
         getNavigation().moveTo(bt.getX() + 0.5, bt.getY(), bt.getZ() + 0.5, 1.0);
         pathRecalcCooldown = 5;
         return true;
-    }
-
-    @Nullable
-    BlockPos findDropInBreakTarget(@Nullable LivingEntity target, BlockPos stepPos) {
-        BlockPos below = blockPosition().below();
-        if (isBreakableBlock(below)) {
-            return below;
-        }
-
-        BlockPos stepBelow = stepPos.below();
-        if (isBreakableBlock(stepBelow)) {
-            return stepBelow;
-        }
-
-        BlockPos fallback = findBreakableWallBlock(target);
-        if (fallback != null && fallback.getY() == blockPosition().getY() - 1) {
-            return fallback;
-        }
-
-        return null;
-    }
-
-
-    void fallbackWallBreak(LivingEntity target) {
-        if (approachState.fallbackBreakCooldown > 0) return;
-        BlockPos wallBlock = findBreakableWallBlock(target);
-        if (wallBlock == null) return;
-
-        if (wallBlock.equals(approachState.lastFallbackBreakPos)
-                && !level().getBlockState(wallBlock).isAir()
-                && !blockBreaker.hasTarget()) {
-            approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
-            return;
-        }
-
-        double blockDist = position().distanceToSqr(
-                wallBlock.getX() + 0.5, wallBlock.getY() + 0.5, wallBlock.getZ() + 0.5);
-
-        if (blockDist <= 4.5 * 4.5) {
-            blockBreaker.setTarget(wallBlock);
-            approachState.lastFallbackBreakPos = wallBlock.immutable();
-            approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
-        } else {
-            getNavigation().moveTo(wallBlock.getX() + 0.5,
-                    wallBlock.getY(), wallBlock.getZ() + 0.5, 1.0);
-            pathRecalcCooldown = 5;
-            approachState.lastFallbackBreakPos = wallBlock.immutable();
-            approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
-        }
-    }
-
-    /**
-     * Find the best breakable block between the mob and the target.
-     *
-     * Priority order:
-     * 1. Block directly below (if target is below us) — critical for dig-down
-     * 2. Block at feet level toward target (horizontal dig)
-     * 3. Raycast from mob toward target
-     */
-    @Nullable
-    BlockPos findBreakableWallBlock(@Nullable LivingEntity target) {
-        if (target == null) return null;
-
-        // --- Priority 1: Dig-down when target is below AND we're close enough
-        // to be in a true drop-in context (roof/shaft), not long-range pursuit.
-        double dxToTarget = target.getX() - getX();
-        double dzToTarget = target.getZ() - getZ();
-        double horizontalDistToTarget = Math.sqrt(dxToTarget * dxToTarget + dzToTarget * dzToTarget);
-        double verticalDropToTarget = getY() - target.getY();
-        if (verticalDropToTarget >= 2.0 && horizontalDistToTarget <= 6.0) {
-            BlockPos below = blockPosition().below();
-            if (isBreakableBlock(below)) {
-                return below;
-            }
-            // Scan nearby at Y-1 for any breakable block. Handles "on roof"
-            // scenarios where mob is on an acheronite rim but breakable roof
-            // blocks (planks, etc.) are 1-3 blocks inward.
-            BlockPos closest = null;
-            double closestDist = Double.MAX_VALUE;
-            for (int ox = -3; ox <= 3; ox++) {
-                for (int oz = -3; oz <= 3; oz++) {
-                    if (ox == 0 && oz == 0) continue; // Already checked
-                    BlockPos candidate = below.offset(ox, 0, oz);
-                    if (isBreakableBlock(candidate)) {
-                        double d = position().distanceToSqr(
-                                candidate.getX() + 0.5, candidate.getY() + 0.5, candidate.getZ() + 0.5);
-                        if (d < closestDist) {
-                            closestDist = d;
-                            closest = candidate;
-                        }
-                    }
-                }
-            }
-            if (closest != null) return closest;
-        }
-
-        // --- Priority 2: Block at feet level in direction of target ---
-        {
-            double dx = target.getX() - getX();
-            double dz = target.getZ() - getZ();
-            BlockPos feet = blockPosition();
-            BlockPos toward;
-            if (Math.abs(dx) > Math.abs(dz)) {
-                toward = feet.offset(dx > 0 ? 1 : -1, 0, 0);
-            } else {
-                toward = feet.offset(0, 0, dz > 0 ? 1 : -1);
-            }
-            if (isBreakableBlock(toward)) return toward;
-            // Also check head height
-            BlockPos towardHead = toward.above();
-            if (isBreakableBlock(towardHead)) return towardHead;
-        }
-
-        // --- Priority 3: Raycast fallback ---
-        Vec3 start = position().add(0, getEyeHeight() * 0.5, 0);
-        Vec3 dir = target.position().add(0, target.getEyeHeight() * 0.5, 0).subtract(start).normalize();
-
-        BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
-        for (int i = 1; i <= 10; i++) {
-            Vec3 point = start.add(dir.scale(i));
-            probe.set((int) Math.floor(point.x), (int) Math.floor(point.y), (int) Math.floor(point.z));
-            if (isBreakableBlock(probe)) {
-                return probe.immutable();
-            }
-        }
-        return null;
     }
 
     void trackWalkStep(BlockPos stepPos) {
@@ -1476,24 +1297,22 @@ public class ArchitectEntity extends Monster {
 
     private void onActionChange(int oldAction, int newAction) {
         if (oldAction == ACTION_OBSERVE) {
-            observationMemory.setObserveTicks(0);
-            observationMemory.setObserveTargetTicks(0);
+            ArchitectActionTransitionSupport.onLeaveObserve(observationMemory);
         }
         if (oldAction == ACTION_PEEK) peekTicks = 0;
-        if (oldAction == ACTION_APPROACH) approachState.unreachableTicks = 0;
+        if (oldAction == ACTION_APPROACH) {
+            ArchitectActionTransitionSupport.onLeaveApproach(approachState);
+        }
         clearWalkNavigationState(true);
         clearCommittedWalk();
         resetWalkStuckTracker();
         resetWalkCellHistory();
         resetUnstickBreakTracker();
         if (oldAction != ACTION_APPROACH) blockBreaker.clearTarget();
-        if (oldAction == ACTION_APPROACH) {
-            approachState.ceilingBreachPos = null;
-            approachState.stepOffTarget = null;
-            approachState.stepOffStart = null;
-        }
         if (oldAction == ACTION_RETREAT && combatState.isDrinkingPotion) cancelDrinking();
-        if (newAction == ACTION_RETREAT) { combatState.retreatPhase = 0; combatState.retreatCoverBuilt = 0; }
+        if (newAction == ACTION_RETREAT) {
+            ArchitectActionTransitionSupport.onEnterRetreat(combatState);
+        }
         if (newAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
@@ -1501,11 +1320,10 @@ public class ArchitectEntity extends Monster {
     }
 
     void primeMeleeHandoff() {
-        brainState.setMeleeCommitTicks(Math.max(brainState.getMeleeCommitTicks(), MELEE_COMMIT_TICKS));
+        ArchitectActionTransitionSupport.primeMeleeHandoffState(brainState, approachState, MELEE_COMMIT_TICKS);
         clearWalkNavigationState(true);
         clearCommittedWalk();
         blockBreaker.clearTarget();
-        approachState.ceilingBreachPos = null;
     }
 
     double horizontalDistanceTo(LivingEntity target) {
@@ -1629,89 +1447,46 @@ public class ArchitectEntity extends Monster {
      * Place scaffold ice. Evicts oldest BEHIND the entity, never beneath.
      */
     boolean placeScaffoldIce(BlockPos pos) {
-        if (!canPlaceIce(pos)) return false;
-
-        while (scaffoldIce.size() >= MAX_SCAFFOLD_ICE) {
-            BlockPos oldest = scaffoldIce.get(0);
-            // Never evict the block we're standing on
-            if (oldest.equals(blockPosition().below()) || oldest.equals(blockPosition())) {
-                if (scaffoldIce.size() > 1) {
-                    BlockPos secondOldest = scaffoldIce.get(1);
-                    level().removeBlock(secondOldest, false);
-                    scaffoldIce.remove(1);
-                } else {
-                    return false;
-                }
-            } else {
-                level().removeBlock(oldest, false);
-                scaffoldIce.remove(0);
-            }
-        }
-
-        level().setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), 3);
-        scaffoldIce.add(pos);
-        entityData.set(DATA_BUILDING_ICE, true);
-        swing(InteractionHand.MAIN_HAND);
-        playSound(ModSounds.ARCHITECT_ICE_PLACE.get(), 0.7f, 0.9f + random.nextFloat() * 0.2f);
-        if (level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    8, 0.22, 0.18, 0.22, 0.02);
-            serverLevel.sendParticles(ParticleTypes.ITEM_SNOWBALL,
-                    pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
-                    4, 0.18, 0.12, 0.18, 0.03);
-        }
-        return true;
-    }
-
-    boolean placeTacticalIce(BlockPos pos) {
-        if (!canPlaceIce(pos)) return false;
-
-        while (tacticalIce.size() >= MAX_TACTICAL_ICE) {
-            BlockPos oldest = tacticalIce.remove(0);
-            level().removeBlock(oldest, false);
-        }
-
-        level().setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), 3);
-        tacticalIce.add(pos);
-        entityData.set(DATA_BUILDING_ICE, true);
-        swing(InteractionHand.MAIN_HAND);
-        playSound(ModSounds.ARCHITECT_ICE_PLACE.get(), 0.7f, 0.9f + random.nextFloat() * 0.2f);
-        if (level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    8, 0.22, 0.18, 0.22, 0.02);
-            serverLevel.sendParticles(ParticleTypes.ITEM_SNOWBALL,
-                    pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
-                    4, 0.18, 0.12, 0.18, 0.03);
-        }
-        return true;
-    }
-
-    private boolean canPlaceIce(BlockPos pos) {
-        BlockState state = level().getBlockState(pos);
-        if (state.isAir() || state.canBeReplaced()) return true;
-        // Destroy small plants/flowers (instant-break blocks) to make room for ice
-        if (state.getDestroySpeed(level(), pos) == 0) {
-            level().destroyBlock(pos, true);
+        if (ArchitectIcePlacement.placeScaffoldIce(
+                level(),
+                pos,
+                scaffoldIce,
+                MAX_SCAFFOLD_ICE,
+                blockPosition())) {
+            emitIcePlacementFx(pos);
             return true;
         }
         return false;
     }
 
+    boolean placeTacticalIce(BlockPos pos) {
+        if (ArchitectIcePlacement.placeTacticalIce(
+                level(),
+                pos,
+                tacticalIce,
+                MAX_TACTICAL_ICE)) {
+            emitIcePlacementFx(pos);
+            return true;
+        }
+        return false;
+    }
+
+    private void emitIcePlacementFx(BlockPos pos) {
+        entityData.set(DATA_BUILDING_ICE, true);
+        swing(InteractionHand.MAIN_HAND);
+        playSound(ModSounds.ARCHITECT_ICE_PLACE.get(), 0.7f, 0.9f + random.nextFloat() * 0.2f);
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
+                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    8, 0.22, 0.18, 0.22, 0.02);
+            serverLevel.sendParticles(ParticleTypes.ITEM_SNOWBALL,
+                    pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
+                    4, 0.18, 0.12, 0.18, 0.03);
+        }
+    }
+
     private void cleanupAllIce() {
-        for (BlockPos pos : scaffoldIce) {
-            if (level().getBlockState(pos).is(Blocks.PACKED_ICE)) {
-                level().removeBlock(pos, false);
-            }
-        }
-        scaffoldIce.clear();
-        for (BlockPos pos : tacticalIce) {
-            if (level().getBlockState(pos).is(Blocks.PACKED_ICE)) {
-                level().removeBlock(pos, false);
-            }
-        }
-        tacticalIce.clear();
+        ArchitectIcePlacement.cleanupAllIce(level(), scaffoldIce, tacticalIce);
     }
 
     // ========================
@@ -1732,30 +1507,7 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     void scanEntrances(ServerLevel level, BlockPos center) {
-        observationMemory.entrancePositions().clear();
-        int radius = 16;
-        for (int dx = -radius; dx <= radius; dx += 2) {
-            for (int dz = -radius; dz <= radius; dz += 2) {
-                if (Math.abs(dx) < radius - 2 && Math.abs(dz) < radius - 2) continue;
-                BlockPos pos = center.offset(dx, 0, dz);
-                for (int dy = -4; dy <= 4; dy++) {
-                    BlockPos check = pos.offset(0, dy, 0);
-                    if (level.getBlockState(check).isAir()
-                            && level.getBlockState(check.above()).isAir()
-                            && level.getBlockState(check.below()).isSolid()) {
-                        boolean nearWall = false;
-                        for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.Plane.HORIZONTAL) {
-                            if (level.getBlockState(check.relative(dir)).isSolid()) {
-                                nearWall = true;
-                                break;
-                            }
-                        }
-                        if (nearWall) observationMemory.entrancePositions().add(check.immutable());
-                        break;
-                    }
-                }
-            }
-        }
+        ArchitectObservationSupport.scanEntrances(level, center, observationMemory.entrancePositions());
     }
 
     /**
@@ -1764,8 +1516,7 @@ public class ArchitectEntity extends Monster {
      */
     public void onNearbyBlockChange(BlockPos changedPos, int changeCount) {
         BlockPos lastObservedPos = observationMemory.getLastObservedPos();
-        if (lastObservedPos != null && changeCount >= 5
-                && changedPos.closerToCenterThan(lastObservedPos.getCenter(), 16.0)) {
+        if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
             observationMemory.setObserveDirty(true);
         }
         // Notify D* Lite of world changes so it updates costs incrementally
@@ -1782,46 +1533,25 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
-        double range = getDetectionRange();
-        double playerRange = brainState.isRoamingAfterTargetLoss() ? OBSERVE_REACQUIRE_RANGE : range;
-        // Find nearest survival/adventure player (exclude creative & spectator)
-        Player nearestPlayer = level().getNearestPlayer(this, playerRange);
-        if (nearestPlayer != null && !nearestPlayer.isCreative() && !nearestPlayer.isSpectator()) {
-            return nearestPlayer;
-        }
-        // Fallback: target nearest villager (useful for testing & gameplay)
-        List<net.minecraft.world.entity.npc.Villager> villagers = level().getEntitiesOfClass(
-                net.minecraft.world.entity.npc.Villager.class,
-                getBoundingBox().inflate(range), v -> v.isAlive());
-        if (!villagers.isEmpty()) {
-            villagers.sort(Comparator.comparingDouble(this::distanceToSqr));
-            return villagers.get(0);
-        }
-        return null;
+        return ArchitectTargetingSupport.findTarget(
+                level(),
+                this,
+                brainState.isRoamingAfterTargetLoss(),
+                getDetectionRange(),
+                OBSERVE_REACQUIRE_RANGE,
+                this::distanceToSqr);
     }
 
     boolean isPlayerFacing(LivingEntity entity) {
-        Vec3 lookVec = entity.getLookAngle().normalize();
-        Vec3 toMob = position().subtract(entity.position()).normalize();
-        return lookVec.dot(toMob) > 0.5;
+        return ArchitectObservationSupport.isPlayerFacing(entity.getLookAngle(), entity.position(), position());
     }
 
     private boolean isPlayerInsideBase(LivingEntity player) {
-        BlockPos pos = player.blockPosition();
-        int solidSides = 0;
-        for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.Plane.HORIZONTAL) {
-            if (level().getBlockState(pos.relative(dir)).isSolid()) solidSides++;
-        }
-        return solidSides >= 3;
+        return ArchitectObservationSupport.isPlayerInsideBase(level(), player);
     }
 
     private boolean isNearCorner() {
-        BlockPos pos = blockPosition();
-        boolean n = level().getBlockState(pos.north()).isSolid();
-        boolean s = level().getBlockState(pos.south()).isSolid();
-        boolean e = level().getBlockState(pos.east()).isSolid();
-        boolean w = level().getBlockState(pos.west()).isSolid();
-        return (n && e) || (n && w) || (s && e) || (s && w);
+        return ArchitectObservationSupport.isNearCorner(level(), blockPosition());
     }
 
     // ========================
@@ -1841,7 +1571,7 @@ public class ArchitectEntity extends Monster {
                         getX(), smokeY - 0.15, getZ(), 2, 0.06, 0.08, 0.06, 0.005);
             }
             if (ticks >= 22) {
-                emitDeathSoulRise(serverLevel, ticks);
+                ArchitectDeathFx.emitDeathSoulRise(serverLevel, ticks, getX(), getY(), getZ());
             }
         }
         if (ticks >= 30) {
@@ -1852,115 +1582,9 @@ public class ArchitectEntity extends Monster {
             }
             remove(RemovalReason.KILLED);
             if (level() instanceof ServerLevel serverLevel) {
-                emitDeathSmokeBurst(serverLevel);
-                emitDeathSoulRelease(serverLevel);
+                ArchitectDeathFx.emitDeathSmokeBurst(serverLevel, random, getX(), getY(), getZ());
+                ArchitectDeathFx.emitDeathSoulRelease(serverLevel, random, getX(), getY(), getZ());
             }
-        }
-    }
-
-    private void emitDeathSmokeBurst(ServerLevel serverLevel) {
-        for (int i = 0; i < 18; i++) {
-            emitDeathSmokeParticle(serverLevel, ParticleTypes.LARGE_SMOKE, 0.18, 0.34, 0.10, 0.28);
-        }
-        for (int i = 0; i < 34; i++) {
-            emitDeathSmokeParticle(serverLevel, ParticleTypes.SMOKE, 0.24, 0.46, 0.06, 0.22);
-        }
-        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
-                getX(), getY() + 1.0, getZ(), 12, 0.12, 0.18, 0.12, 0.08);
-    }
-
-    private void emitDeathSmokeParticle(ServerLevel serverLevel, net.minecraft.core.particles.ParticleOptions particleType,
-                                        double horizontalMin, double horizontalMax,
-                                        double verticalMin, double verticalMax) {
-        double angle = random.nextDouble() * (Math.PI * 2.0);
-        double horizontalSpeed = horizontalMin + random.nextDouble() * (horizontalMax - horizontalMin);
-        double verticalSpeed = verticalMin + random.nextDouble() * (verticalMax - verticalMin);
-        double spawnY = getY() + 0.6 + random.nextDouble() * 0.9;
-        serverLevel.sendParticles(
-                particleType,
-                getX(),
-                spawnY,
-                getZ(),
-                0,
-                Math.cos(angle) * horizontalSpeed,
-                verticalSpeed,
-                Math.sin(angle) * horizontalSpeed,
-                1.0
-        );
-    }
-
-    private void emitDeathSoulRise(ServerLevel serverLevel, int ticks) {
-        float progress = Mth.clamp((ticks - 21) / 9.0f, 0.0f, 1.0f);
-        double baseY = getY() + 0.95 + progress * 1.55;
-        double radius = 0.24 * (1.0 - progress * 0.55);
-        double angleBase = ticks * 0.65;
-
-        for (int i = 0; i < 2; i++) {
-            double angle = angleBase + i * Math.PI;
-            double px = getX() + Math.cos(angle) * radius;
-            double pz = getZ() + Math.sin(angle) * radius;
-            serverLevel.sendParticles(
-                    ParticleTypes.SOUL,
-                    px,
-                    baseY + i * 0.08,
-                    pz,
-                    0,
-                    Math.cos(angle) * 0.03,
-                    0.16 + progress * 0.05,
-                    Math.sin(angle) * 0.03,
-                    1.0
-            );
-        }
-
-        if (ticks % 2 == 0) {
-            serverLevel.sendParticles(
-                    ParticleTypes.SOUL_FIRE_FLAME,
-                    getX(),
-                    baseY + 0.12,
-                    getZ(),
-                    0,
-                    Math.cos(angleBase + Math.PI * 0.5) * 0.018,
-                    0.14 + progress * 0.04,
-                    Math.sin(angleBase + Math.PI * 0.5) * 0.018,
-                    1.0
-            );
-        }
-    }
-
-    private void emitDeathSoulRelease(ServerLevel serverLevel) {
-        double originY = getY() + 1.05;
-        for (int i = 0; i < 8; i++) {
-            double angle = random.nextDouble() * (Math.PI * 2.0);
-            double horizontalSpeed = 0.03 + random.nextDouble() * 0.05;
-            double verticalSpeed = 0.34 + random.nextDouble() * 0.16;
-            serverLevel.sendParticles(
-                    ParticleTypes.SOUL,
-                    getX(),
-                    originY,
-                    getZ(),
-                    0,
-                    Math.cos(angle) * horizontalSpeed,
-                    verticalSpeed,
-                    Math.sin(angle) * horizontalSpeed,
-                    1.0
-            );
-        }
-
-        for (int i = 0; i < 4; i++) {
-            double angle = random.nextDouble() * (Math.PI * 2.0);
-            double horizontalSpeed = 0.015 + random.nextDouble() * 0.03;
-            double verticalSpeed = 0.42 + random.nextDouble() * 0.18;
-            serverLevel.sendParticles(
-                    ParticleTypes.SOUL_FIRE_FLAME,
-                    getX(),
-                    originY + 0.1,
-                    getZ(),
-                    0,
-                    Math.cos(angle) * horizontalSpeed,
-                    verticalSpeed,
-                    Math.sin(angle) * horizontalSpeed,
-                    1.0
-            );
         }
     }
 

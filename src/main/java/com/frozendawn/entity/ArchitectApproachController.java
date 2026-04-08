@@ -1,17 +1,13 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
-import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectBreachPlanner;
+import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
@@ -28,13 +24,7 @@ final class ArchitectApproachController {
     private static final int PLANNING_FALLBACK_REPATH_TICKS = 8;
     private static final double LIQUID_ESCAPE_SPEED = 1.05;
     private static final int LIQUID_ESCAPE_REPATH_TICKS = 5;
-    private static final double LIQUID_ASCEND_ACCEL = 0.06;
-    private static final double LIQUID_ASCEND_CAP = 0.16;
-    private static final double CLIMB_VERTICAL_UP_SPEED = 0.18;
-    private static final double CLIMB_VERTICAL_DOWN_SPEED = -0.12;
-    private static final double CLIMB_HORIZONTAL_ACCEL = 0.08;
-    private static final double CLIMB_HORIZONTAL_CAP = 0.12;
-    private static final double MAX_DIRECT_CHASE_VERTICAL_DELTA = 1.5;
+    private static final int FALLBACK_BREAK_COOLDOWN_TICKS = 10;
 
     private final ArchitectEntity architect;
     private final ArchitectApproachState approachState;
@@ -88,7 +78,13 @@ final class ArchitectApproachController {
 
         // Avoid committed-walk churn while submerged: switch to direct water egress chase.
         if (architect.isInWaterOrBubble()) {
-            executeFallbackChase(target, LIQUID_ESCAPE_SPEED, LIQUID_ESCAPE_REPATH_TICKS, true);
+            ArchitectApproachMovementSupport.executeFallbackChase(
+                    architect,
+                    approachState,
+                    target,
+                    LIQUID_ESCAPE_SPEED,
+                    LIQUID_ESCAPE_REPATH_TICKS,
+                    true);
             return;
         }
 
@@ -102,7 +98,11 @@ final class ArchitectApproachController {
                     scaffoldTarget.getZ() + 0.5
             );
             if (approachState.scaffoldDelay <= 0) {
-                resolveScaffoldStep(scaffoldTarget);
+                ArchitectApproachMovementSupport.resolveScaffoldStep(
+                        architect,
+                        approachState,
+                        blockBreaker,
+                        scaffoldTarget);
                 approachState.scaffoldTarget = null;
             }
             return;
@@ -133,7 +133,7 @@ final class ArchitectApproachController {
             return;
         }
 
-        if (blockBreaker.isMining() && architect.continueBreaking(target)) {
+        if (blockBreaker.isMining() && continueBreaking(target)) {
             return;
         }
 
@@ -176,14 +176,26 @@ final class ArchitectApproachController {
         if (!approachState.dstar.isSearchComplete()) {
             approachState.dstar.computePartial(500, architect.level());
             if (!approachState.dstar.isSearchComplete()) {
-                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
+                ArchitectApproachMovementSupport.executeFallbackChase(
+                        architect,
+                        approachState,
+                        target,
+                        PLANNING_FALLBACK_SPEED,
+                        PLANNING_FALLBACK_REPATH_TICKS,
+                        false);
                 return;
             }
         }
 
         approachState.dstar.updateStart(architect.blockPosition());
         if (!approachState.dstar.computePartial(220, architect.level())) {
-            executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
+            ArchitectApproachMovementSupport.executeFallbackChase(
+                    architect,
+                    approachState,
+                    target,
+                    PLANNING_FALLBACK_SPEED,
+                    PLANNING_FALLBACK_REPATH_TICKS,
+                    false);
             return;
         }
 
@@ -192,15 +204,16 @@ final class ArchitectApproachController {
                 approachState.dstar.getNextStep(architect.blockPosition(), architect.level(), avoidImmediateBacktrack);
         architect.keepDoorOpenNear(step.pos());
 
-        if (shouldUseDirectChase(target, step)) {
+        if (ArchitectApproachMovementSupport.shouldUseDirectChase(architect, target, step)) {
             architect.executeDirectApproachChase(target);
             return;
         }
 
         architect.invalidateStaleApproachBreakTarget(step, target);
 
-        if (step.type() == DStarLitePathfinder.StepType.WALK && isVerticalClimbStep(step)) {
-            executeVerticalClimbStep(step);
+        if (step.type() == DStarLitePathfinder.StepType.WALK
+                && ArchitectApproachMovementSupport.isVerticalClimbStep(architect, step)) {
+            ArchitectApproachMovementSupport.executeVerticalClimbStep(architect, approachState, step);
             return;
         }
 
@@ -216,7 +229,7 @@ final class ArchitectApproachController {
             architect.clearCommittedWalk();
             approachState.unreachableTicks++;
             if (approachState.unreachableTicks >= ArchitectEntity.UNREACHABLE_BREAK_DELAY_TICKS) {
-                architect.fallbackWallBreak(target);
+                fallbackWallBreak(target);
             }
             if (architect.tickCount % 20 == 0 && LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
@@ -233,7 +246,13 @@ final class ArchitectApproachController {
                 LOGGER.info("[Architect] D* Lite hard refresh after prolonged UNREACHABLE");
             }
             if (!blockBreaker.hasTarget()) {
-                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
+                ArchitectApproachMovementSupport.executeFallbackChase(
+                        architect,
+                        approachState,
+                        target,
+                        PLANNING_FALLBACK_SPEED,
+                        PLANNING_FALLBACK_REPATH_TICKS,
+                        false);
             }
             return;
         }
@@ -255,7 +274,7 @@ final class ArchitectApproachController {
                 architect.resetWalkStuckTracker();
                 BlockPos breakTarget = step.breakTarget();
                 if (breakTarget == null) {
-                    breakTarget = architect.findBreakableWallBlock(target);
+                    breakTarget = findBreakableWallBlock(target);
                 }
                 if (breakTarget != null) {
                     double blockDist = architect.position().distanceToSqr(
@@ -307,7 +326,7 @@ final class ArchitectApproachController {
                 boolean targetDirectlyBelow = target.getY() < architect.getY() - 1.0
                         && horizontalTargetDelta <= 2.5;
                 if (targetDirectlyBelow) {
-                    BlockPos dropInTarget = architect.findDropInBreakTarget(target, step.pos());
+                    BlockPos dropInTarget = findDropInBreakTarget(target, step.pos());
                     if (dropInTarget != null) {
                         blockBreaker.setTarget(dropInTarget);
                         approachState.ceilingBreachPos = dropInTarget;
@@ -364,147 +383,108 @@ final class ArchitectApproachController {
         }
     }
 
-    private void executeFallbackChase(LivingEntity target, double speed, int repathCooldownTicks, boolean assistLiquidAscent) {
-        architect.clearCommittedWalk();
-        architect.resetWalkStuckTracker();
-        architect.resetUnstickBreakTracker();
-        approachState.unreachableTicks = 0;
-        approachState.sprintRequested = false;
-
-        if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
-            architect.getNavigation().moveTo(target, speed);
-            architect.setPathRecalcCooldown(repathCooldownTicks);
-        }
-        architect.decrementPathRecalcCooldown();
-        architect.getLookControl().setLookAt(target, 30f, 30f);
-
-        if (assistLiquidAscent && architect.isInWaterOrBubble()) {
-            Vec3 motion = architect.getDeltaMovement();
-            if (motion.y < LIQUID_ASCEND_CAP) {
-                architect.setDeltaMovement(motion.x, Math.min(LIQUID_ASCEND_CAP, motion.y + LIQUID_ASCEND_ACCEL), motion.z);
-            }
-        }
-    }
-
-    private boolean isVerticalClimbStep(DStarLitePathfinder.NextStep step) {
-        BlockPos current = architect.blockPosition();
-        BlockPos next = step.pos();
-        if (next.getX() != current.getX() || next.getZ() != current.getZ() || next.getY() == current.getY()) {
+    private boolean continueBreaking(LivingEntity target) {
+        BlockPos bt = blockBreaker.getTarget();
+        if (bt == null) {
             return false;
         }
-        BlockState currentState = architect.level().getBlockState(current);
-        BlockState nextState = architect.level().getBlockState(next);
-        return currentState.is(BlockTags.CLIMBABLE) || nextState.is(BlockTags.CLIMBABLE);
-    }
 
-    private void resolveScaffoldStep(BlockPos scaffoldTarget) {
-        Level level = architect.level();
-        BlockPos supportPos = scaffoldTarget.below();
-        BlockState supportState = level.getBlockState(supportPos);
-        boolean supportReady = supportState.is(Blocks.PACKED_ICE) || supportState.isSolid() || architect.placeScaffoldIce(supportPos);
-        if (!supportReady) {
-            architect.getDStarPathfinder().onLocalBlockChanged(supportPos, level);
-            return;
-        }
+        double blockDist = architect.position().distanceToSqr(
+                bt.getX() + 0.5, bt.getY() + 0.5, bt.getZ() + 0.5);
 
-        if (!isPassableForStand(scaffoldTarget, level) || !isPassableForStand(scaffoldTarget.above(), level)) {
-            BlockPos obstruction = selectScaffoldObstruction(scaffoldTarget, level);
-            if (obstruction != null && architect.isBreakableBlock(obstruction)) {
-                blockBreaker.setTarget(obstruction);
-                architect.getNavigation().stop();
-                LOGGER.info("[Architect] Scaffold-up blocked, breaching {} before retrying step {}", obstruction, scaffoldTarget);
+        if (blockDist <= 4.5 * 4.5) {
+            architect.getNavigation().stop();
+            architect.getLookControl().setLookAt(bt.getX() + 0.5, bt.getY() + 0.5, bt.getZ() + 0.5);
+            boolean broke = blockBreaker.tick();
+            if (broke) {
+                architect.resetUnstickBreakTracker();
+
+                // Ceiling breach drop-through: teleport into the new opening.
+                if (approachState.ceilingBreachPos != null && bt.equals(approachState.ceilingBreachPos)) {
+                    architect.teleportTo(bt.getX() + 0.5, bt.getY(), bt.getZ() + 0.5);
+                    architect.getNavigation().stop();
+                    approachState.ceilingBreachPos = null;
+                    architect.clearCommittedWalk();
+                    architect.playSound(ModSounds.ARCHITECT_LAND.get(), 0.8f, 0.7f + architect.nextRandomFloat() * 0.3f);
+                    LOGGER.info("[Architect] Ceiling breach complete — dropping through {}", bt);
+                    architect.setPathRecalcCooldown(0);
+                    approachState.dstar.onLocalBlockChanged(bt, architect.level());
+                    architect.triggerReeval();
+                    return true;
+                }
+
+                architect.setPathRecalcCooldown(0);
+                approachState.dstar.onLocalBlockChanged(bt, architect.level());
+
+                // Chain headroom breach to restore 2-block clearance.
+                BlockPos above = bt.above();
+                if (above.getY() <= architect.blockPosition().getY() + 1
+                        && architect.isBreakableBlock(above)
+                        && architect.shouldContinueApproachBreak(target, above)) {
+                    blockBreaker.setTarget(above);
+                    LOGGER.info("[Architect] Chaining headroom break at {}", above);
+                    return true;
+                }
+
+                architect.triggerReeval();
             }
-            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget, level);
-            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget.above(), level);
-            return;
-        }
-
-        architect.teleportTo(
-                scaffoldTarget.getX() + 0.5,
-                scaffoldTarget.getY(),
-                scaffoldTarget.getZ() + 0.5
-        );
-        architect.getNavigation().stop();
-    }
-
-    private boolean isPassableForStand(BlockPos pos, Level level) {
-        BlockState state = level.getBlockState(pos);
-        if (state.is(BlockTags.WOODEN_DOORS)) {
             return true;
         }
-        return !ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
+
+        blockBreaker.clearTarget();
+        return false;
+    }
+
+    private void fallbackWallBreak(LivingEntity target) {
+        if (approachState.fallbackBreakCooldown > 0) {
+            return;
+        }
+        BlockPos wallBlock = findBreakableWallBlock(target);
+        if (wallBlock == null) {
+            return;
+        }
+
+        if (wallBlock.equals(approachState.lastFallbackBreakPos)
+                && !architect.level().getBlockState(wallBlock).isAir()
+                && !blockBreaker.hasTarget()) {
+            approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
+            return;
+        }
+
+        double blockDist = architect.position().distanceToSqr(
+                wallBlock.getX() + 0.5, wallBlock.getY() + 0.5, wallBlock.getZ() + 0.5);
+
+        if (blockDist <= 4.5 * 4.5) {
+            blockBreaker.setTarget(wallBlock);
+            approachState.lastFallbackBreakPos = wallBlock.immutable();
+            approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
+            return;
+        }
+
+        architect.getNavigation().moveTo(
+                wallBlock.getX() + 0.5,
+                wallBlock.getY(),
+                wallBlock.getZ() + 0.5,
+                1.0);
+        architect.setPathRecalcCooldown(5);
+        approachState.lastFallbackBreakPos = wallBlock.immutable();
+        approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
     }
 
     @Nullable
-    private BlockPos selectScaffoldObstruction(BlockPos scaffoldTarget, Level level) {
-        BlockState feet = level.getBlockState(scaffoldTarget);
-        if (!feet.is(BlockTags.WOODEN_DOORS)
-                && ArchitectBreakPolicy.isObstructiveForArchitect(feet, level, scaffoldTarget)) {
-            return scaffoldTarget;
-        }
-        BlockPos headPos = scaffoldTarget.above();
-        BlockState head = level.getBlockState(headPos);
-        if (!head.is(BlockTags.WOODEN_DOORS)
-                && ArchitectBreakPolicy.isObstructiveForArchitect(head, level, headPos)) {
-            return headPos;
-        }
-        return null;
+    private BlockPos findDropInBreakTarget(@Nullable LivingEntity target, BlockPos stepPos) {
+        return ArchitectBreachPlanner.findDropInBreakTarget(
+                architect,
+                target,
+                stepPos,
+                architect::isBreakableBlock);
     }
 
-    private boolean shouldUseDirectChase(LivingEntity target, DStarLitePathfinder.NextStep step) {
-        if (step.type() != DStarLitePathfinder.StepType.WALK || !architect.canDirectChaseApproach(target)) {
-            return false;
-        }
-        if (Math.abs(target.getY() - architect.getY()) > MAX_DIRECT_CHASE_VERTICAL_DELTA) {
-            return false;
-        }
-
-        BlockPos current = architect.blockPosition();
-        BlockPos next = step.pos();
-        if (next.getY() != current.getY()) {
-            return false;
-        }
-        if (isVerticalClimbStep(step)) {
-            return false;
-        }
-
-        BlockState currentState = architect.level().getBlockState(current);
-        BlockState nextState = architect.level().getBlockState(next);
-        return !currentState.is(BlockTags.CLIMBABLE) && !nextState.is(BlockTags.CLIMBABLE);
-    }
-
-    private void executeVerticalClimbStep(DStarLitePathfinder.NextStep step) {
-        architect.clearWalkNavigationState(true);
-        architect.clearCommittedWalk();
-        approachState.unreachableTicks = 0;
-        approachState.sprintRequested = false;
-
-        BlockPos current = architect.blockPosition();
-        BlockPos next = step.pos();
-        int yDir = Integer.compare(next.getY(), current.getY());
-
-        double targetX = next.getX() + 0.5;
-        double targetZ = next.getZ() + 0.5;
-        architect.getMoveControl().setWantedPosition(targetX, architect.getY(), targetZ, 1.0);
-        architect.getLookControl().setLookAt(targetX, next.getY() + 0.5, targetZ, 35f, 30f);
-
-        Vec3 motion = architect.getDeltaMovement();
-        double nx = Mth.clamp(targetX - architect.getX(), -CLIMB_HORIZONTAL_ACCEL, CLIMB_HORIZONTAL_ACCEL);
-        double nz = Mth.clamp(targetZ - architect.getZ(), -CLIMB_HORIZONTAL_ACCEL, CLIMB_HORIZONTAL_ACCEL);
-        double vx = Mth.clamp(motion.x + nx, -CLIMB_HORIZONTAL_CAP, CLIMB_HORIZONTAL_CAP);
-        double vz = Mth.clamp(motion.z + nz, -CLIMB_HORIZONTAL_CAP, CLIMB_HORIZONTAL_CAP);
-
-        double vy = motion.y;
-        if (yDir > 0) {
-            if (architect.onGround()) {
-                architect.getJumpControl().jump();
-            }
-            vy = Math.max(vy, CLIMB_VERTICAL_UP_SPEED);
-        } else if (yDir < 0) {
-            vy = Math.min(vy, CLIMB_VERTICAL_DOWN_SPEED);
-        }
-
-        architect.setDeltaMovement(vx, vy, vz);
-        architect.setPathRecalcCooldown(0);
+    @Nullable
+    private BlockPos findBreakableWallBlock(@Nullable LivingEntity target) {
+        return ArchitectBreachPlanner.findBreakableWallBlock(
+                architect,
+                target,
+                architect::isBreakableBlock);
     }
 }
