@@ -411,6 +411,8 @@ public class DStarLitePathfinder {
         if (dx == 0 && dz == 0) {
             if (dy == 1) {
                 if (fromClimbable || toClimbable) return StepType.WALK;
+                if (feetDoor || headDoor) return StepType.WALK;
+                if (nonDoorSolid) return StepType.BREACH;
                 return StepType.SCAFFOLD_UP;
             }
             if (dy == -1) {

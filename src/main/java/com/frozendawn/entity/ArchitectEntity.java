@@ -1633,7 +1633,9 @@ public class ArchitectEntity extends Monster {
         if (blockPosition().equals(waypoint)) {
             return true;
         }
-        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
+        double verticalDelta = Math.abs(getY() - waypoint.getY());
+        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR
+                && verticalDelta <= WALK_WAYPOINT_REACH_VERTICAL) {
             return true;
         }
 
@@ -1643,7 +1645,7 @@ public class ArchitectEntity extends Monster {
         if (horizontalDistSqr > WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
             return false;
         }
-        return Math.abs(getY() - waypoint.getY()) <= WALK_WAYPOINT_REACH_VERTICAL;
+        return verticalDelta <= WALK_WAYPOINT_REACH_VERTICAL;
     }
 
     void clearWalkNavigationState(boolean stopNavigation) {

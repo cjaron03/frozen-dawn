@@ -14,6 +14,8 @@ import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class ArchitectMoveControl extends MoveControl {
+    private static final double JUMP_EMBED_EPSILON = 0.06;
+    private static final double FULL_BLOCK_COLLISION_THRESHOLD = 0.95;
     private final float maxRotate;
 
     public ArchitectMoveControl(Mob mob, float maxRotate) {
@@ -54,7 +56,8 @@ public class ArchitectMoveControl extends MoveControl {
             double dx = this.wantedX - this.mob.getX();
             double dz = this.wantedZ - this.mob.getZ();
             double dy = this.wantedY - this.mob.getY();
-            double distSqr = dx * dx + dy * dy + dz * dz;
+            double horizontalDistSqr = dx * dx + dz * dz;
+            double distSqr = horizontalDistSqr + dy * dy;
             if (distSqr < MIN_SPEED_SQR) {
                 this.mob.setZza(0.0F);
                 return;
@@ -66,11 +69,18 @@ public class ArchitectMoveControl extends MoveControl {
             BlockPos blockPos = this.mob.blockPosition();
             BlockState state = this.mob.level().getBlockState(blockPos);
             VoxelShape shape = state.getCollisionShape(this.mob.level(), blockPos);
-            if (dy > (double) this.mob.maxUpStep() && dx * dx + dz * dz < (double) Math.max(1.0F, this.mob.getBbWidth())
-                    || !shape.isEmpty()
-                    && this.mob.getY() < shape.max(Direction.Axis.Y) + (double) blockPos.getY()
+            boolean targetRequiresStepJump = dy > (double) this.mob.maxUpStep()
+                    && horizontalDistSqr < (double) Math.max(1.0F, this.mob.getBbWidth());
+            double localTop = shape.isEmpty() ? 0.0 : shape.max(Direction.Axis.Y);
+            double topY = localTop + (double) blockPos.getY();
+            // Ignore partial-height support (e.g., slabs/snow layers) to avoid jump-spin loops.
+            boolean embeddedInTallCollision = !shape.isEmpty()
+                    && localTop >= FULL_BLOCK_COLLISION_THRESHOLD
+                    && dy > 0.0
+                    && this.mob.getY() + JUMP_EMBED_EPSILON < topY
                     && !state.is(BlockTags.DOORS)
-                    && !state.is(BlockTags.FENCES)) {
+                    && !state.is(BlockTags.FENCES);
+            if (targetRequiresStepJump || embeddedInTallCollision) {
                 this.mob.getJumpControl().jump();
                 this.operation = Operation.JUMPING;
             }

@@ -402,6 +402,12 @@ final class ArchitectApproachController {
         }
 
         if (!isPassableForStand(scaffoldTarget, level) || !isPassableForStand(scaffoldTarget.above(), level)) {
+            BlockPos obstruction = selectScaffoldObstruction(scaffoldTarget, level);
+            if (obstruction != null && architect.isBreakableBlock(obstruction)) {
+                blockBreaker.setTarget(obstruction);
+                architect.getNavigation().stop();
+                LOGGER.info("[Architect] Scaffold-up blocked, breaching {} before retrying step {}", obstruction, scaffoldTarget);
+            }
             architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget, level);
             architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget.above(), level);
             return;
@@ -421,6 +427,20 @@ final class ArchitectApproachController {
             return true;
         }
         return !state.isSolid();
+    }
+
+    @Nullable
+    private BlockPos selectScaffoldObstruction(BlockPos scaffoldTarget, Level level) {
+        BlockState feet = level.getBlockState(scaffoldTarget);
+        if (feet.isSolid() && !feet.is(BlockTags.WOODEN_DOORS)) {
+            return scaffoldTarget;
+        }
+        BlockPos headPos = scaffoldTarget.above();
+        BlockState head = level.getBlockState(headPos);
+        if (head.isSolid() && !head.is(BlockTags.WOODEN_DOORS)) {
+            return headPos;
+        }
+        return null;
     }
 
     private boolean shouldUseDirectChase(LivingEntity target, DStarLitePathfinder.NextStep step) {
