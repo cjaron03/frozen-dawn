@@ -46,7 +46,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftLeg.zRot = 0.0f;
 
         if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
-            applyObservePose(ageInTicks, sway);
+            applyObservePose(ageInTicks, sway, limbSwingAmount);
         } else if (action == ArchitectEntity.ACTION_APPROACH) {
             this.head.xRot += 0.02f;
             this.rightArm.xRot -= 0.15f;
@@ -81,11 +81,20 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         }
     }
 
-    private void applyObservePose(float ageInTicks, float sway) {
+    private void applyObservePose(float ageInTicks, float sway, float limbSwingAmount) {
+        // Preserve a blended amount of vanilla gait so OBSERVE movement still reads
+        // as locomotion instead of a frozen pose.
+        float rightArmWalkX = this.rightArm.xRot;
+        float leftArmWalkX = this.leftArm.xRot;
+        float rightLegWalkX = this.rightLeg.xRot;
+        float leftLegWalkX = this.leftLeg.xRot;
+
         float breath = Mth.sin(ageInTicks * 0.09f);
         float settle = Mth.sin(ageInTicks * 0.045f + 0.7f);
         float shoulderDrift = Mth.sin(ageInTicks * 0.06f + 1.1f) * 0.035f;
         float torsoLag = Mth.clamp(this.head.yRot * 0.35f, -0.35f, 0.35f);
+        float gaitBlend = Mth.clamp(limbSwingAmount * 2.0f, 0.0f, 1.0f);
+        float armGaitBlend = gaitBlend * 0.75f;
 
         this.body.xRot = -0.03f + breath * 0.018f;
         this.body.yRot = torsoLag;
@@ -100,6 +109,8 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftArm.yRot = 0.14f + torsoLag * 0.65f;
         this.rightArm.zRot = 0.10f + settle * 0.035f;
         this.leftArm.zRot = -0.16f - settle * 0.03f;
+        this.rightArm.xRot = Mth.lerp(armGaitBlend, this.rightArm.xRot, rightArmWalkX);
+        this.leftArm.xRot = Mth.lerp(armGaitBlend, this.leftArm.xRot, leftArmWalkX);
 
         this.rightLeg.xRot = -0.04f + breath * 0.01f;
         this.leftLeg.xRot = 0.05f - breath * 0.008f;
@@ -107,5 +118,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.leftLeg.yRot = torsoLag * 0.12f;
         this.rightLeg.zRot = -0.035f + settle * 0.015f;
         this.leftLeg.zRot = 0.035f - settle * 0.015f;
+        this.rightLeg.xRot = Mth.lerp(gaitBlend, this.rightLeg.xRot, rightLegWalkX);
+        this.leftLeg.xRot = Mth.lerp(gaitBlend, this.leftLeg.xRot, leftLegWalkX);
     }
 }
