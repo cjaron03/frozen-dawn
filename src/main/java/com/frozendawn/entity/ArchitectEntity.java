@@ -157,6 +157,10 @@ public class ArchitectEntity extends Monster {
     private static final int WALK_COMMIT_DEADMAN_TICKS = 8;
     private static final double WALK_COMMIT_PROGRESS_EPSILON = 0.10;
     private static final double WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR = 0.20;
+    private static final double WALK_WAYPOINT_REACH_HORIZONTAL_SQR = 0.64;
+    private static final double WALK_WAYPOINT_REACH_VERTICAL = 1.05;
+    private static final double WALK_AUTO_JUMP_MIN_VERTICAL_DELTA = 0.90;
+    private static final double WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR = 0.90;
     private static final int WALK_TARGET_SHIFT_GRACE_TICKS = 4;
     private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 36.0;
     private static final int WALK_TARGET_SHIFT_VERTICAL = 2;
@@ -1076,6 +1080,15 @@ public class ArchitectEntity extends Monster {
     private boolean advanceCommittedWalkProgress() {
         BlockPos steeringTarget = getCommittedWalkSteeringTarget();
         while (steeringTarget != null) {
+            int furthestReachedIndex = getFurthestReachedCommittedWalkIndex();
+            if (furthestReachedIndex > approachState.committedWalkCorridorIndex) {
+                approachState.committedWalkCorridorIndex = furthestReachedIndex;
+                approachState.committedWalkNoProgressTicks = 0;
+                approachState.committedWalkLastDistSqr = Double.MAX_VALUE;
+                steeringTarget = getCommittedWalkSteeringTarget();
+                continue;
+            }
+
             double distSqr = distanceToWaypointSqr(steeringTarget);
             if (!hasReachedWalkWaypoint(steeringTarget, distSqr)) {
                 return true;
@@ -1109,7 +1122,10 @@ public class ArchitectEntity extends Monster {
         Vec3 lookTarget = getCommittedWalkLookTarget(moveTarget);
         double horizontalDistSqr = (moveTarget.x - getX()) * (moveTarget.x - getX())
                 + (moveTarget.z - getZ()) * (moveTarget.z - getZ());
-        if (steeringTarget.getY() > getY() + 0.1 && horizontalDistSqr <= 1.25 && onGround()) {
+        double verticalDelta = steeringTarget.getY() - getY();
+        if (verticalDelta >= WALK_AUTO_JUMP_MIN_VERTICAL_DELTA
+                && horizontalDistSqr <= WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR
+                && onGround()) {
             getJumpControl().jump();
         }
 
@@ -1594,8 +1610,40 @@ public class ArchitectEntity extends Monster {
         return dx * dx + dz * dz;
     }
 
+    private int getFurthestReachedCommittedWalkIndex() {
+        if (approachState.committedWalkCorridor.isEmpty()) {
+            return approachState.committedWalkCorridorIndex;
+        }
+
+        int startIndex = Math.max(0, Math.min(
+                approachState.committedWalkCorridorIndex,
+                approachState.committedWalkCorridor.size() - 1));
+        int furthest = startIndex;
+        for (int i = startIndex; i < approachState.committedWalkCorridor.size(); i++) {
+            BlockPos candidate = approachState.committedWalkCorridor.get(i);
+            double distSqr = distanceToWaypointSqr(candidate);
+            if (hasReachedWalkWaypoint(candidate, distSqr)) {
+                furthest = i;
+            }
+        }
+        return furthest;
+    }
+
     private boolean hasReachedWalkWaypoint(BlockPos waypoint, double distSqr) {
-        return blockPosition().equals(waypoint);
+        if (blockPosition().equals(waypoint)) {
+            return true;
+        }
+        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
+            return true;
+        }
+
+        double dx = getX() - (waypoint.getX() + 0.5);
+        double dz = getZ() - (waypoint.getZ() + 0.5);
+        double horizontalDistSqr = dx * dx + dz * dz;
+        if (horizontalDistSqr > WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
+            return false;
+        }
+        return Math.abs(getY() - waypoint.getY()) <= WALK_WAYPOINT_REACH_VERTICAL;
     }
 
     void clearWalkNavigationState(boolean stopNavigation) {
