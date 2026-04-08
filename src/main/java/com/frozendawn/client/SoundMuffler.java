@@ -36,28 +36,30 @@ public class SoundMuffler {
 
         SoundInstance original = event.getSound();
         if (original == null) return;
+        ResourceLocation soundLocation = original.getLocation();
+        String soundPath = soundLocation.getPath();
+
+        // All Frozen Dawn mob sounds are immune from ALL sound suppression,
+        // including late-phase vacuum muting.
+        if (isFrozenDawnEntitySound(soundLocation, soundPath)) {
+            return;
+        }
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
-            if (original.getLocation().getPath().startsWith("ambient.eva_")) return;
+            if (soundPath.startsWith("ambient.eva_")) return;
             event.setSound(null);
             return;
         }
 
-        // All Frozen Dawn mob sounds are immune from ALL sound suppression
         SoundSource source = original.getSource();
-        String soundPath = original.getLocation().getPath();
-        if (original.getLocation().getNamespace().equals(FrozenDawn.MOD_ID)
-                && soundPath.startsWith("entity.")) {
-            return; // Always plays at full volume
-        }
 
         // Hollow proximity: distance-based sound suppression within 6 blocks
         // Hollow's own sounds always pass through; everything else fades with distance
-        boolean isHollowSound = original.getLocation().getNamespace().equals(FrozenDawn.MOD_ID)
+        boolean isHollowSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
                 && soundPath.startsWith("entity.hollow.");
 
         if (!isHollowSound && source != SoundSource.MASTER && source != SoundSource.MUSIC) {
@@ -134,5 +136,10 @@ public class SoundMuffler {
         @Override public double getY() { return wrapped.getY(); }
         @Override public double getZ() { return wrapped.getZ(); }
         @Override public Attenuation getAttenuation() { return wrapped.getAttenuation(); }
+    }
+
+    private static boolean isFrozenDawnEntitySound(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.startsWith("entity.");
     }
 }

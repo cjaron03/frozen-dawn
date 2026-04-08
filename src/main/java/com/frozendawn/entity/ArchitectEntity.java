@@ -159,7 +159,8 @@ public class ArchitectEntity extends Monster {
     private static final double WALK_COMMIT_PROGRESS_EPSILON = 0.10;
     private static final double WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR = 0.20;
     private static final double WALK_WAYPOINT_REACH_HORIZONTAL_SQR = 0.64;
-    private static final double WALK_WAYPOINT_REACH_VERTICAL = 1.05;
+    private static final double WALK_WAYPOINT_REACH_UPWARD_VERTICAL = 0.60;
+    private static final double WALK_WAYPOINT_REACH_DOWNWARD_VERTICAL = 1.05;
     private static final double WALK_AUTO_JUMP_MIN_VERTICAL_DELTA = 0.90;
     private static final double WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR = 0.90;
     private static final int WALK_TARGET_SHIFT_GRACE_TICKS = 4;
@@ -1556,6 +1557,7 @@ public class ArchitectEntity extends Monster {
     private Set<BlockPos> collectWalkUnstickBreakCandidates(BlockPos stepPos) {
         BlockPos from = blockPosition();
         Direction toward = getPrimaryHorizontalDirection(from, stepPos);
+        boolean steppingUp = stepPos.getY() > from.getY();
         boolean steppingDown = stepPos.getY() < from.getY();
 
         Set<BlockPos> candidates = new LinkedHashSet<>(10);
@@ -1576,10 +1578,13 @@ public class ArchitectEntity extends Monster {
         }
 
         // Slab/snow transitions can alternate between the same X/Z at Y and Y+1.
-        // Include both lower cells to avoid repeatedly flipping break targets.
-        candidates.add(stepPos.below());
-        if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
-            candidates.add(stepPos.below(2));
+        // Include lower cells for flat/descending moves, but avoid undercutting
+        // support while trying to climb upward.
+        if (!steppingUp) {
+            candidates.add(stepPos.below());
+            if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
+                candidates.add(stepPos.below(2));
+            }
         }
         return candidates;
     }
@@ -1588,7 +1593,7 @@ public class ArchitectEntity extends Monster {
     private BlockPos selectPreferredBreakCandidate(Iterable<BlockPos> candidates, @Nullable BlockPos blockedCandidate) {
         BlockPos fallback = null;
         for (BlockPos candidate : candidates) {
-            if (blockedCandidate != null && blockedCandidate.equals(candidate)) {
+            if (isBlockedUnstickCandidate(candidate, blockedCandidate)) {
                 continue;
             }
             if (!isBreakableBlock(candidate)) {
@@ -1602,6 +1607,18 @@ public class ArchitectEntity extends Monster {
             }
         }
         return fallback;
+    }
+
+    private boolean isBlockedUnstickCandidate(BlockPos candidate, @Nullable BlockPos blockedCandidate) {
+        if (blockedCandidate == null) {
+            return false;
+        }
+        if (candidate.equals(blockedCandidate)) {
+            return true;
+        }
+        return candidate.getX() == blockedCandidate.getX()
+                && candidate.getZ() == blockedCandidate.getZ()
+                && Math.abs(candidate.getY() - blockedCandidate.getY()) <= 1;
     }
 
     private boolean isLastResortBreakBlock(BlockPos pos) {
@@ -1663,9 +1680,10 @@ public class ArchitectEntity extends Monster {
         for (int i = startIndex; i < approachState.committedWalkCorridor.size(); i++) {
             BlockPos candidate = approachState.committedWalkCorridor.get(i);
             double distSqr = distanceToWaypointSqr(candidate);
-            if (hasReachedWalkWaypoint(candidate, distSqr)) {
-                furthest = i;
+            if (!hasReachedWalkWaypoint(candidate, distSqr)) {
+                break;
             }
+            furthest = i;
         }
         return furthest;
     }
@@ -1674,9 +1692,10 @@ public class ArchitectEntity extends Monster {
         if (blockPosition().equals(waypoint)) {
             return true;
         }
-        double verticalDelta = Math.abs(getY() - waypoint.getY());
-        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR
-                && verticalDelta <= WALK_WAYPOINT_REACH_VERTICAL) {
+        if (!isWithinWaypointVerticalReach(waypoint)) {
+            return false;
+        }
+        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
             return true;
         }
 
@@ -1686,7 +1705,15 @@ public class ArchitectEntity extends Monster {
         if (horizontalDistSqr > WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
             return false;
         }
-        return verticalDelta <= WALK_WAYPOINT_REACH_VERTICAL;
+        return isWithinWaypointVerticalReach(waypoint);
+    }
+
+    private boolean isWithinWaypointVerticalReach(BlockPos waypoint) {
+        double verticalDelta = waypoint.getY() - getY();
+        if (verticalDelta > 0.0) {
+            return verticalDelta <= WALK_WAYPOINT_REACH_UPWARD_VERTICAL;
+        }
+        return -verticalDelta <= WALK_WAYPOINT_REACH_DOWNWARD_VERTICAL;
     }
 
     void clearWalkNavigationState(boolean stopNavigation) {

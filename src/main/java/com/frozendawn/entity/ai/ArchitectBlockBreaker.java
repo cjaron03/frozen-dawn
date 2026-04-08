@@ -41,6 +41,7 @@ public class ArchitectBlockBreaker {
     private static final int MIN_BREAK_TICKS = 4;   // Keep soft/dynamic blocks responsive
     private static final int IMMUNE_TEST_TICKS = 40; // 2 seconds before giving up on immune blocks
     private static final double REACH = 4.5;
+    private static final float BREAK_TIME_BALANCE_SCALE = 1.30F;
 
     public ArchitectBlockBreaker(Monster mob) {
         this.mob = mob;
@@ -226,7 +227,7 @@ public class ArchitectBlockBreaker {
                                    Math.max(axeSpeed, handSpeed));
 
         float hardness = state.getDestroySpeed(level, pos);
-        if (hardness <= 0) return 0.1F; // Instant-break blocks
+        if (hardness <= 0) return 0.1F * BREAK_TIME_BALANCE_SCALE; // Instant-break blocks
 
         // getDestroySpeed returns 1.0 for wrong tool, >1.0 for correct
         boolean correctTool = bestSpeed > 1.0F;
@@ -238,7 +239,7 @@ public class ArchitectBlockBreaker {
             baseTime = (hardness * 5.0F) / bestSpeed;
         }
 
-        return Math.max(baseTime, 0.05F);
+        return Math.max(baseTime * BREAK_TIME_BALANCE_SCALE, 0.05F);
     }
 
     private boolean isImmuneBlock(BlockState state) {
