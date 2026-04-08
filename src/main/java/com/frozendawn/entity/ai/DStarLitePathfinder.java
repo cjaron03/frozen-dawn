@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ public class DStarLitePathfinder {
     private static final float IMMEDIATE_BACKTRACK_PENALTY = 0.25f;
     private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
     private static final int MAX_VERTICAL_FALL_DEPTH = 10;
+    private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
 
     // --- Step types returned to the entity ---
     public enum StepType {
@@ -396,7 +398,7 @@ public class DStarLitePathfinder {
 
         BlockState feetState = level.getBlockState(to);
         BlockState headState = level.getBlockState(to.above());
-        BlockState groundState = level.getBlockState(to.below());
+        BlockPos groundPos = to.below();
         boolean feetDoor = isWoodenDoor(feetState);
         boolean headDoor = isWoodenDoor(headState);
         boolean nonDoorSolid = (feetState.isSolid() && !feetDoor) || (headState.isSolid() && !headDoor);
@@ -428,7 +430,7 @@ public class DStarLitePathfinder {
         }
 
         // Scaffold bridge: no ground below
-        if (!groundState.isSolid()) {
+        if (!hasStandableSupport(groundPos, level)) {
             return StepType.SCAFFOLD_BRIDGE;
         }
 
@@ -623,8 +625,7 @@ public class DStarLitePathfinder {
             cost += bc;
         }
 
-        BlockState groundState = level.getBlockState(toPos.below());
-        if (!groundState.isSolid()) {
+        if (!hasStandableSupport(toPos.below(), level)) {
             if (isDangerousBelow(toPos, level)) return INF;
             if (!isWithinBridgeSpan(toPos, level)) return INF;
             cost += BRIDGE_COST;
@@ -636,7 +637,7 @@ public class DStarLitePathfinder {
     private float stepUpCost(int fx, int fy, int fz, int tx, int ty, int tz, Level level) {
         // Step block (at target x/z, from y) must be solid
         BlockPos stepBlock = new BlockPos(tx, fy, tz);
-        if (!level.getBlockState(stepBlock).isSolid()) return INF;
+        if (!hasStandableSupport(stepBlock, level)) return INF;
 
         float cost = BASE_MOVE_COST * 1.5f;
 
@@ -695,14 +696,14 @@ public class DStarLitePathfinder {
             cost += bc;
         }
 
-        BlockState groundState = level.getBlockState(toPos.below());
-        if (!groundState.isSolid()) {
+        if (!hasStandableSupport(toPos.below(), level)) {
             if (isDangerousBelow(toPos, level)) return INF;
             // Check for ground within safe fall distance
             for (int dy = 2; dy <= MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH; dy++) {
-                BlockState below = level.getBlockState(toPos.below(dy));
+                BlockPos belowPos = toPos.below(dy);
+                BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;
-                if (below.isSolid()) {
+                if (hasStandableSupport(belowPos, level)) {
                     return cost + dy * 0.5f;
                 }
             }
@@ -759,13 +760,15 @@ public class DStarLitePathfinder {
 
         if (toState.isAir() || !toState.isSolid()) {
             // Falling
-            BlockState ground = level.getBlockState(toPos.below());
+            BlockPos groundPos = toPos.below();
+            BlockState ground = level.getBlockState(groundPos);
             if (isHazardous(ground)) return INF;
-            if (ground.isSolid()) return BASE_MOVE_COST;
+            if (hasStandableSupport(groundPos, level)) return BASE_MOVE_COST;
             for (int dy = 2; dy <= MAX_VERTICAL_FALL_DEPTH; dy++) {
-                BlockState below = level.getBlockState(toPos.below(dy));
+                BlockPos belowPos = toPos.below(dy);
+                BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;
-                if (below.isSolid()) {
+                if (hasStandableSupport(belowPos, level)) {
                     return BASE_MOVE_COST + dy * 0.5f;
                 }
             }
@@ -830,18 +833,33 @@ public class DStarLitePathfinder {
         return state.isSolid() && !isWoodenDoor(state);
     }
 
+    private boolean hasStandableSupport(BlockPos pos, Level level) {
+        BlockState state = level.getBlockState(pos);
+        if (isWoodenDoor(state)) {
+            return false;
+        }
+        if (state.isFaceSturdy(level, pos, Direction.UP)) {
+            return true;
+        }
+        VoxelShape collisionShape = state.getCollisionShape(level, pos);
+        if (collisionShape.isEmpty()) {
+            return false;
+        }
+        return collisionShape.max(Direction.Axis.Y) >= MIN_STANDABLE_SUPPORT_HEIGHT;
+    }
+
     private boolean isWithinBridgeSpan(BlockPos pos, Level level) {
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             for (int i = 1; i <= MAX_BRIDGE_SPAN; i++) {
                 BlockPos probe = pos.relative(dir, i);
-                if (level.getBlockState(probe).isSolid()
-                        || level.getBlockState(probe.below()).isSolid()) {
+                if (hasStandableSupport(probe, level)
+                        || hasStandableSupport(probe.below(), level)) {
                     return true;
                 }
             }
         }
         for (int dy = 1; dy <= MAX_BRIDGE_SPAN; dy++) {
-            if (level.getBlockState(pos.below(dy)).isSolid()) {
+            if (hasStandableSupport(pos.below(dy), level)) {
                 return true;
             }
         }
@@ -855,9 +873,10 @@ public class DStarLitePathfinder {
 
     private boolean isDangerousBelow(BlockPos pos, Level level) {
         for (int dy = 1; dy <= 3; dy++) {
-            BlockState below = level.getBlockState(pos.below(dy));
+            BlockPos belowPos = pos.below(dy);
+            BlockState below = level.getBlockState(belowPos);
             if (isHazardous(below)) return true;
-            if (below.isSolid()) return false;
+            if (hasStandableSupport(belowPos, level)) return false;
         }
         return false;
     }
