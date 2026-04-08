@@ -63,6 +63,64 @@ final class ArchitectApproachMovementSupport {
         }
     }
 
+    static boolean tickPendingScaffold(
+            ArchitectEntity architect,
+            ArchitectApproachState approachState,
+            ArchitectBlockBreaker blockBreaker
+    ) {
+        if (approachState.scaffoldTarget == null) {
+            return false;
+        }
+
+        approachState.scaffoldDelay--;
+        BlockPos scaffoldTarget = approachState.scaffoldTarget;
+        architect.getLookControl().setLookAt(
+                scaffoldTarget.getX() + 0.5,
+                scaffoldTarget.getY() - 0.5,
+                scaffoldTarget.getZ() + 0.5
+        );
+        if (approachState.scaffoldDelay <= 0) {
+            resolveScaffoldStep(
+                    architect,
+                    approachState,
+                    blockBreaker,
+                    scaffoldTarget);
+            approachState.scaffoldTarget = null;
+        }
+        return true;
+    }
+
+    static boolean tickStepOffLerp(
+            ArchitectEntity architect,
+            ArchitectApproachState approachState
+    ) {
+        if (approachState.stepOffTarget == null) {
+            return false;
+        }
+
+        approachState.stepOffProgress++;
+        double t = Math.min(1.0, (double) approachState.stepOffProgress / ArchitectEntity.STEP_OFF_DURATION);
+        double smooth = 1.0 - (1.0 - t) * (1.0 - t);
+        double lx = approachState.stepOffStart.x
+                + (approachState.stepOffTarget.getX() + 0.5 - approachState.stepOffStart.x) * smooth;
+        double ly = approachState.stepOffStart.y
+                + (approachState.stepOffTarget.getY() - approachState.stepOffStart.y) * smooth;
+        double lz = approachState.stepOffStart.z
+                + (approachState.stepOffTarget.getZ() + 0.5 - approachState.stepOffStart.z) * smooth;
+        architect.setPos(lx, ly, lz);
+        architect.getNavigation().stop();
+        architect.getLookControl().setLookAt(
+                approachState.stepOffTarget.getX() + 0.5,
+                approachState.stepOffTarget.getY(),
+                approachState.stepOffTarget.getZ() + 0.5
+        );
+        if (approachState.stepOffProgress >= ArchitectEntity.STEP_OFF_DURATION) {
+            approachState.stepOffTarget = null;
+            approachState.stepOffStart = null;
+        }
+        return true;
+    }
+
     static boolean isVerticalClimbStep(ArchitectEntity architect, DStarLitePathfinder.NextStep step) {
         BlockPos current = architect.blockPosition();
         BlockPos next = step.pos();
