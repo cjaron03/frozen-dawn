@@ -156,8 +156,9 @@ public class ArchitectEntity extends Monster {
     private static final int WALK_COMMIT_DEADMAN_TICKS = 8;
     private static final double WALK_COMMIT_PROGRESS_EPSILON = 0.10;
     private static final double WALK_COMMIT_DEADMAN_DISPLACEMENT_SQR = 0.20;
-    private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 9.0;
-    private static final int WALK_TARGET_SHIFT_VERTICAL = 1;
+    private static final int WALK_TARGET_SHIFT_GRACE_TICKS = 4;
+    private static final double WALK_TARGET_SHIFT_HORIZONTAL_SQR = 36.0;
+    private static final int WALK_TARGET_SHIFT_VERTICAL = 2;
     private static final int WALK_CORRIDOR_LOOKAHEAD_STEPS = 2;
     private static final int WALK_SPRINT_STRAIGHT_STEPS = 2;
     private static final float WALK_MAX_ROTATE = 35.0F;
@@ -1134,7 +1135,9 @@ public class ArchitectEntity extends Monster {
             return false;
         }
 
-        if (target != null && approachState.committedWalkTargetSnapshot != null) {
+        if (target != null
+                && approachState.committedWalkTargetSnapshot != null
+                && approachState.committedWalkAgeTicks >= WALK_TARGET_SHIFT_GRACE_TICKS) {
             BlockPos targetPos = target.blockPosition();
             if (horizontalDistanceSqr(targetPos, approachState.committedWalkTargetSnapshot) > WALK_TARGET_SHIFT_HORIZONTAL_SQR
                     || Math.abs(targetPos.getY() - approachState.committedWalkTargetSnapshot.getY()) > WALK_TARGET_SHIFT_VERTICAL) {
@@ -1373,6 +1376,18 @@ public class ArchitectEntity extends Monster {
         approachState.unreachableTicks = 0;
         approachState.sprintRequested = shouldSprintDirectApproach(target);
         getNavigation().moveTo(target, getApproachTravelSpeed());
+        getLookControl().setLookAt(target, 30f, 30f);
+    }
+
+    void executeFallbackApproachChaseWhilePlanning(LivingEntity target) {
+        clearCommittedWalk();
+        resetWalkStuckTracker();
+        approachState.sprintRequested = false;
+        if (isPathRecalcReady() || !getNavigation().isInProgress()) {
+            getNavigation().moveTo(target, 0.95);
+            setPathRecalcCooldown(8);
+        }
+        decrementPathRecalcCooldown();
         getLookControl().setLookAt(target, 30f, 30f);
     }
 

@@ -154,6 +154,7 @@ final class ArchitectApproachController {
         if (!approachState.dstar.isSearchComplete()) {
             approachState.dstar.computePartial(500, architect.level());
             if (!approachState.dstar.isSearchComplete()) {
+                architect.executeFallbackApproachChaseWhilePlanning(target);
                 return;
             }
         }
@@ -162,6 +163,7 @@ final class ArchitectApproachController {
         if (!approachState.dstar.isSearchComplete()) {
             approachState.dstar.computePartial(200, architect.level());
             if (!approachState.dstar.isSearchComplete()) {
+                architect.executeFallbackApproachChaseWhilePlanning(target);
                 return;
             }
         }
@@ -200,6 +202,9 @@ final class ArchitectApproachController {
                 approachState.dstar.computePartial(1200, architect.level());
                 approachState.unreachableTicks = 0;
                 LOGGER.info("[Architect] D* Lite hard refresh after prolonged UNREACHABLE");
+            }
+            if (!blockBreaker.hasTarget()) {
+                architect.executeFallbackApproachChaseWhilePlanning(target);
             }
             return;
         }
