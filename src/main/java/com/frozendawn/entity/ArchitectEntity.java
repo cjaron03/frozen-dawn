@@ -8,6 +8,13 @@ import com.frozendawn.entity.architect.ArchitectFxController;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
 import com.frozendawn.entity.architect.ArchitectPersistence;
 import com.frozendawn.entity.architect.ArchitectRenderFlags;
+import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
+import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
+import com.frozendawn.entity.architect.ArchitectWalkBreakPlanner;
+import com.frozendawn.entity.architect.ArchitectWalkCorridorState;
+import com.frozendawn.entity.architect.ArchitectWalkMotionPlanner;
+import com.frozendawn.entity.architect.ArchitectWalkProgress;
+import com.frozendawn.entity.architect.ArchitectWalkTracking;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
@@ -15,7 +22,6 @@ import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.event.WorldTickHandler;
-import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
@@ -34,7 +40,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.DifficultyInstance;
@@ -55,11 +60,7 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -839,100 +840,44 @@ public class ArchitectEntity extends Monster {
     }
 
     void trackWalkStep(BlockPos stepPos) {
-        BlockPos from = blockPosition();
-        boolean repeated = stepPos.equals(approachState.lastWalkStepPos) && from.equals(approachState.lastWalkFromPos);
-        // Detect A<->B ping-pong as stuck too, not just exact same edge.
-        boolean pingPong = stepPos.equals(approachState.lastWalkFromPos) && from.equals(approachState.lastWalkStepPos);
-        double horizontalMotionSqr = getDeltaMovement().x * getDeltaMovement().x
-                + getDeltaMovement().z * getDeltaMovement().z;
-        boolean actuallyStalled = onGround() && horizontalMotionSqr < 0.0025;
-        boolean lowProgress = onGround() && horizontalMotionSqr < 0.04;
-        if (repeated && actuallyStalled) {
-            approachState.walkStuckTicks++;
-        } else if (pingPong && lowProgress) {
-            approachState.walkStuckTicks += 2;
-        } else if (pingPong && onGround()) {
-            approachState.walkStuckTicks++;
-        } else {
-            approachState.walkStuckTicks = 0;
-        }
-        approachState.lastWalkStepPos = stepPos.immutable();
-        approachState.lastWalkFromPos = from.immutable();
+        ArchitectWalkTracking.trackWalkStep(
+                approachState,
+                blockPosition(),
+                stepPos,
+                getDeltaMovement(),
+                onGround());
     }
 
     void resetWalkStuckTracker() {
-        approachState.walkStuckTicks = 0;
-        approachState.lastWalkStepPos = null;
-        approachState.lastWalkFromPos = null;
+        ArchitectWalkTracking.resetWalkStuckTracker(approachState);
     }
 
     void recordWalkCellHistory() {
-        BlockPos current = blockPosition();
-        if (approachState.currentWalkCellPos == null) {
-            approachState.currentWalkCellPos = current.immutable();
-            return;
-        }
-        if (!current.equals(approachState.currentWalkCellPos)) {
-            approachState.previousWalkCellPos = approachState.currentWalkCellPos;
-            approachState.currentWalkCellPos = current.immutable();
-        }
+        ArchitectWalkTracking.recordWalkCellHistory(approachState, blockPosition());
     }
 
     private void resetWalkCellHistory() {
-        approachState.currentWalkCellPos = null;
-        approachState.previousWalkCellPos = null;
-        approachState.lastCompletedWalkWaypointPos = null;
-        approachState.lastCompletedWalkBacktrackPos = null;
+        ArchitectWalkTracking.resetWalkCellHistory(approachState);
     }
 
     void resetUnstickBreakTracker() {
-        approachState.lastUnstickBreakCandidate = null;
-        approachState.repeatedUnstickBreakAttempts = 0;
+        ArchitectWalkTracking.resetUnstickBreakTracker(approachState);
     }
 
     private void commitWalkStep(List<BlockPos> corridorNodes, @Nullable LivingEntity target) {
-        if (corridorNodes.isEmpty()) {
-            return;
-        }
-
-        approachState.committedWalkCorridor.clear();
-        for (BlockPos node : corridorNodes) {
-            approachState.committedWalkCorridor.add(node.immutable());
-        }
-        approachState.committedWalkCorridorIndex = 0;
-        approachState.committedWalkFirstStepPos = approachState.committedWalkCorridor.get(0);
-        approachState.committedWalkWaypoint = approachState.committedWalkCorridor.get(approachState.committedWalkCorridor.size() - 1);
-        approachState.committedWalkStartPos = blockPosition().immutable();
-        approachState.committedWalkBacktrackPos = approachState.pendingWalkBacktrackPos != null
-                ? approachState.pendingWalkBacktrackPos.immutable()
-                : approachState.committedWalkStartPos;
-        approachState.committedWalkStartVec = position();
-        approachState.committedWalkTargetSnapshot = target != null ? target.blockPosition().immutable() : null;
-        approachState.committedWalkTicks = WALK_COMMIT_TICKS;
-        approachState.committedWalkAgeTicks = 0;
-        approachState.committedWalkNoProgressTicks = 0;
-        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
-        approachState.committedWalkLastDistSqr = steeringTarget != null
-                ? distanceToWaypointSqr(steeringTarget)
-                : Double.MAX_VALUE;
-        approachState.pendingWalkBacktrackPos = null;
+        ArchitectWalkCorridorState.commit(
+                approachState,
+                corridorNodes,
+                blockPosition(),
+                position(),
+                target != null ? target.blockPosition() : null,
+                WALK_COMMIT_TICKS,
+                waypoint -> ArchitectWalkProgress.distanceToWaypointSqr(getX(), getY(), getZ(), waypoint));
         resetWalkStuckTracker();
     }
 
     void clearCommittedWalk() {
-        approachState.committedWalkWaypoint = null;
-        approachState.committedWalkFirstStepPos = null;
-        approachState.committedWalkStartPos = null;
-        approachState.committedWalkBacktrackPos = null;
-        approachState.committedWalkTargetSnapshot = null;
-        approachState.committedWalkStartVec = null;
-        approachState.committedWalkCorridor.clear();
-        approachState.committedWalkCorridorIndex = 0;
-        approachState.committedWalkTicks = 0;
-        approachState.committedWalkAgeTicks = 0;
-        approachState.committedWalkNoProgressTicks = 0;
-        approachState.committedWalkLastDistSqr = Double.MAX_VALUE;
-        approachState.pendingWalkBacktrackPos = null;
+        ArchitectWalkCorridorState.clear(approachState);
     }
 
     private void invalidateCommittedWalk(String reason, @Nullable LivingEntity target) {
@@ -948,68 +893,7 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     BlockPos getCommittedWalkSteeringTarget() {
-        if (approachState.committedWalkCorridor.isEmpty()) {
-            return approachState.committedWalkWaypoint;
-        }
-        if (approachState.committedWalkCorridorIndex < 0) {
-            approachState.committedWalkCorridorIndex = 0;
-        }
-        if (approachState.committedWalkCorridorIndex >= approachState.committedWalkCorridor.size()) {
-            approachState.committedWalkCorridorIndex = approachState.committedWalkCorridor.size() - 1;
-        }
-        return approachState.committedWalkCorridor.get(approachState.committedWalkCorridorIndex);
-    }
-
-    private Vec3 getCommittedWalkMoveTarget(BlockPos steeringTarget) {
-        BlockPos moveTarget = steeringTarget;
-        if (!approachState.committedWalkCorridor.isEmpty()) {
-            int corridorIndex = Math.max(0, Math.min(
-                    approachState.committedWalkCorridorIndex,
-                    approachState.committedWalkCorridor.size() - 1));
-            BlockPos cursor = steeringTarget;
-            Direction runDirection = null;
-            int lookaheadSteps = 0;
-
-            for (int i = corridorIndex + 1;
-                 i < approachState.committedWalkCorridor.size() && lookaheadSteps < WALK_CORRIDOR_LOOKAHEAD_STEPS;
-                 i++) {
-                BlockPos candidate = approachState.committedWalkCorridor.get(i);
-                if (candidate.getY() != cursor.getY()) {
-                    break;
-                }
-
-                Direction segmentDirection = getPrimaryHorizontalDirection(cursor, candidate);
-                if (segmentDirection == null) {
-                    break;
-                }
-
-                if (runDirection == null) {
-                    runDirection = segmentDirection;
-                } else if (segmentDirection != runDirection) {
-                    break;
-                }
-
-                moveTarget = candidate;
-                cursor = candidate;
-                lookaheadSteps++;
-            }
-        }
-
-        return new Vec3(
-                moveTarget.getX() + 0.5,
-                steeringTarget.getY(),
-                moveTarget.getZ() + 0.5);
-    }
-
-    private Vec3 getCommittedWalkLookTarget(Vec3 moveTarget) {
-        Vec3 horizontalDelta = new Vec3(moveTarget.x - getX(), 0.0, moveTarget.z - getZ());
-        if (horizontalDelta.lengthSqr() < 1.0E-4) {
-            return new Vec3(getX(), getEyeY(), getZ());
-        }
-
-        Vec3 forward = horizontalDelta.normalize().scale(Math.min(1.25, horizontalDelta.length()));
-        double lookY = getEyeY() + Mth.clamp(moveTarget.y - getY(), -0.15, 0.35);
-        return new Vec3(getX() + forward.x, lookY, getZ() + forward.z);
+        return ArchitectWalkCorridorState.getSteeringTarget(approachState);
     }
 
     private boolean shouldSprintRetreat(@Nullable LivingEntity target) {
@@ -1080,62 +964,41 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean advanceCommittedWalkProgress() {
-        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
-        while (steeringTarget != null) {
-            int furthestReachedIndex = getFurthestReachedCommittedWalkIndex();
-            if (furthestReachedIndex > approachState.committedWalkCorridorIndex) {
-                approachState.committedWalkCorridorIndex = furthestReachedIndex;
-                approachState.committedWalkNoProgressTicks = 0;
-                approachState.committedWalkLastDistSqr = Double.MAX_VALUE;
-                steeringTarget = getCommittedWalkSteeringTarget();
-                continue;
-            }
-
-            double distSqr = distanceToWaypointSqr(steeringTarget);
-            if (!hasReachedWalkWaypoint(steeringTarget, distSqr)) {
-                return true;
-            }
-
-            if (approachState.committedWalkCorridorIndex < approachState.committedWalkCorridor.size() - 1) {
-                approachState.committedWalkCorridorIndex++;
-                approachState.committedWalkNoProgressTicks = 0;
-                approachState.committedWalkLastDistSqr = Double.MAX_VALUE;
-                steeringTarget = getCommittedWalkSteeringTarget();
-                continue;
-            }
-
-            if (approachState.committedWalkWaypoint != null) {
-                approachState.lastCompletedWalkWaypointPos = approachState.committedWalkWaypoint.immutable();
-            }
-            approachState.lastCompletedWalkBacktrackPos = approachState.committedWalkBacktrackPos != null
-                    ? approachState.committedWalkBacktrackPos.immutable()
-                    : approachState.committedWalkStartPos != null ? approachState.committedWalkStartPos.immutable() : null;
-            clearCommittedWalk();
-            return false;
-        }
-        return false;
+        return ArchitectWalkProgress.advanceCommittedWalkProgress(
+                approachState,
+                blockPosition(),
+                getX(),
+                getY(),
+                getZ(),
+                WALK_WAYPOINT_REACH_HORIZONTAL_SQR,
+                WALK_WAYPOINT_REACH_UPWARD_VERTICAL,
+                WALK_WAYPOINT_REACH_DOWNWARD_VERTICAL);
     }
 
     private boolean continueCommittedWalk() {
-        BlockPos steeringTarget = getCommittedWalkSteeringTarget();
-        if (steeringTarget == null || approachState.committedWalkTicks <= 0) return false;
-
-        Vec3 moveTarget = getCommittedWalkMoveTarget(steeringTarget);
-        Vec3 lookTarget = getCommittedWalkLookTarget(moveTarget);
-        double horizontalDistSqr = (moveTarget.x - getX()) * (moveTarget.x - getX())
-                + (moveTarget.z - getZ()) * (moveTarget.z - getZ());
-        double verticalDelta = steeringTarget.getY() - getY();
-        if (verticalDelta >= WALK_AUTO_JUMP_MIN_VERTICAL_DELTA
-                && horizontalDistSqr <= WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR
-                && onGround()) {
+        ArchitectWalkMotionPlanner.MotionStep motion = ArchitectWalkMotionPlanner.planCommittedWalkStep(
+                approachState,
+                getX(),
+                getY(),
+                getZ(),
+                getEyeY(),
+                onGround(),
+                WALK_CORRIDOR_LOOKAHEAD_STEPS,
+                WALK_AUTO_JUMP_MIN_VERTICAL_DELTA,
+                WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR,
+                this::getPrimaryHorizontalDirection);
+        if (motion == null) {
+            return false;
+        }
+        if (motion.shouldJump()) {
             getJumpControl().jump();
         }
 
-        approachState.committedWalkTicks--;
-        approachState.committedWalkAgeTicks++;
         // Follow D* corridors with raw MoveControl so edge/scaffold approach cells
         // do not get vetoed by vanilla navigation before the scaffold action can fire.
         getNavigation().stop();
+        Vec3 moveTarget = motion.moveTarget();
+        Vec3 lookTarget = motion.lookTarget();
         getMoveControl().setWantedPosition(moveTarget.x, moveTarget.y, moveTarget.z, getApproachTravelSpeed());
         getLookControl().setLookAt(lookTarget.x, lookTarget.y, lookTarget.z, 40f, 30f);
         return true;
@@ -1161,7 +1024,8 @@ public class ArchitectEntity extends Monster {
                 && approachState.committedWalkTargetSnapshot != null
                 && approachState.committedWalkAgeTicks >= WALK_TARGET_SHIFT_GRACE_TICKS) {
             BlockPos targetPos = target.blockPosition();
-            if (horizontalDistanceSqr(targetPos, approachState.committedWalkTargetSnapshot) > WALK_TARGET_SHIFT_HORIZONTAL_SQR
+            if (ArchitectWalkProgress.horizontalDistanceSqr(targetPos, approachState.committedWalkTargetSnapshot)
+                    > WALK_TARGET_SHIFT_HORIZONTAL_SQR
                     || Math.abs(targetPos.getY() - approachState.committedWalkTargetSnapshot.getY()) > WALK_TARGET_SHIFT_VERTICAL) {
                 invalidateCommittedWalk("TARGET_SHIFT", target);
                 return false;
@@ -1173,15 +1037,7 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     BlockPos getImmediateBacktrackPos() {
-        BlockPos current = blockPosition();
-        if (approachState.lastCompletedWalkWaypointPos != null
-                && approachState.lastCompletedWalkBacktrackPos != null
-                && current.equals(approachState.lastCompletedWalkWaypointPos)) {
-            return approachState.lastCompletedWalkBacktrackPos;
-        }
-        if (approachState.currentWalkCellPos == null || approachState.previousWalkCellPos == null) return null;
-        if (!current.equals(approachState.currentWalkCellPos)) return null;
-        return approachState.previousWalkCellPos;
+        return ArchitectWalkCorridorState.getImmediateBacktrackPos(approachState, blockPosition());
     }
 
     boolean tryContinueCommittedWalk(@Nullable LivingEntity target) {
@@ -1202,7 +1058,7 @@ public class ArchitectEntity extends Monster {
             return false;
         }
 
-        double distSqr = distanceToWaypointSqr(steeringTarget);
+        double distSqr = ArchitectWalkProgress.distanceToWaypointSqr(getX(), getY(), getZ(), steeringTarget);
         if (distSqr + WALK_COMMIT_PROGRESS_EPSILON < approachState.committedWalkLastDistSqr) {
             approachState.committedWalkLastDistSqr = distSqr;
             approachState.committedWalkNoProgressTicks = 0;
@@ -1301,7 +1157,14 @@ public class ArchitectEntity extends Monster {
                 ? approachState.lastUnstickBreakCandidate
                 : null;
 
-        BlockPos candidate = findWalkUnstickBreakCandidate(stepPos, blockedCandidate);
+        BlockPos from = blockPosition();
+        Direction toward = getPrimaryHorizontalDirection(from, stepPos);
+        Set<BlockPos> immediateCandidates = ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, stepPos, toward);
+        BlockPos candidate = ArchitectWalkBreakPlanner.selectPreferredBreakCandidate(
+                immediateCandidates,
+                blockedCandidate,
+                this::isBreakableBlock,
+                this::isLastResortBreakBlock);
         if (candidate != null) {
             if (candidate.equals(approachState.lastUnstickBreakCandidate)) {
                 approachState.repeatedUnstickBreakAttempts++;
@@ -1316,8 +1179,10 @@ public class ArchitectEntity extends Monster {
 
         if (!approachState.committedWalkCorridor.isEmpty()) {
             int fromIndex = Math.max(0, Math.min(approachState.committedWalkCorridorIndex, approachState.committedWalkCorridor.size()));
-            BlockPos corridorBreakTarget = findWalkCorridorBreakTarget(
-                    approachState.committedWalkCorridor.subList(fromIndex, approachState.committedWalkCorridor.size()));
+            BlockPos corridorBreakTarget = ArchitectWalkBreakPlanner.findCorridorBreakTarget(
+                    approachState.committedWalkCorridor.subList(fromIndex, approachState.committedWalkCorridor.size()),
+                    this::isBreakableBlock,
+                    this::isLastResortBreakBlock);
             if (corridorBreakTarget != null
                     && (blockedCandidate == null || !blockedCandidate.equals(corridorBreakTarget))) {
                 if (corridorBreakTarget.equals(approachState.lastUnstickBreakCandidate)) {
@@ -1365,7 +1230,10 @@ public class ArchitectEntity extends Monster {
             handleReverseOnlyWalkCorridor(stepPos, target);
             return;
         }
-        BlockPos corridorBreakTarget = findWalkCorridorBreakTarget(corridorNodes);
+        BlockPos corridorBreakTarget = ArchitectWalkBreakPlanner.findCorridorBreakTarget(
+                corridorNodes,
+                this::isBreakableBlock,
+                this::isLastResortBreakBlock);
         if (corridorBreakTarget != null) {
             startWalkCorridorBreak(corridorBreakTarget);
             return;
@@ -1385,11 +1253,11 @@ public class ArchitectEntity extends Monster {
         if (target == null || blockBreaker.hasTarget() || !hasLineOfSight(target)) {
             return false;
         }
-        if (horizontalDistanceTo(target) > DIRECT_APPROACH_PATH_HORIZONTAL_RANGE
-                || verticalDistanceTo(target) > DIRECT_APPROACH_PATH_VERTICAL_RANGE) {
+        if (ArchitectMeleeEngagement.horizontalDistanceTo(this, target) > DIRECT_APPROACH_PATH_HORIZONTAL_RANGE
+                || ArchitectMeleeEngagement.verticalDistanceTo(this, target) > DIRECT_APPROACH_PATH_VERTICAL_RANGE) {
             return false;
         }
-        return hasCleanReachableApproachPath(target);
+        return ArchitectMeleeEngagement.hasCleanReachableApproachPath(getNavigation(), target);
     }
 
     void executeDirectApproachChase(LivingEntity target) {
@@ -1402,39 +1270,32 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean hasCleanReachableApproachPath(LivingEntity target) {
-        Path path = getNavigation().createPath(target, 1);
-        if (path == null || !path.canReach()) {
-            return false;
-        }
-        for (int i = 0; i < path.getNodeCount(); i++) {
-            if (path.getNode(i).type == PathType.BLOCKED) {
-                return false;
-            }
-        }
-        return true;
+        return ArchitectMeleeEngagement.hasCleanReachableApproachPath(getNavigation(), target);
     }
 
     private boolean canStartMelee(LivingEntity target) {
-        if (!hasLineOfSight(target) || !isTargetWithinMeleeEngageGeometry(target)) {
-            return false;
-        }
-        if (horizontalDistanceTo(target) <= 2.25 && verticalDistanceTo(target) <= 1.25) {
-            return true;
-        }
-        return hasCleanReachableApproachPath(target);
+        return ArchitectMeleeEngagement.canStartMelee(
+                this,
+                target,
+                hasLineOfSight(target),
+                getNavigation(),
+                MELEE_ENGAGE_HORIZONTAL_RANGE,
+                MELEE_ENGAGE_VERTICAL_RANGE,
+                2.25,
+                1.25);
     }
 
     private boolean canCommitToMelee(LivingEntity target) {
-        if (!isTargetWithinMeleeCommitGeometry(target)) {
-            return false;
-        }
-        if (!hasLineOfSight(target) && distanceTo(target) >= MELEE_COMMIT_LOS_GRACE_RANGE) {
-            return false;
-        }
-        if (horizontalDistanceTo(target) <= 2.25 && verticalDistanceTo(target) <= 1.25) {
-            return true;
-        }
-        return hasCleanReachableApproachPath(target);
+        return ArchitectMeleeEngagement.canCommitToMelee(
+                this,
+                target,
+                hasLineOfSight(target),
+                getNavigation(),
+                MELEE_COMMIT_HORIZONTAL_RANGE,
+                MELEE_COMMIT_VERTICAL_RANGE,
+                MELEE_COMMIT_LOS_GRACE_RANGE,
+                2.25,
+                1.25);
     }
 
     private List<BlockPos> buildWalkCorridorNodes(BlockPos startPos, DStarLitePathfinder.NextStep firstStep) {
@@ -1508,7 +1369,10 @@ public class ArchitectEntity extends Monster {
 
     private boolean shouldContinueWalkObstructionBreak(DStarLitePathfinder.NextStep step, BlockPos breakTarget) {
         if (isBreakableBlock(breakTarget)) {
-            Set<BlockPos> immediateCandidates = collectWalkUnstickBreakCandidates(step.pos());
+            BlockPos from = blockPosition();
+            Direction toward = getPrimaryHorizontalDirection(from, step.pos());
+            Set<BlockPos> immediateCandidates =
+                    ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, step.pos(), toward);
             if (immediateCandidates.contains(breakTarget)) {
                 return true;
             }
@@ -1518,107 +1382,11 @@ public class ArchitectEntity extends Monster {
         if (corridorNodes.isEmpty()) {
             corridorNodes = List.of(step.pos().immutable());
         }
-        BlockPos corridorCandidate = findWalkCorridorBreakTarget(corridorNodes);
+        BlockPos corridorCandidate = ArchitectWalkBreakPlanner.findCorridorBreakTarget(
+                corridorNodes,
+                this::isBreakableBlock,
+                this::isLastResortBreakBlock);
         return corridorCandidate != null && breakTarget.equals(corridorCandidate);
-    }
-
-    @Nullable
-    private BlockPos findWalkUnstickBreakCandidate(BlockPos stepPos, @Nullable BlockPos blockedCandidate) {
-        Set<BlockPos> candidates = collectWalkUnstickBreakCandidates(stepPos);
-        return selectPreferredBreakCandidate(candidates, blockedCandidate);
-    }
-
-    @Nullable
-    private BlockPos findWalkCorridorBreakTarget(List<BlockPos> corridorNodes) {
-        BlockPos fallback = null;
-        for (BlockPos node : corridorNodes) {
-            if (isBreakableBlock(node)) {
-                if (!isLastResortBreakBlock(node)) {
-                    return node.immutable();
-                }
-                if (fallback == null) {
-                    fallback = node.immutable();
-                }
-            }
-
-            BlockPos headroom = node.above();
-            if (isBreakableBlock(headroom)) {
-                if (!isLastResortBreakBlock(headroom)) {
-                    return headroom.immutable();
-                }
-                if (fallback == null) {
-                    fallback = headroom.immutable();
-                }
-            }
-        }
-        return fallback;
-    }
-
-    private Set<BlockPos> collectWalkUnstickBreakCandidates(BlockPos stepPos) {
-        BlockPos from = blockPosition();
-        Direction toward = getPrimaryHorizontalDirection(from, stepPos);
-        boolean steppingUp = stepPos.getY() > from.getY();
-        boolean steppingDown = stepPos.getY() < from.getY();
-
-        Set<BlockPos> candidates = new LinkedHashSet<>(10);
-        candidates.add(from.above());
-        if (toward != null) {
-            BlockPos front = from.relative(toward);
-            candidates.add(front);
-            candidates.add(front.above());
-            if (steppingDown) {
-                candidates.add(front.above().above());
-            }
-        }
-        if (Math.abs(stepPos.getX() - from.getX()) <= 1
-                && Math.abs(stepPos.getY() - from.getY()) <= 1
-                && Math.abs(stepPos.getZ() - from.getZ()) <= 1) {
-            candidates.add(stepPos);
-            candidates.add(stepPos.above());
-        }
-
-        // Slab/snow transitions can alternate between the same X/Z at Y and Y+1.
-        // Include lower cells for flat/descending moves, but avoid undercutting
-        // support while trying to climb upward.
-        if (!steppingUp) {
-            candidates.add(stepPos.below());
-            if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
-                candidates.add(stepPos.below(2));
-            }
-        }
-        return candidates;
-    }
-
-    @Nullable
-    private BlockPos selectPreferredBreakCandidate(Iterable<BlockPos> candidates, @Nullable BlockPos blockedCandidate) {
-        BlockPos fallback = null;
-        for (BlockPos candidate : candidates) {
-            if (isBlockedUnstickCandidate(candidate, blockedCandidate)) {
-                continue;
-            }
-            if (!isBreakableBlock(candidate)) {
-                continue;
-            }
-            if (!isLastResortBreakBlock(candidate)) {
-                return candidate.immutable();
-            }
-            if (fallback == null) {
-                fallback = candidate.immutable();
-            }
-        }
-        return fallback;
-    }
-
-    private boolean isBlockedUnstickCandidate(BlockPos candidate, @Nullable BlockPos blockedCandidate) {
-        if (blockedCandidate == null) {
-            return false;
-        }
-        if (candidate.equals(blockedCandidate)) {
-            return true;
-        }
-        return candidate.getX() == blockedCandidate.getX()
-                && candidate.getZ() == blockedCandidate.getZ()
-                && Math.abs(candidate.getY() - blockedCandidate.getY()) <= 1;
     }
 
     private boolean isLastResortBreakBlock(BlockPos pos) {
@@ -1655,67 +1423,6 @@ public class ArchitectEntity extends Monster {
         return handleWalkStuck(stepPos, target);
     }
 
-    private double distanceToWaypointSqr(BlockPos waypoint) {
-        return position().distanceToSqr(
-                waypoint.getX() + 0.5,
-                waypoint.getY(),
-                waypoint.getZ() + 0.5);
-    }
-
-    private double horizontalDistanceSqr(BlockPos from, BlockPos to) {
-        double dx = from.getX() - to.getX();
-        double dz = from.getZ() - to.getZ();
-        return dx * dx + dz * dz;
-    }
-
-    private int getFurthestReachedCommittedWalkIndex() {
-        if (approachState.committedWalkCorridor.isEmpty()) {
-            return approachState.committedWalkCorridorIndex;
-        }
-
-        int startIndex = Math.max(0, Math.min(
-                approachState.committedWalkCorridorIndex,
-                approachState.committedWalkCorridor.size() - 1));
-        int furthest = startIndex;
-        for (int i = startIndex; i < approachState.committedWalkCorridor.size(); i++) {
-            BlockPos candidate = approachState.committedWalkCorridor.get(i);
-            double distSqr = distanceToWaypointSqr(candidate);
-            if (!hasReachedWalkWaypoint(candidate, distSqr)) {
-                break;
-            }
-            furthest = i;
-        }
-        return furthest;
-    }
-
-    private boolean hasReachedWalkWaypoint(BlockPos waypoint, double distSqr) {
-        if (blockPosition().equals(waypoint)) {
-            return true;
-        }
-        if (!isWithinWaypointVerticalReach(waypoint)) {
-            return false;
-        }
-        if (distSqr <= WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
-            return true;
-        }
-
-        double dx = getX() - (waypoint.getX() + 0.5);
-        double dz = getZ() - (waypoint.getZ() + 0.5);
-        double horizontalDistSqr = dx * dx + dz * dz;
-        if (horizontalDistSqr > WALK_WAYPOINT_REACH_HORIZONTAL_SQR) {
-            return false;
-        }
-        return isWithinWaypointVerticalReach(waypoint);
-    }
-
-    private boolean isWithinWaypointVerticalReach(BlockPos waypoint) {
-        double verticalDelta = waypoint.getY() - getY();
-        if (verticalDelta > 0.0) {
-            return verticalDelta <= WALK_WAYPOINT_REACH_UPWARD_VERTICAL;
-        }
-        return -verticalDelta <= WALK_WAYPOINT_REACH_DOWNWARD_VERTICAL;
-    }
-
     void clearWalkNavigationState(boolean stopNavigation) {
         if (stopNavigation) {
             getNavigation().stop();
@@ -1736,83 +1443,30 @@ public class ArchitectEntity extends Monster {
     }
 
     void keepNearbyWoodenDoorsOpen() {
-        keepDoorOpenNear(blockPosition());
-        keepDoorOpenNear(blockPosition().above());
+        ArchitectBlockEnvironment.keepNearbyWoodenDoorsOpen(this);
     }
 
     void keepDoorOpenNear(BlockPos center) {
-        openWoodenDoorAt(center);
-        for (Direction dir : Direction.Plane.HORIZONTAL) {
-            openWoodenDoorAt(center.relative(dir));
-        }
-    }
-
-    private void openWoodenDoorAt(BlockPos pos) {
-        BlockState state = level().getBlockState(pos);
-        if (!(state.getBlock() instanceof DoorBlock) || !state.is(BlockTags.WOODEN_DOORS)) return;
-
-        // Normalize to lower half so both halves stay in sync.
-        if (state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER) {
-            pos = pos.below();
-            state = level().getBlockState(pos);
-            if (!(state.getBlock() instanceof DoorBlock) || !state.is(BlockTags.WOODEN_DOORS)) return;
-        }
-
-        if (!state.getValue(DoorBlock.OPEN)) {
-            ((DoorBlock) state.getBlock()).setOpen(this, level(), state, pos, true);
-        }
+        ArchitectBlockEnvironment.keepDoorOpenNear(this, center);
     }
 
     private boolean isPathObstructingState(BlockState state, BlockPos pos) {
-        if (state.is(BlockTags.WOODEN_DOORS)) {
-            return false;
-        }
-        return ArchitectBreakPolicy.isObstructiveForArchitect(state, level(), pos);
+        return ArchitectBlockEnvironment.isPathObstructingState(level(), state, pos);
     }
 
     boolean isBreakableBlock(BlockPos pos) {
-        if (scaffoldIce.contains(pos)) return false; // Don't break our own ice
-        BlockState state = level().getBlockState(pos);
-        if (state.is(BlockTags.WOODEN_DOORS)) return false; // Prefer opening wooden doors over mining them
-        if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level(), pos)) return false;
-        float hardness = state.getDestroySpeed(level(), pos);
-        return hardness >= 0 && hardness < 25.0f
-                && !state.is(ModBlocks.ACHERONITE_BLOCK.get())
-                && !state.is(ModBlocks.TRANSPONDER.get())
-                && !wouldExposeHazard(pos);
-    }
-
-    private boolean wouldExposeHazard(BlockPos breakPos) {
-        for (Direction dir : Direction.values()) {
-            BlockState adjacent = level().getBlockState(breakPos.relative(dir));
-            if (isHazardousState(adjacent)) return true;
-        }
-        return false;
-    }
-
-    private boolean isHazardousState(BlockState state) {
-        return state.is(Blocks.LAVA)
-                || state.getFluidState().is(FluidTags.LAVA)
-                || state.is(Blocks.FIRE)
-                || state.is(Blocks.SOUL_FIRE);
+        return ArchitectBlockEnvironment.isBreakableBlock(level(), pos, scaffoldIce);
     }
 
     void applyCombatHorizontalMotion(double x, double z) {
-        double scale = onGround() ? 1.0 : MELEE_AIR_CONTROL_SCALE;
-        Vec3 desired = new Vec3(x * scale, 0, z * scale);
-        double desiredLen = desired.horizontalDistance();
-        if (desiredLen > MELEE_MAX_HORIZONTAL_SPEED) {
-            desired = desired.scale(MELEE_MAX_HORIZONTAL_SPEED / desiredLen);
-        }
-
         Vec3 current = getDeltaMovement();
-        Vec3 currentHorizontal = new Vec3(current.x, 0, current.z).scale(0.35);
-        Vec3 blended = currentHorizontal.add(desired.scale(0.65));
-        double blendedLen = blended.horizontalDistance();
-        if (blendedLen > MELEE_MAX_HORIZONTAL_SPEED) {
-            blended = blended.scale(MELEE_MAX_HORIZONTAL_SPEED / blendedLen);
-        }
-
+        Vec3 blended = ArchitectMeleeEngagement.blendCombatHorizontalMotion(
+                current,
+                onGround(),
+                x,
+                z,
+                MELEE_AIR_CONTROL_SCALE,
+                MELEE_MAX_HORIZONTAL_SPEED);
         setDeltaMovement(blended.x, current.y, blended.z);
     }
 
@@ -1855,23 +1509,27 @@ public class ArchitectEntity extends Monster {
     }
 
     double horizontalDistanceTo(LivingEntity target) {
-        double dx = getX() - target.getX();
-        double dz = getZ() - target.getZ();
-        return Math.sqrt(dx * dx + dz * dz);
+        return ArchitectMeleeEngagement.horizontalDistanceTo(this, target);
     }
 
     double verticalDistanceTo(LivingEntity target) {
-        return Math.abs(getY() - target.getY());
+        return ArchitectMeleeEngagement.verticalDistanceTo(this, target);
     }
 
     private boolean isTargetWithinMeleeEngageGeometry(LivingEntity target) {
-        return horizontalDistanceTo(target) <= MELEE_ENGAGE_HORIZONTAL_RANGE
-                && verticalDistanceTo(target) <= MELEE_ENGAGE_VERTICAL_RANGE;
+        return ArchitectMeleeEngagement.isWithinMeleeGeometry(
+                this,
+                target,
+                MELEE_ENGAGE_HORIZONTAL_RANGE,
+                MELEE_ENGAGE_VERTICAL_RANGE);
     }
 
     private boolean isTargetWithinMeleeCommitGeometry(LivingEntity target) {
-        return horizontalDistanceTo(target) <= MELEE_COMMIT_HORIZONTAL_RANGE
-                && verticalDistanceTo(target) <= MELEE_COMMIT_VERTICAL_RANGE;
+        return ArchitectMeleeEngagement.isWithinMeleeGeometry(
+                this,
+                target,
+                MELEE_COMMIT_HORIZONTAL_RANGE,
+                MELEE_COMMIT_VERTICAL_RANGE);
     }
 
     boolean shouldPreferMeleeOverApproach(LivingEntity target) {
