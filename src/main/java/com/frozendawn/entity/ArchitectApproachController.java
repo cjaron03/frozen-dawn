@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -57,9 +59,7 @@ final class ArchitectApproachController {
             approachState.dstar.computePartial(800, architect.level());
         } else {
             approachState.dstar.updateStart(architect.blockPosition());
-            if (!approachState.dstar.isSearchComplete()) {
-                approachState.dstar.computePartial(approachState.dstarPrecomputed ? 120 : 250, architect.level());
-            }
+            approachState.dstar.computePartial(approachState.dstarPrecomputed ? 120 : 250, architect.level());
         }
 
         if (approachState.dstar.isSearchComplete()) {
@@ -89,13 +89,14 @@ final class ArchitectApproachController {
         // Scaffold pacing: wait after placing ice, then jump up
         if (approachState.scaffoldTarget != null) {
             approachState.scaffoldDelay--;
-            architect.getLookControl().setLookAt(architect.getX(), architect.getY() - 1, architect.getZ());
+            BlockPos scaffoldTarget = approachState.scaffoldTarget;
+            architect.getLookControl().setLookAt(
+                    scaffoldTarget.getX() + 0.5,
+                    scaffoldTarget.getY() - 0.5,
+                    scaffoldTarget.getZ() + 0.5
+            );
             if (approachState.scaffoldDelay <= 0) {
-                architect.teleportTo(
-                        approachState.scaffoldTarget.getX() + 0.5,
-                        approachState.scaffoldTarget.getY(),
-                        approachState.scaffoldTarget.getZ() + 0.5
-                );
+                resolveScaffoldStep(scaffoldTarget);
                 approachState.scaffoldTarget = null;
             }
             return;
@@ -175,12 +176,9 @@ final class ArchitectApproachController {
         }
 
         approachState.dstar.updateStart(architect.blockPosition());
-        if (!approachState.dstar.isSearchComplete()) {
-            approachState.dstar.computePartial(200, architect.level());
-            if (!approachState.dstar.isSearchComplete()) {
-                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
-                return;
-            }
+        if (!approachState.dstar.computePartial(220, architect.level())) {
+            executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
+            return;
         }
 
         BlockPos avoidImmediateBacktrack = architect.getImmediateBacktrackPos();
@@ -285,12 +283,10 @@ final class ArchitectApproachController {
                 architect.clearCommittedWalk();
                 architect.resetWalkStuckTracker();
                 if (architect.onGround() && architect.getScaffoldIceCount() < architect.getMaxScaffoldIce()) {
-                    BlockPos feetPos = architect.blockPosition();
-                    architect.placeScaffoldIce(feetPos);
                     approachState.scaffoldTarget = step.pos();
                     approachState.scaffoldDelay = ArchitectEntity.SCAFFOLD_PLACE_TICKS;
-                    LOGGER.info("[Architect] D* SCAFFOLD ice at {} -> {} (waiting {}t)",
-                            feetPos,
+                    LOGGER.info("[Architect] D* SCAFFOLD queued support={} step={} (waiting {}t)",
+                            step.pos().below(),
                             step.pos(),
                             ArchitectEntity.SCAFFOLD_PLACE_TICKS);
                 }
@@ -393,6 +389,38 @@ final class ArchitectApproachController {
         BlockState currentState = architect.level().getBlockState(current);
         BlockState nextState = architect.level().getBlockState(next);
         return currentState.is(BlockTags.CLIMBABLE) || nextState.is(BlockTags.CLIMBABLE);
+    }
+
+    private void resolveScaffoldStep(BlockPos scaffoldTarget) {
+        Level level = architect.level();
+        BlockPos supportPos = scaffoldTarget.below();
+        BlockState supportState = level.getBlockState(supportPos);
+        boolean supportReady = supportState.is(Blocks.PACKED_ICE) || supportState.isSolid() || architect.placeScaffoldIce(supportPos);
+        if (!supportReady) {
+            architect.getDStarPathfinder().onLocalBlockChanged(supportPos, level);
+            return;
+        }
+
+        if (!isPassableForStand(scaffoldTarget, level) || !isPassableForStand(scaffoldTarget.above(), level)) {
+            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget, level);
+            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget.above(), level);
+            return;
+        }
+
+        architect.teleportTo(
+                scaffoldTarget.getX() + 0.5,
+                scaffoldTarget.getY(),
+                scaffoldTarget.getZ() + 0.5
+        );
+        architect.getNavigation().stop();
+    }
+
+    private boolean isPassableForStand(BlockPos pos, Level level) {
+        BlockState state = level.getBlockState(pos);
+        if (state.is(BlockTags.WOODEN_DOORS)) {
+            return true;
+        }
+        return !state.isSolid();
     }
 
     private boolean shouldUseDirectChase(LivingEntity target, DStarLitePathfinder.NextStep step) {
