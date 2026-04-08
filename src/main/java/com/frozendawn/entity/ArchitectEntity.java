@@ -123,6 +123,7 @@ public class ArchitectEntity extends Monster {
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
     static final double RETREAT_DISTANCE = 16.0;
+    private static final int MAX_SAFE_FALL_DISTANCE = 10;
 
     // --- Burst Damage Tracking ---
     /** Damage taken in the last BURST_WINDOW ticks. Used to boost retreat scoring. */
@@ -226,7 +227,7 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public int getMaxFallDistance() {
-        return 8;
+        return MAX_SAFE_FALL_DISTANCE;
     }
 
     @Override

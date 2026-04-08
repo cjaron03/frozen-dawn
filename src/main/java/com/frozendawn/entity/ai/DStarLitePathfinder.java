@@ -47,6 +47,8 @@ public class DStarLitePathfinder {
     private static final int LOCAL_BLOCK_CHANGE_SEED_RADIUS = 3;
     private static final int MAX_INCREMENTAL_CELLS = 65_536;
     private static final float IMMEDIATE_BACKTRACK_PENALTY = 0.25f;
+    private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
+    private static final int MAX_VERTICAL_FALL_DEPTH = 10;
 
     // --- Step types returned to the entity ---
     public enum StepType {
@@ -697,7 +699,7 @@ public class DStarLitePathfinder {
         if (!groundState.isSolid()) {
             if (isDangerousBelow(toPos, level)) return INF;
             // Check for ground within safe fall distance
-            for (int dy = 2; dy <= 4; dy++) {
+            for (int dy = 2; dy <= MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH; dy++) {
                 BlockState below = level.getBlockState(toPos.below(dy));
                 if (isHazardous(below)) return INF;
                 if (below.isSolid()) {
@@ -760,7 +762,7 @@ public class DStarLitePathfinder {
             BlockState ground = level.getBlockState(toPos.below());
             if (isHazardous(ground)) return INF;
             if (ground.isSolid()) return BASE_MOVE_COST;
-            for (int dy = 2; dy <= 8; dy++) {
+            for (int dy = 2; dy <= MAX_VERTICAL_FALL_DEPTH; dy++) {
                 BlockState below = level.getBlockState(toPos.below(dy));
                 if (isHazardous(below)) return INF;
                 if (below.isSolid()) {
