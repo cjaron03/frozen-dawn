@@ -42,9 +42,12 @@ public class DStarLitePathfinder {
     private static final int MAX_BRIDGE_SPAN = 6;
     private static final float MAX_BREAKABLE_HARDNESS = 25.0f;
     private static final int SEARCH_RADIUS = 64;
-    private static final int EXTERNAL_BLOCK_CHANGE_SEED_RADIUS = 6;
-    private static final int LOCAL_BLOCK_CHANGE_SEED_RADIUS = 3;
+    private static final int EXTERNAL_BLOCK_CHANGE_SEED_RADIUS = 3;
+    private static final int LOCAL_BLOCK_CHANGE_SEED_RADIUS = 2;
     private static final int MAX_INCREMENTAL_CELLS = 65_536;
+    private static final int INCREMENTAL_CELL_NEAR_CAP = (MAX_INCREMENTAL_CELLS * 3) / 4;
+    private static final int INCREMENTAL_CELL_CRITICAL_CAP = (MAX_INCREMENTAL_CELLS * 9) / 10;
+    private static final int OVERSIZE_REBUILD_BUDGET = 160;
     private static final float IMMEDIATE_BACKTRACK_PENALTY = 0.25f;
     private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
     private static final int MAX_VERTICAL_FALL_DEPTH = 10;
@@ -509,27 +512,52 @@ public class DStarLitePathfinder {
         if (cells.size() > MAX_INCREMENTAL_CELLS) {
             LOGGER.info("[D*Lite] cell map too large ({}), reinitializing incremental search", cells.size());
             initialize(goalPos, startPos, level);
-            computePartial(800, level);
+            // Avoid long server stalls on oversized maps; rebuild incrementally.
+            computePartial(OVERSIZE_REBUILD_BUDGET, level);
             return;
+        }
+
+        int effectiveSeedRadius = seedRadius;
+        int cellCount = cells.size();
+        if (cellCount > INCREMENTAL_CELL_CRITICAL_CAP) {
+            effectiveSeedRadius = 1;
+        } else if (cellCount > INCREMENTAL_CELL_NEAR_CAP) {
+            effectiveSeedRadius = Math.max(1, seedRadius - 1);
         }
 
         // Seed the changed block and nearby cells into the incremental search.
         // External/player world changes use a larger radius; local Architect-driven
         // churn uses a tighter radius to avoid ballooning the cell map mid-chase.
         int px = pos.getX(), py = pos.getY(), pz = pos.getZ();
-        for (int dx = -seedRadius; dx <= seedRadius; dx++) {
-            for (int dy = -seedRadius; dy <= seedRadius; dy++) {
-                for (int dz = -seedRadius; dz <= seedRadius; dz++) {
+        int radiusSqr = effectiveSeedRadius * effectiveSeedRadius;
+        for (int dx = -effectiveSeedRadius; dx <= effectiveSeedRadius; dx++) {
+            for (int dy = -effectiveSeedRadius; dy <= effectiveSeedRadius; dy++) {
+                for (int dz = -effectiveSeedRadius; dz <= effectiveSeedRadius; dz++) {
+                    if (dx * dx + dy * dy + dz * dz > radiusSqr) {
+                        continue;
+                    }
                     int x = px + dx;
                     int y = py + dy;
                     int z = pz + dz;
                     if (!isWithinSearchRadius(x, y, z)) continue;
                     long packed = BlockPos.asLong(x, y, z);
+                    if (!shouldSeedChangedCell(packed, dx, dy, dz)) {
+                        continue;
+                    }
                     updateVertex(packed, level);
                 }
             }
         }
         searchComplete = false;
+    }
+
+    private boolean shouldSeedChangedCell(long packed, int dx, int dy, int dz) {
+        if (cells.containsKey(packed)) {
+            return true;
+        }
+        // Limit new cell creation to the immediate changed neighborhood.
+        int manhattan = Math.abs(dx) + Math.abs(dy) + Math.abs(dz);
+        return manhattan <= 1;
     }
 
     private boolean isWithinSearchRadius(BlockPos pos) {
