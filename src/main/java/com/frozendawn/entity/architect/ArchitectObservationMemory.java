@@ -15,6 +15,7 @@ public final class ArchitectObservationMemory {
     private boolean hasObserved;
     private boolean observeDirty;
     private int observeTicks;
+    private int observeTargetTicks;
     @Nullable
     private BlockPos lastObservedPos;
     @Nullable
@@ -51,6 +52,14 @@ public final class ArchitectObservationMemory {
 
     public void incrementObserveTicks() {
         observeTicks++;
+    }
+
+    public int getObserveTargetTicks() {
+        return observeTargetTicks;
+    }
+
+    public void setObserveTargetTicks(int observeTargetTicks) {
+        this.observeTargetTicks = observeTargetTicks;
     }
 
     @Nullable

@@ -119,9 +119,17 @@ final class ArchitectObservationController {
             return;
         }
 
-        int targetDuration = ArchitectEntity.MIN_OBSERVE_TICKS
-                + architect.nextRandomInt(ArchitectEntity.MAX_OBSERVE_TICKS - ArchitectEntity.MIN_OBSERVE_TICKS);
-        if (observationMemory.getObserveTicks() >= targetDuration) {
+        int currentObserveTargetTicks = observationMemory.getObserveTargetTicks();
+        int observeTargetTicks = ArchitectObserveDuration.ensureObserveTargetTicks(
+                currentObserveTargetTicks,
+                ArchitectEntity.MIN_OBSERVE_TICKS,
+                ArchitectEntity.MAX_OBSERVE_TICKS,
+                architect::nextRandomInt
+        );
+        if (observeTargetTicks != currentObserveTargetTicks) {
+            observationMemory.setObserveTargetTicks(observeTargetTicks);
+        }
+        if (ArchitectObserveDuration.hasReachedObserveTarget(observationMemory.getObserveTicks(), observeTargetTicks)) {
             markObserveComplete();
         }
     }
@@ -203,6 +211,7 @@ final class ArchitectObservationController {
         observationMemory.setHasObserved(false);
         observationMemory.setObserveDirty(false);
         observationMemory.setObserveTicks(0);
+        observationMemory.setObserveTargetTicks(0);
         observationMemory.setLastObservedPos(null);
         approachState.dstarPrecomputed = false;
     }

@@ -1690,7 +1690,10 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void onActionChange(int oldAction, int newAction) {
-        if (oldAction == ACTION_OBSERVE) observationMemory.setObserveTicks(0);
+        if (oldAction == ACTION_OBSERVE) {
+            observationMemory.setObserveTicks(0);
+            observationMemory.setObserveTargetTicks(0);
+        }
         if (oldAction == ACTION_PEEK) peekTicks = 0;
         if (oldAction == ACTION_APPROACH) approachState.unreachableTicks = 0;
         clearWalkNavigationState(true);

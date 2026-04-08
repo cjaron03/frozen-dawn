@@ -74,6 +74,7 @@ public final class ArchitectPersistence {
         observationMemory.setHasObserved(tag.getBoolean(KEY_HAS_OBSERVED));
         observationMemory.setObserveDirty(tag.getBoolean(KEY_OBSERVE_DIRTY));
         observationMemory.setObserveTicks(0);
+        observationMemory.setObserveTargetTicks(0);
         observationMemory.setLastKnownPlayerPos(getOptionalBlockPos(tag, KEY_LAST_KNOWN_PLAYER_POS));
         observationMemory.setLastObservedPos(getOptionalBlockPos(tag, KEY_LAST_OBSERVED_POS));
     }
