@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
+import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.mojang.logging.LogUtils;
@@ -79,6 +80,11 @@ final class ArchitectApproachController {
 
         // Proactively open nearby wooden doors before movement dispatch.
         architect.keepNearbyWoodenDoorsOpen();
+        // Snow/surface state can change around the Architect each tick; reseed a
+        // local incremental update periodically so D* tracks dynamic obstructions.
+        if (architect.tickCount % 10 == 0) {
+            approachState.dstar.onLocalBlockChanged(architect.blockPosition(), architect.level());
+        }
 
         // Avoid committed-walk churn while submerged: switch to direct water egress chase.
         if (architect.isInWaterOrBubble()) {
@@ -426,18 +432,20 @@ final class ArchitectApproachController {
         if (state.is(BlockTags.WOODEN_DOORS)) {
             return true;
         }
-        return !state.isSolid();
+        return !ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
     }
 
     @Nullable
     private BlockPos selectScaffoldObstruction(BlockPos scaffoldTarget, Level level) {
         BlockState feet = level.getBlockState(scaffoldTarget);
-        if (feet.isSolid() && !feet.is(BlockTags.WOODEN_DOORS)) {
+        if (!feet.is(BlockTags.WOODEN_DOORS)
+                && ArchitectBreakPolicy.isObstructiveForArchitect(feet, level, scaffoldTarget)) {
             return scaffoldTarget;
         }
         BlockPos headPos = scaffoldTarget.above();
         BlockState head = level.getBlockState(headPos);
-        if (head.isSolid() && !head.is(BlockTags.WOODEN_DOORS)) {
+        if (!head.is(BlockTags.WOODEN_DOORS)
+                && ArchitectBreakPolicy.isObstructiveForArchitect(head, level, headPos)) {
             return headPos;
         }
         return null;

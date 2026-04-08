@@ -11,6 +11,7 @@ import com.frozendawn.entity.architect.ArchitectRenderFlags;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
+import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.event.WorldTickHandler;
@@ -1149,8 +1150,8 @@ public class ArchitectEntity extends Monster {
 
         BlockState feetState = level().getBlockState(steeringTarget);
         BlockState headState = level().getBlockState(steeringTarget.above());
-        if ((feetState.isSolid() && !feetState.is(BlockTags.WOODEN_DOORS))
-                || (headState.isSolid() && !headState.is(BlockTags.WOODEN_DOORS))) {
+        if (isPathObstructingState(feetState, steeringTarget)
+                || isPathObstructingState(headState, steeringTarget.above())) {
             invalidateCommittedWalk("BLOCKED", target);
             return false;
         }
@@ -1505,9 +1506,11 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean shouldContinueWalkObstructionBreak(DStarLitePathfinder.NextStep step, BlockPos breakTarget) {
-        BlockPos immediateCandidate = findWalkUnstickBreakCandidate(step.pos(), null);
-        if (immediateCandidate != null && breakTarget.equals(immediateCandidate)) {
-            return true;
+        if (isBreakableBlock(breakTarget)) {
+            Set<BlockPos> immediateCandidates = collectWalkUnstickBreakCandidates(step.pos());
+            if (immediateCandidates.contains(breakTarget)) {
+                return true;
+            }
         }
 
         List<BlockPos> corridorNodes = previewWalkCorridorNodes(blockPosition(), step);
@@ -1520,11 +1523,42 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private BlockPos findWalkUnstickBreakCandidate(BlockPos stepPos, @Nullable BlockPos blockedCandidate) {
+        Set<BlockPos> candidates = collectWalkUnstickBreakCandidates(stepPos);
+        return selectPreferredBreakCandidate(candidates, blockedCandidate);
+    }
+
+    @Nullable
+    private BlockPos findWalkCorridorBreakTarget(List<BlockPos> corridorNodes) {
+        BlockPos fallback = null;
+        for (BlockPos node : corridorNodes) {
+            if (isBreakableBlock(node)) {
+                if (!isLastResortBreakBlock(node)) {
+                    return node.immutable();
+                }
+                if (fallback == null) {
+                    fallback = node.immutable();
+                }
+            }
+
+            BlockPos headroom = node.above();
+            if (isBreakableBlock(headroom)) {
+                if (!isLastResortBreakBlock(headroom)) {
+                    return headroom.immutable();
+                }
+                if (fallback == null) {
+                    fallback = headroom.immutable();
+                }
+            }
+        }
+        return fallback;
+    }
+
+    private Set<BlockPos> collectWalkUnstickBreakCandidates(BlockPos stepPos) {
         BlockPos from = blockPosition();
         Direction toward = getPrimaryHorizontalDirection(from, stepPos);
         boolean steppingDown = stepPos.getY() < from.getY();
 
-        Set<BlockPos> candidates = new LinkedHashSet<>(8);
+        Set<BlockPos> candidates = new LinkedHashSet<>(10);
         candidates.add(from.above());
         if (toward != null) {
             BlockPos front = from.relative(toward);
@@ -1541,30 +1575,37 @@ public class ArchitectEntity extends Monster {
             candidates.add(stepPos.above());
         }
 
+        // Slab/snow transitions can alternate between the same X/Z at Y and Y+1.
+        // Include both lower cells to avoid repeatedly flipping break targets.
+        candidates.add(stepPos.below());
+        if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
+            candidates.add(stepPos.below(2));
+        }
+        return candidates;
+    }
+
+    @Nullable
+    private BlockPos selectPreferredBreakCandidate(Iterable<BlockPos> candidates, @Nullable BlockPos blockedCandidate) {
+        BlockPos fallback = null;
         for (BlockPos candidate : candidates) {
             if (blockedCandidate != null && blockedCandidate.equals(candidate)) {
                 continue;
             }
-            if (isBreakableBlock(candidate)) {
+            if (!isBreakableBlock(candidate)) {
+                continue;
+            }
+            if (!isLastResortBreakBlock(candidate)) {
                 return candidate.immutable();
             }
+            if (fallback == null) {
+                fallback = candidate.immutable();
+            }
         }
-        return null;
+        return fallback;
     }
 
-    @Nullable
-    private BlockPos findWalkCorridorBreakTarget(List<BlockPos> corridorNodes) {
-        for (BlockPos node : corridorNodes) {
-            if (isBreakableBlock(node)) {
-                return node.immutable();
-            }
-
-            BlockPos headroom = node.above();
-            if (isBreakableBlock(headroom)) {
-                return headroom.immutable();
-            }
-        }
-        return null;
+    private boolean isLastResortBreakBlock(BlockPos pos) {
+        return ArchitectBreakPolicy.isLastResortBreakBlock(level().getBlockState(pos));
     }
 
     private void startWalkCorridorBreak(BlockPos breakTarget) {
@@ -1695,15 +1736,21 @@ public class ArchitectEntity extends Monster {
         }
     }
 
+    private boolean isPathObstructingState(BlockState state, BlockPos pos) {
+        if (state.is(BlockTags.WOODEN_DOORS)) {
+            return false;
+        }
+        return ArchitectBreakPolicy.isObstructiveForArchitect(state, level(), pos);
+    }
+
     boolean isBreakableBlock(BlockPos pos) {
         if (scaffoldIce.contains(pos)) return false; // Don't break our own ice
         BlockState state = level().getBlockState(pos);
         if (state.is(BlockTags.WOODEN_DOORS)) return false; // Prefer opening wooden doors over mining them
-        if (!state.isSolid()) return false;
+        if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level(), pos)) return false;
         float hardness = state.getDestroySpeed(level(), pos);
         return hardness >= 0 && hardness < 25.0f
                 && !state.is(ModBlocks.ACHERONITE_BLOCK.get())
-                && !state.is(ModBlocks.ACHERONITE_CRYSTAL.get())
                 && !state.is(ModBlocks.TRANSPONDER.get())
                 && !wouldExposeHazard(pos);
     }

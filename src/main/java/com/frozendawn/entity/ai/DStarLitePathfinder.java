@@ -1,6 +1,4 @@
 package com.frozendawn.entity.ai;
-
-import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -405,19 +403,20 @@ public class DStarLitePathfinder {
         boolean toClimbable = isClimbable(feetState);
         boolean feetDoor = isWoodenDoor(feetState);
         boolean headDoor = isWoodenDoor(headState);
-        boolean nonDoorSolid = (feetState.isSolid() && !feetDoor) || (headState.isSolid() && !headDoor);
+        boolean nonDoorBlocked = isNonDoorObstruction(feetState, to, level)
+                || isNonDoorObstruction(headState, to.above(), level);
 
         // Vertical moves (same x/z)
         if (dx == 0 && dz == 0) {
             if (dy == 1) {
                 if (fromClimbable || toClimbable) return StepType.WALK;
                 if (feetDoor || headDoor) return StepType.WALK;
-                if (nonDoorSolid) return StepType.BREACH;
+                if (nonDoorBlocked) return StepType.BREACH;
                 return StepType.SCAFFOLD_UP;
             }
             if (dy == -1) {
                 if (fromClimbable || toClimbable) return StepType.WALK;
-                if (feetState.isSolid()) return StepType.DIG_DOWN;
+                if (nonDoorBlocked) return StepType.DIG_DOWN;
                 return StepType.WALK; // fall
             }
         }
@@ -428,7 +427,7 @@ public class DStarLitePathfinder {
         }
 
         // Breach: non-door solid blocks at feet or head level
-        if (nonDoorSolid) {
+        if (nonDoorBlocked) {
             return StepType.BREACH;
         }
 
@@ -455,9 +454,9 @@ public class DStarLitePathfinder {
     @Nullable
     private BlockPos findBreachTarget(BlockPos from, BlockPos pos, Level level) {
         BlockState feetState = level.getBlockState(pos);
-        if (isNonDoorSolid(feetState)) return pos;
+        if (isNonDoorObstruction(feetState, pos, level)) return pos;
         BlockState headState = level.getBlockState(pos.above());
-        if (isNonDoorSolid(headState)) return pos.above();
+        if (isNonDoorObstruction(headState, pos.above(), level)) return pos.above();
         BlockPos stepDownBreakTarget = getStepDownClearanceBreakTarget(from, pos, level);
         if (stepDownBreakTarget != null) return stepDownBreakTarget;
         return null;
@@ -646,7 +645,7 @@ public class DStarLitePathfinder {
         BlockState feetState = level.getBlockState(toPos);
         if (isWoodenDoor(feetState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (feetState.isSolid()) {
+        } else if (isNonDoorObstruction(feetState, toPos, level)) {
             float breach = breachCost(feetState, toPos, level);
             if (breach >= INF) return INF;
             cost += breach;
@@ -655,7 +654,7 @@ public class DStarLitePathfinder {
         BlockState headState = level.getBlockState(toPos.above());
         if (isWoodenDoor(headState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (headState.isSolid()) {
+        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
             float breach = breachCost(headState, toPos.above(), level);
             if (breach >= INF) return INF;
             cost += breach;
@@ -672,7 +671,7 @@ public class DStarLitePathfinder {
         BlockState feetState = level.getBlockState(toPos);
         if (isWoodenDoor(feetState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (feetState.isSolid()) {
+        } else if (isNonDoorObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -681,7 +680,7 @@ public class DStarLitePathfinder {
         BlockState headState = level.getBlockState(toPos.above());
         if (isWoodenDoor(headState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (headState.isSolid()) {
+        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -708,7 +707,7 @@ public class DStarLitePathfinder {
         BlockState feetState = level.getBlockState(toPos);
         if (isWoodenDoor(feetState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (feetState.isSolid()) {
+        } else if (isNonDoorObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -717,7 +716,7 @@ public class DStarLitePathfinder {
         BlockState headState = level.getBlockState(toPos.above());
         if (isWoodenDoor(headState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (headState.isSolid()) {
+        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -736,7 +735,7 @@ public class DStarLitePathfinder {
         BlockState headState = level.getBlockState(toPos.above());
         if (isWoodenDoor(headState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (headState.isSolid()) {
+        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -745,7 +744,7 @@ public class DStarLitePathfinder {
         BlockState feetState = level.getBlockState(toPos);
         if (isWoodenDoor(feetState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (feetState.isSolid()) {
+        } else if (isNonDoorObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -797,7 +796,7 @@ public class DStarLitePathfinder {
         BlockState feetState = level.getBlockState(toPos);
         if (isWoodenDoor(feetState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (feetState.isSolid()) {
+        } else if (isNonDoorObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -806,7 +805,7 @@ public class DStarLitePathfinder {
         BlockState headState = level.getBlockState(toPos.above());
         if (isWoodenDoor(headState)) {
             cost += DOOR_PREFERENCE_BONUS;
-        } else if (headState.isSolid()) {
+        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -820,7 +819,7 @@ public class DStarLitePathfinder {
         BlockState toState = level.getBlockState(toPos);
         if (isHazardous(toState)) return INF;
 
-        if (toState.isAir() || !toState.isSolid()) {
+        if (!isNonDoorObstruction(toState, toPos, level)) {
             // Falling
             BlockPos groundPos = toPos.below();
             BlockState ground = level.getBlockState(groundPos);
@@ -846,8 +845,8 @@ public class DStarLitePathfinder {
 
         float depthPenalty = Math.max(0, depthBelow) * DIG_DOWN_DEPTH_PENALTY;
         float breakTime = ArchitectBlockBreaker.getEffectiveBreakTime(toState, toPos, level);
-
-        return DIG_DOWN_BASE + breakTime * BREACH_MULTIPLIER + depthPenalty;
+        float digDownCost = DIG_DOWN_BASE + breakTime * BREACH_MULTIPLIER + depthPenalty;
+        return ArchitectBreakPolicy.applyLastResortPenalty(toState, digDownCost);
     }
 
     // ========================================
@@ -858,7 +857,8 @@ public class DStarLitePathfinder {
         if (wouldExposeHazard(pos, level)) return INF;
         if (isUnbreakable(state, pos, level)) return INF;
         float breakTime = ArchitectBlockBreaker.getEffectiveBreakTime(state, pos, level);
-        return breakTime * BREACH_MULTIPLIER;
+        float baseCost = breakTime * BREACH_MULTIPLIER;
+        return ArchitectBreakPolicy.applyLastResortPenalty(state, baseCost);
     }
 
     @Nullable
@@ -870,7 +870,7 @@ public class DStarLitePathfinder {
         }
 
         BlockPos upperFront = to.above().above();
-        if (isNonDoorSolid(level.getBlockState(upperFront))) {
+        if (isNonDoorObstruction(level.getBlockState(upperFront), upperFront, level)) {
             return upperFront;
         }
 
@@ -879,9 +879,7 @@ public class DStarLitePathfinder {
 
     private boolean isUnbreakable(BlockState state, BlockPos pos, Level level) {
         if (immuneBlocks.contains(pos.asLong())) return true;
-        if (state.is(ModBlocks.ACHERONITE_BLOCK.get())) return true;
-        if (state.is(ModBlocks.ACHERONITE_CRYSTAL.get())) return true;
-        if (state.is(ModBlocks.TRANSPONDER.get())) return true;
+        if (ArchitectBreakPolicy.isProtectedBlock(state)) return true;
         float hardness = state.getDestroySpeed(level, pos);
         return hardness < 0 || hardness >= MAX_BREAKABLE_HARDNESS;
     }
@@ -895,8 +893,11 @@ public class DStarLitePathfinder {
         return state.is(BlockTags.CLIMBABLE);
     }
 
-    private boolean isNonDoorSolid(BlockState state) {
-        return state.isSolid() && !isWoodenDoor(state);
+    private boolean isNonDoorObstruction(BlockState state, BlockPos pos, Level level) {
+        if (isWoodenDoor(state)) {
+            return false;
+        }
+        return ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
     }
 
     private boolean hasStandableSupport(BlockPos pos, Level level) {

@@ -1,7 +1,6 @@
 package com.frozendawn.entity.ai;
 
 import com.frozendawn.data.PlayerPlacedBlockTracker;
-import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -122,7 +121,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
 
         BlockState state = context.getBlockState(new BlockPos(x, y, z));
 
-        if (isAcheroniteOrTransponder(state)) return PathType.BLOCKED;
+        if (ArchitectBreakPolicy.isProtectedBlock(state)) return PathType.BLOCKED;
 
         float hardness = state.getDestroySpeed(context.level(), new BlockPos(x, y, z));
         if (hardness < 0 || hardness >= MAX_BREAKABLE_HARDNESS) return PathType.BLOCKED;
@@ -143,7 +142,9 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
                 BlockState state = this.currentContext.getBlockState(pos);
                 float breakTime = ArchitectBlockBreaker.getEffectiveBreakTime(
                         state, pos, this.currentContext.level());
-                float breachCost = breakTime * BREACH_TIME_MULTIPLIER;
+                float breachCost = ArchitectBreakPolicy.applyLastResortPenalty(
+                        state,
+                        breakTime * BREACH_TIME_MULTIPLIER);
                 results[i].costMalus = Math.max(results[i].costMalus, breachCost);
             }
         }
@@ -217,7 +218,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         BlockState twoAboveState = this.currentContext.getBlockState(twoAbove);
         if (!twoAboveState.isAir()) {
             if (!allowBreach) return count;
-            if (isAcheroniteOrTransponder(twoAboveState)) return count;
+            if (ArchitectBreakPolicy.isProtectedBlock(twoAboveState)) return count;
             float hardness = twoAboveState.getDestroySpeed(this.currentContext.level(), twoAbove);
             if (hardness < 0 || hardness >= MAX_BREAKABLE_HARDNESS) return count;
             // Breakable ceiling — allow scaffold with extra cost
@@ -389,7 +390,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         BlockState belowState = this.currentContext.getBlockState(below);
 
         if (belowState.isAir() || !belowState.isSolid()) return count;
-        if (isAcheroniteOrTransponder(belowState)) return count;
+        if (ArchitectBreakPolicy.isProtectedBlock(belowState)) return count;
 
         long packed = below.asLong();
         if (immuneBlocks.contains(packed)) return count;
@@ -410,6 +411,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         float breakTime = ArchitectBlockBreaker.getEffectiveBreakTime(
                 belowState, below, this.currentContext.level());
         float totalCost = DIG_DOWN_BASE_COST + breakTime * BREACH_TIME_MULTIPLIER + depthCost + directionPenalty;
+        totalCost = ArchitectBreakPolicy.applyLastResortPenalty(belowState, totalCost);
 
         Node digNode = this.getNode(below.getX(), below.getY(), below.getZ());
         if (digNode.closed) return count;
@@ -419,13 +421,4 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         return count + 1;
     }
 
-    // ========================
-    //  HELPERS
-    // ========================
-
-    private static boolean isAcheroniteOrTransponder(BlockState state) {
-        return state.is(ModBlocks.ACHERONITE_BLOCK.get())
-                || state.is(ModBlocks.ACHERONITE_CRYSTAL.get())
-                || state.is(ModBlocks.TRANSPONDER.get());
-    }
 }

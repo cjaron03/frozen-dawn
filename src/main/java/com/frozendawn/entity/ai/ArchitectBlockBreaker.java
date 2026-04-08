@@ -3,7 +3,6 @@ package com.frozendawn.entity.ai;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.event.WorldTickHandler;
-import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -39,6 +38,7 @@ public class ArchitectBlockBreaker {
     private int soundCooldown;
 
     private static final int MAX_BREAK_TICKS = 300; // 15 seconds hard cap
+    private static final int MIN_BREAK_TICKS = 4;   // Keep soft/dynamic blocks responsive
     private static final int IMMUNE_TEST_TICKS = 40; // 2 seconds before giving up on immune blocks
     private static final double REACH = 4.5;
 
@@ -58,7 +58,7 @@ public class ArchitectBlockBreaker {
         }
         targetPos = pos;
         if (pos != null) {
-            breakTime = computeBreakTime(pos);
+            breakTime = computeBreakTime(pos, mob.level().getBlockState(pos));
         }
     }
 
@@ -85,12 +85,23 @@ public class ArchitectBlockBreaker {
             clearTarget();
             return true;
         }
+        if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level, targetPos)) {
+            clearTarget();
+            return true;
+        }
 
         // Check reach and LOS
         double distSq = mob.position().distanceToSqr(
                 targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5);
         if (distSq > REACH * REACH) {
             return false; // Too far — entity should path closer
+        }
+
+        int desiredBreakTime = computeBreakTime(targetPos, state);
+        if (desiredBreakTime != breakTime) {
+            breakTime = desiredBreakTime;
+            breakProgress = Math.min(breakProgress, Math.max(0, breakTime - 1));
+            lastDestroyStage = -1;
         }
 
         // Look at the block
@@ -182,11 +193,12 @@ public class ArchitectBlockBreaker {
         }
     }
 
-    private int computeBreakTime(BlockPos pos) {
-        BlockState state = mob.level().getBlockState(pos);
+    private int computeBreakTime(BlockPos pos, BlockState state) {
         float hardness = state.getDestroySpeed(mob.level(), pos);
         if (hardness < 0) return MAX_BREAK_TICKS; // Unbreakable — will be caught by immune check
-        return Math.min(MAX_BREAK_TICKS, Math.max(40, (int) (hardness * 40)));
+        float seconds = getEffectiveBreakTime(state, pos, mob.level());
+        int ticks = (int) Math.ceil(seconds * 20.0F);
+        return Math.min(MAX_BREAK_TICKS, Math.max(MIN_BREAK_TICKS, ticks));
     }
 
     /**
@@ -230,9 +242,7 @@ public class ArchitectBlockBreaker {
     }
 
     private boolean isImmuneBlock(BlockState state) {
-        return state.is(ModBlocks.ACHERONITE_BLOCK.get())
-                || state.is(ModBlocks.ACHERONITE_CRYSTAL.get())
-                || state.is(ModBlocks.TRANSPONDER.get())
+        return ArchitectBreakPolicy.isProtectedBlock(state)
                 || state.getDestroySpeed(mob.level(), targetPos) < 0;
     }
 
