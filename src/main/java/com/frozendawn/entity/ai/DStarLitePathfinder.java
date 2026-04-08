@@ -396,17 +396,24 @@ public class DStarLitePathfinder {
         int dx = to.getX() - from.getX();
         int dz = to.getZ() - from.getZ();
 
+        BlockState fromFeetState = level.getBlockState(from);
         BlockState feetState = level.getBlockState(to);
         BlockState headState = level.getBlockState(to.above());
         BlockPos groundPos = to.below();
+        boolean fromClimbable = isClimbable(fromFeetState);
+        boolean toClimbable = isClimbable(feetState);
         boolean feetDoor = isWoodenDoor(feetState);
         boolean headDoor = isWoodenDoor(headState);
         boolean nonDoorSolid = (feetState.isSolid() && !feetDoor) || (headState.isSolid() && !headDoor);
 
         // Vertical moves (same x/z)
         if (dx == 0 && dz == 0) {
-            if (dy == 1) return StepType.SCAFFOLD_UP;
+            if (dy == 1) {
+                if (fromClimbable || toClimbable) return StepType.WALK;
+                return StepType.SCAFFOLD_UP;
+            }
             if (dy == -1) {
+                if (fromClimbable || toClimbable) return StepType.WALK;
                 if (feetState.isSolid()) return StepType.DIG_DOWN;
                 return StepType.WALK; // fall
             }
@@ -427,6 +434,10 @@ public class DStarLitePathfinder {
         // the Architect clears the lip instead of walking forever into it.
         if (getStepDownClearanceBreakTarget(from, to, level) != null) {
             return StepType.BREACH;
+        }
+
+        if (fromClimbable || toClimbable) {
+            return StepType.WALK;
         }
 
         // Scaffold bridge: no ground below
@@ -587,8 +598,20 @@ public class DStarLitePathfinder {
 
         // --- Vertical (same column) ---
         if (dx == 0 && dz == 0) {
-            if (dy == 1) return scaffoldUpCost(fx, fy, fz, tx, ty, tz, level);
-            if (dy == -1) return verticalDownCost(tx, ty, tz, level);
+            BlockPos fromPos = new BlockPos(fx, fy, fz);
+            BlockPos toPos = new BlockPos(tx, ty, tz);
+            boolean climbTransition = isClimbable(level.getBlockState(fromPos))
+                    || isClimbable(level.getBlockState(toPos));
+            if (dy == 1) {
+                return climbTransition
+                        ? climbTransitionCost(tx, ty, tz, level)
+                        : scaffoldUpCost(fx, fy, fz, tx, ty, tz, level);
+            }
+            if (dy == -1) {
+                return climbTransition
+                        ? climbTransitionCost(tx, ty, tz, level)
+                        : verticalDownCost(tx, ty, tz, level);
+            }
             return INF;
         }
 
@@ -600,6 +623,32 @@ public class DStarLitePathfinder {
         if (dy == -1) return stepDownCost(fx, fy, fz, tx, ty, tz, level);
 
         return INF;
+    }
+
+    private float climbTransitionCost(int tx, int ty, int tz, Level level) {
+        float cost = BASE_MOVE_COST * 1.1f;
+        BlockPos toPos = new BlockPos(tx, ty, tz);
+        if (hasHazardAtOrAbove(toPos, level)) return INF;
+
+        BlockState feetState = level.getBlockState(toPos);
+        if (isWoodenDoor(feetState)) {
+            cost += DOOR_PREFERENCE_BONUS;
+        } else if (feetState.isSolid()) {
+            float breach = breachCost(feetState, toPos, level);
+            if (breach >= INF) return INF;
+            cost += breach;
+        }
+
+        BlockState headState = level.getBlockState(toPos.above());
+        if (isWoodenDoor(headState)) {
+            cost += DOOR_PREFERENCE_BONUS;
+        } else if (headState.isSolid()) {
+            float breach = breachCost(headState, toPos.above(), level);
+            if (breach >= INF) return INF;
+            cost += breach;
+        }
+
+        return cost;
     }
 
     private float flatMoveCost(int tx, int ty, int tz, Level level) {
@@ -829,23 +878,30 @@ public class DStarLitePathfinder {
                 && state.getBlock() instanceof DoorBlock;
     }
 
+    private boolean isClimbable(BlockState state) {
+        return state.is(BlockTags.CLIMBABLE);
+    }
+
     private boolean isNonDoorSolid(BlockState state) {
         return state.isSolid() && !isWoodenDoor(state);
     }
 
     private boolean hasStandableSupport(BlockPos pos, Level level) {
         BlockState state = level.getBlockState(pos);
+        if (isClimbable(state)) {
+            return false;
+        }
         if (isWoodenDoor(state)) {
             return false;
         }
         if (state.isFaceSturdy(level, pos, Direction.UP)) {
             return true;
         }
-        VoxelShape collisionShape = state.getCollisionShape(level, pos);
-        if (collisionShape.isEmpty()) {
+        VoxelShape supportShape = state.getBlockSupportShape(level, pos);
+        if (supportShape.isEmpty()) {
             return false;
         }
-        return collisionShape.max(Direction.Axis.Y) >= MIN_STANDABLE_SUPPORT_HEIGHT;
+        return supportShape.max(Direction.Axis.Y) >= MIN_STANDABLE_SUPPORT_HEIGHT;
     }
 
     private boolean isWithinBridgeSpan(BlockPos pos, Level level) {

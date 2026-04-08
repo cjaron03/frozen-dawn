@@ -5,7 +5,9 @@ import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
@@ -186,6 +188,11 @@ final class ArchitectApproachController {
         architect.keepDoorOpenNear(step.pos());
 
         architect.invalidateStaleApproachBreakTarget(step, target);
+
+        if (step.type() == DStarLitePathfinder.StepType.WALK && isVerticalClimbStep(step)) {
+            executeVerticalClimbStep(step);
+            return;
+        }
 
         if (step.type() == DStarLitePathfinder.StepType.UNREACHABLE) {
             BlockPos stuckWalkStep = architect.getCommittedWalkSteeringTarget();
@@ -369,5 +376,33 @@ final class ArchitectApproachController {
                 architect.setDeltaMovement(motion.x, Math.min(LIQUID_ASCEND_CAP, motion.y + LIQUID_ASCEND_ACCEL), motion.z);
             }
         }
+    }
+
+    private boolean isVerticalClimbStep(DStarLitePathfinder.NextStep step) {
+        BlockPos current = architect.blockPosition();
+        BlockPos next = step.pos();
+        if (next.getX() != current.getX() || next.getZ() != current.getZ() || next.getY() == current.getY()) {
+            return false;
+        }
+        BlockState currentState = architect.level().getBlockState(current);
+        BlockState nextState = architect.level().getBlockState(next);
+        return currentState.is(BlockTags.CLIMBABLE) || nextState.is(BlockTags.CLIMBABLE);
+    }
+
+    private void executeVerticalClimbStep(DStarLitePathfinder.NextStep step) {
+        architect.clearWalkNavigationState(false);
+        architect.clearCommittedWalk();
+        architect.resetWalkStuckTracker();
+        architect.resetUnstickBreakTracker();
+        approachState.unreachableTicks = 0;
+        approachState.sprintRequested = false;
+
+        BlockPos next = step.pos();
+        if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
+            architect.getNavigation().moveTo(next.getX() + 0.5, next.getY(), next.getZ() + 0.5, 1.0);
+            architect.setPathRecalcCooldown(4);
+        }
+        architect.decrementPathRecalcCooldown();
+        architect.getLookControl().setLookAt(next.getX() + 0.5, next.getY() + 0.5, next.getZ() + 0.5, 30f, 30f);
     }
 }
