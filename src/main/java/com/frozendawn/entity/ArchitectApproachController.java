@@ -18,6 +18,12 @@ import javax.annotation.Nullable;
 final class ArchitectApproachController {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final double PLANNING_FALLBACK_SPEED = 0.95;
+    private static final int PLANNING_FALLBACK_REPATH_TICKS = 8;
+    private static final double LIQUID_ESCAPE_SPEED = 1.05;
+    private static final int LIQUID_ESCAPE_REPATH_TICKS = 5;
+    private static final double LIQUID_ASCEND_ACCEL = 0.06;
+    private static final double LIQUID_ASCEND_CAP = 0.16;
 
     private final ArchitectEntity architect;
     private final ArchitectApproachState approachState;
@@ -65,6 +71,12 @@ final class ArchitectApproachController {
 
         // Proactively open nearby wooden doors before movement dispatch.
         architect.keepNearbyWoodenDoorsOpen();
+
+        // Avoid committed-walk churn while submerged: switch to direct water egress chase.
+        if (architect.isInWaterOrBubble()) {
+            executeFallbackChase(target, LIQUID_ESCAPE_SPEED, LIQUID_ESCAPE_REPATH_TICKS, true);
+            return;
+        }
 
         // Scaffold pacing: wait after placing ice, then jump up
         if (approachState.scaffoldTarget != null) {
@@ -154,7 +166,7 @@ final class ArchitectApproachController {
         if (!approachState.dstar.isSearchComplete()) {
             approachState.dstar.computePartial(500, architect.level());
             if (!approachState.dstar.isSearchComplete()) {
-                architect.executeFallbackApproachChaseWhilePlanning(target);
+                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
                 return;
             }
         }
@@ -163,7 +175,7 @@ final class ArchitectApproachController {
         if (!approachState.dstar.isSearchComplete()) {
             approachState.dstar.computePartial(200, architect.level());
             if (!approachState.dstar.isSearchComplete()) {
-                architect.executeFallbackApproachChaseWhilePlanning(target);
+                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
                 return;
             }
         }
@@ -204,7 +216,7 @@ final class ArchitectApproachController {
                 LOGGER.info("[Architect] D* Lite hard refresh after prolonged UNREACHABLE");
             }
             if (!blockBreaker.hasTarget()) {
-                architect.executeFallbackApproachChaseWhilePlanning(target);
+                executeFallbackChase(target, PLANNING_FALLBACK_SPEED, PLANNING_FALLBACK_REPATH_TICKS, false);
             }
             return;
         }
@@ -334,6 +346,28 @@ final class ArchitectApproachController {
                     architect.blockPosition(),
                     step.type(),
                     approachState.dstar.getCellCount());
+        }
+    }
+
+    private void executeFallbackChase(LivingEntity target, double speed, int repathCooldownTicks, boolean assistLiquidAscent) {
+        architect.clearCommittedWalk();
+        architect.resetWalkStuckTracker();
+        architect.resetUnstickBreakTracker();
+        approachState.unreachableTicks = 0;
+        approachState.sprintRequested = false;
+
+        if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
+            architect.getNavigation().moveTo(target, speed);
+            architect.setPathRecalcCooldown(repathCooldownTicks);
+        }
+        architect.decrementPathRecalcCooldown();
+        architect.getLookControl().setLookAt(target, 30f, 30f);
+
+        if (assistLiquidAscent && architect.isInWaterOrBubble()) {
+            Vec3 motion = architect.getDeltaMovement();
+            if (motion.y < LIQUID_ASCEND_CAP) {
+                architect.setDeltaMovement(motion.x, Math.min(LIQUID_ASCEND_CAP, motion.y + LIQUID_ASCEND_ACCEL), motion.z);
+            }
         }
     }
 }

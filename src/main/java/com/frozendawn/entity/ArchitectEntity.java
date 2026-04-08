@@ -218,7 +218,10 @@ public class ArchitectEntity extends Monster {
     protected PathNavigation createNavigation(Level level) {
         // Standard navigation for OBSERVE/RETREAT/TRAP etc.
         // APPROACH uses DStarLitePathfinder directly.
-        return new net.minecraft.world.entity.ai.navigation.GroundPathNavigation(this, level);
+        net.minecraft.world.entity.ai.navigation.GroundPathNavigation navigation =
+                new net.minecraft.world.entity.ai.navigation.GroundPathNavigation(this, level);
+        navigation.setCanFloat(true);
+        return navigation;
     }
 
     @Override
@@ -1376,18 +1379,6 @@ public class ArchitectEntity extends Monster {
         approachState.unreachableTicks = 0;
         approachState.sprintRequested = shouldSprintDirectApproach(target);
         getNavigation().moveTo(target, getApproachTravelSpeed());
-        getLookControl().setLookAt(target, 30f, 30f);
-    }
-
-    void executeFallbackApproachChaseWhilePlanning(LivingEntity target) {
-        clearCommittedWalk();
-        resetWalkStuckTracker();
-        approachState.sprintRequested = false;
-        if (isPathRecalcReady() || !getNavigation().isInProgress()) {
-            getNavigation().moveTo(target, 0.95);
-            setPathRecalcCooldown(8);
-        }
-        decrementPathRecalcCooldown();
         getLookControl().setLookAt(target, 30f, 30f);
     }
 
