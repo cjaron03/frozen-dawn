@@ -31,6 +31,7 @@ final class ArchitectApproachController {
     private static final double CLIMB_VERTICAL_DOWN_SPEED = -0.12;
     private static final double CLIMB_HORIZONTAL_ACCEL = 0.08;
     private static final double CLIMB_HORIZONTAL_CAP = 0.12;
+    private static final double MAX_DIRECT_CHASE_VERTICAL_DELTA = 1.5;
 
     private final ArchitectEntity architect;
     private final ArchitectApproachState approachState;
@@ -149,11 +150,6 @@ final class ArchitectApproachController {
             return;
         }
 
-        if (architect.canDirectChaseApproach(target)) {
-            architect.executeDirectApproachChase(target);
-            return;
-        }
-
         BlockPos targetPos = target.blockPosition();
         if (approachState.dstar.needsReinitialize(targetPos)) {
             approachState.dstar.setSurfaceY(approachState.surfaceY);
@@ -191,6 +187,11 @@ final class ArchitectApproachController {
         DStarLitePathfinder.NextStep step =
                 approachState.dstar.getNextStep(architect.blockPosition(), architect.level(), avoidImmediateBacktrack);
         architect.keepDoorOpenNear(step.pos());
+
+        if (shouldUseDirectChase(target, step)) {
+            architect.executeDirectApproachChase(target);
+            return;
+        }
 
         architect.invalidateStaleApproachBreakTarget(step, target);
 
@@ -392,6 +393,28 @@ final class ArchitectApproachController {
         BlockState currentState = architect.level().getBlockState(current);
         BlockState nextState = architect.level().getBlockState(next);
         return currentState.is(BlockTags.CLIMBABLE) || nextState.is(BlockTags.CLIMBABLE);
+    }
+
+    private boolean shouldUseDirectChase(LivingEntity target, DStarLitePathfinder.NextStep step) {
+        if (step.type() != DStarLitePathfinder.StepType.WALK || !architect.canDirectChaseApproach(target)) {
+            return false;
+        }
+        if (Math.abs(target.getY() - architect.getY()) > MAX_DIRECT_CHASE_VERTICAL_DELTA) {
+            return false;
+        }
+
+        BlockPos current = architect.blockPosition();
+        BlockPos next = step.pos();
+        if (next.getY() != current.getY()) {
+            return false;
+        }
+        if (isVerticalClimbStep(step)) {
+            return false;
+        }
+
+        BlockState currentState = architect.level().getBlockState(current);
+        BlockState nextState = architect.level().getBlockState(next);
+        return !currentState.is(BlockTags.CLIMBABLE) && !nextState.is(BlockTags.CLIMBABLE);
     }
 
     private void executeVerticalClimbStep(DStarLitePathfinder.NextStep step) {

@@ -51,6 +51,7 @@ public class DStarLitePathfinder {
     private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
     private static final int MAX_VERTICAL_FALL_DEPTH = 10;
     private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
+    private static final float CLIMB_TRANSITION_PENALTY = 8.0f;
 
     // --- Step types returned to the entity ---
     public enum StepType {
@@ -593,15 +594,15 @@ public class DStarLitePathfinder {
     private float edgeCost(long fromPacked, long toPacked, Level level) {
         int fx = BlockPos.getX(fromPacked), fy = BlockPos.getY(fromPacked), fz = BlockPos.getZ(fromPacked);
         int tx = BlockPos.getX(toPacked), ty = BlockPos.getY(toPacked), tz = BlockPos.getZ(toPacked);
+        BlockPos fromPos = new BlockPos(fx, fy, fz);
+        BlockPos toPos = new BlockPos(tx, ty, tz);
 
         int dx = tx - fx, dy = ty - fy, dz = tz - fz;
+        boolean climbTransition = isClimbable(level.getBlockState(fromPos))
+                || isClimbable(level.getBlockState(toPos));
 
         // --- Vertical (same column) ---
         if (dx == 0 && dz == 0) {
-            BlockPos fromPos = new BlockPos(fx, fy, fz);
-            BlockPos toPos = new BlockPos(tx, ty, tz);
-            boolean climbTransition = isClimbable(level.getBlockState(fromPos))
-                    || isClimbable(level.getBlockState(toPos));
             if (dy == 1) {
                 return climbTransition
                         ? climbTransitionCost(tx, ty, tz, level)
@@ -618,15 +619,25 @@ public class DStarLitePathfinder {
         // Must be cardinal horizontal
         if (Math.abs(dx) + Math.abs(dz) != 1) return INF;
 
-        if (dy == 0) return flatMoveCost(tx, ty, tz, level);
-        if (dy == 1) return stepUpCost(fx, fy, fz, tx, ty, tz, level);
-        if (dy == -1) return stepDownCost(fx, fy, fz, tx, ty, tz, level);
-
-        return INF;
+        float cost;
+        if (dy == 0) {
+            cost = flatMoveCost(tx, ty, tz, level);
+        } else if (dy == 1) {
+            cost = stepUpCost(fx, fy, fz, tx, ty, tz, level);
+        } else if (dy == -1) {
+            cost = stepDownCost(fx, fy, fz, tx, ty, tz, level);
+        } else {
+            return INF;
+        }
+        if (cost >= INF) return INF;
+        if (climbTransition) {
+            cost += CLIMB_TRANSITION_PENALTY;
+        }
+        return cost;
     }
 
     private float climbTransitionCost(int tx, int ty, int tz, Level level) {
-        float cost = BASE_MOVE_COST * 1.1f;
+        float cost = BASE_MOVE_COST + CLIMB_TRANSITION_PENALTY;
         BlockPos toPos = new BlockPos(tx, ty, tz);
         if (hasHazardAtOrAbove(toPos, level)) return INF;
 
