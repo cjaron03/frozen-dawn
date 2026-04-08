@@ -6,6 +6,7 @@ import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -26,6 +27,10 @@ final class ArchitectApproachController {
     private static final int LIQUID_ESCAPE_REPATH_TICKS = 5;
     private static final double LIQUID_ASCEND_ACCEL = 0.06;
     private static final double LIQUID_ASCEND_CAP = 0.16;
+    private static final double CLIMB_VERTICAL_UP_SPEED = 0.18;
+    private static final double CLIMB_VERTICAL_DOWN_SPEED = -0.12;
+    private static final double CLIMB_HORIZONTAL_ACCEL = 0.08;
+    private static final double CLIMB_HORIZONTAL_CAP = 0.12;
 
     private final ArchitectEntity architect;
     private final ArchitectApproachState approachState;
@@ -390,19 +395,37 @@ final class ArchitectApproachController {
     }
 
     private void executeVerticalClimbStep(DStarLitePathfinder.NextStep step) {
-        architect.clearWalkNavigationState(false);
+        architect.clearWalkNavigationState(true);
         architect.clearCommittedWalk();
-        architect.resetWalkStuckTracker();
-        architect.resetUnstickBreakTracker();
         approachState.unreachableTicks = 0;
         approachState.sprintRequested = false;
 
+        BlockPos current = architect.blockPosition();
         BlockPos next = step.pos();
-        if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
-            architect.getNavigation().moveTo(next.getX() + 0.5, next.getY(), next.getZ() + 0.5, 1.0);
-            architect.setPathRecalcCooldown(4);
+        int yDir = Integer.compare(next.getY(), current.getY());
+
+        double targetX = next.getX() + 0.5;
+        double targetZ = next.getZ() + 0.5;
+        architect.getMoveControl().setWantedPosition(targetX, architect.getY(), targetZ, 1.0);
+        architect.getLookControl().setLookAt(targetX, next.getY() + 0.5, targetZ, 35f, 30f);
+
+        Vec3 motion = architect.getDeltaMovement();
+        double nx = Mth.clamp(targetX - architect.getX(), -CLIMB_HORIZONTAL_ACCEL, CLIMB_HORIZONTAL_ACCEL);
+        double nz = Mth.clamp(targetZ - architect.getZ(), -CLIMB_HORIZONTAL_ACCEL, CLIMB_HORIZONTAL_ACCEL);
+        double vx = Mth.clamp(motion.x + nx, -CLIMB_HORIZONTAL_CAP, CLIMB_HORIZONTAL_CAP);
+        double vz = Mth.clamp(motion.z + nz, -CLIMB_HORIZONTAL_CAP, CLIMB_HORIZONTAL_CAP);
+
+        double vy = motion.y;
+        if (yDir > 0) {
+            if (architect.onGround()) {
+                architect.getJumpControl().jump();
+            }
+            vy = Math.max(vy, CLIMB_VERTICAL_UP_SPEED);
+        } else if (yDir < 0) {
+            vy = Math.min(vy, CLIMB_VERTICAL_DOWN_SPEED);
         }
-        architect.decrementPathRecalcCooldown();
-        architect.getLookControl().setLookAt(next.getX() + 0.5, next.getY() + 0.5, next.getZ() + 0.5, 30f, 30f);
+
+        architect.setDeltaMovement(vx, vy, vz);
+        architect.setPathRecalcCooldown(0);
     }
 }
