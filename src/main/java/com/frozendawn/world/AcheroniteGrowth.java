@@ -98,7 +98,8 @@ public final class AcheroniteGrowth {
                     if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
                         break;
                     }
-                    if (shouldSkipFormationAt(level, crystalPos, gameTime)) {
+                    FormationSkipReason skipReason = getFormationSkipReason(level, crystalPos, gameTime);
+                    if (skipReason != FormationSkipReason.NONE) {
                         break;
                     }
 
@@ -133,7 +134,10 @@ public final class AcheroniteGrowth {
 
                 BlockState belowState = level.getBlockState(mutable.below());
                 if (!isValidSubstrate(belowState)) continue;
-                if (shouldSkipFormationAt(level, mutable, gameTime)) continue;
+                FormationSkipReason skipReason = getFormationSkipReason(level, mutable, gameTime);
+                if (skipReason != FormationSkipReason.NONE) {
+                    continue;
+                }
 
                 float temp = TemperatureManager.getTemperatureAt(level, mutable, currentDay, totalDays);
                 if (temp > FORMATION_TEMP_THRESHOLD) continue;
@@ -192,6 +196,7 @@ public final class AcheroniteGrowth {
                 }
             }
         }
+
     }
 
     private static boolean isValidSubstrate(BlockState state) {
@@ -202,12 +207,15 @@ public final class AcheroniteGrowth {
                 || state.is(Blocks.PACKED_ICE);
     }
 
-    private static boolean shouldSkipFormationAt(ServerLevel level, BlockPos pos, long gameTime) {
+    private static FormationSkipReason getFormationSkipReason(ServerLevel level, BlockPos pos, long gameTime) {
         if (isChunkOnFormationCooldown(pos, gameTime)) {
-            return true;
+            return FormationSkipReason.COOLDOWN;
         }
-        return countNearbyCrystals(level, pos, LOCAL_FORMATION_DENSITY_RADIUS, LOCAL_FORMATION_DENSITY_CAP)
-                >= LOCAL_FORMATION_DENSITY_CAP;
+        if (countNearbyCrystals(level, pos, LOCAL_FORMATION_DENSITY_RADIUS, LOCAL_FORMATION_DENSITY_CAP)
+                >= LOCAL_FORMATION_DENSITY_CAP) {
+            return FormationSkipReason.DENSITY;
+        }
+        return FormationSkipReason.NONE;
     }
 
     private static boolean isChunkOnFormationCooldown(BlockPos pos, long gameTime) {
@@ -260,6 +268,12 @@ public final class AcheroniteGrowth {
             }
         }
         return count;
+    }
+
+    private enum FormationSkipReason {
+        NONE,
+        DENSITY,
+        COOLDOWN
     }
 
     private static boolean promoteMatureCrystal(ServerLevel level, BlockPos crystalPos, BlockState matureState) {
