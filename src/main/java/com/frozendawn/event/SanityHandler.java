@@ -50,6 +50,10 @@ final class SanityHandler {
         lastSanityStage.clear();
     }
 
+    static void onPlayerLogout(ServerPlayer player) {
+        lastSanityStage.remove(player.getUUID());
+    }
+
     /**
      * Called every server tick from PlayerTickHandler.
      */

@@ -224,7 +224,7 @@ public class ModItems {
     public static final DeferredItem<ComfortItem> STUFFED_HYRAX = ITEMS.register("stuffed_hyrax",
             () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.stuffed_hyrax"));
     public static final DeferredItem<ComfortItem> WILSON = ITEMS.register("wilson",
-            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson", true));
+            () -> new ComfortItem(new Item.Properties().stacksTo(1), "tooltip.frozendawn.wilson"));
 
     // --- Acheronite Materials ---
     public static final DeferredItem<AcheroniteShardItem> ACHERONITE_SHARD = ITEMS.register("acheronite_shard",
