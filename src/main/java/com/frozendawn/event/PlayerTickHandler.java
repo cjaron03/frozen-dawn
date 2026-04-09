@@ -74,6 +74,10 @@ final class PlayerTickHandler {
         EasterEggHandler.onPlayerLogout(player);
     }
 
+    static void onPlayerLogin(ServerPlayer player) {
+        FrostbiteHandler.onPlayerLogin(player);
+    }
+
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     static float getLastTemperature(UUID playerId) {
         return playerTemperatures.getOrDefault(playerId, 20f);

@@ -397,6 +397,7 @@ public class WorldTickHandler {
         if (event.getEntity() instanceof ServerPlayer player && player.getServer() != null) {
             ApocalypseState state = ApocalypseState.get(player.getServer());
             WinConditionState winState = WinConditionState.get(player.getServer());
+            PlayerTickHandler.onPlayerLogin(player);
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
 

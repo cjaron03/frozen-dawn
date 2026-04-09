@@ -32,6 +32,9 @@ final class FrostbiteHandler {
 
     private FrostbiteHandler() {}
 
+    private static final String COOLING_TICKS_KEY = "frozendawn:frostbite_cooling_ticks";
+    private static final String FROSTBITE_TICKS_KEY = "frozendawn:frostbite_stage_ticks";
+
     private static final Map<UUID, Integer> coolingTicks = new HashMap<>();
     private static final Map<UUID, Integer> frostbiteTicks = new HashMap<>();
 
@@ -49,8 +52,41 @@ final class FrostbiteHandler {
         frostbiteTicks.clear();
     }
 
+    static void onPlayerLogin(ServerPlayer player) {
+        UUID id = player.getUUID();
+        int savedCooling = player.getPersistentData().getInt(COOLING_TICKS_KEY);
+        int savedFrostbite = player.getPersistentData().getInt(FROSTBITE_TICKS_KEY);
+
+        if (savedCooling > 0) {
+            coolingTicks.put(id, savedCooling);
+        } else {
+            coolingTicks.remove(id);
+        }
+
+        if (savedFrostbite > 0) {
+            frostbiteTicks.put(id, savedFrostbite);
+        } else {
+            frostbiteTicks.remove(id);
+        }
+    }
+
     static void onPlayerLogout(ServerPlayer player) {
         UUID id = player.getUUID();
+        int cooling = coolingTicks.getOrDefault(id, 0);
+        int frostbite = frostbiteTicks.getOrDefault(id, 0);
+
+        if (cooling > 0) {
+            player.getPersistentData().putInt(COOLING_TICKS_KEY, cooling);
+        } else {
+            player.getPersistentData().remove(COOLING_TICKS_KEY);
+        }
+
+        if (frostbite > 0) {
+            player.getPersistentData().putInt(FROSTBITE_TICKS_KEY, frostbite);
+        } else {
+            player.getPersistentData().remove(FROSTBITE_TICKS_KEY);
+        }
+
         coolingTicks.remove(id);
         frostbiteTicks.remove(id);
     }
