@@ -198,7 +198,7 @@ All commands require OP level 2.
 | **Cinematic** | 200 | -80°C | 1.5x | 1.5x | 0.5x |
 | **Brutal** | 50 | -160°C | 0.5x | 0.5x | 2.0x |
 
-Presets stomp the following fields unconditionally: `totalDays`, `basePhase5Temp`, `geothermalStrength`, `heatSourceMultiplier`, `snowAccumulationRate`.
+Presets stomp the following fields unconditionally: `totalDays`, `basePhase5Temp`, `geothermalStrength`, `heatSourceMultiplier`, `snowAccumulationRate`, `broadcastTicks`, `sanitySpeedMultiplier`, `mobSpawnMultiplier`.
 
 ## Configuration
 
@@ -206,24 +206,37 @@ Edit `config/frozendawn-common.toml` after first launch.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `totalDays` | 120 | Days until phase 5 completes (preset-managed) |
-| `startingDay` | 0 | Skip ahead for testing |
-| `pauseProgression` | false | Freeze at current phase |
-| `basePhase5Temp` | -120 | Coldest surface temp in °C (preset-managed) |
-| `geothermalStrength` | 1.0 | Depth warmth multiplier (preset-managed) |
+| `totalDays` | 120 | Total in-game days until phase 6 atmospheric collapse is complete (preset-managed) |
+| `startingDay` | 0 | Skip ahead to this day for testing |
+| `pauseProgression` | false | Freeze apocalypse progression at current phase/day |
+| `basePhase5Temp` | -120 | Coldest surface temperature at phase 5 completion in °C (preset-managed) |
+| `geothermalStrength` | 1.0 | Depth-based warmth multiplier (preset-managed) |
 | `heatSourceMultiplier` | 1.0 | Heat source warmth multiplier (preset-managed) |
-| `enableVegetationDecay` | true | Toggle vegetation death |
-| `enableMobFreezing` | true | Toggle mob/player freeze effects |
-| `enableLavaFreezing` | true | Toggle lava solidification |
-| `snowAccumulationRate` | 1.0 | Snow buildup speed (preset-managed) |
-| `enableFuelPhaseScaling` | true | Toggle phase-based fuel consumption scaling (P4: 2x, P5: 4x, P6: 8x) |
-| `enableFuelScarcity` | true | Toggle coal ore freezing |
-| `fuelScarcityPhase` | 4 | Phase when coal ore starts freezing (2-5) |
-| `enableLoreBooks` | true | Toggle ORSA book injection into loot |
-| `enableSunShrinking` | true | Toggle sun visual shrink |
-| `enableSkyDarkening` | true | Toggle progressive sky/fog darkening |
-| `enableSkyColorShift` | true | Toggle phase-dependent sky hue shifting |
-| `enableFrostOverlay` | true | Toggle frost screen vignette |
+| `enableVegetationDecay` | true | Enable vegetation freezing/decay |
+| `enableMobFreezing` | true | Enable mob freezing on cold surfaces |
+| `enableLavaFreezing` | true | Enable lava freezing in later phases |
+| `snowAccumulationRate` | 1.0 | Snow accumulation speed multiplier (preset-managed) |
+| `enableFuelScarcity` | true | Enable coal ore freezing into Frozen Coal Ore |
+| `fuelScarcityPhase` | 4 | Phase when coal ore freezing starts (2-5) |
+| `enableFuelPhaseScaling` | true | Enable phase-based Thermal Heater fuel scaling (P4: 2x, P5: 4x, P6: 8x) |
+| `enableSanity` | true | Enable isolation/sanity system |
+| `sanitySpeedMultiplier` | 1.0 | Sanity degradation speed multiplier (preset-managed) |
+| `enableNaturalPassiveSpawnSuppression` | true | Suppress Overworld natural passive spawns from phase 4 onward (natural spawns only) |
+| `enableNaturalHostileSpawnSuppression` | true | Suppress Overworld natural non-Frozen-Dawn hostile spawns from phase 4 onward (natural spawns only) |
+| `mobSpawnMultiplier` | 1.0 | Frozen Dawn hostile spawn multiplier (preset-managed) |
+| `enableFrostbitten` | true | Enable Frostbitten spawning in phase 4+ |
+| `enableFrostmite` | true | Enable Frostmite spawning in late phases |
+| `enableHollow` | true | Enable Hollow spawning in phase 5+ |
+| `enableReturned` | true | Enable Returned spawning in phase 6+ |
+| `enableMimic` | true | Enable Mimic spawning in phase 6+ |
+| `enableArchitect` | true | Enable Architect spawning in phase 6+ |
+| `enableLoreBooks` | true | Enable ORSA lore books in structure loot |
+| `enableWinCondition` | true | Enable crashed-satellite/transponder win condition flow |
+| `broadcastTicks` | 120000 | Transponder broadcast duration in ticks (preset-managed) |
+| `enableSkyDarkening` | true | Enable progressive sky darkening and fog |
+| `enableFrostOverlay` | true | Enable frost screen overlay in cold areas |
+| `enableSkyColorShift` | true | Enable phase-dependent sky color shifting |
+| `enableSanityCameraEffects` | true | Enable sanity camera effects (disable for motion sensitivity) |
 
 ## Performance
 
