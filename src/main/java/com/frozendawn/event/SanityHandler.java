@@ -58,19 +58,25 @@ final class SanityHandler {
      * Called every server tick from PlayerTickHandler.
      */
     static void tick(ServerPlayer player, int phase, float speedMultiplier) {
-        if (!FrozenDawnConfig.ENABLE_SANITY.get()) return;
-
-        // Creative/spectator: freeze isolation, reset stage to 0
-        if (player.isCreative() || player.isSpectator()) {
-            updateStage(player, 0, SanityState.get(player.getServer()));
-            return;
-        }
-
         MinecraftServer server = player.getServer();
         if (server == null) return;
         SanityState state = SanityState.get(server);
-
         UUID id = player.getUUID();
+
+        if (!FrozenDawnConfig.ENABLE_SANITY.get()) {
+            // Ensure disabled sanity always clears any persisted progression and syncs stage 0.
+            if (state.getIsolationTicks(id) > 0 || state.getComfortGrace(id) > 0) {
+                state.clearPlayer(id);
+            }
+            updateStage(player, 0, state);
+            return;
+        }
+
+        // Creative/spectator: freeze isolation, reset stage to 0
+        if (player.isCreative() || player.isSpectator()) {
+            updateStage(player, 0, state);
+            return;
+        }
 
         // Phase < 3: no sanity effects
         if (phase < 3) {
@@ -124,6 +130,17 @@ final class SanityHandler {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         SanityState state = SanityState.get(server);
+
+        if (!FrozenDawnConfig.ENABLE_SANITY.get()) {
+            UUID id = player.getUUID();
+            if (state.getIsolationTicks(id) > 0 || state.getComfortGrace(id) > 0) {
+                state.clearPlayer(id);
+            }
+            lastSanityStage.put(id, 0);
+            PacketDistributor.sendToPlayer(player, new SanityStagePayload(0));
+            return;
+        }
+
         int ticks = state.getIsolationTicks(player.getUUID());
         float speed = (float) FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get().doubleValue();
         int phase = com.frozendawn.data.ApocalypseState.get(server).getPhase();
