@@ -6,9 +6,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Handles Acheronite Crystal formation and growth in phase 5+.
@@ -28,6 +33,12 @@ public final class AcheroniteGrowth {
     private static final int FORMATION_RADIUS = 48;
     private static final int GROWTH_RADIUS = 24;
     private static final float FORMATION_TEMP_THRESHOLD = -60f;
+    private static final int LOCAL_FORMATION_DENSITY_RADIUS = 6;
+    private static final int LOCAL_FORMATION_DENSITY_CAP = 8;
+    private static final long FORMATION_CHUNK_COOLDOWN_TICKS = 600L; // 30s
+    private static final int COOLDOWN_PRUNE_INTERVAL_TICKS = 200;
+
+    private static final Map<Long, Long> formationChunkCooldowns = new HashMap<>();
 
     // Phase-scaled values
     private static final int P5_FORMATION_CHECKS = 4;
@@ -39,6 +50,11 @@ public final class AcheroniteGrowth {
     private static final float P6_FORMATION_CHANCE = 0.06f;   // 6% — landscape fills in
     private static final int P6_GROWTH_CHECKS = 20;
     private static final float P6_GROWTH_CHANCE = 0.35f;      // fast growth
+
+    public static void reset() {
+        formationChunkCooldowns.clear();
+    }
+
     public static void tick(ServerLevel level, int phase, float progress, int currentDay, int totalDays) {
         if (phase < 5) return;
 
@@ -47,6 +63,11 @@ public final class AcheroniteGrowth {
         float formationChance = isPhase6 ? P6_FORMATION_CHANCE : P5_FORMATION_CHANCE;
         int growthChecks = isPhase6 ? P6_GROWTH_CHECKS : P5_GROWTH_CHECKS;
         float growthChance = isPhase6 ? P6_GROWTH_CHANCE : P5_GROWTH_CHANCE;
+        long gameTime = level.getGameTime();
+
+        if (gameTime % COOLDOWN_PRUNE_INTERVAL_TICKS == 0) {
+            pruneExpiredChunkCooldowns(gameTime);
+        }
 
         RandomSource random = level.getRandom();
 
@@ -77,6 +98,10 @@ public final class AcheroniteGrowth {
                     if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
                         break;
                     }
+                    FormationSkipReason skipReason = getFormationSkipReason(level, crystalPos, gameTime);
+                    if (skipReason != FormationSkipReason.NONE) {
+                        break;
+                    }
 
                     float temp = TemperatureManager.getTemperatureAt(level, crystalPos, currentDay, totalDays);
                     if (temp > FORMATION_TEMP_THRESHOLD) break;
@@ -91,6 +116,7 @@ public final class AcheroniteGrowth {
                             ModBlocks.ACHERONITE_CRYSTAL.get().defaultBlockState()
                                     .setValue(AcheroniteCrystalBlock.AGE, 0)
                                     .setValue(AcheroniteCrystalBlock.BURIED, buried), 3);
+                    markFormationAt(crystalPos, gameTime);
                     break;
                 }
             }
@@ -108,6 +134,10 @@ public final class AcheroniteGrowth {
 
                 BlockState belowState = level.getBlockState(mutable.below());
                 if (!isValidSubstrate(belowState)) continue;
+                FormationSkipReason skipReason = getFormationSkipReason(level, mutable, gameTime);
+                if (skipReason != FormationSkipReason.NONE) {
+                    continue;
+                }
 
                 float temp = TemperatureManager.getTemperatureAt(level, mutable, currentDay, totalDays);
                 if (temp > FORMATION_TEMP_THRESHOLD) continue;
@@ -117,6 +147,7 @@ public final class AcheroniteGrowth {
                         ModBlocks.ACHERONITE_CRYSTAL.get().defaultBlockState()
                                 .setValue(AcheroniteCrystalBlock.AGE, 0)
                                 .setValue(AcheroniteCrystalBlock.BURIED, false), 3);
+                markFormationAt(mutable, gameTime);
             }
 
             // Surface growth: scan down from heightmap to find existing crystals
@@ -165,6 +196,7 @@ public final class AcheroniteGrowth {
                 }
             }
         }
+
     }
 
     private static boolean isValidSubstrate(BlockState state) {
@@ -173,6 +205,75 @@ public final class AcheroniteGrowth {
                 || state.is(ModBlocks.FROZEN_OBSIDIAN.get())
                 || state.is(Blocks.BLUE_ICE)
                 || state.is(Blocks.PACKED_ICE);
+    }
+
+    private static FormationSkipReason getFormationSkipReason(ServerLevel level, BlockPos pos, long gameTime) {
+        if (isChunkOnFormationCooldown(pos, gameTime)) {
+            return FormationSkipReason.COOLDOWN;
+        }
+        if (countNearbyCrystals(level, pos, LOCAL_FORMATION_DENSITY_RADIUS, LOCAL_FORMATION_DENSITY_CAP)
+                >= LOCAL_FORMATION_DENSITY_CAP) {
+            return FormationSkipReason.DENSITY;
+        }
+        return FormationSkipReason.NONE;
+    }
+
+    private static boolean isChunkOnFormationCooldown(BlockPos pos, long gameTime) {
+        long chunkKey = ChunkPos.asLong(pos);
+        Long cooldownEnd = formationChunkCooldowns.get(chunkKey);
+        if (cooldownEnd == null) {
+            return false;
+        }
+        if (cooldownEnd <= gameTime) {
+            formationChunkCooldowns.remove(chunkKey);
+            return false;
+        }
+        return true;
+    }
+
+    private static void markFormationAt(BlockPos pos, long gameTime) {
+        long chunkKey = ChunkPos.asLong(pos);
+        formationChunkCooldowns.put(chunkKey, gameTime + FORMATION_CHUNK_COOLDOWN_TICKS);
+    }
+
+    private static void pruneExpiredChunkCooldowns(long gameTime) {
+        if (formationChunkCooldowns.isEmpty()) {
+            return;
+        }
+
+        Iterator<Map.Entry<Long, Long>> iterator = formationChunkCooldowns.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getValue() <= gameTime) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private static int countNearbyCrystals(ServerLevel level, BlockPos pos, int radius, int cap) {
+        int count = 0;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    cursor.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
+                    if (!level.getBlockState(cursor).is(ModBlocks.ACHERONITE_CRYSTAL.get())) {
+                        continue;
+                    }
+
+                    count++;
+                    if (count >= cap) {
+                        return count;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    private enum FormationSkipReason {
+        NONE,
+        DENSITY,
+        COOLDOWN
     }
 
     private static boolean promoteMatureCrystal(ServerLevel level, BlockPos crystalPos, BlockState matureState) {
