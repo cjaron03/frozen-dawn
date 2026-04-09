@@ -30,6 +30,7 @@ final class ArchitectApproachMovementSupport {
     private static final double CLIMB_HORIZONTAL_ACCEL = 0.08;
     private static final double CLIMB_HORIZONTAL_CAP = 0.12;
     private static final double MAX_DIRECT_CHASE_VERTICAL_DELTA = 1.5;
+    private static final double FALLBACK_SPRINT_MIN_SPEED = 1.10;
 
     private ArchitectApproachMovementSupport() {
     }
@@ -46,10 +47,14 @@ final class ArchitectApproachMovementSupport {
         architect.resetWalkStuckTracker();
         architect.resetUnstickBreakTracker();
         approachState.unreachableTicks = 0;
-        approachState.sprintRequested = false;
+        boolean canFallbackSprint = !assistLiquidAscent
+                && architect.hasLineOfSight(target)
+                && !architect.isTargetWithinMeleeEngageGeometry(target);
+        approachState.sprintRequested = canFallbackSprint;
+        double chaseSpeed = canFallbackSprint ? Math.max(speed, FALLBACK_SPRINT_MIN_SPEED) : speed;
 
         if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
-            architect.getNavigation().moveTo(target, speed);
+            architect.getNavigation().moveTo(target, chaseSpeed);
             architect.setPathRecalcCooldown(repathCooldownTicks);
         }
         architect.decrementPathRecalcCooldown();
