@@ -415,7 +415,7 @@ public class WorldTickHandler {
         }
     }
 
-    /** Returns the last-calculated temperature for a player (updated every 40 ticks). */
+    /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     public static float getLastTemperature(java.util.UUID playerId) {
         return PlayerTickHandler.getLastTemperature(playerId);
     }

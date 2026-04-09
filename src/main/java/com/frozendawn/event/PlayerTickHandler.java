@@ -63,7 +63,7 @@ final class PlayerTickHandler {
         SanityHandler.reset();
     }
 
-    /** Returns the last-calculated temperature for a player (updated every 20 ticks). */
+    /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     static float getLastTemperature(UUID playerId) {
         return playerTemperatures.getOrDefault(playerId, 20f);
     }
