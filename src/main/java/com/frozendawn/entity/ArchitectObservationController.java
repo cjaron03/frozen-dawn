@@ -238,13 +238,15 @@ final class ArchitectObservationController {
         observationMemory.setHasObserved(true);
         observationMemory.setObserveDirty(false);
         if (!approachState.dstarObserveHandoffLogged) {
-            LOGGER.info("[Architect][DStarDiag] event=OBSERVE_HANDOFF cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={}",
-                    approachState.dstar.getCellCount(),
-                    approachState.dstar.isSearchComplete(),
-                    String.format("%.2f", dist),
-                    approachState.dstar.isInitialized(),
-                    ArchitectEntity.actionName(architect.getBrainAction()),
-                    transitionSource);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("[Architect][DStarDiag] event=OBSERVE_HANDOFF cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={}",
+                        approachState.dstar.getCellCount(),
+                        approachState.dstar.isSearchComplete(),
+                        String.format("%.2f", dist),
+                        approachState.dstar.isInitialized(),
+                        ArchitectEntity.actionName(architect.getBrainAction()),
+                        transitionSource);
+            }
             approachState.dstarObserveHandoffLogged = true;
         }
         approachState.dstarApproachEntryLogged = false;

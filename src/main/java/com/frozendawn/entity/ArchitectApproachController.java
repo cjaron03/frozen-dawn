@@ -174,15 +174,17 @@ final class ArchitectApproachController {
         boolean willReinitialize = approachState.dstar.needsReinitialize(targetPos);
         boolean reuseExisting = initialized && !willReinitialize;
 
-        LOGGER.info("[Architect][DStarDiag] event=APPROACH_ENTRY cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={} reuseExistingSearch={} willReinitialize={}",
-                approachState.dstar.getCellCount(),
-                approachState.dstar.isSearchComplete(),
-                String.format("%.2f", architect.distanceTo(target)),
-                initialized,
-                ArchitectEntity.actionName(architect.getBrainAction()),
-                resolveTransitionSource(),
-                reuseExisting,
-                willReinitialize);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect][DStarDiag] event=APPROACH_ENTRY cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={} reuseExistingSearch={} willReinitialize={}",
+                    approachState.dstar.getCellCount(),
+                    approachState.dstar.isSearchComplete(),
+                    String.format("%.2f", architect.distanceTo(target)),
+                    initialized,
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    resolveTransitionSource(),
+                    reuseExisting,
+                    willReinitialize);
+        }
 
         approachState.dstarApproachEntryLogged = true;
     }

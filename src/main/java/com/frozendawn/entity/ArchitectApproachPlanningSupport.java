@@ -21,7 +21,6 @@ final class ArchitectApproachPlanningSupport {
     private static final int APPROACH_STEADY_COMPUTE_BUDGET = 180;
     private static final int APPROACH_REINIT_FOLLOWUP_COMPUTE_BUDGET = 160;
     private static final int PLAN_BLOCKED_LOG_INTERVAL_TICKS = 40;
-    private static final int PLAN_DISTANCE_GATED_LOG_INTERVAL_TICKS = 40;
     private static final double APPROACH_DSTAR_ENGAGE_RANGE = 48.0;
     private static final double APPROACH_DSTAR_DISENGAGE_RANGE = 56.0;
 
@@ -160,8 +159,8 @@ final class ArchitectApproachPlanningSupport {
         boolean shouldLog = !planBlockedActive
                 || !reason.equals(lastPlanBlockedReason)
                 || planBlockedTicks % PLAN_BLOCKED_LOG_INTERVAL_TICKS == 0;
-        if (shouldLog) {
-            LOGGER.info("[Architect][DStarDiag] event=APPROACH_PLAN_BLOCKED reason={} blockedTicks={} cellCount={} searchComplete={} initialized={} targetDistance={} reinitializedThisTick={} budget={} action={} transitionSource={}",
+        if (shouldLog && LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect][DStarDiag] event=APPROACH_PLAN_BLOCKED reason={} blockedTicks={} cellCount={} searchComplete={} initialized={} targetDistance={} reinitializedThisTick={} budget={} action={} transitionSource={}",
                     reason,
                     planBlockedTicks,
                     approachState.dstar.getCellCount(),
@@ -181,14 +180,16 @@ final class ArchitectApproachPlanningSupport {
         if (!planBlockedActive) {
             return;
         }
-        LOGGER.info("[Architect][DStarDiag] event=APPROACH_PLAN_READY blockedTicks={} cellCount={} searchComplete={} initialized={} targetDistance={} action={} transitionSource={}",
-                planBlockedTicks,
-                approachState.dstar.getCellCount(),
-                approachState.dstar.isSearchComplete(),
-                approachState.dstar.isInitialized(),
-                String.format("%.2f", architect.distanceTo(target)),
-                ArchitectEntity.actionName(architect.getBrainAction()),
-                approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect][DStarDiag] event=APPROACH_PLAN_READY blockedTicks={} cellCount={} searchComplete={} initialized={} targetDistance={} action={} transitionSource={}",
+                    planBlockedTicks,
+                    approachState.dstar.getCellCount(),
+                    approachState.dstar.isSearchComplete(),
+                    approachState.dstar.isInitialized(),
+                    String.format("%.2f", architect.distanceTo(target)),
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE");
+        }
         planBlockedActive = false;
         planBlockedTicks = 0;
         lastPlanBlockedReason = "NONE";
@@ -203,9 +204,7 @@ final class ArchitectApproachPlanningSupport {
 
     private void logPlanDistanceGated(double targetDistance, boolean hadPlannerState) {
         planDistanceGatedTicks++;
-        boolean shouldLog = !planDistanceGatedActive
-                || planDistanceGatedTicks % PLAN_DISTANCE_GATED_LOG_INTERVAL_TICKS == 0;
-        if (shouldLog) {
+        if (!planDistanceGatedActive) {
             LOGGER.info("[Architect][DStarDiag] event=APPROACH_PLAN_DISTANCE_GATED gatedTicks={} targetDistance={} engageRange={} disengageRange={} initialized={} hadPlannerState={} action={} transitionSource={}",
                     planDistanceGatedTicks,
                     String.format("%.2f", targetDistance),

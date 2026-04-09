@@ -313,15 +313,17 @@ final class ArchitectApproachWalkSupport {
         if (approachState.committedWalkWaypoint == null) {
             return;
         }
-        LOGGER.info("[Architect] WALK corridor invalidated: reason={} current={} firstStep={} waypoint={} age={} ttlLeft={} targetSnapshot={} targetNow={}",
-                reason,
-                architect.blockPosition(),
-                approachState.committedWalkFirstStepPos,
-                approachState.committedWalkWaypoint,
-                approachState.committedWalkAgeTicks,
-                approachState.committedWalkTicks,
-                approachState.committedWalkTargetSnapshot,
-                target != null ? target.blockPosition() : null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Architect] WALK corridor invalidated: reason={} current={} firstStep={} waypoint={} age={} ttlLeft={} targetSnapshot={} targetNow={}",
+                    reason,
+                    architect.blockPosition(),
+                    approachState.committedWalkFirstStepPos,
+                    approachState.committedWalkWaypoint,
+                    approachState.committedWalkAgeTicks,
+                    approachState.committedWalkTicks,
+                    approachState.committedWalkTargetSnapshot,
+                    target != null ? target.blockPosition() : null);
+        }
         clearCommittedWalk();
     }
 
