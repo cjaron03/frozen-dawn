@@ -12,7 +12,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -163,6 +162,34 @@ public class MimicEntity extends Monster {
         return entityData.get(DATA_BURROW_TICKS);
     }
 
+    int getDespawnTimerInternal() {
+        return despawnTimer;
+    }
+
+    void setDespawnTimerInternal(int timer) {
+        despawnTimer = timer;
+    }
+
+    boolean isEngagedInternal() {
+        return engaged;
+    }
+
+    void setEngagedInternal(boolean value) {
+        engaged = value;
+    }
+
+    void setMimicTargetUUIDInternal(Optional<UUID> targetUuid) {
+        entityData.set(DATA_MIMIC_TARGET, targetUuid);
+    }
+
+    void setHasLandedFirstHitInternal(boolean value) {
+        hasLandedFirstHit = value;
+    }
+
+    void forceTransitionToPhase(int phase) {
+        transitionToPhase(phase);
+    }
+
     // --- AI Step ---
 
     @Override
@@ -278,7 +305,7 @@ public class MimicEntity extends Monster {
 
             // Detect if player's crosshair is on the mimic — Enderman-style AABB raycast
             if (stareSoundCooldown <= 0) {
-                if (isPlayerLookingAtMe(nearest)) {
+                if (MimicCombatBehavior.isPlayerLookingAtMe(this, nearest)) {
                     // Play at the PLAYER's position so it feels like an ambient cue
                     level().playSound(null, nearest.getX(), nearest.getY(), nearest.getZ(),
                             ModSounds.MIMIC_STARE.get(), net.minecraft.sounds.SoundSource.AMBIENT, 1.0f, 1.0f);
@@ -474,47 +501,17 @@ public class MimicEntity extends Monster {
     @Override
     public boolean doHurtTarget(Entity target) {
         boolean hit = super.doHurtTarget(target);
-        if (hit) {
-            // Low-pitched ghast scream on every attack
-            level().playSound(null, getX(), getY(), getZ(),
-                    ModSounds.MIMIC_ATTACK.get(), net.minecraft.sounds.SoundSource.HOSTILE, 1.0f, 0.5f + random.nextFloat() * 0.1f);
-            if (!hasLandedFirstHit) {
-                // Bonus 2 damage on first hit after entering combat
-                if (target instanceof LivingEntity living) {
-                    living.hurt(damageSources().mobAttack(this), 2.0f);
-                }
-                hasLandedFirstHit = true;
-            }
-        }
+        MimicCombatBehavior.onSuccessfulAttack(this, target, hit);
         return hit;
-    }
-
-    /**
-     * Enderman-style crosshair check: does the player's look ray intersect this entity's hitbox?
-     */
-    private boolean isPlayerLookingAtMe(Player player) {
-        Vec3 lookVec = player.getViewVector(1.0f).normalize();
-        Vec3 eyePos = player.getEyePosition();
-        double range = 64.0;
-        Vec3 rayEnd = eyePos.add(lookVec.scale(range));
-        AABB box = getBoundingBox().inflate(0.1); // slight padding like Enderman
-        Optional<Vec3> hit = box.clip(eyePos, rayEnd);
-        return hit.isPresent();
     }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source.is(DamageTypeTags.IS_FREEZING)) return false;
-        if (source.is(DamageTypeTags.IS_FIRE)) {
-            amount *= 1.5f;
+        MimicCombatBehavior.HurtDecision decision = MimicCombatBehavior.beforeHurt(this, source, amount);
+        if (decision.cancel()) {
+            return false;
         }
-        // If hit during observation, immediately enter combat
-        if (getMimicPhase() == PHASE_OBSERVATION && source.getEntity() instanceof Player attacker) {
-            engaged = true;
-            entityData.set(DATA_MIMIC_TARGET, Optional.of(attacker.getUUID()));
-            transitionToPhase(PHASE_COMBAT);
-        }
-        return super.hurt(source, amount);
+        return super.hurt(source, decision.amount());
     }
 
     @Override
@@ -591,21 +588,13 @@ public class MimicEntity extends Monster {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        tag.putInt("MimicPhase", getMimicPhase());
-        tag.putInt("DespawnTimer", despawnTimer);
-        tag.putBoolean("Engaged", engaged);
-        getMimicTargetUUID().ifPresent(uuid -> tag.putUUID("MimicTarget", uuid));
+        MimicPersistenceState.addAdditionalSaveData(this, tag);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        setMimicPhase(tag.getInt("MimicPhase"));
-        despawnTimer = tag.getInt("DespawnTimer");
-        engaged = tag.getBoolean("Engaged");
-        if (tag.hasUUID("MimicTarget")) {
-            entityData.set(DATA_MIMIC_TARGET, Optional.of(tag.getUUID("MimicTarget")));
-        }
+        MimicPersistenceState.readAdditionalSaveData(this, tag);
     }
 
     // --- Custom despawn (skip vanilla) ---
