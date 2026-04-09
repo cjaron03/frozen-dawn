@@ -2,6 +2,7 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ReturnedBreakLightGoal;
 import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.DifficultyInstance;
@@ -151,6 +153,14 @@ public class ReturnedEntity extends Monster {
             amount *= 1.5f;
         }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
+            WorldTickHandler.grantAdvancement(killer, "returned_killed");
+        }
     }
 
     // --- AI Step (heater burn, despawn timer) ---

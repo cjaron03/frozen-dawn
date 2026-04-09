@@ -877,6 +877,14 @@ public class ArchitectEntity extends Monster {
         return hurt;
     }
 
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
+            WorldTickHandler.grantAdvancement(killer, "disassembled");
+        }
+    }
+
     // ========================
     //  HEALING POTION
     // ========================
