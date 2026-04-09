@@ -63,13 +63,27 @@ final class ArchitectApproachBreakSupport {
                             0.7f + architect.nextRandomFloat() * 0.3f);
                     LOGGER.info("[Architect] Ceiling breach complete — dropping through {}", breakTarget);
                     architect.setPathRecalcCooldown(0);
-                    approachState.dstar.onLocalBlockChanged(breakTarget, architect.level());
+                    approachState.dstar.onLocalBlockChanged(
+                            breakTarget,
+                            architect.level(),
+                            "APPROACH_LOCAL_RESEED",
+                            ArchitectEntity.actionName(architect.getBrainAction()),
+                            approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                            architect.distanceTo(target)
+                    );
                     architect.triggerReeval();
                     return true;
                 }
 
                 architect.setPathRecalcCooldown(0);
-                approachState.dstar.onLocalBlockChanged(breakTarget, architect.level());
+                approachState.dstar.onLocalBlockChanged(
+                        breakTarget,
+                        architect.level(),
+                        "APPROACH_LOCAL_RESEED",
+                        ArchitectEntity.actionName(architect.getBrainAction()),
+                        approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                        architect.distanceTo(target)
+                );
 
                 // Chain headroom breach to restore 2-block clearance.
                 BlockPos above = breakTarget.above();

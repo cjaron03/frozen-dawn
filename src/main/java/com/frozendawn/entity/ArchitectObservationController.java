@@ -27,8 +27,11 @@ import javax.annotation.Nullable;
 final class ArchitectObservationController {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final float OBSERVE_MIN_STANDOFF = 28.0f;
-    private static final float OBSERVE_MAX_STANDOFF = 42.0f;
+    private static final float OBSERVE_MIN_STANDOFF = 20.0f;
+    private static final float OBSERVE_MAX_STANDOFF = 30.0f;
+    private static final double OBSERVE_DSTAR_PRECOMPUTE_MAX_RANGE = 38.0;
+    private static final double OBSERVE_DSTAR_PRECOMPUTE_MAX_RANGE_SQR =
+            OBSERVE_DSTAR_PRECOMPUTE_MAX_RANGE * OBSERVE_DSTAR_PRECOMPUTE_MAX_RANGE;
 
     private final ArchitectEntity architect;
     private final ArchitectObservationMemory observationMemory;
@@ -56,9 +59,14 @@ final class ArchitectObservationController {
             return;
         }
 
-        approachController.precomputeDStarDuringObserve(target);
+        double distSqr = architect.distanceToSqr(target);
+        if (distSqr <= OBSERVE_DSTAR_PRECOMPUTE_MAX_RANGE_SQR) {
+            approachController.precomputeDStarDuringObserve(target);
+        } else {
+            approachState.dstarPrecomputed = false;
+        }
 
-        float dist = architect.distanceTo(target);
+        float dist = (float) Math.sqrt(distSqr);
         boolean hasLineOfSight = target.hasLineOfSight(architect);
         if (shouldHoldObservePosition(dist, hasLineOfSight)) {
             architect.getNavigation().stop();
@@ -115,7 +123,7 @@ final class ArchitectObservationController {
         }
 
         if (dist < 20 && hasLineOfSight && architect.isPlayerFacing(target)) {
-            markObserveComplete();
+            markObserveComplete(dist, "EARLY_EXIT_DIST_LOS_FACING");
             return;
         }
 
@@ -130,7 +138,7 @@ final class ArchitectObservationController {
             observationMemory.setObserveTargetTicks(observeTargetTicks);
         }
         if (ArchitectObserveDuration.hasReachedObserveTarget(observationMemory.getObserveTicks(), observeTargetTicks)) {
-            markObserveComplete();
+            markObserveComplete(dist, "OBSERVE_TARGET_TICKS");
         }
     }
 
@@ -214,6 +222,10 @@ final class ArchitectObservationController {
         observationMemory.setObserveTargetTicks(0);
         observationMemory.setLastObservedPos(null);
         approachState.dstarPrecomputed = false;
+        approachState.dstarObserveHandoffLogged = false;
+        approachState.dstarApproachEntryLogged = false;
+        approachState.dstarTransitionSource = null;
+        approachState.dstar.resetOverflowInvestigationEvents();
     }
 
     private void awardObserveProbeAdvancement(LivingEntity target) {
@@ -222,9 +234,21 @@ final class ArchitectObservationController {
         }
     }
 
-    private void markObserveComplete() {
+    private void markObserveComplete(float dist, String transitionSource) {
         observationMemory.setHasObserved(true);
         observationMemory.setObserveDirty(false);
+        if (!approachState.dstarObserveHandoffLogged) {
+            LOGGER.info("[Architect][DStarDiag] event=OBSERVE_HANDOFF cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={}",
+                    approachState.dstar.getCellCount(),
+                    approachState.dstar.isSearchComplete(),
+                    String.format("%.2f", dist),
+                    approachState.dstar.isInitialized(),
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    transitionSource);
+            approachState.dstarObserveHandoffLogged = true;
+        }
+        approachState.dstarApproachEntryLogged = false;
+        approachState.dstarTransitionSource = transitionSource;
         if (architect.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.SOUL, architect.getX(), architect.getY() + 1.8, architect.getZ(),
                     8, 0.3, 0.2, 0.3, 0.03);

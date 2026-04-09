@@ -61,6 +61,8 @@ final class ArchitectApproachController {
             return;
         }
 
+        logApproachEntryIfNeeded(target);
+
         architect.recordWalkCellHistory();
 
         // Proactively open nearby wooden doors before movement dispatch.
@@ -68,7 +70,14 @@ final class ArchitectApproachController {
         // Snow/surface state can change around the Architect each tick; reseed a
         // local incremental update periodically so D* tracks dynamic obstructions.
         if (architect.tickCount % 10 == 0) {
-            approachState.dstar.onLocalBlockChanged(architect.blockPosition(), architect.level());
+            approachState.dstar.onLocalBlockChanged(
+                    architect.blockPosition(),
+                    architect.level(),
+                    "APPROACH_LOCAL_RESEED",
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    resolveTransitionSource(),
+                    architect.distanceTo(target)
+            );
         }
 
         // Avoid committed-walk churn while submerged: switch to direct water egress chase.
@@ -165,5 +174,34 @@ final class ArchitectApproachController {
                     step.type(),
                     approachState.dstar.getCellCount());
         }
+    }
+
+    private void logApproachEntryIfNeeded(LivingEntity target) {
+        if (approachState.dstarApproachEntryLogged) {
+            return;
+        }
+
+        BlockPos targetPos = target.blockPosition();
+        boolean initialized = approachState.dstar.isInitialized();
+        boolean willReinitialize = approachState.dstar.needsReinitialize(targetPos);
+        boolean reuseExisting = initialized && !willReinitialize;
+
+        LOGGER.info("[Architect][DStarDiag] event=APPROACH_ENTRY cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={} reuseExistingSearch={} willReinitialize={}",
+                approachState.dstar.getCellCount(),
+                approachState.dstar.isSearchComplete(),
+                String.format("%.2f", architect.distanceTo(target)),
+                initialized,
+                ArchitectEntity.actionName(architect.getBrainAction()),
+                resolveTransitionSource(),
+                reuseExisting,
+                willReinitialize);
+
+        approachState.dstarApproachEntryLogged = true;
+    }
+
+    private String resolveTransitionSource() {
+        return approachState.dstarTransitionSource != null
+                ? approachState.dstarTransitionSource
+                : "UNKNOWN_OR_NON_OBSERVE";
     }
 }

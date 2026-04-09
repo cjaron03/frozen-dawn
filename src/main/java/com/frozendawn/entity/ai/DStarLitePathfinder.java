@@ -53,6 +53,11 @@ public class DStarLitePathfinder {
     private static final int MAX_VERTICAL_FALL_DEPTH = 10;
     private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
     private static final float CLIMB_TRANSITION_PENALTY = 8.0f;
+    private static final double UNKNOWN_TARGET_DISTANCE = -1.0;
+    private static final String ACTION_UNKNOWN = "UNKNOWN";
+    private static final String TRANSITION_UNKNOWN = "UNKNOWN";
+    private static final String CHANGE_SOURCE_REAL_BLOCK = "REAL_BLOCK_CHANGE";
+    private static final String CHANGE_SOURCE_APPROACH_LOCAL_RESEED = "APPROACH_LOCAL_RESEED";
 
     // --- Step types returned to the entity ---
     public enum StepType {
@@ -103,6 +108,8 @@ public class DStarLitePathfinder {
     private int surfaceY = 64;
     private boolean initialized = false;
     private boolean searchComplete = false;
+    private boolean oversizeEventLogged = false;
+    private boolean reinitEventLogged = false;
 
     // --- Public accessors ---
     public boolean isInitialized() { return initialized; }
@@ -110,6 +117,11 @@ public class DStarLitePathfinder {
     public void setSurfaceY(int y) { this.surfaceY = y; }
     public void addImmuneBlock(BlockPos pos) {
         immuneBlocks.add(pos.asLong());
+    }
+
+    public void resetOverflowInvestigationEvents() {
+        oversizeEventLogged = false;
+        reinitEventLogged = false;
     }
 
     // ========================================
@@ -498,19 +510,88 @@ public class DStarLitePathfinder {
     // ========================================
 
     public void onBlockChanged(BlockPos pos, Level level) {
-        onBlockChanged(pos, level, EXTERNAL_BLOCK_CHANGE_SEED_RADIUS);
+        onBlockChanged(
+                pos,
+                level,
+                EXTERNAL_BLOCK_CHANGE_SEED_RADIUS,
+                CHANGE_SOURCE_REAL_BLOCK,
+                ACTION_UNKNOWN,
+                TRANSITION_UNKNOWN,
+                UNKNOWN_TARGET_DISTANCE
+        );
     }
 
     public void onLocalBlockChanged(BlockPos pos, Level level) {
-        onBlockChanged(pos, level, LOCAL_BLOCK_CHANGE_SEED_RADIUS);
+        onBlockChanged(
+                pos,
+                level,
+                LOCAL_BLOCK_CHANGE_SEED_RADIUS,
+                CHANGE_SOURCE_APPROACH_LOCAL_RESEED,
+                ACTION_UNKNOWN,
+                TRANSITION_UNKNOWN,
+                UNKNOWN_TARGET_DISTANCE
+        );
     }
 
-    private void onBlockChanged(BlockPos pos, Level level, int seedRadius) {
+    public void onBlockChanged(
+            BlockPos pos,
+            Level level,
+            String changeSource,
+            String action,
+            String transitionSource,
+            double targetDistance
+    ) {
+        onBlockChanged(pos, level, EXTERNAL_BLOCK_CHANGE_SEED_RADIUS, changeSource, action, transitionSource, targetDistance);
+    }
+
+    public void onLocalBlockChanged(
+            BlockPos pos,
+            Level level,
+            String changeSource,
+            String action,
+            String transitionSource,
+            double targetDistance
+    ) {
+        onBlockChanged(pos, level, LOCAL_BLOCK_CHANGE_SEED_RADIUS, changeSource, action, transitionSource, targetDistance);
+    }
+
+    private void onBlockChanged(
+            BlockPos pos,
+            Level level,
+            int seedRadius,
+            String changeSource,
+            String action,
+            String transitionSource,
+            double targetDistance
+    ) {
         if (!initialized) return;
         if (!isWithinSearchRadius(pos)) return;
 
         if (cells.size() > MAX_INCREMENTAL_CELLS) {
-            LOGGER.info("[D*Lite] cell map too large ({}), reinitializing incremental search", cells.size());
+            if (!oversizeEventLogged) {
+                LOGGER.info("[Architect][DStarDiag] event=DSTAR_OVERSIZE_FIRST cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={} seedRadius={} changeSource={}",
+                        cells.size(),
+                        searchComplete,
+                        targetDistance,
+                        initialized,
+                        action,
+                        transitionSource,
+                        seedRadius,
+                        changeSource);
+                oversizeEventLogged = true;
+            }
+            if (!reinitEventLogged) {
+                LOGGER.info("[Architect][DStarDiag] event=DSTAR_REINIT_FIRST cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={} seedRadius={} changeSource={} reason=OVERSIZE_MAP",
+                        cells.size(),
+                        searchComplete,
+                        targetDistance,
+                        initialized,
+                        action,
+                        transitionSource,
+                        seedRadius,
+                        changeSource);
+                reinitEventLogged = true;
+            }
             initialize(goalPos, startPos, level);
             // Avoid long server stalls on oversized maps; rebuild incrementally.
             computePartial(OVERSIZE_REBUILD_BUDGET, level);
@@ -1010,5 +1091,7 @@ public class DStarLitePathfinder {
         immuneBlocks.clear();
         initialized = false;
         searchComplete = false;
+        oversizeEventLogged = false;
+        reinitEventLogged = false;
     }
 }

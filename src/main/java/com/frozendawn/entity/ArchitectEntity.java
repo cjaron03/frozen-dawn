@@ -99,6 +99,19 @@ public class ArchitectEntity extends Monster {
     public static final int ACTION_TRAP_SET = 5;
     public static final int ACTION_PEEK = 6;
 
+    public static String actionName(int action) {
+        return switch (action) {
+            case ACTION_OBSERVE -> "OBSERVE";
+            case ACTION_APPROACH -> "APPROACH";
+            case ACTION_ATTACK_MELEE -> "ATTACK_MELEE";
+            case ACTION_RETREAT -> "RETREAT";
+            case ACTION_FORTIFY -> "FORTIFY";
+            case ACTION_TRAP_SET -> "TRAP_SET";
+            case ACTION_PEEK -> "PEEK";
+            default -> "UNKNOWN(" + action + ")";
+        };
+    }
+
     // --- Ice Budgets (separate to prevent conflicts) ---
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
@@ -776,6 +789,18 @@ public class ArchitectEntity extends Monster {
         if (newAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
+        if (newAction == ACTION_APPROACH) {
+            approachState.dstarApproachEntryLogged = false;
+            if (oldAction != ACTION_OBSERVE || approachState.dstarTransitionSource == null) {
+                approachState.dstarTransitionSource = "ACTION_" + actionName(oldAction);
+            }
+        }
+        if (newAction == ACTION_OBSERVE) {
+            approachState.dstarObserveHandoffLogged = false;
+            approachState.dstarApproachEntryLogged = false;
+            approachState.dstarTransitionSource = null;
+            approachState.dstar.resetOverflowInvestigationEvents();
+        }
         pathRecalcCooldown = 0; // Force path recalc on action change
     }
 
@@ -979,8 +1004,17 @@ public class ArchitectEntity extends Monster {
         if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
             observationMemory.setObserveDirty(true);
         }
+        LivingEntity target = getTarget();
+        double targetDistance = target != null ? distanceTo(target) : -1.0;
         // Notify D* Lite of world changes so it updates costs incrementally
-        approachState.dstar.onBlockChanged(changedPos, level());
+        approachState.dstar.onBlockChanged(
+                changedPos,
+                level(),
+                "REAL_BLOCK_CHANGE",
+                actionName(getBrainAction()),
+                approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                targetDistance
+        );
     }
 
     // ========================

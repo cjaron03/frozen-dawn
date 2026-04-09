@@ -208,7 +208,14 @@ final class ArchitectApproachMovementSupport {
         BlockState supportState = level.getBlockState(supportPos);
         boolean supportReady = supportState.is(Blocks.PACKED_ICE) || supportState.isSolid() || architect.placeScaffoldIce(supportPos);
         if (!supportReady) {
-            architect.getDStarPathfinder().onLocalBlockChanged(supportPos, level);
+            architect.getDStarPathfinder().onLocalBlockChanged(
+                    supportPos,
+                    level,
+                    "APPROACH_LOCAL_RESEED",
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                    -1.0
+            );
             return;
         }
 
@@ -219,8 +226,22 @@ final class ArchitectApproachMovementSupport {
                 architect.getNavigation().stop();
                 LOGGER.info("[Architect] Scaffold-up blocked, breaching {} before retrying step {}", obstruction, scaffoldTarget);
             }
-            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget, level);
-            architect.getDStarPathfinder().onLocalBlockChanged(scaffoldTarget.above(), level);
+            architect.getDStarPathfinder().onLocalBlockChanged(
+                    scaffoldTarget,
+                    level,
+                    "APPROACH_LOCAL_RESEED",
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                    -1.0
+            );
+            architect.getDStarPathfinder().onLocalBlockChanged(
+                    scaffoldTarget.above(),
+                    level,
+                    "APPROACH_LOCAL_RESEED",
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                    -1.0
+            );
             return;
         }
 

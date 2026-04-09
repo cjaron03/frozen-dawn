@@ -119,7 +119,14 @@ public class ArchitectBlockBreaker {
             // Mark as immune in the D* Lite pathfinder
             if (mob instanceof com.frozendawn.entity.ArchitectEntity architect) {
                 architect.getDStarPathfinder().addImmuneBlock(targetPos);
-                architect.getDStarPathfinder().onLocalBlockChanged(targetPos, level);
+                architect.getDStarPathfinder().onLocalBlockChanged(
+                        targetPos,
+                        level,
+                        "APPROACH_LOCAL_RESEED",
+                        ArchitectEntity.actionName(architect.getBrainAction()),
+                        "UNKNOWN_OR_NON_OBSERVE",
+                        -1.0
+                );
             }
             clearTarget();
             return false;

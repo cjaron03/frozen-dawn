@@ -57,7 +57,14 @@ final class ArchitectApproachUnstickSupport {
             return true;
         }
         if (approachState.walkStuckTicks >= WALK_STUCK_REINIT_TICKS && target != null) {
-            approachState.dstar.onLocalBlockChanged(architect.blockPosition(), architect.level());
+            approachState.dstar.onLocalBlockChanged(
+                    architect.blockPosition(),
+                    architect.level(),
+                    "APPROACH_LOCAL_RESEED",
+                    ArchitectEntity.actionName(architect.getBrainAction()),
+                    approachState.dstarTransitionSource != null ? approachState.dstarTransitionSource : "UNKNOWN_OR_NON_OBSERVE",
+                    architect.distanceTo(target)
+            );
             approachState.dstar.setSurfaceY(approachState.surfaceY);
             approachState.dstar.initialize(target.blockPosition(), architect.blockPosition(), architect.level());
             approachState.dstar.computePartial(1000, architect.level());
