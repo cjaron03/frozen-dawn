@@ -67,18 +67,6 @@ final class ArchitectApproachController {
 
         // Proactively open nearby wooden doors before movement dispatch.
         architect.keepNearbyWoodenDoorsOpen();
-        // Snow/surface state can change around the Architect each tick; reseed a
-        // local incremental update periodically so D* tracks dynamic obstructions.
-        if (architect.tickCount % 10 == 0) {
-            approachState.dstar.onLocalBlockChanged(
-                    architect.blockPosition(),
-                    architect.level(),
-                    "APPROACH_LOCAL_RESEED",
-                    ArchitectEntity.actionName(architect.getBrainAction()),
-                    resolveTransitionSource(),
-                    architect.distanceTo(target)
-            );
-        }
 
         // Avoid committed-walk churn while submerged: switch to direct water egress chase.
         if (architect.isInWaterOrBubble()) {
