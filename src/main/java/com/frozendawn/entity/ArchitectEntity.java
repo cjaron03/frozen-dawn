@@ -125,8 +125,8 @@ public class ArchitectEntity extends Monster {
     private final ArchitectCombatState combatState = new ArchitectCombatState();
 
     // --- Observation Data ---
-    static final int MIN_OBSERVE_TICKS = 600;
-    static final int MAX_OBSERVE_TICKS = 1200;
+    static final int MIN_OBSERVE_TICKS = 120;
+    static final int MAX_OBSERVE_TICKS = 120;
     static final double SPAWN_OBSERVE_CUE_RANGE_SQR = 72.0 * 72.0;
 
     private static final int PLAYER_MEMORY_TICKS = 200;
