@@ -63,6 +63,14 @@ final class PlayerTickHandler {
         SanityHandler.reset();
     }
 
+    static void onPlayerLogout(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        breathableCache.remove(playerId);
+        suffocationTimer.remove(playerId);
+        playerTemperatures.remove(playerId);
+        frostmiteTemperatureDrain.remove(playerId);
+    }
+
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     static float getLastTemperature(UUID playerId) {
         return playerTemperatures.getOrDefault(playerId, 20f);

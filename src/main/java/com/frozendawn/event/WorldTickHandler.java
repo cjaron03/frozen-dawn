@@ -415,6 +415,13 @@ public class WorldTickHandler {
         }
     }
 
+    @SubscribeEvent
+    public static void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            PlayerTickHandler.onPlayerLogout(player);
+        }
+    }
+
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     public static float getLastTemperature(java.util.UUID playerId) {
         return PlayerTickHandler.getLastTemperature(playerId);
