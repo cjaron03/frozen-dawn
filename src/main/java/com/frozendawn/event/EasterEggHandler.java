@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -69,6 +70,15 @@ public class EasterEggHandler {
         delayedSounds.clear();
         fireSafetyChunks.clear();
         pendingFreezeDeaths.clear();
+    }
+
+    static void onPlayerLogout(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        crouchTicks.remove(playerId);
+        lookUpTicks.remove(playerId);
+        pendingFreezeDeaths.remove(playerId);
+        delayedSounds.removeIf(sound -> sound.playerId.equals(playerId));
+        pendingWilsonDrops.entrySet().removeIf(entry -> entry.getValue().playerId.equals(playerId));
     }
 
     // ========================================================================
@@ -198,28 +208,27 @@ public class EasterEggHandler {
     // ========================================================================
 
     /**
+     * Tracks Wilson drops from the actual toss event so ownership cannot be
+     * misattributed when multiple players drop Wilson at nearly the same time.
+     */
+    @SubscribeEvent
+    public static void onItemToss(ItemTossEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
+        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
+
+        ItemEntity itemEntity = event.getEntity();
+        if (!itemEntity.getItem().is(ModItems.WILSON.get())) return;
+
+        trackWilsonDrop(player, itemEntity);
+    }
+
+    /**
      * "Snowman Betrayal" — snow golem created in phase 4+ attacks player once.
-     * Also handles Wilson item entity tracking for the lava easter egg.
      */
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
         if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
-
-        // Wilson item entity tracking — only in the dimension where the player dropped it
-        if (event.getEntity() instanceof ItemEntity itemEntity) {
-            if (itemEntity.getItem().is(ModItems.WILSON.get())) {
-                // Find the player who just dropped Wilson (same dimension)
-                for (ServerPlayer player : serverLevel.getPlayers(p -> true)) {
-                    if (player.getPersistentData().getBoolean("frozendawn:wilson_just_dropped")) {
-                        player.getPersistentData().remove("frozendawn:wilson_just_dropped");
-                        trackWilsonDrop(player, itemEntity);
-                        break;
-                    }
-                }
-            }
-            return;
-        }
 
         // Snowman Betrayal
         if (!(event.getEntity() instanceof SnowGolem golem)) return;

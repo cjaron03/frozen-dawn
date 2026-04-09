@@ -69,6 +69,13 @@ final class PlayerTickHandler {
         suffocationTimer.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
+        FrostbiteHandler.onPlayerLogout(player);
+        SanityHandler.onPlayerLogout(player);
+        EasterEggHandler.onPlayerLogout(player);
+    }
+
+    static void onPlayerLogin(ServerPlayer player) {
+        FrostbiteHandler.onPlayerLogin(player);
     }
 
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
