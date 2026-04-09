@@ -166,21 +166,14 @@ public final class MonitoringStationStructureBuilder {
             return;
         }
 
-        int roofSnowHeight = phase >= 5 ? 3 : 1;
-        for (int dx = MIN_X + 1; dx <= MAX_X - 1; dx++) {
-            for (int dz = MIN_Z + 1; dz <= MAX_Z - 1; dz++) {
-                if (phase >= 5 && dx >= 4 && dz <= -5) {
-                    continue;
-                }
-                for (int dy = 0; dy < roofSnowHeight; dy++) {
-                    level.setBlock(new BlockPos(cx + dx, cy + ROOF_Y + 1 + dy, cz + dz), Blocks.SNOW_BLOCK.defaultBlockState(), 2);
-                }
-            }
-        }
-
         if (phase >= 5) {
             for (int dx = -10; dx <= 9; dx++) {
                 for (int dz = -10; dz <= 9; dz++) {
+                    // Keep manual drift outside the station shell; roof/interior should accumulate naturally.
+                    if (dx >= MIN_X + 1 && dx <= MAX_X - 1 && dz >= MIN_Z + 1 && dz <= MAX_Z - 1) {
+                        continue;
+                    }
+
                     int edgeDistance = Math.max(Math.max(Math.abs(dx) - 6, 0), Math.max(Math.abs(dz) - 6, 0));
                     int snowHeight = 4 - edgeDistance;
                     if (snowHeight <= 0) {
