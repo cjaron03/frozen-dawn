@@ -8,7 +8,7 @@ A Minecraft mod where Earth becomes a rogue planet. The sun recedes, the world f
 
 Frozen Dawn takes place after humanity's final attempt to stabilize Earth's climate subtly altered its orbit, triggering a slow, irreversible planetary freeze. The Orbital Resonance Stabilization Authority (ORSA) tried to correct course, but their network of 2,048 orbital adjustment nodes entered a feedback loop — each correction pushing the planet further from the sun. By the time they realized, the orbital momentum was irreversible.
 
-ORSA lore books scattered in world structures tell the full story across 5 documents, from initial optimism to final automated distress signals.
+Frozen Dawn's lore is spread across recovered documents, authored world structures, camp and station records, and secured ORSA terminals. The original five-book trail is still there, but it now sits inside a much broader narrative archive.
 
 ## Overview
 
@@ -98,14 +98,14 @@ The Geothermal Core is the endgame objective — a massive heat source requiring
 - **Fresh chunk rule** — Town lighting, PA speakers, authored sirens, and roof revisions are structure-authored; players need fresh towns or newly generated chunks to see the full update
 
 ### ORSA Narrative
-5 lore books found in world structures tell the story of ORSA and humanity's failed attempt to stabilize Earth's orbit:
+Frozen Dawn's narrative is spread across recovered documents, world structures, and secured ORSA terminals. The original five-book trail still charts ORSA's collapse and humanity's failed attempt to stabilize Earth's orbit:
 1. **Village houses (20%)** — ORSA Outreach Pamphlet (optimism)
 2. **Desert temples (18%)** — ORSA Internal Memo (denial + false hope)
 3. **Mineshafts (15%)** — ORSA Field Report (escalation)
 4. **Stronghold corridors (12%)** — ORSA Emergency Log (panic + irreversibility)
 5. **Stronghold libraries (10%)** — ORSA Final Transmission (resignation + survival directive)
 
-All books are discoverable without beating the game. No End Cities or Ancient Cities required.
+Those core books are discoverable without beating the game. Additional lore can be uncovered through ORSA camps, monitoring stations, towers, terminals, and other landmark structures. No End Cities or Ancient Cities required.
 
 ### Other
 - **Custom survival + world blocks/items** — Frozen terrain variants, ORSA props, thermal progression components, armor tiers, town infrastructure, and landmark rewards
