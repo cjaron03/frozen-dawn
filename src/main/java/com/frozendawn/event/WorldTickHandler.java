@@ -105,6 +105,7 @@ public class WorldTickHandler {
         ReturnedSpawner.reset();
         MimicSpawner.reset();
         ArchitectSpawner.reset();
+        AcheroniteGrowth.reset();
         EasterEggHandler.reset();
         StructureStressTracker.reset();
         BlastPitWarmZoneRegistry.reset();
