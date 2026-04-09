@@ -35,6 +35,7 @@ Over 120 in-game days, the world progresses through 6 phases of an apocalyptic f
 - **Wind chill exhaustion** — Phase 5+: outdoor exposure drains food (sprinting = heavy, moving = moderate, standing = light)
 - **Weather control** — Rain locks in phase 2, permanent thunderstorms from phase 3
 - **Snow accumulation** — Layers build up on exposed surfaces, accelerating in later phases
+- **Acheronite crystal growth** — Rare crystals begin forming on deeply frozen substrates in phase 5+, then mature more aggressively as phase 6 sets in
 - **Sound muffling** — Sounds dampen below -15°C; phase 6 late: vacuum cancels all sound on surface. Wind muffles smoothly indoors with shelter creaking sounds.
 - **Shelter mechanics** — Roof overhead (within 4 blocks) suppresses snow particles, muffles wind, and triggers structural creaking. In phase 5+, exposed heaters (not enclosed on all 6 faces) have halved radius.
 - **False calm rebounds** — Brief temperature spikes near phase boundaries create moments of false hope
@@ -113,7 +114,7 @@ Those core books are discoverable without beating the game. Additional lore can 
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
 - **Admin tooling** — world-state controls, locate helpers, and win-condition inspection through the `/frozendawn` command tree
 - **Config presets** — `/frozendawn world preset default|cinematic|brutal` for quick difficulty tuning
-- **Fully configurable** — 17+ config options covering temperature, features, visuals, and gameplay
+- **Fully configurable** — 30+ config options covering temperature, spawning, visuals, win-condition flow, and gameplay
 
 ## Hostile Ecosystem
 
