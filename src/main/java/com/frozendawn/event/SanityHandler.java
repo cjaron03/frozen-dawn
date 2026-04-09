@@ -68,6 +68,12 @@ final class SanityHandler {
             return;
         }
 
+        // Creative/spectator: freeze isolation, reset stage to 0
+        if (player.isCreative() || player.isSpectator()) {
+            updateStage(player, 0, state);
+            return;
+        }
+
         // Phase < 3: no sanity effects
         if (phase < 3) {
             state.clearPlayer(id);
