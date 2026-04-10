@@ -55,6 +55,7 @@
   "item.frozendawn.eva_chestplate": "EVA Suit",
   "item.frozendawn.eva_leggings": "EVA Leggings",
   "item.frozendawn.eva_boots": "EVA Boots",
+  "item.frozendawn.snowshoes": "Snowshoes",
 
   "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
@@ -216,6 +217,8 @@
   "block.frozendawn.frozen_atmosphere": "Frozen Atmosphere",
   "item.frozendawn.frozen_atmosphere_shard": "Frozen Atmosphere Shard",
   "message.frozendawn.shard_sublimated": "The shard evaporates in the warmth...",
+  "tooltip.frozendawn.snowshoes": "Keeps your pace on snow layers.",
+  "tooltip.frozendawn.snowshoes.powder_snow": "Prevents sinking into powder snow while worn.",
   "tooltip.frozendawn.curios_required": "Requires Curios API to equip.",
   "curios.identifier.feet": "Feet",
 
@@ -419,6 +422,8 @@
   "advancement.frozendawn.et_tu_frosty.description": "He was never on your side.",
   "advancement.frozendawn.edge_of_space.title": "Edge of Space",
   "advancement.frozendawn.edge_of_space.description": "One small step.",
+  "advancement.frozendawn.walks_on_snow.title": "Walks on Snow",
+  "advancement.frozendawn.walks_on_snow.description": "Finally, someone with common sense.",
   "advancement.frozendawn.stubborn.title": "Stubborn",
   "advancement.frozendawn.stubborn.description": "The simulation didn't account for this.",
   "advancement.frozendawn.how.title": "How.",

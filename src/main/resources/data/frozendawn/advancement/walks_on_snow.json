@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:snowshoes"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.walks_on_snow.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.walks_on_snow.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "equipped_snowshoes": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

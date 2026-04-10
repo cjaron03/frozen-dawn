@@ -1,6 +1,7 @@
 package com.frozendawn.compat.curios;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.init.ModItems;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +31,10 @@ public final class CuriosCompat {
 
     public static boolean isItemEquipped(Player player, Predicate<ItemStack> filter) {
         return ACCESS.isItemEquipped(player, filter);
+    }
+
+    public static boolean hasSnowshoesEquipped(Player player) {
+        return isItemEquipped(player, ModItems.SNOWSHOES.get());
     }
 
     private static CuriosAccess createAccess() {

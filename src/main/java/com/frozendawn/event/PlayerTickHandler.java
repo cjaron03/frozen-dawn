@@ -69,6 +69,7 @@ final class PlayerTickHandler {
         suffocationTimer.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
+        SnowshoesHandler.clearBoost(player);
         FrostbiteHandler.onPlayerLogout(player);
         SanityHandler.onPlayerLogout(player);
         EasterEggHandler.onPlayerLogout(player);
@@ -176,6 +177,7 @@ final class PlayerTickHandler {
         // Sanity/isolation tracking (every tick, phase 3+)
         float sanitySpeed = (float) FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get().doubleValue();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            SnowshoesHandler.tick(player);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
                 // Easter egg per-player tick checks (fires in all game modes)

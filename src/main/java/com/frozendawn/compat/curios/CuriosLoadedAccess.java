@@ -1,10 +1,14 @@
 package com.frozendawn.compat.curios;
 
+import com.frozendawn.init.ModItems;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.CuriosCapability;
+import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.type.capability.ICurio;
 
 import java.util.function.Predicate;
 
@@ -17,7 +21,7 @@ final class CuriosLoadedAccess implements CuriosAccess {
 
     @Override
     public void registerCapabilities(RegisterCapabilitiesEvent event) {
-        // Stage-specific Curios capabilities are registered as the related items are added.
+        event.registerItem(CuriosCapability.ITEM, (stack, context) -> new SnowshoesCurio(stack), ModItems.SNOWSHOES.get());
     }
 
     @Override
@@ -32,5 +36,23 @@ final class CuriosLoadedAccess implements CuriosAccess {
         return CuriosApi.getCuriosInventory(player)
                 .map(inventory -> inventory.isEquipped(filter))
                 .orElse(false);
+    }
+
+    private record SnowshoesCurio(ItemStack stack) implements ICurio {
+
+        @Override
+        public ItemStack getStack() {
+            return this.stack;
+        }
+
+        @Override
+        public boolean canEquipFromUse(SlotContext slotContext) {
+            return true;
+        }
+
+        @Override
+        public boolean canWalkOnPowderedSnow(SlotContext slotContext) {
+            return true;
+        }
     }
 }

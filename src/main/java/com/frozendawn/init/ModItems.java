@@ -21,6 +21,7 @@ import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
+import com.frozendawn.item.SnowshoesItem;
 import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.ThermalContainerItem;
@@ -195,6 +196,8 @@ public class ModItems {
     public static final DeferredItem<OrsaThermalVisorItem> ORSA_THERMAL_VISOR = ITEMS.register("orsa_thermal_visor",
             () -> new OrsaThermalVisorItem(ModArmorMaterials.THERMAL_VISOR, ArmorItem.Type.HELMET,
                     new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(25)).rarity(Rarity.EPIC)));
+    public static final DeferredItem<SnowshoesItem> SNOWSHOES = ITEMS.register("snowshoes",
+            () -> new SnowshoesItem(new Item.Properties().stacksTo(1)));
 
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
@@ -381,6 +384,7 @@ public class ModItems {
                         output.accept(SURVEYOR_LENS.get());
                         output.accept(CALIBRATED_SURVEYOR_LENS.get());
                         output.accept(ORSA_THERMAL_VISOR.get());
+                        output.accept(SNOWSHOES.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());
