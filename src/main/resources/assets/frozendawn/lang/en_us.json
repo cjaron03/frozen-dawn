@@ -216,6 +216,8 @@
   "block.frozendawn.frozen_atmosphere": "Frozen Atmosphere",
   "item.frozendawn.frozen_atmosphere_shard": "Frozen Atmosphere Shard",
   "message.frozendawn.shard_sublimated": "The shard evaporates in the warmth...",
+  "tooltip.frozendawn.curios_required": "Requires Curios API to equip.",
+  "curios.identifier.feet": "Feet",
 
   "item.frozendawn.acheronite_compass": "Acheronite Compass",
   "item.frozendawn.transponder_schematic": "ORSA Transponder Schematic",

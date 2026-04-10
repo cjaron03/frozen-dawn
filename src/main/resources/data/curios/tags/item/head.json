@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "frozendawn:blizzard_goggles",
+      "required": false
+    }
+  ]
+}

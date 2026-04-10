@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "frozendawn:ice_claws",
+      "required": false
+    }
+  ]
+}

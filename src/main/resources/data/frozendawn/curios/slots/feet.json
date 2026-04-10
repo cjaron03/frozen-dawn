@@ -1,0 +1,8 @@
+{
+  "size": 1,
+  "operation": "SET",
+  "icon": "frozendawn:slot/empty_feet_slot",
+  "validators": [
+    "curios:tag"
+  ]
+}

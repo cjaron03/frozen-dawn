@@ -20,6 +20,7 @@ def enableEnhancedClassRedefinition = providers
 
 repositories {
     maven { url "https://maven.blamejared.com" }
+    maven { url "https://maven.theillusivec4.top/" }
 }
 
 base {
@@ -94,6 +95,8 @@ dependencies {
     implementation "vazkii.patchouli:Patchouli:1.21.1-92-NEOFORGE"
     compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}+${minecraft_version}:api"
+    localRuntime "top.theillusivec4.curios:curios-neoforge:${curios_version}+${minecraft_version}"
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
 }

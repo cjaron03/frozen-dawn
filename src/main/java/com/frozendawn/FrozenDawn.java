@@ -1,5 +1,6 @@
 package com.frozendawn;
 
+import com.frozendawn.compat.curios.CuriosCompat;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModBlockEntities;
@@ -23,6 +24,8 @@ public class FrozenDawn {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public FrozenDawn(IEventBus modEventBus, ModContainer modContainer) {
+        modEventBus.addListener(CuriosCompat::registerCapabilities);
+
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
