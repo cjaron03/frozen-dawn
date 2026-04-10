@@ -6,8 +6,10 @@ import com.frozendawn.config.DifficultyPresetManager;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
+import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -78,6 +80,26 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) {
                         WorldTickHandler.grantAdvancement(sp, "watcher_seen");
+                    }
+                })
+        );
+        registrar.playToServer(
+                IceClawsInputPayload.TYPE,
+                IceClawsInputPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        BlockPos anchorPos = payload.hasAnchor() ? payload.anchorPos() : null;
+                        var wallSide = payload.hasAnchor() ? IceClawsHandler.decodeWallSide(payload.wallSide2d()) : null;
+                        FrozenDawn.LOGGER.info(
+                                "[ICE_CLAWS][NET] received jumpHeld={} anchor={} from {}",
+                                payload.jumpHeld(),
+                                payload.hasAnchor()
+                                        ? payload.anchorPos().toShortString() + ":" + wallSide
+                                        : "none",
+                                sp.getScoreboardName()
+                        );
+                        IceClawsHandler.setClimbInput(sp, payload.jumpHeld(), anchorPos, wallSide);
+                        IceClawsHandler.logImmediateDebug(sp, "packet");
                     }
                 })
         );

@@ -6,7 +6,6 @@
   "mixins": [
     "BiomeMixin",
     "IceBlockMixin",
-    "LivingEntityAccessor",
     "LivingEntityMixin"
   ],
   "client": [

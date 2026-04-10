@@ -70,6 +70,7 @@ final class PlayerTickHandler {
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
         SnowshoesHandler.clearBoost(player);
+        IceClawsHandler.onPlayerLogout(player);
         FrostbiteHandler.onPlayerLogout(player);
         SanityHandler.onPlayerLogout(player);
         EasterEggHandler.onPlayerLogout(player);
