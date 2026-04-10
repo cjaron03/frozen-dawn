@@ -42,7 +42,7 @@
     {
       "type": "patchouli:text",
       "title": "Frost-Resistant Foods",
-      "text": "Some foods are naturally immune to frost:$(br2)$(li)$(bold)Golden Apples$() — gold doesn't freeze (it does, but these are magical)$(li)$(bold)Enchanted Golden Apples$() — literally glowing$(li)$(bold)Dried Kelp$() — already desiccated, nothing left to ruin$(br2)Everything else? $(italic)Fair game.$(br2)$(bold)Reminder:$() The thermal container exists. Use it."
+      "text": "Some foods are naturally immune to frost:$(br2)$(li)$(bold)Golden Apples$() — gold doesn't freeze (it does, but these are magical)$(li)$(bold)Enchanted Golden Apples$() — literally glowing$(li)$(bold)Dried Kelp$() — already desiccated, nothing left to ruin$(li)$(bold)Hot Wings$() — blaze powder is apparently a valid preservation method$(br2)Everything else? $(italic)Fair game.$(br2)$(bold)Reminder:$() The thermal container exists. Use it."
     }
   ]
 }

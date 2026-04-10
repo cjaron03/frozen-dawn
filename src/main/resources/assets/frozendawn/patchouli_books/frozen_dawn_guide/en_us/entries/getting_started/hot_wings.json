@@ -1,0 +1,23 @@
+{
+  "name": "Hot Wings",
+  "category": "frozendawn:getting_started",
+  "icon": "frozendawn:hot_wings",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Premium Rations",
+      "text": "$(bold)Field rations coated in Blaze extract.$()$(br2)Stays hot indefinitely. Tastes like regret and capsaicin. ORSA Nutritional Services rates it \"technically edible.\"$(br2)Hot Wings are one of the few foods that never frost over in your inventory, which makes them excellent for stockpiling before the Nether severs in Phase 5."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Supply Notes",
+      "text": "Cooked chicken gives you the meal. Blaze powder gives you the part that alarms doctors. The result is a premium ration that restores serious hunger without replacing every other food source in the game.$(br2)Make them early, make them sparingly, and maybe keep water nearby."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:hot_wings",
+      "text": "One cooked chicken, one pinch of Nether bad decisions."
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import com.frozendawn.item.SnowshoesItem;
 import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.ThermalContainerItem;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
@@ -148,8 +149,15 @@ public class ModItems {
     // --- Frostbitten Mob Drops ---
     public static final DeferredItem<FrozenMeatItem> FROZEN_MEAT = ITEMS.register("frozen_meat",
             () -> new FrozenMeatItem(new Item.Properties()
-                    .food(new net.minecraft.world.food.FoodProperties.Builder()
+                    .food(new FoodProperties.Builder()
                             .nutrition(4).saturationModifier(0.3f).build())));
+    public static final DeferredItem<Item> HOT_WINGS = ITEMS.register("hot_wings",
+            () -> new Item(new Item.Properties()
+                    .stacksTo(16)
+                    .food(new FoodProperties.Builder()
+                            .nutrition(8)
+                            .saturationModifier(0.75f)
+                            .build())));
     public static final DeferredItem<Item> FROSTBITTEN_CORE = ITEMS.register("frostbitten_core",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
@@ -373,6 +381,7 @@ public class ModItems {
                         output.accept(TRANSPONDER.get());
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
+                        output.accept(HOT_WINGS.get());
                         output.accept(FROSTBITTEN_CORE.get());
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());

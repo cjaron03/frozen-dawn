@@ -1,0 +1,29 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:hot_wings"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.hot_wings.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.hot_wings.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "ate_hot_wings": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "items": [
+            "frozendawn:hot_wings"
+          ]
+        }
+      }
+    }
+  }
+}

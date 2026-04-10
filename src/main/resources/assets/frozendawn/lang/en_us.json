@@ -180,6 +180,8 @@
 
   "advancement.frozendawn.food_spoiled.title": "Ice Cold Disappointment",
   "advancement.frozendawn.food_spoiled.description": "Watch helplessly as your food freezes beyond recovery. Should've packed a lunchbox.",
+  "advancement.frozendawn.hot_wings.title": "My DoorDash is Here",
+  "advancement.frozendawn.hot_wings.description": "This stuff is so expensive...",
   "advancement.frozendawn.thermal_container.title": "Meal Prep Champion",
   "advancement.frozendawn.thermal_container.description": "Craft a Thermal Container. Your lunch is now rated for deep space.",
 
@@ -281,6 +283,7 @@
   "entity.frozendawn.frostbitten": "Frostbitten",
   "entity.frozendawn.heavy_snowball": "Heavy Snowball",
   "item.frozendawn.frozen_meat": "Frozen Meat",
+  "item.frozendawn.hot_wings": "Hot Wings",
   "item.frozendawn.frostbitten_core": "Frostbitten Core",
 
   "subtitle.frozendawn.entity.frostbitten.ambient": "Frostbitten groans",
