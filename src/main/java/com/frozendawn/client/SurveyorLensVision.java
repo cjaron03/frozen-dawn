@@ -59,6 +59,8 @@ public final class SurveyorLensVision {
     private static float thermalModeStrength = 0.0F;
     private static float blizzardModeStrength = 0.0F;
     private static boolean thermalModeEnabled = false;
+    private static boolean blizzardPluginDetected = false;
+    private static boolean blizzardModeReady = false;
     private static int thermalBootTicksRemaining = 0;
     private static int thermalShutdownTicksRemaining = 0;
     private static VisionMode preferredVisionMode = VisionMode.NONE;
@@ -83,6 +85,8 @@ public final class SurveyorLensVision {
             fadeOut();
             fadeThermal();
             fadeBlizzard();
+            blizzardPluginDetected = false;
+            blizzardModeReady = false;
             activeVisionMode = VisionMode.NONE;
             return;
         }
@@ -93,6 +97,8 @@ public final class SurveyorLensVision {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         boolean blizzardAvailable = gogglesEquipped && BlizzardGogglesHandler.isVisionActive(phase, progress);
+        blizzardPluginDetected = visorEquipped && gogglesEquipped;
+        blizzardModeReady = blizzardPluginDetected && blizzardAvailable;
         SurveyorLensScanner.LensProfile heldProfile = SurveyorLensScanner.heldProfile(
                 mc.player.getMainHandItem(),
                 mc.player.getOffhandItem()
@@ -161,6 +167,8 @@ public final class SurveyorLensVision {
             fadeOut();
             fadeThermal();
             fadeBlizzard();
+            blizzardPluginDetected = false;
+            blizzardModeReady = false;
             activeVisionMode = VisionMode.NONE;
             return;
         }
@@ -250,6 +258,14 @@ public final class SurveyorLensVision {
 
     public static boolean isThermalModeVisible() {
         return thermalModeStrength > 0.01F || thermalBootTicksRemaining > 0 || thermalShutdownTicksRemaining > 0;
+    }
+
+    public static boolean isBlizzardPluginDetected() {
+        return blizzardPluginDetected;
+    }
+
+    public static boolean isBlizzardModeReady() {
+        return blizzardModeReady;
     }
 
     public static float getThermalModeStrength() {

@@ -20,6 +20,7 @@ public final class SurveyorLensOverlay {
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
     private static final int HUD_WIDTH = 144;
     private static final int HUD_HEIGHT = 46;
+    private static final int HUD_HEIGHT_WITH_PLUGIN = 58;
 
     private SurveyorLensOverlay() {}
 
@@ -118,16 +119,30 @@ public final class SurveyorLensOverlay {
     }
 
     private static void drawThermalHud(GuiGraphics graphics, Minecraft mc, int width, float thermalStrength) {
-        int panelX = width - HUD_WIDTH - 10;
+        boolean blizzardPluginDetected = SurveyorLensVision.isBlizzardPluginDetected();
+        String pluginHint = null;
+        if (blizzardPluginDetected) {
+            pluginHint = SurveyorLensVision.isBlizzardModeReady()
+                    ? "BLIZZARD PLUGIN // PRESS B"
+                    : "BLIZZARD PLUGIN // WHITEOUT ONLY";
+        }
+
+        int panelWidth = HUD_WIDTH;
+        if (pluginHint != null) {
+            panelWidth = Math.max(panelWidth, mc.font.width(pluginHint) + 14);
+        }
+
+        int panelX = width - panelWidth - 10;
         int panelY = 10;
+        int panelHeight = blizzardPluginDetected ? HUD_HEIGHT_WITH_PLUGIN : HUD_HEIGHT;
         int bgAlpha = (int) (Mth.clamp(thermalStrength + 0.2F, 0.25F, 1.0F) * 150.0F);
         int borderAlpha = (int) (Mth.clamp(thermalStrength + 0.15F, 0.2F, 1.0F) * 215.0F);
 
-        graphics.fill(panelX, panelY, panelX + HUD_WIDTH, panelY + HUD_HEIGHT, (bgAlpha << 24) | 0x091116);
-        graphics.fill(panelX, panelY, panelX + HUD_WIDTH, panelY + 1, (borderAlpha << 24) | 0x93D8E8);
-        graphics.fill(panelX, panelY + HUD_HEIGHT - 1, panelX + HUD_WIDTH, panelY + HUD_HEIGHT, (borderAlpha << 24) | 0x355B66);
-        graphics.fill(panelX, panelY, panelX + 1, panelY + HUD_HEIGHT, (borderAlpha << 24) | 0x93D8E8);
-        graphics.fill(panelX + HUD_WIDTH - 1, panelY, panelX + HUD_WIDTH, panelY + HUD_HEIGHT, (borderAlpha << 24) | 0x355B66);
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, (bgAlpha << 24) | 0x091116);
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, (borderAlpha << 24) | 0x93D8E8);
+        graphics.fill(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x355B66);
+        graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, (borderAlpha << 24) | 0x93D8E8);
+        graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x355B66);
 
         graphics.blit(ORSA_LOGO, panelX + 7, panelY + 7, 0, 0, 16, 16, 16, 16);
         graphics.drawString(mc.font, "THERMAL ARRAY", panelX + 30, panelY + 7, 0xDFFBFFFF, false);
@@ -137,14 +152,22 @@ public final class SurveyorLensOverlay {
         String sigText = String.format(Locale.ROOT, "%s  //  %02d SIG", status, signatures.size());
         graphics.drawString(mc.font, fit(mc, sigText, 104), panelX + 30, panelY + 17, 0x88DFF4, false);
 
+        int detailLineOneY = 29;
+        int detailLineTwoY = 38;
+        if (pluginHint != null) {
+            graphics.drawString(mc.font, pluginHint, panelX + 7, panelY + 29, 0x89BAFF, false);
+            detailLineOneY = 40;
+            detailLineTwoY = 49;
+        }
+
         if (!signatures.isEmpty()) {
             SurveyorLensScanner.HeatSignature primary = signatures.getFirst();
             String sourceName = fit(mc, primary.sourceType().displayName().getString().toUpperCase(Locale.ROOT), 128);
             String direction = fit(mc, primary.direction().getString().toUpperCase(Locale.ROOT), 86);
-            graphics.drawString(mc.font, sourceName, panelX + 7, panelY + 29, 0xFFF2C567, false);
-            graphics.drawString(mc.font, direction + " // " + primary.distanceBlocks() + "M", panelX + 7, panelY + 38, 0x9DC8D6, false);
+            graphics.drawString(mc.font, sourceName, panelX + 7, panelY + detailLineOneY, 0xFFF2C567, false);
+            graphics.drawString(mc.font, direction + " // " + primary.distanceBlocks() + "M", panelX + 7, panelY + detailLineTwoY, 0x9DC8D6, false);
         } else {
-            graphics.drawString(mc.font, "NO THERMAL ANCHORS", panelX + 7, panelY + 31, 0x6E8A94, false);
+            graphics.drawString(mc.font, "NO THERMAL ANCHORS", panelX + 7, panelY + (blizzardPluginDetected ? 41 : 31), 0x6E8A94, false);
         }
     }
 
