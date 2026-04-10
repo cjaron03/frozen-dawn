@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CGC",
+    " R ",
+    "CIC"
+  ],
+  "key": {
+    "C": { "item": "minecraft:copper_ingot" },
+    "G": { "item": "minecraft:glass_pane" },
+    "R": { "item": "minecraft:redstone" },
+    "I": { "item": "frozendawn:ice_shard" }
+  },
+  "result": {
+    "id": "frozendawn:phase_barometer",
+    "count": 1
+  }
+}

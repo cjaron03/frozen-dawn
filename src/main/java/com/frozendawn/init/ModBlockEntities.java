@@ -9,6 +9,7 @@ import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.MiteAwayBlockEntity;
 import com.frozendawn.block.OrsaFlagBlockEntity;
+import com.frozendawn.block.PhaseBarometerBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TownPASpeakerBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
@@ -75,6 +76,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("monitoring_station_terminal",
                     () -> BlockEntityType.Builder.of(MonitoringStationTerminalBlockEntity::new,
                             ModBlocks.MONITORING_STATION_TERMINAL.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PhaseBarometerBlockEntity>> PHASE_BAROMETER =
+            BLOCK_ENTITIES.register("phase_barometer",
+                    () -> BlockEntityType.Builder.of(PhaseBarometerBlockEntity::new,
+                            ModBlocks.PHASE_BAROMETER.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<OrsaFlagBlockEntity>> ORSA_FLAG =

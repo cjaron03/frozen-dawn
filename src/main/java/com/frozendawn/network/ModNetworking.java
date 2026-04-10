@@ -68,6 +68,11 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenMonitoringTerminal(payload))
         );
         registrar.playToClient(
+                OpenPhaseBarometerPayload.TYPE,
+                OpenPhaseBarometerPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenPhaseBarometer(payload))
+        );
+        registrar.playToClient(
                 OpenMeteorologistJournalPayload.TYPE,
                 OpenMeteorologistJournalPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenMeteorologistJournal(payload))

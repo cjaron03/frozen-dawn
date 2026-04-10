@@ -32,6 +32,7 @@
   "block.frozendawn.town_pa_speaker": "Town PA Speaker",
   "block.frozendawn.tower_antenna_console": "Tower Antenna Console",
   "block.frozendawn.monitoring_station_terminal": "Monitoring Station Terminal",
+  "block.frozendawn.phase_barometer": "Phase Barometer",
 
   "item.frozendawn.ice_shard": "Ice Shard",
   "item.frozendawn.thermal_core": "Thermal Core",
@@ -109,6 +110,13 @@
   "screen.frozendawn.difficulty.brutal.title": "BRUTAL",
   "screen.frozendawn.difficulty.brutal.line1": "%s days. Fast collapse and %s\u00b0C phase-5 cold.",
   "screen.frozendawn.difficulty.brutal.line2": "Weaker heaters. Double snow, sanity drain, and spawn pressure.",
+  "screen.frozendawn.phase_barometer.title": "PHASE BAROMETER",
+  "screen.frozendawn.phase_barometer.current_phase": "CURRENT",
+  "screen.frozendawn.phase_barometer.forecast": "FORECAST",
+  "screen.frozendawn.phase_barometer.upcoming": "UPCOMING",
+  "screen.frozendawn.phase_barometer.warning": "WARNING",
+  "screen.frozendawn.phase_barometer.severity": "SEVERITY TREND",
+  "screen.frozendawn.phase_barometer.none": "None",
 
   "advancement.frozendawn.root.title": "The Sun Grows Cold",
   "advancement.frozendawn.root.description": "The apocalypse has begun. Earth drifts from its star.",
@@ -124,6 +132,8 @@
   "advancement.frozendawn.phase6.description": "Phase 6: The atmosphere freezes and collapses. There is no air left to breathe. ...did you need oxygen?",
   "advancement.frozendawn.last_light.title": "Last Light",
   "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
+  "advancement.frozendawn.reading_the_sky.title": "Reading the Sky",
+  "advancement.frozendawn.reading_the_sky.description": "You wanted certainty. This is what passed for it.",
   "advancement.frozendawn.classified_information.title": "Classified Information",
   "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?",
 

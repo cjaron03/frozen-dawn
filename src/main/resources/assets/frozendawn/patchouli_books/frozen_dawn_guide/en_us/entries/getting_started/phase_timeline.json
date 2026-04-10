@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Phase 0-1",
-      "text": "$(italic)Phase timing varies by preset; use this as an escalation guide, not a day counter.$()$(br2)$(bold)Phase 0: Normal$()$(br)Opening stretch of a fresh world. No effects. Use this time to prepare.$(br2)$(bold)Phase 1: Twilight$()$(br)Early decline. Sun visibly shrinks. Rain becomes frequent. Slight temperature drop. Last chance to see the sun clearly."
+      "text": "$(italic)Phase timing varies by preset; use this as an escalation guide, not a day counter.$()$(br2)$(bold)Phase 0: Normal$()$(br)Opening stretch of a fresh world. No effects. Use this time to prepare.$(br2)$(bold)Phase 1: Twilight$()$(br)Early decline. Sun visibly shrinks. Rain becomes frequent. Slight temperature drop. Last chance to see the sun clearly.$(br2)Once you can craft a $(l:heating/phase_barometer)Phase Barometer$(/l), use it as your in-world forecast tool instead of counting days by hand."
     },
     {
       "type": "patchouli:text",

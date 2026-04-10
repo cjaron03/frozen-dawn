@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "frozendawn:block/phase_barometer" },
+    "facing=south": { "model": "frozendawn:block/phase_barometer", "y": 180 },
+    "facing=west": { "model": "frozendawn:block/phase_barometer", "y": 270 },
+    "facing=east": { "model": "frozendawn:block/phase_barometer", "y": 90 }
+  }
+}

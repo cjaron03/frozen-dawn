@@ -9,6 +9,7 @@ import com.frozendawn.client.renderer.HollowRenderer;
 import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
+import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
@@ -113,6 +114,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
     }
 
     @SubscribeEvent

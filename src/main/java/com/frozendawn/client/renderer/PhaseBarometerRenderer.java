@@ -1,0 +1,156 @@
+package com.frozendawn.client.renderer;
+
+import com.frozendawn.barometer.PhaseBarometerForecasts;
+import com.frozendawn.barometer.PhaseBarometerSnapshot;
+import com.frozendawn.block.PhaseBarometerBlock;
+import com.frozendawn.block.PhaseBarometerBlockEntity;
+import com.frozendawn.client.ApocalypseClientData;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Matrix4f;
+
+public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBarometerBlockEntity> {
+
+    private static final BlockState PANEL_STATE = Blocks.BLACK_CONCRETE.defaultBlockState();
+    private static final BlockState PANEL_DARK_STATE = Blocks.GRAY_CONCRETE.defaultBlockState();
+    private static final BlockState BORDER_STATE = Blocks.CYAN_TERRACOTTA.defaultBlockState();
+    private static final BlockState GREEN_STATE = Blocks.LIME_CONCRETE.defaultBlockState();
+    private static final BlockState CYAN_STATE = Blocks.CYAN_CONCRETE.defaultBlockState();
+    private static final BlockState AMBER_STATE = Blocks.YELLOW_CONCRETE.defaultBlockState();
+    private static final BlockState RED_STATE = Blocks.RED_CONCRETE.defaultBlockState();
+
+    private final Font font;
+    private final BlockRenderDispatcher blockRenderer;
+
+    public PhaseBarometerRenderer(BlockEntityRendererProvider.Context context) {
+        this.font = context.getFont();
+        this.blockRenderer = context.getBlockRenderDispatcher();
+    }
+
+    @Override
+    public void render(PhaseBarometerBlockEntity entity, float partialTick, PoseStack poseStack,
+                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        PhaseBarometerSnapshot snapshot = PhaseBarometerForecasts.evaluate(
+                ApocalypseClientData.getPhase(),
+                ApocalypseClientData.getProgress()
+        );
+
+        poseStack.pushPose();
+        Direction facing = entity.getBlockState().getValue(PhaseBarometerBlock.FACING);
+        float yRot = switch (facing) {
+            case SOUTH -> 180.0f;
+            case WEST -> 90.0f;
+            case EAST -> -90.0f;
+            default -> 0.0f;
+        };
+
+        poseStack.translate(0.5, 0.5, 0.5);
+        poseStack.mulPose(Axis.YP.rotationDegrees(yRot));
+        poseStack.translate(-0.5, -0.5, -0.5);
+
+        float emissiveLight = 0x00F000F0;
+        boolean blinkOn = !snapshot.shouldBlink() || entity.getLevel() == null || ((entity.getLevel().getGameTime() / 8L) & 1L) == 1L;
+        BlockState lampState = lampState(snapshot);
+        BlockState borderState = snapshot.shouldBlink() ? RED_STATE : BORDER_STATE;
+
+        renderScaledBlock(poseStack, bufferSource, BORDER_STATE, 2.1f / 16f, 2.5f / 16f, -0.24f / 16f,
+                11.8f / 16f, 11.2f / 16f, 0.38f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_STATE, 2.45f / 16f, 2.85f / 16f, -0.18f / 16f,
+                11.1f / 16f, 10.5f / 16f, 0.35f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, borderState, 2.8f / 16f, 3.2f / 16f, -0.24f / 16f,
+                10.4f / 16f, 0.28f / 16f, 0.38f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.05f / 16f, 10.2f / 16f, -0.2f / 16f,
+                6.6f / 16f, 0.25f / 16f, 0.30f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 11.15f / 16f, 4.15f / 16f, -0.22f / 16f,
+                1.15f / 16f, 1.15f / 16f, 0.34f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.35f / 16f, 5.0f / 16f, -0.18f / 16f,
+                7.0f / 16f, 0.7f / 16f, 0.28f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.35f / 16f, 3.95f / 16f, -0.18f / 16f,
+                5.1f / 16f, 0.5f / 16f, 0.28f / 16f, packedLight, packedOverlay);
+
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.18f / 16f,
+                7.4f / 16f, 0.65f / 16f, 0.28f / 16f, packedLight, packedOverlay);
+        float fillWidth = Math.max(0.45f / 16f, (7.0f * snapshot.severity()) / 16f);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.45f / 16f, 2.05f / 16f, -0.22f / 16f,
+                fillWidth, 0.5f / 16f, 0.34f / 16f, (int) emissiveLight, packedOverlay);
+
+        renderPhaseText(poseStack, bufferSource, (int) emissiveLight, snapshot);
+        poseStack.popPose();
+    }
+
+    private void renderPhaseText(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                 PhaseBarometerSnapshot snapshot) {
+        poseStack.pushPose();
+        poseStack.translate(0.228f, 0.56f, -0.003f);
+        poseStack.scale(0.015f, -0.015f, 0.015f);
+        Matrix4f matrix = poseStack.last().pose();
+        font.drawInBatch(
+                "P" + snapshot.currentPhase(),
+                0.0f,
+                0.0f,
+                0xFFE8F7F9,
+                false,
+                matrix,
+                bufferSource,
+                Font.DisplayMode.NORMAL,
+                0,
+                packedLight
+        );
+        poseStack.popPose();
+
+        poseStack.pushPose();
+        poseStack.translate(0.23f, 0.395f, -0.003f);
+        poseStack.scale(0.0066f, -0.0066f, 0.0066f);
+        Matrix4f bandMatrix = poseStack.last().pose();
+        font.drawInBatch(
+                bandCode(snapshot),
+                0.0f,
+                0.0f,
+                0xFF8FD9E5,
+                false,
+                bandMatrix,
+                bufferSource,
+                Font.DisplayMode.NORMAL,
+                0,
+                packedLight
+        );
+        poseStack.popPose();
+    }
+
+    private String bandCode(PhaseBarometerSnapshot snapshot) {
+        return switch (snapshot.forecastBand()) {
+            case STABLE -> "STBL";
+            case DETERIORATING -> "DTR";
+            case TRANSITION_LIKELY_SOON -> "SOON";
+            case IMMINENT -> "IMNT";
+            case COLLAPSE_UNDERWAY -> "COLL";
+        };
+    }
+
+    private BlockState lampState(PhaseBarometerSnapshot snapshot) {
+        return switch (snapshot.forecastBand()) {
+            case STABLE -> GREEN_STATE;
+            case DETERIORATING -> CYAN_STATE;
+            case TRANSITION_LIKELY_SOON -> AMBER_STATE;
+            case IMMINENT, COLLAPSE_UNDERWAY -> RED_STATE;
+        };
+    }
+
+    private void renderScaledBlock(PoseStack poseStack, MultiBufferSource bufferSource, BlockState state,
+                                   float x, float y, float z, float scaleX, float scaleY, float scaleZ,
+                                   int packedLight, int packedOverlay) {
+        poseStack.pushPose();
+        poseStack.translate(x, y, z);
+        poseStack.scale(scaleX, scaleY, scaleZ);
+        blockRenderer.renderSingleBlock(state, poseStack, bufferSource, packedLight, packedOverlay);
+        poseStack.popPose();
+    }
+}

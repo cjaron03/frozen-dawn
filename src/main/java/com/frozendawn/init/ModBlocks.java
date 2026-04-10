@@ -13,6 +13,7 @@ import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.MiteAwayBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
+import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
@@ -239,6 +240,14 @@ public class ModBlocks {
                     .strength(3.0F)
                     .sound(SoundType.NETHERITE_BLOCK)
                     .lightLevel(state -> 4)));
+
+    public static final DeferredBlock<PhaseBarometerBlock> PHASE_BAROMETER = BLOCKS.register("phase_barometer",
+            () -> new PhaseBarometerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
 
     // --- Player Agency blocks ---
 

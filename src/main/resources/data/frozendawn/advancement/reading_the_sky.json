@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:phase_barometer"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.reading_the_sky.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.reading_the_sky.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "used_phase_barometer": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
