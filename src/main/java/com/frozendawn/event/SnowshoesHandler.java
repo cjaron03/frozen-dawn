@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-final class SnowshoesHandler {
+public final class SnowshoesHandler {
 
     private static final ResourceLocation SPEED_MODIFIER_ID =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "snowshoes_snow_speed");
@@ -30,7 +30,7 @@ final class SnowshoesHandler {
         }
 
         WorldTickHandler.grantAdvancement(player, "walks_on_snow");
-        applyBoost(player, getSnowLayerSpeedBonus(player.getBlockStateOn()));
+        applyBoost(player, getSurfaceSpeedBonus(player.getBlockStateOn()));
     }
 
     static void clearBoost(ServerPlayer player) {
@@ -40,11 +40,14 @@ final class SnowshoesHandler {
         }
     }
 
-    static double getSnowLayerSpeedBonus(BlockState state) {
-        if (!state.is(Blocks.SNOW) || !state.hasProperty(SnowLayerBlock.LAYERS)) {
-            return 0.0D;
+    public static double getSurfaceSpeedBonus(BlockState state) {
+        if (state.is(Blocks.SNOW_BLOCK)) {
+            return SnowshoesTuning.getSpeedBonusForSnowBlock();
         }
-        return SnowshoesTuning.getSpeedBonusForLayers(state.getValue(SnowLayerBlock.LAYERS));
+        if (state.is(Blocks.SNOW) && state.hasProperty(SnowLayerBlock.LAYERS)) {
+            return SnowshoesTuning.getSpeedBonusForLayers(state.getValue(SnowLayerBlock.LAYERS));
+        }
+        return 0.0D;
     }
 
     private static void applyBoost(ServerPlayer player, double bonusAmount) {

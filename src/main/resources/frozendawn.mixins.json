@@ -5,7 +5,8 @@
   "minVersion": "0.8",
   "mixins": [
     "BiomeMixin",
-    "IceBlockMixin"
+    "IceBlockMixin",
+    "LivingEntityMixin"
   ],
   "client": [
     "DisplayWindowMixin",

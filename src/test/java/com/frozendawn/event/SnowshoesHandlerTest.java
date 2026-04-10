@@ -8,8 +8,8 @@ class SnowshoesHandlerTest {
 
     @Test
     void mapsShallowSnowLayersToTenPercentBoost() {
-        assertEquals(0.10D, SnowshoesTuning.getSpeedBonusForLayers(1));
-        assertEquals(0.10D, SnowshoesTuning.getSpeedBonusForLayers(3));
+        assertEquals(0.12D, SnowshoesTuning.getSpeedBonusForLayers(1));
+        assertEquals(0.12D, SnowshoesTuning.getSpeedBonusForLayers(3));
     }
 
     @Test
@@ -20,8 +20,20 @@ class SnowshoesHandlerTest {
 
     @Test
     void mapsDeepSnowLayersToTwentyPercentBoost() {
-        assertEquals(0.20D, SnowshoesTuning.getSpeedBonusForLayers(6));
-        assertEquals(0.20D, SnowshoesTuning.getSpeedBonusForLayers(7));
+        assertEquals(0.18D, SnowshoesTuning.getSpeedBonusForLayers(6));
+        assertEquals(0.18D, SnowshoesTuning.getSpeedBonusForLayers(7));
+    }
+
+    @Test
+    void assignsSnowBlocksTheirOwnBoostTier() {
+        assertEquals(0.16D, SnowshoesTuning.getSpeedBonusForSnowBlock());
+    }
+
+    @Test
+    void mapsImpulseToSpeedTier() {
+        assertEquals(0.018D, SnowshoesTuning.getTravelImpulseForSpeedBonus(0.12D));
+        assertEquals(0.023D, SnowshoesTuning.getTravelImpulseForSpeedBonus(0.16D));
+        assertEquals(0.028D, SnowshoesTuning.getTravelImpulseForSpeedBonus(0.18D));
     }
 
     @Test

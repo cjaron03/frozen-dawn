@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.FrostmiteRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
@@ -90,7 +91,13 @@ public class ClientEvents {
                         return tracker != null ? tracker.target().orElse(null) : null;
                     })
             );
+            CuriosClientCompat.registerRenderers();
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        CuriosClientCompat.registerLayerDefinitions(event);
     }
 
     @SubscribeEvent
