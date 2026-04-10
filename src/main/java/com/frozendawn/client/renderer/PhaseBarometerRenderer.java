@@ -27,6 +27,9 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
     private static final BlockState AMBER_STATE = Blocks.YELLOW_CONCRETE.defaultBlockState();
     private static final BlockState ORANGE_STATE = Blocks.ORANGE_CONCRETE.defaultBlockState();
     private static final BlockState RED_STATE = Blocks.RED_CONCRETE.defaultBlockState();
+    private static final float FRONT_OVERLAY_Z = 0.96f / 16f;
+    private static final float FRONT_GLOW_Z = 0.92f / 16f;
+    private static final float TEXT_Z = 1.01f / 16f;
 
     private final Font font;
     private final BlockRenderDispatcher blockRenderer;
@@ -61,23 +64,23 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
         boolean blinkOn = !snapshot.shouldBlink() || entity.getLevel() == null || ((entity.getLevel().getGameTime() / 8L) & 1L) == 1L;
         BlockState lampState = warningLampState(snapshot);
 
-        renderScaledBlock(poseStack, bufferSource, BORDER_STATE, 3.2f / 16f, 10.15f / 16f, -0.08f / 16f,
-                7.1f / 16f, 0.08f / 16f, 0.05f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.45f / 16f, 2.0f / 16f, -0.08f / 16f,
-                6.6f / 16f, 0.07f / 16f, 0.05f / 16f, (int) emissiveLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 2.75f / 16f, 3.25f / 16f, -0.07f / 16f,
-                1.65f / 16f, 3.05f / 16f, 0.06f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_STATE, 2.95f / 16f, 3.45f / 16f, -0.085f / 16f,
-                1.25f / 16f, 2.65f / 16f, 0.045f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, lampState, 3.18f / 16f, 4.42f / 16f, -0.105f / 16f,
-                0.80f / 16f, 1.22f / 16f, 0.095f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, lampState, 3.02f / 16f, 4.27f / 16f, -0.125f / 16f,
-                1.12f / 16f, 1.52f / 16f, 0.028f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.08f / 16f,
-                7.2f / 16f, 0.12f / 16f, 0.05f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, BORDER_STATE, 3.2f / 16f, 10.15f / 16f, FRONT_OVERLAY_Z,
+                7.1f / 16f, 0.08f / 16f, 0.022f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.45f / 16f, 2.0f / 16f, FRONT_OVERLAY_Z,
+                6.6f / 16f, 0.07f / 16f, 0.022f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 2.75f / 16f, 3.25f / 16f, FRONT_OVERLAY_Z,
+                1.65f / 16f, 3.05f / 16f, 0.024f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_STATE, 2.95f / 16f, 3.45f / 16f, FRONT_GLOW_Z,
+                1.25f / 16f, 2.65f / 16f, 0.02f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.18f / 16f, 4.42f / 16f, FRONT_GLOW_Z,
+                0.80f / 16f, 1.22f / 16f, 0.03f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.02f / 16f, 4.27f / 16f, 0.88f / 16f,
+                1.12f / 16f, 1.52f / 16f, 0.015f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, FRONT_OVERLAY_Z,
+                7.2f / 16f, 0.12f / 16f, 0.022f / 16f, packedLight, packedOverlay);
         float fillWidth = Math.max(0.45f / 16f, (7.0f * snapshot.severity()) / 16f);
-        renderScaledBlock(poseStack, bufferSource, trendState(snapshot), 3.45f / 16f, 2.0f / 16f, -0.09f / 16f,
-                fillWidth, 0.05f / 16f, 0.045f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, trendState(snapshot), 3.45f / 16f, 2.0f / 16f, 0.90f / 16f,
+                fillWidth, 0.05f / 16f, 0.016f / 16f, packedLight, packedOverlay);
 
         renderPhaseText(poseStack, bufferSource, (int) emissiveLight, snapshot);
         poseStack.popPose();
@@ -86,7 +89,7 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
     private void renderPhaseText(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
                                  PhaseBarometerSnapshot snapshot) {
         poseStack.pushPose();
-        poseStack.translate(0.228f, 0.56f, -0.0008f);
+        poseStack.translate(0.228f, 0.56f, TEXT_Z);
         poseStack.scale(0.015f, -0.015f, 0.015f);
         Matrix4f matrix = poseStack.last().pose();
         font.drawInBatch(
@@ -104,7 +107,7 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(0.23f, 0.395f, -0.0008f);
+        poseStack.translate(0.23f, 0.395f, TEXT_Z);
         poseStack.scale(0.0066f, -0.0066f, 0.0066f);
         Matrix4f bandMatrix = poseStack.last().pose();
         font.drawInBatch(
