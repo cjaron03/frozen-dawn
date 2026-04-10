@@ -156,8 +156,8 @@ public class WorldTickHandler {
             lastLoggedDay = currentDay;
         }
 
-        // Sync apocalypse data to all clients every 100 ticks (~5 seconds)
-        if (state.getApocalypseTicks() % 100 == 0) {
+        // Sync apocalypse data to all clients every 20 ticks (~1 second)
+        if (state.getApocalypseTicks() % 20 == 0) {
             PacketDistributor.sendToAllPlayers(createPayload(state, winState));
         }
 
@@ -467,7 +467,7 @@ public class WorldTickHandler {
     private static ApocalypseDataPayload createPayload(ApocalypseState state, WinConditionState winState) {
         return new ApocalypseDataPayload(
                 state.getPhase(),
-                state.getProgress(),
+                state.getPreciseProgress(),
                 state.getTemperatureOffset(),
                 state.getSunScale(),
                 state.getSunBrightness(),

@@ -41,7 +41,7 @@ public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvid
 
         ApocalypseState apocalypseState = ApocalypseState.get(serverLevel.getServer());
         int phase = apocalypseState.getPhase();
-        float progress = apocalypseState.getProgress();
+        float progress = apocalypseState.getPreciseProgress();
         PhaseBarometerSnapshot snapshot = PhaseBarometerForecasts.evaluate(phase, progress);
         int phase6Stage = PhaseManager.getPhase6Stage(phase, progress).ordinal();
         int band = snapshot.forecastBand().ordinal();

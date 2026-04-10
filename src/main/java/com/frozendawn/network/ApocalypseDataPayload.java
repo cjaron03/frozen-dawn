@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server → client packet carrying apocalypse state for rendering.
- * Sent every 100 ticks and on player join.
+ * Sent periodically and on player join.
  */
 public record ApocalypseDataPayload(
         int phase,

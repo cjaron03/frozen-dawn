@@ -163,6 +163,22 @@ public class ApocalypseState extends SavedData {
         return PhaseManager.getProgress(getCurrentDay(), getTotalDays());
     }
 
+    /**
+     * Continuous apocalypse progress based on world time rather than whole days.
+     * Useful for client diagnostics and forecast instruments that should feel live.
+     */
+    public float getPreciseProgress() {
+        int totalDays = getTotalDays();
+        if (totalDays <= 0) {
+            return 1.0f;
+        }
+        return net.minecraft.util.Mth.clamp(
+                (float) apocalypseTicks / (totalDays * 24000.0f),
+                0.0f,
+                1.0f
+        );
+    }
+
     public float getTemperatureOffset() {
         return PhaseManager.getTemperatureOffset(getCurrentDay(), getTotalDays());
     }

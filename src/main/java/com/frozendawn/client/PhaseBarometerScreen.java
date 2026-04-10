@@ -19,11 +19,11 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
     private static final ResourceLocation ORSA_LOGO =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
 
-    private static final int GUI_W = 212;
-    private static final int GUI_H = 142;
+    private static final int GUI_W = 236;
+    private static final int GUI_H = 154;
     private static final int SECTION_X = 10;
     private static final int SECTION_W = GUI_W - 20;
-    private static final int VALUE_X = 92;
+    private static final int VALUE_X = 78;
     private static final int VALUE_W = GUI_W - VALUE_X - 14;
     private static final int BAR_W = GUI_W - 24;
 
@@ -70,8 +70,8 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         graphics.fill(x + 2, y + 2, x + w - 2, y + 23, 0xFF0E2730);
         graphics.fill(x + 2, y + 23, x + w - 2, y + 24, 0xFF2E8997);
 
-        drawSection(graphics, x + SECTION_X, y + 31, SECTION_W, 50);
-        drawSection(graphics, x + SECTION_X, y + 95, SECTION_W, 24);
+        drawSection(graphics, x + SECTION_X, y + 31, SECTION_W, 66);
+        drawSection(graphics, x + SECTION_X, y + 101, SECTION_W, 26);
     }
 
     private void drawSection(GuiGraphics graphics, int x, int y, int w, int h) {
@@ -81,7 +81,6 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         }
         graphics.fill(x, y, x + w, y + 1, 0xFF14323A);
         graphics.fill(x, y + h - 1, x + w, y + h, 0xFF14323A);
-        graphics.fill(x + 94, y + 8, x + 95, y + h - 8, 0xFF16333B);
     }
 
     @Override
@@ -94,29 +93,29 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         drawField(
                 graphics,
                 SECTION_X,
-                33,
+                36,
                 Component.translatable("screen.frozendawn.phase_barometer.current_phase"),
                 "Phase " + snapshot.currentPhase() + " // " + snapshot.currentPhaseName(),
                 0xFFE6F3F6,
-                false
+                2
         );
         drawField(
                 graphics,
                 SECTION_X,
-                51,
+                54,
                 Component.translatable("screen.frozendawn.phase_barometer.forecast"),
                 snapshot.forecastBand().displayName(),
                 colorForSeverity(snapshot.severity(), snapshot.forecastBand().isHighUrgency()),
-                false
+                2
         );
         drawField(
                 graphics,
                 SECTION_X,
-                69,
+                72,
                 Component.translatable("screen.frozendawn.phase_barometer.upcoming"),
                 snapshot.upcomingState().displayName(),
                 0xFFB7E7EF,
-                true
+                2
         );
 
         String warningText = snapshot.warning() == BarometerWarning.NONE
@@ -125,29 +124,29 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         drawField(
                 graphics,
                 SECTION_X,
-                97,
+                106,
                 Component.translatable("screen.frozendawn.phase_barometer.warning"),
                 warningText,
                 snapshot.warning() == BarometerWarning.NONE ? 0xFF8A9FA7 : 0xFFE3C87F,
-                true
+                2
         );
 
         graphics.drawString(font, Component.translatable("screen.frozendawn.phase_barometer.severity"),
-                12, 123, 0xFF6E8B93, false);
-        drawSeverityBar(graphics, 12, 131, snapshot);
+                12, 132, 0xFF6E8B93, false);
+        drawSeverityBar(graphics, 12, 141, snapshot);
     }
 
-    private void drawField(GuiGraphics graphics, int x, int y, Component label, String value, int color, boolean wrap) {
+    private void drawField(GuiGraphics graphics, int x, int y, Component label, String value, int color, int maxLines) {
         graphics.drawString(font, label, x + 4, y, 0xFF738B95, false);
-        if (wrap) {
-            drawWrappedValue(graphics, value, x + VALUE_X - SECTION_X, y, VALUE_W, color);
+        if (maxLines > 1) {
+            drawWrappedValue(graphics, value, x + VALUE_X - SECTION_X, y, VALUE_W, color, maxLines);
         } else {
             graphics.drawString(font, fit(value, VALUE_W), x + VALUE_X - SECTION_X, y, color, false);
         }
     }
 
-    private void drawWrappedValue(GuiGraphics graphics, String value, int x, int y, int maxWidth, int color) {
-        List<String> lines = wrap(value, maxWidth, 2);
+    private void drawWrappedValue(GuiGraphics graphics, String value, int x, int y, int maxWidth, int color, int maxLines) {
+        List<String> lines = wrap(value, maxWidth, maxLines);
         for (int i = 0; i < lines.size(); i++) {
             graphics.drawString(font, lines.get(i), x, y + i * 10, color, false);
         }

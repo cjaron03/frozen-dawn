@@ -25,6 +25,7 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
     private static final BlockState GREEN_STATE = Blocks.LIME_CONCRETE.defaultBlockState();
     private static final BlockState CYAN_STATE = Blocks.CYAN_CONCRETE.defaultBlockState();
     private static final BlockState AMBER_STATE = Blocks.YELLOW_CONCRETE.defaultBlockState();
+    private static final BlockState ORANGE_STATE = Blocks.ORANGE_CONCRETE.defaultBlockState();
     private static final BlockState RED_STATE = Blocks.RED_CONCRETE.defaultBlockState();
 
     private final Font font;
@@ -58,20 +59,25 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
 
         float emissiveLight = 0x00F000F0;
         boolean blinkOn = !snapshot.shouldBlink() || entity.getLevel() == null || ((entity.getLevel().getGameTime() / 8L) & 1L) == 1L;
-        BlockState lampState = lampState(snapshot);
-        BlockState borderState = snapshot.shouldBlink() ? RED_STATE : BORDER_STATE;
+        BlockState lampState = warningLampState(snapshot);
 
-        renderScaledBlock(poseStack, bufferSource, borderState, 3.0f / 16f, 10.25f / 16f, -0.03f / 16f,
-                7.8f / 16f, 0.10f / 16f, 0.06f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.25f / 16f, 1.85f / 16f, -0.03f / 16f,
-                7.1f / 16f, 0.08f / 16f, 0.06f / 16f, (int) emissiveLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, lampState, 11.15f / 16f, 4.15f / 16f, -0.22f / 16f,
-                0.65f / 16f, 0.65f / 16f, 0.10f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.03f / 16f,
-                7.4f / 16f, 0.14f / 16f, 0.05f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, BORDER_STATE, 3.2f / 16f, 10.15f / 16f, -0.08f / 16f,
+                7.1f / 16f, 0.08f / 16f, 0.05f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.45f / 16f, 2.0f / 16f, -0.08f / 16f,
+                6.6f / 16f, 0.07f / 16f, 0.05f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 2.75f / 16f, 3.25f / 16f, -0.07f / 16f,
+                1.65f / 16f, 3.05f / 16f, 0.06f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_STATE, 2.95f / 16f, 3.45f / 16f, -0.085f / 16f,
+                1.25f / 16f, 2.65f / 16f, 0.045f / 16f, packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.18f / 16f, 4.42f / 16f, -0.105f / 16f,
+                0.80f / 16f, 1.22f / 16f, 0.095f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.02f / 16f, 4.27f / 16f, -0.125f / 16f,
+                1.12f / 16f, 1.52f / 16f, 0.028f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.08f / 16f,
+                7.2f / 16f, 0.12f / 16f, 0.05f / 16f, packedLight, packedOverlay);
         float fillWidth = Math.max(0.45f / 16f, (7.0f * snapshot.severity()) / 16f);
-        renderScaledBlock(poseStack, bufferSource, lampState, 3.45f / 16f, 2.01f / 16f, -0.035f / 16f,
-                fillWidth, 0.08f / 16f, 0.06f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, trendState(snapshot), 3.45f / 16f, 2.0f / 16f, -0.09f / 16f,
+                fillWidth, 0.05f / 16f, 0.045f / 16f, packedLight, packedOverlay);
 
         renderPhaseText(poseStack, bufferSource, (int) emissiveLight, snapshot);
         poseStack.popPose();
@@ -126,13 +132,27 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
         };
     }
 
-    private BlockState lampState(PhaseBarometerSnapshot snapshot) {
+    private BlockState trendState(PhaseBarometerSnapshot snapshot) {
         return switch (snapshot.forecastBand()) {
             case STABLE -> GREEN_STATE;
             case DETERIORATING -> CYAN_STATE;
             case TRANSITION_LIKELY_SOON -> AMBER_STATE;
-            case IMMINENT, COLLAPSE_UNDERWAY -> RED_STATE;
+            case IMMINENT, COLLAPSE_UNDERWAY -> ORANGE_STATE;
         };
+    }
+
+    private BlockState warningLampState(PhaseBarometerSnapshot snapshot) {
+        if (snapshot.forecastBand().isHighUrgency()) {
+            return RED_STATE;
+        }
+        if (snapshot.warning() != com.frozendawn.barometer.BarometerWarning.NONE
+                || snapshot.forecastBand() == com.frozendawn.barometer.ForecastBand.TRANSITION_LIKELY_SOON) {
+            return ORANGE_STATE;
+        }
+        if (snapshot.forecastBand() == com.frozendawn.barometer.ForecastBand.DETERIORATING) {
+            return CYAN_STATE;
+        }
+        return GREEN_STATE;
     }
 
     private void renderScaledBlock(PoseStack poseStack, MultiBufferSource bufferSource, BlockState state,
