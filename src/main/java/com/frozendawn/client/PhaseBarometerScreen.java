@@ -52,7 +52,7 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         int y = topPos;
 
         drawFrame(graphics, x, y, GUI_W, GUI_H);
-        graphics.blit(ORSA_LOGO, x + GUI_W - 26, y + 4, 0, 0, 16, 16, 16, 16);
+        graphics.blit(ORSA_LOGO, x + GUI_W - 30, y + 4, 0, 0, 18, 18, 18, 18);
     }
 
     private PhaseBarometerSnapshot currentSnapshot() {
@@ -87,8 +87,7 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         PhaseBarometerSnapshot snapshot = currentSnapshot();
 
-        graphics.drawString(font, title, 12, 6, 0xFF7BE5ED, false);
-        graphics.drawString(font, "ORSA DIAGNOSTIC FORECAST", 12, 18, 0xFF6A97A3, false);
+        graphics.drawString(font, title, 12, 11, 0xFF7BE5ED, false);
 
         drawField(
                 graphics,
