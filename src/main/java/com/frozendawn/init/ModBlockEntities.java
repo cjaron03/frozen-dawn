@@ -7,6 +7,7 @@ import com.frozendawn.block.CampRadioBlockEntity;
 import com.frozendawn.block.EmergencyLightBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
+import com.frozendawn.block.MiteAwayBlockEntity;
 import com.frozendawn.block.OrsaFlagBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TownPASpeakerBlockEntity;
@@ -32,6 +33,12 @@ public class ModBlockEntities {
                             ModBlocks.IRON_THERMAL_HEATER.get(),
                             ModBlocks.GOLD_THERMAL_HEATER.get(),
                             ModBlocks.DIAMOND_THERMAL_HEATER.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MiteAwayBlockEntity>> MITEAWAY =
+            BLOCK_ENTITIES.register("miteaway",
+                    () -> BlockEntityType.Builder.of(MiteAwayBlockEntity::new,
+                            ModBlocks.MITEAWAY.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GeothermalCoreBlockEntity>> GEOTHERMAL_CORE =

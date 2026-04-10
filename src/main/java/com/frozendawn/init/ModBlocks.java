@@ -10,6 +10,7 @@ import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
 import com.frozendawn.block.MonitoringStationTerminalBlock;
+import com.frozendawn.block.MiteAwayBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
@@ -276,6 +277,14 @@ public class ModBlocks {
                     .strength(5.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> heaterLight(state, 15)), 3.0f));
+
+    public static final DeferredBlock<MiteAwayBlock> MITEAWAY = BLOCKS.register("miteaway",
+            () -> new MiteAwayBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .strength(0.6F)
+                    .sound(SoundType.WOOL)
+                    .noOcclusion()
+                    .lightLevel(state -> state.getValue(MiteAwayBlock.LIT) ? 4 : 0)));
 
     // Insulated Glass: transparent, counts as shelter (roof check)
     public static final DeferredBlock<HalfTransparentBlock> INSULATED_GLASS = BLOCKS.register("insulated_glass",

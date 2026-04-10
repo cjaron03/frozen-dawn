@@ -1,0 +1,31 @@
+{
+  "name": "MiteAway",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:miteaway",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:image",
+      "images": [
+        "frozendawn:textures/gui/patchouli/miteaway_cover.png"
+      ],
+      "border": true,
+      "text": " "
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Quick Start",
+      "text": "$(bold)Place coil. Ignite with Flint and Steel.$()$(br2)Active radius: $(thing)8 blocks$(). Burn time: $(thing)10 minutes$(). Right-click an active coil with an empty hand to snuff it and preserve the remaining burn.$(br2)Using a fresh MiteAway on an existing unit refreshes that burner instead of stacking overlap.$(br2)Effective against Frostmites only."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Safety & Limitations",
+      "text": "$(italic)MiteAway is not a pesticide.$()$(br2)Does not eliminate Frostmites. Does not guarantee uninterrupted sleep, thermal stability, or emotional peace.$(br2)Infested blocks may still spawn Frostmites nearby, but active smoke encourages them to avoid defended rooms instead of swarming straight through them.$(br2)$(italic)ORSA Evaluation: Functions as advertised. Marketing department remains intolerable.$()"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:miteaway",
+      "text": "A disposable residential coil sold like a lifestyle upgrade and used like a survival necessity. Keep one near heaters, worktables, and anywhere you are tired of scraping Frostmites off your sleeves."
+    }
+  ]
+}

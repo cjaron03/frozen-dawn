@@ -1,8 +1,10 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.block.MiteAwayBlockEntity;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
+import com.frozendawn.world.MiteAwayRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -60,11 +62,13 @@ public class FrostmiteEntity extends Monster {
     private static final int PLAYER_LATCH_DURATION = 140;
     private static final int HEATER_LATCH_DURATION = 200;
     private static final int PLAYER_LATCH_MIN_STICK_TICKS = 40;
+    private static final int MITEAWAY_DISENGAGE_DELAY = 30;
 
     private @Nullable UUID latchedPlayerId;
     private @Nullable BlockPos latchedHeaterPos;
     private @Nullable UUID preferredPlayerId;
     private @Nullable BlockPos preferredHeaterPos;
+    private @Nullable BlockPos preferredRepellentPos;
     private int retargetTicks;
     private int latchTicks;
     private float orbitSeed;
@@ -132,6 +136,14 @@ public class FrostmiteEntity extends Monster {
             acquirePreferredTargets();
         }
 
+        if (preferredRepellentPos != null) {
+            if (MiteAwayRegistry.isProtected(level(), position())) {
+                moveAwayFromRepellent(preferredRepellentPos);
+                return;
+            }
+            preferredRepellentPos = null;
+        }
+
         if (preferredHeaterPos != null) {
             moveToHeater(preferredHeaterPos);
             if (distanceToSqr(preferredHeaterPos.getCenter()) <= HEATER_LATCH_RANGE * HEATER_LATCH_RANGE) {
@@ -155,6 +167,14 @@ public class FrostmiteEntity extends Monster {
     }
 
     private void acquirePreferredTargets() {
+        preferredRepellentPos = MiteAwayRegistry.findNearestCoveringBurner(level(), position());
+        if (preferredRepellentPos != null) {
+            preferredHeaterPos = null;
+            preferredPlayerId = null;
+            setTarget(null);
+            return;
+        }
+
         preferredHeaterPos = findPreferredHeater();
         ServerPlayer player = findPreferredPlayer();
         preferredPlayerId = player != null ? player.getUUID() : null;
@@ -170,12 +190,24 @@ public class FrostmiteEntity extends Monster {
         getNavigation().moveTo(target.x, target.y, target.z, 1.25);
     }
 
+    private void moveAwayFromRepellent(BlockPos burnerPos) {
+        Vec3 center = burnerPos.getCenter();
+        Vec3 direction = new Vec3(getX() - center.x, 0.0, getZ() - center.z);
+        if (direction.lengthSqr() < 1.0E-4) {
+            float angle = orbitSeed + tickCount * 0.37f;
+            direction = new Vec3(Mth.cos(angle), 0.0, Mth.sin(angle));
+        }
+        Vec3 target = center.add(direction.normalize().scale(MiteAwayBlockEntity.COVERAGE_RADIUS + 3.0));
+        getNavigation().moveTo(target.x, getY(), target.z, 1.3);
+    }
+
     private @Nullable ServerPlayer findPreferredPlayer() {
         if (!(level() instanceof ServerLevel serverLevel)) return null;
         ServerPlayer best = null;
         double bestDist = Double.MAX_VALUE;
         for (ServerPlayer player : serverLevel.players()) {
             if (!isValidPlayerTarget(player)) continue;
+            if (MiteAwayRegistry.isProtected(level(), player.position())) continue;
             double dist = distanceToSqr(player);
             if (dist < TARGET_RANGE * TARGET_RANGE && dist < bestDist
                     && countLatchedToPlayer(player) < MAX_PLAYER_LATCH) {
@@ -194,6 +226,7 @@ public class FrostmiteEntity extends Monster {
         double bestDist = Double.MAX_VALUE;
         for (BlockPos heaterPos : heaters) {
             if (!isValidHeaterTarget(heaterPos)) continue;
+            if (MiteAwayRegistry.isProtected(level(), heaterPos.getCenter())) continue;
             double dist = distanceToSqr(heaterPos.getCenter());
             if (dist < HEATER_BAIT_RANGE * HEATER_BAIT_RANGE
                     && dist < bestDist
@@ -277,6 +310,15 @@ public class FrostmiteEntity extends Monster {
             return;
         }
 
+        if (latchTicks >= MITEAWAY_DISENGAGE_DELAY) {
+            BlockPos repellent = MiteAwayRegistry.findNearestCoveringBurner(level(), serverPlayer.position());
+            if (repellent != null) {
+                clearLatch();
+                preferredRepellentPos = repellent;
+                return;
+            }
+        }
+
         BlockPos heater = latchTicks >= PLAYER_LATCH_MIN_STICK_TICKS ? findPreferredHeater() : null;
         if (heater != null && serverPlayer.blockPosition().closerToCenterThan(heater.getCenter(), 4.5)) {
             clearLatch();
@@ -305,6 +347,13 @@ public class FrostmiteEntity extends Monster {
             return;
         }
 
+        if (latchTicks >= MITEAWAY_DISENGAGE_DELAY
+                && MiteAwayRegistry.isProtected(level(), latchedHeaterPos.getCenter())) {
+            clearLatch();
+            preferredRepellentPos = latchedHeaterPos;
+            return;
+        }
+
         latchTicks++;
         if (latchTicks > HEATER_LATCH_DURATION) {
             clearLatch();
@@ -324,6 +373,7 @@ public class FrostmiteEntity extends Monster {
     private void clearPreferredTargets() {
         preferredPlayerId = null;
         preferredHeaterPos = null;
+        preferredRepellentPos = null;
         setTarget(null);
     }
 

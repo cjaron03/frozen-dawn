@@ -14,6 +14,7 @@ import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.IceClawsItem;
+import com.frozendawn.item.MiteAwayBlockItem;
 import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
@@ -57,6 +58,9 @@ public class ModItems {
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> GOLD_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("gold_thermal_heater", ModBlocks.GOLD_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> DIAMOND_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("diamond_thermal_heater", ModBlocks.DIAMOND_THERMAL_HEATER);
+    public static final DeferredItem<MiteAwayBlockItem> MITEAWAY = ITEMS.register("miteaway",
+            () -> new MiteAwayBlockItem(new Item.Properties()
+                    .component(ModDataComponents.MITEAWAY_BURN_TICKS.get(), com.frozendawn.block.MiteAwayBlockEntity.MAX_BURN_TICKS)));
     public static final DeferredItem<BlockItem> INSULATED_GLASS = ITEMS.registerSimpleBlockItem("insulated_glass", ModBlocks.INSULATED_GLASS);
     public static final DeferredItem<BlockItem> FROZEN_COAL_ORE = ITEMS.registerSimpleBlockItem("frozen_coal_ore", ModBlocks.FROZEN_COAL_ORE);
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
@@ -320,6 +324,7 @@ public class ModItems {
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());
                         output.accept(DIAMOND_THERMAL_HEATER.get());
+                        output.accept(MITEAWAY.get());
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
                         output.accept(ORSA_SUPPLY_CRATE.get());

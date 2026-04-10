@@ -39,4 +39,11 @@ public class ModDataComponents {
                             .persistent(Codec.INT)
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> MITEAWAY_BURN_TICKS =
+            DATA_COMPONENTS.register("miteaway_burn_ticks", () ->
+                    DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.INT)
+                            .build());
 }

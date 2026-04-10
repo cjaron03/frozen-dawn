@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "charged=true,lit=false": {
+      "model": "frozendawn:block/miteaway"
+    },
+    "charged=true,lit=true": {
+      "model": "frozendawn:block/miteaway_lit"
+    },
+    "charged=false,lit=false": {
+      "model": "frozendawn:block/miteaway_spent"
+    },
+    "charged=false,lit=true": {
+      "model": "frozendawn:block/miteaway_lit"
+    }
+  }
+}

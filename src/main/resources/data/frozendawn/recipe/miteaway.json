@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:charcoal"
+    },
+    {
+      "item": "minecraft:string"
+    },
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "frozendawn:ice_shard"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:miteaway",
+    "count": 1
+  }
+}
