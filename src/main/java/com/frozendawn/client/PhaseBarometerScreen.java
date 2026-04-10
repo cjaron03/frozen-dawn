@@ -1,6 +1,5 @@
 package com.frozendawn.client;
 
-import com.frozendawn.FrozenDawn;
 import com.frozendawn.barometer.BarometerWarning;
 import com.frozendawn.barometer.PhaseBarometerForecasts;
 import com.frozendawn.barometer.PhaseBarometerSnapshot;
@@ -8,16 +7,12 @@ import com.frozendawn.block.PhaseBarometerMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometerMenu> {
-
-    private static final ResourceLocation ORSA_LOGO =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
 
     private static final int GUI_W = 236;
     private static final int GUI_H = 154;
@@ -52,7 +47,6 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
         int y = topPos;
 
         drawFrame(graphics, x, y, GUI_W, GUI_H);
-        graphics.blit(ORSA_LOGO, x + GUI_W - 30, y + 4, 0, 0, 18, 18, 18, 18);
     }
 
     private PhaseBarometerSnapshot currentSnapshot() {
