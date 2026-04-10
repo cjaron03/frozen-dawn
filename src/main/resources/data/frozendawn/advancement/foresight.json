@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:blizzard_goggles"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.foresight.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.foresight.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "equipped_blizzard_goggles": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

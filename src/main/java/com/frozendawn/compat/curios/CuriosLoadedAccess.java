@@ -22,6 +22,7 @@ final class CuriosLoadedAccess implements CuriosAccess {
     @Override
     public void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerItem(CuriosCapability.ITEM, (stack, context) -> new SnowshoesCurio(stack), ModItems.SNOWSHOES.get());
+        event.registerItem(CuriosCapability.ITEM, (stack, context) -> new BasicCurio(stack), ModItems.BLIZZARD_GOGGLES.get());
     }
 
     @Override
@@ -52,6 +53,19 @@ final class CuriosLoadedAccess implements CuriosAccess {
 
         @Override
         public boolean canWalkOnPowderedSnow(SlotContext slotContext) {
+            return true;
+        }
+    }
+
+    private record BasicCurio(ItemStack stack) implements ICurio {
+
+        @Override
+        public ItemStack getStack() {
+            return this.stack;
+        }
+
+        @Override
+        public boolean canEquipFromUse(SlotContext slotContext) {
             return true;
         }
     }

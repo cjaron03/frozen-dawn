@@ -76,6 +76,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(SurveyorLensVision.thermalModeKey());
+        event.register(SurveyorLensVision.blizzardModeKey());
     }
 
     @SubscribeEvent

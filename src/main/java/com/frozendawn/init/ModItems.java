@@ -9,6 +9,7 @@ import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
+import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
@@ -204,6 +205,8 @@ public class ModItems {
     public static final DeferredItem<OrsaThermalVisorItem> ORSA_THERMAL_VISOR = ITEMS.register("orsa_thermal_visor",
             () -> new OrsaThermalVisorItem(ModArmorMaterials.THERMAL_VISOR, ArmorItem.Type.HELMET,
                     new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(25)).rarity(Rarity.EPIC)));
+    public static final DeferredItem<BlizzardGogglesItem> BLIZZARD_GOGGLES = ITEMS.register("blizzard_goggles",
+            () -> new BlizzardGogglesItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<SnowshoesItem> SNOWSHOES = ITEMS.register("snowshoes",
             () -> new SnowshoesItem(new Item.Properties().stacksTo(1)));
 
@@ -393,6 +396,7 @@ public class ModItems {
                         output.accept(SURVEYOR_LENS.get());
                         output.accept(CALIBRATED_SURVEYOR_LENS.get());
                         output.accept(ORSA_THERMAL_VISOR.get());
+                        output.accept(BLIZZARD_GOGGLES.get());
                         output.accept(SNOWSHOES.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());

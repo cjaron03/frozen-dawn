@@ -1,6 +1,8 @@
 package com.frozendawn.client;
 
+import com.frozendawn.compat.curios.CuriosCompat;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.BlizzardGogglesLogic;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
@@ -36,6 +38,8 @@ public class FrostOverlay {
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
+        boolean gogglesWorn = CuriosCompat.hasBlizzardGogglesEquipped(mc.player)
+                && BlizzardGogglesLogic.isVisionActive(phase, progress);
 
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
@@ -50,15 +54,15 @@ public class FrostOverlay {
                     / PhaseManager.PHASE6_PRE_VACUUM_LENGTH);
 
             int tintAlpha = (int) Mth.lerp(darkTransition, 40f, 60f);
-            int tintR = (int) Mth.lerp(darkTransition, 0xCC, 0x22);
-            int tintG = (int) Mth.lerp(darkTransition, 0xDD, 0x22);
-            int tintB = (int) Mth.lerp(darkTransition, 0xFF, 0x33);
+            int tintR = (int) Mth.lerp(darkTransition, gogglesWorn ? 0xB8 : 0xCC, 0x22);
+            int tintG = (int) Mth.lerp(darkTransition, gogglesWorn ? 0xD5 : 0xDD, 0x22);
+            int tintB = (int) Mth.lerp(darkTransition, gogglesWorn ? 0xFF : 0xFF, 0x38);
             graphics.fill(0, 0, width, height, (tintAlpha << 24) | (tintR << 16) | (tintG << 8) | tintB);
 
             int edgeAlpha = (int) Mth.lerp(darkTransition, 100f, 140f);
-            int edgeR = (int) Mth.lerp(darkTransition, 0xAA, 0x11);
-            int edgeG = (int) Mth.lerp(darkTransition, 0xBB, 0x11);
-            int edgeB = (int) Mth.lerp(darkTransition, 0xEE, 0x22);
+            int edgeR = (int) Mth.lerp(darkTransition, gogglesWorn ? 0x92 : 0xAA, 0x11);
+            int edgeG = (int) Mth.lerp(darkTransition, gogglesWorn ? 0xB4 : 0xBB, 0x11);
+            int edgeB = (int) Mth.lerp(darkTransition, gogglesWorn ? 0xFF : 0xEE, 0x28);
             int edgeColor = (edgeAlpha << 24) | (edgeR << 16) | (edgeG << 8) | edgeB;
             int transparent = (0x00 << 24) | (edgeR << 16) | (edgeG << 8) | edgeB;
             int borderSize = (int) (height * 0.15f);
@@ -69,13 +73,15 @@ public class FrostOverlay {
             // Normal frost overlay (phases 1-5)
             int tintAlpha = (int) (intensity * 40);
             if (tintAlpha > 0) {
-                graphics.fill(0, 0, width, height, (tintAlpha << 24) | 0xCCDDFF);
+                int tintColor = gogglesWorn ? 0xBCD8FF : 0xCCDDFF;
+                graphics.fill(0, 0, width, height, (tintAlpha << 24) | tintColor);
             }
 
             int edgeAlpha = (int) (intensity * 100);
             if (edgeAlpha > 0) {
-                int edgeColor = (edgeAlpha << 24) | 0xAABBEE;
-                int transparent = 0x00AABBEE;
+                int edgeBase = gogglesWorn ? 0x8FAFFF : 0xAABBEE;
+                int edgeColor = (edgeAlpha << 24) | edgeBase;
+                int transparent = edgeBase;
                 int borderSize = (int) (height * 0.12f);
 
                 graphics.fillGradient(0, 0, width, borderSize, edgeColor, transparent);

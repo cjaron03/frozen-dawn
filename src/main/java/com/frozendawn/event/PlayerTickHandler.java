@@ -178,6 +178,7 @@ final class PlayerTickHandler {
         float sanitySpeed = (float) FrozenDawnConfig.SANITY_SPEED_MULTIPLIER.get().doubleValue();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             SnowshoesHandler.tick(player);
+            BlizzardGogglesHandler.tick(player, currentPhase, progress);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
                 // Easter egg per-player tick checks (fires in all game modes)

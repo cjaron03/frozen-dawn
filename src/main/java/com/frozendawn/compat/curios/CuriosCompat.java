@@ -21,6 +21,10 @@ public final class CuriosCompat {
         return ACCESS.isLoaded();
     }
 
+    public static boolean isCuriosLoaded() {
+        return isLoaded();
+    }
+
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         ACCESS.registerCapabilities(event);
     }
@@ -35,6 +39,10 @@ public final class CuriosCompat {
 
     public static boolean hasSnowshoesEquipped(Player player) {
         return isItemEquipped(player, ModItems.SNOWSHOES.get());
+    }
+
+    public static boolean hasBlizzardGogglesEquipped(Player player) {
+        return isItemEquipped(player, ModItems.BLIZZARD_GOGGLES.get());
     }
 
     private static CuriosAccess createAccess() {

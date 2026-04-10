@@ -2,6 +2,8 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.item.SurveyorLensScanner;
+import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -45,7 +47,8 @@ public final class SurveyorLensOverlay {
         graphics.fillGradient(0, 0, sideBorder, height, edgeColor, transparent);
         graphics.fillGradient(width - sideBorder, 0, width, height, transparent, edgeColor);
 
-        if (SurveyorLensVision.isThermalModeVisible()) {
+        VisionMode activeMode = SurveyorLensVision.getActiveVisionMode();
+        if (activeMode == VisionMode.THERMAL && SurveyorLensVision.isThermalModeVisible()) {
             float thermalStrength = SurveyorLensVision.getThermalModeStrength();
             SurveyorLensVision.syncThermalShaderUniforms(deltaTracker.getGameTimeDeltaPartialTick(false));
             drawThermalWash(graphics, mc, width, height, thermalStrength);
@@ -63,6 +66,10 @@ public final class SurveyorLensOverlay {
                     drawThermalHud(graphics, mc, width, hudStrength);
                 }
             }
+        } else if (SurveyorLensVision.isBlizzardModeVisible()) {
+            float blizzardStrength = SurveyorLensVision.getBlizzardModeStrength();
+            drawBlizzardWash(graphics, mc, width, height, blizzardStrength);
+            drawBlizzardHud(graphics, mc, width, blizzardStrength);
         }
     }
 
@@ -212,6 +219,63 @@ public final class SurveyorLensOverlay {
             graphics.drawString(mc.font, text, x + 1, y + 1, shadowColor, false);
             graphics.drawString(mc.font, text, x, y, textColor, false);
         }
+    }
+
+    private static void drawBlizzardWash(GuiGraphics graphics, Minecraft mc, int width, int height, float blizzardStrength) {
+        int washAlpha = (int) (Mth.clamp(blizzardStrength, 0.12F, 1.0F) * 28.0F);
+        graphics.fill(0, 0, width, height, (washAlpha << 24) | 0x1C3656);
+
+        int edgeAlpha = (int) (blizzardStrength * 96.0F);
+        int edgeColor = (edgeAlpha << 24) | 0x7CB5F4;
+        int transparent = 0x007CB5F4;
+        int borderSize = (int) (height * 0.15F);
+        int sideBorder = (int) (width * 0.08F);
+        graphics.fillGradient(0, 0, width, borderSize, edgeColor, transparent);
+        graphics.fillGradient(0, height - borderSize, width, height, transparent, edgeColor);
+        graphics.fillGradient(0, 0, sideBorder, height, edgeColor, transparent);
+        graphics.fillGradient(width - sideBorder, 0, width, height, transparent, edgeColor);
+
+        long time = mc.level != null ? mc.level.getGameTime() : 0L;
+        int sweepY = (int) ((time * 1.7F) % Math.max(1, height + 24)) - 12;
+        int sweepAlpha = (int) (blizzardStrength * 48.0F);
+        graphics.fillGradient(0, sweepY, width, sweepY + 12, 0x00000000, (sweepAlpha << 24) | 0xA9D4FF);
+
+        int frameAlpha = (int) (blizzardStrength * 188.0F);
+        int frameColor = (frameAlpha << 24) | 0xB7E0FF;
+        int frameTransparent = 0x00B7E0FF;
+        int inset = 10;
+        graphics.fillGradient(inset, inset, inset + 20, inset + 2, frameColor, frameTransparent);
+        graphics.fillGradient(inset, inset, inset + 2, inset + 20, frameColor, frameTransparent);
+        graphics.fillGradient(width - inset - 20, inset, width - inset, inset + 2, frameTransparent, frameColor);
+        graphics.fillGradient(width - inset - 2, inset, width - inset, inset + 20, frameColor, frameTransparent);
+        graphics.fillGradient(inset, height - inset - 2, inset + 20, height - inset, frameColor, frameTransparent);
+        graphics.fillGradient(inset, height - inset - 20, inset + 2, height - inset, frameTransparent, frameColor);
+        graphics.fillGradient(width - inset - 20, height - inset - 2, width - inset, height - inset, frameTransparent, frameColor);
+        graphics.fillGradient(width - inset - 2, height - inset - 20, width - inset, height - inset, frameTransparent, frameColor);
+    }
+
+    private static void drawBlizzardHud(GuiGraphics graphics, Minecraft mc, int width, float blizzardStrength) {
+        int panelWidth = 152;
+        int panelHeight = 44;
+        int panelX = width - panelWidth - 10;
+        int panelY = 10;
+        int bgAlpha = (int) (Mth.clamp(blizzardStrength + 0.2F, 0.25F, 1.0F) * 146.0F);
+        int borderAlpha = (int) (Mth.clamp(blizzardStrength + 0.15F, 0.2F, 1.0F) * 210.0F);
+
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, (bgAlpha << 24) | 0x09131B);
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, (borderAlpha << 24) | 0xB3DFFF);
+        graphics.fill(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x4A7CAA);
+        graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, (borderAlpha << 24) | 0xB3DFFF);
+        graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x4A7CAA);
+
+        graphics.blit(ORSA_LOGO, panelX + 7, panelY + 7, 0, 0, 16, 16, 16, 16);
+        graphics.drawString(mc.font, "BLIZZARD OPTICS", panelX + 30, panelY + 7, 0xE3F4FFFF, false);
+        graphics.drawString(mc.font, "FILTERED // 32M VIS", panelX + 30, panelY + 17, 0x95C7FF, false);
+
+        int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
+        String condition = PhaseManager.isPhase6Early(phase, progress) ? "PHASE 6 WHITEOUT" : "PHASE 5 WHITEOUT";
+        graphics.drawString(mc.font, condition, panelX + 7, panelY + 30, 0xCBE7FF, false);
     }
 
     private static String fit(Minecraft mc, String text, int maxWidth) {

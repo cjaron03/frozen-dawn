@@ -1,9 +1,13 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.compat.curios.CuriosCompat;
+import com.frozendawn.event.BlizzardGogglesHandler;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.mixin.GameRendererAccessor;
+import com.frozendawn.vision.VisionMode;
+import com.frozendawn.vision.VisionModeResolver;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -32,6 +36,8 @@ public final class SurveyorLensVision {
     private static final int THERMAL_BOOT_TICKS = 42;
     private static final float THERMAL_FADE_IN_STEP = 0.035F;
     private static final float THERMAL_FADE_OUT_STEP = 0.028F;
+    private static final float BLIZZARD_FADE_IN_STEP = 0.085F;
+    private static final float BLIZZARD_FADE_OUT_STEP = 0.070F;
     private static final ResourceLocation THERMAL_POST_EFFECT =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "shaders/post/orsa_thermal_v8a.json");
     private static final KeyMapping THERMAL_MODE_KEY = new KeyMapping(
@@ -40,20 +46,33 @@ public final class SurveyorLensVision {
             GLFW.GLFW_KEY_V,
             "key.categories.frozendawn"
     );
+    private static final KeyMapping BLIZZARD_MODE_KEY = new KeyMapping(
+            "key.frozendawn.toggle_blizzard_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_B,
+            "key.categories.frozendawn"
+    );
 
     private static final List<SurveyorLensScanner.HeatSignature> cachedSignatures = new ArrayList<>();
     private static final List<SurveyorLensTargetCollector.ColdAnchor> cachedColdAnchors = new ArrayList<>();
     private static float overlayStrength = 0.0F;
     private static float thermalModeStrength = 0.0F;
+    private static float blizzardModeStrength = 0.0F;
     private static boolean thermalModeEnabled = false;
     private static int thermalBootTicksRemaining = 0;
     private static int thermalShutdownTicksRemaining = 0;
+    private static VisionMode preferredVisionMode = VisionMode.NONE;
+    private static VisionMode activeVisionMode = VisionMode.NONE;
 
     private SurveyorLensVision() {
     }
 
     public static KeyMapping thermalModeKey() {
         return THERMAL_MODE_KEY;
+    }
+
+    public static KeyMapping blizzardModeKey() {
+        return BLIZZARD_MODE_KEY;
     }
 
     @SubscribeEvent
@@ -63,39 +82,74 @@ public final class SurveyorLensVision {
             syncThermalPostEffect(mc, false);
             fadeOut();
             fadeThermal();
+            fadeBlizzard();
+            activeVisionMode = VisionMode.NONE;
             return;
         }
 
         ItemStack headArmor = mc.player.getItemBySlot(EquipmentSlot.HEAD);
         boolean visorEquipped = headArmor.is(ModItems.ORSA_THERMAL_VISOR.get());
+        boolean gogglesEquipped = CuriosCompat.hasBlizzardGogglesEquipped(mc.player);
+        int phase = ApocalypseClientData.getPhase();
+        float progress = ApocalypseClientData.getProgress();
+        boolean blizzardAvailable = gogglesEquipped && BlizzardGogglesHandler.isVisionActive(phase, progress);
         SurveyorLensScanner.LensProfile heldProfile = SurveyorLensScanner.heldProfile(
                 mc.player.getMainHandItem(),
                 mc.player.getOffhandItem()
         );
         while (THERMAL_MODE_KEY.consumeClick()) {
             if (visorEquipped) {
-                thermalModeEnabled = !thermalModeEnabled;
-                if (thermalModeEnabled) {
-                    thermalBootTicksRemaining = THERMAL_BOOT_TICKS;
-                    thermalShutdownTicksRemaining = 0;
+                if (gogglesEquipped) {
+                    preferredVisionMode = VisionMode.THERMAL;
+                    if (!thermalModeEnabled) {
+                        thermalModeEnabled = true;
+                        thermalModeStrength = Math.max(thermalModeStrength, 0.04F);
+                        thermalBootTicksRemaining = THERMAL_BOOT_TICKS;
+                        thermalShutdownTicksRemaining = 0;
+                    }
                 } else {
-                    thermalBootTicksRemaining = 0;
-                    thermalShutdownTicksRemaining = THERMAL_BOOT_TICKS;
+                    thermalModeEnabled = !thermalModeEnabled;
+                    preferredVisionMode = thermalModeEnabled ? VisionMode.THERMAL : VisionMode.NONE;
+                    if (thermalModeEnabled) {
+                        thermalBootTicksRemaining = THERMAL_BOOT_TICKS;
+                        thermalShutdownTicksRemaining = 0;
+                    } else {
+                        thermalBootTicksRemaining = 0;
+                        thermalShutdownTicksRemaining = THERMAL_BOOT_TICKS;
+                    }
                 }
             }
         }
+        while (BLIZZARD_MODE_KEY.consumeClick()) {
+            if (gogglesEquipped && visorEquipped) {
+                preferredVisionMode = VisionMode.BLIZZARD;
+                thermalModeEnabled = false;
+                thermalBootTicksRemaining = 0;
+                thermalShutdownTicksRemaining = 0;
+                thermalModeStrength = 0.0F;
+            }
+        }
 
-        boolean visorThermalActive = visorEquipped && (
+        boolean thermalVisible = visorEquipped && (
                 thermalModeEnabled
                         || thermalBootTicksRemaining > 0
                         || thermalShutdownTicksRemaining > 0
                         || thermalModeStrength > 0.01F
         );
-        SurveyorLensScanner.LensProfile activeProfile = visorThermalActive
+        if (!visorEquipped && preferredVisionMode == VisionMode.THERMAL) {
+            preferredVisionMode = blizzardAvailable ? VisionMode.BLIZZARD : VisionMode.NONE;
+        } else if (!gogglesEquipped && preferredVisionMode == VisionMode.BLIZZARD) {
+            preferredVisionMode = thermalVisible ? VisionMode.THERMAL : VisionMode.NONE;
+        } else if (preferredVisionMode == VisionMode.NONE && blizzardAvailable) {
+            preferredVisionMode = VisionMode.BLIZZARD;
+        }
+
+        activeVisionMode = VisionModeResolver.resolveActiveMode(thermalVisible, blizzardAvailable, preferredVisionMode);
+        SurveyorLensScanner.LensProfile activeProfile = thermalVisible
                 ? SurveyorLensScanner.LensProfile.VISOR
                 : heldProfile;
 
-        if (activeProfile == null) {
+        if (activeProfile == null && activeVisionMode != VisionMode.BLIZZARD) {
             cachedSignatures.clear();
             cachedColdAnchors.clear();
             if (!visorEquipped) {
@@ -106,6 +160,8 @@ public final class SurveyorLensVision {
             syncThermalPostEffect(mc, false);
             fadeOut();
             fadeThermal();
+            fadeBlizzard();
+            activeVisionMode = VisionMode.NONE;
             return;
         }
 
@@ -130,9 +186,14 @@ public final class SurveyorLensVision {
         }
 
         syncThermalPostEffect(mc, thermalModeStrength > 0.01F);
+        if (activeVisionMode == VisionMode.BLIZZARD) {
+            blizzardModeStrength = Math.min(1.0F, blizzardModeStrength + BLIZZARD_FADE_IN_STEP);
+        } else {
+            fadeBlizzard();
+        }
 
         long gameTime = mc.level.getGameTime();
-        if (gameTime % SCAN_INTERVAL != 0) {
+        if (activeProfile == null || gameTime % SCAN_INTERVAL != 0) {
             return;
         }
 
@@ -175,12 +236,24 @@ public final class SurveyorLensVision {
         return overlayStrength;
     }
 
+    public static VisionMode getActiveVisionMode() {
+        return activeVisionMode;
+    }
+
     public static boolean isThermalModeVisible() {
         return thermalModeStrength > 0.01F || thermalBootTicksRemaining > 0 || thermalShutdownTicksRemaining > 0;
     }
 
     public static float getThermalModeStrength() {
         return easedThermalStrength();
+    }
+
+    public static boolean isBlizzardModeVisible() {
+        return blizzardModeStrength > 0.01F || activeVisionMode == VisionMode.BLIZZARD;
+    }
+
+    public static float getBlizzardModeStrength() {
+        return Mth.clamp(blizzardModeStrength, 0.0F, 1.0F);
     }
 
     public static boolean isThermalBooting() {
@@ -252,6 +325,10 @@ public final class SurveyorLensVision {
 
     private static void fadeThermal() {
         thermalModeStrength = Math.max(0.0F, thermalModeStrength - THERMAL_FADE_OUT_STEP);
+    }
+
+    private static void fadeBlizzard() {
+        blizzardModeStrength = Math.max(0.0F, blizzardModeStrength - BLIZZARD_FADE_OUT_STEP);
     }
 
     private static float easedThermalStrength() {
