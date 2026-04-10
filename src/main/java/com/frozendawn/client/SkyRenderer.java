@@ -2,7 +2,10 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.event.BlizzardGogglesHandler;
+import com.frozendawn.event.BlizzardGogglesLogic;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
@@ -96,6 +99,10 @@ public class SkyRenderer {
         float progress = ApocalypseClientData.getProgress();
 
         float visibility = getTargetVisibility(phase, progress);
+        if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
+                && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
+            visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
+        }
 
         float currentFar = event.getFarPlaneDistance();
         if (visibility < currentFar) {
@@ -131,8 +138,7 @@ public class SkyRenderer {
             };
         }
         if (phase >= 5) {
-            float phase5Progress = Math.min(1f, (progress - 0.46f) / 0.14f);
-            return Mth.lerp(phase5Progress, 48f, 12f);
+            return 12f;
         }
         if (phase >= 4) {
             float phase4Progress = Math.min(1f, (progress - 0.34f) / 0.12f);

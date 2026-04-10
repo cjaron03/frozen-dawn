@@ -240,6 +240,14 @@ public final class SurveyorLensVision {
         return activeVisionMode;
     }
 
+    public static boolean isBlizzardFilterActive() {
+        return activeVisionMode == VisionMode.BLIZZARD
+                && BlizzardGogglesHandler.isVisionActive(
+                ApocalypseClientData.getPhase(),
+                ApocalypseClientData.getProgress()
+        );
+    }
+
     public static boolean isThermalModeVisible() {
         return thermalModeStrength > 0.01F || thermalBootTicksRemaining > 0 || thermalShutdownTicksRemaining > 0;
     }

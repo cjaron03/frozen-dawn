@@ -34,7 +34,9 @@ public class WeatherParticles {
 
         // No blizzard particles underground or inside shelters
         if (mc.player.blockPosition().getY() < 50) return;
-        if (isSheltered(mc)) return;
+        if (isSheltered(mc)) {
+            return;
+        }
 
         float progress = ApocalypseClientData.getProgress();
 

@@ -2,6 +2,7 @@ package com.frozendawn.mixin;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.AlarmDynamicLightManager;
+import com.frozendawn.client.SurveyorLensVision;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -46,6 +47,19 @@ public class LevelRendererMixin {
                                        float partialTick, double camX, double camY, double camZ,
                                        CallbackInfo ci) {
         if (FrozenDawnPhaseTracker.getPhase() >= 5) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(
+            method = "renderSnowAndRain(Lnet/minecraft/client/renderer/LightTexture;FDDD)V",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void frozendawn$filterVanillaWeather(LightTexture lightTexture, float partialTick,
+                                                 double camX, double camY, double camZ,
+                                                 CallbackInfo ci) {
+        if (SurveyorLensVision.isBlizzardFilterActive()) {
             ci.cancel();
         }
     }

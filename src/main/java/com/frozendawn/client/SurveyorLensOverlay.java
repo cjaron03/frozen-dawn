@@ -273,8 +273,7 @@ public final class SurveyorLensOverlay {
         graphics.drawString(mc.font, "FILTERED // 32M VIS", panelX + 30, panelY + 17, 0x95C7FF, false);
 
         int phase = ApocalypseClientData.getPhase();
-        float progress = ApocalypseClientData.getProgress();
-        String condition = PhaseManager.isPhase6Early(phase, progress) ? "PHASE 6 WHITEOUT" : "PHASE 5 WHITEOUT";
+        String condition = phase >= 6 ? "PHASE 6 WHITEOUT" : "PHASE 5 WHITEOUT";
         graphics.drawString(mc.font, condition, panelX + 7, panelY + 30, 0xCBE7FF, false);
     }
 
