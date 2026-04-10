@@ -5,17 +5,17 @@
   "sortnum": 6,
   "pages": [
     {
-      "type": "patchouli:image",
-      "images": [
-        "frozendawn:textures/gui/patchouli/miteaway_cover.png"
-      ],
-      "border": true,
-      "text": " "
+      "type": "frozendawn:miteaway_cover"
     },
     {
       "type": "patchouli:text",
       "title": "Quick Start",
       "text": "$(bold)Place coil. Ignite with Flint and Steel.$()$(br2)Active radius: $(thing)8 blocks$(). Burn time: $(thing)10 minutes$(). Right-click an active coil with an empty hand to snuff it and preserve the remaining burn.$(br2)Using a fresh MiteAway on an existing unit refreshes that burner instead of stacking overlap.$(br2)Effective against Frostmites only."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Verified Testimonials",
+      "text": "\"Five stars. The nursery dome is finally down to a manageable level of screaming.\"$(br2)$(italic)- Lysa R., Cydonia Preferred Habitat Ambassador$(br22)\"We noticed fewer Frostmites immediately after activation and even fewer after the complimentary follow-up survey.\"$(br2)$(italic)- Harlan W., paid reviewer$(br22)\"Stylish, efficient, and almost enough to justify the service plan.\"$(br2)$(italic)- Maris K., Cydonia Living Group employee household$(br22)$(7)Testimonials may have been compensated in credits, coil refills, habitat points, or all three.$()"
     },
     {
       "type": "patchouli:text",

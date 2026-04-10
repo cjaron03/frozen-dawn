@@ -1,0 +1,15 @@
+{
+  "components": [
+    {
+      "type": "patchouli:image",
+      "image": "frozendawn:textures/gui/patchouli/miteaway_cover.png",
+      "x": 0,
+      "y": 0,
+      "width": 464,
+      "height": 632,
+      "texture_width": 512,
+      "texture_height": 1024,
+      "scale": 0.25
+    }
+  ]
+}
