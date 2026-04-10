@@ -2,100 +2,221 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.barometer.BarometerWarning;
+import com.frozendawn.barometer.PhaseBarometerForecasts;
 import com.frozendawn.barometer.PhaseBarometerSnapshot;
-import com.frozendawn.network.OpenPhaseBarometerPayload;
-import net.minecraft.client.Minecraft;
+import com.frozendawn.block.PhaseBarometerMenu;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
 
-public class PhaseBarometerScreen extends Screen {
+import java.util.ArrayList;
+import java.util.List;
+
+public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometerMenu> {
 
     private static final ResourceLocation ORSA_LOGO =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
-    private static final ResourceLocation PANEL_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/phase_barometer_panel.png");
-    private static final int GUI_W = 248;
-    private static final int GUI_H = 138;
-    private static final int BAR_W = 184;
-    private static final int BAR_H = 8;
 
-    private final BlockPos barometerPos;
-    private PhaseBarometerSnapshot snapshot;
+    private static final int GUI_W = 212;
+    private static final int GUI_H = 142;
+    private static final int SECTION_X = 10;
+    private static final int SECTION_W = GUI_W - 20;
+    private static final int VALUE_X = 92;
+    private static final int VALUE_W = GUI_W - VALUE_X - 14;
+    private static final int BAR_W = GUI_W - 24;
 
-    public PhaseBarometerScreen(OpenPhaseBarometerPayload payload) {
-        super(Component.translatable("screen.frozendawn.phase_barometer.title"));
-        this.barometerPos = payload.pos();
-        this.snapshot = payload.toSnapshot();
-    }
-
-    public boolean sameBarometer(BlockPos pos) {
-        return barometerPos.equals(pos);
-    }
-
-    public void applySnapshot(OpenPhaseBarometerPayload payload) {
-        snapshot = payload.toSnapshot();
+    public PhaseBarometerScreen(PhaseBarometerMenu menu, Inventory playerInv, Component title) {
+        super(menu, playerInv, title);
+        imageWidth = GUI_W;
+        imageHeight = GUI_H;
+        inventoryLabelY = 999;
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        int x = (width - GUI_W) / 2;
-        int y = (height - GUI_H) / 2;
-        graphics.blit(PANEL_TEXTURE, x, y, 0, 0, GUI_W, GUI_H, GUI_W, GUI_H);
+    protected void init() {
+        super.init();
+        leftPos = (width - imageWidth) / 2;
+        topPos = (height - imageHeight) / 2;
+    }
 
-        graphics.blit(ORSA_LOGO, x + GUI_W - 28, y + 4, 0, 0, 16, 16, 16, 16);
-        graphics.drawString(font, title, x + 12, y + 8, 0xFF7BE5ED, false);
-        graphics.drawString(font, "ORSA DIAGNOSTIC FORECAST", x + 12, y + 18, 0xFF6A97A3, false);
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.fill(0, 0, width, height, 0x70070D11);
+    }
 
-        drawLabelValue(graphics, x + 14, y + 38,
+    @Override
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+        int x = leftPos;
+        int y = topPos;
+
+        drawFrame(graphics, x, y, GUI_W, GUI_H);
+        graphics.blit(ORSA_LOGO, x + GUI_W - 26, y + 4, 0, 0, 16, 16, 16, 16);
+    }
+
+    private PhaseBarometerSnapshot currentSnapshot() {
+        return PhaseBarometerForecasts.evaluate(ApocalypseClientData.getPhase(), ApocalypseClientData.getProgress());
+    }
+
+    private void drawFrame(GuiGraphics graphics, int x, int y, int w, int h) {
+        graphics.fill(x, y, x + w, y + h, 0xFF05090D);
+        graphics.fill(x, y, x + w, y + 1, 0xFF4CC6D7);
+        graphics.fill(x, y, x + 1, y + h, 0xFF4CC6D7);
+        graphics.fill(x + w - 1, y, x + w, y + h, 0xFF07151A);
+        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF07151A);
+
+        graphics.fill(x + 2, y + 2, x + w - 2, y + h - 2, 0xFF091117);
+        graphics.fill(x + 2, y + 2, x + w - 2, y + 23, 0xFF0E2730);
+        graphics.fill(x + 2, y + 23, x + w - 2, y + 24, 0xFF2E8997);
+
+        drawSection(graphics, x + SECTION_X, y + 31, SECTION_W, 50);
+        drawSection(graphics, x + SECTION_X, y + 95, SECTION_W, 24);
+    }
+
+    private void drawSection(GuiGraphics graphics, int x, int y, int w, int h) {
+        graphics.fill(x, y, x + w, y + h, 0xFF0A141B);
+        for (int lineY = y; lineY < y + h; lineY += 6) {
+            graphics.fill(x, lineY, x + w, lineY + 1, 0x0D68A9B3);
+        }
+        graphics.fill(x, y, x + w, y + 1, 0xFF14323A);
+        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF14323A);
+        graphics.fill(x + 94, y + 8, x + 95, y + h - 8, 0xFF16333B);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        PhaseBarometerSnapshot snapshot = currentSnapshot();
+
+        graphics.drawString(font, title, 12, 6, 0xFF7BE5ED, false);
+        graphics.drawString(font, "ORSA DIAGNOSTIC FORECAST", 12, 18, 0xFF6A97A3, false);
+
+        drawField(
+                graphics,
+                SECTION_X,
+                33,
                 Component.translatable("screen.frozendawn.phase_barometer.current_phase"),
                 "Phase " + snapshot.currentPhase() + " // " + snapshot.currentPhaseName(),
-                0xFFE5F0F2);
-
-        drawLabelValue(graphics, x + 14, y + 52,
+                0xFFE6F3F6,
+                false
+        );
+        drawField(
+                graphics,
+                SECTION_X,
+                51,
                 Component.translatable("screen.frozendawn.phase_barometer.forecast"),
                 snapshot.forecastBand().displayName(),
-                colorForSeverity(snapshot.severity(), snapshot.forecastBand().isHighUrgency()));
-
-        drawLabelValue(graphics, x + 14, y + 66,
+                colorForSeverity(snapshot.severity(), snapshot.forecastBand().isHighUrgency()),
+                false
+        );
+        drawField(
+                graphics,
+                SECTION_X,
+                69,
                 Component.translatable("screen.frozendawn.phase_barometer.upcoming"),
                 snapshot.upcomingState().displayName(),
-                0xFF9ED3DC);
+                0xFFB7E7EF,
+                true
+        );
 
         String warningText = snapshot.warning() == BarometerWarning.NONE
                 ? Component.translatable("screen.frozendawn.phase_barometer.none").getString()
                 : snapshot.warning().displayName();
-        drawLabelValue(graphics, x + 14, y + 98,
+        drawField(
+                graphics,
+                SECTION_X,
+                97,
                 Component.translatable("screen.frozendawn.phase_barometer.warning"),
                 warningText,
-                snapshot.warning() == BarometerWarning.NONE ? 0xFF78909A : 0xFFE3C87F);
+                snapshot.warning() == BarometerWarning.NONE ? 0xFF8A9FA7 : 0xFFE3C87F,
+                true
+        );
 
         graphics.drawString(font, Component.translatable("screen.frozendawn.phase_barometer.severity"),
-                x + 14, y + 113, 0xFF6E8B93, false);
+                12, 123, 0xFF6E8B93, false);
+        drawSeverityBar(graphics, 12, 131, snapshot);
+    }
 
-        int barX = x + 14;
-        int barY = y + 124;
-        graphics.fill(barX, barY, barX + BAR_W, barY + BAR_H, 0xFF081015);
-        int fillW = Math.max(1, Math.round(BAR_W * snapshot.severity()));
-        graphics.fill(barX, barY, barX + fillW, barY + BAR_H, colorForSeverity(snapshot.severity(), snapshot.shouldBlink()));
+    private void drawField(GuiGraphics graphics, int x, int y, Component label, String value, int color, boolean wrap) {
+        graphics.drawString(font, label, x + 4, y, 0xFF738B95, false);
+        if (wrap) {
+            drawWrappedValue(graphics, value, x + VALUE_X - SECTION_X, y, VALUE_W, color);
+        } else {
+            graphics.drawString(font, fit(value, VALUE_W), x + VALUE_X - SECTION_X, y, color, false);
+        }
+    }
+
+    private void drawWrappedValue(GuiGraphics graphics, String value, int x, int y, int maxWidth, int color) {
+        List<String> lines = wrap(value, maxWidth, 2);
+        for (int i = 0; i < lines.size(); i++) {
+            graphics.drawString(font, lines.get(i), x, y + i * 10, color, false);
+        }
+    }
+
+    private List<String> wrap(String text, int maxWidth, int maxLines) {
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split(" ");
+        String current = "";
+        int index = 0;
+
+        while (index < words.length) {
+            String candidate = current.isEmpty() ? words[index] : current + " " + words[index];
+            if (font.width(candidate) <= maxWidth) {
+                current = candidate;
+                index++;
+                continue;
+            }
+
+            if (current.isEmpty()) {
+                lines.add(fit(words[index], maxWidth));
+                index++;
+            } else {
+                lines.add(current);
+                current = "";
+            }
+
+            if (lines.size() == maxLines) {
+                break;
+            }
+        }
+
+        if (!current.isEmpty() && lines.size() < maxLines) {
+            lines.add(current);
+        }
+
+        if (index < words.length && !lines.isEmpty()) {
+            String remaining = String.join(" ", java.util.Arrays.copyOfRange(words, index, words.length));
+            int lastIndex = lines.size() - 1;
+            String prefix = lines.get(lastIndex);
+            String combined = prefix + (prefix.isEmpty() ? "" : " ") + remaining;
+            lines.set(lastIndex, fit(combined, maxWidth));
+        }
+
+        if (lines.isEmpty()) {
+            lines.add(fit(text, maxWidth));
+        }
+
+        return lines;
+    }
+
+    private void drawSeverityBar(GuiGraphics graphics, int x, int y, PhaseBarometerSnapshot snapshot) {
+        int barX = x;
+        int barY = y;
+        int barColor = colorForSeverity(snapshot.severity(), snapshot.shouldBlink());
+        graphics.fill(barX, barY, barX + BAR_W, barY + 8, 0xFF071015);
+        graphics.fill(barX, barY, barX + Math.max(1, Math.round(BAR_W * snapshot.severity())), barY + 8, barColor);
         graphics.fill(barX, barY, barX + BAR_W, barY + 1, 0xFF2A5660);
-        graphics.fill(barX, barY + BAR_H - 1, barX + BAR_W, barY + BAR_H, 0xFF11252C);
+        graphics.fill(barX, barY + 7, barX + BAR_W, barY + 8, 0xFF102027);
+
+        drawTick(graphics, barX, barY, 0.20f);
         drawTick(graphics, barX, barY, 0.40f);
         drawTick(graphics, barX, barY, 0.70f);
         drawTick(graphics, barX, barY, 0.88f);
-
-    }
-
-    private void drawLabelValue(GuiGraphics graphics, int x, int y, Component label, String value, int valueColor) {
-        graphics.drawString(font, label, x, y, 0xFF6E8B93, false);
-        graphics.drawString(font, fit(value, 138), x + 88, y, valueColor, false);
     }
 
     private void drawTick(GuiGraphics graphics, int barX, int barY, float progress) {
         int x = barX + Math.round(BAR_W * progress);
-        graphics.fill(x, barY - 2, x + 1, barY + BAR_H + 2, 0xFF24434B);
+        graphics.fill(x, barY - 3, x + 1, barY + 10, 0xFF20454E);
     }
 
     private String fit(String value, int maxWidth) {
@@ -103,9 +224,8 @@ public class PhaseBarometerScreen extends Screen {
             return value;
         }
         String ellipsis = "...";
-        int ellipsisWidth = font.width(ellipsis);
         int length = value.length();
-        while (length > 0 && font.width(value.substring(0, length)) + ellipsisWidth > maxWidth) {
+        while (length > 0 && font.width(value.substring(0, length) + ellipsis) > maxWidth) {
             length--;
         }
         return length <= 0 ? ellipsis : value.substring(0, length) + ellipsis;
@@ -125,15 +245,13 @@ public class PhaseBarometerScreen extends Screen {
     }
 
     @Override
-    public boolean isPauseScreen() {
-        return false;
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderTooltip(graphics, mouseX, mouseY);
     }
 
-    public static void openOrUpdate(Minecraft minecraft, OpenPhaseBarometerPayload payload) {
-        if (minecraft.screen instanceof PhaseBarometerScreen screen && screen.sameBarometer(payload.pos())) {
-            screen.applySnapshot(payload);
-            return;
-        }
-        minecraft.setScreen(new PhaseBarometerScreen(payload));
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 }

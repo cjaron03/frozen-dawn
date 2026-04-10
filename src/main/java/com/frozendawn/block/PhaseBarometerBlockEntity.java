@@ -5,20 +5,23 @@ import com.frozendawn.barometer.PhaseBarometerForecasts;
 import com.frozendawn.barometer.PhaseBarometerSnapshot;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModBlockEntities;
-import com.frozendawn.network.OpenPhaseBarometerPayload;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
-public class PhaseBarometerBlockEntity extends BlockEntity {
+public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvider {
 
     private static final long ANNOUNCEMENT_TICK_INTERVAL = 20L;
 
@@ -70,17 +73,15 @@ public class PhaseBarometerBlockEntity extends BlockEntity {
         }
     }
 
-    public void openFor(ServerPlayer player) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("block.frozendawn.phase_barometer");
+    }
 
-        ApocalypseState apocalypseState = ApocalypseState.get(serverLevel.getServer());
-        PhaseBarometerSnapshot snapshot = PhaseBarometerForecasts.evaluate(
-                apocalypseState.getPhase(),
-                apocalypseState.getProgress()
-        );
-        PacketDistributor.sendToPlayer(player, OpenPhaseBarometerPayload.fromSnapshot(worldPosition, snapshot));
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInv, Player player) {
+        return new PhaseBarometerMenu(containerId, this);
     }
 
     @Override

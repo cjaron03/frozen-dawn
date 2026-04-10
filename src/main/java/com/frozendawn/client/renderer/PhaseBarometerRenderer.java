@@ -61,26 +61,17 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
         BlockState lampState = lampState(snapshot);
         BlockState borderState = snapshot.shouldBlink() ? RED_STATE : BORDER_STATE;
 
-        renderScaledBlock(poseStack, bufferSource, BORDER_STATE, 2.1f / 16f, 2.5f / 16f, -0.24f / 16f,
-                11.8f / 16f, 11.2f / 16f, 0.38f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_STATE, 2.45f / 16f, 2.85f / 16f, -0.18f / 16f,
-                11.1f / 16f, 10.5f / 16f, 0.35f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, borderState, 2.8f / 16f, 3.2f / 16f, -0.24f / 16f,
-                10.4f / 16f, 0.28f / 16f, 0.38f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.05f / 16f, 10.2f / 16f, -0.2f / 16f,
-                6.6f / 16f, 0.25f / 16f, 0.30f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, borderState, 3.0f / 16f, 10.25f / 16f, -0.03f / 16f,
+                7.8f / 16f, 0.10f / 16f, 0.06f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, CYAN_STATE, 3.25f / 16f, 1.85f / 16f, -0.03f / 16f,
+                7.1f / 16f, 0.08f / 16f, 0.06f / 16f, (int) emissiveLight, packedOverlay);
         renderScaledBlock(poseStack, bufferSource, lampState, 11.15f / 16f, 4.15f / 16f, -0.22f / 16f,
-                1.15f / 16f, 1.15f / 16f, 0.34f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.35f / 16f, 5.0f / 16f, -0.18f / 16f,
-                7.0f / 16f, 0.7f / 16f, 0.28f / 16f, packedLight, packedOverlay);
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.35f / 16f, 3.95f / 16f, -0.18f / 16f,
-                5.1f / 16f, 0.5f / 16f, 0.28f / 16f, packedLight, packedOverlay);
-
-        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.18f / 16f,
-                7.4f / 16f, 0.65f / 16f, 0.28f / 16f, packedLight, packedOverlay);
+                0.65f / 16f, 0.65f / 16f, 0.10f / 16f, blinkOn ? (int) emissiveLight : packedLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, PANEL_DARK_STATE, 3.25f / 16f, 1.95f / 16f, -0.03f / 16f,
+                7.4f / 16f, 0.14f / 16f, 0.05f / 16f, packedLight, packedOverlay);
         float fillWidth = Math.max(0.45f / 16f, (7.0f * snapshot.severity()) / 16f);
-        renderScaledBlock(poseStack, bufferSource, lampState, 3.45f / 16f, 2.05f / 16f, -0.22f / 16f,
-                fillWidth, 0.5f / 16f, 0.34f / 16f, (int) emissiveLight, packedOverlay);
+        renderScaledBlock(poseStack, bufferSource, lampState, 3.45f / 16f, 2.01f / 16f, -0.035f / 16f,
+                fillWidth, 0.08f / 16f, 0.06f / 16f, (int) emissiveLight, packedOverlay);
 
         renderPhaseText(poseStack, bufferSource, (int) emissiveLight, snapshot);
         poseStack.popPose();
@@ -89,7 +80,7 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
     private void renderPhaseText(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
                                  PhaseBarometerSnapshot snapshot) {
         poseStack.pushPose();
-        poseStack.translate(0.228f, 0.56f, -0.003f);
+        poseStack.translate(0.228f, 0.56f, -0.0008f);
         poseStack.scale(0.015f, -0.015f, 0.015f);
         Matrix4f matrix = poseStack.last().pose();
         font.drawInBatch(
@@ -107,7 +98,7 @@ public class PhaseBarometerRenderer implements BlockEntityRenderer<PhaseBaromete
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(0.23f, 0.395f, -0.003f);
+        poseStack.translate(0.23f, 0.395f, -0.0008f);
         poseStack.scale(0.0066f, -0.0066f, 0.0066f);
         Matrix4f bandMatrix = poseStack.last().pose();
         font.drawInBatch(

@@ -135,6 +135,7 @@ public class ClientEvents {
         event.register(ModMenuTypes.THERMAL_CONTAINER.get(), ThermalContainerScreen::new);
         event.register(ModMenuTypes.ACHERON_FORGE.get(), AcheronForgeScreen::new);
         event.register(ModMenuTypes.TRANSPONDER.get(), TransponderScreen::new);
+        event.register(ModMenuTypes.PHASE_BAROMETER.get(), PhaseBarometerScreen::new);
         event.register(ModMenuTypes.THERMAL_HEATER.get(), ThermalHeaterScreen::new);
     }
 

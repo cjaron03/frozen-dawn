@@ -30,45 +30,18 @@ public class PhaseBarometerBlock extends Block implements EntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape NORTH_SHAPE = Shapes.or(
-            Block.box(3.0, 0.0, 0.0, 5.0, 1.0, 4.0),
-            Block.box(11.0, 0.0, 0.0, 13.0, 1.0, 4.0),
-            Block.box(1.0, 1.0, 0.0, 15.0, 11.0, 6.0),
-            Block.box(2.0, 0.0, 4.0, 14.0, 9.0, 15.0),
-            Block.box(3.0, 9.0, 6.0, 13.0, 13.0, 15.0),
-            Block.box(2.0, 11.0, 1.0, 14.0, 13.0, 6.0),
-            Block.box(11.0, 13.0, 10.0, 13.0, 14.0, 12.0),
-            Block.box(11.5, 14.0, 10.5, 12.5, 16.0, 11.5)
+            Block.box(3.0, 0.0, 3.0, 5.0, 1.0, 12.0),
+            Block.box(11.0, 0.0, 3.0, 13.0, 1.0, 12.0),
+            Block.box(2.0, 1.0, 3.0, 14.0, 10.0, 13.0),
+            Block.box(3.0, 2.0, 1.0, 13.0, 11.0, 4.0),
+            Block.box(3.0, 10.0, 4.0, 13.0, 12.0, 12.0),
+            Block.box(4.0, 12.0, 8.0, 12.0, 13.0, 13.0),
+            Block.box(10.0, 12.0, 9.0, 12.0, 13.0, 11.0),
+            Block.box(10.75, 13.0, 9.75, 11.25, 16.0, 10.25)
     );
-    private static final VoxelShape SOUTH_SHAPE = Shapes.or(
-            Block.box(3.0, 0.0, 12.0, 5.0, 1.0, 16.0),
-            Block.box(11.0, 0.0, 12.0, 13.0, 1.0, 16.0),
-            Block.box(1.0, 1.0, 10.0, 15.0, 11.0, 16.0),
-            Block.box(2.0, 0.0, 1.0, 14.0, 9.0, 12.0),
-            Block.box(3.0, 9.0, 1.0, 13.0, 13.0, 10.0),
-            Block.box(2.0, 11.0, 10.0, 14.0, 13.0, 15.0),
-            Block.box(3.0, 13.0, 4.0, 5.0, 14.0, 6.0),
-            Block.box(3.5, 14.0, 4.5, 4.5, 16.0, 5.5)
-    );
-    private static final VoxelShape WEST_SHAPE = Shapes.or(
-            Block.box(0.0, 0.0, 3.0, 4.0, 1.0, 5.0),
-            Block.box(0.0, 0.0, 11.0, 4.0, 1.0, 13.0),
-            Block.box(0.0, 1.0, 1.0, 6.0, 11.0, 15.0),
-            Block.box(4.0, 0.0, 2.0, 15.0, 9.0, 14.0),
-            Block.box(6.0, 9.0, 3.0, 15.0, 13.0, 13.0),
-            Block.box(1.0, 11.0, 2.0, 6.0, 13.0, 14.0),
-            Block.box(10.0, 13.0, 3.0, 12.0, 14.0, 5.0),
-            Block.box(10.5, 14.0, 3.5, 11.5, 16.0, 4.5)
-    );
-    private static final VoxelShape EAST_SHAPE = Shapes.or(
-            Block.box(12.0, 0.0, 3.0, 16.0, 1.0, 5.0),
-            Block.box(12.0, 0.0, 11.0, 16.0, 1.0, 13.0),
-            Block.box(10.0, 1.0, 1.0, 16.0, 11.0, 15.0),
-            Block.box(1.0, 0.0, 2.0, 12.0, 9.0, 14.0),
-            Block.box(1.0, 9.0, 3.0, 10.0, 13.0, 13.0),
-            Block.box(10.0, 11.0, 2.0, 15.0, 13.0, 14.0),
-            Block.box(4.0, 13.0, 11.0, 6.0, 14.0, 13.0),
-            Block.box(4.5, 14.0, 11.5, 5.5, 16.0, 12.5)
-    );
+    private static final VoxelShape SOUTH_SHAPE = rotate(NORTH_SHAPE, 2);
+    private static final VoxelShape WEST_SHAPE = rotate(NORTH_SHAPE, 3);
+    private static final VoxelShape EAST_SHAPE = rotate(NORTH_SHAPE, 1);
 
     public PhaseBarometerBlock(Properties properties) {
         super(properties);
@@ -89,6 +62,20 @@ public class PhaseBarometerBlock extends Block implements EntityBlock {
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    private static VoxelShape rotate(VoxelShape shape, int quarterTurns) {
+        VoxelShape rotated = shape;
+        for (int i = 0; i < quarterTurns; i++) {
+            VoxelShape[] buffer = new VoxelShape[]{Shapes.empty()};
+            rotated.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
+                    buffer[0] = Shapes.or(
+                            buffer[0],
+                            Shapes.box(1.0 - maxZ, minY, minX, 1.0 - minZ, maxY, maxX)
+                    ));
+            rotated = buffer[0];
+        }
+        return rotated;
     }
 
     @Override
@@ -126,7 +113,7 @@ public class PhaseBarometerBlock extends Block implements EntityBlock {
                                                Player player, BlockHitResult hitResult) {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof PhaseBarometerBlockEntity barometer) {
-            barometer.openFor(serverPlayer);
+            serverPlayer.openMenu(barometer, pos);
             WorldTickHandler.grantAdvancement(serverPlayer, "reading_the_sky");
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

@@ -3,7 +3,6 @@ package com.frozendawn.network;
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.MonitoringTerminalScreen;
-import com.frozendawn.client.PhaseBarometerScreen;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.TowerTerminalScreen;
@@ -45,10 +44,6 @@ public final class ClientHandlers {
 
     public static void handleOpenMonitoringTerminal(OpenMonitoringTerminalPayload payload) {
         MonitoringTerminalScreen.openOrUpdate(Minecraft.getInstance(), payload);
-    }
-
-    public static void handleOpenPhaseBarometer(OpenPhaseBarometerPayload payload) {
-        PhaseBarometerScreen.openOrUpdate(Minecraft.getInstance(), payload);
     }
 
     public static void handleOpenMeteorologistJournal(OpenMeteorologistJournalPayload payload) {
