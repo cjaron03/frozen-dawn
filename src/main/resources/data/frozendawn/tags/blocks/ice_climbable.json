@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:snow_block",
+    "minecraft:ice",
+    "minecraft:packed_ice",
+    "minecraft:blue_ice",
+    "frozendawn:frozen_obsidian",
+    "frozendawn:frozen_dirt",
+    "frozendawn:frozen_sand"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "parent": "frozendawn:root",
+  "display": {
+    "icon": {
+      "id": "frozendawn:ice_claws"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.claw_your_way_up.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.claw_your_way_up.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "climbed_with_ice_claws": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

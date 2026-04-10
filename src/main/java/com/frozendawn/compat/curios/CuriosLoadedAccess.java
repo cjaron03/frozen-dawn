@@ -23,6 +23,7 @@ final class CuriosLoadedAccess implements CuriosAccess {
     public void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerItem(CuriosCapability.ITEM, (stack, context) -> new SnowshoesCurio(stack), ModItems.SNOWSHOES.get());
         event.registerItem(CuriosCapability.ITEM, (stack, context) -> new BasicCurio(stack), ModItems.BLIZZARD_GOGGLES.get());
+        event.registerItem(CuriosCapability.ITEM, (stack, context) -> new BasicCurio(stack), ModItems.ICE_CLAWS.get());
     }
 
     @Override

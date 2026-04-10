@@ -1,6 +1,7 @@
 package com.frozendawn.mixin;
 
 import com.frozendawn.compat.curios.CuriosCompat;
+import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.SnowshoesHandler;
 import com.frozendawn.event.SnowshoesTuning;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,6 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
+
+    @Inject(method = "onClimbable", at = @At("HEAD"), cancellable = true)
+    private void frozendawn$allowIceClawClimbing(CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity livingEntity = (LivingEntity) (Object) this;
+        if (IceClawsHandler.shouldTreatAsClimbable(livingEntity)) {
+            cir.setReturnValue(true);
+        }
+    }
 
     @Inject(method = "handleRelativeFrictionAndCalculateMovement", at = @At("RETURN"), cancellable = true)
     private void frozendawn$boostSnowshoeTravel(Vec3 deltaMovement, float friction, CallbackInfoReturnable<Vec3> cir) {
@@ -44,5 +53,27 @@ public abstract class LivingEntityMixin {
         Vec3 direction = horizontalInput.normalize();
         Vec3 baseMovement = cir.getReturnValue();
         cir.setReturnValue(baseMovement.add(direction.x * impulse, 0.0D, direction.z * impulse));
+    }
+
+    @Inject(method = "handleRelativeFrictionAndCalculateMovement", at = @At("RETURN"), cancellable = true)
+    private void frozendawn$scaleIceClawClimb(Vec3 deltaMovement, float friction, CallbackInfoReturnable<Vec3> cir) {
+        LivingEntity livingEntity = (LivingEntity) (Object) this;
+        if (!IceClawsHandler.shouldTreatAsClimbable(livingEntity)) {
+            return;
+        }
+
+        Vec3 movement = cir.getReturnValue();
+        if (livingEntity.isShiftKeyDown()) {
+            cir.setReturnValue(new Vec3(movement.x, 0.0D, movement.z));
+            return;
+        }
+
+        if (IceClawsHandler.isClimbJumpActive(livingEntity)) {
+            cir.setReturnValue(new Vec3(
+                    movement.x,
+                    IceClawsHandler.getClimbVelocity(livingEntity),
+                    movement.z
+            ));
+        }
     }
 }

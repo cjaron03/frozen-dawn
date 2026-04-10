@@ -56,6 +56,7 @@
   "item.frozendawn.eva_leggings": "EVA Leggings",
   "item.frozendawn.eva_boots": "EVA Boots",
   "item.frozendawn.snowshoes": "Snowshoes",
+  "item.frozendawn.ice_claws": "Ice Claws",
 
   "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
@@ -182,6 +183,8 @@
   "advancement.frozendawn.food_spoiled.description": "Watch helplessly as your food freezes beyond recovery. Should've packed a lunchbox.",
   "advancement.frozendawn.hot_wings.title": "My DoorDash is Here",
   "advancement.frozendawn.hot_wings.description": "This stuff is so expensive...",
+  "advancement.frozendawn.claw_your_way_up.title": "Claw Your Way Up",
+  "advancement.frozendawn.claw_your_way_up.description": "The cold never bothered you anyway. (It did.)",
   "advancement.frozendawn.thermal_container.title": "Meal Prep Champion",
   "advancement.frozendawn.thermal_container.description": "Craft a Thermal Container. Your lunch is now rated for deep space.",
 
@@ -222,6 +225,8 @@
   "tooltip.frozendawn.snowshoes": "Keeps your pace on snow layers.",
   "tooltip.frozendawn.snowshoes.powder_snow": "Prevents sinking into powder snow while worn.",
   "tooltip.frozendawn.curios_required": "Requires Curios API to equip.",
+  "tooltip.frozendawn.ice_claws": "Acheronite grips for climbing frozen walls the sensible way.",
+  "tooltip.frozendawn.ice_claws.use": "Wear in a Curios hands slot. Hold Jump to climb tagged frozen surfaces and Sneak to hold.",
   "curios.identifier.feet": "Feet",
 
   "item.frozendawn.acheronite_compass": "Acheronite Compass",

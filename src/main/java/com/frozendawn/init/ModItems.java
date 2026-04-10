@@ -13,6 +13,7 @@ import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.IceClawsItem;
 import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
@@ -209,6 +210,8 @@ public class ModItems {
             () -> new BlizzardGogglesItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<SnowshoesItem> SNOWSHOES = ITEMS.register("snowshoes",
             () -> new SnowshoesItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<IceClawsItem> ICE_CLAWS = ITEMS.register("ice_claws",
+            () -> new IceClawsItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
 
     // --- Spawn Eggs ---
     public static final DeferredItem<DeferredSpawnEggItem> FROSTBITTEN_SPAWN_EGG = ITEMS.register("frostbitten_spawn_egg",
@@ -398,6 +401,7 @@ public class ModItems {
                         output.accept(ORSA_THERMAL_VISOR.get());
                         output.accept(BLIZZARD_GOGGLES.get());
                         output.accept(SNOWSHOES.get());
+                        output.accept(ICE_CLAWS.get());
                         // Hollow Drop Crafts
                         output.accept(CRYO_FUEL.get());
                         output.accept(FROST_WARD_TORCH_ITEM.get());

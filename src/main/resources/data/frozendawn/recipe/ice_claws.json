@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "A": {
+      "item": "frozendawn:acheronite_shard"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    }
+  },
+  "pattern": [
+    "A A",
+    "ILI",
+    "   "
+  ],
+  "result": {
+    "count": 1,
+    "id": "frozendawn:ice_claws"
+  }
+}

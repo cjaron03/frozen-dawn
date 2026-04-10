@@ -179,6 +179,7 @@ final class PlayerTickHandler {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             SnowshoesHandler.tick(player);
             BlizzardGogglesHandler.tick(player, currentPhase, progress);
+            IceClawsHandler.tick(player);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
                 // Easter egg per-player tick checks (fires in all game modes)
