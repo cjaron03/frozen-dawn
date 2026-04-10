@@ -37,21 +37,17 @@ public final class IceClawsHandler {
     private static final double MIN_VERTICAL_OVERLAP = 0.12D;
     private static final double MIN_LATERAL_OVERLAP = 0.12D;
     private static final double MAX_ANCHOR_GAP = 0.28D;
-    private static final long DEBUG_LOG_INTERVAL = 100L;
 
     private static final Map<UUID, Double> CLIMBED_DISTANCE = new HashMap<>();
     private static final Map<UUID, Double> LAST_CLIMB_Y = new HashMap<>();
     private static final Map<UUID, Boolean> CLIMB_JUMP_HELD = new HashMap<>();
     private static final Map<UUID, ClimbAnchor> CLIMB_ANCHORS = new HashMap<>();
-    private static final Map<UUID, Long> LAST_DEBUG_LOG_TICK = new HashMap<>();
-    private static final Map<UUID, String> LAST_DEBUG_STATE = new HashMap<>();
 
     private IceClawsHandler() {
     }
 
     static void tick(ServerPlayer player) {
         UUID id = player.getUUID();
-        logServerDebug(player);
         if (!isCustomClimbActive(player)) {
             CLIMBED_DISTANCE.remove(id);
             LAST_CLIMB_Y.remove(id);
@@ -76,8 +72,6 @@ public final class IceClawsHandler {
         LAST_CLIMB_Y.remove(id);
         CLIMB_JUMP_HELD.remove(id);
         CLIMB_ANCHORS.remove(id);
-        LAST_DEBUG_LOG_TICK.remove(id);
-        LAST_DEBUG_STATE.remove(id);
     }
 
     public static void setClimbInput(ServerPlayer player, boolean climbJumpHeld, BlockPos anchorPos, Direction wallSide) {
@@ -93,10 +87,6 @@ public final class IceClawsHandler {
         } else {
             CLIMB_ANCHORS.remove(id);
         }
-    }
-
-    public static void logImmediateDebug(ServerPlayer player, String source) {
-        logServerDebug(player, source, true);
     }
 
     public static boolean isClimbJumpActive(LivingEntity entity) {
@@ -119,50 +109,6 @@ public final class IceClawsHandler {
             return null;
         }
         return findClosestAnchor(player, player.getBoundingBox(), true);
-    }
-
-    public static String debugSampleSummary(Player player) {
-        AABB box = player.getBoundingBox();
-        double[] ySamples = uniqueSamples(
-                box.minY + 0.15D,
-                (box.minY + box.maxY) * 0.5D,
-                box.maxY - 0.15D
-        );
-        double[] xSamples = uniqueSamples(box.minX + 0.15D, player.getX(), box.maxX - 0.15D);
-        double[] zSamples = uniqueSamples(box.minZ + 0.15D, player.getZ(), box.maxZ - 0.15D);
-        StringBuilder summary = new StringBuilder();
-
-        for (Direction wallSide : Direction.Plane.HORIZONTAL) {
-            double[] lateralSamples = wallSide.getAxis() == Direction.Axis.X ? zSamples : xSamples;
-            BlockPos sample = null;
-            boolean climbable = false;
-            for (double depth : LOCAL_PROBE_DEPTHS) {
-                for (double y : ySamples) {
-                    for (double lateral : lateralSamples) {
-                        sample = sampleBlock(box, wallSide, depth, y, lateral);
-                        if (player.level().getBlockState(sample).is(ICE_CLIMBABLE)) {
-                            climbable = true;
-                            break;
-                        }
-                    }
-                    if (climbable) {
-                        break;
-                    }
-                }
-                if (climbable) {
-                    break;
-                }
-            }
-
-            if (summary.length() > 0) {
-                summary.append(' ');
-            }
-            summary.append(wallSide.getName()).append('=');
-            summary.append(sample == null ? "none" : sample.toShortString());
-            summary.append(':');
-            summary.append(sample == null ? "none" : player.level().getBlockState(sample).getBlock().builtInRegistryHolder().key().location());
-        }
-        return summary.toString();
     }
 
     public static boolean handleCustomTravel(LivingEntity entity) {
@@ -237,55 +183,6 @@ public final class IceClawsHandler {
             }
         }
         return false;
-    }
-
-    private static void logServerDebug(ServerPlayer player) {
-        logServerDebug(player, "tick", false);
-    }
-
-    private static void logServerDebug(ServerPlayer player, String source, boolean force) {
-        long gameTime = player.level().getGameTime();
-        long lastLog = LAST_DEBUG_LOG_TICK.getOrDefault(player.getUUID(), -DEBUG_LOG_INTERVAL);
-        boolean equipped = CuriosCompat.hasIceClawsEquipped(player);
-        boolean jumpHeld = CLIMB_JUMP_HELD.getOrDefault(player.getUUID(), false);
-        ClimbAnchor rawAnchor = CLIMB_ANCHORS.get(player.getUUID());
-        ClimbAnchor activeAnchor = getResolvedAnchor(player);
-        boolean shouldLog = equipped || jumpHeld || rawAnchor != null || player.isShiftKeyDown();
-        if (!shouldLog) {
-            return;
-        }
-
-        String rawState = formatAnchor(rawAnchor);
-        String activeState = formatAnchor(activeAnchor);
-        String debugState = equipped + "|" + jumpHeld + "|" + player.isShiftKeyDown()
-                + "|" + rawState + "|" + activeState + "|" + player.onGround();
-        String lastState = LAST_DEBUG_STATE.getOrDefault(player.getUUID(), "");
-        if (!force && debugState.equals(lastState) && gameTime < lastLog + DEBUG_LOG_INTERVAL) {
-            return;
-        }
-
-        LAST_DEBUG_LOG_TICK.put(player.getUUID(), gameTime);
-        LAST_DEBUG_STATE.put(player.getUUID(), debugState);
-        FrozenDawn.LOGGER.info(
-                "[ICE_CLAWS][SERVER] src={} tick={} equipped={} jumpHeld={} shift={} anchor={} active={} climb={} onGround={} dY={} pos=({}, {}, {})",
-                source,
-                gameTime,
-                equipped,
-                jumpHeld,
-                player.isShiftKeyDown(),
-                rawState,
-                activeState,
-                isCustomClimbActive(player),
-                player.onGround(),
-                String.format("%.3f", player.getDeltaMovement().y),
-                String.format("%.2f", player.getX()),
-                String.format("%.2f", player.getY()),
-                String.format("%.2f", player.getZ())
-        );
-    }
-
-    private static String formatAnchor(ClimbAnchor anchor) {
-        return anchor == null ? "none" : anchor.pos().toShortString() + ":" + anchor.wallSide();
     }
 
     private static ClimbAnchor getResolvedAnchor(LivingEntity entity) {

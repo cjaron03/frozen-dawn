@@ -90,16 +90,7 @@ public class ModNetworking {
                     if (context.player() instanceof ServerPlayer sp) {
                         BlockPos anchorPos = payload.hasAnchor() ? payload.anchorPos() : null;
                         var wallSide = payload.hasAnchor() ? IceClawsHandler.decodeWallSide(payload.wallSide2d()) : null;
-                        FrozenDawn.LOGGER.info(
-                                "[ICE_CLAWS][NET] received jumpHeld={} anchor={} from {}",
-                                payload.jumpHeld(),
-                                payload.hasAnchor()
-                                        ? payload.anchorPos().toShortString() + ":" + wallSide
-                                        : "none",
-                                sp.getScoreboardName()
-                        );
                         IceClawsHandler.setClimbInput(sp, payload.jumpHeld(), anchorPos, wallSide);
-                        IceClawsHandler.logImmediateDebug(sp, "packet");
                     }
                 })
         );
