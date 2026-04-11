@@ -13,6 +13,7 @@ public final class ThermalVentRegistry {
 
     private static final int MAX_VERTICAL_DRIFT = 12;
     private static final int FREEZE_PROTECTION_VERTICAL_DRIFT = 18;
+    private static final int VOLCANIC_FIELD_VERTICAL_DRIFT = 20;
     private static final WeakHashMap<Level, Map<BlockPos, ThermalVentSnapshot>> ventsByLevel = new WeakHashMap<>();
 
     private ThermalVentRegistry() {
@@ -101,6 +102,25 @@ public final class ThermalVentRegistry {
                 continue;
             }
             if (horizontalDistanceSqr(pos, snapshot.poolPos()) <= protectionRadius * protectionRadius) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isVolcanicField(Level level, BlockPos pos) {
+        for (ThermalVentSnapshot snapshot : getVents(level)) {
+            if (snapshot.archetype() != ThermalVentArchetype.RUPTURE || !snapshot.state().contributesWarmth()) {
+                continue;
+            }
+            if (Math.abs(pos.getY() - snapshot.poolPos().getY()) > VOLCANIC_FIELD_VERTICAL_DRIFT) {
+                continue;
+            }
+            int fieldRadius = 9 + snapshot.coneStage() * 2;
+            if (snapshot.isWarning() || snapshot.isErupting()) {
+                fieldRadius += 2;
+            }
+            if (horizontalDistanceSqr(pos, snapshot.poolPos()) <= fieldRadius * fieldRadius) {
                 return true;
             }
         }

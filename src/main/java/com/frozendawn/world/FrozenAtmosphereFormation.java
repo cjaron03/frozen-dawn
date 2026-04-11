@@ -47,6 +47,7 @@ public final class FrozenAtmosphereFormation {
                     mutable.set(x, surfaceY, z);
                     if (!level.isLoaded(mutable)) continue;
                     if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, mutable)) continue;
+                    if (ThermalVentRegistry.isVolcanicField(level, mutable)) continue;
 
                     // Must have sky access
                     if (!level.canSeeSky(mutable)) continue;
@@ -66,6 +67,7 @@ public final class FrozenAtmosphereFormation {
                         // Check the position above for placement
                         BlockPos placePos = mutable.above();
                         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
+                        if (ThermalVentRegistry.isVolcanicField(level, placePos)) break;
                         BlockState aboveState = level.getBlockState(placePos);
                         if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW)) break;
 
@@ -119,7 +121,9 @@ public final class FrozenAtmosphereFormation {
                     }
 
                     float temp = TemperatureManager.getTemperatureAt(level, mutable, currentDay, totalDays);
-                    if (temp > SUBLIMATION_TEMP || BlastPitWarmZoneRegistry.isInsideWarmZone(level, mutable)) {
+                    if (temp > SUBLIMATION_TEMP
+                            || BlastPitWarmZoneRegistry.isInsideWarmZone(level, mutable)
+                            || ThermalVentRegistry.isVolcanicField(level, mutable)) {
                         level.destroyBlock(mutable, false);
                     }
                     break;

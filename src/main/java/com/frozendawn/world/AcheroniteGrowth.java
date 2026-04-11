@@ -82,10 +82,12 @@ public final class AcheroniteGrowth {
                 int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
                 mutable.set(x, surfaceY, z);
                 if (!level.isLoaded(mutable)) continue;
+                if (ThermalVentRegistry.isVolcanicField(level, mutable)) continue;
 
                 // Scan down through snow/air to find the actual ground
                 for (int dy = 0; dy <= 6; dy++) {
                     mutable.set(x, surfaceY - dy, z);
+                    if (ThermalVentRegistry.isVolcanicField(level, mutable)) break;
                     BlockState at = level.getBlockState(mutable);
                     if (at.isAir() || at.is(Blocks.SNOW) || at.is(Blocks.SNOW_BLOCK)) continue;
 
@@ -128,6 +130,7 @@ public final class AcheroniteGrowth {
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight() + 1, 0);
                 mutable.set(x, y, z);
                 if (!level.isLoaded(mutable)) continue;
+                if (ThermalVentRegistry.isVolcanicField(level, mutable)) continue;
 
                 BlockState state = level.getBlockState(mutable);
                 if (!state.isAir()) continue;
@@ -159,6 +162,7 @@ public final class AcheroniteGrowth {
                 for (int dy = 0; dy <= 8; dy++) {
                     mutable.set(x, surfaceY - dy, z);
                     if (!level.isLoaded(mutable)) break;
+                    if (ThermalVentRegistry.isVolcanicField(level, mutable)) break;
 
                     BlockState state = level.getBlockState(mutable);
                     if (!state.is(ModBlocks.ACHERONITE_CRYSTAL.get())) {

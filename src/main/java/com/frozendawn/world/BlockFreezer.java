@@ -498,6 +498,7 @@ public final class BlockFreezer {
                 || state.is(ModBlocks.SCORCHED_GROUND.get())) {
             return true;
         }
-        return ThermalVentRegistry.isFreezeProtected(level, pos);
+        return ThermalVentRegistry.isFreezeProtected(level, pos)
+                || ThermalVentRegistry.isVolcanicField(level, pos);
     }
 }

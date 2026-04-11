@@ -13,6 +13,7 @@ import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ThermalVentSavedData;
+import com.frozendawn.world.ThermalVentArchetype;
 import com.frozendawn.world.ThermalVentState;
 import com.frozendawn.world.ThermalVentSystem;
 import com.frozendawn.world.TowerPlanner;
@@ -53,7 +54,9 @@ final class FrozenDawnLocateCommand {
         return Commands.literal("locate")
                 .then(Commands.literal("all").executes(FrozenDawnLocateCommand::locateAll))
                 .then(Commands.literal("orsa").executes(FrozenDawnLocateCommand::locateOrsa))
-                .then(Commands.literal("vents").executes(FrozenDawnLocateCommand::vents))
+                .then(Commands.literal("vents")
+                        .executes(FrozenDawnLocateCommand::vents)
+                        .then(Commands.literal("rupture").executes(FrozenDawnLocateCommand::ruptureVents)))
                 .then(Commands.literal("towns").executes(FrozenDawnLocateCommand::towns));
     }
 
@@ -129,12 +132,24 @@ final class FrozenDawnLocateCommand {
     }
 
     private static int vents(CommandContext<CommandSourceStack> context) {
+        return locateVent(context, null, 8, "Nearest Vent");
+    }
+
+    private static int ruptureVents(CommandContext<CommandSourceStack> context) {
+        return locateVent(context, ThermalVentArchetype.RUPTURE, 20, "Nearest Rupture Vent");
+    }
+
+    private static int locateVent(CommandContext<CommandSourceStack> context, @org.jetbrains.annotations.Nullable ThermalVentArchetype filter,
+                                  int scanRadius, String label) {
         MinecraftServer server = context.getSource().getServer();
         ServerLevel overworld = server.overworld();
         BlockPos origin = BlockPos.containing(context.getSource().getPosition());
-        ThermalVentSavedData.VentRecord record = ThermalVentSystem.findNearestVent(overworld, origin);
+        ThermalVentSavedData.VentRecord record = ThermalVentSystem.findNearestVent(overworld, origin, filter, scanRadius);
         if (record == null) {
-            context.getSource().sendSuccess(() -> Component.literal("  Thermal Vents: none resolved nearby"), false);
+            String missing = filter == ThermalVentArchetype.RUPTURE
+                    ? "  Rupture Vents: none resolved within scan radius"
+                    : "  Thermal Vents: none resolved nearby";
+            context.getSource().sendSuccess(() -> Component.literal(missing), false);
             return 1;
         }
 
@@ -146,7 +161,7 @@ final class FrozenDawnLocateCommand {
                 record.x(), record.z()) - 1;
 
         context.getSource().sendSuccess(() -> Component.literal(
-                "  Nearest Vent: (" + record.x() + ", " + y + ", " + record.z() + ")"
+                "  " + label + ": (" + record.x() + ", " + y + ", " + record.z() + ")"
                         + " | Archetype: " + record.archetype().getSerializedName()
                         + " | Surfaced: " + yesNo(record.surfaced())
                         + " | State: " + prettyVentState(state)
