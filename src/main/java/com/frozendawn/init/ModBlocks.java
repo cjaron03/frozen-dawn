@@ -22,6 +22,7 @@ import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
+import com.frozendawn.block.VentLavaBlock;
 import com.frozendawn.block.WallAlarmBeaconBlock;
 import com.frozendawn.block.WallEmergencyLightBlock;
 import net.minecraft.core.particles.ParticleTypes;
@@ -163,6 +164,13 @@ public class ModBlocks {
                     .sound(SoundType.CALCITE)
                     .noLootTable()));
 
+    public static final DeferredBlock<Block> HYDROTHERMAL_ROCK = BLOCKS.register("hydrothermal_rock",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_LIGHT_GRAY)
+                    .strength(1.8F)
+                    .sound(SoundType.TUFF)
+                    .noLootTable()));
+
     public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
             () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WATER)
@@ -170,6 +178,16 @@ public class ModBlocks {
                     .sound(SoundType.GLASS)
                     .noOcclusion()
                     .lightLevel(state -> 2 + state.getValue(ThermalVentPoolBlock.HEAT_STAGE) * 2)
+                    .noLootTable()));
+
+    public static final DeferredBlock<VentLavaBlock> VENT_LAVA = BLOCKS.register("vent_lava",
+            () -> new VentLavaBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN)
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.EMPTY)
+                    .replaceable()
+                    .noCollission()
+                    .pushReaction(PushReaction.DESTROY)
                     .noLootTable()));
 
     public static final DeferredBlock<OrsaSupplyCrateBlock> ORSA_SUPPLY_CRATE = BLOCKS.register("orsa_supply_crate",

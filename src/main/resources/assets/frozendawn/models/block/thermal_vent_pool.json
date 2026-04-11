@@ -1,8 +1,8 @@
 {
   "ambientocclusion": false,
   "textures": {
-    "surface": "minecraft:block/water_still",
-    "particle": "minecraft:block/water_still"
+    "surface": "frozendawn:block/thermal_vent_pool",
+    "particle": "frozendawn:block/thermal_vent_pool"
   },
   "elements": [
     {

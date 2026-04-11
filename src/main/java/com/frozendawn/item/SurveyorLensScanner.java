@@ -196,6 +196,9 @@ public final class SurveyorLensScanner {
     }
 
     private static HeatSourceType resolveAmbientSource(Level level, BlockPos pos, BlockState state) {
+        if (state.is(ModBlocks.VENT_LAVA.get())) {
+            return HeatSourceType.THERMAL_VENT_RUPTURE;
+        }
         if (state.is(ModBlocks.THERMAL_VENT_POOL.get())) {
             int stage = state.getValue(ThermalVentPoolBlock.HEAT_STAGE);
             return switch (stage) {

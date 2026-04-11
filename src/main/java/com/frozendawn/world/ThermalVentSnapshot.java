@@ -7,6 +7,7 @@ public record ThermalVentSnapshot(
         BlockPos poolPos,
         ThermalVentArchetype archetype,
         ThermalVentState state,
+        int coneStage,
         int warmthRadius,
         float warmthFloor,
         int rimRadius,

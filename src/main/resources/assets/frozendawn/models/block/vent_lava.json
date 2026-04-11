@@ -1,0 +1,22 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "still": "frozendawn:block/vent_lava",
+    "flow": "frozendawn:block/vent_lava_flow",
+    "particle": "frozendawn:block/vent_lava"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 14, 16],
+      "faces": {
+        "up": { "texture": "#still", "uv": [0, 0, 16, 16] },
+        "down": { "texture": "#still", "uv": [0, 0, 16, 16] },
+        "north": { "texture": "#flow", "uv": [0, 2, 16, 16] },
+        "south": { "texture": "#flow", "uv": [0, 2, 16, 16] },
+        "west": { "texture": "#flow", "uv": [0, 2, 16, 16] },
+        "east": { "texture": "#flow", "uv": [0, 2, 16, 16] }
+      }
+    }
+  ]
+}

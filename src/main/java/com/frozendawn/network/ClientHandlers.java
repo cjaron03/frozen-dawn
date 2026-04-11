@@ -4,6 +4,7 @@ import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.SanityClientData;
+import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.TowerTerminalScreen;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
@@ -51,5 +52,9 @@ public final class ClientHandlers {
         if (access != null) {
             Minecraft.getInstance().setScreen(new BookViewScreen(access));
         }
+    }
+
+    public static void handleThermalVentEruption(ThermalVentEruptionPayload payload) {
+        ThermalVentClientEffects.triggerEruption(payload.pos(), payload.strength(), payload.durationTicks());
     }
 }

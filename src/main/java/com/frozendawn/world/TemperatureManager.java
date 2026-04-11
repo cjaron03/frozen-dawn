@@ -357,6 +357,9 @@ public final class TemperatureManager {
         if (state.is(Blocks.LAVA)) {
             return distSq <= 16 ? 30.0f : 0.0f;
         }
+        if (state.is(ModBlocks.VENT_LAVA.get())) {
+            return distSq <= 36 ? 42.0f : 0.0f;
+        }
         if (state.is(Blocks.MAGMA_BLOCK)) {
             return distSq <= 4 ? 10.0f : 0.0f;
         }

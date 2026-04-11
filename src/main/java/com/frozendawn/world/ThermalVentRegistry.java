@@ -12,6 +12,7 @@ import java.util.WeakHashMap;
 public final class ThermalVentRegistry {
 
     private static final int MAX_VERTICAL_DRIFT = 12;
+    private static final int FREEZE_PROTECTION_VERTICAL_DRIFT = 18;
     private static final WeakHashMap<Level, Map<BlockPos, ThermalVentSnapshot>> ventsByLevel = new WeakHashMap<>();
 
     private ThermalVentRegistry() {
@@ -73,6 +74,33 @@ public final class ThermalVentRegistry {
                 continue;
             }
             if (horizontalDistanceSqr(pos, snapshot.poolPos()) <= 2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isFreezeProtected(Level level, BlockPos pos) {
+        for (ThermalVentSnapshot snapshot : getVents(level)) {
+            if (snapshot.state() == ThermalVentState.DORMANT || snapshot.state() == ThermalVentState.SPENT) {
+                continue;
+            }
+            if (Math.abs(pos.getY() - snapshot.poolPos().getY()) > FREEZE_PROTECTION_VERTICAL_DRIFT) {
+                continue;
+            }
+            int protectionRadius = switch (snapshot.archetype()) {
+                case WARM -> snapshot.warmthRadius() + 2;
+                case ACTIVE -> Math.max(snapshot.warmthRadius() + 4, snapshot.eruptionRadius() + 2);
+                case RUPTURE -> Math.max(snapshot.warmthRadius() + 8 + snapshot.coneStage(),
+                        snapshot.eruptionRadius() + 6 + snapshot.coneStage());
+            };
+            if (snapshot.isWarning() || snapshot.isErupting()) {
+                protectionRadius += 2;
+            }
+            if (protectionRadius <= 0) {
+                continue;
+            }
+            if (horizontalDistanceSqr(pos, snapshot.poolPos()) <= protectionRadius * protectionRadius) {
                 return true;
             }
         }

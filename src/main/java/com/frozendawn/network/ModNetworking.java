@@ -72,6 +72,11 @@ public class ModNetworking {
                 OpenMeteorologistJournalPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenMeteorologistJournal(payload))
         );
+        registrar.playToClient(
+                ThermalVentEruptionPayload.TYPE,
+                ThermalVentEruptionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleThermalVentEruption(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(
