@@ -47,6 +47,7 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setphase <phase> [early|mid|late]"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world pause | reset | preset <name>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate towns"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate all"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn win satellite"), false);

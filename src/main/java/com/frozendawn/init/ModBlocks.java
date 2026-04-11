@@ -16,7 +16,9 @@ import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
+import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
@@ -152,6 +154,22 @@ public class ModBlocks {
                     .strength(-1.0F, 3600000.0F)
                     .sound(SoundType.CALCITE)
                     .lightLevel(state -> 5)
+                    .noLootTable()));
+
+    public static final DeferredBlock<SulfurCrustBlock> SULFUR_CRUST = BLOCKS.register("sulfur_crust",
+            () -> new SulfurCrustBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SAND)
+                    .strength(1.2F)
+                    .sound(SoundType.CALCITE)
+                    .noLootTable()));
+
+    public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
+            () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WATER)
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(state -> 2 + state.getValue(ThermalVentPoolBlock.HEAT_STAGE) * 2)
                     .noLootTable()));
 
     public static final DeferredBlock<OrsaSupplyCrateBlock> ORSA_SUPPLY_CRATE = BLOCKS.register("orsa_supply_crate",

@@ -192,6 +192,38 @@ final class SurveyorLensRenderPass {
                     midAlpha * 1.34F,
                     coreAlpha * (1.42F + Math.max(0.0F, displayHeat - 0.88F) * 0.72F)
             );
+            case THERMAL_VENT_RUPTURE -> new HeatRenderStyle(
+                    0x7A3014,
+                    0xFF7A1A,
+                    0xFFF8D8,
+                    outerAlpha * 1.26F,
+                    midAlpha * 1.42F,
+                    coreAlpha * 1.58F
+            );
+            case THERMAL_VENT_ACTIVE -> new HeatRenderStyle(
+                    0x4E4212,
+                    0xFFB03A,
+                    0xFFF4C8,
+                    outerAlpha * 1.10F,
+                    midAlpha * 1.24F,
+                    coreAlpha * 1.34F
+            );
+            case THERMAL_VENT_WARM -> new HeatRenderStyle(
+                    0x204B61,
+                    0x5FD4FF,
+                    0xF1FFFF,
+                    outerAlpha * 0.98F,
+                    midAlpha * 1.08F,
+                    coreAlpha * 1.14F
+            );
+            case THERMAL_VENT_DORMANT -> new HeatRenderStyle(
+                    0x12303A,
+                    0x3E8DA7,
+                    0xCDEDF4,
+                    outerAlpha * 0.66F,
+                    midAlpha * 0.72F,
+                    coreAlpha * 0.74F
+            );
             case LAVA, ACHERON_FORGE -> new HeatRenderStyle(
                     0x8E0E74,
                     displayHeat >= 1.02F ? 0xFF8712 : 0xFF6B21,

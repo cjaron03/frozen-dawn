@@ -22,6 +22,10 @@ final class SurveyorLensProjectionMath {
                 yield actual * 1.08F;
             }
             case THERMAL_HEATER -> displayHeatForTemperature(Math.max(35.0F, heatValue));
+            case THERMAL_VENT_DORMANT -> displayHeatForTemperature(Math.max(8.0F, heatValue)) * 0.72F;
+            case THERMAL_VENT_WARM -> displayHeatForTemperature(Math.max(18.0F, heatValue)) * 0.94F;
+            case THERMAL_VENT_ACTIVE -> displayHeatForTemperature(Math.max(24.0F, heatValue)) * 1.02F;
+            case THERMAL_VENT_RUPTURE -> displayHeatForTemperature(Math.max(32.0F, heatValue)) * 1.14F;
             case LAVA -> displayHeatForTemperature(Math.max(30.0F, heatValue));
             case ACHERON_FORGE -> displayHeatForTemperature(95.0F);
             case SOUL_CAMPFIRE -> displayHeatForTemperature(28.0F);
@@ -42,6 +46,8 @@ final class SurveyorLensProjectionMath {
         double z = signature.pos().getZ() + 0.5D;
         double y = switch (signature.sourceType()) {
             case GEOTHERMAL_CORE -> signature.pos().getY() + 1.01D;
+            case THERMAL_VENT_DORMANT, THERMAL_VENT_WARM, THERMAL_VENT_ACTIVE, THERMAL_VENT_RUPTURE ->
+                    signature.pos().getY() + 0.22D;
             case TRANSPONDER -> signature.pos().getY() + 0.08D;
             case ACHERON_FORGE -> signature.pos().getY() + 1.01D;
             case THERMAL_HEATER -> signature.pos().getY() + 1.01D;

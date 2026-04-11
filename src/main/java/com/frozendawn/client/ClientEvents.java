@@ -14,6 +14,7 @@ import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
@@ -23,6 +24,8 @@ import net.minecraft.client.model.SkullModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
 import net.minecraft.client.color.item.ItemColor;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.core.component.DataComponents;
@@ -85,6 +88,7 @@ public class ClientEvents {
         // Register compass needle property for Acheronite Compass
         // Uses LodestoneTracker data component — same as vanilla lodestone compass
         event.enqueueWork(() -> {
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.THERMAL_VENT_POOL.get(), RenderType.translucent());
             ItemProperties.register(
                     ModItems.ACHERONITE_COMPASS.get(),
                     ResourceLocation.withDefaultNamespace("angle"),

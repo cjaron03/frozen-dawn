@@ -39,6 +39,7 @@ import com.frozendawn.world.ReturnedSpawner;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.StructureStressTracker;
+import com.frozendawn.world.ThermalVentSystem;
 import com.frozendawn.world.TowerEncounterController;
 import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.TowerPlanner;
@@ -109,6 +110,7 @@ public class WorldTickHandler {
         EasterEggHandler.reset();
         StructureStressTracker.reset();
         BlastPitWarmZoneRegistry.reset();
+        ThermalVentSystem.reset();
         BlastPitPlanner.reset();
         TowerPlanner.reset();
         TowerPlacement.reset();
@@ -161,13 +163,15 @@ public class WorldTickHandler {
             PacketDistributor.sendToAllPlayers(createPayload(state, winState));
         }
 
+        ServerLevel overworld = server.overworld();
         float progress = state.getProgress();
+
+        ThermalVentSystem.tick(overworld, currentPhase, progress, overworld.getGameTime());
 
         // Per-player effects: temperature, heat damage, wind chill, suffocation
         PlayerTickHandler.tick(server, state, currentPhase, currentDay, progress);
 
         // Drive world systems in the overworld
-        ServerLevel overworld = server.overworld();
         long tick = overworld.getGameTime();
         if ((tick & 1L) == 0L) {
             BlastPitPlacement.tickPlacement(overworld);

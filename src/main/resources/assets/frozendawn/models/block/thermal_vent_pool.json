@@ -1,0 +1,21 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "surface": "minecraft:block/water_still",
+    "particle": "minecraft:block/water_still"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 3, 16],
+      "faces": {
+        "up": { "texture": "#surface", "uv": [0, 0, 16, 16] },
+        "down": { "texture": "#surface", "uv": [0, 0, 16, 16] },
+        "north": { "texture": "#surface", "uv": [0, 13, 16, 16] },
+        "south": { "texture": "#surface", "uv": [0, 13, 16, 16] },
+        "west": { "texture": "#surface", "uv": [0, 13, 16, 16] },
+        "east": { "texture": "#surface", "uv": [0, 13, 16, 16] }
+      }
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package com.frozendawn.item;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.world.TemperatureManager;
@@ -21,6 +22,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -102,7 +107,7 @@ public final class SurveyorLensScanner {
                         continue;
                     }
 
-                    HeatSourceType sourceType = HeatSourceType.fromAmbientState(level.getBlockState(mutablePos));
+                    HeatSourceType sourceType = resolveAmbientSource(level, mutablePos, level.getBlockState(mutablePos));
                     if (sourceType == null) {
                         continue;
                     }
@@ -116,6 +121,9 @@ public final class SurveyorLensScanner {
     private static void addSignature(List<HeatSignature> signatures, Level level, Vec3 origin, BlockPos pos, HeatSourceType sourceType, double maxDistanceSqr) {
         double distanceSqr = origin.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
         if (distanceSqr > maxDistanceSqr) {
+            return;
+        }
+        if (sourceType.requiresLineOfSight() && !hasLineOfSight(level, origin, pos)) {
             return;
         }
 
@@ -178,9 +186,38 @@ public final class SurveyorLensScanner {
                 }
                 yield 35.0F;
             }
+            case THERMAL_VENT_DORMANT -> 8.0F;
+            case THERMAL_VENT_WARM -> 18.0F;
+            case THERMAL_VENT_ACTIVE -> 24.0F;
+            case THERMAL_VENT_RUPTURE -> 32.0F;
             case ACHERON_FORGE, TRANSPONDER -> 0.0F;
             default -> TemperatureManager.getAmbientSignatureHeat(state);
         };
+    }
+
+    private static HeatSourceType resolveAmbientSource(Level level, BlockPos pos, BlockState state) {
+        if (state.is(ModBlocks.THERMAL_VENT_POOL.get())) {
+            int stage = state.getValue(ThermalVentPoolBlock.HEAT_STAGE);
+            return switch (stage) {
+                case 1 -> HeatSourceType.THERMAL_VENT_WARM;
+                case 2 -> HeatSourceType.THERMAL_VENT_ACTIVE;
+                case 3 -> HeatSourceType.THERMAL_VENT_RUPTURE;
+                default -> HeatSourceType.THERMAL_VENT_DORMANT;
+            };
+        }
+        return HeatSourceType.fromAmbientState(state);
+    }
+
+    private static boolean hasLineOfSight(Level level, Vec3 origin, BlockPos pos) {
+        Vec3 target = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.2D, pos.getZ() + 0.5D);
+        BlockHitResult hit = level.clip(new ClipContext(
+                origin,
+                target,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                CollisionContext.empty()
+        ));
+        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
     }
 
     private static Component describeDirection(Vec3 origin, BlockPos pos) {
@@ -283,27 +320,38 @@ public final class SurveyorLensScanner {
         TRANSPONDER("block.frozendawn.transponder", ParticleTypes.END_ROD, 1, 0),
         ACHERON_FORGE("block.frozendawn.acheron_forge", ParticleTypes.ENCHANT, 2, 0),
         THERMAL_HEATER("block.frozendawn.thermal_heater", ParticleTypes.FLAME, 3, 0),
-        ACHERONITE_BLOCK("block.frozendawn.acheronite_block", ParticleTypes.SCULK_SOUL, 4, 4),
-        LAVA("block.minecraft.lava", ParticleTypes.LAVA, 5, 5),
-        SOUL_FIRE("block.minecraft.soul_fire", ParticleTypes.SOUL_FIRE_FLAME, 6, 4),
-        FIRE("block.minecraft.fire", ParticleTypes.FLAME, 7, 4),
-        SOUL_CAMPFIRE("block.minecraft.soul_campfire", ParticleTypes.SOUL_FIRE_FLAME, 8, 4),
-        CAMPFIRE("block.minecraft.campfire", ParticleTypes.CAMPFIRE_COSY_SMOKE, 9, 4),
-        SOUL_LANTERN("block.minecraft.soul_lantern", ParticleTypes.SOUL_FIRE_FLAME, 10, 4),
-        LANTERN("block.minecraft.lantern", ParticleTypes.FLAME, 11, 4),
-        SOUL_TORCH("block.minecraft.soul_torch", ParticleTypes.SOUL_FIRE_FLAME, 12, 4),
-        TORCH("block.minecraft.torch", ParticleTypes.FLAME, 13, 4);
+        THERMAL_VENT_RUPTURE("block.frozendawn.thermal_vent_rupture", ParticleTypes.CLOUD, 4, 6, true),
+        THERMAL_VENT_ACTIVE("block.frozendawn.thermal_vent_active", ParticleTypes.CLOUD, 5, 6, true),
+        THERMAL_VENT_WARM("block.frozendawn.thermal_vent_warm", ParticleTypes.CLOUD, 6, 6, true),
+        THERMAL_VENT_DORMANT("block.frozendawn.thermal_vent_dormant", ParticleTypes.CLOUD, 7, 6, true),
+        ACHERONITE_BLOCK("block.frozendawn.acheronite_block", ParticleTypes.SCULK_SOUL, 8, 4),
+        LAVA("block.minecraft.lava", ParticleTypes.LAVA, 9, 5),
+        SOUL_FIRE("block.minecraft.soul_fire", ParticleTypes.SOUL_FIRE_FLAME, 10, 4),
+        FIRE("block.minecraft.fire", ParticleTypes.FLAME, 11, 4),
+        SOUL_CAMPFIRE("block.minecraft.soul_campfire", ParticleTypes.SOUL_FIRE_FLAME, 12, 4),
+        CAMPFIRE("block.minecraft.campfire", ParticleTypes.CAMPFIRE_COSY_SMOKE, 13, 4),
+        SOUL_LANTERN("block.minecraft.soul_lantern", ParticleTypes.SOUL_FIRE_FLAME, 14, 4),
+        LANTERN("block.minecraft.lantern", ParticleTypes.FLAME, 15, 4),
+        SOUL_TORCH("block.minecraft.soul_torch", ParticleTypes.SOUL_FIRE_FLAME, 16, 4),
+        TORCH("block.minecraft.torch", ParticleTypes.FLAME, 17, 4);
 
         private final String translationKey;
         private final ParticleOptions markerParticle;
         private final int priority;
         private final int clusterRadius;
+        private final boolean requiresLineOfSight;
 
         HeatSourceType(String translationKey, ParticleOptions markerParticle, int priority, int clusterRadius) {
+            this(translationKey, markerParticle, priority, clusterRadius, false);
+        }
+
+        HeatSourceType(String translationKey, ParticleOptions markerParticle, int priority, int clusterRadius,
+                       boolean requiresLineOfSight) {
             this.translationKey = translationKey;
             this.markerParticle = markerParticle;
             this.priority = priority;
             this.clusterRadius = clusterRadius;
+            this.requiresLineOfSight = requiresLineOfSight;
         }
 
         public Component displayName() {
@@ -320,6 +368,10 @@ public final class SurveyorLensScanner {
 
         public int clusterRadius() {
             return clusterRadius;
+        }
+
+        public boolean requiresLineOfSight() {
+            return requiresLineOfSight;
         }
 
         public static HeatSourceType fromAmbientState(BlockState state) {

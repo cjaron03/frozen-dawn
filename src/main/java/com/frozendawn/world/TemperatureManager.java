@@ -67,6 +67,11 @@ public final class TemperatureManager {
         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
             return Math.max(finalTemp, 24.0f);
         }
+        float ventFloor = ThermalVentRegistry.getWarmthFloor(level, pos);
+        if (ventFloor > Float.NEGATIVE_INFINITY) {
+            finalTemp = Math.max(finalTemp, ventFloor);
+        }
+        finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
         return finalTemp;
     }
 
