@@ -2,8 +2,8 @@ package com.frozendawn.fluid;
 
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModFluids;
+import com.frozendawn.init.ModItems;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -25,7 +25,7 @@ public abstract class VentLavaFluid extends LavaFluid {
 
     @Override
     public Item getBucket() {
-        return Items.AIR;
+        return ModItems.SULFUR_LAVA_BUCKET.get();
     }
 
     @Override

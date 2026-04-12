@@ -152,24 +152,21 @@ public class ModBlocks {
     public static final DeferredBlock<ScorchedGroundBlock> SCORCHED_GROUND = BLOCKS.register("scorched_ground",
             () -> new ScorchedGroundBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
-                    .strength(-1.0F, 3600000.0F)
+                    .strength(1.8F)
                     .sound(SoundType.CALCITE)
-                    .lightLevel(state -> 5)
-                    .noLootTable()));
+                    .lightLevel(state -> 4)));
 
     public static final DeferredBlock<SulfurCrustBlock> SULFUR_CRUST = BLOCKS.register("sulfur_crust",
             () -> new SulfurCrustBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SAND)
                     .strength(1.2F)
-                    .sound(SoundType.CALCITE)
-                    .noLootTable()));
+                    .sound(SoundType.CALCITE)));
 
     public static final DeferredBlock<Block> HYDROTHERMAL_ROCK = BLOCKS.register("hydrothermal_rock",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_LIGHT_GRAY)
                     .strength(1.8F)
-                    .sound(SoundType.TUFF)
-                    .noLootTable()));
+                    .sound(SoundType.TUFF)));
 
     public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
             () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()

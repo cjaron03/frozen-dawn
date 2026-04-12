@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "frozendawn:scorched_ground"
+          "name": "frozendawn:sulfur_crust"
         }
       ],
       "conditions": [

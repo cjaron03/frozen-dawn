@@ -8,7 +8,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public record ThermalVentEruptionPayload(BlockPos pos, float strength, int durationTicks)
+public record ThermalVentEruptionPayload(BlockPos pos, float strength, int durationTicks, float radius)
         implements CustomPacketPayload {
 
     public static final Type<ThermalVentEruptionPayload> TYPE =
@@ -18,6 +18,7 @@ public record ThermalVentEruptionPayload(BlockPos pos, float strength, int durat
             BlockPos.STREAM_CODEC, ThermalVentEruptionPayload::pos,
             ByteBufCodecs.FLOAT, ThermalVentEruptionPayload::strength,
             ByteBufCodecs.VAR_INT, ThermalVentEruptionPayload::durationTicks,
+            ByteBufCodecs.FLOAT, ThermalVentEruptionPayload::radius,
             ThermalVentEruptionPayload::new
     );
 

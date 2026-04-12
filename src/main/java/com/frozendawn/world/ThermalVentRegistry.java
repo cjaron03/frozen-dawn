@@ -116,7 +116,7 @@ public final class ThermalVentRegistry {
             if (Math.abs(pos.getY() - snapshot.poolPos().getY()) > VOLCANIC_FIELD_VERTICAL_DRIFT) {
                 continue;
             }
-            int fieldRadius = 9 + snapshot.coneStage() * 2;
+            int fieldRadius = ruptureVolcanicFieldRadius(snapshot.coneStage());
             if (snapshot.isWarning() || snapshot.isErupting()) {
                 fieldRadius += 2;
             }
@@ -135,5 +135,9 @@ public final class ThermalVentRegistry {
         int dx = a.getX() - b.getX();
         int dz = a.getZ() - b.getZ();
         return dx * dx + dz * dz;
+    }
+
+    private static int ruptureVolcanicFieldRadius(int coneStage) {
+        return 17 + coneStage + coneStage / 2 + coneStage / 4 + coneStage / 3;
     }
 }

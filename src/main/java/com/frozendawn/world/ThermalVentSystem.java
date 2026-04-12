@@ -34,8 +34,13 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 public final class ThermalVentSystem {
 
@@ -65,6 +70,8 @@ public final class ThermalVentSystem {
     private static final long RUPTURE_BURST_DURATION = 24L;
     private static final int MAX_CONE_STAGE = 12;
     private static final int RUPTURE_LAVA_START_STAGE = 3;
+    private static final int PRIMARY_RUPTURE_OVERFLOW_STAGE = 4;
+    private static final int SECONDARY_RUPTURE_OVERFLOW_STAGE = 6;
     private static final int RUPTURE_BOMBARDMENT_STAGE = 5;
     private static final int MATURE_RUPTURE_STAGE = 4;
     private static final Set<ResourceKey<Biome>> BONUS_BIOMES = Set.of(
@@ -88,12 +95,14 @@ public final class ThermalVentSystem {
             Biomes.SPARSE_JUNGLE,
             Biomes.BAMBOO_JUNGLE
     );
+    private static final WeakHashMap<ServerLevel, List<PendingBombardment>> pendingBombardments = new WeakHashMap<>();
 
     private ThermalVentSystem() {
     }
 
     public static void tick(ServerLevel level, int phase, float progress, long worldTime) {
         ThermalVentRegistry.beginTick(level);
+        processPendingBombardments(level, phase, progress, worldTime);
         if (level.players().isEmpty()) {
             return;
         }
@@ -137,6 +146,7 @@ public final class ThermalVentSystem {
 
     public static void reset() {
         ThermalVentRegistry.reset();
+        pendingBombardments.clear();
     }
 
     @Nullable
@@ -332,7 +342,8 @@ public final class ThermalVentSystem {
 
     private static void startRuptureBurst(ServerLevel level, ThermalVentSavedData.VentRecord record,
                                           long worldTime, int phase, float progress) {
-        int nextConeStage = Math.min(MAX_CONE_STAGE, record.coneStage() + 1);
+        int previousConeStage = record.coneStage();
+        int nextConeStage = Math.min(MAX_CONE_STAGE, previousConeStage + 1);
         record.setConeStage(nextConeStage);
         record.setEruptionEndTick(worldTime + RUPTURE_BURST_DURATION);
         record.setNextEventTick(record.eruptionEndTick() + ruptureInterval(level, record, worldTime, 61L));
@@ -341,25 +352,42 @@ public final class ThermalVentSystem {
         if (!PhaseManager.isVacuumActive(phase, progress)) {
             level.playSound(null, pos, SoundEvents.LAVA_POP, SoundSource.BLOCKS, 1.5f, 0.46f);
         }
-        rebuildRuptureVolcano(level, record, true);
-        record.setShapedConeStage(record.coneStage());
-        sendEruptionImpulse(level, pos, 1.55f + nextConeStage * 0.16f, 42 + nextConeStage * 5, 32.0D + nextConeStage * 2.8D);
+        boolean reshapeCone = record.shapedConeStage() < nextConeStage;
+        boolean maxStageLocked = record.coneStage() >= MAX_CONE_STAGE;
+        if (reshapeCone) {
+            rebuildRuptureVolcano(level, record, true);
+            record.setShapedConeStage(record.coneStage());
+        } else {
+            if (!maxStageLocked) {
+                maintainRuptureLava(level, record, false);
+                applyVolcanicField(level, record, true);
+            }
+        }
+        BlockPos impulsePos = new BlockPos(record.x(), ruptureMouthY(record), record.z());
+        float impulseStrength = 1.70f + nextConeStage * 0.18f + (nextConeStage >= MAX_CONE_STAGE ? 0.35f : 0.0f);
+        int impulseDuration = 46 + nextConeStage * 6;
+        double impulseRadius = 34.0D + nextConeStage * 3.4D;
+        sendEruptionImpulse(level, impulsePos, impulseStrength, impulseDuration, impulseRadius);
         spawnRuptureBurstParticles(level, record);
         meltColdTerrain(level, pos, 6 + nextConeStage, true);
         applyBurstDamage(level, pos, RUPTURE_ERUPTION_RADIUS + nextConeStage / 2,
                 14.0f + nextConeStage * 1.8f, 0.50f + nextConeStage * 0.05f, 0.90f + nextConeStage * 0.07f);
         applyRuptureScar(level, record);
         if (nextConeStage >= RUPTURE_BOMBARDMENT_STAGE) {
-            spawnVolcanicBombardment(level, record, phase, progress);
+            queueVolcanicBombardment(level, record, worldTime);
         }
     }
 
     private static void playRuptureWarning(ServerLevel level, ThermalVentSavedData.VentRecord record,
                                            int phase, float progress) {
-        if (PhaseManager.isVacuumActive(phase, progress)) {
-            return;
+        BlockPos impulsePos = new BlockPos(record.x(), ruptureMouthY(record), record.z());
+        sendEruptionImpulse(level, impulsePos,
+                0.60f + record.coneStage() * 0.06f,
+                30 + record.coneStage() * 2,
+                28.0D + record.coneStage() * 2.6D);
+        if (!PhaseManager.isVacuumActive(phase, progress)) {
+            level.playSound(null, record.anchorPos(), SoundEvents.LAVA_EXTINGUISH, SoundSource.BLOCKS, 0.7f, 0.6f);
         }
-        level.playSound(null, record.anchorPos(), SoundEvents.LAVA_EXTINGUISH, SoundSource.BLOCKS, 0.7f, 0.6f);
     }
 
     private static void applyBurstDamage(ServerLevel level, BlockPos center, int radius, float maxDamage,
@@ -455,7 +483,9 @@ public final class ThermalVentSystem {
                 if (worldTime % 8L == 0L) {
                     spawnSteamColumn(level, record.anchorPos(), 7, 12, 0.24D, 0.070D, false, false);
                 }
-                if (snapshot.archetype() == ThermalVentArchetype.RUPTURE && record.coneStage() >= 5 && worldTime % 12L == 0L) {
+                if (snapshot.archetype() == ThermalVentArchetype.RUPTURE
+                        && record.coneStage() >= MATURE_RUPTURE_STAGE
+                        && worldTime % 16L == 0L) {
                     spawnRupturePlume(level, record, false);
                 }
                 spawnMatureRuptureAmbient(level, record, worldTime, false);
@@ -566,12 +596,39 @@ public final class ThermalVentSystem {
         if (record.coneStage() < MATURE_RUPTURE_STAGE) {
             return;
         }
+        if (worldTime % (erupting ? 2L : 4L) == 0L) {
+            spawnCalderaAshVent(level, record, erupting);
+        }
         if (worldTime % 8L == 0L) {
             spawnPersistentAshCanopy(level, record, erupting);
         }
         if (worldTime % 10L == 0L) {
             spawnSatelliteFumaroles(level, record, erupting);
         }
+    }
+
+    private static void spawnCalderaAshVent(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean erupting) {
+        if (record.coneStage() < MATURE_RUPTURE_STAGE) {
+            return;
+        }
+
+        double x = record.x() + 0.5D;
+        double y = ruptureLakeSurfaceY(record) + 1.1D;
+        double z = record.z() + 0.5D;
+        int stage = record.coneStage();
+        int smokeCount = erupting ? 10 + stage : 5 + stage / 2;
+        int ashCount = erupting ? 12 + stage : 6 + stage / 2;
+        double spread = erupting ? 0.55D : 0.34D;
+        double rise = erupting ? 0.08D : 0.04D;
+
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, smokeCount,
+                spread, 0.18D, spread, rise);
+        level.sendParticles(ParticleTypes.SMOKE, x, y + 0.35D, z, Math.max(6, smokeCount / 2),
+                spread * 0.9D, 0.16D, spread * 0.9D, rise * 0.8D);
+        level.sendParticles(ParticleTypes.ASH, x, y + 0.2D, z, ashCount,
+                spread * 0.85D, 0.22D, spread * 0.85D, erupting ? 0.025D : 0.010D);
+        level.sendParticles(ParticleTypes.WHITE_ASH, x, y + 0.6D, z, Math.max(4, ashCount / 4),
+                spread * 0.55D, 0.10D, spread * 0.55D, erupting ? 0.010D : 0.004D);
     }
 
     private static void spawnPersistentAshCanopy(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean erupting) {
@@ -581,39 +638,42 @@ public final class ThermalVentSystem {
         double x = record.x() + 0.5D;
         double z = record.z() + 0.5D;
         double canopyY = ruptureMouthY(record) + 7.5D + record.coneStage() * 1.0D;
-        double canopySpread = 3.2D + record.coneStage() * 0.42D;
-        int ashCount = erupting ? 10 + record.coneStage() * 2 : 6 + record.coneStage();
+        double canopySpread = 4.2D + record.coneStage() * 0.65D;
+        int ashCount = erupting ? 14 + record.coneStage() * 3 : 8 + record.coneStage() * 2;
 
         level.sendParticles(ParticleTypes.LARGE_SMOKE, x, canopyY, z, ashCount,
-                canopySpread, 0.22D, canopySpread, erupting ? 0.010D : 0.002D);
+                canopySpread, 0.26D, canopySpread, erupting ? 0.014D : 0.004D);
         level.sendParticles(ParticleTypes.SMOKE, x, canopyY + 0.4D, z, Math.max(6, ashCount / 2),
-                canopySpread * 1.15D, 0.16D, canopySpread * 1.15D, erupting ? 0.006D : 0.001D);
+                canopySpread * 1.25D, 0.18D, canopySpread * 1.25D, erupting ? 0.008D : 0.002D);
         level.sendParticles(ParticleTypes.ASH, x, canopyY - 0.2D, z, ashCount,
-                canopySpread * 0.95D, 0.18D, canopySpread * 0.95D, 0.002D);
+                canopySpread, 0.20D, canopySpread, 0.003D);
         level.sendParticles(ParticleTypes.WHITE_ASH, x, canopyY + 0.8D, z, Math.max(4, ashCount / 4),
-                canopySpread * 0.70D, 0.12D, canopySpread * 0.70D, 0.001D);
+                canopySpread * 0.80D, 0.12D, canopySpread * 0.80D, 0.001D);
 
-        double falloutSpread = 3.6D + record.coneStage() * 0.55D;
-        level.sendParticles(ParticleTypes.ASH, x, canopyY - 1.0D, z, Math.max(8, ashCount / 2),
-                falloutSpread, 0.20D, falloutSpread, -0.020D);
-        level.sendParticles(ParticleTypes.SMOKE, x, canopyY - 1.4D, z, Math.max(6, ashCount / 3),
-                falloutSpread * 0.75D, 0.16D, falloutSpread * 0.75D, -0.028D);
+        double falloutSpread = 4.8D + record.coneStage() * 0.82D;
+        level.sendParticles(ParticleTypes.ASH, x, canopyY - 1.0D, z, Math.max(12, ashCount),
+                falloutSpread, 0.24D, falloutSpread, -0.026D);
+        level.sendParticles(ParticleTypes.SMOKE, x, canopyY - 1.4D, z, Math.max(8, ashCount / 2),
+                falloutSpread * 0.85D, 0.18D, falloutSpread * 0.85D, -0.034D);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, canopyY - 0.6D, z, Math.max(4, ashCount / 4),
+                falloutSpread * 0.60D, 0.12D, falloutSpread * 0.60D, -0.012D);
 
-        int slopeEmitters = record.coneStage() >= 7 ? 4 : 3;
-        double slopeRadius = 4.0D + record.coneStage() * 0.65D;
+        int slopeEmitters = record.coneStage() >= 7 ? 6 : 4;
+        double slopeRadius = 4.8D + record.coneStage() * 0.85D;
         for (int i = 0; i < slopeEmitters; i++) {
             double angle = (Mth.TWO_PI * i / slopeEmitters) + (record.x() * 0.037D) + (record.z() * 0.021D);
             double px = x + Math.cos(angle) * slopeRadius;
             double pz = z + Math.sin(angle) * slopeRadius;
             double py = ruptureMouthY(record) + 1.4D + record.coneStage() * 0.35D;
-            level.sendParticles(ParticleTypes.ASH, px, py, pz, erupting ? 5 : 3,
-                    0.35D, 0.08D, 0.35D, -0.018D);
-            level.sendParticles(ParticleTypes.SMOKE, px, py + 0.3D, pz, 2,
-                    0.18D, 0.05D, 0.18D, -0.010D);
+            level.sendParticles(ParticleTypes.ASH, px, py, pz, erupting ? 7 : 4,
+                    0.38D, 0.10D, 0.38D, -0.022D);
+            level.sendParticles(ParticleTypes.SMOKE, px, py + 0.3D, pz, erupting ? 3 : 2,
+                    0.22D, 0.06D, 0.22D, -0.012D);
         }
     }
 
     private static void spawnSatelliteFumaroles(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean erupting) {
+        boolean lockTerrain = record.coneStage() >= MAX_CONE_STAGE;
         int points = record.coneStage() >= 8 ? 6 : 4;
         double radius = 4.5D + record.coneStage() * 0.6D;
         double angleOffset = spillDirection(record).get2DDataValue() * (Math.PI / 6.0D);
@@ -633,10 +693,10 @@ public final class ThermalVentSystem {
             if (surface.is(Blocks.BEDROCK) || surface.is(ModBlocks.THERMAL_VENT_POOL.get()) || surface.is(ModBlocks.VENT_LAVA.get())) {
                 continue;
             }
-            if (surface.isAir() || surface.is(BlockTags.REPLACEABLE) || isFragileSurface(surface)
+            if (!lockTerrain && (surface.isAir() || surface.is(BlockTags.REPLACEABLE) || isFragileSurface(surface)
                     || surface.is(Blocks.DIRT) || surface.is(Blocks.GRASS_BLOCK)
                     || surface.is(ModBlocks.FROZEN_DIRT.get()) || surface.is(ModBlocks.FROZEN_SAND.get())
-                    || surface.is(Blocks.STONE) || surface.is(Blocks.COBBLESTONE) || surface.is(Blocks.SAND)) {
+                    || surface.is(Blocks.STONE) || surface.is(Blocks.COBBLESTONE) || surface.is(Blocks.SAND))) {
                 level.setBlock(cursor, (i & 1) == 0
                         ? ModBlocks.SULFUR_CRUST.get().defaultBlockState()
                         : ModBlocks.HYDROTHERMAL_ROCK.get().defaultBlockState(), 3);
@@ -759,11 +819,13 @@ public final class ThermalVentSystem {
         BlockPos center = record.anchorPos();
         RandomSource random = level.getRandom();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        int scarRadius = 6 + record.coneStage();
+        int innerSkipRadius = ruptureSkirtRadius(record) + (record.coneStage() >= MAX_CONE_STAGE ? 2 : 0);
+        int scarRadius = innerSkipRadius + 6 + record.coneStage() / 2;
+        int innerSkipSq = innerSkipRadius * innerSkipRadius;
         for (int dx = -scarRadius; dx <= scarRadius; dx++) {
             for (int dz = -scarRadius; dz <= scarRadius; dz++) {
                 int distSq = dx * dx + dz * dz;
-                if (distSq < 4 || distSq > scarRadius * scarRadius || random.nextFloat() > 0.58f) {
+                if (distSq <= innerSkipSq || distSq > scarRadius * scarRadius || random.nextFloat() > 0.58f) {
                     continue;
                 }
                 int x = center.getX() + dx;
@@ -796,7 +858,9 @@ public final class ThermalVentSystem {
             return;
         }
 
-        int fieldRadius = 9 + coneStage * 2;
+        int fieldRadius = ruptureVolcanicFieldRadius(coneStage);
+        int skirtRadius = ruptureSkirtRadius(record);
+        int skirtRadiusSq = skirtRadius * skirtRadius;
         int innerRadius = 4 + coneStage;
         int middleRadius = 7 + coneStage * 2;
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -804,6 +868,9 @@ public final class ThermalVentSystem {
             for (int dz = -fieldRadius; dz <= fieldRadius; dz++) {
                 int distSq = dx * dx + dz * dz;
                 if (distSq > fieldRadius * fieldRadius) {
+                    continue;
+                }
+                if (distSq <= skirtRadiusSq) {
                     continue;
                 }
 
@@ -896,39 +963,95 @@ public final class ThermalVentSystem {
         }
     }
 
-    private static void spawnVolcanicBombardment(ServerLevel level, ThermalVentSavedData.VentRecord record,
-                                                 int phase, float progress) {
+    private static void queueVolcanicBombardment(ServerLevel level, ThermalVentSavedData.VentRecord record,
+                                                 long worldTime) {
         int stage = record.coneStage();
         RandomSource random = level.getRandom();
         int impactCount = 1 + Math.max(1, (stage - RUPTURE_BOMBARDMENT_STAGE + 2) / 2);
+        int minDistance = ruptureSkirtRadius(record) + 4;
+        int maxDistance = Math.max(minDistance + 4, ruptureVolcanicFieldRadius(stage) - 2);
+        int launchY = ruptureMouthY(record) + 1;
 
         for (int i = 0; i < impactCount; i++) {
-            double angle = random.nextDouble() * Mth.TWO_PI;
-            int distance = 6 + random.nextInt(5 + stage);
-            int x = record.x() + Mth.floor(Math.cos(angle) * distance);
-            int z = record.z() + Mth.floor(Math.sin(angle) * distance);
-            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-            BlockPos impactPos = new BlockPos(x, y, z);
-            spawnMeteorTrail(level, record, impactPos);
-            applyMeteorImpact(level, impactPos, stage, phase, progress);
+            BlockPos impactPos = null;
+            for (int attempt = 0; attempt < 8; attempt++) {
+                double angle = random.nextDouble() * Mth.TWO_PI;
+                int distance = minDistance + random.nextInt(maxDistance - minDistance + 1);
+                int x = record.x() + Mth.floor(Math.cos(angle) * distance);
+                int z = record.z() + Mth.floor(Math.sin(angle) * distance);
+                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                if (y <= level.getMinBuildHeight()) {
+                    continue;
+                }
+                BlockPos candidate = new BlockPos(x, y, z);
+                BlockState surface = level.getBlockState(candidate);
+                if (surface.is(ModBlocks.VENT_LAVA.get()) || surface.is(ModBlocks.THERMAL_VENT_POOL.get())) {
+                    continue;
+                }
+                impactPos = candidate;
+                break;
+            }
+            if (impactPos == null) {
+                continue;
+            }
+
+            long launchTick = worldTime + i * 3L + random.nextInt(3);
+            long travelDuration = 16L + stage + random.nextInt(9);
+            enqueuePendingBombardment(level, new PendingBombardment(
+                    new BlockPos(record.x(), launchY, record.z()),
+                    impactPos,
+                    launchTick,
+                    launchTick + travelDuration,
+                    stage
+            ));
         }
     }
 
-    private static void spawnMeteorTrail(ServerLevel level, ThermalVentSavedData.VentRecord record, BlockPos impactPos) {
-        double startX = record.x() + 0.5D;
-        double startY = ruptureMouthY(record) + 1.0D;
-        double startZ = record.z() + 0.5D;
-        double dx = impactPos.getX() + 0.5D - startX;
-        double dy = impactPos.getY() + 0.5D - startY;
-        double dz = impactPos.getZ() + 0.5D - startZ;
+    private static void enqueuePendingBombardment(ServerLevel level, PendingBombardment bombardment) {
+        pendingBombardments.computeIfAbsent(level, ignored -> new ArrayList<>()).add(bombardment);
+    }
 
-        for (int step = 0; step <= 10; step++) {
-            double t = step / 10.0D;
-            double px = startX + dx * t;
-            double py = startY + dy * t + Math.sin(t * Math.PI) * (2.0D + record.coneStage() * 0.25D);
-            double pz = startZ + dz * t;
-            level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 2, 0.08D, 0.08D, 0.08D, 0.01D);
-            level.sendParticles(ParticleTypes.ASH, px, py, pz, 2, 0.10D, 0.06D, 0.10D, 0.005D);
+    private static void processPendingBombardments(ServerLevel level, int phase, float progress, long worldTime) {
+        List<PendingBombardment> bombardments = pendingBombardments.get(level);
+        if (bombardments == null || bombardments.isEmpty()) {
+            return;
+        }
+
+        Iterator<PendingBombardment> iterator = bombardments.iterator();
+        while (iterator.hasNext()) {
+            PendingBombardment bombardment = iterator.next();
+            if (worldTime < bombardment.launchTick()) {
+                continue;
+            }
+
+            spawnBombardmentArc(level, bombardment, worldTime);
+            if (worldTime >= bombardment.impactTick()) {
+                applyMeteorImpact(level, bombardment.target(), bombardment.stage(), phase, progress);
+                iterator.remove();
+            }
+        }
+    }
+
+    private static void spawnBombardmentArc(ServerLevel level, PendingBombardment bombardment, long worldTime) {
+        double totalTicks = Math.max(1.0D, bombardment.impactTick() - bombardment.launchTick());
+        double progress = Mth.clamp((worldTime - bombardment.launchTick()) / totalTicks, 0.0D, 1.0D);
+        double previousProgress = Math.max(0.0D, progress - 0.12D);
+
+        for (int sample = 0; sample < 3; sample++) {
+            double t = Mth.lerp(sample / 2.0D, previousProgress, progress);
+            double px = Mth.lerp(t, bombardment.origin().getX() + 0.5D, bombardment.target().getX() + 0.5D);
+            double pz = Mth.lerp(t, bombardment.origin().getZ() + 0.5D, bombardment.target().getZ() + 0.5D);
+            double baseY = Mth.lerp(t, bombardment.origin().getY() + 0.5D, bombardment.target().getY() + 0.5D);
+            double py = baseY + Math.sin(t * Math.PI) * (6.0D + bombardment.stage() * 0.65D);
+
+            level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ModBlocks.HYDROTHERMAL_ROCK.get().defaultBlockState()),
+                    px, py, pz, 2, 0.14D, 0.14D, 0.14D, 0.01D);
+            level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 2,
+                    0.08D, 0.08D, 0.08D, 0.01D);
+            level.sendParticles(ParticleTypes.ASH, px, py, pz, 2,
+                    0.10D, 0.08D, 0.10D, 0.004D);
+            level.sendParticles(ParticleTypes.SMOKE, px, py, pz, 1,
+                    0.06D, 0.06D, 0.06D, 0.002D);
         }
     }
 
@@ -991,7 +1114,7 @@ public final class ThermalVentSystem {
         double radiusSqr = radius * radius;
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(center.getX() + 0.5D, center.getY() + 0.5D, center.getZ() + 0.5D) <= radiusSqr) {
-                PacketDistributor.sendToPlayer(player, new ThermalVentEruptionPayload(center, strength, durationTicks));
+                PacketDistributor.sendToPlayer(player, new ThermalVentEruptionPayload(center, strength, durationTicks, (float) radius));
             }
         }
     }
@@ -1003,8 +1126,10 @@ public final class ThermalVentSystem {
         }
 
         int skirtRadius = ruptureSkirtRadius(record);
+        int outerRadius = ruptureOuterRadius(record);
         int maxClearY = ruptureRimY(record) + 8 + coneStage / 2;
         int minFoundationY = Math.max(level.getMinBuildHeight() + 1, ruptureGroundY(record) - 5);
+        int bodyBaseY = ruptureConeBodyBaseY(level, record);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
         for (int dx = -skirtRadius; dx <= skirtRadius; dx++) {
@@ -1024,7 +1149,13 @@ public final class ThermalVentSystem {
                 clearRuptureColumn(level, x, z, targetTopY, maxClearY);
 
                 int foundationY = findRuptureFoundationY(level, x, z, targetTopY, minFoundationY);
-                for (int fillY = foundationY + 1; fillY <= targetTopY; fillY++) {
+                int fillStartY = foundationY + 1;
+                if (dist <= outerRadius + 0.25D) {
+                    fillStartY = Math.min(fillStartY, bodyBaseY);
+                }
+                fillStartY = Math.max(minFoundationY, fillStartY);
+
+                for (int fillY = fillStartY; fillY <= targetTopY; fillY++) {
                     cursor.set(x, fillY, z);
                     level.setBlock(cursor, ModBlocks.HYDROTHERMAL_ROCK.get().defaultBlockState(), 3);
                 }
@@ -1039,11 +1170,12 @@ public final class ThermalVentSystem {
 
     private static void rebuildRuptureVolcano(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean eruptionPulse) {
         growRuptureCone(level, record);
-        maintainRuptureLava(level, record);
+        scrubRuptureConeEnvelope(level, record);
+        maintainRuptureLava(level, record, false);
         applyVolcanicField(level, record, eruptionPulse);
     }
 
-    private static void maintainRuptureLava(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+    private static void maintainRuptureLava(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean minimalMaintenance) {
         if (record.coneStage() < RUPTURE_LAVA_START_STAGE) {
             return;
         }
@@ -1052,10 +1184,11 @@ public final class ThermalVentSystem {
         int lakeBottomY = ruptureLakeBottomY(record);
         int lakeRadius = ruptureLakeRadius(record);
         int lakeSurfaceY = ruptureLakeSurfaceY(record);
+        int maintainedLakeRadius = minimalMaintenance ? Math.min(1, lakeRadius) : lakeRadius;
         for (int dx = -lakeRadius; dx <= lakeRadius; dx++) {
             for (int dz = -lakeRadius; dz <= lakeRadius; dz++) {
                 double dist = Math.sqrt(dx * dx + dz * dz);
-                if (dist > lakeRadius + 0.25D) {
+                if (dist > lakeRadius + 0.25D || dist > maintainedLakeRadius + 0.25D) {
                     continue;
                 }
                 int x = record.x() + dx;
@@ -1066,13 +1199,15 @@ public final class ThermalVentSystem {
             }
         }
 
-        for (int outletIndex = 0; outletIndex < eruptionOutlets(record).length; outletIndex++) {
-            Direction outlet = eruptionOutlets(record)[outletIndex];
-            BlockPos breachSource = ruptureBreachMouth(record, outlet, outletIndex);
-            maintainVentLavaSource(level, breachSource, allowedSources);
+        Direction[] outlets = eruptionOutlets(record);
+        for (int outletIndex = 0; outletIndex < outlets.length; outletIndex++) {
+            Direction outlet = outlets[outletIndex];
+            maintainRuptureFlankSource(level, record, outlet, outletIndex, allowedSources);
         }
 
-        clearObsoleteVentLavaSources(level, record, allowedSources);
+        if (!minimalMaintenance) {
+            clearObsoleteVentLavaSources(level, record, allowedSources);
+        }
     }
 
     private static int ruptureGroundY(ThermalVentSavedData.VentRecord record) {
@@ -1122,9 +1257,12 @@ public final class ThermalVentSystem {
     }
 
     private static Direction[] eruptionOutlets(ThermalVentSavedData.VentRecord record) {
+        if (record.coneStage() < PRIMARY_RUPTURE_OVERFLOW_STAGE) {
+            return new Direction[0];
+        }
         Direction primary = spillDirection(record);
-        if (record.coneStage() >= 6) {
-            return new Direction[]{primary, primary.getClockWise()};
+        if (record.coneStage() >= SECONDARY_RUPTURE_OVERFLOW_STAGE) {
+            return new Direction[]{primary, primary.getOpposite()};
         }
         return new Direction[]{primary};
     }
@@ -1157,23 +1295,17 @@ public final class ThermalVentSystem {
             return Integer.MIN_VALUE;
         }
 
-        return applyBreachSaddles(record, dx, dz, dist, targetTopY);
+        return applyBreachMouthOpening(record, dx, dz, targetTopY);
     }
 
-    private static int applyBreachSaddles(ThermalVentSavedData.VentRecord record, int dx, int dz, double dist, int targetTopY) {
-        if (record.coneStage() < RUPTURE_LAVA_START_STAGE) {
-            return targetTopY;
-        }
-
-        int lakeRadius = ruptureLakeRadius(record);
-        if (dist <= lakeRadius + 0.25D) {
-            return targetTopY;
-        }
-
-        int skirtRadius = ruptureSkirtRadius(record);
-        int groundY = ruptureGroundY(record);
-        int lakeSurfaceY = ruptureLakeSurfaceY(record);
+    private static int applyBreachMouthOpening(ThermalVentSavedData.VentRecord record, int dx, int dz, int targetTopY) {
         Direction[] outlets = eruptionOutlets(record);
+        if (outlets.length == 0) {
+            return targetTopY;
+        }
+
+        double calderaRadius = ruptureCalderaRadius(record);
+        int breachCeilingBase = ruptureLakeSurfaceY(record) - 1;
 
         for (int outletIndex = 0; outletIndex < outlets.length; outletIndex++) {
             Direction outlet = outlets[outletIndex];
@@ -1182,20 +1314,15 @@ public final class ThermalVentSystem {
             int perpX = -dirZ;
             int perpZ = dirX;
             double along = dx * dirX + dz * dirZ;
-            if (along < lakeRadius - 0.5D || along > skirtRadius + 0.5D) {
-                continue;
-            }
-
-            double progress = Mth.clamp((along - lakeRadius) / Math.max(1.0D, skirtRadius - lakeRadius), 0.0D, 1.0D);
             double across = Math.abs(dx * perpX + dz * perpZ);
-            double width = 1.1D + outletIndex * 0.4D + progress * 1.8D;
-            if (across > width) {
+            double openingStart = calderaRadius - 0.35D;
+            double openingEnd = calderaRadius + 2.4D + outletIndex * 0.65D;
+            double openingWidth = 0.85D + outletIndex * 0.25D;
+            if (along < openingStart || along > openingEnd || across > openingWidth) {
                 continue;
             }
 
-            double eased = progress * progress * (3.0D - 2.0D * progress);
-            int saddleY = Mth.floor(Mth.lerp(eased, lakeSurfaceY - 1 - outletIndex, groundY - 1 - outletIndex));
-            targetTopY = Math.min(targetTopY, saddleY);
+            targetTopY = Math.min(targetTopY, breachCeilingBase - outletIndex);
         }
 
         return targetTopY;
@@ -1265,14 +1392,43 @@ public final class ThermalVentSystem {
                 && !state.is(ModBlocks.VENT_LAVA.get());
     }
 
-    private static BlockPos ruptureBreachMouth(ThermalVentSavedData.VentRecord record, Direction outlet, int outletIndex) {
-        int mouthDistance = ruptureLakeRadius(record) + 1;
-        int y = ruptureLakeSurfaceY(record) - outletIndex;
-        return new BlockPos(record.x(), y, record.z()).relative(outlet, mouthDistance);
+    private static BlockPos ruptureFlankSource(ThermalVentSavedData.VentRecord record, Direction outlet, int outletIndex) {
+        int breachDistance = Math.min(
+                ruptureOuterRadius(record) - 2,
+                ruptureCalderaRadius(record) + 3 + outletIndex
+        );
+        int dx = outlet.getStepX() * breachDistance;
+        int dz = outlet.getStepZ() * breachDistance;
+        int topY = ruptureTargetTopY(record, dx, dz, Math.sqrt(dx * dx + dz * dz));
+        int y = Math.min(ruptureLakeSurfaceY(record) - outletIndex, topY + 1);
+        return new BlockPos(record.x() + dx, y, record.z() + dz);
+    }
+
+    private static void maintainRuptureFlankSource(ServerLevel level, ThermalVentSavedData.VentRecord record,
+                                                   Direction outlet, int outletIndex, Set<BlockPos> allowedSources) {
+        BlockPos source = ruptureFlankSource(record, outlet, outletIndex);
+        BlockPos exterior = source.relative(outlet);
+        BlockPos drop = exterior.below();
+        clearRuptureBreachCell(level, source.above());
+        clearRuptureBreachCell(level, exterior);
+        clearRuptureBreachCell(level, exterior.above());
+        clearRuptureBreachCell(level, drop);
+        maintainVentLavaSource(level, source, allowedSources);
+        level.scheduleTick(source, ModFluids.SOURCE_VENT_LAVA.get(), 1);
+    }
+
+    private static void clearRuptureBreachCell(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.is(Blocks.BEDROCK) && !state.is(ModBlocks.VENT_LAVA.get())) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
     }
 
     private static void maintainVentLavaSource(ServerLevel level, BlockPos pos, Set<BlockPos> allowedSources) {
-        level.setBlock(pos, ModBlocks.VENT_LAVA.get().defaultBlockState(), 3);
+        BlockState state = level.getBlockState(pos);
+        if (!state.is(ModBlocks.VENT_LAVA.get()) || state.getValue(LiquidBlock.LEVEL) != 0) {
+            level.setBlock(pos, ModBlocks.VENT_LAVA.get().defaultBlockState(), 3);
+        }
         level.scheduleTick(pos, ModFluids.SOURCE_VENT_LAVA.get(), ModFluids.SOURCE_VENT_LAVA.get().getTickDelay(level));
         allowedSources.add(pos.immutable());
     }
@@ -1303,6 +1459,11 @@ public final class ThermalVentSystem {
         }
     }
 
+    private static int ruptureConeBodyBaseY(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+        int targetBase = ruptureGroundY(record) - 2 - record.coneStage() / 3;
+        return Math.max(level.getMinBuildHeight() + 1, targetBase);
+    }
+
     private static void applyPoolHeatStage(ServerLevel level, ThermalVentSavedData.VentRecord record, ThermalVentSnapshot snapshot) {
         int stage = switch (snapshot.archetype()) {
             case WARM -> snapshot.state() == ThermalVentState.ACTIVE ? 1 : 0;
@@ -1321,6 +1482,63 @@ public final class ThermalVentSystem {
                 if (state.is(ModBlocks.THERMAL_VENT_POOL.get())
                         && state.getValue(com.frozendawn.block.ThermalVentPoolBlock.HEAT_STAGE) != stage) {
                     level.setBlock(cursor, state.setValue(com.frozendawn.block.ThermalVentPoolBlock.HEAT_STAGE, stage), 3);
+                }
+            }
+        }
+    }
+
+    private static void scrubRuptureConeEnvelope(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+        int skirtRadius = ruptureSkirtRadius(record);
+        int maxClearY = ruptureRimY(record) + 3;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        for (int dx = -skirtRadius; dx <= skirtRadius; dx++) {
+            for (int dz = -skirtRadius; dz <= skirtRadius; dz++) {
+                double dist = Math.sqrt(dx * dx + dz * dz);
+                if (dist > skirtRadius + 0.25D) {
+                    continue;
+                }
+
+                int targetTopY = ruptureTargetTopY(record, dx, dz, dist);
+                if (targetTopY == Integer.MIN_VALUE) {
+                    continue;
+                }
+
+                int x = record.x() + dx;
+                int z = record.z() + dz;
+                cursor.set(x, targetTopY, z);
+                BlockState currentTop = level.getBlockState(cursor);
+                if (currentTop.is(Blocks.BEDROCK) || currentTop.is(ModBlocks.VENT_LAVA.get())) {
+                    continue;
+                }
+
+                if (currentTop.is(ModBlocks.FROZEN_DIRT.get())
+                        || currentTop.is(ModBlocks.FROZEN_SAND.get())
+                        || currentTop.is(ModBlocks.FROZEN_COBBLESTONE.get())
+                        || currentTop.is(ModBlocks.FROZEN_STONE_BRICKS.get())
+                        || currentTop.is(Blocks.SNOW)
+                        || currentTop.is(Blocks.SNOW_BLOCK)
+                        || currentTop.is(Blocks.POWDER_SNOW)
+                        || currentTop.is(ModBlocks.FROZEN_ATMOSPHERE.get())
+                        || currentTop.is(Blocks.ICE)
+                        || currentTop.is(Blocks.PACKED_ICE)
+                        || currentTop.is(Blocks.BLUE_ICE)) {
+                    level.setBlock(cursor, ruptureSurfaceState(record, dist, dx, dz), 3);
+                }
+
+                for (int y = targetTopY + 1; y <= maxClearY; y++) {
+                    cursor.set(x, y, z);
+                    BlockState state = level.getBlockState(cursor);
+                    if (state.is(ModBlocks.FROZEN_ATMOSPHERE.get())
+                            || state.is(ModBlocks.ACHERONITE_CRYSTAL.get())
+                            || state.is(Blocks.SNOW)
+                            || state.is(Blocks.SNOW_BLOCK)
+                            || state.is(Blocks.POWDER_SNOW)
+                            || state.is(Blocks.ICE)
+                            || state.is(Blocks.PACKED_ICE)
+                            || state.is(Blocks.BLUE_ICE)) {
+                        level.destroyBlock(cursor, false);
+                    }
                 }
             }
         }
@@ -1472,5 +1690,12 @@ public final class ThermalVentSystem {
         long interval = randomInterval(level, record, worldTime, RUPTURE_MIN_INTERVAL, RUPTURE_MAX_INTERVAL, salt);
         long reduction = Math.min(12L * 20L, record.coneStage() * 2L * 20L);
         return Math.max(18L * 20L, interval - reduction);
+    }
+
+    private static int ruptureVolcanicFieldRadius(int coneStage) {
+        return 17 + coneStage + coneStage / 2 + coneStage / 4 + coneStage / 3;
+    }
+
+    private record PendingBombardment(BlockPos origin, BlockPos target, long launchTick, long impactTick, int stage) {
     }
 }

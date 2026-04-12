@@ -55,6 +55,6 @@ public final class ClientHandlers {
     }
 
     public static void handleThermalVentEruption(ThermalVentEruptionPayload payload) {
-        ThermalVentClientEffects.triggerEruption(payload.pos(), payload.strength(), payload.durationTicks());
+        ThermalVentClientEffects.triggerEruption(payload.pos(), payload.strength(), payload.durationTicks(), payload.radius());
     }
 }
