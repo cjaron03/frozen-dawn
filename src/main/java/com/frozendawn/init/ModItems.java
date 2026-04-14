@@ -67,6 +67,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> SCORCHED_GROUND = ITEMS.registerSimpleBlockItem("scorched_ground", ModBlocks.SCORCHED_GROUND);
     public static final DeferredItem<BlockItem> SULFUR_CRUST = ITEMS.registerSimpleBlockItem("sulfur_crust", ModBlocks.SULFUR_CRUST);
     public static final DeferredItem<BlockItem> HYDROTHERMAL_ROCK = ITEMS.registerSimpleBlockItem("hydrothermal_rock", ModBlocks.HYDROTHERMAL_ROCK);
+    public static final DeferredItem<BlockItem> VOLCANIC_ASH = ITEMS.registerSimpleBlockItem("volcanic_ash", ModBlocks.VOLCANIC_ASH);
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
     public static final DeferredItem<BlockItem> CAMP_RADIO = ITEMS.registerSimpleBlockItem("camp_radio", ModBlocks.CAMP_RADIO);
     public static final DeferredItem<BlockItem> ORSA_FLAG = ITEMS.registerSimpleBlockItem("orsa_flag", ModBlocks.ORSA_FLAG);
@@ -329,6 +330,7 @@ public class ModItems {
                         output.accept(SCORCHED_GROUND.get());
                         output.accept(SULFUR_CRUST.get());
                         output.accept(HYDROTHERMAL_ROCK.get());
+                        output.accept(VOLCANIC_ASH.get());
                         // Player agency
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());

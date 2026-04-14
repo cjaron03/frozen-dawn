@@ -138,6 +138,6 @@ public final class ThermalVentRegistry {
     }
 
     private static int ruptureVolcanicFieldRadius(int coneStage) {
-        return 17 + coneStage + coneStage / 2 + coneStage / 4 + coneStage / 3;
+        return 23 + coneStage + coneStage / 2 + coneStage / 4 + coneStage / 3;
     }
 }

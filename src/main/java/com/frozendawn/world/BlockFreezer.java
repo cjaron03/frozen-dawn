@@ -495,7 +495,8 @@ public final class BlockFreezer {
                 || state.is(ModBlocks.VENT_LAVA.get())
                 || state.is(ModBlocks.SULFUR_CRUST.get())
                 || state.is(ModBlocks.HYDROTHERMAL_ROCK.get())
-                || state.is(ModBlocks.SCORCHED_GROUND.get())) {
+                || state.is(ModBlocks.SCORCHED_GROUND.get())
+                || state.is(ModBlocks.VOLCANIC_ASH.get())) {
             return true;
         }
         return ThermalVentRegistry.isFreezeProtected(level, pos)

@@ -23,6 +23,7 @@ import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
 import com.frozendawn.block.VentLavaBlock;
+import com.frozendawn.block.VolcanicAshBlock;
 import com.frozendawn.block.WallAlarmBeaconBlock;
 import com.frozendawn.block.WallEmergencyLightBlock;
 import net.minecraft.core.particles.ParticleTypes;
@@ -32,6 +33,7 @@ import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.WallSkullBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
@@ -167,6 +169,17 @@ public class ModBlocks {
                     .mapColor(MapColor.TERRACOTTA_LIGHT_GRAY)
                     .strength(1.8F)
                     .sound(SoundType.TUFF)));
+
+    public static final DeferredBlock<VolcanicAshBlock> VOLCANIC_ASH = BLOCKS.register("volcanic_ash",
+            () -> new VolcanicAshBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(0.15F)
+                    .sound(SoundType.SAND)
+                    .replaceable()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)
+                    .isViewBlocking((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)
+                    .isSuffocating((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)));
 
     public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
             () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()
