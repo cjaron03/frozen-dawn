@@ -116,8 +116,18 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 serverLevel.playSound(null, worldPosition, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
                         SoundSource.BLOCKS, 1.0f, 1.0f);
                 MinecraftServer server = serverLevel.getServer();
+                WinConditionState winState = WinConditionState.get(server);
+                boolean firstMartianReply = !winState.isMartianReplySent();
+                winState.setRocketBlueprintUnlocked(true);
+                if (firstMartianReply) {
+                    winState.setMartianReplySent(true);
+                }
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                     grantAdvancement(p, "broadcast_complete");
+                    p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
+                    if (firstMartianReply) {
+                        sendMartianCommandReply(p);
+                    }
                 }
             }
             setChanged();
@@ -341,6 +351,15 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 player.getAdvancements().award(holder, criterion);
             }
         }
+    }
+
+    private static void sendMartianCommandReply(ServerPlayer player) {
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.header"));
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line1"));
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line2"));
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line3"));
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line4"));
+        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line5"));
     }
 
     @Override

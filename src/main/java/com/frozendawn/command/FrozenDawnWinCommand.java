@@ -29,7 +29,11 @@ final class FrozenDawnWinCommand {
             context.getSource().sendSuccess(() -> Component.literal(
                     "  Satellite: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
                             + " | Placed: " + winState.isSatellitePlaced()
-                            + " | Schematic: " + winState.isSchematicUnlocked()), false);
+                            + " | Schematic: " + winState.isSchematicUnlocked()
+                            + " | Conspiracy: " + winState.isConspiracyDiscovered()
+                            + " | Rocket: " + winState.isRocketBlueprintUnlocked()
+                            + " | Martian Reply: " + winState.isMartianReplySent()
+                            + " | Launched: " + winState.isLaunchCompleted()), false);
         }
         return 1;
     }

@@ -14,8 +14,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.saveddata.SavedData;
 
 /**
- * Persistent world data for the win condition system.
- * Tracks crashed satellite location, schematic unlock, and placement state.
+ * Persistent world data for the endgame progression.
+ * Tracks the satellite/transponder chain plus the final-content narrative flags.
  */
 public class WinConditionState extends SavedData {
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_win_condition";
@@ -23,11 +23,21 @@ public class WinConditionState extends SavedData {
     private BlockPos satellitePos;
     private boolean satellitePlaced;
     private boolean schematicUnlocked;
+    private boolean conspiracyDiscovered;
+    private boolean rocketBlueprintUnlocked;
+    private boolean martianReplySent;
+    private boolean launchCompleted;
+    private boolean endingTriggered;
 
     public WinConditionState() {
         this.satellitePos = null;
         this.satellitePlaced = false;
         this.schematicUnlocked = false;
+        this.conspiracyDiscovered = false;
+        this.rocketBlueprintUnlocked = false;
+        this.martianReplySent = false;
+        this.launchCompleted = false;
+        this.endingTriggered = false;
     }
 
     public static WinConditionState get(MinecraftServer server) {
@@ -49,6 +59,11 @@ public class WinConditionState extends SavedData {
         }
         state.satellitePlaced = tag.getBoolean("satellitePlaced");
         state.schematicUnlocked = tag.getBoolean("schematicUnlocked");
+        state.conspiracyDiscovered = tag.getBoolean("conspiracyDiscovered");
+        state.rocketBlueprintUnlocked = tag.getBoolean("rocketBlueprintUnlocked");
+        state.martianReplySent = tag.getBoolean("martianReplySent");
+        state.launchCompleted = tag.getBoolean("launchCompleted");
+        state.endingTriggered = tag.getBoolean("endingTriggered");
         return state;
     }
 
@@ -61,6 +76,11 @@ public class WinConditionState extends SavedData {
         }
         tag.putBoolean("satellitePlaced", satellitePlaced);
         tag.putBoolean("schematicUnlocked", schematicUnlocked);
+        tag.putBoolean("conspiracyDiscovered", conspiracyDiscovered);
+        tag.putBoolean("rocketBlueprintUnlocked", rocketBlueprintUnlocked);
+        tag.putBoolean("martianReplySent", martianReplySent);
+        tag.putBoolean("launchCompleted", launchCompleted);
+        tag.putBoolean("endingTriggered", endingTriggered);
         return tag;
     }
 
@@ -127,6 +147,51 @@ public class WinConditionState extends SavedData {
 
     public void setSchematicUnlocked(boolean unlocked) {
         this.schematicUnlocked = unlocked;
+        setDirty();
+    }
+
+    public boolean isConspiracyDiscovered() {
+        return conspiracyDiscovered;
+    }
+
+    public void setConspiracyDiscovered(boolean discovered) {
+        this.conspiracyDiscovered = discovered;
+        setDirty();
+    }
+
+    public boolean isRocketBlueprintUnlocked() {
+        return rocketBlueprintUnlocked;
+    }
+
+    public void setRocketBlueprintUnlocked(boolean unlocked) {
+        this.rocketBlueprintUnlocked = unlocked;
+        setDirty();
+    }
+
+    public boolean isMartianReplySent() {
+        return martianReplySent;
+    }
+
+    public void setMartianReplySent(boolean sent) {
+        this.martianReplySent = sent;
+        setDirty();
+    }
+
+    public boolean isLaunchCompleted() {
+        return launchCompleted;
+    }
+
+    public void setLaunchCompleted(boolean completed) {
+        this.launchCompleted = completed;
+        setDirty();
+    }
+
+    public boolean isEndingTriggered() {
+        return endingTriggered;
+    }
+
+    public void setEndingTriggered(boolean triggered) {
+        this.endingTriggered = triggered;
         setDirty();
     }
 }
