@@ -48,6 +48,9 @@ final class FrozenDawnWorldCommand {
                                 .then(Commands.argument("substage", StringArgumentType.word())
                                         .suggests(SUBSTAGE_SUGGESTIONS)
                                         .executes(FrozenDawnWorldCommand::setPhaseSubstage))))
+                .then(Commands.literal("settotaldays")
+                        .then(Commands.argument("days", IntegerArgumentType.integer(7, 10000))
+                                .executes(FrozenDawnWorldCommand::setTotalDays)))
                 .then(Commands.literal("pause").executes(FrozenDawnWorldCommand::togglePause))
                 .then(Commands.literal("reset").executes(FrozenDawnWorldCommand::reset))
                 .then(Commands.literal("preset")
@@ -169,6 +172,22 @@ final class FrozenDawnWorldCommand {
 
         context.getSource().sendSuccess(() -> Component.translatable("command.frozendawn.setphase.substage",
                 substage, targetDay), true);
+        return 1;
+    }
+
+    private static int setTotalDays(CommandContext<CommandSourceStack> context) {
+        int totalDays = IntegerArgumentType.getInteger(context, "days");
+        MinecraftServer server = context.getSource().getServer();
+        ApocalypseState state = ApocalypseState.get(server);
+
+        FrozenDawnConfig.TOTAL_DAYS.set(totalDays);
+        state.setPresetName("custom");
+        DifficultyPresetManager.persistConfigOverrides();
+        DifficultyPresetManager.syncToClients(server, state);
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set apocalypse duration to " + totalDays + " total days (preset now custom, current phase "
+                        + state.getPhase() + ")"), true);
         return 1;
     }
 

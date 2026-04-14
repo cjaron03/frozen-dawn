@@ -14,8 +14,10 @@ import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.init.ModSkullTypes;
@@ -23,6 +25,8 @@ import net.minecraft.client.model.SkullModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
 import net.minecraft.client.color.item.ItemColor;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.core.component.DataComponents;
@@ -33,6 +37,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -45,6 +51,9 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientEvents {
+
+    private static final ResourceLocation VENT_LAVA_STILL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava");
+    private static final ResourceLocation VENT_LAVA_FLOW = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava_flow");
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
@@ -85,6 +94,11 @@ public class ClientEvents {
         // Register compass needle property for Acheronite Compass
         // Uses LodestoneTracker data component — same as vanilla lodestone compass
         event.enqueueWork(() -> {
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.THERMAL_VENT_POOL.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.VENT_LAVA.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.VOLCANIC_ASH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModFluids.SOURCE_VENT_LAVA.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_VENT_LAVA.get(), RenderType.translucent());
             ItemProperties.register(
                     ModItems.ACHERONITE_COMPASS.get(),
                     ResourceLocation.withDefaultNamespace("angle"),
@@ -95,6 +109,21 @@ public class ClientEvents {
             );
             CuriosClientCompat.registerRenderers();
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            @Override
+            public ResourceLocation getStillTexture() {
+                return VENT_LAVA_STILL;
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture() {
+                return VENT_LAVA_FLOW;
+            }
+        }, ModFluids.VENT_LAVA_TYPE.get());
     }
 
     @SubscribeEvent

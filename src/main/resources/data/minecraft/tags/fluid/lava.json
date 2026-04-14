@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:lava",
+    "minecraft:flowing_lava",
+    "frozendawn:vent_lava",
+    "frozendawn:flowing_vent_lava"
+  ]
+}

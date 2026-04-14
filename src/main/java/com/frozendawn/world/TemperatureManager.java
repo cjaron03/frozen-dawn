@@ -67,6 +67,11 @@ public final class TemperatureManager {
         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
             return Math.max(finalTemp, 24.0f);
         }
+        float ventFloor = ThermalVentRegistry.getWarmthFloor(level, pos);
+        if (ventFloor > Float.NEGATIVE_INFINITY) {
+            finalTemp = Math.max(finalTemp, ventFloor);
+        }
+        finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
         return finalTemp;
     }
 
@@ -351,6 +356,9 @@ public final class TemperatureManager {
         }
         if (state.is(Blocks.LAVA)) {
             return distSq <= 16 ? 30.0f : 0.0f;
+        }
+        if (state.is(ModBlocks.VENT_LAVA.get())) {
+            return distSq <= 36 ? 42.0f : 0.0f;
         }
         if (state.is(Blocks.MAGMA_BLOCK)) {
             return distSq <= 4 ? 10.0f : 0.0f;

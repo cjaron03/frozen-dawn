@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "heat_stage=0": { "model": "frozendawn:block/thermal_vent_pool" },
+    "heat_stage=1": { "model": "frozendawn:block/thermal_vent_pool" },
+    "heat_stage=2": { "model": "frozendawn:block/thermal_vent_pool" },
+    "heat_stage=3": { "model": "frozendawn:block/thermal_vent_pool" }
+  }
+}

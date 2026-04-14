@@ -74,6 +74,10 @@ public final class SnowAccumulator {
                     clearColdDepositionAt(level, baseSnowPos);
                     continue;
                 }
+                if (ThermalVentRegistry.isVolcanicField(level, baseSnowPos)) {
+                    clearColdDepositionAt(level, baseSnowPos);
+                    continue;
+                }
                 if (!isOpenToSnow(level, baseSnowPos)) {
                     continue;
                 }

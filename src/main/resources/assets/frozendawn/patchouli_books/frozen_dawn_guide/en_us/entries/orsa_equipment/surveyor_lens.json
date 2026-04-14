@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "Field Use",
-      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
+      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, surfaced $(l:heating/geothermal_vents)geothermal vents$(/l), $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
     },
     {
       "type": "patchouli:crafting",

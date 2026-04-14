@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:sulfur_lava_bucket"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.krakatoa.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.krakatoa.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

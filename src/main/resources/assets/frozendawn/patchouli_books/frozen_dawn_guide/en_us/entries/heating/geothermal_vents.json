@@ -1,0 +1,28 @@
+{
+  "name": "Orbital Geological Note",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:hydrothermal_rock",
+  "sortnum": 8,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Cryostatic Venting",
+      "text": "$(italic)Recovered from an ORSA orbital geology brief.$()$(br2)As the cryosphere thickens, surface ice does not simply bury the world. It loads the crust.$(br2)That added mass increases pressure along already fractured geothermal seams, seals some faults, and overpressurizes others until hot brine, steam, and sulfur-rich melt find a way back out.$(br2)From orbit, the first sign is not flame. It is a thermal blemish in a white world."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What the Satellites Saw",
+      "text": "ORSA's late orbital passes flagged new heat blooms most often under snow belts, taiga, and glacial basins.$(br2)Interpretation: the deepest ice loads were effectively squeezing buried hydrothermal pockets until the crust failed upward.$(br2)The result is not a classic volcanic arc. It is a pressure wound: warm seep, vent basin, then in the worst cases a sulfur-lava rupture cone.$(br2)Those rupture sites also showed unusually dense sulfur staining around the caldera walls, suggesting pressure sorting and mineral concentration near the hottest throat."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Surface Classes",
+      "text": "$(bold)Dormant$(): mineral basin, faint bleed, no shelter value.$(br)$(bold)Warm$(): brief field warmth once Phase 6 begins.$(br)$(bold)Active$(): stable heat pocket with geyser bursts.$(br)$(bold)Rupture$(): cone growth, sulfur lava, ejecta, and ashfall.$(br2)These are world-native weak points, not structures. Treat them like the planet remembering it is still hot underneath."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Guidance",
+      "text": "A $(l:orsa_equipment/surveyor_lens)Surveyor Lens$(/l) will only pick up exposed thermal surfaces, steam, and hot mineral crust. Buried anchors stay hidden until the ground opens.$(br2)Warm vents are temporary refuge. Active vents are risky shelter. Rupture vents are landmarks you survive around, not on.$(br2)ORSA geology notes repeatedly mention sulfur crust, friable tuff, and heavier yellow deposition near mature rupture mouths, but the basin interior remained too unstable for routine extraction.$(br2)If the ground begins vibrating in vacuum, assume the pressure column has decided to move."
+    }
+  ]
+}

@@ -1,15 +1,21 @@
 package com.frozendawn.command;
 
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.CampSatelliteState;
 import com.frozendawn.data.CargoDropState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
+import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.BlastPitPlanner;
 import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.MonitoringStationPlacement;
+import com.frozendawn.world.ThermalVentSavedData;
+import com.frozendawn.world.ThermalVentArchetype;
+import com.frozendawn.world.ThermalVentState;
+import com.frozendawn.world.ThermalVentSystem;
 import com.frozendawn.world.TowerPlanner;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -48,6 +54,9 @@ final class FrozenDawnLocateCommand {
         return Commands.literal("locate")
                 .then(Commands.literal("all").executes(FrozenDawnLocateCommand::locateAll))
                 .then(Commands.literal("orsa").executes(FrozenDawnLocateCommand::locateOrsa))
+                .then(Commands.literal("vents")
+                        .executes(FrozenDawnLocateCommand::vents)
+                        .then(Commands.literal("rupture").executes(FrozenDawnLocateCommand::ruptureVents)))
                 .then(Commands.literal("towns").executes(FrozenDawnLocateCommand::towns));
     }
 
@@ -117,8 +126,90 @@ final class FrozenDawnLocateCommand {
     private static int locateAll(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("--- Locate Summary ---"), false);
         locateOrsa(context);
+        vents(context);
         towns(context);
         return 1;
+    }
+
+    private static int vents(CommandContext<CommandSourceStack> context) {
+        return locateVent(context, null, 8, "Nearest Vent");
+    }
+
+    private static int ruptureVents(CommandContext<CommandSourceStack> context) {
+        return locateVent(context, ThermalVentArchetype.RUPTURE, 20, "Nearest Rupture Vent");
+    }
+
+    private static int locateVent(CommandContext<CommandSourceStack> context, @org.jetbrains.annotations.Nullable ThermalVentArchetype filter,
+                                  int scanRadius, String label) {
+        MinecraftServer server = context.getSource().getServer();
+        ServerLevel overworld = server.overworld();
+        BlockPos origin = BlockPos.containing(context.getSource().getPosition());
+        ThermalVentSavedData.VentRecord record = ThermalVentSystem.findNearestVent(overworld, origin, filter, scanRadius);
+        if (record == null) {
+            String missing = filter == ThermalVentArchetype.RUPTURE
+                    ? "  Rupture Vents: none resolved within scan radius"
+                    : "  Thermal Vents: none resolved nearby";
+            context.getSource().sendSuccess(() -> Component.literal(missing), false);
+            return 1;
+        }
+
+        ApocalypseState apocalypseState = ApocalypseState.get(server);
+        ThermalVentState state = describeVentState(record, apocalypseState.getPhase(), apocalypseState.getPreciseProgress(),
+                overworld.getGameTime());
+        int y = record.hasResolvedSurface() ? record.y() : overworld.getHeight(
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                record.x(), record.z()) - 1;
+
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  " + label + ": (" + record.x() + ", " + y + ", " + record.z() + ")"
+                        + " | Archetype: " + record.archetype().getSerializedName()
+                        + " | Surfaced: " + yesNo(record.surfaced())
+                        + " | State: " + prettyVentState(state)
+                        + " | Spent: " + yesNo(record.spent())
+        ), false);
+        return 1;
+    }
+
+    private static ThermalVentState describeVentState(ThermalVentSavedData.VentRecord record, int phase, float progress, long worldTime) {
+        return switch (record.archetype()) {
+            case WARM -> {
+                if (record.spent()) {
+                    yield ThermalVentState.SPENT;
+                }
+                if (record.activatedAt() >= 0L && worldTime - record.activatedAt() < 12L * 60L * 20L) {
+                    yield ThermalVentState.ACTIVE;
+                }
+                yield ThermalVentState.DORMANT;
+            }
+            case ACTIVE -> {
+                if (!PhaseManager.isPhase6MidOrLater(phase, progress)) {
+                    yield ThermalVentState.DORMANT;
+                }
+                yield record.eruptionEndTick() > worldTime ? ThermalVentState.ERUPTING : ThermalVentState.ACTIVE;
+            }
+            case RUPTURE -> {
+                if (!PhaseManager.isVacuumActive(phase, progress)) {
+                    yield ThermalVentState.DORMANT;
+                }
+                if (record.eruptionEndTick() > worldTime) {
+                    yield ThermalVentState.ERUPTING;
+                }
+                if (record.nextEventTick() > 0L && worldTime >= record.nextEventTick() - (5L * 20L)) {
+                    yield ThermalVentState.WARNING;
+                }
+                yield ThermalVentState.ACTIVE;
+            }
+        };
+    }
+
+    private static String prettyVentState(ThermalVentState state) {
+        return switch (state) {
+            case ACTIVE -> "active";
+            case WARNING -> "warning";
+            case ERUPTING -> "erupting";
+            case SPENT -> "spent";
+            default -> "dormant";
+        };
     }
 
     private static int camps(CommandContext<CommandSourceStack> context) {

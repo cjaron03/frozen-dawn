@@ -16,6 +16,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * /frozendawn world status     — show current state
  * /frozendawn world setday <n> — jump to a specific day
  * /frozendawn world setphase <1-6> [early|mid|late] — jump to the start of a phase (sub-stages for phase 6)
+ * /frozendawn world settotaldays <n> — set total apocalypse duration for fast testing
  * /frozendawn world pause      — toggle progression pause
  * /frozendawn world reset      — reset to day 0
  * /frozendawn world preset <name> — apply a config preset (default/cinematic/brutal)
@@ -45,8 +46,11 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world status"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setday <day>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setphase <phase> [early|mid|late]"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world settotaldays <days>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world pause | reset | preset <name>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents rupture"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate towns"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate all"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn win satellite"), false);

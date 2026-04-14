@@ -117,6 +117,24 @@
       "frozendawn:ambient/sanity_thud2"
     ]
   },
+  "ambient.geothermal_tremor": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.geothermal_tremor",
+    "sounds": [
+      { "name": "minecraft:block.stone.hit", "type": "event", "volume": 0.22, "pitch": 0.48 },
+      { "name": "minecraft:block.basalt.hit", "type": "event", "volume": 0.18, "pitch": 0.58 },
+      { "name": "minecraft:entity.iron_golem.damage", "type": "event", "volume": 0.14, "pitch": 0.72 }
+    ]
+  },
+  "ambient.geothermal_quake": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.geothermal_quake",
+    "sounds": [
+      { "name": "minecraft:block.stone.break", "type": "event", "volume": 0.28, "pitch": 0.42 },
+      { "name": "minecraft:block.basalt.break", "type": "event", "volume": 0.22, "pitch": 0.52 },
+      { "name": "minecraft:entity.iron_golem.damage", "type": "event", "volume": 0.18, "pitch": 0.55 }
+    ]
+  },
   "terminal.boot_orsa": {
     "category": "master",
     "sounds": [ "frozendawn:terminal/orsa_boot" ]

@@ -108,6 +108,9 @@ public final class BlockFreezer {
     }
 
     private static void transformSurface(ServerLevel level, BlockPos pos, BlockState state, int phase, float progress) {
+        if (isVentFreezeImmune(level, pos, state)) {
+            return;
+        }
         // Phase 6 late: exposed snow/snow blocks slowly compact into ice
         // 10% chance per check — gradual transformation, not instant
         // (existing ice → packed ice → blue ice chain handles the rest)
@@ -168,6 +171,7 @@ public final class BlockFreezer {
     private static void transformExposedStructure(ServerLevel level, BlockPos pos, BlockState state,
                                                   int phase, float progress) {
         if (phase < 4) return;
+        if (isVentFreezeImmune(level, pos, state)) return;
         if (!hasOutdoorFace(level, pos)) return;
 
         if (state.is(Blocks.COBBLESTONE) || state.is(Blocks.MOSSY_COBBLESTONE)) {
@@ -445,6 +449,9 @@ public final class BlockFreezer {
     }
 
     private static void transformVolume(ServerLevel level, BlockPos pos, BlockState state, int phase, float progress) {
+        if (isVentFreezeImmune(level, pos, state)) {
+            return;
+        }
         // Phase 6 late: surface ice sublimates (solid → gas in vacuum)
         // Water also boils off instantly. Underground ice is unaffected.
         if (PhaseManager.isVacuumActive(phase, progress) && level.canSeeSky(pos.above())) {
@@ -481,5 +488,18 @@ public final class BlockFreezer {
         if (state.is(Blocks.OBSIDIAN) && phase >= 4) {
             level.setBlock(pos, ModBlocks.FROZEN_OBSIDIAN.get().defaultBlockState(), 3);
         }
+    }
+
+    private static boolean isVentFreezeImmune(ServerLevel level, BlockPos pos, BlockState state) {
+        if (state.is(ModBlocks.THERMAL_VENT_POOL.get())
+                || state.is(ModBlocks.VENT_LAVA.get())
+                || state.is(ModBlocks.SULFUR_CRUST.get())
+                || state.is(ModBlocks.HYDROTHERMAL_ROCK.get())
+                || state.is(ModBlocks.SCORCHED_GROUND.get())
+                || state.is(ModBlocks.VOLCANIC_ASH.get())) {
+            return true;
+        }
+        return ThermalVentRegistry.isFreezeProtected(level, pos)
+                || ThermalVentRegistry.isVolcanicField(level, pos);
     }
 }

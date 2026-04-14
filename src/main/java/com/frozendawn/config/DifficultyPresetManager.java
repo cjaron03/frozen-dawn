@@ -39,7 +39,7 @@ public final class DifficultyPresetManager {
         WinConditionState winState = WinConditionState.get(server);
         PacketDistributor.sendToAllPlayers(new ApocalypseDataPayload(
                 state.getPhase(),
-                state.getPreciseProgress(),
+                state.getProgress(),
                 state.getTemperatureOffset(),
                 state.getSunScale(),
                 state.getSunBrightness(),

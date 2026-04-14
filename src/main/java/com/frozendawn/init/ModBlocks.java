@@ -16,10 +16,14 @@ import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
+import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
+import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
+import com.frozendawn.block.VentLavaBlock;
+import com.frozendawn.block.VolcanicAshBlock;
 import com.frozendawn.block.WallAlarmBeaconBlock;
 import com.frozendawn.block.WallEmergencyLightBlock;
 import net.minecraft.core.particles.ParticleTypes;
@@ -29,6 +33,7 @@ import net.minecraft.world.level.block.HalfTransparentBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.WallSkullBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
@@ -149,9 +154,50 @@ public class ModBlocks {
     public static final DeferredBlock<ScorchedGroundBlock> SCORCHED_GROUND = BLOCKS.register("scorched_ground",
             () -> new ScorchedGroundBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
-                    .strength(-1.0F, 3600000.0F)
+                    .strength(1.8F)
                     .sound(SoundType.CALCITE)
-                    .lightLevel(state -> 5)
+                    .lightLevel(state -> 4)));
+
+    public static final DeferredBlock<SulfurCrustBlock> SULFUR_CRUST = BLOCKS.register("sulfur_crust",
+            () -> new SulfurCrustBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SAND)
+                    .strength(1.2F)
+                    .sound(SoundType.CALCITE)));
+
+    public static final DeferredBlock<Block> HYDROTHERMAL_ROCK = BLOCKS.register("hydrothermal_rock",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_LIGHT_GRAY)
+                    .strength(1.8F)
+                    .sound(SoundType.TUFF)));
+
+    public static final DeferredBlock<VolcanicAshBlock> VOLCANIC_ASH = BLOCKS.register("volcanic_ash",
+            () -> new VolcanicAshBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(0.15F)
+                    .sound(SoundType.SAND)
+                    .replaceable()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)
+                    .isViewBlocking((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)
+                    .isSuffocating((state, level, pos) -> state.getValue(SnowLayerBlock.LAYERS) >= 8)));
+
+    public static final DeferredBlock<ThermalVentPoolBlock> THERMAL_VENT_POOL = BLOCKS.register("thermal_vent_pool",
+            () -> new ThermalVentPoolBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WATER)
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(state -> 2 + state.getValue(ThermalVentPoolBlock.HEAT_STAGE) * 2)
+                    .noLootTable()));
+
+    public static final DeferredBlock<VentLavaBlock> VENT_LAVA = BLOCKS.register("vent_lava",
+            () -> new VentLavaBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN)
+                    .strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.EMPTY)
+                    .replaceable()
+                    .noCollission()
+                    .pushReaction(PushReaction.DESTROY)
                     .noLootTable()));
 
     public static final DeferredBlock<OrsaSupplyCrateBlock> ORSA_SUPPLY_CRATE = BLOCKS.register("orsa_supply_crate",

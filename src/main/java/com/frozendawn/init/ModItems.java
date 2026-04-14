@@ -34,6 +34,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -64,6 +65,10 @@ public class ModItems {
     public static final DeferredItem<BlockItem> INSULATED_GLASS = ITEMS.registerSimpleBlockItem("insulated_glass", ModBlocks.INSULATED_GLASS);
     public static final DeferredItem<BlockItem> FROZEN_COAL_ORE = ITEMS.registerSimpleBlockItem("frozen_coal_ore", ModBlocks.FROZEN_COAL_ORE);
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
+    public static final DeferredItem<BlockItem> SCORCHED_GROUND = ITEMS.registerSimpleBlockItem("scorched_ground", ModBlocks.SCORCHED_GROUND);
+    public static final DeferredItem<BlockItem> SULFUR_CRUST = ITEMS.registerSimpleBlockItem("sulfur_crust", ModBlocks.SULFUR_CRUST);
+    public static final DeferredItem<BlockItem> HYDROTHERMAL_ROCK = ITEMS.registerSimpleBlockItem("hydrothermal_rock", ModBlocks.HYDROTHERMAL_ROCK);
+    public static final DeferredItem<BlockItem> VOLCANIC_ASH = ITEMS.registerSimpleBlockItem("volcanic_ash", ModBlocks.VOLCANIC_ASH);
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
     public static final DeferredItem<BlockItem> CAMP_RADIO = ITEMS.registerSimpleBlockItem("camp_radio", ModBlocks.CAMP_RADIO);
     public static final DeferredItem<BlockItem> ORSA_FLAG = ITEMS.registerSimpleBlockItem("orsa_flag", ModBlocks.ORSA_FLAG);
@@ -97,6 +102,9 @@ public class ModItems {
     public static final DeferredItem<O2TankItem> O2_TANK_MK3 = ITEMS.register("o2_tank_mk3",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER3_MAX), O2TankItem.TIER3_MAX));
+    public static final DeferredItem<Item> SULFUR_LAVA_BUCKET = ITEMS.register("sulfur_lava_bucket",
+            () -> new BucketItem(ModFluids.SOURCE_VENT_LAVA.get(),
+                    new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
     // --- Tier 1: Insulated Clothing (Phase 3) ---
     public static final DeferredItem<ArmorItem> INSULATED_HELMET = ITEMS.register("insulated_helmet",
@@ -320,6 +328,10 @@ public class ModItems {
                         output.accept(ICICLE.get());
                         output.accept(FROZEN_OBSIDIAN.get());
                         output.accept(FROZEN_COAL_ORE.get());
+                        output.accept(SCORCHED_GROUND.get());
+                        output.accept(SULFUR_CRUST.get());
+                        output.accept(HYDROTHERMAL_ROCK.get());
+                        output.accept(VOLCANIC_ASH.get());
                         // Player agency
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
@@ -351,6 +363,7 @@ public class ModItems {
                         output.accept(O2_TANK.get());
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());
+                        output.accept(SULFUR_LAVA_BUCKET.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
                         output.accept(INSULATED_CHESTPLATE.get());
@@ -421,4 +434,10 @@ public class ModItems {
                         output.accept(MIMIC_SPAWN_EGG.get());
                         output.accept(ARCHITECT_SPAWN_EGG.get());
                     }).build());
+
+    public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(SULFUR_LAVA_BUCKET.get());
+        }
+    }
 }

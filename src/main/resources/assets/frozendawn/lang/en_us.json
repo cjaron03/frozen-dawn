@@ -21,6 +21,16 @@
   "block.frozendawn.insulated_glass": "Insulated Glass",
   "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
   "block.frozendawn.geothermal_core": "Geothermal Core",
+  "block.frozendawn.scorched_ground": "Cinders",
+  "block.frozendawn.sulfur_crust": "Sulfur Crust",
+  "block.frozendawn.hydrothermal_rock": "Volcanic Tuff",
+  "block.frozendawn.volcanic_ash": "Volcanic Ash",
+  "block.frozendawn.thermal_vent_pool": "Thermal Vent Pool",
+  "block.frozendawn.vent_lava": "Sulfur Lava",
+  "block.frozendawn.thermal_vent_dormant": "Dormant Vent",
+  "block.frozendawn.thermal_vent_warm": "Warm Vent",
+  "block.frozendawn.thermal_vent_active": "Active Vent",
+  "block.frozendawn.thermal_vent_rupture": "Rupture Vent",
   "block.frozendawn.orsa_supply_crate": "ORSA Supply Crate",
   "block.frozendawn.camp_radio": "ORSA Field Radio",
   "block.frozendawn.orsa_flag": "ORSA Flag",
@@ -44,6 +54,7 @@
   "item.frozendawn.o2_tank": "O2 Canister",
   "item.frozendawn.o2_tank_mk2": "O2 Canister Mk.II",
   "item.frozendawn.o2_tank_mk3": "O2 Canister Mk.III",
+  "item.frozendawn.sulfur_lava_bucket": "Sulfur Lava Bucket",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",
@@ -130,6 +141,8 @@
   "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth.",
   "advancement.frozendawn.phase6.title": "The Last Breath",
   "advancement.frozendawn.phase6.description": "Phase 6: The atmosphere freezes and collapses. There is no air left to breathe. ...did you need oxygen?",
+  "advancement.frozendawn.krakatoa.title": "KRAKATOA!",
+  "advancement.frozendawn.krakatoa.description": "Witness a geothermal eruption. The cryosphere finally found a way to scream without air.",
   "advancement.frozendawn.last_light.title": "Last Light",
   "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
   "advancement.frozendawn.reading_the_sky.title": "Reading the Sky",
@@ -159,6 +172,8 @@
   "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
 
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
+  "subtitle.frozendawn.ambient.geothermal_tremor": "Suit frame vibrates",
+  "subtitle.frozendawn.ambient.geothermal_quake": "Ground convulses",
   "subtitle.frozendawn.ambient.eva_breathing": "Suit breathing",
   "subtitle.frozendawn.ambient.eva_suffocate": "Gasping for air",
 
@@ -173,7 +188,7 @@
   "message.frozendawn.heat.unbearable": "The heat is unbearable! Maybe fewer heaters?",
   "message.frozendawn.heat.cooking": "You are literally cooking alive. In an ice age.",
 
-  "death.attack.frozendawn.hyperthermia": "%1$s was cooked alive by their own heaters",
+  "death.attack.frozendawn.hyperthermia": "%1$s thermally overloaded",
 
   "advancement.frozendawn.too_hot_to_handle.title": "Too Hot to Handle",
   "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you.",
