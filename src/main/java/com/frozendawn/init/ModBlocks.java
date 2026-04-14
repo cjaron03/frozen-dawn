@@ -164,6 +164,13 @@ public class ModBlocks {
                     .strength(1.2F)
                     .sound(SoundType.CALCITE)));
 
+    public static final DeferredBlock<Block> SULFUR_ORE = BLOCKS.register("sulfur_ore",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SAND)
+                    .requiresCorrectToolForDrops()
+                    .strength(2.1F, 6.0F)
+                    .sound(SoundType.CALCITE)));
+
     public static final DeferredBlock<Block> HYDROTHERMAL_ROCK = BLOCKS.register("hydrothermal_rock",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.TERRACOTTA_LIGHT_GRAY)

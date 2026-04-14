@@ -46,4 +46,11 @@ public class ModDataComponents {
                             .persistent(Codec.INT)
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> CALORIC_RESISTANCE =
+            DATA_COMPONENTS.register("caloric_resistance", () ->
+                    DataComponentType.<Boolean>builder()
+                            .persistent(Codec.BOOL)
+                            .networkSynchronized(ByteBufCodecs.BOOL)
+                            .build());
 }

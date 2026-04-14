@@ -23,6 +23,7 @@
   "block.frozendawn.geothermal_core": "Geothermal Core",
   "block.frozendawn.scorched_ground": "Cinders",
   "block.frozendawn.sulfur_crust": "Sulfur Crust",
+  "block.frozendawn.sulfur_ore": "Sulfur Ore",
   "block.frozendawn.hydrothermal_rock": "Volcanic Tuff",
   "block.frozendawn.volcanic_ash": "Volcanic Ash",
   "block.frozendawn.thermal_vent_pool": "Thermal Vent Pool",
@@ -45,6 +46,8 @@
   "block.frozendawn.phase_barometer": "Phase Barometer",
 
   "item.frozendawn.ice_shard": "Ice Shard",
+  "item.frozendawn.impure_sulfur": "Impure Sulfur",
+  "item.frozendawn.sulfur": "Sulfur",
   "item.frozendawn.thermal_core": "Thermal Core",
   "item.frozendawn.frozen_heart": "Frozen Heart",
   "item.frozendawn.orsa_document": "ORSA Document",

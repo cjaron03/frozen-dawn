@@ -370,7 +370,7 @@ public final class ThermalVentSystem {
             level.playSound(null, pos, SoundEvents.LAVA_POP, SoundSource.BLOCKS, 1.5f, 0.46f);
         }
         boolean reshapeCone = record.shapedConeStage() < nextConeStage;
-        boolean maxStageLocked = record.coneStage() >= MAX_CONE_STAGE;
+        boolean maxStageLocked = isFinalRuptureLock(record);
         if (reshapeCone) {
             rebuildRuptureVolcano(level, record, true);
             record.setShapedConeStage(record.coneStage());
@@ -456,6 +456,7 @@ public final class ThermalVentSystem {
                 ThermalVentSavedData.get(level.getServer()).markDirty();
             }
             applyRuptureLavaSurge(level, record, worldTime, false);
+            ensureSulfurDeposits(level, record);
         }
 
         boolean ashHeavyRupture = snapshot.archetype() == ThermalVentArchetype.RUPTURE
@@ -783,7 +784,9 @@ public final class ThermalVentSystem {
                         center.getX() + dx, center.getZ() + dz) - 1;
                 cursor.set(center.getX() + dx, surfaceY, center.getZ() + dz);
                 BlockState surfaceState = level.getBlockState(cursor);
-                if (surfaceState.is(ModBlocks.THERMAL_VENT_POOL.get()) || surfaceState.is(Blocks.BEDROCK)) {
+                if (surfaceState.is(ModBlocks.THERMAL_VENT_POOL.get())
+                        || surfaceState.is(Blocks.BEDROCK)
+                        || surfaceState.is(ModBlocks.SULFUR_ORE.get())) {
                     continue;
                 }
                 if (dx * dx + dz * dz <= 3) {
@@ -899,7 +902,9 @@ public final class ThermalVentSystem {
                 int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
                 cursor.set(x, y, z);
                 BlockState state = level.getBlockState(cursor);
-                if (state.is(ModBlocks.THERMAL_VENT_POOL.get()) || state.is(Blocks.BEDROCK)) {
+                if (state.is(ModBlocks.THERMAL_VENT_POOL.get())
+                        || state.is(Blocks.BEDROCK)
+                        || state.is(ModBlocks.SULFUR_ORE.get())) {
                     continue;
                 }
                 if (isFragileSurface(state) && random.nextFloat() < 0.45F) {
@@ -1288,6 +1293,118 @@ public final class ThermalVentSystem {
         scrubRuptureConeEnvelope(level, record);
         maintainRuptureLava(level, record, false);
         applyVolcanicField(level, record, eruptionPulse);
+    }
+
+    private static void ensureSulfurDeposits(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+        if (!isFinalRuptureLock(record) || record.sulfurDepositsSeeded()) {
+            return;
+        }
+
+        seedSulfurPockets(level, record);
+        seedSulfurNodes(level, record);
+        record.setSulfurDepositsSeeded(true);
+        ThermalVentSavedData.get(level.getServer()).markDirty();
+    }
+
+    private static void seedSulfurPockets(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+        long baseSeed = mixHash((((long) record.x()) << 32) ^ record.z() ^ 0x50504F434B45544CL);
+        int calderaRadius = ruptureCalderaRadius(record);
+        int lakeRadius = ruptureLakeRadius(record);
+        int pocketCount = 6 + Math.max(0, record.coneStage() - MATURE_RUPTURE_STAGE);
+
+        for (int index = 0; index < pocketCount; index++) {
+            long hash = mixHash(baseSeed + index * 0x9E3779B97F4A7C15L);
+            double angle = ((hash >>> 12) & 0x3FFL) / 1024.0D * Mth.TWO_PI;
+            int radialSpan = Math.max(1, calderaRadius - lakeRadius);
+            double radius = lakeRadius + 1.0D + Math.floorMod((int) (hash >>> 28), radialSpan + 1);
+            int dx = Mth.floor(Math.cos(angle) * radius);
+            int dz = Mth.floor(Math.sin(angle) * radius);
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            int targetY = ruptureTargetTopY(record, dx, dz, dist);
+            if (targetY == Integer.MIN_VALUE) {
+                continue;
+            }
+
+            BlockPos pos = new BlockPos(record.x() + dx, targetY, record.z() + dz);
+            replaceWithSulfurOre(level, pos, true);
+        }
+    }
+
+    private static void seedSulfurNodes(ServerLevel level, ThermalVentSavedData.VentRecord record) {
+        long baseSeed = mixHash((((long) record.x()) << 32) ^ record.z() ^ 0x4E4F444553554C46L);
+        int calderaRadius = ruptureCalderaRadius(record);
+        int lakeRadius = ruptureLakeRadius(record);
+        int nodeCount = 9 + record.coneStage() * 2;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        for (int index = 0; index < nodeCount; index++) {
+            long hash = mixHash(baseSeed + index * 0x632BE59BD9B4E019L);
+            double angle = ((hash >>> 10) & 0x7FFL) / 2048.0D * Mth.TWO_PI;
+            int radialSpan = Math.max(1, calderaRadius - lakeRadius + 1);
+            double radius = lakeRadius + 1.0D + Math.floorMod((int) (hash >>> 27), radialSpan + 1);
+            int dx = Mth.floor(Math.cos(angle) * radius);
+            int dz = Mth.floor(Math.sin(angle) * radius);
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            int surfaceY = ruptureTargetTopY(record, dx, dz, dist);
+            if (surfaceY == Integer.MIN_VALUE) {
+                continue;
+            }
+
+            int centerY = Math.max(ruptureLakeBottomY(record) + 1, surfaceY - 1 - Math.floorMod((int) (hash >>> 41), 3));
+            for (int ox = -1; ox <= 1; ox++) {
+                for (int oy = -1; oy <= 1; oy++) {
+                    for (int oz = -1; oz <= 1; oz++) {
+                        if (ox == 0 && oy == 0 && oz == 0) {
+                            cursor.set(record.x() + dx, centerY, record.z() + dz);
+                            replaceWithSulfurOre(level, cursor, false);
+                            continue;
+                        }
+                        long localHash = mixHash(hash + ox * 73428767L + oy * 19459691L + oz * 912931L);
+                        if ((localHash & 3L) != 0L) {
+                            continue;
+                        }
+                        cursor.set(record.x() + dx + ox, centerY + oy, record.z() + dz + oz);
+                        replaceWithSulfurOre(level, cursor, false);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void replaceWithSulfurOre(ServerLevel level, BlockPos pos, boolean exposedPocket) {
+        BlockState state = level.getBlockState(pos);
+        if (!isSulfurDepositHost(state, exposedPocket)) {
+            return;
+        }
+        level.setBlock(pos, ModBlocks.SULFUR_ORE.get().defaultBlockState(), 3);
+    }
+
+    private static boolean isSulfurDepositHost(BlockState state, boolean exposedPocket) {
+        if (state.isAir()
+                || state.is(Blocks.BEDROCK)
+                || state.is(ModBlocks.THERMAL_VENT_POOL.get())
+                || state.is(ModBlocks.VENT_LAVA.get())) {
+            return false;
+        }
+        if (state.is(ModBlocks.SULFUR_ORE.get())) {
+            return false;
+        }
+        if (state.is(ModBlocks.HYDROTHERMAL_ROCK.get())
+                || state.is(ModBlocks.SULFUR_CRUST.get())
+                || state.is(ModBlocks.SCORCHED_GROUND.get())
+                || state.is(Blocks.STONE)
+                || state.is(Blocks.COBBLESTONE)
+                || state.is(ModBlocks.FROZEN_COBBLESTONE.get())
+                || state.is(ModBlocks.FROZEN_STONE_BRICKS.get())
+                || state.is(ModBlocks.FROZEN_DIRT.get())
+                || state.is(ModBlocks.FROZEN_SAND.get())) {
+            return true;
+        }
+        return exposedPocket && state.is(Blocks.DIRT);
+    }
+
+    private static boolean isFinalRuptureLock(ThermalVentSavedData.VentRecord record) {
+        return record.coneStage() >= MAX_CONE_STAGE;
     }
 
     private static void maintainRuptureLava(ServerLevel level, ThermalVentSavedData.VentRecord record, boolean minimalMaintenance) {
@@ -1779,7 +1896,9 @@ public final class ThermalVentSystem {
                 int z = record.z() + dz;
                 cursor.set(x, targetTopY, z);
                 BlockState currentTop = level.getBlockState(cursor);
-                if (currentTop.is(Blocks.BEDROCK) || currentTop.is(ModBlocks.VENT_LAVA.get())) {
+                if (currentTop.is(Blocks.BEDROCK)
+                        || currentTop.is(ModBlocks.VENT_LAVA.get())
+                        || currentTop.is(ModBlocks.SULFUR_ORE.get())) {
                     continue;
                 }
 

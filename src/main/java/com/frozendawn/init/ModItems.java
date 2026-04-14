@@ -67,6 +67,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
     public static final DeferredItem<BlockItem> SCORCHED_GROUND = ITEMS.registerSimpleBlockItem("scorched_ground", ModBlocks.SCORCHED_GROUND);
     public static final DeferredItem<BlockItem> SULFUR_CRUST = ITEMS.registerSimpleBlockItem("sulfur_crust", ModBlocks.SULFUR_CRUST);
+    public static final DeferredItem<BlockItem> SULFUR_ORE = ITEMS.registerSimpleBlockItem("sulfur_ore", ModBlocks.SULFUR_ORE);
     public static final DeferredItem<BlockItem> HYDROTHERMAL_ROCK = ITEMS.registerSimpleBlockItem("hydrothermal_rock", ModBlocks.HYDROTHERMAL_ROCK);
     public static final DeferredItem<BlockItem> VOLCANIC_ASH = ITEMS.registerSimpleBlockItem("volcanic_ash", ModBlocks.VOLCANIC_ASH);
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
@@ -83,6 +84,8 @@ public class ModItems {
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
+    public static final DeferredItem<Item> IMPURE_SULFUR = ITEMS.registerSimpleItem("impure_sulfur");
+    public static final DeferredItem<Item> SULFUR = ITEMS.registerSimpleItem("sulfur");
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
@@ -330,6 +333,7 @@ public class ModItems {
                         output.accept(FROZEN_COAL_ORE.get());
                         output.accept(SCORCHED_GROUND.get());
                         output.accept(SULFUR_CRUST.get());
+                        output.accept(SULFUR_ORE.get());
                         output.accept(HYDROTHERMAL_ROCK.get());
                         output.accept(VOLCANIC_ASH.get());
                         // Player agency
@@ -351,6 +355,8 @@ public class ModItems {
                         output.accept(PHASE_BAROMETER.get());
                         // Items
                         output.accept(ICE_SHARD.get());
+                        output.accept(IMPURE_SULFUR.get());
+                        output.accept(SULFUR.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());

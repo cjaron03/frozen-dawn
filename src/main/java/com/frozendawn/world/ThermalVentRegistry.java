@@ -66,6 +66,26 @@ public final class ThermalVentRegistry {
         return overheat;
     }
 
+    public static float getCalderaOverheatBonus(Level level, BlockPos pos) {
+        float overheat = 0.0f;
+        for (ThermalVentSnapshot snapshot : getVents(level)) {
+            if (snapshot.archetype() != ThermalVentArchetype.RUPTURE || !snapshot.state().contributesWarmth()) {
+                continue;
+            }
+            if (Math.abs(pos.getY() - snapshot.poolPos().getY()) > VOLCANIC_FIELD_VERTICAL_DRIFT) {
+                continue;
+            }
+            int calderaRadius = ruptureCalderaRadius(snapshot.coneStage());
+            if (snapshot.isWarning() || snapshot.isErupting()) {
+                calderaRadius += 1;
+            }
+            if (horizontalDistanceSqr(pos, snapshot.poolPos()) <= calderaRadius * calderaRadius) {
+                overheat = Math.max(overheat, snapshot.rimOverheatBonus());
+            }
+        }
+        return overheat;
+    }
+
     public static boolean isLethalPool(Level level, BlockPos pos) {
         for (ThermalVentSnapshot snapshot : getVents(level)) {
             if (!snapshot.isPoolLethal()) {
@@ -139,5 +159,9 @@ public final class ThermalVentRegistry {
 
     private static int ruptureVolcanicFieldRadius(int coneStage) {
         return 23 + coneStage + coneStage / 2 + coneStage / 4 + coneStage / 3;
+    }
+
+    private static int ruptureCalderaRadius(int coneStage) {
+        return 4 + coneStage / 3;
     }
 }

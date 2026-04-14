@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
+import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
@@ -283,5 +284,14 @@ public class MobFreezeHandler {
             if (stack.is(ModItems.LINED_EVA_CHESTPLATE.get())) return true;
         }
         return false;
+    }
+
+    public static boolean hasCaloricResistance(Player player) {
+        if (getFullSetTier(player) < 3) {
+            return false;
+        }
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        return chest.is(ModItems.LINED_EVA_CHESTPLATE.get())
+                && chest.getOrDefault(ModDataComponents.CALORIC_RESISTANCE.get(), false);
     }
 }
