@@ -471,7 +471,7 @@ public class WorldTickHandler {
     private static ApocalypseDataPayload createPayload(ApocalypseState state, WinConditionState winState) {
         return new ApocalypseDataPayload(
                 state.getPhase(),
-                state.getPreciseProgress(),
+                state.getProgress(),
                 state.getTemperatureOffset(),
                 state.getSunScale(),
                 state.getSunBrightness(),

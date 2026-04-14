@@ -116,11 +116,11 @@ public final class ThermalVentSystem {
     }
 
     public static void tick(ServerLevel level, int phase, float progress, long worldTime) {
-        ThermalVentRegistry.beginTick(level);
         processPendingBombardments(level, phase, progress, worldTime);
         if (level.players().isEmpty()) {
             return;
         }
+        ThermalVentRegistry.beginTick(level);
 
         ThermalVentSavedData ventData = ThermalVentSavedData.get(level.getServer());
         Set<Long> visitedRegions = new HashSet<>();
