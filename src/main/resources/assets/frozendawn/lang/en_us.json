@@ -188,7 +188,7 @@
   "message.frozendawn.heat.unbearable": "The heat is unbearable! Maybe fewer heaters?",
   "message.frozendawn.heat.cooking": "You are literally cooking alive. In an ice age.",
 
-  "death.attack.frozendawn.hyperthermia": "%1$s was cooked alive by their own heaters",
+  "death.attack.frozendawn.hyperthermia": "%1$s thermally overloaded",
 
   "advancement.frozendawn.too_hot_to_handle.title": "Too Hot to Handle",
   "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you.",

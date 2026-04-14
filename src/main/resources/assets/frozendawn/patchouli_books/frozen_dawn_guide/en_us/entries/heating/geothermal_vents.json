@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "What the Satellites Saw",
-      "text": "ORSA's late orbital passes flagged new heat blooms most often under snow belts, taiga, and glacial basins.$(br2)Interpretation: the deepest ice loads were effectively squeezing buried hydrothermal pockets until the crust failed upward.$(br2)The result is not a classic volcanic arc. It is a pressure wound: warm seep, vent basin, then in the worst cases a sulfur-lava rupture cone."
+      "text": "ORSA's late orbital passes flagged new heat blooms most often under snow belts, taiga, and glacial basins.$(br2)Interpretation: the deepest ice loads were effectively squeezing buried hydrothermal pockets until the crust failed upward.$(br2)The result is not a classic volcanic arc. It is a pressure wound: warm seep, vent basin, then in the worst cases a sulfur-lava rupture cone.$(br2)Those rupture sites also showed unusually dense sulfur staining around the caldera walls, suggesting pressure sorting and mineral concentration near the hottest throat."
     },
     {
       "type": "patchouli:text",
@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "Field Guidance",
-      "text": "A $(l:orsa_equipment/surveyor_lens)Surveyor Lens$(/l) will only pick up exposed thermal surfaces, steam, and hot mineral crust. Buried anchors stay hidden until the ground opens.$(br2)Warm vents are temporary refuge. Active vents are risky shelter. Rupture vents are landmarks you survive around, not on.$(br2)If the ground begins vibrating in vacuum, assume the pressure column has decided to move."
+      "text": "A $(l:orsa_equipment/surveyor_lens)Surveyor Lens$(/l) will only pick up exposed thermal surfaces, steam, and hot mineral crust. Buried anchors stay hidden until the ground opens.$(br2)Warm vents are temporary refuge. Active vents are risky shelter. Rupture vents are landmarks you survive around, not on.$(br2)ORSA geology notes repeatedly mention sulfur crust, friable tuff, and heavier yellow deposition near mature rupture mouths, but the basin interior remained too unstable for routine extraction.$(br2)If the ground begins vibrating in vacuum, assume the pressure column has decided to move."
     }
   ]
 }
