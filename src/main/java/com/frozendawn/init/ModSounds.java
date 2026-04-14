@@ -64,6 +64,14 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.sanity_thud")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEOTHERMAL_TREMOR = SOUNDS.register("ambient.geothermal_tremor",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.geothermal_tremor")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEOTHERMAL_QUAKE = SOUNDS.register("ambient.geothermal_quake",
+            () -> SoundEvent.createVariableRangeEvent(
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.geothermal_quake")));
+
     // --- Menu Music ---
     public static final DeferredHolder<SoundEvent, SoundEvent> MENU_MUSIC = SOUNDS.register("music.menu",
             () -> SoundEvent.createVariableRangeEvent(

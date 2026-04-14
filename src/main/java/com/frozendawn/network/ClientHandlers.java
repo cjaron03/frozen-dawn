@@ -9,6 +9,9 @@ import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.TowerTerminalScreen;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 
 /**
  * Client-side packet handlers. This class is only loaded on the client
@@ -56,5 +59,33 @@ public final class ClientHandlers {
 
     public static void handleThermalVentEruption(ThermalVentEruptionPayload payload) {
         ThermalVentClientEffects.triggerEruption(payload.pos(), payload.strength(), payload.durationTicks(), payload.radius());
+    }
+
+    public static void handleGeothermalCue(GeothermalCuePayload payload) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) {
+            return;
+        }
+
+        ResourceLocation soundId = ResourceLocation.tryParse(payload.soundId());
+        if (soundId == null) {
+            return;
+        }
+
+        var sound = BuiltInRegistries.SOUND_EVENT.getOptional(soundId);
+        if (sound.isEmpty()) {
+            return;
+        }
+
+        mc.level.playLocalSound(
+                mc.player.getX(),
+                mc.player.getY(),
+                mc.player.getZ(),
+                sound.get(),
+                SoundSource.AMBIENT,
+                payload.volume(),
+                payload.pitch(),
+                false
+        );
     }
 }

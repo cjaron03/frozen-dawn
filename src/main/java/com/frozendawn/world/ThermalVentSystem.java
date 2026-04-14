@@ -5,17 +5,25 @@ import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModFluids;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.ThermalVentEruptionPayload;
+import com.frozendawn.network.GeothermalCuePayload;
 import com.frozendawn.phase.PhaseManager;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
@@ -76,6 +84,11 @@ public final class ThermalVentSystem {
     private static final int SECONDARY_RUPTURE_OVERFLOW_STAGE = 6;
     private static final int RUPTURE_BOMBARDMENT_STAGE = 4;
     private static final int MATURE_RUPTURE_STAGE = 4;
+    private static final double ACTIVE_TREMOR_RADIUS = 32.0D;
+    private static final double AMBIENT_TREMOR_RADIUS = 24.0D;
+    private static final double RUPTURE_IDLE_TREMOR_BASE_RADIUS = 34.0D;
+    private static final double RUPTURE_WARNING_TREMOR_BASE_RADIUS = 42.0D;
+    private static final double RUPTURE_ERUPTION_QUAKE_BASE_RADIUS = 72.0D;
     private static final Set<ResourceKey<Biome>> BONUS_BIOMES = Set.of(
             Biomes.SNOWY_PLAINS,
             Biomes.ICE_SPIKES,
@@ -337,6 +350,8 @@ public final class ThermalVentSystem {
             level.playSound(null, pos, SoundEvents.LAVA_POP, SoundSource.BLOCKS, 1.1f, 0.62f);
         }
         sendEruptionImpulse(level, pos, 0.85f, 22, 20.0D);
+        playGeothermalTremor(level, pos, ACTIVE_TREMOR_RADIUS, 0.48f, 0.82f);
+        awardWitnessingPlayers(level, pos, 20.0D, "krakatoa");
         spawnActiveBurstParticles(level, pos);
         meltColdTerrain(level, pos, 4, true);
         applyBurstDamage(level, pos, ACTIVE_ERUPTION_RADIUS, 6.0f, 0.2f, 0.4f);
@@ -370,6 +385,10 @@ public final class ThermalVentSystem {
         int impulseDuration = 46 + nextConeStage * 6;
         double impulseRadius = 34.0D + nextConeStage * 3.4D;
         sendEruptionImpulse(level, impulsePos, impulseStrength, impulseDuration, impulseRadius);
+        playGeothermalQuake(level, impulsePos,
+                Math.max(impulseRadius, RUPTURE_ERUPTION_QUAKE_BASE_RADIUS + nextConeStage * 2.5D),
+                0.68f, 0.58f);
+        awardWitnessingPlayers(level, impulsePos, impulseRadius, "krakatoa");
         spawnRuptureBurstParticles(level, record);
         meltColdTerrain(level, pos, 6 + nextConeStage, true);
         applyBurstDamage(level, pos, RUPTURE_ERUPTION_RADIUS + nextConeStage / 2,
@@ -387,6 +406,9 @@ public final class ThermalVentSystem {
                 0.60f + record.coneStage() * 0.06f,
                 30 + record.coneStage() * 2,
                 28.0D + record.coneStage() * 2.6D);
+        playGeothermalTremor(level, impulsePos,
+                RUPTURE_WARNING_TREMOR_BASE_RADIUS + record.coneStage() * 3.2D,
+                0.42f, 0.74f);
         if (!PhaseManager.isVacuumActive(phase, progress)) {
             level.playSound(null, record.anchorPos(), SoundEvents.LAVA_EXTINGUISH, SoundSource.BLOCKS, 0.7f, 0.6f);
         }
@@ -481,6 +503,8 @@ public final class ThermalVentSystem {
                 }
                 if (!PhaseManager.isVacuumActive(phase, progress) && worldTime % 120L == 0L) {
                     playAmbientBoil(level, record.anchorPos(), 0.45f, 1.22f);
+                } else if (PhaseManager.isVacuumActive(phase, progress) && worldTime % 160L == 0L) {
+                    playGeothermalTremor(level, record.anchorPos(), AMBIENT_TREMOR_RADIUS, 0.26f, 1.08f);
                 }
             } else {
                 if (worldTime % 8L == 0L) {
@@ -494,6 +518,9 @@ public final class ThermalVentSystem {
                 spawnMatureRuptureAmbient(level, record, worldTime, false);
                 if (!PhaseManager.isVacuumActive(phase, progress) && worldTime % 80L == 0L) {
                     playAmbientBoil(level, record.anchorPos(), 0.65f, 0.95f);
+                } else if (PhaseManager.isVacuumActive(phase, progress) && worldTime % 100L == 0L) {
+                    playGeothermalTremor(level, new BlockPos(record.x(), ruptureMouthY(record), record.z()),
+                            RUPTURE_IDLE_TREMOR_BASE_RADIUS + record.coneStage() * 2.8D, 0.30f, 0.90f);
                 }
             }
             return;
@@ -790,6 +817,31 @@ public final class ThermalVentSystem {
 
     private static void playAmbientBoil(ServerLevel level, BlockPos pos, float volume, float pitch) {
         level.playSound(null, pos, SoundEvents.LAVA_AMBIENT, SoundSource.BLOCKS, volume, pitch);
+    }
+
+    private static void playGeothermalTremor(ServerLevel level, BlockPos pos, double radius, float volume, float pitch) {
+        playGeothermalCue(level, pos, radius, ModSounds.GEOTHERMAL_TREMOR.get(), volume, pitch);
+    }
+
+    private static void playGeothermalQuake(ServerLevel level, BlockPos pos, double radius, float volume, float pitch) {
+        playGeothermalCue(level, pos, radius, ModSounds.GEOTHERMAL_QUAKE.get(), volume, pitch);
+    }
+
+    private static void playGeothermalCue(ServerLevel level, BlockPos pos, double radius,
+                                          SoundEvent sound, float volume, float pitch) {
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            double cueX = pos.getX() + 0.5D;
+            double cueY = pos.getY() + 0.5D;
+            double cueZ = pos.getZ() + 0.5D;
+            if (player.distanceToSqr(cueX, cueY, cueZ) <= radiusSqr) {
+                PacketDistributor.sendToPlayer(player, new GeothermalCuePayload(
+                        BuiltInRegistries.SOUND_EVENT.getKey(sound).toString(),
+                        volume,
+                        pitch
+                ));
+            }
+        }
     }
 
     private static void spawnGroundStress(ServerLevel level, BlockPos center) {
@@ -1149,6 +1201,35 @@ public final class ThermalVentSystem {
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(center.getX() + 0.5D, center.getY() + 0.5D, center.getZ() + 0.5D) <= radiusSqr) {
                 PacketDistributor.sendToPlayer(player, new ThermalVentEruptionPayload(center, strength, durationTicks, (float) radius));
+            }
+        }
+    }
+
+    private static void awardWitnessingPlayers(ServerLevel level, BlockPos center, double radius, String advancementName) {
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(center.getX() + 0.5D, center.getY() + 0.5D, center.getZ() + 0.5D) <= radiusSqr) {
+                grantAdvancement(player, advancementName);
+            }
+        }
+    }
+
+    private static void grantAdvancement(ServerPlayer player, String name) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return;
+        }
+
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name);
+        AdvancementHolder holder = server.getAdvancements().get(loc);
+        if (holder == null) {
+            return;
+        }
+
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        if (!progress.isDone()) {
+            for (String criterion : progress.getRemainingCriteria()) {
+                player.getAdvancements().award(holder, criterion);
             }
         }
     }

@@ -141,6 +141,8 @@
   "advancement.frozendawn.phase5.description": "Phase 5: The sun is a distant memory. Only the deep earth holds warmth.",
   "advancement.frozendawn.phase6.title": "The Last Breath",
   "advancement.frozendawn.phase6.description": "Phase 6: The atmosphere freezes and collapses. There is no air left to breathe. ...did you need oxygen?",
+  "advancement.frozendawn.krakatoa.title": "KRAKATOA!",
+  "advancement.frozendawn.krakatoa.description": "Witness a geothermal eruption. The cryosphere finally found a way to scream without air.",
   "advancement.frozendawn.last_light.title": "Last Light",
   "advancement.frozendawn.last_light.description": "Place a Geothermal Core below Y=0. The thermal anchor holds.",
   "advancement.frozendawn.reading_the_sky.title": "Reading the Sky",
@@ -170,6 +172,8 @@
   "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
 
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
+  "subtitle.frozendawn.ambient.geothermal_tremor": "Suit frame vibrates",
+  "subtitle.frozendawn.ambient.geothermal_quake": "Ground convulses",
   "subtitle.frozendawn.ambient.eva_breathing": "Suit breathing",
   "subtitle.frozendawn.ambient.eva_suffocate": "Gasping for air",
 

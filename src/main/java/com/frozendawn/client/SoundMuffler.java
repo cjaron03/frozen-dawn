@@ -38,6 +38,7 @@ public class SoundMuffler {
         if (original == null) return;
         ResourceLocation soundLocation = original.getLocation();
         String soundPath = soundLocation.getPath();
+        boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
 
         // All Frozen Dawn mob sounds are immune from ALL sound suppression,
         // including late-phase vacuum muting.
@@ -51,6 +52,12 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
+            if (isGeothermalCue) {
+                // Let geothermal vibration cues survive as near-silent suit/structure transmission
+                // so vanilla subtitles can still track them in vacuum.
+                event.setSound(new MuffledSound(original, 0.08f, 0.90f));
+                return;
+            }
             event.setSound(null);
             return;
         }
@@ -141,5 +148,10 @@ public class SoundMuffler {
     private static boolean isFrozenDawnEntitySound(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.startsWith("entity.");
+    }
+
+    private static boolean isGeothermalCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.startsWith("ambient.geothermal_");
     }
 }

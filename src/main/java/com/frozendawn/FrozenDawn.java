@@ -26,6 +26,7 @@ public class FrozenDawn {
 
     public FrozenDawn(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(CuriosCompat::registerCapabilities);
+        modEventBus.addListener(ModItems::addToVanillaCreativeTabs);
 
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);

@@ -34,6 +34,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -433,4 +434,10 @@ public class ModItems {
                         output.accept(MIMIC_SPAWN_EGG.get());
                         output.accept(ARCHITECT_SPAWN_EGG.get());
                     }).build());
+
+    public static void addToVanillaCreativeTabs(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(SULFUR_LAVA_BUCKET.get());
+        }
+    }
 }

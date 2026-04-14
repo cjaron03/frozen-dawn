@@ -77,6 +77,11 @@ public class ModNetworking {
                 ThermalVentEruptionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleThermalVentEruption(payload))
         );
+        registrar.playToClient(
+                GeothermalCuePayload.TYPE,
+                GeothermalCuePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleGeothermalCue(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(
