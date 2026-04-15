@@ -5,6 +5,7 @@ import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.EmergencyLightBlock;
+import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
@@ -374,6 +375,14 @@ public class ModBlocks {
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 15)));
+
+    public static final DeferredBlock<FuelProcessingSiloControllerBlock> FUEL_PROCESSING_SILO_CONTROLLER = BLOCKS.register("fuel_processing_silo_controller",
+            () -> new FuelProcessingSiloControllerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.0F, 12.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(FuelProcessingSiloControllerBlock.LIT) ? 7 : 0)));
 
     // --- Acheronite ---
 

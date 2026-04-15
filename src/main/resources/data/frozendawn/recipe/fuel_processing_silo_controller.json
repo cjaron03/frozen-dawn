@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ICI",
+    "TFT",
+    "IRI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "T": { "item": "frozendawn:thermal_core" },
+    "F": { "item": "minecraft:furnace" },
+    "R": { "item": "frozendawn:refined_acheronite" }
+  },
+  "result": {
+    "id": "frozendawn:fuel_processing_silo_controller",
+    "count": 1
+  }
+}

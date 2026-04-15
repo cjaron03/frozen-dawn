@@ -21,6 +21,7 @@
   "block.frozendawn.insulated_glass": "Insulated Glass",
   "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
   "block.frozendawn.geothermal_core": "Geothermal Core",
+  "block.frozendawn.fuel_processing_silo_controller": "Fuel Processing Silo Controller",
   "block.frozendawn.scorched_ground": "Cinders",
   "block.frozendawn.sulfur_crust": "Sulfur Crust",
   "block.frozendawn.sulfur_ore": "Sulfur Ore",
@@ -58,6 +59,7 @@
   "item.frozendawn.o2_tank_mk2": "O2 Canister Mk.II",
   "item.frozendawn.o2_tank_mk3": "O2 Canister Mk.III",
   "item.frozendawn.sulfur_lava_bucket": "Sulfur Lava Bucket",
+  "container.frozendawn.fuel_processing_silo": "Fuel Processing Silo",
 
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",

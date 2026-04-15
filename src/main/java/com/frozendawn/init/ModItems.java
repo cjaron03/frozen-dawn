@@ -81,6 +81,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
     public static final DeferredItem<BlockItem> PHASE_BAROMETER = ITEMS.registerSimpleBlockItem("phase_barometer", ModBlocks.PHASE_BAROMETER);
+    public static final DeferredItem<BlockItem> FUEL_PROCESSING_SILO_CONTROLLER = ITEMS.registerSimpleBlockItem("fuel_processing_silo_controller", ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
@@ -344,6 +345,7 @@ public class ModItems {
                         output.accept(MITEAWAY.get());
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
+                        output.accept(FUEL_PROCESSING_SILO_CONTROLLER.get());
                         output.accept(ORSA_SUPPLY_CRATE.get());
                         output.accept(CAMP_RADIO.get());
                         output.accept(ORSA_FLAG.get());

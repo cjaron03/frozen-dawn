@@ -209,6 +209,28 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         return hasCapacitor;
     }
 
+    /**
+     * Lets adjacent infrastructure drain heater burn time directly.
+     * Returns true when the heater remains lit after the requested drain.
+     */
+    public boolean consumeIndustrialFuel(int ticks) {
+        if (ticks <= 0) {
+            return isLit();
+        }
+        if (burnTimeRemaining <= 0) {
+            updateLitState();
+            return false;
+        }
+        burnTimeRemaining = Math.max(0, burnTimeRemaining - ticks);
+        if (burnTimeRemaining == 0
+                || (level != null && !level.isClientSide() && level.getServer() != null
+                && level.getServer().getTickCount() % 200 == 0)) {
+            setChanged();
+        }
+        updateLitState();
+        return burnTimeRemaining > 0;
+    }
+
     public void installCapacitor() {
         this.hasCapacitor = true;
         setChanged();

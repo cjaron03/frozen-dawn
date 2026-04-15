@@ -1,6 +1,8 @@
 package com.frozendawn.item;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
+import com.frozendawn.block.FuelProcessingSiloBlockEntity;
+import com.frozendawn.block.FuelProcessingSiloMultiblock;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TransponderBlock;
 import com.frozendawn.block.TransponderBlockEntity;
@@ -47,6 +49,11 @@ public class OrsaMultiToolItem extends Item {
 
         if (be instanceof GeothermalCoreBlockEntity core) {
             showCoreDiagnostics(player, core);
+            return InteractionResult.sidedSuccess(false);
+        }
+
+        if (be instanceof FuelProcessingSiloBlockEntity silo) {
+            showSiloDiagnostics(player, silo);
             return InteractionResult.sidedSuccess(false);
         }
 
@@ -114,6 +121,33 @@ public class OrsaMultiToolItem extends Item {
         player.sendSystemMessage(Component.literal(p + "\u00A77Status: \u00A7aOnline"));
         player.sendSystemMessage(Component.literal(p + "\u00A77Position: \u00A7f" +
                 core.getBlockPos().getX() + ", " + core.getBlockPos().getY() + ", " + core.getBlockPos().getZ()));
+    }
+
+    private void showSiloDiagnostics(ServerPlayer player, FuelProcessingSiloBlockEntity silo) {
+        String p = "\u00A77[\u00A76ORSA\u00A77] ";
+        FuelProcessingSiloMultiblock.Diagnostic diagnostic = FuelProcessingSiloMultiblock.diagnose(
+                player.level(),
+                silo.getBlockPos(),
+                silo.getBlockState().getValue(com.frozendawn.block.FuelProcessingSiloControllerBlock.FACING)
+        );
+        player.sendSystemMessage(Component.literal(p + "\u00A7e--- Fuel Processing Silo ---"));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Shell: " + (silo.isStructureValid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
+        if (!diagnostic.valid()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Diag: \u00A7c" + diagnostic.message()));
+        }
+        if (!silo.hasAttachedHeater()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Heater: \u00A7cMissing"));
+        } else {
+            String heaterLabel = FuelProcessingSiloMultiblock.tierLabel(silo.getHeaterTierCode())
+                    + (silo.heaterHasCapacitor() ? " + Capacitor" : "");
+            String heaterStatus = silo.isHeaterLit() ? "\u00A7aOnline" : "\u00A76Offline";
+            player.sendSystemMessage(Component.literal(p + "\u00A77Heater: " + heaterStatus + "\u00A7f " + heaterLabel));
+            player.sendSystemMessage(Component.literal(p + "\u00A77Speed: \u00A7f" + FuelProcessingSiloMultiblock.formatSpeed(silo.getHeaterSpeedUnits())));
+            if (silo.isHeaterLit()) {
+                player.sendSystemMessage(Component.literal(p + "\u00A77Fuel ETA: \u00A7f" + silo.getHeaterEtaMinutes() + " min"));
+            }
+        }
+        player.sendSystemMessage(Component.literal(p + "\u00A77Progress: \u00A7f" + silo.getProgressPercentPublic() + "%"));
     }
 
     @Override

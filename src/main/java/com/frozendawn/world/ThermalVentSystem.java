@@ -393,7 +393,9 @@ public final class ThermalVentSystem {
         meltColdTerrain(level, pos, 6 + nextConeStage, true);
         applyBurstDamage(level, pos, RUPTURE_ERUPTION_RADIUS + nextConeStage / 2,
                 14.0f + nextConeStage * 1.8f, 0.50f + nextConeStage * 0.05f, 0.90f + nextConeStage * 0.07f);
-        applyRuptureScar(level, record);
+        if (reshapeCone) {
+            applyRuptureScar(level, record);
+        }
         if (nextConeStage >= RUPTURE_BOMBARDMENT_STAGE) {
             queueVolcanicBombardment(level, record, worldTime);
         }

@@ -5,6 +5,7 @@ import com.frozendawn.block.AcheronForgeBlockEntity;
 import com.frozendawn.block.AlarmBeaconBlockEntity;
 import com.frozendawn.block.CampRadioBlockEntity;
 import com.frozendawn.block.EmergencyLightBlockEntity;
+import com.frozendawn.block.FuelProcessingSiloBlockEntity;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.MiteAwayBlockEntity;
@@ -46,6 +47,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("geothermal_core",
                     () -> BlockEntityType.Builder.of(GeothermalCoreBlockEntity::new,
                             ModBlocks.GEOTHERMAL_CORE.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FuelProcessingSiloBlockEntity>> FUEL_PROCESSING_SILO =
+            BLOCK_ENTITIES.register("fuel_processing_silo",
+                    () -> BlockEntityType.Builder.of(FuelProcessingSiloBlockEntity::new,
+                            ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AcheronForgeBlockEntity>> ACHERON_FORGE =
