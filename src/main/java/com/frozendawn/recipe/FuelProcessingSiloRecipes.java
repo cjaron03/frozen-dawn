@@ -14,13 +14,40 @@ import java.util.List;
 
 /**
  * Small recipe registry for the Fuel Processing Silo.
- * Phase 4 only needs the sulfur-lava utility loop, and later fuel recipes can
- * be added here without changing the machine logic again.
+ * Holds the full Phase 5 fuel chain plus the sulfur-lava utility loop.
  */
 public final class FuelProcessingSiloRecipes {
     public static final int PROGRESS_UNITS_PER_TICK = 20;
 
     private static final List<FuelProcessingSiloRecipe> RECIPES = List.of(
+            new FuelProcessingSiloRecipe(
+                    "solid_propellant",
+                    "Solid Propellant",
+                    List.of(
+                            new IngredientRequirement(Ingredient.of(ModItems.SULFUR.get()), 4),
+                            new IngredientRequirement(Ingredient.of(net.minecraft.world.item.Items.COAL), 2)
+                    ),
+                    new ItemStack(ModItems.SOLID_PROPELLANT.get(), 1),
+                    1200
+            ),
+            new FuelProcessingSiloRecipe(
+                    "liquid_oxidizer",
+                    "Liquid Oxidizer",
+                    List.of(new IngredientRequirement(Ingredient.of(ModItems.FROZEN_ATMOSPHERE_SHARD.get()), 4)),
+                    new ItemStack(ModItems.LIQUID_OXIDIZER.get(), 1),
+                    1800
+            ),
+            new FuelProcessingSiloRecipe(
+                    "rocket_fuel_cell",
+                    "Rocket Fuel Cell",
+                    List.of(
+                            new IngredientRequirement(Ingredient.of(ModItems.SOLID_PROPELLANT.get()), 2),
+                            new IngredientRequirement(Ingredient.of(ModItems.LIQUID_OXIDIZER.get()), 2),
+                            new IngredientRequirement(Ingredient.of(ModItems.ACHERONITE_SHARD.get()), 1)
+                    ),
+                    new ItemStack(ModItems.ROCKET_FUEL_CELL.get(), 1),
+                    2400
+            ),
             new FuelProcessingSiloRecipe(
                     "sulfur_lava_reduction",
                     "Sulfur Lava Reduction",

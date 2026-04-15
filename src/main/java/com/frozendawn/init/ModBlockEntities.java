@@ -11,6 +11,7 @@ import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.MiteAwayBlockEntity;
 import com.frozendawn.block.OrsaFlagBlockEntity;
 import com.frozendawn.block.PhaseBarometerBlockEntity;
+import com.frozendawn.block.RocketEngineBlockEntity;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TownPASpeakerBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
@@ -53,6 +54,12 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("fuel_processing_silo",
                     () -> BlockEntityType.Builder.of(FuelProcessingSiloBlockEntity::new,
                             ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER.get()
+                    ).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RocketEngineBlockEntity>> ROCKET_ENGINE =
+            BLOCK_ENTITIES.register("rocket_engine",
+                    () -> BlockEntityType.Builder.of(RocketEngineBlockEntity::new,
+                            ModBlocks.ROCKET_ENGINE.get()
                     ).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<AcheronForgeBlockEntity>> ACHERON_FORGE =

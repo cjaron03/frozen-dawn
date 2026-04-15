@@ -3,9 +3,12 @@ package com.frozendawn.item;
 import com.frozendawn.block.GeothermalCoreBlockEntity;
 import com.frozendawn.block.FuelProcessingSiloBlockEntity;
 import com.frozendawn.block.FuelProcessingSiloMultiblock;
+import com.frozendawn.block.RocketEngineBlockEntity;
+import com.frozendawn.block.RocketLaunchStructure;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TransponderBlock;
 import com.frozendawn.block.TransponderBlockEntity;
+import com.frozendawn.data.WinConditionState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +57,11 @@ public class OrsaMultiToolItem extends Item {
 
         if (be instanceof FuelProcessingSiloBlockEntity silo) {
             showSiloDiagnostics(player, silo);
+            return InteractionResult.sidedSuccess(false);
+        }
+
+        if (be instanceof RocketEngineBlockEntity engine) {
+            showRocketDiagnostics(player, engine);
             return InteractionResult.sidedSuccess(false);
         }
 
@@ -148,6 +156,25 @@ public class OrsaMultiToolItem extends Item {
             }
         }
         player.sendSystemMessage(Component.literal(p + "\u00A77Progress: \u00A7f" + silo.getProgressPercentPublic() + "%"));
+    }
+
+    private void showRocketDiagnostics(ServerPlayer player, RocketEngineBlockEntity engine) {
+        String p = "\u00A77[\u00A76ORSA\u00A77] ";
+        RocketLaunchStructure.Diagnostic diagnostic = player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
+                ? RocketLaunchStructure.diagnose(serverLevel, engine.getBlockPos())
+                : new RocketLaunchStructure.Diagnostic(false, false, engine.getBlockPos(), "Diagnostics unavailable client-side.");
+        boolean unlocked = WinConditionState.get(player.server).isRocketBlueprintUnlocked();
+        player.sendSystemMessage(Component.literal(p + "\u00A7e--- Launch Assembly ---"));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Launch Package: "
+                + (unlocked ? "\u00A7aUnlocked" : "\u00A7cLocked")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Pad Alignment: "
+                + (engine.isAlignedToBlastPit() ? "\u00A7aCentered" : "\u00A7cOff Pad")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Structure: "
+                + (engine.isStructureValid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Fuel Cells: \u00A7f" + engine.getLoadedFuelCells() + "/6"));
+        if (!diagnostic.valid()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Diag: \u00A7c" + diagnostic.message()));
+        }
     }
 
     @Override

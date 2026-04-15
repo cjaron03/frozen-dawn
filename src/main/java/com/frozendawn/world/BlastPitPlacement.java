@@ -118,6 +118,11 @@ public final class BlastPitPlacement {
         return state.getBlastPitPos() != null ? state.getBlastPitPos() : state.getBlastPitTargetPos();
     }
 
+    public static BlockPos getLaunchPadCenter(ServerLevel overworld) {
+        BlockPos blastPit = ensureBlastPitResolved(overworld);
+        return blastPit != null ? blastPit.below(3) : null;
+    }
+
     /**
      * First-pass blast pit: a crater with scorched center, partial perimeter, and a lore chest.
      * Warm-zone block integration will be layered onto the scorched terrain.

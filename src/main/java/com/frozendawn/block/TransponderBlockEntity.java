@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.world.MartianCommandTransmissionPlayer;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.world.TransponderRegistry;
 import net.minecraft.core.BlockPos;
@@ -30,6 +31,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * Block entity for the ORSA Transponder.
  * State machine: IDLE → BROADCASTING → COMPLETE.
@@ -50,6 +55,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
     private boolean shaftClear = false;
     private int shaftCheckCooldown = 0;
     private boolean manuallyPaused = false;
+    private final List<MartianCommandTransmissionPlayer> activeMartianTransmissions = new ArrayList<>();
 
     public TransponderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TRANSPONDER.get(), pos, state);
@@ -73,6 +79,8 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
 
     public void serverTick() {
         if (level == null || level.isClientSide()) return;
+
+        tickMartianTransmissions();
 
         int state = getBlockState().getValue(TransponderBlock.STATE);
         if (state != STATE_BROADCASTING && state != STATE_PAUSED) return;
@@ -126,7 +134,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                     grantAdvancement(p, "broadcast_complete");
                     p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
                     if (firstMartianReply) {
-                        sendMartianCommandReply(p);
+                        queueMartianCommandReply(p);
                     }
                 }
             }
@@ -353,13 +361,25 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
         }
     }
 
-    private static void sendMartianCommandReply(ServerPlayer player) {
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.header"));
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line1"));
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line2"));
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line3"));
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line4"));
-        player.sendSystemMessage(Component.translatable("message.frozendawn.mars_command.line5"));
+    private void queueMartianCommandReply(ServerPlayer player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        activeMartianTransmissions.add(new MartianCommandTransmissionPlayer(serverLevel, player));
+    }
+
+    private void tickMartianTransmissions() {
+        if (activeMartianTransmissions.isEmpty()) {
+            return;
+        }
+        Iterator<MartianCommandTransmissionPlayer> iterator = activeMartianTransmissions.iterator();
+        while (iterator.hasNext()) {
+            MartianCommandTransmissionPlayer transmission = iterator.next();
+            transmission.tick();
+            if (transmission.isDone()) {
+                iterator.remove();
+            }
+        }
     }
 
     @Override

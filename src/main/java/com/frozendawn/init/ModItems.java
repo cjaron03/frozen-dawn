@@ -82,11 +82,19 @@ public class ModItems {
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
     public static final DeferredItem<BlockItem> PHASE_BAROMETER = ITEMS.registerSimpleBlockItem("phase_barometer", ModBlocks.PHASE_BAROMETER);
     public static final DeferredItem<BlockItem> FUEL_PROCESSING_SILO_CONTROLLER = ITEMS.registerSimpleBlockItem("fuel_processing_silo_controller", ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER);
+    public static final DeferredItem<BlockItem> ROCKET_ENGINE = ITEMS.registerSimpleBlockItem("rocket_engine", ModBlocks.ROCKET_ENGINE);
+    public static final DeferredItem<BlockItem> ROCKET_FIN = ITEMS.registerSimpleBlockItem("rocket_fin", ModBlocks.ROCKET_FIN);
+    public static final DeferredItem<BlockItem> ROCKET_HULL = ITEMS.registerSimpleBlockItem("rocket_hull", ModBlocks.ROCKET_HULL);
+    public static final DeferredItem<BlockItem> ROCKET_NOSE_CONE = ITEMS.registerSimpleBlockItem("rocket_nose_cone", ModBlocks.ROCKET_NOSE_CONE);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
     public static final DeferredItem<Item> IMPURE_SULFUR = ITEMS.registerSimpleItem("impure_sulfur");
     public static final DeferredItem<Item> SULFUR = ITEMS.registerSimpleItem("sulfur");
+    public static final DeferredItem<Item> SOLID_PROPELLANT = ITEMS.registerSimpleItem("solid_propellant");
+    public static final DeferredItem<Item> LIQUID_OXIDIZER = ITEMS.registerSimpleItem("liquid_oxidizer");
+    public static final DeferredItem<Item> ROCKET_FUEL_CELL = ITEMS.register("rocket_fuel_cell",
+            () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
@@ -346,6 +354,10 @@ public class ModItems {
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
                         output.accept(FUEL_PROCESSING_SILO_CONTROLLER.get());
+                        output.accept(ROCKET_ENGINE.get());
+                        output.accept(ROCKET_FIN.get());
+                        output.accept(ROCKET_HULL.get());
+                        output.accept(ROCKET_NOSE_CONE.get());
                         output.accept(ORSA_SUPPLY_CRATE.get());
                         output.accept(CAMP_RADIO.get());
                         output.accept(ORSA_FLAG.get());
@@ -359,6 +371,9 @@ public class ModItems {
                         output.accept(ICE_SHARD.get());
                         output.accept(IMPURE_SULFUR.get());
                         output.accept(SULFUR.get());
+                        output.accept(SOLID_PROPELLANT.get());
+                        output.accept(LIQUID_OXIDIZER.get());
+                        output.accept(ROCKET_FUEL_CELL.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());

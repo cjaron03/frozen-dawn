@@ -15,6 +15,7 @@ import com.frozendawn.block.MiteAwayBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
+import com.frozendawn.block.RocketEngineBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
@@ -383,6 +384,34 @@ public class ModBlocks {
                     .strength(5.0F, 12.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(FuelProcessingSiloControllerBlock.LIT) ? 7 : 0)));
+
+    public static final DeferredBlock<RocketEngineBlock> ROCKET_ENGINE = BLOCKS.register("rocket_engine",
+            () -> new RocketEngineBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.5F, 12.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)));
+
+    public static final DeferredBlock<Block> ROCKET_FIN = BLOCKS.register("rocket_fin",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.5F, 10.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<Block> ROCKET_HULL = BLOCKS.register("rocket_hull",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.0F, 10.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<Block> ROCKET_NOSE_CONE = BLOCKS.register("rocket_nose_cone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.8F, 10.0F)
+                    .sound(SoundType.METAL)));
 
     // --- Acheronite ---
 
