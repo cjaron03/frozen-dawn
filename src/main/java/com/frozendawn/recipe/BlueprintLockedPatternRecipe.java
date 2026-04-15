@@ -1,74 +1,77 @@
 package com.frozendawn.recipe;
 
 import com.frozendawn.data.WinConditionState;
+import com.frozendawn.init.ModRecipeSerializers;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.world.item.Item;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapedRecipePattern;
 import net.minecraft.world.level.Level;
 
-import java.util.Map;
+public class BlueprintLockedPatternRecipe extends ShapedRecipe {
+    private final ItemStack displayResult;
 
-public abstract class BlueprintLockedPatternRecipe extends CustomRecipe {
-    protected BlueprintLockedPatternRecipe(CraftingBookCategory category) {
-        super(category);
+    public BlueprintLockedPatternRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, ItemStack result, boolean showNotification) {
+        super(group, category, pattern, result, showNotification);
+        this.displayResult = result.copy();
     }
 
-    protected abstract String[] pattern();
+    public static BlueprintLockedPatternRecipe fromShaped(ShapedRecipe recipe) {
+        return new BlueprintLockedPatternRecipe(
+                recipe.getGroup(),
+                recipe.category(),
+                recipe.pattern,
+                recipe.getResultItem(null).copy(),
+                recipe.showNotification()
+        );
+    }
 
-    protected abstract Map<Character, Item> key();
-
-    protected abstract ItemStack result();
+    public ShapedRecipe asVanillaShaped() {
+        return new ShapedRecipe(getGroup(), category(), pattern, displayResult.copy(), showNotification());
+    }
 
     @Override
     public boolean matches(CraftingInput input, Level level) {
-        if (input.size() < 9 || level == null || level.getServer() == null) {
+        if (level == null || level.getServer() == null) {
             return false;
         }
         if (!WinConditionState.get(level.getServer()).isRocketBlueprintUnlocked()) {
             return false;
         }
-        return matchesPattern(input, false) || matchesPattern(input, true);
-    }
-
-    @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
-        return result().copy();
-    }
-
-    @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width >= 3 && height >= 3;
+        return super.matches(input, level);
     }
 
     @Override
     public ItemStack getResultItem(HolderLookup.Provider registries) {
-        return result().copy();
+        return displayResult.copy();
     }
 
-    private boolean matchesPattern(CraftingInput input, boolean mirrored) {
-        String[] rows = pattern();
-        Map<Character, Item> keys = key();
-        for (int row = 0; row < 3; row++) {
-            String patternRow = rows[row];
-            for (int col = 0; col < 3; col++) {
-                int patternCol = mirrored ? 2 - col : col;
-                char symbol = patternRow.charAt(patternCol);
-                ItemStack stack = input.getItem(row * 3 + col);
-                if (symbol == ' ') {
-                    if (!stack.isEmpty()) {
-                        return false;
-                    }
-                    continue;
-                }
-                Item expected = keys.get(symbol);
-                if (expected == null || !stack.is(expected)) {
-                    return false;
-                }
-            }
+    @Override
+    public RecipeSerializer<?> getSerializer() {
+        return ModRecipeSerializers.BLUEPRINT_LOCKED_SHAPED.get();
+    }
+
+    public static class Serializer implements RecipeSerializer<BlueprintLockedPatternRecipe> {
+        private static final MapCodec<BlueprintLockedPatternRecipe> CODEC = ShapedRecipe.Serializer.CODEC
+                .xmap(BlueprintLockedPatternRecipe::fromShaped, BlueprintLockedPatternRecipe::asVanillaShaped);
+
+        private static final StreamCodec<RegistryFriendlyByteBuf, BlueprintLockedPatternRecipe> STREAM_CODEC =
+                ShapedRecipe.Serializer.STREAM_CODEC.map(BlueprintLockedPatternRecipe::fromShaped, BlueprintLockedPatternRecipe::asVanillaShaped);
+
+        @Override
+        public MapCodec<BlueprintLockedPatternRecipe> codec() {
+            return CODEC;
         }
-        return true;
+
+        @Override
+        public StreamCodec<RegistryFriendlyByteBuf, BlueprintLockedPatternRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
     }
 }
