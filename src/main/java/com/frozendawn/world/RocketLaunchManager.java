@@ -41,6 +41,7 @@ public final class RocketLaunchManager {
             return;
         }
         ensureRocketPresent(level, state);
+        removeDuplicateRockets(level, state.getRocketPadCenter());
         if (state.isLaunchInProgress()) {
             for (ServerPlayer player : level.players()) {
                 player.setDeltaMovement(Vec3.ZERO);
@@ -63,6 +64,7 @@ public final class RocketLaunchManager {
         }
 
         BlockPos padCenter = enginePos.below();
+        removeDuplicateRockets(level, padCenter);
         for (BlockPos pos : RocketLaunchStructure.rocketBlockPositions(enginePos)) {
             level.removeBlock(pos, false);
         }
@@ -363,6 +365,41 @@ public final class RocketLaunchManager {
             rocket.setSequenceTicks(Math.min(RocketLaunchEntity.getTotalSequenceTicks(), elapsed));
         }
         level.addFreshEntity(rocket);
+    }
+
+    private static void removeDuplicateRockets(ServerLevel level, BlockPos padCenter) {
+        if (padCenter == null) {
+            return;
+        }
+        AABB box = new AABB(padCenter).inflate(2.5D, 10.0D, 2.5D);
+        List<RocketLaunchEntity> rockets = level.getEntitiesOfClass(RocketLaunchEntity.class, box,
+                rocket -> rocket.getPadCenter().equals(padCenter));
+        if (rockets.size() <= 1) {
+            return;
+        }
+
+        RocketLaunchEntity keeper = rockets.stream()
+                .filter(RocketLaunchEntity::isLaunching)
+                .findFirst()
+                .orElseGet(() -> rockets.stream()
+                        .filter(rocket -> !rocket.getPassengers().isEmpty())
+                        .findFirst()
+                        .orElse(rockets.getFirst()));
+        int fuelCells = rockets.stream()
+                .mapToInt(RocketLaunchEntity::getFuelCells)
+                .max()
+                .orElse(keeper.getFuelCells());
+        keeper.setFuelCells(Math.max(keeper.getFuelCells(), fuelCells));
+
+        for (RocketLaunchEntity rocket : rockets) {
+            if (rocket == keeper) {
+                continue;
+            }
+            for (var passenger : List.copyOf(rocket.getPassengers())) {
+                passenger.stopRiding();
+            }
+            rocket.discard();
+        }
     }
 
     public static RocketLaunchEntity findRocket(ServerLevel level, BlockPos padCenter) {

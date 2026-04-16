@@ -1,6 +1,7 @@
 package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -33,6 +34,9 @@ public class RocketLaunchRenderer extends EntityRenderer<RocketLaunchEntity> {
     @Override
     public void render(RocketLaunchEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+        if (!RocketLaunchClientController.shouldRenderExteriorRocket(entity)) {
+            return;
+        }
         poseStack.pushPose();
         poseStack.translate(0.0F, 0.78F, 0.0F);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));

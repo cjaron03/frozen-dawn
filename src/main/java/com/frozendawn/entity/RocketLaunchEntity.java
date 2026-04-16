@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -155,11 +156,14 @@ public class RocketLaunchEntity extends Entity {
     }
 
     @Override
-    public Vec3 getPassengerRidingPosition(Entity passenger) {
-        double x = getX();
-        double y = getY() + 3.72D;
-        double z = getZ() - 0.92D;
-        return new Vec3(x, y, z);
+    protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
+        // Places the rider's eyes near the exterior viewport band without pushing the body through the shell.
+        return new Vec3(0.0D, 3.35D, 0.0D);
+    }
+
+    @Override
+    public boolean shouldRiderSit() {
+        return false;
     }
 
     @Override

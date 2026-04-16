@@ -1,11 +1,11 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.network.LaunchSequencePayload;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -14,6 +14,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderHandEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
@@ -123,14 +125,33 @@ public final class RocketLaunchClientController {
         event.setRoll(roll * Math.min(1.0F, flightProgress * 1.5F));
     }
 
-    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        if (!active) {
-            return;
+    @SubscribeEvent
+    public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
+        if (event.getEntity().getVehicle() instanceof RocketLaunchEntity) {
+            event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void onRenderHand(RenderHandEvent event) {
+        if (shouldShowRocketViewport(Minecraft.getInstance())) {
+            event.setCanceled(true);
+        }
+    }
+
+    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
-        Font font = mc.font;
+        var font = mc.font;
+
+        if (shouldShowRocketViewport(mc)) {
+            renderRocketViewport(graphics, font, width, height);
+        }
+
+        if (!active) {
+            return;
+        }
 
         float fade = getFadeAmount();
         float surfaceFade = getSurfaceFadeAmount();
@@ -145,9 +166,7 @@ public final class RocketLaunchClientController {
             String stage = getStageLabel();
             graphics.fill(0, 0, width, 22, 0x66000000);
             graphics.drawCenteredString(font, Component.literal(stage), width / 2, 8, 0xD9F1FF);
-            if (isCockpitView(mc, mc.level == null ? null : mc.level.getEntity(entityId))) {
-                renderCockpitOverlay(graphics, font, width, height);
-            } else if (clientTicks >= countdownTicks + liftoffTicks && clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
+            if (clientTicks >= countdownTicks + liftoffTicks && clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
                 graphics.drawCenteredString(font, Component.literal("Look around."), width / 2, 20, 0x91C9FF);
             }
         }
@@ -209,6 +228,35 @@ public final class RocketLaunchClientController {
                 && mc.player.getVehicle() == rocket;
     }
 
+    public static boolean shouldRenderExteriorRocket(Entity rocket) {
+        Minecraft mc = Minecraft.getInstance();
+        if (rocket == null || mc.player == null) {
+            return true;
+        }
+        if (isRocketViewportActive(mc)) {
+            return false;
+        }
+        boolean localRider = isSameEntity(mc.player.getVehicle(), rocket)
+                || isSameEntity(mc.player.getRootVehicle(), rocket)
+                || rocket.hasPassenger(mc.player);
+        return !localRider || mc.options.getCameraType() != CameraType.FIRST_PERSON;
+    }
+
+    private static boolean shouldShowRocketViewport(Minecraft mc) {
+        return mc.screen == null
+                && isRocketViewportActive(mc);
+    }
+
+    private static boolean isRocketViewportActive(Minecraft mc) {
+        return mc.player != null
+                && mc.player.getVehicle() instanceof RocketLaunchEntity
+                && mc.options.getCameraType() == CameraType.FIRST_PERSON;
+    }
+
+    private static boolean isSameEntity(Entity first, Entity second) {
+        return first != null && second != null && first.getId() == second.getId();
+    }
+
     private static String getStageLabel() {
         if (clientTicks < countdownTicks + liftoffTicks) {
             return "LIFTOFF";
@@ -234,47 +282,50 @@ public final class RocketLaunchClientController {
         mc.options.keyUse.setDown(false);
     }
 
-    private static void renderCockpitOverlay(GuiGraphics graphics, Font font, int width, int height) {
-        int frameThickness = Math.max(26, width / 20);
-        int sideInset = Math.max(52, width / 7);
-        int topInset = Math.max(34, height / 10);
-        int bottomInset = Math.max(78, height / 4);
+    private static void renderRocketViewport(GuiGraphics graphics, net.minecraft.client.gui.Font font, int width, int height) {
+        int topRail = Math.max(16, height / 30);
+        int bottomRail = Math.max(40, height / 9);
+        int sideRail = Math.max(14, width / 48);
+        int viewLeft = sideRail;
+        int viewRight = width - sideRail;
+        int viewTop = topRail;
+        int viewBottom = height - bottomRail;
 
-        int left = sideInset;
-        int right = width - sideInset;
-        int top = topInset;
-        int bottom = height - bottomInset;
+        graphics.fill(0, 0, width, topRail, 0xCC141A20);
+        graphics.fill(0, viewBottom, width, height, 0xD2141A20);
+        graphics.fill(0, topRail, sideRail, viewBottom, 0xB8141A20);
+        graphics.fill(width - sideRail, topRail, width, viewBottom, 0xB8141A20);
 
-        graphics.fill(0, 0, width, top, 0xD0181D24);
-        graphics.fill(0, bottom, width, height, 0xE820262F);
-        graphics.fill(0, top, left, bottom, 0xD820262F);
-        graphics.fill(right, top, width, bottom, 0xD820262F);
+        graphics.fill(viewLeft, viewTop, viewRight, viewTop + 2, 0xAA4FC7DA);
+        graphics.fill(viewLeft, viewBottom - 2, viewRight, viewBottom, 0x884FC7DA);
+        graphics.fill(viewLeft, viewTop, viewLeft + 2, viewBottom, 0x664FC7DA);
+        graphics.fill(viewRight - 2, viewTop, viewRight, viewBottom, 0x664FC7DA);
 
-        graphics.fill(left - 12, top - 12, right + 12, top + 6, 0xCC3E4754);
-        graphics.fill(left - 14, bottom - 6, right + 14, bottom + 16, 0xCC3E4754);
-        graphics.fill(left - 16, top - 8, left + 8, bottom + 10, 0xCC323A46);
-        graphics.fill(right - 8, top - 8, right + 16, bottom + 10, 0xCC323A46);
+        int corner = Math.max(18, Math.min(width, height) / 18);
+        drawCornerBracket(graphics, viewLeft + 4, viewTop + 4, corner, true, true);
+        drawCornerBracket(graphics, viewRight - 4, viewTop + 4, corner, false, true);
+        drawCornerBracket(graphics, viewLeft + 4, viewBottom - 4, corner, true, false);
+        drawCornerBracket(graphics, viewRight - 4, viewBottom - 4, corner, false, false);
 
-        graphics.fill(left + width / 14, top - 10, right - width / 14, top + 2, 0xB052C7E7);
-        graphics.fill(left + width / 18, bottom - 2, right - width / 18, bottom + 8, 0x8A52C7E7);
-        graphics.fill(left - 8, top + height / 8, left + 2, bottom - height / 7, 0x8852C7E7);
-        graphics.fill(right - 2, top + height / 8, right + 8, bottom - height / 7, 0x8852C7E7);
+        graphics.fillGradient(viewLeft + 4, viewTop + 3, viewRight - 4, viewTop + Math.max(34, height / 11),
+                0x244FC7DA, 0x00000000);
+        graphics.fillGradient(viewLeft + 4, viewBottom - Math.max(24, height / 14), viewRight - 4, viewBottom - 3,
+                0x00000000, 0x18283440);
 
-        int windowBandTop = top + Math.max(16, height / 22);
-        int windowBandBottom = bottom - Math.max(28, height / 10);
-        graphics.fillGradient(left + 6, windowBandTop, right - 6, windowBandTop + 42,
-                0x2452C7E7, 0x00000000);
-        graphics.fillGradient(left + 6, windowBandBottom - 26, right - 6, windowBandBottom,
-                0x00000000, 0x18355469);
+        int statusY = height - bottomRail + 9;
+        graphics.fill(sideRail + 8, statusY - 3, sideRail + 128, statusY + 10, 0x66070B10);
+        graphics.drawString(font, Component.literal("ORSA VIEWPORT"), sideRail + 13, statusY, 0x8DEAFF, false);
+    }
 
-        int consoleTop = bottom + 8;
-        graphics.fillGradient(width / 4, consoleTop, width * 3 / 4, height,
-                0xA0181B21, 0xE0101217);
-        graphics.fill(width / 2 - 4, consoleTop + 10, width / 2 + 4, height - 16, 0x66363E4C);
-        graphics.fill(width / 2 - 90, consoleTop + 26, width / 2 - 28, consoleTop + 34, 0x664FC7DA);
-        graphics.fill(width / 2 + 28, consoleTop + 26, width / 2 + 90, consoleTop + 34, 0x664FC7DA);
-        graphics.drawCenteredString(font, Component.literal("ORSA FLIGHT"), width / 2, consoleTop + 14, 0x9BE8FF);
-        graphics.drawCenteredString(font, Component.literal("Cockpit View"), width / 2, bottom + 18, 0xA8D9E8);
+    private static void drawCornerBracket(GuiGraphics graphics, int x, int y, int size, boolean left, boolean top) {
+        int color = 0xCC7DDFF1;
+        int thickness = 2;
+        int horizontalStart = left ? x : x - size;
+        int horizontalEnd = left ? x + size : x;
+        int verticalStart = top ? y : y - size;
+        int verticalEnd = top ? y + size : y;
+        graphics.fill(horizontalStart, y - (top ? 0 : thickness), horizontalEnd, y + (top ? thickness : 0), color);
+        graphics.fill(x - (left ? 0 : thickness), verticalStart, x + (left ? thickness : 0), verticalEnd, color);
     }
 
     private static void reset(Minecraft mc) {
