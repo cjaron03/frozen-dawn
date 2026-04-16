@@ -22,7 +22,7 @@ public class RocketLaunchRenderer extends EntityRenderer<RocketLaunchEntity> {
     public RocketLaunchRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.model = new RocketLaunchModel(context.bakeLayer(RocketLaunchModel.LAYER_LOCATION));
-        this.shadowRadius = 1.0F;
+        this.shadowRadius = 1.35F;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class RocketLaunchRenderer extends EntityRenderer<RocketLaunchEntity> {
     public void render(RocketLaunchEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         poseStack.pushPose();
-        poseStack.translate(0.0F, 1.5F, 0.0F);
+        poseStack.translate(0.0F, 0.78F, 0.0F);
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
         poseStack.scale(-1.0F, -1.0F, 1.0F);
 

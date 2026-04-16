@@ -1,0 +1,23 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "top": "frozendawn:block/launch_pad_top_formed_east_west",
+    "side": "frozendawn:block/launch_pad_side",
+    "bottom": "frozendawn:block/launch_pad_bottom",
+    "particle": "frozendawn:block/launch_pad_top_formed_east_west"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 2, 16],
+      "faces": {
+        "up": { "texture": "#top" },
+        "down": { "texture": "#bottom" },
+        "north": { "texture": "#side" },
+        "south": { "texture": "#side" },
+        "east": { "texture": "#side" },
+        "west": { "texture": "#side" }
+      }
+    }
+  ]
+}

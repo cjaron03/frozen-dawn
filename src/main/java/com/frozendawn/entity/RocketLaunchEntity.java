@@ -201,14 +201,14 @@ public class RocketLaunchEntity extends Entity {
 
     public float getShakeAmount(float partialTick) {
         if (getLaunchState() != STATE_LAUNCHING) {
-            return 0.015F;
+            return 0.0F;
         }
         int ticks = getSequenceTicks();
         if (ticks < 100) {
-            return 0.025F;
+            return 0.012F;
         }
         if (ticks < COUNTDOWN_TICKS) {
-            return 0.055F;
+            return 0.036F;
         }
         return 0.02F;
     }
@@ -237,7 +237,7 @@ public class RocketLaunchEntity extends Entity {
             return;
         }
         double x = padCenter.getX() + 0.5D;
-        double y = padCenter.getY() + 1.0D + getScriptedYOffset(0.0F);
+        double y = padCenter.getY() + 0.22D + getScriptedYOffset(0.0F);
         double z = padCenter.getZ() + 0.5D;
         setPos(x, y, z);
         setOldPosAndRot();

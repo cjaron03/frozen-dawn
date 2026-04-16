@@ -1,5 +1,22 @@
 {
   "variants": {
-    "": { "model": "frozendawn:block/launch_pad" }
+    "formed=false,pad_x=west,pad_z=west": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=west,pad_z=center": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=west,pad_z=east": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=center,pad_z=west": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=center,pad_z=center": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=center,pad_z=east": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=east,pad_z=west": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=east,pad_z=center": { "model": "frozendawn:block/launch_pad" },
+    "formed=false,pad_x=east,pad_z=east": { "model": "frozendawn:block/launch_pad" },
+    "formed=true,pad_x=west,pad_z=west": { "model": "frozendawn:block/launch_pad_formed_west_west" },
+    "formed=true,pad_x=center,pad_z=west": { "model": "frozendawn:block/launch_pad_formed_center_west" },
+    "formed=true,pad_x=east,pad_z=west": { "model": "frozendawn:block/launch_pad_formed_east_west" },
+    "formed=true,pad_x=west,pad_z=center": { "model": "frozendawn:block/launch_pad_formed_west_center" },
+    "formed=true,pad_x=center,pad_z=center": { "model": "frozendawn:block/launch_pad_formed_center_center" },
+    "formed=true,pad_x=east,pad_z=center": { "model": "frozendawn:block/launch_pad_formed_east_center" },
+    "formed=true,pad_x=west,pad_z=east": { "model": "frozendawn:block/launch_pad_formed_west_east" },
+    "formed=true,pad_x=center,pad_z=east": { "model": "frozendawn:block/launch_pad_formed_center_east" },
+    "formed=true,pad_x=east,pad_z=east": { "model": "frozendawn:block/launch_pad_formed_east_east" }
   }
 }

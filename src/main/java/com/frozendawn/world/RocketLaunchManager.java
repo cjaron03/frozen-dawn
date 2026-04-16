@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.block.RocketLaunchStructure;
+import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.init.ModBlocks;
@@ -30,6 +31,7 @@ public final class RocketLaunchManager {
 
     public static void tick(ServerLevel level) {
         WinConditionState state = WinConditionState.get(level.getServer());
+        refreshPadStates(level);
         if (state.isLaunchCompleted()) {
             return;
         }
@@ -276,6 +278,37 @@ public final class RocketLaunchManager {
         List<RocketLaunchEntity> rockets = level.getEntitiesOfClass(RocketLaunchEntity.class, box,
                 rocket -> rocket.getPadCenter().equals(padCenter));
         return rockets.isEmpty() ? null : rockets.getFirst();
+    }
+
+    private static void refreshPadStates(ServerLevel level) {
+        BlockPos center = RocketLaunchStructure.getExpectedPadCenter(level);
+        if (center == null) {
+            return;
+        }
+        RocketLaunchStructure.PadDiagnostic diagnostic = RocketLaunchStructure.diagnosePad(level, center);
+        boolean formed = diagnostic.valid();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos pos = center.offset(dx, 0, dz);
+                if (!level.getBlockState(pos).is(ModBlocks.LAUNCH_PAD.get())) {
+                    continue;
+                }
+                LaunchPadBlock.PadSection xSection = dx < 0 ? LaunchPadBlock.PadSection.WEST
+                        : dx > 0 ? LaunchPadBlock.PadSection.EAST
+                        : LaunchPadBlock.PadSection.CENTER;
+                LaunchPadBlock.PadSection zSection = dz < 0 ? LaunchPadBlock.PadSection.WEST
+                        : dz > 0 ? LaunchPadBlock.PadSection.EAST
+                        : LaunchPadBlock.PadSection.CENTER;
+                var current = level.getBlockState(pos);
+                var updated = current
+                        .setValue(LaunchPadBlock.FORMED, formed)
+                        .setValue(LaunchPadBlock.PAD_X, xSection)
+                        .setValue(LaunchPadBlock.PAD_Z, zSection);
+                if (!updated.equals(current)) {
+                    level.setBlock(pos, updated, 18);
+                }
+            }
+        }
     }
 
     private static void spawnAssemblyBurst(ServerLevel level, BlockPos padCenter) {
