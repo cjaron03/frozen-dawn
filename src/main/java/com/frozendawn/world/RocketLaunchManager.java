@@ -96,11 +96,6 @@ public final class RocketLaunchManager {
             if (player.isShiftKeyDown()) {
                 return disassemble(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
             }
-            if (rocket.isIdle()) {
-                player.sendSystemMessage(orsa("Board the rocket and press Jump to arm launch.", 'e'));
-                return InteractionResult.CONSUME;
-            }
-            rocket.showStatus(player);
             return InteractionResult.CONSUME;
         }
 
@@ -127,7 +122,6 @@ public final class RocketLaunchManager {
         WinConditionState state = WinConditionState.get(level.getServer());
 
         if (rocket.isLaunching()) {
-            rocket.showStatus(player);
             return InteractionResult.CONSUME;
         }
 
@@ -135,7 +129,6 @@ public final class RocketLaunchManager {
             if (player.getVehicle() == rocket) {
                 player.stopRiding();
                 rocket.clearLaunchConfirmation();
-                player.sendSystemMessage(orsa("Disembarked from the launch vehicle.", 'e'));
                 return InteractionResult.CONSUME;
             }
             return disassemble(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
@@ -143,7 +136,6 @@ public final class RocketLaunchManager {
 
         if (stack.is(ModItems.ROCKET_FUEL_CELL.get())) {
             if (rocket.getFuelCells() >= 6) {
-                player.sendSystemMessage(orsa("Rocket fuel cells loaded: 6/6.", 'a'));
                 return InteractionResult.CONSUME;
             }
             if (!player.getAbilities().instabuild) {
@@ -151,7 +143,6 @@ public final class RocketLaunchManager {
             }
             rocket.setFuelCells(rocket.getFuelCells() + 1);
             level.playSound(null, rocket.blockPosition(), SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.8F, 0.8F);
-            player.sendSystemMessage(orsa("Rocket fuel cells loaded: " + rocket.getFuelCells() + "/6.", 'e'));
             return InteractionResult.CONSUME;
         }
 
@@ -162,7 +153,6 @@ public final class RocketLaunchManager {
 
         if (stack.isEmpty()) {
             if (player.getVehicle() == rocket) {
-                player.sendSystemMessage(orsa("Press Jump to arm launch. Hold sneak to disembark.", 'e'));
                 return InteractionResult.CONSUME;
             }
             if (!rocket.getPassengers().isEmpty()) {
@@ -172,14 +162,12 @@ public final class RocketLaunchManager {
             if (player.startRiding(rocket, false)) {
                 rocket.clearLaunchConfirmation();
                 level.playSound(null, rocket.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 0.8F, 0.9F);
-                player.sendSystemMessage(orsa("Boarded launch vehicle. Press Jump to arm launch.", 'e'));
                 return InteractionResult.CONSUME;
             }
             player.sendSystemMessage(orsa("Unable to board launch vehicle.", 'c'));
             return InteractionResult.FAIL;
         }
 
-        rocket.showStatus(player);
         return InteractionResult.CONSUME;
     }
 
@@ -202,7 +190,6 @@ public final class RocketLaunchManager {
             return;
         }
         if (rocket.getFuelCells() < 6) {
-            player.sendSystemMessage(orsa("Load 6 Rocket Fuel Cells before launch.", 'c'));
             return;
         }
 
@@ -210,7 +197,6 @@ public final class RocketLaunchManager {
         if (!rocket.isLaunchConfirmationArmed(player, gameTime)) {
             rocket.armLaunchConfirmation(player, gameTime + 80L);
             level.playSound(null, rocket.blockPosition(), SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.BLOCKS, 0.8F, 0.8F);
-            player.sendSystemMessage(orsa("After this, there is no going back. Press Jump again to launch.", '6'));
             return;
         }
 
@@ -234,7 +220,6 @@ public final class RocketLaunchManager {
             return false;
         }
         if (rocket.getFuelCells() < 6) {
-            initiator.sendSystemMessage(orsa("Load 6 Rocket Fuel Cells before launch.", 'c'));
             return false;
         }
 
@@ -279,7 +264,6 @@ public final class RocketLaunchManager {
         level.playSound(null, rocket.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 0.9F, 0.75F);
         rocket.discard();
         WinConditionState.get(level.getServer()).clearRocketAssembly();
-        player.sendSystemMessage(orsa("Launch vehicle disassembled.", 'e'));
         return true;
     }
 

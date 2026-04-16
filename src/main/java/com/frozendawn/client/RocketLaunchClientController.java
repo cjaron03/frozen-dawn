@@ -26,6 +26,9 @@ public final class RocketLaunchClientController {
     private static final float VIEWPORT_YAW_LIMIT = 42.0F;
     private static final float VIEWPORT_LOOK_UP_LIMIT = -24.0F;
     private static final float VIEWPORT_LOOK_DOWN_LIMIT = 30.0F;
+    private static final int BOARDED_PROMPT_TICKS = 100;
+    private static final int CONFIRMATION_PROMPT_TICKS = 90;
+    private static final int LAUNCH_PROMPT_FLICKER_OUT_TICKS = 90;
 
     private static boolean active;
     private static int entityId = -1;
@@ -39,6 +42,9 @@ public final class RocketLaunchClientController {
     private static Entity storedCameraEntity;
     private static int viewportVehicleId = -1;
     private static float viewportAnchorYaw;
+    private static int cockpitPromptVehicleId = -1;
+    private static int boardedPromptTicks;
+    private static int launchConfirmationPromptTicks;
 
     private RocketLaunchClientController() {
     }
@@ -67,6 +73,7 @@ public final class RocketLaunchClientController {
             reset(mc);
             return;
         }
+        updateCockpitPromptState(mc);
         enforceRocketViewportLook(mc);
 
         if (!active) {
@@ -86,21 +93,8 @@ public final class RocketLaunchClientController {
             return;
         }
 
-        if (rocket != null) {
-            if (clientTicks < countdownTicks) {
-                mc.setCameraEntity(rocket);
-                mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
-            } else if (clientTicks < countdownTicks + liftoffTicks) {
-                mc.setCameraEntity(rocket);
-                mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-            } else {
-                if (isCockpitView(mc, rocket)) {
-                    mc.setCameraEntity(mc.player);
-                } else {
-                    mc.setCameraEntity(rocket);
-                }
-                mc.options.setCameraType(CameraType.FIRST_PERSON);
-            }
+        if (rocket != null && mc.player.getVehicle() == rocket) {
+            mc.setCameraEntity(mc.player);
         }
 
         if (clientTicks >= getTotalSequenceTicks() + 10) {
@@ -261,6 +255,14 @@ public final class RocketLaunchClientController {
         return !localRider || mc.options.getCameraType() != CameraType.FIRST_PERSON;
     }
 
+    public static void markLaunchJumpAttempt(RocketLaunchEntity rocket) {
+        if (rocket == null || !rocket.isIdle()) {
+            return;
+        }
+        boardedPromptTicks = 0;
+        launchConfirmationPromptTicks = rocket.getFuelCells() >= 6 ? CONFIRMATION_PROMPT_TICKS : 0;
+    }
+
     private static boolean shouldShowRocketViewport(Minecraft mc) {
         return isRocketViewportActive(mc);
     }
@@ -307,6 +309,28 @@ public final class RocketLaunchClientController {
         if (viewportVehicleId != vehicle.getId()) {
             viewportVehicleId = vehicle.getId();
             viewportAnchorYaw = mc.player.getYRot();
+        }
+    }
+
+    private static void updateCockpitPromptState(Minecraft mc) {
+        if (!isRocketViewportActive(mc)) {
+            cockpitPromptVehicleId = -1;
+            boardedPromptTicks = 0;
+            launchConfirmationPromptTicks = 0;
+            return;
+        }
+
+        Entity vehicle = mc.player.getVehicle();
+        if (vehicle == null) {
+            return;
+        }
+        if (cockpitPromptVehicleId != vehicle.getId()) {
+            cockpitPromptVehicleId = vehicle.getId();
+            boardedPromptTicks = BOARDED_PROMPT_TICKS;
+            launchConfirmationPromptTicks = 0;
+        } else {
+            boardedPromptTicks = Math.max(0, boardedPromptTicks - 1);
+            launchConfirmationPromptTicks = Math.max(0, launchConfirmationPromptTicks - 1);
         }
     }
 
@@ -366,7 +390,103 @@ public final class RocketLaunchClientController {
         int statusY = Math.max(6, viewTop - 25);
         graphics.fill(viewLeft + 10, statusY - 3, viewLeft + 142, statusY + 11, 0x6610141A);
         graphics.drawString(font, Component.literal("ORSA VIEWPORT"), viewLeft + 15, statusY, 0x8DEAFF, false);
+        renderRocketPromptPanel(graphics, font, viewLeft, viewRight, viewBottom);
         renderRocketTelemetryPanel(graphics, font, viewRight, viewBottom);
+    }
+
+    private static void renderRocketPromptPanel(GuiGraphics graphics, net.minecraft.client.gui.Font font,
+                                                int viewLeft, int viewRight, int viewBottom) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.player != null && mc.player.getVehicle() instanceof RocketLaunchEntity rocket)) {
+            return;
+        }
+
+        CockpitPrompt prompt = getCockpitPrompt(rocket);
+        float alpha = getCockpitPromptAlpha();
+        if (alpha <= 0.04F) {
+            return;
+        }
+
+        int panelWidth = Math.min(330, Math.max(220, viewRight - viewLeft - 32));
+        int panelHeight = 36;
+        int panelX = viewLeft + 16;
+        int panelY = viewBottom - panelHeight - 14;
+
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, withAlpha(0xA008120F, alpha));
+        graphics.fill(panelX + 2, panelY + 2, panelX + panelWidth - 2, panelY + panelHeight - 2,
+                withAlpha(0x7A10231D, alpha));
+        graphics.fill(panelX + 6, panelY + 6, panelX + 8, panelY + panelHeight - 6,
+                withAlpha(prompt.accentColor(), alpha));
+        graphics.fill(panelX + 14, panelY + 8, panelX + panelWidth - 10, panelY + 9, withAlpha(0x5526F6B0, alpha));
+
+        int scanY = panelY + 11 + Math.floorMod(Minecraft.getInstance().player.tickCount, panelHeight - 18);
+        graphics.fill(panelX + 14, scanY, panelX + panelWidth - 12, scanY + 1, withAlpha(0x3344E6A8, alpha));
+
+        graphics.drawString(font, Component.literal("[ORSA] " + prompt.title()), panelX + 16, panelY + 7,
+                withAlpha(prompt.titleColor(), alpha), false);
+        graphics.drawString(font, Component.literal(prompt.body()), panelX + 16, panelY + 21,
+                withAlpha(prompt.bodyColor(), alpha), false);
+    }
+
+    private static CockpitPrompt getCockpitPrompt(RocketLaunchEntity rocket) {
+        if (rocket.isLaunching() || active) {
+            return new CockpitPrompt("IGNITION ACTIVE", "Launch sequence in progress.", 0xFF8DEAFF, 0xFFD9F1FF,
+                    0xCC4FC7DA);
+        }
+        if (launchConfirmationPromptTicks > 0 && rocket.getFuelCells() >= 6) {
+            return new CockpitPrompt("FINAL CONFIRMATION", "No return after ignition. Jump again.", 0xFFFFC46B,
+                    0xFFFFF0B0, 0xCCFFB84A);
+        }
+        if (boardedPromptTicks > 0) {
+            return new CockpitPrompt("BOARDED LAUNCH VEHICLE", getReadyPromptBody(rocket), 0xFFA7FFEA,
+                    0xFFD9FFF6, 0xCC44E6A8);
+        }
+        if (rocket.getFuelCells() < 6) {
+            return new CockpitPrompt("FUEL CELLS REQUIRED", "Load Rocket Fuel Cells | Sneak: exit", 0xFFFF8B8B,
+                    0xFFFFC0C0, 0xCCFF5C5C);
+        }
+        return new CockpitPrompt("PAD READY", "Jump: arm launch | Sneak: exit", 0xFFA7FFEA, 0xFFD9FFF6, 0xCC44E6A8);
+    }
+
+    private static String getReadyPromptBody(RocketLaunchEntity rocket) {
+        if (rocket.getFuelCells() >= 6) {
+            return "Jump: arm launch | Sneak: exit";
+        }
+        return "Load Rocket Fuel Cells | Sneak: exit";
+    }
+
+    private static float getCockpitPromptAlpha() {
+        Minecraft mc = Minecraft.getInstance();
+        int ticks = mc.player != null ? mc.player.tickCount : clientTicks;
+        if (active) {
+            float fade = 1.0F - Mth.clamp(clientTicks / (float) LAUNCH_PROMPT_FLICKER_OUT_TICKS, 0.0F, 1.0F);
+            float stutter = ticks % 5 == 0 || ticks % 13 == 0 ? 0.28F : 1.0F;
+            return fade * stutter;
+        }
+
+        int bootTicks = getPromptBootTicks();
+        float boot = bootTicks >= 18 ? 1.0F : Mth.clamp(bootTicks / 18.0F, 0.18F, 1.0F);
+        float flicker = bootTicks < 18 && (ticks % 4 == 0 || ticks % 7 == 0) ? 0.32F : 1.0F;
+        if (bootTicks >= 18 && (ticks % 47 == 0 || ticks % 61 == 0)) {
+            flicker = 0.62F;
+        }
+        return boot * flicker;
+    }
+
+    private static int getPromptBootTicks() {
+        if (launchConfirmationPromptTicks > 0) {
+            return CONFIRMATION_PROMPT_TICKS - launchConfirmationPromptTicks;
+        }
+        if (boardedPromptTicks > 0) {
+            return BOARDED_PROMPT_TICKS - boardedPromptTicks;
+        }
+        return 18;
+    }
+
+    private static int withAlpha(int color, float alphaMultiplier) {
+        int alpha = color >>> 24;
+        int scaledAlpha = Mth.clamp((int) (alpha * alphaMultiplier), 0, 255);
+        return (color & 0x00FFFFFF) | (scaledAlpha << 24);
     }
 
     private static void renderRocketTelemetryPanel(GuiGraphics graphics, net.minecraft.client.gui.Font font,
@@ -543,6 +663,9 @@ public final class RocketLaunchClientController {
         int verticalEnd = top ? y + size : y;
         graphics.fill(horizontalStart, y - (top ? 0 : thickness), horizontalEnd, y + (top ? thickness : 0), color);
         graphics.fill(x - (left ? 0 : thickness), verticalStart, x + (left ? thickness : 0), verticalEnd, color);
+    }
+
+    private record CockpitPrompt(String title, String body, int titleColor, int bodyColor, int accentColor) {
     }
 
     private static void reset(Minecraft mc) {

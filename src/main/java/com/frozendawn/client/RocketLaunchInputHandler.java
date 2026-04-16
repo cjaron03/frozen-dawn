@@ -26,10 +26,12 @@ public final class RocketLaunchInputHandler {
             return;
         }
 
-        boolean ridingIdleRocket = mc.player.getVehicle() instanceof RocketLaunchEntity rocket && rocket.isIdle();
+        RocketLaunchEntity rocket = mc.player.getVehicle() instanceof RocketLaunchEntity launchEntity ? launchEntity : null;
+        boolean ridingIdleRocket = rocket != null && rocket.isIdle();
         boolean jumpDown = mc.options.keyJump.isDown();
         if (ridingIdleRocket && jumpDown && !jumpWasDown) {
             PacketDistributor.sendToServer(new RocketLaunchInputPayload());
+            RocketLaunchClientController.markLaunchJumpAttempt(rocket);
         }
         jumpWasDown = jumpDown;
     }
