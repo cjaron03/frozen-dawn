@@ -237,12 +237,6 @@ public final class RocketLaunchManager {
         }
 
         rocket.clearLaunchConfirmation();
-        for (var passenger : List.copyOf(rocket.getPassengers())) {
-            passenger.stopRiding();
-            passenger.teleportTo(padCenter.getX() + 0.5D, padCenter.getY() + 1.05D, padCenter.getZ() + 0.5D);
-            passenger.setDeltaMovement(Vec3.ZERO);
-            passenger.hurtMarked = true;
-        }
         rocket.setFuelCells(0);
         rocket.beginLaunch(level.getGameTime());
         state.setRocketAssembled(true);
@@ -289,6 +283,15 @@ public final class RocketLaunchManager {
 
     public static void finishLaunch(ServerLevel level, RocketLaunchEntity rocket) {
         WinConditionState state = WinConditionState.get(level.getServer());
+        BlockPos padCenter = rocket.getPadCenter();
+        for (var passenger : List.copyOf(rocket.getPassengers())) {
+            passenger.stopRiding();
+            if (padCenter != null && !padCenter.equals(BlockPos.ZERO)) {
+                passenger.teleportTo(padCenter.getX() + 0.5D, padCenter.getY() + 1.05D, padCenter.getZ() + 0.5D);
+            }
+            passenger.setDeltaMovement(Vec3.ZERO);
+            passenger.hurtMarked = true;
+        }
         state.setLaunchCompleted(!allowRepeatLaunchesForTesting());
         state.setLaunchInProgress(false);
         state.setRocketAssembled(false);

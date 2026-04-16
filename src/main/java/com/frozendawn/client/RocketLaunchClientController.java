@@ -75,12 +75,18 @@ public final class RocketLaunchClientController {
         }
 
         if (rocket != null) {
-            mc.setCameraEntity(rocket);
             if (clientTicks < countdownTicks) {
+                mc.setCameraEntity(rocket);
                 mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             } else if (clientTicks < countdownTicks + liftoffTicks) {
+                mc.setCameraEntity(rocket);
                 mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             } else {
+                if (isCockpitView(mc, rocket)) {
+                    mc.setCameraEntity(mc.player);
+                } else {
+                    mc.setCameraEntity(rocket);
+                }
                 mc.options.setCameraType(CameraType.FIRST_PERSON);
             }
         }
@@ -100,7 +106,9 @@ public final class RocketLaunchClientController {
             return;
         }
         Entity camera = mc.getCameraEntity();
-        if (camera == null || camera.getId() != entityId) {
+        Entity rocket = mc.level.getEntity(entityId);
+        boolean cockpitView = rocket != null && isCockpitView(mc, rocket);
+        if (camera == null || (!cockpitView && camera.getId() != entityId)) {
             return;
         }
         if (clientTicks < countdownTicks + liftoffTicks) {
@@ -137,7 +145,9 @@ public final class RocketLaunchClientController {
             String stage = getStageLabel();
             graphics.fill(0, 0, width, 22, 0x66000000);
             graphics.drawCenteredString(font, Component.literal(stage), width / 2, 8, 0xD9F1FF);
-            if (clientTicks >= countdownTicks + liftoffTicks && clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
+            if (isCockpitView(mc, mc.level == null ? null : mc.level.getEntity(entityId))) {
+                renderCockpitOverlay(graphics, font, width, height);
+            } else if (clientTicks >= countdownTicks + liftoffTicks && clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
                 graphics.drawCenteredString(font, Component.literal("Look around."), width / 2, 20, 0x91C9FF);
             }
         }
@@ -192,6 +202,13 @@ public final class RocketLaunchClientController {
         return countdownTicks + liftoffTicks + ascentTicks + atmosphereExitTicks + fadeTicks;
     }
 
+    private static boolean isCockpitView(Minecraft mc, Entity rocket) {
+        return rocket != null
+                && mc.player != null
+                && clientTicks >= countdownTicks + liftoffTicks
+                && mc.player.getVehicle() == rocket;
+    }
+
     private static String getStageLabel() {
         if (clientTicks < countdownTicks + liftoffTicks) {
             return "LIFTOFF";
@@ -215,6 +232,49 @@ public final class RocketLaunchClientController {
         mc.options.keySprint.setDown(false);
         mc.options.keyAttack.setDown(false);
         mc.options.keyUse.setDown(false);
+    }
+
+    private static void renderCockpitOverlay(GuiGraphics graphics, Font font, int width, int height) {
+        int frameThickness = Math.max(26, width / 20);
+        int sideInset = Math.max(52, width / 7);
+        int topInset = Math.max(34, height / 10);
+        int bottomInset = Math.max(78, height / 4);
+
+        int left = sideInset;
+        int right = width - sideInset;
+        int top = topInset;
+        int bottom = height - bottomInset;
+
+        graphics.fill(0, 0, width, top, 0xD0181D24);
+        graphics.fill(0, bottom, width, height, 0xE820262F);
+        graphics.fill(0, top, left, bottom, 0xD820262F);
+        graphics.fill(right, top, width, bottom, 0xD820262F);
+
+        graphics.fill(left - 12, top - 12, right + 12, top + 6, 0xCC3E4754);
+        graphics.fill(left - 14, bottom - 6, right + 14, bottom + 16, 0xCC3E4754);
+        graphics.fill(left - 16, top - 8, left + 8, bottom + 10, 0xCC323A46);
+        graphics.fill(right - 8, top - 8, right + 16, bottom + 10, 0xCC323A46);
+
+        graphics.fill(left + width / 14, top - 10, right - width / 14, top + 2, 0xB052C7E7);
+        graphics.fill(left + width / 18, bottom - 2, right - width / 18, bottom + 8, 0x8A52C7E7);
+        graphics.fill(left - 8, top + height / 8, left + 2, bottom - height / 7, 0x8852C7E7);
+        graphics.fill(right - 2, top + height / 8, right + 8, bottom - height / 7, 0x8852C7E7);
+
+        int windowBandTop = top + Math.max(16, height / 22);
+        int windowBandBottom = bottom - Math.max(28, height / 10);
+        graphics.fillGradient(left + 6, windowBandTop, right - 6, windowBandTop + 42,
+                0x2452C7E7, 0x00000000);
+        graphics.fillGradient(left + 6, windowBandBottom - 26, right - 6, windowBandBottom,
+                0x00000000, 0x18355469);
+
+        int consoleTop = bottom + 8;
+        graphics.fillGradient(width / 4, consoleTop, width * 3 / 4, height,
+                0xA0181B21, 0xE0101217);
+        graphics.fill(width / 2 - 4, consoleTop + 10, width / 2 + 4, height - 16, 0x66363E4C);
+        graphics.fill(width / 2 - 90, consoleTop + 26, width / 2 - 28, consoleTop + 34, 0x664FC7DA);
+        graphics.fill(width / 2 + 28, consoleTop + 26, width / 2 + 90, consoleTop + 34, 0x664FC7DA);
+        graphics.drawCenteredString(font, Component.literal("ORSA FLIGHT"), width / 2, consoleTop + 14, 0x9BE8FF);
+        graphics.drawCenteredString(font, Component.literal("Cockpit View"), width / 2, bottom + 18, 0xA8D9E8);
     }
 
     private static void reset(Minecraft mc) {

@@ -157,8 +157,8 @@ public class RocketLaunchEntity extends Entity {
     @Override
     public Vec3 getPassengerRidingPosition(Entity passenger) {
         double x = getX();
-        double y = getY() + 4.05D;
-        double z = getZ() - 0.02D;
+        double y = getY() + 3.72D;
+        double z = getZ() - 0.92D;
         return new Vec3(x, y, z);
     }
 
