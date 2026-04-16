@@ -16,6 +16,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
@@ -107,11 +108,17 @@ public final class RocketLaunchClientController {
 
     @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if (!active) {
-            return;
-        }
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {
+            return;
+        }
+        boolean viewportActive = isRocketViewportActive(mc);
+        if (viewportActive) {
+            event.setYaw(getClampedViewportYaw(mc));
+            event.setPitch(getClampedViewportPitch(mc));
+        }
+
+        if (!active) {
             return;
         }
         Entity camera = mc.getCameraEntity();
@@ -124,8 +131,10 @@ public final class RocketLaunchClientController {
             return;
         }
 
-        event.setYaw(mc.player.getYRot());
-        event.setPitch(mc.player.getXRot());
+        if (!viewportActive) {
+            event.setYaw(mc.player.getYRot());
+            event.setPitch(mc.player.getXRot());
+        }
 
         float flightProgress = getPostLiftoffProgress();
         float roll = Mth.sin((clientTicks - countdownTicks - liftoffTicks) * 0.06F) * 1.4F;
@@ -146,13 +155,21 @@ public final class RocketLaunchClientController {
         }
     }
 
+    @SubscribeEvent
+    public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (shouldShowRocketViewport(mc)) {
+            renderRocketViewport(event.getGuiGraphics(), mc.font, event.getGuiGraphics().guiWidth(), event.getGuiGraphics().guiHeight());
+        }
+    }
+
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
         var font = mc.font;
 
-        if (shouldShowRocketViewport(mc)) {
+        if (shouldShowRocketViewport(mc) && mc.screen == null) {
             renderRocketViewport(graphics, font, width, height);
         }
 
@@ -250,8 +267,7 @@ public final class RocketLaunchClientController {
     }
 
     private static boolean shouldShowRocketViewport(Minecraft mc) {
-        return mc.screen == null
-                && isRocketViewportActive(mc);
+        return isRocketViewportActive(mc);
     }
 
     private static boolean isRocketViewportActive(Minecraft mc) {
@@ -270,6 +286,25 @@ public final class RocketLaunchClientController {
             return;
         }
 
+        float clampedYaw = getClampedViewportYaw(mc);
+        float clampedPitch = getClampedViewportPitch(mc);
+        mc.player.setYRot(clampedYaw);
+        mc.player.setYHeadRot(clampedYaw);
+        mc.player.setYBodyRot(clampedYaw);
+        mc.player.setXRot(clampedPitch);
+    }
+
+    private static float getClampedViewportYaw(Minecraft mc) {
+        ensureViewportAnchor(mc);
+        float yawDelta = Mth.wrapDegrees(mc.player.getYRot() - viewportAnchorYaw);
+        return viewportAnchorYaw + Mth.clamp(yawDelta, -VIEWPORT_YAW_LIMIT, VIEWPORT_YAW_LIMIT);
+    }
+
+    private static float getClampedViewportPitch(Minecraft mc) {
+        return Mth.clamp(mc.player.getXRot(), VIEWPORT_LOOK_UP_LIMIT, VIEWPORT_LOOK_DOWN_LIMIT);
+    }
+
+    private static void ensureViewportAnchor(Minecraft mc) {
         Entity vehicle = mc.player.getVehicle();
         if (vehicle == null) {
             return;
@@ -278,14 +313,6 @@ public final class RocketLaunchClientController {
             viewportVehicleId = vehicle.getId();
             viewportAnchorYaw = mc.player.getYRot();
         }
-
-        float yawDelta = Mth.wrapDegrees(mc.player.getYRot() - viewportAnchorYaw);
-        float clampedYaw = viewportAnchorYaw + Mth.clamp(yawDelta, -VIEWPORT_YAW_LIMIT, VIEWPORT_YAW_LIMIT);
-        float clampedPitch = Mth.clamp(mc.player.getXRot(), VIEWPORT_LOOK_UP_LIMIT, VIEWPORT_LOOK_DOWN_LIMIT);
-        mc.player.setYRot(clampedYaw);
-        mc.player.setYHeadRot(clampedYaw);
-        mc.player.setYBodyRot(clampedYaw);
-        mc.player.setXRot(clampedPitch);
     }
 
     private static String getStageLabel() {
