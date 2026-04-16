@@ -19,6 +19,8 @@ import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
+import java.util.Locale;
+
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class RocketLaunchClientController {
     private static final float VIEWPORT_YAW_LIMIT = 42.0F;
@@ -381,41 +383,60 @@ public final class RocketLaunchClientController {
         graphics.fill(viewLeft + 24, glareY, viewRight - 38, glareY + 1, 0x558EEAFF);
         graphics.fill(viewLeft + 44, glareY + 16, viewRight - 92, glareY + 17, 0x2255C6D8);
 
-        int statusY = height - bottomRail + 9;
-        graphics.fill(sideRail + 8, statusY - 3, sideRail + 128, statusY + 10, 0x66070B10);
-        graphics.drawString(font, Component.literal("ORSA VIEWPORT"), sideRail + 13, statusY, 0x8DEAFF, false);
-        renderRocketFuelGauge(graphics, font, viewRight, viewBottom);
+        int statusY = Math.max(6, viewTop - 25);
+        graphics.fill(viewLeft + 10, statusY - 3, viewLeft + 142, statusY + 11, 0x6610141A);
+        graphics.drawString(font, Component.literal("ORSA VIEWPORT"), viewLeft + 15, statusY, 0x8DEAFF, false);
+        renderRocketTelemetryPanel(graphics, font, viewRight, viewTop);
     }
 
-    private static void renderRocketFuelGauge(GuiGraphics graphics, net.minecraft.client.gui.Font font,
-                                              int viewRight, int viewBottom) {
+    private static void renderRocketTelemetryPanel(GuiGraphics graphics, net.minecraft.client.gui.Font font,
+                                                   int viewRight, int viewTop) {
+        double altitudeKm = getRocketAltitudeKm();
+        String altitude = formatAltitude(altitudeKm);
+        String phase = getAltitudePhaseLabel(altitudeKm);
         Minecraft mc = Minecraft.getInstance();
         float fill = getRocketFuelFill(mc);
-        String value = getRocketFuelValue(mc, fill);
+        String fuel = getRocketFuelValue(mc, fill);
 
-        int panelWidth = 162;
-        int panelHeight = 24;
+        int panelWidth = 210;
+        int panelHeight = 44;
         int panelX = viewRight - panelWidth - 10;
-        int panelY = viewBottom + 8;
-        int barX = panelX + 54;
-        int barY = panelY + 13;
-        int barWidth = 76;
+        int panelY = viewTop + 12;
+        int labelX = panelX + 8;
+        int valueX = panelX + 44;
+        int barX = panelX + 104;
+        int barWidth = 72;
         int barHeight = 5;
 
         graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0x7710141A);
         graphics.fill(panelX + 2, panelY + 2, panelX + panelWidth - 2, panelY + panelHeight - 2, 0x55242C35);
-        graphics.drawString(font, Component.literal("FUEL"), panelX + 8, panelY + 5, 0x8DEAFF, false);
-        graphics.drawString(font, Component.literal(value), panelX + panelWidth - 8 - font.width(value), panelY + 5, getRocketFuelTextColor(fill), false);
 
-        graphics.fill(barX - 1, barY - 1, barX + barWidth + 1, barY + barHeight + 1, 0xCC05080C);
-        graphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA17202A);
-        int filledWidth = Mth.clamp((int) (fill * barWidth), 0, barWidth);
-        if (filledWidth > 0) {
-            graphics.fill(barX, barY, barX + filledWidth, barY + barHeight, getRocketFuelBarColor(fill));
-        }
+        int altY = panelY + 7;
+        graphics.drawString(font, Component.literal("ALT"), labelX, altY, 0x8DEAFF, false);
+        graphics.drawString(font, Component.literal(altitude), valueX, altY, getAltitudeTextColor(altitudeKm), false);
+        graphics.drawString(font, Component.literal(phase), panelX + panelWidth - 8 - font.width(phase), altY, 0xB8EFFF, false);
+        drawTelemetryBar(graphics, barX, altY + 9, barWidth, barHeight,
+                getAltitudeProgress(altitudeKm), getAltitudeBarColor(altitudeKm));
+        int karmanX = barX + Mth.clamp((int) (100.0D / 160.0D * barWidth), 0, barWidth);
+        graphics.fill(karmanX, altY + 7, karmanX + 1, altY + 16, 0xAA8DEAFF);
+
+        int fuelY = panelY + 25;
+        graphics.drawString(font, Component.literal("FUEL"), labelX, fuelY, 0x8DEAFF, false);
+        graphics.drawString(font, Component.literal(fuel), valueX, fuelY, getRocketFuelTextColor(fill), false);
+        drawTelemetryBar(graphics, barX, fuelY + 9, barWidth, barHeight, fill, getRocketFuelBarColor(fill));
         for (int i = 1; i < 6; i++) {
             int tickX = barX + i * barWidth / 6;
-            graphics.fill(tickX, barY - 1, tickX + 1, barY + barHeight + 1, 0x664FC7DA);
+            graphics.fill(tickX, fuelY + 8, tickX + 1, fuelY + 15, 0x664FC7DA);
+        }
+    }
+
+    private static void drawTelemetryBar(GuiGraphics graphics, int x, int y, int width, int height,
+                                         float fill, int fillColor) {
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xCC05080C);
+        graphics.fill(x, y, x + width, y + height, 0xAA17202A);
+        int filledWidth = Mth.clamp((int) (fill * width), 0, width);
+        if (filledWidth > 0) {
+            graphics.fill(x, y, x + filledWidth, y + height, fillColor);
         }
     }
 
@@ -462,6 +483,75 @@ public final class RocketLaunchClientController {
             return 0xD8FFB44F;
         }
         return 0xD8FF5C5C;
+    }
+
+    private static double getRocketAltitudeKm() {
+        if (!active || clientTicks <= countdownTicks) {
+            return 0.0D;
+        }
+
+        int postCountdown = clientTicks - countdownTicks;
+        if (postCountdown <= liftoffTicks) {
+            double progress = postCountdown / (double) Math.max(1, liftoffTicks);
+            return 8.0D * progress * progress;
+        }
+
+        postCountdown -= liftoffTicks;
+        if (postCountdown <= ascentTicks) {
+            double progress = postCountdown / (double) Math.max(1, ascentTicks);
+            return 8.0D + 152.0D * Math.pow(progress, 1.45D);
+        }
+
+        postCountdown -= ascentTicks;
+        double progress = postCountdown / (double) Math.max(1, atmosphereExitTicks);
+        return 160.0D + 25.0D * Math.sqrt(Mth.clamp((float) progress, 0.0F, 1.0F));
+    }
+
+    private static float getAltitudeProgress(double altitudeKm) {
+        return Mth.clamp((float) (altitudeKm / 160.0D), 0.0F, 1.0F);
+    }
+
+    private static String formatAltitude(double altitudeKm) {
+        if (altitudeKm < 100.0D) {
+            return String.format(Locale.ROOT, "%.1f KM", altitudeKm);
+        }
+        return String.format(Locale.ROOT, "%.0f KM", altitudeKm);
+    }
+
+    private static String getAltitudePhaseLabel(double altitudeKm) {
+        if (!active || clientTicks <= countdownTicks || altitudeKm < 1.0D) {
+            return "GROUND";
+        }
+        if (altitudeKm < 35.0D) {
+            return "MAX-Q";
+        }
+        if (altitudeKm < 100.0D) {
+            return "ASCENT";
+        }
+        if (altitudeKm < 160.0D) {
+            return "KARMAN";
+        }
+        return "LEO XFER";
+    }
+
+    private static int getAltitudeTextColor(double altitudeKm) {
+        if (altitudeKm >= 160.0D) {
+            return 0xA7FFEA;
+        }
+        if (altitudeKm >= 100.0D) {
+            return 0xFFF5A6;
+        }
+        return 0xD9F1FF;
+    }
+
+    private static int getAltitudeBarColor(double altitudeKm) {
+        if (altitudeKm >= 160.0D) {
+            return 0xD44FE6D8;
+        }
+        if (altitudeKm >= 100.0D) {
+            return 0xD8FFB44F;
+        }
+        return 0xD04FC7DA;
     }
 
     private static void drawCornerBracket(GuiGraphics graphics, int x, int y, int size, boolean left, boolean top) {
