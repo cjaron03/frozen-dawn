@@ -8,6 +8,7 @@ import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -166,6 +167,15 @@ public class ModNetworking {
                         for (ServerPlayer online : sp.getServer().getPlayerList().getPlayers()) {
                             online.sendSystemMessage(message);
                         }
+                    }
+                })
+        );
+        registrar.playToServer(
+                RocketLaunchInputPayload.TYPE,
+                RocketLaunchInputPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        RocketLaunchManager.handleLaunchJump(sp);
                     }
                 })
         );

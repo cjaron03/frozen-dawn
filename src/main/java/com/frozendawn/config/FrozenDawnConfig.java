@@ -38,6 +38,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.IntValue TEST_BROADCAST_TICKS_OVERRIDE;
+    public static final ModConfigSpec.BooleanValue TEST_ALLOW_REPEAT_LAUNCHES;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
@@ -177,6 +178,11 @@ public class FrozenDawnConfig {
                         "Set to 0 to use the preset-managed broadcastTicks value.",
                         "100 ticks = 5 seconds.")
                 .defineInRange("testBroadcastTicksOverride", 0, 0, 480000);
+        TEST_ALLOW_REPEAT_LAUNCHES = BUILDER
+                .comment("TESTING ONLY: allow repeated rocket launches in the same world.",
+                        "When true, the final rocket package is not consumed as a one-shot world state.",
+                        "Disable this before shipping the ending.")
+                .define("testAllowRepeatLaunches", false);
         BUILDER.pop();
 
         BUILDER.push("client");

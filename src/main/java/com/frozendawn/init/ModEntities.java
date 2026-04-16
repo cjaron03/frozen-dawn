@@ -82,7 +82,8 @@ public class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<RocketLaunchEntity>> ROCKET_LAUNCH =
             ENTITIES.register("rocket_launch", () -> EntityType.Builder
                     .<RocketLaunchEntity>of((type, level) -> new RocketLaunchEntity((EntityType<RocketLaunchEntity>) type, level), MobCategory.MISC)
-                    .sized(3.2f, 7.6f)
+                    .sized(3.8f, 7.8f)
+                    .eyeHeight(4.7F)
                     .fireImmune()
                     .clientTrackingRange(20)
                     .build("rocket_launch"));

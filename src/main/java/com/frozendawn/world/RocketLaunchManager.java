@@ -2,6 +2,7 @@ package com.frozendawn.world;
 
 import com.frozendawn.block.RocketLaunchStructure;
 import com.frozendawn.block.LaunchPadBlock;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.init.ModBlocks;
@@ -29,10 +30,14 @@ public final class RocketLaunchManager {
     private RocketLaunchManager() {
     }
 
+    private static boolean allowRepeatLaunchesForTesting() {
+        return FrozenDawnConfig.TEST_ALLOW_REPEAT_LAUNCHES.get();
+    }
+
     public static void tick(ServerLevel level) {
         WinConditionState state = WinConditionState.get(level.getServer());
         refreshPadStates(level);
-        if (state.isLaunchCompleted()) {
+        if (state.isLaunchCompleted() && !allowRepeatLaunchesForTesting()) {
             return;
         }
         ensureRocketPresent(level, state);
@@ -46,7 +51,9 @@ public final class RocketLaunchManager {
 
     public static boolean tryAssembleFromBlocks(ServerLevel level, BlockPos enginePos, int preloadedFuel) {
         WinConditionState state = WinConditionState.get(level.getServer());
-        if (state.isLaunchCompleted() || state.isRocketAssembled() || !state.isRocketBlueprintUnlocked()) {
+        if ((state.isLaunchCompleted() && !allowRepeatLaunchesForTesting())
+                || state.isRocketAssembled()
+                || !state.isRocketBlueprintUnlocked()) {
             return false;
         }
 
@@ -88,7 +95,8 @@ public final class RocketLaunchManager {
                 return disassemble(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
             }
             if (rocket.isIdle()) {
-                return tryStartLaunch(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
+                player.sendSystemMessage(orsa("Board the rocket and press Jump to arm launch.", 'e'));
+                return InteractionResult.CONSUME;
             }
             rocket.showStatus(player);
             return InteractionResult.CONSUME;
@@ -122,6 +130,12 @@ public final class RocketLaunchManager {
         }
 
         if (player.isShiftKeyDown() && stack.isEmpty()) {
+            if (player.getVehicle() == rocket) {
+                player.stopRiding();
+                rocket.clearLaunchConfirmation();
+                player.sendSystemMessage(orsa("Disembarked from the launch vehicle.", 'e'));
+                return InteractionResult.CONSUME;
+            }
             return disassemble(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
         }
 
@@ -145,11 +159,60 @@ public final class RocketLaunchManager {
         }
 
         if (stack.isEmpty()) {
-            return tryStartLaunch(level, rocket, player) ? InteractionResult.CONSUME : InteractionResult.FAIL;
+            if (player.getVehicle() == rocket) {
+                player.sendSystemMessage(orsa("Press Jump to arm launch. Hold sneak to disembark.", 'e'));
+                return InteractionResult.CONSUME;
+            }
+            if (!rocket.getPassengers().isEmpty()) {
+                player.sendSystemMessage(orsa("Cockpit occupied.", 'c'));
+                return InteractionResult.CONSUME;
+            }
+            if (player.startRiding(rocket, false)) {
+                rocket.clearLaunchConfirmation();
+                level.playSound(null, rocket.blockPosition(), SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.BLOCKS, 0.8F, 0.9F);
+                player.sendSystemMessage(orsa("Boarded launch vehicle. Press Jump to arm launch.", 'e'));
+                return InteractionResult.CONSUME;
+            }
+            player.sendSystemMessage(orsa("Unable to board launch vehicle.", 'c'));
+            return InteractionResult.FAIL;
         }
 
         rocket.showStatus(player);
         return InteractionResult.CONSUME;
+    }
+
+    public static void handleLaunchJump(ServerPlayer player) {
+        if (!(player.getVehicle() instanceof RocketLaunchEntity rocket)) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        WinConditionState state = WinConditionState.get(level.getServer());
+
+        if (rocket.isLaunching()) {
+            return;
+        }
+        if (!state.isRocketBlueprintUnlocked()) {
+            player.sendSystemMessage(orsa("Launch package still locked.", 'c'));
+            return;
+        }
+        if (state.isLaunchCompleted() && !allowRepeatLaunchesForTesting()) {
+            player.sendSystemMessage(orsa("This world's launch package has already been used.", 'c'));
+            return;
+        }
+        if (rocket.getFuelCells() < 6) {
+            player.sendSystemMessage(orsa("Load 6 Rocket Fuel Cells before launch.", 'c'));
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (!rocket.isLaunchConfirmationArmed(player, gameTime)) {
+            rocket.armLaunchConfirmation(player, gameTime + 80L);
+            level.playSound(null, rocket.blockPosition(), SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.BLOCKS, 0.8F, 0.8F);
+            player.sendSystemMessage(orsa("After this, there is no going back. Press Jump again to launch.", '6'));
+            return;
+        }
+
+        tryStartLaunch(level, rocket, player);
     }
 
     public static boolean tryStartLaunch(ServerLevel level, RocketLaunchEntity rocket, ServerPlayer initiator) {
@@ -164,7 +227,7 @@ public final class RocketLaunchManager {
             initiator.sendSystemMessage(orsa("Launch package still locked.", 'c'));
             return false;
         }
-        if (state.isLaunchCompleted()) {
+        if (state.isLaunchCompleted() && !allowRepeatLaunchesForTesting()) {
             initiator.sendSystemMessage(orsa("This world's launch package has already been used.", 'c'));
             return false;
         }
@@ -173,6 +236,13 @@ public final class RocketLaunchManager {
             return false;
         }
 
+        rocket.clearLaunchConfirmation();
+        for (var passenger : List.copyOf(rocket.getPassengers())) {
+            passenger.stopRiding();
+            passenger.teleportTo(padCenter.getX() + 0.5D, padCenter.getY() + 1.05D, padCenter.getZ() + 0.5D);
+            passenger.setDeltaMovement(Vec3.ZERO);
+            passenger.hurtMarked = true;
+        }
         rocket.setFuelCells(0);
         rocket.beginLaunch(level.getGameTime());
         state.setRocketAssembled(true);
@@ -180,7 +250,13 @@ public final class RocketLaunchManager {
         state.setRocketFuelCellsLoaded(0);
         level.playSound(null, padCenter, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 1.4F, 0.55F);
         LaunchSequencePayload payload = new LaunchSequencePayload(
-                rocket.getId(), padCenter, RocketLaunchEntity.COUNTDOWN_TICKS, RocketLaunchEntity.ASCENT_TICKS);
+                rocket.getId(),
+                padCenter,
+                RocketLaunchEntity.COUNTDOWN_TICKS,
+                RocketLaunchEntity.LIFTOFF_TRACK_TICKS,
+                RocketLaunchEntity.ASCENT_TICKS,
+                RocketLaunchEntity.ATMOSPHERE_EXIT_TICKS,
+                RocketLaunchEntity.FADE_TICKS);
         for (ServerPlayer player : level.players()) {
             PacketDistributor.sendToPlayer(player, payload);
         }
@@ -190,6 +266,10 @@ public final class RocketLaunchManager {
     public static boolean disassemble(ServerLevel level, RocketLaunchEntity rocket, ServerPlayer player) {
         if (rocket.isLaunching()) {
             player.sendSystemMessage(orsa("Launch sequence already active.", 'c'));
+            return false;
+        }
+        if (!rocket.getPassengers().isEmpty()) {
+            player.sendSystemMessage(orsa("Passenger aboard. Clear the cockpit before disassembly.", 'c'));
             return false;
         }
 
@@ -209,7 +289,7 @@ public final class RocketLaunchManager {
 
     public static void finishLaunch(ServerLevel level, RocketLaunchEntity rocket) {
         WinConditionState state = WinConditionState.get(level.getServer());
-        state.setLaunchCompleted(true);
+        state.setLaunchCompleted(!allowRepeatLaunchesForTesting());
         state.setLaunchInProgress(false);
         state.setRocketAssembled(false);
         state.setRocketFuelCellsLoaded(0);
@@ -239,9 +319,21 @@ public final class RocketLaunchManager {
             return;
         }
 
-        level.sendParticles(ParticleTypes.FLAME, x, y - 0.7D, z, 24, 0.42D, 0.15D, 0.42D, 0.05D);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y - 0.1D, z, 16, 0.55D, 0.22D, 0.55D, 0.07D);
-        level.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, x, y, z, 8, 0.35D, 0.18D, 0.35D, 0.04D);
+        int postCountdown = ticks - RocketLaunchEntity.COUNTDOWN_TICKS;
+        if (postCountdown < RocketLaunchEntity.LIFTOFF_TRACK_TICKS + 50) {
+            level.sendParticles(ParticleTypes.FLAME, x, y - 0.7D, z, 28, 0.46D, 0.15D, 0.46D, 0.055D);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y - 0.1D, z, 20, 0.6D, 0.24D, 0.6D, 0.08D);
+            level.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, x, y, z, 10, 0.4D, 0.2D, 0.4D, 0.05D);
+            return;
+        }
+
+        if (postCountdown < RocketLaunchEntity.LIFTOFF_TRACK_TICKS + RocketLaunchEntity.ASCENT_TICKS) {
+            level.sendParticles(ParticleTypes.FLAME, x, y - 0.65D, z, 18, 0.34D, 0.1D, 0.34D, 0.04D);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y - 0.05D, z, 6, 0.32D, 0.12D, 0.32D, 0.03D);
+            return;
+        }
+
+        level.sendParticles(ParticleTypes.FLAME, x, y - 0.55D, z, 10, 0.22D, 0.08D, 0.22D, 0.025D);
     }
 
     private static void ensureRocketPresent(ServerLevel level, WinConditionState state) {
@@ -265,7 +357,7 @@ public final class RocketLaunchManager {
         if (state.isLaunchInProgress()) {
             rocket.setLaunchState(RocketLaunchEntity.STATE_LAUNCHING);
             int elapsed = (int) Math.max(0L, level.getGameTime() - state.getLaunchSequenceStartTick());
-            rocket.setSequenceTicks(Math.min(RocketLaunchEntity.COUNTDOWN_TICKS + RocketLaunchEntity.ASCENT_TICKS, elapsed));
+            rocket.setSequenceTicks(Math.min(RocketLaunchEntity.getTotalSequenceTicks(), elapsed));
         }
         level.addFreshEntity(rocket);
     }

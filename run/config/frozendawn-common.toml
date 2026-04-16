@@ -131,3 +131,7 @@
 	#Affects only natural passive categories (land animals and peaceful water life).
 	#Does not affect breeding, spawn eggs, scripted spawns, or structure spawns.
 	enableNaturalPassiveSpawnSuppression = true
+	#TESTING ONLY: allow repeated rocket launches in the same world.
+	#When true, the final rocket package is not consumed as a one-shot world state.
+	#Disable this before shipping the ending.
+	testAllowRepeatLaunches = false

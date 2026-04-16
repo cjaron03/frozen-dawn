@@ -355,6 +355,7 @@ public class ModItems {
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
                         output.accept(FUEL_PROCESSING_SILO_CONTROLLER.get());
+                        output.accept(LAUNCH_PAD.get());
                         output.accept(ROCKET_ENGINE.get());
                         output.accept(ROCKET_FIN.get());
                         output.accept(ROCKET_HULL.get());
