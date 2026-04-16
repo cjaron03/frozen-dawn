@@ -39,6 +39,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     private boolean hasCapacitor = false;
     private boolean clientRegistryLit = false;
     private float frostmiteHeatPenalty = 0.0f;
+    private int industrialDrainWarningTicks = 0;
 
     public ThermalHeaterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.THERMAL_HEATER.get(), pos, state);
@@ -59,6 +60,9 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
 
     public void serverTick() {
         tickFrostmiteHeatPenalty();
+        if (industrialDrainWarningTicks > 0) {
+            industrialDrainWarningTicks--;
+        }
         if (burnTimeRemaining > 0) {
             int totalDrain = getPhaseConsumption() + getFrostmiteFuelDrain();
             burnTimeRemaining = Math.max(0, burnTimeRemaining - totalDrain);
@@ -211,7 +215,8 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
 
     /**
      * Lets adjacent infrastructure drain heater burn time directly.
-     * Returns true when the heater remains lit after the requested drain.
+     * Returns true when the requested drain was fully covered by available fuel.
+     * A drain that takes the heater exactly to zero still powers the current work tick.
      */
     public boolean consumeIndustrialFuel(int ticks) {
         if (ticks <= 0) {
@@ -221,14 +226,18 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             updateLitState();
             return false;
         }
-        burnTimeRemaining = Math.max(0, burnTimeRemaining - ticks);
+        if (burnTimeRemaining < ticks) {
+            return false;
+        }
+        burnTimeRemaining -= ticks;
+        industrialDrainWarningTicks = 40;
         if (burnTimeRemaining == 0
                 || (level != null && !level.isClientSide() && level.getServer() != null
                 && level.getServer().getTickCount() % 200 == 0)) {
             setChanged();
         }
         updateLitState();
-        return burnTimeRemaining > 0;
+        return true;
     }
 
     public void installCapacitor() {
@@ -265,6 +274,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
                     case 0 -> Math.min(9999, burnTimeRemaining / (getPhaseConsumption() * 1200));
                     case 1 -> isLit() ? 1 : 0;
                     case 2 -> getCachedSheltered() ? 1 : 0;
+                    case 3 -> industrialDrainWarningTicks > 0 ? 1 : 0;
                     default -> 0;
                 };
             }
@@ -273,7 +283,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             public void set(int index, int value) {}
 
             @Override
-            public int getCount() { return 3; }
+            public int getCount() { return 4; }
         };
     }
 

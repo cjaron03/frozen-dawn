@@ -6,9 +6,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class FuelProcessingSiloMultiblock {
@@ -136,6 +140,88 @@ public final class FuelProcessingSiloMultiblock {
         Direction inward = match.inward();
         Direction right = match.right();
         return translate(basePos, right, inward, 0, 4, 1);
+    }
+
+    public static List<Vec3> getFormationEdgeParticlePositions(Level level, BlockPos controllerPos, Direction facing) {
+        StructureMatch match = resolve(level, controllerPos, facing);
+        if (match == null) {
+            return List.of();
+        }
+
+        BlockPos basePos = match.anchorPos();
+        Direction inward = match.inward();
+        Direction right = match.right();
+        List<Vec3> positions = new ArrayList<>();
+
+        double[] cornerX = { -1.55D, 1.55D };
+        double[] cornerZ = { -0.55D, 2.55D };
+        for (double localY = 0.35D; localY <= 3.75D; localY += 0.68D) {
+            for (double localX : cornerX) {
+                for (double localZ : cornerZ) {
+                    positions.add(localPoint(basePos, right, inward, localX, localY, localZ));
+                }
+            }
+        }
+
+        double topY = 4.08D;
+        for (double localX = -1.15D; localX <= 1.16D; localX += 1.15D) {
+            positions.add(localPoint(basePos, right, inward, localX, topY, -0.55D));
+            positions.add(localPoint(basePos, right, inward, localX, topY, 2.55D));
+        }
+        for (double localZ = 0.2D; localZ <= 1.81D; localZ += 0.8D) {
+            positions.add(localPoint(basePos, right, inward, -1.55D, topY, localZ));
+            positions.add(localPoint(basePos, right, inward, 1.55D, topY, localZ));
+        }
+        return positions;
+    }
+
+    public static boolean isProtectedFromEnvironmentalDeposit(Level level, BlockPos pos) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    cursor.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
+                    if (!level.isLoaded(cursor)) {
+                        continue;
+                    }
+                    BlockState state = level.getBlockState(cursor);
+                    if (!state.is(ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER.get())) {
+                        continue;
+                    }
+                    StructureMatch match = resolve(level, cursor.immutable(),
+                            state.getValue(FuelProcessingSiloControllerBlock.FACING));
+                    if (match != null && isInsideProtectedSiloSpace(match, pos)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInsideProtectedSiloSpace(StructureMatch match, BlockPos pos) {
+        BlockPos basePos = match.anchorPos();
+        Direction inward = match.inward();
+        Direction right = match.right();
+        for (int localY = 0; localY <= 4; localY++) {
+            for (int localX = -1; localX <= 1; localX++) {
+                for (int localZ = 0; localZ <= 2; localZ++) {
+                    if (translate(basePos, right, inward, localX, localY, localZ).equals(pos)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static Vec3 localPoint(BlockPos origin, Direction right, Direction inward,
+                                   double localX, double localY, double localZ) {
+        return new Vec3(
+                origin.getX() + 0.5D + right.getStepX() * localX + inward.getStepX() * localZ,
+                origin.getY() + localY,
+                origin.getZ() + 0.5D + right.getStepZ() * localX + inward.getStepZ() * localZ
+        );
     }
 
     private static int tierCodeFor(ThermalHeaterBlockEntity heater) {

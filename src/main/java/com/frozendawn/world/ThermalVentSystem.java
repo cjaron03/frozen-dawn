@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.FuelProcessingSiloMultiblock;
 import com.frozendawn.block.ThermalVentPoolBlock;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDamageTypes;
@@ -1802,6 +1803,9 @@ public final class ThermalVentSystem {
             if (!level.canSeeSky(depositPos)) {
                 continue;
             }
+            if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, depositPos)) {
+                continue;
+            }
             if (existing.is(ModBlocks.VENT_LAVA.get()) || existing.is(ModBlocks.THERMAL_VENT_POOL.get())) {
                 continue;
             }
@@ -1844,6 +1848,9 @@ public final class ThermalVentSystem {
                 }
                 BlockPos placePos = cursor.above();
                 BlockState placeState = level.getBlockState(placePos);
+                if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, placePos)) {
+                    continue;
+                }
                 if (placeState.is(ModBlocks.VOLCANIC_ASH.get())) {
                     int layers = Math.min(6, placeState.getValue(SnowLayerBlock.LAYERS) + 1);
                     level.setBlock(placePos, placeState.setValue(SnowLayerBlock.LAYERS, layers), 3);

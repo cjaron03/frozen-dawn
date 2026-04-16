@@ -20,6 +20,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuProvider {
@@ -94,6 +95,9 @@ public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuPr
 
         if (!initializedStructureState) {
             initializedStructureState = true;
+            if (structureValid) {
+                spawnStructureFormedParticles();
+            }
             lastStructureValid = structureValid;
         } else if (structureValid && !lastStructureValid) {
             spawnStructureFormedParticles();
@@ -179,11 +183,15 @@ public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuPr
             return;
         }
 
-        double x = worldPosition.getX() + 0.5D;
-        double y = worldPosition.getY() + 0.5D;
-        double z = worldPosition.getZ() + 0.5D;
-        serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, x, y, z, 10, 0.22D, 0.22D, 0.22D, 0.01D);
-        serverLevel.sendParticles(ParticleTypes.END_ROD, x, y + 0.1D, z, 6, 0.16D, 0.18D, 0.16D, 0.0D);
+        Direction facing = getBlockState().getValue(FuelProcessingSiloControllerBlock.FACING);
+        for (Vec3 edgePos : FuelProcessingSiloMultiblock.getFormationEdgeParticlePositions(level, worldPosition, facing)) {
+            serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    edgePos.x(), edgePos.y(), edgePos.z(),
+                    4, 0.05D, 0.08D, 0.05D, 0.035D);
+            serverLevel.sendParticles(ParticleTypes.END_ROD,
+                    edgePos.x(), edgePos.y() + 0.05D, edgePos.z(),
+                    2, 0.03D, 0.06D, 0.03D, 0.0D);
+        }
     }
 
     private boolean drainHeaterForProcessing(ThermalHeaterBlockEntity heater, int speedUnits) {

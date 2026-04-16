@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.block.FuelProcessingSiloMultiblock;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -68,6 +69,7 @@ public final class FrozenAtmosphereFormation {
                         BlockPos placePos = mutable.above();
                         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
                         if (ThermalVentRegistry.isVolcanicField(level, placePos)) break;
+                        if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, placePos)) break;
                         BlockState aboveState = level.getBlockState(placePos);
                         if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW)) break;
 
