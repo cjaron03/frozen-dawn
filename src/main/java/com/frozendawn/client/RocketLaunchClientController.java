@@ -188,13 +188,6 @@ public final class RocketLaunchClientController {
             graphics.fill(0, 0, width, 26, 0x88000000);
             graphics.drawCenteredString(font, Component.literal("LAUNCH SEQUENCE"), width / 2, 6, 0xD9F1FF);
             graphics.drawCenteredString(font, Component.literal(countdown), width / 2, 16, 0xFFF5C2);
-        } else {
-            String stage = getStageLabel();
-            graphics.fill(0, 0, width, 22, 0x66000000);
-            graphics.drawCenteredString(font, Component.literal(stage), width / 2, 8, 0xD9F1FF);
-            if (clientTicks >= countdownTicks + liftoffTicks && clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
-                graphics.drawCenteredString(font, Component.literal("Look around."), width / 2, 20, 0x91C9FF);
-            }
         }
 
         if (surfaceFade > 0.0F) {
@@ -317,19 +310,6 @@ public final class RocketLaunchClientController {
         }
     }
 
-    private static String getStageLabel() {
-        if (clientTicks < countdownTicks + liftoffTicks) {
-            return "LIFTOFF";
-        }
-        if (clientTicks < countdownTicks + liftoffTicks + ascentTicks) {
-            return "ASCENT";
-        }
-        if (clientTicks < countdownTicks + liftoffTicks + ascentTicks + atmosphereExitTicks) {
-            return "ATMOSPHERE EXIT";
-        }
-        return "BLACKOUT";
-    }
-
     private static void suppressInput(Minecraft mc) {
         mc.options.keyUp.setDown(false);
         mc.options.keyDown.setDown(false);
@@ -386,11 +366,11 @@ public final class RocketLaunchClientController {
         int statusY = Math.max(6, viewTop - 25);
         graphics.fill(viewLeft + 10, statusY - 3, viewLeft + 142, statusY + 11, 0x6610141A);
         graphics.drawString(font, Component.literal("ORSA VIEWPORT"), viewLeft + 15, statusY, 0x8DEAFF, false);
-        renderRocketTelemetryPanel(graphics, font, viewRight, viewTop);
+        renderRocketTelemetryPanel(graphics, font, viewRight, viewBottom);
     }
 
     private static void renderRocketTelemetryPanel(GuiGraphics graphics, net.minecraft.client.gui.Font font,
-                                                   int viewRight, int viewTop) {
+                                                   int viewRight, int viewBottom) {
         double altitudeKm = getRocketAltitudeKm();
         String altitude = formatAltitude(altitudeKm);
         String phase = getAltitudePhaseLabel(altitudeKm);
@@ -401,7 +381,7 @@ public final class RocketLaunchClientController {
         int panelWidth = 210;
         int panelHeight = 44;
         int panelX = viewRight - panelWidth - 10;
-        int panelY = viewTop + 12;
+        int panelY = viewBottom + 12;
         int labelX = panelX + 8;
         int valueX = panelX + 44;
         int barX = panelX + 104;
