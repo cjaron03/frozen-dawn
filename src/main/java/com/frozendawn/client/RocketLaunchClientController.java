@@ -20,6 +20,10 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class RocketLaunchClientController {
+    private static final float VIEWPORT_YAW_LIMIT = 42.0F;
+    private static final float VIEWPORT_LOOK_UP_LIMIT = -24.0F;
+    private static final float VIEWPORT_LOOK_DOWN_LIMIT = 30.0F;
+
     private static boolean active;
     private static int entityId = -1;
     private static int countdownTicks;
@@ -30,6 +34,8 @@ public final class RocketLaunchClientController {
     private static int clientTicks;
     private static CameraType storedCameraType = CameraType.FIRST_PERSON;
     private static Entity storedCameraEntity;
+    private static int viewportVehicleId = -1;
+    private static float viewportAnchorYaw;
 
     private RocketLaunchClientController() {
     }
@@ -53,13 +59,14 @@ public final class RocketLaunchClientController {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (!active) {
-            return;
-        }
-
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {
             reset(mc);
+            return;
+        }
+        enforceRocketViewportLook(mc);
+
+        if (!active) {
             return;
         }
         if (!mc.isPaused()) {
@@ -257,6 +264,30 @@ public final class RocketLaunchClientController {
         return first != null && second != null && first.getId() == second.getId();
     }
 
+    private static void enforceRocketViewportLook(Minecraft mc) {
+        if (!isRocketViewportActive(mc)) {
+            viewportVehicleId = -1;
+            return;
+        }
+
+        Entity vehicle = mc.player.getVehicle();
+        if (vehicle == null) {
+            return;
+        }
+        if (viewportVehicleId != vehicle.getId()) {
+            viewportVehicleId = vehicle.getId();
+            viewportAnchorYaw = mc.player.getYRot();
+        }
+
+        float yawDelta = Mth.wrapDegrees(mc.player.getYRot() - viewportAnchorYaw);
+        float clampedYaw = viewportAnchorYaw + Mth.clamp(yawDelta, -VIEWPORT_YAW_LIMIT, VIEWPORT_YAW_LIMIT);
+        float clampedPitch = Mth.clamp(mc.player.getXRot(), VIEWPORT_LOOK_UP_LIMIT, VIEWPORT_LOOK_DOWN_LIMIT);
+        mc.player.setYRot(clampedYaw);
+        mc.player.setYHeadRot(clampedYaw);
+        mc.player.setYBodyRot(clampedYaw);
+        mc.player.setXRot(clampedPitch);
+    }
+
     private static String getStageLabel() {
         if (clientTicks < countdownTicks + liftoffTicks) {
             return "LIFTOFF";
@@ -283,23 +314,28 @@ public final class RocketLaunchClientController {
     }
 
     private static void renderRocketViewport(GuiGraphics graphics, net.minecraft.client.gui.Font font, int width, int height) {
-        int topRail = Math.max(16, height / 30);
-        int bottomRail = Math.max(40, height / 9);
-        int sideRail = Math.max(14, width / 48);
+        int topRail = Math.max(34, height / 12);
+        int bottomRail = Math.max(58, height / 6);
+        int sideRail = Math.max(44, width / 10);
         int viewLeft = sideRail;
         int viewRight = width - sideRail;
         int viewTop = topRail;
         int viewBottom = height - bottomRail;
 
-        graphics.fill(0, 0, width, topRail, 0xCC141A20);
-        graphics.fill(0, viewBottom, width, height, 0xD2141A20);
-        graphics.fill(0, topRail, sideRail, viewBottom, 0xB8141A20);
-        graphics.fill(width - sideRail, topRail, width, viewBottom, 0xB8141A20);
+        graphics.fill(0, 0, width, topRail, 0xEA10141A);
+        graphics.fill(0, viewBottom, width, height, 0xF010141A);
+        graphics.fill(0, topRail, sideRail, viewBottom, 0xDE10141A);
+        graphics.fill(width - sideRail, topRail, width, viewBottom, 0xDE10141A);
 
-        graphics.fill(viewLeft, viewTop, viewRight, viewTop + 2, 0xAA4FC7DA);
-        graphics.fill(viewLeft, viewBottom - 2, viewRight, viewBottom, 0x884FC7DA);
-        graphics.fill(viewLeft, viewTop, viewLeft + 2, viewBottom, 0x664FC7DA);
-        graphics.fill(viewRight - 2, viewTop, viewRight, viewBottom, 0x664FC7DA);
+        graphics.fill(viewLeft - 8, viewTop - 8, viewRight + 8, viewTop + 5, 0xCC303844);
+        graphics.fill(viewLeft - 8, viewBottom - 5, viewRight + 8, viewBottom + 10, 0xCC303844);
+        graphics.fill(viewLeft - 10, viewTop - 4, viewLeft + 5, viewBottom + 6, 0xCC252C36);
+        graphics.fill(viewRight - 5, viewTop - 4, viewRight + 10, viewBottom + 6, 0xCC252C36);
+
+        graphics.fill(viewLeft, viewTop, viewRight, viewTop + 2, 0xCC4FC7DA);
+        graphics.fill(viewLeft, viewBottom - 2, viewRight, viewBottom, 0x994FC7DA);
+        graphics.fill(viewLeft, viewTop, viewLeft + 2, viewBottom, 0x884FC7DA);
+        graphics.fill(viewRight - 2, viewTop, viewRight, viewBottom, 0x884FC7DA);
 
         int corner = Math.max(18, Math.min(width, height) / 18);
         drawCornerBracket(graphics, viewLeft + 4, viewTop + 4, corner, true, true);
@@ -311,6 +347,12 @@ public final class RocketLaunchClientController {
                 0x244FC7DA, 0x00000000);
         graphics.fillGradient(viewLeft + 4, viewBottom - Math.max(24, height / 14), viewRight - 4, viewBottom - 3,
                 0x00000000, 0x18283440);
+        graphics.fillGradient(viewLeft + 8, viewTop + 8, viewRight - 8, viewBottom - 8,
+                0x101E5968, 0x08070B10);
+
+        int glareY = viewTop + Math.max(14, (viewBottom - viewTop) / 5);
+        graphics.fill(viewLeft + 24, glareY, viewRight - 38, glareY + 1, 0x558EEAFF);
+        graphics.fill(viewLeft + 44, glareY + 16, viewRight - 92, glareY + 17, 0x2255C6D8);
 
         int statusY = height - bottomRail + 9;
         graphics.fill(sideRail + 8, statusY - 3, sideRail + 128, statusY + 10, 0x66070B10);
