@@ -82,6 +82,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
     public static final DeferredItem<BlockItem> PHASE_BAROMETER = ITEMS.registerSimpleBlockItem("phase_barometer", ModBlocks.PHASE_BAROMETER);
     public static final DeferredItem<BlockItem> FUEL_PROCESSING_SILO_CONTROLLER = ITEMS.registerSimpleBlockItem("fuel_processing_silo_controller", ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER);
+    public static final DeferredItem<BlockItem> LAUNCH_PAD = ITEMS.registerSimpleBlockItem("launch_pad", ModBlocks.LAUNCH_PAD);
     public static final DeferredItem<BlockItem> ROCKET_ENGINE = ITEMS.registerSimpleBlockItem("rocket_engine", ModBlocks.ROCKET_ENGINE);
     public static final DeferredItem<BlockItem> ROCKET_FIN = ITEMS.registerSimpleBlockItem("rocket_fin", ModBlocks.ROCKET_FIN);
     public static final DeferredItem<BlockItem> ROCKET_HULL = ITEMS.registerSimpleBlockItem("rocket_hull", ModBlocks.ROCKET_HULL);

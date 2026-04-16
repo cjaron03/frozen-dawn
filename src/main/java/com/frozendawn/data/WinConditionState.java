@@ -26,6 +26,11 @@ public class WinConditionState extends SavedData {
     private boolean conspiracyDiscovered;
     private boolean rocketBlueprintUnlocked;
     private boolean martianReplySent;
+    private BlockPos rocketPadCenter;
+    private boolean rocketAssembled;
+    private int rocketFuelCellsLoaded;
+    private boolean launchInProgress;
+    private long launchSequenceStartTick;
     private boolean launchCompleted;
     private boolean endingTriggered;
 
@@ -36,6 +41,11 @@ public class WinConditionState extends SavedData {
         this.conspiracyDiscovered = false;
         this.rocketBlueprintUnlocked = false;
         this.martianReplySent = false;
+        this.rocketPadCenter = null;
+        this.rocketAssembled = false;
+        this.rocketFuelCellsLoaded = 0;
+        this.launchInProgress = false;
+        this.launchSequenceStartTick = 0L;
         this.launchCompleted = false;
         this.endingTriggered = false;
     }
@@ -62,6 +72,17 @@ public class WinConditionState extends SavedData {
         state.conspiracyDiscovered = tag.getBoolean("conspiracyDiscovered");
         state.rocketBlueprintUnlocked = tag.getBoolean("rocketBlueprintUnlocked");
         state.martianReplySent = tag.getBoolean("martianReplySent");
+        if (tag.contains("rocketPadCenterX")) {
+            state.rocketPadCenter = new BlockPos(
+                    tag.getInt("rocketPadCenterX"),
+                    tag.getInt("rocketPadCenterY"),
+                    tag.getInt("rocketPadCenterZ")
+            );
+        }
+        state.rocketAssembled = tag.getBoolean("rocketAssembled");
+        state.rocketFuelCellsLoaded = tag.getInt("rocketFuelCellsLoaded");
+        state.launchInProgress = tag.getBoolean("launchInProgress");
+        state.launchSequenceStartTick = tag.getLong("launchSequenceStartTick");
         state.launchCompleted = tag.getBoolean("launchCompleted");
         state.endingTriggered = tag.getBoolean("endingTriggered");
         return state;
@@ -79,6 +100,15 @@ public class WinConditionState extends SavedData {
         tag.putBoolean("conspiracyDiscovered", conspiracyDiscovered);
         tag.putBoolean("rocketBlueprintUnlocked", rocketBlueprintUnlocked);
         tag.putBoolean("martianReplySent", martianReplySent);
+        if (rocketPadCenter != null) {
+            tag.putInt("rocketPadCenterX", rocketPadCenter.getX());
+            tag.putInt("rocketPadCenterY", rocketPadCenter.getY());
+            tag.putInt("rocketPadCenterZ", rocketPadCenter.getZ());
+        }
+        tag.putBoolean("rocketAssembled", rocketAssembled);
+        tag.putInt("rocketFuelCellsLoaded", rocketFuelCellsLoaded);
+        tag.putBoolean("launchInProgress", launchInProgress);
+        tag.putLong("launchSequenceStartTick", launchSequenceStartTick);
         tag.putBoolean("launchCompleted", launchCompleted);
         tag.putBoolean("endingTriggered", endingTriggered);
         return tag;
@@ -177,12 +207,66 @@ public class WinConditionState extends SavedData {
         setDirty();
     }
 
+    public BlockPos getRocketPadCenter() {
+        return rocketPadCenter;
+    }
+
+    public void setRocketPadCenter(BlockPos rocketPadCenter) {
+        this.rocketPadCenter = rocketPadCenter;
+        setDirty();
+    }
+
+    public boolean isRocketAssembled() {
+        return rocketAssembled;
+    }
+
+    public void setRocketAssembled(boolean rocketAssembled) {
+        this.rocketAssembled = rocketAssembled;
+        setDirty();
+    }
+
+    public int getRocketFuelCellsLoaded() {
+        return rocketFuelCellsLoaded;
+    }
+
+    public void setRocketFuelCellsLoaded(int rocketFuelCellsLoaded) {
+        this.rocketFuelCellsLoaded = rocketFuelCellsLoaded;
+        setDirty();
+    }
+
+    public boolean isLaunchInProgress() {
+        return launchInProgress;
+    }
+
+    public void setLaunchInProgress(boolean launchInProgress) {
+        this.launchInProgress = launchInProgress;
+        setDirty();
+    }
+
+    public long getLaunchSequenceStartTick() {
+        return launchSequenceStartTick;
+    }
+
+    public void setLaunchSequenceStartTick(long launchSequenceStartTick) {
+        this.launchSequenceStartTick = launchSequenceStartTick;
+        setDirty();
+    }
+
     public boolean isLaunchCompleted() {
         return launchCompleted;
     }
 
     public void setLaunchCompleted(boolean completed) {
         this.launchCompleted = completed;
+        setDirty();
+    }
+
+    public void clearRocketAssembly() {
+        this.rocketPadCenter = null;
+        this.rocketAssembled = false;
+        this.rocketFuelCellsLoaded = 0;
+        this.launchInProgress = false;
+        this.launchSequenceStartTick = 0L;
         setDirty();
     }
 

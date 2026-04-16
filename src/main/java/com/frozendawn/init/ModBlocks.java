@@ -10,6 +10,7 @@ import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
+import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.MiteAwayBlock;
 import com.frozendawn.block.OrsaFlagBlock;
@@ -384,6 +385,16 @@ public class ModBlocks {
                     .strength(5.0F, 12.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> state.getValue(FuelProcessingSiloControllerBlock.LIT) ? 7 : 0)));
+
+    public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.register("launch_pad",
+            () -> new LaunchPadBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F, 9.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)));
 
     public static final DeferredBlock<RocketEngineBlock> ROCKET_ENGINE = BLOCKS.register("rocket_engine",
             () -> new RocketEngineBlock(BlockBehaviour.Properties.of()

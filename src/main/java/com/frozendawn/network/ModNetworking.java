@@ -82,6 +82,11 @@ public class ModNetworking {
                 GeothermalCuePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleGeothermalCue(payload))
         );
+        registrar.playToClient(
+                LaunchSequencePayload.TYPE,
+                LaunchSequencePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleLaunchSequence(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

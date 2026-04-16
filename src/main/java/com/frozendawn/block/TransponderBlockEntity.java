@@ -237,7 +237,8 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
             // All conditions met — start broadcasting
             shaftClear = true;
             shaftCheckCooldown = SHAFT_CHECK_INTERVAL;
-            totalBroadcastTicks = FrozenDawnConfig.BROADCAST_TICKS.get();
+            int testOverride = FrozenDawnConfig.TEST_BROADCAST_TICKS_OVERRIDE.get();
+            totalBroadcastTicks = testOverride > 0 ? testOverride : FrozenDawnConfig.BROADCAST_TICKS.get();
             broadcastTicksRemaining = totalBroadcastTicks;
             level.setBlock(worldPosition, getBlockState().setValue(TransponderBlock.STATE, STATE_BROADCASTING), 3);
             player.sendSystemMessage(Component.translatable("message.frozendawn.transponder.activated",

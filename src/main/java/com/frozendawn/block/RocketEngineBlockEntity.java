@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -41,6 +42,10 @@ public class RocketEngineBlockEntity extends BlockEntity {
             spawnStructureLockedParticles(serverLevel);
         }
         lastStructureValid = structureValid;
+
+        if (structureValid && alignedToBlastPit && blueprintUnlocked) {
+            RocketLaunchManager.tryAssembleFromBlocks(serverLevel, worldPosition, loadedFuelCells);
+        }
     }
 
     public void inspect(ServerPlayer player) {
@@ -55,6 +60,8 @@ public class RocketEngineBlockEntity extends BlockEntity {
                 + (unlocked ? "\u00A7aUnlocked" : "\u00A7cLocked")));
         player.sendSystemMessage(Component.literal(p + "\u00A77Pad Alignment: "
                 + (diagnostic.atBlastPit() ? "\u00A7aCentered" : "\u00A7cOff Pad")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Launch Pad: "
+                + (diagnostic.padValid() ? "\u00A7aLocked" : "\u00A7cIncomplete")));
         player.sendSystemMessage(Component.literal(p + "\u00A77Structure: "
                 + (diagnostic.valid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
         player.sendSystemMessage(Component.literal(p + "\u00A77Fuel Cells: \u00A7f" + loadedFuelCells + "/6"));

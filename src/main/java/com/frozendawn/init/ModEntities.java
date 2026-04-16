@@ -7,6 +7,7 @@ import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
+import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
 import net.minecraft.core.registries.Registries;
@@ -77,4 +78,12 @@ public class ModEntities {
                     .sized(0.25f, 0.25f)
                     .clientTrackingRange(4)
                     .build("heavy_snowball"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RocketLaunchEntity>> ROCKET_LAUNCH =
+            ENTITIES.register("rocket_launch", () -> EntityType.Builder
+                    .<RocketLaunchEntity>of((type, level) -> new RocketLaunchEntity((EntityType<RocketLaunchEntity>) type, level), MobCategory.MISC)
+                    .sized(2.6f, 7.0f)
+                    .fireImmune()
+                    .clientTrackingRange(20)
+                    .build("rocket_launch"));
 }

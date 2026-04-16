@@ -11,6 +11,8 @@ import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
+import com.frozendawn.client.renderer.RocketLaunchModel;
+import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
 import com.frozendawn.client.renderer.ShadowFigureRenderer;
 import com.frozendawn.init.ModBlockEntities;
@@ -81,6 +83,10 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "o2_bubble_hud"),
                 O2BubbleHud::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "rocket_launch_overlay"),
+                RocketLaunchClientController::render
+        );
     }
 
     @SubscribeEvent
@@ -129,6 +135,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         CuriosClientCompat.registerLayerDefinitions(event);
+        event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -141,6 +148,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
+        event.registerEntityRenderer(ModEntities.ROCKET_LAUNCH.get(), RocketLaunchRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);

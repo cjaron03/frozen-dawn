@@ -1,0 +1,21 @@
+{
+  "type": "frozendawn:blueprint_locked_shaped",
+  "category": "misc",
+  "pattern": [
+    "ICI",
+    "DPR",
+    "ICI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "D": { "item": "minecraft:polished_deepslate" },
+    "P": { "item": "minecraft:heavy_weighted_pressure_plate" },
+    "R": { "item": "minecraft:redstone" }
+  },
+  "result": {
+    "id": "frozendawn:launch_pad",
+    "count": 9
+  },
+  "show_notification": true
+}

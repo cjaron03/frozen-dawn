@@ -37,6 +37,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_LORE_BOOKS;
     public static final ModConfigSpec.BooleanValue ENABLE_WIN_CONDITION;
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
+    public static final ModConfigSpec.IntValue TEST_BROADCAST_TICKS_OVERRIDE;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
@@ -171,6 +172,11 @@ public class FrozenDawnConfig {
                         "Preset-managed: overwritten by /frozendawn preset command.",
                         "Default 120000 (~5 in-game days). Brutal: 192000. Cinematic: 72000.")
                 .defineInRange("broadcastTicks", 120000, 6000, 480000);
+        TEST_BROADCAST_TICKS_OVERRIDE = BUILDER
+                .comment("TESTING ONLY: override transponder broadcast time in ticks.",
+                        "Set to 0 to use the preset-managed broadcastTicks value.",
+                        "100 ticks = 5 seconds.")
+                .defineInRange("testBroadcastTicksOverride", 0, 0, 480000);
         BUILDER.pop();
 
         BUILDER.push("client");
