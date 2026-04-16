@@ -15,6 +15,7 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Arrays;
@@ -23,11 +24,17 @@ import java.util.List;
 public class FuelProcessingSiloCategory implements IRecipeCategory<FuelProcessingSiloRecipeDisplay> {
     public static final RecipeType<FuelProcessingSiloRecipeDisplay> RECIPE_TYPE =
             RecipeType.create(FrozenDawn.MOD_ID, "fuel_processing_silo", FuelProcessingSiloRecipeDisplay.class);
+    private static final ResourceLocation VANILLA_FURNACE_ARROW =
+            ResourceLocation.withDefaultNamespace("container/furnace/burn_progress");
 
     private static final int[][] INPUT_SLOTS = {
-            { 4, 12 }, { 24, 12 },
-            { 4, 32 }, { 24, 32 }
+            { 10, 15 }, { 30, 15 },
+            { 10, 35 }, { 30, 35 }
     };
+    private static final int WIDTH = 170;
+    private static final int HEIGHT = 60;
+    private static final int OUTPUT_X = 140;
+    private static final int OUTPUT_Y = 25;
 
     private final IDrawable icon;
 
@@ -53,12 +60,12 @@ public class FuelProcessingSiloCategory implements IRecipeCategory<FuelProcessin
 
     @Override
     public int getWidth() {
-        return 164;
+        return WIDTH;
     }
 
     @Override
     public int getHeight() {
-        return 78;
+        return HEIGHT;
     }
 
     @Override
@@ -70,31 +77,19 @@ public class FuelProcessingSiloCategory implements IRecipeCategory<FuelProcessin
                     .addItemStacks(stacksWithCount(ingredients.get(i)));
         }
 
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 130, 22)
+        builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_X, OUTPUT_Y)
                 .addItemStack(recipe.output().copy());
-        builder.moveRecipeTransferButton(146, 54);
+        builder.moveRecipeTransferButton(150, 43);
     }
 
     @Override
     public void draw(FuelProcessingSiloRecipeDisplay recipe, IRecipeSlotsView recipeSlotsView,
                      GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        int arrowX = 56;
-        int arrowY = 26;
-        int primary = 0xFF7FDCE8;
-        int shadow = 0xFF1E4A56;
-        guiGraphics.fill(arrowX, arrowY + 5, arrowX + 42, arrowY + 9, shadow);
-        guiGraphics.fill(arrowX + 28, arrowY + 1, arrowX + 34, arrowY + 13, shadow);
-        guiGraphics.fill(arrowX + 34, arrowY + 3, arrowX + 40, arrowY + 11, shadow);
-        guiGraphics.fill(arrowX + 40, arrowY + 6, arrowX + 46, arrowY + 8, shadow);
-        guiGraphics.fill(arrowX + 1, arrowY + 6, arrowX + 38, arrowY + 8, primary);
-        guiGraphics.fill(arrowX + 32, arrowY + 3, arrowX + 37, arrowY + 11, primary);
-        guiGraphics.fill(arrowX + 37, arrowY + 5, arrowX + 42, arrowY + 9, primary);
-
         var font = Minecraft.getInstance().font;
-        guiGraphics.drawString(font, recipe.label(), 50, 7, 0xFFFFFFFF, false);
-        guiGraphics.drawString(font, recipe.durationLabel() + " at x1", 63, 43, 0xFFB7C8D0, false);
-        guiGraphics.drawString(font, "Needs lit Thermal Heater", 0, 57, 0xFF93B8C0, false);
-        guiGraphics.drawString(font, "Drains heater fuel while processing", 0, 66, 0xFF93B8C0, false);
+        drawCentered(guiGraphics, font, recipe.label(), 0, 5, WIDTH, 0xFFFFFFFF);
+        guiGraphics.fill(54, 16, 116, 17, 0x3369DCE8);
+        guiGraphics.blitSprite(VANILLA_FURNACE_ARROW, 81, 25, 24, 16);
+        drawCentered(guiGraphics, font, recipe.durationLabel() + " base", 55, 46, 76, 0xFF9EB4BE);
     }
 
     private static List<ItemStack> stacksWithCount(IngredientRequirement requirement) {
@@ -102,5 +97,11 @@ public class FuelProcessingSiloCategory implements IRecipeCategory<FuelProcessin
                 .map(ItemStack::copy)
                 .peek(stack -> stack.setCount(requirement.count()))
                 .toList();
+    }
+
+    private static void drawCentered(GuiGraphics guiGraphics, net.minecraft.client.gui.Font font,
+                                     String text, int x, int y, int width, int color) {
+        int textX = x + (width - font.width(text)) / 2;
+        guiGraphics.drawString(font, text, textX, y, color, false);
     }
 }

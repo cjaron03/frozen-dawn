@@ -7,14 +7,10 @@ import com.frozendawn.recipe.FuelProcessingSiloRecipes;
 import com.frozendawn.recipe.FuelProcessingSiloRecipes.FuelProcessingSiloRecipe;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
-
-import java.util.List;
-import java.util.Optional;
 
 public class FuelProcessingSiloScreen extends AbstractContainerScreen<FuelProcessingSiloMenu> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -153,11 +149,5 @@ public class FuelProcessingSiloScreen extends AbstractContainerScreen<FuelProces
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
-        if (isHovering(RECIPE_CLICK_X, RECIPE_CLICK_Y, RECIPE_CLICK_W, RECIPE_CLICK_H, mouseX, mouseY)) {
-            graphics.renderTooltip(font, List.of(
-                    Component.literal("View Fuel Processing recipes"),
-                    Component.literal("Click to open JEI").withStyle(ChatFormatting.GRAY)
-            ), Optional.empty(), mouseX, mouseY);
-        }
     }
 }
