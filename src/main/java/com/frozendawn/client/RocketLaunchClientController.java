@@ -384,6 +384,84 @@ public final class RocketLaunchClientController {
         int statusY = height - bottomRail + 9;
         graphics.fill(sideRail + 8, statusY - 3, sideRail + 128, statusY + 10, 0x66070B10);
         graphics.drawString(font, Component.literal("ORSA VIEWPORT"), sideRail + 13, statusY, 0x8DEAFF, false);
+        renderRocketFuelGauge(graphics, font, viewRight, viewBottom);
+    }
+
+    private static void renderRocketFuelGauge(GuiGraphics graphics, net.minecraft.client.gui.Font font,
+                                              int viewRight, int viewBottom) {
+        Minecraft mc = Minecraft.getInstance();
+        float fill = getRocketFuelFill(mc);
+        String value = getRocketFuelValue(mc, fill);
+
+        int panelWidth = 162;
+        int panelHeight = 24;
+        int panelX = viewRight - panelWidth - 10;
+        int panelY = viewBottom + 8;
+        int barX = panelX + 54;
+        int barY = panelY + 13;
+        int barWidth = 76;
+        int barHeight = 5;
+
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0x7710141A);
+        graphics.fill(panelX + 2, panelY + 2, panelX + panelWidth - 2, panelY + panelHeight - 2, 0x55242C35);
+        graphics.drawString(font, Component.literal("FUEL"), panelX + 8, panelY + 5, 0x8DEAFF, false);
+        graphics.drawString(font, Component.literal(value), panelX + panelWidth - 8 - font.width(value), panelY + 5, getRocketFuelTextColor(fill), false);
+
+        graphics.fill(barX - 1, barY - 1, barX + barWidth + 1, barY + barHeight + 1, 0xCC05080C);
+        graphics.fill(barX, barY, barX + barWidth, barY + barHeight, 0xAA17202A);
+        int filledWidth = Mth.clamp((int) (fill * barWidth), 0, barWidth);
+        if (filledWidth > 0) {
+            graphics.fill(barX, barY, barX + filledWidth, barY + barHeight, getRocketFuelBarColor(fill));
+        }
+        for (int i = 1; i < 6; i++) {
+            int tickX = barX + i * barWidth / 6;
+            graphics.fill(tickX, barY - 1, tickX + 1, barY + barHeight + 1, 0x664FC7DA);
+        }
+    }
+
+    private static float getRocketFuelFill(Minecraft mc) {
+        if (active && isRocketViewportActive(mc)) {
+            if (clientTicks < countdownTicks) {
+                return 1.0F;
+            }
+            int burnTicks = Math.max(1, liftoffTicks + ascentTicks + atmosphereExitTicks);
+            float burnProgress = (clientTicks - countdownTicks) / (float) burnTicks;
+            return 1.0F - Mth.clamp(burnProgress, 0.0F, 1.0F);
+        }
+        if (mc.player != null && mc.player.getVehicle() instanceof RocketLaunchEntity rocket) {
+            return rocket.getFuelCells() / 6.0F;
+        }
+        return 0.0F;
+    }
+
+    private static String getRocketFuelValue(Minecraft mc, float fill) {
+        if (active && isRocketViewportActive(mc)) {
+            return clientTicks < countdownTicks ? "ARMED" : Mth.ceil(fill * 100.0F) + "%";
+        }
+        if (mc.player != null && mc.player.getVehicle() instanceof RocketLaunchEntity rocket) {
+            return rocket.getFuelCells() + "/6";
+        }
+        return "0/6";
+    }
+
+    private static int getRocketFuelTextColor(float fill) {
+        if (fill >= 1.0F) {
+            return 0xA7FFEA;
+        }
+        if (fill >= 0.34F) {
+            return 0xFFF5A6;
+        }
+        return 0xFF8B8B;
+    }
+
+    private static int getRocketFuelBarColor(float fill) {
+        if (fill >= 1.0F) {
+            return 0xD44FE6D8;
+        }
+        if (fill >= 0.34F) {
+            return 0xD8FFB44F;
+        }
+        return 0xD8FF5C5C;
     }
 
     private static void drawCornerBracket(GuiGraphics graphics, int x, int y, int size, boolean left, boolean top) {
