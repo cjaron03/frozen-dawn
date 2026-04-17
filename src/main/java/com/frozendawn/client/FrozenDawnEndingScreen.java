@@ -1,5 +1,6 @@
 package com.frozendawn.client;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.EndingSequencePayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,9 +9,15 @@ import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,8 +30,19 @@ public class FrozenDawnEndingScreen extends Screen {
     private static final int POST_CREDITS_MESSAGE_TICKS = 7 * 20;
     private static final int COMPLIANCE_TICKS = 10 * 20;
     private static final int LINE_HEIGHT = 12;
-    private static final int MARS_GRID = 14;
+    private static final int MARS_TEXTURE_GRID = 32;
+    private static final float MARS_YAW_OFFSET = 0.55F;
+    private static final float MARS_PITCH_RADIANS = 0.31F;
+    private static final float MARS_ROLL_RADIANS = -0.017F;
     private static final int CREDIT_FAST_FORWARD_TICKS_PER_TICK = 55;
+    private static final String[] MARS_FACE_TEXTURES = {
+            "mars_front",
+            "mars_back",
+            "mars_right",
+            "mars_left",
+            "mars_top",
+            "mars_bottom"
+    };
 
     private final EndingSequencePayload payload;
     private final List<CreditLine> creditLines;
@@ -32,6 +50,7 @@ public class FrozenDawnEndingScreen extends Screen {
     private int ageTicks;
     private Button returnButton;
     private boolean endingMusicFadeStarted;
+    private MarsFaceTexture[] marsTextures;
 
     public FrozenDawnEndingScreen(EndingSequencePayload payload) {
         super(Component.translatable("screen.frozendawn.ending.title"));
@@ -219,37 +238,38 @@ public class FrozenDawnEndingScreen extends Screen {
         if (reveal <= 0.0F) {
             return;
         }
+        ensureMarsTextures();
 
         float revealPulse = smoothStep(reveal);
         float targetFace = Mth.lerp(revealPulse, 28.0F, Math.max(48.0F, Math.min(width, height) * 0.38F));
         float halfSize = targetFace * 0.5F;
-        float yaw = (tick - BASE_CREDITS_START_TICKS) * 0.012F;
-        float pitch = 0.16F;
+        float yaw = MARS_YAW_OFFSET + (tick - BLACK_END_TICKS) * 0.012F;
         int centerX = width / 2;
         int centerY = Math.round(height * 0.46F);
+        renderMarsBacklight(graphics, centerX, centerY, targetFace, revealPulse);
 
         ProjectedFace[] faces = {
-                projectMarsFace(0, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(0, yaw, halfSize, centerX, centerY,
                         new MarsVertex(-1.0F, 1.0F, 1.0F), new MarsVertex(1.0F, 1.0F, 1.0F),
                         new MarsVertex(1.0F, -1.0F, 1.0F), new MarsVertex(-1.0F, -1.0F, 1.0F),
                         new MarsVertex(0.0F, 0.0F, 1.0F)),
-                projectMarsFace(1, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(1, yaw, halfSize, centerX, centerY,
                         new MarsVertex(1.0F, 1.0F, -1.0F), new MarsVertex(-1.0F, 1.0F, -1.0F),
                         new MarsVertex(-1.0F, -1.0F, -1.0F), new MarsVertex(1.0F, -1.0F, -1.0F),
                         new MarsVertex(0.0F, 0.0F, -1.0F)),
-                projectMarsFace(2, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(2, yaw, halfSize, centerX, centerY,
                         new MarsVertex(1.0F, 1.0F, 1.0F), new MarsVertex(1.0F, 1.0F, -1.0F),
                         new MarsVertex(1.0F, -1.0F, -1.0F), new MarsVertex(1.0F, -1.0F, 1.0F),
                         new MarsVertex(1.0F, 0.0F, 0.0F)),
-                projectMarsFace(3, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(3, yaw, halfSize, centerX, centerY,
                         new MarsVertex(-1.0F, 1.0F, -1.0F), new MarsVertex(-1.0F, 1.0F, 1.0F),
                         new MarsVertex(-1.0F, -1.0F, 1.0F), new MarsVertex(-1.0F, -1.0F, -1.0F),
                         new MarsVertex(-1.0F, 0.0F, 0.0F)),
-                projectMarsFace(4, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(4, yaw, halfSize, centerX, centerY,
                         new MarsVertex(-1.0F, 1.0F, -1.0F), new MarsVertex(1.0F, 1.0F, -1.0F),
                         new MarsVertex(1.0F, 1.0F, 1.0F), new MarsVertex(-1.0F, 1.0F, 1.0F),
                         new MarsVertex(0.0F, 1.0F, 0.0F)),
-                projectMarsFace(5, yaw, pitch, halfSize, centerX, centerY,
+                projectMarsFace(5, yaw, halfSize, centerX, centerY,
                         new MarsVertex(-1.0F, -1.0F, 1.0F), new MarsVertex(1.0F, -1.0F, 1.0F),
                         new MarsVertex(1.0F, -1.0F, -1.0F), new MarsVertex(-1.0F, -1.0F, -1.0F),
                         new MarsVertex(0.0F, -1.0F, 0.0F))
@@ -261,13 +281,36 @@ public class FrozenDawnEndingScreen extends Screen {
         }
     }
 
-    private ProjectedFace projectMarsFace(int faceId, float yaw, float pitch, float halfSize, int centerX, int centerY,
+    private void renderMarsBacklight(GuiGraphics graphics, int centerX, int centerY, float targetFace, float reveal) {
+        float fade = Mth.clamp(reveal, 0.0F, 1.0F);
+        drawMarsGlowDisk(graphics, centerX, centerY, targetFace * 1.58F, Math.round(22.0F * fade), 0x9E341C);
+        drawMarsGlowDisk(graphics, centerX, centerY, targetFace * 1.18F, Math.round(28.0F * fade), 0xE65C28);
+        drawMarsGlowDisk(graphics, centerX, centerY, targetFace * 0.76F, Math.round(18.0F * fade), 0xFF8444);
+    }
+
+    private void drawMarsGlowDisk(GuiGraphics graphics, int centerX, int centerY, float radius, int alpha, int rgb) {
+        if (alpha <= 0 || radius <= 0.0F) {
+            return;
+        }
+        int color = (Mth.clamp(alpha, 0, 255) << 24) | (rgb & 0xFFFFFF);
+        int intRadius = Mth.ceil(radius);
+        for (int y = -intRadius; y <= intRadius; y += 2) {
+            float normalizedY = y / radius;
+            if (normalizedY < -1.0F || normalizedY > 1.0F) {
+                continue;
+            }
+            int halfWidth = Mth.floor(Math.sqrt(1.0F - normalizedY * normalizedY) * radius);
+            graphics.fill(centerX - halfWidth, centerY + y, centerX + halfWidth, centerY + y + 2, color);
+        }
+    }
+
+    private ProjectedFace projectMarsFace(int faceId, float yaw, float halfSize, int centerX, int centerY,
                                           MarsVertex v0, MarsVertex v1, MarsVertex v2, MarsVertex v3, MarsVertex normal) {
-        MarsPoint p0 = projectMarsVertex(v0, yaw, pitch, halfSize, centerX, centerY);
-        MarsPoint p1 = projectMarsVertex(v1, yaw, pitch, halfSize, centerX, centerY);
-        MarsPoint p2 = projectMarsVertex(v2, yaw, pitch, halfSize, centerX, centerY);
-        MarsPoint p3 = projectMarsVertex(v3, yaw, pitch, halfSize, centerX, centerY);
-        MarsVertex litNormal = rotateMarsNormal(normal, yaw, pitch);
+        MarsPoint p0 = projectMarsVertex(v0, yaw, halfSize, centerX, centerY);
+        MarsPoint p1 = projectMarsVertex(v1, yaw, halfSize, centerX, centerY);
+        MarsPoint p2 = projectMarsVertex(v2, yaw, halfSize, centerX, centerY);
+        MarsPoint p3 = projectMarsVertex(v3, yaw, halfSize, centerX, centerY);
+        MarsVertex litNormal = rotateMarsVertex(normal, yaw);
         float light = Mth.clamp(0.64F + Math.max(0.0F,
                 litNormal.x() * -0.25F + litNormal.y() * 0.76F + litNormal.z() * -0.58F) * 0.34F,
                 0.48F, 1.0F);
@@ -275,8 +318,8 @@ public class FrozenDawnEndingScreen extends Screen {
                 (p0.depth() + p1.depth() + p2.depth() + p3.depth()) * 0.25F);
     }
 
-    private MarsPoint projectMarsVertex(MarsVertex vertex, float yaw, float pitch, float halfSize, int centerX, int centerY) {
-        MarsVertex rotated = rotateMarsNormal(vertex, yaw, pitch);
+    private MarsPoint projectMarsVertex(MarsVertex vertex, float yaw, float halfSize, int centerX, int centerY) {
+        MarsVertex rotated = rotateMarsVertex(vertex, yaw);
         float perspective = 4.2F / (4.2F + rotated.z());
         return new MarsPoint(
                 centerX + rotated.x() * halfSize * perspective,
@@ -284,17 +327,22 @@ public class FrozenDawnEndingScreen extends Screen {
                 rotated.z());
     }
 
-    private MarsVertex rotateMarsNormal(MarsVertex vertex, float yaw, float pitch) {
+    private MarsVertex rotateMarsVertex(MarsVertex vertex, float yaw) {
         float cosYaw = Mth.cos(yaw);
         float sinYaw = Mth.sin(yaw);
         float x = vertex.x() * cosYaw + vertex.z() * sinYaw;
         float z = vertex.z() * cosYaw - vertex.x() * sinYaw;
 
-        float cosPitch = Mth.cos(pitch);
-        float sinPitch = Mth.sin(pitch);
+        float cosPitch = Mth.cos(MARS_PITCH_RADIANS);
+        float sinPitch = Mth.sin(MARS_PITCH_RADIANS);
         float y = vertex.y() * cosPitch - z * sinPitch;
         float pitchedZ = vertex.y() * sinPitch + z * cosPitch;
-        return new MarsVertex(x, y, pitchedZ);
+
+        float cosRoll = Mth.cos(MARS_ROLL_RADIANS);
+        float sinRoll = Mth.sin(MARS_ROLL_RADIANS);
+        float rolledX = x * cosRoll - y * sinRoll;
+        float rolledY = x * sinRoll + y * cosRoll;
+        return new MarsVertex(rolledX, rolledY, pitchedZ);
     }
 
     private void sortMarsFacesBackToFront(ProjectedFace[] faces) {
@@ -310,24 +358,25 @@ public class FrozenDawnEndingScreen extends Screen {
     }
 
     private void renderMarsFace(GuiGraphics graphics, ProjectedFace face) {
-        for (int row = 0; row < MARS_GRID; row++) {
-            for (int col = 0; col < MARS_GRID; col++) {
-                float u0 = col / (float) MARS_GRID;
-                float u1 = (col + 1) / (float) MARS_GRID;
-                float v0 = row / (float) MARS_GRID;
-                float v1 = (row + 1) / (float) MARS_GRID;
+        MarsFaceTexture texture = marsTexture(face.faceId());
+        for (int row = 0; row < MARS_TEXTURE_GRID; row++) {
+            for (int col = 0; col < MARS_TEXTURE_GRID; col++) {
+                float u0 = col / (float) MARS_TEXTURE_GRID;
+                float u1 = (col + 1) / (float) MARS_TEXTURE_GRID;
+                float v0 = row / (float) MARS_TEXTURE_GRID;
+                float v1 = (row + 1) / (float) MARS_TEXTURE_GRID;
                 fillProjectedQuad(graphics,
                         interpolateFace(face, u0, v0),
                         interpolateFace(face, u1, v0),
                         interpolateFace(face, u1, v1),
                         interpolateFace(face, u0, v1),
-                        marsFaceCellColor(face.faceId(), row, col, face.light()));
+                        shadeColor(texture.sample((u0 + u1) * 0.5F, (v0 + v1) * 0.5F), face.light()));
             }
         }
-        drawProjectedLine(graphics, face.p0(), face.p1(), 0xAAFFD39A);
-        drawProjectedLine(graphics, face.p1(), face.p2(), 0x992B0E0B);
-        drawProjectedLine(graphics, face.p2(), face.p3(), 0x992B0E0B);
-        drawProjectedLine(graphics, face.p3(), face.p0(), 0xAA2B0E0B);
+        drawProjectedLine(graphics, face.p0(), face.p1(), 0x5531514D);
+        drawProjectedLine(graphics, face.p1(), face.p2(), 0x55170B09);
+        drawProjectedLine(graphics, face.p2(), face.p3(), 0x55170B09);
+        drawProjectedLine(graphics, face.p3(), face.p0(), 0x5531514D);
     }
 
     private MarsPoint interpolateFace(ProjectedFace face, float u, float v) {
@@ -401,56 +450,60 @@ public class FrozenDawnEndingScreen extends Screen {
         }
     }
 
-    private int marsFaceCellColor(int faceId, int row, int col, float light) {
-        if (faceId == 4) {
-            return shadeColor(marsTopCellColor(row, col), light);
+    private void ensureMarsTextures() {
+        if (marsTextures != null) {
+            return;
         }
-        if (faceId == 5) {
-            return shadeColor(marsSideCellColor(row, col, faceId), light * 0.72F);
+        marsTextures = new MarsFaceTexture[MARS_FACE_TEXTURES.length];
+        for (int i = 0; i < MARS_FACE_TEXTURES.length; i++) {
+            marsTextures[i] = loadMarsTexture(i, MARS_FACE_TEXTURES[i]);
         }
-        return shadeColor(marsSurfaceCellColor(row, col, faceId), light);
     }
 
-    private int marsSurfaceCellColor(int row, int col, int faceId) {
-        float noise = hash01(row * 97 + col * 41 + faceId * 131 + 17);
-        if (row <= 1 && (col <= 3 || col >= 10) && noise > 0.18F) {
-            return noise > 0.68F ? 0xFFEAF8FF : 0xFFD5EFFA;
+    private MarsFaceTexture marsTexture(int faceId) {
+        if (marsTextures == null || faceId < 0 || faceId >= marsTextures.length || marsTextures[faceId] == null) {
+            return createFallbackMarsTexture(faceId);
         }
-        if (row == 2 && (col == 2 || col == 11) && noise > 0.3F) {
-            return 0xFFD5EFFA;
-        }
-        if (noise > 0.83F) {
-            return 0xFFD66B3C;
-        }
-        if (noise < 0.16F) {
-            return 0xFF641F1B;
-        }
-        if ((col + row) % 5 == 0) {
-            return 0xFF9E3624;
-        }
-        return ((col + faceId) % 11) > 7 ? 0xFF7E2A20 : 0xFFB2472A;
+        return marsTextures[faceId];
     }
 
-    private int marsTopCellColor(int row, int col) {
-        if (row <= 2 && (col <= 4 || col >= 9)) {
-            return hash01(row * 83 + col * 19) > 0.34F ? 0xFFE8F6FF : 0xFFD3EFF9;
+    private MarsFaceTexture loadMarsTexture(int faceId, String name) {
+        if (minecraft == null) {
+            return createFallbackMarsTexture(faceId);
         }
-        return switch ((row + col) % 4) {
-            case 0 -> 0xFFC96B3D;
-            case 1 -> 0xFFB14A2D;
-            case 2 -> 0xFFE08A54;
-            default -> 0xFF8E3224;
-        };
+
+        ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
+                FrozenDawn.MOD_ID, "textures/gui/ending/" + name + ".png");
+        try {
+            Resource resource = minecraft.getResourceManager()
+                    .getResource(location)
+                    .orElseThrow(() -> new IOException("Missing Mars cubemap face: " + location));
+            try (InputStream stream = resource.open()) {
+                BufferedImage image = ImageIO.read(stream);
+                if (image == null) {
+                    throw new IOException("Unreadable Mars cubemap face: " + location);
+                }
+                int width = image.getWidth();
+                int height = image.getHeight();
+                int[] pixels = new int[width * height];
+                image.getRGB(0, 0, width, height, pixels, 0, width);
+                return new MarsFaceTexture(width, height, pixels);
+            }
+        } catch (IOException exception) {
+            FrozenDawn.LOGGER.error("Failed to load Mars cubemap face {}", location, exception);
+            return createFallbackMarsTexture(faceId);
+        }
     }
 
-    private int marsSideCellColor(int row, int col, int faceId) {
-        return switch ((row * 2 + col + faceId) % 5) {
-            case 0 -> 0xFF5C201A;
-            case 1 -> 0xFF77271E;
-            case 2 -> 0xFF8E3325;
-            case 3 -> 0xFF6A251D;
-            default -> 0xFF4B1916;
-        };
+    private MarsFaceTexture createFallbackMarsTexture(int faceId) {
+        int width = 8;
+        int height = 8;
+        int[] pixels = new int[width * height];
+        int base = faceId == 4 ? 0xFFE8F6FF : faceId == 5 ? 0xFF6A251D : 0xFFE07134;
+        for (int i = 0; i < pixels.length; i++) {
+            pixels[i] = base;
+        }
+        return new MarsFaceTexture(width, height, pixels);
     }
 
     private int shadeColor(int color, float light) {
@@ -630,6 +683,14 @@ public class FrozenDawnEndingScreen extends Screen {
             MarsPoint p3,
             float light,
             float depth) {
+    }
+
+    private record MarsFaceTexture(int width, int height, int[] pixels) {
+        int sample(float u, float v) {
+            int x = Mth.clamp(Mth.floor(u * width), 0, width - 1);
+            int y = Mth.clamp(Mth.floor(v * height), 0, height - 1);
+            return pixels[y * width + x];
+        }
     }
 
     private record CreditLine(Component text, boolean centered, boolean logo, int color, float scale, int height) {
