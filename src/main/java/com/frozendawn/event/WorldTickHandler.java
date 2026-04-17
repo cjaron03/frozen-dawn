@@ -407,6 +407,7 @@ public class WorldTickHandler {
             PlayerTickHandler.onPlayerLogin(player);
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
+            RocketLaunchManager.syncLaunchState(player);
 
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);

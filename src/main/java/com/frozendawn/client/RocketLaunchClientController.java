@@ -58,7 +58,7 @@ public final class RocketLaunchClientController {
         ascentTicks = payload.ascentTicks();
         atmosphereExitTicks = payload.atmosphereExitTicks();
         fadeTicks = payload.fadeTicks();
-        clientTicks = 0;
+        clientTicks = Mth.clamp(payload.elapsedTicks(), 0, getTotalSequenceTicks());
         storedCameraType = mc.options.getCameraType();
         storedCameraEntity = mc.getCameraEntity();
         if (mc.screen != null) {
@@ -255,6 +255,10 @@ public final class RocketLaunchClientController {
         return !localRider || mc.options.getCameraType() != CameraType.FIRST_PERSON;
     }
 
+    public static void resetForEnding() {
+        reset(Minecraft.getInstance());
+    }
+
     public static void markLaunchJumpAttempt(RocketLaunchEntity rocket) {
         if (rocket == null || !rocket.isIdle()) {
             return;
@@ -269,6 +273,7 @@ public final class RocketLaunchClientController {
 
     private static boolean isRocketViewportActive(Minecraft mc) {
         return mc.player != null
+                && !(mc.screen instanceof FrozenDawnEndingScreen)
                 && mc.player.getVehicle() instanceof RocketLaunchEntity
                 && mc.options.getCameraType() == CameraType.FIRST_PERSON;
     }
