@@ -36,6 +36,7 @@ import com.frozendawn.world.FrozenTownRuntime;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
+import com.frozendawn.world.RocketLaunchManager;
 import com.frozendawn.world.SatellitePlacement;
 import com.frozendawn.world.SnowAccumulator;
 import com.frozendawn.world.StructureStressTracker;
@@ -184,6 +185,7 @@ public class WorldTickHandler {
         MonitoringStationPlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
         SatellitePlacement.tickPlacement(overworld);
+        RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
         NetherSeveranceHandler.tick(overworld, currentPhase);
         // Stagger heavy systems on alternating ticks to halve peak load

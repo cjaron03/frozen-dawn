@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "frozendawn:impure_sulfur"
+  },
+  "result": {
+    "id": "frozendawn:sulfur"
+  },
+  "experience": 0.2,
+  "cookingtime": 200
+}

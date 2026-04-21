@@ -5,15 +5,18 @@ import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.EmergencyLightBlock;
+import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
+import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.MiteAwayBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
+import com.frozendawn.block.RocketEngineBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
@@ -162,6 +165,13 @@ public class ModBlocks {
             () -> new SulfurCrustBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.SAND)
                     .strength(1.2F)
+                    .sound(SoundType.CALCITE)));
+
+    public static final DeferredBlock<Block> SULFUR_ORE = BLOCKS.register("sulfur_ore",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SAND)
+                    .requiresCorrectToolForDrops()
+                    .strength(2.1F, 6.0F)
                     .sound(SoundType.CALCITE)));
 
     public static final DeferredBlock<Block> HYDROTHERMAL_ROCK = BLOCKS.register("hydrothermal_rock",
@@ -367,6 +377,52 @@ public class ModBlocks {
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 15)));
+
+    public static final DeferredBlock<FuelProcessingSiloControllerBlock> FUEL_PROCESSING_SILO_CONTROLLER = BLOCKS.register("fuel_processing_silo_controller",
+            () -> new FuelProcessingSiloControllerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.0F, 12.0F)
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(FuelProcessingSiloControllerBlock.LIT) ? 7 : 0)));
+
+    public static final DeferredBlock<LaunchPadBlock> LAUNCH_PAD = BLOCKS.register("launch_pad",
+            () -> new LaunchPadBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F, 9.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)));
+
+    public static final DeferredBlock<RocketEngineBlock> ROCKET_ENGINE = BLOCKS.register("rocket_engine",
+            () -> new RocketEngineBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.5F, 12.0F)
+                    .sound(SoundType.NETHERITE_BLOCK)));
+
+    public static final DeferredBlock<Block> ROCKET_FIN = BLOCKS.register("rocket_fin",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.5F, 10.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<Block> ROCKET_HULL = BLOCKS.register("rocket_hull",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .requiresCorrectToolForDrops()
+                    .strength(5.0F, 10.0F)
+                    .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<Block> ROCKET_NOSE_CONE = BLOCKS.register("rocket_nose_cone",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.8F, 10.0F)
+                    .sound(SoundType.METAL)));
 
     // --- Acheronite ---
 

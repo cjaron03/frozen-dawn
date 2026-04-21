@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.data.WinConditionState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.network.OpenTowerTerminalPayload;
@@ -127,7 +128,11 @@ public class TowerAntennaConsoleBlockEntity extends AbstractPuzzleTerminalBlockE
     @Override
     protected boolean acceptArchivePassword(ServerLevel level, ServerPlayer player, OrsaStructureState.TowerRecord tower,
                                             String normalizedGuess) {
-        return TowerArchive.COMMAND_ARCHIVE_PASSWORD.equals(normalizedGuess);
+        boolean accepted = TowerArchive.COMMAND_ARCHIVE_PASSWORD.equals(normalizedGuess);
+        if (accepted) {
+            WinConditionState.get(level.getServer()).setConspiracyDiscovered(true);
+        }
+        return accepted;
     }
 
     @Override

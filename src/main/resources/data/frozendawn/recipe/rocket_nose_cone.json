@@ -1,0 +1,19 @@
+{
+  "type": "frozendawn:blueprint_locked_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "IGI",
+    "ICI"
+  ],
+  "key": {
+    "A": { "item": "frozendawn:acheronite_compass" },
+    "I": { "item": "minecraft:iron_ingot" },
+    "G": { "item": "frozendawn:insulated_glass" },
+    "C": { "item": "minecraft:copper_ingot" }
+  },
+  "result": {
+    "id": "frozendawn:rocket_nose_cone",
+    "count": 1
+  }
+}

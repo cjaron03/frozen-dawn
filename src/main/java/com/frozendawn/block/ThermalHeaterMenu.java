@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
  *   0 = burn ETA minutes (at current consumption rate)
  *   1 = is lit (0/1)
  *   2 = sheltered (0/1)
+ *   3 = industrial drain active (0/1)
  */
 public class ThermalHeaterMenu extends AbstractContainerMenu {
 
@@ -24,7 +25,7 @@ public class ThermalHeaterMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public ThermalHeaterMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, new SimpleContainerData(3));
+        this(containerId, new SimpleContainerData(4));
     }
 
     /** Server constructor. */

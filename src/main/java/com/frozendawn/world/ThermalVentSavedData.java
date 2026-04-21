@@ -92,6 +92,7 @@ public class ThermalVentSavedData extends SavedData {
         private long eruptionEndTick = -1L;
         private int coneStage;
         private int shapedConeStage;
+        private boolean sulfurDepositsSeeded;
 
         public VentRecord(int regionX, int regionZ, int x, int z, ThermalVentArchetype archetype) {
             this.regionX = regionX;
@@ -189,6 +190,14 @@ public class ThermalVentSavedData extends SavedData {
             this.shapedConeStage = shapedConeStage;
         }
 
+        public boolean sulfurDepositsSeeded() {
+            return sulfurDepositsSeeded;
+        }
+
+        public void setSulfurDepositsSeeded(boolean sulfurDepositsSeeded) {
+            this.sulfurDepositsSeeded = sulfurDepositsSeeded;
+        }
+
         public BlockPos anchorPos() {
             return new BlockPos(x, hasResolvedSurface() ? y : 0, z);
         }
@@ -208,6 +217,7 @@ public class ThermalVentSavedData extends SavedData {
             tag.putLong("EruptionEndTick", eruptionEndTick);
             tag.putInt("ConeStage", coneStage);
             tag.putInt("ShapedConeStage", shapedConeStage);
+            tag.putBoolean("SulfurDepositsSeeded", sulfurDepositsSeeded);
             return tag;
         }
 
@@ -233,6 +243,7 @@ public class ThermalVentSavedData extends SavedData {
             record.eruptionEndTick = tag.getLong("EruptionEndTick");
             record.coneStage = tag.getInt("ConeStage");
             record.shapedConeStage = tag.getInt("ShapedConeStage");
+            record.sulfurDepositsSeeded = tag.getBoolean("SulfurDepositsSeeded");
             return record;
         }
     }

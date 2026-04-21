@@ -3,6 +3,7 @@ package com.frozendawn.network;
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.MonitoringTerminalScreen;
+import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.TemperatureHud;
@@ -87,5 +88,9 @@ public final class ClientHandlers {
                 payload.pitch(),
                 false
         );
+    }
+
+    public static void handleLaunchSequence(LaunchSequencePayload payload) {
+        RocketLaunchClientController.begin(payload);
     }
 }

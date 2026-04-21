@@ -1,9 +1,16 @@
 package com.frozendawn.item;
 
 import com.frozendawn.block.GeothermalCoreBlockEntity;
+import com.frozendawn.block.FuelProcessingSiloBlockEntity;
+import com.frozendawn.block.FuelProcessingSiloMultiblock;
+import com.frozendawn.block.RocketEngineBlockEntity;
+import com.frozendawn.block.RocketLaunchStructure;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.TransponderBlock;
 import com.frozendawn.block.TransponderBlockEntity;
+import com.frozendawn.data.WinConditionState;
+import com.frozendawn.init.ModBlocks;
+import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -47,6 +54,22 @@ public class OrsaMultiToolItem extends Item {
 
         if (be instanceof GeothermalCoreBlockEntity core) {
             showCoreDiagnostics(player, core);
+            return InteractionResult.sidedSuccess(false);
+        }
+
+        if (be instanceof FuelProcessingSiloBlockEntity silo) {
+            showSiloDiagnostics(player, silo);
+            return InteractionResult.sidedSuccess(false);
+        }
+
+        if (be instanceof RocketEngineBlockEntity engine) {
+            showRocketDiagnostics(player, engine);
+            return InteractionResult.sidedSuccess(false);
+        }
+
+        if (level.getBlockState(context.getClickedPos()).is(ModBlocks.LAUNCH_PAD.get())
+                && player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            showLaunchPadDiagnostics(player, serverLevel, context.getClickedPos());
             return InteractionResult.sidedSuccess(false);
         }
 
@@ -114,6 +137,70 @@ public class OrsaMultiToolItem extends Item {
         player.sendSystemMessage(Component.literal(p + "\u00A77Status: \u00A7aOnline"));
         player.sendSystemMessage(Component.literal(p + "\u00A77Position: \u00A7f" +
                 core.getBlockPos().getX() + ", " + core.getBlockPos().getY() + ", " + core.getBlockPos().getZ()));
+    }
+
+    private void showSiloDiagnostics(ServerPlayer player, FuelProcessingSiloBlockEntity silo) {
+        String p = "\u00A77[\u00A76ORSA\u00A77] ";
+        FuelProcessingSiloMultiblock.Diagnostic diagnostic = FuelProcessingSiloMultiblock.diagnose(
+                player.level(),
+                silo.getBlockPos(),
+                silo.getBlockState().getValue(com.frozendawn.block.FuelProcessingSiloControllerBlock.FACING)
+        );
+        player.sendSystemMessage(Component.literal(p + "\u00A7e--- Fuel Processing Silo ---"));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Shell: " + (silo.isStructureValid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
+        if (!diagnostic.valid()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Diag: \u00A7c" + diagnostic.message()));
+        }
+        if (!silo.hasAttachedHeater()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Heater: \u00A7cMissing"));
+        } else {
+            String heaterLabel = FuelProcessingSiloMultiblock.tierLabel(silo.getHeaterTierCode())
+                    + (silo.heaterHasCapacitor() ? " + Capacitor" : "");
+            String heaterStatus = silo.isHeaterLit() ? "\u00A7aOnline" : "\u00A76Offline";
+            player.sendSystemMessage(Component.literal(p + "\u00A77Heater: " + heaterStatus + "\u00A7f " + heaterLabel));
+            player.sendSystemMessage(Component.literal(p + "\u00A77Speed: \u00A7f" + FuelProcessingSiloMultiblock.formatSpeed(silo.getHeaterSpeedUnits())));
+            if (silo.isHeaterLit()) {
+                player.sendSystemMessage(Component.literal(p + "\u00A77Fuel ETA: \u00A7f" + silo.getHeaterEtaMinutes() + " min"));
+            }
+        }
+        player.sendSystemMessage(Component.literal(p + "\u00A77Progress: \u00A7f" + silo.getProgressPercentPublic() + "%"));
+    }
+
+    private void showRocketDiagnostics(ServerPlayer player, RocketEngineBlockEntity engine) {
+        String p = "\u00A77[\u00A76ORSA\u00A77] ";
+        RocketLaunchStructure.Diagnostic diagnostic = player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel
+                ? RocketLaunchStructure.diagnose(serverLevel, engine.getBlockPos())
+                : new RocketLaunchStructure.Diagnostic(false, false, false, engine.getBlockPos(), "Diagnostics unavailable client-side.");
+        boolean unlocked = WinConditionState.get(player.server).isRocketBlueprintUnlocked();
+        player.sendSystemMessage(Component.literal(p + "\u00A7e--- Launch Assembly ---"));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Launch Package: "
+                + (unlocked ? "\u00A7aUnlocked" : "\u00A7cLocked")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Pad Alignment: "
+                + (engine.isAlignedToBlastPit() ? "\u00A7aCentered" : "\u00A7cOff Pad")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Launch Pad: "
+                + (diagnostic.padValid() ? "\u00A7aLocked" : "\u00A7cIncomplete")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Structure: "
+                + (engine.isStructureValid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Fuel Cells: \u00A7f" + engine.getLoadedFuelCells() + "/6"));
+        if (!diagnostic.valid()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Diag: \u00A7c" + diagnostic.message()));
+        }
+    }
+
+    private void showLaunchPadDiagnostics(ServerPlayer player, net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos) {
+        String p = "\u00A77[\u00A76ORSA\u00A77] ";
+        RocketLaunchStructure.PadDiagnostic diagnostic = RocketLaunchStructure.diagnosePad(level, pos);
+        var rocket = RocketLaunchManager.findRocket(level, RocketLaunchStructure.getExpectedPadCenter(level));
+        player.sendSystemMessage(Component.literal(p + "\u00A7e--- Launch Pad ---"));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Alignment: "
+                + (diagnostic.onBlastPit() ? "\u00A7aBlast Pit" : "\u00A7cWrong Site")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Pad: "
+                + (diagnostic.valid() ? "\u00A7aLocked" : "\u00A7cInvalid")));
+        player.sendSystemMessage(Component.literal(p + "\u00A77Rocket: "
+                + (rocket != null ? "\u00A7aAssembled" : "\u00A76Idle")));
+        if (!diagnostic.valid()) {
+            player.sendSystemMessage(Component.literal(p + "\u00A77Diag: \u00A7c" + diagnostic.message()));
+        }
     }
 
     @Override

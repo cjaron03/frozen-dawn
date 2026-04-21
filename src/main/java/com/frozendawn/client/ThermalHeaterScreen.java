@@ -65,6 +65,7 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         int etaMinutes = data.get(0);
         boolean isLit = data.get(1) != 0;
         boolean sheltered = data.get(2) != 0;
+        boolean industrialDrain = data.get(3) != 0;
 
         // --- Burn time bar ---
         int barX = x + 8;
@@ -104,6 +105,13 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         String shelterText = sheltered ? "Sheltered" : "Exposed";
         graphics.drawString(font, icon, x + 10, indicatorY, iconColor, false);
         graphics.drawString(font, shelterText, x + 22, indicatorY, sheltered ? 0xFFAABBAA : 0xFFCC6644, false);
+
+        if (industrialDrain) {
+            int warningY = y + 56;
+            String warning = "! Silo draw: increased drain";
+            graphics.fill(x + 7, warningY - 2, x + GUI_W - 7, warningY + 10, 0x552A1C08);
+            graphics.drawString(font, warning, x + 12, warningY, 0xFFFFB84A, false);
+        }
 
         // --- Fuel hint ---
         String hint = "Right-click with fuel to refuel";

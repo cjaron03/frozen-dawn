@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.world.MartianCommandTransmissionPlayer;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.world.TransponderRegistry;
 import net.minecraft.core.BlockPos;
@@ -30,6 +31,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * Block entity for the ORSA Transponder.
  * State machine: IDLE → BROADCASTING → COMPLETE.
@@ -50,6 +55,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
     private boolean shaftClear = false;
     private int shaftCheckCooldown = 0;
     private boolean manuallyPaused = false;
+    private final List<MartianCommandTransmissionPlayer> activeMartianTransmissions = new ArrayList<>();
 
     public TransponderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TRANSPONDER.get(), pos, state);
@@ -73,6 +79,8 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
 
     public void serverTick() {
         if (level == null || level.isClientSide()) return;
+
+        tickMartianTransmissions();
 
         int state = getBlockState().getValue(TransponderBlock.STATE);
         if (state != STATE_BROADCASTING && state != STATE_PAUSED) return;
@@ -116,8 +124,18 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 serverLevel.playSound(null, worldPosition, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
                         SoundSource.BLOCKS, 1.0f, 1.0f);
                 MinecraftServer server = serverLevel.getServer();
+                WinConditionState winState = WinConditionState.get(server);
+                boolean firstMartianReply = !winState.isMartianReplySent();
+                winState.setRocketBlueprintUnlocked(true);
+                if (firstMartianReply) {
+                    winState.setMartianReplySent(true);
+                }
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                     grantAdvancement(p, "broadcast_complete");
+                    p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
+                    if (firstMartianReply) {
+                        queueMartianCommandReply(p);
+                    }
                 }
             }
             setChanged();
@@ -219,7 +237,8 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
             // All conditions met — start broadcasting
             shaftClear = true;
             shaftCheckCooldown = SHAFT_CHECK_INTERVAL;
-            totalBroadcastTicks = FrozenDawnConfig.BROADCAST_TICKS.get();
+            int testOverride = FrozenDawnConfig.TEST_BROADCAST_TICKS_OVERRIDE.get();
+            totalBroadcastTicks = testOverride > 0 ? testOverride : FrozenDawnConfig.BROADCAST_TICKS.get();
             broadcastTicksRemaining = totalBroadcastTicks;
             level.setBlock(worldPosition, getBlockState().setValue(TransponderBlock.STATE, STATE_BROADCASTING), 3);
             player.sendSystemMessage(Component.translatable("message.frozendawn.transponder.activated",
@@ -339,6 +358,27 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
         if (!progress.isDone()) {
             for (String criterion : progress.getRemainingCriteria()) {
                 player.getAdvancements().award(holder, criterion);
+            }
+        }
+    }
+
+    private void queueMartianCommandReply(ServerPlayer player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        activeMartianTransmissions.add(new MartianCommandTransmissionPlayer(serverLevel, player));
+    }
+
+    private void tickMartianTransmissions() {
+        if (activeMartianTransmissions.isEmpty()) {
+            return;
+        }
+        Iterator<MartianCommandTransmissionPlayer> iterator = activeMartianTransmissions.iterator();
+        while (iterator.hasNext()) {
+            MartianCommandTransmissionPlayer transmission = iterator.next();
+            transmission.tick();
+            if (transmission.isDone()) {
+                iterator.remove();
             }
         }
     }

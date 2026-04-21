@@ -1,0 +1,21 @@
+{
+  "type": "frozendawn:blueprint_locked_shaped",
+  "category": "misc",
+  "pattern": [
+    "OBO",
+    "ATA",
+    "CFC"
+  ],
+  "key": {
+    "O": { "item": "minecraft:obsidian" },
+    "B": { "item": "minecraft:blaze_powder" },
+    "A": { "item": "frozendawn:refined_acheronite" },
+    "T": { "item": "frozendawn:thermal_core" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "F": { "item": "minecraft:blast_furnace" }
+  },
+  "result": {
+    "id": "frozendawn:rocket_engine",
+    "count": 1
+  }
+}

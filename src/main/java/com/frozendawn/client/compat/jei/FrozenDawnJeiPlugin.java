@@ -2,10 +2,13 @@ package com.frozendawn.client.compat.jei;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeMenu;
+import com.frozendawn.block.FuelProcessingSiloMenu;
 import com.frozendawn.block.GeothermalCoreMenu;
+import com.frozendawn.client.FuelProcessingSiloScreen;
 import com.frozendawn.client.GeothermalCoreScreen;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.recipe.FuelProcessingSiloRecipes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
@@ -33,6 +36,7 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
         var guiHelper = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(
                 new AcheronForgeCategory(guiHelper),
+                new FuelProcessingSiloCategory(guiHelper),
                 new GeothermalCoreCategory(guiHelper)
         );
     }
@@ -67,6 +71,11 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                                 new ItemStack(ModItems.O2_TANK_MK3.get())),
                         "O2 Refill", "Refills O2 at +10/tick")
         ));
+
+        registration.addRecipes(FuelProcessingSiloCategory.RECIPE_TYPE,
+                FuelProcessingSiloRecipes.all().stream()
+                        .map(FuelProcessingSiloRecipeDisplay::from)
+                        .toList());
     }
 
     @Override
@@ -75,6 +84,8 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 AcheronForgeCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.GEOTHERMAL_CORE.get()),
                 GeothermalCoreCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.FUEL_PROCESSING_SILO_CONTROLLER.get()),
+                FuelProcessingSiloCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -86,6 +97,13 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                         return screen.getJeiExtraAreas();
                     }
                 });
+        registration.addRecipeClickArea(
+                FuelProcessingSiloScreen.class,
+                FuelProcessingSiloScreen.RECIPE_CLICK_X,
+                FuelProcessingSiloScreen.RECIPE_CLICK_Y,
+                FuelProcessingSiloScreen.RECIPE_CLICK_W,
+                FuelProcessingSiloScreen.RECIPE_CLICK_H,
+                FuelProcessingSiloCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -98,5 +116,9 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 GeothermalCoreMenu.class, ModMenuTypes.GEOTHERMAL_CORE.get(),
                 GeothermalCoreCategory.RECIPE_TYPE,
                 0, 4, 4, 36);
+        registration.addRecipeTransferHandler(
+                FuelProcessingSiloMenu.class, ModMenuTypes.FUEL_PROCESSING_SILO.get(),
+                FuelProcessingSiloCategory.RECIPE_TYPE,
+                0, 4, 5, 36);
     }
 }

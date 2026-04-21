@@ -85,7 +85,10 @@ final class FrozenDawnWorldCommand {
             WinConditionState winState = WinConditionState.get(server);
             context.getSource().sendSuccess(() -> Component.literal(
                     "  Satellite Placed: " + yesNo(winState.isSatellitePlaced())
-                            + " | Schematic: " + yesNo(winState.isSchematicUnlocked())), false);
+                            + " | Schematic: " + yesNo(winState.isSchematicUnlocked())
+                            + " | Conspiracy: " + yesNo(winState.isConspiracyDiscovered())
+                            + " | Rocket Unlock: " + yesNo(winState.isRocketBlueprintUnlocked())
+                            + " | Launch Complete: " + yesNo(winState.isLaunchCompleted())), false);
         }
 
         OrsaStructureState orsaState = OrsaStructureState.get(server);

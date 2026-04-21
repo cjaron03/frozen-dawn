@@ -1,6 +1,7 @@
 package com.frozendawn.block;
 
 import com.frozendawn.data.MonitoringStationState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.network.OpenMonitoringTerminalPayload;
 import com.frozendawn.terminal.MonitoringStationArchive;
@@ -221,6 +222,7 @@ public class MonitoringStationTerminalBlockEntity extends AbstractPuzzleTerminal
             session.appendAudit("> Archive seal disengaged.");
             MonitoringStationState stationState = MonitoringStationState.get(level.getServer());
             stationState.markStationUnlocked(stationCenter.getX() >> 4, stationCenter.getZ() >> 4);
+            PlayerEndStats.incrementTerminalsHacked(player);
             MonitoringStationStructureBuilder.unlockBackRoom(level, stationCenter);
             level.playSound(null, worldPosition, SoundEvents.IRON_DOOR_OPEN, SoundSource.BLOCKS, 1.0f, 1.05f);
             player.displayClientMessage(Component.literal("Back room unsealed."), true);

@@ -12,6 +12,7 @@ import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.world.ThermalVentRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -216,6 +217,10 @@ final class PlayerTickHandler {
     }
 
     private static float applyPlayerTemperatureAdjustments(ServerPlayer player, float temp) {
+        if (MobFreezeHandler.hasCaloricResistance(player)) {
+            temp -= ThermalVentRegistry.getCalderaOverheatBonus(player.level(), player.blockPosition());
+        }
+
         // Armor heat trapping: insulated armor amplifies heat above 20C
         float armorHeatMult = MobFreezeHandler.getArmorHeatMultiplier(player);
         if (temp > 20f && armorHeatMult > 0f) {

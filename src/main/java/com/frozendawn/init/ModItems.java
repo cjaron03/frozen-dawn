@@ -67,6 +67,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> GEOTHERMAL_CORE = ITEMS.registerSimpleBlockItem("geothermal_core", ModBlocks.GEOTHERMAL_CORE);
     public static final DeferredItem<BlockItem> SCORCHED_GROUND = ITEMS.registerSimpleBlockItem("scorched_ground", ModBlocks.SCORCHED_GROUND);
     public static final DeferredItem<BlockItem> SULFUR_CRUST = ITEMS.registerSimpleBlockItem("sulfur_crust", ModBlocks.SULFUR_CRUST);
+    public static final DeferredItem<BlockItem> SULFUR_ORE = ITEMS.registerSimpleBlockItem("sulfur_ore", ModBlocks.SULFUR_ORE);
     public static final DeferredItem<BlockItem> HYDROTHERMAL_ROCK = ITEMS.registerSimpleBlockItem("hydrothermal_rock", ModBlocks.HYDROTHERMAL_ROCK);
     public static final DeferredItem<BlockItem> VOLCANIC_ASH = ITEMS.registerSimpleBlockItem("volcanic_ash", ModBlocks.VOLCANIC_ASH);
     public static final DeferredItem<BlockItem> ORSA_SUPPLY_CRATE = ITEMS.registerSimpleBlockItem("orsa_supply_crate", ModBlocks.ORSA_SUPPLY_CRATE);
@@ -80,9 +81,21 @@ public class ModItems {
     public static final DeferredItem<BlockItem> TOWER_ANTENNA_CONSOLE = ITEMS.registerSimpleBlockItem("tower_antenna_console", ModBlocks.TOWER_ANTENNA_CONSOLE);
     public static final DeferredItem<BlockItem> MONITORING_STATION_TERMINAL = ITEMS.registerSimpleBlockItem("monitoring_station_terminal", ModBlocks.MONITORING_STATION_TERMINAL);
     public static final DeferredItem<BlockItem> PHASE_BAROMETER = ITEMS.registerSimpleBlockItem("phase_barometer", ModBlocks.PHASE_BAROMETER);
+    public static final DeferredItem<BlockItem> FUEL_PROCESSING_SILO_CONTROLLER = ITEMS.registerSimpleBlockItem("fuel_processing_silo_controller", ModBlocks.FUEL_PROCESSING_SILO_CONTROLLER);
+    public static final DeferredItem<BlockItem> LAUNCH_PAD = ITEMS.registerSimpleBlockItem("launch_pad", ModBlocks.LAUNCH_PAD);
+    public static final DeferredItem<BlockItem> ROCKET_ENGINE = ITEMS.registerSimpleBlockItem("rocket_engine", ModBlocks.ROCKET_ENGINE);
+    public static final DeferredItem<BlockItem> ROCKET_FIN = ITEMS.registerSimpleBlockItem("rocket_fin", ModBlocks.ROCKET_FIN);
+    public static final DeferredItem<BlockItem> ROCKET_HULL = ITEMS.registerSimpleBlockItem("rocket_hull", ModBlocks.ROCKET_HULL);
+    public static final DeferredItem<BlockItem> ROCKET_NOSE_CONE = ITEMS.registerSimpleBlockItem("rocket_nose_cone", ModBlocks.ROCKET_NOSE_CONE);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
+    public static final DeferredItem<Item> IMPURE_SULFUR = ITEMS.registerSimpleItem("impure_sulfur");
+    public static final DeferredItem<Item> SULFUR = ITEMS.registerSimpleItem("sulfur");
+    public static final DeferredItem<Item> SOLID_PROPELLANT = ITEMS.registerSimpleItem("solid_propellant");
+    public static final DeferredItem<Item> LIQUID_OXIDIZER = ITEMS.registerSimpleItem("liquid_oxidizer");
+    public static final DeferredItem<Item> ROCKET_FUEL_CELL = ITEMS.register("rocket_fuel_cell",
+            () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
@@ -330,6 +343,7 @@ public class ModItems {
                         output.accept(FROZEN_COAL_ORE.get());
                         output.accept(SCORCHED_GROUND.get());
                         output.accept(SULFUR_CRUST.get());
+                        output.accept(SULFUR_ORE.get());
                         output.accept(HYDROTHERMAL_ROCK.get());
                         output.accept(VOLCANIC_ASH.get());
                         // Player agency
@@ -340,6 +354,12 @@ public class ModItems {
                         output.accept(MITEAWAY.get());
                         output.accept(INSULATED_GLASS.get());
                         output.accept(GEOTHERMAL_CORE.get());
+                        output.accept(FUEL_PROCESSING_SILO_CONTROLLER.get());
+                        output.accept(LAUNCH_PAD.get());
+                        output.accept(ROCKET_ENGINE.get());
+                        output.accept(ROCKET_FIN.get());
+                        output.accept(ROCKET_HULL.get());
+                        output.accept(ROCKET_NOSE_CONE.get());
                         output.accept(ORSA_SUPPLY_CRATE.get());
                         output.accept(CAMP_RADIO.get());
                         output.accept(ORSA_FLAG.get());
@@ -351,6 +371,11 @@ public class ModItems {
                         output.accept(PHASE_BAROMETER.get());
                         // Items
                         output.accept(ICE_SHARD.get());
+                        output.accept(IMPURE_SULFUR.get());
+                        output.accept(SULFUR.get());
+                        output.accept(SOLID_PROPELLANT.get());
+                        output.accept(LIQUID_OXIDIZER.get());
+                        output.accept(ROCKET_FUEL_CELL.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());

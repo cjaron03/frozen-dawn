@@ -3,6 +3,7 @@ package com.frozendawn.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +30,10 @@ public class FrozenAtmosphereBlock extends Block {
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        if (level instanceof Level realLevel
+                && FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(realLevel, pos)) {
+            return false;
+        }
         BlockPos below = pos.below();
         BlockState belowState = level.getBlockState(below);
         return belowState.isFaceSturdy(level, below, Direction.UP);

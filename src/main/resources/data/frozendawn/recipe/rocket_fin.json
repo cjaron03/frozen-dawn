@@ -1,0 +1,18 @@
+{
+  "type": "frozendawn:blueprint_locked_shaped",
+  "category": "misc",
+  "pattern": [
+    "I  ",
+    "II ",
+    "CAC"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "C": { "item": "minecraft:copper_ingot" },
+    "A": { "item": "frozendawn:refined_acheronite" }
+  },
+  "result": {
+    "id": "frozendawn:rocket_fin",
+    "count": 1
+  }
+}

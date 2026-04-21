@@ -567,6 +567,13 @@
     "subtitle": "subtitle.frozendawn.radio.signal_lock",
     "sounds": [ "frozendawn:radio/signal_lock" ]
   },
+  "radio.martian_command_message": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.radio.martian_command",
+    "sounds": [
+      { "name": "frozendawn:radio/martian_command_message", "stream": true }
+    ]
+  },
   "radio.cutoff": {
     "category": "ambient",
     "sounds": [ "frozendawn:radio/radio_cutoff" ]

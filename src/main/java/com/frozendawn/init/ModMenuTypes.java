@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheronForgeMenu;
+import com.frozendawn.block.FuelProcessingSiloMenu;
 import com.frozendawn.block.GeothermalCoreMenu;
 import com.frozendawn.block.PhaseBarometerMenu;
 import com.frozendawn.block.ThermalHeaterMenu;
@@ -20,6 +21,10 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<GeothermalCoreMenu>> GEOTHERMAL_CORE =
             MENU_TYPES.register("geothermal_core",
                     () -> IMenuTypeExtension.create(GeothermalCoreMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<FuelProcessingSiloMenu>> FUEL_PROCESSING_SILO =
+            MENU_TYPES.register("fuel_processing_silo",
+                    () -> IMenuTypeExtension.create(FuelProcessingSiloMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<ThermalContainerMenu>> THERMAL_CONTAINER =
             MENU_TYPES.register("thermal_container",

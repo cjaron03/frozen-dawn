@@ -2,6 +2,7 @@ package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.OrsaStructureState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -138,6 +139,7 @@ public final class TowerPlacement {
         }
 
         state.setTowerAligned(towerId, true);
+        PlayerEndStats.incrementTerminalsHacked(player);
         boolean grantReward = !tower.rewardGranted();
         if (grantReward) {
             ItemStack compass = new ItemStack(ModItems.ACHERONITE_COMPASS.get());
