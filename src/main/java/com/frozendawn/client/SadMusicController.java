@@ -120,7 +120,7 @@ public final class SadMusicController {
                 return;
             }
 
-            playTrack(mc, FOREST_TRACK, TrackMode.FOREST, 0.9f);
+            playTrack(mc, FOREST_TRACK, TrackMode.FOREST, 1.0f);
             return;
         }
 
