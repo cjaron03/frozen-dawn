@@ -10,6 +10,23 @@ This document tracks audio in Frozen Dawn that is not original project audio or 
 
 ## Bundled Third-Party Audio
 
+### `forest_ambience.ogg`
+
+- Local file: `src/main/resources/assets/frozendawn/sounds/music/forest_ambience.ogg`
+- In-game event: `frozendawn:music.biome.forest_ambience`
+- Track title: `Forest Ambience`
+- Creator: TinyWorlds
+- Source URL: `https://opengameart.org/content/forest-ambience`
+- Downloaded source file: `https://opengameart.org/sites/default/files/Forest_Ambience.mp3`
+- License: CC0 1.0 / public domain dedication
+- Release status: Safe to bundle based on the asset page license. Attribution is not required by CC0, but the source is credited here for provenance.
+
+Attribution/provenance text:
+
+```text
+Forest ambience: "Forest Ambience" by TinyWorlds, CC0 (https://opengameart.org/content/forest-ambience)
+```
+
 ### `phase4_guest_1.ogg`
 
 - Local file: `src/main/resources/assets/frozendawn/sounds/music/phase4_guest_1.ogg`
@@ -34,10 +51,11 @@ Music: "Title Music" by Ross Bugden (https://www.youtube.com/watch?v=v29KVjUXiS8
 
 - Previous local file: `src/main/resources/assets/frozendawn/sounds/music/forest_night.ogg`
 - Previous in-game event: `frozendawn:music.biome.forest_night`
-- Release status: Removed before release.
+- Release status: Replaced before release.
 - Reason: redistribution terms were not verified strongly enough for bundling inside the mod jar.
+- Replacement: `forest_ambience.ogg` from the CC0 OpenGameArt asset above.
 
-The early-forest special music path was removed rather than shipped with unclear provenance. Early gameplay now falls back to the existing sparse vanilla-runtime melancholy music pool.
+The early-forest special music path now uses the CC0 replacement while preserving the original phase/biome behavior. It plays only in forest-like biomes through phase 2 and stops once phase 3 begins.
 
 ## Evidence Retention Checklist
 

@@ -93,6 +93,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_SUBWOOFER_LULLABY = register("music.sad.subwoofer_lullaby");
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_SWEDEN = register("music.sad.sweden");
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_WET_HANDS = register("music.sad.wet_hands");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FOREST_AMBIENCE = register("music.biome.forest_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> PHASE4_GUEST_1 = register("music.phase4_guest_1");
 
     // --- Frostbitten Mob ---

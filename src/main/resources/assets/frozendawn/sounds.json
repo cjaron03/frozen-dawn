@@ -518,6 +518,15 @@
       }
     ]
   },
+  "music.biome.forest_ambience": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/forest_ambience",
+        "stream": true
+      }
+    ]
+  },
   "music.phase4_guest_1": {
     "category": "music",
     "sounds": [
