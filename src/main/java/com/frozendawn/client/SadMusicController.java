@@ -39,7 +39,7 @@ public final class SadMusicController {
     private static final int FOREST_TRACK_DELAY_MAX = 180;
 
     private static final RandomSource RANDOM = RandomSource.create();
-    private static final TrackEntry FOREST_TRACK = track(ModSounds.FOREST_NIGHT, 1);
+    private static final TrackEntry FOREST_TRACK = track(ModSounds.FOREST_AMBIENCE, 1);
     private static final Set<ResourceLocation> FOREST_BIOMES = Set.of(
             ResourceLocation.withDefaultNamespace("forest"),
             ResourceLocation.withDefaultNamespace("flower_forest"),
@@ -120,7 +120,7 @@ public final class SadMusicController {
                 return;
             }
 
-            playTrack(mc, FOREST_TRACK, TrackMode.FOREST, 0.9f);
+            playTrack(mc, FOREST_TRACK, TrackMode.FOREST, 1.0f);
             return;
         }
 
