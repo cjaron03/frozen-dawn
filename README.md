@@ -1,7 +1,7 @@
 # Frozen Dawn
 
 <p align="center">
-  <img src="docs/images/readme-title.png" alt="Frozen Dawn" width="640">
+  <img src="docs/images/readme-title.png" alt="Frozen Dawn title screen" width="900">
 </p>
 
 <p align="center">
