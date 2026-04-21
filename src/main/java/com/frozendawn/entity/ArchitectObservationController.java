@@ -3,6 +3,7 @@ package com.frozendawn.entity;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.frozendawn.entity.architect.ArchitectObservationMemory;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
@@ -231,6 +232,7 @@ final class ArchitectObservationController {
     private void awardObserveProbeAdvancement(LivingEntity target) {
         if (target instanceof ServerPlayer player) {
             WorldTickHandler.grantAdvancement(player, "architect_noticed");
+            PlayerEndStats.incrementArchitectObserved(player);
         }
     }
 

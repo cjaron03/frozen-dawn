@@ -1,6 +1,7 @@
 package com.frozendawn.block;
 
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
@@ -101,7 +102,11 @@ public class ThermalHeaterBlock extends Block implements EntityBlock {
             if (be instanceof ThermalHeaterBlockEntity heater) {
                 // Check before shrink since shrink may empty the stack
                 boolean isCryoFuel = stack.is(ModItems.CRYO_FUEL.get());
+                boolean wasUnlit = !heater.isLit();
                 heater.addFuel(burnTime);
+                if (wasUnlit && player instanceof ServerPlayer serverPlayer) {
+                    PlayerEndStats.incrementHeatersLit(serverPlayer);
+                }
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }

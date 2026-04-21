@@ -1,6 +1,8 @@
 package com.frozendawn.block;
 
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.recipe.FuelProcessingSiloRecipes;
 import com.frozendawn.recipe.FuelProcessingSiloRecipes.FuelProcessingSiloRecipe;
 import net.minecraft.core.BlockPos;
@@ -143,6 +145,9 @@ public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuPr
         if (progressUnits >= progressTargetUnits) {
             recipe.consumeInputs(items, INPUT_SLOTS, level, worldPosition);
             ItemStack produced = recipe.createOutput();
+            if (level instanceof ServerLevel serverLevel && produced.is(ModItems.ROCKET_FUEL_CELL.get())) {
+                PlayerEndStats.addFuelCellsProcessedNearby(serverLevel, worldPosition, produced.getCount());
+            }
             ItemStack outputSlot = items.get(OUTPUT_SLOT);
             if (outputSlot.isEmpty()) {
                 items.set(OUTPUT_SLOT, produced);

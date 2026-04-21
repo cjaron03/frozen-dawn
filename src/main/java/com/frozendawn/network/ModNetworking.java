@@ -88,6 +88,11 @@ public class ModNetworking {
                 LaunchSequencePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleLaunchSequence(payload))
         );
+        registrar.playToClient(
+                EndingSequencePayload.TYPE,
+                EndingSequencePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleEndingSequence(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

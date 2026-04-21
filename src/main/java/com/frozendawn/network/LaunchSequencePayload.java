@@ -15,7 +15,8 @@ public record LaunchSequencePayload(
         int liftoffTicks,
         int ascentTicks,
         int atmosphereExitTicks,
-        int fadeTicks)
+        int fadeTicks,
+        int elapsedTicks)
         implements CustomPacketPayload {
 
     public static final Type<LaunchSequencePayload> TYPE =
@@ -31,8 +32,9 @@ public record LaunchSequencePayload(
             int ascentTicks = ByteBufCodecs.VAR_INT.decode(buf);
             int atmosphereExitTicks = ByteBufCodecs.VAR_INT.decode(buf);
             int fadeTicks = ByteBufCodecs.VAR_INT.decode(buf);
+            int elapsedTicks = ByteBufCodecs.VAR_INT.decode(buf);
             return new LaunchSequencePayload(entityId, padCenter, countdownTicks, liftoffTicks,
-                    ascentTicks, atmosphereExitTicks, fadeTicks);
+                    ascentTicks, atmosphereExitTicks, fadeTicks, elapsedTicks);
         }
 
         @Override
@@ -44,6 +46,7 @@ public record LaunchSequencePayload(
             ByteBufCodecs.VAR_INT.encode(buf, payload.ascentTicks());
             ByteBufCodecs.VAR_INT.encode(buf, payload.atmosphereExitTicks());
             ByteBufCodecs.VAR_INT.encode(buf, payload.fadeTicks());
+            ByteBufCodecs.VAR_INT.encode(buf, payload.elapsedTicks());
         }
     };
 

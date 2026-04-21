@@ -3,10 +3,14 @@ package com.frozendawn.world;
 import com.frozendawn.block.RocketLaunchStructure;
 import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.network.EndingSequencePayload;
 import com.frozendawn.network.LaunchSequencePayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -230,16 +235,8 @@ public final class RocketLaunchManager {
         state.setRocketPadCenter(padCenter);
         state.setRocketFuelCellsLoaded(0);
         level.playSound(null, padCenter, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 1.4F, 0.55F);
-        LaunchSequencePayload payload = new LaunchSequencePayload(
-                rocket.getId(),
-                padCenter,
-                RocketLaunchEntity.COUNTDOWN_TICKS,
-                RocketLaunchEntity.LIFTOFF_TRACK_TICKS,
-                RocketLaunchEntity.ASCENT_TICKS,
-                RocketLaunchEntity.ATMOSPHERE_EXIT_TICKS,
-                RocketLaunchEntity.FADE_TICKS);
         for (ServerPlayer player : level.players()) {
-            PacketDistributor.sendToPlayer(player, payload);
+            sendLaunchSequencePayload(player, rocket, padCenter, 0);
         }
         return true;
     }
@@ -270,7 +267,19 @@ public final class RocketLaunchManager {
     public static void finishLaunch(ServerLevel level, RocketLaunchEntity rocket) {
         WinConditionState state = WinConditionState.get(level.getServer());
         BlockPos padCenter = rocket.getPadCenter();
-        for (var passenger : List.copyOf(rocket.getPassengers())) {
+        List<net.minecraft.world.entity.Entity> passengers = List.copyOf(rocket.getPassengers());
+        boolean shouldTriggerEnding = !state.isEndingTriggered() || allowRepeatLaunchesForTesting();
+        boolean endingSent = false;
+        if (shouldTriggerEnding) {
+            for (var passenger : passengers) {
+                if (passenger instanceof ServerPlayer player) {
+                    sendEndingPayload(level, state, player);
+                    endingSent = true;
+                }
+            }
+        }
+
+        for (var passenger : passengers) {
             passenger.stopRiding();
             if (padCenter != null && !padCenter.equals(BlockPos.ZERO)) {
                 passenger.teleportTo(padCenter.getX() + 0.5D, padCenter.getY() + 1.05D, padCenter.getZ() + 0.5D);
@@ -279,6 +288,7 @@ public final class RocketLaunchManager {
             passenger.hurtMarked = true;
         }
         state.setLaunchCompleted(!allowRepeatLaunchesForTesting());
+        state.setEndingTriggered(!allowRepeatLaunchesForTesting() && endingSent);
         state.setLaunchInProgress(false);
         state.setRocketAssembled(false);
         state.setRocketFuelCellsLoaded(0);
@@ -286,6 +296,28 @@ public final class RocketLaunchManager {
         level.playSound(null, rocket.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 0.7F);
         rocket.setLaunchState(RocketLaunchEntity.STATE_FINISHED);
         rocket.discard();
+    }
+
+    public static void syncLaunchState(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        WinConditionState state = WinConditionState.get(level.getServer());
+        if (state.isLaunchInProgress()) {
+            BlockPos padCenter = state.getRocketPadCenter();
+            RocketLaunchEntity rocket = findRocket(level, padCenter);
+            if (rocket == null || padCenter == null) {
+                return;
+            }
+            int elapsedTicks = (int) Math.max(0L, level.getGameTime() - state.getLaunchSequenceStartTick());
+            sendLaunchSequencePayload(player, rocket, padCenter, Math.min(RocketLaunchEntity.getTotalSequenceTicks(), elapsedTicks));
+            return;
+        }
+
+        if (state.isLaunchCompleted() && !state.isEndingTriggered()) {
+            sendEndingPayload(level, state, player);
+            state.setEndingTriggered(true);
+        }
     }
 
     public static void spawnLaunchParticles(ServerLevel level, RocketLaunchEntity rocket) {
@@ -394,6 +426,80 @@ public final class RocketLaunchManager {
         List<RocketLaunchEntity> rockets = level.getEntitiesOfClass(RocketLaunchEntity.class, box,
                 rocket -> rocket.getPadCenter().equals(padCenter));
         return rockets.isEmpty() ? null : rockets.getFirst();
+    }
+
+    private static void sendLaunchSequencePayload(ServerPlayer player, RocketLaunchEntity rocket, BlockPos padCenter, int elapsedTicks) {
+        PacketDistributor.sendToPlayer(player, new LaunchSequencePayload(
+                rocket.getId(),
+                padCenter,
+                RocketLaunchEntity.COUNTDOWN_TICKS,
+                RocketLaunchEntity.LIFTOFF_TRACK_TICKS,
+                RocketLaunchEntity.ASCENT_TICKS,
+                RocketLaunchEntity.ATMOSPHERE_EXIT_TICKS,
+                RocketLaunchEntity.FADE_TICKS,
+                elapsedTicks));
+    }
+
+    private static void sendEndingPayload(ServerLevel level, WinConditionState state, ServerPlayer player) {
+        ApocalypseState apocalypseState = ApocalypseState.get(level.getServer());
+        PlayerEndStats.Snapshot endStats = PlayerEndStats.snapshot(player);
+        int daysSurvived = apocalypseState.getCurrentDay();
+        int terminalsHacked = PlayerEndStats.getTerminalsHacked(player);
+        int mobsKilled = player.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS));
+        int frostbittenKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.FROSTBITTEN.get()));
+        int frostmiteKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.FROSTMITE.get()));
+        int returnedKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.RETURNED.get()));
+        int mimicKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.MIMIC.get()));
+        int hollowKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.HOLLOW.get()));
+        int architectDefeats = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.ARCHITECT.get()));
+        int knownMobKills = frostbittenKilled
+                + frostmiteKilled
+                + returnedKilled
+                + mimicKilled
+                + hollowKilled
+                + architectDefeats;
+        int rocketComponentsCrafted = craftedCount(player, ModItems.ROCKET_ENGINE.get())
+                + craftedCount(player, ModItems.ROCKET_FIN.get())
+                + craftedCount(player, ModItems.ROCKET_HULL.get())
+                + craftedCount(player, ModItems.ROCKET_NOSE_CONE.get());
+        boolean truthEnding = state.isConspiracyDiscovered();
+        PacketDistributor.sendToPlayer(player, new EndingSequencePayload(
+                truthEnding,
+                daysSurvived,
+                terminalsHacked,
+                mobsKilled,
+                truthEnding,
+                endStats.lowestTemperatureSurvived(),
+                endStats.phasesWitnessedMask(),
+                apocalypseState.getBlocksFrozen(),
+                endStats.structuresDiscovered(),
+                endStats.orsaDocumentsRead(),
+                frostbittenKilled,
+                frostmiteKilled,
+                returnedKilled,
+                mimicKilled,
+                hollowKilled,
+                architectDefeats,
+                Math.max(0, mobsKilled - knownMobKills),
+                endStats.architectWallBreaches(),
+                endStats.heatersLit(),
+                endStats.fuelBurnedTicks(),
+                endStats.nightsUnderground(),
+                endStats.lowestHealth(),
+                endStats.architectObserved(),
+                endStats.architectRetreatedToHeal(),
+                endStats.architectWallBreaches(),
+                architectDefeats > 0,
+                rocketComponentsCrafted,
+                endStats.fuelCellsProcessed(),
+                PlayerEndStats.getDaysBetweenSatelliteAndLaunch(player, daysSurvived),
+                endStats.lastTemperatureRecorded(),
+                apocalypseState.getPhase(),
+                player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))));
+    }
+
+    private static int craftedCount(ServerPlayer player, net.minecraft.world.item.Item item) {
+        return player.getStats().getValue(Stats.ITEM_CRAFTED.get(item));
     }
 
     private static void refreshPadStates(ServerLevel level) {

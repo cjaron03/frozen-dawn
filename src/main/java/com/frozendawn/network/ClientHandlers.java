@@ -2,6 +2,7 @@ package com.frozendawn.network;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
+import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
@@ -92,5 +93,10 @@ public final class ClientHandlers {
 
     public static void handleLaunchSequence(LaunchSequencePayload payload) {
         RocketLaunchClientController.begin(payload);
+    }
+
+    public static void handleEndingSequence(EndingSequencePayload payload) {
+        RocketLaunchClientController.resetForEnding();
+        Minecraft.getInstance().setScreen(new FrozenDawnEndingScreen(payload));
     }
 }

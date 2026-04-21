@@ -24,6 +24,7 @@ public class ApocalypseState extends SavedData {
     private boolean initialized;
     private String presetName = "default";
     private boolean difficultyLocked;
+    private long blocksFrozen;
 
     /** Transient — tracks whether we've applied the stored preset this session. */
     private transient boolean presetAppliedThisSession;
@@ -61,6 +62,7 @@ public class ApocalypseState extends SavedData {
             state.presetName = tag.getString("presetName");
         }
         state.difficultyLocked = tag.getBoolean("difficultyLocked");
+        state.blocksFrozen = tag.getLong("blocksFrozen");
         state.presetAppliedThisSession = false;
         return state;
     }
@@ -71,6 +73,7 @@ public class ApocalypseState extends SavedData {
         tag.putBoolean("initialized", initialized);
         tag.putString("presetName", presetName);
         tag.putBoolean("difficultyLocked", difficultyLocked);
+        tag.putLong("blocksFrozen", blocksFrozen);
         return tag;
     }
 
@@ -197,6 +200,15 @@ public class ApocalypseState extends SavedData {
 
     public boolean isInitialized() {
         return initialized;
+    }
+
+    public long getBlocksFrozen() {
+        return blocksFrozen;
+    }
+
+    public void recordFrozenBlock() {
+        blocksFrozen++;
+        setDirty();
     }
 
     /**

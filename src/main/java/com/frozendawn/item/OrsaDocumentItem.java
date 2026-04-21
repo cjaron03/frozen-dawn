@@ -1,6 +1,8 @@
 package com.frozendawn.item;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.data.WinConditionState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.AdvancementHolder;
@@ -81,6 +83,13 @@ public class OrsaDocumentItem extends Item {
                 // Grant general classified_information for ORSA-authored docs only
                 if (!docType.equals("villager_journal") && !docType.startsWith("newspaper_")) {
                     grantAdvancement(serverPlayer, "classified_information");
+                    PlayerEndStats.incrementOrsaDocumentsRead(serverPlayer);
+                }
+
+                if (docType.equals("satellite_log")) {
+                    PlayerEndStats.markSatelliteFound(
+                            serverPlayer,
+                            ApocalypseState.get(serverPlayer.getServer()).getCurrentDay());
                 }
 
                 // Notify player
