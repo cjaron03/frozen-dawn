@@ -21,6 +21,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
@@ -36,7 +37,7 @@ import java.util.List;
 public class FrozenDawnEndingScreen extends Screen {
     private static final int BLACK_END_TICKS = 5 * 20;
     private static final int BASE_CREDITS_START_TICKS = 60 * 20;
-    private static final int ENDING_COMPLETE_TICKS = 9 * 60 * 20 + 30 * 20;
+    private static final int ENDING_COMPLETE_TICKS = 8 * 60 * 20 + 20 * 20;
     private static final int POST_CREDITS_BLACK_FADE_TICKS = 5 * 20;
     private static final int POST_CREDITS_COLONY_TICKS = 6 * 20;
     private static final int POST_CREDITS_MESSAGE_TICKS = 7 * 20;
@@ -50,6 +51,16 @@ public class FrozenDawnEndingScreen extends Screen {
     private static final float MARS_PITCH_RADIANS = -0.24F;
     private static final float MARS_ROLL_RADIANS = -0.22F;
     private static final int CREDIT_FAST_FORWARD_TICKS_PER_TICK = 55;
+    private static final SoundSource[] ENDING_MUTED_SOURCES = {
+            SoundSource.RECORDS,
+            SoundSource.WEATHER,
+            SoundSource.BLOCKS,
+            SoundSource.HOSTILE,
+            SoundSource.NEUTRAL,
+            SoundSource.PLAYERS,
+            SoundSource.AMBIENT,
+            SoundSource.VOICE
+    };
     private static final String[] MARS_FACE_TEXTURES = {
             "mars_front",
             "mars_back",
@@ -79,6 +90,7 @@ public class FrozenDawnEndingScreen extends Screen {
     protected void init() {
         if (ageTicks == 0) {
             EndingMusicController.start();
+            suppressWorldAudio();
         }
         updateReturnButton();
     }
@@ -99,6 +111,7 @@ public class FrozenDawnEndingScreen extends Screen {
         }
         updateComplianceAudioCue();
         EndingMusicController.tick(ageTicks);
+        suppressWorldAudio();
         updateReturnButton();
     }
 
@@ -174,7 +187,9 @@ public class FrozenDawnEndingScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return true;
+        // Credits music uses a runtime stream and volume ramp; Minecraft only
+        // advances streaming/tickable sound channels while the game is unpaused.
+        return false;
     }
 
     private int getCreditsStartTick() {
@@ -271,6 +286,15 @@ public class FrozenDawnEndingScreen extends Screen {
         EndingMusicController.stop();
         if (minecraft != null) {
             minecraft.setScreen(null);
+        }
+    }
+
+    private void suppressWorldAudio() {
+        if (minecraft == null) {
+            return;
+        }
+        for (SoundSource source : ENDING_MUTED_SOURCES) {
+            minecraft.getSoundManager().stop(null, source);
         }
     }
 
@@ -417,6 +441,8 @@ public class FrozenDawnEndingScreen extends Screen {
         graphics.fill(viewLeft + 10, statusY - 3, viewLeft + 142, statusY + 11, applyAlpha(0x6610141A, alpha));
         graphics.drawString(font, Component.literal("ORSA VIEWPORT"), viewLeft + 15, statusY,
                 applyAlpha(0xFF8DEAFF, alpha), false);
+
+        renderApproachVectorTelemetry(graphics, tick, viewLeft, viewRight, viewTop, viewBottom, alpha);
     }
 
     private float getApproachViewportAlpha(float tick) {
@@ -437,6 +463,76 @@ public class FrozenDawnEndingScreen extends Screen {
         graphics.fill(x, verticalStart, x + 2, verticalEnd, color);
         graphics.fill(horizontalStart, y + (top ? 2 : -2), horizontalStart + 6, y + (top ? 4 : 0),
                 applyAlpha(0xAA8DEAFF, alpha));
+    }
+
+    private void renderApproachVectorTelemetry(GuiGraphics graphics, float tick, int viewLeft, int viewRight,
+                                               int viewTop, int viewBottom, float alpha) {
+        int panelW = Math.min(210, Math.max(142, (viewRight - viewLeft) / 4));
+        int panelH = 88;
+        int panelX = viewRight - panelW - 18;
+        int panelY = viewBottom - panelH - 18;
+        if (panelX < viewLeft + 16 || panelY < viewTop + 18) {
+            return;
+        }
+
+        float flicker = 0.84F + hash01((int) tick * 17 + 31) * 0.16F;
+        float hudAlpha = alpha * flicker;
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, applyAlpha(0xA0061218, hudAlpha));
+        graphics.fill(panelX + 2, panelY + 2, panelX + panelW - 2, panelY + panelH - 2,
+                applyAlpha(0x66102931, hudAlpha));
+        graphics.fill(panelX + 7, panelY + 7, panelX + 9, panelY + panelH - 7, applyAlpha(0xCC4FC7DA, hudAlpha));
+        graphics.fill(panelX + 15, panelY + 10, panelX + panelW - 12, panelY + 11, applyAlpha(0x554FC7DA, hudAlpha));
+
+        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.title"),
+                panelX + 15, panelY + 16, applyAlpha(0xFF8DEAFF, hudAlpha), false);
+        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.gravity"),
+                panelX + 15, panelY + 30, applyAlpha(0xFFC9FFF8, hudAlpha), false);
+        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.corridor"),
+                panelX + 15, panelY + 42, applyAlpha(0xFFA7FFEA, hudAlpha), false);
+
+        int graphX = panelX + 18;
+        int graphY = panelY + 61;
+        int graphW = panelW - 42;
+        int centerY = graphY + 8;
+        int craftX = graphX + Math.round((0.22F + Mth.sin(tick * 0.025F) * 0.015F) * graphW);
+        int marsX = graphX + graphW - 8;
+        int cyan = applyAlpha(0xDD8DEAFF, hudAlpha);
+        int dimCyan = applyAlpha(0x6655C6D8, hudAlpha);
+        int orange = applyAlpha(0xFFE06D3C, hudAlpha);
+
+        graphics.fill(graphX, centerY, graphX + graphW, centerY + 1, dimCyan);
+        drawHudLine(graphics, craftX, centerY + 9, marsX, centerY - 5, cyan);
+        drawHudArrow(graphics, marsX - 10, centerY - 2, marsX - 1, centerY - 5, cyan);
+        drawHudReticle(graphics, marsX, centerY - 5, orange, hudAlpha);
+        graphics.fill(craftX - 1, centerY + 8, craftX + 2, centerY + 11, applyAlpha(0xFFE7F5FF, hudAlpha));
+        graphics.drawString(font, Component.translatable("screen.frozendawn.ending.vector.capture"),
+                graphX, panelY + 75, applyAlpha(0xFFB8EFFF, hudAlpha), false);
+    }
+
+    private void drawHudReticle(GuiGraphics graphics, int x, int y, int color, float alpha) {
+        graphics.fill(x - 2, y - 2, x + 3, y + 3, applyAlpha(0x55E06D3C, alpha));
+        graphics.fill(x - 7, y, x - 3, y + 1, color);
+        graphics.fill(x + 4, y, x + 8, y + 1, color);
+        graphics.fill(x, y - 7, x + 1, y - 3, color);
+        graphics.fill(x, y + 4, x + 1, y + 8, color);
+    }
+
+    private void drawHudArrow(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
+        drawHudLine(graphics, x0, y0, x1, y1, color);
+        drawHudLine(graphics, x1, y1, x1 - 5, y1 - 2, color);
+        drawHudLine(graphics, x1, y1, x1 - 3, y1 + 5, color);
+    }
+
+    private void drawHudLine(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int steps = Math.max(1, Math.max(dx, dy));
+        for (int i = 0; i <= steps; i++) {
+            float t = i / (float) steps;
+            int x = Math.round(Mth.lerp(t, x0, x1));
+            int y = Math.round(Mth.lerp(t, y0, y1));
+            graphics.fill(x, y, x + 1, y + 1, color);
+        }
     }
 
     private ProjectedFace projectMarsFace(int faceId, float yaw, float halfSize, float centerX, float centerY,
@@ -703,7 +799,7 @@ public class FrozenDawnEndingScreen extends Screen {
         float progress = Mth.clamp((tick - creditsStart) / (float) (creditsEnd - creditsStart), 0.0F, 1.0F);
         int totalHeight = totalCreditHeight();
         float travel = height + totalHeight + 120.0F;
-        int y = Math.round(height + 62.0F - progress * travel);
+        float y = height + 62.0F - progress * travel;
 
         for (CreditLine line : creditLines) {
             if (y + line.height() >= -140 && y <= height + 40) {
@@ -955,16 +1051,16 @@ public class FrozenDawnEndingScreen extends Screen {
             return new CreditLine(text, false, false, 0xFFE7F5FF, 1.0F, LINE_HEIGHT);
         }
 
-        void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, LogoRenderer logoRenderer, int screenWidth, int y) {
+        void render(GuiGraphics graphics, net.minecraft.client.gui.Font font, LogoRenderer logoRenderer, int screenWidth, float y) {
             if (logo) {
-                logoRenderer.renderLogo(graphics, screenWidth, 1.0F, y);
+                logoRenderer.renderLogo(graphics, screenWidth, 1.0F, Math.round(y));
                 return;
             }
             if (text.getString().isEmpty()) {
                 return;
             }
             graphics.pose().pushPose();
-            int x = centered ? Math.round(screenWidth / 2.0F - font.width(text) * scale / 2.0F) : screenWidth / 2 - 128;
+            float x = centered ? screenWidth / 2.0F - font.width(text) * scale / 2.0F : screenWidth / 2.0F - 128.0F;
             graphics.pose().translate(x, y, 0.0F);
             graphics.pose().scale(scale, scale, 1.0F);
             graphics.drawString(font, text, 0, 0, color, false);

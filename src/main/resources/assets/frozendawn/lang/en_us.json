@@ -339,6 +339,10 @@
   "screen.frozendawn.ending.return": "Return to World",
   "screen.frozendawn.ending.return_hint": "Press Space, Enter, or click to return.",
   "screen.frozendawn.ending.skip_hint": "Hold Q to fast-forward.",
+  "screen.frozendawn.ending.vector.title": "APPROACH VECTOR",
+  "screen.frozendawn.ending.vector.gravity": "Mars gravity well: captured",
+  "screen.frozendawn.ending.vector.corridor": "Entry corridor: locked",
+  "screen.frozendawn.ending.vector.capture": "0.38g capture",
 
   "item.frozendawn.stuffed_penguin": "Stuffed Penguin",
   "item.frozendawn.stuffed_capybara": "Stuffed Capybara",
