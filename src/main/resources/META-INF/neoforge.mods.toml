@@ -47,7 +47,7 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
 
 [[dependencies.${mod_id}]]
     modId="curios"
-    type="optional"
+    type="required"
     reason="Adds accessory slots for Curios-compatible Frozen Dawn gear"
     versionRange="[9,)"
     ordering="AFTER"
