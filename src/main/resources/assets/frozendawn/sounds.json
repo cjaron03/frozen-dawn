@@ -518,15 +518,6 @@
       }
     ]
   },
-  "music.biome.forest_night": {
-    "category": "music",
-    "sounds": [
-      {
-        "name": "frozendawn:music/forest_night",
-        "stream": true
-      }
-    ]
-  },
   "music.phase4_guest_1": {
     "category": "music",
     "sounds": [
