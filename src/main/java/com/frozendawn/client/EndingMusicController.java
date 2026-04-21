@@ -40,6 +40,8 @@ public final class EndingMusicController {
     public static void start() {
         Minecraft mc = Minecraft.getInstance();
         stop();
+        mc.getMusicManager().stopPlaying();
+        mc.getSoundManager().stop(null, SoundSource.MUSIC);
         try {
             int generation = ++startGeneration;
             EndingMusicSound resolver = new EndingMusicSound(null, lastEndingTicks);

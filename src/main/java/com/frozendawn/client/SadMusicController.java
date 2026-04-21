@@ -90,6 +90,11 @@ public final class SadMusicController {
 
         mc.getMusicManager().stopPlaying();
 
+        if (mc.screen instanceof FrozenDawnEndingScreen) {
+            enterMutedState(mc);
+            return;
+        }
+
         if (shouldMuteAllMusic()) {
             enterMutedState(mc);
             return;
