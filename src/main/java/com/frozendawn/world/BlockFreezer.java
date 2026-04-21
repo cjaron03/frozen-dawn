@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
@@ -117,44 +118,44 @@ public final class BlockFreezer {
         if (PhaseManager.isVacuumActive(phase, progress) && level.canSeeSky(pos.above())) {
             if ((state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK))
                     && level.getRandom().nextFloat() < 0.10f) {
-                level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
+                setFrozenBlock(level, pos, Blocks.ICE.defaultBlockState());
                 return;
             }
         }
 
         if (state.is(Blocks.FARMLAND) && phase >= 2) {
-            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.DIRT.defaultBlockState());
             return;
         }
         if (state.is(Blocks.DIRT_PATH) && phase >= 2) {
-            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.DIRT.defaultBlockState());
             return;
         }
         if (state.is(Blocks.GRASS_BLOCK) && phase >= 2) {
-            level.setBlock(pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState());
             return;
         }
         if ((state.is(Blocks.PODZOL) || state.is(Blocks.MYCELIUM)) && phase >= 2) {
-            level.setBlock(pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.DEAD_GRASS_BLOCK.get().defaultBlockState());
             return;
         }
         if (state.is(Blocks.MOSS_BLOCK) && phase >= 2) {
-            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.DIRT.defaultBlockState());
             return;
         }
         if (state.is(ModBlocks.DEAD_GRASS_BLOCK.get()) && phase >= 3) {
-            level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.DIRT.defaultBlockState());
             return;
         }
         if ((state.is(Blocks.DIRT)
                 || state.is(Blocks.COARSE_DIRT)
                 || state.is(Blocks.ROOTED_DIRT)
                 || state.is(Blocks.MUD)) && phase >= 4) {
-            level.setBlock(pos, ModBlocks.FROZEN_DIRT.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_DIRT.get().defaultBlockState());
             return;
         }
         if ((state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)) && phase >= 3) {
-            level.setBlock(pos, ModBlocks.FROZEN_SAND.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_SAND.get().defaultBlockState());
         }
     }
 
@@ -164,7 +165,7 @@ public final class BlockFreezer {
         if (pos.getY() < 0) return;
 
         if (state.is(Blocks.COAL_ORE) || state.is(Blocks.DEEPSLATE_COAL_ORE)) {
-            level.setBlock(pos, ModBlocks.FROZEN_COAL_ORE.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_COAL_ORE.get().defaultBlockState());
         }
     }
 
@@ -175,7 +176,7 @@ public final class BlockFreezer {
         if (!hasOutdoorFace(level, pos)) return;
 
         if (state.is(Blocks.COBBLESTONE) || state.is(Blocks.MOSSY_COBBLESTONE)) {
-            level.setBlock(pos, ModBlocks.FROZEN_COBBLESTONE.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_COBBLESTONE.get().defaultBlockState());
             state = level.getBlockState(pos);
         }
 
@@ -183,12 +184,12 @@ public final class BlockFreezer {
                 || state.is(Blocks.MOSSY_STONE_BRICKS)
                 || state.is(Blocks.CRACKED_STONE_BRICKS)
                 || state.is(Blocks.CHISELED_STONE_BRICKS)) {
-            level.setBlock(pos, ModBlocks.FROZEN_STONE_BRICKS.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_STONE_BRICKS.get().defaultBlockState());
             state = level.getBlockState(pos);
         }
 
         if (state.is(BlockTags.PLANKS)) {
-            level.setBlock(pos, ModBlocks.FROZEN_PLANKS.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_PLANKS.get().defaultBlockState());
             state = level.getBlockState(pos);
         }
 
@@ -463,30 +464,36 @@ public final class BlockFreezer {
         }
 
         if (state.is(Blocks.WATER) && phase >= 2) {
-            level.setBlock(pos, Blocks.ICE.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.ICE.defaultBlockState());
             return;
         }
         if (state.is(Blocks.ICE) && phase >= 3) {
-            level.setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.PACKED_ICE.defaultBlockState());
             return;
         }
         if (state.is(Blocks.PACKED_ICE) && phase >= 4) {
-            level.setBlock(pos, Blocks.BLUE_ICE.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.BLUE_ICE.defaultBlockState());
             return;
         }
 
         if (!FrozenDawnConfig.ENABLE_LAVA_FREEZING.get()) return;
 
         if (state.is(Blocks.LAVA) && phase >= 3) {
-            level.setBlock(pos, Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.MAGMA_BLOCK.defaultBlockState());
             return;
         }
         if (state.is(Blocks.MAGMA_BLOCK) && phase >= 4) {
-            level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), 3);
+            setFrozenBlock(level, pos, Blocks.OBSIDIAN.defaultBlockState());
             return;
         }
         if (state.is(Blocks.OBSIDIAN) && phase >= 4) {
-            level.setBlock(pos, ModBlocks.FROZEN_OBSIDIAN.get().defaultBlockState(), 3);
+            setFrozenBlock(level, pos, ModBlocks.FROZEN_OBSIDIAN.get().defaultBlockState());
+        }
+    }
+
+    private static void setFrozenBlock(ServerLevel level, BlockPos pos, BlockState newState) {
+        if (level.setBlock(pos, newState, 3)) {
+            ApocalypseState.get(level.getServer()).recordFrozenBlock();
         }
     }
 

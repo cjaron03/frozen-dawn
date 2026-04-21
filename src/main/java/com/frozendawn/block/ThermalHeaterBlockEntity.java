@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
@@ -11,6 +12,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -65,6 +67,9 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         }
         if (burnTimeRemaining > 0) {
             int totalDrain = getPhaseConsumption() + getFrostmiteFuelDrain();
+            if (level instanceof ServerLevel serverLevel) {
+                PlayerEndStats.addFuelBurnedNearby(serverLevel, worldPosition, Math.min(burnTimeRemaining, totalDrain));
+            }
             burnTimeRemaining = Math.max(0, burnTimeRemaining - totalDrain);
             if (burnTimeRemaining == 0) {
                 setChanged();
@@ -230,6 +235,9 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             return false;
         }
         burnTimeRemaining -= ticks;
+        if (level instanceof ServerLevel serverLevel) {
+            PlayerEndStats.addFuelBurnedNearby(serverLevel, worldPosition, ticks);
+        }
         industrialDrainWarningTicks = 40;
         if (burnTimeRemaining == 0
                 || (level != null && !level.isClientSide() && level.getServer() != null

@@ -1,6 +1,7 @@
 package com.frozendawn.entity.ai;
 
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModSounds;
@@ -289,6 +290,7 @@ public class ArchitectBlockBreaker {
             return;
         }
 
+        PlayerEndStats.incrementArchitectWallBreachesNearby(level, brokenPos);
         for (ServerPlayer player : level.players()) {
             if (!player.isSpectator()
                     && player.distanceToSqr(

@@ -982,12 +982,146 @@ public class FrozenDawnEndingScreen extends Screen {
         lines.add(CreditLine.center(Component.translatable("screen.frozendawn.ending.created_by"), 0xFFB8EFFF, 1.0F, 18));
         lines.add(CreditLine.center(Component.translatable("screen.frozendawn.ending.creator"), 0xFFFFFFFF, 1.28F, 30));
         lines.add(CreditLine.blank(36));
-        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_stats")));
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_survival")));
         lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.days", payload.daysSurvived())));
-        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.terminals", payload.terminalsHacked())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.lowest_temp",
+                formatTemperature(payload.lowestTemperatureSurvived()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.phases",
+                formatPhaseMask(payload.phasesWitnessedMask()))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_world")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.blocks_frozen",
+                formatCount(payload.blocksFrozen()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.structures",
+                formatCount(payload.structuresDiscovered()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.documents",
+                formatCount(payload.orsaDocumentsRead()))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_combat")));
         lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.mobs", payload.mobsKilled())));
+        addMobLine(lines, "frostbitten", payload.frostbittenKilled());
+        addMobLine(lines, "frostmite", payload.frostmiteKilled());
+        addMobLine(lines, "returned", payload.returnedKilled());
+        addMobLine(lines, "mimic", payload.mimicKilled());
+        addMobLine(lines, "hollow", payload.hollowKilled());
+        addMobLine(lines, "other", payload.otherMobsKilled());
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_defeats",
+                payload.architectDefeats())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_base_breaches",
+                payload.architectBreaches())));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_lore")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.terminals", payload.terminalsHacked())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.documents",
+                formatCount(payload.orsaDocumentsRead()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.conspiracy",
+                payload.conspiracyDiscovered()
+                        ? Component.translatable("screen.frozendawn.ending.yes")
+                        : Component.translatable("screen.frozendawn.ending.no"))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_journey")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.heaters_lit",
+                payload.heatersLit())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.fuel_burned",
+                formatFuelBurned(payload.fuelBurnedTicks()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.nights_underground",
+                payload.nightsUnderground())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.closest_call",
+                formatHealth(payload.lowestHealth()))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_architect")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_observed",
+                payload.architectObserved())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_retreats",
+                payload.architectRetreatedToHeal())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_wall_breaches",
+                payload.architectWallBreaches())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.architect_killed",
+                payload.architectKilled()
+                        ? Component.translatable("screen.frozendawn.ending.yes")
+                        : Component.translatable("screen.frozendawn.ending.no"))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_endgame")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.rocket_components",
+                payload.rocketComponentsCrafted())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.fuel_cells",
+                payload.fuelCellsProcessed())));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.satellite_to_launch",
+                formatOptionalDays(payload.daysBetweenSatelliteAndLaunch()))));
+        lines.add(CreditLine.blank(18));
+
+        lines.add(CreditLine.section(Component.translatable("screen.frozendawn.ending.section_quiet")));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.last_temp",
+                formatTemperature(payload.lastTemperatureBeforeLaunch()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.final_phase",
+                formatPhase(payload.finalPhaseAtLaunch()))));
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.time_played",
+                formatTimePlayed(payload.playTimeTicks()))));
+        lines.add(CreditLine.blank(34));
+        lines.add(CreditLine.center(Component.translatable("screen.frozendawn.ending.dedication")
+                .withStyle(ChatFormatting.ITALIC), 0xFFDCEBFF, 0.95F, 28));
         lines.add(CreditLine.blank(56));
         return lines;
+    }
+
+    private static void addMobLine(List<CreditLine> lines, String key, int count) {
+        lines.add(CreditLine.left(Component.translatable("screen.frozendawn.ending.stat.mob_" + key,
+                Math.max(0, count))));
+    }
+
+    private static String formatCount(long value) {
+        return String.format(java.util.Locale.US, "%,d", Math.max(0L, value));
+    }
+
+    private static String formatTemperature(float value) {
+        return String.format(java.util.Locale.US, "%.1fC", value);
+    }
+
+    private static String formatHealth(float value) {
+        return String.format(java.util.Locale.US, "%.1f HP", Math.max(0.0F, value));
+    }
+
+    private static String formatFuelBurned(int fuelTicks) {
+        float minutes = Math.max(0, fuelTicks) / 1200.0F;
+        return String.format(java.util.Locale.US, "%.1f heater-min", minutes);
+    }
+
+    private static String formatOptionalDays(int days) {
+        return days < 0 ? "Unknown" : String.format(java.util.Locale.US, "%,d days", days);
+    }
+
+    private static String formatTimePlayed(int playTimeTicks) {
+        float hours = Math.max(0, playTimeTicks) / 20.0F / 3600.0F;
+        return String.format(java.util.Locale.US, "%.1f hours", hours);
+    }
+
+    private static String formatPhase(int phase) {
+        return switch (phase) {
+            case 0 -> "Phase 0";
+            case 1 -> "Phase 1";
+            case 2 -> "Phase 2";
+            case 3 -> "Phase 3";
+            case 4 -> "Phase 4";
+            case 5 -> "Phase 5";
+            case 6 -> "Phase 6";
+            default -> "Phase " + phase;
+        };
+    }
+
+    private static String formatPhaseMask(int mask) {
+        List<String> phases = new ArrayList<>();
+        for (int phase = 0; phase <= 6; phase++) {
+            if ((mask & (1 << phase)) != 0) {
+                phases.add(String.valueOf(phase));
+            }
+        }
+        return phases.isEmpty() ? "None recorded" : String.join(", ", phases);
     }
 
     private static int applyAlpha(int color, float alphaScale) {

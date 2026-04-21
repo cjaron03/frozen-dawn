@@ -2,6 +2,7 @@ package com.frozendawn.event;
 
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
@@ -131,6 +132,7 @@ final class PlayerTickHandler {
                 if (player.level().dimension() == Level.OVERWORLD) {
                     float temp = getDisplayedTemperature(player, state);
                     playerTemperatures.put(player.getUUID(), temp);
+                    PlayerEndStats.recordTemperature(player, temp);
                     PacketDistributor.sendToPlayer(player, new TemperaturePayload(temp));
                 }
             }
@@ -184,6 +186,7 @@ final class PlayerTickHandler {
             IceClawsHandler.tick(player);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
+                PlayerEndStats.tickJourneyStats(player, state, currentPhase);
                 // Easter egg per-player tick checks (fires in all game modes)
                 EasterEggHandler.tickPerPlayer(player, currentPhase, progress);
             }

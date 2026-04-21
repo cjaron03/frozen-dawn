@@ -22,6 +22,7 @@ import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
+import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
@@ -892,6 +893,9 @@ public class ArchitectEntity extends Monster {
     void startDrinking() {
         combatState.isDrinkingPotion = true;
         combatState.drinkTicks = 0;
+        if (level() instanceof ServerLevel serverLevel) {
+            PlayerEndStats.incrementArchitectRetreatedToHealNearby(serverLevel, blockPosition());
+        }
         ItemStack potion = PotionContents.createItemStack(Items.POTION, Potions.STRONG_HEALING);
         setItemSlot(EquipmentSlot.MAINHAND, potion);
         getNavigation().stop();

@@ -8,6 +8,7 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.network.EndingSequencePayload;
 import com.frozendawn.network.LaunchSequencePayload;
@@ -440,16 +441,65 @@ public final class RocketLaunchManager {
     }
 
     private static void sendEndingPayload(ServerLevel level, WinConditionState state, ServerPlayer player) {
-        int daysSurvived = ApocalypseState.get(level.getServer()).getCurrentDay();
+        ApocalypseState apocalypseState = ApocalypseState.get(level.getServer());
+        PlayerEndStats.Snapshot endStats = PlayerEndStats.snapshot(player);
+        int daysSurvived = apocalypseState.getCurrentDay();
         int terminalsHacked = PlayerEndStats.getTerminalsHacked(player);
         int mobsKilled = player.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS));
+        int frostbittenKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.FROSTBITTEN.get()));
+        int frostmiteKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.FROSTMITE.get()));
+        int returnedKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.RETURNED.get()));
+        int mimicKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.MIMIC.get()));
+        int hollowKilled = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.HOLLOW.get()));
+        int architectDefeats = player.getStats().getValue(Stats.ENTITY_KILLED.get(ModEntities.ARCHITECT.get()));
+        int knownMobKills = frostbittenKilled
+                + frostmiteKilled
+                + returnedKilled
+                + mimicKilled
+                + hollowKilled
+                + architectDefeats;
+        int rocketComponentsCrafted = craftedCount(player, ModItems.ROCKET_ENGINE.get())
+                + craftedCount(player, ModItems.ROCKET_FIN.get())
+                + craftedCount(player, ModItems.ROCKET_HULL.get())
+                + craftedCount(player, ModItems.ROCKET_NOSE_CONE.get());
         boolean truthEnding = state.isConspiracyDiscovered();
         PacketDistributor.sendToPlayer(player, new EndingSequencePayload(
                 truthEnding,
                 daysSurvived,
                 terminalsHacked,
                 mobsKilled,
-                truthEnding));
+                truthEnding,
+                endStats.lowestTemperatureSurvived(),
+                endStats.phasesWitnessedMask(),
+                apocalypseState.getBlocksFrozen(),
+                endStats.structuresDiscovered(),
+                endStats.orsaDocumentsRead(),
+                frostbittenKilled,
+                frostmiteKilled,
+                returnedKilled,
+                mimicKilled,
+                hollowKilled,
+                architectDefeats,
+                Math.max(0, mobsKilled - knownMobKills),
+                endStats.architectWallBreaches(),
+                endStats.heatersLit(),
+                endStats.fuelBurnedTicks(),
+                endStats.nightsUnderground(),
+                endStats.lowestHealth(),
+                endStats.architectObserved(),
+                endStats.architectRetreatedToHeal(),
+                endStats.architectWallBreaches(),
+                architectDefeats > 0,
+                rocketComponentsCrafted,
+                endStats.fuelCellsProcessed(),
+                PlayerEndStats.getDaysBetweenSatelliteAndLaunch(player, daysSurvived),
+                endStats.lastTemperatureRecorded(),
+                apocalypseState.getPhase(),
+                player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME))));
+    }
+
+    private static int craftedCount(ServerPlayer player, net.minecraft.world.item.Item item) {
+        return player.getStats().getValue(Stats.ITEM_CRAFTED.get(item));
     }
 
     private static void refreshPadStates(ServerLevel level) {
