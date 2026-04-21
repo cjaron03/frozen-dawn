@@ -20,6 +20,14 @@ Answers are not handed to the player. Frozen Dawn's lore is spread across recove
 
 Over 120 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt by building Thermal Heaters, sealing shelters, upgrading survival gear, following ORSA signals, and assembling the final escape route before the surface goes silent.
 
+## What Makes Frozen Dawn Different
+
+- **The world is the timer.** The apocalypse is not a biome or weather preset; it is a server-authoritative phase system that rewrites terrain, atmosphere, light, sound, spawns, and survival pressure over time.
+- **Cold is a full survival loop.** Shelter, heat, depth, armor, fuel, wind chill, oxygen, and visibility all connect instead of acting as separate status effects.
+- **Exploration is diegetic.** Camps, towns, monitoring stations, terminals, landmarks, and recovered ORSA records point players forward without a quest log spelling everything out.
+- **Threats attack your decisions.** Late-game enemies pressure bases, heaters, light, walls, and travel routes, not just player health bars.
+- **The endgame is built, not clicked.** The final route requires discovering infrastructure, surviving phase 6 materials, processing fuel, assembling a launch site, and committing to a scripted escape sequence.
+
 ## Screenshots
 
 | Project Exodus launch site | Phase 6 whiteout |
@@ -41,7 +49,7 @@ Over 120 in-game days, the world progresses through 6 phases of an apocalyptic f
 | **5 — Eternal Winter** | 55–72 | Near-total darkness, obsidian freezes, blizzard whiteout, wind chill exhaustion |
 | **6 — Atmospheric Collapse** | 72–120 | Atmosphere freezes and collapses. Stars appear on a black sky. No air to breathe. |
 
-## Features
+## Detailed Feature Reference
 
 ### Environment
 - **Block transformation chains** — Grass → Dead Grass → Dirt → Frozen Dirt, Water → Ice → Packed Ice → Blue Ice, Lava → Magma → Obsidian → Frozen Obsidian, Coal Ore → Frozen Coal Ore
@@ -159,6 +167,15 @@ The intended pressure curve is asymmetrical:
 - **Architect** is the rare, intelligent, structural threat
 - **Frostmites** are the common, dumb, thermal threat
 - the rest of the roster fills the space between direct combat, environmental pressure, and base attrition
+
+### Architect / Surveyor Gear Progression
+
+Returned Architects can drop two progression-defining rewards: the **Surveyor Lens** and the **Architect Soul**.
+
+- **Surveyor Lens** — a reclaimed optic that can be held or offhanded for passive thermal vision. Right-clicking pings nearby heat signatures such as lit Thermal Heaters, Geothermal Cores, surfaced geothermal vents, Acheron Forges, and ORSA Transponders.
+- **Calibrated Surveyor Lens** — upgrades the base lens with an Architect Soul, 4x Refined Acheronite, and a diamond. The calibrated version reaches farther, shows more markers, and filters major infrastructure out of thermal clutter.
+- **ORSA Thermal Visor** — builds from calibrated lenses and provides hands-free thermal vision, +20°C cold resistance, and reduced oxygen drain when paired with EVA body equipment.
+- **Soul-Harvest Blade** — reforges an Acheronite Sword with an Architect Soul, Frozen Breath, and Refined Acheronite. It deals bonus damage against Frozen Dawn hostiles, turning the Architect's own remnant into an anti-apocalypse weapon.
 
 ## Installation
 
@@ -295,4 +312,4 @@ The built jar will be in `build/libs/`.
 
 ## License
 
-All Rights Reserved
+Frozen Dawn is licensed under the GNU Lesser General Public License v3.0 only (`LGPL-3.0-only`). See [LICENSE](LICENSE).
