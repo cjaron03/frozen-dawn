@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -23,6 +24,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.levelgen.Heightmap;
+
+import java.util.List;
 
 /**
  * Procedural builder for ORSA field camp structures.
@@ -43,6 +46,7 @@ public final class CampStructureBuilder {
 
     private static final int CAMP_RADIUS = 6;
     private static final int FLAG_HEIGHT = 6;
+    private static final String PERSONAL_NOTE_TEXT = "They lied. Mars was never a rescue.";
 
     private CampStructureBuilder() {
     }
@@ -385,8 +389,8 @@ public final class CampStructureBuilder {
 
     private static ItemStack createPersonalNoteDocument() {
         ItemStack doc = new ItemStack(ModItems.ORSA_DOCUMENT.get());
-        doc.set(DataComponents.CUSTOM_NAME,
-                Component.literal("Crumpled Note - \"Day 14: still no extraction\""));
+        doc.set(DataComponents.CUSTOM_NAME, Component.literal("Crumpled Note"));
+        doc.set(DataComponents.LORE, new ItemLore(List.of(Component.literal(PERSONAL_NOTE_TEXT))));
         CompoundTag tag = new CompoundTag();
         tag.putString("doc_type", "camp_personal_note");
         doc.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));

@@ -26,6 +26,7 @@ public final class TowerArchive {
     public static final int PAGE_COUNT = PAGE_TITLES.length;
     public static final int COMMAND_PAGE = PAGE_COUNT - 1;
     public static final String COMMAND_ARCHIVE_PASSWORD = "BLACKGLASS";
+    private static final String PROGRAM_SUCCESS_METRIC = "Program Success Metric: Relocation Throughput";
 
     private static final LocalDate APOCALYPSE_START = LocalDate.of(2042, 6, 20);
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("MMM dd", Locale.US);
@@ -83,6 +84,7 @@ public final class TowerArchive {
         lines.add("ROUTING CLASSES:");
         lines.add("GROUNDSIDE THERMAL RECEIVER");
         lines.add("SOL-04 CIVIC INTAKE RELAY");
+        lines.add(PROGRAM_SUCCESS_METRIC);
         return lines;
     }
 
