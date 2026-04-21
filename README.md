@@ -312,4 +312,4 @@ The built jar will be in `build/libs/`.
 
 ## License
 
-Frozen Dawn is licensed under the GNU Lesser General Public License v3.0 only (`LGPL-3.0-only`). See [LICENSE](LICENSE).
+Frozen Dawn is licensed under the GNU Lesser General Public License v3.0 or later (`LGPL-3.0-or-later`). See [LICENSE](LICENSE).
