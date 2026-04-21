@@ -1,18 +1,34 @@
 # Frozen Dawn
 
-A Minecraft mod where Earth becomes a rogue planet. The sun recedes, the world freezes, and survival shifts underground.
+<p align="center">
+  <img src="docs/images/readme-title.png" alt="Frozen Dawn" width="640">
+</p>
+
+<p align="center">
+  <strong>A survival horror Minecraft mod where the sun recedes, Earth freezes, and the last warm places become the only way forward.</strong>
+</p>
 
 **NeoForge 1.21.1** | **Java 21**
 
 ## Lore
 
-Frozen Dawn takes place after humanity's final attempt to stabilize Earth's climate subtly altered its orbit, triggering a slow, irreversible planetary freeze. The Orbital Resonance Stabilization Authority (ORSA) tried to correct course, but their network of 2,048 orbital adjustment nodes entered a feedback loop — each correction pushing the planet further from the sun. By the time they realized, the orbital momentum was irreversible.
+Frozen Dawn begins with the official story: Earth's climate intervention network failed, the sun receded, and the world entered a slow, irreversible freeze. The Orbital Resonance Stabilization Authority (ORSA) left behind evacuation camps, monitoring stations, emergency broadcasts, and secured terminals for anyone stubborn enough to keep digging.
 
-Frozen Dawn's lore is spread across recovered documents, authored world structures, camp and station records, and secured ORSA terminals. The original five-book trail is still there, but it now sits inside a much broader narrative archive.
+Answers are not handed to the player. Frozen Dawn's lore is spread across recovered documents, authored world structures, camp and station records, and secured ORSA terminals. The original five-book trail is still there, but it now sits inside a much broader narrative archive.
 
 ## Overview
 
-Over 120 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt — building Thermal Heaters, crafting insulated shelters, and ultimately constructing a Geothermal Core deep underground as their last hope for survival.
+Over 120 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt by building Thermal Heaters, sealing shelters, upgrading survival gear, following ORSA signals, and assembling the final escape route before the surface goes silent.
+
+## Screenshots
+
+| Project Exodus launch site | Phase 6 whiteout |
+|---|---|
+| <img src="docs/images/readme-launch-pad.png" alt="Rocket assembled at an ORSA launch site under a frozen night sky" width="520"> | <img src="docs/images/readme-whiteout.png" alt="A heavy Frozen Dawn blizzard over frozen terrain" width="520"> |
+
+| Frozen town collapse | ORSA terminal archive |
+|---|---|
+| <img src="docs/images/readme-frozen-town.png" alt="A frozen town buried under late-phase snowfall" width="520"> | <img src="docs/images/readme-terminal.png" alt="An ORSA terminal archive screen" width="520"> |
 
 ## Phases
 
@@ -69,6 +85,7 @@ At phase 5+, dimensional links are severed. Existing nether portals break and ne
 - **Insulated Glass** — Transparent block that counts as shelter (roof check). Build glass greenhouses that protect from the cold.
 - **Thermal Core** — Crafting component (iron + blaze powder + magma cream) used in heaters and the endgame core.
 - **Frozen Coal Ore** — Coal ore freezes in phase 4+ (configurable), Y≥0 only. Drops 1 coal (no fortune), 50% chance ice shard.
+- **Fuel Processing Silo** — Late-game 3x3x4 industrial multiblock that converts dangerous phase 6 resources into rocket fuel. Requires a nearby lit Thermal Heater, so processing fuel competes directly with staying warm.
 
 ### Phase 6: Atmospheric Collapse
 Phase 6 is divided into three sub-stages:
@@ -82,12 +99,23 @@ Phase 6 is divided into three sub-stages:
 
 **Habitable zones:** Players near a Geothermal Core below Y=0 have their air supply restored. Everyone else suffocates.
 
-### Endgame: Geothermal Core
-The Geothermal Core is the endgame objective — a massive heat source requiring resources from every phase:
+### Late Game: Geothermal Core
+The Geothermal Core is the final survival anchor before the launch arc: a massive heat source requiring resources from every phase.
 - **Below Y=0:** radius 12, +50°C (intended endgame anchor — meaningful warm bubble)
 - **Above Y=0:** radius 6, +15°C (survival aid, not salvation — doesn't trivialize the apocalypse)
 - **Craft chain:** Thermal Core (phase 2-3 resources) + Frozen Heart (diamond + blue ice + ice shards + frozen obsidian) → Geothermal Core (+ diamond blocks + obsidian)
 - **Design philosophy:** Above Y=0 is a survival aid. Below Y=0 is the intended endgame anchor. Modpack authors should tune `heatSourceMultiplier` to adjust.
+
+### Endgame: Project Exodus
+Project Exodus is the final content chain. It starts through nonlinear ORSA discovery paths and ends with a player-built launch system.
+- **Communication Tower** — Late-game ORSA landmark with secured terminal content, compass reward, and blast-pit coordinates
+- **Transponder broadcast** — Reestablishes a signal long enough to unlock the final construction package
+- **Sulfur caldera loop** — RUPTURE vent calderas become the main sulfur source once players have the right survival gear
+- **Fuel Processing Silo** — Processes sulfur, frozen atmosphere, and acheronite into launch fuel while draining heater fuel
+- **Launch Pad and Rocket Assembly** — Player-built blast-pit infrastructure converts into a rendered launch vehicle when the structure is valid
+- **Scripted launch sequence** — A cinematic, server-gated launch flow with cockpit HUD, fuel checks, countdown, ascent, and credits
+
+Late-game story details are intentionally not documented here.
 
 ### World Generation
 - **Frozen Towns** — Large jigsaw towns with squares, civic/commercial/residential layouts, authored sirens, street lights, rooftop PA speakers, and phase-aware emergency infrastructure
@@ -99,7 +127,7 @@ The Geothermal Core is the endgame objective — a massive heat source requiring
 - **Fresh chunk rule** — Town lighting, PA speakers, authored sirens, and roof revisions are structure-authored; players need fresh towns or newly generated chunks to see the full update
 
 ### ORSA Narrative
-Frozen Dawn's narrative is spread across recovered documents, world structures, and secured ORSA terminals. The original five-book trail still charts ORSA's collapse and humanity's failed attempt to stabilize Earth's orbit:
+Frozen Dawn's narrative is spread across recovered documents, world structures, and secured ORSA terminals. The original five-book trail still charts the public version of ORSA's collapse:
 1. **Village houses (20%)** — ORSA Outreach Pamphlet (optimism)
 2. **Desert temples (18%)** — ORSA Internal Memo (denial + false hope)
 3. **Mineshafts (15%)** — ORSA Field Report (escalation)
@@ -189,7 +217,7 @@ All commands require OP level 2.
 
 | Command | Description |
 |---------|-------------|
-| `/frozendawn win satellite` | Show the current satellite win-condition position/state |
+| `/frozendawn win satellite` | Show the current ORSA signal and late-game progression state |
 
 ## Config Presets
 
@@ -232,8 +260,8 @@ Edit `config/frozendawn-common.toml` after first launch.
 | `enableMimic` | true | Enable Mimic spawning in phase 6+ |
 | `enableArchitect` | true | Enable Architect spawning in phase 6+ |
 | `enableLoreBooks` | true | Enable ORSA lore books in structure loot |
-| `enableWinCondition` | true | Enable crashed-satellite/transponder win condition flow |
-| `broadcastTicks` | 120000 | Transponder broadcast duration in ticks (preset-managed) |
+| `enableWinCondition` | true | Enable the ORSA signal, transponder, and late-game launch progression flow |
+| `broadcastTicks` | 120000 | Transponder broadcast duration in ticks before the final construction package unlocks (preset-managed) |
 | `enableSkyDarkening` | true | Enable progressive sky darkening and fog |
 | `enableFrostOverlay` | true | Enable frost screen overlay in cold areas |
 | `enableSkyColorShift` | true | Enable phase-dependent sky color shifting |
