@@ -19,6 +19,7 @@ This document tracks audio in Frozen Dawn that is not original project audio or 
 - Source URL: `https://opengameart.org/content/forest-ambience`
 - Downloaded source file: `https://opengameart.org/sites/default/files/Forest_Ambience.mp3`
 - License: CC0 1.0 / public domain dedication
+- Local processing: Converted to OGG Vorbis from the source MP3 with +12 dB gain for in-game audibility.
 - Release status: Safe to bundle based on the asset page license. Attribution is not required by CC0, but the source is credited here for provenance.
 
 Attribution/provenance text:
