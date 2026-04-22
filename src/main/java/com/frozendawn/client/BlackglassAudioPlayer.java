@@ -31,7 +31,7 @@ final class BlackglassAudioPlayer {
         currentSound = new SimpleSoundInstance(
                 location,
                 SoundSource.RECORDS,
-                1.15F,
+                1.20F,
                 1.0F,
                 SoundInstance.createUnseededRandom(),
                 false,
