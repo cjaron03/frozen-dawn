@@ -24,6 +24,7 @@ final class BlackglassAudioPlayer {
         }
 
         stop();
+        suppressMusic(mc);
 
         DeferredHolder<SoundEvent, SoundEvent> holder = ModSounds.BLACKGLASS_SEGMENTS.get(segmentIndex);
         ResourceLocation location = holder.get().getLocation();
@@ -65,5 +66,23 @@ final class BlackglassAudioPlayer {
             currentSegment = -1;
         }
         return active;
+    }
+
+    static boolean isAnySegmentPlaying() {
+        Minecraft mc = Minecraft.getInstance();
+        if (currentSound == null || mc.getSoundManager() == null) {
+            return false;
+        }
+        boolean active = mc.getSoundManager().isActive(currentSound);
+        if (!active) {
+            currentSound = null;
+            currentSegment = -1;
+        }
+        return active;
+    }
+
+    private static void suppressMusic(Minecraft mc) {
+        mc.getMusicManager().stopPlaying();
+        mc.getSoundManager().stop(null, SoundSource.MUSIC);
     }
 }

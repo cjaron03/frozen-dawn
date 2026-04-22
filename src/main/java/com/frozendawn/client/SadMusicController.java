@@ -77,6 +77,11 @@ public final class SadMusicController {
             enterMutedState(mc);
             return;
         }
+        if (BlackglassAudioPlayer.isAnySegmentPlaying()) {
+            enterMutedState(mc);
+            mc.getSoundManager().stop(null, SoundSource.MUSIC);
+            return;
+        }
 
         if (currentTrack != null && !mc.getSoundManager().isActive(currentTrack)) {
             currentTrack = null;
