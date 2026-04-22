@@ -23,7 +23,14 @@ final class TowerTerminalInputController {
             }
             int audioButton = layout.archiveAudioButtonAt(mouseX, mouseY, viewModel);
             if (audioButton >= 0) {
-                viewModel.handleArchiveAudioButton(audioButton);
+                if (audioButton == 0) {
+                    int audioSegmentIndex = com.frozendawn.terminal.TowerArchive.blackglassSegmentIndex(viewModel.archivePage());
+                    BlackglassAudioPlayer.playSegment(audioSegmentIndex);
+                    viewModel.startArchiveAudio();
+                } else {
+                    BlackglassAudioPlayer.stop();
+                    viewModel.stopArchiveAudio();
+                }
                 return true;
             }
             int entryIndex = layout.archiveEntryAt(mouseX, mouseY, viewModel.archiveDirectoryScroll(), viewModel.archivePageCount());

@@ -218,15 +218,12 @@ final class TowerTerminalViewModel {
         return archiveAudioTicks;
     }
 
-    void handleArchiveAudioButton(int buttonIndex) {
-        if (buttonIndex == 0) {
-            archiveAudioPlaying = true;
-            return;
-        }
-        if (buttonIndex == 1) {
-            archiveAudioPlaying = !archiveAudioPlaying;
-            return;
-        }
+    void startArchiveAudio() {
+        archiveAudioPlaying = true;
+        archiveAudioTicks = 0;
+    }
+
+    void stopArchiveAudio() {
         archiveAudioPlaying = false;
         archiveAudioTicks = 0;
     }

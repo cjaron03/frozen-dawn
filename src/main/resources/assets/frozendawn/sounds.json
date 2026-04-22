@@ -139,6 +139,62 @@
     "category": "master",
     "sounds": [ "frozendawn:terminal/orsa_boot" ]
   },
+  "terminal.blackglass_segment_01": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_01", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_02": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_02", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_03": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_03", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_04": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_04", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_05": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_05", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_06": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_06", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_07": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_07", "stream": true }
+    ]
+  },
+  "terminal.blackglass_segment_08": {
+    "category": "record",
+    "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",
+    "sounds": [
+      { "name": "frozendawn:terminal/blackglass_segment_08", "stream": true }
+    ]
+  },
   "entity.frostbitten.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.frostbitten.ambient",

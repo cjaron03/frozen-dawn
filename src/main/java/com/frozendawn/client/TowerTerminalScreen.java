@@ -29,7 +29,13 @@ public class TowerTerminalScreen extends Screen {
     }
 
     public void applySnapshot(OpenTowerTerminalPayload payload) {
+        int previousAudioSegment = currentBlackglassSegment();
         viewModel.applySnapshot(payload);
+        int currentAudioSegment = currentBlackglassSegment();
+        if (previousAudioSegment != currentAudioSegment) {
+            BlackglassAudioPlayer.stop();
+            viewModel.stopArchiveAudio();
+        }
         if (minecraft != null && minecraft.screen == this) {
             refreshLayout();
             clampArchiveScrolls();
@@ -74,6 +80,7 @@ public class TowerTerminalScreen extends Screen {
         if (tickResult.closeScreen() && minecraft != null) {
             minecraft.setScreen(null);
         }
+        syncBlackglassAudioState();
     }
 
     @Override
@@ -121,6 +128,36 @@ public class TowerTerminalScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        BlackglassAudioPlayer.stop();
+        viewModel.stopArchiveAudio();
+    }
+
+    private void syncBlackglassAudioState() {
+        if (layout == null || !layout.isBlackglassArchive(viewModel)) {
+            if (viewModel.archiveAudioPlaying()) {
+                viewModel.stopArchiveAudio();
+            }
+            BlackglassAudioPlayer.stop();
+            return;
+        }
+
+        int segmentIndex = currentBlackglassSegment();
+        if (viewModel.archiveAudioPlaying() && !BlackglassAudioPlayer.isPlaying(segmentIndex)) {
+            viewModel.stopArchiveAudio();
+        }
+    }
+
+    private int currentBlackglassSegment() {
+        if (!com.frozendawn.terminal.TowerArchive.isBlackglassPage(
+                viewModel.archivePage(), viewModel.archivePasswordPrompt())) {
+            return -1;
+        }
+        return com.frozendawn.terminal.TowerArchive.blackglassSegmentIndex(viewModel.archivePage());
     }
 
     public static void openOrUpdate(Minecraft minecraft, OpenTowerTerminalPayload payload) {

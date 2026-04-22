@@ -459,8 +459,23 @@ final class TowerTerminalRenderer {
         drawScaledString(graphics, font,
                 Component.literal(TowerArchive.blackglassSegmentTitle(segmentIndex)),
                 x + 132, y + 7, layout.auditScale, 0xFFB7F1FF);
-        drawScaledString(graphics, font, Component.literal("SCROLL: MOUSE  NAV: A/D OR [/]"),
-                x + w - 178, y + 7, layout.auditScale, 0xFF58D7F0);
+        drawScaledString(graphics, font,
+                Component.literal(TowerArchive.blackglassSegmentTimecode(segmentIndex) + " / 08:36"),
+                x + w - 86, y + 7, layout.auditScale, 0xFF58D7F0);
+
+        int buttonX = layout.audioButtonX();
+        int buttonY = layout.audioButtonY();
+        int buttonSize = layout.audioButtonSize();
+        renderAudioButton(graphics, font, buttonX, buttonY, buttonSize, ">", 0xFF54D7EF, layout);
+        renderAudioButton(graphics, font, buttonX + buttonSize + 5, buttonY, buttonSize, "S", 0xFFFFB33C, layout);
+        drawScaledString(graphics, font,
+                Component.literal(viewModel.archiveAudioPlaying() ? "RECOVERED AUDIO PLAYING" : "RECOVERED AUDIO READY"),
+                buttonX + (buttonSize + 5) * 2 + 8, buttonY + 4, layout.auditScale,
+                viewModel.archiveAudioPlaying() ? 0xFFFFF0C2 : 0xFF7EA6B5);
+        int waveX = x + Math.max(260, w / 3);
+        int waveW = Math.max(76, w - waveX + x - BOX_PAD);
+        renderWaveform(graphics, waveX, buttonY + 1, waveW, 16,
+                viewModel.archiveAudioTicks(), viewModel.archiveAudioPlaying());
 
         drawScaledString(graphics, font, Component.literal("SEGMENTS"),
                 x + BOX_PAD, layout.segmentTabsY() + 3, layout.auditScale, 0xFF58D7F0);
