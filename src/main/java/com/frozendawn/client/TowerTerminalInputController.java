@@ -16,6 +16,16 @@ final class TowerTerminalInputController {
     boolean mouseClicked(double mouseX, double mouseY, int button,
                          TowerTerminalLayout layout, TowerTerminalViewModel viewModel) {
         if (viewModel.state() == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            int segmentIndex = layout.blackglassSegmentAt(mouseX, mouseY, viewModel);
+            if (segmentIndex >= 0) {
+                sendArchiveOpenAction(viewModel, com.frozendawn.terminal.TowerArchive.COMMAND_PAGE + segmentIndex);
+                return true;
+            }
+            int audioButton = layout.archiveAudioButtonAt(mouseX, mouseY, viewModel);
+            if (audioButton >= 0) {
+                viewModel.handleArchiveAudioButton(audioButton);
+                return true;
+            }
             int entryIndex = layout.archiveEntryAt(mouseX, mouseY, viewModel.archiveDirectoryScroll(), viewModel.archivePageCount());
             if (entryIndex >= 0) {
                 sendArchiveOpenAction(viewModel, entryIndex);

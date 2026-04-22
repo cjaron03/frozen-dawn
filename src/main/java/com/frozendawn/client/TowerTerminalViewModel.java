@@ -33,6 +33,8 @@ final class TowerTerminalViewModel {
     private String archivePasswordInput = "";
     private int archiveDirectoryScroll;
     private int archiveDetailScroll;
+    private boolean archiveAudioPlaying;
+    private int archiveAudioTicks;
 
     void applySnapshot(OpenTowerTerminalPayload payload) {
         long previousNonce = nonce;
@@ -60,6 +62,8 @@ final class TowerTerminalViewModel {
 
         if (payload.archivePage() != previousArchivePage) {
             archiveDetailScroll = 0;
+            archiveAudioPlaying = false;
+            archiveAudioTicks = 0;
         }
         closeTicks = state == OpenTowerTerminalPayload.STATE_COMPLETE ? 30 : -1;
         if (payload.nonce() != previousNonce || state != OpenTowerTerminalPayload.STATE_ACTIVE) {
@@ -87,6 +91,9 @@ final class TowerTerminalViewModel {
         }
         if (state == OpenTowerTerminalPayload.STATE_LOCKED_OUT && lockoutTicksRemaining > 0) {
             lockoutTicksRemaining--;
+        }
+        if (archiveAudioPlaying) {
+            archiveAudioTicks++;
         }
         boolean closeScreen = false;
         if (closeTicks > 0) {
@@ -201,6 +208,27 @@ final class TowerTerminalViewModel {
 
     void setArchiveDetailScroll(int archiveDetailScroll) {
         this.archiveDetailScroll = archiveDetailScroll;
+    }
+
+    boolean archiveAudioPlaying() {
+        return archiveAudioPlaying;
+    }
+
+    int archiveAudioTicks() {
+        return archiveAudioTicks;
+    }
+
+    void handleArchiveAudioButton(int buttonIndex) {
+        if (buttonIndex == 0) {
+            archiveAudioPlaying = true;
+            return;
+        }
+        if (buttonIndex == 1) {
+            archiveAudioPlaying = !archiveAudioPlaying;
+            return;
+        }
+        archiveAudioPlaying = false;
+        archiveAudioTicks = 0;
     }
 
     record TickResult(boolean playBootSound, boolean closeScreen) {

@@ -32,8 +32,15 @@ final class TowerTerminalRenderer {
     void render(GuiGraphics graphics, int mouseX, int mouseY, int width, int height, Font font, Component title,
                 TowerTerminalLayout layout, TowerTerminalViewModel viewModel) {
         renderFrame(graphics, width, height, layout);
-        drawCenteredScaledString(graphics, font, title, layout.panelX + layout.panelW / 2, layout.titleY,
+        Component headerTitle = viewModel.state() == OpenTowerTerminalPayload.STATE_ARCHIVE
+                && TowerArchive.isBlackglassPage(viewModel.archivePage(), viewModel.archivePasswordPrompt())
+                ? Component.literal("ORSA COMMAND ARCHIVE")
+                : title;
+        drawCenteredScaledString(graphics, font, headerTitle, layout.panelX + layout.panelW / 2, layout.titleY,
                 layout.headerScale, 0xFFE4F7FF);
+        if (viewModel.state() == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            renderHeaderBadge(graphics, font, layout, viewModel);
+        }
 
         if (viewModel.booting()) {
             renderBootSequence(graphics, font, layout, viewModel);
@@ -48,6 +55,9 @@ final class TowerTerminalRenderer {
         }
 
         renderStatePanel(graphics, font, mouseX, mouseY, layout, viewModel);
+        if (viewModel.state() == OpenTowerTerminalPayload.STATE_ARCHIVE) {
+            return;
+        }
         renderAudit(graphics, font, layout, viewModel);
     }
 
@@ -206,13 +216,18 @@ final class TowerTerminalRenderer {
     private void renderArchiveState(GuiGraphics graphics, Font font, int mouseX, int mouseY,
                                     TowerTerminalLayout layout, TowerTerminalViewModel viewModel) {
         TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
+        boolean blackglass = TowerArchive.isBlackglassPage(viewModel.archivePage(), viewModel.archivePasswordPrompt());
+        if (blackglass) {
+            renderBlackglassLockdownState(graphics, font, layout, viewModel);
+            return;
+        }
         renderInfoBox(graphics, font, archiveLayout.directoryX(), archiveLayout.directoryY(),
-                archiveLayout.directoryW(), archiveLayout.directoryH(), "DIRECTORY", 0xFFB7F1FF, 0xFF0D1820);
+                archiveLayout.directoryW(), archiveLayout.directoryH(), "DIRECTORY", 0xFFB7F1FF, 0xFF071019);
         renderInfoBox(graphics, font, archiveLayout.detailX(), archiveLayout.detailY(), archiveLayout.detailW(),
                 archiveLayout.detailH(), viewModel.archiveTitle().isBlank() ? "ARCHIVE DATA" : viewModel.archiveTitle(),
-                0xFFB7F1FF, 0xFF0D1820);
+                0xFFB7F1FF, 0xFF071019);
 
-        int pageTotal = layout.pageTotal(viewModel.archivePageCount());
+        int pageTotal = layout.directoryPageTotal(viewModel.archivePageCount());
         int rowY = archiveLayout.directoryContentY() - viewModel.archiveDirectoryScroll();
         int rowHeight = layout.archiveRowHeight();
         graphics.enableScissor(archiveLayout.directoryContentX(), archiveLayout.directoryContentY(),
@@ -222,8 +237,9 @@ final class TowerTerminalRenderer {
             int rowBottom = rowY + rowHeight;
             if (rowBottom >= archiveLayout.directoryContentY() - 2
                     && rowY <= archiveLayout.directoryContentY() + archiveLayout.directoryContentH()) {
-                String label = i < TowerArchive.PAGE_TITLES.length ? TowerArchive.PAGE_TITLES[i] : "ARCHIVE PAGE " + (i + 1);
-                boolean selected = i == viewModel.archivePage();
+                String label = TowerArchive.directoryTitle(i);
+                boolean selected = i == (viewModel.archivePage() >= TowerArchive.COMMAND_PAGE
+                        ? TowerArchive.COMMAND_PAGE : viewModel.archivePage());
                 boolean hovered = layout.archiveEntryAt(mouseX, mouseY, viewModel.archiveDirectoryScroll(),
                         viewModel.archivePageCount()) == i;
                 int rowX = archiveLayout.directoryContentX() - 2;
@@ -248,20 +264,7 @@ final class TowerTerminalRenderer {
                 layout.directoryScrollMax(viewModel.archivePageCount()), archiveLayout.directoryContentH(),
                 0xFF18303C, 0xFF58BDE4);
 
-        int contentY = archiveLayout.detailContentY() - viewModel.archiveDetailScroll();
-        int detailMaxY = viewModel.archivePasswordPrompt()
-                ? archiveLayout.detailContentY() + archiveLayout.detailContentH() - layout.auditLineHeight - 10
-                : archiveLayout.detailContentY() + archiveLayout.detailContentH();
-        graphics.enableScissor(archiveLayout.detailContentX(), archiveLayout.detailContentY(),
-                archiveLayout.detailContentX() + archiveLayout.detailContentW(),
-                archiveLayout.detailContentY() + archiveLayout.detailContentH());
-        for (FormattedCharSequence line : layout.archiveWrappedBody) {
-            if (contentY + layout.auditLineHeight >= archiveLayout.detailContentY() - 2 && contentY <= detailMaxY) {
-                drawScaledString(graphics, font, line, archiveLayout.detailContentX(), contentY, layout.auditScale, 0xFFD4EEF7);
-            }
-            contentY += layout.auditLineHeight;
-        }
-        graphics.disableScissor();
+        renderArchiveBody(graphics, font, layout, viewModel, blackglass);
         renderArchiveScrollbar(graphics, archiveLayout.detailScrollbarX(), archiveLayout.detailContentY(),
                 archiveLayout.detailContentH(), viewModel.archiveDetailScroll(), layout.detailScrollMax(),
                 archiveLayout.detailContentH(), 0xFF18303C, 0xFF58BDE4);
@@ -271,6 +274,274 @@ final class TowerTerminalRenderer {
             drawScaledString(graphics, font, Component.literal("AUTH: " + viewModel.archivePasswordInput() + cursor),
                     archiveLayout.detailContentX(), promptY, layout.auditScale, 0xFFF5F7EE);
         }
+    }
+
+    private void renderBlackglassLockdownState(GuiGraphics graphics, Font font, TowerTerminalLayout layout,
+                                               TowerTerminalViewModel viewModel) {
+        TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
+        renderInfoBox(graphics, font, archiveLayout.detailX(), archiveLayout.detailY(), archiveLayout.detailW(),
+                archiveLayout.detailH(), "BLACKGLASS LOCKDOWN OS", 0xFFFFB33C, 0xFF050C11);
+
+        int pulse = viewModel.blinkTicks();
+        int top = archiveLayout.detailY() + 23;
+        graphics.fill(archiveLayout.detailX() + BOX_PAD, top,
+                archiveLayout.detailX() + archiveLayout.detailW() - BOX_PAD, top + 1, 0xFFFFB33C);
+        for (int i = 0; i < 5; i++) {
+            int lineY = archiveLayout.detailContentY() + Math.floorMod(pulse * (i + 2) + i * 37,
+                    Math.max(1, archiveLayout.detailContentH()));
+            graphics.fill(archiveLayout.detailX() + BOX_PAD, lineY,
+                    archiveLayout.detailX() + archiveLayout.detailW() - BOX_PAD, lineY + 1,
+                    i % 2 == 0 ? 0x302BDDF4 : 0x24FFB33C);
+        }
+
+        int statusY = archiveLayout.detailY() + 27;
+        drawScaledString(graphics, font, Component.literal("STATUS: DIRECTORY SEALED // READ-ONLY TRANSCRIPT MODE"),
+                archiveLayout.detailX() + BOX_PAD, statusY, layout.auditScale, 0xFF58D7F0);
+        drawScaledString(graphics, font, Component.literal("REC ID: BG-556.17"),
+                archiveLayout.detailX() + archiveLayout.detailW() - 104, statusY,
+                layout.auditScale, 0xFFB7F1FF);
+        drawScaledString(graphics, font, Component.literal("AUTH OVERRIDE: BLACKGLASS // OS LOCKDOWN ACTIVE"),
+                archiveLayout.detailX() + BOX_PAD, statusY + layout.auditLineHeight + 2,
+                layout.auditScale, 0xFFFFB33C);
+
+        renderArchiveBody(graphics, font, layout, viewModel, true);
+        renderArchiveScrollbar(graphics, archiveLayout.detailScrollbarX(), archiveLayout.detailContentY(),
+                archiveLayout.detailContentH(), viewModel.archiveDetailScroll(), layout.detailScrollMax(),
+                archiveLayout.detailContentH(), 0xFF18303C, 0xFFFFB33C);
+        renderLockdownSegmentBar(graphics, font, layout, viewModel);
+    }
+
+    private void renderHeaderBadge(GuiGraphics graphics, Font font, TowerTerminalLayout layout,
+                                   TowerTerminalViewModel viewModel) {
+        boolean blackglass = TowerArchive.isBlackglassPage(viewModel.archivePage(), viewModel.archivePasswordPrompt());
+        drawScaledString(graphics, font, Component.literal("[ORSA OS v1.3.7]"),
+                layout.panelX + 16, layout.panelY + 11, layout.auditScale, 0xFF58BDE4);
+        drawScaledString(graphics, font, Component.literal(blackglass ? "FD-ARCHIVE-77A" : "FD-ARCHIVE"),
+                layout.panelX + layout.panelW - 132, layout.panelY + 11, layout.auditScale, 0xFF58BDE4);
+    }
+
+    private void renderArchiveBody(GuiGraphics graphics, Font font, TowerTerminalLayout layout,
+                                   TowerTerminalViewModel viewModel, boolean blackglass) {
+        TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
+        int contentY = archiveLayout.detailContentY() - viewModel.archiveDetailScroll();
+        int detailMaxY = viewModel.archivePasswordPrompt()
+                ? archiveLayout.detailContentY() + archiveLayout.detailContentH() - layout.auditLineHeight - 10
+                : archiveLayout.detailContentY() + archiveLayout.detailContentH();
+        int scaledWidth = Math.max(24, (int) Math.floor(archiveLayout.detailContentW() / layout.auditScale));
+        graphics.enableScissor(archiveLayout.detailContentX(), archiveLayout.detailContentY(),
+                archiveLayout.detailContentX() + archiveLayout.detailContentW(),
+                archiveLayout.detailContentY() + archiveLayout.detailContentH());
+        for (String rawLine : viewModel.archiveBodyLines()) {
+            int color = archiveLineColor(rawLine, blackglass);
+            for (FormattedCharSequence wrapped : font.split(Component.literal(rawLine), scaledWidth)) {
+                if (contentY + layout.auditLineHeight >= archiveLayout.detailContentY() - 2 && contentY <= detailMaxY) {
+                    drawScaledString(graphics, font, wrapped, archiveLayout.detailContentX(), contentY,
+                            layout.auditScale, color);
+                }
+                contentY += layout.auditLineHeight;
+            }
+        }
+        graphics.disableScissor();
+    }
+
+    private int archiveLineColor(String rawLine, boolean blackglass) {
+        if (!blackglass) {
+            return 0xFFD4EEF7;
+        }
+        String line = rawLine.toLowerCase(java.util.Locale.ROOT);
+        if (rawLine.isBlank()) {
+            return 0xFF5E8B9D;
+        }
+        if (rawLine.startsWith("BLACKGLASS") || rawLine.startsWith("ORSA EXECUTIVE")
+                || rawLine.startsWith("DATE:") || rawLine.startsWith("STATUS:") || rawLine.startsWith("SOURCE:")) {
+            return 0xFFB7F1FF;
+        }
+        if (line.contains("we create demand")
+                || line.contains("blackglass arrays")
+                || line.contains("mars to become the solution")
+                || line.contains("it was never rescue")
+                || line.contains("make sure they call us saviors")) {
+            return 0xFFFFD27A;
+        }
+        if (rawLine.startsWith("[") && rawLine.endsWith(":")) {
+            return 0xFF58D7F0;
+        }
+        if (rawLine.contains("Silence") || rawLine.contains("Recording")) {
+            return 0xFF7EA6B5;
+        }
+        return 0xFFE5F7FC;
+    }
+
+    private void renderRecoveredAudioPlayer(GuiGraphics graphics, Font font, TowerTerminalLayout layout,
+                                            TowerTerminalViewModel viewModel) {
+        TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
+        int x = archiveLayout.audioX();
+        int y = archiveLayout.audioY();
+        int w = archiveLayout.audioW();
+        int h = archiveLayout.audioH();
+        int segmentIndex = TowerArchive.blackglassSegmentIndex(viewModel.archivePage());
+
+        graphics.fill(x, y, x + w, y + h, 0xFF071019);
+        graphics.fill(x, y, x + w, y + 1, 0xFF58BDE4);
+        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF102B36);
+        graphics.fill(x + 1, y + 1, x + 2, y + h - 1, 0xFF1C5366);
+
+        drawScaledString(graphics, font, Component.literal("RECOVERED AUDIO"),
+                x + BOX_PAD, y + 7, layout.auditScale, 0xFF58D7F0);
+        drawScaledString(graphics, font,
+                Component.literal(TowerArchive.blackglassSegmentTimecode(segmentIndex) + " / 08:36"),
+                x + w - 86, y + 7, layout.auditScale, 0xFFB7F1FF);
+
+        int buttonX = layout.audioButtonX();
+        int buttonY = layout.audioButtonY();
+        int buttonSize = layout.audioButtonSize();
+        renderAudioButton(graphics, font, buttonX, buttonY, buttonSize, ">", 0xFF54D7EF, layout);
+        renderAudioButton(graphics, font, buttonX + buttonSize + 5, buttonY, buttonSize, "II", 0xFF7EA6B5, layout);
+        renderAudioButton(graphics, font, buttonX + (buttonSize + 5) * 2, buttonY, buttonSize, "S", 0xFF7EA6B5, layout);
+
+        int ttsW = Math.min(104, Math.max(86, w / 6));
+        int ttsX = x + w - BOX_PAD - ttsW;
+        int waveX = buttonX + (buttonSize + 5) * 3 + 10;
+        int waveY = y + 24;
+        int waveW = Math.max(70, ttsX - waveX - 10);
+        renderWaveform(graphics, waveX, waveY, waveW, 18, viewModel.archiveAudioTicks(), viewModel.archiveAudioPlaying());
+
+        int progressY = y + 47;
+        graphics.fill(x + BOX_PAD, progressY, x + w - BOX_PAD, progressY + 7, 0xFF0B222C);
+        int progressW = Math.max(10, Math.round((w - BOX_PAD * 2) * ((segmentIndex + 0.38f) / TowerArchive.blackglassSegmentCount())));
+        graphics.fill(x + BOX_PAD + 2, progressY + 2, x + BOX_PAD + progressW, progressY + 5, 0xFF58D7F0);
+        int scrubX = x + BOX_PAD + progressW;
+        graphics.fill(scrubX - 2, progressY - 2, scrubX + 2, progressY + 9, 0xFFB7F1FF);
+
+        graphics.fill(ttsX, y + 20, ttsX + ttsW, y + 43, 0xFF0A1A22);
+        graphics.fill(ttsX, y + 20, ttsX + ttsW, y + 21, 0xFF1C5366);
+        drawScaledString(graphics, font, Component.literal("TTS RECON"),
+                ttsX + 6, y + 25, layout.auditScale, 0xFF58D7F0);
+        renderMiniTtsBars(graphics, ttsX + 60, y + 30, viewModel.archiveAudioTicks(), viewModel.archiveAudioPlaying());
+
+        drawScaledString(graphics, font, Component.literal("SEG"),
+                x + BOX_PAD, layout.segmentTabsY() + 3, layout.auditScale, 0xFF58D7F0);
+        int tabY = layout.segmentTabsY();
+        for (int i = 0; i < TowerArchive.blackglassSegmentCount(); i++) {
+            int tabX = layout.segmentTabX(i, TowerArchive.blackglassSegmentCount());
+            boolean selected = i == segmentIndex;
+            int border = selected ? 0xFF58D7F0 : 0xFF1C5366;
+            graphics.fill(tabX, tabY, tabX + layout.segmentTabW(), tabY + layout.segmentTabH(),
+                    selected ? 0xFF12323E : 0xFF071019);
+            graphics.fill(tabX, tabY, tabX + layout.segmentTabW(), tabY + 1, border);
+            graphics.fill(tabX, tabY + layout.segmentTabH() - 1, tabX + layout.segmentTabW(), tabY + layout.segmentTabH(), border);
+            drawCenteredScaledString(graphics, font, Component.literal(String.format(java.util.Locale.US, "%02d", i + 1)),
+                    tabX + layout.segmentTabW() / 2, tabY + 3, layout.auditScale, selected ? 0xFFF5F7EE : 0xFF7EA6B5);
+        }
+
+        int warningY = y + h - 11;
+        graphics.fill(x + BOX_PAD, warningY - 2, x + w - BOX_PAD, warningY - 1, 0xFFFFB33C);
+        drawCenteredScaledString(graphics, font, Component.literal("/// EXECUTIVE LIABILITY MATERIAL ///"),
+                x + w / 2, warningY, layout.auditScale, 0xFFFFB33C);
+    }
+
+    private void renderLockdownSegmentBar(GuiGraphics graphics, Font font, TowerTerminalLayout layout,
+                                          TowerTerminalViewModel viewModel) {
+        TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
+        int x = archiveLayout.audioX();
+        int y = archiveLayout.audioY();
+        int w = archiveLayout.audioW();
+        int h = archiveLayout.audioH();
+        int segmentIndex = TowerArchive.blackglassSegmentIndex(viewModel.archivePage());
+
+        graphics.fill(x, y, x + w, y + h, 0xFF071019);
+        graphics.fill(x, y, x + w, y + 1, 0xFFFFB33C);
+        graphics.fill(x, y + h - 1, x + w, y + h, 0xFF102B36);
+        graphics.fill(x + 1, y + 1, x + 2, y + h - 1, 0xFF1C5366);
+
+        drawScaledString(graphics, font, Component.literal("LOCKDOWN TRANSCRIPT"),
+                x + BOX_PAD, y + 7, layout.auditScale, 0xFFFFB33C);
+        drawScaledString(graphics, font,
+                Component.literal(TowerArchive.blackglassSegmentTitle(segmentIndex)),
+                x + 132, y + 7, layout.auditScale, 0xFFB7F1FF);
+        drawScaledString(graphics, font, Component.literal("SCROLL: MOUSE  NAV: A/D OR [/]"),
+                x + w - 178, y + 7, layout.auditScale, 0xFF58D7F0);
+
+        drawScaledString(graphics, font, Component.literal("SEGMENTS"),
+                x + BOX_PAD, layout.segmentTabsY() + 3, layout.auditScale, 0xFF58D7F0);
+        int tabY = layout.segmentTabsY();
+        for (int i = 0; i < TowerArchive.blackglassSegmentCount(); i++) {
+            int tabX = layout.segmentTabX(i, TowerArchive.blackglassSegmentCount());
+            boolean selected = i == segmentIndex;
+            int border = selected ? 0xFFFFB33C : 0xFF1C5366;
+            graphics.fill(tabX, tabY, tabX + layout.segmentTabW(), tabY + layout.segmentTabH(),
+                    selected ? 0xFF2E2108 : 0xFF071019);
+            graphics.fill(tabX, tabY, tabX + layout.segmentTabW(), tabY + 1, border);
+            graphics.fill(tabX, tabY + layout.segmentTabH() - 1, tabX + layout.segmentTabW(),
+                    tabY + layout.segmentTabH(), border);
+            graphics.fill(tabX, tabY, tabX + 1, tabY + layout.segmentTabH(), border);
+            graphics.fill(tabX + layout.segmentTabW() - 1, tabY, tabX + layout.segmentTabW(),
+                    tabY + layout.segmentTabH(), border);
+            drawCenteredScaledString(graphics, font,
+                    Component.literal(String.format(java.util.Locale.US, "%02d", i + 1)),
+                    tabX + layout.segmentTabW() / 2, tabY + 3,
+                    layout.auditScale, selected ? 0xFFFFF0C2 : 0xFF7EA6B5);
+        }
+
+        int warningY = y + h - 11;
+        graphics.fill(x + BOX_PAD, warningY - 2, x + w - BOX_PAD, warningY - 1, 0xFFFFB33C);
+        drawCenteredScaledString(graphics, font, Component.literal("/// EXECUTIVE LIABILITY MATERIAL ///"),
+                x + w / 2, warningY, layout.auditScale, 0xFFFFB33C);
+    }
+
+    private void renderAudioButton(GuiGraphics graphics, Font font, int x, int y, int size, String label, int accent,
+                                   TowerTerminalLayout layout) {
+        graphics.fill(x, y, x + size, y + size, 0xFF071019);
+        graphics.fill(x, y, x + size, y + 1, accent);
+        graphics.fill(x, y, x + 1, y + size, accent);
+        graphics.fill(x + size - 1, y, x + size, y + size, 0xFF0A1720);
+        graphics.fill(x, y + size - 1, x + size, y + size, 0xFF0A1720);
+        drawCenteredScaledString(graphics, font, Component.literal(label), x + size / 2, y + 5,
+                layout.auditScale, accent);
+    }
+
+    private void renderWaveform(GuiGraphics graphics, int x, int y, int w, int h, int ticks, boolean playing) {
+        graphics.fill(x, y - 2, x + w, y + h + 2, 0x20000000);
+        int centerY = y + h / 2;
+        int bars = Math.max(12, w / 5);
+        for (int i = 0; i < bars; i++) {
+            int phase = playing ? ticks / 2 : 0;
+            int magnitude = 4 + Math.abs(((i * 11 + phase) % 25) - 12);
+            int barH = Math.min(h - 4, magnitude + (i % 5));
+            int barX = x + i * w / bars;
+            int color = (i + phase) % 7 == 0 ? 0xFFB7F1FF : 0xFF2FB8D0;
+            graphics.fill(barX, centerY - barH / 2, barX + 2, centerY + barH / 2, color);
+        }
+    }
+
+    private void renderTtsGlyph(GuiGraphics graphics, int x, int y, int ticks, boolean playing) {
+        graphics.fill(x, y, x + 24, y + 24, 0xFF163D4A);
+        graphics.fill(x + 4, y + 4, x + 20, y + 20, 0xFF2B7180);
+        graphics.fill(x + 18, y + 12, x + 30, y + 16, 0xFF2B7180);
+        int baseX = x + 42;
+        for (int i = 0; i < 12; i++) {
+            int phase = playing ? ticks / 3 : 0;
+            int barH = 5 + Math.abs(((i * 7 + phase) % 18) - 9);
+            graphics.fill(baseX + i * 5, y + 18 - barH, baseX + i * 5 + 2, y + 18, 0xFF58D7F0);
+        }
+    }
+
+    private void renderMiniTtsBars(GuiGraphics graphics, int x, int y, int ticks, boolean playing) {
+        for (int i = 0; i < 7; i++) {
+            int phase = playing ? ticks / 3 : 0;
+            int barH = 3 + Math.abs(((i * 5 + phase) % 10) - 5);
+            graphics.fill(x + i * 5, y + 9 - barH, x + i * 5 + 2, y + 9, 0xFF58D7F0);
+        }
+    }
+
+    private void renderSpeakerChip(GuiGraphics graphics, Font font, int x, int y, String label, int accent,
+                                   TowerTerminalLayout layout) {
+        int w = Math.max(34, Math.round(font.width(label) * layout.auditScale) + 12);
+        graphics.fill(x, y, x + w, y + 14, 0xFF071019);
+        graphics.fill(x, y, x + w, y + 1, accent);
+        graphics.fill(x, y, x + 1, y + 14, accent);
+        graphics.fill(x + 4, y + 5, x + 7, y + 8, accent);
+        drawScaledString(graphics, font, Component.literal(label), x + 10, y + 4, layout.auditScale, 0xFFE5F7FC);
     }
 
     private void renderProgressBar(GuiGraphics graphics, int x, int y, int w, float progress) {

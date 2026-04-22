@@ -17,15 +17,20 @@ final class TowerTerminalLayout {
     private static final int ADDRESS_GAP = 6;
     private static final int SEGMENT_GAP = 18;
     private static final int PANEL_MIN_W = 560;
-    private static final int PANEL_MAX_W = 760;
+    private static final int PANEL_MAX_W = 920;
     private static final int PANEL_MIN_H = 320;
-    private static final int PANEL_MAX_H = 500;
+    private static final int PANEL_MAX_H = 560;
     private static final int PANEL_PAD = 18;
     private static final int BOX_PAD = 10;
     private static final int ARCHIVE_TOP_GAP = 8;
     private static final int ARCHIVE_DIRECTORY_W = 176;
     private static final int ARCHIVE_SCROLLBAR_W = 6;
     private static final int ARCHIVE_SCROLLBAR_GAP = 6;
+    private static final int ARCHIVE_AUDIO_H = 44;
+    private static final int ARCHIVE_AUDIO_BUTTON = 18;
+    private static final int ARCHIVE_SEGMENT_TAB_W = 22;
+    private static final int ARCHIVE_SEGMENT_TAB_H = 13;
+    private static final int ARCHIVE_SEGMENT_TAB_GAP = 4;
 
     final int panelX;
     final int panelY;
@@ -152,9 +157,12 @@ final class TowerTerminalLayout {
         int auditW = contentWidth;
         int bottomMargin = 14;
         int maxAuditH = Math.max(84, panelY + panelH - bottomMargin - contentTop - 96);
-        int auditH = Math.min(maxAuditH,
+        boolean archiveMode = viewModel.state() == OpenTowerTerminalPayload.STATE_ARCHIVE;
+        int auditH = archiveMode
+                ? 0
+                : Math.min(maxAuditH,
                 desiredAuditHeight(font, auditScale, auditLineHeight, auditW - BOX_PAD * 2, viewModel));
-        int auditY = panelY + panelH - bottomMargin - auditH;
+        int auditY = archiveMode ? panelY + panelH - bottomMargin : panelY + panelH - bottomMargin - auditH;
 
         int boardY;
         if (viewModel.state() == OpenTowerTerminalPayload.STATE_ACTIVE) {
@@ -167,7 +175,7 @@ final class TowerTerminalLayout {
             boardY = contentTop;
         }
 
-        ArchiveLayout archiveLayout = createArchiveLayout(panelX, panelW, headerBottomY, auditY);
+        ArchiveLayout archiveLayout = createArchiveLayout(panelX, panelW, headerBottomY, auditY, viewModel);
         List<FormattedCharSequence> archiveWrappedBody = wrapArchiveBody(font, auditScale, archiveLayout.detailContentW(), viewModel);
         int directoryScrollMax = directoryScrollMax(archiveLayout, auditLineHeight, viewModel.archivePageCount());
         int detailScrollMax = detailScrollMax(archiveWrappedBody, archiveLayout, auditLineHeight, viewModel.archivePasswordPrompt());
@@ -215,7 +223,7 @@ final class TowerTerminalLayout {
         int rowStride = rowHeight + 2;
         double localY = mouseY - archiveLayout.directoryContentY() + archiveDirectoryScroll;
         int rowIndex = (int) Math.floor(localY / rowStride);
-        if (rowIndex < 0 || rowIndex >= pageTotal(archivePageCount)) {
+        if (rowIndex < 0 || rowIndex >= directoryPageTotal(archivePageCount)) {
             return -1;
         }
         double rowOffset = localY - rowIndex * rowStride;
@@ -236,13 +244,19 @@ final class TowerTerminalLayout {
         return archivePageCount > 0 ? archivePageCount : TowerArchive.PAGE_COUNT;
     }
 
+    int directoryPageTotal(int archivePageCount) {
+        int total = archivePageCount > 0 ? archivePageCount : TowerArchive.DIRECTORY_PAGE_COUNT;
+        return Math.min(TowerArchive.DIRECTORY_PAGE_COUNT, total);
+    }
+
     int clampDirectoryScroll(int scroll, int archivePageCount) {
         return clamp(scroll, 0, directoryScrollMax(archivePageCount));
     }
 
     int ensureSelectedArchiveEntryVisible(int archivePage, int currentScroll) {
+        int directoryPage = archivePage >= TowerArchive.COMMAND_PAGE ? TowerArchive.COMMAND_PAGE : archivePage;
         int rowStride = archiveRowHeight() + 2;
-        int rowTop = archivePage * rowStride;
+        int rowTop = directoryPage * rowStride;
         int rowBottom = rowTop + archiveRowHeight();
         int visibleTop = currentScroll;
         int visibleBottom = currentScroll + archiveLayout.directoryContentH();
@@ -271,6 +285,60 @@ final class TowerTerminalLayout {
         return Math.max(12, auditLineHeight + 2);
     }
 
+    boolean isBlackglassArchive(TowerTerminalViewModel viewModel) {
+        return TowerArchive.isBlackglassPage(viewModel.archivePage(), viewModel.archivePasswordPrompt());
+    }
+
+    int archiveAudioButtonAt(double mouseX, double mouseY, TowerTerminalViewModel viewModel) {
+        return -1;
+    }
+
+    int blackglassSegmentAt(double mouseX, double mouseY, TowerTerminalViewModel viewModel) {
+        if (!isBlackglassArchive(viewModel) || archiveLayout.audioH() <= 0) {
+            return -1;
+        }
+        int count = TowerArchive.blackglassSegmentCount();
+        int y = segmentTabsY();
+        for (int i = 0; i < count; i++) {
+            int x = segmentTabX(i, count);
+            if (mouseX >= x && mouseX < x + ARCHIVE_SEGMENT_TAB_W
+                    && mouseY >= y && mouseY < y + ARCHIVE_SEGMENT_TAB_H) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    int audioButtonX() {
+        return archiveLayout.audioX() + BOX_PAD;
+    }
+
+    int audioButtonY() {
+        return archiveLayout.audioY() + 22;
+    }
+
+    int audioButtonSize() {
+        return ARCHIVE_AUDIO_BUTTON;
+    }
+
+    int segmentTabsY() {
+        return archiveLayout.audioY() + archiveLayout.audioH() - 26;
+    }
+
+    int segmentTabX(int segmentIndex, int segmentCount) {
+        int totalW = segmentCount * ARCHIVE_SEGMENT_TAB_W + (segmentCount - 1) * ARCHIVE_SEGMENT_TAB_GAP;
+        int startX = archiveLayout.audioX() + archiveLayout.audioW() - BOX_PAD - totalW;
+        return startX + segmentIndex * (ARCHIVE_SEGMENT_TAB_W + ARCHIVE_SEGMENT_TAB_GAP);
+    }
+
+    int segmentTabW() {
+        return ARCHIVE_SEGMENT_TAB_W;
+    }
+
+    int segmentTabH() {
+        return ARCHIVE_SEGMENT_TAB_H;
+    }
+
     private static int desiredAuditHeight(Font font, float auditScale, int auditLineHeight, int contentWidth,
                                           TowerTerminalViewModel viewModel) {
         int scaledWidth = Math.max(24, (int) Math.floor(contentWidth / auditScale));
@@ -288,17 +356,23 @@ final class TowerTerminalLayout {
         return Math.max(110, contentHeight);
     }
 
-    private static ArchiveLayout createArchiveLayout(int panelX, int panelW, int headerBottomY, int auditY) {
+    private static ArchiveLayout createArchiveLayout(int panelX, int panelW, int headerBottomY, int auditY,
+                                                     TowerTerminalViewModel viewModel) {
         int boxX = panelX + PANEL_PAD;
         int boxY = headerBottomY + ARCHIVE_TOP_GAP;
         int boxW = panelW - PANEL_PAD * 2;
         int boxH = Math.max(110, auditY - boxY - 12);
-        int directoryW = Math.min(ARCHIVE_DIRECTORY_W, Math.max(150, boxW / 3));
-        int detailX = boxX + directoryW - 1;
+        boolean blackglass = TowerArchive.isBlackglassPage(viewModel.archivePage(), viewModel.archivePasswordPrompt());
+        int directoryW = blackglass ? 0 : Math.min(ARCHIVE_DIRECTORY_W, Math.max(150, boxW / 3));
+        int detailX = blackglass ? boxX : boxX + directoryW - 1;
         int detailW = Math.max(180, boxX + boxW - detailX);
-        int contentTop = boxY + 24;
-        int contentBottom = boxY + boxH - BOX_PAD;
+        int contentTop = boxY + (blackglass ? 44 : 24);
+        int audioH = blackglass ? ARCHIVE_AUDIO_H : 0;
+        int contentBottom = boxY + boxH - BOX_PAD - audioH - (blackglass ? 8 : 0);
         int contentHeight = Math.max(24, contentBottom - contentTop);
+        int audioX = detailX + BOX_PAD;
+        int audioY = contentBottom + 8;
+        int audioW = Math.max(0, detailW - BOX_PAD * 2);
         int directoryScrollbarX = boxX + directoryW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
         int directoryContentX = boxX + BOX_PAD;
         int directoryContentW = Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
@@ -307,7 +381,8 @@ final class TowerTerminalLayout {
         int detailContentW = Math.max(100, detailScrollbarX - ARCHIVE_SCROLLBAR_GAP - detailContentX);
         return new ArchiveLayout(boxX, boxY, directoryW, boxH, detailX, boxY, detailW, boxH,
                 directoryContentX, contentTop, directoryContentW, contentHeight, directoryScrollbarX,
-                detailContentX, contentTop, detailContentW, contentHeight, detailScrollbarX);
+                detailContentX, contentTop, detailContentW, contentHeight, detailScrollbarX,
+                audioX, audioY, audioW, audioH);
     }
 
     private static List<FormattedCharSequence> wrapArchiveBody(Font font, float auditScale, int detailContentWidth,
@@ -322,7 +397,8 @@ final class TowerTerminalLayout {
 
     private static int directoryScrollMax(ArchiveLayout archiveLayout, int auditLineHeight, int archivePageCount) {
         int rowHeight = Math.max(12, auditLineHeight + 2);
-        int pageTotal = archivePageCount > 0 ? archivePageCount : TowerArchive.PAGE_COUNT;
+        int pageTotal = Math.min(TowerArchive.DIRECTORY_PAGE_COUNT,
+                archivePageCount > 0 ? archivePageCount : TowerArchive.DIRECTORY_PAGE_COUNT);
         int contentHeight = Math.max(0, pageTotal * (rowHeight + 2) - 2);
         return Math.max(0, contentHeight - archiveLayout.directoryContentH());
     }
@@ -403,7 +479,8 @@ final class TowerTerminalLayout {
                          int directoryContentX, int directoryContentY, int directoryContentW, int directoryContentH,
                          int directoryScrollbarX,
                          int detailContentX, int detailContentY, int detailContentW, int detailContentH,
-                         int detailScrollbarX) {
+                         int detailScrollbarX,
+                         int audioX, int audioY, int audioW, int audioH) {
     }
 
     record TokenHitbox(int x, int y, int width, int height, int index, boolean word) {
