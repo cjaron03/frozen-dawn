@@ -211,6 +211,9 @@ final class TowerTerminalLayout {
     }
 
     int archiveEntryAt(double mouseX, double mouseY, int archiveDirectoryScroll, int archivePageCount) {
+        if (archiveLayout.directoryW() <= 0 || archiveLayout.directoryContentW() <= 0) {
+            return -1;
+        }
         int minX = archiveLayout.directoryContentX() - 2;
         int maxX = archiveLayout.directoryContentX() + archiveLayout.directoryContentW() + 2;
         int minY = archiveLayout.directoryContentY();
@@ -231,6 +234,9 @@ final class TowerTerminalLayout {
     }
 
     boolean isInsideDirectoryPane(double mouseX, double mouseY) {
+        if (archiveLayout.directoryW() <= 0 || archiveLayout.directoryContentW() <= 0) {
+            return false;
+        }
         return mouseX >= archiveLayout.directoryX() && mouseX < archiveLayout.directoryX() + archiveLayout.directoryW()
                 && mouseY >= archiveLayout.directoryY() && mouseY < archiveLayout.directoryY() + archiveLayout.directoryH();
     }
@@ -395,7 +401,8 @@ final class TowerTerminalLayout {
         int audioW = Math.max(0, detailW - BOX_PAD * 2);
         int directoryScrollbarX = boxX + directoryW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
         int directoryContentX = boxX + BOX_PAD;
-        int directoryContentW = Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
+        int directoryContentW = blackglass ? 0
+                : Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
         int detailScrollbarX = detailX + detailW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
         int detailContentX = detailX + BOX_PAD;
         int detailContentW = Math.max(100, detailScrollbarX - ARCHIVE_SCROLLBAR_GAP - detailContentX);
