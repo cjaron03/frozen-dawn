@@ -24,6 +24,7 @@ abstract class AbstractPuzzleTerminalBlockEntity<C> extends BlockEntity {
     protected static final int ACTION_ARCHIVE_NEXT = 3;
     protected static final int ACTION_ARCHIVE_OPEN_PAGE = 4;
     protected static final int ACTION_ARCHIVE_AUTH = 5;
+    protected static final int ACTION_ARCHIVE_KEEPALIVE = 6;
 
     private static final int TERMINAL_SESSION_TTL_TICKS = 20 * 90;
 
@@ -225,6 +226,11 @@ abstract class AbstractPuzzleTerminalBlockEntity<C> extends BlockEntity {
             return;
         }
 
+        if (actionType == ACTION_ARCHIVE_KEEPALIVE) {
+            sessionState.enterArchiveMode(TERMINAL_SESSION_TTL_TICKS);
+            setChanged();
+            return;
+        }
         if (actionType == ACTION_ARCHIVE_PREVIOUS) {
             navigateArchive(level, player, context, -1, 1.35f);
             return;
