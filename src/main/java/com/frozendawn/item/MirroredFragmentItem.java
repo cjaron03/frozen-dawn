@@ -30,6 +30,10 @@ public class MirroredFragmentItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
+        if (BoardPacketItem.tryRevealHeldPacket(level, player, hand)) {
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        }
+
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             SanityState state = SanityState.get(serverPlayer.getServer());
             int current = state.getIsolationTicks(serverPlayer.getUUID());
@@ -84,6 +88,8 @@ public class MirroredFragmentItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.frozendawn.mirrored_fragment")
                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        tooltip.add(Component.translatable("tooltip.frozendawn.mirrored_fragment.reflection")
+                .withStyle(ChatFormatting.DARK_AQUA, ChatFormatting.ITALIC));
         tooltip.add(Component.translatable("tooltip.frozendawn.mirrored_fragment.use")
                 .withStyle(ChatFormatting.AQUA));
     }

@@ -1,0 +1,24 @@
+{
+  "name": "ORSA Board Packet",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:board_packet",
+  "sortnum": 8,
+  "advancement": "frozendawn:found_board_packet",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Strategic Continuity",
+      "text": "$(bold)ORSA EXECUTIVE BOARD$()$(br)Strategic Continuity Session 14-B$(br2)Recovered records show a pre-phase board packet distributed to only six seats.$(br2)The attendance list names Vale, Ren, Sato, Hollis, Kline, and a redacted security officer. Copies were meant to be returned to Records immediately after adjournment."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Agenda Packet",
+      "text": "The packet is divided by $(italic)page$() and $(italic)agenda$() groupings rather than a single narrative memo.$(br2)Topics jump between board procedure, colonial holdings, atmospheric stabilization, security audits, geothermal dampers, and strategic continuity motions.$(br2)The structure feels more important than the prose."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Directive 7-C",
+      "text": "The closing line forbids annotations in $(italic)non-archival ink$() under directive 7-C.$(br2)That warning does not read like a formality. It reads like someone expected the margins to matter."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:classified_information",
+  "display": {
+    "icon": {
+      "id": "frozendawn:board_packet"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.found_board_packet.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.found_board_packet.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -212,6 +212,11 @@ public final class MonitoringStationArchive {
         lines.add("RELAY NOTE:");
         lines.add("WEATHER INGEST PAYLOADS REMAIN BUFFERED AT THIS NODE");
         lines.add("COMM TOWER ACKNOWLEDGEMENT CHANNEL HAS BEEN SILENT");
+        lines.add("DIRECTIVE 7-C VIOLATIONS:");
+        lines.add("REFLECTIVE REVIEW REQUIRED BEFORE DISPOSAL");
+        lines.add("INDEX FORMAT: PAGE / AGENDA / WORD");
+        lines.add("COLUMN RESTORE: SEATING AUTHORITY ORDER");
+        lines.add("SUPERSEDES TIMESTAMP ORDER");
         return lines;
     }
 
