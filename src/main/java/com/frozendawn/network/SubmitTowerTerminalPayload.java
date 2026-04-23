@@ -17,6 +17,7 @@ public record SubmitTowerTerminalPayload(BlockPos pos, long nonce, int actionTyp
     public static final int ACTION_ARCHIVE_NEXT = 3;
     public static final int ACTION_ARCHIVE_OPEN_PAGE = 4;
     public static final int ACTION_ARCHIVE_AUTH = 5;
+    public static final int ACTION_ARCHIVE_KEEPALIVE = 6;
 
     public static final Type<SubmitTowerTerminalPayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "submit_tower_terminal"));

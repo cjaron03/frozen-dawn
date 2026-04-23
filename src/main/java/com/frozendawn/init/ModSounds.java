@@ -7,6 +7,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.List;
+
 public class ModSounds {
     public static final DeferredRegister<SoundEvent> SOUNDS =
             DeferredRegister.create(Registries.SOUND_EVENT, FrozenDawn.MOD_ID);
@@ -221,6 +223,16 @@ public class ModSounds {
 
     // --- Terminal Boot ---
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");
+    public static final List<DeferredHolder<SoundEvent, SoundEvent>> BLACKGLASS_SEGMENTS = List.of(
+            register("terminal.blackglass_segment_01"),
+            register("terminal.blackglass_segment_02"),
+            register("terminal.blackglass_segment_03"),
+            register("terminal.blackglass_segment_04"),
+            register("terminal.blackglass_segment_05"),
+            register("terminal.blackglass_segment_06"),
+            register("terminal.blackglass_segment_07"),
+            register("terminal.blackglass_segment_08")
+    );
 
     // --- Camp Radio ---
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_BURST = register("radio.static_burst");

@@ -9,3 +9,7 @@ All rights reserved. Not covered by the LGPL license applying to source code.
 - `Frostbitten` - phase 3 theme (`phase3_frostbitten.ogg`)
 - `Igloo` - phase 5 theme (`phase5_igloo.ogg`)
 - `Sub-Zero` - phase 6+ theme (`phase6_sub_zero.ogg`)
+
+## Original Audio Design
+
+- `BLACKGLASS Recovered Audio` - segmented terminal transcript reconstruction (`blackglass_segment_01.ogg` through `blackglass_segment_08.ogg`)

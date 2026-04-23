@@ -26,7 +26,7 @@ final class TowerTerminalLayout {
     private static final int ARCHIVE_DIRECTORY_W = 176;
     private static final int ARCHIVE_SCROLLBAR_W = 6;
     private static final int ARCHIVE_SCROLLBAR_GAP = 6;
-    private static final int ARCHIVE_AUDIO_H = 44;
+    private static final int ARCHIVE_AUDIO_H = 64;
     private static final int ARCHIVE_AUDIO_BUTTON = 18;
     private static final int ARCHIVE_SEGMENT_TAB_W = 22;
     private static final int ARCHIVE_SEGMENT_TAB_H = 13;
@@ -211,6 +211,9 @@ final class TowerTerminalLayout {
     }
 
     int archiveEntryAt(double mouseX, double mouseY, int archiveDirectoryScroll, int archivePageCount) {
+        if (archiveLayout.directoryW() <= 0 || archiveLayout.directoryContentW() <= 0) {
+            return -1;
+        }
         int minX = archiveLayout.directoryContentX() - 2;
         int maxX = archiveLayout.directoryContentX() + archiveLayout.directoryContentW() + 2;
         int minY = archiveLayout.directoryContentY();
@@ -231,6 +234,9 @@ final class TowerTerminalLayout {
     }
 
     boolean isInsideDirectoryPane(double mouseX, double mouseY) {
+        if (archiveLayout.directoryW() <= 0 || archiveLayout.directoryContentW() <= 0) {
+            return false;
+        }
         return mouseX >= archiveLayout.directoryX() && mouseX < archiveLayout.directoryX() + archiveLayout.directoryW()
                 && mouseY >= archiveLayout.directoryY() && mouseY < archiveLayout.directoryY() + archiveLayout.directoryH();
     }
@@ -290,6 +296,26 @@ final class TowerTerminalLayout {
     }
 
     int archiveAudioButtonAt(double mouseX, double mouseY, TowerTerminalViewModel viewModel) {
+        if (!isBlackglassArchive(viewModel) || archiveLayout.audioH() <= 0) {
+            return -1;
+        }
+
+        int y = audioButtonY();
+        int size = audioButtonSize();
+        if (mouseY < y || mouseY >= y + size) {
+            return -1;
+        }
+
+        int playX = audioButtonX();
+        if (mouseX >= playX && mouseX < playX + size) {
+            return 0;
+        }
+
+        int stopX = playX + size + 5;
+        if (mouseX >= stopX && mouseX < stopX + size) {
+            return 1;
+        }
+
         return -1;
     }
 
@@ -314,7 +340,7 @@ final class TowerTerminalLayout {
     }
 
     int audioButtonY() {
-        return archiveLayout.audioY() + 22;
+        return archiveLayout.audioY() + 17;
     }
 
     int audioButtonSize() {
@@ -375,7 +401,8 @@ final class TowerTerminalLayout {
         int audioW = Math.max(0, detailW - BOX_PAD * 2);
         int directoryScrollbarX = boxX + directoryW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
         int directoryContentX = boxX + BOX_PAD;
-        int directoryContentW = Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
+        int directoryContentW = blackglass ? 0
+                : Math.max(60, directoryScrollbarX - ARCHIVE_SCROLLBAR_GAP - directoryContentX);
         int detailScrollbarX = detailX + detailW - BOX_PAD - ARCHIVE_SCROLLBAR_W;
         int detailContentX = detailX + BOX_PAD;
         int detailContentW = Math.max(100, detailScrollbarX - ARCHIVE_SCROLLBAR_GAP - detailContentX);

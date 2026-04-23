@@ -2,20 +2,25 @@ package com.frozendawn.client;
 
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.OpenTowerTerminalPayload;
+import com.frozendawn.network.SubmitTowerTerminalPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class TowerTerminalScreen extends Screen {
+
+    private static final int BLACKGLASS_KEEPALIVE_INTERVAL_TICKS = 20 * 10;
 
     private final BlockPos consolePos;
     private final TowerTerminalViewModel viewModel = new TowerTerminalViewModel();
     private final TowerTerminalRenderer renderer = new TowerTerminalRenderer();
     private final TowerTerminalInputController inputController;
     private TowerTerminalLayout layout;
+    private int blackglassKeepaliveTicks;
 
     public TowerTerminalScreen(OpenTowerTerminalPayload payload) {
         super(Component.literal("ORSA UPLINK TERMINAL"));
@@ -29,7 +34,13 @@ public class TowerTerminalScreen extends Screen {
     }
 
     public void applySnapshot(OpenTowerTerminalPayload payload) {
+        int previousAudioSegment = currentBlackglassSegment();
         viewModel.applySnapshot(payload);
+        int currentAudioSegment = currentBlackglassSegment();
+        if (previousAudioSegment != currentAudioSegment) {
+            BlackglassAudioPlayer.stop();
+            viewModel.stopArchiveAudio();
+        }
         if (minecraft != null && minecraft.screen == this) {
             refreshLayout();
             clampArchiveScrolls();
@@ -74,6 +85,8 @@ public class TowerTerminalScreen extends Screen {
         if (tickResult.closeScreen() && minecraft != null) {
             minecraft.setScreen(null);
         }
+        syncBlackglassAudioState();
+        tickBlackglassKeepalive();
     }
 
     @Override
@@ -121,6 +134,55 @@ public class TowerTerminalScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        BlackglassAudioPlayer.stop();
+        viewModel.stopArchiveAudio();
+    }
+
+    private void syncBlackglassAudioState() {
+        if (layout == null || !layout.isBlackglassArchive(viewModel)) {
+            if (viewModel.archiveAudioPlaying()) {
+                viewModel.stopArchiveAudio();
+            }
+            BlackglassAudioPlayer.stop();
+            return;
+        }
+
+        int segmentIndex = currentBlackglassSegment();
+        if (viewModel.archiveAudioPlaying() && !BlackglassAudioPlayer.isPlaying(segmentIndex)) {
+            viewModel.stopArchiveAudio();
+        }
+    }
+
+    private int currentBlackglassSegment() {
+        if (!com.frozendawn.terminal.TowerArchive.isBlackglassPage(
+                viewModel.archivePage(), viewModel.archivePasswordPrompt())) {
+            return -1;
+        }
+        return com.frozendawn.terminal.TowerArchive.blackglassSegmentIndex(viewModel.archivePage());
+    }
+
+    private void tickBlackglassKeepalive() {
+        if (viewModel.state() != OpenTowerTerminalPayload.STATE_ARCHIVE || currentBlackglassSegment() < 0) {
+            blackglassKeepaliveTicks = 0;
+            return;
+        }
+        blackglassKeepaliveTicks++;
+        if (blackglassKeepaliveTicks < BLACKGLASS_KEEPALIVE_INTERVAL_TICKS) {
+            return;
+        }
+        blackglassKeepaliveTicks = 0;
+        PacketDistributor.sendToServer(new SubmitTowerTerminalPayload(
+                consolePos,
+                viewModel.nonce(),
+                SubmitTowerTerminalPayload.ACTION_ARCHIVE_KEEPALIVE,
+                viewModel.archivePage(),
+                ""
+        ));
     }
 
     public static void openOrUpdate(Minecraft minecraft, OpenTowerTerminalPayload payload) {
