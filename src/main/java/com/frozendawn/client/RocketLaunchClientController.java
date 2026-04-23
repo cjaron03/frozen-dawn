@@ -259,6 +259,10 @@ public final class RocketLaunchClientController {
         reset(Minecraft.getInstance());
     }
 
+    public static boolean isLaunchSequenceActive() {
+        return active;
+    }
+
     public static void markLaunchJumpAttempt(RocketLaunchEntity rocket) {
         if (rocket == null || !rocket.isIdle()) {
             return;

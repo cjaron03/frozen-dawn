@@ -378,7 +378,7 @@
     "category": "music",
     "sounds": [
       {
-        "name": "frozendawn:ambient/menu_music",
+        "name": "frozendawn:music/the_summer_solstice_2077",
         "stream": true
       }
     ]
@@ -518,20 +518,29 @@
       }
     ]
   },
-  "music.biome.forest_ambience": {
+  "music.phase3_frostbitten": {
     "category": "music",
     "sounds": [
       {
-        "name": "frozendawn:music/forest_ambience",
+        "name": "frozendawn:music/phase3_frostbitten",
         "stream": true
       }
     ]
   },
-  "music.phase4_guest_1": {
+  "music.phase5_igloo": {
     "category": "music",
     "sounds": [
       {
-        "name": "frozendawn:music/phase4_guest_1",
+        "name": "frozendawn:music/phase5_igloo",
+        "stream": true
+      }
+    ]
+  },
+  "music.phase6_sub_zero": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/phase6_sub_zero",
         "stream": true
       }
     ]

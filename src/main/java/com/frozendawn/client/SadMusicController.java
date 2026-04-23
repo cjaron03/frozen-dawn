@@ -2,16 +2,13 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
-import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.biome.Biome;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -21,12 +18,11 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Owns in-world music so Frozen Dawn can keep the soundtrack sparse and melancholic.
  * Vanilla MusicManager is suppressed by mixin; this controller schedules only the
- * approved tracks and hard-mutes late phase 6.
+ * approved tracks, including original phase-specific themes.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class SadMusicController {
@@ -35,23 +31,11 @@ public final class SadMusicController {
     private static final int WORLD_ENTRY_DELAY_MAX = 240;
     private static final int BETWEEN_TRACK_DELAY_MIN = 600;
     private static final int BETWEEN_TRACK_DELAY_MAX = 1600;
-    private static final int FOREST_TRACK_DELAY_MIN = 80;
-    private static final int FOREST_TRACK_DELAY_MAX = 180;
 
     private static final RandomSource RANDOM = RandomSource.create();
-    private static final TrackEntry FOREST_TRACK = track(ModSounds.FOREST_AMBIENCE, 1);
-    private static final Set<ResourceLocation> FOREST_BIOMES = Set.of(
-            ResourceLocation.withDefaultNamespace("forest"),
-            ResourceLocation.withDefaultNamespace("flower_forest"),
-            ResourceLocation.withDefaultNamespace("birch_forest"),
-            ResourceLocation.withDefaultNamespace("old_growth_birch_forest"),
-            ResourceLocation.withDefaultNamespace("dark_forest"),
-            ResourceLocation.withDefaultNamespace("taiga"),
-            ResourceLocation.withDefaultNamespace("snowy_taiga"),
-            ResourceLocation.withDefaultNamespace("old_growth_pine_taiga"),
-            ResourceLocation.withDefaultNamespace("old_growth_spruce_taiga"),
-            ResourceLocation.withDefaultNamespace("windswept_forest")
-    );
+    private static final TrackEntry PHASE3_FROSTBITTEN_TRACK = track(ModSounds.PHASE3_FROSTBITTEN, 16);
+    private static final TrackEntry PHASE5_IGLOO_TRACK = track(ModSounds.PHASE5_IGLOO, 16);
+    private static final TrackEntry PHASE6_SUB_ZERO_TRACK = track(ModSounds.PHASE6_SUB_ZERO, 16);
 
     private static final List<TrackEntry> MELANCHOLY_TRACKS = List.of(
             track(ModSounds.SAD_MOOG_CITY_2, 4),
@@ -72,7 +56,6 @@ public final class SadMusicController {
     );
 
     private static SoundInstance currentTrack;
-    private static TrackMode currentTrackMode = TrackMode.NONE;
     private static ResourceLocation lastTrackId;
     private static int ticksUntilNext = 0;
     private static boolean needsWorldEntryDelay = true;
@@ -90,47 +73,13 @@ public final class SadMusicController {
 
         mc.getMusicManager().stopPlaying();
 
-        if (mc.screen instanceof FrozenDawnEndingScreen) {
+        if (mc.screen instanceof FrozenDawnEndingScreen || RocketLaunchClientController.isLaunchSequenceActive()) {
             enterMutedState(mc);
             return;
         }
-
-        if (shouldMuteAllMusic()) {
-            enterMutedState(mc);
-            return;
-        }
-
-        boolean wantsForestTrack = shouldPlayForestTrack(mc);
 
         if (currentTrack != null && !mc.getSoundManager().isActive(currentTrack)) {
             currentTrack = null;
-            currentTrackMode = TrackMode.NONE;
-            ticksUntilNext = wantsForestTrack
-                    ? randomDelay(FOREST_TRACK_DELAY_MIN, FOREST_TRACK_DELAY_MAX)
-                    : randomDelay(BETWEEN_TRACK_DELAY_MIN, BETWEEN_TRACK_DELAY_MAX);
-        }
-
-        if (wantsForestTrack) {
-            if (currentTrackMode == TrackMode.WORLD) {
-                stopCurrentTrack(mc);
-                ticksUntilNext = 0;
-            }
-
-            if (mc.isPaused() || currentTrack != null) {
-                return;
-            }
-
-            if (ticksUntilNext > 0) {
-                ticksUntilNext--;
-                return;
-            }
-
-            playTrack(mc, FOREST_TRACK, TrackMode.FOREST, 1.0f);
-            return;
-        }
-
-        if (currentTrackMode == TrackMode.FOREST) {
-            stopCurrentTrack(mc);
             ticksUntilNext = randomDelay(BETWEEN_TRACK_DELAY_MIN, BETWEEN_TRACK_DELAY_MAX);
         }
 
@@ -171,13 +120,17 @@ public final class SadMusicController {
             return;
         }
 
-        playTrack(mc, selected, TrackMode.WORLD, 0.85f);
+        playTrack(mc, selected, 0.85f);
     }
 
     private static TrackEntry chooseTrack(int phase) {
         List<TrackEntry> candidates = new ArrayList<>(MELANCHOLY_TRACKS);
-        if (phase >= 4) {
-            candidates.addAll(phaseFourGuestTracks());
+        if (phase == 3) {
+            candidates.add(PHASE3_FROSTBITTEN_TRACK);
+        } else if (phase == 5) {
+            candidates.add(PHASE5_IGLOO_TRACK);
+        } else if (phase >= 6) {
+            candidates.add(PHASE6_SUB_ZERO_TRACK);
         }
 
         if (candidates.isEmpty()) {
@@ -203,31 +156,9 @@ public final class SadMusicController {
         return candidates.get(candidates.size() - 1);
     }
 
-    private static List<TrackEntry> phaseFourGuestTracks() {
-        return List.of(
-                track(ModSounds.PHASE4_GUEST_1, 2)
-        );
-    }
-
-    private static boolean shouldMuteAllMusic() {
-        return PhaseManager.isVacuumActive(ApocalypseClientData.getPhase(), ApocalypseClientData.getProgress());
-    }
-
-    private static boolean shouldPlayForestTrack(Minecraft mc) {
-        if (ApocalypseClientData.getPhase() > 2) {
-            return false;
-        }
-
-        Holder<Biome> biomeHolder = mc.level.getBiome(mc.player.blockPosition());
-        return biomeHolder.unwrapKey()
-                .map(key -> FOREST_BIOMES.contains(key.location()))
-                .orElse(false);
-    }
-
-    private static void playTrack(Minecraft mc, TrackEntry selected, TrackMode mode, float volume) {
+    private static void playTrack(Minecraft mc, TrackEntry selected, float volume) {
         SoundEvent event = selected.sound().get();
         lastTrackId = event.getLocation();
-        currentTrackMode = mode;
         currentTrack = new SimpleSoundInstance(
                 event.getLocation(),
                 SoundSource.MUSIC,
@@ -263,7 +194,6 @@ public final class SadMusicController {
             mc.getSoundManager().stop(currentTrack);
             currentTrack = null;
         }
-        currentTrackMode = TrackMode.NONE;
     }
 
     private static int randomDelay(int minTicks, int maxTicks) {
@@ -272,12 +202,6 @@ public final class SadMusicController {
 
     private static TrackEntry track(DeferredHolder<SoundEvent, SoundEvent> sound, int weight) {
         return new TrackEntry(sound, weight);
-    }
-
-    private enum TrackMode {
-        NONE,
-        WORLD,
-        FOREST
     }
 
     private record TrackEntry(DeferredHolder<SoundEvent, SoundEvent> sound, int weight) {}
