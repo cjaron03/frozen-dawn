@@ -280,7 +280,7 @@ final class TowerTerminalRenderer {
                                                TowerTerminalViewModel viewModel) {
         TowerTerminalLayout.ArchiveLayout archiveLayout = layout.archiveLayout;
         renderInfoBox(graphics, font, archiveLayout.detailX(), archiveLayout.detailY(), archiveLayout.detailW(),
-                archiveLayout.detailH(), "BLACKGLASS LOCKDOWN OS", 0xFFFFB33C, 0xFF050C11);
+                archiveLayout.detailH(), "HIGH-AUTH VOICEPRINT MASKING ACTIVE", 0xFFFFB33C, 0xFF050C11);
 
         int pulse = viewModel.blinkTicks();
         int top = archiveLayout.detailY() + 23;
