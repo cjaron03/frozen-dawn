@@ -9,6 +9,7 @@ import com.frozendawn.item.AcheroniteShovelItem;
 import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
+import com.frozendawn.item.BoardPacketItem;
 import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
@@ -98,6 +99,8 @@ public class ModItems {
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
+    public static final DeferredItem<BoardPacketItem> BOARD_PACKET = ITEMS.register("board_packet",
+            () -> new BoardPacketItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<MeteorologistJournalItem> METEOROLOGIST_JOURNAL = ITEMS.register("meteorologist_journal",
@@ -378,6 +381,7 @@ public class ModItems {
                         output.accept(ROCKET_FUEL_CELL.get());
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
+                        output.accept(BOARD_PACKET.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
