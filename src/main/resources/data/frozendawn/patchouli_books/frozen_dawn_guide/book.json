@@ -1,9 +1,12 @@
 {
   "name": "ORSA Field Manual",
-  "landing_text": "$(br2)$(br2)$(br2)$(br2)$(#303030)Issued field survival manual.$(br2)Continuity protocol: active.$(br)Civilian edition.",
+  "landing_text": "$(br2)$(br2)$(br2)$(br2)$(l)Issued field survival manual.$()$(br2)Continuity protocol: active.$(br)Civilian edition.",
   "version": 1,
   "creative_tab": "frozendawn.frozen_dawn_tab",
   "model": "patchouli:book_brown",
+  "book_texture": "frozendawn:textures/gui/patchouli/orsa_book.png",
+  "use_blocky_font": true,
+  "text_color": "1F2A2C",
   "nameplate_color": "F2E7C8",
   "header_color": "2C3336",
   "show_progress": false,
