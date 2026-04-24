@@ -124,6 +124,7 @@ public class BoardPacketItem extends Item {
 
             %s
 
+            SEAT _RDER COLUMNS PAGE AGENDA WORD
             CHAIR ORDER IS KEY
             """.formatted(CLUE_SYMBOLS)
     };
@@ -242,6 +243,7 @@ public class BoardPacketItem extends Item {
                 Component.literal("Reflective Margin Copy").withStyle(ChatFormatting.AQUA));
         clueSlip.set(DataComponents.LORE, new ItemLore(List.of(
                 Component.literal(CLUE_SYMBOLS).withStyle(ChatFormatting.GRAY),
+                Component.literal("SEAT _RDER COLUMNS PAGE AGENDA WORD").withStyle(ChatFormatting.WHITE),
                 Component.literal("CHAIR ORDER IS KEY").withStyle(ChatFormatting.WHITE),
                 Component.literal("Recovered under nonstandard reflected light.")
                         .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC)
