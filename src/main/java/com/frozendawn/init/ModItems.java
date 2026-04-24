@@ -15,6 +15,7 @@ import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.IceClawsItem;
+import com.frozendawn.item.LinedEvaChestplateItem;
 import com.frozendawn.item.MiteAwayBlockItem;
 import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
@@ -317,8 +318,8 @@ public class ModItems {
                     new Item.Properties().durability(500)));
 
     // --- Acheronite-Lined EVA Chestplate (bootstrap item) ---
-    public static final DeferredItem<ArmorItem> LINED_EVA_CHESTPLATE = ITEMS.register("lined_eva_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.CHESTPLATE,
+    public static final DeferredItem<LinedEvaChestplateItem> LINED_EVA_CHESTPLATE = ITEMS.register("lined_eva_chestplate",
+            () -> new LinedEvaChestplateItem(ModArmorMaterials.EVA, ArmorItem.Type.CHESTPLATE,
                     new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(25))));
 
     // --- Creative Tab ---

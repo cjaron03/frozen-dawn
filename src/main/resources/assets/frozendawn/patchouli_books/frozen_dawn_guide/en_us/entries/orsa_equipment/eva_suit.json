@@ -20,6 +20,11 @@
       "text": "Requires Tier 2 heavy insulation as a base, ice shards, blue ice, and — for the chestplate — a $(bold)Frozen Heart$() power core.$(br2)Yes, you need to brave the frozen surface to gather materials. Yes, we see the problem.$(br2)$(italic)ORSA Engineering: \"It builds character.\"$()"
     },
     {
+      "type": "patchouli:text",
+      "title": "Caldera Retrofit",
+      "text": "RUPTURE calderas run hot enough to cook a standard EVA shell from the inside.$(br2)If you already have an $(l:orsa_rd/lined_eva)Acheronite-Lined EVA Suit$(/l), combine it with $(bold)Sulfur Crust$() and $(bold)Volcanic Tuff$() to add a caloric barrier.$(br2)The retrofit suppresses caldera overheat, but it does $(bold)not$() protect against direct lava contact.$(br2)$(italic)ORSA Materials: If the suit starts smelling like minerals and bad decisions, the seal probably took.$()"
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_chestplate",
       "text": "The chestplate requires a Frozen Heart core. Don't worry, it's not YOUR heart."
@@ -38,6 +43,12 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_boots",
       "text": "Seal the suit from the ground up. Vacuum is a terrible thing to step into."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:caloric_lined_eva_retrofit_display",
+      "title": "Caldera Retrofit",
+      "text": "Retrofit an Acheronite-Lined EVA Suit with Sulfur Crust and Volcanic Tuff. If the upgraded shell reads $(italic)Caldera retrofit installed.$(), the barrier took."
     }
   ]
 }
