@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " S ",
+    "TC "
+  ],
+  "key": {
+    "S": {
+      "item": "frozendawn:sulfur_crust"
+    },
+    "T": {
+      "item": "frozendawn:hydrothermal_rock"
+    },
+    "C": {
+      "item": "frozendawn:lined_eva_chestplate"
+    }
+  },
+  "result": {
+    "id": "frozendawn:lined_eva_chestplate",
+    "count": 1,
+    "components": {
+      "frozendawn:caloric_resistance": true
+    }
+  }
+}

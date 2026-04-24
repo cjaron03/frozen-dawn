@@ -42,7 +42,7 @@ public class FrozenDawnEndingScreen extends Screen {
     private static final int POST_CREDITS_COLONY_TICKS = 6 * 20;
     private static final int POST_CREDITS_MESSAGE_TICKS = 7 * 20;
     private static final int COMPLIANCE_STATIC_TICKS = 34;
-    private static final int COMPLIANCE_TTS_DELAY_TICKS = 26;
+    private static final int COMPLIANCE_TTS_DELAY_TICKS = COMPLIANCE_STATIC_TICKS + 10;
     private static final int COMPLIANCE_TICKS = 16 * 20;
     private static final int LINE_HEIGHT = 12;
     private static final int MARS_TEXTURE_SUBDIVISIONS = 16;
