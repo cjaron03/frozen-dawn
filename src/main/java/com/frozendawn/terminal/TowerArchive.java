@@ -44,7 +44,7 @@ public final class TowerArchive {
     private static final String PROGRAM_SUCCESS_METRIC = "Program Success Metric: Relocation Throughput";
     public static final String BLACKGLASS_TITLE = "BLACKGLASS ARCHIVE RECOVERY";
 
-    private static final LocalDate APOCALYPSE_START = LocalDate.of(2042, 6, 20);
+    private static final LocalDate APOCALYPSE_START = LocalDate.of(2077, 6, 20);
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("MMM dd", Locale.US);
     private static final DateTimeFormatter DATE_FULL = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.US);
 

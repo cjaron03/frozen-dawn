@@ -1,0 +1,19 @@
+{
+  "name": "Martian Command Packet",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:martian_command_packet",
+  "sortnum": 9,
+  "advancement": "frozendawn:found_martian_command_packet",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Relay Packet",
+      "text": "$(bold)ORSA MARTIAN COMMAND$()$(br)Recovered relay packet from the Lighthouse network.$(br2)This is the first confirmed answer from Mars after the transponder broadcast succeeds.$(br2)The packet confirms that someone heard the surface response and pushed back a launch package."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Transmission Summary",
+      "text": "The speaker is startled that anyone is still alive on the surface.$(br2)They send $(bold)rocket blueprints$() and direct the respondent to use the $(bold)ORSA blast pit$().$(br2)The tone is half improvised, half rehearsed. It sounds like nobody on Mars expected to need this procedure again."
+    }
+  ]
+}

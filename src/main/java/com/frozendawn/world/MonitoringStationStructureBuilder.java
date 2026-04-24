@@ -232,11 +232,11 @@ public final class MonitoringStationStructureBuilder {
         List<ItemStack> loot = new ArrayList<>();
         loot.add(createOrsaDocument("Weather Upload Log", "station_upload_log"));
         loot.add(createOrsaDocument("Requisition Form - Replacement Thermocouple", "station_requisition"));
-        loot.add(createWeatherReportItem("Station Summary - June 29, 2042",
+        loot.add(createWeatherReportItem("Station Summary - June 29, 2077",
                 "Surface Temp: -18C",
                 "Wind: 31 kts NE",
                 "Uploads accepted by ORSA relay"));
-        loot.add(createWeatherReportItem("Station Summary - August 04, 2042",
+        loot.add(createWeatherReportItem("Station Summary - August 04, 2077",
                 "Surface Temp: -43C",
                 "Wind: 52 kts",
                 "Solar dimming now obvious at noon"));
@@ -304,7 +304,7 @@ public final class MonitoringStationStructureBuilder {
                 Filterable.passThrough(Component.literal(
                         "GROUND TRUTH CLIMATE LOG\n\n"
                                 + stationId + "\n"
-                                + "September 2042\n\n"
+                                + "September 2077\n\n"
                                 + "Contractor: Civilian meteorology office\n"
                                 + "ORSA terminal installed after initial build.")),
                 Filterable.passThrough(Component.literal(JOURNAL_VARIANTS[variant]))

@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.item.MartianCommandPacketItem;
 import com.frozendawn.world.MartianCommandTransmissionPlayer;
 import com.frozendawn.world.GeothermalCoreRegistry;
 import com.frozendawn.world.TransponderRegistry;
@@ -135,6 +136,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                     p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
                     if (firstMartianReply) {
                         queueMartianCommandReply(p);
+                        MartianCommandPacketItem.grantIfMissing(p, true);
                     }
                 }
             }
@@ -223,6 +225,12 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
 
         // Any non-IDLE state: open the status UI
         if (state != STATE_IDLE) {
+            if (state == STATE_COMPLETE && player.getServer() != null) {
+                WinConditionState winState = WinConditionState.get(player.getServer());
+                if (winState.isMartianReplySent()) {
+                    MartianCommandPacketItem.grantIfMissing(player, true);
+                }
+            }
             player.openMenu(this, worldPosition);
             return;
         }

@@ -49,7 +49,7 @@ public final class MonitoringStationCalendar {
         stack.set(DataComponents.MAP_ID, mapId);
         stack.set(DataComponents.CUSTOM_NAME, Component.literal("Station Calendar"));
         stack.set(DataComponents.LORE, new ItemLore(List.of(
-                Component.literal("The X marks stop on September 19th.")
+                Component.literal("The X marks stop on June 19th.")
         )));
         return stack;
     }
