@@ -7,18 +7,38 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Strategic Continuity",
-      "text": "$(bold)ORSA EXECUTIVE BOARD$()$(br)Strategic Continuity Session 14-B$(br2)Recovered records show a pre-phase board packet distributed to only six seats.$(br2)The attendance list names Vale, Ren, Sato, Hollis, Kline, and a redacted security officer. Copies were meant to be returned to Records immediately after adjournment."
+      "title": "Packet Cover",
+      "text": "$(bold)ORSA EXECUTIVE BOARD$()$(br)Strategic Continuity Session 14-B$(br2)$(italic)Pre-Phase Board Packet$()$(br)Distribution Copy 04 of 06$(br2)Classification:$(br)Internal // Board Eyes"
     },
     {
       "type": "patchouli:text",
-      "title": "Agenda Packet",
-      "text": "The packet is divided by $(italic)page$() and $(italic)agenda$() groupings rather than a single narrative memo.$(br2)Topics jump between board procedure, colonial holdings, atmospheric stabilization, security audits, geothermal dampers, and strategic continuity motions.$(br2)The structure feels more important than the prose."
+      "title": "Attendance & Seating",
+      "text": "$(bold)SESSION ATTENDANCE AND SEATING$()$(br2)Seat 1 - Chairman$(br)Vale, M.$(br2)Seat 2 - CFO$(br)Ren, A.$(br2)Seat 3 - Legal Director$(br)Sato, J.$(br2)Seat 4 - Mission Director$(br)Hollis, D.$(br2)Seat 5 - Colonial Assets$(br)Kline, R.$(br2)Seat 6 - Security Officer$(br)[REDACTED]"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Page 1 - Session Opening",
+      "text": "Agenda 1. Call to order. Chair confirms quorum and opens the session.$(br2)Agenda 2. Approval of prior minutes pending legal review of redactions.$(br2)Agenda 3. Budget overview presented by finance covering Mars deployment costs.$(br2)Agenda 4. Operations report submitted on schedule by infrastructure division."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Page 2 - Infrastructure",
+      "text": "Agenda 1. Atmospheric stabilization update. Polar arrays remain in standby configuration.$(br2)Agenda 2. Colonial holdings revenue lagging projection across three fiscal quarters.$(br2)Agenda 3. Legal exposure summary noting external counsel recommendations.$(br2)Agenda 4. Kinetic launch corridor secured for next manifest cycle."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Page 3 - Operations",
+      "text": "Agenda 1. Security audit of facility blackglass inventory with chain of custody appendix.$(br2)Agenda 2. Geothermal damper diagnostics returned within nominal operating bands.$(br2)Agenda 3. Labor cohort selection criteria revised for technical and breeding classes.$(br2)Agenda 4. Atmospheric injection station readiness verified by mission engineering."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Page 4 - Continuity",
+      "text": "Agenda 1. Settler manifest expansion approved subject to financial guarantee adjustments.$(br2)Agenda 2. Strategic continuity provisions reviewed and accepted without objection.$(br2)Agenda 3. Closing remarks delivered by chair noting deniability requirements.$(br2)Agenda 4. Adjournment recorded at standard timestamp with attendance confirmed."
     },
     {
       "type": "patchouli:text",
       "title": "Directive 7-C",
-      "text": "The closing line forbids annotations in $(italic)non-archival ink$() under directive 7-C.$(br2)That warning does not read like a formality. It reads like someone expected the margins to matter."
+      "text": "Distributed copies were to be returned to Records following adjournment.$(br2)Annotations in $(italic)non-archival ink$() are prohibited under directive 7-C.$(br2)That warning does not read like a formality. It reads like someone expected the margins to matter."
     }
   ]
 }
