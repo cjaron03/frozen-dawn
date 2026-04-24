@@ -6,33 +6,43 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA — Who Are We?",
-      "text": "The $(bold)Orbital Resonance Stabilization Authority$() (ORSA) was founded as a joint initiative between the United Nations and the world's leading space agencies.$(br2)Our mission: monitor and maintain Earth's orbital parameters using a global network of $(bold)2,048 resonance stabilization nodes.$()$(br2)For decades, we kept Earth on track. On time. In orbit.$(br2)$(italic)That part worked great.$()"
+      "title": "Identity",
+      "text": "Full name: Orbital Resonance Stabilization Authority$(br)Founded: 2041, Geneva, Switzerland$(br)Mandate: Monitor and correct orbital and atmospheric anomalies introduced by human activity. Preserve the continuity of human civilization under Geneva Continuity Accords emergency provisions.$(br)Public motto: Stability Above. Continuity Beyond.$(br)Classification: Intergovernmental body, UN-adjacent. Treaty-backed authority under the Geneva Continuity Accords."
     },
     {
       "type": "patchouli:text",
-      "title": "What Went Wrong",
-      "text": "Short answer: $(bold)we don't know.$()$(br2)The resonance pattern that keeps Earth anchored began to decay. Slowly at first. Our systems flagged it. We investigated. We found nothing.$(br2)Then the decay accelerated.$(br2)By the time our models caught up, Earth had already begun to drift. The nodes couldn't compensate. $(italic)Nothing$() was designed for this."
+      "title": "2041 — Founding",
+      "text": "Established under the Geneva Continuity Accords, a quiet amendment to existing space governance frameworks that passed during the third consecutive year of global climate emergency declarations. Little public attention. Unglamorous mandate. The founding motto was sincere.$(br2)Headquarters: Geneva. Glass building. Lots of windows. A visitor center with a gift shop. School groups came on field trips. You could buy a mug.$(br2)Nobody protested ORSA. Nobody thought about ORSA. That was the point."
     },
     {
       "type": "patchouli:text",
-      "title": "The Evacuation",
-      "text": "When the models confirmed the drift was irreversible, ORSA pivoted to evacuation. $(bold)Project Exodus$() — the largest coordinated operation in human history.$(br2)Every transport, shuttle, and vessel capable of escape was mobilized. Mars colonies expanded overnight.$(br2)$(bold)14 billion people were evacuated in 72 hours.$()$(br2)On paper, almost everyone was evacuated. Paper is very forgiving."
+      "title": "2041–2068",
+      "text": "Two decades of dense technical reports nobody read. Orbital debris monitoring. Atmospheric mass redistribution assessments. Experimental propulsion incident reviews. Staff wore polos. There was a cafeteria. A newsletter called The Horizon ran birthday announcements and retirement farewells.$(br2)Most employees genuinely believed in the work. They had mortgages. They complained about their commute. The seventh floor had separate badge access. Nobody asked why.$(br2)The seventh floor was not Long Horizon division.$(br2)Long Horizon division was on the fourth floor.$(br2)Nobody who worked on the fourth floor knew what happened on the seventh."
     },
     {
       "type": "patchouli:text",
-      "title": "ORSA Divisions",
-      "text": "$(bold)Science Division$()$(br)Modeled the phase progression. Uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored these survival guides. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin went back for you. Officially, Kevin was unaccounted for.$(br2)$(bold)Engineering Division$()$(br)Designed the heaters, clothing, and cores. Also launched something into orbit before leaving."
+      "title": "2068 — The Models",
+      "text": "Long Horizon division produces its seventeenth classified projection model. Civilizational collapse: 50 to 80 years, high confidence. The directorate presents findings to a closed UN Security Council session.$(br2)The session produces no action.$(br2)The directorate does not wait for a second session.$(br2)What the directorate does next is not recorded in any Long Horizon file.$(br2)The relevant documentation is held under ██████████ authorization. Access requires ██████████ clearance. No such clearance has been issued outside the original ██████████ signatories, two of whom are deceased."
     },
     {
       "type": "patchouli:text",
-      "title": "ORSA Field Documents",
-      "text": "Before evacuation, ORSA distributed field documents to outposts and shelters worldwide. These $(bold)written books$() can still be found in structures across the surface.$(br2)They contain research notes, internal memos, and the personal observations of scientists who knew what was coming.$(br2)$(italic)If you find one, read it. Some contain information that was never meant to go public.$()"
+      "title": "2071 — The Vote",
+      "text": "The Heliostatic Correction Initiative 4 is approved by the ORSA board of directors: 7 votes to 2.$(br2)Internal risk assessment: 94% probability of permanent orbital destabilization.$(br)Public-facing documentation: 15%.$(br2)The two dissenting directors resign within the year. Both are dead before 2080. Cause of death in both personnel files: redacted.$(br2)A third file exists. It does not belong to a director. The name is ██████████. The role listed is ██████████. The file has no termination date."
     },
     {
       "type": "patchouli:text",
-      "title": "A Final Note",
-      "text": "To whoever is reading this:$(br2)We are sorry. We were supposed to prevent this. We had the technology, the funding, the mandate. It wasn't enough.$(br2)This guide is the last thing we could give you. Every recipe, every sarcastic aside from Wellness — it's all we have left.$(br2)Stay underground. Stay warm. Stay alive.$(br2)$(italic)— Dr. Elena Vasquez, ORSA Science Director$(br)(The one who flagged the decay. Nobody listened.)$()"
+      "title": "2074 — Denial",
+      "text": "A Reuters article runs under the headline \"ORSA Mars Installation: Agency Addresses Cydonia Conspiracy Claims.\" Spokesperson Dr. Yael Morrow calls speculation \"flattering but unfounded,\" confirming only that preliminary survey equipment had been deployed to the Cydonia region for standard geological assessment.$(br2)Three years before launch.$(br2)Dr. Morrow's personnel file after 2074 is ██████████. Her listed department changes from Public Communications to ██████████. Her badge access tier changes from Level 3 to ██████████.$(br2)She was not reassigned."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "2075 — The Mask Slips",
+      "text": "The public face gets more polished. A major PR campaign launches — \"50 Years of Stability\" anniversary materials. Nobody checks the math; ORSA was founded in 2041.$(br2)The visitor center is renovated. The website is redesigned.$(br2)Behind badge access: Long Horizon division doubles in size. New hires sign NDAs referencing statutes nobody has heard of. Mars Infrastructure Division is formally established in internal org charts under the name \"Continuity Operations.\"$(br2)A separate division is established simultaneously. It does not appear in the internal org chart. Its budget does not appear in any auditable ledger. Its personnel do not have ORSA employee IDs.$(br2)They have ██████████ IDs."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "2077 — Solstice",
+      "text": "The summer solstice. The longest day.$(br2)The Heliostatic Correction Initiative 4 activates. Earth leaves the solar habitable zone.$(br2)The press release is dated June 22nd. It was pre-written.$(br2)What activates alongside HCI-4 is not in the press release. It is not in any Long Horizon file. It is not in the board minutes recovered from the hidden tower directory.$(br2)There is one reference in the recovered archive. A single line in an undated internal memo, author unknown:$(br2)\"██████████ is not a contingency. ██████████ was always the objective.\""
     }
   ]
 }

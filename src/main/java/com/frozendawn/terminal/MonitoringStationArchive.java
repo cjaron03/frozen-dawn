@@ -26,7 +26,7 @@ public final class MonitoringStationArchive {
     public static final int EMPLOYEE_ONLY_PAGE = PAGE_COUNT - 1;
     public static final String EMPLOYEE_ARCHIVE_PASSWORD = "PEANUTBUTTER";
 
-    private static final LocalDate APOCALYPSE_START = LocalDate.of(2042, 6, 20);
+    private static final LocalDate APOCALYPSE_START = LocalDate.of(2077, 6, 20);
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("MMM dd", Locale.US);
     private static final DateTimeFormatter DATE_FULL = DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.US);
     private static final String[] WIND_DIRECTIONS = {
