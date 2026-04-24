@@ -17,12 +17,12 @@
     {
       "type": "patchouli:text",
       "title": "The Evacuation",
-      "text": "When the models confirmed the drift was irreversible, ORSA pivoted to evacuation. $(bold)Project Exodus$() — the largest coordinated operation in human history.$(br2)Every transport, shuttle, and vessel capable of escape was mobilized. Mars colonies expanded overnight.$(br2)$(bold)14 billion people were evacuated in 72 hours.$()$(br2)All but one, apparently."
+      "text": "When the models confirmed the drift was irreversible, ORSA pivoted to evacuation. $(bold)Project Exodus$() — the largest coordinated operation in human history.$(br2)Every transport, shuttle, and vessel capable of escape was mobilized. Mars colonies expanded overnight.$(br2)$(bold)14 billion people were evacuated in 72 hours.$()$(br2)On paper, almost everyone was evacuated. Paper is very forgiving."
     },
     {
       "type": "patchouli:text",
       "title": "ORSA Divisions",
-      "text": "$(bold)Science Division$()$(br)Modeled the phase progression. Uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored these survival guides. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin worked here. Kevin went back for you. Kevin is on Mars now.$(br2)$(bold)Engineering Division$()$(br)Designed the heaters, clothing, and cores. Also launched something into orbit before leaving."
+      "text": "$(bold)Science Division$()$(br)Modeled the phase progression. Uncomfortably accurate.$(br2)$(bold)Wellness Division$()$(br)Authored these survival guides. Surprisingly cheerful for an apocalypse.$(br2)$(bold)Logistics Division$()$(br)Managed evacuation. Kevin went back for you. Officially, Kevin was unaccounted for.$(br2)$(bold)Engineering Division$()$(br)Designed the heaters, clothing, and cores. Also launched something into orbit before leaving."
     },
     {
       "type": "patchouli:text",

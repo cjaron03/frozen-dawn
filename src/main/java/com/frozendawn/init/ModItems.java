@@ -18,6 +18,7 @@ import com.frozendawn.item.IceClawsItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
 import com.frozendawn.item.MiteAwayBlockItem;
 import com.frozendawn.item.MeteorologistJournalItem;
+import com.frozendawn.item.MartianCommandPacketItem;
 import com.frozendawn.item.SoulHarvestBladeItem;
 import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
@@ -102,6 +103,8 @@ public class ModItems {
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<BoardPacketItem> BOARD_PACKET = ITEMS.register("board_packet",
             () -> new BoardPacketItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<MartianCommandPacketItem> MARTIAN_COMMAND_PACKET = ITEMS.register("martian_command_packet",
+            () -> new MartianCommandPacketItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<OrsaDocumentItem> ORSA_DOCUMENT = ITEMS.register("orsa_document",
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<MeteorologistJournalItem> METEOROLOGIST_JOURNAL = ITEMS.register("meteorologist_journal",
@@ -383,6 +386,7 @@ public class ModItems {
                         output.accept(THERMAL_CORE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(BOARD_PACKET.get());
+                        output.accept(MARTIAN_COMMAND_PACKET.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
