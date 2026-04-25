@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/snow_height8",
   "textures": {
-    "particle": "minecraft:block/gray_concrete_powder",
-    "texture": "minecraft:block/gray_concrete_powder"
+    "particle": "frozendawn:block/volcanic_ash",
+    "texture": "frozendawn:block/volcanic_ash"
   }
 }

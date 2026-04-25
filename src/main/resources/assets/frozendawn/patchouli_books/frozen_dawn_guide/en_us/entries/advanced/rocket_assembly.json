@@ -1,0 +1,54 @@
+{
+  "name": "Rocket Assembly",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:rocket_engine",
+  "sortnum": 5,
+  "advancement": "frozendawn:broadcast_complete",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Launch Package",
+      "text": "The Martian relay does not deliver a turnkey escape vehicle. It gives you the component plan and expects you to finish the launch yourself.$(br2)Everything in this entry is tied to the $(bold)ORSA blast pit$(). Build there or do not build at all."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:launch_pad",
+      "title": "ORSA Launch Pad",
+      "text": "One craft yields $(bold)9 launch pads$() — exactly enough for the full blast-pit platform. Build the entire 3x3 pad on the blast-pit mount before you start stacking rocket parts."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Pad Placement",
+      "text": "$(li)Find the designated ORSA blast pit$(li)Lay a full $(bold)3x3$() launch pad on its mount$(li)The rocket engine sits $(bold)one block above the pad center$()$(li)If the pad is off-center, the structure will not lock$(br2)This is not a decorative build. The blast trench alignment under the center plate has to stay intact."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:rocket_engine",
+      "title": "Rocket Engine",
+      "text": "The engine is the base of the rocket and must occupy the centerline over the blast pit. Place it first. Everything else builds upward from here."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:rocket_fin",
+      "title": "Rocket Fin",
+      "text": "Craft $(bold)4 fins$(). They mount on the four cardinal sides of the engine: north, south, east, and west."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:rocket_hull",
+      "title": "Rocket Hull",
+      "text": "Craft $(bold)4 hull blocks$(). Stack all four directly above the engine to form the rocket body."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:rocket_nose_cone",
+      "title": "Rocket Nose Cone",
+      "text": "Finish the stack with the nose cone. The Acheronite Compass is consumed in the build — ORSA apparently considered that an acceptable trade."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Final Stack",
+      "text": "$(li)Engine on the pad center$(li)4 fins on the engine's sides$(li)4 hull blocks stacked above the engine$(li)Nose cone on top$(br2)Once the structure locks, load $(bold)6 Rocket Fuel Cells$(), board the vehicle, and arm the launch from inside the cockpit."
+    }
+  ]
+}

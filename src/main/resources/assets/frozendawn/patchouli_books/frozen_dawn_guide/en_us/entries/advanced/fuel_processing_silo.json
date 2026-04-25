@@ -1,0 +1,40 @@
+{
+  "name": "Fuel Processing Silo",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:fuel_processing_silo_controller",
+  "sortnum": 4,
+  "advancement": "frozendawn:broadcast_complete",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Fuel Processing Silo",
+      "text": "Mars did not send a finished rocket. It sent a launch package.$(br2)The $(bold)Fuel Processing Silo$() turns caldera salvage and frozen atmosphere into usable launch propellant.$(br2)You will build the machine, refine the feedstock, and process $(bold)Rocket Fuel Cells$() yourself. ORSA's preferred phrase is $(italic)field expedient launch readiness$()."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:fuel_processing_silo_controller",
+      "title": "Controller",
+      "text": "Craft the controller first. It anchors the silo and gives you the processing interface. The shell itself is made from plain iron blocks. Because of course it is."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shell Layout",
+      "text": "$(li)Build a $(bold)3x3$() iron shell, $(bold)4 blocks tall$()$(li)The $(bold)entire floor$() is solid iron$(li)Above the floor, leave the $(bold)center column hollow$() all the way up$(li)Replace the $(bold)center block on one outside face$() with the controller$(li)Attach any $(l:heating/thermal_heater)Thermal Heater$(/l) to the outside shell$(br2)Higher heater tiers process faster. Capacitors push them harder still."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Feedstock",
+      "text": "$(bold)Sulfur:$() Mine sulfur ore in mature rupture calderas. It drops $(bold)Impure Sulfur$(), which must be $(bold)smelted or blasted$() into sulfur.$(br2)$(bold)Frozen Atmosphere Shards:$() Harvest them in Phase 6 and keep them in a $(l:heating/thermal_container)Thermal Container$(/l) before they sublimate.$(br2)$(bold)Utility loop:$() A sulfur lava bucket can also be reduced inside the silo into impure sulfur if you need to stretch a bad expedition."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Processing Chain",
+      "text": "$(bold)Solid Propellant$(): 4 Sulfur + 2 Coal -> 1 output$(br)Base time: ~60s$(br2)$(bold)Liquid Oxidizer$(): 4 Frozen Atmosphere Shards -> 1 output$(br)Base time: ~90s$(br2)$(bold)Rocket Fuel Cell$(): 2 Solid Propellant + 2 Liquid Oxidizer + 1 Acheronite Shard -> 1 output$(br)Base time: ~120s$(br2)$(bold)Sulfur Lava Reduction$(): 1 Sulfur Lava Bucket -> 2 Impure Sulfur$(br)Base time: ~90s"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fueling the Rocket",
+      "text": "A finished rocket requires $(bold)6 Rocket Fuel Cells$(). Bring them to the blast pit, right-click the assembled rocket with the cells, and load it by hand.$(br2)The silo is the slow part. Budget time, heater fuel, and a second sulfur run if your first expedition went poorly."
+    }
+  ]
+}
