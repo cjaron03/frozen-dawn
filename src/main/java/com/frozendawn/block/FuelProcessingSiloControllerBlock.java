@@ -81,6 +81,7 @@ public class FuelProcessingSiloControllerBlock extends Block implements EntityBl
         }
 
         if (state.getValue(LIT)) {
+            spawnSlitFire(level, pos, state, random);
             spawnVentSmoke(level, pos, state, random);
         }
     }
@@ -145,6 +146,40 @@ public class FuelProcessingSiloControllerBlock extends Block implements EntityBl
             double x = centerX + (random.nextDouble() - 0.5D) * 0.2D;
             double z = centerZ + (random.nextDouble() - 0.5D) * 0.2D;
             level.addParticle(ParticleTypes.SMOKE, x, centerY, z, 0.0D, 0.05D, 0.0D);
+        }
+    }
+
+    private void spawnSlitFire(Level level, BlockPos pos, BlockState state, RandomSource random) {
+        Direction facing = state.getValue(FACING);
+        Direction lateral = facing.getClockWise();
+
+        double faceX = pos.getX() + 0.5D + facing.getStepX() * 0.525D;
+        double faceZ = pos.getZ() + 0.5D + facing.getStepZ() * 0.525D;
+        double y = pos.getY() + 0.50D + (random.nextDouble() - 0.5D) * 0.06D;
+
+        int flames = 1 + random.nextInt(2);
+        for (int i = 0; i < flames; i++) {
+            double lateralOffset = (random.nextDouble() - 0.5D) * 0.46D;
+            double x = faceX + lateral.getStepX() * lateralOffset;
+            double z = faceZ + lateral.getStepZ() * lateralOffset;
+            double outward = 0.015D + random.nextDouble() * 0.02D;
+            double upward = 0.012D + random.nextDouble() * 0.025D;
+            level.addParticle(ParticleTypes.FLAME,
+                    x, y, z,
+                    facing.getStepX() * outward,
+                    upward,
+                    facing.getStepZ() * outward);
+        }
+
+        if (random.nextInt(3) == 0) {
+            double lateralOffset = (random.nextDouble() - 0.5D) * 0.36D;
+            double x = faceX + lateral.getStepX() * lateralOffset;
+            double z = faceZ + lateral.getStepZ() * lateralOffset;
+            level.addParticle(ParticleTypes.SMOKE,
+                    x, y + 0.03D, z,
+                    facing.getStepX() * 0.01D,
+                    0.025D,
+                    facing.getStepZ() * 0.01D);
         }
     }
 }
