@@ -1,12 +1,12 @@
 {
   "parent": "block/cube",
   "textures": {
-    "particle": "frozendawn:block/transponder_active",
-    "down": "frozendawn:block/transponder",
-    "up": "frozendawn:block/transponder_active",
-    "north": "frozendawn:block/transponder",
-    "south": "frozendawn:block/transponder_active",
-    "east": "frozendawn:block/transponder",
-    "west": "frozendawn:block/transponder"
+    "particle": "frozendawn:block/tower_antenna_console_side",
+    "down": "frozendawn:block/tower_antenna_console_bottom",
+    "up": "frozendawn:block/tower_antenna_console_top",
+    "north": "frozendawn:block/tower_antenna_console_front",
+    "south": "frozendawn:block/tower_antenna_console_back",
+    "east": "frozendawn:block/tower_antenna_console_side",
+    "west": "frozendawn:block/tower_antenna_console_side"
   }
 }
