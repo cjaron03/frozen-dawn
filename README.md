@@ -316,4 +316,4 @@ The built jar will be in `build/libs/`.
 
 Frozen Dawn is licensed under the GNU Lesser General Public License v3.0 or later (`LGPL-3.0-or-later`). See [LICENSE](LICENSE).
 
-Original music and audio asset ownership is tracked separately in [ASSETS.md](ASSETS.md).
+Original visual, branding, music, and audio asset ownership is tracked separately in [ASSETS.md](ASSETS.md). Third-party asset notes and dependency distribution notes are tracked in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).

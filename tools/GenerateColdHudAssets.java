@@ -8,6 +8,11 @@ import java.util.zip.ZipFile;
 
 public final class GenerateColdHudAssets {
 
+    // Historical/internal utility only. The release provenance for shipped UI
+    // replacement assets is documented in ASSETS.md; final assets under
+    // assets/minecraft are original Frozen Dawn compatibility textures.
+    // Do not use this tool as release asset provenance or to copy/derive
+    // Mojang/Microsoft texture assets for distribution.
     private static final Path INPUT_JAR = Path.of("build/moddev/artifacts/neoforge-21.1.219-client-extra-aka-minecraft-resources.jar");
     private static final Path OUTPUT_ROOT = Path.of("src/main/resources");
 
