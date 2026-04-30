@@ -1,10 +1,8 @@
 package com.frozendawn.client;
 
-import com.frozendawn.FrozenDawn;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 
@@ -12,9 +10,6 @@ import net.minecraft.util.Mth;
  * Compact EVA air-state readout stacked under the temperature HUD.
  */
 public final class AirStatusHud {
-
-    private static final ResourceLocation ORSA_LOGO =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
 
     private static final int PANEL_GAP = 2;
     private static final int BADGE_SIZE = 8;
@@ -105,9 +100,7 @@ public final class AirStatusHud {
         float g = FastColor.ARGB32.green(badgeColor) / 255.0F;
         float b = FastColor.ARGB32.blue(badgeColor) / 255.0F;
         float a = FastColor.ARGB32.alpha(badgeColor) / 255.0F;
-        graphics.setColor(r, g, b, a);
-        graphics.blit(ORSA_LOGO, badgeX, badgeY, BADGE_SIZE, BADGE_SIZE, 0.0F, 0.0F, 16, 16, 16, 16);
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        OrsaLogoRenderer.drawTinted(graphics, badgeX, badgeY, BADGE_SIZE, r, g, b, a);
 
         int textX = badgeX + BADGE_SIZE + LABEL_GAP;
         int airTextY = y + PADDING_Y + 1;

@@ -1,13 +1,11 @@
 package com.frozendawn.client;
 
-import com.frozendawn.FrozenDawn;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -16,8 +14,6 @@ import java.util.Locale;
 
 public final class SurveyorLensOverlay {
 
-    private static final ResourceLocation ORSA_LOGO =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
     private static final int HUD_WIDTH = 144;
     private static final int HUD_HEIGHT = 46;
     private static final int HUD_HEIGHT_WITH_PLUGIN = 58;
@@ -144,7 +140,7 @@ public final class SurveyorLensOverlay {
         graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, (borderAlpha << 24) | 0x93D8E8);
         graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x355B66);
 
-        graphics.blit(ORSA_LOGO, panelX + 7, panelY + 7, 0, 0, 16, 16, 16, 16);
+        OrsaLogoRenderer.draw(graphics, panelX + 7, panelY + 7, 16);
         graphics.drawString(mc.font, "THERMAL ARRAY", panelX + 30, panelY + 7, 0xDFFBFFFF, false);
 
         List<SurveyorLensScanner.HeatSignature> signatures = SurveyorLensVision.getCachedSignatures();
@@ -202,7 +198,7 @@ public final class SurveyorLensOverlay {
         int iconY = Mth.floor(Mth.lerp(transfer, startIconY, hudIconY));
         int iconSize = Mth.floor(Mth.lerp(transfer, 24.0F, 16.0F));
 
-        drawScaledLogo(graphics, iconX, iconY, iconSize);
+        OrsaLogoRenderer.drawBoot(graphics, iconX + iconSize / 2, iconY + iconSize / 2, iconSize, thermalBootOrbitPhase(mc));
 
         if (transfer < 1.0F) {
             int textAlpha = rgba(0x9CE3F5, 1.0F - transfer);
@@ -291,7 +287,7 @@ public final class SurveyorLensOverlay {
         graphics.fill(panelX, panelY, panelX + 1, panelY + panelHeight, (borderAlpha << 24) | 0xB3DFFF);
         graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, (borderAlpha << 24) | 0x4A7CAA);
 
-        graphics.blit(ORSA_LOGO, panelX + 7, panelY + 7, 0, 0, 16, 16, 16, 16);
+        OrsaLogoRenderer.draw(graphics, panelX + 7, panelY + 7, 16);
         graphics.drawString(mc.font, "BLIZZARD OPTICS", panelX + 30, panelY + 7, 0xE3F4FFFF, false);
         graphics.drawString(mc.font, "FILTERED // 32M VIS", panelX + 30, panelY + 17, 0x95C7FF, false);
 
@@ -304,13 +300,9 @@ public final class SurveyorLensOverlay {
         return mc.font.plainSubstrByWidth(text, maxWidth);
     }
 
-    private static void drawScaledLogo(GuiGraphics graphics, int x, int y, int size) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
-        float scale = size / 16.0F;
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.blit(ORSA_LOGO, 0, 0, 0, 0, 16, 16, 16, 16);
-        graphics.pose().popPose();
+    private static float thermalBootOrbitPhase(Minecraft mc) {
+        long time = mc.level != null ? mc.level.getGameTime() : 0L;
+        return (time % 22L) / 22.0F;
     }
 
     private static void drawGlow(GuiGraphics graphics, int centerX, int centerY, int radius, int color, int coreColor, float intensity, boolean primary) {
