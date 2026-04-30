@@ -139,6 +139,18 @@
     "category": "master",
     "sounds": [ "frozendawn:terminal/orsa_boot" ]
   },
+  "ui.orsa_awakening_voice": {
+    "category": "master",
+    "sounds": [
+      { "name": "frozendawn:ui/orsa_awakening_voice", "stream": true }
+    ]
+  },
+  "ui.orsa_awakening_ring": {
+    "category": "master",
+    "sounds": [
+      { "name": "frozendawn:ui/orsa_awakening_ring", "stream": true }
+    ]
+  },
   "terminal.blackglass_segment_01": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.terminal.blackglass_audio",

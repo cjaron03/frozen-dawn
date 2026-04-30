@@ -9,6 +9,7 @@ import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.network.ApocalypseDataPayload;
 import com.frozendawn.network.OpenDifficultySelectionPayload;
+import com.frozendawn.network.OpenOrsaAwakeningPayload;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.IcicleFormation;
@@ -60,6 +61,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
@@ -72,6 +74,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Drives the apocalypse forward each server tick.
@@ -88,6 +91,10 @@ public class WorldTickHandler {
      * notification so Architect D* Lite always sees final world state.
      */
     private static final Map<ResourceKey<Level>, Set<BlockPos>> pendingArchitectBreakUpdates = new HashMap<>();
+    private static final String ORSA_AWAKENING_SEEN_TAG = "frozendawn:orsa_awakening_seen";
+    private static final long ORSA_AWAKENING_FREEZE_TICKS = 340L;
+    private static final Map<UUID, Long> orsaAwakeningFreezeUntil = new HashMap<>();
+    private static final Map<UUID, Vec3> orsaAwakeningFreezeAnchor = new HashMap<>();
 
     private static final String[] PHASE_ADVANCEMENTS = {
             "root", "phase2", "phase3", "phase4", "phase5", "phase6"
@@ -168,6 +175,7 @@ public class WorldTickHandler {
         float progress = state.getProgress();
 
         ThermalVentSystem.tick(overworld, currentPhase, progress, overworld.getGameTime());
+        tickOrsaAwakeningFreeze(server);
 
         // Per-player effects: temperature, heat damage, wind chill, suffocation
         PlayerTickHandler.tick(server, state, currentPhase, currentDay, progress);
@@ -420,6 +428,8 @@ public class WorldTickHandler {
             }
             if (!state.isDifficultyLocked()) {
                 PacketDistributor.sendToPlayer(player, new OpenDifficultySelectionPayload());
+            } else {
+                trySendOrsaAwakening(player);
             }
         }
     }
@@ -427,6 +437,9 @@ public class WorldTickHandler {
     @SubscribeEvent
     public static void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            UUID playerId = player.getUUID();
+            orsaAwakeningFreezeUntil.remove(playerId);
+            orsaAwakeningFreezeAnchor.remove(playerId);
             PlayerTickHandler.onPlayerLogout(player);
         }
     }
@@ -434,6 +447,44 @@ public class WorldTickHandler {
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
     public static float getLastTemperature(java.util.UUID playerId) {
         return PlayerTickHandler.getLastTemperature(playerId);
+    }
+
+    public static void trySendOrsaAwakening(ServerPlayer player) {
+        net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
+        if (persistentData.getBoolean(ORSA_AWAKENING_SEEN_TAG)) {
+            return;
+        }
+        persistentData.putBoolean(ORSA_AWAKENING_SEEN_TAG, true);
+        UUID playerId = player.getUUID();
+        orsaAwakeningFreezeUntil.put(playerId, player.level().getGameTime() + ORSA_AWAKENING_FREEZE_TICKS);
+        orsaAwakeningFreezeAnchor.put(playerId, player.position());
+        PacketDistributor.sendToPlayer(player, new OpenOrsaAwakeningPayload());
+    }
+
+    private static void tickOrsaAwakeningFreeze(MinecraftServer server) {
+        if (orsaAwakeningFreezeUntil.isEmpty()) {
+            return;
+        }
+
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            UUID playerId = player.getUUID();
+            Long until = orsaAwakeningFreezeUntil.get(playerId);
+            if (until == null) {
+                continue;
+            }
+            long now = player.level().getGameTime();
+            if (now >= until) {
+                orsaAwakeningFreezeUntil.remove(playerId);
+                orsaAwakeningFreezeAnchor.remove(playerId);
+                continue;
+            }
+            Vec3 anchor = orsaAwakeningFreezeAnchor.get(playerId);
+            if (anchor != null) {
+                player.teleportTo(anchor.x, anchor.y, anchor.z);
+            }
+            player.setDeltaMovement(Vec3.ZERO);
+            player.hurtMarked = true;
+        }
     }
 
     public static void grantAdvancement(ServerPlayer player, String name) {

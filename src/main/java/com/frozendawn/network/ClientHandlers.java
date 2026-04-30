@@ -4,6 +4,7 @@ import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.MonitoringTerminalScreen;
+import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
@@ -42,6 +43,10 @@ public final class ClientHandlers {
 
     public static void handleOpenDifficultySelection() {
         Minecraft.getInstance().setScreen(new DifficultySelectionScreen());
+    }
+
+    public static void handleOpenOrsaAwakening() {
+        OrsaAwakeningIntro.start();
     }
 
     public static void handleOpenTowerTerminal(OpenTowerTerminalPayload payload) {

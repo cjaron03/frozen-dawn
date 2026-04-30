@@ -37,6 +37,10 @@ public class SoundMuffler {
         SoundInstance original = event.getSound();
         if (original == null) return;
         ResourceLocation soundLocation = original.getLocation();
+        if (OrsaAwakeningIntro.shouldSuppressNonIntroSound(soundLocation)) {
+            event.setSound(null);
+            return;
+        }
         String soundPath = soundLocation.getPath();
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
 

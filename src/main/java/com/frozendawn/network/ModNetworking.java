@@ -59,6 +59,11 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(ClientHandlers::handleOpenDifficultySelection)
         );
         registrar.playToClient(
+                OpenOrsaAwakeningPayload.TYPE,
+                OpenOrsaAwakeningPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(ClientHandlers::handleOpenOrsaAwakening)
+        );
+        registrar.playToClient(
                 OpenTowerTerminalPayload.TYPE,
                 OpenTowerTerminalPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleOpenTowerTerminal(payload))
@@ -165,6 +170,8 @@ public class ModNetworking {
                     if (!applied) {
                         return;
                     }
+
+                    WorldTickHandler.trySendOrsaAwakening(sp);
 
                     if (preset == ConfigPresets.BRUTAL) {
                         Component message = Component.translatable("message.frozendawn.difficulty.brutal_good_luck")
