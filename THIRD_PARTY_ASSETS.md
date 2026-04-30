@@ -4,14 +4,15 @@ This file tracks explicit third-party asset considerations for Frozen Dawn. Asse
 
 ## External Runtime Dependencies
 
-Frozen Dawn depends on Patchouli and Curios at runtime, but release builds do not bundle those dependency jars. Players should install them separately from their official distribution channels.
+Frozen Dawn depends on Patchouli, Curios, and JEI at runtime, but release builds do not bundle those dependency jars. Players should install them separately from their official distribution channels.
 
 - Patchouli: https://www.curseforge.com/minecraft/mc-mods/patchouli
 - Curios API: https://www.curseforge.com/minecraft/mc-mods/curios
+- Just Enough Items (JEI): https://modrinth.com/mod/jei
 
 ## Minecraft / Mojang Assets
 
-Frozen Dawn does not bundle Minecraft, NeoForge, Patchouli, Curios, or other third-party dependency jars inside the Frozen Dawn jar.
+Frozen Dawn does not bundle Minecraft, NeoForge, Patchouli, Curios, JEI, or other third-party dependency jars inside the Frozen Dawn jar.
 
 The replacement UI files under `src/main/resources/assets/minecraft/` are original Frozen Dawn compatibility assets documented in [ASSETS.md](ASSETS.md). They are not copied, traced, recolored, or mechanically derived from Mojang/Microsoft texture assets.
 

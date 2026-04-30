@@ -185,21 +185,23 @@ Returned Architects can drop two progression-defining rewards: the **Surveyor Le
 - **Java** 21
 - **[Patchouli](https://www.curseforge.com/minecraft/mc-mods/patchouli)** (required)
 - **[Curios API 9.5.1+1.21.1](https://maven.theillusivec4.top/top/theillusivec4/curios/curios-neoforge/9.5.1+1.21.1/curios-neoforge-9.5.1+1.21.1.jar)** (required)
+- **[Just Enough Items (JEI) 19.x for NeoForge 1.21.1](https://modrinth.com/mod/jei/versions?l=neoforge&g=1.21.1)** (required)
 
 ### Playing
 1. Install [NeoForge for Minecraft 1.21.1](https://neoforged.net/)
 2. Download the latest `frozendawn-x.x.x.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
 3. Download [Patchouli for NeoForge 1.21.1](https://www.curseforge.com/minecraft/mc-mods/patchouli/files?gameVersionTypeId=6&version=1.21.1)
 4. Download [Curios API 9.5.1+1.21.1 for NeoForge](https://maven.theillusivec4.top/top/theillusivec4/curios/curios-neoforge/9.5.1+1.21.1/curios-neoforge-9.5.1+1.21.1.jar)
-5. Drop Frozen Dawn, Patchouli, and Curios into your `.minecraft/mods/` folder
-6. Launch Minecraft with the NeoForge profile
+5. Download [Just Enough Items (JEI) for NeoForge 1.21.1](https://modrinth.com/mod/jei/versions?l=neoforge&g=1.21.1)
+6. Drop Frozen Dawn, Patchouli, Curios, and JEI into your `.minecraft/mods/` folder
+7. Launch Minecraft with the NeoForge profile
 
 Fresh towns and other authored landmark changes require newly generated chunks to appear in an existing world.
 
 ### Development
 1. Clone the repo: `git clone https://github.com/cjaron03/frozen-dawn.git`
 2. Open in your IDE (IntelliJ recommended) or build from terminal
-3. Patchouli and Curios are included as development dependencies — no manual download needed
+3. Patchouli, Curios, and JEI are included as development dependencies — no manual download needed
 4. Run `./gradlew runClient` to launch a dev instance with the mod loaded
 
 ## Commands
