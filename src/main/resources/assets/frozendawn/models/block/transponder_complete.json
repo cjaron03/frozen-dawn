@@ -1,6 +1,8 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "frozendawn:block/transponder_base",
   "textures": {
-    "all": "frozendawn:block/transponder_complete"
+    "particle": "frozendawn:block/transponder_complete",
+    "all": "frozendawn:block/transponder_complete",
+    "antenna": "frozendawn:block/transponder_complete_antenna"
   }
 }

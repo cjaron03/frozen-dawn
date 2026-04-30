@@ -1,1 +1,12 @@
-{ "parent": "minecraft:block/cube_all", "textures": { "all": "frozendawn:block/acheron_forge" } }
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "frozendawn:block/acheron_forge",
+    "north": "frozendawn:block/acheron_forge",
+    "south": "frozendawn:block/acheron_forge",
+    "east": "frozendawn:block/acheron_forge",
+    "west": "frozendawn:block/acheron_forge",
+    "up": "frozendawn:block/acheron_forge_top",
+    "down": "frozendawn:block/acheron_forge_bottom"
+  }
+}

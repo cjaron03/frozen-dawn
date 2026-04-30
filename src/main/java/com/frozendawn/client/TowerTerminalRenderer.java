@@ -1,13 +1,11 @@
 package com.frozendawn.client;
 
-import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.OpenTowerTerminalPayload;
 import com.frozendawn.terminal.TowerArchive;
 import com.frozendawn.terminal.TowerTerminalPuzzle;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
 final class TowerTerminalRenderer {
@@ -16,8 +14,6 @@ final class TowerTerminalRenderer {
     private static final int ARCHIVE_SCROLLBAR_W = 6;
     private static final int PROGRESS_BAR_H = 14;
     private static final int ALIGN_TICKS_TOTAL = 20 * 30;
-    private static final ResourceLocation ORSA_LOGO =
-            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/gui/orsa_logo.png");
     private static final String[] BOOT_LINES = {
             "[  OK  ] POST COMPLETE",
             "[  OK  ] MEMORY 64K ... VERIFIED",
@@ -81,17 +77,10 @@ final class TowerTerminalRenderer {
         int contentTop = layout.headerBottomY + 8;
         int contentBottom = layout.panelY + layout.panelH - 14;
 
-        int logoSize = 32;
+        int logoSize = OrsaLogoRenderer.bootDrawSize();
         int logoCenterX = centerX;
         int logoCenterY = contentTop + 26;
-        float angle = viewModel.bootTicks() * (720.0f / viewModel.bootDuration());
-        float xSquash = (float) Math.cos(Math.toRadians(angle));
-        float logoScale = logoSize / 16.0f;
-        graphics.pose().pushPose();
-        graphics.pose().translate(logoCenterX, logoCenterY, 0);
-        graphics.pose().scale(xSquash * logoScale, logoScale, 1.0f);
-        graphics.blit(ORSA_LOGO, -8, -8, 0, 0, 16, 16, 16, 16);
-        graphics.pose().popPose();
+        OrsaLogoRenderer.drawBoot(graphics, logoCenterX, logoCenterY, logoSize, viewModel.bootTicks() / 22.0F);
 
         int textX = layout.panelX + 22;
         int textY = logoCenterY + logoSize / 2 + 10;
