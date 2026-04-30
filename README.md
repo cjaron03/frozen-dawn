@@ -314,6 +314,6 @@ The built jar will be in `build/libs/`.
 
 ## License
 
-Frozen Dawn is licensed under the GNU Lesser General Public License v3.0 or later (`LGPL-3.0-or-later`). See [LICENSE](LICENSE).
+Frozen Dawn source code is copyright (C) 2026 Jaron Cabral and is licensed under the GNU Lesser General Public License v3.0 or later (`LGPL-3.0-or-later`). See [LICENSE](LICENSE) for the unmodified LGPL license text.
 
 Original visual, branding, music, and audio asset ownership is tracked separately in [ASSETS.md](ASSETS.md). Third-party asset notes and dependency distribution notes are tracked in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
