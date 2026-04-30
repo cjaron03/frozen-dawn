@@ -87,6 +87,10 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "rocket_launch_overlay"),
                 RocketLaunchClientController::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_awakening_intro"),
+                OrsaAwakeningIntro::render
+        );
     }
 
     @SubscribeEvent

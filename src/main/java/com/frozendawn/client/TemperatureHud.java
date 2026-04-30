@@ -18,6 +18,7 @@ public class TemperatureHud {
 
     private static float displayedTemp = 0f;
     private static float targetTemp = 0f;
+    private static int introBlinkEndTick = 0;
 
     /** Called from network handler when server sends temperature. */
     public static void setTemperature(float temp) {
@@ -28,6 +29,7 @@ public class TemperatureHud {
     public static void reset() {
         displayedTemp = 0f;
         targetTemp = 0f;
+        introBlinkEndTick = 0;
     }
 
     /** Current smoothed display temperature, used by FrostOverlay and cold effects. */
@@ -35,13 +37,25 @@ public class TemperatureHud {
         return displayedTemp;
     }
 
+    public static void startIntroBlink() {
+        Minecraft mc = Minecraft.getInstance();
+        introBlinkEndTick = mc.player != null ? mc.player.tickCount + 30 : 0;
+    }
+
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        if (OrsaAwakeningIntro.shouldSuppressSurvivalHud()) return;
+
         int phase = ApocalypseClientData.getPhase();
         if (phase < 0) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (mc.options.hideGui) return;
+
+        int blinkTicks = Math.max(0, introBlinkEndTick - mc.player.tickCount);
+        if (blinkTicks > 8 && ((blinkTicks / 4) & 1) == 0) {
+            return;
+        }
 
         // Smooth the display temperature
         float lerpSpeed = 0.1f;

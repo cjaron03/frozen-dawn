@@ -37,6 +37,9 @@ public final class AirStatusHud {
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
+        if (OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
+            return;
+        }
         if (mc.player == null || mc.options.hideGui) {
             reset();
             return;

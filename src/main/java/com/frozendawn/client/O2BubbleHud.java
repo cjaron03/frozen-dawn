@@ -30,6 +30,9 @@ public class O2BubbleHud {
     private static long tickCounter = 0;
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        if (OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
+            return;
+        }
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         if (!PhaseManager.isVacuumActive(phase, progress)) return;
