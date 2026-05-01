@@ -50,7 +50,7 @@ public class WindAmbience {
 
         float targetVolume = getTargetWindVolume(phase, progress);
 
-        boolean exposedToStorm = isStormExposed(mc);
+        boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
         if (!exposedToStorm) {
             targetVolume *= 0.08f;
         }
@@ -110,11 +110,6 @@ public class WindAmbience {
         TemperatureHud.reset();
         AirStatusHud.reset();
         SanityClientData.reset();
-    }
-
-    private static boolean isStormExposed(Minecraft mc) {
-        return mc.level != null && mc.player != null
-                && mc.level.canSeeSky(mc.player.blockPosition().above());
     }
 
     private static void stopAll(Minecraft mc) {

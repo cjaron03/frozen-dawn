@@ -33,9 +33,9 @@ public class WeatherParticles {
 
         // No blizzard particles underground or anywhere with a real roof overhead.
         if (mc.player.blockPosition().getY() < 50) return;
-        if (!isStormExposed(mc)) {
-            return;
-        }
+        boolean exposed = ClientStormVisibility.isStormExposed(mc);
+        ClientStormVisibility.WindowView windowView = exposed ? null : ClientStormVisibility.findWindowView(mc);
+        if (!exposed && windowView == null) return;
 
         float progress = ApocalypseClientData.getProgress();
 
@@ -43,13 +43,16 @@ public class WeatherParticles {
         if (PhaseManager.isVacuumActive(phase, progress)) return;
 
         int particleCount = getParticleCount(phase, progress);
+        if (windowView != null) {
+            particleCount = Math.max(2, (int) (particleCount * 0.45F));
+        }
 
         if (particleCount <= 0) return;
 
         RandomSource random = mc.level.random;
-        double px = mc.player.getX();
-        double py = mc.player.getEyeY();
-        double pz = mc.player.getZ();
+        double px = windowView == null ? mc.player.getX() : windowView.outsidePoint().x;
+        double py = windowView == null ? mc.player.getEyeY() : windowView.outsidePoint().y;
+        double pz = windowView == null ? mc.player.getZ() : windowView.outsidePoint().z;
 
         long gameTime = mc.level.getGameTime();
 
@@ -60,10 +63,12 @@ public class WeatherParticles {
             double fallSpeed = -0.08; // barely falling — almost horizontal
 
             for (int i = 0; i < particleCount; i++) {
-                // Spawn at player height and slightly above, spread wide
-                double x = px + random.nextGaussian() * 20;
-                double y = py + random.nextGaussian() * 3; // tight vertical band around player
-                double z = pz + random.nextGaussian() * 20;
+                // Spawn at player height outside, or in a tighter exterior band when viewed through glass.
+                double spread = windowView == null ? 20 : 7;
+                double verticalSpread = windowView == null ? 3 : 2;
+                double x = px + random.nextGaussian() * spread;
+                double y = py + random.nextGaussian() * verticalSpread;
+                double z = pz + random.nextGaussian() * spread;
                 mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
             }
         } else {
@@ -75,17 +80,13 @@ public class WeatherParticles {
             double fallSpeed = -0.3;
 
             for (int i = 0; i < particleCount; i++) {
-                double x = px + random.nextGaussian() * 16;
-                double y = py + 8 + random.nextDouble() * 12;
-                double z = pz + random.nextGaussian() * 16;
+                double spread = windowView == null ? 16 : 6;
+                double x = px + random.nextGaussian() * spread;
+                double y = py + (windowView == null ? 8 : 1) + random.nextDouble() * (windowView == null ? 12 : 5);
+                double z = pz + random.nextGaussian() * spread;
                 mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
             }
         }
-    }
-
-    private static boolean isStormExposed(Minecraft mc) {
-        return mc.level != null && mc.player != null
-                && mc.level.canSeeSky(mc.player.blockPosition().above());
     }
 
     private static int getParticleCount(int phase, float progress) {

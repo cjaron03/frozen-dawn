@@ -43,7 +43,9 @@ public class SkyRenderer {
         if (phase < 1) return;
 
         Minecraft mc = Minecraft.getInstance();
-        if (isUndergroundOrCovered(mc)) return;
+        boolean covered = ClientStormVisibility.isUndergroundOrCovered(mc);
+        ClientStormVisibility.WindowView windowView = covered ? ClientStormVisibility.findWindowView(mc) : null;
+        if (covered && windowView == null) return;
 
         float skyLight = ApocalypseClientData.getSkyLight();
         float sunBrightness = ApocalypseClientData.getSunBrightness();
@@ -61,6 +63,9 @@ public class SkyRenderer {
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
             float whiteoutMix = getWhiteoutMix(phase, progress);
+            if (windowView != null) {
+                whiteoutMix *= 0.55F;
+            }
             if (whiteoutMix > 0.0f) {
                 targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
                 targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
@@ -94,11 +99,16 @@ public class SkyRenderer {
 
         // Don't reduce visibility underground or under a real roof.
         Minecraft mc = Minecraft.getInstance();
-        if (isUndergroundOrCovered(mc)) return;
+        boolean covered = ClientStormVisibility.isUndergroundOrCovered(mc);
+        ClientStormVisibility.WindowView windowView = covered ? ClientStormVisibility.findWindowView(mc) : null;
+        if (covered && windowView == null) return;
 
         float progress = ApocalypseClientData.getProgress();
 
         float visibility = getTargetVisibility(phase, progress);
+        if (windowView != null) {
+            visibility = getWindowTargetVisibility(visibility);
+        }
         if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
                 && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
             visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
@@ -110,13 +120,6 @@ public class SkyRenderer {
             event.setNearPlaneDistance(visibility * 0.05f);
             event.setCanceled(true);
         }
-    }
-
-    private static boolean isUndergroundOrCovered(Minecraft mc) {
-        return mc.player != null
-                && mc.level != null
-                && (mc.player.blockPosition().getY() < 50
-                || !mc.level.canSeeSky(mc.player.blockPosition().above()));
     }
 
     private static float getWhiteoutMix(int phase, float progress) {
@@ -147,5 +150,15 @@ public class SkyRenderer {
 
         float phase3Progress = Math.min(1f, (progress - 0.22f) / 0.12f);
         return Mth.lerp(phase3Progress, 256f, 128f);
+    }
+
+    private static float getWindowTargetVisibility(float exposedVisibility) {
+        if (exposedVisibility <= 16.0F) {
+            return 48.0F;
+        }
+        if (exposedVisibility <= 64.0F) {
+            return 96.0F;
+        }
+        return Math.min(220.0F, exposedVisibility * 1.35F);
     }
 }
