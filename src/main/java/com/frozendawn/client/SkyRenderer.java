@@ -92,9 +92,9 @@ public class SkyRenderer {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // Don't reduce visibility underground (below Y=50)
+        // Don't reduce visibility underground or under a real roof.
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.player.blockPosition().getY() < 50) return;
+        if (isUndergroundOrCovered(mc)) return;
 
         float progress = ApocalypseClientData.getProgress();
 

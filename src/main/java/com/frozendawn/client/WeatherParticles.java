@@ -2,7 +2,6 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.phase.PhaseManager;
-import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
@@ -32,9 +31,9 @@ public class WeatherParticles {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // No blizzard particles underground or inside shelters
+        // No blizzard particles underground or anywhere with a real roof overhead.
         if (mc.player.blockPosition().getY() < 50) return;
-        if (isSheltered(mc)) {
+        if (!isStormExposed(mc)) {
             return;
         }
 
@@ -84,9 +83,9 @@ public class WeatherParticles {
         }
     }
 
-    /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
-    private static boolean isSheltered(Minecraft mc) {
-        return TemperatureManager.isSheltered(mc.level, mc.player.blockPosition());
+    private static boolean isStormExposed(Minecraft mc) {
+        return mc.level != null && mc.player != null
+                && mc.level.canSeeSky(mc.player.blockPosition().above());
     }
 
     private static int getParticleCount(int phase, float progress) {
