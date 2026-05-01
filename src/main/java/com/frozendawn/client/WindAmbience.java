@@ -3,7 +3,6 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
-import com.frozendawn.world.TemperatureManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -31,6 +30,7 @@ public class WindAmbience {
     private static TickableWindSound currentSound = null;
     private static int ticksUntilNext = 0;
     private static int creakCooldown = 0;
+    private static float currentBasePitch = 1.0f;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -50,15 +50,16 @@ public class WindAmbience {
 
         float targetVolume = getTargetWindVolume(phase, progress);
 
-        // Muffle wind when sheltered (roof overhead)
-        boolean sheltered = isSheltered(mc);
-        if (sheltered) {
-            targetVolume *= 0.25f;
+        boolean exposedToStorm = isStormExposed(mc);
+        if (!exposedToStorm) {
+            targetVolume *= 0.08f;
         }
+        float targetPitch = exposedToStorm ? currentBasePitch : currentBasePitch * 0.82f;
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
         if (currentSound != null && !currentSound.isStopped()) {
             currentSound.setTargetVolume(targetVolume);
+            currentSound.setTargetPitch(targetPitch);
         }
 
         // If target is near-zero and no sound playing, bail
@@ -68,7 +69,7 @@ public class WindAmbience {
         }
 
         // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
-        if (sheltered && phase >= 4) {
+        if (!exposedToStorm && phase >= 4) {
             if (creakCooldown > 0) {
                 creakCooldown--;
             } else if (mc.level.random.nextFloat() < 0.015f) {
@@ -89,12 +90,13 @@ public class WindAmbience {
 
         // Start next clip — old one still playing for 5s overlap
         boolean strong = phase >= 4;
-        float pitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
+        currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
+        targetPitch = exposedToStorm ? currentBasePitch : currentBasePitch * 0.82f;
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
         currentSound = new TickableWindSound(
                 strong ? ModSounds.WIND_STRONG.get() : ModSounds.WIND_LIGHT.get(),
-                targetVolume, pitch, clipDuration);
+                targetVolume, targetPitch, clipDuration);
         mc.getSoundManager().play(currentSound);
 
         ticksUntilNext = clipDuration - OVERLAP;
@@ -110,9 +112,9 @@ public class WindAmbience {
         SanityClientData.reset();
     }
 
-    /** Check if the player has a solid block or insulated glass overhead (within 4 blocks). */
-    private static boolean isSheltered(Minecraft mc) {
-        return TemperatureManager.isSheltered(mc.level, mc.player.blockPosition());
+    private static boolean isStormExposed(Minecraft mc) {
+        return mc.level != null && mc.player != null
+                && mc.level.canSeeSky(mc.player.blockPosition().above());
     }
 
     private static void stopAll(Minecraft mc) {
@@ -122,6 +124,7 @@ public class WindAmbience {
         }
         ticksUntilNext = 0;
         creakCooldown = 0;
+        currentBasePitch = 1.0f;
     }
 
     private static boolean shouldStopWind(int phase, float progress, boolean underground) {

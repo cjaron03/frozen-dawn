@@ -15,7 +15,9 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class TickableWindSound extends AbstractTickableSoundInstance {
 
     private float targetVolume;
+    private float targetPitch;
     private final float fadeRate;
+    private final float pitchFadeRate;
     private int ticksRemaining;
 
     public TickableWindSound(SoundEvent sound, float initialVolume, float pitch, int durationTicks) {
@@ -23,8 +25,10 @@ public class TickableWindSound extends AbstractTickableSoundInstance {
         this.volume = initialVolume;
         this.targetVolume = initialVolume;
         this.pitch = pitch;
+        this.targetPitch = pitch;
         this.ticksRemaining = durationTicks;
-        this.fadeRate = 0.04f; // ~0.5s for full 0→1 transition (smooth but responsive)
+        this.fadeRate = 0.025f; // ~2s for full 0→1 transition (smooth but responsive)
+        this.pitchFadeRate = 0.01f;
         this.looping = false;
         this.delay = 0;
         this.relative = true; // global, no positional attenuation
@@ -33,6 +37,10 @@ public class TickableWindSound extends AbstractTickableSoundInstance {
 
     public void setTargetVolume(float target) {
         this.targetVolume = target;
+    }
+
+    public void setTargetPitch(float target) {
+        this.targetPitch = target;
     }
 
     public void fadeOut() {
@@ -46,6 +54,12 @@ public class TickableWindSound extends AbstractTickableSoundInstance {
             volume = Math.min(targetVolume, volume + fadeRate);
         } else if (volume > targetVolume) {
             volume = Math.max(targetVolume, volume - fadeRate);
+        }
+
+        if (pitch < targetPitch) {
+            pitch = Math.min(targetPitch, pitch + pitchFadeRate);
+        } else if (pitch > targetPitch) {
+            pitch = Math.max(targetPitch, pitch - pitchFadeRate);
         }
 
         // Stop when faded out completely
