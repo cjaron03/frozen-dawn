@@ -147,7 +147,7 @@ public class ModBlocks {
                     .isSuffocating((state, level, pos) -> false)
                     .pushReaction(PushReaction.DESTROY)));
 
-    // Obsidian -> Frozen Obsidian (phase 5). Drops obsidian. Visual variant only.
+    // Obsidian -> Frozen Obsidian (phase 4+). Used by late-game cold-core recipes.
     public static final DeferredBlock<Block> FROZEN_OBSIDIAN = BLOCKS.register("frozen_obsidian",
             () -> new Block(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)

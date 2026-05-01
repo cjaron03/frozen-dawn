@@ -3,7 +3,7 @@
   "pools": [
     {
       "rolls": 1,
-      "entries": [{ "type": "minecraft:item", "name": "minecraft:obsidian" }],
+      "entries": [{ "type": "minecraft:item", "name": "frozendawn:frozen_obsidian" }],
       "conditions": [{ "condition": "minecraft:survives_explosion" }]
     }
   ]

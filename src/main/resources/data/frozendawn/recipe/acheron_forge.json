@@ -2,12 +2,12 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "ROR",
+    "SOS",
     "OTO",
-    "ROR"
+    "SOS"
   ],
   "key": {
-    "R": { "item": "frozendawn:refined_acheronite" },
+    "S": { "item": "frozendawn:acheronite_shard" },
     "O": { "item": "minecraft:obsidian" },
     "T": { "item": "frozendawn:thermal_core" }
   },
