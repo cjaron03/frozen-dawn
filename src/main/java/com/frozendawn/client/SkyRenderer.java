@@ -64,7 +64,7 @@ public class SkyRenderer {
 
             float whiteoutMix = getWhiteoutMix(phase, progress);
             if (windowView != null) {
-                whiteoutMix *= 0.55F;
+                whiteoutMix *= 0.9F;
             }
             if (whiteoutMix > 0.0f) {
                 targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
@@ -154,11 +154,11 @@ public class SkyRenderer {
 
     private static float getWindowTargetVisibility(float exposedVisibility) {
         if (exposedVisibility <= 16.0F) {
-            return 48.0F;
+            return 18.0F;
         }
         if (exposedVisibility <= 64.0F) {
-            return 96.0F;
+            return 40.0F;
         }
-        return Math.min(220.0F, exposedVisibility * 1.35F);
+        return Math.min(160.0F, exposedVisibility * 0.75F);
     }
 }
