@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.init.ModBlocks;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -74,8 +75,35 @@ final class ClientStormVisibility {
         }
 
         Level level = mc.level;
-        Vec3 eye = mc.player.getEyePosition();
-        Vec3 look = mc.player.getViewVector(1.0F).normalize();
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 eye = camera.isInitialized() ? camera.getPosition() : mc.player.getEyePosition();
+        Vec3 look = new Vec3(camera.getLookVector()).normalize();
+        Vec3 left = new Vec3(camera.getLeftVector()).normalize();
+        Vec3 up = new Vec3(camera.getUpVector()).normalize();
+
+        WindowView centerView = scanWindowRay(level, eye, look);
+        if (centerView != null) {
+            return centerView;
+        }
+
+        double[] offsets = {-0.34D, 0.0D, 0.34D};
+        for (double yOffset : offsets) {
+            for (double xOffset : offsets) {
+                if (xOffset == 0.0D && yOffset == 0.0D) {
+                    continue;
+                }
+                Vec3 sampleLook = look.add(left.scale(xOffset)).add(up.scale(yOffset)).normalize();
+                WindowView view = scanWindowRay(level, eye, sampleLook);
+                if (view != null) {
+                    return view;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static WindowView scanWindowRay(Level level, Vec3 eye, Vec3 look) {
         boolean sawGlass = false;
         Vec3 lastGlassCenter = null;
 

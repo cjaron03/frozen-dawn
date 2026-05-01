@@ -63,13 +63,16 @@ public class SkyRenderer {
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
             float whiteoutMix = getWhiteoutMix(phase, progress);
-            if (windowView != null) {
-                whiteoutMix *= 0.9F;
-            }
             if (whiteoutMix > 0.0f) {
-                targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
-                targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
-                targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
+                if (windowView != null) {
+                    targetR = Mth.lerp(0.82F, targetR, 0.76F);
+                    targetG = Mth.lerp(0.82F, targetG, 0.86F);
+                    targetB = Mth.lerp(0.82F, targetB, 0.96F);
+                } else {
+                    targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
+                    targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
+                    targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
+                }
             }
 
             // Phase 6 mid+: transition from whiteout to pure black
@@ -109,7 +112,8 @@ public class SkyRenderer {
         if (windowView != null) {
             visibility = getWindowTargetVisibility(visibility);
         }
-        if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
+        if (windowView == null
+                && SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
                 && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
             visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
         }
@@ -154,11 +158,11 @@ public class SkyRenderer {
 
     private static float getWindowTargetVisibility(float exposedVisibility) {
         if (exposedVisibility <= 16.0F) {
-            return 18.0F;
+            return 6.0F;
         }
         if (exposedVisibility <= 64.0F) {
-            return 40.0F;
+            return 12.0F;
         }
-        return Math.min(160.0F, exposedVisibility * 0.75F);
+        return Math.min(48.0F, exposedVisibility * 0.35F);
     }
 }
