@@ -93,10 +93,14 @@ final class ClientStormVisibility {
                 continue;
             }
 
-            if (isOpenStormView(level, pos, state)) {
-                if (sawGlass) {
+            if (sawGlass) {
+                if (isExteriorBeyondWindow(level, pos, state)) {
                     return new WindowView(sample, lastGlassCenter == null ? sample : lastGlassCenter);
                 }
+                return null;
+            }
+
+            if (isOpenStormView(level, pos, state)) {
                 continue;
             }
 
@@ -112,6 +116,31 @@ final class ClientStormVisibility {
                 || state.is(Blocks.SNOW)
                 || state.is(Blocks.POWDER_SNOW))
                 && level.canSeeSky(pos);
+    }
+
+    private static boolean isExteriorBeyondWindow(Level level, BlockPos pos, BlockState state) {
+        if (isOpenStormView(level, pos, state)) {
+            return true;
+        }
+        if (level.canSeeSky(pos) || level.canSeeSky(pos.above())) {
+            return true;
+        }
+        return state.is(BlockTags.LEAVES) && hasNearbySky(level, pos);
+    }
+
+    private static boolean hasNearbySky(Level level, BlockPos center) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 2; dy++) {
+                    cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    if (level.isLoaded(cursor) && level.canSeeSky(cursor)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean isWindowGlass(BlockState state) {
