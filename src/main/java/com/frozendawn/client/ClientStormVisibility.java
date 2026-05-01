@@ -125,6 +125,9 @@ final class ClientStormVisibility {
                 if (isExteriorBeyondWindow(level, pos, state)) {
                     return new WindowView(sample, lastGlassCenter == null ? sample : lastGlassCenter);
                 }
+                if (canKeepScanningBeyondWindow(level, pos, state)) {
+                    continue;
+                }
                 return null;
             }
 
@@ -153,14 +156,24 @@ final class ClientStormVisibility {
         if (level.canSeeSky(pos) || level.canSeeSky(pos.above())) {
             return true;
         }
-        return state.is(BlockTags.LEAVES) && hasNearbySky(level, pos);
+        return hasNearbySky(level, pos);
+    }
+
+    private static boolean canKeepScanningBeyondWindow(Level level, BlockPos pos, BlockState state) {
+        return state.isAir()
+                || state.is(BlockTags.REPLACEABLE)
+                || state.is(Blocks.SNOW)
+                || state.is(Blocks.POWDER_SNOW)
+                || state.is(BlockTags.LEAVES)
+                || !state.blocksMotion()
+                || state.getCollisionShape(level, pos).isEmpty();
     }
 
     private static boolean hasNearbySky(Level level, BlockPos center) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int dy = 0; dy <= 2; dy++) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                for (int dy = -1; dy <= 3; dy++) {
                     cursor.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
                     if (level.isLoaded(cursor) && level.canSeeSky(cursor)) {
                         return true;
