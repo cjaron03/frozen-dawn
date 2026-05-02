@@ -190,6 +190,9 @@ public class TowerTerminalScreen extends Screen {
             screen.applySnapshot(payload);
             return;
         }
+        if (payload.state() == OpenTowerTerminalPayload.STATE_COMPLETE) {
+            return;
+        }
         minecraft.setScreen(new TowerTerminalScreen(payload));
     }
 }
