@@ -43,9 +43,8 @@ public class SkyRenderer {
         if (phase < 1) return;
 
         Minecraft mc = Minecraft.getInstance();
-        boolean covered = ClientStormVisibility.isUndergroundOrCovered(mc);
-        ClientStormVisibility.WindowView windowView = covered ? ClientStormVisibility.findWindowView(mc) : null;
-        if (covered && windowView == null) return;
+        float exposure = phase >= 3 ? StormExposureController.getExposure() : (ClientStormVisibility.isUndergroundOrCovered(mc) ? 0.0F : 1.0F);
+        if (exposure <= 0.0F) return;
 
         float skyLight = ApocalypseClientData.getSkyLight();
         float sunBrightness = ApocalypseClientData.getSunBrightness();
@@ -53,7 +52,7 @@ public class SkyRenderer {
 
         if (FrozenDawnConfig.ENABLE_SKY_COLOR_SHIFT.get() && phase >= 1) {
             int idx = Math.min(phase - 1, 5);
-            float blend = PHASE_BLEND[idx];
+            float blend = PHASE_BLEND[idx] * exposure;
             float floor = PHASE_FLOOR[idx];
 
             float brightness = Math.max(floor, skyLight * (0.3f + 0.7f * sunBrightness));
@@ -62,17 +61,11 @@ public class SkyRenderer {
             float targetG = PHASE_COLORS[idx][1] * brightness;
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
-            float whiteoutMix = getWhiteoutMix(phase, progress);
+            float whiteoutMix = getWhiteoutMix(phase, progress) * exposure;
             if (whiteoutMix > 0.0f) {
-                if (windowView != null) {
-                    targetR = Mth.lerp(0.82F, targetR, 0.76F);
-                    targetG = Mth.lerp(0.82F, targetG, 0.86F);
-                    targetB = Mth.lerp(0.82F, targetB, 0.96F);
-                } else {
-                    targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
-                    targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
-                    targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
-                }
+                targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
+                targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
+                targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
             }
 
             // Phase 6 mid+: transition from whiteout to pure black
@@ -100,25 +93,19 @@ public class SkyRenderer {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // Don't reduce visibility underground or under a real roof.
-        Minecraft mc = Minecraft.getInstance();
-        boolean covered = ClientStormVisibility.isUndergroundOrCovered(mc);
-        ClientStormVisibility.WindowView windowView = covered ? ClientStormVisibility.findWindowView(mc) : null;
-        if (covered && windowView == null) return;
+        float exposure = StormExposureController.getExposure();
+        if (exposure <= 0.0F) return;
 
         float progress = ApocalypseClientData.getProgress();
 
         float visibility = getTargetVisibility(phase, progress);
-        if (windowView != null) {
-            visibility = getWindowTargetVisibility(visibility);
-        }
-        if (windowView == null
-                && SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
+        if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
                 && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
             visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
         }
 
         float currentFar = event.getFarPlaneDistance();
+        visibility = Mth.lerp(exposure, currentFar, visibility);
         if (visibility < currentFar) {
             event.setFarPlaneDistance(visibility);
             event.setNearPlaneDistance(visibility * 0.05f);
@@ -156,13 +143,4 @@ public class SkyRenderer {
         return Mth.lerp(phase3Progress, 256f, 128f);
     }
 
-    private static float getWindowTargetVisibility(float exposedVisibility) {
-        if (exposedVisibility <= 16.0F) {
-            return 6.0F;
-        }
-        if (exposedVisibility <= 64.0F) {
-            return 12.0F;
-        }
-        return Math.min(48.0F, exposedVisibility * 0.35F);
-    }
 }

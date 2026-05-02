@@ -50,11 +50,10 @@ public class WindAmbience {
 
         float targetVolume = getTargetWindVolume(phase, progress);
 
+        float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
-        if (!exposedToStorm) {
-            targetVolume *= 0.08f;
-        }
-        float targetPitch = exposedToStorm ? currentBasePitch : currentBasePitch * 0.82f;
+        targetVolume *= Mth.lerp(exposure, 0.08f, 1.0f);
+        float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
         if (currentSound != null && !currentSound.isStopped()) {
@@ -91,7 +90,7 @@ public class WindAmbience {
         // Start next clip — old one still playing for 5s overlap
         boolean strong = phase >= 4;
         currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
-        targetPitch = exposedToStorm ? currentBasePitch : currentBasePitch * 0.82f;
+        targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
         currentSound = new TickableWindSound(

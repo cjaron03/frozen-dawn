@@ -31,41 +31,33 @@ public class WeatherParticles {
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
-        // No blizzard particles underground or anywhere with a real roof overhead.
-        if (mc.player.blockPosition().getY() < 50) return;
-        boolean exposed = ClientStormVisibility.isStormExposed(mc);
-        ClientStormVisibility.WindowView windowView = exposed ? null : ClientStormVisibility.findWindowView(mc);
-        if (!exposed && windowView == null) return;
+        float exposure = StormExposureController.getExposure();
+        if (exposure <= 0.08F) return;
 
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 6 late: no particles (vacuum)
         if (PhaseManager.isVacuumActive(phase, progress)) return;
 
-        int particleCount = getParticleCount(phase, progress);
-        if (windowView != null) {
-            particleCount = Math.max(2, (int) (particleCount * 0.45F));
-        }
-
+        int particleCount = Math.round(getParticleCount(phase, progress) * exposure);
         if (particleCount <= 0) return;
 
         RandomSource random = mc.level.random;
-        double px = windowView == null ? mc.player.getX() : windowView.outsidePoint().x;
-        double py = windowView == null ? mc.player.getEyeY() : windowView.outsidePoint().y;
-        double pz = windowView == null ? mc.player.getZ() : windowView.outsidePoint().z;
+        double px = mc.player.getX();
+        double py = mc.player.getEyeY();
+        double pz = mc.player.getZ();
 
         long gameTime = mc.level.getGameTime();
 
         if (phase >= 5) {
             // Phase 5+: particles blow sideways at surface level, like a ground blizzard
-            float windX = BlizzardWindHelper.getWindX(phase, progress, gameTime);
-            float windZ = BlizzardWindHelper.getWindZ(phase, progress, gameTime);
+            float windX = BlizzardWindHelper.getWindX(phase, progress, gameTime) * exposure;
+            float windZ = BlizzardWindHelper.getWindZ(phase, progress, gameTime) * exposure;
             double fallSpeed = -0.08; // barely falling — almost horizontal
 
             for (int i = 0; i < particleCount; i++) {
-                // Spawn at player height outside, or in a tighter exterior band when viewed through glass.
-                double spread = windowView == null ? 20 : 7;
-                double verticalSpread = windowView == null ? 3 : 2;
+                double spread = 20;
+                double verticalSpread = 3;
                 double x = px + random.nextGaussian() * spread;
                 double y = py + random.nextGaussian() * verticalSpread;
                 double z = pz + random.nextGaussian() * spread;
@@ -75,14 +67,14 @@ public class WeatherParticles {
             // Phase 3-4: normal falling snow with mild wind
             float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
             float windMult = phase >= 4 ? 0.4f : 0.2f;
-            float windX = windStrength * windMult * (float) Math.sin(gameTime * 0.007);
-            float windZ = windStrength * windMult * (float) Math.cos(gameTime * 0.011);
+            float windX = windStrength * windMult * exposure * (float) Math.sin(gameTime * 0.007);
+            float windZ = windStrength * windMult * exposure * (float) Math.cos(gameTime * 0.011);
             double fallSpeed = -0.3;
 
             for (int i = 0; i < particleCount; i++) {
-                double spread = windowView == null ? 16 : 6;
+                double spread = 16;
                 double x = px + random.nextGaussian() * spread;
-                double y = py + (windowView == null ? 8 : 1) + random.nextDouble() * (windowView == null ? 12 : 5);
+                double y = py + 8 + random.nextDouble() * 12;
                 double z = pz + random.nextGaussian() * spread;
                 mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
             }
