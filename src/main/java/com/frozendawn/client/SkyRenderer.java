@@ -34,6 +34,7 @@ public class SkyRenderer {
 
     private static final float[] PHASE_BLEND = {0.2f, 0.4f, 0.7f, 0.9f, 1.0f, 1.0f};
     private static final float[] PHASE_FLOOR = {0.15f, 0.15f, 0.10f, 0.08f, 0.04f, 0.01f};
+    private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
@@ -44,7 +45,8 @@ public class SkyRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         float exposure = phase >= 3 ? StormExposureController.getExposure() : (ClientStormVisibility.isUndergroundOrCovered(mc) ? 0.0F : 1.0F);
-        if (exposure <= 0.0F) return;
+        float skyColorExposure = phase >= 5 ? 1.0F : exposure;
+        if (skyColorExposure <= 0.0F) return;
 
         float skyLight = ApocalypseClientData.getSkyLight();
         float sunBrightness = ApocalypseClientData.getSunBrightness();
@@ -52,20 +54,23 @@ public class SkyRenderer {
 
         if (FrozenDawnConfig.ENABLE_SKY_COLOR_SHIFT.get() && phase >= 1) {
             int idx = Math.min(phase - 1, 5);
-            float blend = PHASE_BLEND[idx] * exposure;
+            float blend = PHASE_BLEND[idx] * skyColorExposure;
             float floor = PHASE_FLOOR[idx];
 
             float brightness = Math.max(floor, skyLight * (0.3f + 0.7f * sunBrightness));
+            if (phase == 5) {
+                brightness = Math.min(brightness, PHASE5_MAX_SKY_BRIGHTNESS);
+            }
 
             float targetR = PHASE_COLORS[idx][0] * brightness;
             float targetG = PHASE_COLORS[idx][1] * brightness;
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
-            float whiteoutMix = getWhiteoutMix(phase, progress) * exposure;
+            float whiteoutMix = getWhiteoutMix(phase, progress) * skyColorExposure;
             if (whiteoutMix > 0.0f) {
-                targetR = Mth.lerp(whiteoutMix, targetR, 0.15f);
-                targetG = Mth.lerp(whiteoutMix, targetG, 0.15f);
-                targetB = Mth.lerp(whiteoutMix, targetB, 0.18f);
+                targetR = Mth.lerp(whiteoutMix, targetR, getStormHazeRed(phase));
+                targetG = Mth.lerp(whiteoutMix, targetG, getStormHazeGreen(phase));
+                targetB = Mth.lerp(whiteoutMix, targetB, getStormHazeBlue(phase));
             }
 
             // Phase 6 mid+: transition from whiteout to pure black
@@ -121,6 +126,18 @@ public class SkyRenderer {
             return 0.0f;
         }
         return 0.4f * BlizzardWindHelper.getSurfaceStormFade(phase, progress);
+    }
+
+    private static float getStormHazeRed(int phase) {
+        return phase == 5 ? 0.055f : 0.15f;
+    }
+
+    private static float getStormHazeGreen(int phase) {
+        return phase == 5 ? 0.060f : 0.15f;
+    }
+
+    private static float getStormHazeBlue(int phase) {
+        return phase == 5 ? 0.080f : 0.18f;
     }
 
     private static float getTargetVisibility(int phase, float progress) {

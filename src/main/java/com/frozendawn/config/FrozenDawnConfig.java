@@ -44,7 +44,6 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
-    public static final ModConfigSpec.BooleanValue ENABLE_SANITY_CAMERA;
 
     public static final ModConfigSpec SPEC;
 
@@ -196,10 +195,6 @@ public class FrozenDawnConfig {
                 .comment("Enable phase-dependent sky color shifting.",
                         "Shifts sky from warm amber (phase 1) through cold blue to black during phase 6 atmospheric collapse.")
                 .define("enableSkyColorShift", true);
-        ENABLE_SANITY_CAMERA = BUILDER
-                .comment("Enable subtle camera effects from the sanity system.",
-                        "Disable if you experience motion sickness. Audio and visual effects still play.")
-                .define("enableSanityCameraEffects", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

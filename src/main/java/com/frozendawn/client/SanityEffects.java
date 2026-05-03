@@ -1,7 +1,6 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.ShadowFigureEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
@@ -77,11 +76,6 @@ public class SanityEffects {
         } else {
             discardWatcher();
             watcherSpawnCooldown = 0;
-        }
-
-        // Stage 2+: peripheral camera nudge
-        if (stage >= 2 && FrozenDawnConfig.ENABLE_SANITY_CAMERA.get() && !activeShadows.isEmpty()) {
-            tickCameraNudge(mc);
         }
     }
 
@@ -263,25 +257,6 @@ public class SanityEffects {
             mc.player.displayClientMessage(
                     Component.translatable("message.frozendawn.sanity.watched"), true);
         }
-    }
-
-    // ── Camera nudge ──
-
-    private static void tickCameraNudge(Minecraft mc) {
-        if (activeShadows.isEmpty()) return;
-
-        ShadowInstance nearest = activeShadows.get(0);
-        if (nearest.entity.isRemoved()) return;
-
-        Vec3 playerPos = mc.player.getEyePosition();
-        Vec3 toShadow = nearest.entity.position().subtract(playerPos).normalize();
-        Vec3 lookDir = mc.player.getLookAngle();
-
-        // Cross product Y component gives direction to nudge
-        double cross = lookDir.x * toShadow.z - lookDir.z * toShadow.x;
-        float nudge = (float) (Math.signum(cross) * 0.05); // max 0.05 degrees (subtle)
-
-        mc.player.setYRot(mc.player.getYRot() + nudge);
     }
 
     // ── Spawn/Despawn helpers ──

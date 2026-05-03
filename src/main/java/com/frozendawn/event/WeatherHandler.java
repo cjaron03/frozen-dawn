@@ -13,6 +13,10 @@ import net.minecraft.server.level.ServerLevel;
  * Phase 6 early: Extreme thunderstorm (worse than phase 5)
  * Phase 6 mid+: Clear weather (atmosphere thinning — no moisture)
  *
+ * Note: this handler intentionally does not mutate dayTime for Phase 5 night
+ * presentation. Apocalypse progression is derived from absolute world time, so
+ * client sky/fog rendering owns the dark visual treatment instead.
+ *
  * Called from WorldTickHandler each tick.
  */
 public final class WeatherHandler {
@@ -59,7 +63,6 @@ public final class WeatherHandler {
 
     /**
      * Phase 2+: Lock weather to rain (phase 2) or thunderstorm (phase 3+).
-     * Phase 5+: Force permanent midnight.
      * Phase 6 mid+ (progress >= 0.72): Clear weather — atmosphere too thin for precipitation.
      */
     private static void handleLockedWeather(ServerLevel overworld, int phase, float progress) {
@@ -74,14 +77,6 @@ public final class WeatherHandler {
 
             if (needsUpdate) {
                 overworld.setWeatherParameters(0, LOCKED_DURATION, true, wantThunder);
-            }
-        }
-
-        // Phase 5+: lock time to midnight (18000 ticks = midnight)
-        if (phase >= 5) {
-            long dayTime = overworld.getDayTime() % 24000;
-            if (dayTime < 14000 || dayTime > 22000) {
-                overworld.setDayTime((overworld.getDayTime() / 24000) * 24000 + 18000);
             }
         }
     }
