@@ -24,7 +24,11 @@ public class MimicSpawner {
         RandomSource random = level.random;
 
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float spawnChance = Math.min(0.8f, 0.005f * mobMult); // Base 0.005 (~33 min average)
+        float baseChance = BrutalPhase6SpawnCurves.isActive()
+                ? BrutalPhase6SpawnCurves.mimicChance(progress)
+                : 0.005f;
+        if (baseChance <= 0.0f) return;
+        float spawnChance = Math.min(0.8f, baseChance * mobMult); // Base 0.005 (~33 min average)
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;

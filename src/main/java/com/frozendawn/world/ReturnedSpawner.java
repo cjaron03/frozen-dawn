@@ -26,7 +26,11 @@ public class ReturnedSpawner {
         RandomSource random = level.random;
 
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float spawnChance = Math.min(0.8f, 0.008f * mobMult);
+        float baseChance = BrutalPhase6SpawnCurves.isActive()
+                ? BrutalPhase6SpawnCurves.returnedHunterChance(progress)
+                : 0.008f;
+        if (baseChance <= 0.0f) return;
+        float spawnChance = Math.min(0.8f, baseChance * mobMult);
         int maxReturned = Math.max(1, (int) (2 * mobMult));
 
         for (ServerPlayer player : level.players()) {

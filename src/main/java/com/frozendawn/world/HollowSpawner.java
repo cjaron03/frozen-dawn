@@ -36,6 +36,8 @@ public class HollowSpawner {
         float spawnChance;
         if (currentPhase == 5) {
             spawnChance = 0.15f;
+        } else if (BrutalPhase6SpawnCurves.isActive()) {
+            spawnChance = BrutalPhase6SpawnCurves.hollowChance(progress);
         } else {
             float phase6Progress = PhaseManager.getPhase6PreVacuumLocalProgress(progress);
 
@@ -53,6 +55,7 @@ public class HollowSpawner {
                 spawnChance = 0.50f * (1.0f - taper);
             }
         }
+        if (spawnChance <= 0.0f) return;
         spawnChance = Math.min(0.8f, spawnChance * mobMult);
         int maxHollow = Math.max(1, (int) (4 * mobMult));
 
