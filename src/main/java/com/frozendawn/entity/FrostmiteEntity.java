@@ -491,6 +491,11 @@ public class FrostmiteEntity extends Monster {
     }
 
     @Override
+    public int getAmbientSoundInterval() {
+        return 200;
+    }
+
+    @Override
     protected SoundEvent getHurtSound(DamageSource damageSource) {
         return ModSounds.FROSTMITE_HURT.get();
     }
@@ -502,6 +507,6 @@ public class FrostmiteEntity extends Monster {
 
     @Override
     protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        playSound(ModSounds.FROSTMITE_STEP.get(), 0.18f, 1.0f);
+        playSound(ModSounds.FROSTMITE_STEP.get(), 0.07f, 1.0f);
     }
 }

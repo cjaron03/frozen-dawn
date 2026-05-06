@@ -22,12 +22,12 @@ public final class FrostmiteSpawner {
         if (!FrozenDawnConfig.ENABLE_FROSTMITE.get()) return;
 
         long gameTick = level.getGameTime();
-        if (gameTick % 80 != 0) return;
+        if (gameTick % 160 != 0) return;
 
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float spawnChance = currentPhase >= 6 ? Math.min(0.85f, 0.42f * mobMult) : Math.min(0.75f, 0.26f * mobMult);
-        int maxNearby = currentPhase >= 6 ? Math.max(6, Mth.ceil(18 * mobMult)) : Math.max(4, Mth.ceil(12 * mobMult));
-        int maxGroup = currentPhase >= 6 ? Math.max(3, Mth.ceil(6 * mobMult)) : Math.max(2, Mth.ceil(4 * mobMult));
+        float spawnChance = currentPhase >= 6 ? Math.min(0.36f, 0.18f * mobMult) : Math.min(0.20f, 0.10f * mobMult);
+        int maxNearby = currentPhase >= 6 ? Mth.clamp(Mth.ceil(8 * mobMult), 6, 16) : Mth.clamp(Mth.ceil(5 * mobMult), 4, 10);
+        int maxGroup = currentPhase >= 6 ? Mth.clamp(Mth.ceil(2.5f * mobMult), 3, 5) : Mth.clamp(Mth.ceil(1.5f * mobMult), 2, 3);
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
@@ -54,10 +54,10 @@ public final class FrostmiteSpawner {
         if (phase < 4) return;
         if (!isInfestedBreakBlock(state)) return;
 
-        float chance = phase >= 6 ? 0.35f : phase == 5 ? 0.22f : 0.12f;
+        float chance = phase >= 6 ? 0.24f : phase == 5 ? 0.16f : 0.12f;
         if (level.random.nextFloat() > chance) return;
 
-        int count = phase >= 6 ? 2 + level.random.nextInt(3) : 1 + level.random.nextInt(3);
+        int count = phase >= 6 ? 1 + level.random.nextInt(3) : 1 + level.random.nextInt(2);
         spawnCluster(level, pos.above(), count, MobSpawnType.TRIGGERED);
     }
 
@@ -90,7 +90,7 @@ public final class FrostmiteSpawner {
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
         for (int attempt = 0; attempt < 20; attempt++) {
             double angle = random.nextDouble() * Mth.TWO_PI;
-            double dist = 10 + random.nextInt(15);
+            double dist = 18 + random.nextInt(15);
             int x = Mth.floor(player.getX() + Math.cos(angle) * dist);
             int z = Mth.floor(player.getZ() + Math.sin(angle) * dist);
             int baseY = player.blockPosition().getY() + random.nextIntBetweenInclusive(-4, 4);

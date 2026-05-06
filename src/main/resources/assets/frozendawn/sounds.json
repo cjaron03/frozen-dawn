@@ -253,8 +253,8 @@
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.frostmite.ambient",
     "sounds": [
-      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.55, "pitch": 0.62 },
-      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.45, "pitch": 0.54 }
+      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.28, "pitch": 0.62 },
+      { "name": "minecraft:entity.silverfish.ambient", "type": "event", "volume": 0.22, "pitch": 0.54 }
     ]
   },
   "entity.frostmite.hurt": {
@@ -278,7 +278,7 @@
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.frostmite.step",
     "sounds": [
-      { "name": "minecraft:entity.silverfish.step", "type": "event", "volume": 0.18, "pitch": 0.72 }
+      { "name": "minecraft:entity.silverfish.step", "type": "event", "volume": 0.07, "pitch": 0.72 }
     ]
   },
   "entity.hollow.ambient": {
