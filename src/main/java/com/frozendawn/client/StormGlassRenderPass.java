@@ -127,7 +127,10 @@ public final class StormGlassRenderPass {
         RandomSource random = level.random;
         long gameTime = level.getGameTime();
         int particleBudget = Math.min(MAX_WINDOW_PARTICLES_PER_TICK,
-                Math.max(10, Math.round(getBlizzardParticleCount(phase, progress) * getStormStrength() * 0.92F)));
+                Math.round(getBlizzardParticleCount(phase, progress) * getStormStrength() * 0.92F));
+        if (particleBudget <= 0) {
+            return 0;
+        }
 
         int spawned = 0;
         for (int i = 0; i < particleBudget; i++) {

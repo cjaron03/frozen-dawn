@@ -90,7 +90,7 @@ public final class FrostmiteSpawner {
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
         for (int attempt = 0; attempt < 20; attempt++) {
             double angle = random.nextDouble() * Mth.TWO_PI;
-            double dist = 18 + random.nextInt(15);
+            double dist = 10 + random.nextInt(5);
             int x = Mth.floor(player.getX() + Math.cos(angle) * dist);
             int z = Mth.floor(player.getZ() + Math.sin(angle) * dist);
             int baseY = player.blockPosition().getY() + random.nextIntBetweenInclusive(-4, 4);
