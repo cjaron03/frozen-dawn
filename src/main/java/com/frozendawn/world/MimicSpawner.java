@@ -40,7 +40,7 @@ public class MimicSpawner {
                     player.getBoundingBox().inflate(128.0)).size();
             if (nearbyCount >= 1) continue;
 
-            BlockPos spawnPos = findSpawnPos(level, player, random);
+            BlockPos spawnPos = findSpawnPos(level, player, random, progress);
             if (spawnPos == null) continue;
 
             MimicEntity mimic = ModEntities.MIMIC.get().create(level, null, spawnPos,
@@ -54,9 +54,12 @@ public class MimicSpawner {
         }
     }
 
-    private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
+    private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random, float progress) {
+        int maxLight = BrutalPhase6SpawnCurves.isActive()
+                ? BrutalPhase6SpawnCurves.mimicMaxLight(progress)
+                : 7;
         return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
-                40, 64, 20, true);
+                40, 64, 20, maxLight);
     }
 
     public static void reset() {}

@@ -11,19 +11,20 @@ final class LateThreatSpawnHelper {
     private static final int SEA_LEVEL = 60;
     private static final int VERTICAL_SCAN_UP = 12;
     private static final int VERTICAL_SCAN_DOWN = 16;
+    static final int NO_LIGHT_LIMIT = -1;
 
     private LateThreatSpawnHelper() {}
 
     static BlockPos findSurfaceSpawn(ServerLevel level, ServerPlayer player, RandomSource random,
                                      int minDistance, int maxDistance, int attempts,
-                                     boolean requireDark) {
+                                     int maxLightLevel) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
             BlockPos surface = level.getHeightmapPos(
                     Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     new BlockPos(sample.getX(), 0, sample.getZ()));
 
-            if (isValidSurfaceSpawn(level, surface, requireDark)) {
+            if (isValidSurfaceSpawn(level, surface, maxLightLevel)) {
                 return surface;
             }
         }
@@ -32,17 +33,17 @@ final class LateThreatSpawnHelper {
 
     static BlockPos findHybridSpawn(ServerLevel level, ServerPlayer player, RandomSource random,
                                     int minDistance, int maxDistance, int attempts,
-                                    boolean requireDark) {
+                                    int maxLightLevel) {
         for (int attempt = 0; attempt < attempts; attempt++) {
             BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
             BlockPos vertical = findValidVerticalSpawn(level, sample.getX(), sample.getZ(),
-                    player.getBlockY(), requireDark);
+                    player.getBlockY(), maxLightLevel);
             if (vertical != null) {
                 return vertical;
             }
         }
 
-        return findSurfaceSpawn(level, player, random, minDistance, maxDistance, attempts, requireDark);
+        return findSurfaceSpawn(level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
     }
 
     private static BlockPos randomXZAround(ServerPlayer player, RandomSource random,
@@ -55,33 +56,33 @@ final class LateThreatSpawnHelper {
     }
 
     private static BlockPos findValidVerticalSpawn(ServerLevel level, int x, int z, int playerY,
-                                                   boolean requireDark) {
+                                                   int maxLightLevel) {
         int topY = Math.min(level.getMaxBuildHeight() - 2, playerY + VERTICAL_SCAN_UP);
         int bottomY = Math.max(level.getMinBuildHeight() + 1, playerY - VERTICAL_SCAN_DOWN);
 
         for (int y = topY; y >= bottomY; y--) {
             BlockPos pos = new BlockPos(x, y, z);
-            if (isValidHybridSpawn(level, pos, requireDark)) {
+            if (isValidHybridSpawn(level, pos, maxLightLevel)) {
                 return pos;
             }
         }
         return null;
     }
 
-    private static boolean isValidSurfaceSpawn(ServerLevel level, BlockPos pos, boolean requireDark) {
+    private static boolean isValidSurfaceSpawn(ServerLevel level, BlockPos pos, int maxLightLevel) {
         return pos.getY() >= SEA_LEVEL
                 && hasSkyAccess(level, pos)
-                && hasValidMobSpace(level, pos, requireDark);
+                && hasValidMobSpace(level, pos, maxLightLevel);
     }
 
-    private static boolean isValidHybridSpawn(ServerLevel level, BlockPos pos, boolean requireDark) {
+    private static boolean isValidHybridSpawn(ServerLevel level, BlockPos pos, int maxLightLevel) {
         if (pos.getY() >= SEA_LEVEL && !hasSkyAccess(level, pos)) {
             return false;
         }
-        return hasValidMobSpace(level, pos, requireDark);
+        return hasValidMobSpace(level, pos, maxLightLevel);
     }
 
-    private static boolean hasValidMobSpace(ServerLevel level, BlockPos pos, boolean requireDark) {
+    private static boolean hasValidMobSpace(ServerLevel level, BlockPos pos, int maxLightLevel) {
         if (!level.isLoaded(pos) || !level.isLoaded(pos.above()) || !level.isLoaded(pos.below())) {
             return false;
         }
@@ -96,7 +97,7 @@ final class LateThreatSpawnHelper {
             return false;
         }
 
-        return !requireDark || level.getMaxLocalRawBrightness(pos) <= 7;
+        return maxLightLevel < 0 || level.getMaxLocalRawBrightness(pos) <= maxLightLevel;
     }
 
     private static boolean isEmptyCollision(ServerLevel level, BlockPos pos) {

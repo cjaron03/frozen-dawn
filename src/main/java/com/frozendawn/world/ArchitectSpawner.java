@@ -66,7 +66,7 @@ public class ArchitectSpawner {
      */
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
         return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
-                48, 64, 20, false);
+                48, 64, 20, LateThreatSpawnHelper.NO_LIGHT_LIMIT);
     }
 
     public static void reset() {}
