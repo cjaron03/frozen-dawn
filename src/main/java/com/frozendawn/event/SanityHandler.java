@@ -42,6 +42,10 @@ final class SanityHandler {
     static final int BASE_STAGE3 = 72000;  // 60 min
 
     private static final int COMFORT_GRACE_DURATION = 6000; // 5 min grace after removing comfort item
+    private static final int COMFORT_RECOVERY_STAGE_0_1 = 6;
+    private static final int COMFORT_RECOVERY_STAGE_2 = 14;
+    private static final int COMFORT_RECOVERY_STAGE_3 = 28;
+    private static final int SHELTER_RECOVERY = 3;
 
     private static final TagKey<Item> COMFORT_ITEMS =
             TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "comfort_items"));
@@ -105,9 +109,10 @@ final class SanityHandler {
 
         int ticks = state.getIsolationTicks(id);
 
-        if (suppressed) {
-            // Decay at 3x rate
-            ticks = Math.max(0, ticks - 3);
+        if (hasComfortItem) {
+            ticks = Math.max(0, ticks - comfortRecoveryRate(ticks, phase, speedMultiplier));
+        } else if (suppressed) {
+            ticks = Math.max(0, ticks - SHELTER_RECOVERY);
         } else {
             ticks++;
         }
@@ -161,6 +166,17 @@ final class SanityHandler {
         if (ticks >= stage2) return 2;
         if (ticks >= stage1) return 1;
         return 0;
+    }
+
+    private static int comfortRecoveryRate(int ticks, int phase, float speedMultiplier) {
+        int stage = computeStage(ticks, phase, speedMultiplier);
+        if (stage >= 3) {
+            return COMFORT_RECOVERY_STAGE_3;
+        }
+        if (stage == 2) {
+            return COMFORT_RECOVERY_STAGE_2;
+        }
+        return COMFORT_RECOVERY_STAGE_0_1;
     }
 
     private static void updateStage(ServerPlayer player, int stage, SanityState state) {
