@@ -128,15 +128,11 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 WinConditionState winState = WinConditionState.get(server);
                 boolean firstMartianReply = !winState.isMartianReplySent();
                 winState.setRocketBlueprintUnlocked(true);
-                if (firstMartianReply) {
-                    winState.setMartianReplySent(true);
-                }
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                     grantAdvancement(p, "broadcast_complete");
                     p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
                     if (firstMartianReply) {
-                        queueMartianCommandReply(p);
-                        MartianCommandPacketItem.grantIfMissing(p, true);
+                        p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.mars_command_buffered"));
                     }
                 }
             }
@@ -226,10 +222,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
         // Any non-IDLE state: open the status UI
         if (state != STATE_IDLE) {
             if (state == STATE_COMPLETE && player.getServer() != null) {
-                WinConditionState winState = WinConditionState.get(player.getServer());
-                if (winState.isMartianReplySent()) {
-                    MartianCommandPacketItem.grantIfMissing(player, true);
-                }
+                recoverMartianCommandReply(player);
             }
             player.openMenu(this, worldPosition);
             return;
@@ -375,6 +368,21 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
             return;
         }
         activeMartianTransmissions.add(new MartianCommandTransmissionPlayer(serverLevel, player));
+    }
+
+    private void recoverMartianCommandReply(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) {
+            return;
+        }
+
+        WinConditionState winState = WinConditionState.get(server);
+        boolean firstRecovery = !winState.isMartianReplySent();
+        if (firstRecovery) {
+            winState.setMartianReplySent(true);
+            queueMartianCommandReply(player);
+        }
+        MartianCommandPacketItem.grantIfMissing(player, true);
     }
 
     private void tickMartianTransmissions() {
