@@ -78,16 +78,6 @@ final class BrutalPhase6SpawnCurves {
         return 0.050F;
     }
 
-    static int mimicMaxLight(float progress) {
-        if (progress < MID_START) {
-            return 7;
-        }
-        if (progress < LATE_START) {
-            return 11;
-        }
-        return 15;
-    }
-
     static float architectChance(float progress) {
         if (progress < MID_START) {
             return 0.0F;
