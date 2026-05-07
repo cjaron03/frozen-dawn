@@ -61,27 +61,8 @@ public class ReturnedSpawner {
     }
 
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
-        for (int attempt = 0; attempt < 15; attempt++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 32 + random.nextInt(17); // 32-48 blocks
-            int x = (int) (player.getX() + Math.cos(angle) * dist);
-            int z = (int) (player.getZ() + Math.sin(angle) * dist);
-            // Any Y level near the player
-            int y = (int) player.getY() + random.nextInt(17) - 8; // +/- 8 blocks from player Y
-
-            BlockPos pos = new BlockPos(x, y, z);
-
-            // Need solid block below and 2-high air space
-            if (!level.getBlockState(pos.below()).isSolid()) continue;
-            if (!level.getBlockState(pos).isAir()) continue;
-            if (!level.getBlockState(pos.above()).isAir()) continue;
-
-            // Must have sky access or be underground (below Y=60)
-            if (!level.canSeeSky(pos) && pos.getY() >= 60) continue;
-
-            return pos;
-        }
-        return null;
+        return LateThreatSpawnHelper.findSurfaceSpawn(level, player, random,
+                32, 48, 20, false);
     }
 
     public static void reset() {}

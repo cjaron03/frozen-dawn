@@ -55,30 +55,8 @@ public class MimicSpawner {
     }
 
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
-        for (int attempt = 0; attempt < 15; attempt++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 40 + random.nextInt(25); // 40-64 blocks
-            int x = (int) (player.getX() + Math.cos(angle) * dist);
-            int z = (int) (player.getZ() + Math.sin(angle) * dist);
-            int y = (int) player.getY() + random.nextInt(17) - 8;
-
-            BlockPos pos = new BlockPos(x, y, z);
-
-            // Solid block below and 2-high air space
-            if (!level.getBlockState(pos.below()).isSolid()) continue;
-            if (!level.getBlockState(pos).isAir()) continue;
-            if (!level.getBlockState(pos.above()).isAir()) continue;
-
-            // Must have sky access or be underground (below Y=60)
-            if (!level.canSeeSky(pos) && pos.getY() >= 60) continue;
-
-            // Light level must be <= 7
-            int lightLevel = level.getMaxLocalRawBrightness(pos);
-            if (lightLevel > 7) continue;
-
-            return pos;
-        }
-        return null;
+        return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
+                40, 64, 20, true);
     }
 
     public static void reset() {}

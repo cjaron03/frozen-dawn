@@ -31,6 +31,7 @@ public class ArchitectSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
+            // Suppresses only unresolved scripted tower Architect encounters, not solved comm tower terminals.
             if (TowerEncounterController.isTowerEncounterNearby(level, player.blockPosition(), 80.0)) continue;
             if (random.nextFloat() > spawnChance) continue;
 
@@ -60,29 +61,12 @@ public class ArchitectSpawner {
     }
 
     /**
-     * Spawn 48-64 blocks from player — outside render distance so the Architect
-     * exists and begins OBSERVE before the player can see it.
+     * Spawn 48-64 blocks from player, using a vertical scan plus surface fallback
+     * so buried late-phase terrain does not silently eat natural Architect attempts.
      */
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
-        for (int attempt = 0; attempt < 15; attempt++) {
-            double angle = random.nextDouble() * Math.PI * 2;
-            double dist = 48 + random.nextInt(17); // 48-64 blocks
-            int x = (int) (player.getX() + Math.cos(angle) * dist);
-            int z = (int) (player.getZ() + Math.sin(angle) * dist);
-            int y = (int) player.getY() + random.nextInt(17) - 8;
-
-            BlockPos pos = new BlockPos(x, y, z);
-
-            if (!level.getBlockState(pos.below()).isSolid()) continue;
-            if (!level.getBlockState(pos).isAir()) continue;
-            if (!level.getBlockState(pos.above()).isAir()) continue;
-
-            // Must have sky access or be underground (below Y=60)
-            if (!level.canSeeSky(pos) && pos.getY() >= 60) continue;
-
-            return pos;
-        }
-        return null;
+        return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
+                48, 64, 20, false);
     }
 
     public static void reset() {}
