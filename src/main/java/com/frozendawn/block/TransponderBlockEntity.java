@@ -127,7 +127,6 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 MinecraftServer server = serverLevel.getServer();
                 WinConditionState winState = WinConditionState.get(server);
                 boolean firstMartianReply = !winState.isMartianReplySent();
-                winState.setRocketBlueprintUnlocked(true);
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                     grantAdvancement(p, "broadcast_complete");
                     p.sendSystemMessage(Component.translatable("message.frozendawn.transponder.complete"));
@@ -380,6 +379,7 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
         boolean firstRecovery = !winState.isMartianReplySent();
         if (firstRecovery) {
             winState.setMartianReplySent(true);
+            winState.setRocketBlueprintUnlocked(true);
             queueMartianCommandReply(player);
         }
         MartianCommandPacketItem.grantIfMissing(player, true);
