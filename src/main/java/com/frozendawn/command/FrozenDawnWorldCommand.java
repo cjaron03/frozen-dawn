@@ -7,6 +7,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.world.ChunkCatchUpManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -39,6 +40,7 @@ final class FrozenDawnWorldCommand {
     static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
         return Commands.literal("world")
                 .then(Commands.literal("status").executes(FrozenDawnWorldCommand::status))
+                .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
                 .then(Commands.literal("setday")
                         .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
                                 .executes(FrozenDawnWorldCommand::setDay)))
@@ -103,6 +105,13 @@ final class FrozenDawnWorldCommand {
                     "  Blast Pit: final anchor (" + anchor.getX() + ", " + anchor.getY() + ", " + anchor.getZ() + ") | awaiting chunk load"), false);
         }
         context.getSource().sendSuccess(() -> Component.literal("  Towers: " + orsaState.getTowers().size()), false);
+        return 1;
+    }
+
+    private static int catchupStatus(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Chunk Catch-Up ---"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  " + ChunkCatchUpManager.statusLine(server.overworld())), false);
         return 1;
     }
 
