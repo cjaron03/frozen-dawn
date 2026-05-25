@@ -44,6 +44,7 @@ public class FrozenDawnCommand {
     private static int help(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Commands ---"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world status"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world catchup"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setday <day>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setphase <phase> [early|mid|late]"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world settotaldays <days>"), false);

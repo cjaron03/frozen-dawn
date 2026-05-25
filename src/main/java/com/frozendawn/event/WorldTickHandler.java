@@ -32,6 +32,7 @@ import com.frozendawn.world.BlastPitPlanner;
 import com.frozendawn.world.BlastPitPlacement;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.CargoDropPlacement;
+import com.frozendawn.world.ChunkCatchUpManager;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.FrozenTownRuntime;
 import com.frozendawn.world.MimicSpawner;
@@ -123,6 +124,7 @@ public class WorldTickHandler {
         TowerPlanner.reset();
         TowerPlacement.reset();
         CampPlacement.reset();
+        ChunkCatchUpManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
@@ -192,6 +194,7 @@ public class WorldTickHandler {
         CargoDropPlacement.tickPlacement(overworld);
         MonitoringStationPlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
+        ChunkCatchUpManager.tick(overworld, state);
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
