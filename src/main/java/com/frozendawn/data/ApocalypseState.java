@@ -211,6 +211,14 @@ public class ApocalypseState extends SavedData {
         setDirty();
     }
 
+    public void recordFrozenBlocks(long count) {
+        if (count <= 0) {
+            return;
+        }
+        blocksFrozen += count;
+        setDirty();
+    }
+
     /**
      * Set the apocalypse tick count directly (used by admin commands).
      * Also sets world time to keep everything in sync.
