@@ -12,6 +12,7 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +30,11 @@ import java.util.List;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class SoundMuffler {
 
+    private static final int BLOCK_BREAK_SOUND_WINDOW_TICKS = 20;
+    private static final int BLOCK_BREAK_SOUND_LIMIT_PER_WINDOW = 24;
+    private static int blockBreakSoundTicks;
+    private static int blockBreakSoundsThisWindow;
+
     @SubscribeEvent
     public static void onPlaySound(PlaySoundEvent event) {
         Minecraft mc = Minecraft.getInstance();
@@ -37,6 +43,10 @@ public class SoundMuffler {
         SoundInstance original = event.getSound();
         if (original == null) return;
         ResourceLocation soundLocation = original.getLocation();
+        if (shouldSuppressBlockBreakBurst(original, soundLocation)) {
+            event.setSound(null);
+            return;
+        }
         if (OrsaAwakeningIntro.shouldSuppressNonIntroSound(soundLocation)) {
             event.setSound(null);
             return;
@@ -118,6 +128,39 @@ public class SoundMuffler {
         float pitchMult = 1f - (intensity * 0.25f);    // noticeable pitch drop
 
         event.setSound(new MuffledSound(original, volumeMult, pitchMult));
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        tickBlockBreakSoundLimiter();
+    }
+
+    private static boolean shouldSuppressBlockBreakBurst(SoundInstance sound, ResourceLocation location) {
+        if (sound.getSource() != SoundSource.BLOCKS) {
+            return false;
+        }
+        if (!"minecraft".equals(location.getNamespace())) {
+            return false;
+        }
+        String path = location.getPath();
+        if (!path.startsWith("block.") || !path.endsWith(".break")) {
+            return false;
+        }
+        if (blockBreakSoundsThisWindow < BLOCK_BREAK_SOUND_LIMIT_PER_WINDOW) {
+            blockBreakSoundsThisWindow++;
+            return false;
+        }
+        return true;
+    }
+
+    private static void tickBlockBreakSoundLimiter() {
+        blockBreakSoundTicks++;
+        if (blockBreakSoundTicks < BLOCK_BREAK_SOUND_WINDOW_TICKS) {
+            return;
+        }
+
+        blockBreakSoundTicks = 0;
+        blockBreakSoundsThisWindow = 0;
     }
 
     /**
