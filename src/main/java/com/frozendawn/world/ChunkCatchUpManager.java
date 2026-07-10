@@ -33,6 +33,8 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ChunkCatchUpManager {
-    public static final int TRANSFORM_VERSION = 3;
+    public static final int TRANSFORM_VERSION = 4;
 
     private static final long NORMAL_BUDGET_NANOS = 2_500_000L;
     private static final long BURST_BUDGET_NANOS = 5_000_000L;
@@ -61,6 +63,8 @@ public final class ChunkCatchUpManager {
     private static final int NEAR_BURST_RADIUS_CHUNKS = 12;
     private static final int SURFACE_COLUMN_DEPTH = 48;
     private static final int TREE_CLEAR_DEPTH = 96;
+    private static final int MAX_CATCH_UP_SNOW_DEPTH = 3;
+    private static final int MAX_CATCH_UP_SNOW_UNITS = MAX_CATCH_UP_SNOW_DEPTH * 8;
     private static final int VOLUME_SAMPLES_PER_CHUNK = 768;
     private static final int PROTECTION_CELL_SIZE = 8;
     private static final int SILO_PROTECTION_SCAN_XZ_RADIUS = 3;
@@ -311,6 +315,18 @@ public final class ChunkCatchUpManager {
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
         switch (pass) {
+            case TREE_CLEAR -> {
+                int column = cursor & 255;
+                int columnX = (chunkX << 4) + (column & 15);
+                int columnZ = (chunkZ << 4) + ((column >> 4) & 15);
+                clearTreeColumn(level, apocalypse, columnX, columnZ, editBudget, protectionContext);
+            }
+            case DETACHED_SNOW -> {
+                int column = cursor & 255;
+                int columnX = (chunkX << 4) + (column & 15);
+                int columnZ = (chunkZ << 4) + ((column >> 4) & 15);
+                reconcileDetachedSnowColumn(level, columnX, columnZ, editBudget, protectionContext);
+            }
             case SURFACE -> {
                 CatchUpTrace trace = activeTrace;
                 long scanStart = trace != null ? System.nanoTime() : 0L;
@@ -332,12 +348,6 @@ public final class ChunkCatchUpManager {
                 if (trace != null) {
                     trace.recordSurface(SurfacePart.SNOW, System.nanoTime() - snowStart);
                 }
-            }
-            case TREE_CLEAR -> {
-                int column = cursor & 255;
-                int columnX = (chunkX << 4) + (column & 15);
-                int columnZ = (chunkZ << 4) + ((column >> 4) & 15);
-                clearTreeColumn(level, apocalypse, columnX, columnZ, editBudget, protectionContext);
             }
             case SURFACE_COLUMN -> {
                 int column = cursor & 255;
@@ -477,6 +487,114 @@ public final class ChunkCatchUpManager {
             }
             applyTreeClearCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
         }
+    }
+
+    private static void reconcileDetachedSnowColumn(ServerLevel level, int x, int z,
+                                                     TickEditBudget editBudget,
+                                                     MutationProtectionContext protectionContext) {
+        int topY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+        if (topY < level.getMinBuildHeight()) {
+            return;
+        }
+
+        int minY = Math.max(level.getMinBuildHeight(), topY - TREE_CLEAR_DEPTH);
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        List<BlockPos> detachedSnow = new ArrayList<>();
+        int detachedUnits = 0;
+
+        for (int y = topY; y >= minY; y--) {
+            mutable.set(x, y, z);
+            if (!level.isLoaded(mutable)) {
+                return;
+            }
+
+            BlockState state = level.getBlockState(mutable);
+            if ((!state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK))
+                    || !SurfaceColumnScanner.isDetachedSnow(level, mutable)
+                    || !canMutate(level, mutable, protectionContext)) {
+                continue;
+            }
+
+            detachedSnow.add(mutable.immutable());
+            detachedUnits += snowUnits(state);
+        }
+
+        if (detachedSnow.isEmpty()) {
+            return;
+        }
+
+        // Keep removal and collapse in the same budget slice so a retry cannot
+        // lose the snow after the unsupported canopy cap has been cleared.
+        editBudget.requireCapacity(detachedSnow.size() + MAX_CATCH_UP_SNOW_DEPTH);
+        for (BlockPos snowPos : detachedSnow) {
+            setEpochBlock(level, snowPos, Blocks.AIR.defaultBlockState(), editBudget);
+        }
+
+        collapseSnowToGround(level, x, z, detachedUnits, editBudget, protectionContext);
+    }
+
+    private static void collapseSnowToGround(ServerLevel level, int x, int z, int detachedUnits,
+                                             TickEditBudget editBudget,
+                                             MutationProtectionContext protectionContext) {
+        BlockPos supportPos = SurfaceColumnScanner.findSnowSupportBelowCover(level, x, z, TREE_CLEAR_DEPTH);
+        if (supportPos == null || !canPlaceSnowOn(level, supportPos)) {
+            return;
+        }
+
+        BlockPos baseSnowPos = supportPos.above();
+        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, baseSnowPos)
+                || ThermalVentRegistry.isVolcanicField(level, baseSnowPos)
+                || !isOpenToSnow(level, baseSnowPos)) {
+            return;
+        }
+
+        int existingUnits = 0;
+        BlockPos.MutableBlockPos cursor = baseSnowPos.mutable();
+        for (int depth = 0; depth < MAX_CATCH_UP_SNOW_DEPTH; depth++) {
+            BlockState state = level.getBlockState(cursor);
+            if (state.is(Blocks.SNOW_BLOCK)) {
+                existingUnits += 8;
+                cursor.move(Direction.UP);
+                continue;
+            }
+            if (state.is(Blocks.SNOW)) {
+                existingUnits += state.getValue(SnowLayerBlock.LAYERS);
+            }
+            break;
+        }
+
+        int remaining = Math.min(MAX_CATCH_UP_SNOW_UNITS, existingUnits + detachedUnits);
+        cursor.set(baseSnowPos);
+        for (int depth = 0; depth < MAX_CATCH_UP_SNOW_DEPTH && remaining > 0; depth++) {
+            BlockState current = level.getBlockState(cursor);
+            if (!current.isAir() && !current.is(Blocks.SNOW) && !current.is(Blocks.SNOW_BLOCK)) {
+                return;
+            }
+            if (!canMutate(level, cursor, protectionContext)) {
+                return;
+            }
+
+            BlockState target;
+            if (remaining >= 8) {
+                target = Blocks.SNOW_BLOCK.defaultBlockState();
+                remaining -= 8;
+            } else {
+                target = Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, remaining);
+                remaining = 0;
+            }
+            setEpochBlock(level, cursor.immutable(), target, editBudget);
+            cursor.move(Direction.UP);
+        }
+    }
+
+    private static int snowUnits(BlockState state) {
+        if (state.is(Blocks.SNOW_BLOCK)) {
+            return 8;
+        }
+        if (state.is(Blocks.SNOW)) {
+            return state.getValue(SnowLayerBlock.LAYERS);
+        }
+        return 0;
     }
 
     private static void applyVegetationCatchUp(ServerLevel level, ApocalypseState apocalypse,
@@ -672,7 +790,7 @@ public final class ChunkCatchUpManager {
         long placeStart = trace != null ? System.nanoTime() : 0L;
         BlockPos.MutableBlockPos cursor = snowPos.mutable();
         int remaining = targetUnits;
-        int maxDepth = phase >= 5 ? 3 : 1;
+        int maxDepth = phase >= 5 ? MAX_CATCH_UP_SNOW_DEPTH : 1;
         try {
             for (int depth = 0; depth < maxDepth && remaining > 0; depth++) {
                 BlockState at = level.getBlockState(cursor);
@@ -1048,8 +1166,10 @@ public final class ChunkCatchUpManager {
     }
 
     private enum Pass {
-        SURFACE,
+        // Tree removal must happen before snow reconciliation and surface fill.
         TREE_CLEAR,
+        DETACHED_SNOW,
+        SURFACE,
         SURFACE_COLUMN,
         VOLUME_SAMPLE,
         COAL_SAMPLE,
@@ -1057,8 +1177,7 @@ public final class ChunkCatchUpManager {
 
         private int maxCursor(ServerLevel level) {
             return switch (this) {
-                case SURFACE, ATMOSPHERE -> 16 * 16;
-                case TREE_CLEAR -> 16 * 16;
+                case TREE_CLEAR, DETACHED_SNOW, SURFACE, ATMOSPHERE -> 16 * 16;
                 case SURFACE_COLUMN -> 16 * 16 * SURFACE_COLUMN_DEPTH;
                 case VOLUME_SAMPLE, COAL_SAMPLE -> VOLUME_SAMPLES_PER_CHUNK;
             };
@@ -1223,6 +1342,12 @@ public final class ChunkCatchUpManager {
 
         private void reserve() {
             if (edits >= limit) {
+                throw EditBudgetExceeded.INSTANCE;
+            }
+        }
+
+        private void requireCapacity(int additionalEdits) {
+            if (additionalEdits < 0 || edits + additionalEdits > limit) {
                 throw EditBudgetExceeded.INSTANCE;
             }
         }
