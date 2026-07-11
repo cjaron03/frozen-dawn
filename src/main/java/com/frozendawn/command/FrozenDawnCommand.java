@@ -53,6 +53,7 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth status | list"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth locate <major|minor>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth force-select"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth advance <ticks|days> <amount>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents rupture"), false);

@@ -1,5 +1,6 @@
 package com.frozendawn.data;
 
+import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -78,5 +79,78 @@ class ReturnedHearthSavedDataTest {
         assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, saved.getInt("dataVersion"));
         assertFalse(loaded.selectionComplete());
         assertTrue(loaded.hearths().isEmpty());
+    }
+
+    @Test
+    void phaseGatingDoesNotBankIneligibleWorldTime() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+
+        state.updateMaturation(25_000L, false);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertEquals(0L, major.maturityTicks());
+        assertEquals(25_000L, major.lastUpdatedGameTime());
+
+        state.updateMaturation(49_000L, true);
+        assertEquals(HearthMaturationPolicy.MINECRAFT_DAY_TICKS, major.maturityTicks());
+        assertEquals(ReturnedHearthSavedData.HearthStage.TRACE, major.stage());
+    }
+
+    @Test
+    void duplicateTicksDoNotDoubleAdvanceMaturity() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+
+        state.updateMaturation(2000L, true);
+        state.updateMaturation(2000L, true);
+
+        assertEquals(1000L, major(state).maturityTicks());
+    }
+
+    @Test
+    void timeRollbackResetsTheBaselineWithoutRemovingMaturity() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+
+        state.updateMaturation(2000L, true);
+        state.updateMaturation(1500L, true);
+        state.updateMaturation(1600L, true);
+
+        assertEquals(1100L, major(state).maturityTicks());
+        assertEquals(1600L, major(state).lastUpdatedGameTime());
+    }
+
+    @Test
+    void loadedRecordsCatchUpFromTheirPersistedTimestamp() {
+        ReturnedHearthSavedData original = selectedState(1000L);
+        CompoundTag saved = original.save(new CompoundTag(), null);
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(saved, null);
+
+        ReturnedHearthSavedData.MaturationResult result = loaded.updateMaturation(
+                1000L + HearthMaturationPolicy.FORMED_START_TICKS, true);
+
+        assertEquals(loaded.hearths().size(), result.transitions().size());
+        assertEquals(HearthMaturationPolicy.FORMED_START_TICKS, major(loaded).maturityTicks());
+        assertEquals(ReturnedHearthSavedData.HearthStage.FORMED, major(loaded).stage());
+    }
+
+    @Test
+    void debugAdvanceUsesTheSameStagePolicy() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+
+        state.advanceMaturationForDebug(HearthMaturationPolicy.INTACT_START_TICKS, 1000L);
+
+        assertEquals(ReturnedHearthSavedData.HearthStage.INTACT, major(state).stage());
+        state.hearth(HearthSelectionPolicy.HearthType.MINOR).ifPresent(minor ->
+                assertEquals(ReturnedHearthSavedData.HearthStage.FORMED, minor.stage()));
+    }
+
+    private static ReturnedHearthSavedData selectedState(long gameTime) {
+        ReturnedHearthSavedData state = new ReturnedHearthSavedData();
+        BlockPos anchor = new BlockPos(12, 70, -24);
+        state.rememberTransponderAnchor(anchor);
+        state.applySelectionPlan(HearthSelectionPolicy.createPlan(998877L, anchor), gameTime);
+        return state;
+    }
+
+    private static ReturnedHearthSavedData.HearthRecord major(ReturnedHearthSavedData state) {
+        return state.hearth(HearthSelectionPolicy.HearthType.MAJOR).orElseThrow();
     }
 }

@@ -20,6 +20,7 @@ import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
@@ -197,6 +198,7 @@ public class WorldTickHandler {
         FrozenTownRuntime.tickProcessing(overworld);
         ChunkCatchUpManager.tick(overworld, state);
         HearthSelectionManager.tick(overworld, state);
+        HearthMaturationManager.tick(overworld, state);
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);

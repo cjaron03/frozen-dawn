@@ -2,8 +2,12 @@ package com.frozendawn.command;
 
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthMaturationManager;
+import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -15,6 +19,9 @@ import net.minecraft.server.MinecraftServer;
 import java.util.Locale;
 
 final class FrozenDawnHearthCommand {
+    private static final int MAX_DEBUG_ADVANCE_DAYS = 365;
+    private static final long MAX_DEBUG_ADVANCE_TICKS =
+            MAX_DEBUG_ADVANCE_DAYS * HearthMaturationPolicy.MINECRAFT_DAY_TICKS;
 
     private FrozenDawnHearthCommand() {
     }
@@ -32,7 +39,16 @@ final class FrozenDawnHearthCommand {
                                 .executes(context -> locate(
                                         context, HearthSelectionPolicy.HearthType.MINOR))))
                 .then(Commands.literal("force-select")
-                        .executes(FrozenDawnHearthCommand::forceSelect));
+                        .executes(FrozenDawnHearthCommand::forceSelect))
+                .then(Commands.literal("advance")
+                        .then(Commands.literal("ticks")
+                                .then(Commands.argument("amount", LongArgumentType.longArg(
+                                                1L, MAX_DEBUG_ADVANCE_TICKS))
+                                        .executes(FrozenDawnHearthCommand::advanceTicks)))
+                        .then(Commands.literal("days")
+                                .then(Commands.argument("amount", IntegerArgumentType.integer(
+                                                1, MAX_DEBUG_ADVANCE_DAYS))
+                                        .executes(FrozenDawnHearthCommand::advanceDays))));
     }
 
     private static int status(CommandContext<CommandSourceStack> context) {
@@ -59,6 +75,8 @@ final class FrozenDawnHearthCommand {
         String anchor = hearthState.transponderAnchor()
                 .map(FrozenDawnHearthCommand::formatPos)
                 .orElse("not recorded");
+        boolean maturationActive = HearthSelectionPolicy.isSelectionEligible(
+                apocalypse.getApocalypseTicks(), apocalypse.getTotalDays());
 
         context.getSource().sendSuccess(() -> Component.literal("--- Homo Reliquus Hearths ---"), false);
         context.getSource().sendSuccess(() -> Component.literal(
@@ -66,6 +84,8 @@ final class FrozenDawnHearthCommand {
                         + " | Records: " + hearthState.hearths().size()), false);
         context.getSource().sendSuccess(() -> Component.literal("  Transponder anchor: " + anchor), false);
         context.getSource().sendSuccess(() -> Component.literal("  Selection: " + selectionGate), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Maturation clock: " + (maturationActive ? "active" : "phase-gated")), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Hive: " + hearthState.globalDisposition().name().toLowerCase(Locale.ROOT)
                         + " | Permanent Orsathae: " + yesNo(hearthState.permanentOrsathae())), false);
@@ -88,7 +108,7 @@ final class FrozenDawnHearthCommand {
                             + " center=" + formatHorizontalPos(hearth.center())
                             + " stage=" + hearth.stage().name().toLowerCase(Locale.ROOT)
                             + " mood=" + hearth.mood().name().toLowerCase(Locale.ROOT)
-                            + " maturity=" + hearth.maturityTicks() + "t"
+                            + " maturity=" + formatMaturity(hearth.maturityTicks())
                             + " resolved=" + yesNo(hearth.surfaceResolved())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
@@ -132,6 +152,34 @@ final class FrozenDawnHearthCommand {
         return result.hearths().size();
     }
 
+    private static int advanceTicks(CommandContext<CommandSourceStack> context) {
+        return advance(context, LongArgumentType.getLong(context, "amount"));
+    }
+
+    private static int advanceDays(CommandContext<CommandSourceStack> context) {
+        long days = IntegerArgumentType.getInteger(context, "amount");
+        return advance(context, days * HearthMaturationPolicy.MINECRAFT_DAY_TICKS);
+    }
+
+    private static int advance(CommandContext<CommandSourceStack> context, long ticks) {
+        MinecraftServer server = context.getSource().getServer();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(server);
+        if (!state.selectionComplete() || state.hearths().isEmpty()) {
+            context.getSource().sendFailure(Component.literal(
+                    "No Returned Hearth sites exist; run force-select first"));
+            return 0;
+        }
+
+        ReturnedHearthSavedData.MaturationResult result = HearthMaturationManager.advanceForDebug(
+                server.overworld(), ticks);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Advanced each Returned Hearth by " + formatMaturity(ticks)
+                        + " | Records: " + result.recordsAdvanced()
+                        + " | Stage transitions: " + result.transitions().size()), true);
+        list(context);
+        return 1;
+    }
+
     private static String formatTicks(long ticks) {
         long seconds = (ticks + 19L) / 20L;
         long hours = seconds / 3600L;
@@ -141,6 +189,11 @@ final class FrozenDawnHearthCommand {
             return String.format(Locale.ROOT, "%dh %02dm %02ds", hours, minutes, remainder);
         }
         return String.format(Locale.ROOT, "%dm %02ds", minutes, remainder);
+    }
+
+    private static String formatMaturity(long ticks) {
+        double days = (double) ticks / HearthMaturationPolicy.MINECRAFT_DAY_TICKS;
+        return ticks + "t (" + String.format(Locale.ROOT, "%.2f", days) + "d)";
     }
 
     private static String formatPos(BlockPos pos) {
