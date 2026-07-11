@@ -83,12 +83,18 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
+
+    unitTest {
+        enable()
+        testedMod = mods.named(project.mod_id)
+    }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    testRuntimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {

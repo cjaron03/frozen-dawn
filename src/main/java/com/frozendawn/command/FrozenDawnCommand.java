@@ -36,6 +36,7 @@ public class FrozenDawnCommand {
                 .then(Commands.literal("help")
                         .executes(FrozenDawnCommand::help))
                 .then(FrozenDawnWorldCommand.worldCommands())
+                .then(FrozenDawnHearthCommand.hearthCommands())
                 .then(FrozenDawnLocateCommand.locateCommands())
                 .then(FrozenDawnWinCommand.winCommands())
         );
@@ -49,6 +50,9 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world setphase <phase> [early|mid|late]"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world settotaldays <days>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn world pause | reset | preset <name>"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth status | list"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth locate <major|minor>"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth force-select"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents rupture"), false);

@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.data.WinConditionState;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.item.MartianCommandPacketItem;
@@ -28,6 +29,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +69,11 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
         super.onLoad();
         if (level != null) {
             TransponderRegistry.register(level, worldPosition);
+            if (level instanceof ServerLevel serverLevel
+                    && serverLevel.dimension() == Level.OVERWORLD
+                    && getBlockState().getValue(TransponderBlock.STATE) == STATE_COMPLETE) {
+                ReturnedHearthSavedData.get(serverLevel.getServer()).rememberTransponderAnchor(worldPosition);
+            }
         }
     }
 
@@ -125,6 +132,9 @@ public class TransponderBlockEntity extends BlockEntity implements MenuProvider 
                 serverLevel.playSound(null, worldPosition, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
                         SoundSource.BLOCKS, 1.0f, 1.0f);
                 MinecraftServer server = serverLevel.getServer();
+                if (serverLevel.dimension() == Level.OVERWORLD) {
+                    ReturnedHearthSavedData.get(server).rememberTransponderAnchor(worldPosition);
+                }
                 WinConditionState winState = WinConditionState.get(server);
                 boolean firstMartianReply = !winState.isMartianReplySent();
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
