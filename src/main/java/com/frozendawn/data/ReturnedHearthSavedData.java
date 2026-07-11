@@ -1,6 +1,7 @@
 package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -132,6 +133,75 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public MaturationResult updateMaturation(long currentGameTime, boolean maturationActive) {
+        if (!selectionComplete || hearths.isEmpty()) {
+            return MaturationResult.noChange();
+        }
+
+        long now = Math.max(0L, currentGameTime);
+        boolean changed = false;
+        int recordsAdvanced = 0;
+        long totalTicksAdvanced = 0L;
+        List<StageTransition> transitions = new ArrayList<>();
+
+        for (HearthRecord hearth : hearths) {
+            long previousUpdate = hearth.lastUpdatedGameTime;
+            if (previousUpdate < 0L || now < previousUpdate) {
+                hearth.lastUpdatedGameTime = now;
+                changed = true;
+            } else if (now > previousUpdate) {
+                long elapsed = now - previousUpdate;
+                hearth.lastUpdatedGameTime = now;
+                changed = true;
+                if (maturationActive) {
+                    long applied = hearth.addMaturity(elapsed);
+                    if (applied > 0L) {
+                        recordsAdvanced++;
+                        totalTicksAdvanced = saturatingAdd(totalTicksAdvanced, applied);
+                    }
+                }
+            }
+
+            changed |= refreshStage(hearth, transitions);
+        }
+
+        if (changed) {
+            setDirty();
+        }
+        return new MaturationResult(changed, recordsAdvanced, totalTicksAdvanced, transitions);
+    }
+
+    public MaturationResult advanceMaturationForDebug(long ticks, long currentGameTime) {
+        if (!selectionComplete || hearths.isEmpty() || ticks <= 0L) {
+            return MaturationResult.noChange();
+        }
+
+        long now = Math.max(0L, currentGameTime);
+        boolean changed = false;
+        int recordsAdvanced = 0;
+        long totalTicksAdvanced = 0L;
+        List<StageTransition> transitions = new ArrayList<>();
+
+        for (HearthRecord hearth : hearths) {
+            if (hearth.lastUpdatedGameTime != now) {
+                hearth.lastUpdatedGameTime = now;
+                changed = true;
+            }
+            long applied = hearth.addMaturity(ticks);
+            if (applied > 0L) {
+                recordsAdvanced++;
+                totalTicksAdvanced = saturatingAdd(totalTicksAdvanced, applied);
+                changed = true;
+            }
+            changed |= refreshStage(hearth, transitions);
+        }
+
+        if (changed) {
+            setDirty();
+        }
+        return new MaturationResult(changed, recordsAdvanced, totalTicksAdvanced, transitions);
+    }
+
     public int dataVersion() {
         return dataVersion;
     }
@@ -164,6 +234,24 @@ public final class ReturnedHearthSavedData extends SavedData {
         return hearths.stream().filter(record -> record.type() == type).findFirst();
     }
 
+    private static boolean refreshStage(HearthRecord hearth, List<StageTransition> transitions) {
+        HearthStage desired = HearthMaturationPolicy.stageFor(hearth.type, hearth.maturityTicks);
+        if (desired == hearth.stage) {
+            return false;
+        }
+
+        transitions.add(new StageTransition(hearth.id, hearth.type, hearth.stage, desired));
+        hearth.stage = desired;
+        return true;
+    }
+
+    private static long saturatingAdd(long left, long right) {
+        if (right <= 0L) {
+            return left;
+        }
+        return left > Long.MAX_VALUE - right ? Long.MAX_VALUE : left + right;
+    }
+
     private static <E extends Enum<E>> E readEnum(String value, Class<E> enumType, E fallback) {
         if (value == null || value.isBlank()) {
             return fallback;
@@ -193,6 +281,21 @@ public final class ReturnedHearthSavedData extends SavedData {
         NONE,
         SUSPICIOUS,
         VIOLATED
+    }
+
+    public record StageTransition(UUID hearthId, HearthSelectionPolicy.HearthType type,
+                                  HearthStage previousStage, HearthStage currentStage) {
+    }
+
+    public record MaturationResult(boolean changed, int recordsAdvanced,
+                                   long totalTicksAdvanced, List<StageTransition> transitions) {
+        public MaturationResult {
+            transitions = List.copyOf(transitions);
+        }
+
+        private static MaturationResult noChange() {
+            return new MaturationResult(false, 0, 0L, List.of());
+        }
     }
 
     public static final class HearthRecord {
@@ -294,6 +397,15 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
             tag.putBoolean("lootTaken", lootTaken);
             return tag;
+        }
+
+        private long addMaturity(long ticks) {
+            if (ticks <= 0L || maturityTicks == Long.MAX_VALUE) {
+                return 0L;
+            }
+            long applied = Math.min(ticks, Long.MAX_VALUE - maturityTicks);
+            maturityTicks += applied;
+            return applied;
         }
 
         public UUID id() {
