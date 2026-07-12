@@ -1,6 +1,7 @@
 package com.frozendawn.entity.ai;
 
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -20,6 +21,18 @@ public class ReturnedExtinguishHeaterGoal extends MoveToBlockGoal {
 
     public ReturnedExtinguishHeaterGoal(PathfinderMob mob) {
         super(mob, 1.2, 16);
+    }
+
+    @Override
+    public boolean canUse() {
+        return (!(mob instanceof ReturnedEntity returned) || !returned.isHearthBound())
+                && super.canUse();
+    }
+
+    @Override
+    public boolean canContinueToUse() {
+        return (!(mob instanceof ReturnedEntity returned) || !returned.isHearthBound())
+                && super.canContinueToUse();
     }
 
     @Override

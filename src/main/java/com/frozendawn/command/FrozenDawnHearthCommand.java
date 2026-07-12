@@ -7,6 +7,7 @@ import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.homo.HearthWatcherManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -43,6 +44,8 @@ final class FrozenDawnHearthCommand {
                         .executes(FrozenDawnHearthCommand::forceSelect))
                 .then(Commands.literal("reconcile")
                         .executes(FrozenDawnHearthCommand::reconcile))
+                .then(Commands.literal("watcher")
+                        .executes(FrozenDawnHearthCommand::watcher))
                 .then(Commands.literal("advance")
                         .then(Commands.literal("ticks")
                                 .then(Commands.argument("amount", LongArgumentType.longArg(
@@ -94,6 +97,8 @@ final class FrozenDawnHearthCommand {
                         + " | Permanent Orsathae: " + yesNo(hearthState.permanentOrsathae())), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Reconciliation: " + HearthReconciliationManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Watchers: " + HearthWatcherManager.statusLine()), false);
         return 1;
     }
 
@@ -119,6 +124,11 @@ final class FrozenDawnHearthCommand {
                             + " cursor=" + hearth.structureCursor()
                             + " plan=" + hearth.structurePlanVersion()
                             + " complete=" + yesNo(hearth.structurePlaced())
+                            + " watcher=" + hearth.watcherEntityId()
+                                    .map(uuid -> uuid.toString().substring(0, 8))
+                                    .orElse(hearth.watcherSpawned() ? "missing" : "none")
+                            + " profile=" + (hearth.boundVariantProfile().isBlank()
+                                    ? "none" : hearth.boundVariantProfile())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
@@ -167,6 +177,16 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Queued " + queued + " eligible Hearth reconciliation(s). "
                         + HearthReconciliationManager.statusLine()), true);
+        return 1;
+    }
+
+    private static int watcher(CommandContext<CommandSourceStack> context) {
+        int spawned = HearthWatcherManager.reconcileNow(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reconciled Hearth watchers; spawned=" + spawned + " | "
+                        + HearthWatcherManager.statusLine()), true);
+        list(context);
         return 1;
     }
 

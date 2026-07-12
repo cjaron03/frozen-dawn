@@ -2,7 +2,10 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ReturnedBreakLightGoal;
 import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
+import com.frozendawn.entity.ai.ReturnedHearthWatchGoal;
+import com.frozendawn.entity.ai.ReturnedHostileStrollGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthWatcherPolicy;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -31,7 +34,6 @@ import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -41,6 +43,8 @@ import net.minecraft.world.level.ServerLevelAccessor;
 
 import javax.annotation.Nullable;
 import java.util.Set;
+import java.util.Optional;
+import java.util.UUID;
 
 public class ReturnedEntity extends Monster {
 
@@ -51,6 +55,10 @@ public class ReturnedEntity extends Monster {
 
     private int despawnTimer = 0;
     private static final int DESPAWN_TIMEOUT = 6000; // 5 minutes
+    @Nullable
+    private UUID hearthId;
+    @Nullable
+    private BlockPos hearthCenter;
 
     public ReturnedEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -81,13 +89,16 @@ public class ReturnedEntity extends Monster {
         this.goalSelector.addGoal(1, new ReturnedExtinguishHeaterGoal(this));
         this.goalSelector.addGoal(2, new OpenDoorGoal(this, false));
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0, false));
-        this.goalSelector.addGoal(4, new ReturnedBreakLightGoal(this));
-        this.goalSelector.addGoal(5, new net.minecraft.world.entity.ai.goal.RandomStrollGoal(this, 1.0, 40));
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0f));
-        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(4, new ReturnedHearthWatchGoal(this));
+        this.goalSelector.addGoal(5, new ReturnedBreakLightGoal(this));
+        this.goalSelector.addGoal(6, new ReturnedHostileStrollGoal(this, 1.0, 40));
+        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 8.0f));
+        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
+                this, Player.class, true,
+                ignored -> HearthWatcherPolicy.canProactivelyTargetPlayer(isHearthBound())));
     }
 
     // --- Spawn Setup ---
@@ -109,6 +120,33 @@ public class ReturnedEntity extends Monster {
 
     public void setTextureVariant(int variant) {
         entityData.set(DATA_TEXTURE_VARIANT, variant);
+    }
+
+    public void bindToHearth(UUID id, BlockPos center, int textureVariant) {
+        hearthId = id;
+        hearthCenter = center.immutable();
+        setTextureVariant(textureVariant);
+        setPersistenceRequired();
+        restrictTo(hearthCenter, HearthWatcherPolicy.HOME_RADIUS);
+        setTarget(null);
+        getNavigation().stop();
+        despawnTimer = 0;
+    }
+
+    public boolean isHearthBound() {
+        return hearthId != null && hearthCenter != null;
+    }
+
+    public boolean isBoundToHearth(UUID id) {
+        return id != null && id.equals(hearthId);
+    }
+
+    public Optional<UUID> getHearthId() {
+        return Optional.ofNullable(hearthId);
+    }
+
+    public Optional<BlockPos> getHearthCenter() {
+        return Optional.ofNullable(hearthCenter);
     }
 
     // --- Death Animation ---
@@ -184,8 +222,10 @@ public class ReturnedEntity extends Monster {
                 }
             }
 
-            // 5-minute despawn timer: no target + no player within 48 blocks
-            if (getTarget() == null) {
+            // Hearth watchers are persistent. Ordinary Returned retain the custom timer.
+            if (isHearthBound()) {
+                despawnTimer = 0;
+            } else if (getTarget() == null) {
                 boolean playerNearby = !level().getEntitiesOfClass(Player.class,
                         getBoundingBox().inflate(48.0),
                         p -> !p.isSpectator()).isEmpty();
@@ -251,6 +291,10 @@ public class ReturnedEntity extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putInt("TextureVariant", getTextureVariant());
         tag.putInt("DespawnTimer", despawnTimer);
+        if (hearthId != null && hearthCenter != null) {
+            tag.putUUID("HearthId", hearthId);
+            tag.putLong("HearthCenter", hearthCenter.asLong());
+        }
     }
 
     @Override
@@ -258,6 +302,16 @@ public class ReturnedEntity extends Monster {
         super.readAdditionalSaveData(tag);
         setTextureVariant(tag.getInt("TextureVariant"));
         despawnTimer = tag.getInt("DespawnTimer");
+        if (tag.hasUUID("HearthId") && tag.contains("HearthCenter")) {
+            hearthId = tag.getUUID("HearthId");
+            hearthCenter = BlockPos.of(tag.getLong("HearthCenter"));
+            setPersistenceRequired();
+            restrictTo(hearthCenter, HearthWatcherPolicy.HOME_RADIUS);
+            despawnTimer = 0;
+        } else {
+            hearthId = null;
+            hearthCenter = null;
+        }
     }
 
     // --- Prevent natural despawn (custom timer handles it) ---
