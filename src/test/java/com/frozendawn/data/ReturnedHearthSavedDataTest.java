@@ -41,6 +41,8 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.mood(), actual.mood());
             assertEquals(expected.violationState(), actual.violationState());
             assertEquals(expected.lastPlayerContactGameTime(), actual.lastPlayerContactGameTime());
+            assertEquals(expected.watcherSpawned(), actual.watcherSpawned());
+            assertEquals(expected.watcherEntityId(), actual.watcherEntityId());
         }
     }
 
@@ -187,6 +189,27 @@ class ReturnedHearthSavedDataTest {
         assertFalse(major.structurePlaced());
         assertEquals(2, major.structurePlanVersion());
         assertEquals(0, major.structureCursor());
+    }
+
+    @Test
+    void firstWatcherBindingIsPersistentAndCannotBeReplaced() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        java.util.UUID first = java.util.UUID.randomUUID();
+        java.util.UUID second = java.util.UUID.randomUUID();
+
+        assertTrue(state.bindWatcher(major.id(), first, "returned_watcher"));
+        assertFalse(state.bindWatcher(major.id(), second, "hunter_watcher"));
+        assertTrue(major.watcherSpawned());
+        assertEquals(first, major.watcherEntityId().orElseThrow());
+        assertEquals("returned_watcher", major.boundVariantProfile());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.watcherSpawned());
+        assertEquals(first, restored.watcherEntityId().orElseThrow());
+        assertEquals("returned_watcher", restored.boundVariantProfile());
     }
 
     private static ReturnedHearthSavedData selectedState(long gameTime) {

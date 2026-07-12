@@ -1,5 +1,6 @@
 package com.frozendawn.entity.ai;
 
+import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -36,6 +37,9 @@ public class ReturnedBreakLightGoal extends Goal {
 
     @Override
     public boolean canUse() {
+        if (mob instanceof ReturnedEntity returned && returned.isHearthBound()) {
+            return false;
+        }
         if (cooldown > 0) {
             cooldown--;
             return false;
@@ -53,6 +57,9 @@ public class ReturnedBreakLightGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
+        if (mob instanceof ReturnedEntity returned && returned.isHearthBound()) {
+            return false;
+        }
         if (targetPos == null) return false;
         BlockState state = mob.level().getBlockState(targetPos);
         if (!isBreakableLightSource(state)) return false;

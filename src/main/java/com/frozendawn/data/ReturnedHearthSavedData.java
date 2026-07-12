@@ -27,7 +27,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
 
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_returned_hearths";
 
@@ -281,6 +281,18 @@ public final class ReturnedHearthSavedData extends SavedData {
         return changed;
     }
 
+    public boolean bindWatcher(UUID hearthId, UUID entityId, String profile) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.watcherSpawned) {
+            return false;
+        }
+        hearth.watcherSpawned = true;
+        hearth.watcherEntityId = entityId;
+        hearth.boundVariantProfile = profile == null ? "" : profile;
+        setDirty();
+        return true;
+    }
+
     private static boolean refreshStage(HearthRecord hearth, List<StageTransition> transitions) {
         HearthStage desired = HearthMaturationPolicy.stageFor(hearth.type, hearth.maturityTicks);
         if (desired == hearth.stage) {
@@ -363,6 +375,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private int structureCursor;
         private float signalStrength;
         private String boundVariantProfile;
+        private boolean watcherSpawned;
+        private UUID watcherEntityId;
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -417,6 +431,10 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.structureCursor = Math.max(0, tag.getInt("structureCursor"));
             record.signalStrength = Math.max(0.0F, tag.getFloat("signalStrength"));
             record.boundVariantProfile = tag.getString("boundVariantProfile");
+            record.watcherSpawned = tag.getBoolean("watcherSpawned");
+            record.watcherEntityId = tag.hasUUID("watcherEntityId")
+                    ? tag.getUUID("watcherEntityId")
+                    : null;
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -445,6 +463,10 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putInt("structureCursor", structureCursor);
             tag.putFloat("signalStrength", signalStrength);
             tag.putString("boundVariantProfile", boundVariantProfile);
+            tag.putBoolean("watcherSpawned", watcherSpawned);
+            if (watcherEntityId != null) {
+                tag.putUUID("watcherEntityId", watcherEntityId);
+            }
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -527,6 +549,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public String boundVariantProfile() {
             return boundVariantProfile;
+        }
+
+        public boolean watcherSpawned() {
+            return watcherSpawned;
+        }
+
+        public Optional<UUID> watcherEntityId() {
+            return Optional.ofNullable(watcherEntityId);
         }
 
         public long lastPlayerContactGameTime() {
