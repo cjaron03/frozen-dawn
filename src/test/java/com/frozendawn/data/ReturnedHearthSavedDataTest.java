@@ -142,6 +142,53 @@ class ReturnedHearthSavedDataTest {
                 assertEquals(ReturnedHearthSavedData.HearthStage.FORMED, minor.stage()));
     }
 
+    @Test
+    void traceReconciliationProgressIsMonotonicAndPersists() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        state.advanceMaturationForDebug(HearthMaturationPolicy.TRACE_START_TICKS, 1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        BlockPos resolved = new BlockPos(major.center().getX() + 8, 71, major.center().getZ() - 8);
+
+        assertTrue(state.resolveSurface(major.id(), resolved));
+        assertFalse(state.resolveSurface(major.id(), resolved.above()));
+        assertTrue(state.recordStructureProgress(major.id(), 1, 12,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false));
+        assertFalse(state.recordStructureProgress(major.id(), 1, 6,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false));
+
+        CompoundTag saved = state.save(new CompoundTag(), null);
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(saved, null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(resolved, restored.center());
+        assertTrue(restored.surfaceResolved());
+        assertEquals(1, restored.structurePlanVersion());
+        assertEquals(12, restored.structureCursor());
+        assertFalse(restored.structurePlaced());
+
+        assertTrue(loaded.recordStructureProgress(restored.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.TRACE, true));
+        assertTrue(restored.structurePlaced());
+        assertEquals(ReturnedHearthSavedData.HearthStage.TRACE, restored.structureStageApplied());
+        assertFalse(loaded.recordStructureProgress(restored.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.TRACE, true));
+    }
+
+    @Test
+    void newerLayoutVersionReopensCompletedReconciliation() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        state.recordStructureProgress(major.id(), 1, 20,
+                ReturnedHearthSavedData.HearthStage.TRACE, true);
+        assertTrue(major.structurePlaced());
+
+        assertTrue(state.recordStructureProgress(major.id(), 2, 0,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false));
+        assertFalse(major.structurePlaced());
+        assertEquals(2, major.structurePlanVersion());
+        assertEquals(0, major.structureCursor());
+    }
+
     private static ReturnedHearthSavedData selectedState(long gameTime) {
         ReturnedHearthSavedData state = new ReturnedHearthSavedData();
         BlockPos anchor = new BlockPos(12, 70, -24);

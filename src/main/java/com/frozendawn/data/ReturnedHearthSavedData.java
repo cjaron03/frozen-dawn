@@ -23,11 +23,11 @@ import java.util.UUID;
 /**
  * Persistent world-level identity and maturation records for Returned Hearth sites.
  *
- * This foundation stores only intent. Physical terrain validation, structures, and
- * entity binding are deferred to later reconciliation passes.
+ * Physical reconciliation progress is stored here so bounded placement can resume
+ * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
 
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_returned_hearths";
 
@@ -234,6 +234,53 @@ public final class ReturnedHearthSavedData extends SavedData {
         return hearths.stream().filter(record -> record.type() == type).findFirst();
     }
 
+    public Optional<HearthRecord> hearth(UUID id) {
+        return hearths.stream().filter(record -> record.id.equals(id)).findFirst();
+    }
+
+    public boolean resolveSurface(UUID id, BlockPos resolvedCenter) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || hearth.surfaceResolved) {
+            return false;
+        }
+        hearth.center = resolvedCenter.immutable();
+        hearth.surfaceResolved = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean recordStructureProgress(UUID id, int planVersion, int cursor,
+                                           HearthStage appliedStage, boolean complete) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || planVersion < 0 || cursor < 0) {
+            return false;
+        }
+
+        boolean changed = false;
+        if (planVersion > hearth.structurePlanVersion) {
+            hearth.structurePlanVersion = planVersion;
+            hearth.structureCursor = cursor;
+            hearth.structurePlaced = false;
+            changed = true;
+        } else if (planVersion == hearth.structurePlanVersion && cursor > hearth.structureCursor) {
+            hearth.structureCursor = cursor;
+            changed = true;
+        }
+
+        if (appliedStage.ordinal() > hearth.structureStageApplied.ordinal()) {
+            hearth.structureStageApplied = appliedStage;
+            changed = true;
+        }
+        if (complete && !hearth.structurePlaced) {
+            hearth.structurePlaced = true;
+            changed = true;
+        }
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
     private static boolean refreshStage(HearthRecord hearth, List<StageTransition> transitions) {
         HearthStage desired = HearthMaturationPolicy.stageFor(hearth.type, hearth.maturityTicks);
         if (desired == hearth.stage) {
@@ -312,6 +359,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private ViolationState violationState;
         private boolean structurePlaced;
         private HearthStage structureStageApplied;
+        private int structurePlanVersion;
+        private int structureCursor;
         private float signalStrength;
         private String boundVariantProfile;
         private long lastPlayerContactGameTime;
@@ -364,6 +413,8 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.structurePlaced = tag.getBoolean("structurePlaced");
             record.structureStageApplied = readEnum(tag.getString("structureStageApplied"),
                     HearthStage.class, HearthStage.PLANNED);
+            record.structurePlanVersion = Math.max(0, tag.getInt("structurePlanVersion"));
+            record.structureCursor = Math.max(0, tag.getInt("structureCursor"));
             record.signalStrength = Math.max(0.0F, tag.getFloat("signalStrength"));
             record.boundVariantProfile = tag.getString("boundVariantProfile");
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
@@ -390,6 +441,8 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putString("violationState", violationState.name());
             tag.putBoolean("structurePlaced", structurePlaced);
             tag.putString("structureStageApplied", structureStageApplied.name());
+            tag.putInt("structurePlanVersion", structurePlanVersion);
+            tag.putInt("structureCursor", structureCursor);
             tag.putFloat("signalStrength", signalStrength);
             tag.putString("boundVariantProfile", boundVariantProfile);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
@@ -458,6 +511,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public HearthStage structureStageApplied() {
             return structureStageApplied;
+        }
+
+        public int structurePlanVersion() {
+            return structurePlanVersion;
+        }
+
+        public int structureCursor() {
+            return structureCursor;
         }
 
         public float signalStrength() {

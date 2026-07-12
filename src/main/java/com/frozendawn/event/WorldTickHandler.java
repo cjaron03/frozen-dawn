@@ -21,6 +21,7 @@ import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.homo.HearthMaturationManager;
+import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
@@ -127,6 +128,7 @@ public class WorldTickHandler {
         TowerPlacement.reset();
         CampPlacement.reset();
         ChunkCatchUpManager.reset();
+        HearthReconciliationManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
@@ -199,6 +201,7 @@ public class WorldTickHandler {
         ChunkCatchUpManager.tick(overworld, state);
         HearthSelectionManager.tick(overworld, state);
         HearthMaturationManager.tick(overworld, state);
+        HearthReconciliationManager.tick(overworld, state);
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);

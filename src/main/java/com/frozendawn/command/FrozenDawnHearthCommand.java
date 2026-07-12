@@ -4,6 +4,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
+import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -40,6 +41,8 @@ final class FrozenDawnHearthCommand {
                                         context, HearthSelectionPolicy.HearthType.MINOR))))
                 .then(Commands.literal("force-select")
                         .executes(FrozenDawnHearthCommand::forceSelect))
+                .then(Commands.literal("reconcile")
+                        .executes(FrozenDawnHearthCommand::reconcile))
                 .then(Commands.literal("advance")
                         .then(Commands.literal("ticks")
                                 .then(Commands.argument("amount", LongArgumentType.longArg(
@@ -89,6 +92,8 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Hive: " + hearthState.globalDisposition().name().toLowerCase(Locale.ROOT)
                         + " | Permanent Orsathae: " + yesNo(hearthState.permanentOrsathae())), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Reconciliation: " + HearthReconciliationManager.statusLine()), false);
         return 1;
     }
 
@@ -110,6 +115,10 @@ final class FrozenDawnHearthCommand {
                             + " mood=" + hearth.mood().name().toLowerCase(Locale.ROOT)
                             + " maturity=" + formatMaturity(hearth.maturityTicks())
                             + " resolved=" + yesNo(hearth.surfaceResolved())
+                            + " structure=" + hearth.structureStageApplied().name().toLowerCase(Locale.ROOT)
+                            + " cursor=" + hearth.structureCursor()
+                            + " plan=" + hearth.structurePlanVersion()
+                            + " complete=" + yesNo(hearth.structurePlaced())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
@@ -150,6 +159,15 @@ final class FrozenDawnHearthCommand {
                         + (hadAnchor ? "the recorded transponder " : "the debug fallback ")
                         + formatPos(result.anchor())), true);
         return result.hearths().size();
+    }
+
+    private static int reconcile(CommandContext<CommandSourceStack> context) {
+        int queued = HearthReconciliationManager.queueAll(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Queued " + queued + " eligible Hearth reconciliation(s). "
+                        + HearthReconciliationManager.statusLine()), true);
+        return 1;
     }
 
     private static int advanceTicks(CommandContext<CommandSourceStack> context) {
