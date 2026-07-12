@@ -2,6 +2,7 @@ package com.frozendawn.command;
 
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -55,6 +56,14 @@ final class FrozenDawnHearthCommand {
                                 .then(Commands.literal("minor")
                                         .executes(context -> respawnWatcher(
                                                 context, HearthSelectionPolicy.HearthType.MINOR)))))
+                .then(Commands.literal("architect")
+                        .executes(FrozenDawnHearthCommand::architect)
+                        .then(Commands.literal("respawn")
+                                .executes(FrozenDawnHearthCommand::respawnArchitect))
+                        .then(Commands.literal("assessment")
+                                .executes(FrozenDawnHearthCommand::assessment)
+                                .then(Commands.literal("reset")
+                                        .executes(FrozenDawnHearthCommand::resetAssessment))))
                 .then(Commands.literal("relationship")
                         .executes(FrozenDawnHearthCommand::relationship)
                         .then(Commands.literal("set")
@@ -126,6 +135,8 @@ final class FrozenDawnHearthCommand {
                 "  Reconciliation: " + HearthReconciliationManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Watchers: " + HearthWatcherManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         return 1;
     }
 
@@ -156,6 +167,11 @@ final class FrozenDawnHearthCommand {
                                     .orElse(hearth.watcherSpawned() ? "missing" : "none")
                             + " profile=" + (hearth.boundVariantProfile().isBlank()
                                     ? "none" : hearth.boundVariantProfile())
+                            + " architect=" + hearth.architectAssessorEntityId()
+                                    .map(uuid -> uuid.toString().substring(0, 8))
+                                    .orElse(hearth.architectAssessorSpawned() ? "missing" : "none")
+                            + " assessor=" + (hearth.architectAssessorProfile().isBlank()
+                                    ? "none" : hearth.architectAssessorProfile())
                             + " contacts=" + hearth.playerContacts().size()
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
@@ -233,6 +249,73 @@ final class FrozenDawnHearthCommand {
                         + " spawned=" + result.spawned()), true);
         list(context);
         return result.spawned() > 0 ? 1 : 0;
+    }
+
+    private static int architect(CommandContext<CommandSourceStack> context) {
+        int spawned = HearthArchitectManager.reconcileNow(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reconciled Major Hearth Architect assessor; spawned=" + spawned + " | "
+                        + HearthArchitectManager.statusLine()), true);
+        list(context);
+        return 1;
+    }
+
+    private static int respawnArchitect(CommandContext<CommandSourceStack> context) {
+        HearthArchitectManager.DebugRespawnResult result = HearthArchitectManager.respawnForDebug(
+                context.getSource().getServer().overworld());
+        if (!result.hearthLoaded()) {
+            context.getSource().sendFailure(Component.literal(
+                    "Major Hearth does not exist or its center chunk is not loaded"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Respawned Major Hearth Architect assessor"
+                        + " | removed=" + result.removed()
+                        + " spawned=" + result.spawned()), true);
+        list(context);
+        return result.spawned() > 0 ? 1 : 0;
+    }
+
+    private static int assessment(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord major = state
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major == null) {
+            context.getSource().sendFailure(Component.literal("Major Hearth does not exist"));
+            return 0;
+        }
+        String details = major.playerContact(player.getUUID())
+                .map(memory -> "complete=" + yesNo(memory.architectAssessmentComplete())
+                        + " time=" + memory.architectAssessmentGameTime()
+                        + " orsa=" + yesNo(memory.orsaDetectedAtAssessment()))
+                .orElse("complete=no time=-1 orsa=no");
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Architect assessment for " + player.getGameProfile().getName()
+                        + ": " + details), false);
+        return 1;
+    }
+
+    private static int resetAssessment(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord major = state
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major == null) {
+            context.getSource().sendFailure(Component.literal("Major Hearth does not exist"));
+            return 0;
+        }
+        boolean changed = state.clearArchitectAssessmentForDebug(
+                player.getUUID(), major.id());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Architect assessment for " + player.getGameProfile().getName()
+                        + (changed ? "" : " (unchanged)")), true);
+        return assessment(context);
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> relationshipState(
