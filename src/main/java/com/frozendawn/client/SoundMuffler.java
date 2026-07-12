@@ -53,10 +53,18 @@ public class SoundMuffler {
         }
         String soundPath = soundLocation.getPath();
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
+        boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);
+
+        if (isThaevenSound) {
+            return;
+        }
 
         // All Frozen Dawn mob sounds are immune from ALL sound suppression,
         // including late-phase vacuum muting.
         if (isFrozenDawnEntitySound(soundLocation, soundPath)) {
+            if (ThaevenTransmissionOverlay.isActive()) {
+                event.setSound(new MuffledSound(original, 0.35F, 0.96F));
+            }
             return;
         }
 
@@ -73,6 +81,12 @@ public class SoundMuffler {
                 return;
             }
             event.setSound(null);
+            return;
+        }
+
+        if (ThaevenTransmissionOverlay.isActive()
+                && original.getSource() != SoundSource.MASTER) {
+            event.setSound(new MuffledSound(original, 0.35F, 0.96F));
             return;
         }
 

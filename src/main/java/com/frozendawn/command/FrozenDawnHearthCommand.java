@@ -9,6 +9,7 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -64,6 +65,12 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::assessment)
                                 .then(Commands.literal("reset")
                                         .executes(FrozenDawnHearthCommand::resetAssessment))))
+                .then(Commands.literal("transmission")
+                        .executes(FrozenDawnHearthCommand::transmission)
+                        .then(Commands.literal("reset")
+                                .executes(FrozenDawnHearthCommand::resetTransmission))
+                        .then(Commands.literal("replay")
+                                .executes(FrozenDawnHearthCommand::replayTransmission)))
                 .then(Commands.literal("relationship")
                         .executes(FrozenDawnHearthCommand::relationship)
                         .then(Commands.literal("set")
@@ -137,6 +144,8 @@ final class FrozenDawnHearthCommand {
                 "  Watchers: " + HearthWatcherManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
         return 1;
     }
 
@@ -173,6 +182,7 @@ final class FrozenDawnHearthCommand {
                             + " assessor=" + (hearth.architectAssessorProfile().isBlank()
                                     ? "none" : hearth.architectAssessorProfile())
                             + " contacts=" + hearth.playerContacts().size()
+                            + " transmission=" + yesNo(hearth.firstTransmissionFired())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
@@ -316,6 +326,71 @@ final class FrozenDawnHearthCommand {
                 "Reset Architect assessment for " + player.getGameProfile().getName()
                         + (changed ? "" : " (unchanged)")), true);
         return assessment(context);
+    }
+
+    private static int transmission(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord major = state
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major == null) {
+            context.getSource().sendFailure(Component.literal("Major Hearth does not exist"));
+            return 0;
+        }
+        String details = major.playerContact(player.getUUID())
+                .map(memory -> "complete=" + yesNo(memory.firstTransmissionComplete())
+                        + " time=" + memory.firstTransmissionGameTime()
+                        + " active=" + yesNo(HearthTransmissionManager.isActive(player.getUUID()))
+                        + " awaitingExit=" + yesNo(HearthTransmissionManager
+                                .isAwaitingContactExit(player.getUUID())))
+                .orElse("complete=no time=-1 active=no awaitingExit=no");
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Thaeven transmission for " + player.getGameProfile().getName()
+                        + ": " + details), false);
+        return 1;
+    }
+
+    private static int resetTransmission(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord major = state
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major == null) {
+            context.getSource().sendFailure(Component.literal("Major Hearth does not exist"));
+            return 0;
+        }
+        boolean changed = HearthTransmissionManager.resetForDebug(player, major.id());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset first Thaeven transmission for " + player.getGameProfile().getName()
+                        + (changed ? "" : " (unchanged)")), true);
+        return transmission(context);
+    }
+
+    private static int replayTransmission(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord major = state
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major == null) {
+            context.getSource().sendFailure(Component.literal("Major Hearth does not exist"));
+            return 0;
+        }
+        boolean started = HearthTransmissionManager.replayForDebug(player, major.id());
+        if (!started) {
+            context.getSource().sendFailure(Component.literal(
+                    "Could not replay transmission; remain near and visible to the loaded assessor"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Replaying first Thaeven transmission for "
+                        + player.getGameProfile().getName()), true);
+        return 1;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> relationshipState(

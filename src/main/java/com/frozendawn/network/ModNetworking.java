@@ -8,6 +8,7 @@ import com.frozendawn.block.MonitoringStationTerminalBlockEntity;
 import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -97,6 +98,18 @@ public class ModNetworking {
                 EndingSequencePayload.TYPE,
                 EndingSequencePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleEndingSequence(payload))
+        );
+        registrar.playToClient(
+                OpenThaevenTransmissionPayload.TYPE,
+                OpenThaevenTransmissionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleOpenThaevenTransmission(payload))
+        );
+        registrar.playToClient(
+                CancelThaevenTransmissionPayload.TYPE,
+                CancelThaevenTransmissionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleCancelThaevenTransmission(payload))
         );
 
         // Server-bound packets
@@ -188,6 +201,16 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) {
                         RocketLaunchManager.handleLaunchJump(sp);
+                    }
+                })
+        );
+        registrar.playToServer(
+                ThaevenTransmissionResultPayload.TYPE,
+                ThaevenTransmissionResultPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        HearthTransmissionManager.handleResult(
+                                sp, payload.sessionId(), payload.completed());
                     }
                 })
         );

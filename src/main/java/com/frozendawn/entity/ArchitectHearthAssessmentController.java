@@ -5,6 +5,7 @@ import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.OrsaEquipmentDetector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -74,6 +75,7 @@ final class ArchitectHearthAssessmentController {
                 .orElse(false);
         if (alreadyAssessed) {
             resetAssessmentTarget();
+            HearthTransmissionManager.tryStart(level, architect, player, hearthId);
             holdWatchfulPerimeter(player, hearth);
             return true;
         }
@@ -121,6 +123,7 @@ final class ArchitectHearthAssessmentController {
                     shortId(architect.getUUID()), player.getGameProfile().getName(),
                     shortId(hearthId), orsaDetected,
                     result.currentRelationship().name().toLowerCase());
+            HearthTransmissionManager.tryStart(level, architect, player, hearthId);
         }
         resetAssessmentTarget();
         return true;
