@@ -678,5 +678,25 @@
   "radio.voice.field_unit": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_field_unit" ] },
   "radio.voice.repeat": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_repeat" ] },
   "radio.voice.unable": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_unable" ] },
-  "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] }
+  "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] },
+  "ui.thaeven_contact": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_contact",
+    "sounds": [ "frozendawn:ui/thaeven_contact" ]
+  },
+  "ui.thaeven_orsha": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_orsha",
+    "sounds": [ "frozendawn:ui/thaeven_orsha" ]
+  },
+  "ui.thaeven_resolve": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_resolve",
+    "sounds": [ "frozendawn:ui/thaeven_resolve" ]
+  },
+  "ui.thaeven_interrupt": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_interrupt",
+    "sounds": [ "frozendawn:ui/thaeven_interrupt" ]
+  }
 }

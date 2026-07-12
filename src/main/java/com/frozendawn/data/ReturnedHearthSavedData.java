@@ -30,7 +30,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 5;
+    public static final int CURRENT_DATA_VERSION = 6;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -444,6 +444,35 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean completeFirstTransmission(UUID playerId, UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        HearthContactMemory local = hearth == null ? null : hearth.playerContacts.get(playerId);
+        if (local == null || !local.architectAssessmentComplete
+                || local.firstTransmissionComplete) {
+            return false;
+        }
+        local.firstTransmissionComplete = true;
+        local.firstTransmissionGameTime = Math.max(0L, gameTime);
+        hearth.firstTransmissionFired = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean clearFirstTransmissionForDebug(UUID playerId, UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        HearthContactMemory local = hearth == null ? null : hearth.playerContacts.get(playerId);
+        if (local == null || (!local.firstTransmissionComplete
+                && local.firstTransmissionGameTime < 0L)) {
+            return false;
+        }
+        local.firstTransmissionComplete = false;
+        local.firstTransmissionGameTime = -1L;
+        hearth.firstTransmissionFired = hearth.playerContacts.values().stream()
+                .anyMatch(HearthContactMemory::firstTransmissionComplete);
+        setDirty();
+        return true;
+    }
+
     public boolean setRelationshipForDebug(UUID playerId, HiveRelationship relationship,
                                            long gameTime) {
         if (playerId == null || relationship == null) {
@@ -786,6 +815,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean architectAssessmentComplete;
         private long architectAssessmentGameTime = -1L;
         private boolean orsaDetectedAtAssessment;
+        private boolean firstTransmissionComplete;
+        private long firstTransmissionGameTime = -1L;
 
         private HearthContactMemory(UUID playerId) {
             this.playerId = playerId;
@@ -804,6 +835,9 @@ public final class ReturnedHearthSavedData extends SavedData {
             memory.architectAssessmentGameTime = readOptionalTime(
                     tag, "architectAssessmentGameTime");
             memory.orsaDetectedAtAssessment = tag.getBoolean("orsaDetectedAtAssessment");
+            memory.firstTransmissionComplete = tag.getBoolean("firstTransmissionComplete");
+            memory.firstTransmissionGameTime = readOptionalTime(
+                    tag, "firstTransmissionGameTime");
             return memory;
         }
 
@@ -817,6 +851,8 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("architectAssessmentComplete", architectAssessmentComplete);
             tag.putLong("architectAssessmentGameTime", architectAssessmentGameTime);
             tag.putBoolean("orsaDetectedAtAssessment", orsaDetectedAtAssessment);
+            tag.putBoolean("firstTransmissionComplete", firstTransmissionComplete);
+            tag.putLong("firstTransmissionGameTime", firstTransmissionGameTime);
             return tag;
         }
 
@@ -869,6 +905,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean orsaDetectedAtAssessment() {
             return orsaDetectedAtAssessment;
+        }
+
+        public boolean firstTransmissionComplete() {
+            return firstTransmissionComplete;
+        }
+
+        public long firstTransmissionGameTime() {
+            return firstTransmissionGameTime;
         }
     }
 

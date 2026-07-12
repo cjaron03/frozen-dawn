@@ -608,5 +608,22 @@
   "message.frozendawn.ee.how": "How.",
   "message.frozendawn.ee.fire_safety": "ORSA Fire Safety Division would like a word.",
   "message.frozendawn.ee.lovecraft": "Ph'nglui mglw'nafh.",
-  "message.frozendawn.ee.eyes_up": "Eyes up."
+  "message.frozendawn.ee.eyes_up": "Eyes up.",
+
+  "overlay.frozendawn.thaeven.label": "THAE IVEN",
+  "overlay.frozendawn.thaeven.neutral.presence": "[presence - awareness - the feeling of not being alone]",
+  "overlay.frozendawn.thaeven.neutral.word": "Vel-thae.",
+  "overlay.frozendawn.thaeven.neutral.warmth": "[warmth - wrong place - wrong time - something remembered]",
+  "overlay.frozendawn.thaeven.neutral.question": "...thae.",
+  "overlay.frozendawn.thaeven.neutral.openness": "[a question that has no word for question]",
+  "overlay.frozendawn.thaeven.orsa.presence": "[heat - recognition - grief arriving before the name]",
+  "overlay.frozendawn.thaeven.orsa.word": "Orsha.",
+  "overlay.frozendawn.thaeven.orsa.warmth": "[orange light - a heater at full output - hands remembering warmth]",
+  "overlay.frozendawn.thaeven.orsa.withdrawal": "[the door closing - warmth leaving - cold taking its place]",
+  "overlay.frozendawn.thaeven.orsa.recognition": "Vel-thae... not Orsha.",
+  "overlay.frozendawn.thaeven.orsa.uncertainty": "[Orsha-tools - alone - abandoned too - something unresolved]",
+  "subtitle.frozendawn.ui.thaeven_contact": "A thought presses inward",
+  "subtitle.frozendawn.ui.thaeven_orsha": "Warmth is remembered, then withdrawn",
+  "subtitle.frozendawn.ui.thaeven_resolve": "The shared thought recedes",
+  "subtitle.frozendawn.ui.thaeven_interrupt": "The connection tears"
 }

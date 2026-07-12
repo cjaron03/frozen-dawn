@@ -500,6 +500,82 @@ class ReturnedHearthSavedDataTest {
         assertFalse(local.orsaDetectedAtAssessment());
     }
 
+    @Test
+    void firstTransmissionIsPerPlayerAndPersistsOnlyAfterAssessment() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID assessedPlayer = UUID.randomUUID();
+        UUID otherPlayer = UUID.randomUUID();
+
+        assertFalse(state.completeFirstTransmission(
+                assessedPlayer, major.id(), 1900L));
+        state.recordArchitectAssessment(assessedPlayer, major.id(), 2000L, true);
+        state.recordArchitectAssessment(otherPlayer, major.id(), 2100L, false);
+        assertTrue(state.completeFirstTransmission(
+                assessedPlayer, major.id(), 2200L));
+        assertFalse(state.completeFirstTransmission(
+                assessedPlayer, major.id(), 2300L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        ReturnedHearthSavedData.HearthContactMemory assessed = restored
+                .playerContact(assessedPlayer).orElseThrow();
+        ReturnedHearthSavedData.HearthContactMemory other = restored
+                .playerContact(otherPlayer).orElseThrow();
+        assertTrue(assessed.firstTransmissionComplete());
+        assertEquals(2200L, assessed.firstTransmissionGameTime());
+        assertFalse(other.firstTransmissionComplete());
+        assertEquals(-1L, other.firstTransmissionGameTime());
+        assertTrue(restored.firstTransmissionFired());
+    }
+
+    @Test
+    void transmissionDebugResetReopensDeliveryWithoutResettingAssessment() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.recordArchitectAssessment(player, major.id(), 2000L, false);
+        state.completeFirstTransmission(player, major.id(), 2200L);
+
+        assertTrue(state.clearFirstTransmissionForDebug(player, major.id()));
+        ReturnedHearthSavedData.HearthContactMemory local = major.playerContact(player)
+                .orElseThrow();
+        assertTrue(local.architectAssessmentComplete());
+        assertFalse(local.firstTransmissionComplete());
+        assertEquals(-1L, local.firstTransmissionGameTime());
+        assertFalse(major.firstTransmissionFired());
+        assertFalse(state.clearFirstTransmissionForDebug(player, major.id()));
+    }
+
+    @Test
+    void versionFiveAssessmentMemoryMigratesWithUndeliveredTransmission() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.recordArchitectAssessment(player, major.id(), 2000L, true);
+        CompoundTag versionFive = state.save(new CompoundTag(), null);
+        versionFive.putInt("dataVersion", 5);
+        ListTag hearths = versionFive.getList("hearths", Tag.TAG_COMPOUND);
+        for (Tag entry : hearths) {
+            CompoundTag hearth = (CompoundTag) entry;
+            ListTag contacts = hearth.getList("playerContacts", Tag.TAG_COMPOUND);
+            for (Tag contactEntry : contacts) {
+                CompoundTag contact = (CompoundTag) contactEntry;
+                contact.remove("firstTransmissionComplete");
+                contact.remove("firstTransmissionGameTime");
+            }
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionFive, null);
+        ReturnedHearthSavedData.HearthContactMemory local = major(loaded)
+                .playerContact(player).orElseThrow();
+        assertTrue(local.architectAssessmentComplete());
+        assertFalse(local.firstTransmissionComplete());
+        assertEquals(-1L, local.firstTransmissionGameTime());
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+    }
+
     private static ReturnedHearthSavedData selectedState(long gameTime) {
         ReturnedHearthSavedData state = new ReturnedHearthSavedData();
         BlockPos anchor = new BlockPos(12, 70, -24);

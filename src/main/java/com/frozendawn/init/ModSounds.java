@@ -225,6 +225,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");
     public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_AWAKENING_VOICE = register("ui.orsa_awakening_voice");
     public static final DeferredHolder<SoundEvent, SoundEvent> ORSA_AWAKENING_RING = register("ui.orsa_awakening_ring");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_CONTACT = register("ui.thaeven_contact");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_ORSHA = register("ui.thaeven_orsha");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_RESOLVE = register("ui.thaeven_resolve");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_INTERRUPT = register("ui.thaeven_interrupt");
     public static final List<DeferredHolder<SoundEvent, SoundEvent>> BLACKGLASS_SEGMENTS = List.of(
             register("terminal.blackglass_segment_01"),
             register("terminal.blackglass_segment_02"),

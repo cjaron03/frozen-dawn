@@ -91,6 +91,10 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "orsa_awakening_intro"),
                 OrsaAwakeningIntro::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thaeven_transmission"),
+                ThaevenTransmissionOverlay::render
+        );
     }
 
     @SubscribeEvent

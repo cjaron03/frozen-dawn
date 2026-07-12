@@ -9,6 +9,7 @@ import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.TemperatureHud;
+import com.frozendawn.client.ThaevenTransmissionOverlay;
 import com.frozendawn.client.TowerTerminalScreen;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.Minecraft;
@@ -103,5 +104,13 @@ public final class ClientHandlers {
     public static void handleEndingSequence(EndingSequencePayload payload) {
         RocketLaunchClientController.resetForEnding();
         Minecraft.getInstance().setScreen(new FrozenDawnEndingScreen(payload));
+    }
+
+    public static void handleOpenThaevenTransmission(OpenThaevenTransmissionPayload payload) {
+        ThaevenTransmissionOverlay.start(payload);
+    }
+
+    public static void handleCancelThaevenTransmission(CancelThaevenTransmissionPayload payload) {
+        ThaevenTransmissionOverlay.cancelFromServer(payload.sessionId());
     }
 }
