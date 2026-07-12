@@ -21,6 +21,7 @@ import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.homo.HearthMaturationManager;
+import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
@@ -131,6 +132,7 @@ public class WorldTickHandler {
         CampPlacement.reset();
         ChunkCatchUpManager.reset();
         HearthReconciliationManager.reset();
+        HearthArchitectManager.reset();
         HearthMemoryManager.reset();
         HearthWatcherManager.reset();
         FrozenEvacVehiclePlacement.reset();
@@ -206,6 +208,7 @@ public class WorldTickHandler {
         HearthSelectionManager.tick(overworld, state);
         HearthMaturationManager.tick(overworld, state);
         HearthReconciliationManager.tick(overworld, state);
+        HearthArchitectManager.tick(overworld);
         HearthMemoryManager.tick(overworld);
         HearthWatcherManager.tick(overworld);
         SatellitePlacement.tickPlacement(overworld);

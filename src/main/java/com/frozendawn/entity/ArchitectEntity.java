@@ -24,6 +24,8 @@ import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
@@ -133,6 +135,10 @@ public class ArchitectEntity extends Monster {
     private static final int PLAYER_MEMORY_TICKS = 200;
     private boolean towerEncounter = false;
     private long towerEncounterId = Long.MIN_VALUE;
+    @Nullable
+    private UUID hearthAssessorId;
+    @Nullable
+    private BlockPos hearthAssessorCenter;
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
@@ -155,6 +161,8 @@ public class ArchitectEntity extends Monster {
             new ArchitectObservationController(this, observationMemory, approachState, approachController, blockBreaker);
     private final ArchitectTacticsController tacticsController =
             new ArchitectTacticsController(this, observationMemory, blockBreaker);
+    private final ArchitectHearthAssessmentController hearthAssessmentController =
+            new ArchitectHearthAssessmentController(this);
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -421,6 +429,13 @@ public class ArchitectEntity extends Monster {
         // Defensive: fix surfaceY if it wasn't set (NBT load before positioning)
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY();
         ensureAmbientHelmet();
+
+        if (isHearthAssessor() && level() instanceof ServerLevel serverLevel
+                && hearthAssessmentController.tick(serverLevel)) {
+            updateHeldItem();
+            syncRenderState();
+            return;
+        }
 
         long gameTick = level().getGameTime();
 
@@ -861,6 +876,13 @@ public class ArchitectEntity extends Monster {
 
         boolean hurt = super.hurt(source, amount);
         if (hurt && !level().isClientSide()) {
+            if (isHearthAssessor()
+                    && level() instanceof ServerLevel serverLevel
+                    && source.getEntity() instanceof ServerPlayer attacker
+                    && hearthAssessorId != null) {
+                HearthMemoryManager.recordHearthEntityAttack(
+                        serverLevel, hearthAssessorId, attacker, "Architect assessor");
+            }
             if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
                 combatState.rangedHitsReceived++;
             }
@@ -1039,6 +1061,9 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
+        if (isHearthAssessor() && level() instanceof ServerLevel serverLevel) {
+            return hearthAssessmentController.findHostileTarget(serverLevel);
+        }
         return ArchitectTargetingSupport.findTarget(
                 level(),
                 this,
@@ -1120,6 +1145,48 @@ public class ArchitectEntity extends Monster {
         despawnTimer = 0;
     }
 
+    public void bindToHearthAssessor(UUID hearthId, BlockPos center, int textureVariant) {
+        hearthAssessorId = hearthId;
+        hearthAssessorCenter = center.immutable();
+        setTextureVariant(textureVariant);
+        setPersistenceRequired();
+        restrictTo(hearthAssessorCenter, HearthArchitectPolicy.HOME_RADIUS);
+        setTarget(null);
+        getNavigation().stop();
+        despawnTimer = 0;
+        approachState.surfaceY = blockPosition().getY();
+        transitionToObserveAction();
+    }
+
+    public boolean isHearthAssessor() {
+        return hearthAssessorId != null && hearthAssessorCenter != null;
+    }
+
+    public boolean isBoundToHearthAssessor(UUID hearthId) {
+        return hearthId != null && hearthId.equals(hearthAssessorId);
+    }
+
+    public Optional<UUID> getHearthAssessorId() {
+        return Optional.ofNullable(hearthAssessorId);
+    }
+
+    public Optional<BlockPos> getHearthAssessorCenter() {
+        return Optional.ofNullable(hearthAssessorCenter);
+    }
+
+    void prepareHearthAssessmentMode() {
+        if (getBrainAction() != ACTION_OBSERVE) {
+            transitionToObserveAction();
+        }
+        setTarget(null);
+        setSprinting(false);
+        blockBreaker.clearTarget();
+        approachState.sprintRequested = false;
+        if (combatState.isDrinkingPotion) {
+            cancelDrinking();
+        }
+    }
+
     public int getSurfaceY() { return approachState.surfaceY; }
     public DStarLitePathfinder getDStarPathfinder() { return approachState.dstar; }
     public boolean isBuildingIce() { return entityData.get(DATA_BUILDING_ICE); }
@@ -1175,6 +1242,10 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.writeObservationMemory(tag, observationMemory);
         ArchitectPersistence.writeCombatState(tag, combatState);
         ArchitectPersistence.writeApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        if (hearthAssessorId != null && hearthAssessorCenter != null) {
+            tag.putUUID("HearthAssessorId", hearthAssessorId);
+            tag.putLong("HearthAssessorCenter", hearthAssessorCenter.asLong());
+        }
     }
 
     @Override
@@ -1193,6 +1264,16 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.readApproachState(tag, approachState, scaffoldIce, tacticalIce);
         towerEncounter = coreState.towerEncounter();
         towerEncounterId = coreState.towerEncounterId();
+        if (tag.hasUUID("HearthAssessorId") && tag.contains("HearthAssessorCenter")) {
+            hearthAssessorId = tag.getUUID("HearthAssessorId");
+            hearthAssessorCenter = BlockPos.of(tag.getLong("HearthAssessorCenter"));
+            setPersistenceRequired();
+            restrictTo(hearthAssessorCenter, HearthArchitectPolicy.HOME_RADIUS);
+            despawnTimer = 0;
+        } else {
+            hearthAssessorId = null;
+            hearthAssessorCenter = null;
+        }
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
         syncRenderState();
     }

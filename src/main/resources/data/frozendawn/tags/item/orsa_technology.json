@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:orsa_multitool",
+    "frozendawn:orsa_id_badge",
+    "frozendawn:orsa_thermal_visor",
+    "frozendawn:surveyor_lens",
+    "frozendawn:calibrated_surveyor_lens",
+    "frozendawn:acheronite_compass",
+    "frozendawn:o2_tank",
+    "frozendawn:o2_tank_mk2",
+    "frozendawn:o2_tank_mk3",
+    "frozendawn:eva_helmet",
+    "frozendawn:eva_chestplate",
+    "frozendawn:eva_leggings",
+    "frozendawn:eva_boots",
+    "frozendawn:lined_eva_chestplate"
+  ]
+}

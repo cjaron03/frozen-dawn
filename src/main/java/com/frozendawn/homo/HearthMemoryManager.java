@@ -65,14 +65,19 @@ public final class HearthMemoryManager {
         if (hearthId == null) {
             return false;
         }
+        return recordHearthEntityAttack(level, hearthId, attacker, "watcher");
+    }
+
+    public static boolean recordHearthEntityAttack(ServerLevel level, UUID hearthId,
+                                                   ServerPlayer attacker, String role) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         boolean changed = data.markPlayerOrsathae(
                 attacker.getUUID(), hearthId, level.getGameTime());
         if (changed) {
             violationsRecorded++;
             FrozenDawn.LOGGER.info(
-                    "Homo reliquus permanently classified player {} as Orsathae after watcher attack at Hearth {}",
-                    attacker.getGameProfile().getName(), shortId(hearthId));
+                    "Homo reliquus permanently classified player {} as Orsathae after {} attack at Hearth {}",
+                    attacker.getGameProfile().getName(), role, shortId(hearthId));
         }
         return changed;
     }

@@ -1,6 +1,7 @@
 package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
@@ -29,7 +30,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 4;
+    public static final int CURRENT_DATA_VERSION = 5;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -334,6 +335,32 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean bindArchitectAssessor(UUID hearthId, UUID entityId, String profile) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.architectAssessorSpawned) {
+            return false;
+        }
+        hearth.architectAssessorSpawned = true;
+        hearth.architectAssessorEntityId = entityId;
+        hearth.architectAssessorProfile = profile == null ? "" : profile;
+        setDirty();
+        return true;
+    }
+
+    public boolean clearArchitectAssessorBindingForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (!hearth.architectAssessorSpawned
+                && hearth.architectAssessorEntityId == null
+                && hearth.architectAssessorProfile.isBlank())) {
+            return false;
+        }
+        hearth.architectAssessorSpawned = false;
+        hearth.architectAssessorEntityId = null;
+        hearth.architectAssessorProfile = "";
+        setDirty();
+        return true;
+    }
+
     public ContactResult recordPlayerContact(UUID playerId, UUID hearthId, long gameTime) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (playerId == null || hearth == null) {
@@ -368,6 +395,53 @@ public final class ReturnedHearthSavedData extends SavedData {
     public boolean markPlayerOrsathae(UUID playerId, UUID hearthId, long gameTime) {
         return escalateRelationship(playerId, hearthId, gameTime,
                 HiveRelationship.ORSATHAE, true);
+    }
+
+    public AssessmentResult recordArchitectAssessment(UUID playerId, UUID hearthId,
+                                                       long gameTime, boolean orsaDetected) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (playerId == null || hearth == null) {
+            return AssessmentResult.noChange(HiveRelationship.NEUTRAL);
+        }
+
+        long now = Math.max(0L, gameTime);
+        recordPlayerContact(playerId, hearthId, now);
+        HearthContactMemory local = hearth.playerContacts.get(playerId);
+        HiveRelationship before = relationship(playerId);
+        if (local == null || local.architectAssessmentComplete) {
+            return AssessmentResult.noChange(before);
+        }
+
+        local.architectAssessmentComplete = true;
+        local.architectAssessmentGameTime = now;
+        local.orsaDetectedAtAssessment = orsaDetected;
+        hearth.firstAssessmentFired = true;
+        boolean changed = true;
+
+        HiveRelationship desired = HearthArchitectPolicy.relationshipAfterAssessment(
+                before, orsaDetected);
+        if (desired.ordinal() > before.ordinal()) {
+            changed |= escalateRelationship(playerId, hearthId, now, desired, false);
+        }
+        if (changed) {
+            setDirty();
+        }
+        return new AssessmentResult(true, orsaDetected, before, relationship(playerId));
+    }
+
+    public boolean clearArchitectAssessmentForDebug(UUID playerId, UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        HearthContactMemory local = hearth == null ? null : hearth.playerContacts.get(playerId);
+        if (local == null || !local.architectAssessmentComplete) {
+            return false;
+        }
+        local.architectAssessmentComplete = false;
+        local.architectAssessmentGameTime = -1L;
+        local.orsaDetectedAtAssessment = false;
+        hearth.firstAssessmentFired = hearth.playerContacts.values().stream()
+                .anyMatch(HearthContactMemory::architectAssessmentComplete);
+        setDirty();
+        return true;
     }
 
     public boolean setRelationshipForDebug(UUID playerId, HiveRelationship relationship,
@@ -576,6 +650,14 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
     }
 
+    public record AssessmentResult(boolean completedNow, boolean orsaDetected,
+                                   HiveRelationship previousRelationship,
+                                   HiveRelationship currentRelationship) {
+        private static AssessmentResult noChange(HiveRelationship relationship) {
+            return new AssessmentResult(false, false, relationship, relationship);
+        }
+    }
+
     private record ContactUpdate(boolean changed, boolean firstContact, boolean newVisit) {
     }
 
@@ -701,6 +783,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private long lastContactGameTime = -1L;
         private int visits;
         private boolean attackedWatcher;
+        private boolean architectAssessmentComplete;
+        private long architectAssessmentGameTime = -1L;
+        private boolean orsaDetectedAtAssessment;
 
         private HearthContactMemory(UUID playerId) {
             this.playerId = playerId;
@@ -715,6 +800,10 @@ public final class ReturnedHearthSavedData extends SavedData {
             memory.lastContactGameTime = readOptionalTime(tag, "lastContactGameTime");
             memory.visits = Math.max(0, tag.getInt("visits"));
             memory.attackedWatcher = tag.getBoolean("attackedWatcher");
+            memory.architectAssessmentComplete = tag.getBoolean("architectAssessmentComplete");
+            memory.architectAssessmentGameTime = readOptionalTime(
+                    tag, "architectAssessmentGameTime");
+            memory.orsaDetectedAtAssessment = tag.getBoolean("orsaDetectedAtAssessment");
             return memory;
         }
 
@@ -725,6 +814,9 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putLong("lastContactGameTime", lastContactGameTime);
             tag.putInt("visits", visits);
             tag.putBoolean("attackedWatcher", attackedWatcher);
+            tag.putBoolean("architectAssessmentComplete", architectAssessmentComplete);
+            tag.putLong("architectAssessmentGameTime", architectAssessmentGameTime);
+            tag.putBoolean("orsaDetectedAtAssessment", orsaDetectedAtAssessment);
             return tag;
         }
 
@@ -766,6 +858,18 @@ public final class ReturnedHearthSavedData extends SavedData {
         public boolean attackedWatcher() {
             return attackedWatcher;
         }
+
+        public boolean architectAssessmentComplete() {
+            return architectAssessmentComplete;
+        }
+
+        public long architectAssessmentGameTime() {
+            return architectAssessmentGameTime;
+        }
+
+        public boolean orsaDetectedAtAssessment() {
+            return orsaDetectedAtAssessment;
+        }
     }
 
     private static long readOptionalTime(CompoundTag tag, String key) {
@@ -792,6 +896,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private String boundVariantProfile;
         private boolean watcherSpawned;
         private UUID watcherEntityId;
+        private boolean architectAssessorSpawned;
+        private UUID architectAssessorEntityId;
+        private String architectAssessorProfile;
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -809,6 +916,7 @@ public final class ReturnedHearthSavedData extends SavedData {
             this.violationState = ViolationState.NONE;
             this.structureStageApplied = HearthStage.PLANNED;
             this.boundVariantProfile = "";
+            this.architectAssessorProfile = "";
             this.lastPlayerContactGameTime = -1L;
         }
 
@@ -851,6 +959,11 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.watcherEntityId = tag.hasUUID("watcherEntityId")
                     ? tag.getUUID("watcherEntityId")
                     : null;
+            record.architectAssessorSpawned = tag.getBoolean("architectAssessorSpawned");
+            record.architectAssessorEntityId = tag.hasUUID("architectAssessorEntityId")
+                    ? tag.getUUID("architectAssessorEntityId")
+                    : null;
+            record.architectAssessorProfile = tag.getString("architectAssessorProfile");
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -893,6 +1006,11 @@ public final class ReturnedHearthSavedData extends SavedData {
             if (watcherEntityId != null) {
                 tag.putUUID("watcherEntityId", watcherEntityId);
             }
+            tag.putBoolean("architectAssessorSpawned", architectAssessorSpawned);
+            if (architectAssessorEntityId != null) {
+                tag.putUUID("architectAssessorEntityId", architectAssessorEntityId);
+            }
+            tag.putString("architectAssessorProfile", architectAssessorProfile);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -988,6 +1106,18 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public Optional<UUID> watcherEntityId() {
             return Optional.ofNullable(watcherEntityId);
+        }
+
+        public boolean architectAssessorSpawned() {
+            return architectAssessorSpawned;
+        }
+
+        public Optional<UUID> architectAssessorEntityId() {
+            return Optional.ofNullable(architectAssessorEntityId);
+        }
+
+        public String architectAssessorProfile() {
+            return architectAssessorProfile;
         }
 
         public long lastPlayerContactGameTime() {

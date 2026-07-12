@@ -4,6 +4,8 @@ import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -45,6 +47,8 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.lastPlayerContactGameTime(), actual.lastPlayerContactGameTime());
             assertEquals(expected.watcherSpawned(), actual.watcherSpawned());
             assertEquals(expected.watcherEntityId(), actual.watcherEntityId());
+            assertEquals(expected.architectAssessorSpawned(), actual.architectAssessorSpawned());
+            assertEquals(expected.architectAssessorEntityId(), actual.architectAssessorEntityId());
         }
     }
 
@@ -231,6 +235,27 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void architectAssessorBindingIsPersistentAndDebugResettable() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID first = UUID.randomUUID();
+        UUID replacement = UUID.randomUUID();
+
+        assertTrue(state.bindArchitectAssessor(major.id(), first, "architect_assessor"));
+        assertFalse(state.bindArchitectAssessor(major.id(), replacement, "architect_assessor"));
+        assertTrue(major.architectAssessorSpawned());
+        assertEquals(first, major.architectAssessorEntityId().orElseThrow());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(first, restored.architectAssessorEntityId().orElseThrow());
+        assertEquals("architect_assessor", restored.architectAssessorProfile());
+        assertTrue(loaded.clearArchitectAssessorBindingForDebug(restored.id()));
+        assertTrue(loaded.bindArchitectAssessor(restored.id(), replacement, "architect_assessor"));
+    }
+
+    @Test
     void firstContactCreatesGlobalAndHearthLocalMemory() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);
@@ -352,6 +377,28 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void versionFourHiveMemoryMigratesWithEmptyArchitectState() {
+        CompoundTag versionFour = selectedState(1000L).save(new CompoundTag(), null);
+        versionFour.putInt("dataVersion", 4);
+        ListTag hearths = versionFour.getList("hearths", Tag.TAG_COMPOUND);
+        for (Tag entry : hearths) {
+            CompoundTag hearth = (CompoundTag) entry;
+            hearth.remove("architectAssessorSpawned");
+            hearth.remove("architectAssessorEntityId");
+            hearth.remove("architectAssessorProfile");
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionFour, null);
+
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+        for (ReturnedHearthSavedData.HearthRecord hearth : loaded.hearths()) {
+            assertFalse(hearth.architectAssessorSpawned());
+            assertTrue(hearth.architectAssessorEntityId().isEmpty());
+            assertTrue(hearth.architectAssessorProfile().isBlank());
+        }
+    }
+
+    @Test
     void debugRelationshipOverrideCanResetPermanentStateForTesting() {
         ReturnedHearthSavedData state = selectedState(1000L);
         UUID player = UUID.randomUUID();
@@ -371,6 +418,86 @@ class ReturnedHearthSavedDataTest {
             assertEquals(ReturnedHearthSavedData.ViolationState.NONE,
                     hearth.violationState());
         }
+    }
+
+    @Test
+    void neutralArchitectAssessmentRecordsContactWithoutEscalation() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        ReturnedHearthSavedData.AssessmentResult result = state.recordArchitectAssessment(
+                player, major.id(), 2000L, false);
+
+        assertTrue(result.completedNow());
+        assertFalse(result.orsaDetected());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.NEUTRAL,
+                state.relationship(player));
+        ReturnedHearthSavedData.HearthContactMemory local = major.playerContact(player)
+                .orElseThrow();
+        assertTrue(local.architectAssessmentComplete());
+        assertEquals(2000L, local.architectAssessmentGameTime());
+        assertFalse(local.orsaDetectedAtAssessment());
+        assertEquals(ReturnedHearthSavedData.HearthDisposition.WATCHFUL, major.mood());
+    }
+
+    @Test
+    void orsaAssessmentMakesEveryHearthAgitatedButNotHostile() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        ReturnedHearthSavedData.AssessmentResult result = state.recordArchitectAssessment(
+                player, major.id(), 2000L, true);
+
+        assertTrue(result.completedNow());
+        assertTrue(result.orsaDetected());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS,
+                state.relationship(player));
+        assertEquals(2, state.hearths().size());
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.HearthDisposition.AGITATED, hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.SUSPICIOUS,
+                    hearth.violationState());
+        }
+    }
+
+    @Test
+    void completedAssessmentDoesNotReplayAndCannotDowngradeOrsathae() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.markPlayerOrsathae(player, major.id(), 1500L);
+
+        ReturnedHearthSavedData.AssessmentResult first = state.recordArchitectAssessment(
+                player, major.id(), 2000L, true);
+        ReturnedHearthSavedData.AssessmentResult duplicate = state.recordArchitectAssessment(
+                player, major.id(), 3000L, false);
+
+        assertTrue(first.completedNow());
+        assertFalse(duplicate.completedNow());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                state.relationship(player));
+    }
+
+    @Test
+    void architectAssessmentPersistsAndCanBeResetForDebug() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.recordArchitectAssessment(player, major.id(), 2000L, true);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        ReturnedHearthSavedData.HearthContactMemory local = restored.playerContact(player)
+                .orElseThrow();
+        assertTrue(local.architectAssessmentComplete());
+        assertTrue(local.orsaDetectedAtAssessment());
+        assertEquals(2000L, local.architectAssessmentGameTime());
+        assertTrue(loaded.clearArchitectAssessmentForDebug(player, restored.id()));
+        assertFalse(local.architectAssessmentComplete());
+        assertFalse(local.orsaDetectedAtAssessment());
     }
 
     private static ReturnedHearthSavedData selectedState(long gameTime) {
