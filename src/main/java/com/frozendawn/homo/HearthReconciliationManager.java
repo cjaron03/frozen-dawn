@@ -1,0 +1,495 @@
+package com.frozendawn.homo;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.FuelProcessingSiloMultiblock;
+import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.ChunkEpochState;
+import com.frozendawn.data.MonitoringStationState;
+import com.frozendawn.data.OrsaStructureState;
+import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.init.ModBlocks;
+import com.frozendawn.world.BlastPitWarmZoneRegistry;
+import com.frozendawn.world.ChunkCatchUpManager;
+import com.frozendawn.world.ThermalVentRegistry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.DoorHingeSide;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Reconciles mathematically matured Hearth records into tiny physical scenes.
+ * It never loads chunks and applies only a small number of idempotent edits per tick.
+ */
+@EventBusSubscriber(modid = FrozenDawn.MOD_ID)
+public final class HearthReconciliationManager {
+    private static final long TICK_BUDGET_NANOS = 2_000_000L;
+    private static final int EDIT_BUDGET = 24;
+    private static final int SURFACE_CANDIDATES_PER_TICK = 6;
+    private static final long SURFACE_RETRY_DELAY_TICKS = 200L;
+    private static final int STRUCTURE_CLEARANCE_RADIUS = 96;
+    private static final int SET_BLOCK_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+
+    private static final Set<UUID> pending = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, Integer> surfaceSearchCursors = new HashMap<>();
+    private static final Map<UUID, Long> retryAfter = new HashMap<>();
+
+    private static long completedScenes;
+    private static long lastTickNanos;
+    private static int lastTickEdits;
+    private static int lastTickPieces;
+
+    private HearthReconciliationManager() {
+    }
+
+    @SubscribeEvent
+    public static void onChunkLoad(ChunkEvent.Load event) {
+        if (event.getLevel().isClientSide()
+                || !(event.getLevel() instanceof ServerLevel level)
+                || level.dimension() != ServerLevel.OVERWORLD) {
+            return;
+        }
+        queueNearChunk(level, event.getChunk().getPos().x, event.getChunk().getPos().z);
+    }
+
+    public static void tick(ServerLevel level, ApocalypseState apocalypse) {
+        if (level.dimension() != ServerLevel.OVERWORLD) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (gameTime % 20L == 0L) {
+            queueEligibleLoadedHearths(level);
+        }
+        if (pending.isEmpty()) {
+            lastTickNanos = 0L;
+            lastTickEdits = 0;
+            lastTickPieces = 0;
+            return;
+        }
+
+        long start = System.nanoTime();
+        int edits = 0;
+        int pieces = 0;
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+
+        for (UUID id : List.copyOf(pending)) {
+            if (edits >= EDIT_BUDGET || System.nanoTime() - start >= TICK_BUDGET_NANOS) {
+                break;
+            }
+            ReturnedHearthSavedData.HearthRecord hearth = data.hearth(id).orElse(null);
+            if (hearth == null || !HearthReconciliationPolicy.needsTrace(hearth)) {
+                removePending(id);
+                continue;
+            }
+            if (retryAfter.getOrDefault(id, 0L) > gameTime) {
+                continue;
+            }
+
+            if (!hearth.surfaceResolved()) {
+                SurfaceResolution resolution = resolveSurface(level, hearth, start);
+                if (resolution.center() == null) {
+                    if (resolution.exhausted()) {
+                        retryAfter.put(id, gameTime + SURFACE_RETRY_DELAY_TICKS);
+                        surfaceSearchCursors.remove(id);
+                    }
+                    continue;
+                }
+                data.resolveSurface(id, resolution.center());
+                surfaceSearchCursors.remove(id);
+                retryAfter.remove(id);
+                hearth = data.hearth(id).orElseThrow();
+                FrozenDawn.LOGGER.info("Resolved {} Hearth {} surface at ({}, {}, {})",
+                        hearth.type().name().toLowerCase(), shortId(id),
+                        hearth.center().getX(), hearth.center().getY(), hearth.center().getZ());
+            }
+
+            List<TraceHearthLayout.Placement> layout = TraceHearthLayout.create(
+                    hearth.layoutSeed(), hearth.type());
+            if (!footprintLoaded(level, hearth.center())
+                    || !footprintCaughtUp(level, apocalypse, hearth.center())) {
+                continue;
+            }
+
+            int cursor = Math.min(HearthReconciliationPolicy.resumeCursor(hearth), layout.size());
+            while (cursor < layout.size()
+                    && edits < EDIT_BUDGET
+                    && System.nanoTime() - start < TICK_BUDGET_NANOS) {
+                TraceHearthLayout.Placement placement = layout.get(cursor);
+                BlockPos target = hearth.center().offset(placement.offset());
+                if (!level.isLoaded(target)) {
+                    break;
+                }
+
+                BlockState desired = stateFor(placement);
+                BlockState existing = level.getBlockState(target);
+                if (!existing.equals(desired) && canReplace(level, target, existing, placement.piece())) {
+                    if (!level.setBlock(target, desired, SET_BLOCK_FLAGS)) {
+                        break;
+                    }
+                    edits++;
+                }
+                cursor++;
+                pieces++;
+            }
+
+            boolean complete = cursor >= layout.size();
+            data.recordStructureProgress(id, HearthReconciliationPolicy.TRACE_PLAN_VERSION,
+                    cursor, complete ? ReturnedHearthSavedData.HearthStage.TRACE
+                            : ReturnedHearthSavedData.HearthStage.PLANNED, complete);
+            if (complete) {
+                completedScenes++;
+                removePending(id);
+                FrozenDawn.LOGGER.info("Completed Stage 1 Trace Hearth {} with {} planned pieces",
+                        shortId(id), layout.size());
+            }
+        }
+
+        lastTickNanos = System.nanoTime() - start;
+        lastTickEdits = edits;
+        lastTickPieces = pieces;
+    }
+
+    public static int queueAll(ServerLevel level) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        int before = pending.size();
+        for (ReturnedHearthSavedData.HearthRecord hearth : data.hearths()) {
+            if (HearthReconciliationPolicy.needsTrace(hearth)) {
+                pending.add(hearth.id());
+                retryAfter.remove(hearth.id());
+            }
+        }
+        return Math.max(0, pending.size() - before);
+    }
+
+    public static String statusLine() {
+        return "queued=" + pending.size()
+                + " completed=" + completedScenes
+                + " lastMs=" + String.format("%.3f", lastTickNanos / 1_000_000.0D)
+                + " lastEdits=" + lastTickEdits
+                + " lastPieces=" + lastTickPieces
+                + " planVersion=" + HearthReconciliationPolicy.TRACE_PLAN_VERSION;
+    }
+
+    public static void reset() {
+        pending.clear();
+        surfaceSearchCursors.clear();
+        retryAfter.clear();
+        completedScenes = 0L;
+        lastTickNanos = 0L;
+        lastTickEdits = 0;
+        lastTickPieces = 0;
+    }
+
+    private static void queueNearChunk(ServerLevel level, int chunkX, int chunkZ) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        int range = (HearthReconciliationPolicy.CANDIDATE_SEARCH_RADIUS
+                + HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS + 15) >> 4;
+        for (ReturnedHearthSavedData.HearthRecord hearth : data.hearths()) {
+            if (!HearthReconciliationPolicy.needsTrace(hearth)) {
+                continue;
+            }
+            int hearthChunkX = hearth.center().getX() >> 4;
+            int hearthChunkZ = hearth.center().getZ() >> 4;
+            if (Math.abs(hearthChunkX - chunkX) <= range
+                    && Math.abs(hearthChunkZ - chunkZ) <= range) {
+                pending.add(hearth.id());
+            }
+        }
+    }
+
+    private static void queueEligibleLoadedHearths(ServerLevel level) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        for (ReturnedHearthSavedData.HearthRecord hearth : data.hearths()) {
+            if (HearthReconciliationPolicy.needsTrace(hearth)
+                    && centerAreaLoaded(level, hearth.center())) {
+                pending.add(hearth.id());
+            }
+        }
+    }
+
+    private static SurfaceResolution resolveSurface(ServerLevel level,
+                                                    ReturnedHearthSavedData.HearthRecord hearth,
+                                                    long tickStartNanos) {
+        List<BlockPos> offsets = HearthReconciliationPolicy.candidateOffsets(hearth.layoutSeed());
+        int cursor = surfaceSearchCursors.getOrDefault(hearth.id(), 0);
+        int tested = 0;
+        while (cursor < offsets.size()
+                && tested < SURFACE_CANDIDATES_PER_TICK
+                && System.nanoTime() - tickStartNanos < TICK_BUDGET_NANOS) {
+            BlockPos offset = offsets.get(cursor++);
+            tested++;
+            BlockPos horizontal = hearth.center().offset(offset.getX(), 0, offset.getZ());
+            BlockPos resolved = validateCandidate(level, hearth, horizontal);
+            if (resolved != null) {
+                surfaceSearchCursors.put(hearth.id(), cursor);
+                return new SurfaceResolution(resolved, false);
+            }
+        }
+        surfaceSearchCursors.put(hearth.id(), cursor);
+        return new SurfaceResolution(null, cursor >= offsets.size());
+    }
+
+    private static BlockPos validateCandidate(ServerLevel level,
+                                              ReturnedHearthSavedData.HearthRecord hearth,
+                                              BlockPos horizontal) {
+        if (!footprintLoaded(level, horizontal)) {
+            return null;
+        }
+
+        List<TraceHearthLayout.Placement> layout = TraceHearthLayout.create(
+                hearth.layoutSeed(), hearth.type());
+        int minHeight = Integer.MAX_VALUE;
+        int maxHeight = Integer.MIN_VALUE;
+        for (TraceHearthLayout.Placement placement : layout) {
+            if (placement.piece() != TraceHearthLayout.Piece.PACKED_ICE_LOWER) {
+                continue;
+            }
+            int x = horizontal.getX() + placement.offset().getX();
+            int z = horizontal.getZ() + placement.offset().getZ();
+            int height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+            minHeight = Math.min(minHeight, height);
+            maxHeight = Math.max(maxHeight, height);
+        }
+        if (minHeight == Integer.MAX_VALUE
+                || maxHeight - minHeight > HearthReconciliationPolicy.MAX_SURFACE_VARIANCE
+                || maxHeight < level.getMinBuildHeight() + 4
+                || maxHeight > level.getMaxBuildHeight() - 4) {
+            return null;
+        }
+
+        BlockPos center = new BlockPos(horizontal.getX(), maxHeight, horizontal.getZ());
+        if (protectedSite(level, center, layout) || !layoutReplaceable(level, center, layout)) {
+            return null;
+        }
+        return center;
+    }
+
+    private static boolean protectedSite(ServerLevel level, BlockPos center,
+                                         List<TraceHearthLayout.Placement> layout) {
+        OrsaStructureState orsa = OrsaStructureState.get(level.getServer());
+        if (orsa.findTowerNear(center, STRUCTURE_CLEARANCE_RADIUS) != null
+                || flatDistanceWithin(orsa.getBlastPitPos(), center, STRUCTURE_CLEARANCE_RADIUS)
+                || flatDistanceWithin(orsa.getBlastPitTargetPos(), center, STRUCTURE_CLEARANCE_RADIUS)) {
+            return true;
+        }
+
+        int centerChunkX = center.getX() >> 4;
+        int centerChunkZ = center.getZ() >> 4;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (orsa.isCampBuilt(centerChunkX + dx, centerChunkZ + dz)) {
+                    return true;
+                }
+            }
+        }
+
+        MonitoringStationState stations = MonitoringStationState.get(level.getServer());
+        for (BlockPos station : stations.getBuiltStationCenters()) {
+            if (flatDistanceWithin(station, center, STRUCTURE_CLEARANCE_RADIUS)) {
+                return true;
+            }
+        }
+
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        if (data.transponderAnchor().filter(anchor ->
+                flatDistanceWithin(anchor, center, STRUCTURE_CLEARANCE_RADIUS)).isPresent()) {
+            return true;
+        }
+
+        PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(level.getServer());
+        for (int x = center.getX() - HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+             x <= center.getX() + HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS; x++) {
+            for (int z = center.getZ() - HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+                 z <= center.getZ() + HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS; z++) {
+                for (int y = center.getY() - 2; y <= center.getY() + 3; y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (tracker.isPlayerPlaced(pos)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        for (TraceHearthLayout.Placement placement : layout) {
+            BlockPos pos = center.offset(placement.offset());
+            if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
+                    || ThermalVentRegistry.isVolcanicField(level, pos)
+                    || level.getBlockEntity(pos) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean layoutReplaceable(ServerLevel level, BlockPos center,
+                                             List<TraceHearthLayout.Placement> layout) {
+        for (TraceHearthLayout.Placement placement : layout) {
+            BlockPos pos = center.offset(placement.offset());
+            BlockState state = level.getBlockState(pos);
+            if (!state.getFluidState().isEmpty()) {
+                return false;
+            }
+            if (!canReplaceNatural(state, placement.piece())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean canReplace(ServerLevel level, BlockPos pos, BlockState state,
+                                      TraceHearthLayout.Piece piece) {
+        if (!state.getFluidState().isEmpty()
+                || PlayerPlacedBlockTracker.get(level.getServer()).isPlayerPlaced(pos)
+                || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
+                || BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
+                || ThermalVentRegistry.isVolcanicField(level, pos)
+                || level.getBlockEntity(pos) != null
+                        && !(piece == TraceHearthLayout.Piece.CLEAR_LEGACY
+                        && isTraceSceneBlock(state))) {
+            return false;
+        }
+        return canReplaceNatural(state, piece);
+    }
+
+    private static boolean canReplaceNatural(BlockState state, TraceHearthLayout.Piece piece) {
+        if (isTraceSceneBlock(state)) {
+            return true;
+        }
+        if (piece == TraceHearthLayout.Piece.PACKED_ICE_LOWER) {
+            return state.canBeReplaced()
+                    || state.is(BlockTags.BASE_STONE_OVERWORLD)
+                    || state.is(BlockTags.DIRT)
+                    || state.is(Blocks.SNOW_BLOCK)
+                    || state.is(Blocks.ICE)
+                    || state.is(Blocks.PACKED_ICE)
+                    || state.is(Blocks.BLUE_ICE)
+                    || state.is(ModBlocks.DEAD_GRASS_BLOCK.get())
+                    || state.is(ModBlocks.FROZEN_DIRT.get())
+                    || state.is(ModBlocks.FROZEN_SAND.get())
+                    || state.is(ModBlocks.FROZEN_COBBLESTONE.get());
+        }
+        return state.isAir() || state.canBeReplaced();
+    }
+
+    private static boolean isTraceSceneBlock(BlockState state) {
+        return state.is(Blocks.PACKED_ICE)
+                || state.is(Blocks.SNOW)
+                || state.is(Blocks.CAMPFIRE)
+                || state.is(Blocks.SPRUCE_DOOR)
+                || state.is(Blocks.GRAY_BED)
+                || state.is(ModBlocks.ORSA_SUPPLY_CRATE.get());
+    }
+
+    private static BlockState stateFor(TraceHearthLayout.Placement placement) {
+        return switch (placement.piece()) {
+            case PACKED_ICE_LOWER -> Blocks.PACKED_ICE.defaultBlockState();
+            case CLEAR_PLATFORM, CLEAR_LEGACY -> Blocks.AIR.defaultBlockState();
+            case SNOW_MARKER -> Blocks.SNOW.defaultBlockState()
+                    .setValue(SnowLayerBlock.LAYERS, Math.max(1, Math.min(8, placement.variant())));
+            case COLD_CAMPFIRE -> Blocks.CAMPFIRE.defaultBlockState()
+                    .setValue(CampfireBlock.LIT, false)
+                    .setValue(CampfireBlock.FACING, placement.facing());
+            case ORSA_CRATE -> ModBlocks.ORSA_SUPPLY_CRATE.get().defaultBlockState()
+                    .setValue(BarrelBlock.FACING, placement.facing());
+            case DOOR_LOWER, DOOR_UPPER -> Blocks.SPRUCE_DOOR.defaultBlockState()
+                    .setValue(DoorBlock.FACING, placement.facing())
+                    .setValue(DoorBlock.HALF, placement.piece() == TraceHearthLayout.Piece.DOOR_LOWER
+                            ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER)
+                    .setValue(DoorBlock.HINGE, placement.variant() == 0
+                            ? DoorHingeSide.LEFT : DoorHingeSide.RIGHT)
+                    .setValue(DoorBlock.OPEN, false)
+                    .setValue(DoorBlock.POWERED, false);
+            case BED_FOOT, BED_HEAD -> Blocks.GRAY_BED.defaultBlockState()
+                    .setValue(BedBlock.FACING, placement.facing())
+                    .setValue(BedBlock.PART, placement.piece() == TraceHearthLayout.Piece.BED_FOOT
+                            ? BedPart.FOOT : BedPart.HEAD)
+                    .setValue(BedBlock.OCCUPIED, false);
+        };
+    }
+
+    private static boolean footprintLoaded(ServerLevel level, BlockPos center) {
+        int radius = HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+        int minChunkX = (center.getX() - radius) >> 4;
+        int maxChunkX = (center.getX() + radius) >> 4;
+        int minChunkZ = (center.getZ() - radius) >> 4;
+        int maxChunkZ = (center.getZ() + radius) >> 4;
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                BlockPos probe = new BlockPos((chunkX << 4) + 8, center.getY(), (chunkZ << 4) + 8);
+                if (!level.isLoaded(probe)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean footprintCaughtUp(ServerLevel level, ApocalypseState apocalypse, BlockPos center) {
+        ChunkEpochState epochs = ChunkEpochState.get(level.getServer());
+        int radius = HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+        int minChunkX = (center.getX() - radius) >> 4;
+        int maxChunkX = (center.getX() + radius) >> 4;
+        int minChunkZ = (center.getZ() - radius) >> 4;
+        int maxChunkZ = (center.getZ() + radius) >> 4;
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                ChunkEpochState.Record record = epochs.get(chunkX, chunkZ);
+                if (record == null || !record.complete()
+                        || record.transformVersion() < ChunkCatchUpManager.TRANSFORM_VERSION
+                        || record.targetPhase() < apocalypse.getPhase()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean centerAreaLoaded(ServerLevel level, BlockPos center) {
+        return level.isLoaded(new BlockPos(center.getX(), level.getMinBuildHeight(), center.getZ()));
+    }
+
+    private static boolean flatDistanceWithin(BlockPos first, BlockPos second, int radius) {
+        if (first == null) {
+            return false;
+        }
+        long dx = (long) first.getX() - second.getX();
+        long dz = (long) first.getZ() - second.getZ();
+        return dx * dx + dz * dz <= (long) radius * radius;
+    }
+
+    private static void removePending(UUID id) {
+        pending.remove(id);
+        surfaceSearchCursors.remove(id);
+        retryAfter.remove(id);
+    }
+
+    private static String shortId(UUID id) {
+        return id.toString().substring(0, 8);
+    }
+
+    private record SurfaceResolution(BlockPos center, boolean exhausted) {
+    }
+}
