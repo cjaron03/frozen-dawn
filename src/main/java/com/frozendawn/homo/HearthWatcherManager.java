@@ -38,6 +38,26 @@ public final class HearthWatcherManager {
         return reconcile(level);
     }
 
+    public static DebugRespawnResult respawnForDebug(
+            ServerLevel level, HearthSelectionPolicy.HearthType type) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data.hearth(type).orElse(null);
+        if (hearth == null || !level.isLoaded(hearth.center())) {
+            return new DebugRespawnResult(false, 0, 0);
+        }
+
+        AABB area = new AABB(hearth.center()).inflate(ADOPTION_RADIUS);
+        int removed = 0;
+        for (ReturnedEntity watcher : level.getEntitiesOfClass(ReturnedEntity.class, area,
+                returned -> returned.isBoundToHearth(hearth.id()))) {
+            watcher.discard();
+            removed++;
+        }
+        data.clearWatcherBindingForDebug(hearth.id());
+        int spawned = reconcile(level);
+        return new DebugRespawnResult(true, removed, spawned);
+    }
+
     public static String statusLine() {
         return "spawned=" + watchersSpawned + " adopted=" + watchersAdopted;
     }
@@ -145,5 +165,8 @@ public final class HearthWatcherManager {
         BlockState state = level.getBlockState(pos);
         return state.getFluidState().isEmpty()
                 && state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    public record DebugRespawnResult(boolean hearthLoaded, int removed, int spawned) {
     }
 }

@@ -58,8 +58,14 @@ class HearthWatcherPolicyTest {
 
     @Test
     void onlyOrdinaryReturnedProactivelyTargetPlayers() {
-        assertTrue(HearthWatcherPolicy.canProactivelyTargetPlayer(false));
-        assertFalse(HearthWatcherPolicy.canProactivelyTargetPlayer(true));
+        assertTrue(HearthWatcherPolicy.canProactivelyTargetPlayer(false,
+                ReturnedHearthSavedData.HiveRelationship.NEUTRAL));
+        assertFalse(HearthWatcherPolicy.canProactivelyTargetPlayer(true,
+                ReturnedHearthSavedData.HiveRelationship.NEUTRAL));
+        assertFalse(HearthWatcherPolicy.canProactivelyTargetPlayer(true,
+                ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS));
+        assertTrue(HearthWatcherPolicy.canProactivelyTargetPlayer(true,
+                ReturnedHearthSavedData.HiveRelationship.ORSATHAE));
     }
 
     private static ReturnedHearthSavedData selectedState() {

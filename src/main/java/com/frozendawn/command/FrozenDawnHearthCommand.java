@@ -4,6 +4,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
+import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
@@ -17,6 +18,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Locale;
 
@@ -45,7 +47,29 @@ final class FrozenDawnHearthCommand {
                 .then(Commands.literal("reconcile")
                         .executes(FrozenDawnHearthCommand::reconcile))
                 .then(Commands.literal("watcher")
-                        .executes(FrozenDawnHearthCommand::watcher))
+                        .executes(FrozenDawnHearthCommand::watcher)
+                        .then(Commands.literal("respawn")
+                                .then(Commands.literal("major")
+                                        .executes(context -> respawnWatcher(
+                                                context, HearthSelectionPolicy.HearthType.MAJOR)))
+                                .then(Commands.literal("minor")
+                                        .executes(context -> respawnWatcher(
+                                                context, HearthSelectionPolicy.HearthType.MINOR)))))
+                .then(Commands.literal("relationship")
+                        .executes(FrozenDawnHearthCommand::relationship)
+                        .then(Commands.literal("set")
+                                .then(relationshipState("neutral",
+                                        ReturnedHearthSavedData.HiveRelationship.NEUTRAL))
+                                .then(relationshipState("suspicious",
+                                        ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS))
+                                .then(relationshipState("orsathae",
+                                        ReturnedHearthSavedData.HiveRelationship.ORSATHAE))))
+                .then(Commands.literal("mood")
+                        .executes(FrozenDawnHearthCommand::list)
+                        .then(Commands.literal("set")
+                                .then(moodScope("major", HearthSelectionPolicy.HearthType.MAJOR))
+                                .then(moodScope("minor", HearthSelectionPolicy.HearthType.MINOR))
+                                .then(moodScope("all", null))))
                 .then(Commands.literal("advance")
                         .then(Commands.literal("ticks")
                                 .then(Commands.argument("amount", LongArgumentType.longArg(
@@ -93,8 +117,11 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Maturation clock: " + (maturationActive ? "active" : "phase-gated")), false);
         context.getSource().sendSuccess(() -> Component.literal(
-                "  Hive: " + hearthState.globalDisposition().name().toLowerCase(Locale.ROOT)
-                        + " | Permanent Orsathae: " + yesNo(hearthState.permanentOrsathae())), false);
+                "  Hive memories: " + hearthState.playerMemories().size()
+                        + " player(s) | Legacy default: "
+                        + hearthState.legacyRelationship().name().toLowerCase(Locale.ROOT)), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Contact memory: " + HearthMemoryManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Reconciliation: " + HearthReconciliationManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
@@ -129,6 +156,7 @@ final class FrozenDawnHearthCommand {
                                     .orElse(hearth.watcherSpawned() ? "missing" : "none")
                             + " profile=" + (hearth.boundVariantProfile().isBlank()
                                     ? "none" : hearth.boundVariantProfile())
+                            + " contacts=" + hearth.playerContacts().size()
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
@@ -186,6 +214,101 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reconciled Hearth watchers; spawned=" + spawned + " | "
                         + HearthWatcherManager.statusLine()), true);
+        list(context);
+        return 1;
+    }
+
+    private static int respawnWatcher(CommandContext<CommandSourceStack> context,
+                                      HearthSelectionPolicy.HearthType type) {
+        HearthWatcherManager.DebugRespawnResult result = HearthWatcherManager.respawnForDebug(
+                context.getSource().getServer().overworld(), type);
+        if (!result.hearthLoaded()) {
+            context.getSource().sendFailure(Component.literal(
+                    displayName(type) + " Hearth does not exist or its center chunk is not loaded"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Respawned " + displayName(type) + " Hearth watcher"
+                        + " | removed=" + result.removed()
+                        + " spawned=" + result.spawned()), true);
+        list(context);
+        return result.spawned() > 0 ? 1 : 0;
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> relationshipState(
+            String name, ReturnedHearthSavedData.HiveRelationship relationship) {
+        return Commands.literal(name).executes(context -> setRelationship(context, relationship));
+    }
+
+    private static int relationship(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HiveRelationship relationship = state.relationship(player.getUUID());
+        String details = state.playerMemory(player.getUUID())
+                .map(memory -> " | contacts=" + memory.totalVisits()
+                        + " first=" + memory.firstContactGameTime()
+                        + " last=" + memory.lastContactGameTime()
+                        + " source=" + memory.relationshipSourceHearthId()
+                                .map(id -> id.toString().substring(0, 8)).orElse("none"))
+                .orElse(" | no recorded contact");
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Hive relationship for " + player.getGameProfile().getName() + ": "
+                        + relationship.name().toLowerCase(Locale.ROOT) + details), false);
+        return 1;
+    }
+
+    private static int setRelationship(
+            CommandContext<CommandSourceStack> context,
+            ReturnedHearthSavedData.HiveRelationship relationship)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        boolean changed = state.setRelationshipForDebug(
+                player.getUUID(), relationship, context.getSource().getLevel().getGameTime());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set hive relationship for " + player.getGameProfile().getName() + " to "
+                        + relationship.name().toLowerCase(Locale.ROOT)
+                        + (changed ? "" : " (unchanged)")), true);
+        return relationship(context);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> moodScope(
+            String name, HearthSelectionPolicy.HearthType type) {
+        LiteralArgumentBuilder<CommandSourceStack> scope = Commands.literal(name);
+        for (ReturnedHearthSavedData.HearthDisposition mood
+                : ReturnedHearthSavedData.HearthDisposition.values()) {
+            scope.then(Commands.literal(mood.name().toLowerCase(Locale.ROOT))
+                    .executes(context -> setMood(context, type, mood)));
+        }
+        return scope;
+    }
+
+    private static int setMood(CommandContext<CommandSourceStack> context,
+                               HearthSelectionPolicy.HearthType type,
+                               ReturnedHearthSavedData.HearthDisposition mood) {
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        int changed;
+        String target;
+        if (type == null) {
+            changed = state.setAllHearthMoodsForDebug(mood);
+            target = "all Hearths";
+        } else {
+            boolean exists = state.hearth(type).isPresent();
+            if (!exists) {
+                context.getSource().sendFailure(Component.literal(
+                        displayName(type) + " Hearth does not exist"));
+                return 0;
+            }
+            changed = state.setHearthMoodForDebug(type, mood) ? 1 : 0;
+            target = displayName(type) + " Hearth";
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set " + target + " mood to " + mood.name().toLowerCase(Locale.ROOT)
+                        + " | changed=" + changed), true);
         list(context);
         return 1;
     }
