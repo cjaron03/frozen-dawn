@@ -6,6 +6,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,8 +30,8 @@ class ReturnedHearthSavedDataTest {
         assertEquals(anchor, loaded.transponderAnchor().orElseThrow());
         assertTrue(loaded.selectionComplete());
         assertEquals(9876L, loaded.selectionGameTime());
-        assertEquals(original.globalDisposition(), loaded.globalDisposition());
-        assertEquals(original.permanentOrsathae(), loaded.permanentOrsathae());
+        assertEquals(original.legacyRelationship(), loaded.legacyRelationship());
+        assertEquals(original.playerMemories(), loaded.playerMemories());
         assertEquals(original.hearths().size(), loaded.hearths().size());
 
         for (ReturnedHearthSavedData.HearthRecord expected : original.hearths()) {
@@ -212,12 +214,186 @@ class ReturnedHearthSavedDataTest {
         assertEquals("returned_watcher", restored.boundVariantProfile());
     }
 
+    @Test
+    void debugWatcherResetAllowsADeadWatcherToBeReconciledAgain() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID first = UUID.randomUUID();
+        UUID replacement = UUID.randomUUID();
+
+        assertTrue(state.bindWatcher(major.id(), first, "returned_watcher"));
+        assertTrue(state.clearWatcherBindingForDebug(major.id()));
+        assertFalse(major.watcherSpawned());
+        assertTrue(major.watcherEntityId().isEmpty());
+        assertTrue(major.boundVariantProfile().isBlank());
+        assertTrue(state.bindWatcher(major.id(), replacement, "returned_watcher"));
+        assertEquals(replacement, major.watcherEntityId().orElseThrow());
+    }
+
+    @Test
+    void firstContactCreatesGlobalAndHearthLocalMemory() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        ReturnedHearthSavedData.ContactResult first = state.recordPlayerContact(
+                player, major.id(), 2000L);
+        ReturnedHearthSavedData.ContactResult duplicate = state.recordPlayerContact(
+                player, major.id(), 2020L);
+
+        assertTrue(first.changed());
+        assertTrue(first.firstGlobalContact());
+        assertTrue(first.firstHearthContact());
+        assertTrue(first.newVisit());
+        assertFalse(duplicate.changed());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.NEUTRAL,
+                state.relationship(player));
+        assertEquals(ReturnedHearthSavedData.HearthDisposition.WATCHFUL, major.mood());
+        assertEquals(1, state.playerMemory(player).orElseThrow().totalVisits());
+        ReturnedHearthSavedData.HearthContactMemory local = major.playerContact(player)
+                .orElseThrow();
+        assertEquals(1, local.visits());
+        assertFalse(local.attackedWatcher());
+    }
+
+    @Test
+    void aPlayerReturningAfterAnAbsenceCreatesAnotherVisit() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        state.recordPlayerContact(player, major.id(), 2000L);
+        state.recordPlayerContact(player, major.id(),
+                2000L + ReturnedHearthSavedData.CONTACT_SAVE_INTERVAL_TICKS);
+        ReturnedHearthSavedData.ContactResult returned = state.recordPlayerContact(
+                player, major.id(),
+                2000L + ReturnedHearthSavedData.CONTACT_SAVE_INTERVAL_TICKS
+                        + ReturnedHearthSavedData.NEW_VISIT_GAP_TICKS);
+
+        assertTrue(returned.newVisit());
+        assertEquals(2, state.playerMemory(player).orElseThrow().totalVisits());
+        assertEquals(2, major.playerContact(player).orElseThrow().visits());
+    }
+
+    @Test
+    void suspicionIsGlobalButDoesNotMakeWatchersHostile() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        UUID player = UUID.randomUUID();
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markPlayerSuspicious(player, major.id(), 2000L));
+        assertEquals(2, state.hearths().size());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS,
+                state.relationship(player));
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.HearthDisposition.AGITATED, hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.SUSPICIOUS,
+                    hearth.violationState());
+        }
+    }
+
+    @Test
+    void attackingAWatcherPermanentlyViolatesEveryHearth() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        UUID player = UUID.randomUUID();
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markPlayerOrsathae(player, major.id(), 2000L));
+        assertFalse(state.markPlayerSuspicious(player, major.id(), 3000L));
+        assertEquals(2, state.hearths().size());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                state.relationship(player));
+        assertTrue(major.playerContact(player).orElseThrow().attackedWatcher());
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.HearthDisposition.HOSTILE, hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.VIOLATED,
+                    hearth.violationState());
+        }
+    }
+
+    @Test
+    void hiveAndLocalMemorySurviveLogoutDeathAndReloadBoundaries() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        UUID player = UUID.randomUUID();
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.markPlayerOrsathae(player, major.id(), 2000L);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                loaded.relationship(player));
+        ReturnedHearthSavedData.PlayerHiveMemory global = loaded.playerMemory(player)
+                .orElseThrow();
+        assertEquals(2000L, global.firstContactGameTime());
+        assertEquals(major.id(), global.relationshipSourceHearthId().orElseThrow());
+        ReturnedHearthSavedData.HearthContactMemory local = major(loaded)
+                .playerContact(player).orElseThrow();
+        assertTrue(local.attackedWatcher());
+        assertEquals(1, local.visits());
+    }
+
+    @Test
+    void versionThreeGlobalHostilityMigratesWithoutLosingItsMeaning() {
+        CompoundTag legacy = selectedState(1000L).save(new CompoundTag(), null);
+        legacy.putInt("dataVersion", 3);
+        legacy.remove("legacyRelationship");
+        legacy.remove("playerMemories");
+        legacy.putString("globalDisposition", "HOSTILE");
+        legacy.putBoolean("permanentOrsathae", true);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(legacy, null);
+
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                loaded.legacyRelationship());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                loaded.relationship(UUID.randomUUID()));
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+    }
+
+    @Test
+    void debugRelationshipOverrideCanResetPermanentStateForTesting() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        UUID player = UUID.randomUUID();
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.markPlayerOrsathae(player, major.id(), 2000L);
+
+        assertTrue(state.setRelationshipForDebug(
+                player, ReturnedHearthSavedData.HiveRelationship.NEUTRAL, 3000L));
+
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.NEUTRAL,
+                state.relationship(player));
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            ReturnedHearthSavedData.HearthDisposition expected = hearth.playerContacts().isEmpty()
+                    ? ReturnedHearthSavedData.HearthDisposition.DORMANT
+                    : ReturnedHearthSavedData.HearthDisposition.WATCHFUL;
+            assertEquals(expected, hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.NONE,
+                    hearth.violationState());
+        }
+    }
+
     private static ReturnedHearthSavedData selectedState(long gameTime) {
         ReturnedHearthSavedData state = new ReturnedHearthSavedData();
         BlockPos anchor = new BlockPos(12, 70, -24);
         state.rememberTransponderAnchor(anchor);
         state.applySelectionPlan(HearthSelectionPolicy.createPlan(998877L, anchor), gameTime);
         return state;
+    }
+
+    private static ReturnedHearthSavedData selectedStateWithMinor(long gameTime) {
+        BlockPos anchor = new BlockPos(12, 70, -24);
+        for (long seed = 0L; seed < 10_000L; seed++) {
+            HearthSelectionPolicy.SelectionPlan plan = HearthSelectionPolicy.createPlan(seed, anchor);
+            if (plan.minor().isEmpty()) {
+                continue;
+            }
+            ReturnedHearthSavedData state = new ReturnedHearthSavedData();
+            state.rememberTransponderAnchor(anchor);
+            state.applySelectionPlan(plan, gameTime);
+            return state;
+        }
+        throw new AssertionError("Could not find deterministic selection seed with a Minor Hearth");
     }
 
     private static ReturnedHearthSavedData.HearthRecord major(ReturnedHearthSavedData state) {

@@ -59,8 +59,9 @@ public final class HearthWatcherPolicy {
         return homeDistanceSquared > (double) HOME_RADIUS * HOME_RADIUS;
     }
 
-    public static boolean canProactivelyTargetPlayer(boolean hearthBound) {
-        return !hearthBound;
+    public static boolean canProactivelyTargetPlayer(
+            boolean hearthBound, ReturnedHearthSavedData.HiveRelationship relationship) {
+        return !hearthBound || relationship == ReturnedHearthSavedData.HiveRelationship.ORSATHAE;
     }
 
     private static long mix(long value) {

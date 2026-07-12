@@ -15,8 +15,10 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,7 +29,9 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 3;
+    public static final int CURRENT_DATA_VERSION = 4;
+    public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
+    public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_returned_hearths";
 
@@ -35,8 +39,8 @@ public final class ReturnedHearthSavedData extends SavedData {
     private BlockPos transponderAnchor;
     private boolean selectionComplete;
     private long selectionGameTime = -1L;
-    private HearthDisposition globalDisposition = HearthDisposition.DORMANT;
-    private boolean permanentOrsathae;
+    private HiveRelationship legacyRelationship = HiveRelationship.NEUTRAL;
+    private final Map<UUID, PlayerHiveMemory> playerMemories = new LinkedHashMap<>();
     private final List<HearthRecord> hearths = new ArrayList<>();
 
     public ReturnedHearthSavedData() {
@@ -62,9 +66,18 @@ public final class ReturnedHearthSavedData extends SavedData {
         state.selectionGameTime = tag.contains("selectionGameTime", Tag.TAG_LONG)
                 ? tag.getLong("selectionGameTime")
                 : -1L;
-        state.globalDisposition = readEnum(tag.getString("globalDisposition"),
-                HearthDisposition.class, HearthDisposition.DORMANT);
-        state.permanentOrsathae = tag.getBoolean("permanentOrsathae");
+        state.legacyRelationship = loadLegacyRelationship(tag, storedVersion);
+
+        ListTag playerList = tag.getList("playerMemories", Tag.TAG_COMPOUND);
+        for (Tag entry : playerList) {
+            if (!(entry instanceof CompoundTag compound)) {
+                continue;
+            }
+            PlayerHiveMemory memory = PlayerHiveMemory.load(compound);
+            if (memory != null) {
+                state.playerMemories.putIfAbsent(memory.playerId(), memory);
+            }
+        }
 
         EnumSet<HearthSelectionPolicy.HearthType> loadedTypes =
                 EnumSet.noneOf(HearthSelectionPolicy.HearthType.class);
@@ -80,8 +93,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
 
         state.selectionComplete = state.selectionComplete || !state.hearths.isEmpty();
+        boolean conductChanged = state.recomputeAllHearthConduct();
         state.dataVersion = CURRENT_DATA_VERSION;
-        if (storedVersion != CURRENT_DATA_VERSION) {
+        if (storedVersion != CURRENT_DATA_VERSION || conductChanged) {
             if (storedVersion > CURRENT_DATA_VERSION) {
                 FrozenDawn.LOGGER.warn("Returned Hearth data version {} is newer than supported version {}; loading known fields only",
                         storedVersion, CURRENT_DATA_VERSION);
@@ -99,8 +113,13 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         tag.putBoolean("selectionComplete", selectionComplete);
         tag.putLong("selectionGameTime", selectionGameTime);
-        tag.putString("globalDisposition", globalDisposition.name());
-        tag.putBoolean("permanentOrsathae", permanentOrsathae);
+        tag.putString("legacyRelationship", legacyRelationship.name());
+
+        ListTag playerList = new ListTag();
+        for (PlayerHiveMemory memory : playerMemories.values()) {
+            playerList.add(memory.save());
+        }
+        tag.put("playerMemories", playerList);
 
         ListTag hearthList = new ListTag();
         for (HearthRecord hearth : hearths) {
@@ -218,12 +237,21 @@ public final class ReturnedHearthSavedData extends SavedData {
         return selectionGameTime;
     }
 
-    public HearthDisposition globalDisposition() {
-        return globalDisposition;
+    public HiveRelationship legacyRelationship() {
+        return legacyRelationship;
     }
 
-    public boolean permanentOrsathae() {
-        return permanentOrsathae;
+    public HiveRelationship relationship(UUID playerId) {
+        PlayerHiveMemory memory = playerMemories.get(playerId);
+        return memory == null ? legacyRelationship : memory.relationship;
+    }
+
+    public Optional<PlayerHiveMemory> playerMemory(UUID playerId) {
+        return Optional.ofNullable(playerMemories.get(playerId));
+    }
+
+    public List<PlayerHiveMemory> playerMemories() {
+        return List.copyOf(playerMemories.values());
     }
 
     public List<HearthRecord> hearths() {
@@ -293,6 +321,165 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean clearWatcherBindingForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (!hearth.watcherSpawned && hearth.watcherEntityId == null
+                && hearth.boundVariantProfile.isBlank())) {
+            return false;
+        }
+        hearth.watcherSpawned = false;
+        hearth.watcherEntityId = null;
+        hearth.boundVariantProfile = "";
+        setDirty();
+        return true;
+    }
+
+    public ContactResult recordPlayerContact(UUID playerId, UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (playerId == null || hearth == null) {
+            return ContactResult.noChange();
+        }
+
+        long now = Math.max(0L, gameTime);
+        PlayerHiveMemory player = playerMemories.computeIfAbsent(playerId,
+                id -> new PlayerHiveMemory(id, legacyRelationship));
+        ContactUpdate globalUpdate = player.recordContact(now);
+        HearthContactMemory local = hearth.playerContacts.computeIfAbsent(playerId,
+                HearthContactMemory::new);
+        ContactUpdate localUpdate = local.recordContact(now);
+
+        boolean changed = globalUpdate.changed() || localUpdate.changed();
+        if (hearth.mood == HearthDisposition.DORMANT) {
+            hearth.mood = moodFor(player.relationship, true);
+            changed = true;
+        }
+        if (changed) {
+            setDirty();
+        }
+        return new ContactResult(changed, globalUpdate.firstContact(),
+                localUpdate.firstContact(), localUpdate.newVisit());
+    }
+
+    public boolean markPlayerSuspicious(UUID playerId, UUID hearthId, long gameTime) {
+        return escalateRelationship(playerId, hearthId, gameTime,
+                HiveRelationship.SUSPICIOUS, false);
+    }
+
+    public boolean markPlayerOrsathae(UUID playerId, UUID hearthId, long gameTime) {
+        return escalateRelationship(playerId, hearthId, gameTime,
+                HiveRelationship.ORSATHAE, true);
+    }
+
+    public boolean setRelationshipForDebug(UUID playerId, HiveRelationship relationship,
+                                           long gameTime) {
+        if (playerId == null || relationship == null) {
+            return false;
+        }
+        PlayerHiveMemory memory = playerMemories.computeIfAbsent(playerId,
+                id -> new PlayerHiveMemory(id, legacyRelationship));
+        boolean changed = memory.setRelationshipForDebug(relationship, Math.max(0L, gameTime));
+        changed |= recomputeAllHearthConduct();
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
+    public boolean setHearthMoodForDebug(HearthSelectionPolicy.HearthType type,
+                                         HearthDisposition mood) {
+        HearthRecord hearth = hearth(type).orElse(null);
+        if (hearth == null || mood == null || hearth.mood == mood) {
+            return false;
+        }
+        hearth.mood = mood;
+        setDirty();
+        return true;
+    }
+
+    public int setAllHearthMoodsForDebug(HearthDisposition mood) {
+        if (mood == null) {
+            return 0;
+        }
+        int changed = 0;
+        for (HearthRecord hearth : hearths) {
+            if (hearth.mood != mood) {
+                hearth.mood = mood;
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
+    private boolean escalateRelationship(UUID playerId, UUID hearthId, long gameTime,
+                                         HiveRelationship desired, boolean watcherAttacked) {
+        HearthRecord origin = hearth(hearthId).orElse(null);
+        if (playerId == null || origin == null) {
+            return false;
+        }
+
+        long now = Math.max(0L, gameTime);
+        recordPlayerContact(playerId, hearthId, now);
+        PlayerHiveMemory player = playerMemories.get(playerId);
+        boolean changed = player.escalate(desired, now, hearthId);
+        HearthContactMemory local = origin.playerContacts.get(playerId);
+        if (watcherAttacked && local != null && !local.attackedWatcher) {
+            local.attackedWatcher = true;
+            changed = true;
+        }
+        changed |= recomputeAllHearthConduct();
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
+    private boolean recomputeAllHearthConduct() {
+        HiveRelationship strongest = strongestRelationship();
+        boolean changed = false;
+        for (HearthRecord hearth : hearths) {
+            HearthDisposition desiredMood = moodFor(strongest, !hearth.playerContacts.isEmpty());
+            ViolationState desiredViolation = violationFor(strongest);
+            if (hearth.mood != desiredMood) {
+                hearth.mood = desiredMood;
+                changed = true;
+            }
+            if (hearth.violationState != desiredViolation) {
+                hearth.violationState = desiredViolation;
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private HiveRelationship strongestRelationship() {
+        HiveRelationship strongest = legacyRelationship;
+        for (PlayerHiveMemory memory : playerMemories.values()) {
+            if (memory.relationship.ordinal() > strongest.ordinal()) {
+                strongest = memory.relationship;
+            }
+        }
+        return strongest;
+    }
+
+    private static HearthDisposition moodFor(HiveRelationship relationship, boolean contacted) {
+        return switch (relationship) {
+            case ORSATHAE -> HearthDisposition.HOSTILE;
+            case SUSPICIOUS -> HearthDisposition.AGITATED;
+            case NEUTRAL -> contacted ? HearthDisposition.WATCHFUL : HearthDisposition.DORMANT;
+        };
+    }
+
+    private static ViolationState violationFor(HiveRelationship relationship) {
+        return switch (relationship) {
+            case ORSATHAE -> ViolationState.VIOLATED;
+            case SUSPICIOUS -> ViolationState.SUSPICIOUS;
+            case NEUTRAL -> ViolationState.NONE;
+        };
+    }
+
     private static boolean refreshStage(HearthRecord hearth, List<StageTransition> transitions) {
         HearthStage desired = HearthMaturationPolicy.stageFor(hearth.type, hearth.maturityTicks);
         if (desired == hearth.stage) {
@@ -311,6 +498,25 @@ public final class ReturnedHearthSavedData extends SavedData {
         return left > Long.MAX_VALUE - right ? Long.MAX_VALUE : left + right;
     }
 
+    private static HiveRelationship loadLegacyRelationship(CompoundTag tag, int storedVersion) {
+        if (tag.contains("legacyRelationship", Tag.TAG_STRING)) {
+            return readEnum(tag.getString("legacyRelationship"),
+                    HiveRelationship.class, HiveRelationship.NEUTRAL);
+        }
+        if (storedVersion >= 4) {
+            return HiveRelationship.NEUTRAL;
+        }
+
+        HearthDisposition oldDisposition = readEnum(tag.getString("globalDisposition"),
+                HearthDisposition.class, HearthDisposition.DORMANT);
+        if (tag.getBoolean("permanentOrsathae") || oldDisposition == HearthDisposition.HOSTILE) {
+            return HiveRelationship.ORSATHAE;
+        }
+        return oldDisposition == HearthDisposition.AGITATED
+                ? HiveRelationship.SUSPICIOUS
+                : HiveRelationship.NEUTRAL;
+    }
+
     private static <E extends Enum<E>> E readEnum(String value, Class<E> enumType, E fallback) {
         if (value == null || value.isBlank()) {
             return fallback;
@@ -327,6 +533,12 @@ public final class ReturnedHearthSavedData extends SavedData {
         WATCHFUL,
         AGITATED,
         HOSTILE
+    }
+
+    public enum HiveRelationship {
+        NEUTRAL,
+        SUSPICIOUS,
+        ORSATHAE
     }
 
     public enum HearthStage {
@@ -357,6 +569,209 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
     }
 
+    public record ContactResult(boolean changed, boolean firstGlobalContact,
+                                boolean firstHearthContact, boolean newVisit) {
+        private static ContactResult noChange() {
+            return new ContactResult(false, false, false, false);
+        }
+    }
+
+    private record ContactUpdate(boolean changed, boolean firstContact, boolean newVisit) {
+    }
+
+    public static final class PlayerHiveMemory {
+        private final UUID playerId;
+        private HiveRelationship relationship;
+        private long firstContactGameTime = -1L;
+        private long lastContactGameTime = -1L;
+        private int totalVisits;
+        private long relationshipChangedGameTime = -1L;
+        private UUID relationshipSourceHearthId;
+
+        private PlayerHiveMemory(UUID playerId, HiveRelationship relationship) {
+            this.playerId = playerId;
+            this.relationship = relationship;
+        }
+
+        private static PlayerHiveMemory load(CompoundTag tag) {
+            if (!tag.hasUUID("playerId")) {
+                return null;
+            }
+            PlayerHiveMemory memory = new PlayerHiveMemory(tag.getUUID("playerId"),
+                    readEnum(tag.getString("relationship"), HiveRelationship.class,
+                            HiveRelationship.NEUTRAL));
+            memory.firstContactGameTime = readOptionalTime(tag, "firstContactGameTime");
+            memory.lastContactGameTime = readOptionalTime(tag, "lastContactGameTime");
+            memory.totalVisits = Math.max(0, tag.getInt("totalVisits"));
+            memory.relationshipChangedGameTime = readOptionalTime(tag,
+                    "relationshipChangedGameTime");
+            memory.relationshipSourceHearthId = tag.hasUUID("relationshipSourceHearthId")
+                    ? tag.getUUID("relationshipSourceHearthId")
+                    : null;
+            return memory;
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putUUID("playerId", playerId);
+            tag.putString("relationship", relationship.name());
+            tag.putLong("firstContactGameTime", firstContactGameTime);
+            tag.putLong("lastContactGameTime", lastContactGameTime);
+            tag.putInt("totalVisits", totalVisits);
+            tag.putLong("relationshipChangedGameTime", relationshipChangedGameTime);
+            if (relationshipSourceHearthId != null) {
+                tag.putUUID("relationshipSourceHearthId", relationshipSourceHearthId);
+            }
+            return tag;
+        }
+
+        private ContactUpdate recordContact(long gameTime) {
+            boolean first = firstContactGameTime < 0L;
+            boolean newVisit = first || lastContactGameTime < 0L
+                    || gameTime - lastContactGameTime >= NEW_VISIT_GAP_TICKS;
+            boolean shouldPersist = first || newVisit || gameTime < lastContactGameTime
+                    || gameTime - lastContactGameTime >= CONTACT_SAVE_INTERVAL_TICKS;
+            if (!shouldPersist) {
+                return new ContactUpdate(false, false, false);
+            }
+            if (first) {
+                firstContactGameTime = gameTime;
+            }
+            if (newVisit && totalVisits < Integer.MAX_VALUE) {
+                totalVisits++;
+            }
+            lastContactGameTime = gameTime;
+            return new ContactUpdate(true, first, newVisit);
+        }
+
+        private boolean escalate(HiveRelationship desired, long gameTime, UUID sourceHearthId) {
+            if (desired.ordinal() <= relationship.ordinal()) {
+                return false;
+            }
+            relationship = desired;
+            relationshipChangedGameTime = gameTime;
+            relationshipSourceHearthId = sourceHearthId;
+            return true;
+        }
+
+        private boolean setRelationshipForDebug(HiveRelationship desired, long gameTime) {
+            if (relationship == desired) {
+                return false;
+            }
+            relationship = desired;
+            relationshipChangedGameTime = gameTime;
+            if (desired == HiveRelationship.NEUTRAL) {
+                relationshipSourceHearthId = null;
+            }
+            return true;
+        }
+
+        public UUID playerId() {
+            return playerId;
+        }
+
+        public HiveRelationship relationship() {
+            return relationship;
+        }
+
+        public long firstContactGameTime() {
+            return firstContactGameTime;
+        }
+
+        public long lastContactGameTime() {
+            return lastContactGameTime;
+        }
+
+        public int totalVisits() {
+            return totalVisits;
+        }
+
+        public long relationshipChangedGameTime() {
+            return relationshipChangedGameTime;
+        }
+
+        public Optional<UUID> relationshipSourceHearthId() {
+            return Optional.ofNullable(relationshipSourceHearthId);
+        }
+    }
+
+    public static final class HearthContactMemory {
+        private final UUID playerId;
+        private long firstContactGameTime = -1L;
+        private long lastContactGameTime = -1L;
+        private int visits;
+        private boolean attackedWatcher;
+
+        private HearthContactMemory(UUID playerId) {
+            this.playerId = playerId;
+        }
+
+        private static HearthContactMemory load(CompoundTag tag) {
+            if (!tag.hasUUID("playerId")) {
+                return null;
+            }
+            HearthContactMemory memory = new HearthContactMemory(tag.getUUID("playerId"));
+            memory.firstContactGameTime = readOptionalTime(tag, "firstContactGameTime");
+            memory.lastContactGameTime = readOptionalTime(tag, "lastContactGameTime");
+            memory.visits = Math.max(0, tag.getInt("visits"));
+            memory.attackedWatcher = tag.getBoolean("attackedWatcher");
+            return memory;
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putUUID("playerId", playerId);
+            tag.putLong("firstContactGameTime", firstContactGameTime);
+            tag.putLong("lastContactGameTime", lastContactGameTime);
+            tag.putInt("visits", visits);
+            tag.putBoolean("attackedWatcher", attackedWatcher);
+            return tag;
+        }
+
+        private ContactUpdate recordContact(long gameTime) {
+            boolean first = firstContactGameTime < 0L;
+            boolean newVisit = first || lastContactGameTime < 0L
+                    || gameTime - lastContactGameTime >= NEW_VISIT_GAP_TICKS;
+            boolean shouldPersist = first || newVisit || gameTime < lastContactGameTime
+                    || gameTime - lastContactGameTime >= CONTACT_SAVE_INTERVAL_TICKS;
+            if (!shouldPersist) {
+                return new ContactUpdate(false, false, false);
+            }
+            if (first) {
+                firstContactGameTime = gameTime;
+            }
+            if (newVisit && visits < Integer.MAX_VALUE) {
+                visits++;
+            }
+            lastContactGameTime = gameTime;
+            return new ContactUpdate(true, first, newVisit);
+        }
+
+        public UUID playerId() {
+            return playerId;
+        }
+
+        public long firstContactGameTime() {
+            return firstContactGameTime;
+        }
+
+        public long lastContactGameTime() {
+            return lastContactGameTime;
+        }
+
+        public int visits() {
+            return visits;
+        }
+
+        public boolean attackedWatcher() {
+            return attackedWatcher;
+        }
+    }
+
+    private static long readOptionalTime(CompoundTag tag, String key) {
+        return tag.contains(key, Tag.TAG_LONG) ? tag.getLong(key) : -1L;
+    }
+
     public static final class HearthRecord {
         private final UUID id;
         private final HearthSelectionPolicy.HearthType type;
@@ -381,6 +796,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
         private boolean lootTaken;
+        private final Map<UUID, HearthContactMemory> playerContacts = new LinkedHashMap<>();
 
         private HearthRecord(UUID id, HearthSelectionPolicy.HearthType type, BlockPos center,
                             long layoutSeed) {
@@ -441,6 +857,16 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.firstAssessmentFired = tag.getBoolean("firstAssessmentFired");
             record.firstTransmissionFired = tag.getBoolean("firstTransmissionFired");
             record.lootTaken = tag.getBoolean("lootTaken");
+            ListTag contacts = tag.getList("playerContacts", Tag.TAG_COMPOUND);
+            for (Tag entry : contacts) {
+                if (!(entry instanceof CompoundTag compound)) {
+                    continue;
+                }
+                HearthContactMemory memory = HearthContactMemory.load(compound);
+                if (memory != null) {
+                    record.playerContacts.putIfAbsent(memory.playerId(), memory);
+                }
+            }
             return record;
         }
 
@@ -471,6 +897,11 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
             tag.putBoolean("lootTaken", lootTaken);
+            ListTag contacts = new ListTag();
+            for (HearthContactMemory memory : playerContacts.values()) {
+                contacts.add(memory.save());
+            }
+            tag.put("playerContacts", contacts);
             return tag;
         }
 
@@ -573,6 +1004,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean lootTaken() {
             return lootTaken;
+        }
+
+        public Optional<HearthContactMemory> playerContact(UUID playerId) {
+            return Optional.ofNullable(playerContacts.get(playerId));
+        }
+
+        public List<HearthContactMemory> playerContacts() {
+            return List.copyOf(playerContacts.values());
         }
     }
 }

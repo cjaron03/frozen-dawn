@@ -5,6 +5,7 @@ import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
 import com.frozendawn.entity.ai.ReturnedHearthWatchGoal;
 import com.frozendawn.entity.ai.ReturnedHostileStrollGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthWatcherPolicy;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
@@ -15,6 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
@@ -98,7 +100,7 @@ public class ReturnedEntity extends Monster {
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
                 this, Player.class, true,
-                ignored -> HearthWatcherPolicy.canProactivelyTargetPlayer(isHearthBound())));
+                candidate -> canProactivelyTargetPlayer(candidate)));
     }
 
     // --- Spawn Setup ---
@@ -190,7 +192,25 @@ public class ReturnedEntity extends Monster {
         if (source.is(DamageTypeTags.IS_FIRE)) {
             amount *= 1.5f;
         }
-        return super.hurt(source, amount);
+        boolean hurt = super.hurt(source, amount);
+        if (hurt && isHearthBound()
+                && level() instanceof ServerLevel serverLevel
+                && source.getEntity() instanceof ServerPlayer attacker) {
+            HearthMemoryManager.recordWatcherAttack(serverLevel, this, attacker);
+        }
+        return hurt;
+    }
+
+    private boolean canProactivelyTargetPlayer(LivingEntity candidate) {
+        if (!isHearthBound()) {
+            return true;
+        }
+        if (!(candidate instanceof ServerPlayer player)
+                || !(level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        return HearthWatcherPolicy.canProactivelyTargetPlayer(true,
+                HearthMemoryManager.relationship(serverLevel, player.getUUID()));
     }
 
     @Override
