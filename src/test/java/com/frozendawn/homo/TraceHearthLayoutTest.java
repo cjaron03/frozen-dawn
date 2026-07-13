@@ -17,29 +17,29 @@ class TraceHearthLayoutTest {
 
     @Test
     void layoutIsDeterministicAndContainsTheTraceSceneLanguage() {
-        List<TraceHearthLayout.Placement> first = TraceHearthLayout.create(
+        List<HearthStructurePlacement> first = TraceHearthLayout.create(
                 123456789L, HearthSelectionPolicy.HearthType.MAJOR);
-        List<TraceHearthLayout.Placement> second = TraceHearthLayout.create(
+        List<HearthStructurePlacement> second = TraceHearthLayout.create(
                 123456789L, HearthSelectionPolicy.HearthType.MAJOR);
 
         assertEquals(first, second);
-        assertEquals(1, count(first, TraceHearthLayout.Piece.COLD_CAMPFIRE));
-        assertEquals(3, count(first, TraceHearthLayout.Piece.ORSA_CRATE));
-        assertTrue(count(first, TraceHearthLayout.Piece.DOOR_LOWER) >= 2);
-        assertEquals(count(first, TraceHearthLayout.Piece.DOOR_LOWER),
-                count(first, TraceHearthLayout.Piece.DOOR_UPPER));
-        assertEquals(1, count(first, TraceHearthLayout.Piece.BED_FOOT));
-        assertEquals(1, count(first, TraceHearthLayout.Piece.BED_HEAD));
-        assertTrue(count(first, TraceHearthLayout.Piece.SNOW_MARKER) >= 12);
+        assertEquals(1, count(first, HearthStructurePiece.COLD_CAMPFIRE));
+        assertEquals(3, count(first, HearthStructurePiece.ORSA_CRATE));
+        assertTrue(count(first, HearthStructurePiece.DOOR_LOWER) >= 2);
+        assertEquals(count(first, HearthStructurePiece.DOOR_LOWER),
+                count(first, HearthStructurePiece.DOOR_UPPER));
+        assertEquals(1, count(first, HearthStructurePiece.BED_FOOT));
+        assertEquals(1, count(first, HearthStructurePiece.BED_HEAD));
+        assertTrue(count(first, HearthStructurePiece.SNOW_MARKER) >= 12);
     }
 
     @Test
     void layoutNeverWritesTwoDifferentPiecesToOnePosition() {
         for (long seed = 0L; seed < 100L; seed++) {
-            List<TraceHearthLayout.Placement> layout = TraceHearthLayout.create(
+            List<HearthStructurePlacement> layout = TraceHearthLayout.create(
                     seed, HearthSelectionPolicy.HearthType.MAJOR);
             Set<BlockPos> positions = new HashSet<>();
-            for (TraceHearthLayout.Placement placement : layout) {
+            for (HearthStructurePlacement placement : layout) {
                 assertTrue(positions.add(placement.offset()),
                         () -> "duplicate placement at " + placement.offset());
                 assertTrue(Math.abs(placement.offset().getX())
@@ -88,10 +88,29 @@ class TraceHearthLayoutTest {
         state.recordStructureProgress(major.id(), HearthReconciliationPolicy.TRACE_PLAN_VERSION,
                 100, ReturnedHearthSavedData.HearthStage.TRACE, true);
         assertFalse(HearthReconciliationPolicy.needsTrace(major));
+
+        state.advanceMaturationForDebug(
+                HearthMaturationPolicy.FORMED_START_TICKS
+                        - HearthMaturationPolicy.TRACE_START_TICKS,
+                2000L);
+        assertEquals(ReturnedHearthSavedData.HearthStage.FORMED, major.stage());
+        assertTrue(HearthReconciliationPolicy.needsReconciliation(major));
+        assertEquals(HearthReconciliationPolicy.FORMED_PLAN_VERSION,
+                HearthReconciliationPolicy.desiredPlan(major).version());
+        assertEquals(0, HearthReconciliationPolicy.resumeCursor(major));
+
+        state.recordStructureProgress(major.id(), HearthReconciliationPolicy.FORMED_PLAN_VERSION,
+                20, ReturnedHearthSavedData.HearthStage.TRACE, false);
+        assertEquals(20, HearthReconciliationPolicy.resumeCursor(major));
+        assertTrue(HearthReconciliationPolicy.needsReconciliation(major));
+
+        state.recordStructureProgress(major.id(), HearthReconciliationPolicy.FORMED_PLAN_VERSION,
+                200, ReturnedHearthSavedData.HearthStage.FORMED, true);
+        assertFalse(HearthReconciliationPolicy.needsReconciliation(major));
     }
 
-    private static long count(List<TraceHearthLayout.Placement> layout,
-                              TraceHearthLayout.Piece piece) {
+    private static long count(List<HearthStructurePlacement> layout,
+                              HearthStructurePiece piece) {
         return layout.stream().filter(placement -> placement.piece() == piece).count();
     }
 }

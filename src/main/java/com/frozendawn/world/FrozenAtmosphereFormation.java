@@ -1,6 +1,8 @@
 package com.frozendawn.world;
 
 import com.frozendawn.block.FuelProcessingSiloMultiblock;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -34,6 +36,7 @@ public final class FrozenAtmosphereFormation {
     public static void tick(ServerLevel level, int phase, float progress, int currentDay, int totalDays) {
         RandomSource random = level.getRandom();
         boolean canForm = PhaseManager.isVacuumActive(phase, progress);
+        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
@@ -67,6 +70,7 @@ public final class FrozenAtmosphereFormation {
 
                         // Check the position above for placement
                         BlockPos placePos = mutable.above();
+                        if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, placePos)) break;
                         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
                         if (ThermalVentRegistry.isVolcanicField(level, placePos)) break;
                         if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, placePos)) break;
@@ -83,7 +87,7 @@ public final class FrozenAtmosphereFormation {
                         }
                         level.setBlock(placePos,
                                 ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState(), 3);
-                        clearSnowAround(level, placePos, 2);
+                        clearSnowAround(level, placePos, 2, hearths);
                         break;
                     }
                 }
@@ -98,7 +102,7 @@ public final class FrozenAtmosphereFormation {
                         if (!level.isLoaded(mutable)) break;
                         BlockState state = level.getBlockState(mutable);
                         if (state.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
-                            clearSnowAround(level, mutable.immutable(), 1);
+                            clearSnowAround(level, mutable.immutable(), 1, hearths);
                             break;
                         }
                         if (!state.isAir() && !state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK)) break;
@@ -134,12 +138,16 @@ public final class FrozenAtmosphereFormation {
         }
     }
 
-    private static void clearSnowAround(ServerLevel level, BlockPos center, int radius) {
+    private static void clearSnowAround(ServerLevel level, BlockPos center, int radius,
+                                        ReturnedHearthSavedData hearths) {
         BlockPos.MutableBlockPos check = new BlockPos.MutableBlockPos();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 for (int dy = 0; dy <= 2; dy++) {
                     check.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
+                    if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, check)) {
+                        continue;
+                    }
                     BlockState s = level.getBlockState(check);
                     if (s.is(Blocks.SNOW) || s.is(Blocks.SNOW_BLOCK)) {
                         level.destroyBlock(check.immutable(), false);

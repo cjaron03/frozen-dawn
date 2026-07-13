@@ -1,6 +1,8 @@
 package com.frozendawn.world;
 
 import com.frozendawn.block.AcheroniteCrystalBlock;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -58,6 +60,8 @@ public final class AcheroniteGrowth {
     public static void tick(ServerLevel level, int phase, float progress, int currentDay, int totalDays) {
         if (phase < 5) return;
 
+        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
+
         boolean isPhase6 = phase >= 6;
         int formationChecks = isPhase6 ? P6_FORMATION_CHECKS : P5_FORMATION_CHECKS;
         float formationChance = isPhase6 ? P6_FORMATION_CHANCE : P5_FORMATION_CHANCE;
@@ -96,6 +100,9 @@ public final class AcheroniteGrowth {
 
                     // Check air above for crystal placement
                     BlockPos crystalPos = mutable.above();
+                    if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, crystalPos)) {
+                        break;
+                    }
                     BlockState aboveState = level.getBlockState(crystalPos);
                     if (!aboveState.isAir() && !aboveState.is(Blocks.SNOW) && !aboveState.is(Blocks.SNOW_BLOCK)) {
                         break;
@@ -131,6 +138,7 @@ public final class AcheroniteGrowth {
                 mutable.set(x, y, z);
                 if (!level.isLoaded(mutable)) continue;
                 if (ThermalVentRegistry.isVolcanicField(level, mutable)) continue;
+                if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, mutable)) continue;
 
                 BlockState state = level.getBlockState(mutable);
                 if (!state.isAir()) continue;
@@ -168,6 +176,9 @@ public final class AcheroniteGrowth {
                     if (!state.is(ModBlocks.ACHERONITE_CRYSTAL.get())) {
                         if (!state.isAir() && !state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK)) break;
                         continue;
+                    }
+                    if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, mutable)) {
+                        break;
                     }
 
                     int age = state.getValue(AcheroniteCrystalBlock.AGE);

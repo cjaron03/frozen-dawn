@@ -12,7 +12,9 @@ import java.util.List;
  */
 public final class HearthReconciliationPolicy {
     public static final int TRACE_PLAN_VERSION = 2;
+    public static final int FORMED_PLAN_VERSION = 6;
     public static final int TRACE_FOOTPRINT_RADIUS = 4;
+    public static final int FORMED_FOOTPRINT_RADIUS = 4;
     public static final int CANDIDATE_SEARCH_RADIUS = 48;
     public static final int CANDIDATE_STEP = 8;
     public static final int MAX_SURFACE_VARIANCE = 2;
@@ -30,8 +32,33 @@ public final class HearthReconciliationPolicy {
                     || hearth.structurePlanVersion() < TRACE_PLAN_VERSION);
     }
 
+    public static boolean needsReconciliation(ReturnedHearthSavedData.HearthRecord hearth) {
+        StructurePlan desired = desiredPlan(hearth);
+        if (desired == null) {
+            return false;
+        }
+        return hearth.structureStageApplied().ordinal() < desired.stage().ordinal()
+                || !hearth.structurePlaced()
+                || hearth.structurePlanVersion() < desired.version();
+    }
+
+    public static StructurePlan desiredPlan(ReturnedHearthSavedData.HearthRecord hearth) {
+        if (hearth.stage().ordinal() >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
+            return new StructurePlan(FORMED_PLAN_VERSION,
+                    ReturnedHearthSavedData.HearthStage.FORMED,
+                    FORMED_FOOTPRINT_RADIUS);
+        }
+        if (hearth.stage().ordinal() >= ReturnedHearthSavedData.HearthStage.TRACE.ordinal()) {
+            return new StructurePlan(TRACE_PLAN_VERSION,
+                    ReturnedHearthSavedData.HearthStage.TRACE,
+                    TRACE_FOOTPRINT_RADIUS);
+        }
+        return null;
+    }
+
     public static int resumeCursor(ReturnedHearthSavedData.HearthRecord hearth) {
-        return hearth.structurePlanVersion() == TRACE_PLAN_VERSION
+        StructurePlan desired = desiredPlan(hearth);
+        return desired != null && hearth.structurePlanVersion() == desired.version()
                 ? Math.max(0, hearth.structureCursor())
                 : 0;
     }
@@ -61,5 +88,9 @@ public final class HearthReconciliationPolicy {
         value = (value ^ (value >>> 30)) * 0xBF58476D1CE4E5B9L;
         value = (value ^ (value >>> 27)) * 0x94D049BB133111EBL;
         return value ^ (value >>> 31);
+    }
+
+    public record StructurePlan(int version, ReturnedHearthSavedData.HearthStage stage,
+                                int footprintRadius) {
     }
 }

@@ -24,6 +24,7 @@ import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthWatcherManager;
@@ -136,6 +137,7 @@ public class WorldTickHandler {
         HearthArchitectManager.reset();
         HearthMemoryManager.reset();
         HearthTransmissionManager.reset();
+        HearthViolationManager.reset();
         HearthWatcherManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
@@ -212,6 +214,7 @@ public class WorldTickHandler {
         HearthReconciliationManager.tick(overworld, state);
         HearthArchitectManager.tick(overworld);
         HearthTransmissionManager.tick(overworld);
+        HearthViolationManager.tick(overworld);
         HearthMemoryManager.tick(overworld);
         HearthWatcherManager.tick(overworld);
         SatellitePlacement.tickPlacement(overworld);

@@ -2,6 +2,8 @@ package com.frozendawn.world;
 
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -56,6 +58,7 @@ public final class SnowAccumulator {
         };
 
         RandomSource random = level.getRandom();
+        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
 
         for (ServerPlayer player : level.players()) {
             BlockPos origin = player.blockPosition();
@@ -70,6 +73,9 @@ public final class SnowAccumulator {
                 if (groundPos == null) continue;
 
                 BlockPos baseSnowPos = groundPos.above();
+                if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, baseSnowPos)) {
+                    continue;
+                }
                 if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, baseSnowPos)) {
                     clearColdDepositionAt(level, baseSnowPos);
                     continue;

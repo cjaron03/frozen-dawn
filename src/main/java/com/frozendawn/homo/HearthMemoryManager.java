@@ -82,6 +82,22 @@ public final class HearthMemoryManager {
         return changed;
     }
 
+    public static boolean recordProtectedViolation(
+            ServerLevel level, UUID hearthId, ServerPlayer player,
+            ReturnedHearthSavedData.HearthViolationReason reason) {
+        ReturnedHearthSavedData.ViolationResult result =
+                ReturnedHearthSavedData.get(level.getServer()).recordHearthViolation(
+                        player.getUUID(), hearthId, level.getGameTime(), reason);
+        if (result.localReasonRecorded()) {
+            violationsRecorded++;
+            FrozenDawn.LOGGER.info(
+                    "Homo reliquus recorded {} by player {} at Hearth {}; classification={}",
+                    reason.name().toLowerCase(), player.getGameProfile().getName(),
+                    shortId(hearthId), result.currentRelationship().name().toLowerCase());
+        }
+        return result.localReasonRecorded();
+    }
+
     public static ReturnedHearthSavedData.HiveRelationship relationship(
             ServerLevel level, UUID playerId) {
         return ReturnedHearthSavedData.get(level.getServer()).relationship(playerId);

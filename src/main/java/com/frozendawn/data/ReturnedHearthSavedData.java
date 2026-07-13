@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -30,7 +32,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 6;
+    public static final int CURRENT_DATA_VERSION = 7;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -389,12 +391,64 @@ public final class ReturnedHearthSavedData extends SavedData {
 
     public boolean markPlayerSuspicious(UUID playerId, UUID hearthId, long gameTime) {
         return escalateRelationship(playerId, hearthId, gameTime,
-                HiveRelationship.SUSPICIOUS, false);
+                HiveRelationship.SUSPICIOUS);
     }
 
     public boolean markPlayerOrsathae(UUID playerId, UUID hearthId, long gameTime) {
-        return escalateRelationship(playerId, hearthId, gameTime,
-                HiveRelationship.ORSATHAE, true);
+        return recordHearthViolation(playerId, hearthId, gameTime,
+                HearthViolationReason.ENTITY_ATTACK).changed();
+    }
+
+    public ViolationResult recordHearthViolation(UUID playerId, UUID hearthId, long gameTime,
+                                                 HearthViolationReason reason) {
+        HearthRecord origin = hearth(hearthId).orElse(null);
+        if (playerId == null || origin == null || reason == null) {
+            return ViolationResult.noChange(relationship(playerId));
+        }
+
+        long now = Math.max(0L, gameTime);
+        recordPlayerContact(playerId, hearthId, now);
+        PlayerHiveMemory player = playerMemories.get(playerId);
+        HearthContactMemory local = origin.playerContacts.get(playerId);
+        HiveRelationship before = player.relationship;
+        boolean localReasonRecorded = local != null && local.recordViolation(reason, now);
+        boolean changed = localReasonRecorded;
+        if (reason == HearthViolationReason.PROTECTED_CONTAINER && !origin.lootTaken) {
+            origin.lootTaken = true;
+            changed = true;
+        }
+        changed |= player.escalate(HiveRelationship.ORSATHAE, now, hearthId);
+        changed |= recomputeAllHearthConduct();
+        if (changed) {
+            setDirty();
+        }
+        return new ViolationResult(changed, localReasonRecorded, before,
+                relationship(playerId), reason);
+    }
+
+    public boolean clearPlayerViolationsForDebug(UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (HearthRecord hearth : hearths) {
+            HearthContactMemory local = hearth.playerContacts.get(playerId);
+            if (local != null) {
+                changed |= local.clearViolations();
+            }
+            if (hearth.lootTaken) {
+                hearth.lootTaken = false;
+                changed = true;
+            }
+        }
+        PlayerHiveMemory player = playerMemories.computeIfAbsent(playerId,
+                id -> new PlayerHiveMemory(id, legacyRelationship));
+        changed |= player.setRelationshipForDebug(HiveRelationship.NEUTRAL, 0L);
+        changed |= recomputeAllHearthConduct();
+        if (changed) {
+            setDirty();
+        }
+        return changed;
     }
 
     public AssessmentResult recordArchitectAssessment(UUID playerId, UUID hearthId,
@@ -421,7 +475,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         HiveRelationship desired = HearthArchitectPolicy.relationshipAfterAssessment(
                 before, orsaDetected);
         if (desired.ordinal() > before.ordinal()) {
-            changed |= escalateRelationship(playerId, hearthId, now, desired, false);
+            changed |= escalateRelationship(playerId, hearthId, now, desired);
         }
         if (changed) {
             setDirty();
@@ -517,7 +571,7 @@ public final class ReturnedHearthSavedData extends SavedData {
     }
 
     private boolean escalateRelationship(UUID playerId, UUID hearthId, long gameTime,
-                                         HiveRelationship desired, boolean watcherAttacked) {
+                                         HiveRelationship desired) {
         HearthRecord origin = hearth(hearthId).orElse(null);
         if (playerId == null || origin == null) {
             return false;
@@ -527,11 +581,6 @@ public final class ReturnedHearthSavedData extends SavedData {
         recordPlayerContact(playerId, hearthId, now);
         PlayerHiveMemory player = playerMemories.get(playerId);
         boolean changed = player.escalate(desired, now, hearthId);
-        HearthContactMemory local = origin.playerContacts.get(playerId);
-        if (watcherAttacked && local != null && !local.attackedWatcher) {
-            local.attackedWatcher = true;
-            changed = true;
-        }
         changed |= recomputeAllHearthConduct();
         if (changed) {
             setDirty();
@@ -657,6 +706,14 @@ public final class ReturnedHearthSavedData extends SavedData {
         VIOLATED
     }
 
+    public enum HearthViolationReason {
+        ENTITY_ATTACK,
+        PROTECTED_ENTRY,
+        PROTECTED_DOOR,
+        PROTECTED_CONTAINER,
+        PROTECTED_BLOCK_BREAK
+    }
+
     public record StageTransition(UUID hearthId, HearthSelectionPolicy.HearthType type,
                                   HearthStage previousStage, HearthStage currentStage) {
     }
@@ -684,6 +741,15 @@ public final class ReturnedHearthSavedData extends SavedData {
                                    HiveRelationship currentRelationship) {
         private static AssessmentResult noChange(HiveRelationship relationship) {
             return new AssessmentResult(false, false, relationship, relationship);
+        }
+    }
+
+    public record ViolationResult(boolean changed, boolean localReasonRecorded,
+                                  HiveRelationship previousRelationship,
+                                  HiveRelationship currentRelationship,
+                                  HearthViolationReason reason) {
+        private static ViolationResult noChange(HiveRelationship relationship) {
+            return new ViolationResult(false, false, relationship, relationship, null);
         }
     }
 
@@ -817,6 +883,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean orsaDetectedAtAssessment;
         private boolean firstTransmissionComplete;
         private long firstTransmissionGameTime = -1L;
+        private final EnumSet<HearthViolationReason> violationReasons =
+                EnumSet.noneOf(HearthViolationReason.class);
+        private long firstViolationGameTime = -1L;
 
         private HearthContactMemory(UUID playerId) {
             this.playerId = playerId;
@@ -838,6 +907,18 @@ public final class ReturnedHearthSavedData extends SavedData {
             memory.firstTransmissionComplete = tag.getBoolean("firstTransmissionComplete");
             memory.firstTransmissionGameTime = readOptionalTime(
                     tag, "firstTransmissionGameTime");
+            ListTag violationList = tag.getList("violationReasons", Tag.TAG_STRING);
+            for (Tag entry : violationList) {
+                HearthViolationReason reason = readEnum(entry.getAsString(),
+                        HearthViolationReason.class, null);
+                if (reason != null) {
+                    memory.violationReasons.add(reason);
+                }
+            }
+            if (memory.attackedWatcher && memory.violationReasons.isEmpty()) {
+                memory.violationReasons.add(HearthViolationReason.ENTITY_ATTACK);
+            }
+            memory.firstViolationGameTime = readOptionalTime(tag, "firstViolationGameTime");
             return memory;
         }
 
@@ -853,6 +934,12 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("orsaDetectedAtAssessment", orsaDetectedAtAssessment);
             tag.putBoolean("firstTransmissionComplete", firstTransmissionComplete);
             tag.putLong("firstTransmissionGameTime", firstTransmissionGameTime);
+            ListTag violationList = new ListTag();
+            for (HearthViolationReason reason : violationReasons) {
+                violationList.add(StringTag.valueOf(reason.name()));
+            }
+            tag.put("violationReasons", violationList);
+            tag.putLong("firstViolationGameTime", firstViolationGameTime);
             return tag;
         }
 
@@ -873,6 +960,30 @@ public final class ReturnedHearthSavedData extends SavedData {
             }
             lastContactGameTime = gameTime;
             return new ContactUpdate(true, first, newVisit);
+        }
+
+        private boolean recordViolation(HearthViolationReason reason, long gameTime) {
+            boolean changed = violationReasons.add(reason);
+            if (reason == HearthViolationReason.ENTITY_ATTACK && !attackedWatcher) {
+                attackedWatcher = true;
+                changed = true;
+            }
+            if (firstViolationGameTime < 0L) {
+                firstViolationGameTime = gameTime;
+                changed = true;
+            }
+            return changed;
+        }
+
+        private boolean clearViolations() {
+            if (violationReasons.isEmpty() && !attackedWatcher
+                    && firstViolationGameTime < 0L) {
+                return false;
+            }
+            violationReasons.clear();
+            attackedWatcher = false;
+            firstViolationGameTime = -1L;
+            return true;
         }
 
         public UUID playerId() {
@@ -913,6 +1024,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public long firstTransmissionGameTime() {
             return firstTransmissionGameTime;
+        }
+
+        public Set<HearthViolationReason> violationReasons() {
+            return Set.copyOf(violationReasons);
+        }
+
+        public long firstViolationGameTime() {
+            return firstViolationGameTime;
         }
     }
 

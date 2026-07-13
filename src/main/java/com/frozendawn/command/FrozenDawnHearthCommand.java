@@ -10,6 +10,7 @@ import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -80,6 +81,10 @@ final class FrozenDawnHearthCommand {
                                         ReturnedHearthSavedData.HiveRelationship.SUSPICIOUS))
                                 .then(relationshipState("orsathae",
                                         ReturnedHearthSavedData.HiveRelationship.ORSATHAE))))
+                .then(Commands.literal("violation")
+                        .executes(FrozenDawnHearthCommand::violation)
+                        .then(Commands.literal("reset")
+                                .executes(FrozenDawnHearthCommand::resetViolation)))
                 .then(Commands.literal("mood")
                         .executes(FrozenDawnHearthCommand::list)
                         .then(Commands.literal("set")
@@ -146,6 +151,8 @@ final class FrozenDawnHearthCommand {
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Protected conduct: " + HearthViolationManager.statusLine()), false);
         return 1;
     }
 
@@ -183,6 +190,7 @@ final class FrozenDawnHearthCommand {
                                     ? "none" : hearth.architectAssessorProfile())
                             + " contacts=" + hearth.playerContacts().size()
                             + " transmission=" + yesNo(hearth.firstTransmissionFired())
+                            + " lootOpened=" + yesNo(hearth.lootTaken())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
@@ -396,6 +404,55 @@ final class FrozenDawnHearthCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> relationshipState(
             String name, ReturnedHearthSavedData.HiveRelationship relationship) {
         return Commands.literal(name).executes(context -> setRelationship(context, relationship));
+    }
+
+    private static int violation(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Protected conduct for " + player.getGameProfile().getName()
+                        + ": relationship="
+                        + state.relationship(player.getUUID()).name().toLowerCase(Locale.ROOT)), false);
+        int records = 0;
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            ReturnedHearthSavedData.HearthContactMemory memory = hearth
+                    .playerContact(player.getUUID()).orElse(null);
+            if (memory == null) {
+                continue;
+            }
+            records++;
+            String reasons = memory.violationReasons().isEmpty()
+                    ? "none"
+                    : memory.violationReasons().stream()
+                            .map(reason -> reason.name().toLowerCase(Locale.ROOT))
+                            .sorted()
+                            .reduce((left, right) -> left + "," + right)
+                            .orElse("none");
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  " + hearth.type().name().toLowerCase(Locale.ROOT)
+                            + " [" + hearth.id().toString().substring(0, 8) + "]"
+                            + " reasons=" + reasons
+                            + " first=" + memory.firstViolationGameTime()
+                            + " lootOpened=" + yesNo(hearth.lootTaken())), false);
+        }
+        if (records == 0) {
+            context.getSource().sendSuccess(() -> Component.literal("  No Hearth contact memory"), false);
+        }
+        return 1;
+    }
+
+    private static int resetViolation(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        boolean changed = state.clearPlayerViolationsForDebug(player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset protected conduct for " + player.getGameProfile().getName()
+                        + (changed ? "" : " (unchanged)")), true);
+        return violation(context);
     }
 
     private static int relationship(CommandContext<CommandSourceStack> context)
