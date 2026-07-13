@@ -15,9 +15,10 @@ public final class TraceHearthLayout {
     private TraceHearthLayout() {
     }
 
-    public static List<Placement> create(long layoutSeed, HearthSelectionPolicy.HearthType type) {
+    public static List<HearthStructurePlacement> create(
+            long layoutSeed, HearthSelectionPolicy.HearthType type) {
         int turns = Math.floorMod((int) mix(layoutSeed), 4);
-        Map<BlockPos, Placement> placements = new LinkedHashMap<>();
+        Map<BlockPos, HearthStructurePlacement> placements = new LinkedHashMap<>();
 
         for (int axis = -4; axis <= 4; axis += 2) {
             addBoundary(placements, axis, -4, layoutSeed, turns);
@@ -29,9 +30,11 @@ public final class TraceHearthLayout {
         }
 
         addFoundation(placements, 0, 0, turns);
-        put(placements, Piece.COLD_CAMPFIRE, 0, 0, 0,
-                rotate(Direction.NORTH, turns), 0, turns);
-        put(placements, Piece.CLEAR_LEGACY, 0, 1, 0, Direction.NORTH, 0, turns);
+        put(placements, HearthStructurePiece.COLD_CAMPFIRE, 0, 0, 0,
+                rotate(Direction.NORTH, turns), 0,
+                HearthStructurePlacement.Protection.HEARTH_RING, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, 0, 1, 0,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
 
         addCrate(placements, 0, -2, Direction.SOUTH, turns);
         addCrate(placements, 2, 0, Direction.WEST, turns);
@@ -47,60 +50,78 @@ public final class TraceHearthLayout {
 
         addFoundation(placements, -1, 2, turns);
         addFoundation(placements, -1, 3, turns);
-        put(placements, Piece.BED_FOOT, -1, 0, 2,
-                rotate(Direction.SOUTH, turns), 0, turns);
-        put(placements, Piece.BED_HEAD, -1, 0, 3,
-                rotate(Direction.SOUTH, turns), 0, turns);
-        put(placements, Piece.CLEAR_LEGACY, -1, 1, 2, Direction.NORTH, 0, turns);
-        put(placements, Piece.CLEAR_LEGACY, -1, 1, 3, Direction.NORTH, 0, turns);
+        put(placements, HearthStructurePiece.BED_FOOT, -1, 0, 2,
+                rotate(Direction.SOUTH, turns), 0,
+                HearthStructurePlacement.Protection.STRUCTURE, turns);
+        put(placements, HearthStructurePiece.BED_HEAD, -1, 0, 3,
+                rotate(Direction.SOUTH, turns), 0,
+                HearthStructurePlacement.Protection.STRUCTURE, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, -1, 1, 2,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, -1, 1, 3,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
 
         return List.copyOf(new ArrayList<>(placements.values()));
     }
 
-    private static void addBoundary(Map<BlockPos, Placement> placements, int x, int z,
+    private static void addBoundary(Map<BlockPos, HearthStructurePlacement> placements, int x, int z,
                                     long seed, int turns) {
         addFoundation(placements, x, z, turns);
         int layers = 2 + Math.floorMod((int) mix(seed ^ BlockPos.asLong(x, 0, z)), 4);
-        put(placements, Piece.SNOW_MARKER, x, 0, z, Direction.NORTH, layers, turns);
-        put(placements, Piece.CLEAR_LEGACY, x, 1, z, Direction.NORTH, 0, turns);
+        put(placements, HearthStructurePiece.SNOW_MARKER, x, 0, z,
+                Direction.NORTH, layers, HearthStructurePlacement.Protection.NONE, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, x, 1, z,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
     }
 
-    private static void addCrate(Map<BlockPos, Placement> placements, int x, int z,
+    private static void addCrate(Map<BlockPos, HearthStructurePlacement> placements, int x, int z,
                                  Direction facing, int turns) {
         addFoundation(placements, x, z, turns);
-        put(placements, Piece.ORSA_CRATE, x, 0, z, rotate(facing, turns), 0, turns);
-        put(placements, Piece.CLEAR_LEGACY, x, 1, z, Direction.NORTH, 0, turns);
+        put(placements, HearthStructurePiece.ORSA_CRATE, x, 0, z,
+                rotate(facing, turns), 0,
+                HearthStructurePlacement.Protection.HEARTH_RING, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, x, 1, z,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
     }
 
-    private static void addDoor(Map<BlockPos, Placement> placements, int x, int z,
+    private static void addDoor(Map<BlockPos, HearthStructurePlacement> placements, int x, int z,
                                 Direction facing, boolean rightHinge, int turns) {
         addFoundation(placements, x, z, turns);
         Direction rotatedFacing = rotate(facing, turns);
         int hinge = rightHinge ? 1 : 0;
-        put(placements, Piece.DOOR_LOWER, x, 0, z, rotatedFacing, hinge, turns);
-        put(placements, Piece.DOOR_UPPER, x, 1, z, rotatedFacing, hinge, turns);
-        put(placements, Piece.CLEAR_LEGACY, x, 2, z, Direction.NORTH, 0, turns);
+        put(placements, HearthStructurePiece.DOOR_LOWER, x, 0, z,
+                rotatedFacing, hinge, HearthStructurePlacement.Protection.NONE, turns);
+        put(placements, HearthStructurePiece.DOOR_UPPER, x, 1, z,
+                rotatedFacing, hinge, HearthStructurePlacement.Protection.NONE, turns);
+        put(placements, HearthStructurePiece.CLEAR_LEGACY, x, 2, z,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
     }
 
-    private static void addFoundation(Map<BlockPos, Placement> placements, int x, int z, int turns) {
-        put(placements, Piece.PACKED_ICE_LOWER, x, -1, z, Direction.NORTH, 0, turns);
-        put(placements, Piece.CLEAR_PLATFORM, x, 0, z, Direction.NORTH, 0, turns);
+    private static void addFoundation(Map<BlockPos, HearthStructurePlacement> placements,
+                                      int x, int z, int turns) {
+        put(placements, HearthStructurePiece.PACKED_ICE_LOWER, x, -1, z,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
+        put(placements, HearthStructurePiece.CLEAR_PLATFORM, x, 0, z,
+                Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
     }
 
-    private static void put(Map<BlockPos, Placement> placements, Piece piece,
-                            int x, int y, int z, Direction facing, int variant, int turns) {
+    private static void put(Map<BlockPos, HearthStructurePlacement> placements,
+                            HearthStructurePiece piece, int x, int y, int z,
+                            Direction facing, int variant,
+                            HearthStructurePlacement.Protection protection, int turns) {
         BlockPos rotated = rotate(new BlockPos(x, y, z), turns);
-        Placement placement = new Placement(piece, rotated, facing, variant);
-        Placement existing = placements.get(rotated);
-        if (existing != null && existing.piece == Piece.CLEAR_PLATFORM
-                && piece != Piece.CLEAR_PLATFORM) {
+        HearthStructurePlacement placement = new HearthStructurePlacement(
+                piece, rotated, facing, variant, protection);
+        HearthStructurePlacement existing = placements.get(rotated);
+        if (existing != null && existing.piece() == HearthStructurePiece.CLEAR_PLATFORM
+                && piece != HearthStructurePiece.CLEAR_PLATFORM) {
             placements.put(rotated, placement);
             return;
         }
         existing = placements.putIfAbsent(rotated, placement);
-        if (existing != null && existing.piece != piece) {
+        if (existing != null && existing.piece() != piece) {
             throw new IllegalStateException("Trace Hearth layout collision at " + rotated
-                    + ": " + existing.piece + " vs " + piece);
+                    + ": " + existing.piece() + " vs " + piece);
         }
     }
 
@@ -127,19 +148,4 @@ public final class TraceHearthLayout {
         return value ^ (value >>> 31);
     }
 
-    public enum Piece {
-        PACKED_ICE_LOWER,
-        CLEAR_PLATFORM,
-        CLEAR_LEGACY,
-        SNOW_MARKER,
-        COLD_CAMPFIRE,
-        ORSA_CRATE,
-        DOOR_LOWER,
-        DOOR_UPPER,
-        BED_FOOT,
-        BED_HEAD
-    }
-
-    public record Placement(Piece piece, BlockPos offset, Direction facing, int variant) {
-    }
 }

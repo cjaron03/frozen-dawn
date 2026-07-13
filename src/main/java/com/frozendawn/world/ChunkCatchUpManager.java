@@ -8,6 +8,8 @@ import com.frozendawn.data.ChunkEpochState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -922,6 +924,7 @@ public final class ChunkCatchUpManager {
         }
         return !protectionContext.isPlayerPlaced(pos)
                 && !protectionContext.isFuelSiloProtected(pos)
+                && !protectionContext.isHearthProtected(pos)
                 && !BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 && !ThermalVentRegistry.isVolcanicField(level, pos);
     }
@@ -930,10 +933,16 @@ public final class ChunkCatchUpManager {
         private final ServerLevel level;
         private final Map<Long, Boolean> nearbyPlayerPlacedCells = new HashMap<>();
         private final Map<Long, Boolean> fuelSiloProtectedPositions = new HashMap<>();
+        private final ReturnedHearthSavedData hearths;
         private PlayerPlacedBlockTracker tracker;
 
         private MutationProtectionContext(ServerLevel level) {
             this.level = level;
+            this.hearths = ReturnedHearthSavedData.get(level.getServer());
+        }
+
+        private boolean isHearthProtected(BlockPos pos) {
+            return HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, pos);
         }
 
         private boolean isPlayerPlaced(BlockPos pos) {

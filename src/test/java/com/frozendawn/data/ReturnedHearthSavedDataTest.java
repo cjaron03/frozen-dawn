@@ -576,6 +576,91 @@ class ReturnedHearthSavedDataTest {
         assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
     }
 
+    @Test
+    void protectedContainerViolationPersistsLocallyAndClassifiesTheHiveGlobally() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        ReturnedHearthSavedData.ViolationResult result = state.recordHearthViolation(
+                player, major.id(), 2000L,
+                ReturnedHearthSavedData.HearthViolationReason.PROTECTED_CONTAINER);
+
+        assertTrue(result.changed());
+        assertTrue(result.localReasonRecorded());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                state.relationship(player));
+        assertTrue(major.lootTaken());
+        ReturnedHearthSavedData.HearthContactMemory local = major.playerContact(player)
+                .orElseThrow();
+        assertTrue(local.violationReasons().contains(
+                ReturnedHearthSavedData.HearthViolationReason.PROTECTED_CONTAINER));
+        assertEquals(2000L, local.firstViolationGameTime());
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.HearthDisposition.HOSTILE, hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.VIOLATED,
+                    hearth.violationState());
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                loaded.relationship(player));
+        assertTrue(restored.lootTaken());
+        assertTrue(restored.playerContact(player).orElseThrow().violationReasons().contains(
+                ReturnedHearthSavedData.HearthViolationReason.PROTECTED_CONTAINER));
+    }
+
+    @Test
+    void violationDebugResetClearsLocalReasonsAndRestoresNeutralConduct() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.recordHearthViolation(player, major.id(), 2000L,
+                ReturnedHearthSavedData.HearthViolationReason.PROTECTED_ENTRY);
+
+        assertTrue(state.clearPlayerViolationsForDebug(player));
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.NEUTRAL,
+                state.relationship(player));
+        assertTrue(major.playerContact(player).orElseThrow().violationReasons().isEmpty());
+        assertEquals(-1L, major.playerContact(player).orElseThrow().firstViolationGameTime());
+        assertFalse(major.lootTaken());
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.ViolationState.NONE,
+                    hearth.violationState());
+        }
+    }
+
+    @Test
+    void versionSixEntityAttackMigratesIntoNamedViolationMemory() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.markPlayerOrsathae(player, major.id(), 2000L);
+        CompoundTag versionSix = state.save(new CompoundTag(), null);
+        versionSix.putInt("dataVersion", 6);
+        ListTag hearths = versionSix.getList("hearths", Tag.TAG_COMPOUND);
+        for (Tag entry : hearths) {
+            CompoundTag hearth = (CompoundTag) entry;
+            ListTag contacts = hearth.getList("playerContacts", Tag.TAG_COMPOUND);
+            for (Tag contactEntry : contacts) {
+                CompoundTag contact = (CompoundTag) contactEntry;
+                contact.remove("violationReasons");
+                contact.remove("firstViolationGameTime");
+            }
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionSix, null);
+        ReturnedHearthSavedData.HearthContactMemory local = major(loaded)
+                .playerContact(player).orElseThrow();
+        assertTrue(local.attackedWatcher());
+        assertTrue(local.violationReasons().contains(
+                ReturnedHearthSavedData.HearthViolationReason.ENTITY_ATTACK));
+        assertEquals(-1L, local.firstViolationGameTime());
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+    }
+
     private static ReturnedHearthSavedData selectedState(long gameTime) {
         ReturnedHearthSavedData state = new ReturnedHearthSavedData();
         BlockPos anchor = new BlockPos(12, 70, -24);

@@ -225,6 +225,7 @@ public class ReturnedEntity extends Monster {
 
     @Override
     public void aiStep() {
+        clearDeescalatedHearthAggression();
         super.aiStep();
 
         if (!level().isClientSide()) {
@@ -260,6 +261,27 @@ public class ReturnedEntity extends Monster {
             } else {
                 despawnTimer = 0;
             }
+        }
+    }
+
+    private void clearDeescalatedHearthAggression() {
+        if (!isHearthBound() || !(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        boolean navigationStopped = false;
+        if (getTarget() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setTarget(null);
+            navigationStopped = true;
+        }
+        if (getLastHurtByMob() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setLastHurtByMob(null);
+            navigationStopped = true;
+        }
+        if (navigationStopped) {
+            getNavigation().stop();
         }
     }
 
