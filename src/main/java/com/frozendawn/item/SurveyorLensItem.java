@@ -1,10 +1,15 @@
 package com.frozendawn.item;
 
+import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.homo.HearthSurveyPolicy;
+import com.frozendawn.init.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
@@ -13,6 +18,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Optional;
 
 public class SurveyorLensItem extends Item {
 
@@ -36,7 +42,12 @@ public class SurveyorLensItem extends Item {
                     lensProfile
             );
 
-            if (signatures.isEmpty()) {
+            Optional<HearthSurveyScanner.HearthSignal> hearthSignal =
+                    HearthSurveyScanner.scan(serverPlayer, lensProfile);
+
+            if (hearthSignal.isPresent()) {
+                displayHearthSignal(serverPlayer, hearthSignal.orElseThrow());
+            } else if (signatures.isEmpty()) {
                 serverPlayer.displayClientMessage(
                         Component.translatable("message.frozendawn.surveyor_lens.none")
                                 .withStyle(ChatFormatting.GRAY),
@@ -60,6 +71,9 @@ public class SurveyorLensItem extends Item {
                         );
 
                 serverPlayer.displayClientMessage(message.withStyle(ChatFormatting.AQUA), true);
+            }
+
+            if (!signatures.isEmpty()) {
                 markHeatSources(serverLevel, serverPlayer, signatures);
             }
 
@@ -67,6 +81,84 @@ public class SurveyorLensItem extends Item {
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    private void displayHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {
+        MutableComponent message = switch (signal.band()) {
+            case STATIC -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.static_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.static");
+            case CARRIER -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.carrier_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.carrier",
+                    signal.direction());
+            case FRAGMENT -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.fragment_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.fragment",
+                    signal.direction());
+            case LOCK -> Component.translatable(
+                    "message.frozendawn.surveyor_lens.hearth.lock",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction());
+            case CATALOGUED -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.catalogued_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.catalogued",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction());
+            case NONE -> Component.translatable("message.frozendawn.surveyor_lens.none");
+        };
+
+        ChatFormatting color = signal.hostile()
+                ? ChatFormatting.DARK_RED
+                : signal.suspicious() ? ChatFormatting.GOLD : ChatFormatting.AQUA;
+        player.displayClientMessage(message.withStyle(color), true);
+
+        if (signal.newlyDiscovered()) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.frozendawn.surveyor_lens.hearth.catalogued_chat",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction()).withStyle(ChatFormatting.GOLD));
+        }
+
+        playHearthSignal(player, signal);
+    }
+
+    private void playHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {
+        SoundEvent sound;
+        if (signal.hostile()
+                && signal.band() != HearthSurveyPolicy.SignalBand.LOCK
+                && signal.band() != HearthSurveyPolicy.SignalBand.CATALOGUED) {
+            sound = ModSounds.RADIO_STATIC_HEAVY.get();
+        } else {
+            sound = switch (signal.band()) {
+                case STATIC -> ModSounds.RADIO_STATIC_BURST.get();
+                case CARRIER -> ModSounds.RADIO_STATIC_MEDIUM.get();
+                case FRAGMENT -> ModSounds.THAEVEN_CONTACT.get();
+                case LOCK, CATALOGUED -> ModSounds.RADIO_SIGNAL_LOCK.get();
+                case NONE -> ModSounds.RADIO_STATIC_AMBIENT.get();
+            };
+        }
+
+        float volume = 0.35F + signal.observedStrength() * 0.5F;
+        float pitch = signal.hostile()
+                ? 0.68F + signal.observedStrength() * 0.08F
+                : 0.80F + signal.observedStrength() * 0.18F;
+        // Hearth scans are suit-internal instrument feedback and remain audible in vacuum.
+        player.playNotifySound(sound, SoundSource.MASTER, volume, pitch);
+    }
+
+    private static Component hearthTypeName(HearthSelectionPolicy.HearthType type) {
+        String key = type == HearthSelectionPolicy.HearthType.MAJOR
+                ? "message.frozendawn.surveyor_lens.hearth.type.major"
+                : "message.frozendawn.surveyor_lens.hearth.type.minor";
+        return Component.translatable(key);
     }
 
     private void markHeatSources(ServerLevel level, ServerPlayer player, List<SurveyorLensScanner.HeatSignature> signatures) {

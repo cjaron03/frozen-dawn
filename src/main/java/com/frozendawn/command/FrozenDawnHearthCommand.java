@@ -72,6 +72,10 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::resetTransmission))
                         .then(Commands.literal("replay")
                                 .executes(FrozenDawnHearthCommand::replayTransmission)))
+                .then(Commands.literal("survey")
+                        .executes(FrozenDawnHearthCommand::survey)
+                        .then(Commands.literal("reset")
+                                .executes(FrozenDawnHearthCommand::resetSurvey)))
                 .then(Commands.literal("relationship")
                         .executes(FrozenDawnHearthCommand::relationship)
                         .then(Commands.literal("set")
@@ -153,6 +157,12 @@ final class FrozenDawnHearthCommand {
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Protected conduct: " + HearthViolationManager.statusLine()), false);
+        long discovered = hearthState.hearths().stream()
+                .filter(ReturnedHearthSavedData.HearthRecord::discovered)
+                .count();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  ORSA survey: " + discovered + "/" + hearthState.hearths().size()
+                        + " Hearth(s) catalogued"), false);
         return 1;
     }
 
@@ -190,10 +200,39 @@ final class FrozenDawnHearthCommand {
                                     ? "none" : hearth.architectAssessorProfile())
                             + " contacts=" + hearth.playerContacts().size()
                             + " transmission=" + yesNo(hearth.firstTransmissionFired())
+                            + " discovered=" + yesNo(hearth.discovered())
+                            + " signal=" + String.format(Locale.ROOT, "%.2f", hearth.signalStrength())
                             + " lootOpened=" + yesNo(hearth.lootTaken())
                             + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
         }
         return state.hearths().size();
+    }
+
+    private static int survey(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(context.getSource().getServer());
+        context.getSource().sendSuccess(() -> Component.literal("--- ORSA Hearth Survey ---"), false);
+        if (state.hearths().isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal("  No Hearth signals selected"), false);
+            return 1;
+        }
+
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "  " + displayName(hearth.type())
+                            + " stage=" + hearth.stage().name().toLowerCase(Locale.ROOT)
+                            + " discovered=" + yesNo(hearth.discovered())
+                            + " signal=" + String.format(Locale.ROOT, "%.2f", hearth.signalStrength())
+                            + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
+        }
+        return state.hearths().size();
+    }
+
+    private static int resetSurvey(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData state = ReturnedHearthSavedData.get(context.getSource().getServer());
+        int reset = state.resetSurveyDiscoveryForDebug();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset ORSA survey state for " + reset + " Hearth record(s)"), true);
+        return Math.max(1, reset);
     }
 
     private static int locate(CommandContext<CommandSourceStack> context,

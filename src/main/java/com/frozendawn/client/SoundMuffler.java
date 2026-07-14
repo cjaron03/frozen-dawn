@@ -54,8 +54,9 @@ public class SoundMuffler {
         String soundPath = soundLocation.getPath();
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
         boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);
+        boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
 
-        if (isThaevenSound) {
+        if (isThaevenSound || isSurveyorLensCue) {
             return;
         }
 
@@ -214,5 +215,10 @@ public class SoundMuffler {
     private static boolean isGeothermalCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.startsWith("ambient.geothermal_");
+    }
+
+    private static boolean isSurveyorLensCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.equals("item.surveyor_lens.tick");
     }
 }

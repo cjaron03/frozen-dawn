@@ -269,6 +269,50 @@ public final class ReturnedHearthSavedData extends SavedData {
         return hearths.stream().filter(record -> record.id.equals(id)).findFirst();
     }
 
+    public DiscoveryResult recordSurveyObservation(UUID id, float signalStrength,
+                                                    boolean catalogue) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null) {
+            return DiscoveryResult.missing();
+        }
+
+        float normalizedStrength = Float.isFinite(signalStrength)
+                ? Math.max(0.0F, Math.min(1.0F, signalStrength))
+                : 0.0F;
+        boolean changed = false;
+        if (normalizedStrength > hearth.signalStrength) {
+            hearth.signalStrength = normalizedStrength;
+            changed = true;
+        }
+
+        boolean newlyDiscovered = catalogue && !hearth.discovered;
+        if (newlyDiscovered) {
+            hearth.discovered = true;
+            changed = true;
+        }
+
+        if (changed) {
+            setDirty();
+        }
+        return new DiscoveryResult(changed, newlyDiscovered,
+                hearth.discovered, hearth.signalStrength);
+    }
+
+    public int resetSurveyDiscoveryForDebug() {
+        int changed = 0;
+        for (HearthRecord hearth : hearths) {
+            if (hearth.discovered || hearth.signalStrength > 0.0F) {
+                hearth.discovered = false;
+                hearth.signalStrength = 0.0F;
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public boolean resolveSurface(UUID id, BlockPos resolvedCenter) {
         HearthRecord hearth = hearth(id).orElse(null);
         if (hearth == null || hearth.surfaceResolved) {
@@ -733,6 +777,13 @@ public final class ReturnedHearthSavedData extends SavedData {
                                 boolean firstHearthContact, boolean newVisit) {
         private static ContactResult noChange() {
             return new ContactResult(false, false, false, false);
+        }
+    }
+
+    public record DiscoveryResult(boolean changed, boolean newlyDiscovered,
+                                  boolean discovered, float signalStrength) {
+        private static DiscoveryResult missing() {
+            return new DiscoveryResult(false, false, false, 0.0F);
         }
     }
 

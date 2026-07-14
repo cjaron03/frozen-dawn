@@ -27,6 +27,7 @@ import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
+import com.frozendawn.homo.HearthSurveySignalManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
@@ -137,6 +138,7 @@ public class WorldTickHandler {
         HearthArchitectManager.reset();
         HearthMemoryManager.reset();
         HearthTransmissionManager.reset();
+        HearthSurveySignalManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
         FrozenEvacVehiclePlacement.reset();
@@ -214,6 +216,7 @@ public class WorldTickHandler {
         HearthReconciliationManager.tick(overworld, state);
         HearthArchitectManager.tick(overworld);
         HearthTransmissionManager.tick(overworld);
+        HearthSurveySignalManager.tick(server);
         HearthViolationManager.tick(overworld);
         HearthMemoryManager.tick(overworld);
         HearthWatcherManager.tick(overworld);
