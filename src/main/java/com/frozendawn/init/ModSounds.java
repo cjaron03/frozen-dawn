@@ -246,6 +246,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_AMBIENT = register("radio.static_ambient");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_HEAVY = register("radio.static_heavy");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_SIGNAL_LOCK = register("radio.signal_lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SURVEYOR_LENS_TICK = register("item.surveyor_lens.tick");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_MARTIAN_COMMAND_MESSAGE = register("radio.martian_command_message");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_CUTOFF = register("radio.cutoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_TOWER = register("radio.voice.tower");

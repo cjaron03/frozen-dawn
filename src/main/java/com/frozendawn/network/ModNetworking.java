@@ -111,6 +111,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleCancelThaevenTransmission(payload))
         );
+        registrar.playToClient(
+                HearthSurveyAudioPayload.TYPE,
+                HearthSurveyAudioPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHearthSurveyAudio(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

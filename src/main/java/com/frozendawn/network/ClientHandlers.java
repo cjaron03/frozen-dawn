@@ -3,6 +3,7 @@ package com.frozendawn.network;
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.FrozenDawnEndingScreen;
+import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
@@ -112,5 +113,9 @@ public final class ClientHandlers {
 
     public static void handleCancelThaevenTransmission(CancelThaevenTransmissionPayload payload) {
         ThaevenTransmissionOverlay.cancelFromServer(payload.sessionId());
+    }
+
+    public static void handleHearthSurveyAudio(HearthSurveyAudioPayload payload) {
+        HearthSurveyAudio.update(payload);
     }
 }

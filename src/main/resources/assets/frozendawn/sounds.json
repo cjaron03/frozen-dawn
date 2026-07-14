@@ -644,6 +644,10 @@
     "subtitle": "subtitle.frozendawn.radio.signal_lock",
     "sounds": [ "frozendawn:radio/signal_lock" ]
   },
+  "item.surveyor_lens.tick": {
+    "category": "player",
+    "sounds": [ "frozendawn:item/surveyor_lens_tick" ]
+  },
   "radio.martian_command_message": {
     "category": "record",
     "subtitle": "subtitle.frozendawn.radio.martian_command",

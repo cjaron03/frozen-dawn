@@ -633,6 +633,33 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void surveyObservationCataloguesAndPersistsTheHearth() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        ReturnedHearthSavedData.DiscoveryResult first = state.recordSurveyObservation(
+                major.id(), 0.78F, true);
+        ReturnedHearthSavedData.DiscoveryResult duplicate = state.recordSurveyObservation(
+                major.id(), 0.52F, true);
+
+        assertTrue(first.changed());
+        assertTrue(first.newlyDiscovered());
+        assertTrue(first.discovered());
+        assertEquals(0.78F, first.signalStrength(), 0.0001F);
+        assertFalse(duplicate.changed());
+        assertFalse(duplicate.newlyDiscovered());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        assertTrue(major(loaded).discovered());
+        assertEquals(0.78F, major(loaded).signalStrength(), 0.0001F);
+
+        assertEquals(1, loaded.resetSurveyDiscoveryForDebug());
+        assertFalse(major(loaded).discovered());
+        assertEquals(0.0F, major(loaded).signalStrength(), 0.0001F);
+    }
+
+    @Test
     void versionSixEntityAttackMigratesIntoNamedViolationMemory() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);
