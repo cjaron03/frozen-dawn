@@ -2,6 +2,7 @@ package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -10,6 +11,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -30,6 +32,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/architect.png");
     private static final ResourceLocation BLINK_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/architect_blink.png");
+    private static final ResourceLocation WHITE_TEXTURE =
+            ResourceLocation.withDefaultNamespace("textures/misc/white.png");
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
         super(context, new ArchitectModel(context.bakeLayer(ModelLayers.ZOMBIE)), 0.5f);
@@ -56,7 +60,25 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
         if (deathTicks > 0) {
-            renderDeathDissolve(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight, deathTicks);
+            if (entity.isHearthMasterArchitect()) {
+                renderMasterDeathCharge(
+                        entity,
+                        entityYaw,
+                        partialTick,
+                        poseStack,
+                        bufferSource,
+                        packedLight,
+                        deathTicks);
+            } else {
+                renderDeathDissolve(
+                        entity,
+                        entityYaw,
+                        partialTick,
+                        poseStack,
+                        bufferSource,
+                        packedLight,
+                        deathTicks);
+            }
             return;
         }
 
@@ -114,6 +136,71 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 LivingEntityRenderer.getOverlayCoords(entity, this.getWhiteOverlayProgress(entity, partialTick)),
                 color
         );
+        poseStack.popPose();
+    }
+
+    private void renderMasterDeathCharge(
+            ArchitectEntity entity,
+            float entityYaw,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int deathTicks) {
+        float elapsed = deathTicks + partialTick;
+        float charge = MasterArchitectCombatPolicy.deathChargeProgress(elapsed);
+        float shake = MasterArchitectCombatPolicy.deathShakeStrength(elapsed);
+        float time = entity.tickCount + partialTick;
+        float pulse = 0.5F + 0.5F * Mth.sin(time * 0.72F);
+        float glowAlpha = Mth.clamp(charge * (0.72F + pulse * 0.26F), 0.0F, 0.98F);
+
+        poseStack.pushPose();
+        poseStack.translate(
+                Mth.sin(time * 2.45F) * 0.028F * shake,
+                Mth.sin(time * 3.15F) * 0.018F * shake,
+                Mth.cos(time * 2.8F) * 0.028F * shake);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(
+                Mth.sin(time * 2.1F) * 1.9F * shake));
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entityYaw));
+        poseStack.scale(-1.0F, -1.0F, 1.0F);
+        poseStack.translate(0.0F, -1.501F, 0.0F);
+
+        float limbSwing = entity.walkAnimation.position(partialTick);
+        float limbSwingAmount = entity.walkAnimation.speed(partialTick);
+        float headYaw = entity.getYHeadRot() - entityYaw;
+        float headPitch = entity.getXRot();
+        this.model.attackTime = this.getAttackAnim(entity, partialTick);
+        this.model.riding = entity.isPassenger();
+        this.model.young = entity.isBaby();
+        this.model.prepareMobModel(entity, limbSwing, limbSwingAmount, partialTick);
+        this.model.setupAnim(
+                entity,
+                limbSwing,
+                limbSwingAmount,
+                time,
+                headYaw,
+                headPitch);
+
+        VertexConsumer body = bufferSource.getBuffer(
+                RenderType.entityTranslucent(getTextureLocation(entity)));
+        this.model.renderToBuffer(
+                poseStack,
+                body,
+                packedLight,
+                OverlayTexture.NO_OVERLAY,
+                FastColor.ARGB32.color(255, 255, 255, 255));
+
+        if (glowAlpha > 0.0F) {
+            VertexConsumer glow = bufferSource.getBuffer(
+                    RenderType.entityTranslucentEmissive(WHITE_TEXTURE));
+            this.model.renderToBuffer(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY,
+                    FastColor.ARGB32.color(
+                            Mth.floor(glowAlpha * 255.0F), 255, 255, 255));
+        }
         poseStack.popPose();
     }
 }

@@ -92,6 +92,14 @@ public class MobFreezeHandler {
     }
 
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
+        // Thermal Sever owns its exact damage cadence and bypasses EVA climate control.
+        if (entity instanceof ServerPlayer serverPlayer
+                && MasterArchitectThermalSever.isSevering(serverPlayer)) {
+            entity.setTicksFrozen(Math.max(
+                    entity.getTicksFrozen(), entity.getTicksRequiredToFreeze() + 20));
+            return;
+        }
+
         // Phase 6 late without breathable air: skip freeze — suffocation replaces freezing
         if (entity instanceof ServerPlayer serverPlayer
                 && PhaseManager.isVacuumActive(state.getPhase(), state.getProgress())

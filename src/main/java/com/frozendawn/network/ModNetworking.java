@@ -123,6 +123,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleMasterArchitectWeather(payload))
         );
+        registrar.playToClient(
+                ContinuityFracturePayload.TYPE,
+                ContinuityFracturePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleContinuityFracture(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

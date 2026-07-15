@@ -222,6 +222,10 @@ public class ModItems {
             () -> new MirroredFragmentItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
     // --- Architect Mob Drops ---
+    // Entity-only equipment: intentionally omitted from recipes and creative tabs.
+    public static final DeferredItem<Item> MASTER_ARCHITECT_STAFF = ITEMS.register(
+            "master_architect_staff",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<ArchitectMaskItem> ARCHITECT_MASK = ITEMS.register("architect_mask",

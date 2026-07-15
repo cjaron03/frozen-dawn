@@ -1,6 +1,8 @@
 package com.frozendawn.client.renderer;
 
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.MasterArchitectCombatAction;
+import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
@@ -45,6 +47,18 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.rightLeg.zRot = 0.0f;
         this.leftLeg.zRot = 0.0f;
 
+        if (entity.isHearthMasterArchitect() && entity.getDeathTicks() > 0) {
+            applyMasterDeathPose(entity.getDeathTicks(), ageInTicks);
+            return;
+        }
+
+        int masterAction = entity.getMasterCombatAction();
+        if (masterAction != MasterArchitectCombatAction.IDLE) {
+            applyMasterCombatPose(
+                    masterAction, entity.getMasterCombatActionTicks(), ageInTicks);
+            return;
+        }
+
         if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
             applyObservePose(ageInTicks, sway, limbSwingAmount);
         } else if (action == ArchitectEntity.ACTION_APPROACH) {
@@ -79,6 +93,99 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.yRot = 0.20f;
             }
         }
+    }
+
+    private void applyMasterCombatPose(int action, int actionTicks, float ageInTicks) {
+        float pulse = Mth.sin(ageInTicks * 0.35F) * 0.06F;
+        switch (action) {
+            case MasterArchitectCombatAction.STAFF_STRIKE -> {
+                float windup = Mth.clamp(actionTicks / 6.0F, 0.0F, 1.0F);
+                this.body.yRot = -0.20F * windup;
+                this.rightArm.xRot = Mth.lerp(windup, -0.35F, -2.05F);
+                this.rightArm.yRot = -0.35F;
+                this.leftArm.xRot = -0.55F;
+                this.leftArm.yRot = 0.22F;
+                this.head.xRot += 0.08F;
+            }
+            case MasterArchitectCombatAction.CONTINUITY_FRACTURE -> {
+                this.body.xRot = -0.04F;
+                this.head.xRot += 0.04F;
+                this.head.zRot = 0.16F + pulse * 0.35F;
+                this.rightArm.xRot = -1.15F + pulse;
+                this.leftArm.xRot = -1.15F - pulse;
+                this.rightArm.yRot = -0.65F;
+                this.leftArm.yRot = 0.65F;
+                this.rightArm.zRot = 0.22F;
+                this.leftArm.zRot = -0.22F;
+            }
+            case MasterArchitectCombatAction.THERMAL_SEVER -> {
+                this.body.xRot = 0.05F;
+                this.head.xRot += 0.10F;
+                this.rightArm.xRot = -1.52F + pulse * 0.25F;
+                this.rightArm.yRot = -0.10F;
+                this.leftArm.xRot = -0.82F;
+                this.leftArm.yRot = 0.45F;
+                this.leftArm.zRot = -0.28F;
+            }
+            case MasterArchitectCombatAction.LAST_WALL_CAST -> {
+                this.body.xRot = 0.45F;
+                this.head.xRot += 0.30F;
+                this.rightArm.xRot = -2.35F;
+                this.rightArm.yRot = -0.20F;
+                this.leftArm.xRot = -1.35F;
+                this.leftArm.yRot = 0.20F;
+                this.rightLeg.xRot = -0.65F;
+                this.leftLeg.xRot = 0.30F;
+            }
+            case MasterArchitectCombatAction.LAST_WALL_HEAL -> {
+                this.body.xRot = 0.12F;
+                this.head.xRot += 0.10F;
+                this.rightArm.xRot = -1.05F + pulse * 0.20F;
+                this.rightArm.yRot = -0.12F;
+                this.leftArm.xRot = -1.10F;
+                this.leftArm.yRot = 0.55F;
+                this.leftArm.zRot = -0.22F;
+            }
+            case MasterArchitectCombatAction.STORM_MAINTENANCE -> {
+                float raise = Mth.clamp(actionTicks / 12.0F, 0.0F, 1.0F);
+                float lower = Mth.clamp(
+                        (MasterArchitectCombatPolicy.STORM_MAINTENANCE_ACTION_TICKS
+                                - actionTicks) / 10.0F,
+                        0.0F,
+                        1.0F);
+                float hold = Math.min(raise, lower);
+                this.body.xRot = -0.08F * hold;
+                this.head.xRot -= 0.22F * hold;
+                this.head.zRot = pulse * 0.25F;
+                this.rightArm.xRot = Mth.lerp(hold, -0.20F, -2.65F + pulse);
+                this.leftArm.xRot = Mth.lerp(hold, -0.20F, -2.65F - pulse);
+                this.rightArm.yRot = -0.78F * hold;
+                this.leftArm.yRot = 0.78F * hold;
+                this.rightArm.zRot = 0.30F * hold;
+                this.leftArm.zRot = -0.30F * hold;
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void applyMasterDeathPose(int deathTicks, float ageInTicks) {
+        float charge = MasterArchitectCombatPolicy.deathChargeProgress(deathTicks);
+        float shake = MasterArchitectCombatPolicy.deathShakeStrength(deathTicks);
+        float tremor = Mth.sin(ageInTicks * 2.7F) * shake;
+
+        this.body.xRot = Mth.lerp(charge, 0.08F, -0.04F) + tremor * 0.035F;
+        this.body.zRot = tremor * 0.055F;
+        this.head.xRot = Mth.lerp(charge, 0.18F, -0.14F);
+        this.head.zRot = tremor * 0.16F;
+        this.rightArm.xRot = Mth.lerp(charge, -0.30F, -0.92F);
+        this.leftArm.xRot = Mth.lerp(charge, -0.22F, -0.92F);
+        this.rightArm.yRot = -0.28F * charge;
+        this.leftArm.yRot = 0.28F * charge;
+        this.rightArm.zRot = 0.18F + tremor * 0.11F;
+        this.leftArm.zRot = -0.18F - tremor * 0.11F;
+        this.rightLeg.xRot = -0.05F;
+        this.leftLeg.xRot = 0.05F;
     }
 
     private void applyObservePose(float ageInTicks, float sway, float limbSwingAmount) {

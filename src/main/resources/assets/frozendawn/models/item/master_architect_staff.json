@@ -1,0 +1,61 @@
+{
+  "gui_light": "front",
+  "textures": {
+    "shaft": "frozendawn:block/acheronite_block",
+    "core": "frozendawn:block/frozen_atmosphere",
+    "particle": "frozendawn:block/acheronite_block"
+  },
+  "elements": [
+    {
+      "from": [7, 0, 7],
+      "to": [9, 14, 9],
+      "faces": {
+        "north": { "texture": "#shaft" },
+        "east": { "texture": "#shaft" },
+        "south": { "texture": "#shaft" },
+        "west": { "texture": "#shaft" },
+        "up": { "texture": "#shaft" },
+        "down": { "texture": "#shaft" }
+      }
+    },
+    {
+      "from": [5, 12, 5],
+      "to": [11, 16, 11],
+      "faces": {
+        "north": { "texture": "#core" },
+        "east": { "texture": "#core" },
+        "south": { "texture": "#core" },
+        "west": { "texture": "#core" },
+        "up": { "texture": "#core" },
+        "down": { "texture": "#core" }
+      }
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [0, 90, -35],
+      "translation": [0, 3.5, 0.5],
+      "scale": [1.35, 1.35, 1.35]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [0, -90, 35],
+      "translation": [0, 3.5, 0.5],
+      "scale": [1.35, 1.35, 1.35]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, -90, 25],
+      "translation": [1.13, 3.2, 1.13],
+      "scale": [1.1, 1.1, 1.1]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 90, -25],
+      "translation": [1.13, 3.2, 1.13],
+      "scale": [1.1, 1.1, 1.1]
+    },
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.9, 0.9, 0.9]
+    }
+  }
+}

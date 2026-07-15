@@ -220,6 +220,28 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_LAND = SOUNDS.register("entity.architect.land",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.land")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_CAST = register(
+            "entity.master_architect.cast");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_STAFF = register(
+            "entity.master_architect.staff");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_FRACTURE = register(
+            "entity.master_architect.fracture");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_SEVER = register(
+            "entity.master_architect.thermal_sever");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_LAST_WALL = register(
+            "entity.master_architect.last_wall");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_PULSE = register(
+            "entity.master_architect.thermal_pulse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_STORM_MAINTAIN = register(
+            "entity.master_architect.storm_maintain");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AMBIENT = register(
+            "entity.master_architect.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_HURT = register(
+            "entity.master_architect.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_DEATH = register(
+            "entity.master_architect.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_DETONATE = register(
+            "entity.master_architect.detonate");
 
     // --- Terminal Boot ---
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");
