@@ -20,8 +20,8 @@ class HearthArchitectPolicyTest {
 
         state.advanceMaturationForDebug(HearthMaturationPolicy.INTACT_START_TICKS, 1000L);
         state.resolveSurface(major.id(), new BlockPos(major.center().getX(), 70, major.center().getZ()));
-        state.recordStructureProgress(major.id(), HearthReconciliationPolicy.TRACE_PLAN_VERSION,
-                100, ReturnedHearthSavedData.HearthStage.TRACE, true);
+        state.recordStructureProgress(major.id(), HearthReconciliationPolicy.INTACT_PLAN_VERSION,
+                100, ReturnedHearthSavedData.HearthStage.INTACT, true);
 
         assertTrue(HearthArchitectPolicy.canHostAssessor(major));
         state.hearth(HearthSelectionPolicy.HearthType.MINOR).ifPresent(minor ->
