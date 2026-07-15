@@ -36,6 +36,7 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -51,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.frozendawn.init.ModItems;
 
 /**
- * Reconciles mathematically matured Hearth records into tiny physical scenes.
+ * Reconciles mathematically matured Hearth records into bounded physical scenes.
  * It never loads chunks and applies only a small number of idempotent edits per tick.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
@@ -129,7 +130,8 @@ public final class HearthReconciliationManager {
 
             if (!hearth.surfaceResolved()) {
                 SurfaceResolution resolution = resolveSurface(
-                        level, hearth, layout, plan.footprintRadius(), start);
+                        level, hearth, layout, plan.footprintRadius(),
+                        plan.maxSurfaceVariance(), start);
                 if (resolution.center() == null) {
                     if (resolution.exhausted()) {
                         retryAfter.put(id, gameTime + SURFACE_RETRY_DELAY_TICKS);
@@ -191,6 +193,8 @@ public final class HearthReconciliationManager {
                     }
                     if (placement.piece() == HearthStructurePiece.PROTECTED_CHEST) {
                         initializeFormedLoot(level, target, hearth.layoutSeed());
+                    } else if (placement.piece() == HearthStructurePiece.SACRED_CHEST) {
+                        initializeIntactLoot(level, target, hearth.layoutSeed());
                     }
                     edits++;
                 }
@@ -233,7 +237,8 @@ public final class HearthReconciliationManager {
                 + " lastEdits=" + lastTickEdits
                 + " lastPieces=" + lastTickPieces
                 + " tracePlan=" + HearthReconciliationPolicy.TRACE_PLAN_VERSION
-                + " formedPlan=" + HearthReconciliationPolicy.FORMED_PLAN_VERSION;
+                + " formedPlan=" + HearthReconciliationPolicy.FORMED_PLAN_VERSION
+                + " intactPlan=" + HearthReconciliationPolicy.INTACT_PLAN_VERSION;
     }
 
     public static void reset() {
@@ -249,7 +254,7 @@ public final class HearthReconciliationManager {
     private static void queueNearChunk(ServerLevel level, int chunkX, int chunkZ) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         int range = (HearthReconciliationPolicy.CANDIDATE_SEARCH_RADIUS
-                + HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS + 15) >> 4;
+                + HearthReconciliationPolicy.INTACT_FOOTPRINT_RADIUS + 15) >> 4;
         for (ReturnedHearthSavedData.HearthRecord hearth : data.hearths()) {
             if (!HearthReconciliationPolicy.needsReconciliation(hearth)) {
                 continue;
@@ -276,6 +281,7 @@ public final class HearthReconciliationManager {
     private static SurfaceResolution resolveSurface(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
             List<HearthStructurePlacement> layout, int footprintRadius,
+            int maxSurfaceVariance,
             long tickStartNanos) {
         List<BlockPos> offsets = HearthReconciliationPolicy.candidateOffsets(hearth.layoutSeed());
         int cursor = surfaceSearchCursors.getOrDefault(hearth.id(), 0);
@@ -287,7 +293,8 @@ public final class HearthReconciliationManager {
             tested++;
             BlockPos horizontal = hearth.center().offset(offset.getX(), 0, offset.getZ());
             BlockPos resolved = validateCandidate(
-                    level, hearth, horizontal, layout, footprintRadius);
+                    level, hearth, horizontal, layout, footprintRadius,
+                    maxSurfaceVariance);
             if (resolved != null) {
                 surfaceSearchCursors.put(hearth.id(), cursor);
                 return new SurfaceResolution(resolved, false);
@@ -300,7 +307,7 @@ public final class HearthReconciliationManager {
     private static BlockPos validateCandidate(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
             BlockPos horizontal, List<HearthStructurePlacement> layout,
-            int footprintRadius) {
+            int footprintRadius, int maxSurfaceVariance) {
         if (!footprintLoaded(level, horizontal, footprintRadius)) {
             return null;
         }
@@ -321,7 +328,7 @@ public final class HearthReconciliationManager {
             maxHeight = Math.max(maxHeight, height);
         }
         if (minHeight == Integer.MAX_VALUE
-                || maxHeight - minHeight > HearthReconciliationPolicy.MAX_SURFACE_VARIANCE
+                || maxHeight - minHeight > maxSurfaceVariance
                 || maxHeight < level.getMinBuildHeight() + 4
                 || maxHeight > level.getMaxBuildHeight() - 4) {
             return null;
@@ -398,7 +405,7 @@ public final class HearthReconciliationManager {
         for (HearthStructurePlacement placement : layout) {
             BlockPos pos = center.offset(placement.offset());
             BlockState state = level.getBlockState(pos);
-            if (!state.getFluidState().isEmpty()) {
+            if (!allowsFluidReplacement(state, placement.piece())) {
                 return false;
             }
             if (placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT
@@ -414,7 +421,7 @@ public final class HearthReconciliationManager {
 
     private static boolean canReplace(ServerLevel level, BlockPos pos, BlockState state,
                                       HearthStructurePlacement placement) {
-        if (!state.getFluidState().isEmpty()
+        if (!allowsFluidReplacement(state, placement.piece())
                 || PlayerPlacedBlockTracker.get(level.getServer()).isPlayerPlaced(pos)
                 || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
                 || BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
@@ -425,13 +432,25 @@ public final class HearthReconciliationManager {
         return canReplaceNatural(state, placement);
     }
 
+    static boolean allowsFluidReplacement(BlockState state, HearthStructurePiece piece) {
+        return state.getFluidState().isEmpty()
+                || piece == HearthStructurePiece.FOUNDATION_SUPPORT
+                && (state.getFluidState().getType() == Fluids.WATER
+                || state.getFluidState().getType() == Fluids.FLOWING_WATER);
+    }
+
     private static boolean canReplaceNatural(BlockState state,
                                              HearthStructurePlacement placement) {
         if (placement.piece() == HearthStructurePiece.FOUNDATION_SUPPORT) {
-            return state.getFluidState().isEmpty();
+            return allowsFluidReplacement(state, placement.piece());
         }
         if (placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT) {
             return state.isAir() || isTransientSurface(state);
+        }
+        if (placement.piece() == HearthStructurePiece.CLEAR_SETTLEMENT) {
+            return state.isAir() || isTransientSurface(state)
+                    || isHearthSceneBlock(state)
+                    || isNaturalSettlementObstruction(state);
         }
         if (isTransientSurface(state)) {
             return true;
@@ -442,6 +461,10 @@ public final class HearthReconciliationManager {
             return true;
         }
         if (isHearthSceneBlock(state)) {
+            return true;
+        }
+        if (placement.protection() != HearthStructurePlacement.Protection.NONE
+                && isNaturalSettlementObstruction(state)) {
             return true;
         }
         if (placement.offset().getY() == -1) {
@@ -470,13 +493,15 @@ public final class HearthReconciliationManager {
                 || state.is(Blocks.GRAY_BED)
                 || state.is(ModBlocks.FROZEN_PLANKS.get())
                 || state.is(ModBlocks.FROZEN_STONE_BRICKS.get())
+                || state.is(ModBlocks.FROZEN_ATMOSPHERE.get())
                 || state.is(ModBlocks.ORSA_SUPPLY_CRATE.get());
     }
 
     private static BlockState stateFor(HearthStructurePlacement placement) {
         return switch (placement.piece()) {
             case FOUNDATION_SUPPORT, PACKED_ICE_LOWER -> Blocks.PACKED_ICE.defaultBlockState();
-            case CLEAR_TRANSIENT, CLEAR_PLATFORM, CLEAR_LEGACY -> Blocks.AIR.defaultBlockState();
+            case CLEAR_TRANSIENT, CLEAR_SETTLEMENT, CLEAR_PLATFORM, CLEAR_LEGACY ->
+                    Blocks.AIR.defaultBlockState();
             case SNOW_MARKER -> Blocks.SNOW.defaultBlockState()
                     .setValue(SnowLayerBlock.LAYERS, Math.max(1, Math.min(8, placement.variant())));
             case COLD_CAMPFIRE -> Blocks.CAMPFIRE.defaultBlockState()
@@ -489,7 +514,8 @@ public final class HearthReconciliationManager {
                     .setValue(BarrelBlock.FACING, placement.facing());
             case FROZEN_PLANKS -> ModBlocks.FROZEN_PLANKS.get().defaultBlockState();
             case FROZEN_STONE_BRICKS -> ModBlocks.FROZEN_STONE_BRICKS.get().defaultBlockState();
-            case PROTECTED_CHEST -> Blocks.CHEST.defaultBlockState()
+            case FROZEN_ATMOSPHERE -> ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState();
+            case PROTECTED_CHEST, SACRED_CHEST -> Blocks.CHEST.defaultBlockState()
                     .setValue(ChestBlock.FACING, placement.facing())
                     .setValue(ChestBlock.TYPE, ChestType.SINGLE)
                     .setValue(ChestBlock.WATERLOGGED, false);
@@ -543,6 +569,23 @@ public final class HearthReconciliationManager {
                 || state.is(ModBlocks.ACHERONITE_CRYSTAL.get());
     }
 
+    private static boolean isNaturalSettlementObstruction(BlockState state) {
+        return state.is(BlockTags.BASE_STONE_OVERWORLD)
+                || state.is(BlockTags.DIRT)
+                || state.is(BlockTags.SAND)
+                || state.is(BlockTags.LOGS)
+                || state.is(BlockTags.LEAVES)
+                || state.is(Blocks.GRAVEL)
+                || state.is(Blocks.SNOW_BLOCK)
+                || state.is(Blocks.ICE)
+                || state.is(Blocks.PACKED_ICE)
+                || state.is(Blocks.BLUE_ICE)
+                || state.is(ModBlocks.DEAD_GRASS_BLOCK.get())
+                || state.is(ModBlocks.FROZEN_DIRT.get())
+                || state.is(ModBlocks.FROZEN_SAND.get())
+                || state.is(ModBlocks.FROZEN_COBBLESTONE.get());
+    }
+
     private static boolean footprintLoaded(ServerLevel level, BlockPos center, int radius) {
         int minChunkX = (center.getX() - radius) >> 4;
         int maxChunkX = (center.getX() + radius) >> 4;
@@ -582,9 +625,14 @@ public final class HearthReconciliationManager {
     private static List<HearthStructurePlacement> layoutFor(
             ReturnedHearthSavedData.HearthRecord hearth,
             ReturnedHearthSavedData.HearthStage stage) {
-        return stage.ordinal() >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()
-                ? FormedHearthLayout.create(hearth.layoutSeed(), hearth.type())
-                : TraceHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        if (stage == ReturnedHearthSavedData.HearthStage.INTACT
+                && hearth.type() == HearthSelectionPolicy.HearthType.MAJOR) {
+            return IntactHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        }
+        if (stage.ordinal() >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
+            return FormedHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        }
+        return TraceHearthLayout.create(hearth.layoutSeed(), hearth.type());
     }
 
     private static void initializeFormedLoot(ServerLevel level, BlockPos pos, long layoutSeed) {
@@ -605,6 +653,33 @@ public final class HearthReconciliationManager {
         }
         if (random.nextFloat() < 0.35F) {
             chest.setItem(slots[4], new ItemStack(Items.IRON_INGOT, 1 + random.nextInt(3)));
+        }
+        chest.setChanged();
+    }
+
+    private static void initializeIntactLoot(ServerLevel level, BlockPos pos, long layoutSeed) {
+        if (!(level.getBlockEntity(pos) instanceof ChestBlockEntity chest) || !chest.isEmpty()) {
+            return;
+        }
+
+        RandomSource random = RandomSource.create(layoutSeed ^ pos.asLong()
+                ^ 0x494E544143545F4CL);
+        int[] slots = {2, 6, 10, 13, 16, 20, 24};
+        chest.setItem(slots[0], new ItemStack(ModItems.TATTERED_CLOTHING_SCRAP.get(),
+                4 + random.nextInt(5)));
+        chest.setItem(slots[1], new ItemStack(ModItems.FROZEN_ATMOSPHERE_SHARD.get(),
+                3 + random.nextInt(5)));
+        chest.setItem(slots[2], new ItemStack(ModItems.ICE_SHARD.get(),
+                5 + random.nextInt(6)));
+        chest.setItem(slots[3], new ItemStack(ModItems.FROZEN_HEART.get(),
+                1 + random.nextInt(2)));
+        chest.setItem(slots[4], new ItemStack(ModItems.ACHERONITE_SHARD.get(),
+                1 + random.nextInt(2)));
+        if (random.nextFloat() < 0.65F) {
+            chest.setItem(slots[5], new ItemStack(ModItems.MIRRORED_FRAGMENT.get()));
+        }
+        if (random.nextFloat() < 0.45F) {
+            chest.setItem(slots[6], new ItemStack(ModItems.ARCHITECT_SOUL.get()));
         }
         chest.setChanged();
     }

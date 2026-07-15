@@ -30,6 +30,7 @@ public final class HearthArchitectPolicy {
     public static boolean canHostAssessor(ReturnedHearthSavedData.HearthRecord hearth) {
         return hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
                 && hearth.stage() == ReturnedHearthSavedData.HearthStage.INTACT
+                && hearth.structureStageApplied() == ReturnedHearthSavedData.HearthStage.INTACT
                 && hearth.surfaceResolved()
                 && hearth.structurePlaced();
     }

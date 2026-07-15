@@ -41,8 +41,14 @@ public final class HearthProtectionPolicy {
                 continue;
             }
             BlockPos relative = worldPos.subtract(hearth.center());
-            if (FormedHearthLayout.isInsideProtectedInterior(
-                    hearth.layoutSeed(), relative)) {
+            boolean protectedInterior = hearth.structureStageApplied()
+                    == ReturnedHearthSavedData.HearthStage.INTACT
+                    && hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    ? IntactHearthLayout.isInsideProtectedInterior(
+                            hearth.layoutSeed(), relative)
+                    : FormedHearthLayout.isInsideProtectedInterior(
+                            hearth.layoutSeed(), relative);
+            if (protectedInterior) {
                 return Optional.of(hearth.id());
             }
         }
@@ -62,10 +68,16 @@ public final class HearthProtectionPolicy {
             }
 
             BlockPos center = hearth.center();
-            int radius = hearth.stage().ordinal()
-                    >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()
-                    ? HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS
-                    : HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+            int radius;
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    && hearth.stage() == ReturnedHearthSavedData.HearthStage.INTACT) {
+                radius = HearthReconciliationPolicy.INTACT_FOOTPRINT_RADIUS;
+            } else if (hearth.stage().ordinal()
+                    >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
+                radius = HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS;
+            } else {
+                radius = HearthReconciliationPolicy.TRACE_FOOTPRINT_RADIUS;
+            }
             int dx = Math.abs(worldPos.getX() - center.getX());
             int dz = Math.abs(worldPos.getZ() - center.getZ());
             int dy = worldPos.getY() - center.getY();
@@ -80,10 +92,16 @@ public final class HearthProtectionPolicy {
 
     private static HearthStructurePlacement.Protection protectionAt(
             ReturnedHearthSavedData.HearthRecord hearth, BlockPos relative) {
-        List<HearthStructurePlacement> layout = hearth.structureStageApplied().ordinal()
-                >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()
-                ? FormedHearthLayout.create(hearth.layoutSeed(), hearth.type())
-                : TraceHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        List<HearthStructurePlacement> layout;
+        if (hearth.structureStageApplied() == ReturnedHearthSavedData.HearthStage.INTACT
+                && hearth.type() == HearthSelectionPolicy.HearthType.MAJOR) {
+            layout = IntactHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        } else if (hearth.structureStageApplied().ordinal()
+                >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
+            layout = FormedHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        } else {
+            layout = TraceHearthLayout.create(hearth.layoutSeed(), hearth.type());
+        }
         for (HearthStructurePlacement placement : layout) {
             if (placement.offset().equals(relative)) {
                 return placement.protection();
