@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
+import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -63,6 +64,10 @@ final class FrozenDawnHearthCommand {
                         .executes(FrozenDawnHearthCommand::population)
                         .then(Commands.literal("respawn")
                                 .executes(FrozenDawnHearthCommand::respawnPopulation)))
+                .then(Commands.literal("master")
+                        .executes(FrozenDawnHearthCommand::masterArchitect)
+                        .then(Commands.literal("respawn")
+                                .executes(FrozenDawnHearthCommand::respawnMasterArchitect)))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -159,6 +164,8 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "  INTACT population: " + HearthPopulationManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
+                "  Master Architect: " + HearthMasterArchitectManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
@@ -206,6 +213,7 @@ final class FrozenDawnHearthCommand {
                             + " assessor=" + (hearth.architectAssessorProfile().isBlank()
                                     ? "none" : hearth.architectAssessorProfile())
                             + " population=" + formatPopulation(hearth)
+                            + " master=" + formatMasterArchitect(hearth)
                             + " contacts=" + hearth.playerContacts().size()
                             + " transmission=" + yesNo(hearth.firstTransmissionFired())
                             + " discovered=" + yesNo(hearth.discovered())
@@ -337,6 +345,33 @@ final class FrozenDawnHearthCommand {
         }
         context.getSource().sendSuccess(() -> Component.literal(
                 "Respawned INTACT Major Hearth population"
+                        + " | removed=" + result.removed()
+                        + " spawned=" + result.spawned()), true);
+        list(context);
+        return result.spawned() > 0 ? 1 : 0;
+    }
+
+    private static int masterArchitect(CommandContext<CommandSourceStack> context) {
+        int spawned = HearthMasterArchitectManager.reconcileNow(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reconciled INTACT Major Hearth Master Architect; spawned=" + spawned + " | "
+                        + HearthMasterArchitectManager.statusLine()), true);
+        list(context);
+        return 1;
+    }
+
+    private static int respawnMasterArchitect(CommandContext<CommandSourceStack> context) {
+        HearthMasterArchitectManager.DebugRespawnResult result =
+                HearthMasterArchitectManager.respawnForDebug(
+                        context.getSource().getServer().overworld());
+        if (!result.hearthLoaded()) {
+            context.getSource().sendFailure(Component.literal(
+                    "Major Hearth does not exist or its center chunk is not loaded"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Respawned INTACT Major Hearth Master Architect"
                         + " | removed=" + result.removed()
                         + " spawned=" + result.spawned()), true);
         list(context);
@@ -662,6 +697,16 @@ final class FrozenDawnHearthCommand {
                     () -> result.append("waiting@").append(binding.respawnAfterGameTime()));
         }
         return result.toString();
+    }
+
+    private static String formatMasterArchitect(
+            ReturnedHearthSavedData.HearthRecord hearth) {
+        if (hearth.masterArchitectDefeated()) {
+            return "defeated@" + hearth.masterArchitectDefeatedGameTime();
+        }
+        return hearth.masterArchitectEntityId()
+                .map(id -> id.toString().substring(0, 8))
+                .orElse("none");
     }
 
     private static String formatPos(BlockPos pos) {
