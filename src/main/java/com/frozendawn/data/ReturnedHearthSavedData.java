@@ -35,7 +35,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 8;
+    public static final int CURRENT_DATA_VERSION = 9;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -452,6 +452,45 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.populationResidents.clear();
         setDirty();
         return cleared;
+    }
+
+    public boolean bindMasterArchitect(UUID hearthId, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null || hearth.masterArchitectDefeated
+                || hearth.masterArchitectEntityId != null) {
+            return false;
+        }
+        hearth.masterArchitectEntityId = entityId;
+        setDirty();
+        return true;
+    }
+
+    public boolean markMasterArchitectDefeated(UUID hearthId, UUID entityId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null
+                || !entityId.equals(hearth.masterArchitectEntityId)
+                || hearth.masterArchitectDefeated) {
+            return false;
+        }
+        hearth.masterArchitectEntityId = null;
+        hearth.masterArchitectDefeated = true;
+        hearth.masterArchitectDefeatedGameTime = Math.max(0L, gameTime);
+        setDirty();
+        return true;
+    }
+
+    public boolean resetMasterArchitectForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.masterArchitectEntityId == null
+                && !hearth.masterArchitectDefeated
+                && hearth.masterArchitectDefeatedGameTime < 0L)) {
+            return false;
+        }
+        hearth.masterArchitectEntityId = null;
+        hearth.masterArchitectDefeated = false;
+        hearth.masterArchitectDefeatedGameTime = -1L;
+        setDirty();
+        return true;
     }
 
     public ContactResult recordPlayerContact(UUID playerId, UUID hearthId, long gameTime) {
@@ -1162,6 +1201,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private String architectAssessorProfile;
         private final Map<HearthPopulationRole, HearthResidentBinding> populationResidents =
                 new EnumMap<>(HearthPopulationRole.class);
+        private UUID masterArchitectEntityId;
+        private boolean masterArchitectDefeated;
+        private long masterArchitectDefeatedGameTime = -1L;
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -1237,6 +1279,12 @@ public final class ReturnedHearthSavedData extends SavedData {
                     record.populationResidents.putIfAbsent(binding.role(), binding);
                 }
             }
+            record.masterArchitectEntityId = tag.hasUUID("masterArchitectEntityId")
+                    ? tag.getUUID("masterArchitectEntityId")
+                    : null;
+            record.masterArchitectDefeated = tag.getBoolean("masterArchitectDefeated");
+            record.masterArchitectDefeatedGameTime = readOptionalTime(
+                    tag, "masterArchitectDefeatedGameTime");
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -1289,6 +1337,11 @@ public final class ReturnedHearthSavedData extends SavedData {
                 residents.add(binding.save());
             }
             tag.put("populationResidents", residents);
+            if (masterArchitectEntityId != null) {
+                tag.putUUID("masterArchitectEntityId", masterArchitectEntityId);
+            }
+            tag.putBoolean("masterArchitectDefeated", masterArchitectDefeated);
+            tag.putLong("masterArchitectDefeatedGameTime", masterArchitectDefeatedGameTime);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -1404,6 +1457,18 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public List<HearthResidentBinding> populationResidents() {
             return List.copyOf(populationResidents.values());
+        }
+
+        public Optional<UUID> masterArchitectEntityId() {
+            return Optional.ofNullable(masterArchitectEntityId);
+        }
+
+        public boolean masterArchitectDefeated() {
+            return masterArchitectDefeated;
+        }
+
+        public long masterArchitectDefeatedGameTime() {
+            return masterArchitectDefeatedGameTime;
         }
 
         public long lastPlayerContactGameTime() {

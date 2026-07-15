@@ -51,6 +51,10 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.watcherEntityId(), actual.watcherEntityId());
             assertEquals(expected.architectAssessorSpawned(), actual.architectAssessorSpawned());
             assertEquals(expected.architectAssessorEntityId(), actual.architectAssessorEntityId());
+            assertEquals(expected.masterArchitectEntityId(), actual.masterArchitectEntityId());
+            assertEquals(expected.masterArchitectDefeated(), actual.masterArchitectDefeated());
+            assertEquals(expected.masterArchitectDefeatedGameTime(),
+                    actual.masterArchitectDefeatedGameTime());
         }
     }
 
@@ -314,6 +318,58 @@ class ReturnedHearthSavedDataTest {
                 major(loaded).id(), HearthPopulationRole.MIMIC, replacement));
         assertEquals(replacement, major(loaded).populationResident(HearthPopulationRole.MIMIC)
                 .orElseThrow().entityId().orElseThrow());
+    }
+
+    @Test
+    void masterArchitectBindingPersistsAndDefeatIsPermanent() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID first = UUID.randomUUID();
+        UUID wrong = UUID.randomUUID();
+        UUID replacement = UUID.randomUUID();
+
+        assertTrue(state.bindMasterArchitect(major.id(), first));
+        assertFalse(state.bindMasterArchitect(major.id(), replacement));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(first, restored.masterArchitectEntityId().orElseThrow());
+        assertFalse(restored.masterArchitectDefeated());
+        assertEquals(-1L, restored.masterArchitectDefeatedGameTime());
+
+        assertFalse(loaded.markMasterArchitectDefeated(
+                restored.id(), wrong, 5000L));
+        assertTrue(loaded.markMasterArchitectDefeated(
+                restored.id(), first, 5000L));
+        assertTrue(restored.masterArchitectEntityId().isEmpty());
+        assertTrue(restored.masterArchitectDefeated());
+        assertEquals(5000L, restored.masterArchitectDefeatedGameTime());
+        assertFalse(loaded.bindMasterArchitect(restored.id(), replacement));
+
+        ReturnedHearthSavedData defeatedReload = ReturnedHearthSavedData.load(
+                loaded.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord defeated = major(defeatedReload);
+        assertTrue(defeated.masterArchitectDefeated());
+        assertEquals(5000L, defeated.masterArchitectDefeatedGameTime());
+        assertTrue(defeatedReload.resetMasterArchitectForDebug(defeated.id()));
+        assertTrue(defeatedReload.bindMasterArchitect(defeated.id(), replacement));
+        assertEquals(replacement, defeated.masterArchitectEntityId().orElseThrow());
+    }
+
+    @Test
+    void versionEightDataMigratesWithoutInventingAMasterArchitect() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        CompoundTag versionEight = state.save(new CompoundTag(), null);
+        versionEight.putInt("dataVersion", 8);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionEight, null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+        assertTrue(restored.masterArchitectEntityId().isEmpty());
+        assertFalse(restored.masterArchitectDefeated());
+        assertEquals(-1L, restored.masterArchitectDefeatedGameTime());
     }
 
     @Test

@@ -269,7 +269,7 @@ public final class HearthPopulationManager {
     }
 
     @Nullable
-    private static SpawnPoint findSpawnPoint(ServerLevel level, BlockPos anchor) {
+    static SpawnPoint findSpawnPoint(ServerLevel level, BlockPos anchor) {
         int[] verticalOffsets = {0, 1, -1, 2, -2};
         for (BlockPos local : HearthPopulationPolicy.localSpawnOffsets()) {
             for (int yOffset : verticalOffsets) {
@@ -346,6 +346,6 @@ public final class HearthPopulationManager {
     public record DebugRespawnResult(boolean hearthLoaded, int removed, int spawned) {
     }
 
-    private record SpawnPoint(BlockPos blockPos, double y) {
+    record SpawnPoint(BlockPos blockPos, double y) {
     }
 }
