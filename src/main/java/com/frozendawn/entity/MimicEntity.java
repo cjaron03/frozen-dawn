@@ -2,6 +2,10 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.MimicCombatGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.HearthPopulationManager;
+import com.frozendawn.homo.HearthPopulationPolicy;
+import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -84,6 +88,11 @@ public class MimicEntity extends Monster {
     private BlockState burrowCoverBlock = null;
 
     private int stareSoundCooldown = 0;
+    @Nullable
+    private UUID hearthPopulationId;
+    @Nullable
+    private BlockPos hearthPopulationHome;
+    private int hearthLostTargetTicks;
 
     public MimicEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -120,7 +129,8 @@ public class MimicEntity extends Monster {
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // Only target players when in Phase 1+ (not during observation)
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true) {
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
+                this, Player.class, true, this::canProactivelyTargetPlayer) {
             @Override
             public boolean canUse() {
                 return getMimicPhase() >= PHASE_MIMICRY && super.canUse();
@@ -190,10 +200,40 @@ public class MimicEntity extends Monster {
         transitionToPhase(phase);
     }
 
+    public void bindToHearthPopulation(UUID hearthId, BlockPos home) {
+        hearthPopulationId = hearthId;
+        hearthPopulationHome = home.immutable();
+        setPersistenceRequired();
+        restrictTo(hearthPopulationHome, HearthPopulationPolicy.MIMIC_HOME_RADIUS);
+        setTarget(null);
+        getNavigation().stop();
+        engaged = false;
+        despawnTimer = 0;
+        transitionToPhase(PHASE_OBSERVATION);
+    }
+
+    public boolean isHearthPopulationResident() {
+        return hearthPopulationId != null && hearthPopulationHome != null;
+    }
+
+    public boolean isBoundToHearthPopulation(UUID hearthId) {
+        return hearthId != null && hearthId.equals(hearthPopulationId)
+                && hearthPopulationHome != null;
+    }
+
+    public Optional<UUID> getHearthPopulationId() {
+        return Optional.ofNullable(hearthPopulationId);
+    }
+
+    public Optional<BlockPos> getHearthPopulationHome() {
+        return Optional.ofNullable(hearthPopulationHome);
+    }
+
     // --- AI Step ---
 
     @Override
     public void aiStep() {
+        clearDeescalatedHearthAggression();
         super.aiStep();
 
         // Client-side particles
@@ -270,8 +310,10 @@ public class MimicEntity extends Monster {
             }
         }
 
-        // Despawn timer: 3 minutes with no engagement
-        if (!engaged) {
+        // Hearth residents persist. Ordinary Mimics retain their custom timer.
+        if (isHearthPopulationResident()) {
+            despawnTimer = 0;
+        } else if (!engaged) {
             despawnTimer++;
             if (despawnTimer >= DESPAWN_TIMEOUT) {
                 discard();
@@ -282,6 +324,11 @@ public class MimicEntity extends Monster {
     }
 
     private void tickObservation() {
+        if (isHearthPopulationResident()) {
+            tickHearthObservation();
+            return;
+        }
+
         int ticks = getObservationTicks() + 1;
         entityData.set(DATA_OBSERVATION_TICKS, ticks);
 
@@ -366,6 +413,15 @@ public class MimicEntity extends Monster {
     private void tickCombat() {
         // Check LOS to target
         LivingEntity target = getTarget();
+        if (isHearthPopulationResident() && target == null) {
+            hearthLostTargetTicks++;
+            if (hearthLostTargetTicks >= 100) {
+                transitionToPhase(PHASE_OBSERVATION);
+                return;
+            }
+        } else {
+            hearthLostTargetTicks = 0;
+        }
         if (target != null) {
             if (hasLineOfSight(target)) {
                 losTimer = 0;
@@ -511,13 +567,25 @@ public class MimicEntity extends Monster {
         if (decision.cancel()) {
             return false;
         }
-        return super.hurt(source, decision.amount());
+        boolean hurt = super.hurt(source, decision.amount());
+        if (hurt && isHearthPopulationResident()
+                && level() instanceof ServerLevel serverLevel
+                && source.getEntity() instanceof ServerPlayer attacker
+                && hearthPopulationId != null) {
+            HearthMemoryManager.recordHearthEntityAttack(
+                    serverLevel, hearthPopulationId, attacker, "mimic resident");
+        }
+        return hurt;
     }
 
     @Override
     public void die(DamageSource source) {
         super.die(source);
         if (level() instanceof ServerLevel serverLevel) {
+            if (hearthPopulationId != null && isHearthPopulationResident()) {
+                HearthPopulationManager.recordResidentDeath(
+                        serverLevel, hearthPopulationId, HearthPopulationRole.MIMIC, getUUID());
+            }
             // Giant smoke puff on death
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
                     getX(), getY() + 1.0, getZ(), 40, 0.5, 1.0, 0.5, 0.05);
@@ -589,12 +657,26 @@ public class MimicEntity extends Monster {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         MimicPersistenceState.addAdditionalSaveData(this, tag);
+        if (hearthPopulationId != null && hearthPopulationHome != null) {
+            tag.putUUID("HearthPopulationId", hearthPopulationId);
+            tag.putLong("HearthPopulationHome", hearthPopulationHome.asLong());
+        }
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         MimicPersistenceState.readAdditionalSaveData(this, tag);
+        if (tag.hasUUID("HearthPopulationId") && tag.contains("HearthPopulationHome")) {
+            hearthPopulationId = tag.getUUID("HearthPopulationId");
+            hearthPopulationHome = BlockPos.of(tag.getLong("HearthPopulationHome"));
+            setPersistenceRequired();
+            restrictTo(hearthPopulationHome, HearthPopulationPolicy.MIMIC_HOME_RADIUS);
+            despawnTimer = 0;
+        } else {
+            hearthPopulationId = null;
+            hearthPopulationHome = null;
+        }
     }
 
     // --- Custom despawn (skip vanilla) ---
@@ -611,6 +693,103 @@ public class MimicEntity extends Monster {
 
     @Override
     public boolean shouldDespawnInPeaceful() {
-        return true;
+        return !isHearthPopulationResident();
+    }
+
+    private void tickHearthObservation() {
+        entityData.set(DATA_OBSERVATION_TICKS, 0);
+        despawnTimer = 0;
+        engaged = false;
+
+        BlockPos home = hearthPopulationHome;
+        if (home == null) {
+            return;
+        }
+        double homeDistance = position().distanceToSqr(home.getCenter());
+        if (homeDistance > (double) HearthPopulationPolicy.MIMIC_HOME_RADIUS
+                * HearthPopulationPolicy.MIMIC_HOME_RADIUS) {
+            getNavigation().moveTo(
+                    home.getX() + 0.5D, home.getY(), home.getZ() + 0.5D, 0.8D);
+        } else {
+            Vec3 currentMotion = getDeltaMovement();
+            setDeltaMovement(0.0D, currentMotion.y, 0.0D);
+            getNavigation().stop();
+        }
+
+        Player hostile = nearestHearthPlayer(true);
+        Player observed = hostile != null ? hostile : nearestHearthPlayer(false);
+        if (observed == null) {
+            return;
+        }
+        facePlayer(observed);
+        if (stareSoundCooldown > 0) {
+            stareSoundCooldown--;
+        } else if (MimicCombatBehavior.isPlayerLookingAtMe(this, observed)) {
+            level().playSound(null, observed.getX(), observed.getY(), observed.getZ(),
+                    ModSounds.MIMIC_STARE.get(), net.minecraft.sounds.SoundSource.AMBIENT,
+                    1.0F, 1.0F);
+            stareSoundCooldown = 100 + random.nextInt(200);
+        }
+        if (hostile != null && hostile.distanceTo(this) <= 16.0D) {
+            recordedVelocity = hostile.getDeltaMovement();
+            entityData.set(DATA_MIMIC_TARGET, Optional.of(hostile.getUUID()));
+            transitionToPhase(PHASE_MIMICRY);
+        }
+    }
+
+    @Nullable
+    private Player nearestHearthPlayer(boolean hostileOnly) {
+        if (!(level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        return serverLevel.players().stream()
+                .filter(player -> player.isAlive() && !player.isCreative() && !player.isSpectator())
+                .filter(player -> distanceToSqr(player) <= 48.0D * 48.0D)
+                .filter(player -> !hostileOnly
+                        || HearthPopulationPolicy.isHostileRelationship(
+                                HearthMemoryManager.relationship(serverLevel, player.getUUID())))
+                .min(java.util.Comparator.comparingDouble(this::distanceToSqr))
+                .orElse(null);
+    }
+
+    private void facePlayer(Player player) {
+        double dx = player.getX() - getX();
+        double dz = player.getZ() - getZ();
+        float yaw = (float) (Math.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0F;
+        entityData.set(DATA_TARGET_YAW, yaw);
+        setYRot(yaw);
+        setYHeadRot(yaw);
+    }
+
+    private boolean canProactivelyTargetPlayer(LivingEntity candidate) {
+        if (!isHearthPopulationResident()) {
+            return true;
+        }
+        return candidate instanceof ServerPlayer player
+                && level() instanceof ServerLevel serverLevel
+                && HearthPopulationPolicy.isHostileRelationship(
+                        HearthMemoryManager.relationship(serverLevel, player.getUUID()));
+    }
+
+    private void clearDeescalatedHearthAggression() {
+        if (!isHearthPopulationResident() || !(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        boolean reset = false;
+        if (getTarget() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setTarget(null);
+            reset = true;
+        }
+        if (getLastHurtByMob() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setLastHurtByMob(null);
+            reset = true;
+        }
+        if (reset) {
+            engaged = false;
+            transitionToPhase(PHASE_OBSERVATION);
+            getNavigation().stop();
+        }
     }
 }

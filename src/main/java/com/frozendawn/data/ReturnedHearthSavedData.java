@@ -3,6 +3,8 @@ package com.frozendawn.data;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthMaturationPolicy;
+import com.frozendawn.homo.HearthPopulationPolicy;
+import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -16,6 +18,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,7 +35,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 7;
+    public static final int CURRENT_DATA_VERSION = 8;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -405,6 +408,50 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.architectAssessorProfile = "";
         setDirty();
         return true;
+    }
+
+    public boolean bindPopulationResident(UUID hearthId, HearthPopulationRole role, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || role == null || entityId == null) {
+            return false;
+        }
+        HearthResidentBinding binding = hearth.populationResidents.computeIfAbsent(
+                role, HearthResidentBinding::new);
+        if (binding.entityId != null) {
+            return false;
+        }
+        binding.entityId = entityId;
+        binding.respawnAfterGameTime = -1L;
+        setDirty();
+        return true;
+    }
+
+    public boolean markPopulationResidentMissing(UUID hearthId, HearthPopulationRole role,
+                                                    UUID entityId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || role == null || entityId == null) {
+            return false;
+        }
+        HearthResidentBinding binding = hearth.populationResidents.get(role);
+        if (binding == null || !entityId.equals(binding.entityId)) {
+            return false;
+        }
+        binding.entityId = null;
+        binding.respawnAfterGameTime = Math.max(0L, gameTime)
+                + HearthPopulationPolicy.RESPAWN_DELAY_TICKS;
+        setDirty();
+        return true;
+    }
+
+    public int clearPopulationBindingsForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.populationResidents.isEmpty()) {
+            return 0;
+        }
+        int cleared = hearth.populationResidents.size();
+        hearth.populationResidents.clear();
+        setDirty();
+        return cleared;
     }
 
     public ContactResult recordPlayerContact(UUID playerId, UUID hearthId, long gameTime) {
@@ -1113,6 +1160,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean architectAssessorSpawned;
         private UUID architectAssessorEntityId;
         private String architectAssessorProfile;
+        private final Map<HearthPopulationRole, HearthResidentBinding> populationResidents =
+                new EnumMap<>(HearthPopulationRole.class);
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -1178,6 +1227,16 @@ public final class ReturnedHearthSavedData extends SavedData {
                     ? tag.getUUID("architectAssessorEntityId")
                     : null;
             record.architectAssessorProfile = tag.getString("architectAssessorProfile");
+            ListTag residents = tag.getList("populationResidents", Tag.TAG_COMPOUND);
+            for (Tag entry : residents) {
+                if (!(entry instanceof CompoundTag compound)) {
+                    continue;
+                }
+                HearthResidentBinding binding = HearthResidentBinding.load(compound);
+                if (binding != null) {
+                    record.populationResidents.putIfAbsent(binding.role(), binding);
+                }
+            }
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -1225,6 +1284,11 @@ public final class ReturnedHearthSavedData extends SavedData {
                 tag.putUUID("architectAssessorEntityId", architectAssessorEntityId);
             }
             tag.putString("architectAssessorProfile", architectAssessorProfile);
+            ListTag residents = new ListTag();
+            for (HearthResidentBinding binding : populationResidents.values()) {
+                residents.add(binding.save());
+            }
+            tag.put("populationResidents", residents);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -1334,6 +1398,14 @@ public final class ReturnedHearthSavedData extends SavedData {
             return architectAssessorProfile;
         }
 
+        public Optional<HearthResidentBinding> populationResident(HearthPopulationRole role) {
+            return Optional.ofNullable(populationResidents.get(role));
+        }
+
+        public List<HearthResidentBinding> populationResidents() {
+            return List.copyOf(populationResidents.values());
+        }
+
         public long lastPlayerContactGameTime() {
             return lastPlayerContactGameTime;
         }
@@ -1356,6 +1428,52 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public List<HearthContactMemory> playerContacts() {
             return List.copyOf(playerContacts.values());
+        }
+    }
+
+    public static final class HearthResidentBinding {
+        private final HearthPopulationRole role;
+        private UUID entityId;
+        private long respawnAfterGameTime = -1L;
+
+        private HearthResidentBinding(HearthPopulationRole role) {
+            this.role = role;
+        }
+
+        private static HearthResidentBinding load(CompoundTag tag) {
+            HearthPopulationRole role = HearthPopulationRole.fromSerializedName(
+                    tag.getString("role"));
+            if (role == null) {
+                return null;
+            }
+            HearthResidentBinding binding = new HearthResidentBinding(role);
+            binding.entityId = tag.hasUUID("entityId") ? tag.getUUID("entityId") : null;
+            binding.respawnAfterGameTime = tag.contains("respawnAfterGameTime", Tag.TAG_LONG)
+                    ? tag.getLong("respawnAfterGameTime")
+                    : -1L;
+            return binding;
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putString("role", role.serializedName());
+            if (entityId != null) {
+                tag.putUUID("entityId", entityId);
+            }
+            tag.putLong("respawnAfterGameTime", respawnAfterGameTime);
+            return tag;
+        }
+
+        public HearthPopulationRole role() {
+            return role;
+        }
+
+        public Optional<UUID> entityId() {
+            return Optional.ofNullable(entityId);
+        }
+
+        public long respawnAfterGameTime() {
+            return respawnAfterGameTime;
         }
     }
 }
