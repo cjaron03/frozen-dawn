@@ -621,6 +621,89 @@
       { "name": "minecraft:block.stone.break", "type": "event", "volume": 0.5, "pitch": 0.6 }
     ]
   },
+  "entity.master_architect.cast": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.cast",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/cast", "volume": 1.35 }
+    ]
+  },
+  "entity.master_architect.staff": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.staff",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/staff", "volume": 1.35 },
+      { "name": "minecraft:block.amethyst_block.hit", "type": "event", "volume": 0.38, "pitch": 0.62 }
+    ]
+  },
+  "entity.master_architect.fracture": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.fracture",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/continuity_fracture", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.thermal_sever": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_sever",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/thermal_sever", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.last_wall": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.last_wall",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/last_wall", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.thermal_pulse": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_pulse",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/thermal_pulse", "volume": 1.3 }
+    ]
+  },
+  "entity.master_architect.storm_maintain": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.storm_maintain",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/storm_maintain", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.ambient",
+    "sounds": [
+      { "name": "frozendawn:entity.architect.ambient", "type": "event", "volume": 0.58, "pitch": 0.88 },
+      { "name": "minecraft:entity.enderman.ambient", "type": "event", "volume": 0.95, "pitch": 1.25 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.4, "pitch": 0.92 }
+    ]
+  },
+  "entity.master_architect.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.hurt",
+    "sounds": [
+      { "name": "frozendawn:entity.architect.hurt", "type": "event", "volume": 0.42, "pitch": 0.85 },
+      { "name": "minecraft:entity.enderman.hurt", "type": "event", "volume": 1.15, "pitch": 1.2 },
+      { "name": "minecraft:entity.warden.hurt", "type": "event", "volume": 0.52, "pitch": 0.78 },
+      { "name": "frozendawn:entity/master_architect/voice_hurt", "volume": 1.4, "pitch": 0.95 }
+    ]
+  },
+  "entity.master_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.death",
+    "sounds": [
+      { "name": "minecraft:entity.wither.death", "type": "event", "volume": 1.0, "pitch": 1.3 }
+    ]
+  },
+  "entity.master_architect.detonate": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.detonate",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.45 }
+    ]
+  },
   "radio.static_burst": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.radio.static",

@@ -16,6 +16,7 @@ import com.frozendawn.entity.architect.ArchitectMeleeEngagement;
 import com.frozendawn.entity.architect.ArchitectObservationSupport;
 import com.frozendawn.entity.architect.ArchitectTargetingSupport;
 import com.frozendawn.entity.architect.ArchitectTickSupport;
+import com.frozendawn.entity.master.MasterArchitectDeathFx;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
@@ -31,6 +32,8 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
@@ -97,6 +100,12 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_MINING_PROGRESS =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_MASTER_COMBAT_ACTION =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_MASTER_COMBAT_TICKS =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_MASTER_ARCHITECT =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -261,6 +270,9 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_BUILDING_ICE, false);
         builder.define(DATA_RENDER_FLAGS, 0);
         builder.define(DATA_MINING_PROGRESS, 0.0f);
+        builder.define(DATA_MASTER_COMBAT_ACTION, MasterArchitectCombatAction.IDLE);
+        builder.define(DATA_MASTER_COMBAT_TICKS, 0);
+        builder.define(DATA_MASTER_ARCHITECT, false);
     }
 
     @Override
@@ -461,7 +473,7 @@ public class ArchitectEntity extends Monster {
         }
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel
                 && hearthMasterController.tick(serverLevel)) {
-            updateHeldItem();
+            equipMasterArchitectStaff();
             syncRenderState();
             return;
         }
@@ -924,6 +936,9 @@ public class ArchitectEntity extends Monster {
                 HearthMemoryManager.recordHearthEntityAttack(
                         serverLevel, hearthMasterArchitectId, attacker, "Master Architect");
             }
+            if (isHearthMasterArchitect()) {
+                hearthMasterController.onHurt();
+            }
             if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
                 combatState.rangedHitsReceived++;
             }
@@ -951,6 +966,7 @@ public class ArchitectEntity extends Monster {
         }
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel
                 && hearthMasterArchitectId != null) {
+            hearthMasterController.onDeath(serverLevel);
             HearthMasterArchitectManager.recordDefeat(
                     serverLevel, hearthMasterArchitectId, getUUID());
         }
@@ -1150,6 +1166,10 @@ public class ArchitectEntity extends Monster {
     protected void tickDeath() {
         int ticks = getDeathTicks() + 1;
         entityData.set(DATA_DEATH_TICKS, ticks);
+        if (isHearthMasterArchitect()) {
+            tickMasterArchitectDeath(ticks);
+            return;
+        }
         if (level() instanceof ServerLevel serverLevel) {
             double smokeY = getY() + 0.4 + (ticks / 30.0) * 1.8;
             serverLevel.sendParticles(ParticleTypes.SMOKE,
@@ -1176,6 +1196,26 @@ public class ArchitectEntity extends Monster {
         }
     }
 
+    private void tickMasterArchitectDeath(int ticks) {
+        setDeltaMovement(Vec3.ZERO);
+        if (level() instanceof ServerLevel serverLevel) {
+            MasterArchitectDeathFx.tickCharge(serverLevel, this, ticks);
+        }
+        if (ticks < MasterArchitectCombatPolicy.DEATH_DETONATION_TICK) {
+            return;
+        }
+
+        cleanupAllIce();
+        blockBreaker.onDeath();
+        if (towerEncounter && level() instanceof ServerLevel serverLevel) {
+            TowerEncounterController.markResolved(serverLevel, towerEncounterId);
+        }
+        if (level() instanceof ServerLevel serverLevel) {
+            MasterArchitectDeathFx.detonate(serverLevel, this);
+        }
+        remove(RemovalReason.KILLED);
+    }
+
     // ========================
     //  SYNCHED DATA ACCESSORS
     // ========================
@@ -1184,6 +1224,12 @@ public class ArchitectEntity extends Monster {
     public void setTextureVariant(int variant) { entityData.set(DATA_TEXTURE_VARIANT, variant); }
     public int getDeathTicks() { return entityData.get(DATA_DEATH_TICKS); }
     public int getCurrentAction() { return entityData.get(DATA_ACTION); }
+    public int getMasterCombatAction() {
+        return entityData.get(DATA_MASTER_COMBAT_ACTION);
+    }
+    public int getMasterCombatActionTicks() {
+        return entityData.get(DATA_MASTER_COMBAT_TICKS);
+    }
     public boolean isMiningBlock() {
         return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.MINING);
     }
@@ -1265,6 +1311,7 @@ public class ArchitectEntity extends Monster {
             UUID hearthId, BlockPos home, int textureVariant) {
         hearthMasterArchitectId = hearthId;
         hearthMasterArchitectHome = home.immutable();
+        entityData.set(DATA_MASTER_ARCHITECT, true);
         setTextureVariant(textureVariant);
         setPersistenceRequired();
         restrictTo(hearthMasterArchitectHome, HearthMasterArchitectPolicy.HOME_RADIUS);
@@ -1273,10 +1320,13 @@ public class ArchitectEntity extends Monster {
         despawnTimer = 0;
         approachState.surfaceY = blockPosition().getY();
         transitionToObserveAction();
+        setCustomName(Component.literal("The Master Architect"));
+        equipMasterArchitectStaff();
     }
 
     public boolean isHearthMasterArchitect() {
-        return hearthMasterArchitectId != null && hearthMasterArchitectHome != null;
+        return entityData.get(DATA_MASTER_ARCHITECT)
+                || (hearthMasterArchitectId != null && hearthMasterArchitectHome != null);
     }
 
     public boolean isBoundToHearthMasterArchitect(UUID hearthId) {
@@ -1305,6 +1355,25 @@ public class ArchitectEntity extends Monster {
         }
     }
 
+    void setMasterCombatVisual(int action, int ticks) {
+        if (!isHearthMasterArchitect()) {
+            return;
+        }
+        entityData.set(DATA_MASTER_COMBAT_ACTION, action);
+        entityData.set(DATA_MASTER_COMBAT_TICKS, Math.max(0, ticks));
+    }
+
+    void equipMasterArchitectStaff() {
+        if (!isHearthMasterArchitect()) {
+            return;
+        }
+        if (!getMainHandItem().is(ModItems.MASTER_ARCHITECT_STAFF.get())) {
+            setItemSlot(EquipmentSlot.MAINHAND,
+                    new ItemStack(ModItems.MASTER_ARCHITECT_STAFF.get()));
+        }
+        setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+    }
+
     public int getSurfaceY() { return approachState.surfaceY; }
     public DStarLitePathfinder getDStarPathfinder() { return approachState.dstar; }
     public boolean isBuildingIce() { return entityData.get(DATA_BUILDING_ICE); }
@@ -1330,17 +1399,38 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     @Override
-    public float getVoicePitch() { return 0.5f + random.nextFloat() * 0.15f; }
+    public float getVoicePitch() {
+        return isHearthMasterArchitect()
+                ? 0.38F + random.nextFloat() * 0.06F
+                : 0.5F + random.nextFloat() * 0.15F;
+    }
+
+    @Override
+    protected float getSoundVolume() {
+        return isHearthMasterArchitect() ? 1.35F : super.getSoundVolume();
+    }
 
     @Nullable
     @Override
-    protected SoundEvent getAmbientSound() { return ModSounds.ARCHITECT_AMBIENT.get(); }
+    protected SoundEvent getAmbientSound() {
+        return isHearthMasterArchitect()
+                ? ModSounds.MASTER_ARCHITECT_AMBIENT.get()
+                : ModSounds.ARCHITECT_AMBIENT.get();
+    }
 
     @Override
-    protected SoundEvent getHurtSound(DamageSource source) { return ModSounds.ARCHITECT_HURT.get(); }
+    protected SoundEvent getHurtSound(DamageSource source) {
+        return isHearthMasterArchitect()
+                ? ModSounds.MASTER_ARCHITECT_HURT.get()
+                : ModSounds.ARCHITECT_HURT.get();
+    }
 
     @Override
-    protected SoundEvent getDeathSound() { return ModSounds.ARCHITECT_DEATH.get(); }
+    protected SoundEvent getDeathSound() {
+        return isHearthMasterArchitect()
+                ? ModSounds.MASTER_ARCHITECT_DEATH.get()
+                : ModSounds.ARCHITECT_DEATH.get();
+    }
 
     // ========================
     //  NBT
@@ -1371,6 +1461,7 @@ public class ArchitectEntity extends Monster {
         if (hearthMasterArchitectId != null && hearthMasterArchitectHome != null) {
             tag.putUUID("HearthMasterArchitectId", hearthMasterArchitectId);
             tag.putLong("HearthMasterArchitectHome", hearthMasterArchitectHome.asLong());
+            hearthMasterController.addSaveData(tag);
         }
     }
 
@@ -1415,12 +1506,17 @@ public class ArchitectEntity extends Monster {
             hearthMasterArchitectId = tag.getUUID("HearthMasterArchitectId");
             hearthMasterArchitectHome = BlockPos.of(
                     tag.getLong("HearthMasterArchitectHome"));
+            entityData.set(DATA_MASTER_ARCHITECT, true);
             setPersistenceRequired();
             restrictTo(hearthMasterArchitectHome, HearthMasterArchitectPolicy.HOME_RADIUS);
             despawnTimer = 0;
+            setCustomName(Component.literal("The Master Architect"));
+            hearthMasterController.readSaveData(tag);
+            equipMasterArchitectStaff();
         } else {
             hearthMasterArchitectId = null;
             hearthMasterArchitectHome = null;
+            entityData.set(DATA_MASTER_ARCHITECT, false);
         }
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
         syncRenderState();

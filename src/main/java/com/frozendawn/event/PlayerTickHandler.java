@@ -61,6 +61,7 @@ final class PlayerTickHandler {
         suffocationTimer.clear();
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
+        MasterArchitectThermalSever.reset();
         FrostbiteHandler.reset();
         SanityHandler.reset();
     }
@@ -71,6 +72,7 @@ final class PlayerTickHandler {
         suffocationTimer.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
+        MasterArchitectThermalSever.onPlayerLogout(player);
         SnowshoesHandler.clearBoost(player);
         IceClawsHandler.onPlayerLogout(player);
         FrostbiteHandler.onPlayerLogout(player);
@@ -122,6 +124,7 @@ final class PlayerTickHandler {
      * Called every server tick from WorldTickHandler.
      */
     static void tick(MinecraftServer server, ApocalypseState state, int currentPhase, int currentDay, float progress) {
+        MasterArchitectThermalSever.tick(server);
         if (state.getApocalypseTicks() % FROSTMITE_DRAIN_STEP_INTERVAL == 0) {
             tickFrostmiteDrain(server);
         }
@@ -250,7 +253,7 @@ final class PlayerTickHandler {
             }
         }
 
-        return temp;
+        return MasterArchitectThermalSever.adjustTemperature(player, temp);
     }
 
     private static void applyHeatDamage(ServerPlayer player, float temp, float progress) {

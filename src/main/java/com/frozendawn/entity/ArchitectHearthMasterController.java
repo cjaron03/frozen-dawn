@@ -10,9 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
 import java.util.Comparator;
 
-/**
- * Peaceful watch behavior for the apex Architect at the INTACT Major Hearth.
- */
+/** Owns both peaceful watch and hostile combat for the INTACT Hearth apex. */
 final class ArchitectHearthMasterController {
     private static final double HOSTILE_ACQUISITION_RANGE = 112.0D;
     private static final double WALK_SPEED = 0.45D;
@@ -21,21 +19,24 @@ final class ArchitectHearthMasterController {
     private static final int PATROL_DELAY_VARIANCE = 180;
 
     private final ArchitectEntity architect;
+    private final MasterArchitectCombatController combatController;
     private int patrolCooldown;
 
     ArchitectHearthMasterController(ArchitectEntity architect) {
         this.architect = architect;
+        this.combatController = new MasterArchitectCombatController(architect);
     }
 
-    /**
-     * @return true when peaceful Master behavior handled this tick.
-     */
+    /** @return always true because the Master never falls through to ordinary Architect AI. */
     boolean tick(ServerLevel level) {
-        if (findHostileTarget(level) != null) {
+        ServerPlayer hostileTarget = findHostileTarget(level);
+        if (hostileTarget != null) {
             patrolCooldown = 0;
-            return false;
+            combatController.tick(level, hostileTarget);
+            return true;
         }
 
+        combatController.leaveCombat(level);
         architect.prepareHearthAssessmentMode();
         BlockPos home = architect.getHearthMasterArchitectHome().orElse(null);
         if (home == null) {
@@ -65,6 +66,22 @@ final class ArchitectHearthMasterController {
 
         patrol(home);
         return true;
+    }
+
+    void onHurt() {
+        combatController.onHurt();
+    }
+
+    void onDeath(ServerLevel level) {
+        combatController.onDeath(level);
+    }
+
+    void addSaveData(net.minecraft.nbt.CompoundTag tag) {
+        combatController.addSaveData(tag);
+    }
+
+    void readSaveData(net.minecraft.nbt.CompoundTag tag) {
+        combatController.readSaveData(tag);
     }
 
     @Nullable

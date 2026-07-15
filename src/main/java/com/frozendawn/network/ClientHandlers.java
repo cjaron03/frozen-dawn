@@ -2,6 +2,7 @@ package com.frozendawn.network;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
+import com.frozendawn.client.ContinuityFractureInput;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.MasterArchitectWeather;
@@ -123,5 +124,10 @@ public final class ClientHandlers {
     public static void handleMasterArchitectWeather(
             MasterArchitectWeatherPayload payload) {
         MasterArchitectWeather.update(payload);
+    }
+
+    public static void handleContinuityFracture(
+            ContinuityFracturePayload payload) {
+        ContinuityFractureInput.start(payload);
     }
 }
