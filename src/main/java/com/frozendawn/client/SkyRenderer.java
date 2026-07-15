@@ -35,6 +35,8 @@ public class SkyRenderer {
     private static final float[] PHASE_BLEND = {0.2f, 0.4f, 0.7f, 0.9f, 1.0f, 1.0f};
     private static final float[] PHASE_FLOOR = {0.15f, 0.15f, 0.10f, 0.08f, 0.04f, 0.01f};
     private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
+    private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.4F;
+    private static final float MASTER_ARCHITECT_VISIBILITY = 12.0F;
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
@@ -81,6 +83,14 @@ public class SkyRenderer {
                 targetB = Mth.lerp(blackTransition, targetB, 0.005f);
             }
 
+            float masterWhiteout = MasterArchitectWeather.getStrength()
+                    * exposure * MASTER_ARCHITECT_WHITEOUT_MIX;
+            if (masterWhiteout > 0.0F) {
+                targetR = Mth.lerp(masterWhiteout, targetR, getStormHazeRed(6));
+                targetG = Mth.lerp(masterWhiteout, targetG, getStormHazeGreen(6));
+                targetB = Mth.lerp(masterWhiteout, targetB, getStormHazeBlue(6));
+            }
+
             event.setRed(Mth.lerp(blend, event.getRed() * skyLight, targetR));
             event.setGreen(Mth.lerp(blend, event.getGreen() * skyLight, targetG));
             event.setBlue(Mth.lerp(blend, event.getBlue() * skyLight, targetB));
@@ -103,14 +113,19 @@ public class SkyRenderer {
 
         float progress = ApocalypseClientData.getProgress();
 
-        float visibility = getTargetVisibility(phase, progress);
+        float targetVisibility = getTargetVisibility(phase, progress);
         if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
                 && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
-            visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
+            targetVisibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
         }
 
         float currentFar = event.getFarPlaneDistance();
-        visibility = Mth.lerp(exposure, currentFar, visibility);
+        float visibility = Mth.lerp(exposure, currentFar, targetVisibility);
+        float masterStrength = MasterArchitectWeather.getStrength() * exposure;
+        if (masterStrength > 0.0F) {
+            visibility = Math.min(visibility, Mth.lerp(
+                    masterStrength, currentFar, MASTER_ARCHITECT_VISIBILITY));
+        }
         if (visibility < currentFar) {
             event.setFarPlaneDistance(visibility);
             event.setNearPlaneDistance(visibility * 0.05f);

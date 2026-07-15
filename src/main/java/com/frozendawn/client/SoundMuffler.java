@@ -55,6 +55,7 @@ public class SoundMuffler {
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
         boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);
         boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
+        boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
 
         if (isThaevenSound || isSurveyorLensCue) {
             return;
@@ -75,6 +76,7 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
+            if (isWindAmbience && MasterArchitectWeather.getStrength() > 0.01F) return;
             if (isGeothermalCue) {
                 // Let geothermal vibration cues survive as near-silent suit/structure transmission
                 // so vanilla subtitles can still track them in vacuum.
@@ -134,7 +136,7 @@ public class SoundMuffler {
         if (original.getSource() == SoundSource.MUSIC) return;
         if (original.getSource() == SoundSource.MASTER) return;
         String path = original.getLocation().getPath();
-        if (path.startsWith("ambient/wind")) return;
+        if (isWindAmbienceCue(original.getLocation(), path)) return;
 
         // Muffle intensity: 0 at -15C, full at -45C
         float intensity = Math.min(1f, (-temp - 15f) / 30f);
@@ -220,5 +222,12 @@ public class SoundMuffler {
     private static boolean isSurveyorLensCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.equals("item.surveyor_lens.tick");
+    }
+
+    private static boolean isWindAmbienceCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (path.equals("ambient.wind_light")
+                        || path.equals("ambient.wind_strong")
+                        || path.startsWith("ambient/wind"));
     }
 }

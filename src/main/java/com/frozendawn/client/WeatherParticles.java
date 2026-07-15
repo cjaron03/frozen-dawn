@@ -15,7 +15,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 /**
  * Spawns ambient snowflake particles around the player in phases 3+.
  * Phase 3: light snow. Phase 4: heavy. Phase 5: extreme blizzard whiteout.
- * Phase 6 early: maximum blizzard (60 particles). Mid: particles fade to 0. Late: none.
+ * Phase 6 early: maximum blizzard (60 particles). Mid: particles fade to 0.
+ * Late: none except inside a living Master Architect's local Hearth storm.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WeatherParticles {
@@ -32,14 +33,17 @@ public class WeatherParticles {
         if (phase < 3) return;
 
         float exposure = StormExposureController.getExposure();
-        if (exposure <= 0.08F) return;
-
         float progress = ApocalypseClientData.getProgress();
+        float masterStrength = MasterArchitectWeather.getStrength() * exposure;
+        if (exposure <= 0.08F && masterStrength <= 0.08F) return;
 
-        // Phase 6 late: no particles (vacuum)
-        if (PhaseManager.isVacuumActive(phase, progress)) return;
+        boolean vacuum = PhaseManager.isVacuumActive(phase, progress);
+        if (vacuum && masterStrength <= 0.0F) return;
 
-        int particleCount = Math.round(getParticleCount(phase, progress) * exposure);
+        int globalParticleCount = vacuum
+                ? 0 : Math.round(getParticleCount(phase, progress) * exposure);
+        int localParticleCount = Math.round(60.0F * masterStrength);
+        int particleCount = Math.max(globalParticleCount, localParticleCount);
         if (particleCount <= 0) return;
 
         RandomSource random = mc.level.random;
@@ -51,8 +55,14 @@ public class WeatherParticles {
 
         if (phase >= 5) {
             // Phase 5+: particles blow sideways at surface level, like a ground blizzard
-            float windX = BlizzardWindHelper.getWindX(phase, progress, gameTime) * exposure;
-            float windZ = BlizzardWindHelper.getWindZ(phase, progress, gameTime) * exposure;
+            float globalWindSpeed = BlizzardWindHelper.getSurfaceWindSpeed(
+                    phase, progress, gameTime) * exposure;
+            float localWindSpeed = BlizzardWindHelper.getMasterArchitectWindSpeed(
+                    gameTime, masterStrength);
+            float windSpeed = Math.max(globalWindSpeed, localWindSpeed);
+            float windAngle = BlizzardWindHelper.getWindAngleRad(gameTime);
+            float windX = windSpeed * Mth.sin(windAngle);
+            float windZ = windSpeed * Mth.cos(windAngle);
             double fallSpeed = -0.08; // barely falling — almost horizontal
 
             for (int i = 0; i < particleCount; i++) {

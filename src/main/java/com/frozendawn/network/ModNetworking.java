@@ -117,6 +117,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleHearthSurveyAudio(payload))
         );
+        registrar.playToClient(
+                MasterArchitectWeatherPayload.TYPE,
+                MasterArchitectWeatherPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectWeather(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

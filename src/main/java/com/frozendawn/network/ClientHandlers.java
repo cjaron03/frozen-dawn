@@ -4,6 +4,7 @@ import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
+import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
@@ -117,5 +118,10 @@ public final class ClientHandlers {
 
     public static void handleHearthSurveyAudio(HearthSurveyAudioPayload payload) {
         HearthSurveyAudio.update(payload);
+    }
+
+    public static void handleMasterArchitectWeather(
+            MasterArchitectWeatherPayload payload) {
+        MasterArchitectWeather.update(payload);
     }
 }

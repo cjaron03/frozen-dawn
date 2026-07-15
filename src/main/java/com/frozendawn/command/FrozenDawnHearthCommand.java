@@ -4,6 +4,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
+import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -67,7 +68,9 @@ final class FrozenDawnHearthCommand {
                 .then(Commands.literal("master")
                         .executes(FrozenDawnHearthCommand::masterArchitect)
                         .then(Commands.literal("respawn")
-                                .executes(FrozenDawnHearthCommand::respawnMasterArchitect)))
+                                .executes(FrozenDawnHearthCommand::respawnMasterArchitect))
+                        .then(Commands.literal("weather")
+                                .executes(FrozenDawnHearthCommand::masterArchitectWeather)))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -165,6 +168,9 @@ final class FrozenDawnHearthCommand {
                 "  INTACT population: " + HearthPopulationManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Master Architect: " + HearthMasterArchitectManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Master weather: "
+                        + HearthMasterArchitectWeatherManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
@@ -376,6 +382,21 @@ final class FrozenDawnHearthCommand {
                         + " spawned=" + result.spawned()), true);
         list(context);
         return result.spawned() > 0 ? 1 : 0;
+    }
+
+    private static int masterArchitectWeather(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ApocalypseState apocalypse = ApocalypseState.get(
+                context.getSource().getServer());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Master Architect weather for "
+                        + player.getGameProfile().getName() + ": "
+                        + HearthMasterArchitectWeatherManager.describe(
+                                player, apocalypse.getPhase(), apocalypse.getProgress())),
+                false);
+        return 1;
     }
 
     private static int architect(CommandContext<CommandSourceStack> context) {

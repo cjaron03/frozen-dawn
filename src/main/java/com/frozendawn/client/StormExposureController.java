@@ -73,7 +73,11 @@ public final class StormExposureController {
             coveredGraceTicks = 0;
             return 0.0F;
         }
-        if (phase < 3 || PhaseManager.isVacuumActive(phase, progress) || mc.player.blockPosition().getY() < 50) {
+        boolean masterStormRequested = MasterArchitectWeather.isRequested();
+        if (phase < 3
+                || (PhaseManager.isVacuumActive(phase, progress)
+                        && !masterStormRequested)
+                || mc.player.blockPosition().getY() < 50) {
             coveredGraceTicks = 0;
             return 0.0F;
         }

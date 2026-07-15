@@ -18,7 +18,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * Uses TickableWindSound for smooth per-frame volume transitions (no hard cuts).
  * Next clip starts 5s before the current one ends for seamless overlap.
  *
- * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence.
+ * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence,
+ * except inside a living Master Architect's local Hearth storm.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WindAmbience {
@@ -41,14 +42,18 @@ public class WindAmbience {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         boolean underground = mc.player.blockPosition().getY() < 50;
+        float masterStrength = MasterArchitectWeather.getStrength();
 
-        boolean shouldStop = shouldStopWind(phase, progress, underground);
+        boolean shouldStop = shouldStopWind(
+                phase, progress, underground, masterStrength);
         if (shouldStop) {
             stopAll(mc);
             return;
         }
 
-        float targetVolume = getTargetWindVolume(phase, progress);
+        float targetVolume = Math.max(
+                getTargetWindVolume(phase, progress),
+                0.9F * masterStrength);
 
         float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
@@ -88,7 +93,7 @@ public class WindAmbience {
         }
 
         // Start next clip — old one still playing for 5s overlap
-        boolean strong = phase >= 4;
+        boolean strong = phase >= 4 || masterStrength > 0.05F;
         currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
         targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
@@ -121,8 +126,10 @@ public class WindAmbience {
         currentBasePitch = 1.0f;
     }
 
-    private static boolean shouldStopWind(int phase, float progress, boolean underground) {
-        return phase < 3 || underground || PhaseManager.isVacuumActive(phase, progress);
+    private static boolean shouldStopWind(
+            int phase, float progress, boolean underground, float masterStrength) {
+        return underground || (masterStrength <= 0.01F
+                && (phase < 3 || PhaseManager.isVacuumActive(phase, progress)));
     }
 
     private static float getTargetWindVolume(int phase, float progress) {
