@@ -23,6 +23,7 @@ import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
@@ -136,6 +137,7 @@ public class WorldTickHandler {
         ChunkCatchUpManager.reset();
         HearthReconciliationManager.reset();
         HearthArchitectManager.reset();
+        HearthPopulationManager.reset();
         HearthMemoryManager.reset();
         HearthTransmissionManager.reset();
         HearthSurveySignalManager.reset();
@@ -215,6 +217,7 @@ public class WorldTickHandler {
         HearthMaturationManager.tick(overworld, state);
         HearthReconciliationManager.tick(overworld, state);
         HearthArchitectManager.tick(overworld);
+        HearthPopulationManager.tick(overworld);
         HearthTransmissionManager.tick(overworld);
         HearthSurveySignalManager.tick(server);
         HearthViolationManager.tick(overworld);

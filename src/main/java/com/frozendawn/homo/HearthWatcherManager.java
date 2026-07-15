@@ -49,7 +49,8 @@ public final class HearthWatcherManager {
         AABB area = new AABB(hearth.center()).inflate(ADOPTION_RADIUS);
         int removed = 0;
         for (ReturnedEntity watcher : level.getEntitiesOfClass(ReturnedEntity.class, area,
-                returned -> returned.isBoundToHearth(hearth.id()))) {
+                returned -> !returned.isHearthPopulationResident()
+                        && returned.isBoundToHearth(hearth.id()))) {
             watcher.discard();
             removed++;
         }
@@ -122,7 +123,9 @@ public final class HearthWatcherManager {
             ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth) {
         AABB area = new AABB(hearth.center()).inflate(ADOPTION_RADIUS);
         return level.getEntitiesOfClass(ReturnedEntity.class, area,
-                        returned -> returned.isAlive() && returned.isBoundToHearth(hearth.id()))
+                        returned -> returned.isAlive()
+                                && !returned.isHearthPopulationResident()
+                                && returned.isBoundToHearth(hearth.id()))
                 .stream()
                 .findFirst()
                 .orElse(null);

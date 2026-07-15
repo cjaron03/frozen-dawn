@@ -1,6 +1,8 @@
 package com.frozendawn.data;
 
 import com.frozendawn.homo.HearthMaturationPolicy;
+import com.frozendawn.homo.HearthPopulationPolicy;
+import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -253,6 +255,77 @@ class ReturnedHearthSavedDataTest {
         assertEquals("architect_assessor", restored.architectAssessorProfile());
         assertTrue(loaded.clearArchitectAssessorBindingForDebug(restored.id()));
         assertTrue(loaded.bindArchitectAssessor(restored.id(), replacement, "architect_assessor"));
+    }
+
+    @Test
+    void intactPopulationBindingsRoundTripByRole() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        for (HearthPopulationRole role : HearthPopulationRole.values()) {
+            assertTrue(state.bindPopulationResident(major.id(), role, UUID.randomUUID()));
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(HearthPopulationRole.values().length,
+                restored.populationResidents().size());
+        for (HearthPopulationRole role : HearthPopulationRole.values()) {
+            ReturnedHearthSavedData.HearthResidentBinding expected =
+                    major.populationResident(role).orElseThrow();
+            ReturnedHearthSavedData.HearthResidentBinding actual =
+                    restored.populationResident(role).orElseThrow();
+            assertEquals(expected.entityId(), actual.entityId());
+            assertEquals(-1L, actual.respawnAfterGameTime());
+        }
+    }
+
+    @Test
+    void residentDeathSchedulesPersistentDelayedReplacement() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID resident = UUID.randomUUID();
+        UUID wrong = UUID.randomUUID();
+        UUID replacement = UUID.randomUUID();
+
+        assertTrue(state.bindPopulationResident(
+                major.id(), HearthPopulationRole.MIMIC, resident));
+        assertFalse(state.bindPopulationResident(
+                major.id(), HearthPopulationRole.MIMIC, replacement));
+        assertFalse(state.markPopulationResidentMissing(
+                major.id(), HearthPopulationRole.MIMIC, wrong, 5000L));
+        assertTrue(state.markPopulationResidentMissing(
+                major.id(), HearthPopulationRole.MIMIC, resident, 5000L));
+
+        ReturnedHearthSavedData.HearthResidentBinding missing = major
+                .populationResident(HearthPopulationRole.MIMIC).orElseThrow();
+        assertTrue(missing.entityId().isEmpty());
+        assertEquals(5000L + HearthPopulationPolicy.RESPAWN_DELAY_TICKS,
+                missing.respawnAfterGameTime());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthResidentBinding restored = major(loaded)
+                .populationResident(HearthPopulationRole.MIMIC).orElseThrow();
+        assertTrue(restored.entityId().isEmpty());
+        assertEquals(missing.respawnAfterGameTime(), restored.respawnAfterGameTime());
+        assertTrue(loaded.bindPopulationResident(
+                major(loaded).id(), HearthPopulationRole.MIMIC, replacement));
+        assertEquals(replacement, major(loaded).populationResident(HearthPopulationRole.MIMIC)
+                .orElseThrow().entityId().orElseThrow());
+    }
+
+    @Test
+    void versionSevenDataMigratesWithAnEmptyPopulation() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        CompoundTag versionSeven = state.save(new CompoundTag(), null);
+        versionSeven.putInt("dataVersion", 7);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionSeven, null);
+
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
+        assertTrue(major(loaded).populationResidents().isEmpty());
     }
 
     @Test
