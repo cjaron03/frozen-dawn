@@ -53,6 +53,8 @@ import java.util.UUID;
 
 public class ReturnedEntity extends Monster {
 
+    public static final double MAX_HEALTH = 50.0D;
+
     private static final EntityDataAccessor<Integer> DATA_TEXTURE_VARIANT =
             SynchedEntityData.defineId(ReturnedEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DEATH_TICKS =
@@ -75,7 +77,7 @@ public class ReturnedEntity extends Monster {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 60.0)
+                .add(Attributes.MAX_HEALTH, MAX_HEALTH)
                 .add(Attributes.ATTACK_DAMAGE, 8.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.ARMOR, 8.0)
@@ -386,6 +388,7 @@ public class ReturnedEntity extends Monster {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        applyCurrentHealthBalance();
         setTextureVariant(tag.getInt("TextureVariant"));
         despawnTimer = tag.getInt("DespawnTimer");
         if (tag.hasUUID("HearthId") && tag.contains("HearthCenter")) {
@@ -403,6 +406,18 @@ public class ReturnedEntity extends Monster {
             hearthCenter = null;
             hearthPopulationRole = null;
         }
+    }
+
+    private void applyCurrentHealthBalance() {
+        var maxHealthAttribute = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealthAttribute == null) {
+            return;
+        }
+        float previousMax = getMaxHealth();
+        float healthFraction = previousMax > 0.0F ? getHealth() / previousMax : 1.0F;
+        maxHealthAttribute.setBaseValue(MAX_HEALTH);
+        setHealth(Math.max(0.0F, Math.min(getMaxHealth(),
+                getMaxHealth() * healthFraction)));
     }
 
     // --- Prevent natural despawn (custom timer handles it) ---

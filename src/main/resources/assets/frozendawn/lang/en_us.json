@@ -581,6 +581,12 @@
 
   "advancement.frozendawn.disassembled.title": "Disassembled",
   "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose.",
+  "advancement.frozendawn.decoherence.title": "Decoherence",
+  "advancement.frozendawn.decoherence.description": "There You Were",
+  "advancement.frozendawn.host_has_joined_the_game.title": "Host Has Joined the Game",
+  "advancement.frozendawn.host_has_joined_the_game.description": "It wasn't looking at your character.",
+  "overlay.frozendawn.thaeven.host_found": "There you are",
+  "bossbar.frozendawn.master_architect": "The Master Architect",
 
   "advancement.frozendawn.found_newspaper_cannibal.title": "Local News",
   "advancement.frozendawn.found_newspaper_cannibal.description": "Find a tattered newspaper clipping. Some stories age poorly.",

@@ -46,6 +46,20 @@ class HearthMasterArchitectPolicyTest {
                 ReturnedHearthSavedData.HiveRelationship.ORSATHAE));
     }
 
+    @Test
+    void combatStatsScaleWithTheWorldPreset() {
+        assertEquals(300.0D,
+                HearthMasterArchitectPolicy.maxHealthForPreset("default"));
+        assertEquals(200.0D,
+                HearthMasterArchitectPolicy.maxHealthForPreset("cinematic"));
+        assertEquals(450.0D,
+                HearthMasterArchitectPolicy.maxHealthForPreset("brutal"));
+        assertEquals(300.0D,
+                HearthMasterArchitectPolicy.maxHealthForPreset("custom"));
+        assertEquals(12.0D, HearthMasterArchitectPolicy.ARMOR);
+        assertEquals(1.0D, HearthMasterArchitectPolicy.KNOCKBACK_RESISTANCE);
+    }
+
     private static ReturnedHearthSavedData selectedState() {
         ReturnedHearthSavedData state = new ReturnedHearthSavedData();
         BlockPos anchor = new BlockPos(12, 70, -24);

@@ -3,6 +3,7 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.client.MasterArchitectFourthWallMoment;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
@@ -64,6 +65,13 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
 
         if (entity.isHearthMasterArchitect()) {
             applyMasterIdlePose(limbSwingAmount);
+            MasterArchitectFourthWallMoment.CameraHeadAngles cameraHead =
+                    MasterArchitectFourthWallMoment.cameraHeadAngles(
+                            entity, ageInTicks - entity.tickCount);
+            if (cameraHead != null) {
+                this.head.yRot = cameraHead.yawRadians();
+                this.head.xRot = cameraHead.pitchRadians();
+            }
             return;
         }
 

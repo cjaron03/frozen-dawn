@@ -23,6 +23,7 @@ import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthArchitectPolicy;
@@ -32,6 +33,7 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.MasterArchitectBossBarPolicy;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
@@ -45,6 +47,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -53,6 +56,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -161,6 +165,8 @@ public class ArchitectEntity extends Monster {
     private UUID hearthMasterArchitectId;
     @Nullable
     private BlockPos hearthMasterArchitectHome;
+    @Nullable
+    private ServerBossEvent masterBossEvent;
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
@@ -439,6 +445,9 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
+        if (!level().isClientSide() && isHearthMasterArchitect()) {
+            updateMasterBossBarProgress();
+        }
         // Warmup: skip all AI for first 2 seconds after spawn/load
         // Prevents pathfinding freeze when entity loads before chunks are ready
         if (tickCount < 40) {
@@ -913,7 +922,14 @@ public class ArchitectEntity extends Monster {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (source.is(DamageTypeTags.IS_FREEZING)) return false;
-        if (source.is(DamageTypeTags.IS_FIRE)) amount *= 1.5f;
+        if (isHearthMasterArchitect()) {
+            amount = MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                    amount,
+                    source.is(DamageTypeTags.IS_FIRE),
+                    source.is(DamageTypeTags.BYPASSES_INVULNERABILITY));
+        } else if (source.is(DamageTypeTags.IS_FIRE)) {
+            amount *= 1.5F;
+        }
 
         boolean hurt = super.hurt(source, amount);
         if (hurt && !level().isClientSide()) {
@@ -938,6 +954,10 @@ public class ArchitectEntity extends Monster {
             }
             if (isHearthMasterArchitect()) {
                 hearthMasterController.onHurt();
+                if (MasterArchitectBossBarPolicy.shouldReveal(
+                        false, source.getEntity() instanceof ServerPlayer)) {
+                    setMasterBossBarProvoked(true);
+                }
             }
             if (source.getDirectEntity() != null && source.getDirectEntity() != source.getEntity()) {
                 combatState.rangedHitsReceived++;
@@ -958,7 +978,11 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void die(DamageSource source) {
+        boolean masterArchitect = isHearthMasterArchitect();
         super.die(source);
+        if (masterArchitect) {
+            updateMasterBossBarProgress();
+        }
         if (isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
                 && hearthPopulationId != null) {
             HearthPopulationManager.recordResidentDeath(
@@ -971,7 +995,20 @@ public class ArchitectEntity extends Monster {
                     serverLevel, hearthMasterArchitectId, getUUID());
         }
         if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
-            WorldTickHandler.grantAdvancement(killer, "disassembled");
+            WorldTickHandler.grantAdvancement(
+                    killer, masterArchitect ? "decoherence" : "disassembled");
+        }
+    }
+
+    @Override
+    protected boolean shouldDropLoot() {
+        return !isHearthMasterArchitect() && super.shouldDropLoot();
+    }
+
+    @Override
+    protected void dropEquipment() {
+        if (!isHearthMasterArchitect()) {
+            super.dropEquipment();
         }
     }
 
@@ -1322,6 +1359,7 @@ public class ArchitectEntity extends Monster {
         hearthMasterArchitectId = hearthId;
         hearthMasterArchitectHome = home.immutable();
         entityData.set(DATA_MASTER_ARCHITECT, true);
+        applyMasterArchitectStats(true);
         setTextureVariant(textureVariant);
         setPersistenceRequired();
         restrictTo(hearthMasterArchitectHome, HearthMasterArchitectPolicy.HOME_RADIUS);
@@ -1383,6 +1421,78 @@ public class ArchitectEntity extends Monster {
                     new ItemStack(ModItems.MASTER_ARCHITECT_STAFF.get()));
         }
         setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+    }
+
+    public void refreshMasterArchitectStats() {
+        if (isHearthMasterArchitect()) {
+            applyMasterArchitectStats(false);
+        }
+    }
+
+    void setMasterBossBarProvoked(boolean provoked) {
+        if (!isHearthMasterArchitect()) {
+            return;
+        }
+        if (masterBossEvent == null && !provoked) {
+            return;
+        }
+        ServerBossEvent bossEvent = getOrCreateMasterBossEvent();
+        bossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
+                getHealth(), getMaxHealth()));
+        bossEvent.setVisible(provoked);
+    }
+
+    private void updateMasterBossBarProgress() {
+        if (masterBossEvent != null) {
+            masterBossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
+                    getHealth(), getMaxHealth()));
+        }
+    }
+
+    private ServerBossEvent getOrCreateMasterBossEvent() {
+        if (masterBossEvent == null) {
+            masterBossEvent = new ServerBossEvent(
+                    Component.translatable(MasterArchitectBossBarPolicy.NAME_KEY),
+                    BossEvent.BossBarColor.BLUE,
+                    BossEvent.BossBarOverlay.PROGRESS);
+            masterBossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
+                    getHealth(), getMaxHealth()));
+            masterBossEvent.setVisible(false);
+        }
+        return masterBossEvent;
+    }
+
+    private void applyMasterArchitectStats(boolean healToFull) {
+        var maxHealthAttribute = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealthAttribute == null) {
+            return;
+        }
+        String presetName = level() instanceof ServerLevel serverLevel
+                ? ApocalypseState.get(serverLevel.getServer()).getPresetName()
+                : "default";
+        double targetMaxHealth = HearthMasterArchitectPolicy.maxHealthForPreset(presetName);
+        float previousMax = getMaxHealth();
+        float healthFraction = previousMax > 0.0F ? getHealth() / previousMax : 1.0F;
+        boolean maxHealthChanged = Double.compare(
+                maxHealthAttribute.getBaseValue(), targetMaxHealth) != 0;
+        if (maxHealthChanged) {
+            maxHealthAttribute.setBaseValue(targetMaxHealth);
+        }
+        var armorAttribute = getAttribute(Attributes.ARMOR);
+        if (armorAttribute != null) {
+            armorAttribute.setBaseValue(HearthMasterArchitectPolicy.ARMOR);
+        }
+        var knockbackAttribute = getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+        if (knockbackAttribute != null) {
+            knockbackAttribute.setBaseValue(
+                    HearthMasterArchitectPolicy.KNOCKBACK_RESISTANCE);
+        }
+        if (healToFull) {
+            setHealth(getMaxHealth());
+        } else if (maxHealthChanged) {
+            setHealth(Mth.clamp(
+                    getMaxHealth() * healthFraction, 0.0F, getMaxHealth()));
+        }
     }
 
     public int getSurfaceY() { return approachState.surfaceY; }
@@ -1523,6 +1633,7 @@ public class ArchitectEntity extends Monster {
             despawnTimer = 0;
             setCustomName(Component.literal("The Master Architect"));
             hearthMasterController.readSaveData(tag);
+            applyMasterArchitectStats(false);
             equipMasterArchitectStaff();
         } else {
             hearthMasterArchitectId = null;
@@ -1546,5 +1657,29 @@ public class ArchitectEntity extends Monster {
     @Override
     public boolean shouldDespawnInPeaceful() {
         return !isHearthPopulationResident() && !isHearthMasterArchitect();
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        if (isHearthMasterArchitect()) {
+            getOrCreateMasterBossEvent().addPlayer(player);
+        }
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        if (masterBossEvent != null) {
+            masterBossEvent.removePlayer(player);
+        }
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (masterBossEvent != null) {
+            masterBossEvent.removeAllPlayers();
+        }
+        super.remove(reason);
     }
 }

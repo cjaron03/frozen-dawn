@@ -328,8 +328,12 @@ final class MasterArchitectCombatController {
             finishAction();
             return;
         }
-        if (actionTicks % 10 == 0 && architect.getHealth() < healTarget) {
-            architect.heal(Math.min(1.0F, healTarget - architect.getHealth()));
+        if (actionTicks % MasterArchitectCombatPolicy.LAST_WALL_HEAL_PULSE_TICKS == 0
+                && architect.getHealth() < healTarget) {
+            architect.heal(Math.min(
+                    MasterArchitectCombatPolicy.lastWallHealPerPulse(
+                            architect.getMaxHealth()),
+                    healTarget - architect.getHealth()));
         }
         if (actionTicks % 5 == 0) {
             level.sendParticles(ParticleTypes.SCULK_SOUL,

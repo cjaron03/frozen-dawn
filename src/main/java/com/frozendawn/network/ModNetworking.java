@@ -9,6 +9,7 @@ import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -135,6 +136,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleHearthBoundaryEffect(payload))
         );
+        registrar.playToClient(
+                MasterArchitectFourthWallStatePayload.TYPE,
+                MasterArchitectFourthWallStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFourthWallState(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(
@@ -143,6 +150,15 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) {
                         WorldTickHandler.grantAdvancement(sp, "watcher_seen");
+                    }
+                })
+        );
+        registrar.playToServer(
+                MasterArchitectFourthWallRequestPayload.TYPE,
+                MasterArchitectFourthWallRequestPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        MasterArchitectFourthWallManager.handleRequest(sp, payload);
                     }
                 })
         );

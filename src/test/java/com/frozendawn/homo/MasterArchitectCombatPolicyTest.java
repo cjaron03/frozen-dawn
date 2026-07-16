@@ -30,7 +30,29 @@ class MasterArchitectCombatPolicyTest {
     }
 
     @Test
+    void lastWallCanDeliverItsFullPresetScaledHeal() {
+        assertEquals(7.5F, MasterArchitectCombatPolicy.lastWallHealPerPulse(300.0F));
+        assertEquals(5.0F, MasterArchitectCombatPolicy.lastWallHealPerPulse(200.0F));
+        assertEquals(11.25F, MasterArchitectCombatPolicy.lastWallHealPerPulse(450.0F));
+    }
+
+    @Test
+    void incomingBurstDamageIsCappedAfterFireVulnerability() {
+        assertEquals(20.0F, MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                20.0F, false, false));
+        assertEquals(30.0F, MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                20.0F, true, false));
+        assertEquals(40.0F, MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                30.0F, true, false));
+        assertEquals(40.0F, MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                100.0F, false, false));
+        assertEquals(150.0F, MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                100.0F, true, true));
+    }
+
+    @Test
     void thermalSeverHasOneSecondGraceAndFourPulses() {
+        assertEquals(3.0F, MasterArchitectCombatPolicy.THERMAL_PULSE_DAMAGE);
         assertEquals(0, MasterArchitectCombatPolicy.thermalPulseCountAt(19));
         assertEquals(1, MasterArchitectCombatPolicy.thermalPulseCountAt(20));
         assertEquals(2, MasterArchitectCombatPolicy.thermalPulseCountAt(40));

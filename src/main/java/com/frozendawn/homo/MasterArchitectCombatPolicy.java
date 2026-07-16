@@ -17,6 +17,7 @@ public final class MasterArchitectCombatPolicy {
     public static final int THERMAL_RECOVERY_TICKS = 60;
     public static final int LAST_WALL_CAST_TICKS = 16;
     public static final int LAST_WALL_HEAL_TICKS = 100;
+    public static final int LAST_WALL_HEAL_PULSE_TICKS = 10;
     public static final int LAST_WALL_LIFETIME_TICKS = 240;
     public static final int STORM_MAINTENANCE_ACTION_TICKS = 52;
     public static final int DEATH_CHARGE_START_TICK = 14;
@@ -33,10 +34,12 @@ public final class MasterArchitectCombatPolicy {
     public static final int STORM_MAINTENANCE_COOLDOWN_VARIANCE = 200;
 
     public static final float THERMAL_SINK_CELSIUS = -220.0F;
-    public static final float THERMAL_PULSE_DAMAGE = 4.0F;
+    public static final float THERMAL_PULSE_DAMAGE = 3.0F;
     public static final int THERMAL_PULSE_COUNT = 4;
     public static final float LAST_WALL_TRIGGER_HEALTH_FRACTION = 0.30F;
     public static final float LAST_WALL_MAX_HEAL_FRACTION = 0.25F;
+    public static final float MAX_DAMAGE_PER_HIT = 40.0F;
+    public static final float FIRE_DAMAGE_MULTIPLIER = 1.5F;
     public static final double DEATH_BLAST_RADIUS = 5.0D;
     public static final float DEATH_BLAST_MIN_DAMAGE = 2.0F;
     public static final float DEATH_BLAST_MAX_DAMAGE = 6.0F;
@@ -57,6 +60,18 @@ public final class MasterArchitectCombatPolicy {
                 && maxHealth > 0.0F
                 && health > 0.0F
                 && health / maxHealth <= LAST_WALL_TRIGGER_HEALTH_FRACTION;
+    }
+
+    public static float adjustedIncomingDamage(
+            float amount, boolean fireDamage, boolean bypassesCap) {
+        float adjusted = Math.max(0.0F, amount)
+                * (fireDamage ? FIRE_DAMAGE_MULTIPLIER : 1.0F);
+        return bypassesCap ? adjusted : Math.min(MAX_DAMAGE_PER_HIT, adjusted);
+    }
+
+    public static float lastWallHealPerPulse(float maxHealth) {
+        int pulses = LAST_WALL_HEAL_TICKS / LAST_WALL_HEAL_PULSE_TICKS;
+        return maxHealth * LAST_WALL_MAX_HEAL_FRACTION / pulses;
     }
 
     public static boolean shouldMaintainStorm(

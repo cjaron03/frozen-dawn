@@ -31,11 +31,13 @@ final class ArchitectHearthMasterController {
     boolean tick(ServerLevel level) {
         ServerPlayer hostileTarget = findHostileTarget(level);
         if (hostileTarget != null) {
+            architect.setMasterBossBarProvoked(true);
             patrolCooldown = 0;
             combatController.tick(level, hostileTarget);
             return true;
         }
 
+        architect.setMasterBossBarProvoked(false);
         combatController.leaveCombat(level);
         architect.prepareHearthAssessmentMode();
         BlockPos home = architect.getHearthMasterArchitectHome().orElse(null);

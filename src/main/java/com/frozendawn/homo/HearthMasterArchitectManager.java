@@ -116,6 +116,7 @@ public final class HearthMasterArchitectManager {
             }
             if (bound instanceof ArchitectEntity architect
                     && architect.isBoundToHearthMasterArchitect(hearth.id())) {
+                architect.refreshMasterArchitectStats();
                 lastFailure = "none";
             } else {
                 lastFailure = "bound UUID resolved to a non-Master Architect entity";
@@ -125,6 +126,7 @@ public final class HearthMasterArchitectManager {
 
         ArchitectEntity existing = findExistingMaster(level, hearth.id(), anchor);
         if (existing != null) {
+            existing.refreshMasterArchitectStats();
             if (data.bindMasterArchitect(hearth.id(), existing.getUUID())) {
                 mastersAdopted++;
                 lastFailure = "none";

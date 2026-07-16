@@ -7,6 +7,7 @@ import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
+import com.frozendawn.client.MasterArchitectFourthWallMoment;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
@@ -135,5 +136,10 @@ public final class ClientHandlers {
     public static void handleHearthBoundaryEffect(
             HearthBoundaryEffectPayload payload) {
         HearthBoundaryEffects.trigger(payload);
+    }
+
+    public static void handleMasterArchitectFourthWallState(
+            MasterArchitectFourthWallStatePayload payload) {
+        MasterArchitectFourthWallMoment.handleState(payload);
     }
 }
