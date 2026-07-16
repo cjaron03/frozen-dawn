@@ -33,6 +33,12 @@ class IntactHearthLayoutTest {
         assertEquals(1, count(first, HearthStructurePiece.SACRED_CHEST));
         assertEquals(1, count(first, HearthStructurePiece.PROTECTED_CHEST));
         assertTrue(count(first, HearthStructurePiece.FROZEN_ATMOSPHERE) >= 8);
+        assertTrue(count(first, HearthStructurePiece.BOUNDARY_MARKER)
+                > count(formed, HearthStructurePiece.BOUNDARY_MARKER));
+        assertTrue(first.stream()
+                .filter(placement -> placement.piece() == HearthStructurePiece.BOUNDARY_MARKER)
+                .allMatch(placement -> placement.protection()
+                        == HearthStructurePlacement.Protection.HEARTH_RING));
 
         Map<BlockPos, HearthStructurePlacement> intactByPosition = first.stream()
                 .collect(Collectors.toMap(HearthStructurePlacement::offset,

@@ -39,9 +39,9 @@ class HearthProtectionPolicyTest {
         assertTrue(HearthProtectionPolicy.protectedTargetAt(
                 state, resolved.offset(12, 0, 12)).isEmpty());
         assertTrue(HearthProtectionPolicy.isEnvironmentalMutationProtected(
-                state, resolved.offset(4, -5, 4)));
-        assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
                 state, resolved.offset(5, 0, 0)));
+        assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
+                state, resolved.offset(6, 0, 0)));
         assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
                 state, resolved.offset(0, -6, 0)));
     }
@@ -85,9 +85,9 @@ class HearthProtectionPolicyTest {
                 FormedHearthLayout.create(minor.layoutSeed(), minor.type()).size(),
                 ReturnedHearthSavedData.HearthStage.FORMED, true);
         assertTrue(HearthProtectionPolicy.isEnvironmentalMutationProtected(
-                state, minorCenter.offset(4, 0, 4)));
-        assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
                 state, minorCenter.offset(5, 0, 0)));
+        assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
+                state, minorCenter.offset(6, 0, 0)));
     }
 
     private static HearthSelectionPolicy.SelectionPlan planWithMinor() {

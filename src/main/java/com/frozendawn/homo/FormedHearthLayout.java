@@ -17,6 +17,11 @@ public final class FormedHearthLayout {
     private static final int SHELTER_MAX_X = 0;
     private static final int SHELTER_MIN_Z = -2;
     private static final int SHELTER_MAX_Z = 2;
+    private static final int BOUNDARY_MIN_X = -5;
+    private static final int BOUNDARY_MAX_X = 1;
+    private static final int BOUNDARY_MIN_Z = -3;
+    private static final int BOUNDARY_MAX_Z = 3;
+    private static final int WARNING_WIDTH = 3;
 
     private FormedHearthLayout() {
     }
@@ -33,6 +38,7 @@ public final class FormedHearthLayout {
         addLeanTo(placements, turns);
         addHearthRing(placements, turns);
         addWrongDoor(placements, turns);
+        clearLegacyBoundaryMarkers(placements, turns);
 
         return List.copyOf(new ArrayList<>(placements.values()));
     }
@@ -67,6 +73,61 @@ public final class FormedHearthLayout {
         return canonical.getX() >= -3 && canonical.getX() <= -1
                 && canonical.getZ() >= -1 && canonical.getZ() <= 1
                 && canonical.getY() >= 0 && canonical.getY() <= 1;
+    }
+
+    public static boolean isInsideMarkedBoundary(long layoutSeed, BlockPos relativePos) {
+        BlockPos canonical = inverseRotate(relativePos, turns(layoutSeed));
+        return canonical.getX() > BOUNDARY_MIN_X && canonical.getX() < BOUNDARY_MAX_X
+                && canonical.getZ() > BOUNDARY_MIN_Z && canonical.getZ() < BOUNDARY_MAX_Z
+                && canonical.getY() >= -1 && canonical.getY() <= 3;
+    }
+
+    public static boolean isInsideBoundaryWarningBand(long layoutSeed, BlockPos relativePos) {
+        BlockPos canonical = inverseRotate(relativePos, turns(layoutSeed));
+        if (canonical.getY() < -2 || canonical.getY() > 4
+                || isInsideMarkedBoundary(layoutSeed, relativePos)) {
+            return false;
+        }
+        return canonical.getX() >= BOUNDARY_MIN_X - WARNING_WIDTH
+                && canonical.getX() <= BOUNDARY_MAX_X + WARNING_WIDTH
+                && canonical.getZ() >= BOUNDARY_MIN_Z - WARNING_WIDTH
+                && canonical.getZ() <= BOUNDARY_MAX_Z + WARNING_WIDTH;
+    }
+
+    public static List<BlockPos> boundaryParticleOffsets(long layoutSeed) {
+        int turns = turns(layoutSeed);
+        List<BlockPos> offsets = new ArrayList<>();
+        for (int x = BOUNDARY_MIN_X; x <= BOUNDARY_MAX_X; x++) {
+            for (int z = BOUNDARY_MIN_Z; z <= BOUNDARY_MAX_Z; z++) {
+                if (x == BOUNDARY_MIN_X || x == BOUNDARY_MAX_X
+                        || z == BOUNDARY_MIN_Z || z == BOUNDARY_MAX_Z) {
+                    offsets.add(rotate(new BlockPos(x, 0, z), turns));
+                }
+            }
+        }
+        return List.copyOf(offsets);
+    }
+
+    private static void clearLegacyBoundaryMarkers(
+            Map<BlockPos, HearthStructurePlacement> placements, int turns) {
+        for (int x = BOUNDARY_MIN_X; x <= BOUNDARY_MAX_X; x++) {
+            for (int z = BOUNDARY_MIN_Z; z <= BOUNDARY_MAX_Z; z++) {
+                boolean perimeter = x == BOUNDARY_MIN_X || x == BOUNDARY_MAX_X
+                        || z == BOUNDARY_MIN_Z || z == BOUNDARY_MAX_Z;
+                if (!perimeter || isBoundaryEntrance(x, z)) {
+                    continue;
+                }
+                putRotated(placements, HearthStructurePiece.BOUNDARY_MARKER,
+                        new BlockPos(x, 0, z), Direction.NORTH, 0,
+                        HearthStructurePlacement.Protection.HEARTH_RING, turns);
+            }
+        }
+    }
+
+    private static boolean isBoundaryEntrance(int x, int z) {
+        boolean shelterDoor = z == BOUNDARY_MAX_Z && x >= -3 && x <= -1;
+        boolean hearthApproach = x == BOUNDARY_MAX_X && z >= 0 && z <= 1;
+        return shelterDoor || hearthApproach;
     }
 
     private static void clearTraceScene(Map<BlockPos, HearthStructurePlacement> placements,

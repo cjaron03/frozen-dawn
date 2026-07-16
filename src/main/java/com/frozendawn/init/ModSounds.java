@@ -251,6 +251,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_ORSHA = register("ui.thaeven_orsha");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_RESOLVE = register("ui.thaeven_resolve");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAEVEN_INTERRUPT = register("ui.thaeven_interrupt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTH_BOUNDARY_WARNING = register(
+            "entity.hearth.boundary_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTH_BOUNDARY_ORSATHAE = register(
+            "entity.hearth.orsathae");
     public static final List<DeferredHolder<SoundEvent, SoundEvent>> BLACKGLASS_SEGMENTS = List.of(
             register("terminal.blackglass_segment_01"),
             register("terminal.blackglass_segment_02"),

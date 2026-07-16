@@ -1,0 +1,33 @@
+{
+  "textures": {
+    "seal": "frozendawn:block/acheronite_block",
+    "core": "frozendawn:block/frozen_atmosphere",
+    "particle": "frozendawn:block/acheronite_block"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 1, 16],
+      "faces": {
+        "north": { "texture": "#seal" },
+        "east": { "texture": "#seal" },
+        "south": { "texture": "#seal" },
+        "west": { "texture": "#seal" },
+        "up": { "texture": "#seal" },
+        "down": { "texture": "#seal" }
+      }
+    },
+    {
+      "from": [2, 1, 7],
+      "to": [14, 1.5, 9],
+      "faces": {
+        "north": { "texture": "#core" },
+        "east": { "texture": "#core" },
+        "south": { "texture": "#core" },
+        "west": { "texture": "#core" },
+        "up": { "texture": "#core" },
+        "down": { "texture": "#core" }
+      }
+    }
+  ]
+}

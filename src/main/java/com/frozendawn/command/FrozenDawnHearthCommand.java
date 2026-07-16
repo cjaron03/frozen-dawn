@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
+import com.frozendawn.homo.HearthBoundaryManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthMaturationManager;
@@ -177,6 +178,8 @@ final class FrozenDawnHearthCommand {
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Protected conduct: " + HearthViolationManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Boundary response: " + HearthBoundaryManager.statusLine()), false);
         long discovered = hearthState.hearths().stream()
                 .filter(ReturnedHearthSavedData.HearthRecord::discovered)
                 .count();
@@ -291,6 +294,9 @@ final class FrozenDawnHearthCommand {
                 "Selected " + result.hearths().size() + " Returned Hearth site(s) around "
                         + (hadAnchor ? "the recorded transponder " : "the debug fallback ")
                         + formatPos(result.anchor())), true);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Hearths do not force-load or build at a distance. Load a planned site naturally "
+                        + "or use /frozendawn hearth locate major before testing reconciliation."), false);
         return result.hearths().size();
     }
 

@@ -5,6 +5,7 @@ import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.ContinuityFractureInput;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
+import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
@@ -129,5 +130,10 @@ public final class ClientHandlers {
     public static void handleContinuityFracture(
             ContinuityFracturePayload payload) {
         ContinuityFractureInput.start(payload);
+    }
+
+    public static void handleHearthBoundaryEffect(
+            HearthBoundaryEffectPayload payload) {
+        HearthBoundaryEffects.trigger(payload);
     }
 }

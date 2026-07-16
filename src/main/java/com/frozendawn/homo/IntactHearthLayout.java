@@ -16,6 +16,11 @@ public final class IntactHearthLayout {
     private static final int DEEP_SUPPORT_DEPTH = 10;
     private static final int PATH_SUPPORT_DEPTH = 6;
     private static final int CORE_RADIUS = HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS;
+    private static final int BOUNDARY_MIN_X = -8;
+    private static final int BOUNDARY_MAX_X = 10;
+    private static final int BOUNDARY_MIN_Z = -8;
+    private static final int BOUNDARY_MAX_Z = 10;
+    private static final int WARNING_WIDTH = 3;
 
     private static final List<InteriorBox> OUTER_INTERIORS = List.of(
             new InteriorBox(-3, 3, -21, -14, 0, 3),
@@ -46,6 +51,7 @@ public final class IntactHearthLayout {
         addAtmosphereField(placements, layoutSeed, turns);
         addDeadEnds(placements, turns);
         addSnowBoundary(placements, layoutSeed, turns);
+        clearLegacyBoundaryMarkers(placements, turns);
         preserveFormedCore(placements, layoutSeed, type);
 
         return List.copyOf(new ArrayList<>(placements.values()));
@@ -57,6 +63,45 @@ public final class IntactHearthLayout {
         }
         BlockPos canonical = inverseRotate(relativePos, turns(layoutSeed));
         return OUTER_INTERIORS.stream().anyMatch(box -> box.contains(canonical));
+    }
+
+    public static boolean isInsideMarkedBoundary(long layoutSeed, BlockPos relativePos) {
+        BlockPos canonical = inverseRotate(relativePos, turns(layoutSeed));
+        return canonical.getX() > BOUNDARY_MIN_X && canonical.getX() < BOUNDARY_MAX_X
+                && canonical.getZ() > BOUNDARY_MIN_Z && canonical.getZ() < BOUNDARY_MAX_Z
+                && canonical.getY() >= -1 && canonical.getY() <= 4;
+    }
+
+    public static boolean isInsideBoundaryWarningBand(long layoutSeed, BlockPos relativePos) {
+        BlockPos canonical = inverseRotate(relativePos, turns(layoutSeed));
+        if (canonical.getY() < -2 || canonical.getY() > 5
+                || isInsideMarkedBoundary(layoutSeed, relativePos)) {
+            return false;
+        }
+        boolean centralWarning = canonical.getX() >= BOUNDARY_MIN_X - WARNING_WIDTH
+                && canonical.getX() <= BOUNDARY_MAX_X + WARNING_WIDTH
+                && canonical.getZ() >= BOUNDARY_MIN_Z - WARNING_WIDTH
+                && canonical.getZ() <= BOUNDARY_MAX_Z + WARNING_WIDTH;
+        if (centralWarning) {
+            return true;
+        }
+        return OUTER_INTERIORS.stream().anyMatch(
+                box -> box.containsExpanded(canonical, WARNING_WIDTH)
+                        && !box.contains(canonical));
+    }
+
+    public static List<BlockPos> boundaryParticleOffsets(long layoutSeed) {
+        int turns = turns(layoutSeed);
+        List<BlockPos> offsets = new ArrayList<>();
+        for (int x = BOUNDARY_MIN_X; x <= BOUNDARY_MAX_X; x++) {
+            for (int z = BOUNDARY_MIN_Z; z <= BOUNDARY_MAX_Z; z++) {
+                if (x == BOUNDARY_MIN_X || x == BOUNDARY_MAX_X
+                        || z == BOUNDARY_MIN_Z || z == BOUNDARY_MAX_Z) {
+                    offsets.add(rotate(new BlockPos(x, 0, z), turns));
+                }
+            }
+        }
+        return List.copyOf(offsets);
     }
 
     public static List<BlockPos> returnedAnchors(long layoutSeed) {
@@ -306,6 +351,30 @@ public final class IntactHearthLayout {
         }
     }
 
+    private static void clearLegacyBoundaryMarkers(
+            Map<BlockPos, HearthStructurePlacement> placements, int turns) {
+        for (int x = BOUNDARY_MIN_X; x <= BOUNDARY_MAX_X; x++) {
+            for (int z = BOUNDARY_MIN_Z; z <= BOUNDARY_MAX_Z; z++) {
+                boolean perimeter = x == BOUNDARY_MIN_X || x == BOUNDARY_MAX_X
+                        || z == BOUNDARY_MIN_Z || z == BOUNDARY_MAX_Z;
+                if (!perimeter || isBoundaryEntrance(x, z)) {
+                    continue;
+                }
+                putRotated(placements, HearthStructurePiece.BOUNDARY_MARKER,
+                        new BlockPos(x, 0, z), Direction.NORTH, 0,
+                        HearthStructurePlacement.Protection.HEARTH_RING, turns);
+            }
+        }
+    }
+
+    private static boolean isBoundaryEntrance(int x, int z) {
+        boolean northOrSouth = (z == BOUNDARY_MIN_Z || z == BOUNDARY_MAX_Z)
+                && x >= 0 && x <= 2;
+        boolean eastOrWest = (x == BOUNDARY_MIN_X || x == BOUNDARY_MAX_X)
+                && z >= 0 && z <= 2;
+        return northOrSouth || eastOrWest;
+    }
+
     private static void addShelterShell(
             Map<BlockPos, HearthStructurePlacement> placements,
             int minX, int maxX, int minZ, int maxZ,
@@ -488,6 +557,12 @@ public final class IntactHearthLayout {
             return pos.getX() >= minX && pos.getX() <= maxX
                     && pos.getZ() >= minZ && pos.getZ() <= maxZ
                     && pos.getY() >= minY && pos.getY() <= maxY;
+        }
+
+        private boolean containsExpanded(BlockPos pos, int amount) {
+            return pos.getX() >= minX - amount && pos.getX() <= maxX + amount
+                    && pos.getZ() >= minZ - amount && pos.getZ() <= maxZ + amount
+                    && pos.getY() >= minY - 1 && pos.getY() <= maxY + 1;
         }
     }
 }

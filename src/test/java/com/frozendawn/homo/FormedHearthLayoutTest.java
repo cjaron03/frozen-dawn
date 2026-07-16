@@ -29,12 +29,17 @@ class FormedHearthLayoutTest {
         assertEquals(4, count(first, HearthStructurePiece.ORSA_CRATE));
         assertEquals(2, count(first, HearthStructurePiece.DOOR_LOWER));
         assertEquals(2, count(first, HearthStructurePiece.DOOR_UPPER));
+        assertTrue(count(first, HearthStructurePiece.BOUNDARY_MARKER) >= 12);
         assertTrue(first.stream().anyMatch(placement ->
                 placement.protection() == HearthStructurePlacement.Protection.CONTAINER));
         assertTrue(first.stream().anyMatch(placement ->
                 placement.protection() == HearthStructurePlacement.Protection.DOOR));
         assertTrue(first.stream().anyMatch(placement ->
                 placement.protection() == HearthStructurePlacement.Protection.HEARTH_RING));
+        assertTrue(first.stream()
+                .filter(placement -> placement.piece() == HearthStructurePiece.BOUNDARY_MARKER)
+                .allMatch(placement -> placement.protection()
+                        == HearthStructurePlacement.Protection.HEARTH_RING));
         assertTrue(first.stream().anyMatch(placement ->
                 placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT
                         && placement.offset().getY() == 4));

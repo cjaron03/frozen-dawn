@@ -40,15 +40,8 @@ public final class HearthProtectionPolicy {
                     < ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
                 continue;
             }
-            BlockPos relative = worldPos.subtract(hearth.center());
-            boolean protectedInterior = hearth.structureStageApplied()
-                    == ReturnedHearthSavedData.HearthStage.INTACT
-                    && hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
-                    ? IntactHearthLayout.isInsideProtectedInterior(
-                            hearth.layoutSeed(), relative)
-                    : FormedHearthLayout.isInsideProtectedInterior(
-                            hearth.layoutSeed(), relative);
-            if (protectedInterior) {
+            if (HearthBoundaryPolicy.zoneFor(hearth, worldPos)
+                    == HearthBoundaryPolicy.Zone.PROTECTED) {
                 return Optional.of(hearth.id());
             }
         }

@@ -8,6 +8,7 @@ import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
+import com.frozendawn.block.HearthBoundaryMarkerBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
 import com.frozendawn.block.LaunchPadBlock;
@@ -527,4 +528,18 @@ public class ModBlocks {
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 5)));
+
+    // Legacy migration marker retained so experimental Hearth saves can reconcile it away.
+    public static final DeferredBlock<HearthBoundaryMarkerBlock> HEARTH_BOUNDARY_MARKER =
+            BLOCKS.register("hearth_boundary_marker",
+                    () -> new HearthBoundaryMarkerBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_CYAN)
+                            .strength(3.0F, 8.0F)
+                            .sound(SoundType.AMETHYST)
+                            .lightLevel(state -> 7)
+                            .noCollission()
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false)
+                            .isSuffocating((state, level, pos) -> false)
+                            .pushReaction(PushReaction.BLOCK)));
 }
