@@ -13,6 +13,9 @@ import net.minecraft.util.Mth;
  * Stiff arms only when observing (stalking).
  */
 public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
+    private static final float MASTER_WAND_HOLD_X = -0.42F;
+    private static final float MASTER_WAND_HOLD_Y = -0.08F;
+    private static final float MASTER_WAND_HOLD_Z = 0.07F;
 
     public ArchitectModel(ModelPart root) {
         super(root);
@@ -56,6 +59,11 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         if (masterAction != MasterArchitectCombatAction.IDLE) {
             applyMasterCombatPose(
                     masterAction, entity.getMasterCombatActionTicks(), ageInTicks);
+            return;
+        }
+
+        if (entity.isHearthMasterArchitect()) {
+            applyMasterIdlePose(limbSwingAmount);
             return;
         }
 
@@ -119,32 +127,32 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.zRot = -0.22F;
             }
             case MasterArchitectCombatAction.THERMAL_SEVER -> {
-                this.body.xRot = 0.05F;
-                this.head.xRot += 0.10F;
-                this.rightArm.xRot = -1.52F + pulse * 0.25F;
+                this.body.xRot = 0.0F;
+                this.head.xRot += 0.04F;
+                this.rightArm.xRot = -1.52F;
                 this.rightArm.yRot = -0.10F;
+                this.rightArm.zRot = 0.02F;
                 this.leftArm.xRot = -0.82F;
                 this.leftArm.yRot = 0.45F;
                 this.leftArm.zRot = -0.28F;
             }
             case MasterArchitectCombatAction.LAST_WALL_CAST -> {
-                this.body.xRot = 0.45F;
-                this.head.xRot += 0.30F;
-                this.rightArm.xRot = -2.35F;
-                this.rightArm.yRot = -0.20F;
-                this.leftArm.xRot = -1.35F;
-                this.leftArm.yRot = 0.20F;
-                this.rightLeg.xRot = -0.65F;
-                this.leftLeg.xRot = 0.30F;
+                this.body.xRot = 0.0F;
+                this.head.xRot += 0.08F;
+                applyMasterWandGrip();
+                this.leftArm.xRot = -1.48F;
+                this.leftArm.yRot = 0.32F;
+                this.leftArm.zRot = -0.18F;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
             }
             case MasterArchitectCombatAction.LAST_WALL_HEAL -> {
-                this.body.xRot = 0.12F;
-                this.head.xRot += 0.10F;
-                this.rightArm.xRot = -1.05F + pulse * 0.20F;
-                this.rightArm.yRot = -0.12F;
-                this.leftArm.xRot = -1.10F;
-                this.leftArm.yRot = 0.55F;
-                this.leftArm.zRot = -0.22F;
+                this.body.xRot = 0.0F;
+                this.head.xRot += 0.06F;
+                applyMasterWandGrip();
+                this.leftArm.xRot = -1.18F;
+                this.leftArm.yRot = 0.48F;
+                this.leftArm.zRot = -0.20F;
             }
             case MasterArchitectCombatAction.STORM_MAINTENANCE -> {
                 float raise = Mth.clamp(actionTicks / 12.0F, 0.0F, 1.0F);
@@ -154,15 +162,13 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                         0.0F,
                         1.0F);
                 float hold = Math.min(raise, lower);
-                this.body.xRot = -0.08F * hold;
-                this.head.xRot -= 0.22F * hold;
-                this.head.zRot = pulse * 0.25F;
-                this.rightArm.xRot = Mth.lerp(hold, -0.20F, -2.65F + pulse);
-                this.leftArm.xRot = Mth.lerp(hold, -0.20F, -2.65F - pulse);
-                this.rightArm.yRot = -0.78F * hold;
-                this.leftArm.yRot = 0.78F * hold;
-                this.rightArm.zRot = 0.30F * hold;
-                this.leftArm.zRot = -0.30F * hold;
+                this.body.xRot = 0.0F;
+                this.head.xRot = 0.0F;
+                this.head.zRot = 0.0F;
+                applyMasterWandGrip();
+                this.leftArm.xRot = Mth.lerp(hold, -0.20F, -2.48F);
+                this.leftArm.yRot = 0.68F * hold;
+                this.leftArm.zRot = -0.24F * hold;
             }
             default -> {
             }
@@ -171,21 +177,36 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
 
     private void applyMasterDeathPose(int deathTicks, float ageInTicks) {
         float charge = MasterArchitectCombatPolicy.deathChargeProgress(deathTicks);
-        float shake = MasterArchitectCombatPolicy.deathShakeStrength(deathTicks);
-        float tremor = Mth.sin(ageInTicks * 2.7F) * shake;
-
-        this.body.xRot = Mth.lerp(charge, 0.08F, -0.04F) + tremor * 0.035F;
-        this.body.zRot = tremor * 0.055F;
-        this.head.xRot = Mth.lerp(charge, 0.18F, -0.14F);
-        this.head.zRot = tremor * 0.16F;
-        this.rightArm.xRot = Mth.lerp(charge, -0.30F, -0.92F);
+        this.body.xRot = Mth.lerp(charge, 0.05F, -0.03F);
+        this.body.zRot = 0.0F;
+        this.head.xRot = Mth.lerp(charge, 0.12F, -0.12F);
+        this.head.zRot = 0.0F;
+        applyMasterWandGrip();
         this.leftArm.xRot = Mth.lerp(charge, -0.22F, -0.92F);
-        this.rightArm.yRot = -0.28F * charge;
         this.leftArm.yRot = 0.28F * charge;
-        this.rightArm.zRot = 0.18F + tremor * 0.11F;
-        this.leftArm.zRot = -0.18F - tremor * 0.11F;
+        this.leftArm.zRot = -0.18F;
         this.rightLeg.xRot = -0.05F;
         this.leftLeg.xRot = 0.05F;
+    }
+
+    private void applyMasterIdlePose(float limbSwingAmount) {
+        float gaitBlend = Mth.clamp(limbSwingAmount * 2.0F, 0.0F, 1.0F);
+        float leftArmWalkX = this.leftArm.xRot;
+
+        this.body.xRot = 0.0F;
+        this.body.yRot = 0.0F;
+        this.body.zRot = 0.0F;
+        this.head.zRot = 0.0F;
+        applyMasterWandGrip();
+        this.leftArm.xRot = Mth.lerp(gaitBlend * 0.55F, -0.12F, leftArmWalkX);
+        this.leftArm.yRot = 0.06F;
+        this.leftArm.zRot = -0.04F;
+    }
+
+    private void applyMasterWandGrip() {
+        this.rightArm.xRot = MASTER_WAND_HOLD_X;
+        this.rightArm.yRot = MASTER_WAND_HOLD_Y;
+        this.rightArm.zRot = MASTER_WAND_HOLD_Z;
     }
 
     private void applyObservePose(float ageInTicks, float sway, float limbSwingAmount) {

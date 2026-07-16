@@ -1018,11 +1018,21 @@ public class ArchitectEntity extends Monster {
     }
 
     private void ensureAmbientHelmet() {
+        if (isHearthMasterArchitect()) {
+            clearMasterAmbientHelmet();
+            return;
+        }
         if (!getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
             return;
         }
         setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
         setDropChance(EquipmentSlot.HEAD, 0.0F);
+    }
+
+    private void clearMasterAmbientHelmet() {
+        if (getItemBySlot(EquipmentSlot.HEAD).is(Items.LEATHER_HELMET)) {
+            setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        }
     }
 
     // ========================
@@ -1367,6 +1377,7 @@ public class ArchitectEntity extends Monster {
         if (!isHearthMasterArchitect()) {
             return;
         }
+        clearMasterAmbientHelmet();
         if (!getMainHandItem().is(ModItems.MASTER_ARCHITECT_STAFF.get())) {
             setItemSlot(EquipmentSlot.MAINHAND,
                     new ItemStack(ModItems.MASTER_ARCHITECT_STAFF.get()));

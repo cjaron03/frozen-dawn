@@ -9,6 +9,7 @@ import com.frozendawn.client.renderer.HollowRenderer;
 import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
+import com.frozendawn.client.renderer.MasterArchitectAdornmentModel;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.RocketLaunchModel;
@@ -143,6 +144,9 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         CuriosClientCompat.registerLayerDefinitions(event);
+        event.registerLayerDefinition(
+                MasterArchitectAdornmentModel.LAYER_LOCATION,
+                MasterArchitectAdornmentModel::createBodyLayer);
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
     }
 
