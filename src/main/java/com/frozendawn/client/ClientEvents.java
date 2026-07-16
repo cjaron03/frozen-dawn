@@ -96,6 +96,10 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thaeven_transmission"),
                 ThaevenTransmissionOverlay::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "hearth_boundary_effect"),
+                HearthBoundaryEffects::render
+        );
     }
 
     @SubscribeEvent

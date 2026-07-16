@@ -570,6 +570,8 @@
   "subtitle.frozendawn.entity.master_architect.hurt": "The Master Architect recoils",
   "subtitle.frozendawn.entity.master_architect.death": "The Master Architect falls silent",
   "subtitle.frozendawn.entity.master_architect.detonate": "The Master Architect ruptures",
+  "subtitle.frozendawn.entity.hearth.boundary_warning": "The collective draws breath.",
+  "subtitle.frozendawn.entity.hearth.orsathae": "The collective screams.",
 
   "subtitle.frozendawn.radio.static": "Radio static crackles",
   "subtitle.frozendawn.radio.signal_lock": "Radio signal acquired",

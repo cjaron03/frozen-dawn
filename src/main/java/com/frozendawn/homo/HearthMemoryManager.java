@@ -71,6 +71,7 @@ public final class HearthMemoryManager {
     public static boolean recordHearthEntityAttack(ServerLevel level, UUID hearthId,
                                                    ServerPlayer attacker, String role) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        ReturnedHearthSavedData.HiveRelationship before = data.relationship(attacker.getUUID());
         boolean changed = data.markPlayerOrsathae(
                 attacker.getUUID(), hearthId, level.getGameTime());
         if (changed) {
@@ -78,6 +79,11 @@ public final class HearthMemoryManager {
             FrozenDawn.LOGGER.info(
                     "Homo reliquus permanently classified player {} as Orsathae after {} attack at Hearth {}",
                     attacker.getGameProfile().getName(), role, shortId(hearthId));
+        }
+        if (before != ReturnedHearthSavedData.HiveRelationship.ORSATHAE
+                && data.relationship(attacker.getUUID())
+                == ReturnedHearthSavedData.HiveRelationship.ORSATHAE) {
+            HearthBoundaryManager.triggerOrsathaeEffect(level, hearthId, attacker);
         }
         return changed;
     }

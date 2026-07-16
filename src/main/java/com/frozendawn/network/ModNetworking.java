@@ -129,6 +129,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleContinuityFracture(payload))
         );
+        registrar.playToClient(
+                HearthBoundaryEffectPayload.TYPE,
+                HearthBoundaryEffectPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHearthBoundaryEffect(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

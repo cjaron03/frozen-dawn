@@ -22,4 +22,26 @@ class HearthReconciliationManagerTest {
         assertTrue(HearthReconciliationManager.allowsFluidReplacement(
                 Blocks.AIR.defaultBlockState(), HearthStructurePiece.FROZEN_PLANKS));
     }
+
+    @Test
+    void unchangedBlocksDoNotRequirePlacementOrEntityClearance() {
+        assertFalse(HearthReconciliationManager.needsPlacement(
+                Blocks.PACKED_ICE.defaultBlockState(), Blocks.PACKED_ICE.defaultBlockState()));
+        assertTrue(HearthReconciliationManager.needsPlacement(
+                Blocks.AIR.defaultBlockState(), Blocks.PACKED_ICE.defaultBlockState()));
+    }
+
+    @Test
+    void blockedClearanceCellsCanBePreservedWithoutStallingTheScene() {
+        assertTrue(HearthReconciliationManager.isClearancePiece(
+                HearthStructurePiece.CLEAR_TRANSIENT));
+        assertTrue(HearthReconciliationManager.isClearancePiece(
+                HearthStructurePiece.CLEAR_SETTLEMENT));
+        assertTrue(HearthReconciliationManager.isClearancePiece(
+                HearthStructurePiece.CLEAR_PLATFORM));
+        assertTrue(HearthReconciliationManager.isClearancePiece(
+                HearthStructurePiece.CLEAR_LEGACY));
+        assertFalse(HearthReconciliationManager.isClearancePiece(
+                HearthStructurePiece.BOUNDARY_MARKER));
+    }
 }

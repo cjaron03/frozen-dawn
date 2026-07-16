@@ -14,6 +14,7 @@ import com.frozendawn.world.ChunkCatchUpManager;
 import com.frozendawn.world.ThermalVentRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
@@ -67,6 +68,7 @@ public final class HearthReconciliationManager {
     private static final Set<UUID> pending = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Integer> surfaceSearchCursors = new HashMap<>();
     private static final Map<UUID, Long> retryAfter = new HashMap<>();
+    private static final Map<UUID, String> waitReasons = new HashMap<>();
 
     private static long completedScenes;
     private static long lastTickNanos;
@@ -116,7 +118,9 @@ public final class HearthReconciliationManager {
                 removePending(id);
                 continue;
             }
+            waitReasons.remove(id);
             if (retryAfter.getOrDefault(id, 0L) > gameTime) {
+                waitReasons.put(id, "retry");
                 continue;
             }
 
@@ -136,6 +140,9 @@ public final class HearthReconciliationManager {
                     if (resolution.exhausted()) {
                         retryAfter.put(id, gameTime + SURFACE_RETRY_DELAY_TICKS);
                         surfaceSearchCursors.remove(id);
+                        waitReasons.put(id, "surface-retry");
+                    } else {
+                        waitReasons.put(id, "surface-search");
                     }
                     continue;
                 }
@@ -148,9 +155,13 @@ public final class HearthReconciliationManager {
                         hearth.center().getX(), hearth.center().getY(), hearth.center().getZ());
             }
 
-            if (!footprintLoaded(level, hearth.center(), plan.footprintRadius())
-                    || !footprintCaughtUp(level, apocalypse, hearth.center(),
+            if (!footprintLoaded(level, hearth.center(), plan.footprintRadius())) {
+                waitReasons.put(id, "footprint-unloaded");
+                continue;
+            }
+            if (!footprintCaughtUp(level, apocalypse, hearth.center(),
                     plan.footprintRadius())) {
+                waitReasons.put(id, "chunk-catch-up");
                 continue;
             }
 
@@ -161,6 +172,7 @@ public final class HearthReconciliationManager {
                 HearthStructurePlacement placement = layout.get(cursor);
                 BlockPos target = hearth.center().offset(placement.offset());
                 if (!level.isLoaded(target)) {
+                    waitReasons.put(id, "target-unloaded@" + formatPos(target));
                     break;
                 }
 
@@ -178,17 +190,26 @@ public final class HearthReconciliationManager {
                     pieces++;
                     continue;
                 }
-                if (!desired.getCollisionShape(level, target).isEmpty()
-                        && !level.getEntitiesOfClass(
-                                LivingEntity.class, new AABB(target)).isEmpty()) {
-                    break;
-                }
-                if (!existing.equals(desired)) {
+                if (needsPlacement(existing, desired)) {
+                    if (!desired.getCollisionShape(level, target).isEmpty()
+                            && !level.getEntitiesOfClass(
+                                    LivingEntity.class, new AABB(target)).isEmpty()) {
+                        waitReasons.put(id, "entity@" + formatPos(target));
+                        break;
+                    }
                     if (!canReplace(level, target, existing, placement)) {
+                        if (isClearancePiece(placement.piece())) {
+                            cursor++;
+                            pieces++;
+                            continue;
+                        }
                         retryAfter.put(id, gameTime + SURFACE_RETRY_DELAY_TICKS);
+                        waitReasons.put(id, "blocked@" + formatPos(target)
+                                + ":" + BuiltInRegistries.BLOCK.getKey(existing.getBlock()));
                         break;
                     }
                     if (!level.setBlock(target, desired, SET_BLOCK_FLAGS)) {
+                        waitReasons.put(id, "set-failed@" + formatPos(target));
                         break;
                     }
                     if (placement.piece() == HearthStructurePiece.PROTECTED_CHEST) {
@@ -210,6 +231,8 @@ public final class HearthReconciliationManager {
                 removePending(id);
                 FrozenDawn.LOGGER.info("Completed {} Hearth {} with {} planned pieces",
                         plan.stage().name().toLowerCase(), shortId(id), layout.size());
+            } else if (!waitReasons.containsKey(id)) {
+                waitReasons.put(id, "budget@cursor=" + cursor);
             }
         }
 
@@ -236,6 +259,7 @@ public final class HearthReconciliationManager {
                 + " lastMs=" + String.format("%.3f", lastTickNanos / 1_000_000.0D)
                 + " lastEdits=" + lastTickEdits
                 + " lastPieces=" + lastTickPieces
+                + " waiting=" + waitingSummary()
                 + " tracePlan=" + HearthReconciliationPolicy.TRACE_PLAN_VERSION
                 + " formedPlan=" + HearthReconciliationPolicy.FORMED_PLAN_VERSION
                 + " intactPlan=" + HearthReconciliationPolicy.INTACT_PLAN_VERSION;
@@ -245,6 +269,7 @@ public final class HearthReconciliationManager {
         pending.clear();
         surfaceSearchCursors.clear();
         retryAfter.clear();
+        waitReasons.clear();
         completedScenes = 0L;
         lastTickNanos = 0L;
         lastTickEdits = 0;
@@ -439,6 +464,17 @@ public final class HearthReconciliationManager {
                 || state.getFluidState().getType() == Fluids.FLOWING_WATER);
     }
 
+    static boolean needsPlacement(BlockState existing, BlockState desired) {
+        return !existing.equals(desired);
+    }
+
+    static boolean isClearancePiece(HearthStructurePiece piece) {
+        return switch (piece) {
+            case CLEAR_TRANSIENT, CLEAR_SETTLEMENT, CLEAR_PLATFORM, CLEAR_LEGACY -> true;
+            default -> false;
+        };
+    }
+
     private static boolean canReplaceNatural(BlockState state,
                                              HearthStructurePlacement placement) {
         if (placement.piece() == HearthStructurePiece.FOUNDATION_SUPPORT) {
@@ -494,6 +530,7 @@ public final class HearthReconciliationManager {
                 || state.is(ModBlocks.FROZEN_PLANKS.get())
                 || state.is(ModBlocks.FROZEN_STONE_BRICKS.get())
                 || state.is(ModBlocks.FROZEN_ATMOSPHERE.get())
+                || state.is(ModBlocks.HEARTH_BOUNDARY_MARKER.get())
                 || state.is(ModBlocks.ORSA_SUPPLY_CRATE.get());
     }
 
@@ -515,6 +552,8 @@ public final class HearthReconciliationManager {
             case FROZEN_PLANKS -> ModBlocks.FROZEN_PLANKS.get().defaultBlockState();
             case FROZEN_STONE_BRICKS -> ModBlocks.FROZEN_STONE_BRICKS.get().defaultBlockState();
             case FROZEN_ATMOSPHERE -> ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState();
+            // Kept in layouts only long enough to clear markers from experimental saves.
+            case BOUNDARY_MARKER -> Blocks.AIR.defaultBlockState();
             case PROTECTED_CHEST, SACRED_CHEST -> Blocks.CHEST.defaultBlockState()
                     .setValue(ChestBlock.FACING, placement.facing())
                     .setValue(ChestBlock.TYPE, ChestType.SINGLE)
@@ -701,6 +740,22 @@ public final class HearthReconciliationManager {
         pending.remove(id);
         surfaceSearchCursors.remove(id);
         retryAfter.remove(id);
+        waitReasons.remove(id);
+    }
+
+    private static String waitingSummary() {
+        if (pending.isEmpty()) {
+            return "none";
+        }
+        return pending.stream()
+                .sorted()
+                .map(id -> shortId(id) + ":" + waitReasons.getOrDefault(id, "queued"))
+                .reduce((first, second) -> first + "," + second)
+                .orElse("none");
+    }
+
+    private static String formatPos(BlockPos pos) {
+        return pos.getX() + "/" + pos.getY() + "/" + pos.getZ();
     }
 
     private static String shortId(UUID id) {

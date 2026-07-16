@@ -12,10 +12,10 @@ import java.util.List;
  */
 public final class HearthReconciliationPolicy {
     public static final int TRACE_PLAN_VERSION = 2;
-    public static final int FORMED_PLAN_VERSION = 6;
-    public static final int INTACT_PLAN_VERSION = 7;
+    public static final int FORMED_PLAN_VERSION = 8;
+    public static final int INTACT_PLAN_VERSION = 9;
     public static final int TRACE_FOOTPRINT_RADIUS = 4;
-    public static final int FORMED_FOOTPRINT_RADIUS = 4;
+    public static final int FORMED_FOOTPRINT_RADIUS = 5;
     public static final int INTACT_FOOTPRINT_RADIUS = 22;
     public static final int CANDIDATE_SEARCH_RADIUS = 48;
     public static final int CANDIDATE_STEP = 8;

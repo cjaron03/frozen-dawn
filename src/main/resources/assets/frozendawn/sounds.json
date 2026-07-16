@@ -704,6 +704,20 @@
       { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.45 }
     ]
   },
+  "entity.hearth.boundary_warning": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.hearth.boundary_warning",
+    "sounds": [
+      { "name": "frozendawn:entity/hearth/boundary_warning", "volume": 1.35 }
+    ]
+  },
+  "entity.hearth.orsathae": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.hearth.orsathae",
+    "sounds": [
+      { "name": "frozendawn:entity/hearth/orsathae", "volume": 1.45 }
+    ]
+  },
   "radio.static_burst": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.radio.static",
