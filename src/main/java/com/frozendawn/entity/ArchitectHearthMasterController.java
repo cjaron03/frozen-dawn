@@ -53,7 +53,7 @@ final class ArchitectHearthMasterController {
 
         ServerPlayer player = nearestPlayer(level);
         if (player != null) {
-            architect.getLookControl().setLookAt(player, 30.0F, 30.0F);
+            architect.getLookControl().setLookAt(player, 8.0F, 6.0F);
             if (architect.distanceToSqr(player)
                     < (double) HearthMasterArchitectPolicy.RETREAT_DISTANCE
                     * HearthMasterArchitectPolicy.RETREAT_DISTANCE) {

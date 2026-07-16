@@ -2,6 +2,7 @@ package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -34,6 +35,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "textures/entity/architect_blink.png");
     private static final ResourceLocation WHITE_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
+    private final MasterArchitectAdornmentLayer masterAdornmentLayer;
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
         super(context, new ArchitectModel(context.bakeLayer(ModelLayers.ZOMBIE)), 0.5f);
@@ -43,6 +45,11 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
                 context.getModelManager()
         ));
+        this.masterAdornmentLayer = new MasterArchitectAdornmentLayer(
+                this,
+                new MasterArchitectAdornmentModel(
+                        context.bakeLayer(MasterArchitectAdornmentModel.LAYER_LOCATION)));
+        this.addLayer(this.masterAdornmentLayer);
     }
 
     @Override
@@ -84,7 +91,17 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
 
         poseStack.pushPose();
         int action = entity.getCurrentAction();
-        if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
+        if (entity.isHearthMasterArchitect()
+                && entity.getMasterCombatAction()
+                == MasterArchitectCombatAction.STORM_MAINTENANCE) {
+            float time = entity.tickCount + partialTick;
+            poseStack.translate(
+                    Mth.sin(time * 2.2F) * 0.009F,
+                    Mth.cos(time * 2.7F) * 0.006F,
+                    Mth.sin(time * 2.45F) * 0.009F);
+        } else if (!entity.isHearthMasterArchitect()
+                && (action == ArchitectEntity.ACTION_OBSERVE
+                || action == ArchitectEntity.ACTION_PEEK)) {
             float sway = Mth.sin((entity.tickCount + partialTick) * 0.035f) * 0.9f;
             poseStack.mulPose(Axis.YP.rotationDegrees(sway));
         }
@@ -201,6 +218,17 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                     FastColor.ARGB32.color(
                             Mth.floor(glowAlpha * 255.0F), 255, 255, 255));
         }
+        this.masterAdornmentLayer.render(
+                poseStack,
+                bufferSource,
+                packedLight,
+                entity,
+                limbSwing,
+                limbSwingAmount,
+                partialTick,
+                time,
+                headYaw,
+                headPitch);
         poseStack.popPose();
     }
 }
