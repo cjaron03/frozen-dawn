@@ -1,7 +1,9 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,6 +23,7 @@ final class ArchitectHearthMasterController {
     private final ArchitectEntity architect;
     private final MasterArchitectCombatController combatController;
     private int patrolCooldown;
+    private boolean combatMusicActive;
 
     ArchitectHearthMasterController(ArchitectEntity architect) {
         this.architect = architect;
@@ -31,12 +34,27 @@ final class ArchitectHearthMasterController {
     boolean tick(ServerLevel level) {
         ServerPlayer hostileTarget = findHostileTarget(level);
         if (hostileTarget != null) {
+            architect.getHearthMasterArchitectId().ifPresent(
+                    hearthId -> HearthCombatRosterManager.ensureRoster(
+                            level, hearthId, hostileTarget));
             architect.setMasterBossBarProvoked(true);
             patrolCooldown = 0;
             combatController.tick(level, hostileTarget);
+            if (!combatMusicActive) {
+                MasterArchitectFightMusicManager.pushStage(
+                        level, architect, combatController.musicStage());
+            } else {
+                MasterArchitectFightMusicManager.heartbeat(
+                        level, architect, combatController.musicStage());
+            }
+            combatMusicActive = true;
             return true;
         }
 
+        if (combatMusicActive) {
+            MasterArchitectFightMusicManager.stopNearby(level, architect);
+            combatMusicActive = false;
+        }
         architect.setMasterBossBarProvoked(false);
         combatController.leaveCombat(level);
         architect.prepareHearthAssessmentMode();
@@ -74,7 +92,14 @@ final class ArchitectHearthMasterController {
         combatController.onHurt();
     }
 
+    MasterArchitectCombatController.TetherDamageResult redistributeIncomingDamage(
+            ServerLevel level, float incomingDamage) {
+        return combatController.redistributeIncomingDamage(level, incomingDamage);
+    }
+
     void onDeath(ServerLevel level) {
+        MasterArchitectFightMusicManager.stopNearby(level, architect);
+        combatMusicActive = false;
         combatController.onDeath(level);
     }
 

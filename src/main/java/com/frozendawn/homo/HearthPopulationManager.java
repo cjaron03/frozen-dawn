@@ -81,16 +81,29 @@ public final class HearthPopulationManager {
 
     public static void recordResidentDeath(ServerLevel level, UUID hearthId,
                                            HearthPopulationRole role, UUID entityId) {
+        recordResidentDeath(level, hearthId, role, entityId, false);
+    }
+
+    public static boolean recordResidentDeath(
+            ServerLevel level, UUID hearthId, HearthPopulationRole role,
+            UUID entityId, boolean permanentlyVacant) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         if (!data.markPopulationResidentMissing(
-                hearthId, role, entityId, level.getGameTime())) {
-            return;
+                hearthId, role, entityId, level.getGameTime(), permanentlyVacant)) {
+            return false;
         }
         residentsLost++;
-        FrozenDawn.LOGGER.info(
-                "Hearth resident {} ({}) lost at Hearth {}; replacement eligible in {} ticks",
-                shortId(entityId), role.serializedName(), shortId(hearthId),
-                HearthPopulationPolicy.RESPAWN_DELAY_TICKS);
+        if (permanentlyVacant) {
+            FrozenDawn.LOGGER.info(
+                    "Hearth resident {} ({}) permanently lost at Hearth {}",
+                    shortId(entityId), role.serializedName(), shortId(hearthId));
+        } else {
+            FrozenDawn.LOGGER.info(
+                    "Hearth resident {} ({}) lost at Hearth {}; replacement eligible in {} ticks",
+                    shortId(entityId), role.serializedName(), shortId(hearthId),
+                    HearthPopulationPolicy.RESPAWN_DELAY_TICKS);
+        }
+        return true;
     }
 
     public static String statusLine() {
@@ -128,6 +141,9 @@ public final class HearthPopulationManager {
 
             ReturnedHearthSavedData.HearthResidentBinding binding =
                     hearth.populationResident(role).orElse(null);
+            if (binding != null && binding.permanentlyVacant()) {
+                continue;
+            }
             if (binding != null && binding.entityId().isPresent()) {
                 UUID boundId = binding.entityId().orElseThrow();
                 Entity bound = level.getEntity(boundId);
@@ -148,6 +164,10 @@ public final class HearthPopulationManager {
             }
             if (binding != null && !HearthPopulationPolicy.isReplacementReady(
                     binding.respawnAfterGameTime(), level.getGameTime())) {
+                continue;
+            }
+            if (binding != null && HearthCombatRosterManager
+                    .suppressPopulationReplacement(hearth)) {
                 continue;
             }
 

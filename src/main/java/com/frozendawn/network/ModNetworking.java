@@ -125,6 +125,24 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectWeather(payload))
         );
         registrar.playToClient(
+                MasterArchitectFightMusicPayload.TYPE,
+                MasterArchitectFightMusicPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFightMusic(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectTetherHitPayload.TYPE,
+                MasterArchitectTetherHitPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectTetherHit(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectSeverTelegraphPayload.TYPE,
+                MasterArchitectSeverTelegraphPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectSeverTelegraph(payload))
+        );
+        registrar.playToClient(
                 ContinuityFracturePayload.TYPE,
                 ContinuityFracturePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

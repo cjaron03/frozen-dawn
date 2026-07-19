@@ -74,7 +74,12 @@ public final class MasterArchitectPresenceFx {
         }
 
         if (action == MasterArchitectCombatAction.THERMAL_SEVER) {
-            tickThermalConvergence(level, master, tick);
+            tickThermalConvergence(
+                    level, master, tick, master.getMasterCombatActionTicks());
+        } else if (hostile
+                && master.getMasterThermalCharge() >= 0.98F
+                && Math.floorMod(tick + master.getId(), 4) == 0) {
+            tickLoadedThermalHand(level, master, tick);
         } else if (action == MasterArchitectCombatAction.LAST_WALL_CAST
                 || action == MasterArchitectCombatAction.LAST_WALL_HEAL) {
             tickLastWallConvergence(level, master, tick);
@@ -110,26 +115,76 @@ public final class MasterArchitectPresenceFx {
     private static void tickThermalConvergence(
             ClientLevel level,
             ArchitectEntity master,
-            int tick) {
-        Vec3 focus = wandFocus(master);
+            int tick,
+            int actionTicks) {
+        float charge = com.frozendawn.homo.MasterArchitectCombatPolicy
+                .thermalCastCharge(actionTicks);
+        if (charge <= 0.0F) {
+            return;
+        }
+        Vec3 focus = thermalHandFocus(master, charge);
+        Vec3 shoulder = thermalShoulderFocus(master);
+        Vec3 frostFront = focus.lerp(shoulder, charge);
         spawnConvergingParticle(
                 level,
                 master,
                 ParticleTypes.SNOWFLAKE,
-                focus,
-                1.15D,
-                0.14D,
+                frostFront,
+                0.72D + charge * 0.58D,
+                0.08D + charge * 0.09D,
                 tick * 1.21D);
         if ((tick & 1) == 0) {
             spawnConvergingParticle(
                     level,
                     master,
+                    ParticleTypes.END_ROD,
+                    focus,
+                    0.32D + charge * 0.30D,
+                    0.045D + charge * 0.05D,
+                    tick * 1.63D + 0.8D);
+        }
+        if (charge > 0.25F && (tick & 1) == 0) {
+            spawnConvergingParticle(
+                    level,
+                    master,
                     ParticleTypes.SCULK_SOUL,
                     focus,
-                    0.82D,
-                    0.09D,
+                    0.45D + charge * 0.52D,
+                    0.06D + charge * 0.06D,
                     tick * -0.87D + 1.4D);
         }
+        if (charge > 0.82F) {
+            level.addParticle(
+                    ParticleTypes.END_ROD,
+                    focus.x,
+                    focus.y,
+                    focus.z,
+                    0.0D,
+                    0.006D,
+                    0.0D);
+        }
+    }
+
+    private static void tickLoadedThermalHand(
+            ClientLevel level, ArchitectEntity master, int tick) {
+        Vec3 focus = thermalHandFocus(master, 0.0F);
+        double angle = tick * 0.46D + master.getId();
+        level.addParticle(
+                ParticleTypes.END_ROD,
+                focus.x + Math.cos(angle) * 0.18D,
+                focus.y + Math.sin(angle * 1.4D) * 0.12D,
+                focus.z + Math.sin(angle) * 0.18D,
+                0.0D,
+                0.004D,
+                0.0D);
+        level.addParticle(
+                ParticleTypes.SNOWFLAKE,
+                focus.x,
+                focus.y,
+                focus.z,
+                0.0D,
+                0.012D,
+                0.0D);
     }
 
     private static void tickLastWallConvergence(
@@ -190,18 +245,28 @@ public final class MasterArchitectPresenceFx {
                 velocity.z);
     }
 
-    private static Vec3 wandFocus(ArchitectEntity master) {
+    private static Vec3 thermalHandFocus(ArchitectEntity master, float charge) {
+        Vec3 look = horizontalLook(master);
+        Vec3 right = new Vec3(-look.z, 0.0D, look.x);
+        return master.position()
+                .add(0.0D, 1.05D + charge * 0.23D, 0.0D)
+                .add(look.scale(0.12D + charge * 0.60D))
+                .add(right.scale(-0.34D));
+    }
+
+    private static Vec3 thermalShoulderFocus(ArchitectEntity master) {
+        Vec3 look = horizontalLook(master);
+        Vec3 right = new Vec3(-look.z, 0.0D, look.x);
+        return master.position()
+                .add(0.0D, 1.48D, 0.0D)
+                .add(right.scale(-0.34D));
+    }
+
+    private static Vec3 horizontalLook(ArchitectEntity master) {
         Vec3 look = master.getLookAngle();
         Vec3 horizontal = new Vec3(look.x, 0.0D, look.z);
-        if (horizontal.lengthSqr() < 1.0E-4D) {
-            horizontal = new Vec3(0.0D, 0.0D, 1.0D);
-        } else {
-            horizontal = horizontal.normalize();
-        }
-        Vec3 right = new Vec3(-horizontal.z, 0.0D, horizontal.x);
-        return master.position()
-                .add(0.0D, 1.28D, 0.0D)
-                .add(horizontal.scale(0.72D))
-                .add(right.scale(0.34D));
+        return horizontal.lengthSqr() < 1.0E-4D
+                ? new Vec3(0.0D, 0.0D, 1.0D)
+                : horizontal.normalize();
     }
 }

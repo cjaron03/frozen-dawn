@@ -4,6 +4,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthMaturationManager;
@@ -180,6 +181,9 @@ final class FrozenDawnHearthCommand {
                 "  Protected conduct: " + HearthViolationManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Boundary response: " + HearthBoundaryManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Master encounter roster: "
+                        + HearthCombatRosterManager.statusLine()), false);
         long discovered = hearthState.hearths().stream()
                 .filter(ReturnedHearthSavedData.HearthRecord::discovered)
                 .count();
@@ -599,6 +603,7 @@ final class FrozenDawnHearthCommand {
         ReturnedHearthSavedData.HiveRelationship relationship = state.relationship(player.getUUID());
         String details = state.playerMemory(player.getUUID())
                 .map(memory -> " | contacts=" + memory.totalVisits()
+                        + " casualties=" + memory.congregationCasualties()
                         + " first=" + memory.firstContactGameTime()
                         + " last=" + memory.lastContactGameTime()
                         + " source=" + memory.relationshipSourceHearthId()
@@ -721,7 +726,13 @@ final class FrozenDawnHearthCommand {
             result.append(binding.role().serializedName()).append(':');
             binding.entityId().ifPresentOrElse(
                     id -> result.append(id.toString(), 0, 8),
-                    () -> result.append("waiting@").append(binding.respawnAfterGameTime()));
+                    () -> {
+                        if (binding.permanentlyVacant()) {
+                            result.append("casualty");
+                        } else {
+                            result.append("waiting@").append(binding.respawnAfterGameTime());
+                        }
+                    });
         }
         return result.toString();
     }

@@ -78,6 +78,12 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> MENU_MUSIC = SOUNDS.register("music.menu",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "music.menu")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_GHOST = register(
+            "music.master_architect.ghost");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_TETHERS = register(
+            "music.master_architect.tethers");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_LAST_WALL = register(
+            "music.master_architect.last_wall");
 
     // Curated melancholy gameplay music.
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MOOG_CITY_2 = register("music.sad.moog_city_2");
@@ -242,6 +248,18 @@ public class ModSounds {
             "entity.master_architect.death");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_DETONATE = register(
             "entity.master_architect.detonate");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TETHER_DEFLECT = register(
+            "entity.master_architect.tether_deflect");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TETHER_STRAIN = register(
+            "entity.master_architect.tether_strain");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TETHER_DEPLOY = register(
+            "entity.master_architect.tether_deploy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CHARGE = register(
+            "entity.master_architect.thermal_charge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_COMMIT = register(
+            "entity.master_architect.thermal_commit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CANCEL = register(
+            "entity.master_architect.thermal_cancel");
 
     // --- Terminal Boot ---
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");

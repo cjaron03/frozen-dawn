@@ -23,6 +23,7 @@ import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -147,6 +148,7 @@ public class WorldTickHandler {
         HearthTransmissionManager.reset();
         HearthSurveySignalManager.reset();
         HearthBoundaryManager.reset();
+        HearthCombatRosterManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
         FrozenEvacVehiclePlacement.reset();

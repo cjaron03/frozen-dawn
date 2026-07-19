@@ -27,10 +27,10 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
-import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.MasterArchitectBossBarPolicy;
@@ -108,6 +108,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_MASTER_COMBAT_TICKS =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> DATA_MASTER_THERMAL_CHARGE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> DATA_MASTER_ARCHITECT =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -206,6 +208,8 @@ public class ArchitectEntity extends Monster {
     private int peekTicks = 0;
     private int trapCooldown = 0;
     private int pathRecalcCooldown = 0;
+    private boolean suppressMasterHurtSound;
+    private int clientMasterTetherHurtSuppressionTicks;
     private static final float WALK_MAX_ROTATE = 35.0F;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     static final int MELEE_COMMIT_TICKS = 12;
@@ -278,6 +282,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MINING_PROGRESS, 0.0f);
         builder.define(DATA_MASTER_COMBAT_ACTION, MasterArchitectCombatAction.IDLE);
         builder.define(DATA_MASTER_COMBAT_TICKS, 0);
+        builder.define(DATA_MASTER_THERMAL_CHARGE, 0.0F);
         builder.define(DATA_MASTER_ARCHITECT, false);
     }
 
@@ -445,8 +450,20 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
+        if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
+            clientMasterTetherHurtSuppressionTicks--;
+        }
         if (!level().isClientSide() && isHearthMasterArchitect()) {
             updateMasterBossBarProgress();
+        }
+        if (level() instanceof ServerLevel serverLevel) {
+            if (isHearthAssessor() && hearthAssessorId != null) {
+                HearthCombatRosterManager.enforcePassiveRole(
+                        serverLevel, hearthAssessorId, this);
+            } else if (isHearthPopulationResident() && hearthPopulationId != null) {
+                HearthCombatRosterManager.enforcePassiveRole(
+                        serverLevel, hearthPopulationId, this);
+            }
         }
         // Warmup: skip all AI for first 2 seconds after spawn/load
         // Prevents pathfinding freeze when entity loads before chunks are ready
@@ -927,11 +944,23 @@ public class ArchitectEntity extends Monster {
                     amount,
                     source.is(DamageTypeTags.IS_FIRE),
                     source.is(DamageTypeTags.BYPASSES_INVULNERABILITY));
+            if (level() instanceof ServerLevel serverLevel) {
+                MasterArchitectCombatController.TetherDamageResult tetherResult =
+                        hearthMasterController.redistributeIncomingDamage(
+                                serverLevel, amount);
+                amount = tetherResult.masterDamage();
+                suppressMasterHurtSound = tetherResult.suppressNormalHitSound();
+            }
         } else if (source.is(DamageTypeTags.IS_FIRE)) {
             amount *= 1.5F;
         }
 
-        boolean hurt = super.hurt(source, amount);
+        boolean hurt;
+        try {
+            hurt = super.hurt(source, amount);
+        } finally {
+            suppressMasterHurtSound = false;
+        }
         if (hurt && !level().isClientSide()) {
             if (isHearthAssessor()
                     && level() instanceof ServerLevel serverLevel
@@ -985,8 +1014,13 @@ public class ArchitectEntity extends Monster {
         }
         if (isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
                 && hearthPopulationId != null) {
-            HearthPopulationManager.recordResidentDeath(
-                    serverLevel, hearthPopulationId, HearthPopulationRole.ARCHITECT, getUUID());
+            HearthCombatRosterManager.recordResidentDeath(
+                    serverLevel, hearthPopulationId, getUUID(),
+                    HearthPopulationRole.ARCHITECT, source);
+        } else if (isHearthAssessor() && level() instanceof ServerLevel serverLevel
+                && hearthAssessorId != null) {
+            HearthCombatRosterManager.recordResidentDeath(
+                    serverLevel, hearthAssessorId, getUUID(), null, source);
         }
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel
                 && hearthMasterArchitectId != null) {
@@ -1277,6 +1311,9 @@ public class ArchitectEntity extends Monster {
     public int getMasterCombatActionTicks() {
         return entityData.get(DATA_MASTER_COMBAT_TICKS);
     }
+    public float getMasterThermalCharge() {
+        return entityData.get(DATA_MASTER_THERMAL_CHARGE);
+    }
     public boolean isMiningBlock() {
         return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.MINING);
     }
@@ -1411,6 +1448,13 @@ public class ArchitectEntity extends Monster {
         entityData.set(DATA_MASTER_COMBAT_TICKS, Math.max(0, ticks));
     }
 
+    void setMasterThermalCharge(float charge) {
+        if (isHearthMasterArchitect()) {
+            entityData.set(DATA_MASTER_THERMAL_CHARGE,
+                    Mth.clamp(charge, 0.0F, 1.0F));
+        }
+    }
+
     void equipMasterArchitectStaff() {
         if (!isHearthMasterArchitect()) {
             return;
@@ -1539,11 +1583,25 @@ public class ArchitectEntity extends Monster {
                 : ModSounds.ARCHITECT_AMBIENT.get();
     }
 
+    @Nullable
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
+        if (isHearthMasterArchitect()
+                && (suppressMasterHurtSound
+                || clientMasterTetherHurtSuppressionTicks > 0)) {
+            return null;
+        }
         return isHearthMasterArchitect()
                 ? ModSounds.MASTER_ARCHITECT_HURT.get()
                 : ModSounds.ARCHITECT_HURT.get();
+    }
+
+    public void setClientMasterTetherFeedback(int feedbackStateId) {
+        MasterArchitectCombatPolicy.TetherFeedbackState feedback =
+                MasterArchitectCombatPolicy.TetherFeedbackState.fromId(feedbackStateId);
+        clientMasterTetherHurtSuppressionTicks = feedback.suppressesNormalHitSound()
+                ? 4
+                : 0;
     }
 
     @Override

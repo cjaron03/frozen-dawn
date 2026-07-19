@@ -5,8 +5,8 @@ import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
 import com.frozendawn.entity.ai.ReturnedHearthWatchGoal;
 import com.frozendawn.entity.ai.ReturnedHostileStrollGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
-import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthWatcherPolicy;
@@ -248,16 +248,18 @@ public class ReturnedEntity extends Monster {
             return false;
         }
         return HearthWatcherPolicy.canProactivelyTargetPlayer(true,
-                HearthMemoryManager.relationship(serverLevel, player.getUUID()));
+                HearthMemoryManager.relationship(serverLevel, player.getUUID()))
+                && HearthCombatRosterManager.canEngagePlayer(
+                        serverLevel, hearthId, getUUID());
     }
 
     @Override
     public void die(DamageSource source) {
         super.die(source);
-        if (isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
-                && hearthId != null && hearthPopulationRole != null) {
-            HearthPopulationManager.recordResidentDeath(
-                    serverLevel, hearthId, hearthPopulationRole, getUUID());
+        if (isHearthBound() && level() instanceof ServerLevel serverLevel
+                && hearthId != null) {
+            HearthCombatRosterManager.recordResidentDeath(
+                    serverLevel, hearthId, getUUID(), hearthPopulationRole, source);
         }
         if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
             WorldTickHandler.grantAdvancement(killer, "returned_killed");
@@ -268,6 +270,7 @@ public class ReturnedEntity extends Monster {
 
     @Override
     public void aiStep() {
+        enforceHearthEncounterRole();
         clearDeescalatedHearthAggression();
         super.aiStep();
 
@@ -325,6 +328,13 @@ public class ReturnedEntity extends Monster {
         }
         if (navigationStopped) {
             getNavigation().stop();
+        }
+    }
+
+    private void enforceHearthEncounterRole() {
+        if (hearthId != null && level() instanceof ServerLevel serverLevel) {
+            HearthCombatRosterManager.enforcePassiveRole(
+                    serverLevel, hearthId, this);
         }
     }
 

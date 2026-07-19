@@ -97,7 +97,8 @@ public final class HearthBoundaryManager {
             return;
         }
 
-        makeResidentsHostile(level, hearth, violator);
+        HearthCombatRosterManager.ensureRoster(level, hearthId, violator);
+        MasterArchitectFightMusicManager.start(violator);
         for (ServerPlayer observer : level.players()) {
             if (observer.isAlive() && observer.distanceToSqr(hearth.center().getCenter())
                     <= FX_RADIUS_SQUARED) {
@@ -244,19 +245,6 @@ public final class HearthBoundaryManager {
             if (entity instanceof Mob mob && mob.isAlive()) {
                 mob.getNavigation().stop();
                 mob.getLookControl().setLookAt(player, 30.0F, 30.0F);
-            }
-        }
-    }
-
-    private static void makeResidentsHostile(
-            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
-            ServerPlayer violator) {
-        for (UUID entityId : residentIds(hearth)) {
-            Entity entity = level.getEntity(entityId);
-            if (entity instanceof Mob mob && mob.isAlive()) {
-                mob.getNavigation().stop();
-                mob.setTarget(violator);
-                mob.getLookControl().setLookAt(violator, 45.0F, 45.0F);
             }
         }
     }

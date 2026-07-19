@@ -2,6 +2,7 @@ package com.frozendawn.data;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 9;
+    public static final int CURRENT_DATA_VERSION = 10;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -417,7 +419,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         HearthResidentBinding binding = hearth.populationResidents.computeIfAbsent(
                 role, HearthResidentBinding::new);
-        if (binding.entityId != null) {
+        if (binding.entityId != null || binding.permanentlyVacant) {
             return false;
         }
         binding.entityId = entityId;
@@ -428,6 +430,13 @@ public final class ReturnedHearthSavedData extends SavedData {
 
     public boolean markPopulationResidentMissing(UUID hearthId, HearthPopulationRole role,
                                                     UUID entityId, long gameTime) {
+        return markPopulationResidentMissing(
+                hearthId, role, entityId, gameTime, false);
+    }
+
+    public boolean markPopulationResidentMissing(UUID hearthId, HearthPopulationRole role,
+                                                   UUID entityId, long gameTime,
+                                                   boolean permanentlyVacant) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || role == null || entityId == null) {
             return false;
@@ -437,8 +446,106 @@ public final class ReturnedHearthSavedData extends SavedData {
             return false;
         }
         binding.entityId = null;
-        binding.respawnAfterGameTime = Math.max(0L, gameTime)
-                + HearthPopulationPolicy.RESPAWN_DELAY_TICKS;
+        binding.permanentlyVacant = permanentlyVacant;
+        binding.respawnAfterGameTime = permanentlyVacant
+                ? -1L
+                : Math.max(0L, gameTime) + HearthPopulationPolicy.RESPAWN_DELAY_TICKS;
+        setDirty();
+        return true;
+    }
+
+    public boolean initializeCombatRoster(
+            UUID hearthId, Map<UUID, HearthEncounterRole> assignments) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.combatRosterInitialized || assignments == null) {
+            return false;
+        }
+        hearth.combatRoster.clear();
+        assignments.forEach((entityId, role) -> {
+            if (entityId != null && role != null && role != HearthEncounterRole.UNASSIGNED) {
+                hearth.combatRoster.put(entityId, role);
+            }
+        });
+        hearth.combatRosterInitialized = true;
+        setDirty();
+        return true;
+    }
+
+    public HearthEncounterRole encounterRole(UUID hearthId, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null) {
+            return HearthEncounterRole.UNASSIGNED;
+        }
+        return hearth.combatRoster.getOrDefault(
+                entityId, HearthEncounterRole.UNASSIGNED);
+    }
+
+    public boolean setEncounterRole(
+            UUID hearthId, UUID entityId, HearthEncounterRole role) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null || role == null
+                || role == HearthEncounterRole.UNASSIGNED) {
+            return false;
+        }
+        HearthEncounterRole previous = hearth.combatRoster.put(entityId, role);
+        hearth.combatRosterInitialized = true;
+        if (previous == role) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public int releaseEncounterTethers(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.combatRoster.isEmpty()) {
+            return 0;
+        }
+        int changed = 0;
+        for (Map.Entry<UUID, HearthEncounterRole> entry : hearth.combatRoster.entrySet()) {
+            if (entry.getValue() == HearthEncounterRole.TETHERED) {
+                entry.setValue(HearthEncounterRole.RESERVED);
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
+    public int pacifyCombatRoster(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.combatRoster.isEmpty()) {
+            return 0;
+        }
+        int changed = 0;
+        for (Map.Entry<UUID, HearthEncounterRole> entry : hearth.combatRoster.entrySet()) {
+            if (entry.getValue() == HearthEncounterRole.DISPATCHED
+                    || entry.getValue() == HearthEncounterRole.RESERVED
+                    || entry.getValue() == HearthEncounterRole.TETHERED) {
+                entry.setValue(HearthEncounterRole.BYSTANDER);
+                changed++;
+            }
+        }
+        if (changed > 0) {
+            setDirty();
+        }
+        return changed;
+    }
+
+    public boolean recordCongregationCasualty(
+            UUID playerId, UUID hearthId, UUID entityId, long gameTime) {
+        if (playerId == null || hearthId == null || entityId == null
+                || hearth(hearthId).isEmpty()) {
+            return false;
+        }
+        PlayerHiveMemory memory = playerMemories.computeIfAbsent(
+                playerId, id -> new PlayerHiveMemory(id, legacyRelationship));
+        if (!memory.recordCongregationCasualty(
+                entityId, hearthId, Math.max(0L, gameTime))) {
+            return false;
+        }
         setDirty();
         return true;
     }
@@ -489,6 +596,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.masterArchitectEntityId = null;
         hearth.masterArchitectDefeated = false;
         hearth.masterArchitectDefeatedGameTime = -1L;
+        hearth.combatRosterInitialized = false;
+        hearth.combatRoster.clear();
         setDirty();
         return true;
     }
@@ -901,6 +1010,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private int totalVisits;
         private long relationshipChangedGameTime = -1L;
         private UUID relationshipSourceHearthId;
+        private final Set<UUID> congregationCasualtyIds = new LinkedHashSet<>();
+        private long lastCongregationCasualtyGameTime = -1L;
+        private UUID lastCongregationCasualtyHearthId;
 
         private PlayerHiveMemory(UUID playerId, HiveRelationship relationship) {
             this.playerId = playerId;
@@ -922,6 +1034,19 @@ public final class ReturnedHearthSavedData extends SavedData {
             memory.relationshipSourceHearthId = tag.hasUUID("relationshipSourceHearthId")
                     ? tag.getUUID("relationshipSourceHearthId")
                     : null;
+            ListTag casualties = tag.getList(
+                    "congregationCasualties", Tag.TAG_COMPOUND);
+            for (Tag entry : casualties) {
+                if (entry instanceof CompoundTag casualty && casualty.hasUUID("entityId")) {
+                    memory.congregationCasualtyIds.add(casualty.getUUID("entityId"));
+                }
+            }
+            memory.lastCongregationCasualtyGameTime = readOptionalTime(
+                    tag, "lastCongregationCasualtyGameTime");
+            memory.lastCongregationCasualtyHearthId =
+                    tag.hasUUID("lastCongregationCasualtyHearthId")
+                            ? tag.getUUID("lastCongregationCasualtyHearthId")
+                            : null;
             return memory;
         }
 
@@ -936,7 +1061,30 @@ public final class ReturnedHearthSavedData extends SavedData {
             if (relationshipSourceHearthId != null) {
                 tag.putUUID("relationshipSourceHearthId", relationshipSourceHearthId);
             }
+            ListTag casualties = new ListTag();
+            for (UUID entityId : congregationCasualtyIds) {
+                CompoundTag casualty = new CompoundTag();
+                casualty.putUUID("entityId", entityId);
+                casualties.add(casualty);
+            }
+            tag.put("congregationCasualties", casualties);
+            tag.putLong("lastCongregationCasualtyGameTime",
+                    lastCongregationCasualtyGameTime);
+            if (lastCongregationCasualtyHearthId != null) {
+                tag.putUUID("lastCongregationCasualtyHearthId",
+                        lastCongregationCasualtyHearthId);
+            }
             return tag;
+        }
+
+        private boolean recordCongregationCasualty(
+                UUID entityId, UUID hearthId, long gameTime) {
+            if (!congregationCasualtyIds.add(entityId)) {
+                return false;
+            }
+            lastCongregationCasualtyGameTime = gameTime;
+            lastCongregationCasualtyHearthId = hearthId;
+            return true;
         }
 
         private ContactUpdate recordContact(long gameTime) {
@@ -1006,6 +1154,18 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public Optional<UUID> relationshipSourceHearthId() {
             return Optional.ofNullable(relationshipSourceHearthId);
+        }
+
+        public int congregationCasualties() {
+            return congregationCasualtyIds.size();
+        }
+
+        public long lastCongregationCasualtyGameTime() {
+            return lastCongregationCasualtyGameTime;
+        }
+
+        public Optional<UUID> lastCongregationCasualtyHearthId() {
+            return Optional.ofNullable(lastCongregationCasualtyHearthId);
         }
     }
 
@@ -1208,6 +1368,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
         private boolean lootTaken;
+        private boolean combatRosterInitialized;
+        private final Map<UUID, HearthEncounterRole> combatRoster = new LinkedHashMap<>();
         private final Map<UUID, HearthContactMemory> playerContacts = new LinkedHashMap<>();
 
         private HearthRecord(UUID id, HearthSelectionPolicy.HearthType type, BlockPos center,
@@ -1291,6 +1453,22 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.firstAssessmentFired = tag.getBoolean("firstAssessmentFired");
             record.firstTransmissionFired = tag.getBoolean("firstTransmissionFired");
             record.lootTaken = tag.getBoolean("lootTaken");
+            record.combatRosterInitialized = tag.getBoolean("combatRosterInitialized");
+            ListTag roster = tag.getList("combatRoster", Tag.TAG_COMPOUND);
+            for (Tag entry : roster) {
+                if (!(entry instanceof CompoundTag member) || !member.hasUUID("entityId")) {
+                    continue;
+                }
+                HearthEncounterRole role = HearthEncounterRole.fromSerializedName(
+                        member.getString("role"));
+                if (role == HearthEncounterRole.BYSTANDER
+                        && !record.masterArchitectDefeated) {
+                    role = HearthEncounterRole.RESERVED;
+                }
+                if (role != HearthEncounterRole.UNASSIGNED) {
+                    record.combatRoster.putIfAbsent(member.getUUID("entityId"), role);
+                }
+            }
             ListTag contacts = tag.getList("playerContacts", Tag.TAG_COMPOUND);
             for (Tag entry : contacts) {
                 if (!(entry instanceof CompoundTag compound)) {
@@ -1346,6 +1524,15 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
             tag.putBoolean("lootTaken", lootTaken);
+            tag.putBoolean("combatRosterInitialized", combatRosterInitialized);
+            ListTag roster = new ListTag();
+            for (Map.Entry<UUID, HearthEncounterRole> entry : combatRoster.entrySet()) {
+                CompoundTag member = new CompoundTag();
+                member.putUUID("entityId", entry.getKey());
+                member.putString("role", entry.getValue().serializedName());
+                roster.add(member);
+            }
+            tag.put("combatRoster", roster);
             ListTag contacts = new ListTag();
             for (HearthContactMemory memory : playerContacts.values()) {
                 contacts.add(memory.save());
@@ -1487,6 +1674,14 @@ public final class ReturnedHearthSavedData extends SavedData {
             return lootTaken;
         }
 
+        public boolean combatRosterInitialized() {
+            return combatRosterInitialized;
+        }
+
+        public Map<UUID, HearthEncounterRole> combatRoster() {
+            return Map.copyOf(combatRoster);
+        }
+
         public Optional<HearthContactMemory> playerContact(UUID playerId) {
             return Optional.ofNullable(playerContacts.get(playerId));
         }
@@ -1500,6 +1695,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         private final HearthPopulationRole role;
         private UUID entityId;
         private long respawnAfterGameTime = -1L;
+        private boolean permanentlyVacant;
 
         private HearthResidentBinding(HearthPopulationRole role) {
             this.role = role;
@@ -1516,6 +1712,7 @@ public final class ReturnedHearthSavedData extends SavedData {
             binding.respawnAfterGameTime = tag.contains("respawnAfterGameTime", Tag.TAG_LONG)
                     ? tag.getLong("respawnAfterGameTime")
                     : -1L;
+            binding.permanentlyVacant = tag.getBoolean("permanentlyVacant");
             return binding;
         }
 
@@ -1526,6 +1723,7 @@ public final class ReturnedHearthSavedData extends SavedData {
                 tag.putUUID("entityId", entityId);
             }
             tag.putLong("respawnAfterGameTime", respawnAfterGameTime);
+            tag.putBoolean("permanentlyVacant", permanentlyVacant);
             return tag;
         }
 
@@ -1539,6 +1737,10 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public long respawnAfterGameTime() {
             return respawnAfterGameTime;
+        }
+
+        public boolean permanentlyVacant() {
+            return permanentlyVacant;
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.frozendawn.event;
 
+import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -12,6 +14,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,8 +72,22 @@ public final class MasterArchitectThermalSever {
                         player.getTicksFrozen(), player.getTicksRequiredToFreeze() + 20));
             }
 
+            if (!state.pulsesCancelled
+                    && shouldCancelRemainingPulses(player, state)) {
+                state.pulsesCancelled = true;
+                player.serverLevel().playSound(
+                        null,
+                        player.blockPosition(),
+                        ModSounds.MASTER_ARCHITECT_THERMAL_CANCEL.get(),
+                        SoundSource.HOSTILE,
+                        1.2F,
+                        1.08F);
+            }
+
             int duePulses = MasterArchitectCombatPolicy.thermalPulseCountAt(elapsed);
-            while (state.pulsesApplied < duePulses && player.isAlive()) {
+            while (!state.pulsesCancelled
+                    && state.pulsesApplied < duePulses
+                    && player.isAlive()) {
                 state.pulsesApplied++;
                 player.serverLevel().playSound(
                         null,
@@ -114,6 +131,22 @@ public final class MasterArchitectThermalSever {
         return (int) Math.max(0L, Math.min(Integer.MAX_VALUE, elapsed));
     }
 
+    private static boolean shouldCancelRemainingPulses(
+            ServerPlayer player, SeverState state) {
+        Entity caster = player.serverLevel().getEntity(state.casterId);
+        boolean hasLineOfSight = caster instanceof LivingEntity living
+                && living.hasLineOfSight(player);
+        ApocalypseState apocalypse = ApocalypseState.get(player.getServer());
+        boolean withinHeatSource = TemperatureManager.getHeatSourceModifier(
+                player.serverLevel(),
+                player.blockPosition(),
+                apocalypse.getCurrentDay(),
+                apocalypse.getTotalDays(),
+                true) > 0.0F;
+        return MasterArchitectCombatPolicy.shouldCancelThermalPulses(
+                hasLineOfSight, withinHeatSource);
+    }
+
     private static DamageSource createDamageSource(
             ServerPlayer player, UUID casterId) {
         Entity caster = player.serverLevel().getEntity(casterId);
@@ -128,6 +161,7 @@ public final class MasterArchitectThermalSever {
         private final long startGameTime;
         private final UUID casterId;
         private int pulsesApplied;
+        private boolean pulsesCancelled;
 
         private SeverState(long startGameTime, UUID casterId) {
             this.startGameTime = startGameTime;

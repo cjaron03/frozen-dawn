@@ -12,6 +12,8 @@ public final class MasterArchitectCombatPolicy {
     public static final int CONTINUITY_ACTION_TICKS = 28;
     public static final int CONTINUITY_EFFECT_TICKS = 50;
     public static final int THERMAL_RELEASE_TICK = 28;
+    public static final int THERMAL_CHARGE_START_TICK = 4;
+    public static final int THERMAL_COMMIT_TICK = 24;
     public static final int THERMAL_ACTION_TICKS = 34;
     public static final int THERMAL_ACTIVE_TICKS = 100;
     public static final int THERMAL_RECOVERY_TICKS = 60;
@@ -36,6 +38,12 @@ public final class MasterArchitectCombatPolicy {
     public static final float THERMAL_SINK_CELSIUS = -220.0F;
     public static final float THERMAL_PULSE_DAMAGE = 3.0F;
     public static final int THERMAL_PULSE_COUNT = 4;
+    public static final float TETHER_TRIGGER_HEALTH_FRACTION = 0.50F;
+    public static final float TETHER_REDIRECT_FRACTION = 0.90F;
+    public static final float TETHER_MAX_CHARGE_PER_MEMBER = 12.0F;
+    public static final float TETHER_RECHARGE_PER_TICK = 0.15F;
+    public static final float TETHER_SURVIVAL_FLOOR = 1.0F;
+    public static final int TETHER_MAX_MEMBERS = 3;
     public static final float LAST_WALL_TRIGGER_HEALTH_FRACTION = 0.30F;
     public static final float LAST_WALL_MAX_HEAL_FRACTION = 0.25F;
     public static final float MAX_DAMAGE_PER_HIT = 40.0F;
@@ -60,6 +68,51 @@ public final class MasterArchitectCombatPolicy {
                 && maxHealth > 0.0F
                 && health > 0.0F
                 && health / maxHealth <= LAST_WALL_TRIGGER_HEALTH_FRACTION;
+    }
+
+    public static boolean shouldUseTether(
+            float health, float maxHealth, boolean alreadyUsed) {
+        return !alreadyUsed
+                && maxHealth > 0.0F
+                && health > 0.0F
+                && health / maxHealth <= TETHER_TRIGGER_HEALTH_FRACTION;
+    }
+
+    public static float desiredTetherRedirect(float incomingDamage) {
+        return Math.max(0.0F, incomingDamage) * TETHER_REDIRECT_FRACTION;
+    }
+
+    public static float thermalCooldownCharge(int cooldownTicks, int durationTicks) {
+        if (durationTicks <= 0) {
+            return cooldownTicks <= 0 ? 1.0F : 0.0F;
+        }
+        return clamp01(1.0F - Math.max(0, cooldownTicks) / (float) durationTicks);
+    }
+
+    public static float thermalCastCharge(int actionTicks) {
+        return clamp01((actionTicks - THERMAL_CHARGE_START_TICK)
+                / (float) (THERMAL_RELEASE_TICK - THERMAL_CHARGE_START_TICK));
+    }
+
+    public static TetherFeedbackState tetherFeedbackState(
+            float desiredRedirect, float actualRedirect, float chargeFraction) {
+        if (actualRedirect + 0.001F < desiredRedirect) {
+            return TetherFeedbackState.BREAKTHROUGH;
+        }
+        return chargeFraction <= 0.50F
+                ? TetherFeedbackState.STRAINED
+                : TetherFeedbackState.HEALTHY;
+    }
+
+    public static float rechargeTether(float currentCharge) {
+        return Math.min(TETHER_MAX_CHARGE_PER_MEMBER,
+                Math.max(0.0F, currentCharge) + TETHER_RECHARGE_PER_TICK);
+    }
+
+    public static float safeTransferRequest(float desired, float charge, float health) {
+        return Math.min(Math.max(0.0F, desired),
+                Math.min(Math.max(0.0F, charge),
+                        Math.max(0.0F, health - TETHER_SURVIVAL_FLOOR)));
     }
 
     public static float adjustedIncomingDamage(
@@ -108,6 +161,11 @@ public final class MasterArchitectCombatPolicy {
         return Math.min(THERMAL_PULSE_COUNT, elapsedTicks / 20);
     }
 
+    public static boolean shouldCancelThermalPulses(
+            boolean hasLineOfSight, boolean withinHeatSource) {
+        return !hasLineOfSight || withinHeatSource;
+    }
+
     public static int thermalSlownessAmplifierAt(int elapsedTicks) {
         if (elapsedTicks < 0 || elapsedTicks >= THERMAL_ACTIVE_TICKS) {
             return -1;
@@ -134,5 +192,35 @@ public final class MasterArchitectCombatPolicy {
 
     private static float clamp01(float value) {
         return Math.max(0.0F, Math.min(1.0F, value));
+    }
+
+    public enum TetherFeedbackState {
+        HEALTHY(0, true),
+        STRAINED(1, true),
+        BREAKTHROUGH(2, false);
+
+        private final int id;
+        private final boolean suppressesNormalHitSound;
+
+        TetherFeedbackState(int id, boolean suppressesNormalHitSound) {
+            this.id = id;
+            this.suppressesNormalHitSound = suppressesNormalHitSound;
+        }
+
+        public int id() {
+            return id;
+        }
+
+        public boolean suppressesNormalHitSound() {
+            return suppressesNormalHitSound;
+        }
+
+        public static TetherFeedbackState fromId(int id) {
+            return switch (id) {
+                case 0 -> HEALTHY;
+                case 1 -> STRAINED;
+                default -> BREAKTHROUGH;
+            };
+        }
     }
 }

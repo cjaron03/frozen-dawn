@@ -1,5 +1,6 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import net.minecraft.core.BlockPos;
@@ -69,6 +70,11 @@ final class ArchitectHearthResidentController {
 
     @Nullable
     ServerPlayer findHostileTarget(ServerLevel level) {
+        java.util.UUID hearthId = architect.getHearthPopulationId().orElse(null);
+        if (hearthId != null && !HearthCombatRosterManager.canEngagePlayer(
+                level, hearthId, architect.getUUID())) {
+            return null;
+        }
         return level.players().stream()
                 .filter(player -> player.isAlive() && !player.isCreative() && !player.isSpectator())
                 .filter(player -> architect.distanceToSqr(player)

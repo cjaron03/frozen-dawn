@@ -135,14 +135,19 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.zRot = -0.22F;
             }
             case MasterArchitectCombatAction.THERMAL_SEVER -> {
+                float charge = MasterArchitectCombatPolicy.thermalCastCharge(actionTicks);
                 this.body.xRot = 0.0F;
-                this.head.xRot += 0.04F;
-                this.rightArm.xRot = -1.52F;
-                this.rightArm.yRot = -0.10F;
-                this.rightArm.zRot = 0.02F;
-                this.leftArm.xRot = -0.82F;
-                this.leftArm.yRot = 0.45F;
-                this.leftArm.zRot = -0.28F;
+                this.body.yRot = 0.0F;
+                this.body.zRot = 0.0F;
+                this.head.xRot += 0.02F;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+                this.rightArm.xRot = Mth.lerp(charge, MASTER_WAND_HOLD_X, -1.38F);
+                this.rightArm.yRot = Mth.lerp(charge, MASTER_WAND_HOLD_Y, -0.12F);
+                this.rightArm.zRot = MASTER_WAND_HOLD_Z;
+                this.leftArm.xRot = Mth.lerp(charge, 0.10F, -1.28F);
+                this.leftArm.yRot = Mth.lerp(charge, 0.0F, 0.24F);
+                this.leftArm.zRot = Mth.lerp(charge, 0.0F, -0.10F);
             }
             case MasterArchitectCombatAction.LAST_WALL_CAST -> {
                 this.body.xRot = 0.0F;

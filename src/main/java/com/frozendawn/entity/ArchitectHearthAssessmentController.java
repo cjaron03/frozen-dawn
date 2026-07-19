@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.OrsaEquipmentDetector;
@@ -131,6 +132,11 @@ final class ArchitectHearthAssessmentController {
 
     @Nullable
     ServerPlayer findHostileTarget(ServerLevel level) {
+        UUID hearthId = architect.getHearthAssessorId().orElse(null);
+        if (hearthId != null && !HearthCombatRosterManager.canEngagePlayer(
+                level, hearthId, architect.getUUID())) {
+            return null;
+        }
         return level.players().stream()
                 .filter(player -> player.isAlive() && !player.isCreative() && !player.isSpectator())
                 .filter(player -> architect.distanceToSqr(player)

@@ -1,6 +1,7 @@
 package com.frozendawn.data;
 
 import com.frozendawn.homo.HearthMaturationPolicy;
+import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthSelectionPolicy;
@@ -11,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -321,6 +323,100 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void playerCausedPassiveDeathLeavesAPermanentPopulationVacancy() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID resident = UUID.randomUUID();
+
+        assertTrue(state.bindPopulationResident(
+                major.id(), HearthPopulationRole.RETURNED, resident));
+        assertTrue(state.markPopulationResidentMissing(
+                major.id(), HearthPopulationRole.RETURNED, resident, 5000L, true));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthResidentBinding vacancy = major(loaded)
+                .populationResident(HearthPopulationRole.RETURNED).orElseThrow();
+        assertTrue(vacancy.permanentlyVacant());
+        assertTrue(vacancy.entityId().isEmpty());
+        assertEquals(-1L, vacancy.respawnAfterGameTime());
+        assertFalse(loaded.bindPopulationResident(
+                major(loaded).id(), HearthPopulationRole.RETURNED, UUID.randomUUID()));
+    }
+
+    @Test
+    void combatRosterRolesPersistAndTetherReleasePreservesSpentResidents() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID dispatched = UUID.randomUUID();
+        UUID tethered = UUID.randomUUID();
+        UUID spent = UUID.randomUUID();
+
+        assertTrue(state.initializeCombatRoster(major.id(), Map.of(
+                dispatched, HearthEncounterRole.DISPATCHED,
+                tethered, HearthEncounterRole.TETHERED,
+                spent, HearthEncounterRole.SPENT)));
+        assertFalse(state.initializeCombatRoster(major.id(), Map.of()));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.combatRosterInitialized());
+        assertEquals(HearthEncounterRole.DISPATCHED,
+                loaded.encounterRole(restored.id(), dispatched));
+        assertEquals(HearthEncounterRole.TETHERED,
+                loaded.encounterRole(restored.id(), tethered));
+        assertEquals(HearthEncounterRole.SPENT,
+                loaded.encounterRole(restored.id(), spent));
+
+        assertEquals(1, loaded.releaseEncounterTethers(restored.id()));
+        assertEquals(HearthEncounterRole.RESERVED,
+                loaded.encounterRole(restored.id(), tethered));
+        assertEquals(HearthEncounterRole.SPENT,
+                loaded.encounterRole(restored.id(), spent));
+    }
+
+    @Test
+    void legacyUntetheredBystandersMigrateToActiveReserves() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID legacyBystander = UUID.randomUUID();
+
+        assertTrue(state.initializeCombatRoster(major.id(), Map.of(
+                legacyBystander, HearthEncounterRole.BYSTANDER)));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        assertEquals(HearthEncounterRole.RESERVED,
+                loaded.encounterRole(major(loaded).id(), legacyBystander));
+    }
+
+    @Test
+    void congregationCasualtyLedgerIsPermanentAndDeduplicated() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        UUID casualty = UUID.randomUUID();
+
+        assertTrue(state.recordCongregationCasualty(
+                player, major.id(), casualty, 8000L));
+        assertFalse(state.recordCongregationCasualty(
+                player, major.id(), casualty, 9000L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.PlayerHiveMemory memory = loaded.playerMemory(player)
+                .orElseThrow();
+        assertEquals(1, memory.congregationCasualties());
+        assertEquals(8000L, memory.lastCongregationCasualtyGameTime());
+        assertEquals(major.id(), memory.lastCongregationCasualtyHearthId().orElseThrow());
+
+        loaded.clearPlayerViolationsForDebug(player);
+        assertEquals(1, loaded.playerMemory(player).orElseThrow()
+                .congregationCasualties());
+    }
+
+    @Test
     void masterArchitectBindingPersistsAndDefeatIsPermanent() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);
@@ -346,6 +442,8 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.masterArchitectDefeated());
         assertEquals(5000L, restored.masterArchitectDefeatedGameTime());
         assertFalse(loaded.bindMasterArchitect(restored.id(), replacement));
+        assertTrue(loaded.initializeCombatRoster(restored.id(), Map.of(
+                UUID.randomUUID(), HearthEncounterRole.DISPATCHED)));
 
         ReturnedHearthSavedData defeatedReload = ReturnedHearthSavedData.load(
                 loaded.save(new CompoundTag(), null), null);
@@ -353,6 +451,8 @@ class ReturnedHearthSavedDataTest {
         assertTrue(defeated.masterArchitectDefeated());
         assertEquals(5000L, defeated.masterArchitectDefeatedGameTime());
         assertTrue(defeatedReload.resetMasterArchitectForDebug(defeated.id()));
+        assertFalse(defeated.combatRosterInitialized());
+        assertTrue(defeated.combatRoster().isEmpty());
         assertTrue(defeatedReload.bindMasterArchitect(defeated.id(), replacement));
         assertEquals(replacement, defeated.masterArchitectEntityId().orElseThrow());
     }

@@ -30,6 +30,66 @@ class MasterArchitectCombatPolicyTest {
     }
 
     @Test
+    void loadSharingTriggersOnceAtHalfHealthBeforeLastWall() {
+        assertFalse(MasterArchitectCombatPolicy.shouldUseTether(51.0F, 100.0F, false));
+        assertTrue(MasterArchitectCombatPolicy.shouldUseTether(50.0F, 100.0F, false));
+        assertFalse(MasterArchitectCombatPolicy.shouldUseTether(50.0F, 100.0F, true));
+        assertFalse(MasterArchitectCombatPolicy.shouldUseTether(0.0F, 100.0F, false));
+    }
+
+    @Test
+    void scoreMovementsFollowTheFightSkeleton() {
+        assertEquals(MasterArchitectMusicStage.KIT,
+                MasterArchitectMusicStage.forCombatState(false, false));
+        assertEquals(MasterArchitectMusicStage.TETHER,
+                MasterArchitectMusicStage.forCombatState(true, false));
+        assertEquals(MasterArchitectMusicStage.LAST_WALL,
+                MasterArchitectMusicStage.forCombatState(true, true));
+        assertEquals(MasterArchitectMusicStage.LAST_WALL,
+                MasterArchitectMusicStage.forCombatState(false, true));
+        assertEquals(MasterArchitectMusicStage.OFF,
+                MasterArchitectMusicStage.fromId(999));
+    }
+
+    @Test
+    void loadSharingMakesNinetyPercentEligibleWithoutMakingTheMasterImmune() {
+        assertEquals(36.0F, MasterArchitectCombatPolicy.desiredTetherRedirect(40.0F));
+        assertEquals(0.0F, MasterArchitectCombatPolicy.desiredTetherRedirect(-1.0F));
+        assertEquals(4.0F,
+                40.0F - MasterArchitectCombatPolicy.desiredTetherRedirect(40.0F),
+                0.0001F);
+    }
+
+    @Test
+    void tetherFeedbackTracksChargeAndActualBreakthrough() {
+        assertEquals(MasterArchitectCombatPolicy.TetherFeedbackState.HEALTHY,
+                MasterArchitectCombatPolicy.tetherFeedbackState(9.0F, 9.0F, 0.75F));
+        assertEquals(MasterArchitectCombatPolicy.TetherFeedbackState.STRAINED,
+                MasterArchitectCombatPolicy.tetherFeedbackState(9.0F, 9.0F, 0.30F));
+        assertEquals(MasterArchitectCombatPolicy.TetherFeedbackState.BREAKTHROUGH,
+                MasterArchitectCombatPolicy.tetherFeedbackState(9.0F, 4.0F, 0.90F));
+    }
+
+    @Test
+    void tetherChargeRechargesButNeverExceedsItsCap() {
+        assertEquals(0.15F, MasterArchitectCombatPolicy.rechargeTether(0.0F), 0.0001F);
+        assertEquals(MasterArchitectCombatPolicy.TETHER_MAX_CHARGE_PER_MEMBER,
+                MasterArchitectCombatPolicy.rechargeTether(
+                        MasterArchitectCombatPolicy.TETHER_MAX_CHARGE_PER_MEMBER),
+                0.0001F);
+    }
+
+    @Test
+    void transferCannotConsumeMoreChargeOrKillItsNode() {
+        assertEquals(4.0F,
+                MasterArchitectCombatPolicy.safeTransferRequest(8.0F, 4.0F, 20.0F));
+        assertEquals(2.0F,
+                MasterArchitectCombatPolicy.safeTransferRequest(8.0F, 12.0F, 3.0F));
+        assertEquals(0.0F,
+                MasterArchitectCombatPolicy.safeTransferRequest(8.0F, 12.0F, 1.0F));
+    }
+
+    @Test
     void lastWallCanDeliverItsFullPresetScaledHeal() {
         assertEquals(7.5F, MasterArchitectCombatPolicy.lastWallHealPerPulse(300.0F));
         assertEquals(5.0F, MasterArchitectCombatPolicy.lastWallHealPerPulse(200.0F));
@@ -59,6 +119,24 @@ class MasterArchitectCombatPolicyTest {
         assertEquals(3, MasterArchitectCombatPolicy.thermalPulseCountAt(60));
         assertEquals(4, MasterArchitectCombatPolicy.thermalPulseCountAt(80));
         assertEquals(4, MasterArchitectCombatPolicy.thermalPulseCountAt(100));
+    }
+
+    @Test
+    void thermalSeverPulsesYieldToCoverOrHeat() {
+        assertFalse(MasterArchitectCombatPolicy.shouldCancelThermalPulses(true, false));
+        assertTrue(MasterArchitectCombatPolicy.shouldCancelThermalPulses(false, false));
+        assertTrue(MasterArchitectCombatPolicy.shouldCancelThermalPulses(true, true));
+    }
+
+    @Test
+    void thermalArmShowsCooldownAndCastReadiness() {
+        assertEquals(0.0F, MasterArchitectCombatPolicy.thermalCooldownCharge(100, 100));
+        assertEquals(0.5F, MasterArchitectCombatPolicy.thermalCooldownCharge(50, 100));
+        assertEquals(1.0F, MasterArchitectCombatPolicy.thermalCooldownCharge(0, 100));
+        assertEquals(0.0F, MasterArchitectCombatPolicy.thermalCastCharge(
+                MasterArchitectCombatPolicy.THERMAL_CHARGE_START_TICK));
+        assertEquals(1.0F, MasterArchitectCombatPolicy.thermalCastCharge(
+                MasterArchitectCombatPolicy.THERMAL_RELEASE_TICK));
     }
 
     @Test
