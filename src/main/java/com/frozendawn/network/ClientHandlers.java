@@ -7,6 +7,9 @@ import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
+import com.frozendawn.client.MasterArchitectFightMusic;
+import com.frozendawn.client.MasterArchitectFourthWallMoment;
+import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
@@ -15,6 +18,7 @@ import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.ThaevenTransmissionOverlay;
 import com.frozendawn.client.TowerTerminalScreen;
+import com.frozendawn.entity.ArchitectEntity;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -127,6 +131,25 @@ public final class ClientHandlers {
         MasterArchitectWeather.update(payload);
     }
 
+    public static void handleMasterArchitectFightMusic(
+            MasterArchitectFightMusicPayload payload) {
+        MasterArchitectFightMusic.update(payload);
+    }
+
+    public static void handleMasterArchitectTetherHit(
+            MasterArchitectTetherHitPayload payload) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null
+                && mc.level.getEntity(payload.entityId()) instanceof ArchitectEntity architect) {
+            architect.setClientMasterTetherFeedback(payload.feedbackStateId());
+        }
+    }
+
+    public static void handleMasterArchitectSeverTelegraph(
+            MasterArchitectSeverTelegraphPayload payload) {
+        MasterArchitectSeverTelegraph.start(payload);
+    }
+
     public static void handleContinuityFracture(
             ContinuityFracturePayload payload) {
         ContinuityFractureInput.start(payload);
@@ -135,5 +158,10 @@ public final class ClientHandlers {
     public static void handleHearthBoundaryEffect(
             HearthBoundaryEffectPayload payload) {
         HearthBoundaryEffects.trigger(payload);
+    }
+
+    public static void handleMasterArchitectFourthWallState(
+            MasterArchitectFourthWallStatePayload payload) {
+        MasterArchitectFourthWallMoment.handleState(payload);
     }
 }

@@ -451,6 +451,33 @@
       }
     ]
   },
+  "music.master_architect.ghost": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/continuity_ghost",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.tethers": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/thae_iven_tethers",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.last_wall": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/last_wall_memory",
+        "stream": true
+      }
+    ]
+  },
   "music.sad.moog_city_2": {
     "category": "music",
     "sounds": [
@@ -702,6 +729,59 @@
     "subtitle": "subtitle.frozendawn.entity.master_architect.detonate",
     "sounds": [
       { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.45 }
+    ]
+  },
+  "entity.master_architect.tether_deflect": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_deflect",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 1.05, "pitch": 1.35 },
+      { "name": "minecraft:block.chain.hit", "type": "event", "volume": 0.72, "pitch": 1.45 }
+    ]
+  },
+  "entity.master_architect.tether_strain": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_strain",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.break", "type": "event", "volume": 0.92, "pitch": 0.72 },
+      { "name": "minecraft:block.chain.break", "type": "event", "volume": 0.78, "pitch": 0.68 },
+      { "name": "minecraft:block.sculk.charge", "type": "event", "volume": 0.52, "pitch": 0.56 }
+    ]
+  },
+  "entity.master_architect.tether_deploy": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_deploy",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.cast", "type": "event", "volume": 0.82, "pitch": 0.72 },
+      { "name": "minecraft:block.conduit.activate", "type": "event", "volume": 1.15, "pitch": 0.74 },
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 0.92, "pitch": 0.62 },
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.72, "pitch": 1.18 }
+    ]
+  },
+  "entity.master_architect.thermal_charge": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_charge",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.cast", "type": "event", "volume": 0.68, "pitch": 0.62 },
+      { "name": "minecraft:block.respawn_anchor.ambient", "type": "event", "volume": 1.18, "pitch": 0.50 },
+      { "name": "minecraft:block.beacon.deactivate", "type": "event", "volume": 0.78, "pitch": 0.58 }
+    ]
+  },
+  "entity.master_architect.thermal_commit": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_commit",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.12, "pitch": 0.72 },
+      { "name": "minecraft:block.respawn_anchor.charge", "type": "event", "volume": 1.08, "pitch": 0.64 },
+      { "name": "minecraft:entity.warden.sonic_charge", "type": "event", "volume": 0.65, "pitch": 1.25 }
+    ]
+  },
+  "entity.master_architect.thermal_cancel": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_cancel",
+    "sounds": [
+      { "name": "minecraft:block.fire.extinguish", "type": "event", "volume": 0.82, "pitch": 1.42 },
+      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 0.54, "pitch": 0.68 }
     ]
   },
   "entity.hearth.boundary_warning": {

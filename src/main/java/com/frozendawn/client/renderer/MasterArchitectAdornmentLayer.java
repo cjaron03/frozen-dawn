@@ -80,6 +80,18 @@ public final class MasterArchitectAdornmentLayer
                 overlay,
                 FastColor.ARGB32.color(crownAlpha, 111, 235, 244));
 
+        float thermalCharge = entity.getMasterCombatAction()
+                == MasterArchitectCombatAction.THERMAL_SEVER
+                ? MasterArchitectCombatPolicy.thermalCastCharge(
+                        entity.getMasterCombatActionTicks())
+                : entity.getMasterThermalCharge();
+        adornments.renderThermalCharge(
+                poseStack,
+                glow,
+                LightTexture.FULL_BRIGHT,
+                overlay,
+                thermalCharge);
+
         if (entity.getDeathTicks() > 0) {
             float charge = MasterArchitectCombatPolicy.deathChargeProgress(
                     entity.getDeathTicks() + partialTick);

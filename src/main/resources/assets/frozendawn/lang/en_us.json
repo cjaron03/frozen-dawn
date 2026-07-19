@@ -570,6 +570,12 @@
   "subtitle.frozendawn.entity.master_architect.hurt": "The Master Architect recoils",
   "subtitle.frozendawn.entity.master_architect.death": "The Master Architect falls silent",
   "subtitle.frozendawn.entity.master_architect.detonate": "The Master Architect ruptures",
+  "subtitle.frozendawn.entity.master_architect.tether_deflect": "Thae Iven turns the blow aside",
+  "subtitle.frozendawn.entity.master_architect.tether_strain": "Thae Iven begins to crack",
+  "subtitle.frozendawn.entity.master_architect.tether_deploy": "The Master Architect protects itself",
+  "subtitle.frozendawn.entity.master_architect.thermal_charge": "The storm falls silent around the Master Architect",
+  "subtitle.frozendawn.entity.master_architect.thermal_commit": "Thermal Sever commits",
+  "subtitle.frozendawn.entity.master_architect.thermal_cancel": "Thermal Sever loses its hold",
   "subtitle.frozendawn.entity.hearth.boundary_warning": "The collective draws breath.",
   "subtitle.frozendawn.entity.hearth.orsathae": "The collective screams.",
 
@@ -581,6 +587,12 @@
 
   "advancement.frozendawn.disassembled.title": "Disassembled",
   "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose.",
+  "advancement.frozendawn.decoherence.title": "Decoherence",
+  "advancement.frozendawn.decoherence.description": "There You Were",
+  "advancement.frozendawn.host_has_joined_the_game.title": "Host Has Joined the Game",
+  "advancement.frozendawn.host_has_joined_the_game.description": "It wasn't looking at your character.",
+  "overlay.frozendawn.thaeven.host_found": "There you are",
+  "bossbar.frozendawn.master_architect": "The Master Architect",
 
   "advancement.frozendawn.found_newspaper_cannibal.title": "Local News",
   "advancement.frozendawn.found_newspaper_cannibal.description": "Find a tattered newspaper clipping. Some stories age poorly.",

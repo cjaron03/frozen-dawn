@@ -100,6 +100,11 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "hearth_boundary_effect"),
                 HearthBoundaryEffects::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "master_architect_fourth_wall"),
+                MasterArchitectFourthWallMoment::render
+        );
     }
 
     @SubscribeEvent

@@ -58,11 +58,14 @@ public class WindAmbience {
         float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
         targetVolume *= Mth.lerp(exposure, 0.08f, 1.0f);
+        targetVolume *= MasterArchitectFourthWallMoment.weatherAudioMultiplier();
+        targetVolume *= MasterArchitectSeverTelegraph.weatherAudioMultiplier();
         float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
         if (currentSound != null && !currentSound.isStopped()) {
-            currentSound.setTargetVolume(targetVolume);
+            currentSound.setTargetVolume(
+                    targetVolume, MasterArchitectSeverTelegraph.windFadeRate());
             currentSound.setTargetPitch(targetPitch);
         }
 

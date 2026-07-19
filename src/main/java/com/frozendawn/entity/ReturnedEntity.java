@@ -5,8 +5,8 @@ import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
 import com.frozendawn.entity.ai.ReturnedHearthWatchGoal;
 import com.frozendawn.entity.ai.ReturnedHostileStrollGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
-import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthWatcherPolicy;
@@ -53,6 +53,8 @@ import java.util.UUID;
 
 public class ReturnedEntity extends Monster {
 
+    public static final double MAX_HEALTH = 50.0D;
+
     private static final EntityDataAccessor<Integer> DATA_TEXTURE_VARIANT =
             SynchedEntityData.defineId(ReturnedEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DEATH_TICKS =
@@ -75,7 +77,7 @@ public class ReturnedEntity extends Monster {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 60.0)
+                .add(Attributes.MAX_HEALTH, MAX_HEALTH)
                 .add(Attributes.ATTACK_DAMAGE, 8.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.ARMOR, 8.0)
@@ -246,16 +248,18 @@ public class ReturnedEntity extends Monster {
             return false;
         }
         return HearthWatcherPolicy.canProactivelyTargetPlayer(true,
-                HearthMemoryManager.relationship(serverLevel, player.getUUID()));
+                HearthMemoryManager.relationship(serverLevel, player.getUUID()))
+                && HearthCombatRosterManager.canEngagePlayer(
+                        serverLevel, hearthId, getUUID());
     }
 
     @Override
     public void die(DamageSource source) {
         super.die(source);
-        if (isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
-                && hearthId != null && hearthPopulationRole != null) {
-            HearthPopulationManager.recordResidentDeath(
-                    serverLevel, hearthId, hearthPopulationRole, getUUID());
+        if (isHearthBound() && level() instanceof ServerLevel serverLevel
+                && hearthId != null) {
+            HearthCombatRosterManager.recordResidentDeath(
+                    serverLevel, hearthId, getUUID(), hearthPopulationRole, source);
         }
         if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
             WorldTickHandler.grantAdvancement(killer, "returned_killed");
@@ -266,6 +270,7 @@ public class ReturnedEntity extends Monster {
 
     @Override
     public void aiStep() {
+        enforceHearthEncounterRole();
         clearDeescalatedHearthAggression();
         super.aiStep();
 
@@ -323,6 +328,13 @@ public class ReturnedEntity extends Monster {
         }
         if (navigationStopped) {
             getNavigation().stop();
+        }
+    }
+
+    private void enforceHearthEncounterRole() {
+        if (hearthId != null && level() instanceof ServerLevel serverLevel) {
+            HearthCombatRosterManager.enforcePassiveRole(
+                    serverLevel, hearthId, this);
         }
     }
 
@@ -386,6 +398,7 @@ public class ReturnedEntity extends Monster {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        applyCurrentHealthBalance();
         setTextureVariant(tag.getInt("TextureVariant"));
         despawnTimer = tag.getInt("DespawnTimer");
         if (tag.hasUUID("HearthId") && tag.contains("HearthCenter")) {
@@ -403,6 +416,18 @@ public class ReturnedEntity extends Monster {
             hearthCenter = null;
             hearthPopulationRole = null;
         }
+    }
+
+    private void applyCurrentHealthBalance() {
+        var maxHealthAttribute = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealthAttribute == null) {
+            return;
+        }
+        float previousMax = getMaxHealth();
+        float healthFraction = previousMax > 0.0F ? getHealth() / previousMax : 1.0F;
+        maxHealthAttribute.setBaseValue(MAX_HEALTH);
+        setHealth(Math.max(0.0F, Math.min(getMaxHealth(),
+                getMaxHealth() * healthFraction)));
     }
 
     // --- Prevent natural despawn (custom timer handles it) ---

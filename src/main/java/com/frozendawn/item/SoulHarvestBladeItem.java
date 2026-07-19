@@ -1,6 +1,7 @@
 package com.frozendawn.item;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchitectEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -44,15 +45,27 @@ public class SoulHarvestBladeItem extends AcheroniteSwordItem {
 
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        return target.getType().is(SOUL_HARVEST_TARGETS) ? SOUL_HARVEST_DAMAGE : 0.0f;
+        return soulHarvestDamageBonus(
+                target.getType().is(SOUL_HARVEST_TARGETS),
+                target instanceof ArchitectEntity architect
+                        && architect.isHearthMasterArchitect());
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (target.getType().is(SOUL_HARVEST_TARGETS) && target.level() instanceof ServerLevel serverLevel) {
+        if (soulHarvestDamageBonus(
+                        target.getType().is(SOUL_HARVEST_TARGETS),
+                        target instanceof ArchitectEntity architect
+                                && architect.isHearthMasterArchitect())
+                > 0.0F
+                && target.level() instanceof ServerLevel serverLevel) {
             spawnSoulHarvestParticles(serverLevel, target, attacker);
         }
         return super.hurtEnemy(stack, target, attacker);
+    }
+
+    static float soulHarvestDamageBonus(boolean taggedTarget, boolean masterArchitect) {
+        return taggedTarget || masterArchitect ? SOUL_HARVEST_DAMAGE : 0.0F;
     }
 
     private static void spawnSoulHarvestParticles(ServerLevel serverLevel, LivingEntity target, LivingEntity attacker) {

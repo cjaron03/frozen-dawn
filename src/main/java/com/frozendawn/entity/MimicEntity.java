@@ -2,8 +2,8 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.MimicCombatGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
-import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.init.ModSounds;
@@ -233,6 +233,7 @@ public class MimicEntity extends Monster {
 
     @Override
     public void aiStep() {
+        enforceHearthEncounterRole();
         clearDeescalatedHearthAggression();
         super.aiStep();
 
@@ -583,8 +584,9 @@ public class MimicEntity extends Monster {
         super.die(source);
         if (level() instanceof ServerLevel serverLevel) {
             if (hearthPopulationId != null && isHearthPopulationResident()) {
-                HearthPopulationManager.recordResidentDeath(
-                        serverLevel, hearthPopulationId, HearthPopulationRole.MIMIC, getUUID());
+                HearthCombatRosterManager.recordResidentDeath(
+                        serverLevel, hearthPopulationId, getUUID(),
+                        HearthPopulationRole.MIMIC, source);
             }
             // Giant smoke puff on death
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
@@ -747,7 +749,9 @@ public class MimicEntity extends Monster {
                 .filter(player -> distanceToSqr(player) <= 48.0D * 48.0D)
                 .filter(player -> !hostileOnly
                         || HearthPopulationPolicy.isHostileRelationship(
-                                HearthMemoryManager.relationship(serverLevel, player.getUUID())))
+                                HearthMemoryManager.relationship(serverLevel, player.getUUID()))
+                        && HearthCombatRosterManager.canEngagePlayer(
+                                serverLevel, hearthPopulationId, getUUID()))
                 .min(java.util.Comparator.comparingDouble(this::distanceToSqr))
                 .orElse(null);
     }
@@ -768,7 +772,9 @@ public class MimicEntity extends Monster {
         return candidate instanceof ServerPlayer player
                 && level() instanceof ServerLevel serverLevel
                 && HearthPopulationPolicy.isHostileRelationship(
-                        HearthMemoryManager.relationship(serverLevel, player.getUUID()));
+                        HearthMemoryManager.relationship(serverLevel, player.getUUID()))
+                && HearthCombatRosterManager.canEngagePlayer(
+                        serverLevel, hearthPopulationId, getUUID());
     }
 
     private void clearDeescalatedHearthAggression() {
@@ -790,6 +796,17 @@ public class MimicEntity extends Monster {
             engaged = false;
             transitionToPhase(PHASE_OBSERVATION);
             getNavigation().stop();
+        }
+    }
+
+    private void enforceHearthEncounterRole() {
+        if (hearthPopulationId != null && level() instanceof ServerLevel serverLevel
+                && HearthCombatRosterManager.enforcePassiveRole(
+                        serverLevel, hearthPopulationId, this)) {
+            engaged = false;
+            if (getMimicPhase() != PHASE_OBSERVATION) {
+                transitionToPhase(PHASE_OBSERVATION);
+            }
         }
     }
 }

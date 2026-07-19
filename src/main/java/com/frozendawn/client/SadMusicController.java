@@ -77,6 +77,10 @@ public final class SadMusicController {
             enterMutedState(mc);
             return;
         }
+        if (MasterArchitectFightMusic.isActive()) {
+            enterMutedState(mc);
+            return;
+        }
         if (BlackglassAudioPlayer.isAnySegmentPlaying()) {
             enterMutedState(mc);
             mc.getSoundManager().stop(null, SoundSource.MUSIC);
