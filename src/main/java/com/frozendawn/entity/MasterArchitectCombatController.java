@@ -4,9 +4,11 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MasterArchitectThermalSever;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthEncounterRole;
+import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import com.frozendawn.homo.MasterArchitectMusicStage;
+import com.frozendawn.homo.MasterArchitectPhasePolicy;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.ContinuityFracturePayload;
 import com.frozendawn.network.MasterArchitectTetherHitPayload;
@@ -73,12 +75,14 @@ final class MasterArchitectCombatController {
     private long wallExpiresAt = -1L;
     private UUID severTargetId;
     private int continuityStrafeDirection = 1;
+    private MasterArchitectCombatPhase combatPhase = MasterArchitectCombatPhase.KIT;
 
     MasterArchitectCombatController(ArchitectEntity architect) {
         this.architect = architect;
     }
 
     void tick(ServerLevel level, ServerPlayer target) {
+        refreshPhaseFromHealth(true);
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
@@ -150,6 +154,7 @@ final class MasterArchitectCombatController {
     }
 
     void leaveCombat(ServerLevel level) {
+        refreshPhaseFromHealth(true);
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
@@ -162,9 +167,19 @@ final class MasterArchitectCombatController {
     }
 
     void onHurt() {
+        refreshPhaseFromHealth(true);
         if (activeAction == MasterArchitectCombatAction.LAST_WALL_HEAL) {
             healingInterrupted = true;
         }
+    }
+
+    float prepareIncomingDamage(float incomingDamage, boolean bypassesInvulnerability) {
+        return MasterArchitectPhasePolicy.clampFloodEntryDamage(
+                combatPhase,
+                architect.getHealth(),
+                architect.getMaxHealth(),
+                incomingDamage,
+                bypassesInvulnerability);
     }
 
     void onDeath(ServerLevel level) {
@@ -260,6 +275,7 @@ final class MasterArchitectCombatController {
     }
 
     void addSaveData(CompoundTag tag) {
+        tag.putString("MasterCombatPhase", combatPhase.serializedName());
         tag.putBoolean("MasterTetherUsed", tetherUsed);
         tag.putBoolean("MasterTetherActive", tetherActive);
         ListTag tethers = new ListTag();
@@ -296,6 +312,16 @@ final class MasterArchitectCombatController {
         pendingTetherPulses.clear();
         breakthroughDimTicks = 0;
         lastWallUsed = tag.getBoolean("MasterLastWallUsed");
+        MasterArchitectCombatPhase loadedPhase = tag.contains(
+                "MasterCombatPhase", Tag.TAG_STRING)
+                ? MasterArchitectCombatPhase.fromSerializedName(
+                        tag.getString("MasterCombatPhase"))
+                : MasterArchitectPhasePolicy.migrateLegacyState(
+                        architect.getHealth(), architect.getMaxHealth(),
+                        tetherUsed, lastWallUsed);
+        combatPhase = MasterArchitectPhasePolicy.advance(
+                loadedPhase, architect.getHealth(), architect.getMaxHealth());
+        architect.setMasterCombatPhase(combatPhase);
         continuityCooldown = Math.max(0, tag.getInt("MasterContinuityCooldown"));
         thermalCooldown = Math.max(0, tag.getInt("MasterThermalCooldown"));
         thermalCooldownDuration = tag.contains("MasterThermalCooldownDuration")
@@ -315,6 +341,24 @@ final class MasterArchitectCombatController {
         wallPlan.clear();
         severTargetId = null;
         syncThermalCharge();
+    }
+
+    private void refreshPhaseFromHealth(boolean logTransition) {
+        MasterArchitectCombatPhase next = MasterArchitectPhasePolicy.advance(
+                combatPhase, architect.getHealth(), architect.getMaxHealth());
+        if (next != combatPhase) {
+            MasterArchitectCombatPhase previous = combatPhase;
+            combatPhase = next;
+            if (logTransition && !architect.level().isClientSide()) {
+                FrozenDawn.LOGGER.info(
+                        "Master Architect {} advanced {} -> {} at {}/{} health",
+                        shortId(architect.getUUID()),
+                        previous.serializedName(), next.serializedName(),
+                        String.format("%.1f", architect.getHealth()),
+                        String.format("%.1f", architect.getMaxHealth()));
+            }
+        }
+        architect.setMasterCombatPhase(combatPhase);
     }
 
     private void beginTether(ServerLevel level, ServerPlayer target) {

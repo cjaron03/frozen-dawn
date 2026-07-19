@@ -34,6 +34,7 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.MasterArchitectBossBarPolicy;
+import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
@@ -110,6 +111,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_MASTER_THERMAL_CHARGE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_MASTER_COMBAT_PHASE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MASTER_ARCHITECT =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -283,6 +286,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_COMBAT_ACTION, MasterArchitectCombatAction.IDLE);
         builder.define(DATA_MASTER_COMBAT_TICKS, 0);
         builder.define(DATA_MASTER_THERMAL_CHARGE, 0.0F);
+        builder.define(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.KIT.id());
         builder.define(DATA_MASTER_ARCHITECT, false);
     }
 
@@ -950,6 +954,8 @@ public class ArchitectEntity extends Monster {
                                 serverLevel, amount);
                 amount = tetherResult.masterDamage();
                 suppressMasterHurtSound = tetherResult.suppressNormalHitSound();
+                amount = hearthMasterController.prepareIncomingDamage(
+                        amount, source.is(DamageTypeTags.BYPASSES_INVULNERABILITY));
             }
         } else if (source.is(DamageTypeTags.IS_FIRE)) {
             amount *= 1.5F;
@@ -1314,6 +1320,10 @@ public class ArchitectEntity extends Monster {
     public float getMasterThermalCharge() {
         return entityData.get(DATA_MASTER_THERMAL_CHARGE);
     }
+    public MasterArchitectCombatPhase getMasterCombatPhase() {
+        return MasterArchitectCombatPhase.fromId(
+                entityData.get(DATA_MASTER_COMBAT_PHASE));
+    }
     public boolean isMiningBlock() {
         return ArchitectRenderFlags.has(entityData.get(DATA_RENDER_FLAGS), ArchitectRenderFlags.MINING);
     }
@@ -1452,6 +1462,12 @@ public class ArchitectEntity extends Monster {
         if (isHearthMasterArchitect()) {
             entityData.set(DATA_MASTER_THERMAL_CHARGE,
                     Mth.clamp(charge, 0.0F, 1.0F));
+        }
+    }
+
+    void setMasterCombatPhase(MasterArchitectCombatPhase phase) {
+        if (isHearthMasterArchitect()) {
+            entityData.set(DATA_MASTER_COMBAT_PHASE, phase.id());
         }
     }
 

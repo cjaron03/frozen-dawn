@@ -97,6 +97,11 @@ final class ArchitectHearthMasterController {
         return combatController.redistributeIncomingDamage(level, incomingDamage);
     }
 
+    float prepareIncomingDamage(float incomingDamage, boolean bypassesInvulnerability) {
+        return combatController.prepareIncomingDamage(
+                incomingDamage, bypassesInvulnerability);
+    }
+
     void onDeath(ServerLevel level) {
         MasterArchitectFightMusicManager.stopNearby(level, architect);
         combatMusicActive = false;
