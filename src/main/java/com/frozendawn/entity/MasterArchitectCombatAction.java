@@ -9,6 +9,7 @@ public final class MasterArchitectCombatAction {
     public static final int LAST_WALL_CAST = 4;
     public static final int LAST_WALL_HEAL = 5;
     public static final int STORM_MAINTENANCE = 6;
+    public static final int CONSTRUCTION_WALL_CAST = 7;
 
     private MasterArchitectCombatAction() {
     }

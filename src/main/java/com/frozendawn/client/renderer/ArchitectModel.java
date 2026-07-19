@@ -159,6 +159,18 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.rightLeg.xRot = 0.0F;
                 this.leftLeg.xRot = 0.0F;
             }
+            case MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST -> {
+                float build = Mth.clamp(actionTicks / 10.0F, 0.0F, 1.0F);
+                this.body.xRot = -0.03F;
+                this.body.yRot = 0.0F;
+                this.head.xRot += 0.10F;
+                applyMasterWandGrip();
+                this.leftArm.xRot = Mth.lerp(build, -0.32F, -1.62F);
+                this.leftArm.yRot = 0.48F * build;
+                this.leftArm.zRot = -0.20F * build;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+            }
             case MasterArchitectCombatAction.LAST_WALL_HEAL -> {
                 this.body.xRot = 0.0F;
                 this.head.xRot += 0.06F;

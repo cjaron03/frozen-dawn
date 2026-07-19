@@ -81,7 +81,8 @@ public final class MasterArchitectPresenceFx {
                 && Math.floorMod(tick + master.getId(), 4) == 0) {
             tickLoadedThermalHand(level, master, tick);
         } else if (action == MasterArchitectCombatAction.LAST_WALL_CAST
-                || action == MasterArchitectCombatAction.LAST_WALL_HEAL) {
+                || action == MasterArchitectCombatAction.LAST_WALL_HEAL
+                || action == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
             tickLastWallConvergence(level, master, tick);
         }
     }

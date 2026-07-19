@@ -6,6 +6,7 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectConstructionPolicy;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import com.frozendawn.homo.MasterArchitectMusicStage;
 import com.frozendawn.homo.MasterArchitectPhasePolicy;
@@ -53,6 +54,7 @@ final class MasterArchitectCombatController {
     private static final int WALL_HEIGHT = 3;
 
     private final ArchitectEntity architect;
+    private final MasterArchitectConstructionController constructionController;
     private final List<PlannedWallColumn> wallPlan = new ArrayList<>();
     private final List<BlockPos> placedWallBlocks = new ArrayList<>();
     private final Map<UUID, Float> tetherCharges = new LinkedHashMap<>();
@@ -79,6 +81,8 @@ final class MasterArchitectCombatController {
 
     MasterArchitectCombatController(ArchitectEntity architect) {
         this.architect = architect;
+        this.constructionController =
+                new MasterArchitectConstructionController(architect);
     }
 
     void tick(ServerLevel level, ServerPlayer target) {
@@ -86,6 +90,7 @@ final class MasterArchitectCombatController {
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
+        constructionController.tick(level);
         tickTether(level);
         architect.prepareHearthAssessmentMode();
         architect.setTarget(target);
@@ -106,6 +111,14 @@ final class MasterArchitectCombatController {
         if (MasterArchitectCombatPolicy.shouldUseLastWall(
                 architect.getHealth(), architect.getMaxHealth(), lastWallUsed)
                 && beginLastWall(level, target)) {
+            return;
+        }
+
+        if (constructionController.tryBeginWall(level, target, combatPhase)) {
+            startAction(MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST);
+            architect.getNavigation().stop();
+            architect.playSound(
+                    ModSounds.MASTER_ARCHITECT_LAST_WALL.get(), 1.45F, 0.60F);
             return;
         }
 
@@ -158,6 +171,10 @@ final class MasterArchitectCombatController {
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
+        constructionController.tick(level);
+        if (activeAction == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
+            constructionController.cancelCast(level);
+        }
         activeAction = MasterArchitectCombatAction.IDLE;
         actionTicks = 0;
         healingInterrupted = false;
@@ -186,6 +203,7 @@ final class MasterArchitectCombatController {
         endTether(level);
         architect.getHearthMasterArchitectId().ifPresent(
                 hearthId -> HearthCombatRosterManager.onMasterDefeated(level, hearthId));
+        constructionController.onDeath(level);
         removeWall(level);
         leaveCombat(level);
     }
@@ -294,6 +312,7 @@ final class MasterArchitectCombatController {
         tag.putLong("MasterWallExpiresAt", wallExpiresAt);
         tag.putLongArray("MasterWallBlocks",
                 placedWallBlocks.stream().mapToLong(BlockPos::asLong).toArray());
+        constructionController.addSaveData(tag);
     }
 
     void readSaveData(CompoundTag tag) {
@@ -340,6 +359,7 @@ final class MasterArchitectCombatController {
         healingInterrupted = false;
         wallPlan.clear();
         severTargetId = null;
+        constructionController.readSaveData(tag);
         syncThermalCharge();
     }
 
@@ -623,7 +643,19 @@ final class MasterArchitectCombatController {
                     tickLastWallHeal(level);
             case MasterArchitectCombatAction.STORM_MAINTENANCE ->
                     tickStormMaintenance(level, target);
+            case MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST ->
+                    tickConstructionWall(level);
             default -> finishAction();
+        }
+    }
+
+    private void tickConstructionWall(ServerLevel level) {
+        architect.getNavigation().stop();
+        constructionController.placeColumnForTick(level, actionTicks);
+        if (actionTicks >= MasterArchitectConstructionPolicy.WALL_CAST_TICKS) {
+            constructionController.finishWall(level);
+            sharedSpellCooldown = Math.max(sharedSpellCooldown, 30);
+            finishAction();
         }
     }
 
@@ -1066,7 +1098,8 @@ final class MasterArchitectCombatController {
                 || action == MasterArchitectCombatAction.THERMAL_SEVER
                 || action == MasterArchitectCombatAction.LAST_WALL_CAST
                 || action == MasterArchitectCombatAction.LAST_WALL_HEAL
-                || action == MasterArchitectCombatAction.STORM_MAINTENANCE;
+                || action == MasterArchitectCombatAction.STORM_MAINTENANCE
+                || action == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST;
     }
 
     private void syncThermalCharge() {
