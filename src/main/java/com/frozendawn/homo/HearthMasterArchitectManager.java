@@ -12,6 +12,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -78,6 +79,38 @@ public final class HearthMasterArchitectManager {
                 + " adopted=" + mastersAdopted
                 + " defeated=" + mastersDefeated
                 + " lastFailure=" + lastFailure;
+    }
+
+    public static String phaseStatus(ServerLevel level) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (hearth == null) {
+            return "unavailable: Major Hearth does not exist";
+        }
+        UUID entityId = hearth.masterArchitectEntityId().orElse(null);
+        if (entityId == null) {
+            return hearth.masterArchitectDefeated()
+                    ? "unavailable: Master Architect was defeated"
+                    : "unavailable: Master Architect is not bound";
+        }
+        Entity entity = level.getEntity(entityId);
+        if (!(entity instanceof ArchitectEntity master)
+                || !master.isBoundToHearthMasterArchitect(hearth.id())) {
+            return "unavailable: bound Master Architect is not loaded";
+        }
+
+        float maxHealth = master.getMaxHealth();
+        float healthFraction = maxHealth > 0.0F
+                ? master.getHealth() / maxHealth
+                : 0.0F;
+        MasterArchitectCombatPhase phase = master.getMasterCombatPhase();
+        return String.format(Locale.ROOT,
+                "phase=%s health=%.1f/%.1f (%.1f%%) next=%.1f%% entity=%s",
+                phase.serializedName(), master.getHealth(), maxHealth,
+                healthFraction * 100.0F,
+                MasterArchitectPhasePolicy.nextThreshold(phase) * 100.0F,
+                shortId(entityId));
     }
 
     public static void reset() {

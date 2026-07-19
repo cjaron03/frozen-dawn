@@ -71,6 +71,8 @@ final class FrozenDawnHearthCommand {
                         .executes(FrozenDawnHearthCommand::masterArchitect)
                         .then(Commands.literal("respawn")
                                 .executes(FrozenDawnHearthCommand::respawnMasterArchitect))
+                        .then(Commands.literal("phase")
+                                .executes(FrozenDawnHearthCommand::masterArchitectPhase))
                         .then(Commands.literal("weather")
                                 .executes(FrozenDawnHearthCommand::masterArchitectWeather)))
                 .then(Commands.literal("architect")
@@ -406,6 +408,15 @@ final class FrozenDawnHearthCommand {
                         + HearthMasterArchitectWeatherManager.describe(
                                 player, apocalypse.getPhase(), apocalypse.getProgress())),
                 false);
+        return 1;
+    }
+
+    private static int masterArchitectPhase(
+            CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Master Architect combat: "
+                        + HearthMasterArchitectManager.phaseStatus(
+                                context.getSource().getServer().overworld())), false);
         return 1;
     }
 
