@@ -10,27 +10,24 @@ class MasterArchitectConstructionPolicyTest {
 
     @Test
     void wallCanOnlyStartDuringConstructionAtValidRange() {
-        assertTrue(MasterArchitectConstructionPolicy.canStartWall(
+        assertTrue(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.CONSTRUCTION,
-                0, false, 12.0D * 12.0D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
+                0, false, 12.0D * 12.0D));
+        assertFalse(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.KIT,
-                0, false, 12.0D * 12.0D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
+                0, false, 12.0D * 12.0D));
+        assertFalse(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.TETHER,
-                0, false, 12.0D * 12.0D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
+                0, false, 12.0D * 12.0D));
+        assertFalse(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.CONSTRUCTION,
-                1, false, 12.0D * 12.0D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
+                1, false, 12.0D * 12.0D));
+        assertFalse(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.CONSTRUCTION,
-                0, true, 12.0D * 12.0D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
+                0, true, 12.0D * 12.0D));
+        assertFalse(MasterArchitectConstructionPolicy.canStartConstruction(
                 MasterArchitectCombatPhase.CONSTRUCTION,
-                0, false, 24.1D * 24.1D, true));
-        assertFalse(MasterArchitectConstructionPolicy.canStartWall(
-                MasterArchitectCombatPhase.CONSTRUCTION,
-                0, false, 12.0D * 12.0D, false));
+                0, false, 24.1D * 24.1D));
     }
 
     @Test
@@ -61,6 +58,28 @@ class MasterArchitectConstructionPolicyTest {
                 .shouldCollapseForMissingSeam(3, 3));
         assertTrue(MasterArchitectConstructionPolicy
                 .shouldCollapseForMissingSeam(3, 2));
+    }
+
+    @Test
+    void sharedBudgetNeverExceedsSixtyFourLiveBlocks() {
+        assertTrue(MasterArchitectConstructionPolicy.canReserve(33, 31));
+        assertFalse(MasterArchitectConstructionPolicy.canReserve(33, 32));
+        assertFalse(MasterArchitectConstructionPolicy.canReserve(64, 1));
+        assertFalse(MasterArchitectConstructionPolicy.canReserve(0, 0));
+    }
+
+    @Test
+    void seamCollapseLeavesSparseFloorRubbleAndCanStaggerNearbyMaster() {
+        assertTrue(MasterArchitectConstructionPolicy.shouldLeaveRubble(
+                0, 64, 64, false));
+        assertFalse(MasterArchitectConstructionPolicy.shouldLeaveRubble(
+                1, 64, 64, false));
+        assertFalse(MasterArchitectConstructionPolicy.shouldLeaveRubble(
+                4, 65, 64, false));
+        assertFalse(MasterArchitectConstructionPolicy.shouldLeaveRubble(
+                4, 64, 64, true));
+        assertTrue(MasterArchitectConstructionPolicy.shouldStaggerMaster(25.0D));
+        assertFalse(MasterArchitectConstructionPolicy.shouldStaggerMaster(25.1D));
     }
 
     @Test

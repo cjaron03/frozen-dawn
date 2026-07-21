@@ -6,9 +6,16 @@ public final class MasterArchitectConstructionPolicy {
     public static final int WALL_HEIGHT = 3;
     public static final int MAX_ACTIVE_BLOCKS = WALL_COLUMN_COUNT * WALL_HEIGHT;
     public static final int WALL_CAST_TICKS = WALL_COLUMN_COUNT + 1;
-    public static final int WALL_LIFETIME_TICKS = 1_200;
-    public static final int WALL_COOLDOWN_MIN = 240;
-    public static final int WALL_COOLDOWN_VARIANCE = 100;
+    public static final int LIVE_BLOCK_BUDGET = 64;
+    public static final int OPENING_LIFETIME_TICKS = 1_200;
+    public static final int STRUCTURE_LIFETIME_TICKS = 900;
+    public static final int OPENING_COOLDOWN_TICKS = 120;
+    public static final int ONGOING_COOLDOWN_MIN = 160;
+    public static final int ONGOING_COOLDOWN_VARIANCE = 80;
+    public static final int COVER_MEMORY_TICKS = 120;
+    public static final int VANTAGE_SEEK_TICKS = 100;
+    public static final int SEAM_STAGGER_TICKS = 30;
+    public static final double SEAM_STAGGER_RANGE = 5.0D;
     public static final double MAX_CAST_RANGE = 24.0D;
 
     // A three-sided U centered on the Master, open behind it for counterplay.
@@ -18,17 +25,31 @@ public final class MasterArchitectConstructionPolicy {
     private MasterArchitectConstructionPolicy() {
     }
 
-    public static boolean canStartWall(
+    public static boolean canStartConstruction(
             MasterArchitectCombatPhase phase,
             int cooldown,
-            boolean constructionActive,
-            double distanceSquared,
-            boolean hasLineOfSight) {
+            boolean buildActive,
+            double distanceSquared) {
         return phase == MasterArchitectCombatPhase.CONSTRUCTION
                 && cooldown <= 0
-                && !constructionActive
-                && hasLineOfSight
+                && !buildActive
                 && distanceSquared <= MAX_CAST_RANGE * MAX_CAST_RANGE;
+    }
+
+    public static boolean canReserve(int liveBlocks, int plannedBlocks) {
+        return liveBlocks >= 0
+                && plannedBlocks > 0
+                && liveBlocks + plannedBlocks <= LIVE_BLOCK_BUDGET;
+    }
+
+    public static boolean shouldStaggerMaster(double distanceSquared) {
+        return distanceSquared
+                <= SEAM_STAGGER_RANGE * SEAM_STAGGER_RANGE;
+    }
+
+    public static boolean shouldLeaveRubble(
+            int blockIndex, int blockY, int minimumY, boolean seam) {
+        return !seam && blockY == minimumY && Math.floorMod(blockIndex, 4) == 0;
     }
 
     public static int columnIndexAtTick(int actionTicks) {

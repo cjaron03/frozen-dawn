@@ -1,10 +1,11 @@
 package com.frozendawn.event;
 
-import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModSounds;
-import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -136,15 +137,19 @@ public final class MasterArchitectThermalSever {
         Entity caster = player.serverLevel().getEntity(state.casterId);
         boolean hasLineOfSight = caster instanceof LivingEntity living
                 && living.hasLineOfSight(player);
-        ApocalypseState apocalypse = ApocalypseState.get(player.getServer());
-        boolean withinHeatSource = TemperatureManager.getHeatSourceModifier(
-                player.serverLevel(),
-                player.blockPosition(),
-                apocalypse.getCurrentDay(),
-                apocalypse.getTotalDays(),
-                true) > 0.0F;
+        boolean withinHeatSource = isNearActivePlayerHeater(player);
         return MasterArchitectCombatPolicy.shouldCancelThermalPulses(
                 hasLineOfSight, withinHeatSource);
+    }
+
+    private static boolean isNearActivePlayerHeater(ServerPlayer player) {
+        PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(
+                player.getServer());
+        return HeaterRegistry.getHeaters(player.serverLevel()).stream()
+                .filter(tracker::isPlayerPlaced)
+                .filter(pos -> player.serverLevel().getBlockEntity(pos)
+                        instanceof ThermalHeaterBlockEntity heater && heater.isLit())
+                .anyMatch(pos -> player.distanceToSqr(pos.getCenter()) <= 5.5D * 5.5D);
     }
 
     private static DamageSource createDamageSource(

@@ -6,7 +6,6 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
-import com.frozendawn.homo.MasterArchitectConstructionPolicy;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import com.frozendawn.homo.MasterArchitectMusicStage;
 import com.frozendawn.homo.MasterArchitectPhasePolicy;
@@ -57,6 +56,7 @@ final class MasterArchitectCombatController {
     private final MasterArchitectConstructionController constructionController;
     private final List<PlannedWallColumn> wallPlan = new ArrayList<>();
     private final List<BlockPos> placedWallBlocks = new ArrayList<>();
+    private final List<BlockPos> placedWallSeams = new ArrayList<>();
     private final Map<UUID, Float> tetherCharges = new LinkedHashMap<>();
     private final List<PendingTetherPulse> pendingTetherPulses = new ArrayList<>();
 
@@ -90,12 +90,17 @@ final class MasterArchitectCombatController {
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
-        constructionController.tick(level);
+        constructionController.tick(level, target, combatPhase);
         tickTether(level);
         architect.prepareHearthAssessmentMode();
         architect.setTarget(target);
         architect.equipMasterArchitectStaff();
         architect.getLookControl().setLookAt(target, 40.0F, 35.0F);
+
+        if (constructionController.isStaggered()) {
+            holdConstructionStagger(level);
+            return;
+        }
 
         if (activeAction != MasterArchitectCombatAction.IDLE) {
             tickActiveAction(level, target);
@@ -114,11 +119,16 @@ final class MasterArchitectCombatController {
             return;
         }
 
-        if (constructionController.tryBeginWall(level, target, combatPhase)) {
+        if (constructionController.tryBeginConstruction(level, target, combatPhase)) {
             startAction(MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST);
             architect.getNavigation().stop();
             architect.playSound(
                     ModSounds.MASTER_ARCHITECT_LAST_WALL.get(), 1.45F, 0.60F);
+            return;
+        }
+
+        if (combatPhase == MasterArchitectCombatPhase.CONSTRUCTION
+                && constructionController.seekVantage(level)) {
             return;
         }
 
@@ -171,7 +181,7 @@ final class MasterArchitectCombatController {
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
-        constructionController.tick(level);
+        constructionController.tick(level, null, combatPhase);
         if (activeAction == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
             constructionController.cancelCast(level);
         }
@@ -312,6 +322,8 @@ final class MasterArchitectCombatController {
         tag.putLong("MasterWallExpiresAt", wallExpiresAt);
         tag.putLongArray("MasterWallBlocks",
                 placedWallBlocks.stream().mapToLong(BlockPos::asLong).toArray());
+        tag.putLongArray("MasterWallSeams",
+                placedWallSeams.stream().mapToLong(BlockPos::asLong).toArray());
         constructionController.addSaveData(tag);
     }
 
@@ -354,12 +366,19 @@ final class MasterArchitectCombatController {
         for (long packed : tag.getLongArray("MasterWallBlocks")) {
             placedWallBlocks.add(BlockPos.of(packed));
         }
+        placedWallSeams.clear();
+        for (long packed : tag.getLongArray("MasterWallSeams")) {
+            BlockPos seam = BlockPos.of(packed);
+            if (placedWallBlocks.contains(seam)) {
+                placedWallSeams.add(seam);
+            }
+        }
         activeAction = MasterArchitectCombatAction.IDLE;
         actionTicks = 0;
         healingInterrupted = false;
         wallPlan.clear();
         severTargetId = null;
-        constructionController.readSaveData(tag);
+        constructionController.readSaveData(tag, combatPhase);
         syncThermalCharge();
     }
 
@@ -651,9 +670,8 @@ final class MasterArchitectCombatController {
 
     private void tickConstructionWall(ServerLevel level) {
         architect.getNavigation().stop();
-        constructionController.placeColumnForTick(level, actionTicks);
-        if (actionTicks >= MasterArchitectConstructionPolicy.WALL_CAST_TICKS) {
-            constructionController.finishWall(level);
+        if (constructionController.placeNextStep(level)) {
+            constructionController.finishConstruction(level);
             sharedSpellCooldown = Math.max(sharedSpellCooldown, 30);
             finishAction();
         }
@@ -868,7 +886,9 @@ final class MasterArchitectCombatController {
         if (tetherActive) {
             endTether(level);
         }
+        constructionController.clearLastWallFootprint(level);
         wallPlan.clear();
+        placedWallSeams.clear();
         buildWallPlan(level, target);
         if (wallPlan.size() < 3
                 || wallPlan.stream().noneMatch(PlannedWallColumn::weakCenter)) {
@@ -946,8 +966,8 @@ final class MasterArchitectCombatController {
         }
         PlannedWallColumn column = wallPlan.get(index);
         BlockState state = column.weakCenter
-                ? Blocks.PACKED_ICE.defaultBlockState()
-                : Blocks.BLUE_ICE.defaultBlockState();
+                ? Blocks.ICE.defaultBlockState()
+                : Blocks.PACKED_ICE.defaultBlockState();
         for (int height = 0; height < WALL_HEIGHT; height++) {
             BlockPos pos = column.base.above(height);
             if (!level.hasChunkAt(pos)
@@ -957,6 +977,9 @@ final class MasterArchitectCombatController {
             }
             level.setBlock(pos, state, Block.UPDATE_ALL);
             placedWallBlocks.add(pos.immutable());
+            if (column.weakCenter) {
+                placedWallSeams.add(pos.immutable());
+            }
             level.sendParticles(ParticleTypes.SNOWFLAKE,
                     pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
                     10, 0.32D, 0.35D, 0.32D, 0.08D);
@@ -1124,6 +1147,20 @@ final class MasterArchitectCombatController {
     }
 
     private void cleanupExpiredWall(ServerLevel level) {
+        boolean seamMissing = placedWallSeams.stream().anyMatch(pos ->
+                level.hasChunkAt(pos) && !level.getBlockState(pos).is(Blocks.ICE));
+        if (seamMissing) {
+            healingInterrupted = true;
+            level.playSound(
+                    null,
+                    architect.blockPosition(),
+                    SoundEvents.GLASS_BREAK,
+                    architect.getSoundSource(),
+                    1.7F,
+                    0.52F);
+            removeWall(level);
+            return;
+        }
         if (wallExpiresAt >= 0L && level.getGameTime() >= wallExpiresAt) {
             removeWall(level);
         }
@@ -1137,12 +1174,13 @@ final class MasterArchitectCombatController {
                 continue;
             }
             BlockState state = level.getBlockState(pos);
-            if (state.is(Blocks.PACKED_ICE) || state.is(Blocks.BLUE_ICE)) {
+            if (state.is(Blocks.PACKED_ICE) || state.is(Blocks.ICE)) {
                 level.removeBlock(pos, false);
             }
         }
         placedWallBlocks.clear();
         placedWallBlocks.addAll(unloaded);
+        placedWallSeams.removeIf(pos -> !unloaded.contains(pos));
         wallPlan.clear();
         if (placedWallBlocks.isEmpty()) {
             wallExpiresAt = -1L;
@@ -1151,6 +1189,21 @@ final class MasterArchitectCombatController {
 
     private static String shortId(java.util.UUID id) {
         return id.toString().substring(0, 8);
+    }
+
+    private void holdConstructionStagger(ServerLevel level) {
+        if (activeAction == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
+            constructionController.cancelCast(level);
+        }
+        activeAction = MasterArchitectCombatAction.IDLE;
+        actionTicks = 0;
+        severTargetId = null;
+        architect.getNavigation().stop();
+        Vec3 velocity = architect.getDeltaMovement();
+        architect.setDeltaMovement(0.0D, velocity.y, 0.0D);
+        architect.setMasterCombatVisual(
+                MasterArchitectCombatAction.CONSTRUCTION_STAGGER,
+                constructionController.staggerTicks());
     }
 
     private record PlannedWallColumn(BlockPos base, boolean weakCenter) {
