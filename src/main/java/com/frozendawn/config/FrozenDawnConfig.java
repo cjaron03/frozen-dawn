@@ -46,6 +46,17 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_TWO_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_THREE_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue MASTER_AURA_RADIUS;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_TEMP_OFFSET_PER_TIER;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_STRIKE_MIN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_STRIKE_MAX_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_STRIKE_MIN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_STRIKE_MAX_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_ARC_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_ARC_SECONDS;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_INFRASOUND_GAIN;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_STORM_RESPONSE_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_KILL_COLLAPSE_SECONDS;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
@@ -54,6 +65,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_HUD_FADE;
     public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_SCREEN_EFFECTS;
     public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_FLASH_INTENSITY;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_PARTICLE_DENSITY;
 
     public static final ModConfigSpec SPEC;
 
@@ -214,6 +227,40 @@ public class FrozenDawnConfig {
         BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER = BUILDER
                 .comment("Brutal Thae Iven Tier 3 healing-rate multiplier.")
                 .defineInRange("brutalMindHealTierThreeMultiplier", 4.0D, 1.0D, 12.0D);
+        MASTER_AURA_RADIUS = BUILDER
+                .comment("Radius of the Master Architect's non-damaging Hearth aura.")
+                .defineInRange("masterAuraRadius", 160, 48, 512);
+        MASTER_AURA_TEMP_OFFSET_PER_TIER = BUILDER
+                .comment("Ambient Celsius offset for each aura step above Passive.",
+                        "Tier 2 applies one step; Tier 3 applies two steps.")
+                .defineInRange("masterAuraTempOffsetPerTier", -8.0D, -40.0D, 0.0D);
+        MASTER_AURA_T2_STRIKE_MIN_SECONDS = BUILDER
+                .comment("Minimum seconds between Noticed aura lightning events.")
+                .defineInRange("masterAuraTier2StrikeMinSeconds", 10, 3, 120);
+        MASTER_AURA_T2_STRIKE_MAX_SECONDS = BUILDER
+                .comment("Maximum seconds between Noticed aura lightning events.")
+                .defineInRange("masterAuraTier2StrikeMaxSeconds", 20, 4, 180);
+        MASTER_AURA_T3_STRIKE_MIN_SECONDS = BUILDER
+                .comment("Minimum seconds between fight aura lightning events.")
+                .defineInRange("masterAuraTier3StrikeMinSeconds", 3, 1, 60);
+        MASTER_AURA_T3_STRIKE_MAX_SECONDS = BUILDER
+                .comment("Maximum seconds between fight aura lightning events.")
+                .defineInRange("masterAuraTier3StrikeMaxSeconds", 7, 2, 90);
+        MASTER_AURA_T2_ARC_SECONDS = BUILDER
+                .comment("Average seconds between Noticed aura particle arcs.")
+                .defineInRange("masterAuraTier2ArcSeconds", 10, 2, 60);
+        MASTER_AURA_T3_ARC_SECONDS = BUILDER
+                .comment("Average seconds between fight aura particle arcs.")
+                .defineInRange("masterAuraTier3ArcSeconds", 3, 1, 30);
+        MASTER_AURA_INFRASOUND_GAIN = BUILDER
+                .comment("Maximum gain of the Master Architect's 36 Hz presence hum.")
+                .defineInRange("masterAuraInfrasoundGain", 0.55D, 0.0D, 1.5D);
+        MASTER_AURA_STORM_RESPONSE_SECONDS = BUILDER
+                .comment("Seconds for the distant storm column to grow toward a new tier.")
+                .defineInRange("masterAuraStormResponseSeconds", 5.0D, 0.5D, 30.0D);
+        MASTER_AURA_KILL_COLLAPSE_SECONDS = BUILDER
+                .comment("Seconds for the distant storm column to unwind after the Master dies.")
+                .defineInRange("masterAuraKillCollapseSeconds", 60, 10, 180);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -238,6 +285,13 @@ public class FrozenDawnConfig {
         MIND_OVERRIDE_INTENSITY = BUILDER
                 .comment("Scales Thae Iven screen effects without changing movement or damage.")
                 .defineInRange("mindOverrideIntensity", 1.0D, 0.0D, 1.0D);
+        MASTER_AURA_FLASH_INTENSITY = BUILDER
+                .comment("Enables the vanilla-style Master aura lightning flash above zero.",
+                        "Set to zero to disable it for photosensitivity.")
+                .defineInRange("masterAuraFlashIntensity", 1.0D, 0.0D, 1.0D);
+        MASTER_AURA_PARTICLE_DENSITY = BUILDER
+                .comment("Scales visual-only Master aura particles without changing mechanics.")
+                .defineInRange("masterAuraParticleDensity", 1.0D, 0.0D, 1.0D);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

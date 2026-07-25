@@ -2,6 +2,7 @@ package com.frozendawn.mixin;
 
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.AlarmDynamicLightManager;
+import com.frozendawn.client.MasterArchitectAuraClient;
 import com.frozendawn.client.SurveyorLensVision;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
@@ -40,6 +41,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class LevelRendererMixin {
 
     @Shadow private VertexBuffer starBuffer;
+    @Shadow private VertexBuffer skyBuffer;
     @Shadow private Minecraft minecraft;
 
     @Inject(method = "renderClouds", at = @At("HEAD"), cancellable = true)
@@ -89,6 +91,12 @@ public class LevelRendererMixin {
         int phase = FrozenDawnPhaseTracker.getPhase();
         if (phase < 5) return;
 
+        float lightningFlash = MasterArchitectAuraClient.getLightningWorldFlash(partialTick);
+        if (lightningFlash > 0.0F) {
+            renderPhaseSkyFlash(
+                    frustumMatrix, projectionMatrix, skyFogSetup, lightningFlash);
+        }
+
         float progress = ApocalypseClientData.getProgress();
 
         // Phase 5 + phase 6 early: full cancel (blizzard whiteout)
@@ -100,6 +108,30 @@ public class LevelRendererMixin {
         // Phase 6 mid+: cancel default sky, render stars only
         ci.cancel();
         renderPhase6Stars(frustumMatrix, projectionMatrix, partialTick, skyFogSetup);
+    }
+
+    private void renderPhaseSkyFlash(Matrix4f frustumMatrix, Matrix4f projectionMatrix,
+                                     Runnable skyFogSetup, float flash) {
+        PoseStack poseStack = new PoseStack();
+        poseStack.mulPose(frustumMatrix);
+
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getPositionShader);
+        RenderSystem.setShaderColor(
+                0.56F * flash,
+                0.80F * flash,
+                1.0F * flash,
+                1.0F);
+        FogRenderer.setupNoFog();
+        skyBuffer.bind();
+        skyBuffer.drawWithShader(
+                poseStack.last().pose(),
+                projectionMatrix,
+                GameRenderer.getPositionShader());
+        VertexBuffer.unbind();
+        skyFogSetup.run();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.depthMask(true);
     }
 
     @Inject(method = "getLightColor(Lnet/minecraft/world/level/BlockAndTintGetter;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/core/BlockPos;)I",

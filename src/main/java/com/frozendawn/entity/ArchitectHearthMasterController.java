@@ -1,8 +1,10 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.MasterArchitectAuraTier;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -34,6 +36,7 @@ final class ArchitectHearthMasterController {
     boolean tick(ServerLevel level) {
         combatController.tickPersistentState(level);
         if (combatController.isMindSessionActive()) {
+            updateAuraTier(level, MasterArchitectAuraTier.FIGHT);
             architect.setMasterBossBarProvoked(true);
             combatController.tickFolded(level);
             if (!combatMusicActive) {
@@ -48,6 +51,7 @@ final class ArchitectHearthMasterController {
         }
         ServerPlayer hostileTarget = findHostileTarget(level);
         if (hostileTarget != null) {
+            updateAuraTier(level, MasterArchitectAuraTier.FIGHT);
             architect.getHearthMasterArchitectId().ifPresent(
                     hearthId -> HearthCombatRosterManager.ensureRoster(
                             level, hearthId, hostileTarget));
@@ -71,6 +75,7 @@ final class ArchitectHearthMasterController {
         }
         architect.setMasterBossBarProvoked(false);
         combatController.leaveCombat(level);
+        updateAuraTier(level, peacefulAuraTier(level));
         architect.prepareHearthAssessmentMode();
         BlockPos home = architect.getHearthMasterArchitectHome().orElse(null);
         if (home == null) {
@@ -219,5 +224,25 @@ final class ArchitectHearthMasterController {
         }
         architect.getNavigation().moveTo(
                 center.x + offset.x, home.getY(), center.z + offset.z, speed);
+    }
+
+    private int peacefulAuraTier(ServerLevel level) {
+        ReturnedHearthSavedData.HearthDisposition mood = architect
+                .getHearthMasterArchitectId()
+                .flatMap(id -> ReturnedHearthSavedData.get(level.getServer()).hearth(id))
+                .map(ReturnedHearthSavedData.HearthRecord::mood)
+                .orElse(ReturnedHearthSavedData.HearthDisposition.DORMANT);
+        return MasterArchitectAuraTier.fromMood(mood, false);
+    }
+
+    private void updateAuraTier(ServerLevel level, int tier) {
+        int previous = architect.getMasterAuraTier();
+        if (previous == tier) {
+            return;
+        }
+        architect.setMasterAuraTier(tier);
+        architect.getHearthMasterArchitectId().ifPresent(
+                hearthId -> HearthCombatRosterManager.signalAuraTierChange(
+                        level, hearthId, architect, tier));
     }
 }

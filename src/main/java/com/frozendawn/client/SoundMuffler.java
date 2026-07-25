@@ -92,6 +92,30 @@ public class SoundMuffler {
             return;
         }
 
+        boolean isMasterAuraSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.startsWith("entity.master_architect.")
+                || soundPath.startsWith("ui.master_architect."));
+        float auraSilence = MasterArchitectAuraClient.silenceFactor();
+        boolean isAuraAmbientSource = original.getSource() == SoundSource.AMBIENT
+                || original.getSource() == SoundSource.WEATHER
+                || original.getSource() == SoundSource.HOSTILE
+                || original.getSource() == SoundSource.NEUTRAL;
+        if (!isMasterAuraSound
+                && original.getSource() != SoundSource.MASTER
+                && original.getSource() != SoundSource.MUSIC
+                && isAuraAmbientSource
+                && auraSilence > 0.01F) {
+            if (auraSilence >= 0.96F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(
+                        original,
+                        1.0F - auraSilence,
+                        1.0F - auraSilence * 0.12F));
+            }
+            return;
+        }
+
         // All Frozen Dawn mob sounds are immune from ALL sound suppression,
         // including late-phase vacuum muting.
         if (isFrozenDawnEntitySound(soundLocation, soundPath)) {

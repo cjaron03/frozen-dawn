@@ -50,6 +50,10 @@ public final class AirStatusHud {
                     graphics, MasterArchitectFloodClient.corruptedOxygenText());
             return;
         }
+        if (MasterArchitectAuraClient.shouldFlickerO2()) {
+            renderMindOverride(graphics, "RECAL...");
+            return;
+        }
 
         AirStatusTelemetry.Reading reading = AirStatusTelemetry.resolveReading(mc.player);
         if (reading == null) {

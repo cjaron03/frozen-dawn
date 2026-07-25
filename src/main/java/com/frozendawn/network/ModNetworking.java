@@ -125,6 +125,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectWeather(payload))
         );
         registrar.playToClient(
+                MasterArchitectAuraEventPayload.TYPE,
+                MasterArchitectAuraEventPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectAuraEvent(payload))
+        );
+        registrar.playToClient(
                 MasterArchitectFightMusicPayload.TYPE,
                 MasterArchitectFightMusicPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

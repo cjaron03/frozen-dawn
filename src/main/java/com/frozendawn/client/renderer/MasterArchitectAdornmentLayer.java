@@ -1,10 +1,10 @@
 package com.frozendawn.client.renderer;
 
-import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
+import com.frozendawn.homo.MasterArchitectAuraTier;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.LightTexture;
@@ -59,12 +59,14 @@ public final class MasterArchitectAdornmentLayer
 
         VertexConsumer glow = bufferSource.getBuffer(
                 RenderType.entityTranslucentEmissive(WHITE_TEXTURE));
-        boolean hostile = MasterArchitectWeather.getStrength() > 0.05F
+        int auraTier = entity.getMasterAuraTier();
+        boolean hostile = auraTier >= MasterArchitectAuraTier.FIGHT
                 || entity.getMasterCombatAction() != MasterArchitectCombatAction.IDLE;
         float pulse = 0.5F + 0.5F * Mth.sin(ageInTicks * (hostile ? 0.32F : 0.15F));
-        int glowAlpha = Mth.floor((hostile
+        float tierBoost = Mth.clamp((auraTier - 1) * 0.12F, 0.0F, 0.24F);
+        int glowAlpha = Mth.floor(Mth.clamp((hostile
                 ? 0.80F + pulse * 0.20F
-                : 0.58F + pulse * 0.14F) * 255.0F);
+                : 0.58F + pulse * 0.14F) + tierBoost, 0.0F, 1.0F) * 255.0F);
         int crownAlpha = Mth.floor((hostile
                 ? 0.30F + pulse * 0.38F
                 : 0.10F + pulse * 0.10F) * 255.0F);

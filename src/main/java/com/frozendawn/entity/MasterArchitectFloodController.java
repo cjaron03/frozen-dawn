@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModEntities;
@@ -11,6 +12,7 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.MasterArchitectFloodMotePayload;
 import com.frozendawn.network.MasterArchitectFloodProgressPayload;
 import com.frozendawn.network.MasterArchitectFloodStatePayload;
+import com.frozendawn.network.MasterArchitectAuraEventPayload;
 import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -398,6 +400,14 @@ final class MasterArchitectFloodController {
                 ParticleTypes.SCULK_SOUL,
                 copy.getX(), copy.getY() + 1.1D, copy.getZ(),
                 85, 1.0D, 1.25D, 1.0D, 0.16D);
+        if (architect.level() instanceof ServerLevel originLevel) {
+            HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                    originLevel,
+                    MasterArchitectAuraEventPayload.EXPOSURE_STUTTER,
+                    architect.blockPosition().above(72),
+                    architect.blockPosition(),
+                    1.15F);
+        }
         broadcastProgress();
         FrozenDawn.LOGGER.info(
                 "Master Architect {} exposed its Thae Iven core ({}/{})",
@@ -739,6 +749,12 @@ final class MasterArchitectFloodController {
         copy.setMasterBossBarEmptyOverride(true);
         copy.setMasterCombatVisual(MasterArchitectCombatAction.MIND_RETURN_STAGGER, 0);
         copy.playSound(ModSounds.MASTER_ARCHITECT_MIND_DEATH_WAIL.get(), 6.5F, 0.52F);
+        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                originLevel,
+                MasterArchitectAuraEventPayload.DEATH_COLLAPSE,
+                architect.blockPosition().above(96),
+                architect.blockPosition(),
+                1.8F);
         for (UUID participantId : participantIds) {
             ServerPlayer player = originLevel.getServer().getPlayerList()
                     .getPlayer(participantId);
@@ -944,6 +960,12 @@ final class MasterArchitectFloodController {
         lockRealMaster();
         architect.setMasterCombatVisual(MasterArchitectCombatAction.FLOOD_FOLD_CAST, 0);
         architect.playSound(ModSounds.MASTER_ARCHITECT_FLOOD_BEGIN.get(), 3.2F, 0.58F);
+        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                level,
+                MasterArchitectAuraEventPayload.FOLD_CONTRACTION,
+                architect.blockPosition().above(88),
+                architect.blockPosition(),
+                1.5F);
         emitFoldEntryBurst(level);
         FrozenDawn.LOGGER.info(
                 "Master Architect {} began the Thae Iven fold cast at {}/{} health",

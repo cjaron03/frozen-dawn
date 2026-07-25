@@ -290,6 +290,22 @@ public class ModSounds {
             "entity.master_architect.thermal_commit");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CANCEL = register(
             "entity.master_architect.thermal_cancel");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_CLOSE = register(
+            "entity.master_architect.thundersnow_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_MID = register(
+            "entity.master_architect.thundersnow_mid");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_DISTANT = register(
+            "entity.master_architect.thundersnow_distant");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_ARC_CRACKLE = register(
+            "entity.master_architect.arc_crackle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_INFRASOUND = register(
+            "entity.master_architect.infrasound");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_DEATH = register(
+            "entity.master_architect.aura_death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_TEMPERATURE_TTS = register(
+            "ui.master_architect.aura_temperature");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_FIGHT_TTS = register(
+            "ui.master_architect.aura_fight");
 
     // --- Terminal Boot ---
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");

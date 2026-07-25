@@ -40,6 +40,10 @@ public class O2BubbleHud {
                     MasterArchitectFloodClient.corruptedOxygenRatio());
             return;
         }
+        if (MasterArchitectAuraClient.shouldFlickerO2()) {
+            renderMindOverride(graphics, deltaTracker, 1.0F);
+            return;
+        }
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         if (!PhaseManager.isVacuumActive(phase, progress)) return;

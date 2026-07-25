@@ -68,6 +68,7 @@ public final class HearthMasterArchitectManager {
                 hearthId, entityId, level.getGameTime())) {
             return;
         }
+        HearthMasterArchitectWeatherManager.onMasterDefeated(level, hearthId);
         mastersDefeated++;
         FrozenDawn.LOGGER.info(
                 "Master Architect {} defeated at Major Hearth {}; apex will not respawn",

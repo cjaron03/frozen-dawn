@@ -684,5 +684,16 @@
   "ui.frozendawn.master_architect.suit_speaker": "ORSA // SUIT AI",
   "ui.frozendawn.master_architect.mind_scan": "Biometric scan detects... multiple occupants.",
   "ui.frozendawn.master_architect.telemetry_mismatch": "Warning: telemetry mismatch. Location services unavailable. Please remain where you are.",
-  "ui.frozendawn.master_architect.telemetry_restored": "Telemetry restored. Have a productive day."
+  "ui.frozendawn.master_architect.telemetry_restored": "Telemetry restored. Have a productive day.",
+  "ui.frozendawn.master_architect.aura_temperature": "Localized temperature anomaly detected.",
+  "ui.frozendawn.master_architect.aura_fight": "Local storm convergence exceeds forecast parameters.",
+  "subtitle.frozendawn.entity.master_architect.thundersnow_close": "Thundersnow tears through the Hearth",
+  "subtitle.frozendawn.entity.master_architect.thundersnow_mid": "Thundersnow rolls across the ice",
+  "subtitle.frozendawn.entity.master_architect.thundersnow_distant": "Distant thundersnow answers the Hearth",
+  "subtitle.frozendawn.entity.master_architect.arc_crackle": "Blue-black current crackles",
+  "subtitle.frozendawn.entity.master_architect.aura_death": "The storm tears apart",
+  "subtitle.frozendawn.ui.master_architect.aura_temperature": "Localized temperature anomaly detected",
+  "subtitle.frozendawn.ui.master_architect.aura_fight": "Local storm convergence exceeds forecast parameters",
+  "dimension.frozendawn.thae_iven": "Thae Iven",
+  "dimension_type.frozendawn.thae_iven": "Thae Iven"
 }

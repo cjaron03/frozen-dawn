@@ -72,6 +72,8 @@ public final class TemperatureManager {
             finalTemp = Math.max(finalTemp, ventFloor);
         }
         finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
+        finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
+                .temperatureOffset(level, pos);
         return finalTemp;
     }
 

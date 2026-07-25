@@ -5,12 +5,17 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server-to-client strength for the local storm surrounding a living Master Architect.
  */
-public record MasterArchitectWeatherPayload(float strength) implements CustomPacketPayload {
+public record MasterArchitectWeatherPayload(
+        float strength,
+        int auraTier,
+        BlockPos hearthCenter,
+        boolean anchored) implements CustomPacketPayload {
 
     public static final Type<MasterArchitectWeatherPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -20,10 +25,16 @@ public record MasterArchitectWeatherPayload(float strength) implements CustomPac
             StreamCodec.composite(
                     ByteBufCodecs.FLOAT,
                     MasterArchitectWeatherPayload::strength,
+                    ByteBufCodecs.VAR_INT,
+                    MasterArchitectWeatherPayload::auraTier,
+                    BlockPos.STREAM_CODEC,
+                    MasterArchitectWeatherPayload::hearthCenter,
+                    ByteBufCodecs.BOOL,
+                    MasterArchitectWeatherPayload::anchored,
                     MasterArchitectWeatherPayload::new);
 
     public static MasterArchitectWeatherPayload inactive() {
-        return new MasterArchitectWeatherPayload(0.0F);
+        return new MasterArchitectWeatherPayload(0.0F, 0, BlockPos.ZERO, false);
     }
 
     @Override

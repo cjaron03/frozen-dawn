@@ -7,6 +7,7 @@ import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
+import com.frozendawn.client.MasterArchitectAuraClient;
 import com.frozendawn.client.MasterArchitectFightMusic;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
 import com.frozendawn.client.MasterArchitectFloodClient;
@@ -130,6 +131,11 @@ public final class ClientHandlers {
     public static void handleMasterArchitectWeather(
             MasterArchitectWeatherPayload payload) {
         MasterArchitectWeather.update(payload);
+    }
+
+    public static void handleMasterArchitectAuraEvent(
+            MasterArchitectAuraEventPayload payload) {
+        MasterArchitectAuraClient.handleEvent(payload);
     }
 
     public static void handleMasterArchitectFightMusic(

@@ -81,7 +81,6 @@ public final class MasterArchitectFloodClient {
     private static int mindScoreStartTicks = MIND_SCORE_START_DELAY_TICKS;
     private static int mindSessionTicks;
     private static int pendingTelemetryTicks;
-    private static int pendingWitherDeathTicks;
     private static boolean mindScanPlayed;
     private static boolean telemetryMismatchPlayed;
     private static String suitDialogueKey;
@@ -108,7 +107,6 @@ public final class MasterArchitectFloodClient {
                         == MasterArchitectFloodStatePayload.COMPLETE_REFUSED) {
             clear();
             MasterArchitectFightMusic.suppressAfterCanonicalDeath(200);
-            pendingWitherDeathTicks = 3;
             pendingTelemetryTicks = TELEMETRY_RESTORED_DELAY_TICKS;
             return;
         }
@@ -180,6 +178,10 @@ public final class MasterArchitectFloodClient {
         return active;
     }
 
+    public static boolean isDeathRitual() {
+        return deathRitual;
+    }
+
     public static float audioDuckFactor() {
         return active && !deathRitual
                 ? Mth.clamp(1.0F - audioFade * effectStrength() * 0.97F, 0.03F, 1.0F)
@@ -243,16 +245,7 @@ public final class MasterArchitectFloodClient {
         if (minecraft.level == null || minecraft.player == null) {
             clear();
             pendingTelemetryTicks = 0;
-            pendingWitherDeathTicks = 0;
             return;
-        }
-        if (pendingWitherDeathTicks > 0 && --pendingWitherDeathTicks == 0) {
-            MasterArchitectFightMusic.suppressAfterCanonicalDeath(200);
-            stopMindScore();
-            minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
-            minecraft.getMusicManager().stopPlaying();
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
-                    SoundEvents.WITHER_DEATH, 1.0F, 1.0F));
         }
         if (pendingTelemetryTicks > 0 && --pendingTelemetryTicks == 0) {
             minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
@@ -447,7 +440,6 @@ public final class MasterArchitectFloodClient {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         clear();
         pendingTelemetryTicks = 0;
-        pendingWitherDeathTicks = 0;
     }
 
     static boolean shouldCorruptSuitTelemetry() {
@@ -496,7 +488,7 @@ public final class MasterArchitectFloodClient {
         return AirStatusTelemetry.getTankTelemetry(minecraft.player).fillRatio();
     }
 
-    private static void showSuitDialogue(String translationKey) {
+    public static void showSuitDialogue(String translationKey) {
         suitDialogueKey = translationKey;
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
         suitDialogueAge = 0;

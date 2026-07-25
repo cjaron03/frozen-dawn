@@ -6,6 +6,7 @@ import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.event.MasterArchitectThermalSever;
 import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
@@ -14,6 +15,7 @@ import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import com.frozendawn.homo.MasterArchitectMusicStage;
 import com.frozendawn.homo.MasterArchitectPhasePolicy;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.MasterArchitectAuraEventPayload;
 import com.frozendawn.network.ContinuityFracturePayload;
 import com.frozendawn.network.MasterArchitectTetherHitPayload;
 import com.frozendawn.network.MasterArchitectSeverTelegraphPayload;
@@ -580,6 +582,12 @@ final class MasterArchitectCombatController {
                 ModSounds.MASTER_ARCHITECT_TETHER_DEPLOY.get(), 1.9F, 0.82F);
         architect.playSound(
                 ModSounds.MASTER_ARCHITECT_TETHER_WAIL.get(), 3.6F, 0.56F);
+        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                level,
+                MasterArchitectAuraEventPayload.TETHER_SHUDDER,
+                architect.blockPosition().above(72),
+                architect.blockPosition(),
+                1.35F);
         level.sendParticles(ParticleTypes.SCULK_SOUL,
                 architect.getX(), architect.getY() + 1.45D, architect.getZ(),
                 tetherActive ? 28 : 10, 0.55D, 0.8D, 0.55D, 0.06D);

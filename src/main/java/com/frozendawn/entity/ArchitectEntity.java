@@ -117,6 +117,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_MASTER_MIND_COPY =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_MASTER_AURA_TIER =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -299,6 +301,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.KIT.id());
         builder.define(DATA_MASTER_ARCHITECT, false);
         builder.define(DATA_MASTER_MIND_COPY, false);
+        builder.define(DATA_MASTER_AURA_TIER, 0);
     }
 
     @Override
@@ -1499,6 +1502,8 @@ public class ArchitectEntity extends Monster {
         hearthMasterArchitectId = hearthId;
         hearthMasterArchitectHome = home.immutable();
         entityData.set(DATA_MASTER_ARCHITECT, true);
+        entityData.set(DATA_MASTER_AURA_TIER,
+                com.frozendawn.homo.MasterArchitectAuraTier.PASSIVE);
         applyMasterArchitectStats(true);
         setTextureVariant(textureVariant);
         setPersistenceRequired();
@@ -1523,6 +1528,15 @@ public class ArchitectEntity extends Monster {
 
     public boolean isMasterArchitectVisual() {
         return isHearthMasterArchitect() || isMasterMindCopy();
+    }
+
+    public int getMasterAuraTier() {
+        return entityData.get(DATA_MASTER_AURA_TIER);
+    }
+
+    void setMasterAuraTier(int tier) {
+        entityData.set(DATA_MASTER_AURA_TIER,
+                com.frozendawn.homo.MasterArchitectAuraTier.clamp(tier));
     }
 
     public Optional<UUID> getMindCopyRealMasterId() {
@@ -1589,6 +1603,8 @@ public class ArchitectEntity extends Monster {
             int textureVariant) {
         mindCopyRealMasterId = realMasterId;
         entityData.set(DATA_MASTER_MIND_COPY, true);
+        entityData.set(DATA_MASTER_AURA_TIER,
+                com.frozendawn.homo.MasterArchitectAuraTier.FIGHT);
         entityData.set(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.FLOOD.id());
         entityData.set(DATA_MASTER_COMBAT_ACTION, MasterArchitectCombatAction.FLOOD_CHANNEL);
         entityData.set(DATA_MASTER_COMBAT_TICKS, 0);
@@ -1861,6 +1877,7 @@ public class ArchitectEntity extends Monster {
         if (hearthMasterArchitectId != null && hearthMasterArchitectHome != null) {
             tag.putUUID("HearthMasterArchitectId", hearthMasterArchitectId);
             tag.putLong("HearthMasterArchitectHome", hearthMasterArchitectHome.asLong());
+            tag.putInt("MasterAuraTier", getMasterAuraTier());
             hearthMasterController.addSaveData(tag);
         }
         if (isMasterMindCopy() && mindCopyRealMasterId != null) {
@@ -1910,6 +1927,13 @@ public class ArchitectEntity extends Monster {
             hearthMasterArchitectHome = BlockPos.of(
                     tag.getLong("HearthMasterArchitectHome"));
             entityData.set(DATA_MASTER_ARCHITECT, true);
+            entityData.set(DATA_MASTER_AURA_TIER,
+                    com.frozendawn.homo.MasterArchitectAuraTier.clamp(
+                            tag.getInt("MasterAuraTier")));
+            if (getMasterAuraTier() == com.frozendawn.homo.MasterArchitectAuraTier.NONE) {
+                entityData.set(DATA_MASTER_AURA_TIER,
+                        com.frozendawn.homo.MasterArchitectAuraTier.PASSIVE);
+            }
             setPersistenceRequired();
             restrictTo(hearthMasterArchitectHome, HearthMasterArchitectPolicy.HOME_RADIUS);
             despawnTimer = 0;
@@ -1925,6 +1949,8 @@ public class ArchitectEntity extends Monster {
         if (tag.hasUUID("MasterMindCopyRealId")) {
             mindCopyRealMasterId = tag.getUUID("MasterMindCopyRealId");
             entityData.set(DATA_MASTER_MIND_COPY, true);
+            entityData.set(DATA_MASTER_AURA_TIER,
+                    com.frozendawn.homo.MasterArchitectAuraTier.FIGHT);
             entityData.set(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.FLOOD.id());
             setPersistenceRequired();
             setCustomName(Component.literal("The Master Architect"));

@@ -305,6 +305,25 @@ public final class HearthCombatRosterManager {
         }
     }
 
+    /** Gives every loaded resident the same one-tick acknowledgement of an aura escalation. */
+    public static void signalAuraTierChange(
+            ServerLevel level, UUID hearthId, LivingEntity master, int tier) {
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return;
+        }
+        for (UUID entityId : hearth.combatRoster().keySet()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity instanceof Mob resident && resident.isAlive()) {
+                resident.getNavigation().stop();
+                resident.getLookControl().setLookAt(master, 45.0F, 45.0F);
+            }
+        }
+        FrozenDawn.LOGGER.debug(
+                "Master aura tier changed at Hearth {}: tier={}", shortId(hearthId), tier);
+    }
+
     @Nullable
     private static CastWindow activeCastWindow(ServerLevel level, UUID hearthId) {
         CastWindow window = ACTIVE_CASTS.get(hearthId);

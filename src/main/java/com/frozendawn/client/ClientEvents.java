@@ -10,6 +10,7 @@ import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.MasterArchitectAdornmentModel;
+import com.frozendawn.client.renderer.MasterArchitectLightningRenderer;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.RocketLaunchModel;
@@ -174,6 +175,9 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.MASTER_ARCHITECT_LIGHTNING.get(),
+                MasterArchitectLightningRenderer::new);
         event.registerEntityRenderer(ModEntities.ROCKET_LAUNCH.get(), RocketLaunchRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);

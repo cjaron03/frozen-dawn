@@ -1,15 +1,17 @@
 package com.frozendawn.entity.master;
 
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.MasterArchitectLightningEntity;
+import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.MasterArchitectAuraEventPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -81,6 +83,13 @@ public final class MasterArchitectDeathFx {
 
     public static void detonate(ServerLevel level, ArchitectEntity architect) {
         Vec3 center = architect.position().add(0.0D, 1.0D, 0.0D);
+        level.playSound(
+                null,
+                BlockPos.containing(center),
+                SoundEvents.WITHER_DEATH,
+                SoundSource.MASTER,
+                6.5F,
+                0.58F);
         if (!architect.isMindReturnDeathSoundOnly()) {
             level.playSound(
                     null,
@@ -152,19 +161,23 @@ public final class MasterArchitectDeathFx {
                 0.25D);
 
         applyBlast(level, architect, center);
+        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                level,
+                MasterArchitectAuraEventPayload.DEATH_COLLAPSE,
+                architect.blockPosition().above(128),
+                architect.blockPosition(),
+                2.0F);
         for (int strike = 0; strike < 3; strike++) {
-            LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
-            if (lightning != null) {
-                double angle = strike * Math.PI * 2.0D / 3.0D;
-                double radius = strike == 0 ? 0.0D : 0.85D;
-                lightning.setVisualOnly(true);
-                lightning.setSilent(architect.isMindReturnDeathSoundOnly());
-                lightning.moveTo(
-                        architect.getX() + Math.cos(angle) * radius,
-                        architect.getY(),
-                        architect.getZ() + Math.sin(angle) * radius);
-                level.addFreshEntity(lightning);
-            }
+            double angle = strike * Math.PI * 2.0D / 3.0D;
+            double radius = strike == 0 ? 0.0D : 0.85D;
+            MasterArchitectLightningEntity.spawn(
+                    level,
+                    architect.getX() + Math.cos(angle) * radius,
+                    architect.getY(),
+                    architect.getZ() + Math.sin(angle) * radius,
+                    128.0F,
+                    1.8F,
+                    level.random.nextLong());
         }
     }
 
