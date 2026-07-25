@@ -695,6 +695,8 @@ public final class MasterArchitectAuraClient {
     }
 
     private static void renderMindRift(RenderLevelStageEvent event) {
+        float deathProgress = MasterArchitectFloodClient.getDeathRitualProgress();
+        float opening = 1.0F - (float) Math.pow(1.0F - deathProgress, 3.0F);
         float pulse = 0.78F + 0.22F * Mth.sin(
                 Minecraft.getInstance().level.getGameTime() * 0.18F);
         RenderSystem.enableBlend();
@@ -714,7 +716,7 @@ public final class MasterArchitectAuraClient {
         Matrix4f matrix = poses.last().pose();
         BufferBuilder buffer = Tesselator.getInstance().begin(
                 VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        float radius = 10.0F + contractionPulse * 3.0F;
+        float radius = 8.0F + opening * 8.5F + contractionPulse * 2.0F;
         int apertureSegments = 40;
         for (int segment = 0; segment < apertureSegments; segment++) {
             float a0 = segment * Mth.TWO_PI / apertureSegments;
@@ -736,8 +738,8 @@ public final class MasterArchitectAuraClient {
         for (int ray = 0; ray < 20; ray++) {
             float angle = ray * Mth.TWO_PI / 20.0F;
             float inner = radius * (0.76F + (ray % 2) * 0.07F);
-            float outer = radius * (1.38F + (ray % 5) * 0.19F);
-            float width = 0.12F + contractionPulse * 0.08F;
+            float outer = radius * (1.38F + (ray % 5) * 0.19F + opening * 0.28F);
+            float width = 0.12F + contractionPulse * 0.08F + opening * 0.10F;
             addRadialStrip(
                     buffer,
                     matrix,
@@ -750,6 +752,37 @@ public final class MasterArchitectAuraClient {
                     255,
                     220);
         }
+        float crackLength = 4.0F + opening * 22.0F;
+        float crackDrop = 3.0F + opening * 20.0F;
+        float crackWidth = 0.14F + (float) Math.pow(opening, 1.35F) * 1.25F;
+        for (int direction = 0; direction < 4; direction++) {
+            addCardinalRiftCrack(
+                    buffer,
+                    matrix,
+                    direction,
+                    radius * 0.52F,
+                    crackLength,
+                    crackDrop,
+                    crackWidth,
+                    opening,
+                    64,
+                    164,
+                    210,
+                    150);
+            addCardinalRiftCrack(
+                    buffer,
+                    matrix,
+                    direction,
+                    radius * 0.52F,
+                    crackLength,
+                    crackDrop,
+                    crackWidth * 0.28F,
+                    opening,
+                    190,
+                    247,
+                    255,
+                    238);
+        }
         BufferUploader.drawWithShader(buffer.buildOrThrow());
         poses.popPose();
         RenderSystem.enableDepthTest();
@@ -757,6 +790,57 @@ public final class MasterArchitectAuraClient {
         RenderSystem.enableCull();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
+    }
+
+    private static void addCardinalRiftCrack(
+            BufferBuilder buffer,
+            Matrix4f matrix,
+            int direction,
+            float startRadius,
+            float length,
+            float drop,
+            float halfWidth,
+            float progress,
+            int red,
+            int green,
+            int blue,
+            int alpha) {
+        float angle = direction * Mth.HALF_PI;
+        float dx = Mth.cos(angle);
+        float dz = Mth.sin(angle);
+        float px = -dz;
+        float pz = dx;
+        int segments = 10;
+        for (int segment = 0; segment < segments; segment++) {
+            float t0 = segment / (float) segments;
+            float t1 = (segment + 1) / (float) segments;
+            float jitterScale = (0.32F + progress * 0.78F)
+                    * Mth.sin(t0 * Mth.PI);
+            float offset0 = (hash01(direction * 97 + segment * 31) - 0.5F)
+                    * jitterScale * 2.0F;
+            float offset1 = (hash01(direction * 97 + (segment + 1) * 31) - 0.5F)
+                    * jitterScale * 2.0F;
+            float radial0 = startRadius + length * t0;
+            float radial1 = startRadius + length * t1;
+            float x0 = dx * radial0 + px * offset0;
+            float z0 = dz * radial0 + pz * offset0;
+            float x1 = dx * radial1 + px * offset1;
+            float z1 = dz * radial1 + pz * offset1;
+            float y0 = -drop * (float) Math.pow(t0, 0.78F);
+            float y1 = -drop * (float) Math.pow(t1, 0.78F);
+            float width0 = halfWidth * (0.62F + t0 * 0.72F);
+            float width1 = halfWidth * (0.62F + t1 * 0.72F);
+            int alpha0 = Mth.floor(alpha * (1.0F - t0 * 0.32F));
+            int alpha1 = Mth.floor(alpha * (1.0F - t1 * 0.32F));
+            buffer.addVertex(matrix, x0 + px * width0, y0, z0 + pz * width0)
+                    .setColor(red, green, blue, alpha0);
+            buffer.addVertex(matrix, x1 + px * width1, y1, z1 + pz * width1)
+                    .setColor(red, green, blue, alpha1);
+            buffer.addVertex(matrix, x1 - px * width1, y1, z1 - pz * width1)
+                    .setColor(red, green, blue, alpha1);
+            buffer.addVertex(matrix, x0 - px * width0, y0, z0 - pz * width0)
+                    .setColor(red, green, blue, alpha0);
+        }
     }
 
     private static void addWispQuad(

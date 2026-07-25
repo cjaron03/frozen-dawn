@@ -149,6 +149,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectSeverTelegraph(payload))
         );
         registrar.playToClient(
+                MasterArchitectThermalSeverWarningPayload.TYPE,
+                MasterArchitectThermalSeverWarningPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectThermalSeverWarning(payload))
+        );
+        registrar.playToClient(
                 ContinuityFracturePayload.TYPE,
                 ContinuityFracturePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

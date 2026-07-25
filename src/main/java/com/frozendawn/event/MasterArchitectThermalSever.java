@@ -5,9 +5,9 @@ import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.MasterArchitectThermalSeverWarningPayload;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -16,6 +16,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,9 +36,8 @@ public final class MasterArchitectThermalSever {
         }
         ACTIVE.put(player.getUUID(), new SeverState(
                 player.serverLevel().getGameTime(), casterId));
-        player.displayClientMessage(
-                Component.translatable("message.frozendawn.master_architect.thermal_sever"),
-                true);
+        PacketDistributor.sendToPlayer(
+                player, new MasterArchitectThermalSeverWarningPayload());
     }
 
     public static void tick(MinecraftServer server) {

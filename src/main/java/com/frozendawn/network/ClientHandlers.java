@@ -157,6 +157,12 @@ public final class ClientHandlers {
         MasterArchitectSeverTelegraph.start(payload);
     }
 
+    public static void handleMasterArchitectThermalSeverWarning(
+            MasterArchitectThermalSeverWarningPayload payload) {
+        MasterArchitectFloodClient.showWarningSuitDialogue(
+                "ui.frozendawn.master_architect.thermal_sever_warning");
+    }
+
     public static void handleContinuityFracture(
             ContinuityFracturePayload payload) {
         ContinuityFractureInput.start(payload);

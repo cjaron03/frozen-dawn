@@ -86,10 +86,12 @@ public final class MasterArchitectFloodClient {
     private static String suitDialogueKey;
     private static int suitDialogueTicks;
     private static int suitDialogueAge;
+    private static boolean suitDialogueWarning;
     private static int ivenStacks;
     private static int exposureCycle;
     private static boolean coreExposed;
     private static boolean deathRitual;
+    private static int deathRitualTicks;
     private static int healingTier = 1;
     private static int corePulseTicks;
     private static int mindWitnessSoundTicks;
@@ -163,11 +165,14 @@ public final class MasterArchitectFloodClient {
         if (deathRitual) {
             MOTES.clear();
             if (!wasDeathRitual) {
+                deathRitualTicks = 0;
                 mindWitnessSoundTicks = 1;
                 stopMindScore();
                 MasterArchitectFightMusic.stopAll();
                 clearSuitDialogue();
             }
+        } else {
+            deathRitualTicks = 0;
         }
         if ((!wasExposed && coreExposed) || exposureCycle > previousCycle) {
             corePulseTicks = 18;
@@ -298,6 +303,7 @@ public final class MasterArchitectFloodClient {
                 }
             }
             if (deathRitual) {
+                deathRitualTicks++;
                 stopMindScore();
             } else {
                 tickMindScore(minecraft);
@@ -492,12 +498,29 @@ public final class MasterArchitectFloodClient {
         suitDialogueKey = translationKey;
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
         suitDialogueAge = 0;
+        suitDialogueWarning = false;
+    }
+
+    public static void showWarningSuitDialogue(String translationKey) {
+        suitDialogueKey = translationKey;
+        suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
+        suitDialogueAge = 0;
+        suitDialogueWarning = true;
+    }
+
+    public static float getDeathRitualProgress() {
+        return Mth.clamp(
+                deathRitualTicks
+                        / (float) MasterArchitectFloodPolicy.MIND_DEATH_DISINTEGRATION_TICKS,
+                0.0F,
+                1.0F);
     }
 
     private static void clearSuitDialogue() {
         suitDialogueKey = null;
         suitDialogueTicks = 0;
         suitDialogueAge = 0;
+        suitDialogueWarning = false;
     }
 
     private static void renderSuitDialogue(GuiGraphics graphics) {
@@ -525,21 +548,27 @@ public final class MasterArchitectFloodClient {
         int panelHeight = 17 + visibleLines * 10;
         float fade = Mth.clamp(suitDialogueTicks / 16.0F, 0.0F, 1.0F);
 
+        int panelColor = suitDialogueWarning ? 0x181407 : 0x071319;
+        int accentColor = suitDialogueWarning ? 0xF0C934 : 0x20DCE7;
+        int speakerColor = suitDialogueWarning ? 0xFFE06A : 0x54EAF1;
+        int textColor = suitDialogueWarning ? 0xFFF3C4 : 0xD5EEF2;
         graphics.fill(x + 1, y, x + panelWidth - 1, y + panelHeight,
-                argb(Math.round(210.0F * fade), 0x071319));
+                argb(Math.round(224.0F * fade), panelColor));
         graphics.fill(x, y + 1, x + panelWidth, y + panelHeight - 1,
-                argb(Math.round(210.0F * fade), 0x071319));
+                argb(Math.round(224.0F * fade), panelColor));
         graphics.fill(x, y, x + panelWidth, y + 2,
-                argb(Math.round(240.0F * fade), 0x20DCE7));
+                argb(Math.round(255.0F * fade), accentColor));
         graphics.fill(x, y + 2, x + 2, y + panelHeight,
-                argb(Math.round(205.0F * fade), 0x20DCE7));
+                argb(Math.round(230.0F * fade), accentColor));
 
         graphics.drawString(
                 minecraft.font,
-                Component.translatable("ui.frozendawn.master_architect.suit_speaker"),
+                Component.translatable(suitDialogueWarning
+                        ? "ui.frozendawn.master_architect.suit_speaker_warning"
+                        : "ui.frozendawn.master_architect.suit_speaker"),
                 x + 7,
                 y + 5,
-                argb(Math.round(255.0F * fade), 0x54EAF1),
+                argb(Math.round(255.0F * fade), speakerColor),
                 false);
         for (int line = 0; line < visibleLines; line++) {
             graphics.drawString(
@@ -547,7 +576,7 @@ public final class MasterArchitectFloodClient {
                     lines.get(line),
                     x + 7,
                     y + 15 + line * 10,
-                    argb(Math.round(255.0F * fade), 0xD5EEF2),
+                    argb(Math.round(255.0F * fade), textColor),
                     false);
         }
     }
@@ -795,6 +824,7 @@ public final class MasterArchitectFloodClient {
         exposureCycle = 0;
         coreExposed = false;
         deathRitual = false;
+        deathRitualTicks = 0;
         healingTier = 1;
         corePulseTicks = 0;
         MOTES.clear();
