@@ -83,6 +83,30 @@
       }
     ]
   },
+  "ui.suit.puncture_warning": {
+    "subtitle": "subtitle.frozendawn.ui.suit.puncture_warning",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/puncture_warning", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_critical",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/oxygen_critical", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_beep": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_beep",
+    "sounds": [
+      "frozendawn:ui/suit/oxygen_beep"
+    ]
+  },
+  "ui.suit.leak_hiss": {
+    "subtitle": "subtitle.frozendawn.ui.suit.leak_hiss",
+    "sounds": [
+      "frozendawn:ui/suit/leak_hiss"
+    ]
+  },
   "ambient.eva_suffocate": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_suffocate",

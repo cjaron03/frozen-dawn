@@ -3,6 +3,7 @@ package com.frozendawn;
 import com.frozendawn.compat.curios.CuriosCompat;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModArmorMaterials;
+import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
@@ -30,6 +31,7 @@ public class FrozenDawn {
         modEventBus.addListener(ModItems::addToVanillaCreativeTabs);
 
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
+        ModAttachments.ATTACHMENTS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);

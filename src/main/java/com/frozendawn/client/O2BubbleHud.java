@@ -1,17 +1,15 @@
 package com.frozendawn.client;
 
 import com.frozendawn.event.MobFreezeHandler;
-import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 
 /**
  * Custom O2 bubble bar HUD. Shows 10 bubbles above the hunger bar (right side)
- * when in phase 6 late with full EVA suit and an O2 tank in inventory.
+ * whenever a full EVA suit and an O2 tank are equipped for use.
  * Tier-colored bubbles with glow, pulse, and pop animations.
  */
 public class O2BubbleHud {
@@ -44,17 +42,11 @@ public class O2BubbleHud {
             renderMindOverride(graphics, deltaTracker, 1.0F);
             return;
         }
-        int phase = ApocalypseClientData.getPhase();
-        float progress = ApocalypseClientData.getProgress();
-        if (!PhaseManager.isVacuumActive(phase, progress)) return;
-
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || player.isCreative() || player.isSpectator()) return;
         if (mc.options.hideGui) return;
-        if (player.level().dimension() != Level.OVERWORLD) return;
         if (MobFreezeHandler.getFullSetTier(player) != 3) return;
-        if (ApocalypseClientData.isBreathable()) return;
 
         AirStatusTelemetry.TankTelemetry tankTelemetry = AirStatusTelemetry.getTankTelemetry(player);
         if (!tankTelemetry.hasAnyTank()) return;
@@ -159,6 +151,14 @@ public class O2BubbleHud {
 
     /** Returns {outline, fill, highlight, glow} colors for a tier. */
     private static int[] getTierColors(int tier) {
+        if (SuitIntegrityClient.punctures() > 0) {
+            return new int[]{
+                    0xFF6D1010,
+                    0xFFE0342C,
+                    0xFFFF9B82,
+                    0x50E0342C
+            };
+        }
         return switch (tier) {
             case 3 -> new int[]{
                     0xFF3A1060, // outline — dark purple

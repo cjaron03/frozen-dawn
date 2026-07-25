@@ -17,6 +17,7 @@ import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
+import com.frozendawn.client.SuitIntegrityClient;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.ThaevenTransmissionOverlay;
 import com.frozendawn.client.TowerTerminalScreen;
@@ -46,6 +47,10 @@ public final class ClientHandlers {
 
     public static void handleBreathableState(BreathableStatePayload payload) {
         ApocalypseClientData.setBreathable(payload.breathable());
+    }
+
+    public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
+        SuitIntegrityClient.update(payload);
     }
 
     public static void handleSanityStage(SanityStagePayload payload) {

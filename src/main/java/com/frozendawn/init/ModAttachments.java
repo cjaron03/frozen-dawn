@@ -1,0 +1,23 @@
+package com.frozendawn.init;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.SuitIntegrity;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+
+public final class ModAttachments {
+
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
+            DeferredRegister.create(
+                    NeoForgeRegistries.Keys.ATTACHMENT_TYPES, FrozenDawn.MOD_ID);
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<SuitIntegrity>>
+            SUIT_INTEGRITY = ATTACHMENTS.register(
+                    "suit_integrity",
+                    () -> AttachmentType.serializable(SuitIntegrity::new).build());
+
+    private ModAttachments() {
+    }
+}

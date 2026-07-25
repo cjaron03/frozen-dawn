@@ -350,7 +350,8 @@ final class PlayerTickHandler {
                 if (!tank.isEmpty()) {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
-                        if (!visorRig || state.getApocalypseTicks() % 2 == 0) {
+                        if (!SuitIntegrityHandler.hasPuncture(player)
+                                && (!visorRig || state.getApocalypseTicks() % 2 == 0)) {
                             tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
                         }
                         suffocationTimer.put(id, 0);
@@ -360,6 +361,9 @@ final class PlayerTickHandler {
             }
 
             int ticks = suffocationTimer.getOrDefault(id, 0);
+            if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
+                ticks = Math.max(ticks, SUFFOCATION_DURATION);
+            }
             if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
                 ticks++;
             }

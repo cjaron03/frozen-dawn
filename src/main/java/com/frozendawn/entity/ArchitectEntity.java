@@ -965,6 +965,9 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (isMasterMindCopy() && mindCopyDefeatReported) {
+            return false;
+        }
         boolean hit = super.doHurtTarget(target);
         if (hit && target instanceof LivingEntity living) {
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));

@@ -266,9 +266,8 @@ final class MasterArchitectCombatController {
         if (floodController.isActive()
                 || floodController.isMindSessionActive()
                 || floodController.isRetreating()
-                || architect.getHealth() / architect.getMaxHealth()
-                        > com.frozendawn.homo.MasterArchitectFloodPolicy
-                                .ENTRY_HEALTH_FRACTION + 0.001F) {
+                || !MasterArchitectPhasePolicy.isAtFloodEntry(
+                        architect.getHealth(), architect.getMaxHealth())) {
             return;
         }
         if (tetherActive) {

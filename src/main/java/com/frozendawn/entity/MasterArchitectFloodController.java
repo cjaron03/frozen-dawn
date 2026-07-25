@@ -6,6 +6,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
+import com.frozendawn.homo.MasterArchitectPhasePolicy;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
@@ -138,9 +139,8 @@ final class MasterArchitectFloodController {
             return false;
         }
         if (!active) {
-            float healthFraction = architect.getHealth() / architect.getMaxHealth();
-            if (healthFraction
-                    > MasterArchitectFloodPolicy.ENTRY_HEALTH_FRACTION + 0.001F) {
+            if (!MasterArchitectPhasePolicy.isAtFloodEntry(
+                    architect.getHealth(), architect.getMaxHealth())) {
                 return false;
             }
             if (target == null || !beginFoldCast(level, target)) {
@@ -281,8 +281,10 @@ final class MasterArchitectFloodController {
         }
 
         float adjusted = incomingDamage * multiplier;
-        // Three severances, not raw burst damage, own the throne-world kill.
-        return Math.min(adjusted, Math.max(0.0F, copy.getHealth() - 1.0F));
+        // Never leave a hidden final hit point behind an empty boss bar. A
+        // lethal hit in Thae Iven commits the same canonical death ritual as
+        // the third severance and shuts the throne's healing down immediately.
+        return Math.min(adjusted, Math.max(0.0F, copy.getHealth()));
     }
 
     private void tickThroneState(
@@ -733,13 +735,20 @@ final class MasterArchitectFloodController {
             ServerLevel originLevel,
             ArchitectEntity copy,
             @Nullable ServerPlayer killer) {
-        if (!active || mindCopyId == null || !mindCopyId.equals(copy.getUUID())) {
+        if (!active || mindDeathReturnTicks > 0
+                || mindCopyId == null || !mindCopyId.equals(copy.getUUID())) {
             return;
         }
         mindDeathKillerId = killer == null ? null : killer.getUUID();
         mindDeathReturnTicks = MIND_DEATH_EJECTION_TICKS;
         immersion = 1.0F;
         copyHealthSnapshot = 0.0F;
+        copyHealTicks = Integer.MAX_VALUE;
+        healingPressureTicks = 0;
+        coreExposed = false;
+        exposureTicks = 0;
+        surgeTicks = Integer.MAX_VALUE;
+        surgeTelegraphTicks = 0;
         copy.setInvulnerable(true);
         copy.setNoAi(true);
         copy.getNavigation().stop();

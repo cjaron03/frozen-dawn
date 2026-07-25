@@ -30,6 +30,7 @@ import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.SnowshoesItem;
 import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
+import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.registries.Registries;
@@ -213,7 +214,13 @@ public class ModItems {
     public static final DeferredItem<RemnantEmberItem> REMNANT_EMBER = ITEMS.register("remnant_ember",
             () -> new RemnantEmberItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
                     .component(ModDataComponents.WARMTH_REMAINING.get(), RemnantEmberItem.MAX_WARMTH)));
-    public static final DeferredItem<Item> TATTERED_CLOTHING_SCRAP = ITEMS.registerSimpleItem("tattered_clothing_scrap");
+    public static final DeferredItem<SuitPatchItem> TATTERED_CLOTHING_SCRAP = ITEMS.register(
+            "tattered_clothing_scrap",
+            () -> new SuitPatchItem(new Item.Properties().stacksTo(32), false));
+    public static final DeferredItem<SuitPatchItem> ORSA_SUIT_PATCH_KIT = ITEMS.register(
+            "orsa_suit_patch_kit",
+            () -> new SuitPatchItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON), true));
     public static final DeferredItem<OrsaIdBadgeItem> ORSA_ID_BADGE = ITEMS.register("orsa_id_badge",
             () -> new OrsaIdBadgeItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
@@ -450,6 +457,7 @@ public class ModItems {
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());
                         output.accept(TATTERED_CLOTHING_SCRAP.get());
+                        output.accept(ORSA_SUIT_PATCH_KIT.get());
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());

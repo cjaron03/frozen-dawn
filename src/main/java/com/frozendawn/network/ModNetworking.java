@@ -51,6 +51,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleBreathableState(payload))
         );
         registrar.playToClient(
+                SuitIntegrityPayload.TYPE,
+                SuitIntegrityPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleSuitIntegrity(payload))
+        );
+        registrar.playToClient(
                 SanityStagePayload.TYPE,
                 SanityStagePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSanityStage(payload))

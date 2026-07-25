@@ -86,6 +86,10 @@ public class ClientEvents {
                 O2BubbleHud::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "suit_integrity"),
+                SuitIntegrityClient::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "rocket_launch_overlay"),
                 RocketLaunchClientController::render
         );

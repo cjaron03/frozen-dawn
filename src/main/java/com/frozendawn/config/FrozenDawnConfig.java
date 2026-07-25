@@ -57,6 +57,20 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue MASTER_AURA_INFRASOUND_GAIN;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_STORM_RESPONSE_SECONDS;
     public static final ModConfigSpec.IntValue MASTER_AURA_KILL_COLLAPSE_SECONDS;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MASTER_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_ARCHITECT_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_PHYSICAL_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_FALL_CHANCE_PER_BLOCK;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_GRACE_TICKS;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_MAX_CONCURRENT;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_VENT_SECONDS;
+    public static final ModConfigSpec.IntValue SUIT_REPRESSURIZE_PER_TICK;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_DURATION_TICKS;
+    public static final ModConfigSpec.IntValue ORSA_PATCH_DURATION_TICKS;
+    public static final ModConfigSpec.DoubleValue IMPROVISED_PATCH_DEGRADE_CHANCE;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MIN_SEAL_SECONDS;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MAX_SEAL_SECONDS;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
@@ -67,6 +81,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_FLASH_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_PARTICLE_DENSITY;
+    public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
 
@@ -261,6 +276,48 @@ public class FrozenDawnConfig {
         MASTER_AURA_KILL_COLLAPSE_SECONDS = BUILDER
                 .comment("Seconds for the distant storm column to unwind after the Master dies.")
                 .defineInRange("masterAuraKillCollapseSeconds", 60, 10, 180);
+        SUIT_PUNCTURE_MASTER_CHANCE = BUILDER
+                .comment("Chance that a Master Architect melee hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureMasterChance", 0.10D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_ARCHITECT_CHANCE = BUILDER
+                .comment("Chance that a base Architect melee hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureArchitectChance", 0.33D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE = BUILDER
+                .comment("Chance that a Mimic's first ambush hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureMimicAmbushChance", 0.65D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_PHYSICAL_CHANCE = BUILDER
+                .comment("Baseline puncture chance for whitelisted physical damage.")
+                .defineInRange("suitPuncturePhysicalChance", 0.20D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_FALL_CHANCE_PER_BLOCK = BUILDER
+                .comment("Puncture chance added per block of fall distance, capped at 60%.")
+                .defineInRange("suitPunctureFallChancePerBlock", 0.03D, 0.0D, 0.20D);
+        SUIT_PUNCTURE_GRACE_TICKS = BUILDER
+                .comment("Ticks after a puncture during which another puncture cannot occur.")
+                .defineInRange("suitPunctureGraceTicks", 100, 1, 1200);
+        SUIT_PUNCTURE_MAX_CONCURRENT = BUILDER
+                .comment("Maximum concurrent EVA suit punctures. Hard-capped at two.")
+                .defineInRange("suitPunctureMaxConcurrent", 2, 1, 2);
+        SUIT_PUNCTURE_VENT_SECONDS = BUILDER
+                .comment("Seconds for one puncture to vent a full carried O2 reserve.")
+                .defineInRange("suitPunctureVentSeconds", 80, 20, 300);
+        SUIT_REPRESSURIZE_PER_TICK = BUILDER
+                .comment("O2 restored per tick while an intact EVA suit is in breathable air.")
+                .defineInRange("suitRepressurizePerTick", 1, 0, 20);
+        IMPROVISED_PATCH_DURATION_TICKS = BUILDER
+                .comment("Use duration of the improvised clothing-scrap patch.")
+                .defineInRange("improvisedPatchDurationTicks", 60, 20, 200);
+        ORSA_PATCH_DURATION_TICKS = BUILDER
+                .comment("Use duration of the permanent ORSA suit patch kit.")
+                .defineInRange("orsaPatchDurationTicks", 40, 10, 120);
+        IMPROVISED_PATCH_DEGRADE_CHANCE = BUILDER
+                .comment("Chance that an improvised patch eventually reopens in vacuum.")
+                .defineInRange("improvisedPatchDegradeChance", 0.25D, 0.0D, 1.0D);
+        IMPROVISED_PATCH_MIN_SEAL_SECONDS = BUILDER
+                .comment("Minimum lifetime of a degrading improvised seal.")
+                .defineInRange("improvisedPatchMinSealSeconds", 60, 10, 1200);
+        IMPROVISED_PATCH_MAX_SEAL_SECONDS = BUILDER
+                .comment("Maximum lifetime of a degrading improvised seal.")
+                .defineInRange("improvisedPatchMaxSealSeconds", 120, 10, 1800);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -292,6 +349,9 @@ public class FrozenDawnConfig {
         MASTER_AURA_PARTICLE_DENSITY = BUILDER
                 .comment("Scales visual-only Master aura particles without changing mechanics.")
                 .defineInRange("masterAuraParticleDensity", 1.0D, 0.0D, 1.0D);
+        ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
+                .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
+                .define("enableSuitPunctureOverlay", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

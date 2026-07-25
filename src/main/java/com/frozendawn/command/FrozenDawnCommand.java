@@ -38,6 +38,7 @@ public class FrozenDawnCommand {
                 .then(FrozenDawnWorldCommand.worldCommands())
                 .then(FrozenDawnHearthCommand.hearthCommands())
                 .then(FrozenDawnLocateCommand.locateCommands())
+                .then(FrozenDawnSuitCommand.suitCommands())
                 .then(FrozenDawnWinCommand.winCommands())
         );
     }
@@ -63,6 +64,7 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents rupture"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate towns"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate all"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn suit status | punctures <0-2>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn win satellite"), false);
         return 1;
     }

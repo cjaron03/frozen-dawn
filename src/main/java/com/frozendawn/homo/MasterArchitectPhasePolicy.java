@@ -7,10 +7,9 @@ public final class MasterArchitectPhasePolicy {
     public static final float ASCENT_THRESHOLD = 0.30F;
     public static final float FLOOD_THRESHOLD = 0.10F;
     private static final float THRESHOLD_EPSILON = 0.000001F;
-    // Health is displayed to one decimal place. Treat a value that visibly
-    // reads as the exact Flood threshold as reached without loosening the
-    // earlier phase boundaries.
-    private static final float FLOOD_HEALTH_DISPLAY_EPSILON = 0.05F;
+    // The boss bar can visually read as 10% slightly above the exact float
+    // threshold. This single tolerance owns both phase entry and Flood startup.
+    private static final float FLOOD_THRESHOLD_EPSILON = 0.001F;
 
     private MasterArchitectPhasePolicy() {
     }
@@ -22,8 +21,7 @@ public final class MasterArchitectPhasePolicy {
         }
         float safeHealth = Math.max(0.0F, health);
         float fraction = safeHealth / maxHealth;
-        if (safeHealth <= maxHealth * FLOOD_THRESHOLD
-                + FLOOD_HEALTH_DISPLAY_EPSILON) {
+        if (isAtFloodEntry(safeHealth, maxHealth)) {
             return MasterArchitectCombatPhase.FLOOD;
         }
         if (fraction <= ASCENT_THRESHOLD + THRESHOLD_EPSILON) {
@@ -45,6 +43,14 @@ public final class MasterArchitectPhasePolicy {
                 : current;
         MasterArchitectCombatPhase healthPhase = phaseForHealth(health, maxHealth);
         return safeCurrent.isBefore(healthPhase) ? healthPhase : safeCurrent;
+    }
+
+    public static boolean isAtFloodEntry(float health, float maxHealth) {
+        if (maxHealth <= 0.0F || !Float.isFinite(maxHealth)) {
+            return false;
+        }
+        return Math.max(0.0F, health) / maxHealth
+                <= FLOOD_THRESHOLD + FLOOD_THRESHOLD_EPSILON;
     }
 
     public static MasterArchitectCombatPhase migrateLegacyState(

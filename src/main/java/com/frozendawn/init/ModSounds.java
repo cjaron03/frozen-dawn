@@ -53,6 +53,14 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_SUFFOCATE = SOUNDS.register("ambient.eva_suffocate",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_suffocate")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_PUNCTURE_WARNING =
+            register("ui.suit.puncture_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_CRITICAL =
+            register("ui.suit.oxygen_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_BEEP =
+            register("ui.suit.oxygen_beep");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
+            register("ui.suit.leak_hiss");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = SOUNDS.register("ambient.sanity_whisper",
             () -> SoundEvent.createVariableRangeEvent(

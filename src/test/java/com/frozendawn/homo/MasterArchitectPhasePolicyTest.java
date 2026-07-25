@@ -3,6 +3,7 @@ package com.frozendawn.homo;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MasterArchitectPhasePolicyTest {
 
@@ -25,12 +26,13 @@ class MasterArchitectPhasePolicyTest {
         assertEquals(MasterArchitectCombatPhase.FLOOD,
                 MasterArchitectPhasePolicy.phaseForHealth(45.0F, 450.0F));
         assertEquals(MasterArchitectCombatPhase.FLOOD,
-                MasterArchitectPhasePolicy.phaseForHealth(45.05F, 450.0F));
+                MasterArchitectPhasePolicy.phaseForHealth(45.45F, 450.0F));
         assertEquals(MasterArchitectCombatPhase.ASCENT,
-                MasterArchitectPhasePolicy.phaseForHealth(45.051F, 450.0F));
+                MasterArchitectPhasePolicy.phaseForHealth(45.451F, 450.0F));
         assertEquals(MasterArchitectCombatPhase.FLOOD,
                 MasterArchitectPhasePolicy.advance(
                         MasterArchitectCombatPhase.ASCENT, 45.0F, 450.0F));
+        assertTrue(MasterArchitectPhasePolicy.isAtFloodEntry(45.45F, 450.0F));
     }
 
     @Test
