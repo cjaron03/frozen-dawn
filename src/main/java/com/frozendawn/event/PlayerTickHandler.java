@@ -14,6 +14,7 @@ import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.ThermalVentRegistry;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -326,7 +327,10 @@ final class PlayerTickHandler {
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD) continue;
+            if (player.level().dimension() != Level.OVERWORLD
+                    && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+                continue;
+            }
 
             UUID id = player.getUUID();
             if (refreshCache || !breathableCache.containsKey(id)) {

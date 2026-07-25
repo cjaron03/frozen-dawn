@@ -3,6 +3,7 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -27,6 +28,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                            float ageInTicks, float netHeadYaw, float headPitch) {
         // super.setupAnim handles player-like walk animation (arm + leg swing)
         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+        this.setAllVisible(true);
 
         int action = entity.getCurrentAction();
         float sway = Mth.sin(ageInTicks * 0.08f) * 0.06f;
@@ -51,7 +53,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.rightLeg.zRot = 0.0f;
         this.leftLeg.zRot = 0.0f;
 
-        if (entity.isHearthMasterArchitect() && entity.getDeathTicks() > 0) {
+        if (entity.isMasterArchitectVisual() && entity.getDeathTicks() > 0) {
             applyMasterDeathPose(entity.getDeathTicks(), ageInTicks);
             return;
         }
@@ -60,10 +62,15 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         if (masterAction != MasterArchitectCombatAction.IDLE) {
             applyMasterCombatPose(
                     masterAction, entity.getMasterCombatActionTicks(), ageInTicks);
+            if (entity.isMasterMindCopy()
+                    && masterAction == MasterArchitectCombatAction.MIND_RETURN_STAGGER) {
+                applyMindDisintegrationVisibility(
+                        entity.getMasterCombatActionTicks(), ageInTicks);
+            }
             return;
         }
 
-        if (entity.isHearthMasterArchitect()) {
+        if (entity.isMasterArchitectVisual()) {
             applyMasterIdlePose(limbSwingAmount);
             MasterArchitectFourthWallMoment.CameraHeadAngles cameraHead =
                     MasterArchitectFourthWallMoment.cameraHeadAngles(
@@ -207,9 +214,166 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.yRot = 0.68F * hold;
                 this.leftArm.zRot = -0.24F * hold;
             }
+            case MasterArchitectCombatAction.OBSTRUCTION_SMASH -> {
+                float strike = Mth.clamp(actionTicks / 8.0F, 0.0F, 1.0F);
+                this.body.yRot = -0.30F * strike;
+                this.body.xRot = 0.08F * strike;
+                this.head.xRot += 0.12F;
+                this.rightArm.xRot = Mth.lerp(strike, MASTER_WAND_HOLD_X, -2.35F);
+                this.rightArm.yRot = Mth.lerp(strike, MASTER_WAND_HOLD_Y, -0.52F);
+                this.rightArm.zRot = MASTER_WAND_HOLD_Z;
+                this.leftArm.xRot = -0.72F;
+                this.leftArm.yRot = 0.26F;
+            }
+            case MasterArchitectCombatAction.FLOOD_CHANNEL -> {
+                this.body.xRot = -0.04F;
+                this.body.yRot = 0.0F;
+                this.body.zRot = 0.0F;
+                this.head.xRot = -0.10F;
+                this.head.yRot = 0.0F;
+                this.head.zRot = 0.0F;
+                this.rightArm.xRot = -1.42F;
+                this.rightArm.yRot = -0.72F;
+                this.rightArm.zRot = 0.18F;
+                this.leftArm.xRot = -1.42F;
+                this.leftArm.yRot = 0.72F;
+                this.leftArm.zRot = -0.18F;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+            }
+            case MasterArchitectCombatAction.MIND_CORE_REVEAL -> {
+                float elapsed = Mth.clamp(
+                        (MasterArchitectFloodPolicy.CORE_REVEAL_TICKS - actionTicks)
+                                / (float) MasterArchitectFloodPolicy.CORE_REVEAL_TICKS,
+                        0.0F,
+                        1.0F);
+                float recoilProgress = Mth.clamp(elapsed / 0.34F, 0.0F, 1.0F);
+                float recoil = Mth.sin(recoilProgress * Mth.PI);
+                float revealInput = Mth.clamp(
+                        (elapsed - 0.20F) / 0.80F, 0.0F, 1.0F);
+                float reveal = revealInput * revealInput * (3.0F - 2.0F * revealInput);
+                this.body.xRot = 0.24F * recoil;
+                this.body.zRot = pulse * recoil * 1.7F;
+                this.head.xRot = 0.18F * recoil - 0.08F * reveal;
+                this.head.zRot = -pulse * recoil;
+                this.rightArm.xRot = Mth.lerp(reveal, -1.42F, -0.58F);
+                this.rightArm.yRot = Mth.lerp(reveal, -0.72F, -1.22F);
+                this.rightArm.zRot = Mth.lerp(reveal, 0.18F, 0.58F);
+                this.leftArm.xRot = Mth.lerp(reveal, -1.42F, -0.68F);
+                this.leftArm.yRot = Mth.lerp(reveal, 0.72F, 0.28F);
+                this.leftArm.zRot = Mth.lerp(reveal, -0.18F, -0.10F);
+                this.rightLeg.xRot = -0.12F * recoil;
+                this.leftLeg.xRot = 0.16F * recoil;
+            }
+            case MasterArchitectCombatAction.MIND_CORE_READY -> {
+                this.body.xRot = -0.02F;
+                this.head.xRot = -0.08F;
+                this.head.yRot = 0.0F;
+                this.rightArm.xRot = -0.58F;
+                this.rightArm.yRot = -1.22F;
+                this.rightArm.zRot = 0.58F;
+                this.leftArm.xRot = -0.68F;
+                this.leftArm.yRot = 0.28F;
+                this.leftArm.zRot = -0.10F;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+            }
+            case MasterArchitectCombatAction.FLOOD_FOLD_CAST -> {
+                float panic = Mth.sin(ageInTicks * 3.8F) * 0.075F;
+                this.body.xRot = -0.08F;
+                this.body.zRot = panic;
+                this.head.xRot = -0.20F;
+                this.head.zRot = -panic * 0.75F;
+                this.rightArm.xRot = -1.62F;
+                this.rightArm.yRot = -0.78F;
+                this.rightArm.zRot = 0.20F + panic;
+                this.leftArm.xRot = -1.62F;
+                this.leftArm.yRot = 0.78F;
+                this.leftArm.zRot = -0.20F - panic;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+            }
+            case MasterArchitectCombatAction.MIND_HIT_STAGGER -> {
+                float recoil = Mth.clamp(actionTicks / 7.0F, 0.0F, 1.0F);
+                this.body.xRot = 0.22F + pulse;
+                this.body.zRot = 0.10F * recoil;
+                this.head.xRot = 0.20F;
+                this.head.zRot = -0.14F * recoil;
+                this.rightArm.xRot = -0.82F;
+                this.rightArm.yRot = -0.28F;
+                this.leftArm.xRot = -0.64F;
+                this.leftArm.yRot = 0.34F;
+                this.rightLeg.xRot = -0.12F;
+                this.leftLeg.xRot = 0.12F;
+            }
+            case MasterArchitectCombatAction.MIND_CORE_EXPOSED -> {
+                float fracture = Mth.sin(ageInTicks * 1.9F) * 0.12F;
+                this.body.xRot = 0.28F;
+                this.body.zRot = fracture;
+                this.head.xRot = 0.18F;
+                this.head.zRot = -fracture * 0.8F;
+                this.rightArm.xRot = -0.58F;
+                this.rightArm.yRot = -1.22F;
+                this.rightArm.zRot = 0.58F;
+                this.leftArm.xRot = -0.72F;
+                this.leftArm.yRot = 0.30F;
+                this.leftArm.zRot = -0.12F;
+                this.rightLeg.xRot = -0.08F;
+                this.leftLeg.xRot = 0.08F;
+            }
+            case MasterArchitectCombatAction.MIND_RETURN_STAGGER -> {
+                this.body.xRot = 0.44F;
+                this.body.zRot = pulse * 0.35F;
+                this.head.xRot = 0.34F;
+                this.head.zRot = -pulse * 0.45F;
+                this.rightArm.xRot = -0.18F;
+                this.rightArm.yRot = -0.18F;
+                this.leftArm.xRot = -1.10F;
+                this.leftArm.yRot = 0.46F;
+                this.rightLeg.xRot = -0.20F;
+                this.leftLeg.xRot = 0.34F;
+            }
+            case MasterArchitectCombatAction.MIND_RETURN_CHARGE -> {
+                float shake = Mth.sin(ageInTicks * 3.1F) * 0.08F;
+                this.body.xRot = -0.05F;
+                this.body.zRot = shake;
+                this.head.xRot = -0.16F;
+                this.head.zRot = -shake;
+                this.rightArm.xRot = -1.34F;
+                this.rightArm.yRot = -0.64F;
+                this.leftArm.xRot = -1.34F;
+                this.leftArm.yRot = 0.64F;
+                this.rightLeg.xRot = 0.0F;
+                this.leftLeg.xRot = 0.0F;
+            }
             default -> {
             }
         }
+    }
+
+    private void applyMindDisintegrationVisibility(int actionTicks, float ageInTicks) {
+        float progress = Mth.clamp(
+                actionTicks
+                        / (float) MasterArchitectFloodPolicy.MIND_DEATH_DISINTEGRATION_TICKS,
+                0.0F,
+                1.0F);
+        this.leftLeg.visible = dissolvePartVisible(progress, 0.18F, ageInTicks, 1);
+        this.rightLeg.visible = dissolvePartVisible(progress, 0.32F, ageInTicks, 2);
+        this.leftArm.visible = dissolvePartVisible(progress, 0.48F, ageInTicks, 3);
+        this.rightArm.visible = dissolvePartVisible(progress, 0.62F, ageInTicks, 4);
+        this.body.visible = dissolvePartVisible(progress, 0.78F, ageInTicks, 5);
+        this.head.visible = dissolvePartVisible(progress, 0.93F, ageInTicks, 6);
+    }
+
+    private static boolean dissolvePartVisible(
+            float progress, float threshold, float ageInTicks, int salt) {
+        if (progress < threshold) {
+            return true;
+        }
+        if (progress >= threshold + 0.12F) {
+            return false;
+        }
+        return (Mth.floor(ageInTicks * 2.0F) + salt) % 4 != 0;
     }
 
     private void applyMasterDeathPose(int deathTicks, float ageInTicks) {

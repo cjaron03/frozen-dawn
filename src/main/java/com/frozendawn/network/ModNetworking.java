@@ -160,6 +160,24 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleMasterArchitectFourthWallState(payload))
         );
+        registrar.playToClient(
+                MasterArchitectFloodStatePayload.TYPE,
+                MasterArchitectFloodStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodState(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectFloodMotePayload.TYPE,
+                MasterArchitectFloodMotePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodMote(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectFloodProgressPayload.TYPE,
+                MasterArchitectFloodProgressPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodProgress(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(

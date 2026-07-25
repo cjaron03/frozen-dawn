@@ -8,6 +8,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
@@ -17,12 +18,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /** Owns the persistent moral and combat roles of the Intact Hearth congregation. */
 public final class HearthCombatRosterManager {
     private static final double TETHER_CANDIDATE_RANGE_SQUARED = 48.0D * 48.0D;
     private static final Map<UUID, CastWindow> ACTIVE_CASTS = new HashMap<>();
+    private static final Set<UUID> ACTIVE_FLOOD_HEARTHS = new HashSet<>();
 
     private static long rostersCreated;
     private static long residentsSpent;
@@ -80,7 +84,8 @@ public final class HearthCombatRosterManager {
             ServerLevel level, UUID hearthId, UUID entityId) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         ReturnedHearthSavedData.HearthRecord hearth = data.hearth(hearthId).orElse(null);
-        return (hearth == null || !hearth.combatRosterInitialized()
+        return !ACTIVE_FLOOD_HEARTHS.contains(hearthId)
+                && (hearth == null || !hearth.combatRosterInitialized()
                 || HearthCombatRosterPolicy.canAttack(
                         data.encounterRole(hearthId, entityId)))
                 && activeCastWindow(level, hearthId) == null;
@@ -93,6 +98,17 @@ public final class HearthCombatRosterManager {
         ReturnedHearthSavedData.HearthRecord hearth = data.hearth(hearthId).orElse(null);
         if (hearth == null || !hearth.combatRosterInitialized()) {
             return false;
+        }
+
+        if (ACTIVE_FLOOD_HEARTHS.contains(hearthId)) {
+            resident.setTarget(null);
+            resident.setLastHurtByMob(null);
+            resident.getNavigation().stop();
+            resident.setPose(Pose.CROUCHING);
+            return true;
+        }
+        if (resident.getPose() == Pose.CROUCHING) {
+            resident.setPose(Pose.STANDING);
         }
 
         HearthEncounterRole role = data.encounterRole(hearthId, resident.getUUID());
@@ -178,6 +194,7 @@ public final class HearthCombatRosterManager {
     }
 
     public static void onMasterDefeated(ServerLevel level, UUID hearthId) {
+        setFloodKneeling(level, hearthId, false);
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         data.pacifyCombatRoster(hearthId);
         ReturnedHearthSavedData.HearthRecord hearth = data.hearth(hearthId).orElse(null);
@@ -243,6 +260,49 @@ public final class HearthCombatRosterManager {
         residentsSpent = 0L;
         casualtiesRecorded = 0L;
         ACTIVE_CASTS.clear();
+        ACTIVE_FLOOD_HEARTHS.clear();
+    }
+
+    public static FloodPopulation floodPopulation(
+            ServerLevel level, UUID hearthId) {
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return new FloodPopulation(0, 0, 0.0F);
+        }
+        int maximum = hearth.combatRoster().size();
+        int surviving = 0;
+        for (UUID entityId : hearth.combatRoster().keySet()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity instanceof LivingEntity living && living.isAlive()) {
+                surviving++;
+            }
+        }
+        float strength = MasterArchitectFloodPolicy.strength(surviving, maximum);
+        return new FloodPopulation(surviving, maximum, strength);
+    }
+
+    public static void setFloodKneeling(
+            ServerLevel level, UUID hearthId, boolean active) {
+        if (active) {
+            ACTIVE_FLOOD_HEARTHS.add(hearthId);
+        } else {
+            ACTIVE_FLOOD_HEARTHS.remove(hearthId);
+        }
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return;
+        }
+        for (UUID entityId : hearth.combatRoster().keySet()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity instanceof Mob resident && resident.isAlive()) {
+                resident.setTarget(null);
+                resident.setLastHurtByMob(null);
+                resident.getNavigation().stop();
+                resident.setPose(active ? Pose.CROUCHING : Pose.STANDING);
+            }
+        }
     }
 
     @Nullable
@@ -346,5 +406,9 @@ public final class HearthCombatRosterManager {
 
     public record DeathResult(
             HearthEncounterRole role, boolean bindingChanged, boolean casualtyRecorded) {
+    }
+
+    public record FloodPopulation(
+            int survivingResidents, int maximumResidents, float strength) {
     }
 }

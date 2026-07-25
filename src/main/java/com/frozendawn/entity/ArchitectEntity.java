@@ -115,6 +115,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MASTER_ARCHITECT =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_MASTER_MIND_COPY =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -171,7 +173,10 @@ public class ArchitectEntity extends Monster {
     @Nullable
     private BlockPos hearthMasterArchitectHome;
     @Nullable
+    private UUID mindCopyRealMasterId;
+    @Nullable
     private ServerBossEvent masterBossEvent;
+    private boolean masterBossBarEmptyOverride;
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
@@ -213,6 +218,11 @@ public class ArchitectEntity extends Monster {
     private int pathRecalcCooldown = 0;
     private boolean suppressMasterHurtSound;
     private int clientMasterTetherHurtSuppressionTicks;
+    private boolean mindReturnDeathDetonatesImmediately;
+    private boolean foldedDeathPresentationAlreadyPlayed;
+    private boolean mindReturnDeathSoundOnly;
+    private boolean mindCopyDefeatReported;
+    private DamageSource mindCopyDeathSource;
     private static final float WALK_MAX_ROTATE = 35.0F;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     static final int MELEE_COMMIT_TICKS = 12;
@@ -288,6 +298,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_THERMAL_CHARGE, 0.0F);
         builder.define(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.KIT.id());
         builder.define(DATA_MASTER_ARCHITECT, false);
+        builder.define(DATA_MASTER_MIND_COPY, false);
     }
 
     @Override
@@ -457,7 +468,7 @@ public class ArchitectEntity extends Monster {
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
         }
-        if (!level().isClientSide() && isHearthMasterArchitect()) {
+        if (!level().isClientSide() && isMasterArchitectVisual()) {
             updateMasterBossBarProgress();
         }
         if (level() instanceof ServerLevel serverLevel) {
@@ -468,6 +479,22 @@ public class ArchitectEntity extends Monster {
                 HearthCombatRosterManager.enforcePassiveRole(
                         serverLevel, hearthPopulationId, this);
             }
+        }
+        if (isMasterMindCopy()) {
+            super.aiStep();
+            if (!level().isClientSide()) {
+                getNavigation().stop();
+                setTarget(null);
+                setSprinting(false);
+                setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
+                int visualTicks = getMasterCombatActionTicks();
+                if (visualTicks > 0) {
+                    entityData.set(DATA_MASTER_COMBAT_TICKS, visualTicks - 1);
+                } else {
+                    setMasterCombatVisual(MasterArchitectCombatAction.FLOOD_CHANNEL, 0);
+                }
+            }
+            return;
         }
         // Warmup: skip all AI for first 2 seconds after spawn/load
         // Prevents pathfinding freeze when entity loads before chunks are ready
@@ -482,6 +509,9 @@ public class ArchitectEntity extends Monster {
         long superUs = (System.nanoTime() - superStart) / 1000;
         if (superUs > SLOW_SUPER_AISTEP_LOG_US && LOGGER.isDebugEnabled()) {
             LOGGER.debug("[Architect] super.aiStep() took {}us (nav recompute?)", superUs);
+        }
+        if (!isAlive() || getDeathTicks() > 0) {
+            return;
         }
         if (level().isClientSide()) return;
 
@@ -943,6 +973,40 @@ public class ArchitectEntity extends Monster {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (source.is(DamageTypeTags.IS_FREEZING)) return false;
+        if (isMasterMindCopy()) {
+            amount = MasterArchitectCombatPolicy.adjustedIncomingDamage(
+                    amount,
+                    source.is(DamageTypeTags.IS_FIRE),
+                    source.is(DamageTypeTags.BYPASSES_INVULNERABILITY));
+            if (!level().isClientSide() && level() instanceof ServerLevel serverLevel) {
+                amount = MasterArchitectMindSessionBridge.prepareCopyDamage(
+                        serverLevel, this, source, amount);
+            }
+            if (!level().isClientSide()
+                    && !mindCopyDefeatReported
+                    && amount + 0.001F >= getHealth()
+                    && level() instanceof ServerLevel serverLevel) {
+                mindCopyDefeatReported = true;
+                mindCopyDeathSource = source;
+                setHealth(Math.min(1.0F, getHealth()));
+                setInvulnerable(true);
+                setNoAi(true);
+                getNavigation().stop();
+                setTarget(null);
+                setMasterCombatVisual(MasterArchitectCombatAction.MIND_RETURN_STAGGER, 0);
+                updateMasterBossBarProgress();
+                MasterArchitectMindSessionBridge.onCopyDefeated(
+                        serverLevel, this, source);
+                return true;
+            }
+            boolean hurt = super.hurt(source, amount);
+            if (hurt && !level().isClientSide() && !isRemoved()
+                    && level() instanceof ServerLevel serverLevel) {
+                MasterArchitectMindSessionBridge.onCopyHurt(
+                        serverLevel, this, source, amount);
+            }
+            return hurt;
+        }
         if (isHearthMasterArchitect()) {
             amount = MasterArchitectCombatPolicy.adjustedIncomingDamage(
                     amount,
@@ -988,7 +1052,10 @@ public class ArchitectEntity extends Monster {
                         serverLevel, hearthMasterArchitectId, attacker, "Master Architect");
             }
             if (isHearthMasterArchitect()) {
-                hearthMasterController.onHurt();
+                hearthMasterController.onHurt(
+                        (ServerLevel) level(),
+                        source.getEntity() instanceof ServerPlayer attacker
+                                ? attacker : null);
                 if (MasterArchitectBossBarPolicy.shouldReveal(
                         false, source.getEntity() instanceof ServerPlayer)) {
                     setMasterBossBarProvoked(true);
@@ -1013,6 +1080,12 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void die(DamageSource source) {
+        if (isMasterMindCopy()) {
+            mindCopyDeathSource = source;
+            super.die(source);
+            updateMasterBossBarProgress();
+            return;
+        }
         boolean masterArchitect = isHearthMasterArchitect();
         super.die(source);
         if (masterArchitect) {
@@ -1030,7 +1103,9 @@ public class ArchitectEntity extends Monster {
         }
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel
                 && hearthMasterArchitectId != null) {
-            hearthMasterController.onDeath(serverLevel);
+            hearthMasterController.onDeath(
+                    serverLevel,
+                    source.getEntity() instanceof ServerPlayer killer ? killer : null);
             HearthMasterArchitectManager.recordDefeat(
                     serverLevel, hearthMasterArchitectId, getUUID());
         }
@@ -1042,12 +1117,12 @@ public class ArchitectEntity extends Monster {
 
     @Override
     protected boolean shouldDropLoot() {
-        return !isHearthMasterArchitect() && super.shouldDropLoot();
+        return !isMasterArchitectVisual() && super.shouldDropLoot();
     }
 
     @Override
     protected void dropEquipment() {
-        if (!isHearthMasterArchitect()) {
+        if (!isMasterArchitectVisual()) {
             super.dropEquipment();
         }
     }
@@ -1095,7 +1170,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private void ensureAmbientHelmet() {
-        if (isHearthMasterArchitect()) {
+        if (isMasterArchitectVisual()) {
             clearMasterAmbientHelmet();
             return;
         }
@@ -1253,7 +1328,7 @@ public class ArchitectEntity extends Monster {
     protected void tickDeath() {
         int ticks = getDeathTicks() + 1;
         entityData.set(DATA_DEATH_TICKS, ticks);
-        if (isHearthMasterArchitect()) {
+        if (isMasterArchitectVisual()) {
             tickMasterArchitectDeath(ticks);
             return;
         }
@@ -1285,6 +1360,10 @@ public class ArchitectEntity extends Monster {
 
     private void tickMasterArchitectDeath(int ticks) {
         setDeltaMovement(Vec3.ZERO);
+        if (mindReturnDeathDetonatesImmediately) {
+            detonateMasterArchitectDeath();
+            return;
+        }
         if (level() instanceof ServerLevel serverLevel) {
             MasterArchitectDeathFx.tickCharge(serverLevel, this, ticks);
         }
@@ -1292,13 +1371,27 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
+        detonateMasterArchitectDeath();
+    }
+
+    private void detonateMasterArchitectDeath() {
         cleanupAllIce();
         blockBreaker.onDeath();
         if (towerEncounter && level() instanceof ServerLevel serverLevel) {
             TowerEncounterController.markResolved(serverLevel, towerEncounterId);
         }
-        if (level() instanceof ServerLevel serverLevel) {
+        if (level() instanceof ServerLevel serverLevel
+                && !foldedDeathPresentationAlreadyPlayed) {
             MasterArchitectDeathFx.detonate(serverLevel, this);
+        }
+        if (isMasterMindCopy() && !mindCopyDefeatReported
+                && level() instanceof ServerLevel serverLevel) {
+            mindCopyDefeatReported = true;
+            DamageSource source = mindCopyDeathSource == null
+                    ? serverLevel.damageSources().generic()
+                    : mindCopyDeathSource;
+            MasterArchitectMindSessionBridge.onCopyDefeated(
+                    serverLevel, this, source);
         }
         remove(RemovalReason.KILLED);
     }
@@ -1424,6 +1517,102 @@ public class ArchitectEntity extends Monster {
                 || (hearthMasterArchitectId != null && hearthMasterArchitectHome != null);
     }
 
+    public boolean isMasterMindCopy() {
+        return entityData.get(DATA_MASTER_MIND_COPY);
+    }
+
+    public boolean isMasterArchitectVisual() {
+        return isHearthMasterArchitect() || isMasterMindCopy();
+    }
+
+    public Optional<UUID> getMindCopyRealMasterId() {
+        return Optional.ofNullable(mindCopyRealMasterId);
+    }
+
+    public void onMindCopyHurt(
+            ArchitectEntity copy, DamageSource source, float amount) {
+        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
+            hearthMasterController.onMindCopyHurt(
+                    serverLevel, copy, source, amount);
+        }
+    }
+
+    float prepareMindCopyDamage(
+            ArchitectEntity copy, DamageSource source, float amount) {
+        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
+            return hearthMasterController.prepareMindCopyDamage(
+                    serverLevel, copy, source, amount);
+        }
+        return amount;
+    }
+
+    public void onMindCopyDefeated(
+            ArchitectEntity copy, @Nullable ServerPlayer killer) {
+        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
+            hearthMasterController.onMindCopyDefeated(serverLevel, copy, killer);
+        }
+    }
+
+    public void onMindParticipantFailed(ServerPlayer player, String reason) {
+        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
+            hearthMasterController.onMindParticipantFailed(serverLevel, player, reason);
+        }
+    }
+
+    void executeMindReturnDeath(DamageSource source) {
+        if (!isHearthMasterArchitect() || !isAlive()) {
+            return;
+        }
+        mindReturnDeathSoundOnly = true;
+        setHealth(0.0F);
+        die(source);
+    }
+
+    public boolean isMindReturnDeathSoundOnly() {
+        return mindReturnDeathSoundOnly;
+    }
+
+    void executeFoldedCanonicalDeath(DamageSource source) {
+        if (!isHearthMasterArchitect() || !isAlive()) {
+            return;
+        }
+        foldedDeathPresentationAlreadyPlayed = true;
+        mindReturnDeathDetonatesImmediately = true;
+        setHealth(0.0F);
+        die(source);
+    }
+
+    public void initializeMasterMindCopy(
+            UUID realMasterId,
+            float realMaximumHealth,
+            float remainingHealth,
+            int textureVariant) {
+        mindCopyRealMasterId = realMasterId;
+        entityData.set(DATA_MASTER_MIND_COPY, true);
+        entityData.set(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.FLOOD.id());
+        entityData.set(DATA_MASTER_COMBAT_ACTION, MasterArchitectCombatAction.FLOOD_CHANNEL);
+        entityData.set(DATA_MASTER_COMBAT_TICKS, 0);
+        setTextureVariant(textureVariant);
+        setPersistenceRequired();
+        setCustomName(Component.literal("The Master Architect"));
+        var maxHealth = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealth != null) {
+            maxHealth.setBaseValue(Math.max(1.0F, realMaximumHealth));
+        }
+        var armor = getAttribute(Attributes.ARMOR);
+        if (armor != null) {
+            armor.setBaseValue(HearthMasterArchitectPolicy.ARMOR);
+        }
+        var knockback = getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+        if (knockback != null) {
+            knockback.setBaseValue(HearthMasterArchitectPolicy.KNOCKBACK_RESISTANCE);
+        }
+        setHealth(Mth.clamp(remainingHealth, 1.0F, getMaxHealth()));
+        masterBossBarEmptyOverride = false;
+        equipMasterArchitectStaff();
+        setMasterBossBarProvoked(true);
+    }
+
     public boolean isBoundToHearthMasterArchitect(UUID hearthId) {
         return hearthId != null && hearthId.equals(hearthMasterArchitectId)
                 && hearthMasterArchitectHome != null;
@@ -1451,7 +1640,7 @@ public class ArchitectEntity extends Monster {
     }
 
     void setMasterCombatVisual(int action, int ticks) {
-        if (!isHearthMasterArchitect()) {
+        if (!isMasterArchitectVisual()) {
             return;
         }
         entityData.set(DATA_MASTER_COMBAT_ACTION, action);
@@ -1459,20 +1648,20 @@ public class ArchitectEntity extends Monster {
     }
 
     void setMasterThermalCharge(float charge) {
-        if (isHearthMasterArchitect()) {
+        if (isMasterArchitectVisual()) {
             entityData.set(DATA_MASTER_THERMAL_CHARGE,
                     Mth.clamp(charge, 0.0F, 1.0F));
         }
     }
 
     void setMasterCombatPhase(MasterArchitectCombatPhase phase) {
-        if (isHearthMasterArchitect()) {
+        if (isMasterArchitectVisual()) {
             entityData.set(DATA_MASTER_COMBAT_PHASE, phase.id());
         }
     }
 
     void equipMasterArchitectStaff() {
-        if (!isHearthMasterArchitect()) {
+        if (!isMasterArchitectVisual()) {
             return;
         }
         clearMasterAmbientHelmet();
@@ -1490,23 +1679,37 @@ public class ArchitectEntity extends Monster {
     }
 
     void setMasterBossBarProvoked(boolean provoked) {
-        if (!isHearthMasterArchitect()) {
+        if (!isMasterArchitectVisual()) {
             return;
         }
         if (masterBossEvent == null && !provoked) {
             return;
         }
         ServerBossEvent bossEvent = getOrCreateMasterBossEvent();
-        bossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
-                getHealth(), getMaxHealth()));
+        bossEvent.setProgress(masterBossBarProgress());
         bossEvent.setVisible(provoked);
+    }
+
+    void setMasterBossBarEmptyOverride(boolean empty) {
+        if (!isMasterMindCopy()) {
+            return;
+        }
+        masterBossBarEmptyOverride = empty;
+        if (masterBossEvent != null) {
+            masterBossEvent.setProgress(masterBossBarProgress());
+        }
     }
 
     private void updateMasterBossBarProgress() {
         if (masterBossEvent != null) {
-            masterBossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
-                    getHealth(), getMaxHealth()));
+            masterBossEvent.setProgress(masterBossBarProgress());
         }
+    }
+
+    private float masterBossBarProgress() {
+        return masterBossBarEmptyOverride
+                ? 0.0F
+                : MasterArchitectBossBarPolicy.progress(getHealth(), getMaxHealth());
     }
 
     private ServerBossEvent getOrCreateMasterBossEvent() {
@@ -1515,8 +1718,7 @@ public class ArchitectEntity extends Monster {
                     Component.translatable(MasterArchitectBossBarPolicy.NAME_KEY),
                     BossEvent.BossBarColor.BLUE,
                     BossEvent.BossBarOverlay.PROGRESS);
-            masterBossEvent.setProgress(MasterArchitectBossBarPolicy.progress(
-                    getHealth(), getMaxHealth()));
+            masterBossEvent.setProgress(masterBossBarProgress());
             masterBossEvent.setVisible(false);
         }
         return masterBossEvent;
@@ -1581,20 +1783,20 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public float getVoicePitch() {
-        return isHearthMasterArchitect()
+        return isMasterArchitectVisual()
                 ? 0.38F + random.nextFloat() * 0.06F
                 : 0.5F + random.nextFloat() * 0.15F;
     }
 
     @Override
     protected float getSoundVolume() {
-        return isHearthMasterArchitect() ? 1.35F : super.getSoundVolume();
+        return isMasterArchitectVisual() ? 1.35F : super.getSoundVolume();
     }
 
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
-        return isHearthMasterArchitect()
+        return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_AMBIENT.get()
                 : ModSounds.ARCHITECT_AMBIENT.get();
     }
@@ -1602,12 +1804,12 @@ public class ArchitectEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        if (isHearthMasterArchitect()
+        if (isMasterArchitectVisual()
                 && (suppressMasterHurtSound
                 || clientMasterTetherHurtSuppressionTicks > 0)) {
             return null;
         }
-        return isHearthMasterArchitect()
+        return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_HURT.get()
                 : ModSounds.ARCHITECT_HURT.get();
     }
@@ -1622,7 +1824,10 @@ public class ArchitectEntity extends Monster {
 
     @Override
     protected SoundEvent getDeathSound() {
-        return isHearthMasterArchitect()
+        if (foldedDeathPresentationAlreadyPlayed || mindReturnDeathSoundOnly) {
+            return null;
+        }
+        return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_DEATH.get()
                 : ModSounds.ARCHITECT_DEATH.get();
     }
@@ -1657,6 +1862,9 @@ public class ArchitectEntity extends Monster {
             tag.putUUID("HearthMasterArchitectId", hearthMasterArchitectId);
             tag.putLong("HearthMasterArchitectHome", hearthMasterArchitectHome.asLong());
             hearthMasterController.addSaveData(tag);
+        }
+        if (isMasterMindCopy() && mindCopyRealMasterId != null) {
+            tag.putUUID("MasterMindCopyRealId", mindCopyRealMasterId);
         }
     }
 
@@ -1714,6 +1922,18 @@ public class ArchitectEntity extends Monster {
             hearthMasterArchitectHome = null;
             entityData.set(DATA_MASTER_ARCHITECT, false);
         }
+        if (tag.hasUUID("MasterMindCopyRealId")) {
+            mindCopyRealMasterId = tag.getUUID("MasterMindCopyRealId");
+            entityData.set(DATA_MASTER_MIND_COPY, true);
+            entityData.set(DATA_MASTER_COMBAT_PHASE, MasterArchitectCombatPhase.FLOOD.id());
+            setPersistenceRequired();
+            setCustomName(Component.literal("The Master Architect"));
+            equipMasterArchitectStaff();
+            setMasterBossBarProvoked(true);
+        } else {
+            mindCopyRealMasterId = null;
+            entityData.set(DATA_MASTER_MIND_COPY, false);
+        }
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
         syncRenderState();
     }
@@ -1726,18 +1946,27 @@ public class ArchitectEntity extends Monster {
     public boolean removeWhenFarAway(double d) { return false; }
 
     @Override
+    public boolean shouldBeSaved() {
+        return !isMasterMindCopy() && super.shouldBeSaved();
+    }
+
+    @Override
     public void checkDespawn() { }
 
     @Override
     public boolean shouldDespawnInPeaceful() {
-        return !isHearthPopulationResident() && !isHearthMasterArchitect();
+        return !isHearthPopulationResident() && !isMasterArchitectVisual();
     }
 
     @Override
     public void startSeenByPlayer(ServerPlayer player) {
         super.startSeenByPlayer(player);
-        if (isHearthMasterArchitect()) {
-            getOrCreateMasterBossEvent().addPlayer(player);
+        if (isMasterArchitectVisual()) {
+            ServerBossEvent event = getOrCreateMasterBossEvent();
+            event.addPlayer(player);
+            if (isMasterMindCopy()) {
+                event.setVisible(true);
+            }
         }
     }
 

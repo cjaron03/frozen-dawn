@@ -94,4 +94,72 @@ class MasterArchitectConstructionPolicyTest {
                 new MasterArchitectConstructionPolicy.WallAxes(0, -1, 1, 0),
                 MasterArchitectConstructionPolicy.wallAxes(2.0D, -6.0D));
     }
+
+    @Test
+    void constructionDirectorPrioritizesPlayerBehavior() {
+        assertEquals(
+                MasterArchitectConstructionPolicy.ConstructionIntent.COVER_DENIAL,
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        true, true, 80, 400.0D, 0));
+        assertEquals(
+                MasterArchitectConstructionPolicy.ConstructionIntent.HEATER_BURIAL,
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        false, true, 80, 400.0D, 0));
+        assertEquals(
+                MasterArchitectConstructionPolicy.ConstructionIntent.ENCLOSURE,
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        false, false, 30, 400.0D, 0));
+        assertEquals(
+                MasterArchitectConstructionPolicy.ConstructionIntent.VANTAGE,
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        false, false, 0, 100.0D, 1));
+        assertEquals(
+                MasterArchitectConstructionPolicy.ConstructionIntent.HEATER_BURIAL,
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        false, false, 0, 25.0D, 2));
+    }
+
+    @Test
+    void crowdedTerrainCanStillProduceReadablePartialStructures() {
+        assertTrue(MasterArchitectConstructionPolicy.hasViableStructure(
+                7, true, MasterArchitectConstructionPolicy.MIN_OPENING_COLUMNS));
+        assertFalse(MasterArchitectConstructionPolicy.hasViableStructure(
+                6, true, MasterArchitectConstructionPolicy.MIN_OPENING_COLUMNS));
+        assertFalse(MasterArchitectConstructionPolicy.hasViableStructure(
+                11, false, MasterArchitectConstructionPolicy.MIN_OPENING_COLUMNS));
+        assertTrue(MasterArchitectConstructionPolicy.hasViableStructure(
+                3, true, MasterArchitectConstructionPolicy.MIN_WALL_COLUMNS));
+    }
+
+    @Test
+    void shelterHealingScalesByPresetAndStopsAtPhaseCeiling() {
+        assertTrue(MasterArchitectConstructionPolicy.shelterHealGraceTicks("brutal")
+                < MasterArchitectConstructionPolicy.shelterHealGraceTicks("normal"));
+        assertTrue(MasterArchitectConstructionPolicy.shelterHealGraceTicks("normal")
+                < MasterArchitectConstructionPolicy.shelterHealGraceTicks("cinematic"));
+        assertTrue(MasterArchitectConstructionPolicy.shelterHealPerTick(450.0F, "brutal")
+                > MasterArchitectConstructionPolicy.shelterHealPerTick(450.0F, "normal"));
+        assertTrue(MasterArchitectConstructionPolicy.shelterHealPerTick(450.0F, "normal")
+                > MasterArchitectConstructionPolicy.shelterHealPerTick(450.0F, "cinematic"));
+        assertEquals(
+                337.5F,
+                MasterArchitectConstructionPolicy.shelterHealCeiling(
+                        MasterArchitectCombatPhase.CONSTRUCTION, 450.0F),
+                0.001F);
+        assertEquals(
+                225.0F,
+                MasterArchitectConstructionPolicy.shelterHealCeiling(
+                        MasterArchitectCombatPhase.TETHER, 450.0F),
+                0.001F);
+        assertEquals(
+                135.0F,
+                MasterArchitectConstructionPolicy.shelterHealCeiling(
+                        MasterArchitectCombatPhase.ASCENT, 450.0F),
+                0.001F);
+        assertEquals(
+                45.0F,
+                MasterArchitectConstructionPolicy.shelterHealCeiling(
+                        MasterArchitectCombatPhase.FLOOD, 450.0F),
+                0.001F);
+    }
 }

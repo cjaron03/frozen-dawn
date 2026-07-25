@@ -45,11 +45,42 @@ public final class AirStatusHud {
             return;
         }
 
+        if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
+            renderMindOverride(
+                    graphics, MasterArchitectFloodClient.corruptedOxygenText());
+            return;
+        }
+
         AirStatusTelemetry.Reading reading = AirStatusTelemetry.resolveReading(mc.player);
         if (reading == null) {
             reset();
             return;
         }
+        renderReading(graphics, mc, reading, null);
+    }
+
+    /** Draws the existing EVA panel with a temporary mind-stage tank value. */
+    static void renderMindOverride(GuiGraphics graphics, String tankValueOverride) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.options.hideGui
+                || mc.player.isCreative() || mc.player.isSpectator()) {
+            return;
+        }
+        AirStatusTelemetry.TankTelemetry tankTelemetry =
+                AirStatusTelemetry.getTankTelemetry(mc.player);
+        renderReading(
+                graphics,
+                mc,
+                new AirStatusTelemetry.Reading(
+                        AirStatusTelemetry.State.EVA_SUPPLY, tankTelemetry),
+                tankValueOverride);
+    }
+
+    private static void renderReading(
+            GuiGraphics graphics,
+            Minecraft mc,
+            AirStatusTelemetry.Reading reading,
+            String tankValueOverride) {
         AirStatusTelemetry.State state = reading.state();
         AirStatusTelemetry.TankTelemetry tankTelemetry = reading.tankTelemetry();
 
@@ -63,7 +94,9 @@ public final class AirStatusHud {
         String prefix = "AIR:";
         String label = state.label();
         String tankPrefix = "TANK:";
-        String tankValue = tankTelemetry.hasAnyTank() ? tankTelemetry.fillPercent() + "%" : "NONE";
+        String tankValue = tankValueOverride != null
+                ? tankValueOverride
+                : tankTelemetry.hasAnyTank() ? tankTelemetry.fillPercent() + "%" : "NONE";
         int prefixWidth = mc.font.width(prefix);
         int labelWidth = mc.font.width(label);
         int tankPrefixWidth = mc.font.width(tankPrefix);

@@ -9,12 +9,22 @@ public final class MasterArchitectConstructionPolicy {
     public static final int LIVE_BLOCK_BUDGET = 64;
     public static final int OPENING_LIFETIME_TICKS = 1_200;
     public static final int STRUCTURE_LIFETIME_TICKS = 900;
-    public static final int OPENING_COOLDOWN_TICKS = 120;
-    public static final int ONGOING_COOLDOWN_MIN = 160;
-    public static final int ONGOING_COOLDOWN_VARIANCE = 80;
+    public static final int OPENING_COOLDOWN_TICKS = 60;
+    public static final int ONGOING_COOLDOWN_MIN = 90;
+    public static final int ONGOING_COOLDOWN_VARIANCE = 50;
     public static final int COVER_MEMORY_TICKS = 120;
     public static final int VANTAGE_SEEK_TICKS = 100;
     public static final int SEAM_STAGGER_TICKS = 30;
+    public static final int CHOREOGRAPHY_TICKS = 8;
+    public static final int MAX_TRAVELING_FRAGMENTS = 12;
+    public static final int ORBITING_FRAGMENT_COUNT = 4;
+    public static final int STATIONARY_TRAP_TICKS = 30;
+    public static final int MIN_OPENING_COLUMNS = 7;
+    public static final int MIN_WALL_COLUMNS = 3;
+    public static final int MIN_ENCLOSURE_COLUMNS = 5;
+    public static final int MIN_HEATER_COLUMNS = 3;
+    public static final int SHELTER_HEAL_MAX_TICKS = 100;
+    public static final int SHELTER_HEAL_COOLDOWN_TICKS = 160;
     public static final double SEAM_STAGGER_RANGE = 5.0D;
     public static final double MAX_CAST_RANGE = 24.0D;
 
@@ -42,6 +52,51 @@ public final class MasterArchitectConstructionPolicy {
                 && liveBlocks + plannedBlocks <= LIVE_BLOCK_BUDGET;
     }
 
+    public static boolean hasViableStructure(
+            int viableSteps,
+            boolean hasSeam,
+            int minimumSteps) {
+        return viableSteps >= minimumSteps && hasSeam;
+    }
+
+    public static int shelterHealGraceTicks(String presetName) {
+        if ("brutal".equalsIgnoreCase(presetName)) {
+            return 55;
+        }
+        if ("cinematic".equalsIgnoreCase(presetName)) {
+            return 90;
+        }
+        return 70;
+    }
+
+    public static float shelterHealFractionPerSecond(String presetName) {
+        if ("brutal".equalsIgnoreCase(presetName)) {
+            return 0.03F;
+        }
+        if ("cinematic".equalsIgnoreCase(presetName)) {
+            return 0.006F;
+        }
+        return 0.0225F;
+    }
+
+    public static float shelterHealPerTick(float maxHealth, String presetName) {
+        return Math.max(0.0F, maxHealth)
+                * shelterHealFractionPerSecond(presetName) / 20.0F;
+    }
+
+    public static float shelterHealCeiling(
+            MasterArchitectCombatPhase phase,
+            float maxHealth) {
+        float fraction = switch (phase) {
+            case KIT -> 1.0F;
+            case CONSTRUCTION -> 0.75F;
+            case TETHER -> 0.50F;
+            case ASCENT -> 0.30F;
+            case FLOOD -> 0.10F;
+        };
+        return Math.max(0.0F, maxHealth) * fraction;
+    }
+
     public static boolean shouldStaggerMaster(double distanceSquared) {
         return distanceSquared
                 <= SEAM_STAGGER_RANGE * SEAM_STAGGER_RANGE;
@@ -50,6 +105,31 @@ public final class MasterArchitectConstructionPolicy {
     public static boolean shouldLeaveRubble(
             int blockIndex, int blockY, int minimumY, boolean seam) {
         return !seam && blockY == minimumY && Math.floorMod(blockIndex, 4) == 0;
+    }
+
+    public static ConstructionIntent chooseIntent(
+            boolean recentCover,
+            boolean activePlayerHeater,
+            int stationaryTicks,
+            double distanceSquared,
+            int fallbackCursor) {
+        if (recentCover) {
+            return ConstructionIntent.COVER_DENIAL;
+        }
+        if (activePlayerHeater) {
+            return ConstructionIntent.HEATER_BURIAL;
+        }
+        if (stationaryTicks >= STATIONARY_TRAP_TICKS) {
+            return ConstructionIntent.ENCLOSURE;
+        }
+        if (distanceSquared >= 10.0D * 10.0D) {
+            return ConstructionIntent.VANTAGE;
+        }
+        return switch (Math.floorMod(fallbackCursor, 3)) {
+            case 0 -> ConstructionIntent.VANTAGE;
+            case 1 -> ConstructionIntent.ENCLOSURE;
+            default -> ConstructionIntent.HEATER_BURIAL;
+        };
     }
 
     public static int columnIndexAtTick(int actionTicks) {
@@ -88,5 +168,12 @@ public final class MasterArchitectConstructionPolicy {
     }
 
     public record WallAxes(int normalX, int normalZ, int tangentX, int tangentZ) {
+    }
+
+    public enum ConstructionIntent {
+        COVER_DENIAL,
+        VANTAGE,
+        ENCLOSURE,
+        HEATER_BURIAL
     }
 }

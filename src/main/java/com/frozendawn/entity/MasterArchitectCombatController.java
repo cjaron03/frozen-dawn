@@ -1,11 +1,15 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.event.MasterArchitectThermalSever;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthEncounterRole;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectConstructionPolicy;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import com.frozendawn.homo.MasterArchitectMusicStage;
 import com.frozendawn.homo.MasterArchitectPhasePolicy;
@@ -30,11 +34,16 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,9 +60,15 @@ final class MasterArchitectCombatController {
     private static final double SPELL_HOLD_MIN_DISTANCE = 6.0D;
     private static final double SPELL_HOLD_MAX_DISTANCE = 10.0D;
     private static final int WALL_HEIGHT = 3;
+    private static final double JUKE_SMASH_RANGE = 3.25D;
+    private static final int JUKE_SMASH_TRACK_TICKS = 50;
+    private static final int JUKE_SMASH_RELEASE_TICK = 8;
+    private static final int JUKE_SMASH_ACTION_TICKS = 14;
+    private static final int JUKE_SMASH_COOLDOWN_TICKS = 90;
 
     private final ArchitectEntity architect;
     private final MasterArchitectConstructionController constructionController;
+    private final MasterArchitectFloodController floodController;
     private final List<PlannedWallColumn> wallPlan = new ArrayList<>();
     private final List<BlockPos> placedWallBlocks = new ArrayList<>();
     private final List<BlockPos> placedWallSeams = new ArrayList<>();
@@ -68,14 +83,22 @@ final class MasterArchitectCombatController {
     private int thermalCooldown = 80;
     private int thermalCooldownDuration = 80;
     private int stormMaintenanceCooldown = 120;
+    private int constructionShelterTicks;
+    private int constructionHealingTicks;
+    private int constructionHealCooldown;
+    private int jukeSmashCooldown;
+    private int jukeObstructionTicks;
     private boolean tetherUsed;
     private boolean tetherActive;
     private int breakthroughDimTicks;
     private boolean lastWallUsed;
     private boolean healingInterrupted;
+    private boolean constructionHealing;
     private float healTarget;
     private long wallExpiresAt = -1L;
     private UUID severTargetId;
+    private BlockPos jukeObstruction;
+    private BlockPos pendingSmashBlock;
     private int continuityStrafeDirection = 1;
     private MasterArchitectCombatPhase combatPhase = MasterArchitectCombatPhase.KIT;
 
@@ -83,10 +106,17 @@ final class MasterArchitectCombatController {
         this.architect = architect;
         this.constructionController =
                 new MasterArchitectConstructionController(architect);
+        this.floodController = new MasterArchitectFloodController(architect, this);
     }
 
     void tick(ServerLevel level, ServerPlayer target) {
         refreshPhaseFromHealth(true);
+        if (combatPhase == MasterArchitectCombatPhase.FLOOD) {
+            prepareFloodOwnership(level);
+            if (floodController.tick(level, target)) {
+                return;
+            }
+        }
         tickCooldowns();
         syncThermalCharge();
         cleanupExpiredWall(level);
@@ -96,6 +126,20 @@ final class MasterArchitectCombatController {
         architect.setTarget(target);
         architect.equipMasterArchitectStaff();
         architect.getLookControl().setLookAt(target, 40.0F, 35.0F);
+
+        if (MasterArchitectCombatPolicy.shouldUseLastWall(
+                        architect.getHealth(), architect.getMaxHealth(), lastWallUsed)
+                && (activeAction == MasterArchitectCombatAction.IDLE
+                        || activeAction
+                                == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST)) {
+            if (activeAction == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
+                constructionController.cancelCast(level);
+                finishAction();
+            }
+            if (beginLastWall(level, target)) {
+                return;
+            }
+        }
 
         if (constructionController.isStaggered()) {
             holdConstructionStagger(level);
@@ -107,23 +151,25 @@ final class MasterArchitectCombatController {
             return;
         }
 
+        if (tryBeginObstructionSmash(level, target)) {
+            return;
+        }
+
+        if (tickConstructionShelterHeal(level, target)) {
+            return;
+        }
+
         architect.setMasterCombatVisual(MasterArchitectCombatAction.IDLE, 0);
         if (MasterArchitectCombatPolicy.shouldUseTether(
                 architect.getHealth(), architect.getMaxHealth(), tetherUsed)) {
             beginTether(level, target);
             return;
         }
-        if (MasterArchitectCombatPolicy.shouldUseLastWall(
-                architect.getHealth(), architect.getMaxHealth(), lastWallUsed)
-                && beginLastWall(level, target)) {
-            return;
-        }
-
         if (constructionController.tryBeginConstruction(level, target, combatPhase)) {
             startAction(MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST);
             architect.getNavigation().stop();
             architect.playSound(
-                    ModSounds.MASTER_ARCHITECT_LAST_WALL.get(), 1.45F, 0.60F);
+                    ModSounds.MASTER_ARCHITECT_CONSTRUCTION.get(), 1.45F, 0.66F);
             return;
         }
 
@@ -177,6 +223,7 @@ final class MasterArchitectCombatController {
     }
 
     void leaveCombat(ServerLevel level) {
+        floodController.onCombatLost(level);
         refreshPhaseFromHealth(true);
         tickCooldowns();
         syncThermalCharge();
@@ -188,16 +235,47 @@ final class MasterArchitectCombatController {
         activeAction = MasterArchitectCombatAction.IDLE;
         actionTicks = 0;
         healingInterrupted = false;
+        resetConstructionHealing(false);
         wallPlan.clear();
         architect.setMasterCombatVisual(MasterArchitectCombatAction.IDLE, 0);
         severTargetId = null;
+        jukeObstruction = null;
+        pendingSmashBlock = null;
+        jukeObstructionTicks = 0;
     }
 
-    void onHurt() {
+    void onHurt(ServerLevel level, @Nullable ServerPlayer target) {
         refreshPhaseFromHealth(true);
         if (activeAction == MasterArchitectCombatAction.LAST_WALL_HEAL) {
             healingInterrupted = true;
         }
+        if (constructionShelterTicks > 0 || constructionHealing) {
+            resetConstructionHealing(true);
+        }
+        // The threshold hit owns the phase transition. Waiting for the next AI
+        // target tick leaves the clamped Master apparently immune at 10%.
+        if (combatPhase == MasterArchitectCombatPhase.FLOOD && target != null) {
+            prepareFloodOwnership(level);
+            floodController.tick(level, target);
+        }
+    }
+
+    private void prepareFloodOwnership(ServerLevel level) {
+        if (floodController.isActive()
+                || floodController.isMindSessionActive()
+                || floodController.isRetreating()
+                || architect.getHealth() / architect.getMaxHealth()
+                        > com.frozendawn.homo.MasterArchitectFloodPolicy
+                                .ENTRY_HEALTH_FRACTION + 0.001F) {
+            return;
+        }
+        if (tetherActive) {
+            endTether(level);
+        }
+        if (activeAction == MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST) {
+            constructionController.cancelCast(level);
+        }
+        finishAction();
     }
 
     float prepareIncomingDamage(float incomingDamage, boolean bypassesInvulnerability) {
@@ -209,7 +287,8 @@ final class MasterArchitectCombatController {
                 bypassesInvulnerability);
     }
 
-    void onDeath(ServerLevel level) {
+    void onDeath(ServerLevel level, ServerPlayer killer) {
+        floodController.onDeath(level, killer);
         endTether(level);
         architect.getHearthMasterArchitectId().ifPresent(
                 hearthId -> HearthCombatRosterManager.onMasterDefeated(level, hearthId));
@@ -218,7 +297,50 @@ final class MasterArchitectCombatController {
         leaveCombat(level);
     }
 
+    boolean isMindSessionActive() {
+        return floodController.isMindSessionActive();
+    }
+
+    void tickPersistentState(ServerLevel level) {
+        floodController.tickRearmCountdown(level);
+    }
+
+    void tickFolded(ServerLevel level) {
+        floodController.tickFolded(level);
+    }
+
+    void onMindCopyHurt(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        floodController.onMindCopyHurt(level, copy, source, amount);
+    }
+
+    float prepareMindCopyDamage(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        return floodController.prepareMindCopyDamage(level, copy, source, amount);
+    }
+
+    void onMindCopyDefeated(
+            ServerLevel level,
+            ArchitectEntity copy,
+            ServerPlayer killer) {
+        floodController.onMindCopyDefeated(level, copy, killer);
+    }
+
+    void onMindParticipantFailed(
+            ServerLevel level, ServerPlayer player, String reason) {
+        floodController.participantFailed(level, player, reason);
+    }
+
     MasterArchitectMusicStage musicStage() {
+        if (floodController.isMindSessionActive()) {
+            return MasterArchitectMusicStage.FLOOD;
+        }
         return MasterArchitectMusicStage.forCombatState(tetherUsed, lastWallUsed);
     }
 
@@ -319,12 +441,15 @@ final class MasterArchitectCombatController {
         tag.putInt("MasterThermalCooldown", thermalCooldown);
         tag.putInt("MasterThermalCooldownDuration", thermalCooldownDuration);
         tag.putInt("MasterStormMaintenanceCooldown", stormMaintenanceCooldown);
+        tag.putInt("MasterConstructionHealCooldown", constructionHealCooldown);
+        tag.putInt("MasterJukeSmashCooldown", jukeSmashCooldown);
         tag.putLong("MasterWallExpiresAt", wallExpiresAt);
         tag.putLongArray("MasterWallBlocks",
                 placedWallBlocks.stream().mapToLong(BlockPos::asLong).toArray());
         tag.putLongArray("MasterWallSeams",
                 placedWallSeams.stream().mapToLong(BlockPos::asLong).toArray());
         constructionController.addSaveData(tag);
+        floodController.addSaveData(tag);
     }
 
     void readSaveData(CompoundTag tag) {
@@ -361,6 +486,15 @@ final class MasterArchitectCombatController {
         stormMaintenanceCooldown = tag.contains("MasterStormMaintenanceCooldown")
                 ? Math.max(0, tag.getInt("MasterStormMaintenanceCooldown"))
                 : 120;
+        constructionHealCooldown = Math.max(
+                0, tag.getInt("MasterConstructionHealCooldown"));
+        jukeSmashCooldown = Math.max(0, tag.getInt("MasterJukeSmashCooldown"));
+        jukeObstructionTicks = 0;
+        jukeObstruction = null;
+        pendingSmashBlock = null;
+        constructionShelterTicks = 0;
+        constructionHealingTicks = 0;
+        constructionHealing = false;
         wallExpiresAt = tag.getLong("MasterWallExpiresAt");
         placedWallBlocks.clear();
         for (long packed : tag.getLongArray("MasterWallBlocks")) {
@@ -379,6 +513,7 @@ final class MasterArchitectCombatController {
         wallPlan.clear();
         severTargetId = null;
         constructionController.readSaveData(tag, combatPhase);
+        floodController.readSaveData(tag);
         syncThermalCharge();
     }
 
@@ -398,6 +533,26 @@ final class MasterArchitectCombatController {
             }
         }
         architect.setMasterCombatPhase(combatPhase);
+    }
+
+    void resumeAfterFailedMind(ServerLevel level) {
+        endTether(level);
+        removeWall(level);
+        finishAction();
+        combatPhase = MasterArchitectPhasePolicy.phaseForHealth(
+                architect.getHealth(), architect.getMaxHealth());
+        if (combatPhase == MasterArchitectCombatPhase.FLOOD) {
+            combatPhase = MasterArchitectCombatPhase.ASCENT;
+        }
+        tetherUsed = false;
+        lastWallUsed = false;
+        architect.setMasterCombatPhase(combatPhase);
+        architect.setMasterCombatVisual(MasterArchitectCombatAction.IDLE, 0);
+        FrozenDawn.LOGGER.info(
+                "Master Architect {} resumed at {} after Thae Iven restored it to {}/{} health",
+                shortId(architect.getUUID()), combatPhase.serializedName(),
+                String.format("%.1f", architect.getHealth()),
+                String.format("%.1f", architect.getMaxHealth()));
     }
 
     private void beginTether(ServerLevel level, ServerPlayer target) {
@@ -423,6 +578,8 @@ final class MasterArchitectCombatController {
 
         architect.playSound(
                 ModSounds.MASTER_ARCHITECT_TETHER_DEPLOY.get(), 1.9F, 0.82F);
+        architect.playSound(
+                ModSounds.MASTER_ARCHITECT_TETHER_WAIL.get(), 3.6F, 0.56F);
         level.sendParticles(ParticleTypes.SCULK_SOUL,
                 architect.getX(), architect.getY() + 1.45D, architect.getZ(),
                 tetherActive ? 28 : 10, 0.55D, 0.8D, 0.55D, 0.06D);
@@ -643,6 +800,71 @@ final class MasterArchitectCombatController {
         }
     }
 
+    private boolean tickConstructionShelterHeal(
+            ServerLevel level,
+            ServerPlayer target) {
+        if (combatPhase != MasterArchitectCombatPhase.CONSTRUCTION
+                || constructionHealCooldown > 0) {
+            resetConstructionHealing(false);
+            return false;
+        }
+        boolean sheltered = constructionController.hasIntactShelterBetween(
+                level, target);
+        if (!sheltered) {
+            resetConstructionHealing(constructionHealing);
+            return false;
+        }
+        float ceiling = MasterArchitectConstructionPolicy.shelterHealCeiling(
+                combatPhase, architect.getMaxHealth());
+        if (architect.getHealth() >= ceiling) {
+            resetConstructionHealing(false);
+            return false;
+        }
+
+        architect.getNavigation().stop();
+        Vec3 velocity = architect.getDeltaMovement();
+        architect.setDeltaMovement(0.0D, velocity.y, 0.0D);
+        constructionShelterTicks++;
+        String preset = ApocalypseState.get(level.getServer()).getPresetName();
+        int graceTicks = MasterArchitectConstructionPolicy.shelterHealGraceTicks(
+                preset);
+        if (constructionShelterTicks < graceTicks) {
+            return true;
+        }
+
+        if (!constructionHealing) {
+            constructionHealing = true;
+            FrozenDawn.LOGGER.info(
+                    "Master Architect {} began channeling Construction War shelter",
+                    shortId(architect.getUUID()));
+        }
+        constructionHealingTicks++;
+        architect.heal(Math.min(
+                MasterArchitectConstructionPolicy.shelterHealPerTick(
+                        architect.getMaxHealth(), preset),
+                ceiling - architect.getHealth()));
+        if (constructionHealingTicks % 2 == 0) {
+            constructionController.emitShelterHealingParticles(level);
+        }
+        if (constructionHealingTicks
+                        >= MasterArchitectConstructionPolicy.SHELTER_HEAL_MAX_TICKS
+                || architect.getHealth() >= ceiling) {
+            resetConstructionHealing(true);
+        }
+        return true;
+    }
+
+    private void resetConstructionHealing(boolean startCooldown) {
+        constructionShelterTicks = 0;
+        constructionHealingTicks = 0;
+        constructionHealing = false;
+        if (startCooldown) {
+            constructionHealCooldown = Math.max(
+                    constructionHealCooldown,
+                    MasterArchitectConstructionPolicy.SHELTER_HEAL_COOLDOWN_TICKS);
+        }
+    }
+
     private void tickActiveAction(ServerLevel level, ServerPlayer target) {
         actionTicks++;
         architect.setMasterCombatVisual(activeAction, actionTicks);
@@ -664,8 +886,125 @@ final class MasterArchitectCombatController {
                     tickStormMaintenance(level, target);
             case MasterArchitectCombatAction.CONSTRUCTION_WALL_CAST ->
                     tickConstructionWall(level);
+            case MasterArchitectCombatAction.OBSTRUCTION_SMASH ->
+                    tickObstructionSmash(level);
             default -> finishAction();
         }
+    }
+
+    private boolean tryBeginObstructionSmash(
+            ServerLevel level, ServerPlayer target) {
+        if (jukeSmashCooldown > 0
+                || architect.distanceToSqr(target)
+                        > JUKE_SMASH_RANGE * JUKE_SMASH_RANGE
+                || architect.hasLineOfSight(target)) {
+            resetJukeTracking();
+            return false;
+        }
+
+        BlockPos obstruction = singlePlayerObstruction(level, target);
+        if (obstruction == null) {
+            resetJukeTracking();
+            return false;
+        }
+        if (!obstruction.equals(jukeObstruction)) {
+            jukeObstruction = obstruction;
+            jukeObstructionTicks = 1;
+            return false;
+        }
+        if (++jukeObstructionTicks < JUKE_SMASH_TRACK_TICKS) {
+            return false;
+        }
+
+        pendingSmashBlock = obstruction.immutable();
+        resetJukeTracking();
+        startAction(MasterArchitectCombatAction.OBSTRUCTION_SMASH);
+        architect.getNavigation().stop();
+        architect.getLookControl().setLookAt(
+                Vec3.atCenterOf(pendingSmashBlock));
+        architect.playSound(
+                ModSounds.MASTER_ARCHITECT_OBSTRUCTION_SMASH.get(), 1.8F, 0.72F);
+        level.sendParticles(
+                ParticleTypes.SCULK_SOUL,
+                pendingSmashBlock.getX() + 0.5D,
+                pendingSmashBlock.getY() + 0.5D,
+                pendingSmashBlock.getZ() + 0.5D,
+                12, 0.25D, 0.25D, 0.25D, 0.035D);
+        FrozenDawn.LOGGER.info(
+                "Master Architect {} marked player obstruction {} for a juke break",
+                shortId(architect.getUUID()), pendingSmashBlock);
+        return true;
+    }
+
+    private void tickObstructionSmash(ServerLevel level) {
+        architect.getNavigation().stop();
+        if (pendingSmashBlock == null) {
+            finishAction();
+            return;
+        }
+        architect.getLookControl().setLookAt(Vec3.atCenterOf(pendingSmashBlock));
+        if (actionTicks == JUKE_SMASH_RELEASE_TICK
+                && isValidJukeObstruction(level, pendingSmashBlock)) {
+            BlockState state = level.getBlockState(pendingSmashBlock);
+            level.levelEvent(2001, pendingSmashBlock, Block.getId(state));
+            level.destroyBlock(pendingSmashBlock, true, architect);
+            PlayerPlacedBlockTracker.get(level.getServer())
+                    .markRemoved(pendingSmashBlock);
+            level.sendParticles(
+                    ParticleTypes.SCULK_SOUL,
+                    pendingSmashBlock.getX() + 0.5D,
+                    pendingSmashBlock.getY() + 0.5D,
+                    pendingSmashBlock.getZ() + 0.5D,
+                    18, 0.35D, 0.35D, 0.35D, 0.08D);
+        }
+        if (actionTicks >= JUKE_SMASH_ACTION_TICKS) {
+            pendingSmashBlock = null;
+            jukeSmashCooldown = JUKE_SMASH_COOLDOWN_TICKS;
+            finishAction();
+        }
+    }
+
+    private BlockPos singlePlayerObstruction(
+            ServerLevel level, ServerPlayer target) {
+        Vec3 start = architect.getEyePosition();
+        Vec3 end = target.getEyePosition();
+        Vec3 direction = end.subtract(start).normalize();
+        BlockHitResult first = level.clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, architect));
+        if (first.getType() != HitResult.Type.BLOCK
+                || !isValidJukeObstruction(level, first.getBlockPos())) {
+            return null;
+        }
+
+        Vec3 beyond = Vec3.atCenterOf(first.getBlockPos())
+                .add(direction.scale(0.90D));
+        BlockHitResult second = level.clip(new ClipContext(
+                beyond, end, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, architect));
+        return second.getType() == HitResult.Type.MISS
+                ? first.getBlockPos().immutable()
+                : null;
+    }
+
+    private boolean isValidJukeObstruction(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)
+                || architect.distanceToSqr(Vec3.atCenterOf(pos))
+                        > JUKE_SMASH_RANGE * JUKE_SMASH_RANGE
+                || constructionController.isTrackedConstructionBlock(pos)
+                || level.getBlockEntity(pos) != null
+                || !PlayerPlacedBlockTracker.get(level.getServer()).isPlayerPlaced(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        return !state.isAir()
+                && state.getDestroySpeed(level, pos) >= 0.0F
+                && !ArchitectBreakPolicy.isProtectedBlock(state);
+    }
+
+    private void resetJukeTracking() {
+        jukeObstruction = null;
+        jukeObstructionTicks = 0;
     }
 
     private void tickConstructionWall(ServerLevel level) {
@@ -814,7 +1153,12 @@ final class MasterArchitectCombatController {
             placeWallColumn(level, columnIndex);
         }
         if (actionTicks >= MasterArchitectCombatPolicy.LAST_WALL_CAST_TICKS) {
-            if (placedWallBlocks.isEmpty()) {
+            if (placedWallBlocks.isEmpty() || placedWallSeams.isEmpty()) {
+                lastWallUsed = false;
+                removeWall(level);
+                FrozenDawn.LOGGER.info(
+                        "Master Architect {} deferred Last Wall after terrain blocked placement",
+                        shortId(architect.getUUID()));
                 finishAction();
                 return;
             }
@@ -910,31 +1254,52 @@ final class MasterArchitectCombatController {
 
     private void buildWallPlan(ServerLevel level, ServerPlayer target) {
         Vec3 toward = target.position().subtract(architect.position());
-        int normalX;
-        int normalZ;
-        int tangentX;
-        int tangentZ;
-        if (Math.abs(toward.x) >= Math.abs(toward.z)) {
-            normalX = toward.x >= 0.0D ? 1 : -1;
-            normalZ = 0;
-            tangentX = 0;
-            tangentZ = 1;
-        } else {
-            normalX = 0;
-            normalZ = toward.z >= 0.0D ? 1 : -1;
-            tangentX = 1;
-            tangentZ = 0;
-        }
-
-        BlockPos center = architect.blockPosition().offset(normalX * 2, 0, normalZ * 2);
+        MasterArchitectConstructionPolicy.WallAxes primary =
+                MasterArchitectConstructionPolicy.wallAxes(toward.x, toward.z);
+        List<MasterArchitectConstructionPolicy.WallAxes> orientations = List.of(
+                primary,
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        primary.tangentX(), primary.tangentZ(),
+                        -primary.normalX(), -primary.normalZ()),
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        -primary.tangentX(), -primary.tangentZ(),
+                        primary.normalX(), primary.normalZ()),
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        -primary.normalX(), -primary.normalZ(),
+                        primary.tangentX(), primary.tangentZ()));
+        List<PlannedWallColumn> best = List.of();
         int[] offsets = {0, -1, 1, -2, 2};
-        for (int offset : offsets) {
-            BlockPos column = center.offset(tangentX * offset, 0, tangentZ * offset);
-            BlockPos base = findWallBase(level, column);
-            if (base != null) {
-                wallPlan.add(new PlannedWallColumn(base, offset == 0));
+        for (MasterArchitectConstructionPolicy.WallAxes axes : orientations) {
+            for (int shift = -2; shift <= 2; shift++) {
+                BlockPos center = architect.blockPosition().offset(
+                        axes.normalX() * 2 + axes.tangentX() * shift,
+                        0,
+                        axes.normalZ() * 2 + axes.tangentZ() * shift);
+                List<WallCandidate> candidates = new ArrayList<>();
+                for (int offset : offsets) {
+                    BlockPos column = center.offset(
+                            axes.tangentX() * offset,
+                            0,
+                            axes.tangentZ() * offset);
+                    BlockPos base = findWallBase(level, column);
+                    if (base != null) {
+                        candidates.add(new WallCandidate(base, offset));
+                    }
+                }
+                if (candidates.size() < 3 || candidates.size() <= best.size()) {
+                    continue;
+                }
+                WallCandidate seam = candidates.stream()
+                        .min(Comparator.comparingInt(
+                                candidate -> Math.abs(candidate.offset)))
+                        .orElseThrow();
+                best = candidates.stream()
+                        .map(candidate -> new PlannedWallColumn(
+                                candidate.base, candidate == seam))
+                        .toList();
             }
         }
+        wallPlan.addAll(best);
     }
 
     private BlockPos findWallBase(ServerLevel level, BlockPos column) {
@@ -948,7 +1313,10 @@ final class MasterArchitectCombatController {
             }
             boolean clear = true;
             for (int height = 0; height < WALL_HEIGHT; height++) {
-                if (!level.getBlockState(base.above(height)).isAir()) {
+                BlockPos position = base.above(height);
+                BlockState state = level.getBlockState(position);
+                if ((!state.isAir() && !state.canBeReplaced())
+                        || !level.getEntities(null, new AABB(position)).isEmpty()) {
                     clear = false;
                     break;
                 }
@@ -970,12 +1338,13 @@ final class MasterArchitectCombatController {
                 : Blocks.PACKED_ICE.defaultBlockState();
         for (int height = 0; height < WALL_HEIGHT; height++) {
             BlockPos pos = column.base.above(height);
+            BlockState existing = level.getBlockState(pos);
             if (!level.hasChunkAt(pos)
-                    || !level.getBlockState(pos).isAir()
+                    || (!existing.isAir() && !existing.canBeReplaced())
                     || !level.getEntities(null, new AABB(pos)).isEmpty()) {
                 continue;
             }
-            level.setBlock(pos, state, Block.UPDATE_ALL);
+            level.setBlock(pos, state, Block.UPDATE_CLIENTS);
             placedWallBlocks.add(pos.immutable());
             if (column.weakCenter) {
                 placedWallSeams.add(pos.immutable());
@@ -1059,6 +1428,12 @@ final class MasterArchitectCombatController {
         }
         if (stormMaintenanceCooldown > 0) {
             stormMaintenanceCooldown--;
+        }
+        if (constructionHealCooldown > 0) {
+            constructionHealCooldown--;
+        }
+        if (jukeSmashCooldown > 0) {
+            jukeSmashCooldown--;
         }
     }
 
@@ -1207,6 +1582,9 @@ final class MasterArchitectCombatController {
     }
 
     private record PlannedWallColumn(BlockPos base, boolean weakCenter) {
+    }
+
+    private record WallCandidate(BlockPos base, int offset) {
     }
 
     record TetherDamageResult(float masterDamage, boolean suppressNormalHitSound) {

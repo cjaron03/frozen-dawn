@@ -1,13 +1,17 @@
 package com.frozendawn.entity;
 
+import com.mojang.math.Transformation;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectConstructionPolicy;
+import com.frozendawn.mixin.BlockDisplayAccessor;
+import com.frozendawn.mixin.DisplayAccessor;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -15,12 +19,20 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,9 +46,12 @@ final class MasterArchitectConstructionController {
     private static final int TRAP_HEIGHT = 2;
     private static final int WALL_HEIGHT = 3;
     private static final double LAST_WALL_CLEAR_RADIUS_SQR = 6.0D * 6.0D;
+    private static final String CONSTRUCTION_VFX_TAG =
+            "frozendawn_master_construction_vfx";
 
     private final ArchitectEntity architect;
     private final List<ConstructionInstance> constructions = new ArrayList<>();
+    private final List<Display.BlockDisplay> orbitingFragments = new ArrayList<>();
 
     private BuildPlan activePlan;
     private BlockPos observedCoverPos;
@@ -46,8 +61,12 @@ final class MasterArchitectConstructionController {
     private int cooldown;
     private int staggerTicks;
     private int behaviorCursor;
+    private int stationaryTicks;
     private long nextConstructionId = 1L;
+    private long shelteringConstructionId = -1L;
     private boolean openingFortUsed;
+    private boolean vfxInitialized;
+    private Vec3 lastTargetPosition;
 
     MasterArchitectConstructionController(ArchitectEntity architect) {
         this.architect = architect;
@@ -63,6 +82,9 @@ final class MasterArchitectConstructionController {
         if (staggerTicks > 0) {
             staggerTicks--;
         }
+        initializeVfx(level);
+        updateTargetMotion(target, phase);
+        tickAmbientFragments(level, phase);
         observeCover(level, target, phase);
 
         List<ConstructionInstance> expired = new ArrayList<>();
@@ -77,6 +99,12 @@ final class MasterArchitectConstructionController {
                     && activePlan.instance.id == construction.id;
             if (building) {
                 continue;
+            }
+
+            if (construction.blocks.stream().anyMatch(pos ->
+                    level.hasChunkAt(pos)
+                            && !isConstructionBlock(level.getBlockState(pos)))) {
+                construction.breached = true;
             }
 
             if (construction.seams.isEmpty()) {
@@ -134,15 +162,24 @@ final class MasterArchitectConstructionController {
         BuildPlan plan;
         if (!openingFortUsed) {
             plan = createOpeningFort(level, target);
+            if (plan == null) {
+                plan = createOpeningFallbackWall(level, target);
+            }
         } else {
             plan = selectOngoingPlan(level, target);
         }
         if (plan == null) {
             return false;
         }
+        makeRoomFor(level, plan.plannedBlockCount());
+        if (!MasterArchitectConstructionPolicy.canReserve(
+                liveBlockCount(), plan.plannedBlockCount())) {
+            return false;
+        }
 
         constructions.add(plan.instance);
         activePlan = plan;
+        beginTravelingFragments(level, plan);
         openingFortUsed |= plan.instance.kind == ConstructionKind.OPENING_FORT;
         cooldown = plan.instance.kind == ConstructionKind.OPENING_FORT
                 ? MasterArchitectConstructionPolicy.OPENING_COOLDOWN_TICKS
@@ -165,35 +202,54 @@ final class MasterArchitectConstructionController {
         if (activePlan == null) {
             return true;
         }
-        if (activePlan.cursor >= activePlan.steps.size()) {
-            return true;
+        activePlan.choreographyTicks++;
+        updateTravelingFragments(level, activePlan);
+        if (activePlan.choreographyTicks
+                < MasterArchitectConstructionPolicy.CHOREOGRAPHY_TICKS) {
+            return false;
         }
 
-        BuildStep step = activePlan.steps.get(activePlan.cursor++);
-        for (PlannedBlock planned : step.blocks) {
-            if (liveBlockCount()
-                            >= MasterArchitectConstructionPolicy.LIVE_BLOCK_BUDGET
-                    || !canPlaceAt(level, planned.pos)) {
-                continue;
+        clearTravelingFragments(level, activePlan);
+        boolean seamPlaced = false;
+        int placed = 0;
+        while (activePlan.cursor < activePlan.steps.size()) {
+            BuildStep step = activePlan.steps.get(activePlan.cursor++);
+            for (PlannedBlock planned : step.blocks) {
+                if (liveBlockCount()
+                                >= MasterArchitectConstructionPolicy.LIVE_BLOCK_BUDGET
+                        || !canPlaceAt(level, planned.pos)) {
+                    continue;
+                }
+                BlockState state = planned.seam
+                        ? Blocks.ICE.defaultBlockState()
+                        : Blocks.PACKED_ICE.defaultBlockState();
+                level.setBlock(planned.pos, state, Block.UPDATE_CLIENTS);
+                activePlan.instance.blocks.add(planned.pos.immutable());
+                if (planned.seam) {
+                    activePlan.instance.seams.add(planned.pos.immutable());
+                    seamPlaced = true;
+                }
+                emitPlacedBlock(level, planned);
+                placed++;
             }
-            BlockState state = planned.seam
-                    ? Blocks.ICE.defaultBlockState()
-                    : Blocks.PACKED_ICE.defaultBlockState();
-            level.setBlock(planned.pos, state, Block.UPDATE_ALL);
-            activePlan.instance.blocks.add(planned.pos.immutable());
-            if (planned.seam) {
-                activePlan.instance.seams.add(planned.pos.immutable());
-            }
-            emitPlacedBlock(level, planned);
         }
         level.playSound(
                 null,
-                step.focus,
-                SoundEvents.GLASS_PLACE,
+                activePlan.instance.anchor,
+                SoundEvents.GENERIC_EXPLODE.value(),
                 architect.getSoundSource(),
-                1.15F,
-                step.hasSeam() ? 1.35F : 0.62F);
-        return activePlan.cursor >= activePlan.steps.size();
+                0.72F,
+                0.58F);
+        level.playSound(
+                null,
+                activePlan.instance.anchor,
+                seamPlaced
+                        ? SoundEvents.AMETHYST_BLOCK_CHIME
+                        : SoundEvents.GLASS_PLACE,
+                architect.getSoundSource(),
+                1.35F,
+                seamPlaced ? 0.72F : 0.62F);
+        return placed > 0 || activePlan.cursor >= activePlan.steps.size();
     }
 
     void finishConstruction(ServerLevel level) {
@@ -226,6 +282,7 @@ final class MasterArchitectConstructionController {
             return;
         }
         ConstructionInstance cancelled = activePlan.instance;
+        clearTravelingFragments(level, activePlan);
         activePlan = null;
         removeConstruction(level, cancelled, false, false);
     }
@@ -268,6 +325,7 @@ final class MasterArchitectConstructionController {
     }
 
     void onDeath(ServerLevel level) {
+        clearAllVfx(level);
         activePlan = null;
         for (ConstructionInstance construction : List.copyOf(constructions)) {
             removeConstruction(level, construction, false, false);
@@ -289,6 +347,7 @@ final class MasterArchitectConstructionController {
             saved.putString("Kind", construction.kind.serializedName);
             saved.putLong("ExpiresAt", construction.expiresAt);
             saved.putLong("Anchor", construction.anchor.asLong());
+            saved.putBoolean("Breached", construction.breached);
             if (construction.vantageStand != null) {
                 saved.putLong("VantageStand", construction.vantageStand.asLong());
             }
@@ -309,6 +368,11 @@ final class MasterArchitectConstructionController {
                 ? tag.getBoolean("MasterConstructionOpeningUsed")
                 : loadedPhase != MasterArchitectCombatPhase.KIT;
         activePlan = null;
+        orbitingFragments.clear();
+        vfxInitialized = false;
+        lastTargetPosition = null;
+        stationaryTicks = 0;
+        shelteringConstructionId = -1L;
         constructions.clear();
         vantageTarget = null;
         vantageSeekUntil = -1L;
@@ -334,24 +398,108 @@ final class MasterArchitectConstructionController {
         }
     }
 
+    boolean hasIntactShelterBetween(
+            ServerLevel level,
+            ServerPlayer target) {
+        shelteringConstructionId = -1L;
+        if (target == null || architect.hasLineOfSight(target)) {
+            return false;
+        }
+        BlockHitResult obstruction = level.clip(new ClipContext(
+                architect.getEyePosition(),
+                target.getEyePosition(),
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                architect));
+        if (obstruction.getType() != HitResult.Type.BLOCK) {
+            return false;
+        }
+        BlockPos hit = obstruction.getBlockPos();
+        ConstructionInstance shelter = constructions.stream()
+                .filter(construction -> construction.kind.isShelterWall())
+                .filter(construction -> construction.blocks.contains(hit))
+                .filter(construction -> isIntactShelter(level, construction))
+                .findFirst()
+                .orElse(null);
+        if (shelter == null) {
+            return false;
+        }
+        shelteringConstructionId = shelter.id;
+        return true;
+    }
+
+    void emitShelterHealingParticles(ServerLevel level) {
+        ConstructionInstance shelter = constructions.stream()
+                .filter(construction -> construction.id == shelteringConstructionId)
+                .filter(construction -> isIntactShelter(level, construction))
+                .findFirst()
+                .orElse(null);
+        if (shelter == null || shelter.seams.isEmpty()) {
+            return;
+        }
+        BlockPos seam = shelter.seams.get(
+                Math.floorMod((int) (level.getGameTime() / 4L), shelter.seams.size()));
+        List<BlockPos> sources = shelter.blocks.stream()
+                .filter(pos -> !shelter.seams.contains(pos))
+                .filter(pos -> level.hasChunkAt(pos)
+                        && level.getBlockState(pos).is(Blocks.PACKED_ICE))
+                .sorted(Comparator.comparingDouble(pos -> pos.distSqr(seam)))
+                .limit(3)
+                .toList();
+        Vec3 seamCenter = Vec3.atCenterOf(seam);
+        for (int index = 0; index < sources.size(); index++) {
+            emitSoulStream(
+                    level,
+                    Vec3.atCenterOf(sources.get(index)),
+                    seamCenter,
+                    index);
+        }
+        emitSoulStream(
+                level,
+                seamCenter,
+                architect.position().add(0.0D, architect.getBbHeight() * 0.62D, 0.0D),
+                0);
+    }
+
     private BuildPlan selectOngoingPlan(ServerLevel level, ServerPlayer target) {
-        if (observedCoverPos != null
+        boolean recentCover = observedCoverPos != null
                 && level.getGameTime() - observedCoverAt
-                        <= MasterArchitectConstructionPolicy.COVER_MEMORY_TICKS) {
-            BuildPlan cover = createCoverDenialWall(level, target);
-            observedCoverPos = null;
-            if (cover != null) {
-                return cover;
+                        <= MasterArchitectConstructionPolicy.COVER_MEMORY_TICKS;
+        boolean activeHeater = findActivePlayerHeater(level, target) != null;
+        MasterArchitectConstructionPolicy.ConstructionIntent preferred =
+                MasterArchitectConstructionPolicy.chooseIntent(
+                        recentCover,
+                        activeHeater,
+                        stationaryTicks,
+                        architect.distanceToSqr(target),
+                        behaviorCursor++);
+
+        List<MasterArchitectConstructionPolicy.ConstructionIntent> intents =
+                new ArrayList<>();
+        intents.add(preferred);
+        for (MasterArchitectConstructionPolicy.ConstructionIntent intent
+                : MasterArchitectConstructionPolicy.ConstructionIntent.values()) {
+            if (!intents.contains(intent)) {
+                intents.add(intent);
             }
         }
 
-        for (int attempt = 0; attempt < 3; attempt++) {
-            int behavior = Math.floorMod(behaviorCursor++, 3);
-            BuildPlan plan = switch (behavior) {
-                case 0 -> createVantagePlatform(level, target);
-                case 1 -> createEnclosureTrap(level, target);
-                default -> createHeaterBurial(level, target);
+        for (MasterArchitectConstructionPolicy.ConstructionIntent intent : intents) {
+            if (intent == MasterArchitectConstructionPolicy
+                            .ConstructionIntent.COVER_DENIAL
+                    && !recentCover) {
+                continue;
+            }
+            BuildPlan plan = switch (intent) {
+                case COVER_DENIAL -> createCoverDenialWall(level, target);
+                case VANTAGE -> createVantagePlatform(level, target);
+                case ENCLOSURE -> createEnclosureTrap(level, target);
+                case HEATER_BURIAL -> createHeaterBurial(level, target);
             };
+            if (intent == MasterArchitectConstructionPolicy
+                    .ConstructionIntent.COVER_DENIAL) {
+                observedCoverPos = null;
+            }
             if (plan != null) {
                 return plan;
             }
@@ -364,13 +512,87 @@ final class MasterArchitectConstructionController {
         MasterArchitectConstructionPolicy.WallAxes axes =
                 MasterArchitectConstructionPolicy.wallAxes(
                         towardTarget.x, towardTarget.z);
-        BlockPos center = architect.blockPosition();
+        List<MasterArchitectConstructionPolicy.WallAxes> orientations = List.of(
+                axes,
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        axes.tangentX(), axes.tangentZ(),
+                        -axes.normalX(), -axes.normalZ()),
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        -axes.tangentX(), -axes.tangentZ(),
+                        axes.normalX(), axes.normalZ()),
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        -axes.normalX(), -axes.normalZ(),
+                        axes.tangentX(), axes.tangentZ()));
+        BlockPos origin = architect.blockPosition();
+        List<BlockPos> centers = List.of(
+                origin,
+                origin.north(),
+                origin.south(),
+                origin.east(),
+                origin.west());
+        for (BlockPos center : centers) {
+            for (MasterArchitectConstructionPolicy.WallAxes orientation
+                    : orientations) {
+                BuildPlan plan = createOpeningFortAt(
+                        level, center, orientation);
+                if (plan != null) {
+                    return plan;
+                }
+            }
+        }
+        return null;
+    }
+
+    private BuildPlan createOpeningFallbackWall(
+            ServerLevel level,
+            ServerPlayer target) {
+        Vec3 towardTarget = target.position().subtract(architect.position());
+        MasterArchitectConstructionPolicy.WallAxes axes =
+                MasterArchitectConstructionPolicy.wallAxes(
+                        towardTarget.x, towardTarget.z);
+        List<MasterArchitectConstructionPolicy.WallAxes> orientations = List.of(
+                axes,
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        axes.tangentX(),
+                        axes.tangentZ(),
+                        -axes.normalX(),
+                        -axes.normalZ()),
+                new MasterArchitectConstructionPolicy.WallAxes(
+                        -axes.tangentX(),
+                        -axes.tangentZ(),
+                        axes.normalX(),
+                        axes.normalZ()));
+        BlockPos master = architect.blockPosition();
+        for (MasterArchitectConstructionPolicy.WallAxes orientation : orientations) {
+            BlockPos preferred = master.offset(
+                    orientation.normalX() * 2,
+                    0,
+                    orientation.normalZ() * 2);
+            for (BlockPos center : orderedConstructionAnchors(
+                    level, preferred, 1)) {
+                BuildPlan fallback = createCoverDenialWallAt(
+                        level, master, center, orientation);
+                if (fallback != null) {
+                    FrozenDawn.LOGGER.info(
+                            "Master Architect {} adapted opening fort to crowded Hearth terrain",
+                            shortId(architect));
+                    return fallback;
+                }
+            }
+        }
+        return null;
+    }
+
+    private BuildPlan createOpeningFortAt(
+            ServerLevel level,
+            BlockPos center,
+            MasterArchitectConstructionPolicy.WallAxes axes) {
         BlockPos rearEscape = center.offset(
                 -axes.normalX() * 2, 0, -axes.normalZ() * 2);
         if (!hasTwoBlockSpace(level, rearEscape)) {
             return null;
         }
-        List<BuildStep> steps = new ArrayList<>();
+        List<PlannedColumn> columns = new ArrayList<>();
         for (int index = 0;
                 index < MasterArchitectConstructionPolicy.WALL_COLUMN_COUNT;
                 index++) {
@@ -385,14 +607,31 @@ final class MasterArchitectConstructionController {
                     axes.normalZ() * normalOffset
                             + axes.tangentZ() * tangentOffset);
             BlockPos base = findWallBase(level, column, center.getY(), WALL_HEIGHT);
-            if (base == null) {
-                return null;
+            if (base != null) {
+                columns.add(new PlannedColumn(base, index));
             }
-            steps.add(verticalStep(
-                    base,
-                    WALL_HEIGHT,
-                    MasterArchitectConstructionPolicy.isWeakSeamColumn(index)));
         }
+        if (columns.size() < MasterArchitectConstructionPolicy.MIN_OPENING_COLUMNS) {
+            return null;
+        }
+        PlannedColumn seamColumn = columns.stream()
+                .min(Comparator.comparingInt(column ->
+                        Math.abs(MasterArchitectConstructionPolicy
+                                .columnNormalOffset(column.layoutIndex) - 2) * 4
+                                + Math.abs(MasterArchitectConstructionPolicy
+                                        .columnTangentOffset(column.layoutIndex))))
+                .orElse(null);
+        if (seamColumn == null) {
+            return null;
+        }
+        List<BuildStep> steps = new ArrayList<>();
+        for (PlannedColumn column : columns) {
+            steps.add(verticalStep(
+                    column.base,
+                    WALL_HEIGHT,
+                    column == seamColumn));
+        }
+        moveSeamStepLast(steps);
         return createPlan(
                 level,
                 ConstructionKind.OPENING_FORT,
@@ -410,9 +649,24 @@ final class MasterArchitectConstructionController {
         MasterArchitectConstructionPolicy.WallAxes axes =
                 MasterArchitectConstructionPolicy.wallAxes(
                         awayFromMaster.x, awayFromMaster.z);
-        BlockPos center = cover.offset(axes.normalX() * 2, 0, axes.normalZ() * 2);
+        BlockPos preferred = cover.offset(
+                axes.normalX() * 2, 0, axes.normalZ() * 2);
+        for (BlockPos center : orderedConstructionAnchors(level, preferred, 2)) {
+            BuildPlan plan = createCoverDenialWallAt(level, cover, center, axes);
+            if (plan != null) {
+                return plan;
+            }
+        }
+        return null;
+    }
+
+    private BuildPlan createCoverDenialWallAt(
+            ServerLevel level,
+            BlockPos cover,
+            BlockPos center,
+            MasterArchitectConstructionPolicy.WallAxes axes) {
         int[] offsets = {-2, 2, -1, 1, 0};
-        List<BuildStep> steps = new ArrayList<>();
+        List<PlannedColumn> columns = new ArrayList<>();
         for (int index = 0; index < offsets.length; index++) {
             int offset = offsets[index];
             BlockPos column = center.offset(
@@ -420,11 +674,23 @@ final class MasterArchitectConstructionController {
                     0,
                     axes.tangentZ() * offset);
             BlockPos base = findWallBase(level, column, cover.getY(), WALL_HEIGHT);
-            if (base == null) {
-                return null;
+            if (base != null) {
+                columns.add(new PlannedColumn(base, index));
             }
-            steps.add(verticalStep(base, WALL_HEIGHT, index == offsets.length - 1));
         }
+        if (columns.size() < MasterArchitectConstructionPolicy.MIN_WALL_COLUMNS) {
+            return null;
+        }
+        PlannedColumn seamColumn = columns.stream()
+                .min(Comparator.comparingInt(
+                        column -> Math.abs(offsets[column.layoutIndex])))
+                .orElse(null);
+        List<BuildStep> steps = new ArrayList<>();
+        for (PlannedColumn column : columns) {
+            steps.add(verticalStep(
+                    column.base, WALL_HEIGHT, column == seamColumn));
+        }
+        moveSeamStepLast(steps);
         return createPlan(
                 level,
                 ConstructionKind.COVER_WALL,
@@ -458,7 +724,7 @@ final class MasterArchitectConstructionController {
             BlockPos column = center.offset(offset[0], 0, offset[1]);
             BlockPos base = findWallBase(level, column, center.getY(), TRAP_HEIGHT);
             if (base == null) {
-                return null;
+                continue;
             }
             boolean seam = offset[0] == seamX && offset[1] == seamZ;
             BuildStep step = verticalStep(base, TRAP_HEIGHT, seam);
@@ -482,22 +748,7 @@ final class MasterArchitectConstructionController {
     }
 
     private BuildPlan createHeaterBurial(ServerLevel level, ServerPlayer target) {
-        PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(
-                level.getServer());
-        BlockPos heaterPos = HeaterRegistry.getHeaters(level).stream()
-                .filter(level::hasChunkAt)
-                .filter(tracker::isPlayerPlaced)
-                .filter(pos -> level.getBlockEntity(pos)
-                        instanceof ThermalHeaterBlockEntity heater && heater.isLit())
-                .filter(pos -> architect.distanceToSqr(Vec3.atCenterOf(pos))
-                        <= MasterArchitectConstructionPolicy.MAX_CAST_RANGE
-                                * MasterArchitectConstructionPolicy.MAX_CAST_RANGE)
-                .filter(pos -> constructions.stream().noneMatch(construction ->
-                        construction.kind == ConstructionKind.HEATER_BURIAL
-                                && construction.anchor.equals(pos)))
-                .min(Comparator.comparingDouble(
-                        pos -> target.distanceToSqr(Vec3.atCenterOf(pos))))
-                .orElse(null);
+        BlockPos heaterPos = findActivePlayerHeater(level, target);
         if (heaterPos == null) {
             return null;
         }
@@ -507,7 +758,7 @@ final class MasterArchitectConstructionController {
             BlockPos base = heaterPos.relative(direction);
             if (!level.getBlockState(base.below())
                     .isFaceSturdy(level, base.below(), Direction.UP)) {
-                return null;
+                continue;
             }
             steps.add(verticalStep(base, 2, false));
         }
@@ -523,13 +774,49 @@ final class MasterArchitectConstructionController {
                 steps);
     }
 
+    private BlockPos findActivePlayerHeater(
+            ServerLevel level,
+            ServerPlayer target) {
+        PlayerPlacedBlockTracker tracker = PlayerPlacedBlockTracker.get(
+                level.getServer());
+        return HeaterRegistry.getHeaters(level).stream()
+                .filter(level::hasChunkAt)
+                .filter(tracker::isPlayerPlaced)
+                .filter(pos -> level.getBlockEntity(pos)
+                        instanceof ThermalHeaterBlockEntity heater && heater.isLit())
+                .filter(pos -> architect.distanceToSqr(Vec3.atCenterOf(pos))
+                        <= MasterArchitectConstructionPolicy.MAX_CAST_RANGE
+                                * MasterArchitectConstructionPolicy.MAX_CAST_RANGE)
+                .filter(pos -> constructions.stream().noneMatch(construction ->
+                        construction.kind == ConstructionKind.HEATER_BURIAL
+                                && construction.anchor.equals(pos)))
+                .min(Comparator.comparingDouble(
+                        pos -> target.distanceToSqr(Vec3.atCenterOf(pos))))
+                .orElse(null);
+    }
+
     private BuildPlan createVantagePlatform(ServerLevel level, ServerPlayer target) {
         Vec3 towardTarget = target.position().subtract(architect.position());
         MasterArchitectConstructionPolicy.WallAxes axes =
                 MasterArchitectConstructionPolicy.wallAxes(
                         towardTarget.x, towardTarget.z);
-        BlockPos centerColumn = architect.blockPosition().offset(
+        BlockPos preferred = architect.blockPosition().offset(
                 -axes.normalX() * 4, 0, -axes.normalZ() * 4);
+        for (BlockPos centerColumn : orderedConstructionAnchors(
+                level, preferred, 2)) {
+            BuildPlan plan = createVantagePlatformAt(
+                    level, centerColumn, axes);
+            if (plan != null) {
+                return plan;
+            }
+        }
+        return null;
+    }
+
+    private BuildPlan createVantagePlatformAt(
+            ServerLevel level,
+            BlockPos centerColumn,
+            MasterArchitectConstructionPolicy.WallAxes axes) {
         Integer baseY = findGroundY(level, centerColumn, architect.blockPosition().getY());
         if (baseY == null) {
             return null;
@@ -597,19 +884,29 @@ final class MasterArchitectConstructionController {
             ConstructionKind kind,
             BlockPos anchor,
             BlockPos vantageStand,
-            int lifetimeTicks,
+        int lifetimeTicks,
             List<BuildStep> steps) {
-        int plannedBlocks = steps.stream().mapToInt(step -> step.blocks.size()).sum();
-        if (!MasterArchitectConstructionPolicy.canReserve(
-                liveBlockCount(), plannedBlocks)) {
+        List<BuildStep> viableSteps = steps.stream()
+                .filter(step -> step.blocks.stream().allMatch(
+                        planned -> canPlaceAt(level, planned.pos)))
+                .toList();
+        int minimumSteps = switch (kind) {
+            case OPENING_FORT -> MasterArchitectConstructionPolicy.MIN_OPENING_COLUMNS;
+            case COVER_WALL -> MasterArchitectConstructionPolicy.MIN_WALL_COLUMNS;
+            case ENCLOSURE -> MasterArchitectConstructionPolicy.MIN_ENCLOSURE_COLUMNS;
+            case HEATER_BURIAL -> MasterArchitectConstructionPolicy.MIN_HEATER_COLUMNS;
+            case VANTAGE -> 5;
+        };
+        boolean hasSeam = viableSteps.stream().anyMatch(BuildStep::hasSeam);
+        if (!MasterArchitectConstructionPolicy.hasViableStructure(
+                viableSteps.size(), hasSeam, minimumSteps)) {
             return null;
         }
-        for (BuildStep step : steps) {
-            for (PlannedBlock planned : step.blocks) {
-                if (!canPlaceAt(level, planned.pos)) {
-                    return null;
-                }
-            }
+        int plannedBlocks = viableSteps.stream()
+                .mapToInt(step -> step.blocks.size())
+                .sum();
+        if (plannedBlocks > MasterArchitectConstructionPolicy.LIVE_BLOCK_BUDGET) {
+            return null;
         }
         ConstructionInstance instance = new ConstructionInstance(
                 nextConstructionId++,
@@ -617,7 +914,22 @@ final class MasterArchitectConstructionController {
                 anchor.immutable(),
                 vantageStand == null ? null : vantageStand.immutable(),
                 level.getGameTime() + lifetimeTicks);
-        return new BuildPlan(instance, List.copyOf(steps));
+        return new BuildPlan(instance, viableSteps);
+    }
+
+    private void makeRoomFor(ServerLevel level, int plannedBlocks) {
+        while (!MasterArchitectConstructionPolicy.canReserve(
+                liveBlockCount(), plannedBlocks)) {
+            ConstructionInstance oldest = constructions.stream()
+                    .filter(construction -> activePlan == null
+                            || construction.id != activePlan.instance.id)
+                    .findFirst()
+                    .orElse(null);
+            if (oldest == null) {
+                return;
+            }
+            removeConstruction(level, oldest, false, false);
+        }
     }
 
     private void observeCover(
@@ -628,9 +940,111 @@ final class MasterArchitectConstructionController {
             return;
         }
         if (!architect.hasLineOfSight(target)) {
-            observedCoverPos = target.blockPosition().immutable();
+            BlockHitResult obstruction = level.clip(new ClipContext(
+                    architect.getEyePosition(),
+                    target.getEyePosition(),
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
+                    architect));
+            if (obstruction.getType() == HitResult.Type.BLOCK
+                    && isTrackedConstructionBlock(obstruction.getBlockPos())) {
+                return;
+            }
+            observedCoverPos = obstruction.getType() == HitResult.Type.BLOCK
+                    ? obstruction.getBlockPos().immutable()
+                    : target.blockPosition().immutable();
             observedCoverAt = level.getGameTime();
         }
+    }
+
+    private void updateTargetMotion(
+            ServerPlayer target,
+            MasterArchitectCombatPhase phase) {
+        if (target == null || phase != MasterArchitectCombatPhase.CONSTRUCTION) {
+            stationaryTicks = 0;
+            lastTargetPosition = target == null ? null : target.position();
+            return;
+        }
+        Vec3 current = target.position();
+        if (lastTargetPosition != null
+                && current.distanceToSqr(lastTargetPosition) <= 0.04D) {
+            stationaryTicks = Math.min(stationaryTicks + 1, 200);
+        } else {
+            stationaryTicks = 0;
+        }
+        lastTargetPosition = current;
+    }
+
+    boolean isTrackedConstructionBlock(BlockPos pos) {
+        return constructions.stream().anyMatch(
+                construction -> construction.blocks.contains(pos));
+    }
+
+    private boolean isIntactShelter(
+            ServerLevel level,
+            ConstructionInstance construction) {
+        if (construction.breached
+                || construction.blocks.isEmpty()
+                || construction.seams.isEmpty()) {
+            return false;
+        }
+        return construction.seams.stream().allMatch(pos ->
+                level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.ICE));
+    }
+
+    private static void emitSoulStream(
+            ServerLevel level,
+            Vec3 start,
+            Vec3 end,
+            int phaseOffset) {
+        for (int step = 1; step <= 5; step++) {
+            double progress = (step + phaseOffset * 0.35D) / 6.0D;
+            progress = Math.min(0.92D, progress);
+            Vec3 point = start.lerp(end, progress);
+            level.sendParticles(
+                    ParticleTypes.SCULK_SOUL,
+                    point.x,
+                    point.y,
+                    point.z,
+                    1,
+                    0.025D,
+                    0.025D,
+                    0.025D,
+                    0.005D);
+        }
+    }
+
+    private List<BlockPos> orderedConstructionAnchors(
+            ServerLevel level,
+            BlockPos preferred,
+            int radius) {
+        List<BlockPos> candidates = new ArrayList<>();
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                BlockPos candidate = preferred.offset(x, 0, z);
+                if (level.hasChunkAt(candidate)) {
+                    candidates.add(candidate);
+                }
+            }
+        }
+        candidates.sort(Comparator.comparingDouble(
+                candidate -> -constructionAnchorScore(preferred, candidate)));
+        return candidates;
+    }
+
+    private double constructionAnchorScore(
+            BlockPos preferred,
+            BlockPos candidate) {
+        double preferencePenalty = preferred.distManhattan(candidate) * 3.0D;
+        int nearest = constructions.stream()
+                .flatMap(construction -> construction.blocks.stream())
+                .mapToInt(candidate::distManhattan)
+                .min()
+                .orElse(Integer.MAX_VALUE);
+        double connectionBonus = nearest <= 1
+                ? 18.0D
+                : nearest <= 3 ? 10.0D : nearest <= 5 ? 4.0D : 0.0D;
+        return connectionBonus - preferencePenalty;
     }
 
     private void removeConstruction(
@@ -701,6 +1115,9 @@ final class MasterArchitectConstructionController {
         if (activePlan != null && activePlan.instance.id == construction.id) {
             activePlan = null;
         }
+        if (shelteringConstructionId == construction.id) {
+            shelteringConstructionId = -1L;
+        }
         if (construction.vantageStand != null
                 && construction.vantageStand.equals(vantageTarget)) {
             vantageTarget = null;
@@ -741,6 +1158,240 @@ final class MasterArchitectConstructionController {
         }
     }
 
+    private void initializeVfx(ServerLevel level) {
+        if (vfxInitialized) {
+            return;
+        }
+        String tag = vfxTag();
+        level.getEntities(
+                        (Entity) null,
+                        architect.getBoundingBox().inflate(96.0D),
+                        entity -> entity.getTags().contains(tag))
+                .forEach(Entity::discard);
+        vfxInitialized = true;
+    }
+
+    private void tickAmbientFragments(
+            ServerLevel level,
+            MasterArchitectCombatPhase phase) {
+        orbitingFragments.removeIf(Entity::isRemoved);
+        if (phase != MasterArchitectCombatPhase.CONSTRUCTION
+                || !architect.isAlive()) {
+            clearOrbitingFragments();
+            return;
+        }
+
+        while (orbitingFragments.size()
+                < MasterArchitectConstructionPolicy.ORBITING_FRAGMENT_COUNT) {
+            int index = orbitingFragments.size();
+            Display.BlockDisplay fragment = createDisplayFragment(
+                    level,
+                    index == MasterArchitectConstructionPolicy
+                                    .ORBITING_FRAGMENT_COUNT - 1
+                            ? Blocks.ICE.defaultBlockState()
+                            : Blocks.PACKED_ICE.defaultBlockState(),
+                    architect.position().add(0.0D, 1.2D, 0.0D),
+                    0.28F,
+                    index == MasterArchitectConstructionPolicy
+                            .ORBITING_FRAGMENT_COUNT - 1);
+            if (fragment == null) {
+                break;
+            }
+            orbitingFragments.add(fragment);
+        }
+
+        double time = level.getGameTime() * 0.085D;
+        for (int index = 0; index < orbitingFragments.size(); index++) {
+            Display.BlockDisplay fragment = orbitingFragments.get(index);
+            double angle = time
+                    + index * (Math.PI * 2.0D / orbitingFragments.size());
+            double radius = 1.30D + (index % 2) * 0.22D;
+            double y = architect.getY() + 1.0D
+                    + index * 0.27D
+                    + Math.sin(time * 1.35D + index) * 0.18D;
+            fragment.setPos(
+                    architect.getX() + Math.cos(angle) * radius,
+                    y,
+                    architect.getZ() + Math.sin(angle) * radius);
+            fragment.setYRot((float) Math.toDegrees(-angle));
+        }
+    }
+
+    private void beginTravelingFragments(ServerLevel level, BuildPlan plan) {
+        clearTravelingFragments(level, plan);
+        List<PlannedBlock> planned = plan.steps.stream()
+                .flatMap(step -> step.blocks.stream())
+                .toList();
+        int count = Math.min(
+                MasterArchitectConstructionPolicy.MAX_TRAVELING_FRAGMENTS,
+                planned.size());
+        for (int index = 0; index < count; index++) {
+            PlannedBlock target = planned.get(
+                    Math.min(planned.size() - 1, index * planned.size() / count));
+            BlockPos sourceFloor = findFragmentSource(
+                    level, plan.instance.anchor, index, count);
+            Vec3 source = Vec3.atCenterOf(sourceFloor).add(0.0D, 0.65D, 0.0D);
+            Vec3 destination = Vec3.atCenterOf(target.pos);
+            Display.BlockDisplay display = createDisplayFragment(
+                    level,
+                    target.seam
+                            ? Blocks.ICE.defaultBlockState()
+                            : Blocks.PACKED_ICE.defaultBlockState(),
+                    source,
+                    target.seam ? 0.46F : 0.38F,
+                    target.seam);
+            if (display == null) {
+                continue;
+            }
+            plan.fragments.add(new ConstructionFragment(
+                    display,
+                    source,
+                    destination,
+                    sourceFloor,
+                    Math.floorMod(index, 3),
+                    -1_000_000 - architect.getId() * 32 - index));
+        }
+    }
+
+    private void updateTravelingFragments(ServerLevel level, BuildPlan plan) {
+        int totalTicks = MasterArchitectConstructionPolicy.CHOREOGRAPHY_TICKS;
+        for (int index = 0; index < plan.fragments.size(); index++) {
+            ConstructionFragment fragment = plan.fragments.get(index);
+            if (fragment.display.isRemoved()) {
+                continue;
+            }
+            int availableTicks = Math.max(1, totalTicks - fragment.delay);
+            double rawProgress = Mth.clamp(
+                    (plan.choreographyTicks - fragment.delay)
+                            / (double) availableTicks,
+                    0.0D,
+                    1.0D);
+            double progress = rawProgress * rawProgress
+                    * (3.0D - 2.0D * rawProgress);
+            Vec3 midpoint = fragment.source.add(fragment.destination).scale(0.5D)
+                    .add(0.0D, 2.15D + index % 3 * 0.35D, 0.0D);
+            Vec3 point = quadraticBezier(
+                    fragment.source, midpoint, fragment.destination, progress);
+            fragment.display.setPos(point);
+            fragment.display.setYRot(
+                    fragment.display.getYRot() + 24.0F + index * 1.7F);
+
+            int crackStage = Math.min(9, plan.choreographyTicks * 2);
+            level.destroyBlockProgress(
+                    fragment.breakerId, fragment.sourceFloor, crackStage);
+            if ((plan.choreographyTicks + index) % 2 == 0) {
+                level.sendParticles(
+                        new BlockParticleOption(
+                                ParticleTypes.BLOCK,
+                                fragment.display.blockRenderState() == null
+                                        ? Blocks.PACKED_ICE.defaultBlockState()
+                                        : fragment.display.blockRenderState()
+                                                .blockState()),
+                        point.x,
+                        point.y,
+                        point.z,
+                        2,
+                        0.08D,
+                        0.08D,
+                        0.08D,
+                        0.025D);
+            }
+        }
+    }
+
+    private void clearTravelingFragments(ServerLevel level, BuildPlan plan) {
+        for (ConstructionFragment fragment : plan.fragments) {
+            level.destroyBlockProgress(
+                    fragment.breakerId, fragment.sourceFloor, -1);
+            fragment.display.discard();
+        }
+        plan.fragments.clear();
+    }
+
+    private void clearOrbitingFragments() {
+        orbitingFragments.forEach(Entity::discard);
+        orbitingFragments.clear();
+    }
+
+    private void clearAllVfx(ServerLevel level) {
+        clearOrbitingFragments();
+        if (activePlan != null) {
+            clearTravelingFragments(level, activePlan);
+        }
+        String tag = vfxTag();
+        level.getEntities(
+                        (Entity) null,
+                        architect.getBoundingBox().inflate(96.0D),
+                        entity -> entity.getTags().contains(tag))
+                .forEach(Entity::discard);
+    }
+
+    private Display.BlockDisplay createDisplayFragment(
+            ServerLevel level,
+            BlockState state,
+            Vec3 position,
+            float scale,
+            boolean glowing) {
+        Display.BlockDisplay display = new Display.BlockDisplay(
+                EntityType.BLOCK_DISPLAY, level);
+        ((BlockDisplayAccessor) (Object) display)
+                .frozendawn$setBlockState(state);
+        ((DisplayAccessor) (Object) display)
+                .frozendawn$setPosRotInterpolationDuration(2);
+        float half = scale * 0.5F;
+        ((DisplayAccessor) (Object) display).frozendawn$setTransformation(
+                new Transformation(
+                        new Vector3f(-half, -half, -half),
+                        new Quaternionf(),
+                        new Vector3f(scale, scale, scale),
+                        new Quaternionf()));
+        display.setNoGravity(true);
+        display.setInvulnerable(true);
+        display.setSilent(true);
+        display.setGlowingTag(glowing);
+        display.addTag(vfxTag());
+        display.setPos(position);
+        if (!level.addFreshEntity(display)) {
+            display.discard();
+            return null;
+        }
+        return display;
+    }
+
+    private BlockPos findFragmentSource(
+            ServerLevel level,
+            BlockPos anchor,
+            int index,
+            int count) {
+        double angle = index * (Math.PI * 2.0D / Math.max(1, count))
+                + architect.getId() * 0.17D;
+        int radius = 4 + index % 4;
+        BlockPos column = anchor.offset(
+                Mth.floor(Math.cos(angle) * radius),
+                0,
+                Mth.floor(Math.sin(angle) * radius));
+        Integer airY = findGroundY(level, column, anchor.getY());
+        if (airY != null) {
+            return column.atY(airY - 1);
+        }
+        return architect.blockPosition().below();
+    }
+
+    private static Vec3 quadraticBezier(
+            Vec3 start,
+            Vec3 control,
+            Vec3 end,
+            double progress) {
+        double inverse = 1.0D - progress;
+        return start.scale(inverse * inverse)
+                .add(control.scale(2.0D * inverse * progress))
+                .add(end.scale(progress * progress));
+    }
+
+    private String vfxTag() {
+        return CONSTRUCTION_VFX_TAG + "_" + shortId(architect);
+    }
+
     private void emitBuildStart(ServerLevel level, ConstructionInstance instance) {
         level.playSound(
                 null,
@@ -766,6 +1417,22 @@ final class MasterArchitectConstructionController {
                     0.10D,
                     0.035D);
         }
+        for (int index = 0; index < 28; index++) {
+            double angle = index * (Math.PI * 2.0D / 28.0D);
+            double radius = 0.75D + index % 4 * 0.55D;
+            level.sendParticles(
+                    index % 5 == 0
+                            ? ParticleTypes.SCULK_SOUL
+                            : ParticleTypes.SNOWFLAKE,
+                    instance.anchor.getX() + 0.5D + Math.cos(angle) * radius,
+                    instance.anchor.getY() + 0.08D,
+                    instance.anchor.getZ() + 0.5D + Math.sin(angle) * radius,
+                    1,
+                    0.03D,
+                    0.01D,
+                    0.03D,
+                    0.018D);
+        }
     }
 
     private void emitPlacedBlock(ServerLevel level, PlannedBlock planned) {
@@ -774,7 +1441,7 @@ final class MasterArchitectConstructionController {
                 planned.pos.getX() + 0.5D,
                 planned.pos.getY() + 0.5D,
                 planned.pos.getZ() + 0.5D,
-                12,
+                7,
                 0.34D,
                 0.38D,
                 0.34D,
@@ -789,6 +1456,20 @@ final class MasterArchitectConstructionController {
                 0.28D,
                 0.22D,
                 0.025D);
+        level.sendParticles(
+                new BlockParticleOption(
+                        ParticleTypes.BLOCK,
+                        planned.seam
+                                ? Blocks.ICE.defaultBlockState()
+                                : Blocks.PACKED_ICE.defaultBlockState()),
+                planned.pos.getX() + 0.5D,
+                planned.pos.getY() + 0.5D,
+                planned.pos.getZ() + 0.5D,
+                planned.seam ? 7 : 4,
+                0.24D,
+                0.27D,
+                0.24D,
+                0.08D);
     }
 
     private BuildStep verticalStep(BlockPos base, int height, boolean seam) {
@@ -878,6 +1559,7 @@ final class MasterArchitectConstructionController {
                 anchor,
                 vantage,
                 saved.getLong("ExpiresAt"));
+        construction.breached = saved.getBoolean("Breached");
         int remainingBudget = MasterArchitectConstructionPolicy.LIVE_BLOCK_BUDGET
                 - liveBlockCount();
         for (long packed : saved.getLongArray("Blocks")) {
@@ -982,6 +1664,10 @@ final class MasterArchitectConstructionController {
             this.serializedName = serializedName;
         }
 
+        private boolean isShelterWall() {
+            return this == OPENING_FORT || this == COVER_WALL;
+        }
+
         private static ConstructionKind fromSerializedName(String name) {
             if (name != null) {
                 String normalized = name.toLowerCase(Locale.ROOT);
@@ -1003,6 +1689,7 @@ final class MasterArchitectConstructionController {
         private final List<BlockPos> blocks = new ArrayList<>();
         private final List<BlockPos> seams = new ArrayList<>();
         private long expiresAt;
+        private boolean breached;
 
         private ConstructionInstance(
                 long id,
@@ -1021,7 +1708,9 @@ final class MasterArchitectConstructionController {
     private static final class BuildPlan {
         private final ConstructionInstance instance;
         private final List<BuildStep> steps;
+        private final List<ConstructionFragment> fragments = new ArrayList<>();
         private int cursor;
+        private int choreographyTicks;
 
         private BuildPlan(
                 ConstructionInstance instance,
@@ -1029,9 +1718,40 @@ final class MasterArchitectConstructionController {
             this.instance = instance;
             this.steps = steps;
         }
+
+        private int plannedBlockCount() {
+            return steps.stream().mapToInt(step -> step.blocks.size()).sum();
+        }
+    }
+
+    private static final class ConstructionFragment {
+        private final Display.BlockDisplay display;
+        private final Vec3 source;
+        private final Vec3 destination;
+        private final BlockPos sourceFloor;
+        private final int delay;
+        private final int breakerId;
+
+        private ConstructionFragment(
+                Display.BlockDisplay display,
+                Vec3 source,
+                Vec3 destination,
+                BlockPos sourceFloor,
+                int delay,
+                int breakerId) {
+            this.display = display;
+            this.source = source;
+            this.destination = destination;
+            this.sourceFloor = sourceFloor;
+            this.delay = delay;
+            this.breakerId = breakerId;
+        }
     }
 
     private record PlannedBlock(BlockPos pos, boolean seam) {
+    }
+
+    private record PlannedColumn(BlockPos base, int layoutIndex) {
     }
 
     private record BuildStep(List<PlannedBlock> blocks, BlockPos focus) {

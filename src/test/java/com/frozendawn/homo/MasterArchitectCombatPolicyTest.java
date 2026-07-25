@@ -174,13 +174,13 @@ class MasterArchitectCombatPolicyTest {
     }
 
     @Test
-    void deathChargeShakesThenLocksBeforeDetonation() {
-        assertEquals(0.0F, MasterArchitectCombatPolicy.deathChargeProgress(13));
-        assertEquals(0.0F, MasterArchitectCombatPolicy.deathShakeStrength(13));
+    void deathChargeBuildsIntoAFullDetonationShake() {
+        assertEquals(0.0F, MasterArchitectCombatPolicy.deathChargeProgress(3));
+        assertEquals(0.0F, MasterArchitectCombatPolicy.deathShakeStrength(3));
         assertTrue(MasterArchitectCombatPolicy.deathChargeProgress(40) > 0.5F);
-        assertTrue(MasterArchitectCombatPolicy.deathShakeStrength(40) > 0.5F);
+        assertTrue(MasterArchitectCombatPolicy.deathShakeStrength(40) > 0.4F);
         assertEquals(1.0F, MasterArchitectCombatPolicy.deathChargeProgress(60));
-        assertEquals(0.0F, MasterArchitectCombatPolicy.deathShakeStrength(70));
+        assertTrue(MasterArchitectCombatPolicy.deathShakeStrength(70) > 1.2F);
     }
 
     @Test

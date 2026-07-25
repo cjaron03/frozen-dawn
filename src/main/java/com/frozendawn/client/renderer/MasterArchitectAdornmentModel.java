@@ -26,6 +26,8 @@ public final class MasterArchitectAdornmentModel {
     private final ModelPart darkRightArm;
     private final ModelPart darkLeftArm;
     private final ModelPart glowBody;
+    private final ModelPart coreHaloBody;
+    private final ModelPart coreBody;
     private final ModelPart glowRightArm;
     private final ModelPart thermalLeftHand;
     private final ModelPart thermalLeftForearm;
@@ -37,6 +39,8 @@ public final class MasterArchitectAdornmentModel {
         darkRightArm = root.getChild("dark_right_arm");
         darkLeftArm = root.getChild("dark_left_arm");
         glowBody = root.getChild("glow_body");
+        coreHaloBody = root.getChild("core_halo_body");
+        coreBody = root.getChild("core_body");
         glowRightArm = root.getChild("glow_right_arm");
         thermalLeftHand = root.getChild("thermal_left_hand");
         thermalLeftForearm = root.getChild("thermal_left_forearm");
@@ -99,6 +103,18 @@ public final class MasterArchitectAdornmentModel {
                         .addBox(-4.2F, 0.2F, -2.65F, 8.4F, 0.8F, 0.8F),
                 PartPose.ZERO);
         root.addOrReplaceChild(
+                "core_halo_body",
+                CubeListBuilder.create()
+                        .texOffs(0, 0)
+                        .addBox(-3.2F, 2.15F, -3.38F, 6.4F, 6.4F, 0.5F),
+                PartPose.ZERO);
+        root.addOrReplaceChild(
+                "core_body",
+                CubeListBuilder.create()
+                        .texOffs(0, 0)
+                        .addBox(-2.35F, 3.0F, -3.05F, 4.7F, 4.7F, 1.15F),
+                PartPose.ZERO);
+        root.addOrReplaceChild(
                 "glow_right_arm",
                 CubeListBuilder.create()
                         .texOffs(0, 0)
@@ -132,10 +148,23 @@ public final class MasterArchitectAdornmentModel {
         darkRightArm.copyFrom(parent.rightArm);
         darkLeftArm.copyFrom(parent.leftArm);
         glowBody.copyFrom(parent.body);
+        coreHaloBody.copyFrom(parent.body);
+        coreBody.copyFrom(parent.body);
         glowRightArm.copyFrom(parent.rightArm);
         thermalLeftHand.copyFrom(parent.leftArm);
         thermalLeftForearm.copyFrom(parent.leftArm);
         thermalLeftUpperArm.copyFrom(parent.leftArm);
+        darkHead.visible = parent.head.visible;
+        frostHead.visible = parent.head.visible;
+        darkRightArm.visible = parent.rightArm.visible;
+        glowRightArm.visible = parent.rightArm.visible;
+        darkLeftArm.visible = parent.leftArm.visible;
+        glowBody.visible = parent.body.visible;
+        coreHaloBody.visible = parent.body.visible;
+        coreBody.visible = parent.body.visible;
+        thermalLeftHand.visible = parent.leftArm.visible;
+        thermalLeftForearm.visible = parent.leftArm.visible;
+        thermalLeftUpperArm.visible = parent.leftArm.visible;
     }
 
     public void renderDark(
@@ -166,6 +195,16 @@ public final class MasterArchitectAdornmentModel {
             int color) {
         glowBody.render(poseStack, consumer, packedLight, packedOverlay, color);
         glowRightArm.render(poseStack, consumer, packedLight, packedOverlay, color);
+    }
+
+    public void renderCore(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            int packedLight,
+            int packedOverlay,
+            int color) {
+        coreHaloBody.render(poseStack, consumer, packedLight, packedOverlay, color);
+        coreBody.render(poseStack, consumer, packedLight, packedOverlay, color);
     }
 
     public void renderThermalCharge(
@@ -217,5 +256,6 @@ public final class MasterArchitectAdornmentModel {
         renderDark(poseStack, consumer, packedLight, packedOverlay, color);
         renderFrost(poseStack, consumer, packedLight, packedOverlay, color);
         renderGlow(poseStack, consumer, packedLight, packedOverlay, color);
+        renderCore(poseStack, consumer, packedLight, packedOverlay, color);
     }
 }

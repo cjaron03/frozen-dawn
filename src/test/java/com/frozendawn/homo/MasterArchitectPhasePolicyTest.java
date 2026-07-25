@@ -21,6 +21,19 @@ class MasterArchitectPhasePolicyTest {
     }
 
     @Test
+    void brutalPresetFloodClampDoesNotStickInAscentAtRoundedTenPercent() {
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.phaseForHealth(45.0F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.phaseForHealth(45.05F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.ASCENT,
+                MasterArchitectPhasePolicy.phaseForHealth(45.051F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.advance(
+                        MasterArchitectCombatPhase.ASCENT, 45.0F, 450.0F));
+    }
+
+    @Test
     void healingNeverRewindsAnEncounterPhase() {
         assertEquals(MasterArchitectCombatPhase.TETHER,
                 MasterArchitectPhasePolicy.advance(
@@ -47,18 +60,18 @@ class MasterArchitectPhasePolicyTest {
     }
 
     @Test
-    void floodEntryClampCannotBecomeDamageImmunity() {
+    void realMasterCannotDieOutsideTheMind() {
         assertEquals(1.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.ASCENT,
                         21.0F, 200.0F, 40.0F, false),
                 0.0001F);
-        assertEquals(40.0F,
+        assertEquals(0.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.FLOOD,
                         20.0F, 200.0F, 40.0F, false),
                 0.0001F);
-        assertEquals(40.0F,
+        assertEquals(1.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.ASCENT,
                         21.0F, 200.0F, 40.0F, true),

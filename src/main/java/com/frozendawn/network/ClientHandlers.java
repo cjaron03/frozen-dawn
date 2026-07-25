@@ -9,6 +9,7 @@ import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.client.MasterArchitectFightMusic;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
+import com.frozendawn.client.MasterArchitectFloodClient;
 import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
@@ -163,5 +164,20 @@ public final class ClientHandlers {
     public static void handleMasterArchitectFourthWallState(
             MasterArchitectFourthWallStatePayload payload) {
         MasterArchitectFourthWallMoment.handleState(payload);
+    }
+
+    public static void handleMasterArchitectFloodState(
+            MasterArchitectFloodStatePayload payload) {
+        MasterArchitectFloodClient.handleState(payload);
+    }
+
+    public static void handleMasterArchitectFloodMote(
+            MasterArchitectFloodMotePayload payload) {
+        MasterArchitectFloodClient.handleMote(payload);
+    }
+
+    public static void handleMasterArchitectFloodProgress(
+            MasterArchitectFloodProgressPayload payload) {
+        MasterArchitectFloodClient.handleProgress(payload);
     }
 }

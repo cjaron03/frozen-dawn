@@ -4,6 +4,7 @@ import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.LightTexture;
@@ -45,7 +46,7 @@ public final class MasterArchitectAdornmentLayer
             float ageInTicks,
             float netHeadYaw,
             float headPitch) {
-        if (!entity.isHearthMasterArchitect() || entity.isInvisible()) {
+        if (!entity.isMasterArchitectVisual() || entity.isInvisible()) {
             return;
         }
 
@@ -79,6 +80,44 @@ public final class MasterArchitectAdornmentLayer
                 LightTexture.FULL_BRIGHT,
                 overlay,
                 FastColor.ARGB32.color(crownAlpha, 111, 235, 244));
+
+        int mindAction = entity.getMasterCombatAction();
+        if (entity.isMasterMindCopy()
+                && (mindAction == MasterArchitectCombatAction.MIND_CORE_READY
+                || mindAction == MasterArchitectCombatAction.MIND_CORE_REVEAL)) {
+            float readyPulse = 0.82F + 0.18F * Mth.sin(ageInTicks * 0.9F);
+            float reveal = mindAction == MasterArchitectCombatAction.MIND_CORE_REVEAL
+                    ? 1.0F - Mth.clamp(
+                            entity.getMasterCombatActionTicks()
+                                    / (float) MasterArchitectFloodPolicy.CORE_REVEAL_TICKS,
+                            0.0F,
+                            1.0F)
+                    : 1.0F;
+            adornments.renderCore(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(
+                            Mth.floor(readyPulse * reveal * 255.0F), 126, 246, 255));
+        } else if (entity.isMasterMindCopy()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.MIND_CORE_EXPOSED) {
+            float crackPulse = 0.62F + 0.38F * Mth.sin(ageInTicks * 1.4F);
+            adornments.renderCore(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(255, 244, 255, 255));
+            adornments.renderAll(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(
+                            Mth.floor(crackPulse * 220.0F), 205, 252, 255));
+        }
 
         float thermalCharge = entity.getMasterCombatAction()
                 == MasterArchitectCombatAction.THERMAL_SEVER

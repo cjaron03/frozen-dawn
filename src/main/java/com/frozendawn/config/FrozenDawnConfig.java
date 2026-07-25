@@ -39,11 +39,21 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.IntValue TEST_BROADCAST_TICKS_OVERRIDE;
     public static final ModConfigSpec.BooleanValue TEST_ALLOW_REPEAT_LAUNCHES;
+    public static final ModConfigSpec.IntValue MIND_HEAL_TIER_TWO_SECONDS;
+    public static final ModConfigSpec.IntValue MIND_HEAL_TIER_THREE_SECONDS;
+    public static final ModConfigSpec.IntValue BRUTAL_MIND_HEAL_TIER_TWO_SECONDS;
+    public static final ModConfigSpec.IntValue BRUTAL_MIND_HEAL_TIER_THREE_SECONDS;
+    public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_TWO_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_THREE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
+    public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_HUD_FADE;
+    public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_SCREEN_EFFECTS;
+    public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
 
     public static final ModConfigSpec SPEC;
 
@@ -182,6 +192,28 @@ public class FrozenDawnConfig {
                         "When true, the final rocket package is not consumed as a one-shot world state.",
                         "Disable this before shipping the ending.")
                 .define("testAllowRepeatLaunches", false);
+        MIND_HEAL_TIER_TWO_SECONDS = BUILDER
+                .comment("Seconds before Thae Iven healing escalates to Tier 2.",
+                        "Cinematic never escalates beyond Tier 1.")
+                .defineInRange("mindHealTierTwoSeconds", 90, 15, 600);
+        MIND_HEAL_TIER_THREE_SECONDS = BUILDER
+                .comment("Seconds before Thae Iven healing escalates to Tier 3.")
+                .defineInRange("mindHealTierThreeSeconds", 180, 30, 1200);
+        BRUTAL_MIND_HEAL_TIER_TWO_SECONDS = BUILDER
+                .comment("Brutal seconds before Thae Iven healing reaches Tier 2.")
+                .defineInRange("brutalMindHealTierTwoSeconds", 60, 10, 600);
+        BRUTAL_MIND_HEAL_TIER_THREE_SECONDS = BUILDER
+                .comment("Brutal seconds before Thae Iven healing reaches Tier 3.")
+                .defineInRange("brutalMindHealTierThreeSeconds", 120, 20, 1200);
+        MIND_HEAL_TIER_TWO_MULTIPLIER = BUILDER
+                .comment("Thae Iven Tier 2 healing-rate multiplier.")
+                .defineInRange("mindHealTierTwoMultiplier", 2.0D, 1.0D, 8.0D);
+        MIND_HEAL_TIER_THREE_MULTIPLIER = BUILDER
+                .comment("Default Thae Iven Tier 3 healing-rate multiplier.")
+                .defineInRange("mindHealTierThreeMultiplier", 3.5D, 1.0D, 10.0D);
+        BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER = BUILDER
+                .comment("Brutal Thae Iven Tier 3 healing-rate multiplier.")
+                .defineInRange("brutalMindHealTierThreeMultiplier", 4.0D, 1.0D, 12.0D);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -195,6 +227,17 @@ public class FrozenDawnConfig {
                 .comment("Enable phase-dependent sky color shifting.",
                         "Shifts sky from warm amber (phase 1) through cold blue to black during phase 6 atmospheric collapse.")
                 .define("enableSkyColorShift", true);
+        ENABLE_FLOOD_HUD_FADE = BUILDER
+                .comment("Fade survival HUD elements during the Master Architect Flood finale.",
+                        "Disable for accessibility; gameplay effects and the crosshair remain unchanged.")
+                .define("enableFloodHudFade", true);
+        ENABLE_FLOOD_SCREEN_EFFECTS = BUILDER
+                .comment("Enable fog, vignette, memory pulses, and FOV compression in Thae Iven.",
+                        "Disable for photosensitivity while preserving the fight and its hotbar.")
+                .define("enableFloodScreenEffects", true);
+        MIND_OVERRIDE_INTENSITY = BUILDER
+                .comment("Scales Thae Iven screen effects without changing movement or damage.")
+                .defineInRange("mindOverrideIntensity", 1.0D, 0.0D, 1.0D);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

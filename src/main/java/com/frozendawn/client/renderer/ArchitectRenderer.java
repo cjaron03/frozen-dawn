@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectFloodPolicy;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -67,7 +68,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
         if (deathTicks > 0) {
-            if (entity.isHearthMasterArchitect()) {
+            if (entity.isMasterArchitectVisual()) {
                 renderMasterDeathCharge(
                         entity,
                         entityYaw,
@@ -91,15 +92,60 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
 
         poseStack.pushPose();
         int action = entity.getCurrentAction();
-        if (entity.isHearthMasterArchitect()
+        if (entity.isMasterArchitectVisual()
                 && entity.getMasterCombatAction()
-                == MasterArchitectCombatAction.STORM_MAINTENANCE) {
+                        == MasterArchitectCombatAction.STORM_MAINTENANCE) {
             float time = entity.tickCount + partialTick;
             poseStack.translate(
                     Mth.sin(time * 2.2F) * 0.009F,
                     Mth.cos(time * 2.7F) * 0.006F,
                     Mth.sin(time * 2.45F) * 0.009F);
-        } else if (!entity.isHearthMasterArchitect()
+        } else if (entity.isMasterArchitectVisual()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.FLOOD_FOLD_CAST) {
+            float time = entity.tickCount + partialTick;
+            poseStack.translate(
+                    Mth.sin(time * 5.7F) * 0.026F,
+                    Mth.cos(time * 6.4F) * 0.014F,
+                    Mth.sin(time * 5.1F) * 0.026F);
+        } else if (entity.isMasterMindCopy()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.MIND_CORE_REVEAL) {
+            float time = entity.tickCount + partialTick;
+            float elapsed = Mth.clamp(
+                    (MasterArchitectFloodPolicy.CORE_REVEAL_TICKS
+                            - entity.getMasterCombatActionTicks())
+                            / (float) MasterArchitectFloodPolicy.CORE_REVEAL_TICKS,
+                    0.0F,
+                    1.0F);
+            float recoil = Mth.sin(Mth.clamp(elapsed / 0.34F, 0.0F, 1.0F) * Mth.PI);
+            poseStack.translate(
+                    Mth.sin(time * 8.0F) * 0.028F * recoil,
+                    -0.025F * recoil,
+                    0.075F * recoil);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(
+                    Mth.sin(time * 7.2F) * 2.4F * recoil));
+        } else if (entity.isMasterMindCopy()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.MIND_RETURN_STAGGER) {
+            float time = entity.tickCount + partialTick;
+            poseStack.translate(
+                    Mth.sin(time * 8.8F) * 0.075F,
+                    Mth.cos(time * 10.2F) * 0.045F,
+                    Mth.sin(time * 9.5F) * 0.075F);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(
+                    Mth.sin(time * 7.6F) * 4.2F));
+        } else if (entity.isMasterMindCopy()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.MIND_CORE_EXPOSED) {
+            float time = entity.tickCount + partialTick;
+            poseStack.translate(
+                    Mth.sin(time * 9.2F) * 0.048F,
+                    Mth.cos(time * 10.6F) * 0.026F,
+                    Mth.sin(time * 8.7F) * 0.048F);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(
+                    Mth.sin(time * 6.8F) * 2.8F));
+        } else if (!entity.isMasterArchitectVisual()
                 && (action == ArchitectEntity.ACTION_OBSERVE
                 || action == ArchitectEntity.ACTION_PEEK)) {
             float sway = Mth.sin((entity.tickCount + partialTick) * 0.035f) * 0.9f;
@@ -173,11 +219,11 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
 
         poseStack.pushPose();
         poseStack.translate(
-                Mth.sin(time * 2.45F) * 0.028F * shake,
-                Mth.sin(time * 3.15F) * 0.018F * shake,
-                Mth.cos(time * 2.8F) * 0.028F * shake);
+                Mth.sin(time * 3.85F) * 0.052F * shake,
+                Mth.sin(time * 4.65F) * 0.034F * shake,
+                Mth.cos(time * 4.2F) * 0.052F * shake);
         poseStack.mulPose(Axis.ZP.rotationDegrees(
-                Mth.sin(time * 2.1F) * 1.9F * shake));
+                Mth.sin(time * 3.35F) * 4.4F * shake));
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entityYaw));
         poseStack.scale(-1.0F, -1.0F, 1.0F);
         poseStack.translate(0.0F, -1.501F, 0.0F);

@@ -32,6 +32,20 @@ final class ArchitectHearthMasterController {
 
     /** @return always true because the Master never falls through to ordinary Architect AI. */
     boolean tick(ServerLevel level) {
+        combatController.tickPersistentState(level);
+        if (combatController.isMindSessionActive()) {
+            architect.setMasterBossBarProvoked(true);
+            combatController.tickFolded(level);
+            if (!combatMusicActive) {
+                MasterArchitectFightMusicManager.pushStage(
+                        level, architect, combatController.musicStage());
+            } else {
+                MasterArchitectFightMusicManager.heartbeat(
+                        level, architect, combatController.musicStage());
+            }
+            combatMusicActive = true;
+            return true;
+        }
         ServerPlayer hostileTarget = findHostileTarget(level);
         if (hostileTarget != null) {
             architect.getHearthMasterArchitectId().ifPresent(
@@ -88,8 +102,9 @@ final class ArchitectHearthMasterController {
         return true;
     }
 
-    void onHurt() {
-        combatController.onHurt();
+    void onHurt(ServerLevel level, @Nullable ServerPlayer attacker) {
+        ServerPlayer floodTarget = attacker != null ? attacker : findHostileTarget(level);
+        combatController.onHurt(level, floodTarget);
     }
 
     MasterArchitectCombatController.TetherDamageResult redistributeIncomingDamage(
@@ -102,10 +117,38 @@ final class ArchitectHearthMasterController {
                 incomingDamage, bypassesInvulnerability);
     }
 
-    void onDeath(ServerLevel level) {
+    void onDeath(ServerLevel level, @Nullable ServerPlayer killer) {
         MasterArchitectFightMusicManager.stopNearby(level, architect);
         combatMusicActive = false;
-        combatController.onDeath(level);
+        combatController.onDeath(level, killer);
+    }
+
+    void onMindCopyHurt(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        combatController.onMindCopyHurt(level, copy, source, amount);
+    }
+
+    float prepareMindCopyDamage(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        return combatController.prepareMindCopyDamage(level, copy, source, amount);
+    }
+
+    void onMindCopyDefeated(
+            ServerLevel level,
+            ArchitectEntity copy,
+            @Nullable ServerPlayer killer) {
+        combatController.onMindCopyDefeated(level, copy, killer);
+    }
+
+    void onMindParticipantFailed(
+            ServerLevel level, ServerPlayer player, String reason) {
+        combatController.onMindParticipantFailed(level, player, reason);
     }
 
     void addSaveData(net.minecraft.nbt.CompoundTag tag) {
