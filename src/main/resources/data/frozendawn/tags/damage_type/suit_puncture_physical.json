@@ -10,7 +10,6 @@
     "minecraft:falling_anvil",
     "minecraft:fly_into_wall",
     "minecraft:sonic_boom",
-    "minecraft:mace_smash",
     "#minecraft:is_projectile",
     "#minecraft:is_explosion",
     "#minecraft:is_fall"

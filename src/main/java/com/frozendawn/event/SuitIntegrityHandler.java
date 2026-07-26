@@ -36,6 +36,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class SuitIntegrityHandler {
 
+    public enum EmergencyRefillResult {
+        SUCCESS,
+        NO_SEALED_SUIT,
+        NO_CAPACITY,
+        FULL
+    }
+
     public static final TagKey<DamageType> PHYSICAL_DAMAGE = TagKey.create(
             Registries.DAMAGE_TYPE,
             ResourceLocation.fromNamespaceAndPath(
@@ -215,6 +222,27 @@ public final class SuitIntegrityHandler {
 
     public static boolean hasPuncture(Player player) {
         return player.getData(ModAttachments.SUIT_INTEGRITY).punctures() > 0;
+    }
+
+    public static EmergencyRefillResult useEmergencyO2Cartridge(ServerPlayer player) {
+        if (!isWearingSealedSuit(player)) {
+            return EmergencyRefillResult.NO_SEALED_SUIT;
+        }
+        int maxO2 = getTotalMaxO2(player);
+        if (maxO2 <= 0) {
+            return EmergencyRefillResult.NO_CAPACITY;
+        }
+        int beforeO2 = getTotalO2(player);
+        if (beforeO2 >= maxO2) {
+            return EmergencyRefillResult.FULL;
+        }
+
+        refillO2(player, SuitIntegrityPolicy.emergencyRefillAmount(maxO2));
+        SuitIntegrity state = player.getData(ModAttachments.SUIT_INTEGRITY);
+        state.setO2Ticks(getTotalO2(player));
+        state.clearWarnings();
+        sync(player, state, SuitIntegrityPayload.EMERGENCY_RESERVE);
+        return EmergencyRefillResult.SUCCESS;
     }
 
     public static boolean isWearingSealedSuit(Player player) {

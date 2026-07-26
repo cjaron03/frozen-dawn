@@ -36,6 +36,15 @@ class SuitIntegrityPolicyTest {
         assertEquals(0.0D, SuitIntegrityPolicy.ventPerTick(3600, 80, 0), 0.0001D);
     }
 
+    @Test
+    void emergencyCartridgeRestoresThirtyFivePercentWithFixedCap() {
+        assertEquals(420, SuitIntegrityPolicy.emergencyRefillAmount(1200));
+        assertEquals(840, SuitIntegrityPolicy.emergencyRefillAmount(2400));
+        assertEquals(1200, SuitIntegrityPolicy.emergencyRefillAmount(3600));
+        assertEquals(1200, SuitIntegrityPolicy.emergencyRefillAmount(10800));
+        assertEquals(0, SuitIntegrityPolicy.emergencyRefillAmount(0));
+    }
+
     private static float chance(SuitIntegrityPolicy.SourceKind source) {
         return chance(source, 0.0F);
     }

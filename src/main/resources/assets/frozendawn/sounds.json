@@ -107,6 +107,12 @@
       "frozendawn:ui/suit/leak_hiss"
     ]
   },
+  "ui.suit.emergency_reserve": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_reserve", "stream": true }
+    ]
+  },
   "ambient.eva_suffocate": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_suffocate",

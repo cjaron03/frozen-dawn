@@ -72,6 +72,12 @@ public final class SuitIntegrityClient {
                 MasterArchitectFloodClient.showWarningSuitDialogue(
                         "ui.frozendawn.suit.patch_degraded");
             }
+            case SuitIntegrityPayload.EMERGENCY_RESERVE -> {
+                playUi(SoundEvents.RESPAWN_ANCHOR_CHARGE, 0.6F, 1.45F);
+                playUi(ModSounds.SUIT_EMERGENCY_RESERVE.get(), 1.0F, 1.0F);
+                MasterArchitectFloodClient.showSuitDialogue(
+                        "ui.frozendawn.suit.emergency_reserve");
+            }
             default -> {
             }
         }

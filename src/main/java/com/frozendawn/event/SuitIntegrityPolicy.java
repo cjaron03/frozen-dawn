@@ -5,6 +5,9 @@ import net.minecraft.util.Mth;
 /** Pure tuning math for suit punctures, kept separate from event plumbing. */
 public final class SuitIntegrityPolicy {
 
+    public static final int EMERGENCY_REFILL_CAP_TICKS = 1200;
+    public static final float EMERGENCY_REFILL_FRACTION = 0.35F;
+
     public enum SourceKind {
         MASTER_ARCHITECT,
         ARCHITECT_HEAVY,
@@ -15,6 +18,15 @@ public final class SuitIntegrityPolicy {
     }
 
     private SuitIntegrityPolicy() {
+    }
+
+    public static int emergencyRefillAmount(int totalCapacity) {
+        if (totalCapacity <= 0) {
+            return 0;
+        }
+        return Math.min(
+                EMERGENCY_REFILL_CAP_TICKS,
+                Math.max(1, (int) Math.ceil(totalCapacity * EMERGENCY_REFILL_FRACTION)));
     }
 
     public static float chance(

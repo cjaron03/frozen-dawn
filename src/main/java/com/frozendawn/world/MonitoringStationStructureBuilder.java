@@ -252,6 +252,7 @@ public final class MonitoringStationStructureBuilder {
         loot.add(new ItemStack(Items.REPEATER, 2));
         loot.add(new ItemStack(Items.COMPARATOR, 1));
         loot.add(new ItemStack(ModItems.BOARD_PACKET.get()));
+        loot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
         loot.add(createOrsaDocument("ORSA Ingest Node Maintenance Bulletin", "station_maintenance_bulletin"));
         loot.add(createOrsaDocument("Relay Diagnostics Printout", "station_relay_diagnostics"));
         loot.add(createEmployeeRelayNote());

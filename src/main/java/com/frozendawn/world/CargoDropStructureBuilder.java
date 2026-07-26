@@ -337,6 +337,7 @@ public final class CargoDropStructureBuilder {
                 firstCrateLoot.add(new ItemStack(ModItems.THERMAL_CORE.get(), 1 + random.nextInt(2)));
                 firstCrateLoot.add(createRandomInsulatedArmor(random));
                 firstCrateLoot.add(new ItemStack(ModItems.FROZEN_MEAT.get(), 4 + random.nextInt(3)));
+                firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
                 secondCrateLoot.add(new ItemStack(Items.COAL_BLOCK, 2 + random.nextInt(3)));
                 secondCrateLoot.add(new ItemStack(Items.IRON_INGOT, 8 + random.nextInt(9)));
             }
@@ -353,6 +354,9 @@ public final class CargoDropStructureBuilder {
                 }
                 if (random.nextBoolean()) {
                     secondCrateLoot.add(new ItemStack(Items.IRON_AXE));
+                }
+                if (random.nextFloat() < 0.25F) {
+                    firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
                 }
             }
             case BUREAUCRATIC -> {

@@ -703,7 +703,7 @@ public final class HearthReconciliationManager {
 
         RandomSource random = RandomSource.create(layoutSeed ^ pos.asLong()
                 ^ 0x494E544143545F4CL);
-        int[] slots = {2, 6, 10, 13, 16, 20, 22, 24};
+        int[] slots = {2, 6, 10, 13, 16, 20, 22, 24, 26};
         chest.setItem(slots[0], new ItemStack(ModItems.TATTERED_CLOTHING_SCRAP.get(),
                 4 + random.nextInt(5)));
         chest.setItem(slots[1], new ItemStack(ModItems.FROZEN_ATMOSPHERE_SHARD.get(),
@@ -716,6 +716,7 @@ public final class HearthReconciliationManager {
                 1 + random.nextInt(2)));
         chest.setItem(slots[5], new ItemStack(ModItems.ORSA_SUIT_PATCH_KIT.get(),
                 1 + random.nextInt(2)));
+        chest.setItem(slots[8], new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
         if (random.nextFloat() < 0.65F) {
             chest.setItem(slots[6], new ItemStack(ModItems.MIRRORED_FRAGMENT.get()));
         }

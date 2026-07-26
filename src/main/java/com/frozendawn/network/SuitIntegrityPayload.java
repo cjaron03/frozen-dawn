@@ -21,6 +21,7 @@ public record SuitIntegrityPayload(
     public static final int OXYGEN_CRITICAL = 2;
     public static final int PATCHED = 3;
     public static final int PATCH_DEGRADED = 4;
+    public static final int EMERGENCY_RESERVE = 5;
 
     public static final Type<SuitIntegrityPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "suit_integrity"));

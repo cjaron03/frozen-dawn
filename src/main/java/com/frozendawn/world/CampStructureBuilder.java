@@ -265,6 +265,9 @@ public final class CampStructureBuilder {
                 crate.setItem(9, hasLinkedVehicle ? createTransferLogDocument() : createPersonalNoteDocument());
                 crate.setItem(13, new ItemStack(Items.STRING, 4));
                 crate.setItem(18, new ItemStack(Items.FLINT_AND_STEEL));
+                if (hasLinkedVehicle) {
+                    crate.setItem(22, new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
+                }
             }
         }
     }

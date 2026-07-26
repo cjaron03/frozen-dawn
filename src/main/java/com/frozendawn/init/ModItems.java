@@ -14,6 +14,7 @@ import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.EmergencyO2CartridgeItem;
 import com.frozendawn.item.IceClawsItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
 import com.frozendawn.item.MiteAwayBlockItem;
@@ -123,6 +124,10 @@ public class ModItems {
     public static final DeferredItem<O2TankItem> O2_TANK_MK3 = ITEMS.register("o2_tank_mk3",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER3_MAX), O2TankItem.TIER3_MAX));
+    public static final DeferredItem<EmergencyO2CartridgeItem> EMERGENCY_O2_CARTRIDGE = ITEMS.register(
+            "emergency_o2_cartridge",
+            () -> new EmergencyO2CartridgeItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SULFUR_LAVA_BUCKET = ITEMS.register("sulfur_lava_bucket",
             () -> new BucketItem(ModFluids.SOURCE_VENT_LAVA.get(),
                     new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
@@ -408,6 +413,7 @@ public class ModItems {
                         output.accept(O2_TANK.get());
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());
+                        output.accept(EMERGENCY_O2_CARTRIDGE.get());
                         output.accept(SULFUR_LAVA_BUCKET.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
