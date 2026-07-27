@@ -179,6 +179,7 @@ public class ArchitectEntity extends Monster {
     @Nullable
     private ServerBossEvent masterBossEvent;
     private boolean masterBossBarEmptyOverride;
+    private boolean masterBossBarProvoked;
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
@@ -1708,12 +1709,17 @@ public class ArchitectEntity extends Monster {
         if (!isMasterArchitectVisual()) {
             return;
         }
+        masterBossBarProvoked = provoked;
         if (masterBossEvent == null && !provoked) {
             return;
         }
         ServerBossEvent bossEvent = getOrCreateMasterBossEvent();
         bossEvent.setProgress(masterBossBarProgress());
         bossEvent.setVisible(provoked);
+    }
+
+    public boolean isMasterFightActive() {
+        return isMasterArchitectVisual() && masterBossBarProvoked;
     }
 
     void setMasterBossBarEmptyOverride(boolean empty) {

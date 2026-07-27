@@ -94,6 +94,7 @@ public final class HearthMasterArchitectWeatherManager {
                 major, data.relationship(player.getUUID()), phase, progress);
         float strength = strengthFor(player, data, major, phase, progress);
         int auraTier = auraTierFor(player.serverLevel(), major);
+        boolean fightActive = fightActiveFor(player.serverLevel(), major);
         int aftermathTicks = major.masterStormAftermathActive()
                 ? aftermathElapsed(player.serverLevel(), major) : 0;
         String aftermath = major.masterStormAftermathActive()
@@ -115,6 +116,7 @@ public final class HearthMasterArchitectWeatherManager {
                 + " bound=" + yesNo(major.masterArchitectEntityId().isPresent())
                 + " distance=" + String.format(Locale.ROOT, "%.1f", Math.sqrt(dx * dx + dz * dz))
                 + " auraTier=" + auraTier
+                + " fight=" + yesNo(fightActive)
                 + " strength=" + String.format(Locale.ROOT, "%.3f", strength);
     }
 
@@ -241,6 +243,7 @@ public final class HearthMasterArchitectWeatherManager {
             return new AuraSnapshot(
                     localStrength * stormScale,
                     tier,
+                    true,
                     major.center(),
                     true,
                     elapsed,
@@ -249,10 +252,22 @@ public final class HearthMasterArchitectWeatherManager {
                     false);
         }
         int tier = auraTierFor(level, major);
+        boolean fightActive = fightActiveFor(level, major);
         float strength = strengthFor(player, data, major, phase, progress);
         return new AuraSnapshot(
-                strength, tier, major.center(), tier > 0,
+                strength, tier, fightActive, major.center(), tier > 0,
                 0, 0, 0.0F, major.hearthStormDead());
+    }
+
+    private static boolean fightActiveFor(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
+        if (major == null || major.masterArchitectEntityId().isEmpty()) {
+            return false;
+        }
+        var loaded = level.getEntity(major.masterArchitectEntityId().orElseThrow());
+        return loaded instanceof ArchitectEntity architect
+                && architect.isHearthMasterArchitect()
+                && architect.isMasterFightActive();
     }
 
     private static int auraTierFor(
@@ -546,6 +561,7 @@ public final class HearthMasterArchitectWeatherManager {
         return previous != null
                 && Math.abs(previous.strength() - current.strength()) < RESEND_EPSILON
                 && previous.tier() == current.tier()
+                && previous.fightActive() == current.fightActive()
                 && previous.anchored() == current.anchored()
                 && previous.center().equals(current.center())
                 && previous.aftermathTicks() == current.aftermathTicks()
@@ -566,6 +582,7 @@ public final class HearthMasterArchitectWeatherManager {
     private record AuraSnapshot(
             float strength,
             int tier,
+            boolean fightActive,
             BlockPos center,
             boolean anchored,
             int aftermathTicks,
@@ -574,13 +591,13 @@ public final class HearthMasterArchitectWeatherManager {
             boolean hearthStormDead) {
         private static AuraSnapshot inactive() {
             return new AuraSnapshot(
-                    0.0F, 0, BlockPos.ZERO, false,
+                    0.0F, 0, false, BlockPos.ZERO, false,
                     0, 0, 0.0F, false);
         }
 
         private MasterArchitectWeatherPayload payload() {
             return new MasterArchitectWeatherPayload(
-                    strength, tier, center, anchored,
+                    strength, tier, fightActive, center, anchored,
                     aftermathTicks, aftermathDurationTicks,
                     aftermathStrength, hearthStormDead);
         }

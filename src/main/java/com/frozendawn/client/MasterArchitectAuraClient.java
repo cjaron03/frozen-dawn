@@ -204,6 +204,7 @@ public final class MasterArchitectAuraClient {
         tickHum(tier, proximity, aftermathStage);
         tickAmbientParticles(level, tier, proximity);
         tickAftermathParticles(level, aftermathStage);
+        MasterArchitectSkyFaceRenderer.tick();
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -250,6 +251,13 @@ public final class MasterArchitectAuraClient {
             renderMindRift(event);
         }
         if (collapseTicks > 0) {
+            MasterArchitectSkyFaceRenderer.render(
+                    event,
+                    collapseCenter,
+                    MasterArchitectAuraTier.FIGHT,
+                    true,
+                    collapseTicks,
+                    collapseStrength);
             renderStormColumn(
                     event,
                     collapseCenter,
@@ -260,6 +268,13 @@ public final class MasterArchitectAuraClient {
             float visualTier = Math.max(
                     MasterArchitectAuraTier.PASSIVE,
                     MasterArchitectWeather.getVisualAuraTier());
+            MasterArchitectSkyFaceRenderer.render(
+                    event,
+                    MasterArchitectWeather.getHearthCenter(),
+                    MasterArchitectWeather.getAuraTier(),
+                    MasterArchitectWeather.isFightActive(),
+                    0,
+                    0.0F);
             renderStormColumn(
                     event,
                     MasterArchitectWeather.getHearthCenter(),
@@ -740,9 +755,10 @@ public final class MasterArchitectAuraClient {
                 + collapseProgress * 0.42D;
         double centerDx = player.x - center.x;
         double centerDz = player.z - center.z;
-        float nearWeight = MasterArchitectEyeWallPolicy.nearParticleWeight(
-                Math.sqrt(centerDx * centerDx + centerDz * centerDz));
-        if (nearWeight <= 0.001F) {
+        double observerDistance = Math.sqrt(centerDx * centerDx + centerDz * centerDz);
+        float particleWeight = MasterArchitectEyeWallPolicy.observerParticleWeight(
+                observerDistance);
+        if (particleWeight <= 0.001F) {
             eyeWallParticleWarmupTicks = 0;
             return;
         }
@@ -752,7 +768,7 @@ public final class MasterArchitectAuraClient {
         int requested = Math.max(1, Mth.floor(
                 Mth.lerp(tierProgress, 11.0F, 24.0F)
                         * density * Mth.lerp(proximity, 0.58F, 1.0F)
-                        * fade * nearWeight));
+                        * fade * particleWeight));
         int spawned = 0;
         int attempts = requested * 4;
         long time = level.getGameTime();
@@ -778,6 +794,13 @@ public final class MasterArchitectAuraClient {
             double angle = hash01(sequence * 73 + 17) * Math.PI * 2.0D
                     + time * Mth.lerp(tierProgress, 0.018D, 0.052D)
                     + (y - center.y) * Mth.lerp(tierProgress, 0.025D, 0.052D);
+            if (observerDistance > MasterArchitectEyeWallPolicy.NEAR_END_DISTANCE) {
+                double observerAngle = Math.atan2(centerDz, centerDx);
+                double cameraArc = (hash01(sequence * 73 + 17) - 0.5D) * 2.35D;
+                angle = observerAngle + cameraArc
+                        + time * Mth.lerp(tierProgress, 0.012D, 0.026D)
+                        + (y - center.y) * 0.018D;
+            }
             radius += Math.sin(time * 0.045D + sequence * 1.37D
                     + y * 0.12D) * Mth.lerp(tierProgress, 1.1D, 2.4D);
             Vec3 position = new Vec3(
@@ -1124,7 +1147,9 @@ public final class MasterArchitectAuraClient {
         float speed = Mth.lerp(tierProgress, 0.010F, 0.034F) * rotationScale;
         for (int index = 0; index < flakeCount; index++) {
             float seed = hash01(index * 47 + 23);
-            boolean eyeWall = hash01(index * 31 + 11) < 0.72F;
+            // Keep the same total quad budget, but give the vertical column enough
+            // of it to read as a supercell instead of a rounded fog bank.
+            boolean eyeWall = hash01(index * 31 + 11) < 0.50F;
             float verticalSpeed = Mth.lerp(
                     hash01(index * 19 + 3), 0.0009F, 0.0038F);
             float verticalPhase = Mth.frac(seed - (float) time * verticalSpeed);
@@ -1135,11 +1160,11 @@ public final class MasterArchitectAuraClient {
                 radius = width * Mth.lerp(
                         hash01(index * 59 + 29), 0.88F, 1.18F);
             } else {
-                float upper = verticalPhase * verticalPhase;
+                float upper = (float) Math.pow(verticalPhase, 0.72D);
                 y = eyeWallHeight + upper * Math.max(1.0F, height - eyeWallHeight);
-                float taper = Mth.lerp(upper, 1.0F, 0.52F);
+                float taper = Mth.lerp(upper, 1.0F, 0.44F);
                 radius = width * taper * Mth.lerp(
-                        hash01(index * 59 + 29), 0.74F, 1.22F);
+                        hash01(index * 59 + 29), 0.72F, 1.12F);
             }
             float direction = (index & 15) == 0 ? -0.38F : 1.0F;
             float angle = hash01(index * 73 + 17) * Mth.TWO_PI
@@ -1151,7 +1176,9 @@ public final class MasterArchitectAuraClient {
             float x = Mth.cos(angle) * radius;
             float z = Mth.sin(angle) * radius;
             float size = Mth.lerp(
-                    hash01(index * 37 + 13), 0.72F, 1.85F)
+                    hash01(index * 37 + 13),
+                    eyeWall ? 0.72F : 0.48F,
+                    eyeWall ? 1.70F : 1.18F)
                     * Mth.lerp(tierProgress, 0.92F, 1.20F);
             int alpha = Mth.clamp(Mth.floor(
                     Mth.lerp(hash01(index * 41 + 7), 74.0F, 164.0F)
@@ -1557,6 +1584,7 @@ public final class MasterArchitectAuraClient {
         eyeWallParticleWarmupTicks = 0;
         lastAftermathStage = MasterArchitectStormAftermathPolicy.Stage.COMPLETE;
         MasterArchitectEyeWallRenderer.clear();
+        MasterArchitectSkyFaceRenderer.clear();
     }
 
     private static final class DelayedThunder {

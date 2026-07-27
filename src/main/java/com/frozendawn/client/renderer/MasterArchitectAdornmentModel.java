@@ -173,12 +173,30 @@ public final class MasterArchitectAdornmentModel {
             int packedLight,
             int packedOverlay,
             int color) {
-        darkHead.render(poseStack, consumer, packedLight, packedOverlay, color);
+        renderCrownDark(poseStack, consumer, packedLight, packedOverlay, color);
         darkRightArm.render(poseStack, consumer, packedLight, packedOverlay, color);
         darkLeftArm.render(poseStack, consumer, packedLight, packedOverlay, color);
     }
 
     public void renderFrost(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            int packedLight,
+            int packedOverlay,
+            int color) {
+        renderCrownFrost(poseStack, consumer, packedLight, packedOverlay, color);
+    }
+
+    public void renderCrownDark(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            int packedLight,
+            int packedOverlay,
+            int color) {
+        darkHead.render(poseStack, consumer, packedLight, packedOverlay, color);
+    }
+
+    public void renderCrownFrost(
             PoseStack poseStack,
             VertexConsumer consumer,
             int packedLight,

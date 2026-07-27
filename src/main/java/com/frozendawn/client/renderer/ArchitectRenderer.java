@@ -53,14 +53,20 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         this.addLayer(this.masterAdornmentLayer);
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(ArchitectEntity entity) {
-        return isBlinking(entity) ? BLINK_TEXTURE : TEXTURE;
+    /** Shared by the distant sky face so it samples the exact live entity texture. */
+    public static ResourceLocation baseTexture() {
+        return TEXTURE;
     }
 
-    private boolean isBlinking(ArchitectEntity entity) {
-        int cycle = Math.floorMod(entity.tickCount + entity.getId() * 13, 97);
-        return cycle <= 1 || cycle == 41;
+    @Override
+    public ResourceLocation getTextureLocation(ArchitectEntity entity) {
+        return textureForBlinkCycle(entity.tickCount, entity.getId());
+    }
+
+    /** Shared so the distant sky head blinks with the physical Master's exact cadence. */
+    public static ResourceLocation textureForBlinkCycle(int tickCount, int seed) {
+        int cycle = Math.floorMod(tickCount + seed * 13, 97);
+        return cycle <= 1 || cycle == 41 ? BLINK_TEXTURE : TEXTURE;
     }
 
     @Override

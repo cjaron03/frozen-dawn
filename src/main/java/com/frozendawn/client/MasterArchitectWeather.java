@@ -23,6 +23,7 @@ public final class MasterArchitectWeather {
     private static float targetStrength;
     private static float currentStrength;
     private static int auraTier;
+    private static boolean fightActive;
     private static float visualAuraTier;
     private static BlockPos hearthCenter = BlockPos.ZERO;
     private static boolean anchored;
@@ -42,6 +43,7 @@ public final class MasterArchitectWeather {
         suppressedForDeath = false;
         targetStrength = Mth.clamp(payload.strength(), 0.0F, 1.0F);
         auraTier = Mth.clamp(payload.auraTier(), 0, 3);
+        fightActive = payload.fightActive();
         hearthCenter = payload.hearthCenter().immutable();
         anchored = payload.anchored();
         if (initialAnchor) {
@@ -91,6 +93,10 @@ public final class MasterArchitectWeather {
         return auraTier;
     }
 
+    public static boolean isFightActive() {
+        return fightActive;
+    }
+
     public static float getVisualAuraTier() {
         return visualAuraTier;
     }
@@ -123,6 +129,7 @@ public final class MasterArchitectWeather {
         targetStrength = 0.0F;
         currentStrength = 0.0F;
         auraTier = 0;
+        fightActive = false;
         visualAuraTier = 0.0F;
         anchored = false;
         suppressedForDeath = true;
@@ -132,6 +139,7 @@ public final class MasterArchitectWeather {
         targetStrength = 0.0F;
         currentStrength = 0.0F;
         auraTier = 0;
+        fightActive = false;
         visualAuraTier = 0.0F;
         hearthCenter = BlockPos.ZERO;
         anchored = false;

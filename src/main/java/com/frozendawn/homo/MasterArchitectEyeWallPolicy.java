@@ -11,6 +11,8 @@ public final class MasterArchitectEyeWallPolicy {
     public static final float NEAR_END_DISTANCE = 64.0F;
     public static final float FAR_START_DISTANCE = 104.0F;
     public static final float FAR_FULL_DISTANCE = 128.0F;
+    private static final float OBSERVER_PARTICLE_END_DISTANCE = 176.0F;
+    private static final float OBSERVER_PARTICLE_WEIGHT = 0.26F;
     private static final float NEAR_BATCHED_SHELL_WEIGHT = 0.55F;
     private static final float OPEN_EYE_FOG_FLOOR = 0.18F;
 
@@ -113,6 +115,16 @@ public final class MasterArchitectEyeWallPolicy {
     public static float nearParticleWeight(double horizontalDistance) {
         return 1.0F - smoothRange(
                 horizontalDistance, NEAR_FULL_DISTANCE, NEAR_END_DISTANCE);
+    }
+
+    /** Sparse live flakes keep the batched wall visibly stormy from observation range. */
+    public static float observerParticleWeight(double horizontalDistance) {
+        float near = nearParticleWeight(horizontalDistance);
+        if (near > 0.0F) {
+            return near;
+        }
+        return OBSERVER_PARTICLE_WEIGHT * (1.0F - smoothRange(
+                horizontalDistance, FAR_FULL_DISTANCE, OBSERVER_PARTICLE_END_DISTANCE));
     }
 
     public static float midRenderWeight(double horizontalDistance) {

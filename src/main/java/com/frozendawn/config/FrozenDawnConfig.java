@@ -80,6 +80,13 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_FLASH_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_PARTICLE_DENSITY;
+    public static final ModConfigSpec.BooleanValue ENABLE_MASTER_SKY_FACE;
+    public static final ModConfigSpec.DoubleValue MASTER_SKY_FACE_OPACITY;
+    public static final ModConfigSpec.DoubleValue MASTER_SKY_FACE_SCALE;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_GAZE_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_IN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_OUT_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_RENDER_DISTANCE;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
@@ -345,6 +352,28 @@ public class FrozenDawnConfig {
         MASTER_AURA_PARTICLE_DENSITY = BUILDER
                 .comment("Scales visual-only Master aura particles without changing mechanics.")
                 .defineInRange("masterAuraParticleDensity", 1.0D, 0.0D, 1.0D);
+        ENABLE_MASTER_SKY_FACE = BUILDER
+                .comment("Render the distant Master Architect face above an awakened Major Hearth.")
+                .define("enableMasterSkyFace", true);
+        MASTER_SKY_FACE_OPACITY = BUILDER
+                .comment("Maximum opacity of the Master Architect sky face.")
+                .defineInRange("masterSkyFaceOpacity", 0.82D, 0.0D, 1.0D);
+        MASTER_SKY_FACE_SCALE = BUILDER
+                .comment("Scale of the Master Architect sky face beacon.")
+                .defineInRange("masterSkyFaceScale", 1.0D, 0.25D, 3.0D);
+        MASTER_SKY_FACE_GAZE_SECONDS = BUILDER
+                .comment("Average seconds between rare sky-face glances toward the player.")
+                .defineInRange("masterSkyFaceGazeSeconds", 55, 10, 600);
+        MASTER_SKY_FACE_FADE_IN_SECONDS = BUILDER
+                .comment("Seconds for newly awakened sky-face features to fully resolve.")
+                .defineInRange("masterSkyFaceFadeInSeconds", 90, 5, 300);
+        MASTER_SKY_FACE_FADE_OUT_SECONDS = BUILDER
+                .comment("Seconds for sky-face features to recede after de-escalation.")
+                .defineInRange("masterSkyFaceFadeOutSeconds", 120, 5, 600);
+        MASTER_SKY_FACE_RENDER_DISTANCE = BUILDER
+                .comment("Maximum horizontal distance for the sky-face beacon.",
+                        "It recedes with true distance and fades near the configured boundary.")
+                .defineInRange("masterSkyFaceRenderDistance", 2500, 128, 8000);
         ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
                 .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
                 .define("enableSuitPunctureOverlay", true);

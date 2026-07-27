@@ -86,6 +86,17 @@ class MasterArchitectEyeWallPolicyTest {
     }
 
     @Test
+    void sparseObserverFlakesBridgeTheBatchedWallAtMidDistance() {
+        assertEquals(1.0F,
+                MasterArchitectEyeWallPolicy.observerParticleWeight(48.0D),
+                0.0001F);
+        assertTrue(MasterArchitectEyeWallPolicy.observerParticleWeight(96.0D) > 0.0F);
+        assertEquals(0.0F,
+                MasterArchitectEyeWallPolicy.observerParticleWeight(176.0D),
+                0.0001F);
+    }
+
+    @Test
     void batchedWallCoversTheNearParticleWarmup() {
         assertEquals(1.0F,
                 MasterArchitectEyeWallPolicy.batchedRenderWeight(20.0D, 0.0F),

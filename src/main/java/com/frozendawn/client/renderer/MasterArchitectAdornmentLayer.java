@@ -22,8 +22,19 @@ public final class MasterArchitectAdornmentLayer
         extends RenderLayer<ArchitectEntity, ArchitectModel> {
     private static final ResourceLocation WHITE_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    private static final int DARK_COLOR = FastColor.ARGB32.color(255, 16, 27, 36);
-    private static final int FROST_COLOR = FastColor.ARGB32.color(255, 159, 203, 208);
+    public static final int CROWN_DARK_RED = 16;
+    public static final int CROWN_DARK_GREEN = 27;
+    public static final int CROWN_DARK_BLUE = 36;
+    public static final int CROWN_FROST_RED = 159;
+    public static final int CROWN_FROST_GREEN = 203;
+    public static final int CROWN_FROST_BLUE = 208;
+    public static final int CROWN_GLOW_RED = 111;
+    public static final int CROWN_GLOW_GREEN = 235;
+    public static final int CROWN_GLOW_BLUE = 244;
+    private static final int DARK_COLOR = FastColor.ARGB32.color(
+            255, CROWN_DARK_RED, CROWN_DARK_GREEN, CROWN_DARK_BLUE);
+    private static final int FROST_COLOR = FastColor.ARGB32.color(
+            255, CROWN_FROST_RED, CROWN_FROST_GREEN, CROWN_FROST_BLUE);
 
     private final MasterArchitectAdornmentModel adornments;
 
@@ -81,7 +92,8 @@ public final class MasterArchitectAdornmentLayer
                 glow,
                 LightTexture.FULL_BRIGHT,
                 overlay,
-                FastColor.ARGB32.color(crownAlpha, 111, 235, 244));
+                FastColor.ARGB32.color(
+                        crownAlpha, CROWN_GLOW_RED, CROWN_GLOW_GREEN, CROWN_GLOW_BLUE));
 
         int mindAction = entity.getMasterCombatAction();
         if (entity.isMasterMindCopy()
