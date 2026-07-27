@@ -12,6 +12,8 @@ import java.util.Map;
  * Deterministic Stage 1 scene: remembered domestic objects without a shelter.
  */
 public final class TraceHearthLayout {
+    private static final int FOUNDATION_SUPPORT_DEPTH = 8;
+
     private TraceHearthLayout() {
     }
 
@@ -99,6 +101,11 @@ public final class TraceHearthLayout {
 
     private static void addFoundation(Map<BlockPos, HearthStructurePlacement> placements,
                                       int x, int z, int turns) {
+        for (int depth = 2; depth <= FOUNDATION_SUPPORT_DEPTH; depth++) {
+            put(placements, HearthStructurePiece.FOUNDATION_SUPPORT, x, -depth, z,
+                    Direction.NORTH, 0,
+                    HearthStructurePlacement.Protection.NONE, turns);
+        }
         put(placements, HearthStructurePiece.PACKED_ICE_LOWER, x, -1, z,
                 Direction.NORTH, 0, HearthStructurePlacement.Protection.NONE, turns);
         put(placements, HearthStructurePiece.CLEAR_PLATFORM, x, 0, z,

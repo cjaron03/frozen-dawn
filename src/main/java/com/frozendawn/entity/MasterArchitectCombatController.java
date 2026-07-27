@@ -111,7 +111,7 @@ final class MasterArchitectCombatController {
         this.floodController = new MasterArchitectFloodController(architect, this);
     }
 
-    void tick(ServerLevel level, ServerPlayer target) {
+    void tick(ServerLevel level, ServerPlayer target, @Nullable BlockPos boundaryCenter) {
         refreshPhaseFromHealth(true);
         if (combatPhase == MasterArchitectCombatPhase.FLOOD) {
             prepareFloodOwnership(level);
@@ -176,7 +176,7 @@ final class MasterArchitectCombatController {
         }
 
         if (combatPhase == MasterArchitectCombatPhase.CONSTRUCTION
-                && constructionController.seekVantage(level)) {
+                && constructionController.seekVantage(level, boundaryCenter)) {
             return;
         }
 
@@ -221,7 +221,7 @@ final class MasterArchitectCombatController {
             return;
         }
 
-        maneuver(target, distanceSquared);
+        maneuver(target, distanceSquared, boundaryCenter);
     }
 
     void leaveCombat(ServerLevel level) {
@@ -1363,7 +1363,10 @@ final class MasterArchitectCombatController {
                 column.weakCenter ? 0.72F : 0.56F);
     }
 
-    private void maneuver(ServerPlayer target, double distanceSquared) {
+    private void maneuver(
+            ServerPlayer target,
+            double distanceSquared,
+            @Nullable BlockPos boundaryCenter) {
         double distance = Math.sqrt(distanceSquared);
         boolean spellReadySoon = sharedSpellCooldown <= 20
                 && (continuityCooldown <= 20 || thermalCooldown <= 20);
@@ -1379,11 +1382,21 @@ final class MasterArchitectCombatController {
                 away = new Vec3(1.0D, 0.0D, 0.0D);
             }
             Vec3 destination = architect.position().add(away.normalize().scale(4.0D));
+            if (boundaryCenter != null) {
+                destination = com.frozendawn.homo.HearthMasterArchitectPolicy
+                        .clampToStormBoundary(boundaryCenter, destination);
+            }
             architect.getNavigation().moveTo(
                     destination.x, architect.getY(), destination.z, RETREAT_SPEED);
             return;
         }
-        architect.getNavigation().moveTo(target, APPROACH_SPEED);
+        Vec3 destination = target.position();
+        if (boundaryCenter != null) {
+            destination = com.frozendawn.homo.HearthMasterArchitectPolicy
+                    .clampToStormBoundary(boundaryCenter, destination);
+        }
+        architect.getNavigation().moveTo(
+                destination.x, destination.y, destination.z, APPROACH_SPEED);
     }
 
     private void emitBeam(

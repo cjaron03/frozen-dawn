@@ -29,6 +29,11 @@ class HearthReconciliationPolicyTest {
         assertEquals(ReturnedHearthSavedData.HearthStage.FORMED, minorPlan.stage());
         assertEquals(HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS,
                 minorPlan.footprintRadius());
+        assertEquals(HearthReconciliationPolicy.FORMED_MAX_SURFACE_VARIANCE,
+                minorPlan.maxSurfaceVariance());
+        org.junit.jupiter.api.Assertions.assertTrue(
+                majorPlan.maxSurfaceVariance() > 2,
+                "Hearths should tolerate ordinary sloped terrain");
     }
 
     @Test

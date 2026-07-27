@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.minecraft.world.phys.Vec3;
 
 class HearthMasterArchitectPolicyTest {
 
@@ -58,6 +59,19 @@ class HearthMasterArchitectPolicyTest {
                 HearthMasterArchitectPolicy.maxHealthForPreset("custom"));
         assertEquals(12.0D, HearthMasterArchitectPolicy.ARMOR);
         assertEquals(1.0D, HearthMasterArchitectPolicy.KNOCKBACK_RESISTANCE);
+    }
+
+    @Test
+    void combatDestinationsNeverLeaveTheStormEye() {
+        BlockPos center = new BlockPos(100, 70, -40);
+        Vec3 outside = center.getCenter().add(80.0D, 0.0D, 0.0D);
+        Vec3 clamped = HearthMasterArchitectPolicy.clampToStormBoundary(center, outside);
+
+        assertFalse(HearthMasterArchitectPolicy.isInsideStormBoundary(center, outside));
+        assertTrue(HearthMasterArchitectPolicy.isInsideStormBoundary(center, clamped));
+        assertEquals(HearthMasterArchitectPolicy.STORM_BOUNDARY_RADIUS,
+                Math.sqrt(clamped.subtract(center.getCenter()).horizontalDistanceSqr()),
+                0.0001D);
     }
 
     private static ReturnedHearthSavedData selectedState() {

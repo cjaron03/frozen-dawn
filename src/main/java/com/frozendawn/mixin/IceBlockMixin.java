@@ -31,7 +31,8 @@ public abstract class IceBlockMixin {
     @Inject(method = "melt", at = @At("HEAD"), cancellable = true)
     private void frozendawn$preventLatePhaseIceMelt(BlockState state, Level level, BlockPos pos, CallbackInfo ci) {
         if (!frozendawn$shouldBreakDry(level)) return;
-        level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        // Late-phase ice is permanent terrain. Replacing vanilla melt output with
+        // air punched random one-block holes through frozen lakes and oceans.
         ci.cancel();
     }
 

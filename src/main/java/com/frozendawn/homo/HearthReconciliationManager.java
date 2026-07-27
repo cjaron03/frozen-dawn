@@ -63,6 +63,7 @@ public final class HearthReconciliationManager {
     private static final int SURFACE_CANDIDATES_PER_TICK = 6;
     private static final long SURFACE_RETRY_DELAY_TICKS = 200L;
     private static final int STRUCTURE_CLEARANCE_RADIUS = 96;
+    private static final int SURFACE_SCAN_DEPTH = 48;
     private static final int SET_BLOCK_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private static final Set<UUID> pending = ConcurrentHashMap.newKeySet();
@@ -118,11 +119,11 @@ public final class HearthReconciliationManager {
                 removePending(id);
                 continue;
             }
-            waitReasons.remove(id);
             if (retryAfter.getOrDefault(id, 0L) > gameTime) {
-                waitReasons.put(id, "retry");
+                waitReasons.putIfAbsent(id, "retry");
                 continue;
             }
+            waitReasons.remove(id);
 
             HearthReconciliationPolicy.StructurePlan plan =
                     HearthReconciliationPolicy.desiredPlan(hearth);
@@ -198,7 +199,9 @@ public final class HearthReconciliationManager {
                         break;
                     }
                     if (!canReplace(level, target, existing, placement)) {
-                        if (isClearancePiece(placement.piece())) {
+                        if (isClearancePiece(placement.piece())
+                                || isOptionalTerrainDecoration(placement.piece())
+                                && isNaturalSettlementObstruction(existing)) {
                             cursor++;
                             pieces++;
                             continue;
@@ -430,7 +433,7 @@ public final class HearthReconciliationManager {
         for (HearthStructurePlacement placement : layout) {
             BlockPos pos = center.offset(placement.offset());
             BlockState state = level.getBlockState(pos);
-            if (!allowsFluidReplacement(state, placement.piece())) {
+            if (!allowsFluidReplacement(state, placement)) {
                 return false;
             }
             if (placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT
@@ -446,7 +449,7 @@ public final class HearthReconciliationManager {
 
     private static boolean canReplace(ServerLevel level, BlockPos pos, BlockState state,
                                       HearthStructurePlacement placement) {
-        if (!allowsFluidReplacement(state, placement.piece())
+        if (!allowsFluidReplacement(state, placement)
                 || PlayerPlacedBlockTracker.get(level.getServer()).isPlayerPlaced(pos)
                 || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
                 || BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
@@ -464,6 +467,21 @@ public final class HearthReconciliationManager {
                 || state.getFluidState().getType() == Fluids.FLOWING_WATER);
     }
 
+    static boolean allowsFluidReplacement(BlockState state, HearthStructurePlacement placement) {
+        if (allowsFluidReplacement(state, placement.piece())) {
+            return true;
+        }
+        if (placement.offset().getY() != -1
+                || state.getFluidState().getType() != Fluids.WATER
+                && state.getFluidState().getType() != Fluids.FLOWING_WATER) {
+            return false;
+        }
+        return switch (placement.piece()) {
+            case PACKED_ICE_LOWER, FROZEN_PLANKS, FROZEN_STONE_BRICKS -> true;
+            default -> false;
+        };
+    }
+
     static boolean needsPlacement(BlockState existing, BlockState desired) {
         return !existing.equals(desired);
     }
@@ -475,8 +493,13 @@ public final class HearthReconciliationManager {
         };
     }
 
-    private static boolean canReplaceNatural(BlockState state,
-                                             HearthStructurePlacement placement) {
+    static boolean isOptionalTerrainDecoration(HearthStructurePiece piece) {
+        return piece == HearthStructurePiece.SNOW_MARKER
+                || piece == HearthStructurePiece.FROZEN_ATMOSPHERE;
+    }
+
+    static boolean canReplaceNatural(BlockState state,
+                                     HearthStructurePlacement placement) {
         if (placement.piece() == HearthStructurePiece.FOUNDATION_SUPPORT) {
             return allowsFluidReplacement(state, placement.piece());
         }
@@ -504,17 +527,7 @@ public final class HearthReconciliationManager {
             return true;
         }
         if (placement.offset().getY() == -1) {
-            return state.canBeReplaced()
-                    || state.is(BlockTags.BASE_STONE_OVERWORLD)
-                    || state.is(BlockTags.DIRT)
-                    || state.is(Blocks.SNOW_BLOCK)
-                    || state.is(Blocks.ICE)
-                    || state.is(Blocks.PACKED_ICE)
-                    || state.is(Blocks.BLUE_ICE)
-                    || state.is(ModBlocks.DEAD_GRASS_BLOCK.get())
-                    || state.is(ModBlocks.FROZEN_DIRT.get())
-                    || state.is(ModBlocks.FROZEN_SAND.get())
-                    || state.is(ModBlocks.FROZEN_COBBLESTONE.get());
+            return state.canBeReplaced() || isNaturalSettlementObstruction(state);
         }
         return state.isAir() || state.canBeReplaced();
     }
@@ -586,7 +599,7 @@ public final class HearthReconciliationManager {
 
     private static int stableSurfaceHeight(ServerLevel level, int x, int z) {
         int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-        int floor = Math.max(level.getMinBuildHeight(), top - 12);
+        int floor = Math.max(level.getMinBuildHeight(), top - SURFACE_SCAN_DEPTH);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int y = top; y >= floor; y--) {
             cursor.set(x, y, z);

@@ -35,6 +35,8 @@ final class ArchitectHearthMasterController {
     /** @return always true because the Master never falls through to ordinary Architect AI. */
     boolean tick(ServerLevel level) {
         combatController.tickPersistentState(level);
+        BlockPos boundaryCenter = hearthBoundaryCenter(level);
+        enforceStormBoundary(boundaryCenter);
         if (combatController.isMindSessionActive()) {
             updateAuraTier(level, MasterArchitectAuraTier.FIGHT);
             architect.setMasterBossBarProvoked(true);
@@ -57,7 +59,8 @@ final class ArchitectHearthMasterController {
                             level, hearthId, hostileTarget));
             architect.setMasterBossBarProvoked(true);
             patrolCooldown = 0;
-            combatController.tick(level, hostileTarget);
+            combatController.tick(level, hostileTarget, boundaryCenter);
+            enforceStormBoundary(boundaryCenter);
             if (!combatMusicActive) {
                 MasterArchitectFightMusicManager.pushStage(
                         level, architect, combatController.musicStage());
@@ -227,6 +230,27 @@ final class ArchitectHearthMasterController {
         }
         architect.getNavigation().moveTo(
                 center.x + offset.x, home.getY(), center.z + offset.z, speed);
+    }
+
+    @Nullable
+    private BlockPos hearthBoundaryCenter(ServerLevel level) {
+        return architect.getHearthMasterArchitectId()
+                .flatMap(id -> ReturnedHearthSavedData.get(level.getServer()).hearth(id))
+                .map(ReturnedHearthSavedData.HearthRecord::center)
+                .orElseGet(() -> architect.getHearthMasterArchitectHome().orElse(null));
+    }
+
+    private void enforceStormBoundary(@Nullable BlockPos center) {
+        if (center == null
+                || HearthMasterArchitectPolicy.isInsideStormBoundary(
+                        center, architect.position())) {
+            return;
+        }
+        Vec3 clamped = HearthMasterArchitectPolicy.clampToStormBoundary(
+                center, architect.position());
+        architect.getNavigation().stop();
+        architect.setDeltaMovement(0.0D, architect.getDeltaMovement().y, 0.0D);
+        architect.setPos(clamped.x, clamped.y, clamped.z);
     }
 
     private int peacefulAuraTier(ServerLevel level) {

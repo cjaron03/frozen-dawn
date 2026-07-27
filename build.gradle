@@ -41,6 +41,7 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             if (enableEnhancedClassRedefinition) {
                 jvmArgument '-XX:+AllowEnhancedClassRedefinition'
             }
@@ -49,6 +50,7 @@ neoForge {
         clientDebug {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006'
             if (enableEnhancedClassRedefinition) {
                 jvmArgument '-XX:+AllowEnhancedClassRedefinition'

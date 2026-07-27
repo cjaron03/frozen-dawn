@@ -6,6 +6,7 @@ import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectConstructionPolicy;
+import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.mixin.BlockDisplayAccessor;
 import com.frozendawn.mixin.DisplayAccessor;
 import com.frozendawn.world.HeaterRegistry;
@@ -33,6 +34,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -295,11 +298,18 @@ final class MasterArchitectConstructionController {
         return staggerTicks;
     }
 
-    boolean seekVantage(ServerLevel level) {
+    boolean seekVantage(ServerLevel level, @Nullable BlockPos boundaryCenter) {
         if (vantageTarget == null || level.getGameTime() > vantageSeekUntil) {
             return false;
         }
         Vec3 destination = Vec3.atBottomCenterOf(vantageTarget);
+        if (boundaryCenter != null
+                && !HearthMasterArchitectPolicy.isInsideStormBoundary(
+                        boundaryCenter, destination)) {
+            vantageTarget = null;
+            vantageSeekUntil = -1L;
+            return false;
+        }
         if (architect.position().distanceToSqr(destination) <= 2.25D) {
             vantageTarget = null;
             vantageSeekUntil = -1L;

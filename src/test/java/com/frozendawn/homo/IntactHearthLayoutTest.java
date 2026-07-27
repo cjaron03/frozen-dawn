@@ -73,7 +73,7 @@ class IntactHearthLayoutTest {
                 assertTrue(Math.abs(placement.offset().getZ())
                                 <= HearthReconciliationPolicy.INTACT_FOOTPRINT_RADIUS,
                         () -> "z outside footprint: " + placement.offset());
-                assertTrue(placement.offset().getY() >= -10
+                assertTrue(placement.offset().getY() >= -16
                                 && placement.offset().getY() <= 5,
                         () -> "y outside authored volume: " + placement.offset());
                 reachedOuterSettlement |= Math.abs(placement.offset().getX()) >= 20

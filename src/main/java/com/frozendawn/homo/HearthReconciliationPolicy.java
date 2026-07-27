@@ -11,16 +11,17 @@ import java.util.List;
  * Pure reconciliation rules shared by the runtime and tests.
  */
 public final class HearthReconciliationPolicy {
-    public static final int TRACE_PLAN_VERSION = 2;
-    public static final int FORMED_PLAN_VERSION = 8;
-    public static final int INTACT_PLAN_VERSION = 9;
+    public static final int TRACE_PLAN_VERSION = 3;
+    public static final int FORMED_PLAN_VERSION = 9;
+    public static final int INTACT_PLAN_VERSION = 10;
     public static final int TRACE_FOOTPRINT_RADIUS = 4;
     public static final int FORMED_FOOTPRINT_RADIUS = 5;
     public static final int INTACT_FOOTPRINT_RADIUS = 22;
     public static final int CANDIDATE_SEARCH_RADIUS = 48;
     public static final int CANDIDATE_STEP = 8;
-    public static final int MAX_SURFACE_VARIANCE = 2;
-    public static final int INTACT_MAX_SURFACE_VARIANCE = 8;
+    public static final int TRACE_MAX_SURFACE_VARIANCE = 8;
+    public static final int FORMED_MAX_SURFACE_VARIANCE = 8;
+    public static final int INTACT_MAX_SURFACE_VARIANCE = 16;
 
     private static final long SURFACE_SEARCH_SALT = 0x54524143455F3031L;
 
@@ -57,13 +58,13 @@ public final class HearthReconciliationPolicy {
             return new StructurePlan(FORMED_PLAN_VERSION,
                     ReturnedHearthSavedData.HearthStage.FORMED,
                     FORMED_FOOTPRINT_RADIUS,
-                    MAX_SURFACE_VARIANCE);
+                    FORMED_MAX_SURFACE_VARIANCE);
         }
         if (hearth.stage().ordinal() >= ReturnedHearthSavedData.HearthStage.TRACE.ordinal()) {
             return new StructurePlan(TRACE_PLAN_VERSION,
                     ReturnedHearthSavedData.HearthStage.TRACE,
                     TRACE_FOOTPRINT_RADIUS,
-                    MAX_SURFACE_VARIANCE);
+                    TRACE_MAX_SURFACE_VARIANCE);
         }
         return null;
     }
