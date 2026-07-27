@@ -57,6 +57,9 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.masterArchitectDefeated(), actual.masterArchitectDefeated());
             assertEquals(expected.masterArchitectDefeatedGameTime(),
                     actual.masterArchitectDefeatedGameTime());
+            assertEquals(expected.masterStormAftermathActive(),
+                    actual.masterStormAftermathActive());
+            assertEquals(expected.hearthStormDead(), actual.hearthStormDead());
         }
     }
 
@@ -441,6 +444,21 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.masterArchitectEntityId().isEmpty());
         assertTrue(restored.masterArchitectDefeated());
         assertEquals(5000L, restored.masterArchitectDefeatedGameTime());
+        UUID killer = UUID.randomUUID();
+        assertTrue(loaded.beginMasterArchitectStormAftermath(
+                restored.id(), 5070L, 0.75F, killer));
+
+        ReturnedHearthSavedData aftermathReload = ReturnedHearthSavedData.load(
+                loaded.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord active = major(aftermathReload);
+        assertTrue(active.masterStormAftermathActive());
+        assertEquals(5070L, active.masterStormAftermathStartGameTime());
+        assertEquals(0.75F, active.masterStormAftermathStrength());
+        assertEquals(killer, active.masterStormAftermathKillerId().orElseThrow());
+        assertFalse(active.hearthStormDead());
+        assertTrue(aftermathReload.completeMasterArchitectStormAftermath(active.id()));
+        assertTrue(active.hearthStormDead());
+        assertFalse(active.masterStormAftermathActive());
         assertFalse(loaded.bindMasterArchitect(restored.id(), replacement));
         assertTrue(loaded.initializeCombatRoster(restored.id(), Map.of(
                 UUID.randomUUID(), HearthEncounterRole.DISPATCHED)));

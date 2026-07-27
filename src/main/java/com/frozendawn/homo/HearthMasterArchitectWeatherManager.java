@@ -1,5 +1,6 @@
 package com.frozendawn.homo;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.ArchitectEntity;
@@ -7,6 +8,7 @@ import com.frozendawn.entity.MasterArchitectLightningEntity;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.network.MasterArchitectAuraEventPayload;
 import com.frozendawn.network.MasterArchitectWeatherPayload;
+import com.frozendawn.event.WorldTickHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,6 +45,12 @@ public final class HearthMasterArchitectWeatherManager {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         ReturnedHearthSavedData.HearthRecord major = data
                 .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        MasterArchitectStormDebrisManager.tick(
+                level,
+                major,
+                major != null && major.masterStormAftermathActive()
+                        ? aftermathElapsed(level, major) : 0);
+        tickStormAftermath(level, data, major);
         tickAuraEvents(level, major);
         if (level.getGameTime()
                 % HearthMasterArchitectWeatherPolicy.SYNC_INTERVAL_TICKS != 0L) {
@@ -86,12 +94,24 @@ public final class HearthMasterArchitectWeatherManager {
                 major, data.relationship(player.getUUID()), phase, progress);
         float strength = strengthFor(player, data, major, phase, progress);
         int auraTier = auraTierFor(player.serverLevel(), major);
+        int aftermathTicks = major.masterStormAftermathActive()
+                ? aftermathElapsed(player.serverLevel(), major) : 0;
+        String aftermath = major.masterStormAftermathActive()
+                ? MasterArchitectStormAftermathPolicy.stage(
+                aftermathTicks, major.masterStormAftermathStrength())
+                .name().toLowerCase(Locale.ROOT)
+                + "@" + aftermathTicks + "/"
+                + MasterArchitectStormAftermathPolicy.timeline(
+                major.masterStormAftermathStrength()).completeTick()
+                : "inactive";
         double dx = player.getX() - (major.center().getX() + 0.5D);
         double dz = player.getZ() - (major.center().getZ() + 0.5D);
         return "eligible=" + yesNo(eligible)
                 + " relationship="
                 + data.relationship(player.getUUID()).name().toLowerCase(Locale.ROOT)
                 + " defeated=" + yesNo(major.masterArchitectDefeated())
+                + " stormDead=" + yesNo(major.hearthStormDead())
+                + " aftermath=" + aftermath
                 + " bound=" + yesNo(major.masterArchitectEntityId().isPresent())
                 + " distance=" + String.format(Locale.ROOT, "%.1f", Math.sqrt(dx * dx + dz * dz))
                 + " auraTier=" + auraTier
@@ -110,22 +130,24 @@ public final class HearthMasterArchitectWeatherManager {
         lastSentGameTime.clear();
         nextStrikeGameTime.clear();
         nextArcGameTime.clear();
+        MasterArchitectStormDebrisManager.reset();
         packetsSent = 0L;
     }
 
-    /** Immediately clears the defeated Master's aura for every overworld listener. */
-    public static void onMasterDefeated(ServerLevel level, UUID hearthId) {
+    /** Starts the staged sky collapse without clearing the storm at the moment of death. */
+    public static void onMasterDefeated(
+            ServerLevel level, UUID hearthId, float fieldStrength) {
         nextStrikeGameTime.remove(hearthId);
         nextArcGameTime.remove(hearthId);
-        AuraSnapshot inactive = AuraSnapshot.inactive();
-        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
-            if (player.level().dimension() != level.dimension()) {
-                continue;
-            }
-            PacketDistributor.sendToPlayer(player, inactive.payload());
-            lastSentState.put(player.getUUID(), inactive);
-            lastSentGameTime.put(player.getUUID(), level.getGameTime());
-            packetsSent++;
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(hearthId).orElse(null);
+        if (hearth != null) {
+            broadcastAuraEvent(
+                    level,
+                    MasterArchitectAuraEventPayload.DEATH_COLLAPSE,
+                    hearth.center().above(128),
+                    hearth.center(),
+                    fieldStrength);
         }
     }
 
@@ -201,13 +223,49 @@ public final class HearthMasterArchitectWeatherManager {
         if (player.level().dimension() != Level.OVERWORLD || major == null) {
             return AuraSnapshot.inactive();
         }
+        if (major.masterStormAftermathActive()) {
+            int elapsed = aftermathElapsed(level, major);
+            MasterArchitectStormAftermathPolicy.Timeline timeline =
+                    MasterArchitectStormAftermathPolicy.timeline(
+                            major.masterStormAftermathStrength());
+            MasterArchitectStormAftermathPolicy.Stage stage =
+                    MasterArchitectStormAftermathPolicy.stage(
+                            elapsed, major.masterStormAftermathStrength());
+            float localStrength = HearthMasterArchitectWeatherPolicy.strength(
+                    major.center(), player.position());
+            float stormScale = aftermathStormScale(
+                    elapsed, major.masterStormAftermathStrength(), timeline, stage);
+            int tier = stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                    || stage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE
+                    ? MasterArchitectAuraTier.NONE : MasterArchitectAuraTier.FIGHT;
+            return new AuraSnapshot(
+                    localStrength * stormScale,
+                    tier,
+                    major.center(),
+                    true,
+                    elapsed,
+                    timeline.completeTick(),
+                    major.masterStormAftermathStrength(),
+                    false);
+        }
         int tier = auraTierFor(level, major);
         float strength = strengthFor(player, data, major, phase, progress);
-        return new AuraSnapshot(strength, tier, major.center(), tier > 0);
+        return new AuraSnapshot(
+                strength, tier, major.center(), tier > 0,
+                0, 0, 0.0F, major.hearthStormDead());
     }
 
     private static int auraTierFor(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
+        if (major != null && major.masterStormAftermathActive()) {
+            MasterArchitectStormAftermathPolicy.Stage stage =
+                    MasterArchitectStormAftermathPolicy.stage(
+                            aftermathElapsed(level, major),
+                            major.masterStormAftermathStrength());
+            return stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                    || stage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE
+                    ? MasterArchitectAuraTier.NONE : MasterArchitectAuraTier.FIGHT;
+        }
         if (major == null
                 || !HearthMasterArchitectPolicy.canHostMasterArchitect(major)
                 || major.masterArchitectEntityId().isEmpty()
@@ -243,6 +301,10 @@ public final class HearthMasterArchitectWeatherManager {
 
     private static void tickAuraEvents(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
+        if (major != null && major.masterStormAftermathActive()) {
+            tickAftermathAuraEvents(level, major);
+            return;
+        }
         int tier = auraTierFor(level, major);
         if (major == null || tier < MasterArchitectAuraTier.NOTICED) {
             if (major != null) {
@@ -275,6 +337,136 @@ public final class HearthMasterArchitectWeatherManager {
                     + level.random.nextInt(jitter * 2 + 1));
             nextArcGameTime.put(major.id(), now + seconds * 20L);
         }
+    }
+
+    private static void tickStormAftermath(
+            ServerLevel level,
+            ReturnedHearthSavedData data,
+            ReturnedHearthSavedData.HearthRecord major) {
+        if (major == null) {
+            return;
+        }
+        if (!major.masterStormAftermathActive()) {
+            grantDeferredDecoherence(level, data, major);
+            return;
+        }
+        int elapsed = aftermathElapsed(level, major);
+        MasterArchitectStormAftermathPolicy.Timeline timeline =
+                MasterArchitectStormAftermathPolicy.timeline(
+                        major.masterStormAftermathStrength());
+        if (elapsed < timeline.completeTick()) {
+            return;
+        }
+
+        if (data.completeMasterArchitectStormAftermath(major.id())) {
+            HearthCombatRosterManager.beginAftermathConvergence(
+                    level, major.id(), major.center());
+            nextStrikeGameTime.remove(major.id());
+            nextArcGameTime.remove(major.id());
+            FrozenDawn.LOGGER.info(
+                    "Master Architect storm aftermath completed at Major Hearth {}; "
+                            + "the Hearth sky is permanently clear",
+                    shortId(major.id()));
+        }
+        grantDeferredDecoherence(level, data, major);
+    }
+
+    private static void grantDeferredDecoherence(
+            ServerLevel level,
+            ReturnedHearthSavedData data,
+            ReturnedHearthSavedData.HearthRecord major) {
+        if (!major.hearthStormDead() || major.decoherenceGranted()) {
+            return;
+        }
+        UUID killerId = major.masterStormAftermathKillerId().orElse(null);
+        if (killerId == null) {
+            data.markDecoherenceGranted(major.id());
+            return;
+        }
+        ServerPlayer killer = level.getServer().getPlayerList().getPlayer(killerId);
+        if (killer == null) {
+            return;
+        }
+        WorldTickHandler.grantAdvancement(killer, "decoherence");
+        data.markDecoherenceGranted(major.id());
+    }
+
+    private static void tickAftermathAuraEvents(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
+        float fieldStrength = major.masterStormAftermathStrength();
+        if (fieldStrength <= 0.001F) {
+            return;
+        }
+        int elapsed = aftermathElapsed(level, major);
+        MasterArchitectStormAftermathPolicy.Stage stage =
+                MasterArchitectStormAftermathPolicy.stage(elapsed, fieldStrength);
+        switch (stage) {
+            case EYE -> {
+                if (elapsed % 24 == 0) {
+                    emitArc(level, major, MasterArchitectAuraTier.FIGHT);
+                }
+            }
+            case RUPTURE -> {
+                if (elapsed % 18 == 0) {
+                    emitLightning(level, major, MasterArchitectAuraTier.FIGHT);
+                }
+                if (elapsed % 7 == 0) {
+                    emitArc(level, major, MasterArchitectAuraTier.FIGHT);
+                }
+            }
+            case BASE_COLLAPSE -> {
+                if (elapsed % 12 == 0) {
+                    emitLightning(level, major, MasterArchitectAuraTier.FIGHT);
+                }
+                if (elapsed % 5 == 0) {
+                    emitArc(level, major, MasterArchitectAuraTier.FIGHT);
+                }
+                int pressureTick = MasterArchitectStormAftermathPolicy
+                        .timeline(fieldStrength).collapseEndTick() - 1;
+                if (elapsed == pressureTick) {
+                    broadcastAuraEvent(
+                            level,
+                            MasterArchitectAuraEventPayload.DEATH_PRESSURE_WAVE,
+                            major.center(), major.center(), fieldStrength);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private static int aftermathElapsed(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
+        return Mth.clamp(
+                (int) Math.max(0L, level.getGameTime()
+                        - major.masterStormAftermathStartGameTime()),
+                0, Integer.MAX_VALUE);
+    }
+
+    private static float aftermathStormScale(
+            int elapsed,
+            float fieldStrength,
+            MasterArchitectStormAftermathPolicy.Timeline timeline,
+            MasterArchitectStormAftermathPolicy.Stage stage) {
+        return switch (stage) {
+            case CORE, EYE -> 1.0F;
+            case RUPTURE -> Mth.lerp(
+                    Mth.clamp((elapsed - timeline.eyeEndTick())
+                            / (float) Math.max(1,
+                            timeline.ruptureEndTick() - timeline.eyeEndTick()),
+                            0.0F, 1.0F),
+                    1.0F, 0.55F);
+            case BASE_COLLAPSE -> Mth.lerp(
+                    Mth.clamp((elapsed - timeline.ruptureEndTick())
+                            / (float) Math.max(1,
+                            timeline.collapseEndTick() - timeline.ruptureEndTick()),
+                            0.0F, 1.0F),
+                    0.55F, 0.0F);
+            case FADE -> 1.0F - Mth.clamp(
+                    elapsed / (float) Math.max(1, timeline.collapseEndTick()),
+                    0.0F, 1.0F);
+            case STILLNESS, COMPLETE -> 0.0F;
+        };
     }
 
     private static void emitLightning(
@@ -355,22 +547,42 @@ public final class HearthMasterArchitectWeatherManager {
                 && Math.abs(previous.strength() - current.strength()) < RESEND_EPSILON
                 && previous.tier() == current.tier()
                 && previous.anchored() == current.anchored()
-                && previous.center().equals(current.center());
+                && previous.center().equals(current.center())
+                && previous.aftermathTicks() == current.aftermathTicks()
+                && previous.aftermathDurationTicks() == current.aftermathDurationTicks()
+                && Math.abs(previous.aftermathStrength()
+                        - current.aftermathStrength()) < RESEND_EPSILON
+                && previous.hearthStormDead() == current.hearthStormDead();
     }
 
     private static String yesNo(boolean value) {
         return value ? "yes" : "no";
     }
 
+    private static String shortId(UUID id) {
+        return id.toString().substring(0, 8);
+    }
+
     private record AuraSnapshot(
-            float strength, int tier, BlockPos center, boolean anchored) {
+            float strength,
+            int tier,
+            BlockPos center,
+            boolean anchored,
+            int aftermathTicks,
+            int aftermathDurationTicks,
+            float aftermathStrength,
+            boolean hearthStormDead) {
         private static AuraSnapshot inactive() {
-            return new AuraSnapshot(0.0F, 0, BlockPos.ZERO, false);
+            return new AuraSnapshot(
+                    0.0F, 0, BlockPos.ZERO, false,
+                    0, 0, 0.0F, false);
         }
 
         private MasterArchitectWeatherPayload payload() {
             return new MasterArchitectWeatherPayload(
-                    strength, tier, center, anchored);
+                    strength, tier, center, anchored,
+                    aftermathTicks, aftermathDurationTicks,
+                    aftermathStrength, hearthStormDead);
         }
     }
 }

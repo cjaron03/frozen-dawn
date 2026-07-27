@@ -2,10 +2,8 @@ package com.frozendawn.entity.master;
 
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectLightningEntity;
-import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.init.ModSounds;
-import com.frozendawn.network.MasterArchitectAuraEventPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -161,12 +159,6 @@ public final class MasterArchitectDeathFx {
                 0.25D);
 
         applyBlast(level, architect, center);
-        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
-                level,
-                MasterArchitectAuraEventPayload.DEATH_COLLAPSE,
-                architect.blockPosition().above(128),
-                architect.blockPosition(),
-                2.0F);
         for (int strike = 0; strike < 3; strike++) {
             double angle = strike * Math.PI * 2.0D / 3.0D;
             double radius = strike == 0 ? 0.0D : 0.85D;

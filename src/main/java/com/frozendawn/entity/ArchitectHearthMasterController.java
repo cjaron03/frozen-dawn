@@ -126,6 +126,9 @@ final class ArchitectHearthMasterController {
         MasterArchitectFightMusicManager.stopNearby(level, architect);
         combatMusicActive = false;
         combatController.onDeath(level, killer);
+        architect.getHearthMasterArchitectId().ifPresent(
+                hearthId -> HearthCombatRosterManager.setFloodKneeling(
+                        level, hearthId, true));
     }
 
     void onMindCopyHurt(

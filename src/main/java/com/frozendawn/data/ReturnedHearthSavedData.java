@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 10;
+    public static final int CURRENT_DATA_VERSION = 11;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -586,6 +586,43 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean beginMasterArchitectStormAftermath(
+            UUID hearthId, long gameTime, float fieldStrength, UUID killerId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.masterArchitectDefeated
+                || hearth.hearthStormDead || hearth.masterStormAftermathActive) {
+            return false;
+        }
+        hearth.masterStormAftermathActive = true;
+        hearth.masterStormAftermathStartGameTime = Math.max(0L, gameTime);
+        hearth.masterStormAftermathStrength = Math.max(0.0F, Math.min(1.0F, fieldStrength));
+        hearth.masterStormAftermathKillerId = killerId;
+        hearth.decoherenceGranted = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean completeMasterArchitectStormAftermath(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.masterStormAftermathActive) {
+            return false;
+        }
+        hearth.masterStormAftermathActive = false;
+        hearth.hearthStormDead = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markDecoherenceGranted(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.decoherenceGranted) {
+            return false;
+        }
+        hearth.decoherenceGranted = true;
+        setDirty();
+        return true;
+    }
+
     public boolean resetMasterArchitectForDebug(UUID hearthId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || (hearth.masterArchitectEntityId == null
@@ -596,6 +633,12 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.masterArchitectEntityId = null;
         hearth.masterArchitectDefeated = false;
         hearth.masterArchitectDefeatedGameTime = -1L;
+        hearth.masterStormAftermathActive = false;
+        hearth.masterStormAftermathStartGameTime = -1L;
+        hearth.masterStormAftermathStrength = 0.0F;
+        hearth.masterStormAftermathKillerId = null;
+        hearth.hearthStormDead = false;
+        hearth.decoherenceGranted = false;
         hearth.combatRosterInitialized = false;
         hearth.combatRoster.clear();
         setDirty();
@@ -1364,6 +1407,12 @@ public final class ReturnedHearthSavedData extends SavedData {
         private UUID masterArchitectEntityId;
         private boolean masterArchitectDefeated;
         private long masterArchitectDefeatedGameTime = -1L;
+        private boolean masterStormAftermathActive;
+        private long masterStormAftermathStartGameTime = -1L;
+        private float masterStormAftermathStrength;
+        private UUID masterStormAftermathKillerId;
+        private boolean hearthStormDead;
+        private boolean decoherenceGranted;
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -1447,6 +1496,15 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.masterArchitectDefeated = tag.getBoolean("masterArchitectDefeated");
             record.masterArchitectDefeatedGameTime = readOptionalTime(
                     tag, "masterArchitectDefeatedGameTime");
+            record.masterStormAftermathActive = tag.getBoolean("masterStormAftermathActive");
+            record.masterStormAftermathStartGameTime = readOptionalTime(
+                    tag, "masterStormAftermathStartGameTime");
+            record.masterStormAftermathStrength = Math.max(
+                    0.0F, Math.min(1.0F, tag.getFloat("masterStormAftermathStrength")));
+            record.masterStormAftermathKillerId = tag.hasUUID("masterStormAftermathKillerId")
+                    ? tag.getUUID("masterStormAftermathKillerId") : null;
+            record.hearthStormDead = tag.getBoolean("hearthStormDead");
+            record.decoherenceGranted = tag.getBoolean("decoherenceGranted");
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -1520,6 +1578,15 @@ public final class ReturnedHearthSavedData extends SavedData {
             }
             tag.putBoolean("masterArchitectDefeated", masterArchitectDefeated);
             tag.putLong("masterArchitectDefeatedGameTime", masterArchitectDefeatedGameTime);
+            tag.putBoolean("masterStormAftermathActive", masterStormAftermathActive);
+            tag.putLong("masterStormAftermathStartGameTime",
+                    masterStormAftermathStartGameTime);
+            tag.putFloat("masterStormAftermathStrength", masterStormAftermathStrength);
+            if (masterStormAftermathKillerId != null) {
+                tag.putUUID("masterStormAftermathKillerId", masterStormAftermathKillerId);
+            }
+            tag.putBoolean("hearthStormDead", hearthStormDead);
+            tag.putBoolean("decoherenceGranted", decoherenceGranted);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -1656,6 +1723,30 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public long masterArchitectDefeatedGameTime() {
             return masterArchitectDefeatedGameTime;
+        }
+
+        public boolean masterStormAftermathActive() {
+            return masterStormAftermathActive;
+        }
+
+        public long masterStormAftermathStartGameTime() {
+            return masterStormAftermathStartGameTime;
+        }
+
+        public float masterStormAftermathStrength() {
+            return masterStormAftermathStrength;
+        }
+
+        public Optional<UUID> masterStormAftermathKillerId() {
+            return Optional.ofNullable(masterStormAftermathKillerId);
+        }
+
+        public boolean hearthStormDead() {
+            return hearthStormDead;
+        }
+
+        public boolean decoherenceGranted() {
+            return decoherenceGranted;
         }
 
         public long lastPlayerContactGameTime() {

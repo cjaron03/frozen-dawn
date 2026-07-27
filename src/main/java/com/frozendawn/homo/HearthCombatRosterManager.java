@@ -211,6 +211,32 @@ public final class HearthCombatRosterManager {
         }
     }
 
+    /** Releases the vigil and draws surviving residents toward the dead storm's center. */
+    public static void beginAftermathConvergence(
+            ServerLevel level, UUID hearthId, net.minecraft.core.BlockPos center) {
+        onMasterDefeated(level, hearthId);
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return;
+        }
+        List<UUID> residents = new ArrayList<>(hearth.combatRoster().keySet());
+        for (int index = 0; index < residents.size(); index++) {
+            Entity entity = level.getEntity(residents.get(index));
+            if (!(entity instanceof Mob mob) || !mob.isAlive()) {
+                continue;
+            }
+            double angle = index * Math.PI * 2.0D / Math.max(1, residents.size());
+            double radius = 3.5D + (index & 1) * 1.25D;
+            double x = center.getX() + 0.5D + Math.cos(angle) * radius;
+            double z = center.getZ() + 0.5D + Math.sin(angle) * radius;
+            mob.getNavigation().moveTo(x, center.getY(), z, 0.72D);
+            mob.getLookControl().setLookAt(
+                    center.getX() + 0.5D, center.getY() + 1.0D,
+                    center.getZ() + 0.5D, 30.0F, 30.0F);
+        }
+    }
+
     public static DeathResult recordResidentDeath(
             ServerLevel level, UUID hearthId, UUID entityId,
             @Nullable HearthPopulationRole populationRole, DamageSource source) {

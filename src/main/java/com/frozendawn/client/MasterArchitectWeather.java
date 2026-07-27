@@ -32,16 +32,21 @@ public final class MasterArchitectWeather {
     }
 
     public static void update(MasterArchitectWeatherPayload payload) {
-        if (suppressedForDeath) {
-            if (payload.anchored() || payload.auraTier() > 0) {
-                return;
-            }
-            suppressedForDeath = false;
+        MasterArchitectAuraClient.updateAftermath(payload);
+        if (payload.hearthStormDead()) {
+            suppressAfterMasterDeath();
+            return;
         }
+        boolean initialAnchor = payload.anchored()
+                && (!anchored || !hearthCenter.equals(payload.hearthCenter()));
+        suppressedForDeath = false;
         targetStrength = Mth.clamp(payload.strength(), 0.0F, 1.0F);
         auraTier = Mth.clamp(payload.auraTier(), 0, 3);
         hearthCenter = payload.hearthCenter().immutable();
         anchored = payload.anchored();
+        if (initialAnchor) {
+            visualAuraTier = auraTier;
+        }
     }
 
     @SubscribeEvent

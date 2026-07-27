@@ -225,6 +225,7 @@ public class ArchitectEntity extends Monster {
     private boolean mindReturnDeathSoundOnly;
     private boolean mindCopyDefeatReported;
     private DamageSource mindCopyDeathSource;
+    private UUID masterDeathKillerId;
     private static final float WALK_MAX_ROTATE = 35.0F;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     static final int MELEE_COMMIT_TICKS = 12;
@@ -1093,6 +1094,9 @@ public class ArchitectEntity extends Monster {
             return;
         }
         boolean masterArchitect = isHearthMasterArchitect();
+        if (masterArchitect && source.getEntity() instanceof ServerPlayer killer) {
+            masterDeathKillerId = killer.getUUID();
+        }
         super.die(source);
         if (masterArchitect) {
             updateMasterBossBarProgress();
@@ -1107,17 +1111,14 @@ public class ArchitectEntity extends Monster {
             HearthCombatRosterManager.recordResidentDeath(
                     serverLevel, hearthAssessorId, getUUID(), null, source);
         }
-        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel
-                && hearthMasterArchitectId != null) {
+        if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
             hearthMasterController.onDeath(
                     serverLevel,
                     source.getEntity() instanceof ServerPlayer killer ? killer : null);
-            HearthMasterArchitectManager.recordDefeat(
-                    serverLevel, hearthMasterArchitectId, getUUID());
         }
-        if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
-            WorldTickHandler.grantAdvancement(
-                    killer, masterArchitect ? "decoherence" : "disassembled");
+        if (!masterArchitect && !level().isClientSide()
+                && source.getEntity() instanceof ServerPlayer killer) {
+            WorldTickHandler.grantAdvancement(killer, "disassembled");
         }
     }
 
@@ -1389,6 +1390,12 @@ public class ArchitectEntity extends Monster {
         if (level() instanceof ServerLevel serverLevel
                 && !foldedDeathPresentationAlreadyPlayed) {
             MasterArchitectDeathFx.detonate(serverLevel, this);
+        }
+        if (level() instanceof ServerLevel serverLevel
+                && isHearthMasterArchitect()
+                && hearthMasterArchitectId != null) {
+            HearthMasterArchitectManager.recordDefeat(
+                    serverLevel, hearthMasterArchitectId, getUUID(), masterDeathKillerId);
         }
         if (isMasterMindCopy() && !mindCopyDefeatReported
                 && level() instanceof ServerLevel serverLevel) {
@@ -1886,6 +1893,9 @@ public class ArchitectEntity extends Monster {
         if (isMasterMindCopy() && mindCopyRealMasterId != null) {
             tag.putUUID("MasterMindCopyRealId", mindCopyRealMasterId);
         }
+        if (masterDeathKillerId != null) {
+            tag.putUUID("MasterDeathKillerId", masterDeathKillerId);
+        }
     }
 
     @Override
@@ -1963,6 +1973,8 @@ public class ArchitectEntity extends Monster {
             mindCopyRealMasterId = null;
             entityData.set(DATA_MASTER_MIND_COPY, false);
         }
+        masterDeathKillerId = tag.hasUUID("MasterDeathKillerId")
+                ? tag.getUUID("MasterDeathKillerId") : null;
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
         syncRenderState();
     }

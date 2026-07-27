@@ -291,8 +291,6 @@ final class MasterArchitectCombatController {
     void onDeath(ServerLevel level, ServerPlayer killer) {
         floodController.onDeath(level, killer);
         endTether(level);
-        architect.getHearthMasterArchitectId().ifPresent(
-                hearthId -> HearthCombatRosterManager.onMasterDefeated(level, hearthId));
         constructionController.onDeath(level);
         removeWall(level);
         leaveCombat(level);

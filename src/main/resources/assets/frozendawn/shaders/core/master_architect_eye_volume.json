@@ -1,0 +1,29 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "zero"
+  },
+  "vertex": "frozendawn:master_architect_eye_volume",
+  "fragment": "frozendawn:master_architect_eye_volume",
+  "attributes": [ "Position" ],
+  "samplers": [
+    { "name": "uScene" },
+    { "name": "uDepth" }
+  ],
+  "uniforms": [
+    { "name": "uInverseProjection", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "uCameraWorld", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "uCameraPosition", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "uFar", "type": "float", "count": 1, "values": [ 192.0 ] },
+    { "name": "uEyeCenter", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "uInnerRadius", "type": "float", "count": 1, "values": [ 25.0 ] },
+    { "name": "uOuterRadius", "type": "float", "count": 1, "values": [ 31.0 ] },
+    { "name": "uMinimumY", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "uMaximumY", "type": "float", "count": 1, "values": [ 38.0 ] },
+    { "name": "uTime", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "uWind", "type": "float", "count": 2, "values": [ 0.92, 0.38 ] },
+    { "name": "uDensity", "type": "float", "count": 1, "values": [ 1.15 ] },
+    { "name": "uStormColor", "type": "float", "count": 3, "values": [ 0.247, 0.294, 0.345 ] }
+  ]
+}

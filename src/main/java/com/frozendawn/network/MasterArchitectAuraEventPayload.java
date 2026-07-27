@@ -21,6 +21,7 @@ public record MasterArchitectAuraEventPayload(
     public static final int FOLD_CONTRACTION = 4;
     public static final int EXPOSURE_STUTTER = 5;
     public static final int DEATH_COLLAPSE = 6;
+    public static final int DEATH_PRESSURE_WAVE = 7;
 
     public static final Type<MasterArchitectAuraEventPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(

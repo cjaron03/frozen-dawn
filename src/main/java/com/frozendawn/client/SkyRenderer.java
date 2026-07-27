@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.BlizzardGogglesHandler;
 import com.frozendawn.event.BlizzardGogglesLogic;
+import com.frozendawn.homo.MasterArchitectEyeWallPolicy;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.Minecraft;
@@ -35,8 +36,8 @@ public class SkyRenderer {
     private static final float[] PHASE_BLEND = {0.2f, 0.4f, 0.7f, 0.9f, 1.0f, 1.0f};
     private static final float[] PHASE_FLOOR = {0.15f, 0.15f, 0.10f, 0.08f, 0.04f, 0.01f};
     private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
-    private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.4F;
-    private static final float MASTER_ARCHITECT_VISIBILITY = 12.0F;
+    private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.48F;
+    private static final float MASTER_ARCHITECT_VISIBILITY = 14.0F;
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
@@ -83,8 +84,13 @@ public class SkyRenderer {
                 targetB = Mth.lerp(blackTransition, targetB, 0.005f);
             }
 
+            float eyeStormFactor = MasterArchitectAuraClient.localStormFactor(
+                    mc.player.position());
+            float viewFogFactor = MasterArchitectEyeWallPolicy.directionalFogFactor(
+                    mc.gameRenderer.getMainCamera().getXRot());
             float masterWhiteout = MasterArchitectWeather.getStrength()
-                    * exposure * MASTER_ARCHITECT_WHITEOUT_MIX;
+                    * exposure * eyeStormFactor * viewFogFactor
+                    * MASTER_ARCHITECT_WHITEOUT_MIX;
             if (masterWhiteout > 0.0F) {
                 targetR = Mth.lerp(masterWhiteout, targetR, getStormHazeRed(6));
                 targetG = Mth.lerp(masterWhiteout, targetG, getStormHazeGreen(6));
@@ -121,7 +127,12 @@ public class SkyRenderer {
 
         float currentFar = event.getFarPlaneDistance();
         float visibility = Mth.lerp(exposure, currentFar, targetVisibility);
-        float masterStrength = MasterArchitectWeather.getStrength() * exposure;
+        float masterStrength = MasterArchitectWeather.getStrength()
+                * exposure
+                * MasterArchitectAuraClient.localStormFactor(
+                Minecraft.getInstance().player.position())
+                * MasterArchitectEyeWallPolicy.directionalFogFactor(
+                        Minecraft.getInstance().gameRenderer.getMainCamera().getXRot());
         if (masterStrength > 0.0F) {
             visibility = Math.min(visibility, Mth.lerp(
                     masterStrength, currentFar, MASTER_ARCHITECT_VISIBILITY));

@@ -2,10 +2,14 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.homo.HearthMasterArchitectWeatherPolicy;
 import com.frozendawn.homo.MasterArchitectAuraTier;
+import com.frozendawn.homo.MasterArchitectEyeWallPolicy;
+import com.frozendawn.homo.MasterArchitectStormAftermathPolicy;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.MasterArchitectAuraEventPayload;
+import com.frozendawn.network.MasterArchitectWeatherPayload;
 import com.frozendawn.world.ThaeIvenMindDimension;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -20,6 +24,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -36,6 +41,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,10 +53,13 @@ public final class MasterArchitectAuraClient {
     private static final int HUM_DURATION_TICKS = 150;
     private static final int SILENCE_RADIUS = 13;
     private static final int O2_FLICKER_DURATION = 50;
+    private static final int EYE_WALL_PARTICLE_WARMUP_TICKS = 40;
     private static final int LIGHTNING_FLASH_DURATION_TICKS = 7;
     private static final float[] LIGHTNING_FLASH_ENVELOPE = {
             1.0F, 1.0F, 0.52F, 0.10F, 0.74F, 0.30F, 0.08F, 0.0F
     };
+    private static final ResourceLocation SNOWFLAKE_TEXTURE =
+            ResourceLocation.withDefaultNamespace("textures/particle/generic_0.png");
     private static final List<DelayedThunder> THUNDER = new ArrayList<>();
 
     private static TickableWindSound hum;
@@ -65,6 +74,11 @@ public final class MasterArchitectAuraClient {
     private static BlockPos collapseCenter = BlockPos.ZERO;
     private static int collapseTicks;
     private static int collapseDurationTicks = 1200;
+    private static float collapseStrength;
+    private static int pressureWaveTicks;
+    private static int eyeWallParticleWarmupTicks;
+    private static MasterArchitectStormAftermathPolicy.Stage lastAftermathStage =
+            MasterArchitectStormAftermathPolicy.Stage.COMPLETE;
 
     private MasterArchitectAuraClient() {
     }
@@ -85,17 +99,34 @@ public final class MasterArchitectAuraClient {
             case MasterArchitectAuraEventPayload.DEATH_COLLAPSE -> {
                 collapseCenter = payload.target().immutable();
                 collapseTicks = 1;
-                collapseDurationTicks = Math.min(
-                        FrozenDawnConfig.MASTER_AURA_KILL_COLLAPSE_SECONDS.get() * 20,
-                        12 * 20);
+                collapseStrength = Mth.clamp(payload.intensity(), 0.0F, 1.0F);
+                collapseDurationTicks = MasterArchitectStormAftermathPolicy
+                        .timeline(collapseStrength).completeTick();
                 contractionPulse = 2.0F;
-                MasterArchitectWeather.suppressAfterMasterDeath();
-                THUNDER.clear();
-                if (hum != null) {
-                    hum.fadeOut();
-                }
             }
+            case MasterArchitectAuraEventPayload.DEATH_PRESSURE_WAVE ->
+                    triggerPressureWave(payload);
             default -> {
+            }
+        }
+    }
+
+    static void updateAftermath(MasterArchitectWeatherPayload payload) {
+        if (payload.aftermathDurationTicks() > 0) {
+            collapseCenter = payload.hearthCenter().immutable();
+            collapseTicks = Math.max(1, payload.aftermathTicks());
+            collapseDurationTicks = Math.max(1, payload.aftermathDurationTicks());
+            collapseStrength = Mth.clamp(payload.aftermathStrength(), 0.0F, 1.0F);
+            return;
+        }
+        if (payload.hearthStormDead()) {
+            collapseTicks = 0;
+            collapseCenter = BlockPos.ZERO;
+            collapseStrength = 0.0F;
+            pressureWaveTicks = 0;
+            THUNDER.clear();
+            if (hum != null) {
+                hum.fadeOut();
             }
         }
     }
@@ -112,11 +143,24 @@ public final class MasterArchitectAuraClient {
             return;
         }
 
-        int tier = collapseTicks > 0
-                ? MasterArchitectAuraTier.NONE
+        MasterArchitectStormAftermathPolicy.Stage aftermathStage = aftermathStage();
+        if (aftermathStage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                && lastAftermathStage != MasterArchitectStormAftermathPolicy.Stage.STILLNESS) {
+            THUNDER.clear();
+            if (hum != null) {
+                minecraft.getSoundManager().stop(hum);
+                hum = null;
+            }
+        }
+        lastAftermathStage = aftermathStage;
+        boolean activeStormAftermath = collapseTicks > 0
+                && aftermathStage != MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                && aftermathStage != MasterArchitectStormAftermathPolicy.Stage.COMPLETE;
+        int tier = activeStormAftermath
+                ? MasterArchitectAuraTier.FIGHT
                 : MasterArchitectWeather.getAuraTier();
-        float proximity = collapseTicks > 0
-                ? 0.0F
+        float proximity = activeStormAftermath
+                ? aftermathProximity() * aftermathStormScale(aftermathStage)
                 : MasterArchitectWeather.getAuraProximity();
         if (proximity > 0.01F) {
             if (tier >= MasterArchitectAuraTier.FIGHT && !fightLinePlayed) {
@@ -146,6 +190,9 @@ public final class MasterArchitectAuraClient {
         } else {
             lightningFlashStrength = 0.0F;
         }
+        if (pressureWaveTicks > 0) {
+            pressureWaveTicks--;
+        }
         if (collapseTicks > 0 && collapseTicks < collapseDurationTicks) {
             collapseTicks++;
         } else if (collapseTicks >= collapseDurationTicks) {
@@ -154,8 +201,9 @@ public final class MasterArchitectAuraClient {
         }
 
         tickThunder(level);
-        tickHum(tier, proximity);
+        tickHum(tier, proximity, aftermathStage);
         tickAmbientParticles(level, tier, proximity);
+        tickAftermathParticles(level, aftermathStage);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -171,7 +219,25 @@ public final class MasterArchitectAuraClient {
     }
 
     @SubscribeEvent
+    public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (pressureWaveTicks <= 0 || minecraft.level == null) {
+            return;
+        }
+        float strength = pressureWaveTicks / 28.0F * collapseStrength;
+        double time = minecraft.level.getGameTime() * 2.7D + pressureWaveTicks;
+        event.setPitch(event.getPitch()
+                + (float) Math.sin(time * 1.7D) * 1.15F * strength);
+        event.setYaw(event.getYaw()
+                + (float) Math.cos(time * 2.1D) * 1.55F * strength);
+    }
+
+    @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            renderEyeWallVolume(event);
+            return;
+        }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) {
             return;
         }
@@ -188,15 +254,44 @@ public final class MasterArchitectAuraClient {
                     event,
                     collapseCenter,
                     (float) MasterArchitectAuraTier.FIGHT,
-                    collapseTicks / (float) Math.max(1, collapseDurationTicks));
+                    collapseTicks,
+                    collapseStrength);
         } else if (MasterArchitectWeather.hasAuraAnchor()) {
+            float visualTier = Math.max(
+                    MasterArchitectAuraTier.PASSIVE,
+                    MasterArchitectWeather.getVisualAuraTier());
             renderStormColumn(
                     event,
                     MasterArchitectWeather.getHearthCenter(),
-                    Math.max(
-                            MasterArchitectAuraTier.PASSIVE,
-                            MasterArchitectWeather.getVisualAuraTier()),
+                    visualTier,
+                    0,
                     0.0F);
+        }
+    }
+
+    private static void renderEyeWallVolume(RenderLevelStageEvent event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null
+                || minecraft.player == null
+                || ThaeIvenMindDimension.isMindLevel(minecraft.level)) {
+            return;
+        }
+        if (collapseTicks > 0) {
+            MasterArchitectEyeWallRenderer.render(
+                    event,
+                    collapseCenter,
+                    MasterArchitectAuraTier.FIGHT,
+                    collapseTicks,
+                    collapseStrength,
+                    1.0F);
+        } else if (MasterArchitectWeather.hasAuraAnchor()) {
+            MasterArchitectEyeWallRenderer.render(
+                    event,
+                    MasterArchitectWeather.getHearthCenter(),
+                    MasterArchitectWeather.getVisualAuraTier(),
+                    0,
+                    0.0F,
+                    MasterArchitectWeather.getStrength());
         }
     }
 
@@ -207,6 +302,13 @@ public final class MasterArchitectAuraClient {
 
     public static float silenceFactor() {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null
+                && aftermathStage() == MasterArchitectStormAftermathPolicy.Stage.STILLNESS) {
+            double distance = minecraft.player.position().distanceTo(
+                    collapseCenter.getCenter());
+            return distance < HearthMasterArchitectWeatherPolicy.OUTER_RADIUS
+                    ? 1.0F : 0.0F;
+        }
         if (minecraft.player == null || !MasterArchitectWeather.hasAuraAnchor()) {
             return 0.0F;
         }
@@ -220,6 +322,26 @@ public final class MasterArchitectAuraClient {
 
     public static boolean shouldFlickerO2() {
         return o2FlickerTicks > 0 && ((o2FlickerTicks / 3) & 1) == 0;
+    }
+
+    /** Contains the hostile Master's local snow and fog inside its eye wall. */
+    public static float localStormFactor(Vec3 position) {
+        BlockPos centerPos = collapseTicks > 0
+                ? collapseCenter : MasterArchitectWeather.getHearthCenter();
+        float visualTier = collapseTicks > 0
+                ? MasterArchitectAuraTier.FIGHT
+                : MasterArchitectWeather.getVisualAuraTier();
+        if (centerPos.equals(BlockPos.ZERO)) {
+            return 1.0F;
+        }
+        Vec3 center = centerPos.getCenter();
+        double dx = position.x - center.x;
+        double dz = position.z - center.z;
+        return MasterArchitectEyeWallPolicy.localStormFactor(
+                Math.sqrt(dx * dx + dz * dz),
+                visualTier,
+                collapseTicks,
+                collapseStrength);
     }
 
     public static float getLightningWorldFlash(float partialTick) {
@@ -342,14 +464,162 @@ public final class MasterArchitectAuraClient {
         columnPulse = Math.max(columnPulse, payload.intensity() * 0.38F);
     }
 
-    private static void tickHum(int tier, float proximity) {
+    private static void triggerPressureWave(MasterArchitectAuraEventPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (level == null || minecraft.player == null) {
+            return;
+        }
+        collapseStrength = Math.max(
+                collapseStrength, Mth.clamp(payload.intensity(), 0.0F, 1.0F));
+        pressureWaveTicks = 28;
+        Vec3 center = payload.target().getCenter();
+        int particles = Math.max(48, Mth.floor(
+                140.0D * FrozenDawnConfig.MASTER_AURA_PARTICLE_DENSITY.get()));
+        for (int index = 0; index < particles; index++) {
+            double angle = index * Math.PI * 2.0D / particles;
+            double speed = 0.45D + level.random.nextDouble() * 0.65D;
+            level.addParticle(
+                    index % 5 == 0
+                            ? ParticleTypes.ELECTRIC_SPARK : ParticleTypes.SNOWFLAKE,
+                    center.x + Math.cos(angle) * 2.0D,
+                    center.y + 0.15D + level.random.nextDouble() * 0.8D,
+                    center.z + Math.sin(angle) * 2.0D,
+                    Math.cos(angle) * speed,
+                    0.04D + level.random.nextDouble() * 0.08D,
+                    Math.sin(angle) * speed);
+        }
+        playAtListener(
+                ModSounds.MASTER_ARCHITECT_THUNDERSNOW_CLOSE.get(),
+                3.8F * Math.max(0.35F, collapseStrength),
+                0.68F,
+                SoundSource.WEATHER);
+    }
+
+    private static MasterArchitectStormAftermathPolicy.Stage aftermathStage() {
+        if (collapseTicks <= 0) {
+            return MasterArchitectStormAftermathPolicy.Stage.COMPLETE;
+        }
+        return MasterArchitectStormAftermathPolicy.stage(
+                collapseTicks, collapseStrength);
+    }
+
+    private static float aftermathProximity() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || collapseTicks <= 0) {
+            return 0.0F;
+        }
+        double distance = minecraft.player.position().distanceTo(
+                collapseCenter.getCenter());
+        return Mth.clamp((float) (1.0D - distance
+                / HearthMasterArchitectWeatherPolicy.OUTER_RADIUS), 0.0F, 1.0F);
+    }
+
+    private static float aftermathStormScale(
+            MasterArchitectStormAftermathPolicy.Stage stage) {
+        MasterArchitectStormAftermathPolicy.Timeline timeline =
+                MasterArchitectStormAftermathPolicy.timeline(collapseStrength);
+        return switch (stage) {
+            case CORE, EYE -> 1.0F;
+            case RUPTURE -> Mth.lerp(
+                    Mth.clamp((collapseTicks - timeline.eyeEndTick())
+                            / (float) Math.max(1,
+                            timeline.ruptureEndTick() - timeline.eyeEndTick()),
+                            0.0F, 1.0F),
+                    1.0F, 0.55F);
+            case BASE_COLLAPSE -> Mth.lerp(
+                    Mth.clamp((collapseTicks - timeline.ruptureEndTick())
+                            / (float) Math.max(1,
+                            timeline.collapseEndTick() - timeline.ruptureEndTick()),
+                            0.0F, 1.0F),
+                    0.55F, 0.0F);
+            case FADE -> 1.0F - Mth.clamp(
+                    collapseTicks / (float) Math.max(1, timeline.collapseEndTick()),
+                    0.0F, 1.0F);
+            case STILLNESS, COMPLETE -> 0.0F;
+        };
+    }
+
+    private static void tickAftermathParticles(
+            ClientLevel level,
+            MasterArchitectStormAftermathPolicy.Stage stage) {
+        if (collapseTicks <= 0 || collapseStrength <= 0.001F
+                || stage == MasterArchitectStormAftermathPolicy.Stage.CORE
+                || stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                || stage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE) {
+            return;
+        }
+        double density = FrozenDawnConfig.MASTER_AURA_PARTICLE_DENSITY.get();
+        if (density <= 0.0D) {
+            return;
+        }
+        Vec3 center = collapseCenter.getCenter();
+        MasterArchitectStormAftermathPolicy.Timeline timeline =
+                MasterArchitectStormAftermathPolicy.timeline(collapseStrength);
+        int requested;
+        if (stage == MasterArchitectStormAftermathPolicy.Stage.EYE) {
+            float progress = Mth.clamp((collapseTicks - timeline.coreEndTick())
+                    / (float) Math.max(1,
+                    timeline.eyeEndTick() - timeline.coreEndTick()), 0.0F, 1.0F);
+            requested = Math.max(4, Mth.floor(14.0D * density * collapseStrength));
+            double radius = Mth.lerp(progress, 31.0D, 6.0D);
+            for (int index = 0; index < requested; index++) {
+                double angle = level.random.nextDouble() * Math.PI * 2.0D;
+                Vec3 position = center.add(
+                        Math.cos(angle) * radius,
+                        level.random.nextDouble() * 18.0D,
+                        Math.sin(angle) * radius);
+                Vec3 inward = center.add(0.0D, 5.0D, 0.0D)
+                        .subtract(position).normalize().scale(0.32D + progress * 0.48D);
+                level.addParticle(
+                        ParticleTypes.SNOWFLAKE,
+                        position.x, position.y, position.z,
+                        inward.x, inward.y, inward.z);
+            }
+            return;
+        }
+
+        requested = Math.max(3, Mth.floor((stage
+                == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                ? 18.0D : 10.0D) * density * collapseStrength));
+        for (int index = 0; index < requested; index++) {
+            double radius = 5.0D + level.random.nextDouble() * 38.0D;
+            double angle = level.random.nextDouble() * Math.PI * 2.0D;
+            level.addParticle(
+                    index % 6 == 0 ? ParticleTypes.ELECTRIC_SPARK : ParticleTypes.SNOWFLAKE,
+                    center.x + Math.cos(angle) * radius,
+                    center.y + 14.0D + level.random.nextDouble() * 35.0D,
+                    center.z + Math.sin(angle) * radius,
+                    (level.random.nextDouble() - 0.5D) * 0.55D,
+                    -0.55D - level.random.nextDouble() * 0.75D,
+                    (level.random.nextDouble() - 0.5D) * 0.55D);
+        }
+    }
+
+    private static void tickHum(
+            int tier,
+            float proximity,
+            MasterArchitectStormAftermathPolicy.Stage aftermathStage) {
         Minecraft minecraft = Minecraft.getInstance();
         float target = tier <= MasterArchitectAuraTier.PASSIVE
                 ? 0.0F
                 : Mth.clamp((tier - 1) * 0.34F + proximity * 0.44F, 0.0F, 1.0F)
                 * FrozenDawnConfig.MASTER_AURA_INFRASOUND_GAIN.get().floatValue();
+        if (aftermathStage == MasterArchitectStormAftermathPolicy.Stage.EYE) {
+            target = Math.max(target, 0.82F + collapseStrength * 0.25F);
+        } else if (aftermathStage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE) {
+            target = Math.max(target, 0.92F + collapseStrength * 0.32F);
+        } else if (aftermathStage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE) {
+            target = 0.0F;
+        }
         if (hum != null && !hum.isStopped()) {
             hum.setTargetVolume(target, 0.012F);
+            hum.setTargetPitch(aftermathStage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                    || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                    || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                    ? 0.72F : 1.0F);
             humRestartTicks--;
         }
         if (target <= 0.005F) {
@@ -362,7 +632,10 @@ public final class MasterArchitectAuraClient {
             hum = new TickableWindSound(
                     ModSounds.MASTER_ARCHITECT_INFRASOUND.get(),
                     target,
-                    1.0F,
+                    aftermathStage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                            || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                            || aftermathStage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                            ? 0.72F : 1.0F,
                     HUM_DURATION_TICKS);
             minecraft.getSoundManager().play(hum);
             humRestartTicks = HUM_DURATION_TICKS - 12;
@@ -373,10 +646,12 @@ public final class MasterArchitectAuraClient {
             ClientLevel level, int tier, float proximity) {
         Minecraft minecraft = Minecraft.getInstance();
         if (tier < MasterArchitectAuraTier.PASSIVE || proximity <= 0.0F) {
+            eyeWallParticleWarmupTicks = 0;
             return;
         }
         double density = FrozenDawnConfig.MASTER_AURA_PARTICLE_DENSITY.get();
         if (density <= 0.0D) {
+            eyeWallParticleWarmupTicks = 0;
             return;
         }
         spawnStormWall(level, tier, proximity, density);
@@ -427,49 +702,110 @@ public final class MasterArchitectAuraClient {
             return;
         }
 
-        Vec3 center = MasterArchitectWeather.getHearthCenter().getCenter();
+        Vec3 center = (collapseTicks > 0
+                ? collapseCenter : MasterArchitectWeather.getHearthCenter()).getCenter();
         Vec3 player = minecraft.player.position();
-        float tierProgress = (tier - MasterArchitectAuraTier.PASSIVE)
-                / (float) (MasterArchitectAuraTier.FIGHT
-                - MasterArchitectAuraTier.PASSIVE);
-        double wallRadius = Mth.lerp(tierProgress, 36.0D, 22.0D);
-        double wallDepth = Mth.lerp(tierProgress, 5.5D, 9.0D);
-        double windSpeed = Mth.lerp(tierProgress, 0.22D, 0.82D);
+        float visualTier = collapseTicks > 0
+                ? MasterArchitectAuraTier.FIGHT
+                : MasterArchitectWeather.getVisualAuraTier();
+        if (!MasterArchitectEyeWallPolicy.isVisible(
+                visualTier, collapseTicks, collapseStrength)) {
+            eyeWallParticleWarmupTicks = 0;
+            return;
+        }
+        if (collapseTicks <= 0
+                && Math.abs(visualTier - MasterArchitectWeather.getAuraTier()) > 0.025F) {
+            // The batched wall covers tier transitions. Existing live particles retain
+            // their old radius, so emitting during a transition produces competing rings.
+            eyeWallParticleWarmupTicks = 0;
+            return;
+        }
+        float tierProgress = Mth.clamp(
+                visualTier - MasterArchitectAuraTier.NOTICED,
+                0.0F,
+                1.0F);
+        float collapseProgress = MasterArchitectEyeWallPolicy.collapseProgress(
+                collapseTicks, collapseStrength);
+        float fade = MasterArchitectEyeWallPolicy.emptyFade(
+                collapseTicks, collapseStrength);
+        double wallRadius = MasterArchitectEyeWallPolicy.radius(
+                visualTier, collapseTicks, collapseStrength)
+                * (1.0D + columnPulse * 0.16D);
+        double columnHeight = 154.0D
+                * Mth.lerp(collapseProgress, 1.0F, 0.38F);
+        double eyeWallHeight = Math.min(
+                columnHeight * 0.42D,
+                MasterArchitectEyeWallPolicy.height(visualTier) * 1.08D);
+        double windSpeed = Mth.lerp(tierProgress, 0.24D, 0.72D)
+                + collapseProgress * 0.42D;
+        double centerDx = player.x - center.x;
+        double centerDz = player.z - center.z;
+        float nearWeight = MasterArchitectEyeWallPolicy.nearParticleWeight(
+                Math.sqrt(centerDx * centerDx + centerDz * centerDz));
+        if (nearWeight <= 0.001F) {
+            eyeWallParticleWarmupTicks = 0;
+            return;
+        }
+        eyeWallParticleWarmupTicks = Math.min(
+                EYE_WALL_PARTICLE_WARMUP_TICKS,
+                eyeWallParticleWarmupTicks + 1);
         int requested = Math.max(1, Mth.floor(
-                Mth.lerp(tierProgress, 4.0F, 18.0F)
-                        * density * Mth.lerp(proximity, 0.45F, 1.0F)));
+                Mth.lerp(tierProgress, 11.0F, 24.0F)
+                        * density * Mth.lerp(proximity, 0.58F, 1.0F)
+                        * fade * nearWeight));
         int spawned = 0;
-        int attempts = requested * 5;
+        int attempts = requested * 4;
         long time = level.getGameTime();
 
         for (int attempt = 0; attempt < attempts && spawned < requested; attempt++) {
-            double angle = level.random.nextDouble() * Math.PI * 2.0D;
-            double radius = wallRadius + level.random.nextGaussian() * wallDepth;
-            double y = center.y - 1.5D + level.random.nextDouble()
-                    * Mth.lerp(tierProgress, 18.0D, 31.0D);
+            int sequence = (int) (time * Math.max(1, requested) + attempt);
+            boolean eyeWall = hash01(sequence * 31 + 11) < 0.72F;
+            double vertical = hash01(sequence * 47 + 23);
+            double y;
+            double radius;
+            if (eyeWall) {
+                y = center.y - 1.0D + vertical * eyeWallHeight;
+                radius = wallRadius * Mth.lerp(
+                        hash01(sequence * 59 + 29), 0.88D, 1.18D);
+            } else {
+                double upper = vertical * vertical;
+                y = center.y - 1.0D + eyeWallHeight
+                        + upper * Math.max(1.0D, columnHeight - eyeWallHeight);
+                double taper = Mth.lerp(upper, 1.0D, 0.52D);
+                radius = wallRadius * taper * Mth.lerp(
+                        hash01(sequence * 59 + 29), 0.74D, 1.22D);
+            }
+            double angle = hash01(sequence * 73 + 17) * Math.PI * 2.0D
+                    + time * Mth.lerp(tierProgress, 0.018D, 0.052D)
+                    + (y - center.y) * Mth.lerp(tierProgress, 0.025D, 0.052D);
+            radius += Math.sin(time * 0.045D + sequence * 1.37D
+                    + y * 0.12D) * Mth.lerp(tierProgress, 1.1D, 2.4D);
             Vec3 position = new Vec3(
                     center.x + Math.cos(angle) * radius,
                     y,
                     center.z + Math.sin(angle) * radius);
-            if (position.distanceToSqr(player) > 52.0D * 52.0D) {
+            BlockPos particlePos = BlockPos.containing(position);
+            if (!level.getBlockState(particlePos)
+                    .getCollisionShape(level, particlePos).isEmpty()) {
                 continue;
             }
 
-            double gust = 0.72D + level.random.nextDouble() * 0.68D;
-            double turbulence = Math.sin(time * 0.09D + angle * 7.0D) * 0.08D;
+            double gust = Mth.lerp(
+                    hash01(sequence * 67 + 7), 0.72D, 1.42D);
+            double turbulence = Math.sin(time * 0.09D + angle * 7.0D) * 0.055D;
             double tangentX = -Math.sin(angle);
             double tangentZ = Math.cos(angle);
             double radialX = Math.cos(angle);
             double radialZ = Math.sin(angle);
-            double radialDrift = -0.045D + level.random.nextGaussian() * 0.035D;
+            double radialDrift = -0.025D - collapseProgress * 0.78D;
             double velocityX = tangentX * windSpeed * gust
                     + radialX * radialDrift;
-            double velocityY = -0.025D + turbulence
-                    + level.random.nextGaussian() * 0.035D;
+            double velocityY = (eyeWall ? -0.018D : -0.008D) + turbulence;
             double velocityZ = tangentZ * windSpeed * gust
                     + radialZ * radialDrift;
             level.addParticle(
                     ParticleTypes.SNOWFLAKE,
+                    true,
                     position.x,
                     position.y,
                     position.z,
@@ -478,41 +814,123 @@ public final class MasterArchitectAuraClient {
                     velocityZ);
             spawned++;
         }
+    }
 
-        if (tier < MasterArchitectAuraTier.NOTICED) {
+    private static void renderEyeWallLod(
+            RenderLevelStageEvent event,
+            BlockPos centerPos,
+            float visualTier,
+            int aftermathTicks,
+            float aftermathStrength) {
+        if (!MasterArchitectEyeWallPolicy.isVisible(
+                visualTier, aftermathTicks, aftermathStrength)) {
+            return;
+        }
+        Vec3 camera = event.getCamera().getPosition();
+        Vec3 center = centerPos.getCenter();
+        double dx = center.x - camera.x;
+        double dz = center.z - camera.z;
+        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+        float particleWarmupProgress = eyeWallParticleWarmupTicks
+                / (float) EYE_WALL_PARTICLE_WARMUP_TICKS;
+        float lodWeight = MasterArchitectEyeWallPolicy.batchedRenderWeight(
+                horizontalDistance, particleWarmupProgress);
+        if (lodWeight <= 0.001F) {
             return;
         }
 
-        Vec3 fromCenter = new Vec3(
-                player.x - center.x, 0.0D, player.z - center.z);
-        if (fromCenter.lengthSqr() < 1.0E-4D) {
-            fromCenter = new Vec3(1.0D, 0.0D, 0.0D);
+        double configuredDensity = FrozenDawnConfig.MASTER_AURA_PARTICLE_DENSITY.get();
+        if (configuredDensity <= 0.0D) {
+            return;
         }
-        double localAngle = Math.atan2(fromCenter.z, fromCenter.x);
-        Vec3 localWind = new Vec3(
-                -Math.sin(localAngle), 0.0D, Math.cos(localAngle))
-                .scale(windSpeed * 1.15D);
-        int sheetCount = Math.max(1, Mth.floor(
-                Mth.lerp(tierProgress, 2.0F, 9.0F) * density * proximity));
-        Vec3 crosswind = new Vec3(-localWind.z, 0.0D, localWind.x).normalize();
-        Vec3 upwind = localWind.normalize().scale(-18.0D);
-        for (int index = 0; index < sheetCount; index++) {
-            double lateral = level.random.nextGaussian() * 13.0D;
-            double forward = level.random.nextDouble() * 12.0D;
-            Vec3 position = player.add(upwind)
-                    .add(localWind.normalize().scale(forward))
-                    .add(crosswind.scale(lateral))
-                    .add(0.0D, -2.0D + level.random.nextDouble() * 10.0D, 0.0D);
-            double gust = 0.85D + level.random.nextDouble() * 0.75D;
-            level.addParticle(
-                    ParticleTypes.SNOWFLAKE,
-                    position.x,
-                    position.y,
-                    position.z,
-                    localWind.x * gust,
-                    -0.035D + level.random.nextGaussian() * 0.045D,
-                    localWind.z * gust);
-        }
+        float collapseProgress = MasterArchitectEyeWallPolicy.collapseProgress(
+                aftermathTicks, aftermathStrength);
+        float fade = MasterArchitectEyeWallPolicy.emptyFade(
+                aftermathTicks, aftermathStrength);
+        float alphaScale = lodWeight * fade;
+        float width = MasterArchitectEyeWallPolicy.radius(
+                visualTier, aftermathTicks, aftermathStrength)
+                * (1.0F + columnPulse * 0.16F);
+        float height = 154.0F
+                * Mth.lerp(collapseProgress, 1.0F, 0.38F);
+        double time = Minecraft.getInstance().level.getGameTime()
+                + event.getPartialTick().getGameTimeDeltaPartialTick(false);
+
+        RenderSystem.enableBlend();
+        RenderSystem.disableCull();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, SNOWFLAKE_TEXTURE);
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        PoseStack poses = event.getPoseStack();
+        poses.pushPose();
+        poses.translate(dx, center.y - camera.y - 1.0D, dz);
+        BufferBuilder buffer = Tesselator.getInstance().begin(
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.POSITION_TEX_COLOR);
+        addStormSnowVolume(
+                buffer,
+                poses.last().pose(),
+                event.getCamera().getLeftVector(),
+                event.getCamera().getUpVector(),
+                visualTier,
+                width,
+                height,
+                time,
+                alphaScale,
+                Mth.lerp(collapseProgress, 1.0F, 1.15F));
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
+        poses.popPose();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    }
+
+    private static void addSnowflakeQuad(
+            BufferBuilder buffer,
+            Matrix4f matrix,
+            Vector3f cameraLeft,
+            Vector3f cameraUp,
+            float x,
+            float y,
+            float z,
+            float size,
+            int alpha) {
+        addSnowflakeVertex(buffer, matrix, cameraLeft, cameraUp, x, y, z,
+                1.0F, -1.0F, size, 1.0F, 1.0F, alpha);
+        addSnowflakeVertex(buffer, matrix, cameraLeft, cameraUp, x, y, z,
+                1.0F, 1.0F, size, 1.0F, 0.0F, alpha);
+        addSnowflakeVertex(buffer, matrix, cameraLeft, cameraUp, x, y, z,
+                -1.0F, 1.0F, size, 0.0F, 0.0F, alpha);
+        addSnowflakeVertex(buffer, matrix, cameraLeft, cameraUp, x, y, z,
+                -1.0F, -1.0F, size, 0.0F, 1.0F, alpha);
+    }
+
+    private static void addSnowflakeVertex(
+            BufferBuilder buffer,
+            Matrix4f matrix,
+            Vector3f cameraLeft,
+            Vector3f cameraUp,
+            float x,
+            float y,
+            float z,
+            float xOffset,
+            float yOffset,
+            float size,
+            float u,
+            float v,
+            int alpha) {
+        float vertexX = x + (cameraLeft.x * xOffset + cameraUp.x * yOffset) * size;
+        float vertexY = y + (cameraLeft.y * xOffset + cameraUp.y * yOffset) * size;
+        float vertexZ = z + (cameraLeft.z * xOffset + cameraUp.z * yOffset) * size;
+        buffer.addVertex(matrix, vertexX, vertexY, vertexZ)
+                .setUv(u, v)
+                .setColor(0.923F, 0.964F, 0.999F, alpha / 255.0F);
     }
 
     private static void spawnSurfaceFrost(ClientLevel level, BlockPos origin) {
@@ -544,12 +962,15 @@ public final class MasterArchitectAuraClient {
             RenderLevelStageEvent event,
             BlockPos center,
             float tier,
-            float collapseProgress) {
+            int aftermathTicks,
+            float aftermathStrength) {
         Vec3 camera = event.getCamera().getPosition();
         Vec3 toCenter = center.getCenter().subtract(camera);
         double horizontalDistance = Math.sqrt(
                 toCenter.x * toCenter.x + toCenter.z * toCenter.z);
-        if (horizontalDistance < 88.0D) {
+        float distantLodWeight = MasterArchitectEyeWallPolicy
+                .distantRenderWeight(horizontalDistance);
+        if (distantLodWeight <= 0.001F) {
             return;
         }
         Vec3 anchor;
@@ -570,29 +991,65 @@ public final class MasterArchitectAuraClient {
                 tier,
                 MasterArchitectAuraTier.PASSIVE,
                 MasterArchitectAuraTier.FIGHT);
-        float collapse = Mth.clamp(collapseProgress, 0.0F, 1.0F);
-        float contractionPortion = Math.min(
-                0.20F,
-                40.0F / Math.max(1.0F, collapseDurationTicks));
-        float contraction = collapse <= 0.0F
-                ? 0.0F
-                : Mth.clamp(collapse / contractionPortion, 0.0F, 1.0F);
-        float unwind = collapse <= contractionPortion
-                ? 0.0F
-                : Mth.clamp(
-                        (collapse - contractionPortion) / (1.0F - contractionPortion),
-                        0.0F,
-                        1.0F);
-        float collapseScale = collapse <= contractionPortion
-                ? Mth.lerp(contraction, 1.0F, 0.30F)
-                : Mth.lerp(unwind, 0.30F, 3.4F);
+        boolean aftermath = aftermathTicks > 0;
+        MasterArchitectStormAftermathPolicy.Stage stage = aftermath
+                ? MasterArchitectStormAftermathPolicy.stage(
+                aftermathTicks, aftermathStrength)
+                : MasterArchitectStormAftermathPolicy.Stage.CORE;
+        MasterArchitectStormAftermathPolicy.Timeline timeline =
+                MasterArchitectStormAftermathPolicy.timeline(aftermathStrength);
+        float eyeProgress = stage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                ? Mth.clamp((aftermathTicks - timeline.coreEndTick())
+                / (float) Math.max(1, timeline.eyeEndTick() - timeline.coreEndTick()),
+                0.0F, 1.0F) : stage.ordinal()
+                > MasterArchitectStormAftermathPolicy.Stage.EYE.ordinal() ? 1.0F : 0.0F;
+        float ruptureProgress = stage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                ? Mth.clamp((aftermathTicks - timeline.eyeEndTick())
+                / (float) Math.max(1,
+                timeline.ruptureEndTick() - timeline.eyeEndTick()),
+                0.0F, 1.0F) : stage.ordinal()
+                > MasterArchitectStormAftermathPolicy.Stage.RUPTURE.ordinal() ? 1.0F : 0.0F;
+        float baseProgress = stage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                ? Mth.clamp((aftermathTicks - timeline.ruptureEndTick())
+                / (float) Math.max(1,
+                timeline.collapseEndTick() - timeline.ruptureEndTick()),
+                0.0F, 1.0F) : 0.0F;
+        float fadeProgress = stage == MasterArchitectStormAftermathPolicy.Stage.FADE
+                ? Mth.clamp(aftermathTicks
+                / (float) Math.max(1, timeline.collapseEndTick()), 0.0F, 1.0F)
+                : 0.0F;
+        float collapseScale = !aftermath ? 1.0F
+                : stage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                ? Mth.lerp(eyeProgress, 1.0F, 0.42F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                ? Mth.lerp(ruptureProgress, 0.42F, 0.82F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                ? Mth.lerp(baseProgress, 0.82F, 1.55F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.FADE
+                ? Mth.lerp(fadeProgress, 1.0F, 2.8F) : 1.0F;
         float pulse = 1.0F + columnPulse * 0.16F;
-        float width = Mth.lerp(
-                (visualTier - 1.0F) / 2.0F,
-                34.0F, 19.0F)
-                * distanceScale * pulse * collapseScale;
-        float height = 154.0F * distanceScale;
-        float alphaScale = 1.0F - unwind;
+        float activeWidth = MasterArchitectEyeWallPolicy.radius(
+                visualTier, aftermathTicks, aftermathStrength);
+        float rupturingWidth = Mth.lerp(
+                (visualTier - 1.0F) / 2.0F, 39.0F, 26.0F) * collapseScale;
+        float width = (stage == MasterArchitectStormAftermathPolicy.Stage.CORE
+                || stage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                ? activeWidth : rupturingWidth) * distanceScale * pulse;
+        float heightScale = stage == MasterArchitectStormAftermathPolicy.Stage.EYE
+                ? Mth.lerp(eyeProgress, 1.0F, 0.38F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                ? 1.0F - baseProgress * 0.92F : 1.0F;
+        float height = 154.0F * distanceScale * heightScale;
+        float alphaScale = (!aftermath ? 1.0F
+                : stage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
+                ? Mth.lerp(ruptureProgress, 1.0F, 0.52F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
+                ? Mth.lerp(baseProgress, 0.52F, 0.0F)
+                : stage == MasterArchitectStormAftermathPolicy.Stage.FADE
+                ? 1.0F - fadeProgress
+                : stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
+                || stage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE
+                ? 0.0F : 1.0F) * distantLodWeight;
         if (alphaScale <= 0.01F) {
             return;
         }
@@ -600,7 +1057,8 @@ public final class MasterArchitectAuraClient {
         RenderSystem.enableBlend();
         RenderSystem.disableCull();
         RenderSystem.depthMask(false);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, SNOWFLAKE_TEXTURE);
         RenderSystem.blendFuncSeparate(
                 GlStateManager.SourceFactor.SRC_ALPHA,
                 GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
@@ -611,23 +1069,157 @@ public final class MasterArchitectAuraClient {
         poses.translate(anchor.x, anchor.y + baseY, anchor.z);
         Matrix4f matrix = poses.last().pose();
         BufferBuilder buffer = Tesselator.getInstance().begin(
-                VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+                VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
         double time = Minecraft.getInstance().level.getGameTime()
                 + event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        addStormWisps(
+        addStormSnowVolume(
                 buffer,
                 matrix,
+                event.getCamera().getLeftVector(),
+                event.getCamera().getUpVector(),
                 visualTier,
                 width,
                 height,
                 time,
-                alphaScale * 0.42F);
+                alphaScale,
+                aftermath ? Mth.lerp(ruptureProgress, 1.15F, 0.18F) : 1.0F);
         BufferUploader.drawWithShader(buffer.buildOrThrow());
         poses.popPose();
+        if (aftermath && aftermathStrength > 0.001F
+                && ruptureProgress > 0.0F) {
+            renderDetachedStormChunks(
+                    event, anchor, baseY, distanceScale, visualTier,
+                    time, ruptureProgress, baseProgress, aftermathStrength);
+        }
         RenderSystem.depthMask(true);
         RenderSystem.enableCull();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
+    }
+
+    private static void addStormSnowVolume(
+            BufferBuilder buffer,
+            Matrix4f matrix,
+            Vector3f cameraLeft,
+            Vector3f cameraUp,
+            float tier,
+            float width,
+            float height,
+            double time,
+            float alphaScale,
+            float rotationScale) {
+        float tierProgress = Mth.clamp((tier - 1.0F) / 2.0F, 0.0F, 1.0F);
+        double density = FrozenDawnConfig.MASTER_AURA_PARTICLE_DENSITY.get();
+        double optionScale = switch (Minecraft.getInstance().options.particles().get()) {
+            case ALL -> 1.0D;
+            case DECREASED -> 0.68D;
+            case MINIMAL -> 0.38D;
+        };
+        int flakeCount = Math.max(48, Mth.floor(
+                Mth.lerp(tierProgress, 176.0F, 288.0F)
+                        * density * optionScale));
+        float eyeWallHeight = Math.min(
+                height * 0.42F,
+                MasterArchitectEyeWallPolicy.height(tier) * 1.08F);
+        float speed = Mth.lerp(tierProgress, 0.010F, 0.034F) * rotationScale;
+        for (int index = 0; index < flakeCount; index++) {
+            float seed = hash01(index * 47 + 23);
+            boolean eyeWall = hash01(index * 31 + 11) < 0.72F;
+            float verticalSpeed = Mth.lerp(
+                    hash01(index * 19 + 3), 0.0009F, 0.0038F);
+            float verticalPhase = Mth.frac(seed - (float) time * verticalSpeed);
+            float y;
+            float radius;
+            if (eyeWall) {
+                y = verticalPhase * eyeWallHeight;
+                radius = width * Mth.lerp(
+                        hash01(index * 59 + 29), 0.88F, 1.18F);
+            } else {
+                float upper = verticalPhase * verticalPhase;
+                y = eyeWallHeight + upper * Math.max(1.0F, height - eyeWallHeight);
+                float taper = Mth.lerp(upper, 1.0F, 0.52F);
+                radius = width * taper * Mth.lerp(
+                        hash01(index * 59 + 29), 0.74F, 1.22F);
+            }
+            float direction = (index & 15) == 0 ? -0.38F : 1.0F;
+            float angle = hash01(index * 73 + 17) * Mth.TWO_PI
+                    + (float) time * speed * direction
+                    + y * Mth.lerp(tierProgress, 0.025F, 0.052F);
+            float turbulence = Mth.sin(
+                    (float) time * 0.045F + index * 1.37F + y * 0.12F);
+            radius += turbulence * Mth.lerp(tierProgress, 1.1F, 2.4F);
+            float x = Mth.cos(angle) * radius;
+            float z = Mth.sin(angle) * radius;
+            float size = Mth.lerp(
+                    hash01(index * 37 + 13), 0.72F, 1.85F)
+                    * Mth.lerp(tierProgress, 0.92F, 1.20F);
+            int alpha = Mth.clamp(Mth.floor(
+                    Mth.lerp(hash01(index * 41 + 7), 74.0F, 164.0F)
+                            * alphaScale), 0, 210);
+            addSnowflakeQuad(
+                    buffer,
+                    matrix,
+                    cameraLeft,
+                    cameraUp,
+                    x,
+                    y,
+                    z,
+                    size,
+                    alpha);
+        }
+    }
+
+    private static void renderDetachedStormChunks(
+            RenderLevelStageEvent event,
+            Vec3 anchor,
+            float baseY,
+            float distanceScale,
+            float visualTier,
+            double time,
+            float ruptureProgress,
+            float baseProgress,
+            float fieldStrength) {
+        int chunkCount = MasterArchitectStormAftermathPolicy
+                .detachedChunkCount(fieldStrength);
+        for (int index = 0; index < chunkCount; index++) {
+            float releaseAt = 0.12F + index * 0.17F;
+            float progress = Mth.clamp(
+                    (ruptureProgress - releaseAt) / Math.max(0.1F, 1.0F - releaseAt),
+                    0.0F, 1.0F);
+            if (progress <= 0.0F) {
+                continue;
+            }
+            float driftAngle = hash01(index * 71 + 19) * Mth.TWO_PI;
+            float drift = Mth.lerp(progress, 3.0F, 48.0F) * distanceScale;
+            float vertical = (44.0F + index * 23.0F) * distanceScale
+                    + progress * (7.0F + index * 2.0F);
+            float alpha = (1.0F - progress * 0.82F)
+                    * (1.0F - baseProgress * 0.55F);
+            if (alpha <= 0.02F) {
+                continue;
+            }
+
+            PoseStack poses = event.getPoseStack();
+            poses.pushPose();
+            poses.translate(
+                    anchor.x + Math.cos(driftAngle) * drift,
+                    anchor.y + baseY + vertical,
+                    anchor.z + Math.sin(driftAngle) * drift);
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+            BufferBuilder buffer = Tesselator.getInstance().begin(
+                    VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+            addStormWisps(
+                    buffer,
+                    poses.last().pose(),
+                    visualTier,
+                    (7.0F + index * 1.3F) * distanceScale,
+                    (18.0F + index * 3.0F) * distanceScale,
+                    time - progress * 14.0D,
+                    alpha * 0.58F,
+                    Mth.lerp(progress, 0.82F, 0.08F));
+            BufferUploader.drawWithShader(buffer.buildOrThrow());
+            poses.popPose();
+        }
     }
 
     private static void addStormWisps(
@@ -637,7 +1229,8 @@ public final class MasterArchitectAuraClient {
             float width,
             float height,
             double time,
-            float alphaScale) {
+            float alphaScale,
+            float rotationScale) {
         float tierProgress = (tier - 1.0F) / 2.0F;
         int wispCount = Mth.floor(Mth.lerp(tierProgress, 88.0F, 158.0F));
         float speed = Mth.lerp(tierProgress, 0.006F, 0.031F);
@@ -652,7 +1245,7 @@ public final class MasterArchitectAuraClient {
             float direction = (wisp & 7) == 0 ? -0.55F : 1.0F;
             float angularSpeed = speed
                     * Mth.lerp(hash01(wisp * 23 + 3), 0.68F, 1.34F)
-                    * direction;
+                    * direction * rotationScale;
             float angle = hash01(wisp * 53 + 17) * Mth.TWO_PI
                     + (float) time * angularSpeed
                     + vertical * Mth.lerp(tierProgress, 3.2F, 6.8F);
@@ -959,6 +1552,11 @@ public final class MasterArchitectAuraClient {
         collapseCenter = BlockPos.ZERO;
         collapseTicks = 0;
         collapseDurationTicks = 12 * 20;
+        collapseStrength = 0.0F;
+        pressureWaveTicks = 0;
+        eyeWallParticleWarmupTicks = 0;
+        lastAftermathStage = MasterArchitectStormAftermathPolicy.Stage.COMPLETE;
+        MasterArchitectEyeWallRenderer.clear();
     }
 
     private static final class DelayedThunder {

@@ -758,12 +758,6 @@ final class MasterArchitectFloodController {
         copy.setMasterBossBarEmptyOverride(true);
         copy.setMasterCombatVisual(MasterArchitectCombatAction.MIND_RETURN_STAGGER, 0);
         copy.playSound(ModSounds.MASTER_ARCHITECT_MIND_DEATH_WAIL.get(), 6.5F, 0.52F);
-        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
-                originLevel,
-                MasterArchitectAuraEventPayload.DEATH_COLLAPSE,
-                architect.blockPosition().above(96),
-                architect.blockPosition(),
-                1.8F);
         for (UUID participantId : participantIds) {
             ServerPlayer player = originLevel.getServer().getPlayerList()
                     .getPlayer(participantId);

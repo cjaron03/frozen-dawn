@@ -56,7 +56,6 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue MASTER_AURA_T3_ARC_SECONDS;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_INFRASOUND_GAIN;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_STORM_RESPONSE_SECONDS;
-    public static final ModConfigSpec.IntValue MASTER_AURA_KILL_COLLAPSE_SECONDS;
     public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MASTER_CHANCE;
     public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_ARCHITECT_CHANCE;
     public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE;
@@ -273,9 +272,6 @@ public class FrozenDawnConfig {
         MASTER_AURA_STORM_RESPONSE_SECONDS = BUILDER
                 .comment("Seconds for the distant storm column to grow toward a new tier.")
                 .defineInRange("masterAuraStormResponseSeconds", 5.0D, 0.5D, 30.0D);
-        MASTER_AURA_KILL_COLLAPSE_SECONDS = BUILDER
-                .comment("Seconds for the distant storm column to unwind after the Master dies.")
-                .defineInRange("masterAuraKillCollapseSeconds", 60, 10, 180);
         SUIT_PUNCTURE_MASTER_CHANCE = BUILDER
                 .comment("Chance that a Master Architect melee hit punctures a sealed EVA suit.")
                 .defineInRange("suitPunctureMasterChance", 0.10D, 0.0D, 1.0D);

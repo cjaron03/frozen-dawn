@@ -62,17 +62,27 @@ public final class HearthMasterArchitectManager {
         return new DebugRespawnResult(true, removed, spawned);
     }
 
-    public static void recordDefeat(ServerLevel level, UUID hearthId, UUID entityId) {
+    public static void recordDefeat(
+            ServerLevel level, UUID hearthId, UUID entityId, @Nullable UUID killerId) {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        HearthCombatRosterManager.FloodPopulation population =
+                HearthCombatRosterManager.floodPopulation(level, hearthId);
         if (!data.markMasterArchitectDefeated(
                 hearthId, entityId, level.getGameTime())) {
             return;
         }
-        HearthMasterArchitectWeatherManager.onMasterDefeated(level, hearthId);
+        data.beginMasterArchitectStormAftermath(
+                hearthId, level.getGameTime(), population.strength(), killerId);
+        HearthCombatRosterManager.setFloodKneeling(level, hearthId, true);
+        HearthMasterArchitectWeatherManager.onMasterDefeated(
+                level, hearthId, population.strength());
         mastersDefeated++;
         FrozenDawn.LOGGER.info(
-                "Master Architect {} defeated at Major Hearth {}; apex will not respawn",
-                shortId(entityId), shortId(hearthId));
+                "Master Architect {} defeated at Major Hearth {}; storm aftermath started "
+                        + "with {}/{} surviving residents (strength={})",
+                shortId(entityId), shortId(hearthId),
+                population.survivingResidents(), population.maximumResidents(),
+                String.format(Locale.ROOT, "%.3f", population.strength()));
     }
 
     public static String statusLine() {
