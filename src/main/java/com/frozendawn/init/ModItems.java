@@ -10,6 +10,7 @@ import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.BoardPacketItem;
+import com.frozendawn.item.BlackglassArchiveCardItem;
 import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
@@ -25,6 +26,8 @@ import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.OrsaThermalVisorItem;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
+import com.frozendawn.item.OrsaTraumaKitItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
@@ -128,6 +131,18 @@ public class ModItems {
             "emergency_o2_cartridge",
             () -> new EmergencyO2CartridgeItem(
                     new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<O2EfficiencyModuleItem> O2_EFFICIENCY_MODULE = ITEMS.register(
+            "o2_efficiency_module",
+            () -> new O2EfficiencyModuleItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<OrsaTraumaKitItem> ORSA_TRAUMA_KIT = ITEMS.register(
+            "orsa_trauma_kit",
+            () -> new OrsaTraumaKitItem(
+                    new Item.Properties().stacksTo(4).rarity(Rarity.RARE)));
+    public static final DeferredItem<BlackglassArchiveCardItem> BLACKGLASS_ARCHIVE_CARD =
+            ITEMS.register("blackglass_archive_card",
+                    () -> new BlackglassArchiveCardItem(
+                            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SULFUR_LAVA_BUCKET = ITEMS.register("sulfur_lava_bucket",
             () -> new BucketItem(ModFluids.SOURCE_VENT_LAVA.get(),
                     new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
@@ -414,6 +429,9 @@ public class ModItems {
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());
                         output.accept(EMERGENCY_O2_CARTRIDGE.get());
+                        output.accept(O2_EFFICIENCY_MODULE.get());
+                        output.accept(ORSA_TRAUMA_KIT.get());
+                        output.accept(BLACKGLASS_ARCHIVE_CARD.get());
                         output.accept(SULFUR_LAVA_BUCKET.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());

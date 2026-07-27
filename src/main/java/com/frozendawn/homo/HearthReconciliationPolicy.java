@@ -11,9 +11,9 @@ import java.util.List;
  * Pure reconciliation rules shared by the runtime and tests.
  */
 public final class HearthReconciliationPolicy {
-    public static final int TRACE_PLAN_VERSION = 3;
-    public static final int FORMED_PLAN_VERSION = 9;
-    public static final int INTACT_PLAN_VERSION = 10;
+    public static final int TRACE_PLAN_VERSION = 4;
+    public static final int FORMED_PLAN_VERSION = 10;
+    public static final int INTACT_PLAN_VERSION = 11;
     public static final int TRACE_FOOTPRINT_RADIUS = 4;
     public static final int FORMED_FOOTPRINT_RADIUS = 5;
     public static final int INTACT_FOOTPRINT_RADIUS = 22;

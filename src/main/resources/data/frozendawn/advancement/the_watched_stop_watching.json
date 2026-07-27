@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:decoherence",
+  "display": {
+    "icon": {
+      "id": "frozendawn:master_architect_staff"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.the_watched_stop_watching.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.the_watched_stop_watching.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

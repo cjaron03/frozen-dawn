@@ -6,6 +6,7 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -724,6 +725,12 @@ public class MimicEntity extends Monster {
             return;
         }
         facePlayer(observed);
+        if (observed instanceof ServerPlayer serverPlayer
+                && level() instanceof ServerLevel serverLevel
+                && hearthPopulationId != null) {
+            HearthTransmissionManager.tryStart(
+                    serverLevel, this, serverPlayer, hearthPopulationId);
+        }
         if (stareSoundCooldown > 0) {
             stareSoundCooldown--;
         } else if (MimicCombatBehavior.isPlayerLookingAtMe(this, observed)) {

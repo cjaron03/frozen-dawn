@@ -23,5 +23,7 @@ class ThaevenTransmissionTypeTest {
             assertTrue(type.minimumCompletionTicks() <= type.durationTicks());
             assertTrue(type.durationTicks() - type.minimumCompletionTicks() <= 20);
         }
+        assertEquals(ThaevenTransmissionType.HEARTH_MYTH,
+                ThaevenTransmissionType.fromNetworkId(2));
     }
 }

@@ -13,6 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HearthArchitectPolicyTest {
 
     @Test
+    void assessmentEscalatesAfterThreeSeconds() {
+        assertEquals(60, HearthArchitectPolicy.ASSESSMENT_TICKS);
+    }
+
+    @Test
     void onlyReconciledIntactMajorHearthCanHostAssessor() {
         ReturnedHearthSavedData state = selectedState();
         ReturnedHearthSavedData.HearthRecord major = major(state);

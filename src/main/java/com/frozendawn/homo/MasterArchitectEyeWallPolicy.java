@@ -23,7 +23,7 @@ public final class MasterArchitectEyeWallPolicy {
             float visualTier,
             int aftermathTicks,
             float aftermathStrength) {
-        if (visualTier < MasterArchitectAuraTier.NOTICED) {
+        if (activationProgress(visualTier, aftermathTicks) <= 0.001F) {
             return false;
         }
         if (aftermathTicks <= 0) {
@@ -42,12 +42,37 @@ public final class MasterArchitectEyeWallPolicy {
             float visualTier,
             int aftermathTicks,
             float aftermathStrength) {
+        float activation = activationProgress(visualTier, aftermathTicks);
+        float activeRadius = Mth.lerp(
+                activation, COLLAPSED_RADIUS, HOSTILE_RADIUS);
         float collapse = collapseProgress(aftermathTicks, aftermathStrength);
-        return Mth.lerp(collapse, HOSTILE_RADIUS, COLLAPSED_RADIUS);
+        return Mth.lerp(collapse, activeRadius, COLLAPSED_RADIUS);
     }
 
     public static float height(float visualTier) {
-        return HOSTILE_HEIGHT;
+        return HOSTILE_HEIGHT * Mth.lerp(
+                activationProgress(visualTier, 0), 0.22F, 1.0F);
+    }
+
+    /** Reverse-collapse used when the storm first answers an escalating Hearth. */
+    public static float activationProgress(float visualTier, int aftermathTicks) {
+        if (aftermathTicks > 0) {
+            return 1.0F;
+        }
+        float linear = Mth.clamp(
+                visualTier - MasterArchitectAuraTier.PASSIVE,
+                0.0F,
+                1.0F);
+        return linear * linear * (3.0F - 2.0F * linear);
+    }
+
+    /** Live snow arrives after the expanding eye wall has established its shape. */
+    public static float snowActivationProgress(float visualTier, int aftermathTicks) {
+        float linear = Mth.clamp(
+                (activationProgress(visualTier, aftermathTicks) - 0.42F) / 0.58F,
+                0.0F,
+                1.0F);
+        return linear * linear * (3.0F - 2.0F * linear);
     }
 
     public static float collapseProgress(

@@ -19,7 +19,7 @@ public final class HearthArchitectPolicy {
     public static final int WATCH_DISTANCE = 32;
     public static final int ASSESSMENT_MIN_DISTANCE = 10;
     public static final int ASSESSMENT_MAX_DISTANCE = 24;
-    public static final int ASSESSMENT_TICKS = 100;
+    public static final int ASSESSMENT_TICKS = 60;
 
     private static final long SPAWN_SALT = 0x4153534553534F52L;
     private static final long VARIANT_SALT = 0x415243485F564152L;

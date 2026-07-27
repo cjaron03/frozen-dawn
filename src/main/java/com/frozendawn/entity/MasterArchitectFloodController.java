@@ -3,6 +3,8 @@ package com.frozendawn.entity;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
@@ -740,6 +742,13 @@ final class MasterArchitectFloodController {
             return;
         }
         mindDeathKillerId = killer == null ? null : killer.getUUID();
+        if (killer != null) {
+            architect.getHearthMasterArchitectId().ifPresent(hearthId -> {
+                WorldTickHandler.grantAdvancement(killer, "decoherence");
+                ReturnedHearthSavedData.get(originLevel.getServer())
+                        .markDecoherenceGranted(hearthId);
+            });
+        }
         mindDeathReturnTicks = MIND_DEATH_EJECTION_TICKS;
         immersion = 1.0F;
         copyHealthSnapshot = 0.0F;

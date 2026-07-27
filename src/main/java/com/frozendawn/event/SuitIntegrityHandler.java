@@ -10,6 +10,7 @@ import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.network.SuitIntegrityPayload;
 import com.frozendawn.phase.PhaseManager;
@@ -125,7 +126,8 @@ public final class SuitIntegrityHandler {
                     state.ventAccumulator() + SuitIntegrityPolicy.ventPerTick(
                     maxO2,
                     FrozenDawnConfig.SUIT_PUNCTURE_VENT_SECONDS.get(),
-                    state.punctures()));
+                    state.punctures())
+                            * O2EfficiencyModuleItem.consumptionMultiplier(player));
             int vent = (int) Math.floor(state.ventAccumulator());
             if (vent > 0) {
                 consumeO2(player, vent);

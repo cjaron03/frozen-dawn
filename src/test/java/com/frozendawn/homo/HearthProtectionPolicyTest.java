@@ -42,8 +42,12 @@ class HearthProtectionPolicyTest {
                 state, resolved.offset(5, 0, 0)));
         assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
                 state, resolved.offset(6, 0, 0)));
+        assertTrue(HearthProtectionPolicy.isEnvironmentalMutationProtected(
+                state, resolved.offset(0, -16, 0)));
         assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
-                state, resolved.offset(0, -6, 0)));
+                state, resolved.offset(0, -19, 0)));
+        assertFalse(HearthProtectionPolicy.isEnvironmentalMutationProtected(
+                state, resolved.offset(0, 8, 0)));
     }
 
     @Test

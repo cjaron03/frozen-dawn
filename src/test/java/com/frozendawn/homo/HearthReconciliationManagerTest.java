@@ -1,6 +1,7 @@
 package com.frozendawn.homo;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.minecraft.core.BlockPos;
@@ -49,7 +50,7 @@ class HearthReconciliationManagerTest {
     }
 
     @Test
-    void lowerDeckCanReplaceNaturalGravelDuringIntactExpansion() {
+    void hearthConstructionCanConsumeNaturalTerrainAtAnyAuthoredHeight() {
         HearthStructurePlacement floor = new HearthStructurePlacement(
                 HearthStructurePiece.PACKED_ICE_LOWER,
                 new BlockPos(10, -1, 6),
@@ -65,7 +66,7 @@ class HearthReconciliationManagerTest {
 
         assertTrue(HearthReconciliationManager.canReplaceNatural(
                 Blocks.GRAVEL.defaultBlockState(), floor));
-        assertFalse(HearthReconciliationManager.canReplaceNatural(
+        assertTrue(HearthReconciliationManager.canReplaceNatural(
                 Blocks.GRAVEL.defaultBlockState(), aboveGround));
     }
 
@@ -101,5 +102,38 @@ class HearthReconciliationManagerTest {
                 HearthStructurePiece.FROZEN_STONE_BRICKS));
         assertFalse(HearthReconciliationManager.isOptionalTerrainDecoration(
                 HearthStructurePiece.SACRED_CHEST));
+    }
+
+    @Test
+    void permanentBlockersAreSkippedInsteadOfRetriedForever() {
+        assertEquals(1, HearthReconciliationManager.failureAttemptLimit(
+                HearthReconciliationManager.PlacementFailureKind.PERMANENT_BLOCKER));
+        assertTrue(HearthReconciliationManager.shouldSkipAfterFailure(
+                HearthReconciliationManager.PlacementFailureKind.PERMANENT_BLOCKER, 1));
+    }
+
+    @Test
+    void temporaryPlacementFailuresHaveBoundedRecoveryWindows() {
+        int entityLimit = HearthReconciliationManager.failureAttemptLimit(
+                HearthReconciliationManager.PlacementFailureKind.ENTITY);
+        int setBlockLimit = HearthReconciliationManager.failureAttemptLimit(
+                HearthReconciliationManager.PlacementFailureKind.SET_BLOCK);
+
+        assertTrue(entityLimit > setBlockLimit);
+        assertFalse(HearthReconciliationManager.shouldSkipAfterFailure(
+                HearthReconciliationManager.PlacementFailureKind.ENTITY, entityLimit - 1));
+        assertTrue(HearthReconciliationManager.shouldSkipAfterFailure(
+                HearthReconciliationManager.PlacementFailureKind.ENTITY, entityLimit));
+        assertFalse(HearthReconciliationManager.shouldSkipAfterFailure(
+                HearthReconciliationManager.PlacementFailureKind.SET_BLOCK, setBlockLimit - 1));
+        assertTrue(HearthReconciliationManager.shouldSkipAfterFailure(
+                HearthReconciliationManager.PlacementFailureKind.SET_BLOCK, setBlockLimit));
+    }
+
+    @Test
+    void ruggedSurfaceFallbackKeepsFoundationsWithinAuthoredDepth() {
+        assertEquals(96, HearthReconciliationManager.fallbackSurfaceY(80, 96, 16));
+        assertEquals(96, HearthReconciliationManager.fallbackSurfaceY(80, 112, 16));
+        assertEquals(87, HearthReconciliationManager.fallbackSurfaceY(80, 87, 16));
     }
 }

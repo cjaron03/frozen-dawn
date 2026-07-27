@@ -33,9 +33,8 @@ import java.util.List;
 public final class ThaevenTransmissionOverlay {
     private static final int INPUT_GRACE_TICKS = 8;
     private static final int CAMERA_SETTLE_TICKS = 24;
-    private static final int LOOK_AWAY_GRACE_TICKS = 32;
+    private static final int RESIST_HOLD_TICKS = 28;
     private static final double MAX_DISTANCE_SQUARED = 34.0D * 34.0D;
-    private static final double LOOK_AWAY_DOT = 0.18D;
 
     private static boolean active;
     private static int sessionId;
@@ -46,6 +45,7 @@ public final class ThaevenTransmissionOverlay {
     private static ThaevenTransmissionType transmissionType = ThaevenTransmissionType.VEL_THAE;
     private static boolean secondaryCuePlayed;
     private static boolean resolveCuePlayed;
+    private static int resistTicks;
     private static SoundInstance contactSound;
 
     private ThaevenTransmissionOverlay() {
@@ -65,6 +65,7 @@ public final class ThaevenTransmissionOverlay {
                 : mc.player.getHealth() + mc.player.getAbsorptionAmount();
         secondaryCuePlayed = false;
         resolveCuePlayed = false;
+        resistTicks = 0;
         if (mc.getSoundManager() != null) {
             contactSound = SimpleSoundInstance.forUI(
                     ModSounds.THAEVEN_CONTACT.get(), 1.0F, 0.88F);
@@ -133,6 +134,21 @@ public final class ThaevenTransmissionOverlay {
         Component sensation = Component.translatable(beat.sensation());
         drawCenteredWrapped(graphics, font, sensation, width, phraseY + 8,
                 maxTextWidth, withAlpha(0xFF8FB7BF, fade * beatFade * 0.9F));
+
+        if (resistTicks > 0) {
+            float resistance = Mth.clamp(resistTicks / (float) RESIST_HOLD_TICKS, 0.0F, 1.0F);
+            int meterWidth = Math.min(180, width / 3);
+            int meterX = (width - meterWidth) / 2;
+            int meterY = height - barHeight - 14;
+            graphics.fill(meterX, meterY, meterX + meterWidth, meterY + 3,
+                    argb(Math.round(90.0F * fade), 17, 39, 46));
+            graphics.fill(meterX, meterY,
+                    meterX + Math.round(meterWidth * resistance), meterY + 3,
+                    argb(Math.round(210.0F * fade), 96, 216, 223));
+            Component resist = Component.translatable("overlay.frozendawn.thaeven.resist");
+            graphics.drawCenteredString(font, resist, width / 2, meterY - 11,
+                    withAlpha(0xFF8FB7BF, fade));
+        }
     }
 
     @SubscribeEvent
@@ -154,9 +170,20 @@ public final class ThaevenTransmissionOverlay {
             return;
         }
 
-        if (ticks > INPUT_GRACE_TICKS && shouldBreakContact(mc, source)) {
-            stop(false, true, true);
-            return;
+        if (ticks > INPUT_GRACE_TICKS) {
+            if (tookDamage(mc)) {
+                stop(false, true, true);
+                return;
+            }
+            if (isResisting(mc)) {
+                resistTicks++;
+            } else {
+                resistTicks = Math.max(0, resistTicks - 2);
+            }
+            if (resistTicks >= RESIST_HOLD_TICKS) {
+                stop(false, true, true);
+                return;
+            }
         }
 
         if (ticks < CAMERA_SETTLE_TICKS) {
@@ -181,9 +208,8 @@ public final class ThaevenTransmissionOverlay {
         }
     }
 
-    private static boolean shouldBreakContact(Minecraft mc, Entity source) {
-        if (mc.screen != null
-                || mc.options.keyUp.isDown()
+    private static boolean isResisting(Minecraft mc) {
+        return mc.options.keyUp.isDown()
                 || mc.options.keyDown.isDown()
                 || mc.options.keyLeft.isDown()
                 || mc.options.keyRight.isDown()
@@ -191,21 +217,12 @@ public final class ThaevenTransmissionOverlay {
                 || mc.options.keyShift.isDown()
                 || mc.options.keySprint.isDown()
                 || mc.options.keyAttack.isDown()
-                || mc.options.keyUse.isDown()) {
-            return true;
-        }
+                || mc.options.keyUse.isDown();
+    }
 
+    private static boolean tookDamage(Minecraft mc) {
         float currentHealth = mc.player.getHealth() + mc.player.getAbsorptionAmount();
-        if (currentHealth + 0.01F < startingHealth || mc.player.hurtTime > 0) {
-            return true;
-        }
-
-        if (ticks <= LOOK_AWAY_GRACE_TICKS) {
-            return false;
-        }
-        Vec3 towardSource = source.getEyePosition().subtract(mc.player.getEyePosition());
-        return towardSource.lengthSqr() > 0.001D
-                && mc.player.getViewVector(1.0F).dot(towardSource.normalize()) < LOOK_AWAY_DOT;
+        return currentHealth + 0.01F < startingHealth || mc.player.hurtTime > 0;
     }
 
     private static void settleCamera(Minecraft mc, Entity source) {
@@ -222,6 +239,26 @@ public final class ThaevenTransmissionOverlay {
     }
 
     private static TransmissionBeat currentBeat() {
+        if (transmissionType == ThaevenTransmissionType.HEARTH_MYTH) {
+            if (ticks < 54) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.myth.orsha_built",
+                        "overlay.frozendawn.thaeven.myth.warm_camps", 0);
+            }
+            if (ticks < 116) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.myth.maeve_coming",
+                        "overlay.frozendawn.thaeven.myth.descent", 54);
+            }
+            if (ticks < 184) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.myth.vel_vesh",
+                        "overlay.frozendawn.thaeven.myth.stars", 116);
+            }
+            if (ticks < 246) {
+                return new TransmissionBeat("overlay.frozendawn.thaeven.myth.took_warmth",
+                        "overlay.frozendawn.thaeven.myth.cold_heater", 184);
+            }
+            return new TransmissionBeat(null,
+                    "overlay.frozendawn.thaeven.myth.silence", 246);
+        }
         if (transmissionType == ThaevenTransmissionType.ORSHA_RECOGNITION) {
             if (ticks < 44) {
                 return new TransmissionBeat(null,

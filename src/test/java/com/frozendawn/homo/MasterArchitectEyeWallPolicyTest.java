@@ -28,6 +28,31 @@ class MasterArchitectEyeWallPolicyTest {
     }
 
     @Test
+    void stormExpandsOutwardBeforeSnowReachesFullDensity() {
+        float earlyTier = MasterArchitectAuraTier.PASSIVE + 0.25F;
+        float middleTier = MasterArchitectAuraTier.PASSIVE + 0.60F;
+
+        float earlyRadius = MasterArchitectEyeWallPolicy.radius(
+                earlyTier, 0, 0.0F);
+        float middleRadius = MasterArchitectEyeWallPolicy.radius(
+                middleTier, 0, 0.0F);
+
+        assertTrue(MasterArchitectEyeWallPolicy.isVisible(earlyTier, 0, 0.0F));
+        assertTrue(earlyRadius > MasterArchitectEyeWallPolicy.COLLAPSED_RADIUS);
+        assertTrue(middleRadius > earlyRadius);
+        assertTrue(middleRadius < MasterArchitectEyeWallPolicy.HOSTILE_RADIUS);
+        assertEquals(0.0F,
+                MasterArchitectEyeWallPolicy.snowActivationProgress(earlyTier, 0),
+                0.0001F);
+        assertTrue(MasterArchitectEyeWallPolicy.snowActivationProgress(middleTier, 0)
+                > 0.0F);
+        assertEquals(1.0F,
+                MasterArchitectEyeWallPolicy.snowActivationProgress(
+                        MasterArchitectAuraTier.NOTICED, 0),
+                0.0001F);
+    }
+
+    @Test
     void deathPullsTheEyeInwardBeforeRupture() {
         float strength = 1.0F;
         MasterArchitectStormAftermathPolicy.Timeline timeline =

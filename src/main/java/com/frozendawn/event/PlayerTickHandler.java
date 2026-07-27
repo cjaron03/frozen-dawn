@@ -6,6 +6,7 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
@@ -351,7 +352,9 @@ final class PlayerTickHandler {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
                         if (!SuitIntegrityHandler.hasPuncture(player)
-                                && (!visorRig || state.getApocalypseTicks() % 2 == 0)) {
+                                && (!visorRig || state.getApocalypseTicks() % 2 == 0)
+                                && O2EfficiencyModuleItem.consumesBaselineO2(
+                                        player, state.getApocalypseTicks())) {
                             tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
                         }
                         suffocationTimer.put(id, 0);

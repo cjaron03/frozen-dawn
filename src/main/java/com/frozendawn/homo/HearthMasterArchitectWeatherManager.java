@@ -362,9 +362,10 @@ public final class HearthMasterArchitectWeatherManager {
             return;
         }
         if (!major.masterStormAftermathActive()) {
-            grantDeferredDecoherence(level, data, major);
+            grantDeferredWatchedStopWatching(level, data, major);
             return;
         }
+        recoverFoldDecoherence(level, data, major);
         int elapsed = aftermathElapsed(level, major);
         MasterArchitectStormAftermathPolicy.Timeline timeline =
                 MasterArchitectStormAftermathPolicy.timeline(
@@ -383,14 +384,14 @@ public final class HearthMasterArchitectWeatherManager {
                             + "the Hearth sky is permanently clear",
                     shortId(major.id()));
         }
-        grantDeferredDecoherence(level, data, major);
+        grantDeferredWatchedStopWatching(level, data, major);
     }
 
-    private static void grantDeferredDecoherence(
+    private static void recoverFoldDecoherence(
             ServerLevel level,
             ReturnedHearthSavedData data,
             ReturnedHearthSavedData.HearthRecord major) {
-        if (!major.hearthStormDead() || major.decoherenceGranted()) {
+        if (major.decoherenceGranted()) {
             return;
         }
         UUID killerId = major.masterStormAftermathKillerId().orElse(null);
@@ -404,6 +405,26 @@ public final class HearthMasterArchitectWeatherManager {
         }
         WorldTickHandler.grantAdvancement(killer, "decoherence");
         data.markDecoherenceGranted(major.id());
+    }
+
+    private static void grantDeferredWatchedStopWatching(
+            ServerLevel level,
+            ReturnedHearthSavedData data,
+            ReturnedHearthSavedData.HearthRecord major) {
+        if (!major.hearthStormDead() || major.watchedStopWatchingGranted()) {
+            return;
+        }
+        UUID killerId = major.masterStormAftermathKillerId().orElse(null);
+        if (killerId == null) {
+            data.markWatchedStopWatchingGranted(major.id());
+            return;
+        }
+        ServerPlayer killer = level.getServer().getPlayerList().getPlayer(killerId);
+        if (killer == null) {
+            return;
+        }
+        WorldTickHandler.grantAdvancement(killer, "the_watched_stop_watching");
+        data.markWatchedStopWatchingGranted(major.id());
     }
 
     private static void tickAftermathAuraEvents(

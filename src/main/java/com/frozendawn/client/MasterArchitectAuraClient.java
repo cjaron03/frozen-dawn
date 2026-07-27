@@ -728,10 +728,9 @@ public final class MasterArchitectAuraClient {
             eyeWallParticleWarmupTicks = 0;
             return;
         }
-        if (collapseTicks <= 0
-                && Math.abs(visualTier - MasterArchitectWeather.getAuraTier()) > 0.025F) {
-            // The batched wall covers tier transitions. Existing live particles retain
-            // their old radius, so emitting during a transition produces competing rings.
+        float snowActivation = MasterArchitectEyeWallPolicy.snowActivationProgress(
+                visualTier, collapseTicks);
+        if (snowActivation <= 0.001F) {
             eyeWallParticleWarmupTicks = 0;
             return;
         }
@@ -747,7 +746,10 @@ public final class MasterArchitectAuraClient {
                 visualTier, collapseTicks, collapseStrength)
                 * (1.0D + columnPulse * 0.16D);
         double columnHeight = 154.0D
-                * Mth.lerp(collapseProgress, 1.0F, 0.38F);
+                * Mth.lerp(collapseProgress, 1.0F, 0.38F)
+                * Mth.lerp(
+                MasterArchitectEyeWallPolicy.activationProgress(
+                        visualTier, collapseTicks), 0.35F, 1.0F);
         double eyeWallHeight = Math.min(
                 columnHeight * 0.42D,
                 MasterArchitectEyeWallPolicy.height(visualTier) * 1.08D);
@@ -768,7 +770,7 @@ public final class MasterArchitectAuraClient {
         int requested = Math.max(1, Mth.floor(
                 Mth.lerp(tierProgress, 11.0F, 24.0F)
                         * density * Mth.lerp(proximity, 0.58F, 1.0F)
-                        * fade * particleWeight));
+                        * fade * particleWeight * snowActivation));
         int spawned = 0;
         int attempts = requested * 4;
         long time = level.getGameTime();
@@ -870,12 +872,15 @@ public final class MasterArchitectAuraClient {
                 aftermathTicks, aftermathStrength);
         float fade = MasterArchitectEyeWallPolicy.emptyFade(
                 aftermathTicks, aftermathStrength);
-        float alphaScale = lodWeight * fade;
+        float activation = MasterArchitectEyeWallPolicy.activationProgress(
+                visualTier, aftermathTicks);
+        float alphaScale = lodWeight * fade * activation;
         float width = MasterArchitectEyeWallPolicy.radius(
                 visualTier, aftermathTicks, aftermathStrength)
                 * (1.0F + columnPulse * 0.16F);
         float height = 154.0F
-                * Mth.lerp(collapseProgress, 1.0F, 0.38F);
+                * Mth.lerp(collapseProgress, 1.0F, 0.38F)
+                * Mth.lerp(activation, 0.35F, 1.0F);
         double time = Minecraft.getInstance().level.getGameTime()
                 + event.getPartialTick().getGameTimeDeltaPartialTick(false);
 
@@ -1014,6 +1019,8 @@ public final class MasterArchitectAuraClient {
                 tier,
                 MasterArchitectAuraTier.PASSIVE,
                 MasterArchitectAuraTier.FIGHT);
+        float activation = MasterArchitectEyeWallPolicy.activationProgress(
+                visualTier, aftermathTicks);
         boolean aftermath = aftermathTicks > 0;
         MasterArchitectStormAftermathPolicy.Stage stage = aftermath
                 ? MasterArchitectStormAftermathPolicy.stage(
@@ -1062,7 +1069,8 @@ public final class MasterArchitectAuraClient {
                 ? Mth.lerp(eyeProgress, 1.0F, 0.38F)
                 : stage == MasterArchitectStormAftermathPolicy.Stage.BASE_COLLAPSE
                 ? 1.0F - baseProgress * 0.92F : 1.0F;
-        float height = 154.0F * distanceScale * heightScale;
+        float height = 154.0F * distanceScale * heightScale
+                * Mth.lerp(activation, 0.35F, 1.0F);
         float alphaScale = (!aftermath ? 1.0F
                 : stage == MasterArchitectStormAftermathPolicy.Stage.RUPTURE
                 ? Mth.lerp(ruptureProgress, 1.0F, 0.52F)
@@ -1072,7 +1080,7 @@ public final class MasterArchitectAuraClient {
                 ? 1.0F - fadeProgress
                 : stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS
                 || stage == MasterArchitectStormAftermathPolicy.Stage.COMPLETE
-                ? 0.0F : 1.0F) * distantLodWeight;
+                ? 0.0F : 1.0F) * distantLodWeight * activation;
         if (alphaScale <= 0.01F) {
             return;
         }
