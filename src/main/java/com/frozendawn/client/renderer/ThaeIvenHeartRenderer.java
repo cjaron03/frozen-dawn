@@ -1,5 +1,6 @@
 package com.frozendawn.client.renderer;
 
+import com.frozendawn.client.CognitiveLoadClientState;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.homo.HeartFormationStage;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -49,6 +50,11 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
             case HOLD, LIVE -> 1.0F;
             default -> 0.0F;
         };
+        boolean descended = stage == HeartFormationStage.LIVE;
+        if (descended) {
+            poseStack.pushPose();
+            poseStack.translate(0.0D, -CognitiveLoadClientState.heartDescentBlocks(), 0.0D);
+        }
         Lattice lattice = CACHE.computeIfAbsent(
                 heart.layoutSeed(), ThaeIvenHeartRenderer::createLattice);
         PoseStack.Pose pose = poseStack.last();
@@ -72,6 +78,9 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                     0.10F, 0.78F, 1.0F, pulse);
         }
         super.render(heart, yaw, partialTick, poseStack, buffers, packedLight);
+        if (descended) {
+            poseStack.popPose();
+        }
     }
 
     private static void renderGroundMark(

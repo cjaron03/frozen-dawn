@@ -9,6 +9,7 @@ import com.frozendawn.block.TowerAntennaConsoleBlockEntity;
 import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
@@ -196,8 +197,23 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleMasterArchitectFloodProgress(payload))
         );
+        registrar.playToClient(
+                CognitiveLoadPayload.TYPE,
+                CognitiveLoadPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleCognitiveLoad(payload))
+        );
 
         // Server-bound packets
+        registrar.playToServer(
+                CognitiveResistancePayload.TYPE,
+                CognitiveResistancePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        CognitiveLoadManager.handleResistance(sp, payload.resistance());
+                    }
+                })
+        );
         registrar.playToServer(
                 WatcherSeenPayload.TYPE,
                 WatcherSeenPayload.STREAM_CODEC,

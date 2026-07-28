@@ -3,6 +3,7 @@ package com.frozendawn.network;
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.DifficultySelectionScreen;
 import com.frozendawn.client.ContinuityFractureInput;
+import com.frozendawn.client.CognitiveLoadClientState;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
@@ -196,5 +197,9 @@ public final class ClientHandlers {
     public static void handleMasterArchitectFloodProgress(
             MasterArchitectFloodProgressPayload payload) {
         MasterArchitectFloodClient.handleProgress(payload);
+    }
+
+    public static void handleCognitiveLoad(CognitiveLoadPayload payload) {
+        CognitiveLoadClientState.update(payload);
     }
 }

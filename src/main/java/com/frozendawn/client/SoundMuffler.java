@@ -92,6 +92,16 @@ public class SoundMuffler {
             return;
         }
 
+        if (CognitiveLoadClientState.shouldMuffleWorldSound(original)) {
+            float factor = CognitiveLoadClientState.worldSoundVolumeFactor();
+            if (factor <= 0.01F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(original, factor, 0.94F));
+            }
+            return;
+        }
+
         boolean isMasterAuraSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
                 && (soundPath.startsWith("entity.master_architect.")
                 || soundPath.startsWith("ui.master_architect."));

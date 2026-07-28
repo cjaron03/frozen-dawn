@@ -77,6 +77,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
     public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_HUD_FADE;
     public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_SCREEN_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_COGNITIVE_LOAD_EFFECTS;
     public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_FLASH_INTENSITY;
     public static final ModConfigSpec.DoubleValue MASTER_AURA_PARTICLE_DENSITY;
@@ -342,6 +343,10 @@ public class FrozenDawnConfig {
                 .comment("Enable fog, vignette, memory pulses, and FOV compression in Thae Iven.",
                         "Disable for photosensitivity while preserving the fight and its hotbar.")
                 .define("enableFloodScreenEffects", true);
+        ENABLE_COGNITIVE_LOAD_EFFECTS = BUILDER
+                .comment("Enable Cognitive Load watcher, telemetry, screen, and audio effects.",
+                        "Disable for accessibility; Load mechanics and its HUD bar remain active.")
+                .define("enableCognitiveLoadEffects", true);
         MIND_OVERRIDE_INTENSITY = BUILDER
                 .comment("Scales Thae Iven screen effects without changing movement or damage.")
                 .defineInRange("mindOverrideIntensity", 1.0D, 0.0D, 1.0D);

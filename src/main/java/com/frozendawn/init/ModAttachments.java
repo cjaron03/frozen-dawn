@@ -1,6 +1,7 @@
 package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.data.CognitiveLoadState;
 import com.frozendawn.data.SuitIntegrity;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -17,6 +18,11 @@ public final class ModAttachments {
             SUIT_INTEGRITY = ATTACHMENTS.register(
                     "suit_integrity",
                     () -> AttachmentType.serializable(SuitIntegrity::new).build());
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<CognitiveLoadState>>
+            COGNITIVE_LOAD = ATTACHMENTS.register(
+                    "cognitive_load",
+                    () -> AttachmentType.serializable(CognitiveLoadState::new).build());
 
     private ModAttachments() {
     }
