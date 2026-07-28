@@ -16,22 +16,24 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-/** Owns the layered, vacuum-safe score for the Master Architect fight. */
+/** Owns the continuous, vacuum-safe score for the Master Architect fight. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class MasterArchitectFightMusic {
     private static final int HEARTBEAT_TIMEOUT_TICKS = 70;
-    private static final int GHOST_DURATION_TICKS = 744;
-    private static final int LAST_WALL_DURATION_TICKS = 842;
 
     private static MasterArchitectMusicStage stage = MasterArchitectMusicStage.OFF;
-    private static FightTrack tetherBed;
-    private static FightTrack memoryFragment;
+    private static FightTrack battleScore;
     private static int heartbeatTicks;
+    private static int terminalSuppressionTicks;
 
     private MasterArchitectFightMusic() {
     }
 
     public static void update(MasterArchitectFightMusicPayload payload) {
+        if (terminalSuppressionTicks > 0) {
+            hardStop();
+            return;
+        }
         MasterArchitectMusicStage incoming = MasterArchitectMusicStage.fromId(
                 payload.stageId());
         if (incoming == MasterArchitectMusicStage.OFF) {
@@ -41,32 +43,18 @@ public final class MasterArchitectFightMusic {
 
         heartbeatTicks = HEARTBEAT_TIMEOUT_TICKS;
         if (incoming == stage) {
-            ensureTetherBed();
+            if (incoming != MasterArchitectMusicStage.FLOOD) {
+                ensureBattleScore();
+            }
             return;
         }
 
         stage = incoming;
-        ensureTetherBed();
-        switch (incoming) {
-            case KIT -> {
-                tetherBed.setTargetVolume(0.48F);
-                replaceMemoryFragment(
-                        ModSounds.MASTER_ARCHITECT_MUSIC_GHOST.get(),
-                        0.78F,
-                        GHOST_DURATION_TICKS);
-            }
-            case TETHER -> {
-                tetherBed.setTargetVolume(0.96F);
-                stopMemoryFragment();
-            }
-            case LAST_WALL -> {
-                tetherBed.setTargetVolume(0.56F);
-                replaceMemoryFragment(
-                        ModSounds.MASTER_ARCHITECT_MUSIC_LAST_WALL.get(),
-                        0.88F,
-                        LAST_WALL_DURATION_TICKS);
-            }
-            case OFF -> hardStop();
+        if (incoming == MasterArchitectMusicStage.FLOOD) {
+            stopBattleScore();
+        } else {
+            ensureBattleScore();
+            battleScore.setTargetVolume(stageVolume(incoming));
         }
     }
 
@@ -74,9 +62,35 @@ public final class MasterArchitectFightMusic {
         return stage != MasterArchitectMusicStage.OFF && heartbeatTicks > 0;
     }
 
+    public static void stopFlood() {
+        hardStop();
+    }
+
+    /** Hard encounter teardown used when the Master dies or the Flood closes. */
+    public static void stopAll() {
+        hardStop();
+    }
+
+    public static void setFloodIntensity(float strength, float proximity) {
+        if (terminalSuppressionTicks > 0) {
+            hardStop();
+            return;
+        }
+        heartbeatTicks = HEARTBEAT_TIMEOUT_TICKS;
+        if (stage != MasterArchitectMusicStage.FLOOD) {
+            stage = MasterArchitectMusicStage.FLOOD;
+        }
+        stopBattleScore();
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+        if (terminalSuppressionTicks > 0) {
+            terminalSuppressionTicks--;
+            hardStop();
+            return;
+        }
         if (mc.level == null || mc.player == null) {
             hardStop();
             return;
@@ -88,49 +102,56 @@ public final class MasterArchitectFightMusic {
             hardStop();
             return;
         }
-        ensureTetherBed();
+        if (stage != MasterArchitectMusicStage.FLOOD) {
+            ensureBattleScore();
+        }
     }
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         hardStop();
+        terminalSuppressionTicks = 0;
     }
 
-    private static void ensureTetherBed() {
-        if (tetherBed != null && !tetherBed.isStopped()) {
+    public static void suppressAfterCanonicalDeath(int ticks) {
+        terminalSuppressionTicks = Math.max(terminalSuppressionTicks, ticks);
+        hardStop();
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
+        minecraft.getMusicManager().stopPlaying();
+    }
+
+    private static void ensureBattleScore() {
+        if (battleScore != null && !battleScore.isStopped()) {
             return;
         }
-        tetherBed = new FightTrack(
-                ModSounds.MASTER_ARCHITECT_MUSIC_TETHERS.get(),
+        battleScore = new FightTrack(
+                ModSounds.MASTER_ARCHITECT_MUSIC_ORREN.get(),
                 0.0F,
-                stage == MasterArchitectMusicStage.TETHER ? 0.96F
-                        : stage == MasterArchitectMusicStage.LAST_WALL ? 0.56F : 0.48F,
+                stageVolume(stage),
                 true,
                 -1);
-        Minecraft.getInstance().getSoundManager().play(tetherBed);
+        Minecraft.getInstance().getSoundManager().play(battleScore);
     }
 
-    private static void replaceMemoryFragment(
-            SoundEvent sound, float volume, int durationTicks) {
-        stopMemoryFragment();
-        memoryFragment = new FightTrack(sound, 0.0F, volume, false, durationTicks);
-        Minecraft.getInstance().getSoundManager().play(memoryFragment);
+    private static float stageVolume(MasterArchitectMusicStage currentStage) {
+        return switch (currentStage) {
+            case KIT -> 0.78F;
+            case TETHER -> 0.92F;
+            case LAST_WALL -> 0.88F;
+            case FLOOD, OFF -> 0.0F;
+        };
     }
 
-    private static void stopMemoryFragment() {
-        if (memoryFragment != null) {
-            Minecraft.getInstance().getSoundManager().stop(memoryFragment);
-            memoryFragment = null;
+    private static void stopBattleScore() {
+        if (battleScore != null) {
+            Minecraft.getInstance().getSoundManager().stop(battleScore);
+            battleScore = null;
         }
     }
 
     private static void hardStop() {
-        Minecraft mc = Minecraft.getInstance();
-        if (tetherBed != null) {
-            mc.getSoundManager().stop(tetherBed);
-            tetherBed = null;
-        }
-        stopMemoryFragment();
+        stopBattleScore();
         stage = MasterArchitectMusicStage.OFF;
         heartbeatTicks = 0;
     }

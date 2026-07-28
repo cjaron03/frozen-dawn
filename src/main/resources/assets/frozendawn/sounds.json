@@ -83,6 +83,36 @@
       }
     ]
   },
+  "ui.suit.puncture_warning": {
+    "subtitle": "subtitle.frozendawn.ui.suit.puncture_warning",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/puncture_warning", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_critical",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/oxygen_critical", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_beep": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_beep",
+    "sounds": [
+      "frozendawn:ui/suit/oxygen_beep"
+    ]
+  },
+  "ui.suit.leak_hiss": {
+    "subtitle": "subtitle.frozendawn.ui.suit.leak_hiss",
+    "sounds": [
+      "frozendawn:ui/suit/leak_hiss"
+    ]
+  },
+  "ui.suit.emergency_reserve": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_reserve", "stream": true }
+    ]
+  },
   "ambient.eva_suffocate": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_suffocate",
@@ -478,6 +508,24 @@
       }
     ]
   },
+  "music.master_architect.mind": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/thae_iven_v3",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.orren": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/orren",
+        "stream": true
+      }
+    ]
+  },
   "music.sad.moog_city_2": {
     "category": "music",
     "sounds": [
@@ -684,6 +732,15 @@
       { "name": "frozendawn:entity/master_architect/last_wall", "volume": 1.4 }
     ]
   },
+  "entity.master_architect.construction": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.construction",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/cast", "volume": 0.85, "pitch": 0.64 },
+      { "name": "minecraft:block.piston.extend", "type": "event", "volume": 0.8, "pitch": 0.55 },
+      { "name": "minecraft:block.packed_ice.place", "type": "event", "volume": 1.05, "pitch": 0.62 }
+    ]
+  },
   "entity.master_architect.thermal_pulse": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_pulse",
@@ -756,6 +813,86 @@
       { "name": "minecraft:block.conduit.activate", "type": "event", "volume": 1.15, "pitch": 0.74 },
       { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 0.92, "pitch": 0.62 },
       { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.72, "pitch": 1.18 }
+    ]
+  },
+  "entity.master_architect.tether_wail": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.2, "pitch": 0.56 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.25, "pitch": 0.60 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.85, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.obstruction_smash": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.obstruction_smash",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.staff", "type": "event", "volume": 1.0, "pitch": 0.72 },
+      { "name": "minecraft:entity.iron_golem.attack", "type": "event", "volume": 1.15, "pitch": 0.68 }
+    ]
+  },
+  "entity.master_architect.flood_begin": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_begin",
+    "sounds": [
+      { "name": "frozendawn:ui.thaeven_contact", "type": "event", "volume": 1.25, "pitch": 0.66 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.45, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.flood_mote": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_mote",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.92, "pitch": 0.72 },
+      { "name": "minecraft:block.sculk_sensor.clicking", "type": "event", "volume": 0.68, "pitch": 0.58 }
+    ]
+  },
+  "entity.master_architect.core_reveal": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.core_reveal",
+    "sounds": [
+      { "name": "minecraft:entity.allay.item_given", "type": "event", "volume": 1.55, "pitch": 0.48 },
+      { "name": "minecraft:entity.warden.heartbeat", "type": "event", "volume": 1.45, "pitch": 0.72 },
+      { "name": "minecraft:block.amethyst_cluster.step", "type": "event", "volume": 1.10, "pitch": 0.42 }
+    ]
+  },
+  "entity.master_architect.flood_hit": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_hit",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.65, "pitch": 0.46 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 0.82, "pitch": 0.48 },
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 0.78, "pitch": 0.54 }
+    ]
+  },
+  "entity.master_architect.flood_return": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_return",
+    "sounds": [
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.5, "pitch": 0.55 },
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 0.9, "pitch": 0.62 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.72, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.mind_death_wail": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.mind_death_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_death", "volume": 2.4, "pitch": 0.66 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.55, "pitch": 0.46 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.2, "pitch": 0.68 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.15, "pitch": 0.44 }
+    ]
+  },
+  "entity.master_architect.mind_heal_escalate": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.mind_heal_escalate",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.8, "pitch": 0.43 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.8, "pitch": 0.50 },
+      { "name": "minecraft:block.end_portal.spawn", "type": "event", "volume": 1.45, "pitch": 0.62 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.35, "pitch": 0.38 }
     ]
   },
   "entity.master_architect.thermal_charge": {
@@ -860,6 +997,27 @@
   "radio.voice.repeat": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_repeat" ] },
   "radio.voice.unable": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_unable" ] },
   "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] },
+  "ui.master_architect.mind_scan": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.mind_scan",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/mind_scan", "stream": true }
+    ]
+  },
+  "ui.master_architect.telemetry_mismatch": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.telemetry_mismatch",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/telemetry_mismatch", "stream": true }
+    ]
+  },
+  "ui.master_architect.telemetry_restored": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.telemetry_restored",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/telemetry_restored", "stream": true }
+    ]
+  },
   "ui.thaeven_contact": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.thaeven_contact",
@@ -874,6 +1032,62 @@
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.thaeven_resolve",
     "sounds": [ "frozendawn:ui/thaeven_resolve" ]
+  },
+  "entity.master_architect.thundersnow_close": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_close",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_close", "stream": true }
+    ]
+  },
+  "entity.master_architect.thundersnow_mid": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_mid",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_mid", "stream": true }
+    ]
+  },
+  "entity.master_architect.thundersnow_distant": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_distant",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_distant", "stream": true }
+    ]
+  },
+  "entity.master_architect.arc_crackle": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.arc_crackle",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/arc_crackle" }
+    ]
+  },
+  "entity.master_architect.infrasound": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/infrasound", "stream": true }
+    ]
+  },
+  "entity.master_architect.aura_death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.aura_death",
+    "sounds": [
+      { "name": "minecraft:entity.wither.death", "type": "event", "volume": 2.2, "pitch": 0.62 },
+      { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.6, "pitch": 0.72 }
+    ]
+  },
+  "ui.master_architect.aura_temperature": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.aura_temperature",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/aura_temperature", "stream": true }
+    ]
+  },
+  "ui.master_architect.aura_fight": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.aura_fight",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/aura_fight", "stream": true }
+    ]
   },
   "ui.thaeven_interrupt": {
     "category": "master",

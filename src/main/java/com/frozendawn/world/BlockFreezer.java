@@ -453,16 +453,6 @@ public final class BlockFreezer {
         if (isVentFreezeImmune(level, pos, state)) {
             return;
         }
-        // Phase 6 late: surface ice sublimates (solid → gas in vacuum)
-        // Water also boils off instantly. Underground ice is unaffected.
-        if (PhaseManager.isVacuumActive(phase, progress) && level.canSeeSky(pos.above())) {
-            if (state.is(Blocks.WATER) || state.is(Blocks.ICE)
-                    || state.is(Blocks.PACKED_ICE) || state.is(Blocks.BLUE_ICE)) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
-                return;
-            }
-        }
-
         if (state.is(Blocks.WATER) && phase >= 2) {
             setFrozenBlock(level, pos, Blocks.ICE.defaultBlockState());
             return;

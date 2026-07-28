@@ -57,6 +57,12 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.masterArchitectDefeated(), actual.masterArchitectDefeated());
             assertEquals(expected.masterArchitectDefeatedGameTime(),
                     actual.masterArchitectDefeatedGameTime());
+            assertEquals(expected.masterStormAftermathActive(),
+                    actual.masterStormAftermathActive());
+            assertEquals(expected.hearthStormDead(), actual.hearthStormDead());
+            assertEquals(expected.decoherenceGranted(), actual.decoherenceGranted());
+            assertEquals(expected.watchedStopWatchingGranted(),
+                    actual.watchedStopWatchingGranted());
         }
     }
 
@@ -441,6 +447,26 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.masterArchitectEntityId().isEmpty());
         assertTrue(restored.masterArchitectDefeated());
         assertEquals(5000L, restored.masterArchitectDefeatedGameTime());
+        UUID killer = UUID.randomUUID();
+        assertTrue(loaded.markDecoherenceGranted(restored.id()));
+        assertTrue(loaded.beginMasterArchitectStormAftermath(
+                restored.id(), 5070L, 0.75F, killer));
+
+        ReturnedHearthSavedData aftermathReload = ReturnedHearthSavedData.load(
+                loaded.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord active = major(aftermathReload);
+        assertTrue(active.masterStormAftermathActive());
+        assertEquals(5070L, active.masterStormAftermathStartGameTime());
+        assertEquals(0.75F, active.masterStormAftermathStrength());
+        assertEquals(killer, active.masterStormAftermathKillerId().orElseThrow());
+        assertFalse(active.hearthStormDead());
+        assertTrue(active.decoherenceGranted());
+        assertFalse(active.watchedStopWatchingGranted());
+        assertTrue(aftermathReload.completeMasterArchitectStormAftermath(active.id()));
+        assertTrue(active.hearthStormDead());
+        assertFalse(active.masterStormAftermathActive());
+        assertTrue(aftermathReload.markWatchedStopWatchingGranted(active.id()));
+        assertFalse(aftermathReload.markWatchedStopWatchingGranted(active.id()));
         assertFalse(loaded.bindMasterArchitect(restored.id(), replacement));
         assertTrue(loaded.initializeCombatRoster(restored.id(), Map.of(
                 UUID.randomUUID(), HearthEncounterRole.DISPATCHED)));
@@ -451,6 +477,8 @@ class ReturnedHearthSavedDataTest {
         assertTrue(defeated.masterArchitectDefeated());
         assertEquals(5000L, defeated.masterArchitectDefeatedGameTime());
         assertTrue(defeatedReload.resetMasterArchitectForDebug(defeated.id()));
+        assertFalse(defeated.decoherenceGranted());
+        assertFalse(defeated.watchedStopWatchingGranted());
         assertFalse(defeated.combatRosterInitialized());
         assertTrue(defeated.combatRoster().isEmpty());
         assertTrue(defeatedReload.bindMasterArchitect(defeated.id(), replacement));
@@ -470,6 +498,27 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.masterArchitectEntityId().isEmpty());
         assertFalse(restored.masterArchitectDefeated());
         assertEquals(-1L, restored.masterArchitectDefeatedGameTime());
+    }
+
+    @Test
+    void completedStormMigrationDoesNotInventASecondAdvancementToast() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        CompoundTag versionTwelve = state.save(new CompoundTag(), null);
+        versionTwelve.putInt("dataVersion", 12);
+        for (Tag entry : versionTwelve.getList("hearths", Tag.TAG_COMPOUND)) {
+            CompoundTag hearth = (CompoundTag) entry;
+            if ("MAJOR".equals(hearth.getString("type"))) {
+                hearth.putBoolean("hearthStormDead", true);
+                hearth.putBoolean("decoherenceGranted", true);
+                hearth.remove("watchedStopWatchingGranted");
+            }
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionTwelve, null);
+
+        assertTrue(major(loaded).decoherenceGranted());
+        assertTrue(major(loaded).watchedStopWatchingGranted());
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
     }
 
     @Test
@@ -757,6 +806,54 @@ class ReturnedHearthSavedDataTest {
         assertFalse(other.firstTransmissionComplete());
         assertEquals(-1L, other.firstTransmissionGameTime());
         assertTrue(restored.firstTransmissionFired());
+    }
+
+    @Test
+    void hearthMythRequiresFirstContactAndPersistsIndependently() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+
+        state.recordArchitectAssessment(player, major.id(), 2000L, false);
+        assertFalse(state.completeHearthMythTransmission(player, major.id(), 2100L));
+        assertTrue(state.completeFirstTransmission(player, major.id(), 2200L));
+        assertTrue(state.completeHearthMythTransmission(player, major.id(), 2600L));
+        assertFalse(state.completeHearthMythTransmission(player, major.id(), 2700L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthContactMemory contact = major(loaded)
+                .playerContact(player).orElseThrow();
+        assertTrue(contact.firstTransmissionComplete());
+        assertTrue(contact.hearthMythTransmissionComplete());
+        assertEquals(2600L, contact.hearthMythTransmissionGameTime());
+    }
+
+    @Test
+    void preMythSchemaLoadsWithMythUndelivered() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        state.recordArchitectAssessment(player, major.id(), 2000L, false);
+        state.completeFirstTransmission(player, major.id(), 2200L);
+        CompoundTag versionEleven = state.save(new CompoundTag(), null);
+        versionEleven.putInt("dataVersion", 11);
+        for (Tag entry : versionEleven.getList("hearths", Tag.TAG_COMPOUND)) {
+            CompoundTag hearth = (CompoundTag) entry;
+            for (Tag contactEntry : hearth.getList("playerContacts", Tag.TAG_COMPOUND)) {
+                CompoundTag contact = (CompoundTag) contactEntry;
+                contact.remove("hearthMythTransmissionComplete");
+                contact.remove("hearthMythTransmissionGameTime");
+            }
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(versionEleven, null);
+        ReturnedHearthSavedData.HearthContactMemory contact = major(loaded)
+                .playerContact(player).orElseThrow();
+        assertTrue(contact.firstTransmissionComplete());
+        assertFalse(contact.hearthMythTransmissionComplete());
+        assertEquals(-1L, contact.hearthMythTransmissionGameTime());
+        assertEquals(ReturnedHearthSavedData.CURRENT_DATA_VERSION, loaded.dataVersion());
     }
 
     @Test

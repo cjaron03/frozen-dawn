@@ -22,7 +22,7 @@ public final class MasterArchitectCombatPolicy {
     public static final int LAST_WALL_HEAL_PULSE_TICKS = 10;
     public static final int LAST_WALL_LIFETIME_TICKS = 240;
     public static final int STORM_MAINTENANCE_ACTION_TICKS = 52;
-    public static final int DEATH_CHARGE_START_TICK = 14;
+    public static final int DEATH_CHARGE_START_TICK = 4;
     public static final int DEATH_LOCK_TICK = 60;
     public static final int DEATH_DETONATION_TICK = 70;
 
@@ -145,7 +145,7 @@ public final class MasterArchitectCombatPolicy {
         float charge = deathChargeProgress(deathTicks);
         float lock = clamp01((deathTicks - DEATH_LOCK_TICK)
                 / (DEATH_DETONATION_TICK - (float) DEATH_LOCK_TICK));
-        return charge * (1.0F - lock);
+        return charge * (0.72F + lock * 0.58F);
     }
 
     public static float deathBlastDamage(double distance) {

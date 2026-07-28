@@ -194,6 +194,13 @@ public class BoardPacketItem extends Item {
         return stack.is(ModItems.BOARD_PACKET.get());
     }
 
+    public static ItemStack createHearthRecoveredPacket() {
+        ItemStack packet = new ItemStack(ModItems.BOARD_PACKET.get());
+        reveal(packet);
+        refreshBookContent(packet);
+        return packet;
+    }
+
     private static boolean hasMirrorInOtherHand(Player player, InteractionHand hand) {
         InteractionHand otherHand = hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
         return player.getItemInHand(otherHand).is(ModItems.MIRRORED_FRAGMENT.get());

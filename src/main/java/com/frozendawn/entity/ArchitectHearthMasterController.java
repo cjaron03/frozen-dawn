@@ -1,8 +1,10 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.MasterArchitectAuraTier;
 import com.frozendawn.homo.MasterArchitectFightMusicManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -32,14 +34,33 @@ final class ArchitectHearthMasterController {
 
     /** @return always true because the Master never falls through to ordinary Architect AI. */
     boolean tick(ServerLevel level) {
+        combatController.tickPersistentState(level);
+        BlockPos boundaryCenter = hearthBoundaryCenter(level);
+        enforceStormBoundary(boundaryCenter);
+        if (combatController.isMindSessionActive()) {
+            updateAuraTier(level, MasterArchitectAuraTier.FIGHT);
+            architect.setMasterBossBarProvoked(true);
+            combatController.tickFolded(level);
+            if (!combatMusicActive) {
+                MasterArchitectFightMusicManager.pushStage(
+                        level, architect, combatController.musicStage());
+            } else {
+                MasterArchitectFightMusicManager.heartbeat(
+                        level, architect, combatController.musicStage());
+            }
+            combatMusicActive = true;
+            return true;
+        }
         ServerPlayer hostileTarget = findHostileTarget(level);
         if (hostileTarget != null) {
+            updateAuraTier(level, MasterArchitectAuraTier.FIGHT);
             architect.getHearthMasterArchitectId().ifPresent(
                     hearthId -> HearthCombatRosterManager.ensureRoster(
                             level, hearthId, hostileTarget));
             architect.setMasterBossBarProvoked(true);
             patrolCooldown = 0;
-            combatController.tick(level, hostileTarget);
+            combatController.tick(level, hostileTarget, boundaryCenter);
+            enforceStormBoundary(boundaryCenter);
             if (!combatMusicActive) {
                 MasterArchitectFightMusicManager.pushStage(
                         level, architect, combatController.musicStage());
@@ -57,6 +78,7 @@ final class ArchitectHearthMasterController {
         }
         architect.setMasterBossBarProvoked(false);
         combatController.leaveCombat(level);
+        updateAuraTier(level, peacefulAuraTier(level));
         architect.prepareHearthAssessmentMode();
         BlockPos home = architect.getHearthMasterArchitectHome().orElse(null);
         if (home == null) {
@@ -88,8 +110,9 @@ final class ArchitectHearthMasterController {
         return true;
     }
 
-    void onHurt() {
-        combatController.onHurt();
+    void onHurt(ServerLevel level, @Nullable ServerPlayer attacker) {
+        ServerPlayer floodTarget = attacker != null ? attacker : findHostileTarget(level);
+        combatController.onHurt(level, floodTarget);
     }
 
     MasterArchitectCombatController.TetherDamageResult redistributeIncomingDamage(
@@ -102,10 +125,41 @@ final class ArchitectHearthMasterController {
                 incomingDamage, bypassesInvulnerability);
     }
 
-    void onDeath(ServerLevel level) {
+    void onDeath(ServerLevel level, @Nullable ServerPlayer killer) {
         MasterArchitectFightMusicManager.stopNearby(level, architect);
         combatMusicActive = false;
-        combatController.onDeath(level);
+        combatController.onDeath(level, killer);
+        architect.getHearthMasterArchitectId().ifPresent(
+                hearthId -> HearthCombatRosterManager.setFloodKneeling(
+                        level, hearthId, true));
+    }
+
+    void onMindCopyHurt(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        combatController.onMindCopyHurt(level, copy, source, amount);
+    }
+
+    float prepareMindCopyDamage(
+            ServerLevel level,
+            ArchitectEntity copy,
+            net.minecraft.world.damagesource.DamageSource source,
+            float amount) {
+        return combatController.prepareMindCopyDamage(level, copy, source, amount);
+    }
+
+    void onMindCopyDefeated(
+            ServerLevel level,
+            ArchitectEntity copy,
+            @Nullable ServerPlayer killer) {
+        combatController.onMindCopyDefeated(level, copy, killer);
+    }
+
+    void onMindParticipantFailed(
+            ServerLevel level, ServerPlayer player, String reason) {
+        combatController.onMindParticipantFailed(level, player, reason);
     }
 
     void addSaveData(net.minecraft.nbt.CompoundTag tag) {
@@ -176,5 +230,46 @@ final class ArchitectHearthMasterController {
         }
         architect.getNavigation().moveTo(
                 center.x + offset.x, home.getY(), center.z + offset.z, speed);
+    }
+
+    @Nullable
+    private BlockPos hearthBoundaryCenter(ServerLevel level) {
+        return architect.getHearthMasterArchitectId()
+                .flatMap(id -> ReturnedHearthSavedData.get(level.getServer()).hearth(id))
+                .map(ReturnedHearthSavedData.HearthRecord::center)
+                .orElseGet(() -> architect.getHearthMasterArchitectHome().orElse(null));
+    }
+
+    private void enforceStormBoundary(@Nullable BlockPos center) {
+        if (center == null
+                || HearthMasterArchitectPolicy.isInsideStormBoundary(
+                        center, architect.position())) {
+            return;
+        }
+        Vec3 clamped = HearthMasterArchitectPolicy.clampToStormBoundary(
+                center, architect.position());
+        architect.getNavigation().stop();
+        architect.setDeltaMovement(0.0D, architect.getDeltaMovement().y, 0.0D);
+        architect.setPos(clamped.x, clamped.y, clamped.z);
+    }
+
+    private int peacefulAuraTier(ServerLevel level) {
+        ReturnedHearthSavedData.HearthDisposition mood = architect
+                .getHearthMasterArchitectId()
+                .flatMap(id -> ReturnedHearthSavedData.get(level.getServer()).hearth(id))
+                .map(ReturnedHearthSavedData.HearthRecord::mood)
+                .orElse(ReturnedHearthSavedData.HearthDisposition.DORMANT);
+        return MasterArchitectAuraTier.fromMood(mood, false);
+    }
+
+    private void updateAuraTier(ServerLevel level, int tier) {
+        int previous = architect.getMasterAuraTier();
+        if (previous == tier) {
+            return;
+        }
+        architect.setMasterAuraTier(tier);
+        architect.getHearthMasterArchitectId().ifPresent(
+                hearthId -> HearthCombatRosterManager.signalAuraTierChange(
+                        level, hearthId, architect, tier));
     }
 }

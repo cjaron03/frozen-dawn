@@ -53,6 +53,16 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_SUFFOCATE = SOUNDS.register("ambient.eva_suffocate",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_suffocate")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_PUNCTURE_WARNING =
+            register("ui.suit.puncture_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_CRITICAL =
+            register("ui.suit.oxygen_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_BEEP =
+            register("ui.suit.oxygen_beep");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
+            register("ui.suit.leak_hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =
+            register("ui.suit.emergency_reserve");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = SOUNDS.register("ambient.sanity_whisper",
             () -> SoundEvent.createVariableRangeEvent(
@@ -84,6 +94,10 @@ public class ModSounds {
             "music.master_architect.tethers");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_LAST_WALL = register(
             "music.master_architect.last_wall");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_MIND = register(
+            "music.master_architect.mind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_ORREN = register(
+            "music.master_architect.orren");
 
     // Curated melancholy gameplay music.
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MOOG_CITY_2 = register("music.sad.moog_city_2");
@@ -236,6 +250,8 @@ public class ModSounds {
             "entity.master_architect.thermal_sever");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_LAST_WALL = register(
             "entity.master_architect.last_wall");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_CONSTRUCTION = register(
+            "entity.master_architect.construction");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_PULSE = register(
             "entity.master_architect.thermal_pulse");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_STORM_MAINTAIN = register(
@@ -254,12 +270,52 @@ public class ModSounds {
             "entity.master_architect.tether_strain");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TETHER_DEPLOY = register(
             "entity.master_architect.tether_deploy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TETHER_WAIL = register(
+            "entity.master_architect.tether_wail");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_OBSTRUCTION_SMASH = register(
+            "entity.master_architect.obstruction_smash");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_FLOOD_BEGIN = register(
+            "entity.master_architect.flood_begin");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_FLOOD_MOTE = register(
+            "entity.master_architect.flood_mote");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_CORE_REVEAL = register(
+            "entity.master_architect.core_reveal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_FLOOD_HIT = register(
+            "entity.master_architect.flood_hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_FLOOD_RETURN = register(
+            "entity.master_architect.flood_return");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MIND_DEATH_WAIL = register(
+            "entity.master_architect.mind_death_wail");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MIND_HEAL_ESCALATE = register(
+            "entity.master_architect.mind_heal_escalate");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MIND_SCAN_TTS = register(
+            "ui.master_architect.mind_scan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TELEMETRY_MISMATCH_TTS = register(
+            "ui.master_architect.telemetry_mismatch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_TELEMETRY_RESTORED_TTS = register(
+            "ui.master_architect.telemetry_restored");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CHARGE = register(
             "entity.master_architect.thermal_charge");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_COMMIT = register(
             "entity.master_architect.thermal_commit");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CANCEL = register(
             "entity.master_architect.thermal_cancel");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_CLOSE = register(
+            "entity.master_architect.thundersnow_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_MID = register(
+            "entity.master_architect.thundersnow_mid");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_DISTANT = register(
+            "entity.master_architect.thundersnow_distant");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_ARC_CRACKLE = register(
+            "entity.master_architect.arc_crackle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_INFRASOUND = register(
+            "entity.master_architect.infrasound");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_DEATH = register(
+            "entity.master_architect.aura_death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_TEMPERATURE_TTS = register(
+            "ui.master_architect.aura_temperature");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_FIGHT_TTS = register(
+            "ui.master_architect.aura_fight");
 
     // --- Terminal Boot ---
     public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_BOOT_ORSA = register("terminal.boot_orsa");

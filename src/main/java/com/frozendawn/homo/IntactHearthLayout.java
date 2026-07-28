@@ -13,8 +13,8 @@ import java.util.Map;
  * existing Formed Hearth core.
  */
 public final class IntactHearthLayout {
-    private static final int DEEP_SUPPORT_DEPTH = 10;
-    private static final int PATH_SUPPORT_DEPTH = 6;
+    private static final int DEEP_SUPPORT_DEPTH = 16;
+    private static final int PATH_SUPPORT_DEPTH = 12;
     private static final int CORE_RADIUS = HearthReconciliationPolicy.FORMED_FOOTPRINT_RADIUS;
     private static final int BOUNDARY_MIN_X = -8;
     private static final int BOUNDARY_MAX_X = 10;
@@ -473,11 +473,9 @@ public final class IntactHearthLayout {
             int x, int z, int supportDepth, boolean deepSupport,
             HearthStructurePiece surfacePiece,
             HearthStructurePlacement.Protection protection, int turns) {
-        if (deepSupport) {
-            for (int depth = 2; depth <= supportDepth; depth++) {
-                putRotated(placements, HearthStructurePiece.FOUNDATION_SUPPORT,
-                        new BlockPos(x, -depth, z), Direction.NORTH, 0, protection, turns);
-            }
+        for (int depth = 2; depth <= supportDepth; depth++) {
+            putRotated(placements, HearthStructurePiece.FOUNDATION_SUPPORT,
+                    new BlockPos(x, -depth, z), Direction.NORTH, 0, protection, turns);
         }
         putRotated(placements, surfacePiece,
                 new BlockPos(x, -1, z), Direction.NORTH, 0, protection, turns);

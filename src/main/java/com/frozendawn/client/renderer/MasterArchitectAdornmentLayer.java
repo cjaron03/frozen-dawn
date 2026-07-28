@@ -1,9 +1,10 @@
 package com.frozendawn.client.renderer;
 
-import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.homo.MasterArchitectFloodPolicy;
+import com.frozendawn.homo.MasterArchitectAuraTier;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.LightTexture;
@@ -21,8 +22,19 @@ public final class MasterArchitectAdornmentLayer
         extends RenderLayer<ArchitectEntity, ArchitectModel> {
     private static final ResourceLocation WHITE_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
-    private static final int DARK_COLOR = FastColor.ARGB32.color(255, 16, 27, 36);
-    private static final int FROST_COLOR = FastColor.ARGB32.color(255, 159, 203, 208);
+    public static final int CROWN_DARK_RED = 16;
+    public static final int CROWN_DARK_GREEN = 27;
+    public static final int CROWN_DARK_BLUE = 36;
+    public static final int CROWN_FROST_RED = 159;
+    public static final int CROWN_FROST_GREEN = 203;
+    public static final int CROWN_FROST_BLUE = 208;
+    public static final int CROWN_GLOW_RED = 111;
+    public static final int CROWN_GLOW_GREEN = 235;
+    public static final int CROWN_GLOW_BLUE = 244;
+    private static final int DARK_COLOR = FastColor.ARGB32.color(
+            255, CROWN_DARK_RED, CROWN_DARK_GREEN, CROWN_DARK_BLUE);
+    private static final int FROST_COLOR = FastColor.ARGB32.color(
+            255, CROWN_FROST_RED, CROWN_FROST_GREEN, CROWN_FROST_BLUE);
 
     private final MasterArchitectAdornmentModel adornments;
 
@@ -45,7 +57,7 @@ public final class MasterArchitectAdornmentLayer
             float ageInTicks,
             float netHeadYaw,
             float headPitch) {
-        if (!entity.isHearthMasterArchitect() || entity.isInvisible()) {
+        if (!entity.isMasterArchitectVisual() || entity.isInvisible()) {
             return;
         }
 
@@ -58,12 +70,14 @@ public final class MasterArchitectAdornmentLayer
 
         VertexConsumer glow = bufferSource.getBuffer(
                 RenderType.entityTranslucentEmissive(WHITE_TEXTURE));
-        boolean hostile = MasterArchitectWeather.getStrength() > 0.05F
+        int auraTier = entity.getMasterAuraTier();
+        boolean hostile = auraTier >= MasterArchitectAuraTier.FIGHT
                 || entity.getMasterCombatAction() != MasterArchitectCombatAction.IDLE;
         float pulse = 0.5F + 0.5F * Mth.sin(ageInTicks * (hostile ? 0.32F : 0.15F));
-        int glowAlpha = Mth.floor((hostile
+        float tierBoost = Mth.clamp((auraTier - 1) * 0.12F, 0.0F, 0.24F);
+        int glowAlpha = Mth.floor(Mth.clamp((hostile
                 ? 0.80F + pulse * 0.20F
-                : 0.58F + pulse * 0.14F) * 255.0F);
+                : 0.58F + pulse * 0.14F) + tierBoost, 0.0F, 1.0F) * 255.0F);
         int crownAlpha = Mth.floor((hostile
                 ? 0.30F + pulse * 0.38F
                 : 0.10F + pulse * 0.10F) * 255.0F);
@@ -78,7 +92,46 @@ public final class MasterArchitectAdornmentLayer
                 glow,
                 LightTexture.FULL_BRIGHT,
                 overlay,
-                FastColor.ARGB32.color(crownAlpha, 111, 235, 244));
+                FastColor.ARGB32.color(
+                        crownAlpha, CROWN_GLOW_RED, CROWN_GLOW_GREEN, CROWN_GLOW_BLUE));
+
+        int mindAction = entity.getMasterCombatAction();
+        if (entity.isMasterMindCopy()
+                && (mindAction == MasterArchitectCombatAction.MIND_CORE_READY
+                || mindAction == MasterArchitectCombatAction.MIND_CORE_REVEAL)) {
+            float readyPulse = 0.82F + 0.18F * Mth.sin(ageInTicks * 0.9F);
+            float reveal = mindAction == MasterArchitectCombatAction.MIND_CORE_REVEAL
+                    ? 1.0F - Mth.clamp(
+                            entity.getMasterCombatActionTicks()
+                                    / (float) MasterArchitectFloodPolicy.CORE_REVEAL_TICKS,
+                            0.0F,
+                            1.0F)
+                    : 1.0F;
+            adornments.renderCore(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(
+                            Mth.floor(readyPulse * reveal * 255.0F), 126, 246, 255));
+        } else if (entity.isMasterMindCopy()
+                && entity.getMasterCombatAction()
+                        == MasterArchitectCombatAction.MIND_CORE_EXPOSED) {
+            float crackPulse = 0.62F + 0.38F * Mth.sin(ageInTicks * 1.4F);
+            adornments.renderCore(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(255, 244, 255, 255));
+            adornments.renderAll(
+                    poseStack,
+                    glow,
+                    LightTexture.FULL_BRIGHT,
+                    overlay,
+                    FastColor.ARGB32.color(
+                            Mth.floor(crackPulse * 220.0F), 205, 252, 255));
+        }
 
         float thermalCharge = entity.getMasterCombatAction()
                 == MasterArchitectCombatAction.THERMAL_SEVER

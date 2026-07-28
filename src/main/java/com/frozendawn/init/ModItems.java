@@ -10,10 +10,12 @@ import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.BoardPacketItem;
+import com.frozendawn.item.BlackglassArchiveCardItem;
 import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.EmergencyO2CartridgeItem;
 import com.frozendawn.item.IceClawsItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
 import com.frozendawn.item.MiteAwayBlockItem;
@@ -24,12 +26,15 @@ import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.OrsaThermalVisorItem;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
+import com.frozendawn.item.OrsaTraumaKitItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.SnowshoesItem;
 import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
+import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.registries.Registries;
@@ -122,6 +127,22 @@ public class ModItems {
     public static final DeferredItem<O2TankItem> O2_TANK_MK3 = ITEMS.register("o2_tank_mk3",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER3_MAX), O2TankItem.TIER3_MAX));
+    public static final DeferredItem<EmergencyO2CartridgeItem> EMERGENCY_O2_CARTRIDGE = ITEMS.register(
+            "emergency_o2_cartridge",
+            () -> new EmergencyO2CartridgeItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<O2EfficiencyModuleItem> O2_EFFICIENCY_MODULE = ITEMS.register(
+            "o2_efficiency_module",
+            () -> new O2EfficiencyModuleItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<OrsaTraumaKitItem> ORSA_TRAUMA_KIT = ITEMS.register(
+            "orsa_trauma_kit",
+            () -> new OrsaTraumaKitItem(
+                    new Item.Properties().stacksTo(4).rarity(Rarity.RARE)));
+    public static final DeferredItem<BlackglassArchiveCardItem> BLACKGLASS_ARCHIVE_CARD =
+            ITEMS.register("blackglass_archive_card",
+                    () -> new BlackglassArchiveCardItem(
+                            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SULFUR_LAVA_BUCKET = ITEMS.register("sulfur_lava_bucket",
             () -> new BucketItem(ModFluids.SOURCE_VENT_LAVA.get(),
                     new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
@@ -213,7 +234,13 @@ public class ModItems {
     public static final DeferredItem<RemnantEmberItem> REMNANT_EMBER = ITEMS.register("remnant_ember",
             () -> new RemnantEmberItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
                     .component(ModDataComponents.WARMTH_REMAINING.get(), RemnantEmberItem.MAX_WARMTH)));
-    public static final DeferredItem<Item> TATTERED_CLOTHING_SCRAP = ITEMS.registerSimpleItem("tattered_clothing_scrap");
+    public static final DeferredItem<SuitPatchItem> TATTERED_CLOTHING_SCRAP = ITEMS.register(
+            "tattered_clothing_scrap",
+            () -> new SuitPatchItem(new Item.Properties().stacksTo(32), false));
+    public static final DeferredItem<SuitPatchItem> ORSA_SUIT_PATCH_KIT = ITEMS.register(
+            "orsa_suit_patch_kit",
+            () -> new SuitPatchItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON), true));
     public static final DeferredItem<OrsaIdBadgeItem> ORSA_ID_BADGE = ITEMS.register("orsa_id_badge",
             () -> new OrsaIdBadgeItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
@@ -401,6 +428,10 @@ public class ModItems {
                         output.accept(O2_TANK.get());
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());
+                        output.accept(EMERGENCY_O2_CARTRIDGE.get());
+                        output.accept(O2_EFFICIENCY_MODULE.get());
+                        output.accept(ORSA_TRAUMA_KIT.get());
+                        output.accept(BLACKGLASS_ARCHIVE_CARD.get());
                         output.accept(SULFUR_LAVA_BUCKET.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
@@ -450,6 +481,7 @@ public class ModItems {
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());
                         output.accept(TATTERED_CLOTHING_SCRAP.get());
+                        output.accept(ORSA_SUIT_PATCH_KIT.get());
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());

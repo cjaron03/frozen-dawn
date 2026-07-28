@@ -256,6 +256,7 @@ public final class FrozenEvacVehicleStructureBuilder {
                 loot.add(createPickupDelayNotice(campCenter));
                 loot.add(createPassengerManifest());
                 loot.add(new ItemStack(ModItems.CRYO_FUEL.get()));
+                loot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
             }
             case FAILED_TRANSFER -> {
                 loot.add(createPickupDelayNotice(campCenter));

@@ -12,7 +12,7 @@ import java.util.Map;
  * Deterministic Stage 2 scene: a remembered shelter with an unmistakable threshold.
  */
 public final class FormedHearthLayout {
-    private static final int FOUNDATION_SUPPORT_DEPTH = 5;
+    private static final int FOUNDATION_SUPPORT_DEPTH = 8;
     private static final int SHELTER_MIN_X = -4;
     private static final int SHELTER_MAX_X = 0;
     private static final int SHELTER_MIN_Z = -2;

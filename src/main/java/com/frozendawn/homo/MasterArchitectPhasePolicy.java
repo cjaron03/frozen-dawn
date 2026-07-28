@@ -6,6 +6,10 @@ public final class MasterArchitectPhasePolicy {
     public static final float TETHER_THRESHOLD = 0.50F;
     public static final float ASCENT_THRESHOLD = 0.30F;
     public static final float FLOOD_THRESHOLD = 0.10F;
+    private static final float THRESHOLD_EPSILON = 0.000001F;
+    // The boss bar can visually read as 10% slightly above the exact float
+    // threshold. This single tolerance owns both phase entry and Flood startup.
+    private static final float FLOOD_THRESHOLD_EPSILON = 0.001F;
 
     private MasterArchitectPhasePolicy() {
     }
@@ -15,17 +19,18 @@ public final class MasterArchitectPhasePolicy {
         if (maxHealth <= 0.0F || !Float.isFinite(maxHealth)) {
             return MasterArchitectCombatPhase.KIT;
         }
-        float fraction = Math.max(0.0F, health) / maxHealth;
-        if (fraction <= FLOOD_THRESHOLD) {
+        float safeHealth = Math.max(0.0F, health);
+        float fraction = safeHealth / maxHealth;
+        if (isAtFloodEntry(safeHealth, maxHealth)) {
             return MasterArchitectCombatPhase.FLOOD;
         }
-        if (fraction <= ASCENT_THRESHOLD) {
+        if (fraction <= ASCENT_THRESHOLD + THRESHOLD_EPSILON) {
             return MasterArchitectCombatPhase.ASCENT;
         }
-        if (fraction <= TETHER_THRESHOLD) {
+        if (fraction <= TETHER_THRESHOLD + THRESHOLD_EPSILON) {
             return MasterArchitectCombatPhase.TETHER;
         }
-        if (fraction <= CONSTRUCTION_THRESHOLD) {
+        if (fraction <= CONSTRUCTION_THRESHOLD + THRESHOLD_EPSILON) {
             return MasterArchitectCombatPhase.CONSTRUCTION;
         }
         return MasterArchitectCombatPhase.KIT;
@@ -38,6 +43,14 @@ public final class MasterArchitectPhasePolicy {
                 : current;
         MasterArchitectCombatPhase healthPhase = phaseForHealth(health, maxHealth);
         return safeCurrent.isBefore(healthPhase) ? healthPhase : safeCurrent;
+    }
+
+    public static boolean isAtFloodEntry(float health, float maxHealth) {
+        if (maxHealth <= 0.0F || !Float.isFinite(maxHealth)) {
+            return false;
+        }
+        return Math.max(0.0F, health) / maxHealth
+                <= FLOOD_THRESHOLD + FLOOD_THRESHOLD_EPSILON;
     }
 
     public static MasterArchitectCombatPhase migrateLegacyState(
@@ -62,13 +75,14 @@ public final class MasterArchitectPhasePolicy {
             float incomingDamage,
             boolean bypassesInvulnerability) {
         if (incomingDamage <= 0.0F
-                || maxHealth <= 0.0F
-                || bypassesInvulnerability
-                || current == MasterArchitectCombatPhase.FLOOD) {
+                || maxHealth <= 0.0F) {
             return Math.max(0.0F, incomingDamage);
         }
         float floodHealth = maxHealth * FLOOD_THRESHOLD;
-        if (health <= floodHealth || health - incomingDamage >= floodHealth) {
+        if (health <= floodHealth) {
+            return 0.0F;
+        }
+        if (health - incomingDamage >= floodHealth) {
             return incomingDamage;
         }
         return Math.max(0.0F, health - floodHealth);

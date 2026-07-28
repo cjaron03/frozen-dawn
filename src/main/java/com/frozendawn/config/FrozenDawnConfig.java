@@ -39,11 +39,55 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue BROADCAST_TICKS;
     public static final ModConfigSpec.IntValue TEST_BROADCAST_TICKS_OVERRIDE;
     public static final ModConfigSpec.BooleanValue TEST_ALLOW_REPEAT_LAUNCHES;
+    public static final ModConfigSpec.IntValue MIND_HEAL_TIER_TWO_SECONDS;
+    public static final ModConfigSpec.IntValue MIND_HEAL_TIER_THREE_SECONDS;
+    public static final ModConfigSpec.IntValue BRUTAL_MIND_HEAL_TIER_TWO_SECONDS;
+    public static final ModConfigSpec.IntValue BRUTAL_MIND_HEAL_TIER_THREE_SECONDS;
+    public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_TWO_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue MIND_HEAL_TIER_THREE_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue MASTER_AURA_RADIUS;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_TEMP_OFFSET_PER_TIER;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_STRIKE_MIN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_STRIKE_MAX_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_STRIKE_MIN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_STRIKE_MAX_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T2_ARC_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_AURA_T3_ARC_SECONDS;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_INFRASOUND_GAIN;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_STORM_RESPONSE_SECONDS;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MASTER_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_ARCHITECT_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_PHYSICAL_CHANCE;
+    public static final ModConfigSpec.DoubleValue SUIT_PUNCTURE_FALL_CHANCE_PER_BLOCK;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_GRACE_TICKS;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_MAX_CONCURRENT;
+    public static final ModConfigSpec.IntValue SUIT_PUNCTURE_VENT_SECONDS;
+    public static final ModConfigSpec.IntValue SUIT_REPRESSURIZE_PER_TICK;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_DURATION_TICKS;
+    public static final ModConfigSpec.IntValue ORSA_PATCH_DURATION_TICKS;
+    public static final ModConfigSpec.DoubleValue IMPROVISED_PATCH_DEGRADE_CHANCE;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MIN_SEAL_SECONDS;
+    public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MAX_SEAL_SECONDS;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
+    public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_HUD_FADE;
+    public static final ModConfigSpec.BooleanValue ENABLE_FLOOD_SCREEN_EFFECTS;
+    public static final ModConfigSpec.DoubleValue MIND_OVERRIDE_INTENSITY;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_FLASH_INTENSITY;
+    public static final ModConfigSpec.DoubleValue MASTER_AURA_PARTICLE_DENSITY;
+    public static final ModConfigSpec.BooleanValue ENABLE_MASTER_SKY_FACE;
+    public static final ModConfigSpec.DoubleValue MASTER_SKY_FACE_OPACITY;
+    public static final ModConfigSpec.DoubleValue MASTER_SKY_FACE_SCALE;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_GAZE_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_IN_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_OUT_SECONDS;
+    public static final ModConfigSpec.IntValue MASTER_SKY_FACE_RENDER_DISTANCE;
+    public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
 
@@ -182,6 +226,101 @@ public class FrozenDawnConfig {
                         "When true, the final rocket package is not consumed as a one-shot world state.",
                         "Disable this before shipping the ending.")
                 .define("testAllowRepeatLaunches", false);
+        MIND_HEAL_TIER_TWO_SECONDS = BUILDER
+                .comment("Seconds before Thae Iven healing escalates to Tier 2.",
+                        "Cinematic never escalates beyond Tier 1.")
+                .defineInRange("mindHealTierTwoSeconds", 90, 15, 600);
+        MIND_HEAL_TIER_THREE_SECONDS = BUILDER
+                .comment("Seconds before Thae Iven healing escalates to Tier 3.")
+                .defineInRange("mindHealTierThreeSeconds", 180, 30, 1200);
+        BRUTAL_MIND_HEAL_TIER_TWO_SECONDS = BUILDER
+                .comment("Brutal seconds before Thae Iven healing reaches Tier 2.")
+                .defineInRange("brutalMindHealTierTwoSeconds", 60, 10, 600);
+        BRUTAL_MIND_HEAL_TIER_THREE_SECONDS = BUILDER
+                .comment("Brutal seconds before Thae Iven healing reaches Tier 3.")
+                .defineInRange("brutalMindHealTierThreeSeconds", 120, 20, 1200);
+        MIND_HEAL_TIER_TWO_MULTIPLIER = BUILDER
+                .comment("Thae Iven Tier 2 healing-rate multiplier.")
+                .defineInRange("mindHealTierTwoMultiplier", 2.0D, 1.0D, 8.0D);
+        MIND_HEAL_TIER_THREE_MULTIPLIER = BUILDER
+                .comment("Default Thae Iven Tier 3 healing-rate multiplier.")
+                .defineInRange("mindHealTierThreeMultiplier", 3.5D, 1.0D, 10.0D);
+        BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER = BUILDER
+                .comment("Brutal Thae Iven Tier 3 healing-rate multiplier.")
+                .defineInRange("brutalMindHealTierThreeMultiplier", 4.0D, 1.0D, 12.0D);
+        MASTER_AURA_RADIUS = BUILDER
+                .comment("Radius of the Master Architect's non-damaging Hearth aura.")
+                .defineInRange("masterAuraRadius", 160, 48, 512);
+        MASTER_AURA_TEMP_OFFSET_PER_TIER = BUILDER
+                .comment("Ambient Celsius offset for each aura step above Passive.",
+                        "Tier 2 applies one step; Tier 3 applies two steps.")
+                .defineInRange("masterAuraTempOffsetPerTier", -8.0D, -40.0D, 0.0D);
+        MASTER_AURA_T2_STRIKE_MIN_SECONDS = BUILDER
+                .comment("Minimum seconds between Noticed aura lightning events.")
+                .defineInRange("masterAuraTier2StrikeMinSeconds", 10, 3, 120);
+        MASTER_AURA_T2_STRIKE_MAX_SECONDS = BUILDER
+                .comment("Maximum seconds between Noticed aura lightning events.")
+                .defineInRange("masterAuraTier2StrikeMaxSeconds", 20, 4, 180);
+        MASTER_AURA_T3_STRIKE_MIN_SECONDS = BUILDER
+                .comment("Minimum seconds between fight aura lightning events.")
+                .defineInRange("masterAuraTier3StrikeMinSeconds", 3, 1, 60);
+        MASTER_AURA_T3_STRIKE_MAX_SECONDS = BUILDER
+                .comment("Maximum seconds between fight aura lightning events.")
+                .defineInRange("masterAuraTier3StrikeMaxSeconds", 7, 2, 90);
+        MASTER_AURA_T2_ARC_SECONDS = BUILDER
+                .comment("Average seconds between Noticed aura particle arcs.")
+                .defineInRange("masterAuraTier2ArcSeconds", 10, 2, 60);
+        MASTER_AURA_T3_ARC_SECONDS = BUILDER
+                .comment("Average seconds between fight aura particle arcs.")
+                .defineInRange("masterAuraTier3ArcSeconds", 3, 1, 30);
+        MASTER_AURA_INFRASOUND_GAIN = BUILDER
+                .comment("Maximum gain of the Master Architect's 36 Hz presence hum.")
+                .defineInRange("masterAuraInfrasoundGain", 0.55D, 0.0D, 1.5D);
+        MASTER_AURA_STORM_RESPONSE_SECONDS = BUILDER
+                .comment("Seconds for the distant storm column to grow toward a new tier.")
+                .defineInRange("masterAuraStormResponseSeconds", 5.0D, 0.5D, 30.0D);
+        SUIT_PUNCTURE_MASTER_CHANCE = BUILDER
+                .comment("Chance that a Master Architect melee hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureMasterChance", 0.10D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_ARCHITECT_CHANCE = BUILDER
+                .comment("Chance that a base Architect melee hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureArchitectChance", 0.33D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE = BUILDER
+                .comment("Chance that a Mimic's first ambush hit punctures a sealed EVA suit.")
+                .defineInRange("suitPunctureMimicAmbushChance", 0.65D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_PHYSICAL_CHANCE = BUILDER
+                .comment("Baseline puncture chance for whitelisted physical damage.")
+                .defineInRange("suitPuncturePhysicalChance", 0.20D, 0.0D, 1.0D);
+        SUIT_PUNCTURE_FALL_CHANCE_PER_BLOCK = BUILDER
+                .comment("Puncture chance added per block of fall distance, capped at 60%.")
+                .defineInRange("suitPunctureFallChancePerBlock", 0.03D, 0.0D, 0.20D);
+        SUIT_PUNCTURE_GRACE_TICKS = BUILDER
+                .comment("Ticks after a puncture during which another puncture cannot occur.")
+                .defineInRange("suitPunctureGraceTicks", 100, 1, 1200);
+        SUIT_PUNCTURE_MAX_CONCURRENT = BUILDER
+                .comment("Maximum concurrent EVA suit punctures. Hard-capped at two.")
+                .defineInRange("suitPunctureMaxConcurrent", 2, 1, 2);
+        SUIT_PUNCTURE_VENT_SECONDS = BUILDER
+                .comment("Seconds for one puncture to vent a full carried O2 reserve.")
+                .defineInRange("suitPunctureVentSeconds", 80, 20, 300);
+        SUIT_REPRESSURIZE_PER_TICK = BUILDER
+                .comment("O2 restored per tick while an intact EVA suit is in breathable air.")
+                .defineInRange("suitRepressurizePerTick", 1, 0, 20);
+        IMPROVISED_PATCH_DURATION_TICKS = BUILDER
+                .comment("Use duration of the improvised clothing-scrap patch.")
+                .defineInRange("improvisedPatchDurationTicks", 60, 20, 200);
+        ORSA_PATCH_DURATION_TICKS = BUILDER
+                .comment("Use duration of the permanent ORSA suit patch kit.")
+                .defineInRange("orsaPatchDurationTicks", 40, 10, 120);
+        IMPROVISED_PATCH_DEGRADE_CHANCE = BUILDER
+                .comment("Chance that an improvised patch eventually reopens in vacuum.")
+                .defineInRange("improvisedPatchDegradeChance", 0.25D, 0.0D, 1.0D);
+        IMPROVISED_PATCH_MIN_SEAL_SECONDS = BUILDER
+                .comment("Minimum lifetime of a degrading improvised seal.")
+                .defineInRange("improvisedPatchMinSealSeconds", 60, 10, 1200);
+        IMPROVISED_PATCH_MAX_SEAL_SECONDS = BUILDER
+                .comment("Maximum lifetime of a degrading improvised seal.")
+                .defineInRange("improvisedPatchMaxSealSeconds", 120, 10, 1800);
         BUILDER.pop();
 
         BUILDER.push("client");
@@ -195,6 +334,49 @@ public class FrozenDawnConfig {
                 .comment("Enable phase-dependent sky color shifting.",
                         "Shifts sky from warm amber (phase 1) through cold blue to black during phase 6 atmospheric collapse.")
                 .define("enableSkyColorShift", true);
+        ENABLE_FLOOD_HUD_FADE = BUILDER
+                .comment("Fade survival HUD elements during the Master Architect Flood finale.",
+                        "Disable for accessibility; gameplay effects and the crosshair remain unchanged.")
+                .define("enableFloodHudFade", true);
+        ENABLE_FLOOD_SCREEN_EFFECTS = BUILDER
+                .comment("Enable fog, vignette, memory pulses, and FOV compression in Thae Iven.",
+                        "Disable for photosensitivity while preserving the fight and its hotbar.")
+                .define("enableFloodScreenEffects", true);
+        MIND_OVERRIDE_INTENSITY = BUILDER
+                .comment("Scales Thae Iven screen effects without changing movement or damage.")
+                .defineInRange("mindOverrideIntensity", 1.0D, 0.0D, 1.0D);
+        MASTER_AURA_FLASH_INTENSITY = BUILDER
+                .comment("Enables the vanilla-style Master aura lightning flash above zero.",
+                        "Set to zero to disable it for photosensitivity.")
+                .defineInRange("masterAuraFlashIntensity", 1.0D, 0.0D, 1.0D);
+        MASTER_AURA_PARTICLE_DENSITY = BUILDER
+                .comment("Scales visual-only Master aura particles without changing mechanics.")
+                .defineInRange("masterAuraParticleDensity", 1.0D, 0.0D, 1.0D);
+        ENABLE_MASTER_SKY_FACE = BUILDER
+                .comment("Render the distant Master Architect face above an awakened Major Hearth.")
+                .define("enableMasterSkyFace", true);
+        MASTER_SKY_FACE_OPACITY = BUILDER
+                .comment("Maximum opacity of the Master Architect sky face.")
+                .defineInRange("masterSkyFaceOpacity", 0.82D, 0.0D, 1.0D);
+        MASTER_SKY_FACE_SCALE = BUILDER
+                .comment("Scale of the Master Architect sky face beacon.")
+                .defineInRange("masterSkyFaceScale", 1.0D, 0.25D, 3.0D);
+        MASTER_SKY_FACE_GAZE_SECONDS = BUILDER
+                .comment("Average seconds between rare sky-face glances toward the player.")
+                .defineInRange("masterSkyFaceGazeSeconds", 55, 10, 600);
+        MASTER_SKY_FACE_FADE_IN_SECONDS = BUILDER
+                .comment("Seconds for newly awakened sky-face features to fully resolve.")
+                .defineInRange("masterSkyFaceFadeInSeconds", 90, 5, 300);
+        MASTER_SKY_FACE_FADE_OUT_SECONDS = BUILDER
+                .comment("Seconds for sky-face features to recede after de-escalation.")
+                .defineInRange("masterSkyFaceFadeOutSeconds", 120, 5, 600);
+        MASTER_SKY_FACE_RENDER_DISTANCE = BUILDER
+                .comment("Maximum horizontal distance for the sky-face beacon.",
+                        "It recedes with true distance and fades near the configured boundary.")
+                .defineInRange("masterSkyFaceRenderDistance", 2500, 128, 8000);
+        ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
+                .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
+                .define("enableSuitPunctureOverlay", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();

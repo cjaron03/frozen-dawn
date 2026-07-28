@@ -72,6 +72,8 @@ public final class TemperatureManager {
             finalTemp = Math.max(finalTemp, ventFloor);
         }
         finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
+        finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
+                .temperatureOffset(level, pos);
         return finalTemp;
     }
 
@@ -130,9 +132,15 @@ public final class TemperatureManager {
      */
     public static boolean hasBreathableAir(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) return true;
-        if (isInsideGeothermalO2Range(level, pos)) return true;
+        if (hasOxygenSupport(level, pos)) return true;
         return isInsideSealedRoom(level, pos);
+    }
+
+    /** Active infrastructure that can repressurize an intact EVA suit. */
+    public static boolean hasOxygenSupport(Level level, BlockPos pos) {
+        if (level.dimension() != Level.OVERWORLD) return false;
+        return BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
+                || isInsideGeothermalO2Range(level, pos);
     }
 
     private static boolean isInsideGeothermalO2Range(Level level, BlockPos pos) {

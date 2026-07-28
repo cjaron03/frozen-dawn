@@ -5,7 +5,8 @@ package com.frozendawn.homo;
  */
 public enum ThaevenTransmissionType {
     VEL_THAE(0, 180),
-    ORSHA_RECOGNITION(1, 220);
+    ORSHA_RECOGNITION(1, 220),
+    HEARTH_MYTH(2, 300);
 
     private final int networkId;
     private final int durationTicks;

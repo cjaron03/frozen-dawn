@@ -3,11 +3,14 @@ package com.frozendawn.homo;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.MimicEntity;
+import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.network.CancelThaevenTransmissionPayload;
 import com.frozendawn.network.OpenThaevenTransmissionPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
@@ -34,20 +37,19 @@ public final class HearthTransmissionManager {
     private HearthTransmissionManager() {
     }
 
-    public static boolean tryStart(ServerLevel level, ArchitectEntity architect,
+    public static boolean tryStart(ServerLevel level, Mob source,
                                    ServerPlayer player, UUID hearthId) {
-        return tryStart(level, architect, player, hearthId, false);
+        return tryStart(level, source, player, hearthId, false);
     }
 
-    public static boolean tryStart(ServerLevel level, ArchitectEntity architect,
+    public static boolean tryStart(ServerLevel level, Mob source,
                                    ServerPlayer player, UUID hearthId, boolean replay) {
         if (activeSessions.containsKey(player.getUUID())
                 || (!replay && awaitingContactExit.containsKey(player.getUUID()))
                 || HearthMemoryManager.isPermanentOrsathae(level, player.getUUID())
-                || !architect.isAlive()
-                || !architect.isBoundToHearthAssessor(hearthId)
-                || architect.distanceToSqr(player) > MAX_CONTACT_DISTANCE_SQUARED
-                || !architect.hasLineOfSight(player)) {
+                || !validHearthSource(source, hearthId)
+                || source.distanceToSqr(player) > MAX_CONTACT_DISTANCE_SQUARED
+                || !source.hasLineOfSight(player)) {
             return false;
         }
 
@@ -55,21 +57,31 @@ public final class HearthTransmissionManager {
         ReturnedHearthSavedData.HearthContactMemory contact = data.hearth(hearthId)
                 .flatMap(record -> record.playerContact(player.getUUID()))
                 .orElse(null);
-        if (contact == null || !contact.architectAssessmentComplete()
-                || (!replay && contact.firstTransmissionComplete())) {
+        if (contact == null || !contact.architectAssessmentComplete()) {
             return false;
         }
 
-        ThaevenTransmissionType type = ThaevenTransmissionType.fromAssessment(
-                contact.orsaDetectedAtAssessment());
+        ReturnedHearthSavedData.HearthRecord hearth = data.hearth(hearthId).orElse(null);
+        ThaevenTransmissionType type;
+        if (replay || !contact.firstTransmissionComplete()) {
+            type = ThaevenTransmissionType.fromAssessment(contact.orsaDetectedAtAssessment());
+        } else if (!contact.hearthMythTransmissionComplete()
+                && hearth != null
+                && hearth.stage().ordinal()
+                        >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()
+                && isPopulationSource(source, hearthId)) {
+            type = ThaevenTransmissionType.HEARTH_MYTH;
+        } else {
+            return false;
+        }
         int sessionId = nextSessionId();
-        Session session = new Session(sessionId, player.getUUID(), architect.getUUID(),
+        Session session = new Session(sessionId, player.getUUID(), source.getUUID(),
                 hearthId, type, level.getGameTime(), replay);
         activeSessions.put(player.getUUID(), session);
         sessionsStarted++;
 
         PacketDistributor.sendToPlayer(player, new OpenThaevenTransmissionPayload(
-                sessionId, architect.getId(), type.networkId(), type.durationTicks()));
+                sessionId, source.getId(), type.networkId(), type.durationTicks()));
         FrozenDawn.LOGGER.info(
                 "Started Thaeven transmission {} for player {} at Hearth {} | type={} replay={}",
                 sessionId, player.getGameProfile().getName(), shortId(hearthId),
@@ -90,8 +102,8 @@ public final class HearthTransmissionManager {
                 continue;
             }
 
-            ArchitectEntity architect = resolveArchitect(level, session.architectId());
-            if (!validContact(level, player, architect, session.hearthId())) {
+            Mob source = resolveSource(level, session.sourceId());
+            if (!validContact(level, player, source, session.hearthId())) {
                 PacketDistributor.sendToPlayer(player,
                         new CancelThaevenTransmissionPayload(session.sessionId()));
                 interrupt(iterator, session);
@@ -180,15 +192,45 @@ public final class HearthTransmissionManager {
     }
 
     private static boolean validContact(ServerLevel level, ServerPlayer player,
-                                        ArchitectEntity architect, UUID hearthId) {
+                                        Mob source, UUID hearthId) {
         return player.isAlive()
                 && !player.isSpectator()
-                && architect != null
-                && architect.isAlive()
-                && architect.isBoundToHearthAssessor(hearthId)
-                && architect.distanceToSqr(player) <= MAX_CONTACT_DISTANCE_SQUARED
-                && architect.hasLineOfSight(player)
+                && validHearthSource(source, hearthId)
+                && source.distanceToSqr(player) <= MAX_CONTACT_DISTANCE_SQUARED
+                && source.hasLineOfSight(player)
                 && !HearthMemoryManager.isPermanentOrsathae(level, player.getUUID());
+    }
+
+    private static boolean validHearthSource(Mob source, UUID hearthId) {
+        if (source == null || !source.isAlive()) {
+            return false;
+        }
+        if (source instanceof ArchitectEntity architect) {
+            return architect.isBoundToHearthAssessor(hearthId)
+                    || architect.isBoundToHearthPopulation(hearthId);
+        }
+        if (source instanceof ReturnedEntity returned) {
+            return returned.isBoundToHearth(hearthId);
+        }
+        return source instanceof MimicEntity mimic
+                && mimic.isBoundToHearthPopulation(hearthId);
+    }
+
+    private static boolean isPopulationSource(Mob source, UUID hearthId) {
+        if (source instanceof ArchitectEntity architect) {
+            return architect.isBoundToHearthPopulation(hearthId);
+        }
+        if (source instanceof ReturnedEntity returned) {
+            return returned.isHearthPopulationResident()
+                    && returned.isBoundToHearth(hearthId);
+        }
+        return source instanceof MimicEntity mimic
+                && mimic.isBoundToHearthPopulation(hearthId);
+    }
+
+    private static Mob resolveSource(ServerLevel level, UUID entityId) {
+        Entity entity = level.getEntity(entityId);
+        return entity instanceof Mob mob ? mob : null;
     }
 
     private static ArchitectEntity resolveArchitect(ServerLevel level, UUID entityId) {
@@ -199,11 +241,22 @@ public final class HearthTransmissionManager {
     private static void complete(Iterator<Map.Entry<UUID, Session>> iterator,
                                  ServerLevel level, ServerPlayer player, Session session) {
         if (!session.replay()) {
-            ReturnedHearthSavedData.get(level.getServer()).completeFirstTransmission(
-                    player.getUUID(), session.hearthId(), level.getGameTime());
+            ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+            if (session.type() == ThaevenTransmissionType.HEARTH_MYTH) {
+                data.completeHearthMythTransmission(
+                        player.getUUID(), session.hearthId(), level.getGameTime());
+            } else {
+                data.completeFirstTransmission(
+                        player.getUUID(), session.hearthId(), level.getGameTime());
+            }
         }
         iterator.remove();
-        awaitingContactExit.remove(player.getUUID());
+        if (!session.replay() && session.type() != ThaevenTransmissionType.HEARTH_MYTH) {
+            awaitingContactExit.put(player.getUUID(), new RearmContact(
+                    session.sourceId(), session.hearthId()));
+        } else {
+            awaitingContactExit.remove(player.getUUID());
+        }
         sessionsCompleted++;
         FrozenDawn.LOGGER.info(
                 "Completed Thaeven transmission {} for player {} at Hearth {} | type={} replay={}",
@@ -215,7 +268,7 @@ public final class HearthTransmissionManager {
                                   Session session) {
         iterator.remove();
         awaitingContactExit.put(session.playerId(), new RearmContact(
-                session.architectId(), session.hearthId()));
+                session.sourceId(), session.hearthId()));
         sessionsInterrupted++;
         FrozenDawn.LOGGER.info(
                 "Interrupted Thaeven transmission {} for player {} at Hearth {}",
@@ -246,11 +299,9 @@ public final class HearthTransmissionManager {
             }
 
             RearmContact contact = entry.getValue();
-            ArchitectEntity architect = resolveArchitect(level, contact.architectId());
-            if (architect == null
-                    || !architect.isAlive()
-                    || !architect.isBoundToHearthAssessor(contact.hearthId())
-                    || architect.distanceToSqr(player) > MAX_CONTACT_DISTANCE_SQUARED) {
+            Mob source = resolveSource(level, contact.sourceId());
+            if (!validHearthSource(source, contact.hearthId())
+                    || source.distanceToSqr(player) > MAX_CONTACT_DISTANCE_SQUARED) {
                 iterator.remove();
                 FrozenDawn.LOGGER.info(
                         "Re-armed Thaeven contact for player {} after leaving Hearth {} range",
@@ -269,10 +320,10 @@ public final class HearthTransmissionManager {
         return id.toString().substring(0, 8);
     }
 
-    private record Session(int sessionId, UUID playerId, UUID architectId, UUID hearthId,
+    private record Session(int sessionId, UUID playerId, UUID sourceId, UUID hearthId,
                            ThaevenTransmissionType type, long startedGameTime, boolean replay) {
     }
 
-    private record RearmContact(UUID architectId, UUID hearthId) {
+    private record RearmContact(UUID sourceId, UUID hearthId) {
     }
 }

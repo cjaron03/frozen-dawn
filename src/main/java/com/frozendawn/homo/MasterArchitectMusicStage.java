@@ -5,7 +5,8 @@ public enum MasterArchitectMusicStage {
     OFF(0),
     KIT(1),
     TETHER(2),
-    LAST_WALL(3);
+    LAST_WALL(3),
+    FLOOD(4);
 
     private final int id;
 

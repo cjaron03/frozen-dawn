@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.RandomSource;
 
 import java.util.List;
 
@@ -27,6 +28,16 @@ public class OrsaIdBadgeItem extends Item {
 
     public OrsaIdBadgeItem(Properties properties) {
         super(properties);
+    }
+
+    public static ItemStack createNamed(long seed, int ordinal) {
+        RandomSource random = RandomSource.create(seed + ordinal * 0x9E3779B97F4A7C15L);
+        ItemStack stack = new ItemStack(com.frozendawn.init.ModItems.ORSA_ID_BADGE.get());
+        CompoundTag tag = new CompoundTag();
+        tag.putString("BadgeName", NAMES[random.nextInt(NAMES.length)]);
+        tag.putString("BadgeDept", DEPARTMENTS[random.nextInt(DEPARTMENTS.length)]);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        return stack;
     }
 
     @Override

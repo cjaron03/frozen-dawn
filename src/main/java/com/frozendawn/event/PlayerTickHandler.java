@@ -6,6 +6,7 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
@@ -14,6 +15,7 @@ import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.ThermalVentRegistry;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -326,7 +328,10 @@ final class PlayerTickHandler {
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD) continue;
+            if (player.level().dimension() != Level.OVERWORLD
+                    && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+                continue;
+            }
 
             UUID id = player.getUUID();
             if (refreshCache || !breathableCache.containsKey(id)) {
@@ -346,7 +351,10 @@ final class PlayerTickHandler {
                 if (!tank.isEmpty()) {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
-                        if (!visorRig || state.getApocalypseTicks() % 2 == 0) {
+                        if (!SuitIntegrityHandler.hasPuncture(player)
+                                && (!visorRig || state.getApocalypseTicks() % 2 == 0)
+                                && O2EfficiencyModuleItem.consumesBaselineO2(
+                                        player, state.getApocalypseTicks())) {
                             tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
                         }
                         suffocationTimer.put(id, 0);
@@ -356,6 +364,9 @@ final class PlayerTickHandler {
             }
 
             int ticks = suffocationTimer.getOrDefault(id, 0);
+            if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
+                ticks = Math.max(ticks, SUFFOCATION_DURATION);
+            }
             if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
                 ticks++;
             }

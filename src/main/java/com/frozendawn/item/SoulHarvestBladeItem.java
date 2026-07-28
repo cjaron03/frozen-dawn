@@ -48,7 +48,7 @@ public class SoulHarvestBladeItem extends AcheroniteSwordItem {
         return soulHarvestDamageBonus(
                 target.getType().is(SOUL_HARVEST_TARGETS),
                 target instanceof ArchitectEntity architect
-                        && architect.isHearthMasterArchitect());
+                        && architect.isMasterArchitectVisual());
     }
 
     @Override
@@ -56,7 +56,7 @@ public class SoulHarvestBladeItem extends AcheroniteSwordItem {
         if (soulHarvestDamageBonus(
                         target.getType().is(SOUL_HARVEST_TARGETS),
                         target instanceof ArchitectEntity architect
-                                && architect.isHearthMasterArchitect())
+                                && architect.isMasterArchitectVisual())
                 > 0.0F
                 && target.level() instanceof ServerLevel serverLevel) {
             spawnSoulHarvestParticles(serverLevel, target, attacker);

@@ -1,17 +1,15 @@
 package com.frozendawn.client;
 
 import com.frozendawn.event.MobFreezeHandler;
-import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 
 /**
  * Custom O2 bubble bar HUD. Shows 10 bubbles above the hunger bar (right side)
- * when in phase 6 late with full EVA suit and an O2 tank in inventory.
+ * whenever a full EVA suit and an O2 tank are equipped for use.
  * Tier-colored bubbles with glow, pulse, and pop animations.
  */
 public class O2BubbleHud {
@@ -33,17 +31,22 @@ public class O2BubbleHud {
         if (OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
             return;
         }
-        int phase = ApocalypseClientData.getPhase();
-        float progress = ApocalypseClientData.getProgress();
-        if (!PhaseManager.isVacuumActive(phase, progress)) return;
-
+        if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
+            renderMindOverride(
+                    graphics,
+                    deltaTracker,
+                    MasterArchitectFloodClient.corruptedOxygenRatio());
+            return;
+        }
+        if (MasterArchitectAuraClient.shouldFlickerO2()) {
+            renderMindOverride(graphics, deltaTracker, 1.0F);
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || player.isCreative() || player.isSpectator()) return;
         if (mc.options.hideGui) return;
-        if (player.level().dimension() != Level.OVERWORLD) return;
         if (MobFreezeHandler.getFullSetTier(player) != 3) return;
-        if (ApocalypseClientData.isBreathable()) return;
 
         AirStatusTelemetry.TankTelemetry tankTelemetry = AirStatusTelemetry.getTankTelemetry(player);
         if (!tankTelemetry.hasAnyTank()) return;
@@ -51,6 +54,37 @@ public class O2BubbleHud {
         int o2Level = tankTelemetry.totalO2();
         int tier = tankTelemetry.bestTier();
         int maxO2 = tankTelemetry.maxO2();
+
+        renderBubbles(graphics, mc, o2Level, tier, maxO2);
+    }
+
+    /** Draws the existing O2 bubbles with a temporary mind-stage fill value. */
+    static void renderMindOverride(
+            GuiGraphics graphics, DeltaTracker deltaTracker, float fillRatio) {
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null || player.isCreative() || player.isSpectator()
+                || mc.options.hideGui) {
+            return;
+        }
+        AirStatusTelemetry.TankTelemetry tankTelemetry =
+                AirStatusTelemetry.getTankTelemetry(player);
+        if (!tankTelemetry.hasAnyTank()) {
+            return;
+        }
+        int o2Level = Math.round(tankTelemetry.maxO2()
+                * Mth.clamp(fillRatio, 0.0F, 1.0F));
+        renderBubbles(
+                graphics, mc, o2Level,
+                tankTelemetry.bestTier(), tankTelemetry.maxO2());
+    }
+
+    private static void renderBubbles(
+            GuiGraphics graphics,
+            Minecraft mc,
+            int o2Level,
+            int tier,
+            int maxO2) {
 
         tickCounter++;
 
@@ -85,7 +119,9 @@ public class O2BubbleHud {
         if (popTimer > 0) popTimer--;
 
         // Low O2 pulse (≤20%)
-        float o2Ratio = tankTelemetry.fillRatio();
+        float o2Ratio = maxO2 <= 0
+                ? 0.0F
+                : Mth.clamp((float) o2Level / (float) maxO2, 0.0F, 1.0F);
         boolean lowO2 = o2Ratio <= 0.2f && o2Level > 0;
         float pulseAlpha = 1.0f;
         if (lowO2) {
@@ -115,6 +151,14 @@ public class O2BubbleHud {
 
     /** Returns {outline, fill, highlight, glow} colors for a tier. */
     private static int[] getTierColors(int tier) {
+        if (SuitIntegrityClient.punctures() > 0) {
+            return new int[]{
+                    0xFF6D1010,
+                    0xFFE0342C,
+                    0xFFFF9B82,
+                    0x50E0342C
+            };
+        }
         return switch (tier) {
             case 3 -> new int[]{
                     0xFF3A1060, // outline — dark purple

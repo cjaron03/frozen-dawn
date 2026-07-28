@@ -107,6 +107,7 @@ public class WorldTickHandler {
      */
     private static final Map<ResourceKey<Level>, Set<BlockPos>> pendingArchitectBreakUpdates = new HashMap<>();
     private static final String ORSA_AWAKENING_SEEN_TAG = "frozendawn:orsa_awakening_seen";
+    private static final String SKIP_ORSA_AWAKENING_PROPERTY = "frozendawn.dev.skipOrsaAwakening";
     private static final long ORSA_AWAKENING_FREEZE_TICKS = 340L;
     private static final Map<UUID, Long> orsaAwakeningFreezeUntil = new HashMap<>();
     private static final Map<UUID, Vec3> orsaAwakeningFreezeAnchor = new HashMap<>();
@@ -491,6 +492,9 @@ public class WorldTickHandler {
     }
 
     public static void trySendOrsaAwakening(ServerPlayer player) {
+        if (Boolean.getBoolean(SKIP_ORSA_AWAKENING_PROPERTY)) {
+            return;
+        }
         net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
         if (persistentData.getBoolean(ORSA_AWAKENING_SEEN_TAG)) {
             return;

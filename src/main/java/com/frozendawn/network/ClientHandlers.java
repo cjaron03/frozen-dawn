@@ -7,14 +7,17 @@ import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
 import com.frozendawn.client.MasterArchitectWeather;
+import com.frozendawn.client.MasterArchitectAuraClient;
 import com.frozendawn.client.MasterArchitectFightMusic;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
+import com.frozendawn.client.MasterArchitectFloodClient;
 import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
+import com.frozendawn.client.SuitIntegrityClient;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.ThaevenTransmissionOverlay;
 import com.frozendawn.client.TowerTerminalScreen;
@@ -44,6 +47,10 @@ public final class ClientHandlers {
 
     public static void handleBreathableState(BreathableStatePayload payload) {
         ApocalypseClientData.setBreathable(payload.breathable());
+    }
+
+    public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
+        SuitIntegrityClient.update(payload);
     }
 
     public static void handleSanityStage(SanityStagePayload payload) {
@@ -131,6 +138,11 @@ public final class ClientHandlers {
         MasterArchitectWeather.update(payload);
     }
 
+    public static void handleMasterArchitectAuraEvent(
+            MasterArchitectAuraEventPayload payload) {
+        MasterArchitectAuraClient.handleEvent(payload);
+    }
+
     public static void handleMasterArchitectFightMusic(
             MasterArchitectFightMusicPayload payload) {
         MasterArchitectFightMusic.update(payload);
@@ -150,6 +162,12 @@ public final class ClientHandlers {
         MasterArchitectSeverTelegraph.start(payload);
     }
 
+    public static void handleMasterArchitectThermalSeverWarning(
+            MasterArchitectThermalSeverWarningPayload payload) {
+        MasterArchitectFloodClient.showWarningSuitDialogue(
+                "ui.frozendawn.master_architect.thermal_sever_warning");
+    }
+
     public static void handleContinuityFracture(
             ContinuityFracturePayload payload) {
         ContinuityFractureInput.start(payload);
@@ -163,5 +181,20 @@ public final class ClientHandlers {
     public static void handleMasterArchitectFourthWallState(
             MasterArchitectFourthWallStatePayload payload) {
         MasterArchitectFourthWallMoment.handleState(payload);
+    }
+
+    public static void handleMasterArchitectFloodState(
+            MasterArchitectFloodStatePayload payload) {
+        MasterArchitectFloodClient.handleState(payload);
+    }
+
+    public static void handleMasterArchitectFloodMote(
+            MasterArchitectFloodMotePayload payload) {
+        MasterArchitectFloodClient.handleMote(payload);
+    }
+
+    public static void handleMasterArchitectFloodProgress(
+            MasterArchitectFloodProgressPayload payload) {
+        MasterArchitectFloodClient.handleProgress(payload);
     }
 }

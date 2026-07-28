@@ -10,6 +10,7 @@ import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.MasterArchitectAdornmentModel;
+import com.frozendawn.client.renderer.MasterArchitectLightningRenderer;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.RocketLaunchModel;
@@ -30,8 +31,10 @@ import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
 import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -47,6 +50,9 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+
+import java.io.IOException;
 
 /**
  * Client-side MOD bus event handlers.
@@ -57,6 +63,17 @@ public class ClientEvents {
 
     private static final ResourceLocation VENT_LAVA_STILL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava");
     private static final ResourceLocation VENT_LAVA_FLOW = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava_flow");
+
+    @SubscribeEvent
+    public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        event.registerShader(
+                new ShaderInstance(
+                        event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(
+                                FrozenDawn.MOD_ID, "master_architect_eye_volume"),
+                        DefaultVertexFormat.POSITION),
+                MasterArchitectEyeWallRenderer::setShader);
+    }
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
@@ -85,6 +102,10 @@ public class ClientEvents {
                 O2BubbleHud::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "suit_integrity"),
+                SuitIntegrityClient::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "rocket_launch_overlay"),
                 RocketLaunchClientController::render
         );
@@ -104,6 +125,11 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(
                         FrozenDawn.MOD_ID, "master_architect_fourth_wall"),
                 MasterArchitectFourthWallMoment::render
+        );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "master_architect_flood"),
+                MasterArchitectFloodClient::render
         );
     }
 
@@ -169,6 +195,9 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.MASTER_ARCHITECT_LIGHTNING.get(),
+                MasterArchitectLightningRenderer::new);
         event.registerEntityRenderer(ModEntities.ROCKET_LAUNCH.get(), RocketLaunchRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);

@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FurnaceBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -51,6 +52,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.OrsaIdBadgeItem;
 
 /**
  * Reconciles mathematically matured Hearth records into bounded physical scenes.
@@ -63,17 +65,26 @@ public final class HearthReconciliationManager {
     private static final int SURFACE_CANDIDATES_PER_TICK = 6;
     private static final long SURFACE_RETRY_DELAY_TICKS = 200L;
     private static final int STRUCTURE_CLEARANCE_RADIUS = 96;
+    private static final int SURFACE_SCAN_DEPTH = 48;
+    private static final int ENTITY_BLOCK_RETRY_LIMIT = 60;
+    private static final int SET_BLOCK_RETRY_LIMIT = 8;
+    private static final int SKIP_LOG_LIMIT = 12;
     private static final int SET_BLOCK_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private static final Set<UUID> pending = ConcurrentHashMap.newKeySet();
     private static final Map<UUID, Integer> surfaceSearchCursors = new HashMap<>();
+    private static final Map<UUID, SurfaceCandidate> surfaceFallbacks = new HashMap<>();
     private static final Map<UUID, Long> retryAfter = new HashMap<>();
     private static final Map<UUID, String> waitReasons = new HashMap<>();
+    private static final Map<PlacementFailureKey, Integer> placementFailures = new HashMap<>();
+    private static final Map<UUID, Integer> skippedLogCounts = new HashMap<>();
 
     private static long completedScenes;
+    private static long skippedPlacements;
     private static long lastTickNanos;
     private static int lastTickEdits;
     private static int lastTickPieces;
+    private static int lastTickSkipped;
 
     private HearthReconciliationManager() {
     }
@@ -101,12 +112,14 @@ public final class HearthReconciliationManager {
             lastTickNanos = 0L;
             lastTickEdits = 0;
             lastTickPieces = 0;
+            lastTickSkipped = 0;
             return;
         }
 
         long start = System.nanoTime();
         int edits = 0;
         int pieces = 0;
+        int skipped = 0;
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
 
         for (UUID id : List.copyOf(pending)) {
@@ -118,11 +131,11 @@ public final class HearthReconciliationManager {
                 removePending(id);
                 continue;
             }
-            waitReasons.remove(id);
             if (retryAfter.getOrDefault(id, 0L) > gameTime) {
-                waitReasons.put(id, "retry");
+                waitReasons.putIfAbsent(id, "retry");
                 continue;
             }
+            waitReasons.remove(id);
 
             HearthReconciliationPolicy.StructurePlan plan =
                     HearthReconciliationPolicy.desiredPlan(hearth);
@@ -148,11 +161,13 @@ public final class HearthReconciliationManager {
                 }
                 data.resolveSurface(id, resolution.center());
                 surfaceSearchCursors.remove(id);
+                surfaceFallbacks.remove(id);
                 retryAfter.remove(id);
                 hearth = data.hearth(id).orElseThrow();
-                FrozenDawn.LOGGER.info("Resolved {} Hearth {} surface at ({}, {}, {})",
+                FrozenDawn.LOGGER.info("Resolved {} Hearth {} surface at ({}, {}, {}){}",
                         hearth.type().name().toLowerCase(), shortId(id),
-                        hearth.center().getX(), hearth.center().getY(), hearth.center().getZ());
+                        hearth.center().getX(), hearth.center().getY(), hearth.center().getZ(),
+                        resolution.fallback() ? " using rugged-terrain fallback" : "");
             }
 
             if (!footprintLoaded(level, hearth.center(), plan.footprintRadius())) {
@@ -180,12 +195,14 @@ public final class HearthReconciliationManager {
                 BlockState existing = level.getBlockState(target);
                 if (placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT
                         && !isTransientSurface(existing)) {
+                    clearPlacementFailure(id, plan.version(), cursor);
                     cursor++;
                     pieces++;
                     continue;
                 }
                 if (placement.piece() == HearthStructurePiece.FOUNDATION_SUPPORT
                         && hasSolidFoundation(level, target, existing)) {
+                    clearPlacementFailure(id, plan.version(), cursor);
                     cursor++;
                     pieces++;
                     continue;
@@ -194,30 +211,61 @@ public final class HearthReconciliationManager {
                     if (!desired.getCollisionShape(level, target).isEmpty()
                             && !level.getEntitiesOfClass(
                                     LivingEntity.class, new AABB(target)).isEmpty()) {
-                        waitReasons.put(id, "entity@" + formatPos(target));
-                        break;
+                        int attempts = recordPlacementFailure(
+                                id, plan.version(), cursor, PlacementFailureKind.ENTITY);
+                        if (!shouldSkipAfterFailure(PlacementFailureKind.ENTITY, attempts)) {
+                            waitReasons.put(id, "entity@" + formatPos(target)
+                                    + "#" + attempts);
+                            break;
+                        }
+                        skipped += skipBlockedPlacement(
+                                id, plan, cursor, placement, target, existing,
+                                PlacementFailureKind.ENTITY, attempts);
+                        cursor++;
+                        pieces++;
+                        continue;
                     }
                     if (!canReplace(level, target, existing, placement)) {
-                        if (isClearancePiece(placement.piece())) {
+                        if (isClearancePiece(placement.piece())
+                                || isOptionalTerrainDecoration(placement.piece())
+                                && isNaturalSettlementObstruction(existing)) {
+                            clearPlacementFailure(id, plan.version(), cursor);
                             cursor++;
                             pieces++;
                             continue;
                         }
-                        retryAfter.put(id, gameTime + SURFACE_RETRY_DELAY_TICKS);
-                        waitReasons.put(id, "blocked@" + formatPos(target)
-                                + ":" + BuiltInRegistries.BLOCK.getKey(existing.getBlock()));
-                        break;
+                        skipped += skipBlockedPlacement(
+                                id, plan, cursor, placement, target, existing,
+                                PlacementFailureKind.PERMANENT_BLOCKER, 1);
+                        cursor++;
+                        pieces++;
+                        continue;
                     }
                     if (!level.setBlock(target, desired, SET_BLOCK_FLAGS)) {
-                        waitReasons.put(id, "set-failed@" + formatPos(target));
-                        break;
-                    }
-                    if (placement.piece() == HearthStructurePiece.PROTECTED_CHEST) {
-                        initializeFormedLoot(level, target, hearth.layoutSeed());
-                    } else if (placement.piece() == HearthStructurePiece.SACRED_CHEST) {
-                        initializeIntactLoot(level, target, hearth.layoutSeed());
+                        int attempts = recordPlacementFailure(
+                                id, plan.version(), cursor, PlacementFailureKind.SET_BLOCK);
+                        if (!shouldSkipAfterFailure(PlacementFailureKind.SET_BLOCK, attempts)) {
+                            waitReasons.put(id, "set-failed@" + formatPos(target)
+                                    + "#" + attempts);
+                            break;
+                        }
+                        skipped += skipBlockedPlacement(
+                                id, plan, cursor, placement, target, existing,
+                                PlacementFailureKind.SET_BLOCK, attempts);
+                        cursor++;
+                        pieces++;
+                        continue;
                     }
                     edits++;
+                }
+                clearPlacementFailure(id, plan.version(), cursor);
+                if (placement.piece() == HearthStructurePiece.ORSA_CRATE) {
+                    initializeOrsaCrateLoot(
+                            level, target, hearth.layoutSeed(), plan.stage());
+                } else if (placement.piece() == HearthStructurePiece.PROTECTED_CHEST) {
+                    initializeFormedLoot(level, target, hearth.layoutSeed());
+                } else if (placement.piece() == HearthStructurePiece.SACRED_CHEST) {
+                    initializeIntactLoot(level, target, hearth.layoutSeed());
                 }
                 cursor++;
                 pieces++;
@@ -239,6 +287,8 @@ public final class HearthReconciliationManager {
         lastTickNanos = System.nanoTime() - start;
         lastTickEdits = edits;
         lastTickPieces = pieces;
+        lastTickSkipped = skipped;
+        skippedPlacements += skipped;
     }
 
     public static int queueAll(ServerLevel level) {
@@ -259,6 +309,8 @@ public final class HearthReconciliationManager {
                 + " lastMs=" + String.format("%.3f", lastTickNanos / 1_000_000.0D)
                 + " lastEdits=" + lastTickEdits
                 + " lastPieces=" + lastTickPieces
+                + " lastSkipped=" + lastTickSkipped
+                + " skipped=" + skippedPlacements
                 + " waiting=" + waitingSummary()
                 + " tracePlan=" + HearthReconciliationPolicy.TRACE_PLAN_VERSION
                 + " formedPlan=" + HearthReconciliationPolicy.FORMED_PLAN_VERSION
@@ -268,12 +320,17 @@ public final class HearthReconciliationManager {
     public static void reset() {
         pending.clear();
         surfaceSearchCursors.clear();
+        surfaceFallbacks.clear();
         retryAfter.clear();
         waitReasons.clear();
+        placementFailures.clear();
+        skippedLogCounts.clear();
         completedScenes = 0L;
+        skippedPlacements = 0L;
         lastTickNanos = 0L;
         lastTickEdits = 0;
         lastTickPieces = 0;
+        lastTickSkipped = 0;
     }
 
     private static void queueNearChunk(ServerLevel level, int chunkX, int chunkZ) {
@@ -317,19 +374,29 @@ public final class HearthReconciliationManager {
             BlockPos offset = offsets.get(cursor++);
             tested++;
             BlockPos horizontal = hearth.center().offset(offset.getX(), 0, offset.getZ());
-            BlockPos resolved = validateCandidate(
+            SurfaceCandidate candidate = evaluateCandidate(
                     level, hearth, horizontal, layout, footprintRadius,
                     maxSurfaceVariance);
-            if (resolved != null) {
-                surfaceSearchCursors.put(hearth.id(), cursor);
-                return new SurfaceResolution(resolved, false);
+            if (candidate == null) {
+                continue;
             }
+            if (candidate.strict()) {
+                surfaceSearchCursors.put(hearth.id(), cursor);
+                return new SurfaceResolution(candidate.center(), false, false);
+            }
+            surfaceFallbacks.merge(hearth.id(), candidate,
+                    (first, second) -> first.variance() <= second.variance() ? first : second);
         }
         surfaceSearchCursors.put(hearth.id(), cursor);
-        return new SurfaceResolution(null, cursor >= offsets.size());
+        boolean exhausted = cursor >= offsets.size();
+        SurfaceCandidate fallback = exhausted ? surfaceFallbacks.get(hearth.id()) : null;
+        if (fallback != null) {
+            return new SurfaceResolution(fallback.center(), true, true);
+        }
+        return new SurfaceResolution(null, exhausted, false);
     }
 
-    private static BlockPos validateCandidate(
+    private static SurfaceCandidate evaluateCandidate(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
             BlockPos horizontal, List<HearthStructurePlacement> layout,
             int footprintRadius, int maxSurfaceVariance) {
@@ -353,18 +420,23 @@ public final class HearthReconciliationManager {
             maxHeight = Math.max(maxHeight, height);
         }
         if (minHeight == Integer.MAX_VALUE
-                || maxHeight - minHeight > maxSurfaceVariance
                 || maxHeight < level.getMinBuildHeight() + 4
                 || maxHeight > level.getMaxBuildHeight() - 4) {
             return null;
         }
 
-        BlockPos center = new BlockPos(horizontal.getX(), maxHeight, horizontal.getZ());
+        int variance = maxHeight - minHeight;
+        int centerY = fallbackSurfaceY(minHeight, maxHeight, maxSurfaceVariance);
+        BlockPos center = new BlockPos(horizontal.getX(), centerY, horizontal.getZ());
         if (protectedSite(level, center, layout, footprintRadius)
                 || !layoutReplaceable(level, center, layout)) {
             return null;
         }
-        return center;
+        return new SurfaceCandidate(center, variance, variance <= maxSurfaceVariance);
+    }
+
+    static int fallbackSurfaceY(int minHeight, int maxHeight, int maxSurfaceVariance) {
+        return Math.min(maxHeight, minHeight + Math.max(0, maxSurfaceVariance));
     }
 
     private static boolean protectedSite(ServerLevel level, BlockPos center,
@@ -430,7 +502,7 @@ public final class HearthReconciliationManager {
         for (HearthStructurePlacement placement : layout) {
             BlockPos pos = center.offset(placement.offset());
             BlockState state = level.getBlockState(pos);
-            if (!allowsFluidReplacement(state, placement.piece())) {
+            if (!allowsFluidReplacement(state, placement)) {
                 return false;
             }
             if (placement.piece() == HearthStructurePiece.CLEAR_TRANSIENT
@@ -446,7 +518,7 @@ public final class HearthReconciliationManager {
 
     private static boolean canReplace(ServerLevel level, BlockPos pos, BlockState state,
                                       HearthStructurePlacement placement) {
-        if (!allowsFluidReplacement(state, placement.piece())
+        if (!allowsFluidReplacement(state, placement)
                 || PlayerPlacedBlockTracker.get(level.getServer()).isPlayerPlaced(pos)
                 || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
                 || BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
@@ -464,6 +536,21 @@ public final class HearthReconciliationManager {
                 || state.getFluidState().getType() == Fluids.FLOWING_WATER);
     }
 
+    static boolean allowsFluidReplacement(BlockState state, HearthStructurePlacement placement) {
+        if (allowsFluidReplacement(state, placement.piece())) {
+            return true;
+        }
+        if (placement.offset().getY() != -1
+                || state.getFluidState().getType() != Fluids.WATER
+                && state.getFluidState().getType() != Fluids.FLOWING_WATER) {
+            return false;
+        }
+        return switch (placement.piece()) {
+            case PACKED_ICE_LOWER, FROZEN_PLANKS, FROZEN_STONE_BRICKS -> true;
+            default -> false;
+        };
+    }
+
     static boolean needsPlacement(BlockState existing, BlockState desired) {
         return !existing.equals(desired);
     }
@@ -475,8 +562,67 @@ public final class HearthReconciliationManager {
         };
     }
 
-    private static boolean canReplaceNatural(BlockState state,
-                                             HearthStructurePlacement placement) {
+    static boolean isOptionalTerrainDecoration(HearthStructurePiece piece) {
+        return piece == HearthStructurePiece.SNOW_MARKER
+                || piece == HearthStructurePiece.FROZEN_ATMOSPHERE;
+    }
+
+    static int failureAttemptLimit(PlacementFailureKind kind) {
+        return switch (kind) {
+            case ENTITY -> ENTITY_BLOCK_RETRY_LIMIT;
+            case SET_BLOCK -> SET_BLOCK_RETRY_LIMIT;
+            case PERMANENT_BLOCKER -> 1;
+        };
+    }
+
+    static boolean shouldSkipAfterFailure(PlacementFailureKind kind, int attempts) {
+        return attempts >= failureAttemptLimit(kind);
+    }
+
+    private static int recordPlacementFailure(
+            UUID hearthId,
+            int planVersion,
+            int cursor,
+            PlacementFailureKind kind) {
+        PlacementFailureKey key = new PlacementFailureKey(hearthId, planVersion, cursor, kind);
+        return placementFailures.merge(key, 1, Integer::sum);
+    }
+
+    private static void clearPlacementFailure(UUID hearthId, int planVersion, int cursor) {
+        placementFailures.keySet().removeIf(key -> key.hearthId().equals(hearthId)
+                && key.planVersion() == planVersion
+                && key.cursor() == cursor);
+    }
+
+    private static int skipBlockedPlacement(
+            UUID hearthId,
+            HearthReconciliationPolicy.StructurePlan plan,
+            int cursor,
+            HearthStructurePlacement placement,
+            BlockPos target,
+            BlockState existing,
+            PlacementFailureKind kind,
+            int attempts) {
+        clearPlacementFailure(hearthId, plan.version(), cursor);
+        int logCount = skippedLogCounts.merge(hearthId, 1, Integer::sum);
+        if (logCount <= SKIP_LOG_LIMIT) {
+            FrozenDawn.LOGGER.warn(
+                    "Hearth {} {} plan {} skipped {} at cursor {} ({}) after {} {} attempt(s) "
+                            + "over {}; reconciliation will continue",
+                    shortId(hearthId), plan.stage().name().toLowerCase(), plan.version(),
+                    placement.piece().name().toLowerCase(), cursor, formatPos(target), attempts,
+                    kind.name().toLowerCase(), BuiltInRegistries.BLOCK.getKey(existing.getBlock()));
+        } else if (logCount == SKIP_LOG_LIMIT + 1) {
+            FrozenDawn.LOGGER.warn(
+                    "Hearth {} has more than {} degraded placements; suppressing further "
+                            + "per-block warnings while reconciliation continues",
+                    shortId(hearthId), SKIP_LOG_LIMIT);
+        }
+        return 1;
+    }
+
+    static boolean canReplaceNatural(BlockState state,
+                                     HearthStructurePlacement placement) {
         if (placement.piece() == HearthStructurePiece.FOUNDATION_SUPPORT) {
             return allowsFluidReplacement(state, placement.piece());
         }
@@ -499,22 +645,11 @@ public final class HearthReconciliationManager {
         if (isHearthSceneBlock(state)) {
             return true;
         }
-        if (placement.protection() != HearthStructurePlacement.Protection.NONE
-                && isNaturalSettlementObstruction(state)) {
+        if (isNaturalSettlementObstruction(state)) {
             return true;
         }
         if (placement.offset().getY() == -1) {
-            return state.canBeReplaced()
-                    || state.is(BlockTags.BASE_STONE_OVERWORLD)
-                    || state.is(BlockTags.DIRT)
-                    || state.is(Blocks.SNOW_BLOCK)
-                    || state.is(Blocks.ICE)
-                    || state.is(Blocks.PACKED_ICE)
-                    || state.is(Blocks.BLUE_ICE)
-                    || state.is(ModBlocks.DEAD_GRASS_BLOCK.get())
-                    || state.is(ModBlocks.FROZEN_DIRT.get())
-                    || state.is(ModBlocks.FROZEN_SAND.get())
-                    || state.is(ModBlocks.FROZEN_COBBLESTONE.get());
+            return state.canBeReplaced() || isNaturalSettlementObstruction(state);
         }
         return state.isAir() || state.canBeReplaced();
     }
@@ -586,7 +721,7 @@ public final class HearthReconciliationManager {
 
     private static int stableSurfaceHeight(ServerLevel level, int x, int z) {
         int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-        int floor = Math.max(level.getMinBuildHeight(), top - 12);
+        int floor = Math.max(level.getMinBuildHeight(), top - SURFACE_SCAN_DEPTH);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int y = top; y >= floor; y--) {
             cursor.set(x, y, z);
@@ -696,6 +831,54 @@ public final class HearthReconciliationManager {
         chest.setChanged();
     }
 
+    private static void initializeOrsaCrateLoot(
+            ServerLevel level,
+            BlockPos pos,
+            long layoutSeed,
+            ReturnedHearthSavedData.HearthStage stage) {
+        if (!(level.getBlockEntity(pos) instanceof BarrelBlockEntity barrel)
+                || !barrel.isEmpty()) {
+            return;
+        }
+
+        RandomSource random = RandomSource.create(
+                layoutSeed ^ pos.asLong() ^ 0x4F5253415F435241L
+                        ^ ((long) stage.ordinal() << 48));
+        int[] slots = {4, 13, 22, 10, 16, 1, 25, 7};
+        List<ItemStack> loot = new java.util.ArrayList<>();
+        loot.add(new ItemStack(ModItems.TATTERED_CLOTHING_SCRAP.get(),
+                1 + random.nextInt(3)));
+        loot.add(new ItemStack(Items.CHARCOAL, 2 + random.nextInt(4)));
+        loot.add(new ItemStack(ModItems.ICE_SHARD.get(), 1 + random.nextInt(4)));
+
+        if (stage.ordinal() >= ReturnedHearthSavedData.HearthStage.FORMED.ordinal()) {
+            loot.add(random.nextBoolean()
+                    ? new ItemStack(ModItems.ORSA_SUIT_PATCH_KIT.get())
+                    : new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
+            if (random.nextFloat() < 0.45F) {
+                loot.add(OrsaIdBadgeItem.createNamed(
+                        layoutSeed ^ pos.asLong(), random.nextInt(8)));
+            }
+            if (random.nextFloat() < 0.35F) {
+                loot.add(new ItemStack(ModItems.CRYO_FUEL.get(),
+                        1 + random.nextInt(3)));
+            }
+        }
+        if (stage == ReturnedHearthSavedData.HearthStage.INTACT) {
+            if (random.nextFloat() < 0.28F) {
+                loot.add(new ItemStack(ModItems.ROCKET_FUEL_CELL.get()));
+            }
+            if (random.nextFloat() < 0.18F) {
+                loot.add(new ItemStack(ModItems.ORSA_TRAUMA_KIT.get()));
+            }
+        }
+
+        for (int index = 0; index < loot.size() && index < slots.length; index++) {
+            barrel.setItem(slots[index], loot.get(index));
+        }
+        barrel.setChanged();
+    }
+
     private static void initializeIntactLoot(ServerLevel level, BlockPos pos, long layoutSeed) {
         if (!(level.getBlockEntity(pos) instanceof ChestBlockEntity chest) || !chest.isEmpty()) {
             return;
@@ -703,22 +886,53 @@ public final class HearthReconciliationManager {
 
         RandomSource random = RandomSource.create(layoutSeed ^ pos.asLong()
                 ^ 0x494E544143545F4CL);
-        int[] slots = {2, 6, 10, 13, 16, 20, 24};
+        int[] slots = {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 0, 8, 18, 26, 4};
         chest.setItem(slots[0], new ItemStack(ModItems.TATTERED_CLOTHING_SCRAP.get(),
                 4 + random.nextInt(5)));
         chest.setItem(slots[1], new ItemStack(ModItems.FROZEN_ATMOSPHERE_SHARD.get(),
                 3 + random.nextInt(5)));
-        chest.setItem(slots[2], new ItemStack(ModItems.ICE_SHARD.get(),
-                5 + random.nextInt(6)));
-        chest.setItem(slots[3], new ItemStack(ModItems.FROZEN_HEART.get(),
+        chest.setItem(slots[2], new ItemStack(ModItems.FROZEN_HEART.get(),
                 1 + random.nextInt(2)));
-        chest.setItem(slots[4], new ItemStack(ModItems.ACHERONITE_SHARD.get(),
+        chest.setItem(slots[3], new ItemStack(ModItems.ORSA_SUIT_PATCH_KIT.get(),
                 1 + random.nextInt(2)));
-        if (random.nextFloat() < 0.65F) {
-            chest.setItem(slots[5], new ItemStack(ModItems.MIRRORED_FRAGMENT.get()));
+        chest.setItem(slots[4], new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get(),
+                1 + random.nextInt(2)));
+        chest.setItem(slots[5], new ItemStack(ModItems.ORSA_TRAUMA_KIT.get()));
+        chest.setItem(slots[6], new ItemStack(ModItems.BLACKGLASS_ARCHIVE_CARD.get()));
+        chest.setItem(slots[7], OrsaIdBadgeItem.createNamed(layoutSeed, 0));
+        chest.setItem(slots[8], OrsaIdBadgeItem.createNamed(layoutSeed, 1));
+
+        ItemStack rocketPart = switch (random.nextInt(4)) {
+            case 0 -> new ItemStack(ModItems.ROCKET_ENGINE.get());
+            case 1 -> new ItemStack(ModItems.ROCKET_FIN.get());
+            case 2 -> new ItemStack(ModItems.ROCKET_HULL.get());
+            default -> new ItemStack(ModItems.ROCKET_NOSE_CONE.get());
+        };
+        chest.setItem(slots[9], rocketPart);
+        chest.setItem(slots[10], new ItemStack(ModItems.ROCKET_FUEL_CELL.get(),
+                1 + random.nextInt(2)));
+        chest.setItem(slots[11], new ItemStack(ModItems.CRYO_FUEL.get(),
+                2 + random.nextInt(3)));
+
+        if (random.nextFloat() < 0.70F) {
+            chest.setItem(slots[12], new ItemStack(ModItems.O2_EFFICIENCY_MODULE.get()));
         }
-        if (random.nextFloat() < 0.45F) {
-            chest.setItem(slots[6], new ItemStack(ModItems.ARCHITECT_SOUL.get()));
+        if (random.nextFloat() < 0.60F) {
+            chest.setItem(slots[13], new ItemStack(ModItems.THERMAL_CAPACITOR.get()));
+        }
+        if (random.nextFloat() < 0.40F) {
+            chest.setItem(slots[14], new ItemStack(ModItems.REFINED_ACHERONITE.get()));
+        }
+        if (random.nextFloat() < 0.30F) {
+            chest.setItem(slots[15], new ItemStack(ModItems.ARCHITECT_SOUL.get()));
+        }
+        if (random.nextFloat() < 0.50F) {
+            chest.setItem(slots[16], new ItemStack(ModItems.MIRRORED_FRAGMENT.get()));
+        }
+        if (random.nextFloat() < 0.55F) {
+            chest.setItem(slots[17], random.nextBoolean()
+                    ? new ItemStack(ModItems.LIQUID_OXIDIZER.get(), 2 + random.nextInt(3))
+                    : new ItemStack(ModItems.SOLID_PROPELLANT.get(), 3 + random.nextInt(4)));
         }
         chest.setChanged();
     }
@@ -739,8 +953,11 @@ public final class HearthReconciliationManager {
     private static void removePending(UUID id) {
         pending.remove(id);
         surfaceSearchCursors.remove(id);
+        surfaceFallbacks.remove(id);
         retryAfter.remove(id);
         waitReasons.remove(id);
+        placementFailures.keySet().removeIf(key -> key.hearthId().equals(id));
+        skippedLogCounts.remove(id);
     }
 
     private static String waitingSummary() {
@@ -762,6 +979,22 @@ public final class HearthReconciliationManager {
         return id.toString().substring(0, 8);
     }
 
-    private record SurfaceResolution(BlockPos center, boolean exhausted) {
+    enum PlacementFailureKind {
+        ENTITY,
+        SET_BLOCK,
+        PERMANENT_BLOCKER
+    }
+
+    private record PlacementFailureKey(
+            UUID hearthId,
+            int planVersion,
+            int cursor,
+            PlacementFailureKind kind) {
+    }
+
+    private record SurfaceCandidate(BlockPos center, int variance, boolean strict) {
+    }
+
+    private record SurfaceResolution(BlockPos center, boolean exhausted, boolean fallback) {
     }
 }

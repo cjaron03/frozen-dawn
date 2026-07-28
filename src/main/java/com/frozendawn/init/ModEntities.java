@@ -7,6 +7,7 @@ import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
+import com.frozendawn.entity.MasterArchitectLightningEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -71,6 +72,18 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("architect"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<MasterArchitectLightningEntity>>
+            MASTER_ARCHITECT_LIGHTNING = ENTITIES.register(
+                    "master_architect_lightning", () -> EntityType.Builder
+                            .of(MasterArchitectLightningEntity::new, MobCategory.MISC)
+                            .sized(0.1F, 0.1F)
+                            .noSave()
+                            .noSummon()
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
+                            .build("master_architect_lightning"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HeavySnowballEntity>> HEAVY_SNOWBALL =
             ENTITIES.register("heavy_snowball", () -> EntityType.Builder

@@ -51,6 +51,12 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleBreathableState(payload))
         );
         registrar.playToClient(
+                SuitIntegrityPayload.TYPE,
+                SuitIntegrityPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleSuitIntegrity(payload))
+        );
+        registrar.playToClient(
                 SanityStagePayload.TYPE,
                 SanityStagePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSanityStage(payload))
@@ -125,6 +131,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectWeather(payload))
         );
         registrar.playToClient(
+                MasterArchitectAuraEventPayload.TYPE,
+                MasterArchitectAuraEventPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectAuraEvent(payload))
+        );
+        registrar.playToClient(
                 MasterArchitectFightMusicPayload.TYPE,
                 MasterArchitectFightMusicPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
@@ -143,6 +155,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectSeverTelegraph(payload))
         );
         registrar.playToClient(
+                MasterArchitectThermalSeverWarningPayload.TYPE,
+                MasterArchitectThermalSeverWarningPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectThermalSeverWarning(payload))
+        );
+        registrar.playToClient(
                 ContinuityFracturePayload.TYPE,
                 ContinuityFracturePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
@@ -159,6 +177,24 @@ public class ModNetworking {
                 MasterArchitectFourthWallStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleMasterArchitectFourthWallState(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectFloodStatePayload.TYPE,
+                MasterArchitectFloodStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodState(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectFloodMotePayload.TYPE,
+                MasterArchitectFloodMotePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodMote(payload))
+        );
+        registrar.playToClient(
+                MasterArchitectFloodProgressPayload.TYPE,
+                MasterArchitectFloodProgressPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleMasterArchitectFloodProgress(payload))
         );
 
         // Server-bound packets

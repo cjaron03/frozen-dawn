@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
@@ -58,6 +59,60 @@ public class SoundMuffler {
         boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
 
         if (isThaevenSound || isSurveyorLensCue) {
+            return;
+        }
+
+        if (MasterArchitectFloodClient.isActive()) {
+            boolean isMasterFightMusic = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("music.master_architect.");
+            boolean isMasterArchitectSound = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("entity.master_architect.");
+            boolean isMasterArchitectUi = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("ui.master_architect.");
+            boolean isMindWitnessCue = ThaeIvenMindDimension.isMindLevel(mc.level)
+                    && soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("ambient.sanity_");
+            boolean isMindTransitionCue = soundLocation.getNamespace().equals("minecraft")
+                    && soundPath.equals("block.portal.travel");
+            if (isMasterFightMusic || isMasterArchitectSound || isMasterArchitectUi
+                    || isMindWitnessCue || isMindTransitionCue) {
+                return;
+            }
+            if (original.getSource() == SoundSource.MUSIC) {
+                event.setSound(null);
+                return;
+            }
+            event.setSound(new MuffledSound(
+                    original,
+                    MasterArchitectFloodClient.audioDuckFactor(),
+                    0.94F));
+            return;
+        }
+
+        boolean isMasterAuraSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.startsWith("entity.master_architect.")
+                || soundPath.startsWith("ui.master_architect."));
+        float auraSilence = MasterArchitectAuraClient.silenceFactor();
+        boolean isAuraAmbientSource = original.getSource() == SoundSource.AMBIENT
+                || original.getSource() == SoundSource.WEATHER
+                || original.getSource() == SoundSource.HOSTILE
+                || original.getSource() == SoundSource.NEUTRAL;
+        if (!isMasterAuraSound
+                && original.getSource() != SoundSource.MASTER
+                && original.getSource() != SoundSource.MUSIC
+                && isAuraAmbientSource
+                && auraSilence > 0.01F) {
+            if (auraSilence >= 0.96F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(
+                        original,
+                        1.0F - auraSilence,
+                        1.0F - auraSilence * 0.12F));
+            }
             return;
         }
 

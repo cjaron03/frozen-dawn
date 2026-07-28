@@ -2,6 +2,7 @@ package com.frozendawn.homo;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Eligibility, anchor, and peaceful-perimeter rules for the Major-Hearth apex.
@@ -11,6 +12,8 @@ public final class HearthMasterArchitectPolicy {
     public static final int HOME_RADIUS = 16;
     public static final int WATCH_DISTANCE = 36;
     public static final int RETREAT_DISTANCE = 8;
+    public static final double STORM_BOUNDARY_RADIUS =
+            MasterArchitectEyeWallPolicy.HOSTILE_RADIUS - 2.0D;
     public static final double DEFAULT_MAX_HEALTH = 300.0D;
     public static final double CINEMATIC_MAX_HEALTH = 200.0D;
     public static final double BRUTAL_MAX_HEALTH = 450.0D;
@@ -53,6 +56,26 @@ public final class HearthMasterArchitectPolicy {
             case "cinematic" -> CINEMATIC_MAX_HEALTH;
             default -> DEFAULT_MAX_HEALTH;
         };
+    }
+
+    public static boolean isInsideStormBoundary(BlockPos center, Vec3 position) {
+        Vec3 origin = center.getCenter();
+        double dx = position.x - origin.x;
+        double dz = position.z - origin.z;
+        return dx * dx + dz * dz <= STORM_BOUNDARY_RADIUS * STORM_BOUNDARY_RADIUS;
+    }
+
+    public static Vec3 clampToStormBoundary(BlockPos center, Vec3 position) {
+        Vec3 origin = center.getCenter();
+        double dx = position.x - origin.x;
+        double dz = position.z - origin.z;
+        double distanceSquared = dx * dx + dz * dz;
+        double radiusSquared = STORM_BOUNDARY_RADIUS * STORM_BOUNDARY_RADIUS;
+        if (distanceSquared <= radiusSquared || distanceSquared < 1.0E-6D) {
+            return position;
+        }
+        double scale = STORM_BOUNDARY_RADIUS / Math.sqrt(distanceSquared);
+        return new Vec3(origin.x + dx * scale, position.y, origin.z + dz * scale);
     }
 
     private static long mix(long value) {

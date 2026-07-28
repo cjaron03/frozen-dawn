@@ -3,6 +3,7 @@ package com.frozendawn.homo;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MasterArchitectPhasePolicyTest {
 
@@ -18,6 +19,20 @@ class MasterArchitectPhasePolicyTest {
                 MasterArchitectPhasePolicy.phaseForHealth(30.0F, 100.0F));
         assertEquals(MasterArchitectCombatPhase.FLOOD,
                 MasterArchitectPhasePolicy.phaseForHealth(10.0F, 100.0F));
+    }
+
+    @Test
+    void brutalPresetFloodClampDoesNotStickInAscentAtRoundedTenPercent() {
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.phaseForHealth(45.0F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.phaseForHealth(45.45F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.ASCENT,
+                MasterArchitectPhasePolicy.phaseForHealth(45.451F, 450.0F));
+        assertEquals(MasterArchitectCombatPhase.FLOOD,
+                MasterArchitectPhasePolicy.advance(
+                        MasterArchitectCombatPhase.ASCENT, 45.0F, 450.0F));
+        assertTrue(MasterArchitectPhasePolicy.isAtFloodEntry(45.45F, 450.0F));
     }
 
     @Test
@@ -47,18 +62,18 @@ class MasterArchitectPhasePolicyTest {
     }
 
     @Test
-    void floodEntryClampCannotBecomeDamageImmunity() {
+    void realMasterCannotDieOutsideTheMind() {
         assertEquals(1.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.ASCENT,
                         21.0F, 200.0F, 40.0F, false),
                 0.0001F);
-        assertEquals(40.0F,
+        assertEquals(0.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.FLOOD,
                         20.0F, 200.0F, 40.0F, false),
                 0.0001F);
-        assertEquals(40.0F,
+        assertEquals(1.0F,
                 MasterArchitectPhasePolicy.clampFloodEntryDamage(
                         MasterArchitectCombatPhase.ASCENT,
                         21.0F, 200.0F, 40.0F, true),

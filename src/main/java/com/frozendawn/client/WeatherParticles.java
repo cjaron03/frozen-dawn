@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -34,7 +35,10 @@ public class WeatherParticles {
 
         float exposure = StormExposureController.getExposure();
         float progress = ApocalypseClientData.getProgress();
-        float masterStrength = MasterArchitectWeather.getStrength() * exposure;
+        float eyeStormFactor = MasterArchitectAuraClient.localStormFactor(
+                mc.player.position());
+        float masterStrength = MasterArchitectWeather.getStrength()
+                * exposure * eyeStormFactor;
         if (exposure <= 0.08F && masterStrength <= 0.08F) return;
 
         boolean vacuum = PhaseManager.isVacuumActive(phase, progress);
@@ -42,9 +46,9 @@ public class WeatherParticles {
 
         int globalParticleCount = vacuum
                 ? 0 : Math.round(getParticleCount(phase, progress) * exposure);
-        int localParticleCount = Math.round(60.0F * masterStrength);
-        int particleCount = Math.max(globalParticleCount, localParticleCount);
-        if (particleCount <= 0) return;
+        int localParticleCount = Math.round(72.0F * masterStrength);
+        int totalParticleCount = Math.max(globalParticleCount, localParticleCount);
+        if (totalParticleCount <= 0) return;
 
         RandomSource random = mc.level.random;
         double px = mc.player.getX();
@@ -59,20 +63,27 @@ public class WeatherParticles {
                     phase, progress, gameTime) * exposure;
             float localWindSpeed = BlizzardWindHelper.getMasterArchitectWindSpeed(
                     gameTime, masterStrength);
-            float windSpeed = Math.max(globalWindSpeed, localWindSpeed);
             float windAngle = BlizzardWindHelper.getWindAngleRad(gameTime);
-            float windX = windSpeed * Mth.sin(windAngle);
-            float windZ = windSpeed * Mth.cos(windAngle);
-            double fallSpeed = -0.08; // barely falling — almost horizontal
-
-            for (int i = 0; i < particleCount; i++) {
-                double spread = 20;
-                double verticalSpread = 3;
-                double x = px + random.nextGaussian() * spread;
-                double y = py + random.nextGaussian() * verticalSpread;
-                double z = pz + random.nextGaussian() * spread;
-                mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
-            }
+            spawnHorizontalSnow(
+                    mc,
+                    random,
+                    px,
+                    py,
+                    pz,
+                    globalParticleCount,
+                    globalWindSpeed * Mth.sin(windAngle),
+                    globalWindSpeed * Mth.cos(windAngle),
+                    false);
+            spawnHorizontalSnow(
+                    mc,
+                    random,
+                    px,
+                    py,
+                    pz,
+                    Math.max(0, totalParticleCount - globalParticleCount),
+                    localWindSpeed * Mth.sin(windAngle),
+                    localWindSpeed * Mth.cos(windAngle),
+                    true);
         } else {
             // Phase 3-4: normal falling snow with mild wind
             float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
@@ -81,13 +92,46 @@ public class WeatherParticles {
             float windZ = windStrength * windMult * exposure * (float) Math.cos(gameTime * 0.011);
             double fallSpeed = -0.3;
 
-            for (int i = 0; i < particleCount; i++) {
+            for (int i = 0; i < totalParticleCount; i++) {
                 double spread = 16;
                 double x = px + random.nextGaussian() * spread;
                 double y = py + 8 + random.nextDouble() * 12;
                 double z = pz + random.nextGaussian() * spread;
                 mc.level.addParticle(ParticleTypes.SNOWFLAKE, x, y, z, windX, fallSpeed, windZ);
             }
+        }
+    }
+
+    private static void spawnHorizontalSnow(
+            Minecraft minecraft,
+            RandomSource random,
+            double playerX,
+            double playerY,
+            double playerZ,
+            int count,
+            double windX,
+            double windZ,
+            boolean confineToMasterEye) {
+        int spawned = 0;
+        int attempts = Math.max(count, count * 4);
+        for (int attempt = 0; attempt < attempts && spawned < count; attempt++) {
+            double x = playerX + random.nextGaussian() * 20.0D;
+            double y = playerY + random.nextGaussian() * 3.0D;
+            double z = playerZ + random.nextGaussian() * 20.0D;
+            if (confineToMasterEye
+                    && MasterArchitectAuraClient.localStormFactor(new Vec3(x, y, z))
+                    <= 0.08F) {
+                continue;
+            }
+            minecraft.level.addParticle(
+                    ParticleTypes.SNOWFLAKE,
+                    x,
+                    y,
+                    z,
+                    windX,
+                    -0.08D,
+                    windZ);
+            spawned++;
         }
     }
 

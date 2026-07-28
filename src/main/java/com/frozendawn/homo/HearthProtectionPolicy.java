@@ -11,8 +11,10 @@ import java.util.UUID;
  * Resolves exact protected Hearth positions without broad proximity guesses.
  */
 public final class HearthProtectionPolicy {
-    private static final int ENVIRONMENT_MIN_Y_OFFSET = -5;
-    private static final int ENVIRONMENT_MAX_Y_OFFSET = 4;
+    // Intact Hearth paths and shelters use support columns as deep as 16 blocks.
+    // Reserve the complete authored volume while reconciliation is in progress.
+    private static final int ENVIRONMENT_MIN_Y_OFFSET = -18;
+    private static final int ENVIRONMENT_MAX_Y_OFFSET = 7;
 
     private HearthProtectionPolicy() {
     }

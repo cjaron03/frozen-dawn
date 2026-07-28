@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.network.MasterArchitectWeatherPayload;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,12 +22,33 @@ public final class MasterArchitectWeather {
 
     private static float targetStrength;
     private static float currentStrength;
+    private static int auraTier;
+    private static boolean fightActive;
+    private static float visualAuraTier;
+    private static BlockPos hearthCenter = BlockPos.ZERO;
+    private static boolean anchored;
+    private static boolean suppressedForDeath;
 
     private MasterArchitectWeather() {
     }
 
     public static void update(MasterArchitectWeatherPayload payload) {
+        MasterArchitectAuraClient.updateAftermath(payload);
+        if (payload.hearthStormDead()) {
+            suppressAfterMasterDeath();
+            return;
+        }
+        boolean initialAnchor = payload.anchored()
+                && (!anchored || !hearthCenter.equals(payload.hearthCenter()));
+        suppressedForDeath = false;
         targetStrength = Mth.clamp(payload.strength(), 0.0F, 1.0F);
+        auraTier = Mth.clamp(payload.auraTier(), 0, 3);
+        fightActive = payload.fightActive();
+        hearthCenter = payload.hearthCenter().immutable();
+        anchored = payload.anchored();
+        if (initialAnchor) {
+            visualAuraTier = auraTier;
+        }
     }
 
     @SubscribeEvent
@@ -46,6 +68,12 @@ public final class MasterArchitectWeather {
         if (currentStrength < ACTIVE_THRESHOLD && targetStrength <= 0.0F) {
             currentStrength = 0.0F;
         }
+        float auraStep = 1.0F / Math.max(
+                1.0F,
+                com.frozendawn.config.FrozenDawnConfig
+                        .MASTER_AURA_STORM_RESPONSE_SECONDS.get().floatValue() * 20.0F);
+        visualAuraTier = moveToward(
+                visualAuraTier, auraTier, auraStep);
     }
 
     @SubscribeEvent
@@ -61,13 +89,61 @@ public final class MasterArchitectWeather {
         return currentStrength * StormExposureController.getExposure();
     }
 
+    public static int getAuraTier() {
+        return auraTier;
+    }
+
+    public static boolean isFightActive() {
+        return fightActive;
+    }
+
+    public static float getVisualAuraTier() {
+        return visualAuraTier;
+    }
+
+    public static BlockPos getHearthCenter() {
+        return hearthCenter;
+    }
+
+    public static boolean hasAuraAnchor() {
+        return anchored && auraTier > 0;
+    }
+
+    public static float getAuraProximity() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!hasAuraAnchor() || minecraft.player == null) {
+            return 0.0F;
+        }
+        double distance = Math.sqrt(minecraft.player.blockPosition()
+                .distSqr(hearthCenter));
+        double radius = com.frozendawn.config.FrozenDawnConfig
+                .MASTER_AURA_RADIUS.get();
+        return Mth.clamp((float) (1.0D - distance / radius), 0.0F, 1.0F);
+    }
+
     static boolean isRequested() {
         return targetStrength > ACTIVE_THRESHOLD || currentStrength > ACTIVE_THRESHOLD;
+    }
+
+    static void suppressAfterMasterDeath() {
+        targetStrength = 0.0F;
+        currentStrength = 0.0F;
+        auraTier = 0;
+        fightActive = false;
+        visualAuraTier = 0.0F;
+        anchored = false;
+        suppressedForDeath = true;
     }
 
     static void reset() {
         targetStrength = 0.0F;
         currentStrength = 0.0F;
+        auraTier = 0;
+        fightActive = false;
+        visualAuraTier = 0.0F;
+        hearthCenter = BlockPos.ZERO;
+        anchored = false;
+        suppressedForDeath = false;
     }
 
     private static float moveToward(float current, float target, float step) {
