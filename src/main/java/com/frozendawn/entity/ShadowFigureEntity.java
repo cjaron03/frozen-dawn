@@ -16,6 +16,8 @@ public class ShadowFigureEntity extends Entity {
 
     private static final EntityDataAccessor<Boolean> DATA_IS_WATCHER =
             SynchedEntityData.defineId(ShadowFigureEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_IS_ECHO =
+            SynchedEntityData.defineId(ShadowFigureEntity.class, EntityDataSerializers.BOOLEAN);
 
     private int ticksAlive = 0;
     private boolean fading = false;
@@ -31,6 +33,7 @@ public class ShadowFigureEntity extends Entity {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_IS_WATCHER, false);
+        builder.define(DATA_IS_ECHO, false);
     }
 
     @Override
@@ -71,6 +74,17 @@ public class ShadowFigureEntity extends Entity {
         entityData.set(DATA_IS_WATCHER, watcher);
     }
 
+    public boolean isEcho() {
+        return entityData.get(DATA_IS_ECHO);
+    }
+
+    public void setEcho(boolean echo) {
+        entityData.set(DATA_IS_ECHO, echo);
+        if (echo) {
+            entityData.set(DATA_IS_WATCHER, false);
+        }
+    }
+
     // -- Fade logic --
 
     public void startFading() {
@@ -100,6 +114,6 @@ public class ShadowFigureEntity extends Entity {
         float age = ticksAlive + partialTick;
         float fadeIn = Math.min(1.0f, age / 20.0f);
         float fadeOut = fading ? Math.max(0.0f, 1.0f - (fadeOutTicks + partialTick) / maxFadeOutTicks) : 1.0f;
-        return fadeIn * fadeOut * 0.7f;
+        return fadeIn * fadeOut * (isEcho() ? 0.9f : 0.7f);
     }
 }

@@ -1,8 +1,10 @@
 package com.frozendawn.client.renderer;
 
 import com.frozendawn.client.CognitiveLoadClientState;
+import com.frozendawn.client.HeartEchoClient;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.homo.HeartFormationStage;
+import com.frozendawn.homo.HeartLattice;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -12,18 +14,16 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Cached deterministic blue-black lattice renderer for the persistent Heart. */
 public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEntity> {
-    private static final Map<Long, Lattice> CACHE = new ConcurrentHashMap<>();
+    private static final Map<Long, HeartLattice.Lattice> CACHE =
+            new ConcurrentHashMap<>();
 
     public ThaeIvenHeartRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -55,32 +55,61 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
             poseStack.pushPose();
             poseStack.translate(0.0D, -CognitiveLoadClientState.heartDescentBlocks(), 0.0D);
         }
-        Lattice lattice = CACHE.computeIfAbsent(
-                heart.layoutSeed(), ThaeIvenHeartRenderer::createLattice);
+        int destroyedMask = heart.destroyedNodeMask();
+        HeartLattice.Lattice lattice = CACHE.computeIfAbsent(
+                heart.layoutSeed(), HeartLattice::create);
         PoseStack.Pose pose = poseStack.last();
         VertexConsumer dark = buffers.getBuffer(RenderType.debugQuads());
-        int visible = Math.max(1, Mth.ceil(lattice.segments.size() * reveal));
+        int visible = Math.max(1, Mth.ceil(lattice.segments().size() * reveal));
         for (int index = 0; index < visible; index++) {
-            Segment segment = lattice.segments.get(index);
+            HeartLattice.Segment segment = lattice.segments().get(index);
+            if (removedByDestroyedNode(segment.group(), destroyedMask)) {
+                continue;
+            }
             float pulse = 0.86F + 0.14F * Mth.sin(
-                    (heart.tickCount + partialTick) * 0.035F + segment.group * 0.8F);
+                    (heart.tickCount + partialTick) * 0.035F
+                            + segment.group() * 0.8F);
             beam(pose.pose(), dark, segment, 0.015F, 0.035F, 0.075F,
                     (0.78F + 0.16F * heart.fieldStrength()) * pulse);
         }
         VertexConsumer light = buffers.getBuffer(RenderType.lightning());
-        for (Node node : lattice.nodes) {
-            if (reveal + 0.001F < node.revealAt) {
+        int activeNode = HeartLattice.nextNode(destroyedMask);
+        for (HeartLattice.Node node : lattice.nodes()) {
+            if (reveal + 0.001F < node.revealAt()
+                    || HeartLattice.isDestroyed(destroyedMask, node.index())) {
                 continue;
             }
             float pulse = 0.72F + 0.28F * Mth.sin(
-                    (heart.tickCount + partialTick) * 0.09F + node.phase);
-            cube(pose.pose(), light, node.x, node.y, node.z, 0.8F,
-                    0.10F, 0.78F, 1.0F, pulse);
+                    (heart.tickCount + partialTick) * 0.09F + node.phase());
+            boolean active = node.index() == activeNode;
+            boolean echoExposed = active && HeartEchoClient.isNodeExposed(node.index());
+            float damagePulse = active
+                    ? 1.0F + heart.activeNodeDamage() * 0.10F
+                    * Mth.sin((heart.tickCount + partialTick) * 0.72F)
+                    : 1.0F;
+            float radius = (echoExposed ? 1.48F : active ? 0.94F : 0.60F)
+                    * damagePulse;
+            float alpha = echoExposed ? 1.0F : active
+                    ? pulse : 0.16F + pulse * 0.10F;
+            cube(pose.pose(), light, node.x(), node.y(), node.z(), radius,
+                    echoExposed ? 0.42F : active ? 0.16F : 0.04F,
+                    echoExposed ? 1.0F : active ? 0.88F : 0.28F,
+                    1.0F, alpha);
         }
         super.render(heart, yaw, partialTick, poseStack, buffers, packedLight);
         if (descended) {
             poseStack.popPose();
         }
+    }
+
+    private static boolean removedByDestroyedNode(int group, int destroyedMask) {
+        return (HeartLattice.isDestroyed(destroyedMask, 0) && (group == 0 || group == 1))
+                || (HeartLattice.isDestroyed(destroyedMask, 1)
+                && (group == 3 || group == 4))
+                || (HeartLattice.isDestroyed(destroyedMask, 2)
+                && (group == 6 || group == 7))
+                || (HeartLattice.isDestroyed(destroyedMask, 3) && group == 9)
+                || (HeartLattice.isDestroyed(destroyedMask, 4) && group == 11);
     }
 
     private static void renderGroundMark(
@@ -108,69 +137,19 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
         }
     }
 
-    private static Lattice createLattice(long seed) {
-        RandomSource random = RandomSource.create(seed);
-        List<Segment> segments = new ArrayList<>();
-        List<Node> nodes = new ArrayList<>();
-        for (int trunk = 0; trunk < 12; trunk++) {
-            float angle = (float) (trunk * Math.PI * 2.0D / 12.0D
-                    + (random.nextFloat() - 0.5F) * 0.42F);
-            float startRadius = 2.0F + random.nextFloat() * 3.0F;
-            float x = Mth.cos(angle) * startRadius;
-            float y = -13.0F + random.nextFloat() * 8.0F;
-            float z = Mth.sin(angle) * startRadius * 0.78F;
-            for (int step = 0; step < 5; step++) {
-                float nextAngle = angle + (random.nextFloat() - 0.5F) * 0.7F;
-                float radial = 4.0F + step * (2.8F + random.nextFloat() * 0.65F);
-                float nx = Mth.cos(nextAngle) * radial
-                        + (random.nextFloat() - 0.5F) * 3.0F;
-                float ny = y + 3.0F + random.nextFloat();
-                float nz = Mth.sin(nextAngle) * radial * 0.78F
-                        + (random.nextFloat() - 0.5F) * 2.4F;
-                float thickness = 1.4F - step * 0.14F + random.nextFloat() * 0.45F;
-                segments.add(segmentBetween(x, y, z, nx, ny, nz, thickness, trunk));
-                if (step >= 1 && random.nextFloat() < 0.78F) {
-                    float bx = nx + (random.nextFloat() - 0.5F) * 8.0F;
-                    float by = ny + 1.0F + random.nextFloat() * 5.0F;
-                    float bz = nz + (random.nextFloat() - 0.5F) * 8.0F;
-                    segments.add(segmentBetween(nx, ny, nz, bx, by, bz,
-                            thickness * 0.55F, trunk));
-                }
-                x = nx;
-                y = ny;
-                z = nz;
-            }
-        }
-        for (int index = 0; index < 5; index++) {
-            float angle = random.nextFloat() * Mth.TWO_PI;
-            float radius = 3.0F + random.nextFloat() * 9.0F;
-            nodes.add(new Node(
-                    Mth.cos(angle) * radius,
-                    -4.0F + random.nextFloat() * 18.0F,
-                    Mth.sin(angle) * radius,
-                    0.48F + index * 0.105F,
-                    random.nextFloat() * Mth.TWO_PI));
-        }
-        return new Lattice(List.copyOf(segments), List.copyOf(nodes));
-    }
-
-    private static Segment segmentBetween(
-            float x0, float y0, float z0, float x1, float y1, float z1,
-            float thickness, int group) {
-        return new Segment(x0, y0, z0, x1, y1, z1, thickness, group);
-    }
-
     private static void beam(
-            Matrix4f matrix, VertexConsumer consumer, Segment box,
+            Matrix4f matrix, VertexConsumer consumer, HeartLattice.Segment box,
             float red, float green, float blue, float alpha) {
-        Vector3f start = new Vector3f(box.x0, box.y0, box.z0);
-        Vector3f end = new Vector3f(box.x1, box.y1, box.z1);
+        Vector3f start = new Vector3f(box.x0(), box.y0(), box.z0());
+        Vector3f end = new Vector3f(box.x1(), box.y1(), box.z1());
         Vector3f direction = new Vector3f(end).sub(start).normalize();
         Vector3f reference = Math.abs(direction.y) > 0.92F
                 ? new Vector3f(1.0F, 0.0F, 0.0F)
                 : new Vector3f(0.0F, 1.0F, 0.0F);
-        Vector3f side = new Vector3f(direction).cross(reference).normalize().mul(box.thickness);
-        Vector3f up = new Vector3f(side).cross(direction).normalize().mul(box.thickness);
+        Vector3f side = new Vector3f(direction).cross(reference).normalize()
+                .mul(box.thickness());
+        Vector3f up = new Vector3f(side).cross(direction).normalize()
+                .mul(box.thickness());
         Vector3f[] a = corners(start, side, up);
         Vector3f[] b = corners(end, side, up);
         coloredQuad(matrix, consumer, a[0], a[1], a[2], a[3], red, green, blue, alpha);
@@ -238,14 +217,4 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
         return TextureAtlas.LOCATION_BLOCKS;
     }
 
-    private record Segment(float x0, float y0, float z0,
-                           float x1, float y1, float z1,
-                           float thickness, int group) {
-    }
-
-    private record Node(float x, float y, float z, float revealAt, float phase) {
-    }
-
-    private record Lattice(List<Segment> segments, List<Node> nodes) {
-    }
 }

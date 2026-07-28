@@ -30,6 +30,10 @@ public final class MasterArchitectFightMusic {
     }
 
     public static void update(MasterArchitectFightMusicPayload payload) {
+        if (HeartBattleMusic.isActive()) {
+            hardStop();
+            return;
+        }
         if (terminalSuppressionTicks > 0) {
             hardStop();
             return;
@@ -92,6 +96,10 @@ public final class MasterArchitectFightMusic {
             return;
         }
         if (mc.level == null || mc.player == null) {
+            hardStop();
+            return;
+        }
+        if (HeartBattleMusic.isActive()) {
             hardStop();
             return;
         }

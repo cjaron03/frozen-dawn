@@ -526,6 +526,51 @@
       }
     ]
   },
+  "music.thae_iven_heart": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/heart/iven_battle_loop",
+        "stream": true
+      }
+    ]
+  },
+  "entity.thae_iven_heart.echo_acknowledge": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_acknowledge",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.95, "pitch": 0.72 },
+      { "name": "minecraft:entity.allay.item_thrown", "type": "event", "volume": 0.72, "pitch": 0.58 },
+      { "name": "minecraft:block.sculk_sensor.clicking", "type": "event", "volume": 0.55, "pitch": 0.64 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_appear": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_appear",
+    "sounds": [
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 1.35, "pitch": 0.58 },
+      { "name": "minecraft:entity.enderman.stare", "type": "event", "volume": 0.82, "pitch": 0.52 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 0.78, "pitch": 1.38 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_scream": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_scream",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.35, "pitch": 0.64 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.15, "pitch": 0.74 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.92, "pitch": 0.62 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_break": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_break",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.break", "type": "event", "volume": 1.0, "pitch": 0.58 },
+      { "name": "minecraft:block.chain.break", "type": "event", "volume": 0.68, "pitch": 0.72 },
+      { "name": "minecraft:block.sculk.charge", "type": "event", "volume": 0.62, "pitch": 0.54 }
+    ]
+  },
   "music.sad.moog_city_2": {
     "category": "music",
     "sounds": [

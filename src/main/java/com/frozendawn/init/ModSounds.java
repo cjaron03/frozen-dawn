@@ -98,6 +98,8 @@ public class ModSounds {
             "music.master_architect.mind");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_MUSIC_ORREN = register(
             "music.master_architect.orren");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MUSIC = register(
+            "music.thae_iven_heart");
 
     // Curated melancholy gameplay music.
     public static final DeferredHolder<SoundEvent, SoundEvent> SAD_MOOG_CITY_2 = register("music.sad.moog_city_2");
@@ -312,6 +314,14 @@ public class ModSounds {
             "entity.master_architect.infrasound");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_FORMATION = register(
             "entity.thae_iven_heart.formation");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_ECHO_APPEAR = register(
+            "entity.thae_iven_heart.echo_appear");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_ECHO_ACKNOWLEDGE = register(
+            "entity.thae_iven_heart.echo_acknowledge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_ECHO_SCREAM = register(
+            "entity.thae_iven_heart.echo_scream");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_ECHO_BREAK = register(
+            "entity.thae_iven_heart.echo_break");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_DEATH = register(
             "entity.master_architect.aura_death");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_TEMPERATURE_TTS = register(

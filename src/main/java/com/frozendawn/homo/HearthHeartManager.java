@@ -98,7 +98,9 @@ public final class HearthHeartManager {
                     anchor.asLong(),
                     hearth.heartFieldStrength(),
                     snapshot.stage(),
-                    snapshot.stageProgress());
+                    snapshot.stageProgress(),
+                    hearth.heartDestroyedNodeMask(),
+                    hearth.heartActiveNodeDamage());
         }
         reconcileFragments(level, hearth, anchor, snapshot);
     }
@@ -168,6 +170,9 @@ public final class HearthHeartManager {
                 + " anchor=" + hearth.heartAnchor().map(BlockPos::toShortString).orElse("fallback")
                 + " advancement=" + yesNo(hearth.heartAdvancementFired())
                 + " live=" + yesNo(hearth.heartLive())
+                + " nodes=" + HeartLattice.destroyedCount(
+                hearth.heartDestroyedNodeMask()) + "/" + HeartLattice.NODE_COUNT
+                + " activeDamage=" + hearth.heartActiveNodeDamage()
                 + " entity=" + hearth.heartEntityId()
                 .map(id -> id.toString().substring(0, 8)).orElse("none");
     }
@@ -235,7 +240,8 @@ public final class HearthHeartManager {
         created.setPos(anchor.getX() + 0.5D, anchor.getY() + 30.0D,
                 anchor.getZ() + 0.5D);
         created.configure(hearth.id(), layoutSeed(hearth, anchor), anchor.asLong(),
-                hearth.heartFieldStrength(), HeartFormationStage.NONE, 0.0F);
+                hearth.heartFieldStrength(), HeartFormationStage.NONE, 0.0F,
+                hearth.heartDestroyedNodeMask(), hearth.heartActiveNodeDamage());
         if (!level.addFreshEntity(created)) {
             lastFailure = "entity-add";
             created.discard();

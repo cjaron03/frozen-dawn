@@ -10,6 +10,8 @@ import com.frozendawn.event.IceClawsHandler;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.CognitiveLoadManager;
+import com.frozendawn.homo.HeartEchoManager;
+import com.frozendawn.homo.HeartMemoryNodeManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
@@ -144,6 +146,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleMasterArchitectFightMusic(payload))
         );
         registrar.playToClient(
+                HeartMusicStatePayload.TYPE,
+                HeartMusicStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHeartMusicState(payload))
+        );
+        registrar.playToClient(
                 MasterArchitectTetherHitPayload.TYPE,
                 MasterArchitectTetherHitPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
@@ -203,6 +211,18 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(
                         () -> ClientHandlers.handleCognitiveLoad(payload))
         );
+        registrar.playToClient(
+                HeartEchoStatePayload.TYPE,
+                HeartEchoStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHeartEchoState(payload))
+        );
+        registrar.playToClient(
+                HeartMemoryNodeEventPayload.TYPE,
+                HeartMemoryNodeEventPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHeartMemoryNodeEvent(payload))
+        );
 
         // Server-bound packets
         registrar.playToServer(
@@ -211,6 +231,25 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer sp) {
                         CognitiveLoadManager.handleResistance(sp, payload.resistance());
+                    }
+                })
+        );
+        registrar.playToServer(
+                HeartEchoActionPayload.TYPE,
+                HeartEchoActionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        HeartEchoManager.handleAction(sp, payload);
+                    }
+                })
+        );
+        registrar.playToServer(
+                HeartMemoryNodeStrikePayload.TYPE,
+                HeartMemoryNodeStrikePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        HeartMemoryNodeManager.handleStrike(
+                                sp, payload.nodeIndex(), payload.renderedLoad());
                     }
                 })
         );

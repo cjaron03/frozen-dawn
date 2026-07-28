@@ -55,6 +55,8 @@ public final class CognitiveLoadManager {
         boolean heartLive = heart != null;
 
         for (ServerPlayer player : level.players()) {
+            HeartEchoManager.tick(level, player,
+                    player.getData(ModAttachments.COGNITIVE_LOAD), heart, anchor);
             tickPlayer(level, player, apocalypse, anchor, fieldStrength, heartLive);
         }
     }
@@ -78,6 +80,28 @@ public final class CognitiveLoadManager {
         HeartContext heart = heartContext(player.serverLevel());
         sync(player, state.load(), heart.anchor(), heart.live(),
                 CognitiveLoadPayload.EVENT_NONE, true);
+    }
+
+    public static float relieveFromHeartNode(ServerPlayer player, float amount) {
+        CognitiveLoadState state = player.getData(ModAttachments.COGNITIVE_LOAD);
+        boolean endedTakeover = state.terminalTakeover();
+        state.setLoad(state.load() - Math.max(0.0F, amount));
+        if (state.load() < CognitiveLoadPolicy.MEMORY_FAILURE_THRESHOLD) {
+            state.setRememberedHotbarSlot(-1);
+        }
+        if (endedTakeover || state.load() < CognitiveLoadPolicy.TAKEOVER_THRESHOLD) {
+            state.setTerminalTakeover(false);
+            state.setTakeoverTicks(0);
+            state.setBreakoutTicks(0.0F);
+            state.setResistanceInput(0.0F, 0);
+        }
+        state.setLapseCooldownTicks(Math.max(state.lapseCooldownTicks(), 80));
+        HeartContext heart = heartContext(player.serverLevel());
+        sync(player, state.load(), heart.anchor(), heart.live(),
+                endedTakeover ? CognitiveLoadPayload.EVENT_TAKEOVER_END
+                        : CognitiveLoadPayload.EVENT_NONE,
+                true);
+        return state.load();
     }
 
     public static String describe(ServerPlayer player) {
@@ -116,12 +140,14 @@ public final class CognitiveLoadManager {
         RELIEF_CACHE.remove(id);
         LAST_SYNCED_LOAD.remove(id);
         LAST_SYNCED_BREAKOUT.remove(id);
+        HeartEchoManager.onPlayerLogout(player);
     }
 
     public static void reset() {
         RELIEF_CACHE.clear();
         LAST_SYNCED_LOAD.clear();
         LAST_SYNCED_BREAKOUT.clear();
+        HeartEchoManager.reset();
     }
 
     private static void tickPlayer(
@@ -160,6 +186,7 @@ public final class CognitiveLoadManager {
                 && hasHeartLineOfSight(level, player, anchor, previous);
         state.setLoad(CognitiveLoadPolicy.nextLoad(
                 previous, proximity, lineOfSight, relief, fieldStrength));
+        state.setLoad(Math.max(state.load(), HeartEchoManager.loadFloor(player)));
 
         tickHotbarFailure(player, state, previous);
         int eventId = tickMicroLapse(level, player, state);
@@ -267,6 +294,11 @@ public final class CognitiveLoadManager {
 
     private static int tickMicroLapse(
             ServerLevel level, ServerPlayer player, CognitiveLoadState state) {
+        if (HeartEchoManager.hasClarity(player)) {
+            state.setLapseCooldownTicks(Math.max(
+                    state.lapseCooldownTicks(), HeartEchoPolicy.CLARITY_TICKS));
+            return CognitiveLoadPayload.EVENT_NONE;
+        }
         if (state.load() < CognitiveLoadPolicy.MICRO_LAPSE_THRESHOLD) {
             state.setLapseCooldownTicks(0);
             return CognitiveLoadPayload.EVENT_NONE;

@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 14;
+    public static final int CURRENT_DATA_VERSION = 16;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -646,6 +646,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartAdvancementFired = false;
         hearth.heartLive = false;
         hearth.heartConvergenceStarted = false;
+        hearth.heartMusicActive = true;
         setDirty();
         return true;
     }
@@ -666,8 +667,70 @@ public final class ReturnedHearthSavedData extends SavedData {
             return false;
         }
         hearth.heartLive = true;
+        hearth.heartMusicActive = true;
         setDirty();
         return true;
+    }
+
+    /** Future canonical Heart death calls this to release the client music channel. */
+    public boolean stopHeartMusic(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartMusicActive) {
+            return false;
+        }
+        hearth.heartMusicActive = false;
+        setDirty();
+        return true;
+    }
+
+    public HeartNodeDamageResult damageHeartMemoryNode(UUID hearthId, int nodeIndex) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartLive
+                || nodeIndex != com.frozendawn.homo.HeartLattice.nextNode(
+                hearth.heartDestroyedNodeMask)) {
+            return HeartNodeDamageResult.rejected();
+        }
+        hearth.heartActiveNodeDamage++;
+        boolean destroyed = hearth.heartActiveNodeDamage
+                >= com.frozendawn.homo.HeartLattice.HITS_PER_NODE;
+        if (destroyed) {
+            hearth.heartDestroyedNodeMask |= 1 << nodeIndex;
+            hearth.heartActiveNodeDamage = 0;
+        }
+        setDirty();
+        return new HeartNodeDamageResult(
+                true,
+                destroyed,
+                hearth.heartActiveNodeDamage,
+                hearth.heartDestroyedNodeMask);
+    }
+
+    public boolean resetHeartMemoryNodesForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.heartDestroyedNodeMask == 0
+                && hearth.heartActiveNodeDamage == 0)) {
+            return false;
+        }
+        hearth.heartDestroyedNodeMask = 0;
+        hearth.heartActiveNodeDamage = 0;
+        setDirty();
+        return true;
+    }
+
+    /** Node five removes the hive's stored account of this player, not shared world facts. */
+    public boolean erasePlayerFromHive(UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        boolean changed = playerMemories.remove(playerId) != null;
+        for (HearthRecord hearth : hearths) {
+            changed |= hearth.playerContacts.remove(playerId) != null;
+        }
+        changed |= recomputeAllHearthConduct();
+        if (changed) {
+            setDirty();
+        }
+        return changed;
     }
 
     public boolean markHeartConvergenceStarted(UUID hearthId) {
@@ -722,6 +785,7 @@ public final class ReturnedHearthSavedData extends SavedData {
                 >= com.frozendawn.homo.HeartFormationPolicy.DEAD_AIR_TICKS;
         hearth.heartLive = stage == com.frozendawn.homo.HeartFormationStage.LIVE;
         hearth.heartConvergenceStarted = false;
+        hearth.heartMusicActive = true;
         setDirty();
         return true;
     }
@@ -741,7 +805,10 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartAdvancementFired = false;
         hearth.heartLive = false;
         hearth.heartConvergenceStarted = false;
+        hearth.heartMusicActive = false;
         hearth.heartEntityId = null;
+        hearth.heartDestroyedNodeMask = 0;
+        hearth.heartActiveNodeDamage = 0;
         hearth.heartFragments.clear();
         setDirty();
         return true;
@@ -802,7 +869,10 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartFormationSuppressed = false;
         hearth.heartAdvancementFired = false;
         hearth.heartLive = false;
+        hearth.heartMusicActive = false;
         hearth.heartEntityId = null;
+        hearth.heartDestroyedNodeMask = 0;
+        hearth.heartActiveNodeDamage = 0;
         hearth.heartFragments.clear();
         hearth.combatRosterInitialized = false;
         hearth.combatRoster.clear();
@@ -1599,6 +1669,16 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
     }
 
+    public record HeartNodeDamageResult(
+            boolean accepted,
+            boolean destroyed,
+            int activeDamage,
+            int destroyedMask) {
+        private static HeartNodeDamageResult rejected() {
+            return new HeartNodeDamageResult(false, false, 0, 0);
+        }
+    }
+
     public static final class HearthRecord {
         private final UUID id;
         private final HearthSelectionPolicy.HearthType type;
@@ -1642,7 +1722,10 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean heartAdvancementFired;
         private boolean heartLive;
         private boolean heartConvergenceStarted;
+        private boolean heartMusicActive;
         private UUID heartEntityId;
+        private int heartDestroyedNodeMask;
+        private int heartActiveNodeDamage;
         private final List<HeartFragmentSnapshot> heartFragments = new ArrayList<>();
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
@@ -1751,8 +1834,21 @@ public final class ReturnedHearthSavedData extends SavedData {
             record.heartAdvancementFired = tag.getBoolean("heartAdvancementFired");
             record.heartLive = tag.getBoolean("heartLive");
             record.heartConvergenceStarted = tag.getBoolean("heartConvergenceStarted");
+            record.heartMusicActive = tag.contains("heartMusicActive", Tag.TAG_BYTE)
+                    ? tag.getBoolean("heartMusicActive")
+                    : record.heartFormationStartGameTime >= 0L
+                    && !record.heartFormationSuppressed;
             record.heartEntityId = tag.hasUUID("heartEntityId")
                     ? tag.getUUID("heartEntityId") : null;
+            record.heartDestroyedNodeMask = tag.getInt("heartDestroyedNodeMask")
+                    & ((1 << com.frozendawn.homo.HeartLattice.NODE_COUNT) - 1);
+            record.heartActiveNodeDamage = Math.max(0, Math.min(
+                    com.frozendawn.homo.HeartLattice.HITS_PER_NODE - 1,
+                    tag.getInt("heartActiveNodeDamage")));
+            if (com.frozendawn.homo.HeartLattice.nextNode(
+                    record.heartDestroyedNodeMask) < 0) {
+                record.heartActiveNodeDamage = 0;
+            }
             ListTag heartFragments = tag.getList("heartFragments", Tag.TAG_COMPOUND);
             for (Tag entry : heartFragments) {
                 if (entry instanceof CompoundTag fragmentTag) {
@@ -1855,9 +1951,12 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("heartAdvancementFired", heartAdvancementFired);
             tag.putBoolean("heartLive", heartLive);
             tag.putBoolean("heartConvergenceStarted", heartConvergenceStarted);
+            tag.putBoolean("heartMusicActive", heartMusicActive);
             if (heartEntityId != null) {
                 tag.putUUID("heartEntityId", heartEntityId);
             }
+            tag.putInt("heartDestroyedNodeMask", heartDestroyedNodeMask);
+            tag.putInt("heartActiveNodeDamage", heartActiveNodeDamage);
             ListTag heartFragments = new ListTag();
             for (HeartFragmentSnapshot fragment : this.heartFragments) {
                 heartFragments.add(fragment.save());
@@ -2061,8 +2160,20 @@ public final class ReturnedHearthSavedData extends SavedData {
             return heartConvergenceStarted;
         }
 
+        public boolean heartMusicActive() {
+            return heartMusicActive;
+        }
+
         public Optional<UUID> heartEntityId() {
             return Optional.ofNullable(heartEntityId);
+        }
+
+        public int heartDestroyedNodeMask() {
+            return heartDestroyedNodeMask;
+        }
+
+        public int heartActiveNodeDamage() {
+            return heartActiveNodeDamage;
         }
 
         public List<HeartFragmentSnapshot> heartFragments() {

@@ -32,6 +32,12 @@ public final class ThaeIvenHeartEntity extends Entity {
     private static final EntityDataAccessor<Float> DATA_STAGE_PROGRESS =
             SynchedEntityData.defineId(ThaeIvenHeartEntity.class,
                     EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_DESTROYED_NODE_MASK =
+            SynchedEntityData.defineId(ThaeIvenHeartEntity.class,
+                    EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_ACTIVE_NODE_DAMAGE =
+            SynchedEntityData.defineId(ThaeIvenHeartEntity.class,
+                    EntityDataSerializers.INT);
 
     public ThaeIvenHeartEntity(
             EntityType<? extends ThaeIvenHeartEntity> type, Level level) {
@@ -50,6 +56,8 @@ public final class ThaeIvenHeartEntity extends Entity {
         builder.define(DATA_FIELD_STRENGTH, 0.0F);
         builder.define(DATA_STAGE, HeartFormationStage.NONE.ordinal());
         builder.define(DATA_STAGE_PROGRESS, 0.0F);
+        builder.define(DATA_DESTROYED_NODE_MASK, 0);
+        builder.define(DATA_ACTIVE_NODE_DAMAGE, 0);
     }
 
     public void configure(
@@ -58,7 +66,9 @@ public final class ThaeIvenHeartEntity extends Entity {
             long anchor,
             float fieldStrength,
             HeartFormationStage stage,
-            float progress) {
+            float progress,
+            int destroyedNodeMask,
+            int activeNodeDamage) {
         entityData.set(DATA_HEARTH_ID, Optional.ofNullable(hearthId));
         entityData.set(DATA_LAYOUT_SEED, layoutSeed);
         entityData.set(DATA_ANCHOR, anchor);
@@ -67,6 +77,9 @@ public final class ThaeIvenHeartEntity extends Entity {
         entityData.set(DATA_STAGE, stage.ordinal());
         entityData.set(DATA_STAGE_PROGRESS,
                 net.minecraft.util.Mth.clamp(progress, 0.0F, 1.0F));
+        entityData.set(DATA_DESTROYED_NODE_MASK, destroyedNodeMask & 0x1F);
+        entityData.set(DATA_ACTIVE_NODE_DAMAGE,
+                net.minecraft.util.Mth.clamp(activeNodeDamage, 0, 2));
     }
 
     public Optional<UUID> hearthId() {
@@ -95,6 +108,14 @@ public final class ThaeIvenHeartEntity extends Entity {
         return entityData.get(DATA_STAGE_PROGRESS);
     }
 
+    public int destroyedNodeMask() {
+        return entityData.get(DATA_DESTROYED_NODE_MASK);
+    }
+
+    public int activeNodeDamage() {
+        return entityData.get(DATA_ACTIVE_NODE_DAMAGE);
+    }
+
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance <= 512.0D * 512.0D;
@@ -109,7 +130,9 @@ public final class ThaeIvenHeartEntity extends Entity {
                 tag.getLong("Anchor"),
                 tag.getFloat("FieldStrength"),
                 HeartFormationStage.fromName(tag.getString("FormationStage")),
-                tag.getFloat("StageProgress"));
+                tag.getFloat("StageProgress"),
+                tag.getInt("DestroyedNodeMask"),
+                tag.getInt("ActiveNodeDamage"));
     }
 
     @Override
@@ -120,5 +143,7 @@ public final class ThaeIvenHeartEntity extends Entity {
         tag.putFloat("FieldStrength", fieldStrength());
         tag.putString("FormationStage", formationStage().name());
         tag.putFloat("StageProgress", stageProgress());
+        tag.putInt("DestroyedNodeMask", destroyedNodeMask());
+        tag.putInt("ActiveNodeDamage", activeNodeDamage());
     }
 }

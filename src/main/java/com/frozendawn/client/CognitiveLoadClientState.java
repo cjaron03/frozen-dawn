@@ -131,6 +131,7 @@ public final class CognitiveLoadClientState {
 
     public static boolean shouldFreezeOxygenTelemetry() {
         return FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+                && !HeartEchoClient.hasClarity()
                 && targetLoad >= CognitiveLoadPolicy.O2_FREEZE_THRESHOLD
                 && frozenOxygenRatio >= 0.0F;
     }
@@ -141,7 +142,8 @@ public final class CognitiveLoadClientState {
 
     public static boolean shouldMuffleWorldSound(SoundInstance sound) {
         if (!FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
-                || !heartLive || isCognitiveSound(sound.getLocation())) {
+                || !heartLive || HeartEchoClient.hasClarity()
+                || isCognitiveSound(sound.getLocation())) {
             return false;
         }
         if (FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
@@ -196,6 +198,10 @@ public final class CognitiveLoadClientState {
 
     @SubscribeEvent
     public static void onInteractionInput(InputEvent.InteractionKeyMappingTriggered event) {
+        // Cognitive Load may distract the player, but it must never swallow a swing.
+        if (event.isAttack() || HeartEchoClient.hasClarity()) {
+            return;
+        }
         KeyMapping mapping = event.getKeyMapping();
         int bypass = BYPASS_INPUTS.getOrDefault(mapping, 0);
         if (bypass > 0) {
@@ -224,7 +230,8 @@ public final class CognitiveLoadClientState {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen != null || minecraft.player == null) {
+        if (minecraft.screen != null || minecraft.player == null
+                || HeartEchoClient.hasClarity()) {
             return;
         }
         int delay = CognitiveLoadPolicy.inputDelayTicks(targetLoad);
@@ -247,7 +254,8 @@ public final class CognitiveLoadClientState {
 
     @SubscribeEvent
     public static void onGuiLayerPre(RenderGuiLayerEvent.Pre event) {
-        if (FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+        if (!HeartEchoClient.hasClarity()
+                && FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
                 && targetLoad >= CognitiveLoadPolicy.MEMORY_FAILURE_THRESHOLD
                 && event.getName().equals(VanillaGuiLayers.SCOREBOARD_SIDEBAR)) {
             event.setCanceled(true);
@@ -308,15 +316,18 @@ public final class CognitiveLoadClientState {
             }
         }
 
-        if (FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+        if (!HeartEchoClient.hasClarity()
+                && FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
                 && displayedLoad >= CognitiveLoadPolicy.INPUT_DELAY_THRESHOLD) {
             renderPeripheralFailure(graphics);
         }
-        if (FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+        if (!HeartEchoClient.hasClarity()
+                && FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
                 && hallucinationTicks > 0) {
             renderHallucination(graphics, minecraft);
         }
-        if (FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+        if (!HeartEchoClient.hasClarity()
+                && FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
                 && blackoutTicks > 0) {
             float pulse = 1.0F - Math.abs(blackoutTicks - 3.0F) / 3.0F;
             int alpha = Math.round(Mth.clamp(pulse, 0.30F, 1.0F) * 242.0F);
@@ -351,6 +362,16 @@ public final class CognitiveLoadClientState {
         audioDuckDelayTicks = 260;
         audioDuckTicks = 0;
         groanTicks = 520;
+    }
+
+    public static void beginClarity() {
+        blackoutTicks = 0;
+        hallucinationTicks = 0;
+        PENDING_INPUTS.clear();
+        BYPASS_INPUTS.clear();
+        discardWatchers();
+        audioDuckTicks = 0;
+        stopAudio();
     }
 
     private static void tickDelayedInputs() {
@@ -442,7 +463,7 @@ public final class CognitiveLoadClientState {
 
     private static void tickHallucination(Minecraft minecraft) {
         if (!FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
-                || !heartLive
+                || !heartLive || HeartEchoClient.hasClarity()
                 || displayedLoad < CognitiveLoadPolicy.MEMORY_FAILURE_THRESHOLD) {
             hallucinationTicks = 0;
             hallucinationCooldown = 80;
@@ -496,7 +517,8 @@ public final class CognitiveLoadClientState {
 
     private static void tickWatchers(Minecraft minecraft) {
         int desired = FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
-                && heartLive ? CognitiveLoadPolicy.watcherCount(displayedLoad) : 0;
+                && heartLive && !HeartEchoClient.hasClarity()
+                ? CognitiveLoadPolicy.watcherCount(displayedLoad) : 0;
         if (desired == 0 || minecraft.player == null
                 || minecraft.player.distanceToSqr(Vec3.atCenterOf(BlockPos.of(heartAnchor)))
                 > 150.0D * 150.0D) {
@@ -548,7 +570,8 @@ public final class CognitiveLoadClientState {
 
     private static void tickAudio(Minecraft minecraft) {
         if (!FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
-                || !heartLive || MasterArchitectFloodClient.isActive()) {
+                || !heartLive || HeartEchoClient.hasClarity()
+                || MasterArchitectFloodClient.isActive()) {
             fadeAudio(0.0F, 0.0F);
             audioDuckTicks = 0;
             return;
