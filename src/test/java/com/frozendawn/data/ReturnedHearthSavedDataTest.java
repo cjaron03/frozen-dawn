@@ -64,6 +64,11 @@ class ReturnedHearthSavedDataTest {
             assertEquals(expected.decoherenceGranted(), actual.decoherenceGranted());
             assertEquals(expected.watchedStopWatchingGranted(),
                     actual.watchedStopWatchingGranted());
+            assertEquals(expected.heartDestroyedNodeMask(),
+                    actual.heartDestroyedNodeMask());
+            assertEquals(expected.heartActiveNodeDamage(),
+                    actual.heartActiveNodeDamage());
+            assertEquals(expected.heartMusicActive(), actual.heartMusicActive());
         }
     }
 
@@ -509,6 +514,7 @@ class ReturnedHearthSavedDataTest {
         assertTrue(state.completeMasterArchitectStormAftermath(major.id()));
         assertTrue(state.markWatchedStopWatchingGranted(major.id()));
         assertTrue(state.startHeartFormation(major.id(), 5600L));
+        assertTrue(major.heartMusicActive());
         assertTrue(state.markHeartAdvancementFired(major.id()));
         assertTrue(state.bindHeartEntity(major.id(), heart));
         assertTrue(state.markHeartLive(major.id()));
@@ -524,6 +530,7 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.heartAdvancementFired());
         assertTrue(restored.heartLive());
         assertTrue(restored.heartConvergenceStarted());
+        assertTrue(restored.heartMusicActive());
         assertEquals(heart, restored.heartEntityId().orElseThrow());
         assertEquals(40, restored.heartFragments().size());
         assertEquals(fragments.getFirst(), restored.heartFragments().getFirst());
@@ -535,8 +542,71 @@ class ReturnedHearthSavedDataTest {
         assertTrue(restored.heartFormationSuppressed());
         assertTrue(restored.heartEntityId().isEmpty());
         assertTrue(restored.heartFragments().isEmpty());
+        assertFalse(restored.heartMusicActive());
         assertTrue(loaded.startHeartFormation(restored.id(), 7000L));
         assertFalse(restored.heartFormationSuppressed());
+        assertTrue(restored.heartMusicActive());
+        assertTrue(loaded.stopHeartMusic(restored.id()));
+        assertFalse(restored.heartMusicActive());
+    }
+
+    @Test
+    void heartMemoryNodeDamagePersistsAndEnforcesOrder() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+
+        assertTrue(state.damageHeartMemoryNode(major.id(), 0).accepted());
+        ReturnedHearthSavedData.HeartNodeDamageResult second =
+                state.damageHeartMemoryNode(major.id(), 0);
+        assertTrue(second.accepted());
+        assertFalse(second.destroyed());
+        assertEquals(2, second.activeDamage());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(0, restored.heartDestroyedNodeMask());
+        assertEquals(2, restored.heartActiveNodeDamage());
+        assertFalse(loaded.damageHeartMemoryNode(restored.id(), 1).accepted());
+
+        ReturnedHearthSavedData.HeartNodeDamageResult destroyed =
+                loaded.damageHeartMemoryNode(restored.id(), 0);
+        assertTrue(destroyed.destroyed());
+        assertEquals(0b00001, destroyed.destroyedMask());
+        assertEquals(0, destroyed.activeDamage());
+        assertTrue(loaded.damageHeartMemoryNode(restored.id(), 1).accepted());
+    }
+
+    @Test
+    void fifthMemoryCanErasePlayerKnowledgeWithoutErasingTheHearth() {
+        ReturnedHearthSavedData state = selectedStateWithMinor(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID player = UUID.randomUUID();
+        UUID resident = UUID.randomUUID();
+
+        state.recordPlayerContact(player, major.id(), 2000L);
+        state.recordHearthViolation(player, major.id(), 2100L,
+                ReturnedHearthSavedData.HearthViolationReason.ENTITY_ATTACK);
+        assertTrue(state.recordCongregationCasualty(
+                player, major.id(), resident, 2200L));
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
+                state.relationship(player));
+
+        int hearthCount = state.hearths().size();
+        assertTrue(state.erasePlayerFromHive(player));
+        assertEquals(hearthCount, state.hearths().size());
+        assertTrue(state.playerMemory(player).isEmpty());
+        assertTrue(major.playerContact(player).isEmpty());
+        assertEquals(ReturnedHearthSavedData.HiveRelationship.NEUTRAL,
+                state.relationship(player));
+        for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            assertEquals(ReturnedHearthSavedData.HearthDisposition.DORMANT,
+                    hearth.mood());
+            assertEquals(ReturnedHearthSavedData.ViolationState.NONE,
+                    hearth.violationState());
+        }
     }
 
     @Test

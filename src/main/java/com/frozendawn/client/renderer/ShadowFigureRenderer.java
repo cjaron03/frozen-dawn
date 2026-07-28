@@ -43,6 +43,7 @@ public class ShadowFigureRenderer extends EntityRenderer<ShadowFigureEntity> {
         if (alpha <= 0) return;
 
         boolean isWatcher = entity.isWatcher();
+        boolean isEcho = entity.isEcho();
         float cameraYaw = this.entityRenderDispatcher.camera.getYRot();
 
         // ── Single pass: body + eyes + hat all in one coordinate space ──
@@ -50,14 +51,14 @@ public class ShadowFigureRenderer extends EntityRenderer<ShadowFigureEntity> {
 
         // Billboard: face toward camera — standard LivingEntityRenderer convention
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - cameraYaw));
-        poseStack.scale(-1.0f, -1.0f, 1.0f);
+        poseStack.scale(-1.0f, isEcho ? -1.08f : -1.0f, 1.0f);
         poseStack.translate(0.0f, -1.501f, 0.0f);
 
         // Reset model to standing pose
         resetModelPose(playerRoot);
 
         // Watcher: rotate head pitch to track player
-        if (isWatcher) {
+        if (isWatcher || isEcho) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) {
                 Vec3 playerEye = mc.player.getEyePosition(partialTick);
@@ -75,7 +76,9 @@ public class ShadowFigureRenderer extends EntityRenderer<ShadowFigureEntity> {
 
         // Render player model body
         VertexConsumer bodyVC = bufferSource.getBuffer(RenderType.entityTranslucentEmissive(TEXTURE));
-        int bodyColor = FastColor.ARGB32.color((int) (alpha * 180), 10, 10, 15);
+        int bodyColor = isEcho
+                ? FastColor.ARGB32.color((int) (alpha * 205), 2, 18, 29)
+                : FastColor.ARGB32.color((int) (alpha * 180), 10, 10, 15);
         playerRoot.render(poseStack, bodyVC, 0xF000F0, OverlayTexture.NO_OVERLAY, bodyColor);
 
         // ── Eyes: render in model coordinate space so they align with the head ──
@@ -99,12 +102,15 @@ public class ShadowFigureRenderer extends EntityRenderer<ShadowFigureEntity> {
         float rightEyeX = -0.09375f; // camera-right eye
 
         int er, eg, eb;
-        if (isWatcher) {
+        if (isEcho) {
+            er = 55; eg = 225; eb = 255;
+        } else if (isWatcher) {
             er = 255; eg = 0; eb = 0;
         } else {
             er = 200; eg = 40; eb = 40;
         }
-        int ea = Math.min(255, (int) (alpha * (isWatcher ? 450 : 320)));
+        int ea = Math.min(255, (int) (alpha * (isEcho ? 520
+                : isWatcher ? 450 : 320)));
 
         // Blink: every ~3-5 seconds, close for 3 ticks
         int blinkPeriod = 60 + (entity.getId() % 40);
@@ -116,17 +122,30 @@ public class ShadowFigureRenderer extends EntityRenderer<ShadowFigureEntity> {
 
         VertexConsumer eyeVC = bufferSource.getBuffer(RenderType.eyes(TEXTURE));
 
-        // Left eye (from camera perspective)
-        addQuad(eyeVC, pose, poseEntry,
-                leftEyeX - eyeHalfW, eyeLocalY - eyeHalfH,
-                leftEyeX + eyeHalfW, eyeLocalY + eyeHalfH,
-                eyeLocalZ, er, eg, eb, ea);
+        if (isEcho) {
+            float aperturePulse = 0.78F + 0.22F * Mth.sin(
+                    (entity.getTicksAlive() + partialTick) * 0.18F);
+            addQuad(eyeVC, pose, poseEntry,
+                    -0.085F, eyeLocalY - 0.09F,
+                    0.085F, eyeLocalY + 0.09F,
+                    eyeLocalZ, er, eg, eb, Math.round(ea * aperturePulse));
+            addQuad(eyeVC, pose, poseEntry,
+                    -0.045F, 0.17F,
+                    0.045F, 0.43F,
+                    eyeLocalZ, er, eg, eb, Math.round(ea * 0.72F));
+        } else {
+            // Left eye (from camera perspective)
+            addQuad(eyeVC, pose, poseEntry,
+                    leftEyeX - eyeHalfW, eyeLocalY - eyeHalfH,
+                    leftEyeX + eyeHalfW, eyeLocalY + eyeHalfH,
+                    eyeLocalZ, er, eg, eb, ea);
 
-        // Right eye
-        addQuad(eyeVC, pose, poseEntry,
-                rightEyeX - eyeHalfW, eyeLocalY - eyeHalfH,
-                rightEyeX + eyeHalfW, eyeLocalY + eyeHalfH,
-                eyeLocalZ, er, eg, eb, ea);
+            // Right eye
+            addQuad(eyeVC, pose, poseEntry,
+                    rightEyeX - eyeHalfW, eyeLocalY - eyeHalfH,
+                    rightEyeX + eyeHalfW, eyeLocalY + eyeHalfH,
+                    eyeLocalZ, er, eg, eb, ea);
+        }
 
         poseStack.popPose();
 

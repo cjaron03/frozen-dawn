@@ -10,6 +10,8 @@ import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthHeartManager;
 import com.frozendawn.homo.HeartFormationStage;
+import com.frozendawn.homo.HeartLattice;
+import com.frozendawn.homo.HeartMemoryNodeManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -100,7 +102,18 @@ final class FrozenDawnHearthCommand {
                                                         FloatArgumentType.floatArg(0.0F, 100.0F))
                                                 .executes(FrozenDawnHearthCommand::heartLoadSet)))
                                 .then(Commands.literal("clear")
-                                        .executes(FrozenDawnHearthCommand::heartLoadClear))))
+                                        .executes(FrozenDawnHearthCommand::heartLoadClear)))
+                        .then(Commands.literal("nodes")
+                                .executes(FrozenDawnHearthCommand::heartNodesStatus)
+                                .then(Commands.literal("destroy")
+                                        .then(Commands.argument("node",
+                                                        IntegerArgumentType.integer(
+                                                                1, HeartLattice.NODE_COUNT))
+                                                .executes(
+                                                        FrozenDawnHearthCommand::heartNodeDestroy)))
+                                .then(Commands.literal("reset")
+                                        .executes(
+                                                FrozenDawnHearthCommand::heartNodesReset))))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -354,6 +367,59 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Cleared Cognitive Load"), true);
         return heartLoadStatus(context);
+    }
+
+    private static int heartNodesStatus(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(context.getSource().getServer())
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (hearth == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "Major Hearth does not exist"));
+            return 0;
+        }
+        int next = HeartLattice.nextNode(hearth.heartDestroyedNodeMask());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Heart nodes: destroyed="
+                        + HeartLattice.destroyedCount(hearth.heartDestroyedNodeMask())
+                        + "/" + HeartLattice.NODE_COUNT
+                        + " mask=0x" + Integer.toHexString(
+                        hearth.heartDestroyedNodeMask())
+                        + " next=" + (next < 0 ? "none" : next + 1)
+                        + " damage=" + hearth.heartActiveNodeDamage()
+                        + "/" + HeartLattice.HITS_PER_NODE), false);
+        return 1;
+    }
+
+    private static int heartNodeDestroy(CommandContext<CommandSourceStack> context) {
+        int node = IntegerArgumentType.getInteger(context, "node") - 1;
+        boolean changed = HeartMemoryNodeManager.damageNodeForDebug(
+                context.getSource().getLevel(), node);
+        if (!changed) {
+            context.getSource().sendFailure(Component.literal(
+                    "Node " + (node + 1)
+                            + " is not the next active memory node or the Heart is not LIVE"));
+            return 0;
+        }
+        HearthHeartManager.tick(context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Destroyed Heart memory node " + (node + 1)
+                        + " for debugging"), true);
+        return heartNodesStatus(context);
+    }
+
+    private static int heartNodesReset(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        boolean changed = hearth != null
+                && data.resetHeartMemoryNodesForDebug(hearth.id());
+        HearthHeartManager.tick(context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Heart memory nodes" + (changed ? "" : " (unchanged)")),
+                true);
+        return heartNodesStatus(context);
     }
 
     private static int locate(CommandContext<CommandSourceStack> context,

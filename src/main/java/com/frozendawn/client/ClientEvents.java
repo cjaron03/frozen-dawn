@@ -137,6 +137,11 @@ public class ClientEvents {
                         FrozenDawn.MOD_ID, "cognitive_load"),
                 CognitiveLoadClientState::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "heart_memory_node"),
+                HeartMemoryNodeClient::render
+        );
     }
 
     @SubscribeEvent

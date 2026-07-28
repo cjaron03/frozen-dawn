@@ -7,9 +7,12 @@ import com.frozendawn.client.CognitiveLoadClientState;
 import com.frozendawn.client.FrozenDawnEndingScreen;
 import com.frozendawn.client.HearthSurveyAudio;
 import com.frozendawn.client.HearthBoundaryEffects;
+import com.frozendawn.client.HeartEchoClient;
+import com.frozendawn.client.HeartMemoryNodeClient;
 import com.frozendawn.client.MasterArchitectWeather;
 import com.frozendawn.client.MasterArchitectAuraClient;
 import com.frozendawn.client.MasterArchitectFightMusic;
+import com.frozendawn.client.HeartBattleMusic;
 import com.frozendawn.client.MasterArchitectFourthWallMoment;
 import com.frozendawn.client.MasterArchitectFloodClient;
 import com.frozendawn.client.MasterArchitectSeverTelegraph;
@@ -149,6 +152,10 @@ public final class ClientHandlers {
         MasterArchitectFightMusic.update(payload);
     }
 
+    public static void handleHeartMusicState(HeartMusicStatePayload payload) {
+        HeartBattleMusic.update(payload);
+    }
+
     public static void handleMasterArchitectTetherHit(
             MasterArchitectTetherHitPayload payload) {
         Minecraft mc = Minecraft.getInstance();
@@ -201,5 +208,14 @@ public final class ClientHandlers {
 
     public static void handleCognitiveLoad(CognitiveLoadPayload payload) {
         CognitiveLoadClientState.update(payload);
+    }
+
+    public static void handleHeartEchoState(HeartEchoStatePayload payload) {
+        HeartEchoClient.handleState(payload);
+    }
+
+    public static void handleHeartMemoryNodeEvent(
+            HeartMemoryNodeEventPayload payload) {
+        HeartMemoryNodeClient.handleEvent(payload);
     }
 }
