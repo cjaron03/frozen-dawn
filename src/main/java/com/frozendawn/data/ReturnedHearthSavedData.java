@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 13;
+    public static final int CURRENT_DATA_VERSION = 14;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -586,6 +586,31 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean prepareHeartFormation(
+            UUID hearthId,
+            BlockPos anchor,
+            List<HeartFragmentSnapshot> fragments) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.type != HearthSelectionPolicy.HearthType.MAJOR) {
+            return false;
+        }
+        boolean changed = false;
+        if (hearth.heartAnchor == null && anchor != null) {
+            hearth.heartAnchor = anchor.immutable();
+            hearth.heartLayoutSeed = hearth.layoutSeed ^ anchor.asLong()
+                    ^ 0x48454152544C4154L;
+            changed = true;
+        }
+        if (hearth.heartFragments.isEmpty() && fragments != null && !fragments.isEmpty()) {
+            hearth.heartFragments.addAll(fragments.stream().limit(40).toList());
+            changed = true;
+        }
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public boolean beginMasterArchitectStormAftermath(
             UUID hearthId, long gameTime, float fieldStrength, UUID killerId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
@@ -596,8 +621,128 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.masterStormAftermathActive = true;
         hearth.masterStormAftermathStartGameTime = Math.max(0L, gameTime);
         hearth.masterStormAftermathStrength = Math.max(0.0F, Math.min(1.0F, fieldStrength));
+        hearth.heartFieldStrength = hearth.masterStormAftermathStrength;
         hearth.masterStormAftermathKillerId = killerId;
         hearth.watchedStopWatchingGranted = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean startHeartFormation(UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.type != HearthSelectionPolicy.HearthType.MAJOR
+                || hearth.heartLive || hearth.heartFormationStartGameTime >= 0L) {
+            return false;
+        }
+        if (hearth.heartAnchor == null) {
+            hearth.heartAnchor = hearth.center.immutable();
+        }
+        if (hearth.heartLayoutSeed == 0L) {
+            hearth.heartLayoutSeed = hearth.layoutSeed ^ hearth.heartAnchor.asLong()
+                    ^ 0x48454152544C4154L;
+        }
+        hearth.heartFormationStartGameTime = Math.max(0L, gameTime);
+        hearth.heartFormationSuppressed = false;
+        hearth.heartAdvancementFired = false;
+        hearth.heartLive = false;
+        hearth.heartConvergenceStarted = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartAdvancementFired(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartAdvancementFired) {
+            return false;
+        }
+        hearth.heartAdvancementFired = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartLive(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartLive) {
+            return false;
+        }
+        hearth.heartLive = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartConvergenceStarted(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartConvergenceStarted) {
+            return false;
+        }
+        hearth.heartConvergenceStarted = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean bindHeartEntity(UUID hearthId, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null || entityId.equals(hearth.heartEntityId)) {
+            return false;
+        }
+        hearth.heartEntityId = entityId;
+        setDirty();
+        return true;
+    }
+
+    public boolean clearHeartBinding(UUID hearthId, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartEntityId == null
+                || (entityId != null && !entityId.equals(hearth.heartEntityId))) {
+            return false;
+        }
+        hearth.heartEntityId = null;
+        setDirty();
+        return true;
+    }
+
+    public boolean setHeartStageForDebug(
+            UUID hearthId, long gameTime, com.frozendawn.homo.HeartFormationStage stage) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || stage == com.frozendawn.homo.HeartFormationStage.NONE) {
+            return false;
+        }
+        if (hearth.heartAnchor == null) {
+            hearth.heartAnchor = hearth.center.immutable();
+        }
+        if (hearth.heartLayoutSeed == 0L) {
+            hearth.heartLayoutSeed = hearth.layoutSeed ^ hearth.heartAnchor.asLong()
+                    ^ 0x48454152544C4154L;
+        }
+        long elapsed = com.frozendawn.homo.HeartFormationPolicy.elapsedAtStageStart(
+                stage, hearth.heartFieldStrength);
+        hearth.heartFormationStartGameTime = Math.max(0L, gameTime - elapsed);
+        hearth.heartFormationSuppressed = false;
+        hearth.heartAdvancementFired = elapsed
+                >= com.frozendawn.homo.HeartFormationPolicy.DEAD_AIR_TICKS;
+        hearth.heartLive = stage == com.frozendawn.homo.HeartFormationStage.LIVE;
+        hearth.heartConvergenceStarted = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean resetHeartForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.heartAnchor == null
+                && hearth.heartFormationStartGameTime < 0L
+                && hearth.heartEntityId == null)) {
+            return false;
+        }
+        hearth.heartAnchor = null;
+        hearth.heartLayoutSeed = 0L;
+        hearth.heartFieldStrength = 0.0F;
+        hearth.heartFormationStartGameTime = -1L;
+        hearth.heartFormationSuppressed = true;
+        hearth.heartAdvancementFired = false;
+        hearth.heartLive = false;
+        hearth.heartConvergenceStarted = false;
+        hearth.heartEntityId = null;
+        hearth.heartFragments.clear();
         setDirty();
         return true;
     }
@@ -650,6 +795,15 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.hearthStormDead = false;
         hearth.decoherenceGranted = false;
         hearth.watchedStopWatchingGranted = false;
+        hearth.heartAnchor = null;
+        hearth.heartLayoutSeed = 0L;
+        hearth.heartFieldStrength = 0.0F;
+        hearth.heartFormationStartGameTime = -1L;
+        hearth.heartFormationSuppressed = false;
+        hearth.heartAdvancementFired = false;
+        hearth.heartLive = false;
+        hearth.heartEntityId = null;
+        hearth.heartFragments.clear();
         hearth.combatRosterInitialized = false;
         hearth.combatRoster.clear();
         setDirty();
@@ -1423,6 +1577,28 @@ public final class ReturnedHearthSavedData extends SavedData {
         return tag.contains(key, Tag.TAG_LONG) ? tag.getLong(key) : -1L;
     }
 
+    public record HeartFragmentSnapshot(BlockPos relativePos, String blockId) {
+        public HeartFragmentSnapshot {
+            relativePos = relativePos == null ? BlockPos.ZERO : relativePos.immutable();
+            blockId = blockId == null || blockId.isBlank() ? "minecraft:packed_ice" : blockId;
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putLong("relativePos", relativePos.asLong());
+            tag.putString("blockId", blockId);
+            return tag;
+        }
+
+        private static HeartFragmentSnapshot load(CompoundTag tag) {
+            if (!tag.contains("relativePos", Tag.TAG_LONG)) {
+                return null;
+            }
+            return new HeartFragmentSnapshot(
+                    BlockPos.of(tag.getLong("relativePos")), tag.getString("blockId"));
+        }
+    }
+
     public static final class HearthRecord {
         private final UUID id;
         private final HearthSelectionPolicy.HearthType type;
@@ -1458,6 +1634,16 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean hearthStormDead;
         private boolean decoherenceGranted;
         private boolean watchedStopWatchingGranted;
+        private BlockPos heartAnchor;
+        private long heartLayoutSeed;
+        private float heartFieldStrength;
+        private long heartFormationStartGameTime = -1L;
+        private boolean heartFormationSuppressed;
+        private boolean heartAdvancementFired;
+        private boolean heartLive;
+        private boolean heartConvergenceStarted;
+        private UUID heartEntityId;
+        private final List<HeartFragmentSnapshot> heartFragments = new ArrayList<>();
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
         private boolean firstTransmissionFired;
@@ -1554,6 +1740,28 @@ public final class ReturnedHearthSavedData extends SavedData {
                     tag.contains("watchedStopWatchingGranted", Tag.TAG_BYTE)
                             ? tag.getBoolean("watchedStopWatchingGranted")
                             : record.hearthStormDead && record.decoherenceGranted;
+            record.heartAnchor = tag.contains("heartAnchor", Tag.TAG_LONG)
+                    ? BlockPos.of(tag.getLong("heartAnchor")) : null;
+            record.heartLayoutSeed = tag.getLong("heartLayoutSeed");
+            record.heartFieldStrength = Math.max(0.0F,
+                    Math.min(1.0F, tag.getFloat("heartFieldStrength")));
+            record.heartFormationStartGameTime = readOptionalTime(
+                    tag, "heartFormationStartGameTime");
+            record.heartFormationSuppressed = tag.getBoolean("heartFormationSuppressed");
+            record.heartAdvancementFired = tag.getBoolean("heartAdvancementFired");
+            record.heartLive = tag.getBoolean("heartLive");
+            record.heartConvergenceStarted = tag.getBoolean("heartConvergenceStarted");
+            record.heartEntityId = tag.hasUUID("heartEntityId")
+                    ? tag.getUUID("heartEntityId") : null;
+            ListTag heartFragments = tag.getList("heartFragments", Tag.TAG_COMPOUND);
+            for (Tag entry : heartFragments) {
+                if (entry instanceof CompoundTag fragmentTag) {
+                    HeartFragmentSnapshot fragment = HeartFragmentSnapshot.load(fragmentTag);
+                    if (fragment != null && record.heartFragments.size() < 40) {
+                        record.heartFragments.add(fragment);
+                    }
+                }
+            }
             record.lastPlayerContactGameTime = tag.contains("lastPlayerContactGameTime", Tag.TAG_LONG)
                     ? tag.getLong("lastPlayerContactGameTime")
                     : -1L;
@@ -1637,6 +1845,24 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putBoolean("hearthStormDead", hearthStormDead);
             tag.putBoolean("decoherenceGranted", decoherenceGranted);
             tag.putBoolean("watchedStopWatchingGranted", watchedStopWatchingGranted);
+            if (heartAnchor != null) {
+                tag.putLong("heartAnchor", heartAnchor.asLong());
+            }
+            tag.putLong("heartLayoutSeed", heartLayoutSeed);
+            tag.putFloat("heartFieldStrength", heartFieldStrength);
+            tag.putLong("heartFormationStartGameTime", heartFormationStartGameTime);
+            tag.putBoolean("heartFormationSuppressed", heartFormationSuppressed);
+            tag.putBoolean("heartAdvancementFired", heartAdvancementFired);
+            tag.putBoolean("heartLive", heartLive);
+            tag.putBoolean("heartConvergenceStarted", heartConvergenceStarted);
+            if (heartEntityId != null) {
+                tag.putUUID("heartEntityId", heartEntityId);
+            }
+            ListTag heartFragments = new ListTag();
+            for (HeartFragmentSnapshot fragment : this.heartFragments) {
+                heartFragments.add(fragment.save());
+            }
+            tag.put("heartFragments", heartFragments);
             tag.putLong("lastPlayerContactGameTime", lastPlayerContactGameTime);
             tag.putBoolean("firstAssessmentFired", firstAssessmentFired);
             tag.putBoolean("firstTransmissionFired", firstTransmissionFired);
@@ -1801,6 +2027,46 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean watchedStopWatchingGranted() {
             return watchedStopWatchingGranted;
+        }
+
+        public Optional<BlockPos> heartAnchor() {
+            return Optional.ofNullable(heartAnchor);
+        }
+
+        public long heartLayoutSeed() {
+            return heartLayoutSeed;
+        }
+
+        public float heartFieldStrength() {
+            return heartFieldStrength;
+        }
+
+        public long heartFormationStartGameTime() {
+            return heartFormationStartGameTime;
+        }
+
+        public boolean heartFormationSuppressed() {
+            return heartFormationSuppressed;
+        }
+
+        public boolean heartAdvancementFired() {
+            return heartAdvancementFired;
+        }
+
+        public boolean heartLive() {
+            return heartLive;
+        }
+
+        public boolean heartConvergenceStarted() {
+            return heartConvergenceStarted;
+        }
+
+        public Optional<UUID> heartEntityId() {
+            return Optional.ofNullable(heartEntityId);
+        }
+
+        public List<HeartFragmentSnapshot> heartFragments() {
+            return List.copyOf(heartFragments);
         }
 
         public long lastPlayerContactGameTime() {

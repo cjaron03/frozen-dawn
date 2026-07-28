@@ -737,5 +737,10 @@
   "subtitle.frozendawn.ui.master_architect.aura_temperature": "Localized temperature anomaly detected",
   "subtitle.frozendawn.ui.master_architect.aura_fight": "Local storm convergence exceeds forecast parameters",
   "dimension.frozendawn.thae_iven": "Thae Iven",
-  "dimension_type.frozendawn.thae_iven": "Thae Iven"
+  "dimension_type.frozendawn.thae_iven": "Thae Iven",
+  "item.frozendawn.memory_node_empty": "Empty Memory Node",
+  "advancement.frozendawn.the_watching_never_stopped.title": "The Watching Never Stopped",
+  "advancement.frozendawn.the_watching_never_stopped.description": "You were counted.",
+  "advancement.frozendawn.no_one_else_remembers_now.title": "No One Else Remembers Now",
+  "advancement.frozendawn.no_one_else_remembers_now.description": "There is no one left to tell."
 }

@@ -1067,6 +1067,12 @@
       { "name": "frozendawn:entity/master_architect/aura/infrasound", "stream": true }
     ]
   },
+  "entity.thae_iven_heart.formation": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:music/master_architect/thae_iven_v3", "stream": true }
+    ]
+  },
   "entity.master_architect.aura_death": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.master_architect.aura_death",

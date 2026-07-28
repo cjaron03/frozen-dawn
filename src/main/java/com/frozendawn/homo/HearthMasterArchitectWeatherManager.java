@@ -375,8 +375,6 @@ public final class HearthMasterArchitectWeatherManager {
         }
 
         if (data.completeMasterArchitectStormAftermath(major.id())) {
-            HearthCombatRosterManager.beginAftermathConvergence(
-                    level, major.id(), major.center());
             nextStrikeGameTime.remove(major.id());
             nextArcGameTime.remove(major.id());
             FrozenDawn.LOGGER.info(
@@ -416,7 +414,9 @@ public final class HearthMasterArchitectWeatherManager {
         }
         UUID killerId = major.masterStormAftermathKillerId().orElse(null);
         if (killerId == null) {
-            data.markWatchedStopWatchingGranted(major.id());
+            if (data.markWatchedStopWatchingGranted(major.id())) {
+                data.startHeartFormation(major.id(), level.getGameTime());
+            }
             return;
         }
         ServerPlayer killer = level.getServer().getPlayerList().getPlayer(killerId);
@@ -424,7 +424,9 @@ public final class HearthMasterArchitectWeatherManager {
             return;
         }
         WorldTickHandler.grantAdvancement(killer, "the_watched_stop_watching");
-        data.markWatchedStopWatchingGranted(major.id());
+        if (data.markWatchedStopWatchingGranted(major.id())) {
+            data.startHeartFormation(major.id(), level.getGameTime());
+        }
     }
 
     private static void tickAftermathAuraEvents(

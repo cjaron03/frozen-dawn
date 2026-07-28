@@ -4,6 +4,7 @@ import com.mojang.math.Transformation;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectConstructionPolicy;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
@@ -12,6 +13,7 @@ import com.frozendawn.mixin.DisplayAccessor;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -343,6 +345,25 @@ final class MasterArchitectConstructionController {
         constructions.clear();
         vantageTarget = null;
         vantageSeekUntil = -1L;
+    }
+
+    List<ReturnedHearthSavedData.HeartFragmentSnapshot> snapshotHeartFragments(
+            ServerLevel level, BlockPos anchor, int limit) {
+        return constructions.stream()
+                .flatMap(construction -> construction.blocks.stream())
+                .distinct()
+                .filter(level::hasChunkAt)
+                .filter(pos -> level.getBlockState(pos).is(Blocks.PACKED_ICE)
+                        || level.getBlockState(pos).is(Blocks.ICE))
+                .sorted(Comparator
+                        .comparingDouble((BlockPos pos) -> pos.distSqr(anchor))
+                        .thenComparingLong(BlockPos::asLong))
+                .limit(Math.max(0, Math.min(40, limit)))
+                .map(pos -> new ReturnedHearthSavedData.HeartFragmentSnapshot(
+                        pos.subtract(anchor),
+                        BuiltInRegistries.BLOCK.getKey(
+                                level.getBlockState(pos).getBlock()).toString()))
+                .toList();
     }
 
     void addSaveData(CompoundTag tag) {

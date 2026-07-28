@@ -310,6 +310,8 @@ public class ModSounds {
             "entity.master_architect.arc_crackle");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_INFRASOUND = register(
             "entity.master_architect.infrasound");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_FORMATION = register(
+            "entity.thae_iven_heart.formation");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_DEATH = register(
             "entity.master_architect.aura_death");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_TEMPERATURE_TTS = register(

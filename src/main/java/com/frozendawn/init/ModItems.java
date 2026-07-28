@@ -255,6 +255,10 @@ public class ModItems {
             () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    // Future Maeve-erasure icon. Intentionally absent from creative tabs and recipes.
+    public static final DeferredItem<Item> MEMORY_NODE_EMPTY = ITEMS.register(
+            "memory_node_empty",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectMaskItem> ARCHITECT_MASK = ITEMS.register("architect_mask",
             () -> new ArchitectMaskItem(
                     ModBlocks.ARCHITECT_MASK.get(),
