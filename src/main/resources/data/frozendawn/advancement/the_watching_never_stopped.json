@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:the_watched_stop_watching",
+  "display": {
+    "icon": {
+      "id": "frozendawn:architect_soul"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.the_watching_never_stopped.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.the_watching_never_stopped.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

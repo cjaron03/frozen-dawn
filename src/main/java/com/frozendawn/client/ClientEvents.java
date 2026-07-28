@@ -11,6 +11,7 @@ import com.frozendawn.client.renderer.AlarmBeaconRenderer;
 import com.frozendawn.client.renderer.MimicRenderer;
 import com.frozendawn.client.renderer.MasterArchitectAdornmentModel;
 import com.frozendawn.client.renderer.MasterArchitectLightningRenderer;
+import com.frozendawn.client.renderer.ThaeIvenHeartRenderer;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.RocketLaunchModel;
@@ -131,6 +132,11 @@ public class ClientEvents {
                         FrozenDawn.MOD_ID, "master_architect_flood"),
                 MasterArchitectFloodClient::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "cognitive_load_inactive"),
+                CognitiveLoadClientState::render
+        );
     }
 
     @SubscribeEvent
@@ -198,6 +204,9 @@ public class ClientEvents {
         event.registerEntityRenderer(
                 ModEntities.MASTER_ARCHITECT_LIGHTNING.get(),
                 MasterArchitectLightningRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.THAE_IVEN_HEART.get(),
+                ThaeIvenHeartRenderer::new);
         event.registerEntityRenderer(ModEntities.ROCKET_LAUNCH.get(), RocketLaunchRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);

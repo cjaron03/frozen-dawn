@@ -12,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -483,6 +484,59 @@ class ReturnedHearthSavedDataTest {
         assertTrue(defeated.combatRoster().isEmpty());
         assertTrue(defeatedReload.bindMasterArchitect(defeated.id(), replacement));
         assertEquals(replacement, defeated.masterArchitectEntityId().orElseThrow());
+    }
+
+    @Test
+    void heartFormationAuthorityRoundTripsAndResetDoesNotResurrectMaster() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID master = UUID.randomUUID();
+        UUID killer = UUID.randomUUID();
+        UUID heart = UUID.randomUUID();
+        BlockPos deathAnchor = major.center().offset(9, 3, -6);
+        List<ReturnedHearthSavedData.HeartFragmentSnapshot> fragments =
+                java.util.stream.IntStream.range(0, 45)
+                        .mapToObj(index -> new ReturnedHearthSavedData.HeartFragmentSnapshot(
+                                new BlockPos(index - 20, index % 4, 20 - index),
+                                index % 3 == 0 ? "minecraft:ice" : "minecraft:packed_ice"))
+                        .toList();
+
+        assertTrue(state.bindMasterArchitect(major.id(), master));
+        assertTrue(state.prepareHeartFormation(major.id(), deathAnchor, fragments));
+        assertTrue(state.markMasterArchitectDefeated(major.id(), master, 5000L));
+        assertTrue(state.beginMasterArchitectStormAftermath(
+                major.id(), 5070L, 0.625F, killer));
+        assertTrue(state.completeMasterArchitectStormAftermath(major.id()));
+        assertTrue(state.markWatchedStopWatchingGranted(major.id()));
+        assertTrue(state.startHeartFormation(major.id(), 5600L));
+        assertTrue(state.markHeartAdvancementFired(major.id()));
+        assertTrue(state.bindHeartEntity(major.id(), heart));
+        assertTrue(state.markHeartLive(major.id()));
+        assertTrue(state.markHeartConvergenceStarted(major.id()));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(deathAnchor, restored.heartAnchor().orElseThrow());
+        assertEquals(major.heartLayoutSeed(), restored.heartLayoutSeed());
+        assertEquals(0.625F, restored.heartFieldStrength());
+        assertEquals(5600L, restored.heartFormationStartGameTime());
+        assertTrue(restored.heartAdvancementFired());
+        assertTrue(restored.heartLive());
+        assertTrue(restored.heartConvergenceStarted());
+        assertEquals(heart, restored.heartEntityId().orElseThrow());
+        assertEquals(40, restored.heartFragments().size());
+        assertEquals(fragments.getFirst(), restored.heartFragments().getFirst());
+
+        assertTrue(loaded.resetHeartForDebug(restored.id()));
+        assertTrue(restored.masterArchitectDefeated());
+        assertTrue(restored.heartAnchor().isEmpty());
+        assertEquals(-1L, restored.heartFormationStartGameTime());
+        assertTrue(restored.heartFormationSuppressed());
+        assertTrue(restored.heartEntityId().isEmpty());
+        assertTrue(restored.heartFragments().isEmpty());
+        assertTrue(loaded.startHeartFormation(restored.id(), 7000L));
+        assertFalse(restored.heartFormationSuppressed());
     }
 
     @Test

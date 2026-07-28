@@ -296,6 +296,15 @@ final class MasterArchitectCombatController {
         leaveCombat(level);
     }
 
+    java.util.List<com.frozendawn.data.ReturnedHearthSavedData.HeartFragmentSnapshot>
+            snapshotHeartFragments(ServerLevel level, BlockPos anchor) {
+        return constructionController.snapshotHeartFragments(level, anchor, 40);
+    }
+
+    boolean isTrackedConstructionBlock(BlockPos pos) {
+        return constructionController.isTrackedConstructionBlock(pos);
+    }
+
     boolean isMindSessionActive() {
         return floodController.isMindSessionActive();
     }
@@ -965,8 +974,8 @@ final class MasterArchitectCombatController {
         if (actionTicks >= JUKE_SMASH_ACTION_TICKS) {
             pendingSmashBlock = null;
             jukeSmashCooldown = JUKE_SMASH_COOLDOWN_TICKS;
-            finishAction();
         }
+        finishAction();
     }
 
     private BlockPos singlePlayerObstruction(

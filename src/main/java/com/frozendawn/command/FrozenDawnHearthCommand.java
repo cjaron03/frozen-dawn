@@ -7,6 +7,8 @@ import com.frozendawn.homo.HearthBoundaryManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
+import com.frozendawn.homo.HearthHeartManager;
+import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -75,6 +77,20 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::masterArchitectPhase))
                         .then(Commands.literal("weather")
                                 .executes(FrozenDawnHearthCommand::masterArchitectWeather)))
+                .then(Commands.literal("heart")
+                        .executes(FrozenDawnHearthCommand::heartStatus)
+                        .then(Commands.literal("status")
+                                .executes(FrozenDawnHearthCommand::heartStatus))
+                        .then(Commands.literal("start")
+                                .executes(FrozenDawnHearthCommand::heartStart))
+                        .then(Commands.literal("setstage")
+                                .then(heartStage("dead_air", HeartFormationStage.DEAD_AIR))
+                                .then(heartStage("shake", HeartFormationStage.SHAKE))
+                                .then(heartStage("gather", HeartFormationStage.GATHER))
+                                .then(heartStage("hold", HeartFormationStage.HOLD))
+                                .then(heartStage("live", HeartFormationStage.LIVE)))
+                        .then(Commands.literal("reset")
+                                .executes(FrozenDawnHearthCommand::heartReset)))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -176,6 +192,8 @@ final class FrozenDawnHearthCommand {
                 "  Master weather: "
                         + HearthMasterArchitectWeatherManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
+                "  Thae Iven Heart: " + HearthHeartManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
@@ -264,6 +282,41 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reset ORSA survey state for " + reset + " Hearth record(s)"), true);
         return Math.max(1, reset);
+    }
+
+    private static int heartStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "--- Thae Iven Heart ---"), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  " + HearthHeartManager.describe(context.getSource().getLevel())), false);
+        return 1;
+    }
+
+    private static int heartStart(CommandContext<CommandSourceStack> context) {
+        HearthHeartManager.startForDebug(context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Started Heart formation at the Major Hearth"), true);
+        return heartStatus(context);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> heartStage(
+            String name, HeartFormationStage stage) {
+        return Commands.literal(name).executes(context -> {
+            boolean changed = HearthHeartManager.setStageForDebug(
+                    context.getSource().getLevel(), stage);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Set Heart formation to " + stage.name().toLowerCase(Locale.ROOT)
+                            + (changed ? "" : " (unchanged)")), true);
+            return heartStatus(context);
+        });
+    }
+
+    private static int heartReset(CommandContext<CommandSourceStack> context) {
+        int removed = HearthHeartManager.resetForDebug(context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Heart formation state; removed " + removed
+                        + " Heart/display entity(s). Master state was not changed."), true);
+        return 1;
     }
 
     private static int locate(CommandContext<CommandSourceStack> context,

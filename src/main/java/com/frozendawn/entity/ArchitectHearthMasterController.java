@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
@@ -128,10 +129,34 @@ final class ArchitectHearthMasterController {
     void onDeath(ServerLevel level, @Nullable ServerPlayer killer) {
         MasterArchitectFightMusicManager.stopNearby(level, architect);
         combatMusicActive = false;
+        architect.getHearthMasterArchitectId().ifPresent(hearthId -> {
+            BlockPos surface = level.getHeightmapPos(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    architect.blockPosition());
+            BlockPos anchor = findHeartAnchor(level, surface.below());
+            ReturnedHearthSavedData.get(level.getServer()).prepareHeartFormation(
+                    hearthId,
+                    anchor,
+                    combatController.snapshotHeartFragments(level, anchor));
+        });
         combatController.onDeath(level, killer);
         architect.getHearthMasterArchitectId().ifPresent(
                 hearthId -> HearthCombatRosterManager.setFloodKneeling(
                         level, hearthId, true));
+    }
+
+    private BlockPos findHeartAnchor(ServerLevel level, BlockPos start) {
+        BlockPos.MutableBlockPos cursor = start.mutable();
+        for (int scanned = 0;
+                scanned < 96 && cursor.getY() >= level.getMinBuildHeight();
+                scanned++, cursor.move(0, -1, 0)) {
+            BlockPos candidate = cursor.immutable();
+            if (!combatController.isTrackedConstructionBlock(candidate)
+                    && level.getBlockState(candidate).isSolidRender(level, candidate)) {
+                return candidate;
+            }
+        }
+        return architect.blockPosition();
     }
 
     void onMindCopyHurt(
