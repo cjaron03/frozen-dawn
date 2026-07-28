@@ -134,7 +134,7 @@ public class ClientEvents {
         );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(
-                        FrozenDawn.MOD_ID, "cognitive_load_inactive"),
+                        FrozenDawn.MOD_ID, "cognitive_load"),
                 CognitiveLoadClientState::render
         );
     }

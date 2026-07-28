@@ -20,6 +20,7 @@ import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthBoundaryManager;
@@ -147,6 +148,7 @@ public class WorldTickHandler {
         HearthMasterArchitectManager.reset();
         HearthMasterArchitectWeatherManager.reset();
         HearthHeartManager.reset();
+        CognitiveLoadManager.reset();
         HearthMemoryManager.reset();
         HearthTransmissionManager.reset();
         HearthSurveySignalManager.reset();
@@ -232,6 +234,7 @@ public class WorldTickHandler {
         HearthMasterArchitectManager.tick(overworld);
         HearthMasterArchitectWeatherManager.tick(overworld, currentPhase, progress);
         HearthHeartManager.tick(overworld);
+        CognitiveLoadManager.tick(overworld, state);
         HearthTransmissionManager.tick(overworld);
         HearthSurveySignalManager.tick(server);
         HearthBoundaryManager.tick(overworld);
@@ -486,6 +489,7 @@ public class WorldTickHandler {
             orsaAwakeningFreezeUntil.remove(playerId);
             orsaAwakeningFreezeAnchor.remove(playerId);
             PlayerTickHandler.onPlayerLogout(player);
+            CognitiveLoadManager.onPlayerLogout(player);
         }
     }
 

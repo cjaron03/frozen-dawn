@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthArchitectManager;
+import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthBoundaryManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
@@ -20,6 +21,7 @@ import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -90,7 +92,15 @@ final class FrozenDawnHearthCommand {
                                 .then(heartStage("hold", HeartFormationStage.HOLD))
                                 .then(heartStage("live", HeartFormationStage.LIVE)))
                         .then(Commands.literal("reset")
-                                .executes(FrozenDawnHearthCommand::heartReset)))
+                                .executes(FrozenDawnHearthCommand::heartReset))
+                        .then(Commands.literal("load")
+                                .executes(FrozenDawnHearthCommand::heartLoadStatus)
+                                .then(Commands.literal("set")
+                                        .then(Commands.argument("value",
+                                                        FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(FrozenDawnHearthCommand::heartLoadSet)))
+                                .then(Commands.literal("clear")
+                                        .executes(FrozenDawnHearthCommand::heartLoadClear))))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -317,6 +327,33 @@ final class FrozenDawnHearthCommand {
                 "Reset Heart formation state; removed " + removed
                         + " Heart/display entity(s). Master state was not changed."), true);
         return 1;
+    }
+
+    private static int heartLoadStatus(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Cognitive Load: " + CognitiveLoadManager.describe(player)), false);
+        return 1;
+    }
+
+    private static int heartLoadSet(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        float value = FloatArgumentType.getFloat(context, "value");
+        CognitiveLoadManager.setLoadForDebug(player, value);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set Cognitive Load to " + String.format(Locale.ROOT, "%.1f", value)), true);
+        return heartLoadStatus(context);
+    }
+
+    private static int heartLoadClear(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        CognitiveLoadManager.setLoadForDebug(player, 0.0F);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Cleared Cognitive Load"), true);
+        return heartLoadStatus(context);
     }
 
     private static int locate(CommandContext<CommandSourceStack> context,

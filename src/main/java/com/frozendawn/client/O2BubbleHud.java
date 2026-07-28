@@ -38,6 +38,13 @@ public class O2BubbleHud {
                     MasterArchitectFloodClient.corruptedOxygenRatio());
             return;
         }
+        if (CognitiveLoadClientState.shouldFreezeOxygenTelemetry()) {
+            renderMindOverride(
+                    graphics,
+                    deltaTracker,
+                    CognitiveLoadClientState.frozenOxygenRatio());
+            return;
+        }
         if (MasterArchitectAuraClient.shouldFlickerO2()) {
             renderMindOverride(graphics, deltaTracker, 1.0F);
             return;
