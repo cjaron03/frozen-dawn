@@ -10,6 +10,12 @@ public final class HeartSuccessorPolicy {
     public static final int STAGGER_TICKS = 180;
     public static final int CONDUCT_TICKS = 160;
     public static final int HEAL_TICKS = 120;
+    public static final int MAX_SUPPORT_LINKS = 3;
+    public static final float EMERGENCY_HEAL_THRESHOLD = 0.35F;
+    public static final float HEAL_RELEASE_THRESHOLD = 0.72F;
+    public static final double SUPPORT_SPEED_BONUS = 0.24D;
+    public static final double SUPPORT_DAMAGE_BONUS = 0.30D;
+    public static final float SUPPORT_DAMAGE_TAKEN_MULTIPLIER = 0.75F;
 
     private HeartSuccessorPolicy() {
     }
@@ -41,6 +47,18 @@ public final class HeartSuccessorPolicy {
         return Math.max(0.15F,
                 (0.45F + Mth.clamp(fieldStrength, 0.0F, 1.0F) * 0.55F)
                         * (1.0F - generation * 0.22F));
+    }
+
+    public static boolean needsEmergencyHealing(float health, float maxHealth) {
+        return maxHealth > 0.0F && health / maxHealth <= EMERGENCY_HEAL_THRESHOLD;
+    }
+
+    public static boolean shouldContinueHealing(float health, float maxHealth) {
+        return maxHealth > 0.0F && health / maxHealth < HEAL_RELEASE_THRESHOLD;
+    }
+
+    public static float mitigateSupportedDamage(float damage) {
+        return Math.max(0.0F, damage) * SUPPORT_DAMAGE_TAKEN_MULTIPLIER;
     }
 
     public static Mode mode(long activeTicks) {

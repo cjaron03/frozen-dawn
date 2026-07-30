@@ -2,22 +2,28 @@ package com.frozendawn.client.renderer;
 
 import com.frozendawn.client.CognitiveLoadClientState;
 import com.frozendawn.client.HeartEchoClient;
+import com.frozendawn.client.HeartMemoryNodeClient;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.homo.CognitiveLoadPolicy;
 import com.frozendawn.homo.HeartCollapseStage;
 import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HeartLattice;
-import com.mojang.math.Axis;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Map;
@@ -27,10 +33,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEntity> {
     private static final Map<Long, HeartLattice.Lattice> CACHE =
             new ConcurrentHashMap<>();
+    private static final ResourceLocation END_CRYSTAL_TEXTURE =
+            ResourceLocation.withDefaultNamespace(
+                    "textures/entity/end_crystal/end_crystal.png");
+    private static final RenderType CRYSTAL_RENDER_TYPE =
+            RenderType.entityCutoutNoCull(END_CRYSTAL_TEXTURE);
+    private static final RenderType CRYSTAL_DISTORTION_RENDER_TYPE =
+            RenderType.entityTranslucent(END_CRYSTAL_TEXTURE);
+    private static final float SIN_45 = (float) Math.sin(Math.PI / 4.0D);
+    private final ModelPart crystalCube;
+    private final ModelPart crystalGlass;
 
     public ThaeIvenHeartRenderer(EntityRendererProvider.Context context) {
         super(context);
         shadowRadius = 0.0F;
+        ModelPart crystal = context.bakeLayer(ModelLayers.END_CRYSTAL);
+        crystalCube = crystal.getChild("cube");
+        crystalGlass = crystal.getChild("glass");
     }
 
     @Override
@@ -64,6 +83,7 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                     HeartLattice.requiredLoad(HeartLattice.NODE_COUNT - 1));
             poseStack.translate(0.0D, -descent, 0.0D);
             applyCollapsePose(heart, poseStack, partialTick);
+            applyMaeveErasurePose(heart, poseStack, partialTick);
         }
         int destroyedMask = heart.destroyedNodeMask();
         HeartLattice.Lattice lattice = CACHE.computeIfAbsent(
@@ -77,7 +97,9 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                 continue;
             }
             if (!survivesCollapse(index, collapseStage,
-                    heart.collapseProgress())) {
+                    heart.collapseProgress())
+                    || !survivesMaeveErasure(index,
+                    heart.maeveErasureProgress())) {
                 continue;
             }
             float pulse = 0.86F + 0.14F * Mth.sin(
@@ -97,20 +119,23 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                     (heart.tickCount + partialTick) * 0.09F + node.phase());
             boolean active = node.index() == activeNode;
             boolean echoExposed = active && HeartEchoClient.isNodeExposed(node.index());
+            boolean hittable = active && HeartLattice.isNodeHittable(
+                    node.index(), CognitiveLoadClientState.loadPercent(), echoExposed);
             float damagePulse = active
                     ? 1.0F + heart.activeNodeDamage() * 0.10F
                     * Mth.sin((heart.tickCount + partialTick) * 0.72F)
                     : 1.0F;
-            float radius = (echoExposed ? 1.48F : active ? 0.94F : 0.60F)
+            float radius = (echoExposed && hittable
+                    ? 1.48F : hittable ? 0.94F : 0.60F)
                     * damagePulse;
-            float alpha = echoExposed ? 1.0F : active
+            float alpha = echoExposed && hittable ? 1.0F : hittable
                     ? pulse : 0.16F + pulse * 0.10F;
             cube(pose.pose(), light, node.x(), node.y(), node.z(), radius,
-                    echoExposed ? 0.42F : active ? 0.16F : 0.04F,
-                    echoExposed ? 1.0F : active ? 0.88F : 0.28F,
+                    echoExposed && hittable ? 0.42F : hittable ? 0.16F : 0.04F,
+                    echoExposed && hittable ? 1.0F : hittable ? 0.88F : 0.28F,
                     1.0F, alpha);
         }
-        if (heart.maeveExposed()) {
+        if (heart.maeveFormationProgress() > 0.0F) {
             renderDormantMaeve(heart, poseStack, buffers, partialTick);
         }
         super.render(heart, yaw, partialTick, poseStack, buffers, packedLight);
@@ -154,31 +179,135 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
         return deterministic >= removal;
     }
 
-    private static void renderDormantMaeve(
+    private void renderDormantMaeve(
             ThaeIvenHeartEntity heart,
             PoseStack poseStack,
             MultiBufferSource buffers,
             float partialTick) {
-        Matrix4f matrix = poseStack.last().pose();
+        float overall = heart.maeveErasureProgress();
+        float formation = heart.maeveFormationProgress();
+        float formationScale = Mth.lerp(formation, 0.08F, 1.0F);
+        float breakPoint = 120.0F / 220.0F;
+        float erasure = Mth.clamp(overall / breakPoint, 0.0F, 1.0F);
+        float forge = Mth.clamp((overall - breakPoint) / (1.0F - breakPoint),
+                0.0F, 1.0F);
+        float channel = HeartMemoryNodeClient.maeveChannelProgress(heart);
         float pulse = 0.78F + 0.22F * Mth.sin(
                 (heart.tickCount + partialTick) * 0.045F);
-        VertexConsumer shell = buffers.getBuffer(RenderType.debugQuads());
-        cube(matrix, shell, -0.7F, -3.4F, 0.2F, 2.8F,
-                0.005F, 0.012F, 0.026F, 0.96F);
-        cube(matrix, shell, -0.7F, -3.4F, 0.2F, 2.15F,
-                0.018F, 0.045F, 0.080F, 0.88F);
+        float shellScale = (forge > 0.0F
+                ? Mth.lerp(forge, 0.30F, 0.12F)
+                : 1.0F - erasure * 0.70F) * formationScale;
+        float coreScale = (forge > 0.0F
+                ? Mth.lerp(forge, 0.34F, 0.18F)
+                : 1.0F + channel * 0.80F - erasure * 0.68F)
+                * Mth.lerp(formation, 0.18F, 1.0F);
+        float age = heart.tickCount + partialTick;
+
+        if (forge > 0.0F) {
+            renderMaeveDistortion(poseStack, buffers, age, forge);
+        }
+        poseStack.pushPose();
+        float assemblyDrift = 1.0F - formation;
+        poseStack.translate(
+                -0.7F + Mth.sin(age * 0.11F) * assemblyDrift * 1.6F,
+                -3.4F + assemblyDrift * 2.8F,
+                0.2F + Mth.cos(age * 0.09F) * assemblyDrift * 1.3F);
+        poseStack.scale(5.4F * shellScale, 5.4F * shellScale,
+                5.4F * shellScale);
+        VertexConsumer crystal = buffers.getBuffer(CRYSTAL_RENDER_TYPE);
+        int overlay = OverlayTexture.NO_OVERLAY;
+        float rotation = age * (1.25F + channel * 1.8F
+                + forge * forge * 24.0F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
+        poseStack.mulPose(new Quaternionf().setAngleAxis(
+                (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
+        crystalGlass.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
+                overlay, 0xFF082238);
+        poseStack.scale(0.82F, 0.82F, 0.82F);
+        poseStack.mulPose(Axis.XP.rotationDegrees(-rotation * 0.72F));
+        poseStack.mulPose(new Quaternionf().setAngleAxis(
+                (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
+        crystalGlass.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
+                overlay, 0xFF0A5475);
+        poseStack.scale(0.78F, 0.78F, 0.78F);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(rotation * 1.18F));
+        crystalCube.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
+                overlay, 0xFF14BEE6);
+        poseStack.popPose();
+
+        Matrix4f matrix = poseStack.last().pose();
         VertexConsumer core = buffers.getBuffer(RenderType.lightning());
-        cube(matrix, core, -0.7F, -3.4F, 0.2F, 0.72F,
-                0.10F, 0.72F, 1.0F, 0.76F * pulse);
-        for (int branch = 0; branch < 7; branch++) {
-            double angle = branch * Math.PI * 2.0D / 7.0D + 0.35D;
-            float x = -0.7F + (float) Math.cos(angle) * 3.7F;
+        cube(matrix, core, -0.7F, -3.4F, 0.2F,
+                Math.max(0.12F, 0.92F * coreScale),
+                0.08F + erasure * 0.72F,
+                0.78F + erasure * 0.22F,
+                1.0F, (0.76F + channel * 0.22F) * pulse * formation);
+        for (int branch = 0; branch < 9; branch++) {
+            double angle = branch * Math.PI * 2.0D / 9.0D
+                    + age * 0.006D + 0.35D;
+            float x = -0.7F + (float) Math.cos(angle) * 4.2F;
             float y = -3.4F + (branch % 3 - 1) * 1.25F;
-            float z = 0.2F + (float) Math.sin(angle) * 2.8F;
+            float z = 0.2F + (float) Math.sin(angle) * 3.3F;
             beam(matrix, core, new HeartLattice.Segment(
                     -0.7F, -3.4F, 0.2F, x, y, z, 0.11F, 0),
-                    0.04F, 0.36F, 0.72F, 0.48F * pulse);
+                    0.04F + erasure * 0.28F,
+                    0.36F + channel * 0.30F,
+                    0.72F + erasure * 0.28F,
+                    0.48F * pulse * formation * (1.0F - erasure * 0.82F));
         }
+    }
+
+    private void renderMaeveDistortion(
+            PoseStack poseStack,
+            MultiBufferSource buffers,
+            float age,
+            float forge) {
+        VertexConsumer distortion = buffers.getBuffer(
+                CRYSTAL_DISTORTION_RENDER_TYPE);
+        for (int shell = 0; shell < 3; shell++) {
+            float phase = age * (0.75F + shell * 0.19F)
+                    * (1.0F + forge * 2.8F);
+            float breathing = 1.0F + Mth.sin(
+                    age * 0.16F + shell * 1.9F) * 0.10F;
+            float scale = (6.6F + shell * 1.35F)
+                    * breathing * (1.0F - forge * 0.16F);
+            int alpha = Mth.clamp(
+                    Math.round((30.0F - shell * 6.0F) * (0.45F + forge * 0.55F)),
+                    0, 255);
+            int color = alpha << 24 | (shell == 0 ? 0x146783 : 0x0A314A);
+            poseStack.pushPose();
+            poseStack.translate(-0.7F, -3.4F, 0.2F);
+            poseStack.scale(scale, scale, scale);
+            poseStack.mulPose(Axis.YP.rotationDegrees(phase));
+            poseStack.mulPose(Axis.XP.rotationDegrees(-phase * 0.61F));
+            crystalGlass.render(poseStack, distortion,
+                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
+            poseStack.popPose();
+        }
+    }
+
+    private static void applyMaeveErasurePose(
+            ThaeIvenHeartEntity heart, PoseStack poseStack, float partialTick) {
+        float progress = heart.maeveErasureProgress();
+        if (progress <= 0.0F) {
+            return;
+        }
+        float age = heart.tickCount + partialTick;
+        float amplitude = 0.035F + progress * 0.14F;
+        poseStack.translate(
+                Mth.sin(age * 1.73F) * amplitude,
+                Mth.sin(age * 2.11F) * amplitude * 0.45F,
+                Mth.cos(age * 1.41F) * amplitude);
+    }
+
+    private static boolean survivesMaeveErasure(int index, float progress) {
+        if (progress <= 0.50F) {
+            return true;
+        }
+        float shatterProgress = Mth.clamp((progress - 0.50F) / 0.22F,
+                0.0F, 1.0F);
+        float threshold = Math.floorMod(index * 53 + 19, 101) / 100.0F;
+        return threshold >= shatterProgress * 0.98F;
     }
 
     private static boolean removedByDestroyedNode(int group, int destroyedMask) {

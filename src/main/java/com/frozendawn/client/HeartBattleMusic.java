@@ -23,6 +23,7 @@ public final class HeartBattleMusic {
     }
 
     public static void update(HeartMusicStatePayload payload) {
+        HeartQuietClient.setWorldErased(payload.erased());
         if (!payload.active()) {
             active = false;
             return;
@@ -58,6 +59,7 @@ public final class HeartBattleMusic {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         hardStop();
+        HeartQuietClient.reset();
     }
 
     private static void ensureTrack() {

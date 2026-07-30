@@ -18,6 +18,7 @@ import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.EmergencyO2CartridgeItem;
 import com.frozendawn.item.IceClawsItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
+import com.frozendawn.item.LastWitnessItem;
 import com.frozendawn.item.MiteAwayBlockItem;
 import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.MartianCommandPacketItem;
@@ -259,6 +260,17 @@ public class ModItems {
     public static final DeferredItem<Item> MEMORY_NODE_EMPTY = ITEMS.register(
             "memory_node_empty",
             () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Hidden advancement icon for the first time The Last Witness denies a death.
+    public static final DeferredItem<Item> REMEMBERED_KEEPSAKE = ITEMS.register(
+            "remembered_keepsake",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Unique Maeve-erasure relic. Intentionally absent from creative tabs and recipes.
+    public static final DeferredItem<LastWitnessItem> THE_LAST_WITNESS = ITEMS.register(
+            "the_last_witness",
+            () -> new LastWitnessItem(new Item.Properties()
+                    .stacksTo(1)
+                    .durability(LastWitnessItem.MAX_CHARGES)
+                    .rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectMaskItem> ARCHITECT_MASK = ITEMS.register("architect_mask",
             () -> new ArchitectMaskItem(
                     ModBlocks.ARCHITECT_MASK.get(),

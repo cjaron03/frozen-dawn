@@ -123,6 +123,10 @@ public final class MasterArchitectThermalSever {
         ACTIVE.remove(player.getUUID());
     }
 
+    static void clearForRescue(ServerPlayer player) {
+        ACTIVE.remove(player.getUUID());
+    }
+
     static void reset() {
         ACTIVE.clear();
     }

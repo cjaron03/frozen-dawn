@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:no_one_else_remembers_now",
+  "display": {
+    "icon": {
+      "id": "frozendawn:remembered_keepsake"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.you_are_remembered.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.you_are_remembered.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

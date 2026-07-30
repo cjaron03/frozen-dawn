@@ -38,6 +38,8 @@ public class SkyRenderer {
     private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
     private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.48F;
     private static final float MASTER_ARCHITECT_VISIBILITY = 14.0F;
+    private static final float HEART_WHITEOUT_MIX = 0.30F;
+    private static final float HEART_VISIBILITY = 30.0F;
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
@@ -96,6 +98,13 @@ public class SkyRenderer {
                 targetG = Mth.lerp(masterWhiteout, targetG, getStormHazeGreen(6));
                 targetB = Mth.lerp(masterWhiteout, targetB, getStormHazeBlue(6));
             }
+            float heartWhiteout = HeartQuietClient.localStormStrength()
+                    * exposure * HEART_WHITEOUT_MIX;
+            if (heartWhiteout > 0.0F) {
+                targetR = Mth.lerp(heartWhiteout, targetR, getStormHazeRed(5));
+                targetG = Mth.lerp(heartWhiteout, targetG, getStormHazeGreen(5));
+                targetB = Mth.lerp(heartWhiteout, targetB, getStormHazeBlue(5));
+            }
 
             event.setRed(Mth.lerp(blend, event.getRed() * skyLight, targetR));
             event.setGreen(Mth.lerp(blend, event.getGreen() * skyLight, targetG));
@@ -136,6 +145,11 @@ public class SkyRenderer {
         if (masterStrength > 0.0F) {
             visibility = Math.min(visibility, Mth.lerp(
                     masterStrength, currentFar, MASTER_ARCHITECT_VISIBILITY));
+        }
+        float heartStrength = HeartQuietClient.localStormStrength() * exposure;
+        if (heartStrength > 0.0F) {
+            visibility = Math.min(visibility, Mth.lerp(
+                    heartStrength, currentFar, HEART_VISIBILITY));
         }
         if (visibility < currentFar) {
             event.setFarPlaneDistance(visibility);

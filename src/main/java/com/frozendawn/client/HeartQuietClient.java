@@ -17,6 +17,8 @@ public final class HeartQuietClient {
     private static long sampledGameTime = Long.MIN_VALUE;
     private static int destroyedNodes;
     private static float environmentMultiplier = 1.0F;
+    private static float localStormStrength;
+    private static boolean worldErased;
 
     private HeartQuietClient() {
     }
@@ -31,10 +33,22 @@ public final class HeartQuietClient {
         return environmentMultiplier;
     }
 
+    public static float localStormStrength() {
+        refresh();
+        return localStormStrength;
+    }
+
     public static void reset() {
         sampledGameTime = Long.MIN_VALUE;
         destroyedNodes = 0;
         environmentMultiplier = 1.0F;
+        localStormStrength = 0.0F;
+        worldErased = false;
+    }
+
+    public static void setWorldErased(boolean erased) {
+        worldErased = erased;
+        sampledGameTime = Long.MIN_VALUE;
     }
 
     private static void refresh() {
@@ -63,7 +77,8 @@ public final class HeartQuietClient {
                 .orElse(null);
         if (heart == null) {
             destroyedNodes = 0;
-            environmentMultiplier = 1.0F;
+            environmentMultiplier = worldErased ? 0.72F : 1.0F;
+            localStormStrength = 0.0F;
             return;
         }
 
@@ -91,5 +106,6 @@ public final class HeartQuietClient {
                 0.0D,
                 1.0D);
         environmentMultiplier = Mth.lerp(influence, 1.0F, nodeMultiplier);
+        localStormStrength = influence * nodeMultiplier;
     }
 }

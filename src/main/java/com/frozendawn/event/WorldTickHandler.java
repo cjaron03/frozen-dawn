@@ -29,6 +29,7 @@ import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthHeartManager;
 import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.HeartMusicManager;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -152,6 +153,7 @@ public class WorldTickHandler {
         HearthMasterArchitectWeatherManager.reset();
         HearthHeartManager.reset();
         HeartMemoryNodeManager.reset();
+        HeartMaeveErasureManager.reset();
         HeartScavengerWaveManager.reset();
         HeartMusicManager.reset();
         CognitiveLoadManager.reset();

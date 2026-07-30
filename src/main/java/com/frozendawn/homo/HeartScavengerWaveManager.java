@@ -3,6 +3,7 @@ package com.frozendawn.homo;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
@@ -11,14 +12,20 @@ import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -46,6 +53,12 @@ public final class HeartScavengerWaveManager {
     private static final float NEAR_PLAYER_FROSTBITTEN_CHANCE = 0.22F;
     private static final DustParticleOptions HEALING_TETHER_DUST =
             new DustParticleOptions(new Vector3f(1.0F, 0.58F, 0.08F), 0.85F);
+    private static final ResourceLocation SUPPORT_SPEED_ID =
+            ResourceLocation.fromNamespaceAndPath(
+                    FrozenDawn.MOD_ID, "heart_successor_support_speed");
+    private static final ResourceLocation SUPPORT_DAMAGE_ID =
+            ResourceLocation.fromNamespaceAndPath(
+                    FrozenDawn.MOD_ID, "heart_successor_support_damage");
     private static final List<SummonTrail> SUMMON_TRAILS = new ArrayList<>();
 
     private static long wavesSpawned;
@@ -99,9 +112,31 @@ public final class HeartScavengerWaveManager {
                 && entity.getTags().contains(scavengerTag(hearthId));
     }
 
+    public static boolean isSuccessorSupported(LivingEntity entity) {
+        AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
+        return movement != null && movement.hasModifier(SUPPORT_SPEED_ID);
+    }
+
     public static String statusLine() {
         return "waves=" + wavesSpawned + " scavengers=" + scavengersSpawned
                 + " successors=" + successorsSpawned + " failure=" + lastFailure;
+    }
+
+    public static void endEncounter(
+            ServerLevel level, UUID hearthId, BlockPos anchor) {
+        if (!level.hasChunkAt(anchor)) {
+            return;
+        }
+        activeScavengers(level, hearthId, anchor).forEach(Entity::discard);
+        level.getEntitiesOfClass(
+                        HeartSuccessorEntity.class,
+                        new AABB(anchor).inflate(72.0D, 80.0D, 72.0D),
+                        entity -> entity.hearthId().map(hearthId::equals).orElse(false))
+                .forEach(successor -> {
+                    clearSupportBuffs(level, successor);
+                    successor.discard();
+                });
+        SUMMON_TRAILS.removeIf(trail -> hearthId.equals(trail.hearthId()));
     }
 
     public static String describe(ServerLevel level) {
@@ -228,12 +263,36 @@ public final class HeartScavengerWaveManager {
         level.playSound(null, anchor,
                 ModSounds.THAE_IVEN_HEART_SWARM_WAIL.get(),
                 SoundSource.HOSTILE, 7.0F, 0.58F);
-        level.sendParticles(ParticleTypes.SCULK_SOUL,
-                anchor.getX() + 0.5D, anchor.getY() + 30.0D, anchor.getZ() + 0.5D,
-                72, 8.0D, 7.0D, 8.0D, 0.12D);
+        level.players().stream()
+                .filter(player -> participatingPlayer(player, anchor))
+                .forEach(player -> sendSwarmBeacon(level, player, anchor));
         FrozenDawn.LOGGER.info(
                 "Heart {} became LIVE and called the exposed archive swarm",
                 shortId(hearth.id()));
+    }
+
+    private static void sendSwarmBeacon(
+            ServerLevel level, ServerPlayer player, BlockPos anchor) {
+        double x = anchor.getX() + 0.5D;
+        double y = anchor.getY() + 30.0D;
+        double z = anchor.getZ() + 0.5D;
+        level.sendParticles(player, ParticleTypes.FLASH, true,
+                x, y, z, 2, 0.5D, 0.5D, 0.5D, 0.0D);
+        level.sendParticles(player, ParticleTypes.SCULK_SOUL, true,
+                x, y, z, 96, 6.5D, 5.0D, 6.5D, 0.16D);
+        for (int height = 0; height <= 42; height += 2) {
+            level.sendParticles(player, ParticleTypes.END_ROD, true,
+                    x, y + height, z,
+                    2, 0.18D, 0.30D, 0.18D, 0.015D);
+        }
+        for (int ray = 0; ray < 24; ray++) {
+            double angle = ray * Math.PI * 2.0D / 24.0D;
+            double rise = 0.10D + (ray % 4) * 0.035D;
+            level.sendParticles(player, ParticleTypes.SCULK_SOUL, true,
+                    x, y, z, 0,
+                    Math.cos(angle) * 0.42D, rise,
+                    Math.sin(angle) * 0.42D, 1.0D);
+        }
     }
 
     @Nullable
@@ -350,13 +409,15 @@ public final class HeartScavengerWaveManager {
         LivingEntity focus = conducting ? focusTarget(targets, anchor) : null;
         if (successor != null) {
             List<Mob> links = conducting
-                    ? scavengers.stream()
+                    ? supportCandidates(level, hearth, anchor).stream()
+                    .filter(Mob.class::isInstance)
+                    .map(Mob.class::cast)
                     .filter(Mob::isAlive)
                     .sorted(Comparator.comparingDouble(successor::distanceToSqr))
-                    .limit(3)
+                    .limit(HeartSuccessorPolicy.MAX_SUPPORT_LINKS)
                     .toList()
                     : List.of();
-            successor.setLinkTargetIds(links);
+            replaceSupportLinks(level, successor, links, conducting);
         }
         for (Mob scavenger : scavengers) {
             LivingEntity target = focus != null ? focus : nearestTarget(scavenger, targets);
@@ -398,6 +459,7 @@ public final class HeartScavengerWaveManager {
             BlockPos anchor, HeartSuccessorEntity successor) {
         long now = level.getGameTime();
         if (successor.isDying()) {
+            clearSupportBuffs(level, successor);
             if (successor.deathTicks() >= HeartSuccessorPolicy.DEATH_TICKS) {
                 int nextGeneration = successor.generation() + 1;
                 level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
@@ -413,12 +475,14 @@ public final class HeartScavengerWaveManager {
         steerSuccessor(level, hearth, anchor, successor);
         if (now - successor.assemblyStartGameTime()
                 < HeartSuccessorPolicy.ASSEMBLY_TICKS) {
+            clearSupportBuffs(level, successor);
             successor.setMode(HeartSuccessorPolicy.Mode.ASSEMBLING);
             successor.setHealTargetId(-1);
             successor.clearLinkTargets();
             return;
         }
         if (successor.staggerTicks() > 0) {
+            clearSupportBuffs(level, successor);
             successor.tickStagger();
             successor.setMode(HeartSuccessorPolicy.Mode.STAGGERED);
             successor.setHealTargetId(-1);
@@ -427,10 +491,30 @@ public final class HeartScavengerWaveManager {
         }
         long activeTicks = now - successor.assemblyStartGameTime()
                 - HeartSuccessorPolicy.ASSEMBLY_TICKS;
-        HeartSuccessorPolicy.Mode desired = HeartSuccessorPolicy.mode(activeTicks);
-        if (successor.mode() != desired) {
-            successor.setMode(desired);
+        LivingEntity currentHealTarget = level.getEntity(successor.healTargetId())
+                instanceof LivingEntity living && validHealTarget(successor, living)
+                ? living : null;
+        LivingEntity emergencyTarget = emergencyHealTarget(
+                level, hearth, anchor, successor);
+        boolean continueHealing = currentHealTarget != null
+                && HeartSuccessorPolicy.shouldContinueHealing(
+                currentHealTarget.getHealth(), currentHealTarget.getMaxHealth());
+        HeartSuccessorPolicy.Mode desired = emergencyTarget != null || continueHealing
+                ? HeartSuccessorPolicy.Mode.HEALING
+                : HeartSuccessorPolicy.mode(activeTicks);
+        if (emergencyTarget != null && emergencyTarget != currentHealTarget) {
+            successor.setHealTargetId(emergencyTarget.getId());
+        } else if (!continueHealing && emergencyTarget == null
+                && desired != HeartSuccessorPolicy.Mode.HEALING) {
             successor.setHealTargetId(-1);
+        }
+        if (successor.mode() != desired) {
+            clearSupportBuffs(level, successor);
+            successor.setMode(desired);
+            if (desired != HeartSuccessorPolicy.Mode.HEALING) {
+                successor.setHealTargetId(-1);
+                successor.clearLinkTargets();
+            }
             level.playSound(null, successor.blockPosition(),
                     desired == HeartSuccessorPolicy.Mode.CONDUCTING
                             ? ModSounds.HEART_SUCCESSOR_CONDUCT.get()
@@ -456,10 +540,7 @@ public final class HeartScavengerWaveManager {
                 instanceof LivingEntity living && validHealTarget(successor, living)
                 ? living : null;
         if (target == null) {
-            List<LivingEntity> candidates = new ArrayList<>(
-                    encounterTargets(level, hearth, anchor));
-            activeScavengers(level, hearth.id(), anchor).forEach(candidates::add);
-            target = candidates.stream()
+            target = supportCandidates(level, hearth, anchor).stream()
                     .filter(candidate -> validHealTarget(successor, candidate))
                     .min(Comparator.comparingDouble(
                             candidate -> candidate.getHealth() / candidate.getMaxHealth()))
@@ -467,9 +548,11 @@ public final class HeartScavengerWaveManager {
             successor.setHealTargetId(target == null ? -1 : target.getId());
         }
         if (target == null) {
+            clearSupportBuffs(level, successor);
             successor.clearLinkTargets();
             return;
         }
+        clearSupportBuffs(level, successor);
         successor.setLinkTargetIds(List.of(target));
         successor.getLookControl().setLookAt(target, 45.0F, 45.0F);
         if (level.getGameTime() % 20L == 0L) {
@@ -483,10 +566,23 @@ public final class HeartScavengerWaveManager {
 
     private static boolean validHealTarget(
             HeartSuccessorEntity successor, LivingEntity candidate) {
-        return candidate.isAlive() && candidate != successor
+        return candidate instanceof Mob && candidate.isAlive() && candidate != successor
                 && candidate.getHealth() + 0.05F < candidate.getMaxHealth()
                 && candidate.distanceToSqr(successor) <= 64.0D * 64.0D
                 && successor.hasLineOfSight(candidate);
+    }
+
+    @Nullable
+    private static LivingEntity emergencyHealTarget(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
+            BlockPos anchor, HeartSuccessorEntity successor) {
+        return supportCandidates(level, hearth, anchor).stream()
+                .filter(candidate -> validHealTarget(successor, candidate))
+                .filter(candidate -> HeartSuccessorPolicy.needsEmergencyHealing(
+                        candidate.getHealth(), candidate.getMaxHealth()))
+                .min(Comparator.comparingDouble(
+                        candidate -> candidate.getHealth() / candidate.getMaxHealth()))
+                .orElse(null);
     }
 
     @Nullable
@@ -577,6 +673,7 @@ public final class HeartScavengerWaveManager {
 
     private static void snapSuccessor(
             ServerLevel level, HeartSuccessorEntity successor) {
+        clearSupportBuffs(level, successor);
         level.playSound(null, successor.blockPosition(),
                 ModSounds.HEART_SUCCESSOR_SNAP.get(),
                 SoundSource.HOSTILE, 1.8F, 0.82F);
@@ -711,6 +808,83 @@ public final class HeartScavengerWaveManager {
             level.sendParticles(ParticleTypes.WAX_ON,
                     to.x, to.y, to.z,
                     2, 0.12D, 0.18D, 0.12D, 0.015D);
+        }
+    }
+
+    private static List<LivingEntity> supportCandidates(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
+            BlockPos anchor) {
+        List<LivingEntity> candidates = new ArrayList<>();
+        activeScavengers(level, hearth.id(), anchor).stream()
+                .filter(LivingEntity::isAlive)
+                .filter(HeartScavengerWaveManager::eligibleSupportTarget)
+                .forEach(candidates::add);
+        for (UUID residentId : hearth.combatRoster().keySet()) {
+            if (level.getEntity(residentId) instanceof Mob resident
+                    && resident.isAlive()
+                    && eligibleSupportTarget(resident)) {
+                candidates.add(resident);
+            }
+        }
+        return candidates;
+    }
+
+    private static boolean eligibleSupportTarget(LivingEntity target) {
+        return !(target instanceof FrostmiteEntity)
+                && target.getType() != ModEntities.SHADOW_FIGURE.get();
+    }
+
+    private static void replaceSupportLinks(
+            ServerLevel level, HeartSuccessorEntity successor,
+            List<? extends Mob> links, boolean buffing) {
+        clearSupportBuffs(level, successor);
+        successor.setLinkTargetIds(links);
+        if (buffing) {
+            links.forEach(HeartScavengerWaveManager::applySupportBuff);
+        }
+    }
+
+    private static void applySupportBuff(LivingEntity target) {
+        AttributeInstance movement = target.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movement != null) {
+            movement.addOrUpdateTransientModifier(new AttributeModifier(
+                    SUPPORT_SPEED_ID,
+                    HeartSuccessorPolicy.SUPPORT_SPEED_BONUS,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+        AttributeInstance damage = target.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (damage != null) {
+            damage.addOrUpdateTransientModifier(new AttributeModifier(
+                    SUPPORT_DAMAGE_ID,
+                    HeartSuccessorPolicy.SUPPORT_DAMAGE_BONUS,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+        target.addEffect(new MobEffectInstance(
+                MobEffects.GLOWING,
+                TARGET_REFRESH_TICKS + 4,
+                0,
+                true,
+                false,
+                false));
+    }
+
+    private static void clearSupportBuffs(
+            ServerLevel level, HeartSuccessorEntity successor) {
+        for (int entityId : successor.linkTargetIds()) {
+            if (level.getEntity(entityId) instanceof LivingEntity target) {
+                clearSupportBuff(target);
+            }
+        }
+    }
+
+    private static void clearSupportBuff(LivingEntity target) {
+        AttributeInstance movement = target.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movement != null) {
+            movement.removeModifier(SUPPORT_SPEED_ID);
+        }
+        AttributeInstance damage = target.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (damage != null) {
+            damage.removeModifier(SUPPORT_DAMAGE_ID);
         }
     }
 

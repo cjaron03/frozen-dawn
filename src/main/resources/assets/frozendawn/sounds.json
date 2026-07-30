@@ -1232,6 +1232,55 @@
     "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_dont",
     "sounds": [ "frozendawn:entity/heart_successor/voice_dont" ]
   },
+  "entity.thae_iven_heart.maeve_erasure": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_erasure",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_death", "volume": 2.4, "pitch": 0.72 },
+      { "name": "minecraft:entity.allay.death", "type": "event", "volume": 1.8, "pitch": 0.48 },
+      { "name": "minecraft:entity.ghast.death", "type": "event", "volume": 1.15, "pitch": 0.62 },
+      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.6, "pitch": 0.42 },
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.2, "pitch": 0.50 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_break": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_break",
+    "sounds": [
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 2.2, "pitch": 0.38 },
+      { "name": "minecraft:entity.warden.death", "type": "event", "volume": 1.7, "pitch": 0.46 },
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.8, "pitch": 0.44 }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_forge": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_forge",
+    "sounds": [
+      { "name": "minecraft:block.beacon.activate", "type": "event", "volume": 1.6, "pitch": 0.48 },
+      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 2.0, "pitch": 0.74 },
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 1.35, "pitch": 0.62 }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_converge": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_converge",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/thae_iven_heart/last_witness_converge",
+        "volume": 1.65
+      }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_save": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_save",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/thae_iven_heart/last_witness_save",
+        "volume": 1.55
+      }
+    ]
+  },
   "ui.thaeven_interrupt": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.thaeven_interrupt",

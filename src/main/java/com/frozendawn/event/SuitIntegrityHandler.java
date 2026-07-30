@@ -247,6 +247,23 @@ public final class SuitIntegrityHandler {
         return EmergencyRefillResult.SUCCESS;
     }
 
+    /** A Last Witness rescue is a complete suit recovery, not an O2-only refill. */
+    public static void stabilizeAfterRescue(ServerPlayer player, float o2Fraction) {
+        if (player.isUsingItem()
+                && player.getUseItem().getItem() instanceof SuitPatchItem) {
+            player.stopUsingItem();
+        }
+        SuitIntegrity state = player.getData(ModAttachments.SUIT_INTEGRITY);
+        state.resetAfterDeath();
+
+        int maxO2 = getTotalMaxO2(player);
+        if (maxO2 > 0) {
+            refillO2(player, Math.round(maxO2 * Math.max(0.0F, o2Fraction)));
+        }
+        state.setO2Ticks(getTotalO2(player));
+        sync(player, state, SuitIntegrityPayload.NONE);
+    }
+
     public static boolean isWearingSealedSuit(Player player) {
         return MobFreezeHandler.getFullSetTier(player) == 3;
     }

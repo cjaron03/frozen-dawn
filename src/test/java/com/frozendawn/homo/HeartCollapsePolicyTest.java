@@ -25,4 +25,14 @@ class HeartCollapsePolicyTest {
         assertEquals(HeartCollapsePolicy.DORMANT_START,
                 HeartCollapsePolicy.elapsedAtStageStart(HeartCollapseStage.DORMANT));
     }
+
+    @Test
+    void maeveAssemblesOnlyDuringSettleAndPersistsAfterward() {
+        assertEquals(0.0F, HeartCollapsePolicy.maeveFormationProgress(
+                HeartCollapseStage.FALL, 1.0F));
+        assertEquals(0.5F, HeartCollapsePolicy.maeveFormationProgress(
+                HeartCollapseStage.SETTLE, 0.5F));
+        assertEquals(1.0F, HeartCollapsePolicy.maeveFormationProgress(
+                HeartCollapseStage.DORMANT, 1.0F));
+    }
 }

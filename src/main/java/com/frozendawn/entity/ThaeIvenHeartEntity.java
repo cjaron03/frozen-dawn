@@ -2,6 +2,7 @@ package com.frozendawn.entity;
 
 import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HeartCollapseStage;
+import com.frozendawn.homo.HeartCollapsePolicy;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -48,6 +49,9 @@ public final class ThaeIvenHeartEntity extends Entity {
     private static final EntityDataAccessor<Boolean> DATA_MAEVE_EXPOSED =
             SynchedEntityData.defineId(ThaeIvenHeartEntity.class,
                     EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> DATA_MAEVE_ERASURE_PROGRESS =
+            SynchedEntityData.defineId(ThaeIvenHeartEntity.class,
+                    EntityDataSerializers.FLOAT);
 
     public ThaeIvenHeartEntity(
             EntityType<? extends ThaeIvenHeartEntity> type, Level level) {
@@ -71,6 +75,7 @@ public final class ThaeIvenHeartEntity extends Entity {
         builder.define(DATA_COLLAPSE_STAGE, HeartCollapseStage.NONE.ordinal());
         builder.define(DATA_COLLAPSE_PROGRESS, 0.0F);
         builder.define(DATA_MAEVE_EXPOSED, false);
+        builder.define(DATA_MAEVE_ERASURE_PROGRESS, 0.0F);
     }
 
     public void configure(
@@ -84,7 +89,8 @@ public final class ThaeIvenHeartEntity extends Entity {
             int activeNodeDamage,
             HeartCollapseStage collapseStage,
             float collapseProgress,
-            boolean maeveExposed) {
+            boolean maeveExposed,
+            float maeveErasureProgress) {
         entityData.set(DATA_HEARTH_ID, Optional.ofNullable(hearthId));
         entityData.set(DATA_LAYOUT_SEED, layoutSeed);
         entityData.set(DATA_ANCHOR, anchor);
@@ -100,6 +106,8 @@ public final class ThaeIvenHeartEntity extends Entity {
         entityData.set(DATA_COLLAPSE_PROGRESS,
                 net.minecraft.util.Mth.clamp(collapseProgress, 0.0F, 1.0F));
         entityData.set(DATA_MAEVE_EXPOSED, maeveExposed);
+        entityData.set(DATA_MAEVE_ERASURE_PROGRESS,
+                net.minecraft.util.Mth.clamp(maeveErasureProgress, 0.0F, 1.0F));
     }
 
     public Optional<UUID> hearthId() {
@@ -150,6 +158,18 @@ public final class ThaeIvenHeartEntity extends Entity {
         return entityData.get(DATA_MAEVE_EXPOSED);
     }
 
+    public float maeveFormationProgress() {
+        if (maeveExposed()) {
+            return 1.0F;
+        }
+        return HeartCollapsePolicy.maeveFormationProgress(
+                collapseStage(), collapseProgress());
+    }
+
+    public float maeveErasureProgress() {
+        return entityData.get(DATA_MAEVE_ERASURE_PROGRESS);
+    }
+
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance <= 512.0D * 512.0D;
@@ -169,7 +189,8 @@ public final class ThaeIvenHeartEntity extends Entity {
                 tag.getInt("ActiveNodeDamage"),
                 HeartCollapseStage.fromName(tag.getString("CollapseStage")),
                 tag.getFloat("CollapseProgress"),
-                tag.getBoolean("MaeveExposed"));
+                tag.getBoolean("MaeveExposed"),
+                tag.getFloat("MaeveErasureProgress"));
     }
 
     @Override
@@ -185,5 +206,6 @@ public final class ThaeIvenHeartEntity extends Entity {
         tag.putString("CollapseStage", collapseStage().name());
         tag.putFloat("CollapseProgress", collapseProgress());
         tag.putBoolean("MaeveExposed", maeveExposed());
+        tag.putFloat("MaeveErasureProgress", maeveErasureProgress());
     }
 }

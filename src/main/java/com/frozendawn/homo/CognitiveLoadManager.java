@@ -104,6 +104,18 @@ public final class CognitiveLoadManager {
         return state.load();
     }
 
+    public static void clearForHeartErasure(ServerLevel level) {
+        for (ServerPlayer player : level.players()) {
+            CognitiveLoadState state = player.getData(ModAttachments.COGNITIVE_LOAD);
+            state.setLoad(0.0F);
+            state.clearTransientEffects();
+            state.setRememberedHotbarSlot(-1);
+            state.setLapseCooldownTicks(0);
+            sync(player, 0.0F, BlockPos.ZERO, false,
+                    CognitiveLoadPayload.EVENT_TAKEOVER_END, true);
+        }
+    }
+
     public static String describe(ServerPlayer player) {
         CognitiveLoadState state = player.getData(ModAttachments.COGNITIVE_LOAD);
         HeartContext heart = heartContext(player.serverLevel());

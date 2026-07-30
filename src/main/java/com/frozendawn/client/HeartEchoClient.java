@@ -31,7 +31,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class HeartEchoClient {
     private static final double GAZE_DOT = Math.cos(Math.toRadians(8.0D));
     private static final double ECHO_HIT_RADIUS = 0.9D;
-    private static final int FILAMENT_TICKS = 30;
+    private static final int FILAMENT_TICKS = HeartEchoPolicy.NODE_EXPOSURE_TICKS;
 
     private static ShadowFigureEntity echo;
     private static Vec3 echoPosition = Vec3.ZERO;

@@ -19,9 +19,13 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 public final class HearthBoundaryEffects {
     private static final int PULSE_DURATION_TICKS = 34;
     private static final int SHAKE_DURATION_TICKS = 18;
+    private static final int MAEVE_SHAKE_DURATION_TICKS = 52;
+    private static final int RESCUE_DURATION_TICKS = 56;
 
     private static int pulseTicks;
     private static int shakeTicks;
+    private static int shakeDuration = SHAKE_DURATION_TICKS;
+    private static int rescueTicks;
 
     private HearthBoundaryEffects() {
     }
@@ -36,12 +40,27 @@ public final class HearthBoundaryEffects {
                     ModSounds.HEARTH_BOUNDARY_WARNING.get(), 0.92F, 1.15F));
             return;
         }
+        if (payload.effectType() == HearthBoundaryEffectPayload.MAEVE_BREAK) {
+            pulseTicks = PULSE_DURATION_TICKS;
+            shakeTicks = MAEVE_SHAKE_DURATION_TICKS;
+            shakeDuration = MAEVE_SHAKE_DURATION_TICKS;
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.LAST_WITNESS_RESCUE) {
+            rescueTicks = RESCUE_DURATION_TICKS;
+            shakeTicks = 24;
+            shakeDuration = 24;
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.LAST_WITNESS_SAVE.get(), 1.0F, 1.0F));
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }
 
         pulseTicks = PULSE_DURATION_TICKS;
         shakeTicks = SHAKE_DURATION_TICKS;
+        shakeDuration = SHAKE_DURATION_TICKS;
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
                 ModSounds.HEARTH_BOUNDARY_ORSATHAE.get(), 0.95F, 1.25F));
         minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
@@ -49,6 +68,9 @@ public final class HearthBoundaryEffects {
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        if (rescueTicks > 0) {
+            renderLastWitnessRescue(graphics);
+        }
         if (pulseTicks <= 0) {
             return;
         }
@@ -81,6 +103,9 @@ public final class HearthBoundaryEffects {
         if (shakeTicks > 0) {
             shakeTicks--;
         }
+        if (rescueTicks > 0) {
+            rescueTicks--;
+        }
     }
 
     @SubscribeEvent
@@ -89,12 +114,57 @@ public final class HearthBoundaryEffects {
         if (shakeTicks <= 0 || minecraft.level == null) {
             return;
         }
-        float strength = shakeTicks / (float) SHAKE_DURATION_TICKS;
+        float strength = shakeTicks / (float) Math.max(1, shakeDuration);
+        float magnitude = shakeDuration == MAEVE_SHAKE_DURATION_TICKS
+                ? 2.35F : rescueTicks > 0 ? 0.55F : 1.0F;
         double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);
         float yaw = (float) (Math.cos(time * 4.9D) * 0.92D * strength);
-        event.setPitch(event.getPitch() + pitch);
-        event.setYaw(event.getYaw() + yaw);
+        event.setPitch(event.getPitch() + pitch * magnitude);
+        event.setYaw(event.getYaw() + yaw * magnitude);
+    }
+
+    private static void renderLastWitnessRescue(GuiGraphics graphics) {
+        int elapsed = RESCUE_DURATION_TICKS - rescueTicks;
+        float arrival = Mth.clamp(elapsed / 12.0F, 0.0F, 1.0F);
+        float release = Mth.clamp(rescueTicks / 32.0F, 0.0F, 1.0F);
+        float strength = Math.min(arrival, release);
+        int width = graphics.guiWidth();
+        int height = graphics.guiHeight();
+        int centerX = width / 2;
+        int centerY = height / 2;
+
+        graphics.fill(0, 0, width, height,
+                argb(Math.round(112.0F * strength), 0x00040B12));
+        for (int ring = 0; ring < 9; ring++) {
+            float phase = Mth.clamp(
+                    strength * 1.3F - ring * 0.055F, 0.0F, 1.0F);
+            int halfWidth = Math.max(3,
+                    Math.round((width * 0.46F - ring * 13.0F) * phase));
+            int halfHeight = Math.max(3,
+                    Math.round((height * 0.42F - ring * 8.0F) * phase));
+            int thickness = ring % 3 == 0 ? 3 : 1;
+            int alpha = Math.round((145.0F - ring * 8.0F) * strength);
+            int color = argb(alpha, ring % 2 == 0 ? 0x0016C7DF : 0x000A4A67);
+            graphics.fill(centerX - halfWidth, centerY - halfHeight,
+                    centerX + halfWidth, centerY - halfHeight + thickness, color);
+            graphics.fill(centerX - halfWidth, centerY + halfHeight - thickness,
+                    centerX + halfWidth, centerY + halfHeight, color);
+            graphics.fill(centerX - halfWidth, centerY - halfHeight,
+                    centerX - halfWidth + thickness, centerY + halfHeight, color);
+            graphics.fill(centerX + halfWidth - thickness, centerY - halfHeight,
+                    centerX + halfWidth, centerY + halfHeight, color);
+        }
+        int coreAlpha = Math.round(220.0F * strength);
+        int coreColor = argb(coreAlpha, 0x0068EFFF);
+        graphics.fill(centerX - 1, centerY - 28,
+                centerX + 2, centerY + 29, coreColor);
+        graphics.fill(centerX - 18, centerY - 2,
+                centerX + 19, centerY + 2, coreColor);
+        graphics.fill(centerX - 10, centerY - 13,
+                centerX + 11, centerY - 10, coreColor);
+        graphics.fill(centerX - 10, centerY + 10,
+                centerX + 11, centerY + 13, coreColor);
     }
 
     private static int argb(int alpha, int rgb) {

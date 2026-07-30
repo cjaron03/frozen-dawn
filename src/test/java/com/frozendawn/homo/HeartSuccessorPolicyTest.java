@@ -25,4 +25,21 @@ class HeartSuccessorPolicyTest {
         assertEquals(HeartSuccessorPolicy.Mode.HEALING,
                 HeartSuccessorPolicy.mode(HeartSuccessorPolicy.CONDUCT_TICKS));
     }
+
+    @Test
+    void injuredSupportInterruptsConductingUntilStable() {
+        assertTrue(HeartSuccessorPolicy.needsEmergencyHealing(7.0F, 20.0F));
+        assertFalse(HeartSuccessorPolicy.needsEmergencyHealing(7.1F, 20.0F));
+        assertTrue(HeartSuccessorPolicy.shouldContinueHealing(14.3F, 20.0F));
+        assertFalse(HeartSuccessorPolicy.shouldContinueHealing(14.5F, 20.0F));
+        assertEquals(3, HeartSuccessorPolicy.MAX_SUPPORT_LINKS);
+    }
+
+    @Test
+    void supportTetherReducesIncomingDamageByOneQuarter() {
+        assertEquals(15.0F,
+                HeartSuccessorPolicy.mitigateSupportedDamage(20.0F), 0.0001F);
+        assertEquals(0.0F,
+                HeartSuccessorPolicy.mitigateSupportedDamage(-4.0F), 0.0001F);
+    }
 }

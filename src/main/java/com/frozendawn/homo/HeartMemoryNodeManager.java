@@ -50,8 +50,10 @@ public final class HeartMemoryNodeManager {
             return;
         }
         float load = CognitiveLoadManager.getLoad(player);
-        if (load + 0.001F < HeartLattice.requiredLoad(requestedNode)
-                && !HeartEchoManager.isNodeExposed(player, requestedNode)) {
+        boolean echoExposed = HeartEchoManager.isNodeExposed(
+                player, requestedNode);
+        if (!HeartLattice.isNodeHittable(
+                requestedNode, load, echoExposed)) {
             return;
         }
         if (!Float.isFinite(renderedLoad)
@@ -152,7 +154,8 @@ public final class HeartMemoryNodeManager {
                     result.destroyed() && nodeIndex == HeartLattice.NODE_COUNT - 1
                             ? HeartCollapseStage.RUPTURE : heart.collapseStage(),
                     0.0F,
-                    false);
+                    false,
+                    0.0F);
         }
 
         for (ServerPlayer witness : level.players()) {

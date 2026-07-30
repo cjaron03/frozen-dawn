@@ -12,6 +12,8 @@ public record HearthBoundaryEffectPayload(int effectType)
         implements CustomPacketPayload {
     public static final int WARNING = 0;
     public static final int ORSATHAE = 1;
+    public static final int MAEVE_BREAK = 2;
+    public static final int LAST_WITNESS_RESCUE = 3;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -29,6 +31,14 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload orsathae() {
         return new HearthBoundaryEffectPayload(ORSATHAE);
+    }
+
+    public static HearthBoundaryEffectPayload maeveBreak() {
+        return new HearthBoundaryEffectPayload(MAEVE_BREAK);
+    }
+
+    public static HearthBoundaryEffectPayload lastWitnessRescue() {
+        return new HearthBoundaryEffectPayload(LAST_WITNESS_RESCUE);
     }
 
     @Override

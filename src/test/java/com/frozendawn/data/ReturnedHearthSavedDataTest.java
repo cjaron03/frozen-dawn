@@ -686,6 +686,45 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void maeveErasureIsDeliberatePersistentAndFinal() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID eraser = UUID.randomUUID();
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        assertFalse(state.startHeartMaeveErasure(major.id(), 6100L, eraser));
+        destroyAllHeartNodes(state, major.id());
+        assertTrue(state.startHeartCollapse(major.id(), 6200L));
+        assertTrue(state.completeHeartCollapse(major.id()));
+
+        assertTrue(state.startHeartMaeveErasure(major.id(), 7000L, eraser));
+        assertFalse(state.startHeartMaeveErasure(major.id(), 7001L, eraser));
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(7000L, restored.heartMaeveErasureStartGameTime());
+        assertEquals(eraser, restored.heartMaeveEraserId().orElseThrow());
+        assertFalse(restored.heartMaeveErasureComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertTrue(restored.heartMusicActive());
+
+        assertTrue(loaded.completeHeartMaeveErasure(restored.id()));
+        assertTrue(restored.heartMaeveErasureComplete());
+        assertFalse(restored.heartMaeveExposed());
+        assertFalse(restored.heartMusicActive());
+        assertTrue(restored.heartEntityId().isEmpty());
+        assertTrue(loaded.markHeartFinalAdvancementGranted(restored.id()));
+        assertFalse(loaded.markHeartFinalAdvancementGranted(restored.id()));
+
+        assertTrue(loaded.resetHeartMaeveErasureForDebug(restored.id()));
+        assertEquals(-1L, restored.heartMaeveErasureStartGameTime());
+        assertFalse(restored.heartMaeveErasureComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertFalse(restored.heartFinalAdvancementGranted());
+        assertTrue(restored.heartMusicActive());
+    }
+
+    @Test
     void resettingHeartNodesAlsoResetsCollapseForAnotherSmokePass() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);

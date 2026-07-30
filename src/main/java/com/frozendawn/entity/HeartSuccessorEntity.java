@@ -365,7 +365,8 @@ public final class HeartSuccessorEntity extends PathfinderMob {
             setStaggerTicks(HeartSuccessorPolicy.STAGGER_TICKS);
             setMode(HeartSuccessorPolicy.Mode.STAGGERED);
             setHealTargetId(-1);
-            clearLinkTargets();
+            // The server director clears the linked targets after removing its
+            // transient buffs; retaining the ids here prevents leaked modifiers.
             if (level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.SOUL,
                         getX(), getY() + 1.4D, getZ(), 34,
@@ -384,7 +385,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         setMode(HeartSuccessorPolicy.Mode.STAGGERED);
         setStaggerTicks(0);
         setHealTargetId(-1);
-        clearLinkTargets();
+        // Keep target ids until the server director strips their support buffs.
         setDeltaMovement(Vec3.ZERO);
         if (level() instanceof ServerLevel serverLevel) {
             serverLevel.playSound(null, blockPosition(),

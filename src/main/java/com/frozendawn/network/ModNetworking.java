@@ -12,6 +12,7 @@ import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HeartEchoManager;
 import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
@@ -250,6 +251,15 @@ public class ModNetworking {
                     if (context.player() instanceof ServerPlayer sp) {
                         HeartMemoryNodeManager.handleStrike(
                                 sp, payload.nodeIndex(), payload.renderedLoad());
+                    }
+                })
+        );
+        registrar.playToServer(
+                HeartMaeveErasePayload.TYPE,
+                HeartMaeveErasePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer sp) {
+                        HeartMaeveErasureManager.handlePulse(sp);
                     }
                 })
         );

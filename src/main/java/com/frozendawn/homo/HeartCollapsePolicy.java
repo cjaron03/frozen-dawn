@@ -45,6 +45,18 @@ public final class HeartCollapsePolicy {
         };
     }
 
+    public static float maeveFormationProgress(
+            HeartCollapseStage stage, float stageProgress) {
+        return switch (stage) {
+            case SETTLE -> {
+                float progress = Mth.clamp(stageProgress, 0.0F, 1.0F);
+                yield progress * progress * (3.0F - 2.0F * progress);
+            }
+            case DORMANT -> 1.0F;
+            default -> 0.0F;
+        };
+    }
+
     private static float progress(long elapsed, int duration) {
         return Mth.clamp(elapsed / (float) Math.max(1, duration), 0.0F, 1.0F);
     }
