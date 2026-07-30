@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 public final class HeartSuccessorPolicy {
     public static final int ASSEMBLY_TICKS = 100;
     public static final int RESPAWN_TICKS = 600;
+    public static final int DEATH_TICKS = 60;
     public static final int STAGGER_TICKS = 180;
     public static final int CONDUCT_TICKS = 160;
     public static final int HEAL_TICKS = 120;

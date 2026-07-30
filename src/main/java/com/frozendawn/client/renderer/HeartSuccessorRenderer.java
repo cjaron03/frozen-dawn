@@ -50,13 +50,18 @@ public final class HeartSuccessorRenderer extends EntityRenderer<HeartSuccessorE
                 0.0F, 1.0F);
         float stride = time * (0.16F + flightSpeed * 0.24F);
         float walk = Mth.sin(stride) * (0.07F + flightSpeed * 0.10F);
+        float breath = Mth.sin(time * 0.075F) * 0.022F;
+        float reach = Mth.sin(time * 0.105F) * (0.025F + flightSpeed * 0.035F);
+        float verticalLean = Mth.clamp(
+                (float) entity.getDeltaMovement().y * 18.0F, -6.0F, 6.0F);
+        float death = entity.deathProgress(partialTick);
 
         poseStack.pushPose();
         poseStack.translate(
-                0.0D,
+                death > 0.0F ? Mth.sin(time * 2.6F) * death * 0.07F : 0.0D,
                 Mth.sin(time * 0.055F) * 0.11F
                         + Math.abs(Mth.sin(stride)) * flightSpeed * 0.035F,
-                0.0D);
+                death > 0.0F ? Mth.cos(time * 2.2F) * death * 0.06F : 0.0D);
         if (entity.mode() == HeartSuccessorPolicy.Mode.STAGGERED) {
             poseStack.translate(
                     Mth.sin(time * 0.9F) * 0.055F,
@@ -66,9 +71,11 @@ public final class HeartSuccessorRenderer extends EntityRenderer<HeartSuccessorE
                     8.0F + Mth.sin(time * 0.7F) * 3.5F));
         }
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-flightSpeed * 10.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(
+                -flightSpeed * 10.0F + verticalLean + death * 18.0F));
         poseStack.mulPose(Axis.ZP.rotationDegrees(
-                Mth.sin(time * 0.035F) * (1.2F + flightSpeed * 1.8F)));
+                Mth.sin(time * 0.035F) * (1.2F + flightSpeed * 1.8F)
+                        + death * 24.0F));
         poseStack.scale(scale, scale, scale);
 
         Matrix4f matrix = poseStack.last().pose();
@@ -80,39 +87,66 @@ public final class HeartSuccessorRenderer extends EntityRenderer<HeartSuccessorE
             float x = Mth.lerp(partProgress, part.sourceX(), part.x());
             float y = Mth.lerp(partProgress, part.sourceY(), part.y());
             float z = Mth.lerp(partProgress, part.sourceZ(), part.z());
+            float fracture = Mth.clamp(death * 1.35F - index * 0.045F,
+                    0.0F, 1.0F);
+            if (index == 0) {
+                x += Mth.sin(time * 0.045F) * 0.018F;
+                y += breath;
+            } else if (index == 1) {
+                x -= Mth.sin(time * 0.045F) * 0.012F;
+                y -= breath * 0.45F;
+            } else if (index == 2) {
+                x += Mth.sin(time * 0.032F) * 0.025F;
+                y += breath * 0.65F;
+            }
             if (index == 7 || index == 8) {
-                z += (index == 7 ? walk : -walk);
+                z += (index == 7 ? walk : -walk) + flightSpeed * 0.10F;
                 y += Math.abs(walk) * (0.10F + flightSpeed * 0.16F);
             } else if (index == 3 || index == 4 || index == 5 || index == 6) {
                 z += (index <= 4 ? -walk : walk)
                         * (0.45F + flightSpeed * 0.35F);
+                y += (index <= 4 ? reach : -reach);
+                x += Mth.sin(time * 0.052F + index * 0.8F) * 0.018F;
             }
             if (entity.mode() == HeartSuccessorPolicy.Mode.CONDUCTING
                     && (index == 5 || index == 6)) {
                 x += index == 5 ? 0.16F : 0.28F;
                 y += index == 5 ? 0.30F : 0.66F;
                 z -= index == 5 ? 0.10F : 0.22F;
+            } else if (entity.mode() == HeartSuccessorPolicy.Mode.HEALING
+                    && (index == 3 || index == 4)) {
+                x -= index == 3 ? 0.10F : 0.16F;
+                y += index == 3 ? 0.08F : 0.18F;
+                z -= index == 3 ? 0.09F : 0.20F;
             }
+            x += part.sourceX() * 0.11F * fracture;
+            y += (0.16F + index * 0.045F) * fracture;
+            z += part.sourceZ() * 0.10F * fracture;
+            float partAlpha = alpha * (0.55F + partProgress * 0.45F)
+                    * (1.0F - fracture * 0.94F);
             box(matrix, shell, x, y, z, part.hx(), part.hy(), part.hz(),
                     index == 9 ? 0.16F : 0.025F,
                     index == 9 ? 0.27F : 0.055F,
                     index == 9 ? 0.34F : 0.12F,
-                    alpha * (0.55F + partProgress * 0.45F));
+                    partAlpha);
         }
 
         // Half-mask and the single channel eye.
         box(matrix, shell, -0.14F, 2.28F, -0.315F,
-                0.16F, 0.24F, 0.025F, 0.035F, 0.07F, 0.13F, alpha);
+                0.16F, 0.24F, 0.025F, 0.035F, 0.07F, 0.13F,
+                alpha * (1.0F - death * 0.9F));
         VertexConsumer glow = buffers.getBuffer(RenderType.lightning());
         float eyePulse = 0.84F + 0.16F * Mth.sin(time * 0.13F);
         box(matrix, glow, -0.14F, 2.31F, -0.35F,
                 0.095F, 0.075F, 0.020F,
-                0.18F, 0.90F, 1.0F, eyePulse * ease);
+                0.18F, 0.90F, 1.0F,
+                eyePulse * ease * (1.0F - death * 0.92F));
 
         // Last Wall seam through the unfinished torso.
         box(matrix, glow, 0.05F, 1.48F, -0.205F,
                 0.030F, 0.34F, 0.021F,
-                0.08F, 0.55F, 0.92F, alpha * 0.78F);
+                0.08F, 0.55F, 0.92F,
+                alpha * 0.78F * (1.0F - death * 0.9F));
 
         poseStack.popPose();
         super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);

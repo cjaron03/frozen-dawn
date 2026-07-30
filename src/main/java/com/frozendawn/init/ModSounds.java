@@ -336,6 +336,8 @@ public class ModSounds {
             "entity.heart_successor.stagger");
     public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_SNAP = register(
             "entity.heart_successor.snap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_DEATH = register(
+            "entity.heart_successor.death");
     public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_WHY = register(
             "entity.heart_successor.voice_why");
     public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_COLD = register(

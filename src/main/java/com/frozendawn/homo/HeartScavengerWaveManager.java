@@ -9,6 +9,7 @@ import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +33,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import org.joml.Vector3f;
 
 /** Server-owned scavenger waves and the node-bound Orsathae-vaen focal point. */
 public final class HeartScavengerWaveManager {
@@ -42,6 +44,8 @@ public final class HeartScavengerWaveManager {
     private static final int TARGET_REFRESH_TICKS = 10;
     private static final int SUMMON_TRAIL_TICKS = 18;
     private static final float NEAR_PLAYER_FROSTBITTEN_CHANCE = 0.22F;
+    private static final DustParticleOptions HEALING_TETHER_DUST =
+            new DustParticleOptions(new Vector3f(1.0F, 0.58F, 0.08F), 0.85F);
     private static final List<SummonTrail> SUMMON_TRAILS = new ArrayList<>();
 
     private static long wavesSpawned;
@@ -86,7 +90,7 @@ public final class HeartScavengerWaveManager {
             directEncounter(level, hearth, anchor, successor);
         }
         if (successor != null) {
-            tickSuccessor(level, hearth, anchor, successor);
+            tickSuccessor(level, data, hearth, anchor, successor);
         }
     }
 
@@ -389,9 +393,23 @@ public final class HeartScavengerWaveManager {
     }
 
     private static void tickSuccessor(
-            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth,
+            ServerLevel level, ReturnedHearthSavedData data,
+            ReturnedHearthSavedData.HearthRecord hearth,
             BlockPos anchor, HeartSuccessorEntity successor) {
         long now = level.getGameTime();
+        if (successor.isDying()) {
+            if (successor.deathTicks() >= HeartSuccessorPolicy.DEATH_TICKS) {
+                int nextGeneration = successor.generation() + 1;
+                level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                        successor.getX(), successor.getY() + 1.2D, successor.getZ(),
+                        52, 1.1D, 1.7D, 1.1D, 0.13D);
+                data.scheduleHeartSuccessorRespawn(
+                        hearth.id(), nextGeneration,
+                        now + HeartSuccessorPolicy.RESPAWN_TICKS);
+                successor.discard();
+            }
+            return;
+        }
         steerSuccessor(level, hearth, anchor, successor);
         if (now - successor.assemblyStartGameTime()
                 < HeartSuccessorPolicy.ASSEMBLY_TICKS) {
@@ -505,7 +523,9 @@ public final class HeartScavengerWaveManager {
         }
 
         int boundNode = HeartSuccessorPolicy.boundNode(hearth.heartDestroyedNodeMask());
-        int generation = HeartSuccessorPolicy.generationForNode(boundNode);
+        int generation = Math.max(
+                HeartSuccessorPolicy.generationForNode(boundNode),
+                hearth.heartSuccessorGeneration());
         if (bound != null && bound.boundNode() != boundNode) {
             snapSuccessor(level, bound);
             data.scheduleHeartSuccessorRespawn(
@@ -520,7 +540,7 @@ public final class HeartScavengerWaveManager {
         if (bound == null) {
             bound = createSuccessor(level, data, hearth, anchor, boundNode, generation);
         }
-        if (bound != null) {
+        if (bound != null && !bound.isDying()) {
             orientTowardNearestPlayer(level, anchor, bound);
         }
         return bound;
@@ -606,13 +626,13 @@ public final class HeartScavengerWaveManager {
             away = new Vec3(1.0D, 0.0D, 0.0D);
         }
         away = away.normalize();
-        Vec3 side = new Vec3(-away.z, 0.0D, away.x);
         double standoff = support != null ? 4.5D : 8.0D;
-        double drift = Math.sin((level.getGameTime()
-                + hearth.heartLayoutSeed() % 251L) * 0.021D) * 2.2D;
-        Vec3 desired = focus.position()
-                .add(away.scale(standoff))
-                .add(side.scale(drift));
+        double horizontalDistance = successor.position().subtract(focus.position())
+                .multiply(1.0D, 0.0D, 1.0D).horizontalDistance();
+        Vec3 desired = horizontalDistance > standoff + 1.5D
+                || horizontalDistance < standoff - 1.0D
+                ? focus.position().add(away.scale(standoff))
+                : new Vec3(successor.getX(), focus.getY(), successor.getZ());
         desired = new Vec3(
                 desired.x,
                 Math.max(anchor.getY() + 1.25D,
@@ -626,6 +646,7 @@ public final class HeartScavengerWaveManager {
             Vec3 clamped = fromCenter.normalize().scale(28.0D);
             desired = new Vec3(center.x + clamped.x, desired.y, center.z + clamped.z);
         }
+        successor.turnToward(focus.getEyePosition());
         successor.steerToward(findOpenFlightPoint(level, desired));
     }
 
@@ -655,7 +676,7 @@ public final class HeartScavengerWaveManager {
         Vec3 node = HeartLattice.nodePosition(
                 successor.heartAnchor(), successor.layoutSeed(),
                 0.0F, successor.boundNode());
-        emitParticleTether(level, node, from);
+        emitParticleTether(level, node, from, false);
         for (int entityId : successor.linkTargetIds()) {
             if (!(level.getEntity(entityId) instanceof LivingEntity target)
                     || !target.isAlive()) {
@@ -663,20 +684,33 @@ public final class HeartScavengerWaveManager {
             }
             Vec3 to = target.position().add(
                     0.0D, target.getBbHeight() * 0.58D, 0.0D);
-            emitParticleTether(level, from, to);
+            boolean healing = successor.mode() == HeartSuccessorPolicy.Mode.HEALING
+                    && entityId == successor.healTargetId();
+            emitParticleTether(level, from, to, healing);
         }
     }
 
     private static void emitParticleTether(
-            ServerLevel level, Vec3 from, Vec3 to) {
+            ServerLevel level, Vec3 from, Vec3 to, boolean healing) {
         Vec3 delta = to.subtract(from);
-        int steps = 12;
+        int steps = healing ? 16 : 12;
         for (int step = 1; step <= steps; step++) {
             Vec3 point = from.add(delta.scale(step / (double) steps));
-            level.sendParticles(step % 3 == 0
-                            ? ParticleTypes.SNOWFLAKE : ParticleTypes.SCULK_SOUL,
-                    point.x, point.y, point.z,
-                    1, 0.012D, 0.012D, 0.012D, 0.0D);
+            if (healing) {
+                level.sendParticles(HEALING_TETHER_DUST,
+                        point.x, point.y, point.z,
+                        1, 0.018D, 0.018D, 0.018D, 0.0D);
+            } else {
+                level.sendParticles(step % 3 == 0
+                                ? ParticleTypes.SNOWFLAKE : ParticleTypes.SCULK_SOUL,
+                        point.x, point.y, point.z,
+                        1, 0.012D, 0.012D, 0.012D, 0.0D);
+            }
+        }
+        if (healing) {
+            level.sendParticles(ParticleTypes.WAX_ON,
+                    to.x, to.y, to.z,
+                    2, 0.12D, 0.18D, 0.12D, 0.015D);
         }
     }
 
@@ -689,10 +723,7 @@ public final class HeartScavengerWaveManager {
         if (player == null) {
             return;
         }
-        Vec3 delta = player.position().subtract(successor.position());
-        float yaw = (float) (Math.atan2(delta.z, delta.x) * 180.0D / Math.PI) - 90.0F;
-        successor.setYRot(yaw);
-        successor.setYHeadRot(yaw);
+        successor.turnToward(player.getEyePosition());
     }
 
     private static List<LivingEntity> encounterTargets(

@@ -10,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -53,6 +54,9 @@ public final class HeartSuccessorEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_STAGGER_TICKS =
             SynchedEntityData.defineId(HeartSuccessorEntity.class,
                     EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_DEATH_TICKS =
+            SynchedEntityData.defineId(HeartSuccessorEntity.class,
+                    EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_HEAL_TARGET_ID =
             SynchedEntityData.defineId(HeartSuccessorEntity.class,
                     EntityDataSerializers.INT);
@@ -73,7 +77,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
             EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         setNoGravity(true);
-        noPhysics = true;
+        noPhysics = false;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -100,6 +104,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         builder.define(DATA_FIELD_STRENGTH, 0.0F);
         builder.define(DATA_MODE, HeartSuccessorPolicy.Mode.ASSEMBLING.ordinal());
         builder.define(DATA_STAGGER_TICKS, 0);
+        builder.define(DATA_DEATH_TICKS, 0);
         builder.define(DATA_HEAL_TARGET_ID, -1);
         builder.define(DATA_LINK_TARGET_0, -1);
         builder.define(DATA_LINK_TARGET_1, -1);
@@ -166,6 +171,22 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         entityData.set(DATA_STAGGER_TICKS, Math.max(0, ticks));
     }
 
+    public int deathTicks() {
+        return entityData.get(DATA_DEATH_TICKS);
+    }
+
+    public boolean isDying() {
+        return deathTicks() > 0;
+    }
+
+    public float deathProgress(float partialTick) {
+        if (!isDying()) {
+            return 0.0F;
+        }
+        return Mth.clamp((deathTicks() + partialTick)
+                / HeartSuccessorPolicy.DEATH_TICKS, 0.0F, 1.0F);
+    }
+
     public int healTargetId() {
         return entityData.get(DATA_HEAL_TARGET_ID);
     }
@@ -206,13 +227,66 @@ public final class HeartSuccessorEntity extends PathfinderMob {
             setDeltaMovement(getDeltaMovement().scale(0.72D));
             return;
         }
-        double speed = net.minecraft.util.Mth.clamp(
+        double speed = Mth.clamp(
                 distance * 0.032D, 0.045D, 0.19D);
         Vec3 desired = delta.scale(speed / distance);
-        Vec3 steering = getDeltaMovement().scale(0.76D)
-                .add(desired.scale(0.24D));
+        Vec3 steering = getDeltaMovement().scale(0.84D)
+                .add(desired.scale(0.16D));
+        steering = collisionAwareMotion(steering, delta);
         setDeltaMovement(steering);
         hasImpulse = true;
+    }
+
+    public void turnToward(Vec3 target) {
+        if (target == null) {
+            return;
+        }
+        Vec3 delta = target.subtract(position());
+        if (delta.horizontalDistanceSqr() < 0.0001D) {
+            return;
+        }
+        float targetYaw = (float) (Math.atan2(delta.z, delta.x)
+                * 180.0D / Math.PI) - 90.0F;
+        float bodyYaw = Mth.approachDegrees(getYRot(), targetYaw, 4.0F);
+        setYRot(bodyYaw);
+        setYBodyRot(Mth.approachDegrees(yBodyRot, targetYaw, 3.0F));
+        setYHeadRot(Mth.approachDegrees(getYHeadRot(), targetYaw, 7.5F));
+    }
+
+    private Vec3 collisionAwareMotion(Vec3 motion, Vec3 targetDelta) {
+        if (pathClear(motion)) {
+            return motion;
+        }
+        Vec3 horizontal = targetDelta.multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.horizontalDistanceSqr() < 0.0001D) {
+            horizontal = new Vec3(1.0D, 0.0D, 0.0D);
+        } else {
+            horizontal = horizontal.normalize();
+        }
+        Vec3 side = new Vec3(-horizontal.z, 0.0D, horizontal.x);
+        Vec3[] detours = {
+                new Vec3(motion.x * 0.45D, 0.16D, motion.z * 0.45D),
+                side.scale(0.13D).add(0.0D, 0.07D, 0.0D),
+                side.scale(-0.13D).add(0.0D, 0.07D, 0.0D),
+                new Vec3(0.0D, 0.18D, 0.0D)
+        };
+        for (Vec3 detour : detours) {
+            if (pathClear(detour)) {
+                return getDeltaMovement().scale(0.38D)
+                        .add(detour.scale(0.62D));
+            }
+        }
+        return Vec3.ZERO;
+    }
+
+    private boolean pathClear(Vec3 motion) {
+        for (int step = 1; step <= 5; step++) {
+            if (!level().noCollision(this,
+                    getBoundingBox().move(motion.scale(step)))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public float assemblyProgress(float partialTick) {
@@ -232,9 +306,27 @@ public final class HeartSuccessorEntity extends PathfinderMob {
     public void tick() {
         super.tick();
         setNoGravity(true);
-        noPhysics = true;
+        noPhysics = false;
+        if (isDying()) {
+            setDeltaMovement(Vec3.ZERO);
+            if (!level().isClientSide() && level() instanceof ServerLevel serverLevel) {
+                entityData.set(DATA_DEATH_TICKS,
+                        Math.min(HeartSuccessorPolicy.DEATH_TICKS,
+                                deathTicks() + 1));
+                int ticks = deathTicks();
+                if ((ticks & 1) == 0) {
+                    double spread = 0.18D + ticks * 0.012D;
+                    serverLevel.sendParticles(ticks % 6 == 0
+                                    ? ParticleTypes.REVERSE_PORTAL
+                                    : ParticleTypes.SCULK_SOUL,
+                            getX(), getY() + 1.25D, getZ(),
+                            4, spread, 0.7D + spread, spread, 0.025D);
+                }
+            }
+            return;
+        }
         if (!level().isClientSide()) {
-            setDeltaMovement(getDeltaMovement().scale(0.97D));
+            setDeltaMovement(getDeltaMovement().scale(0.985D));
         }
         if (!level().isClientSide() && mode() == HeartSuccessorPolicy.Mode.ASSEMBLING
                 && tickCount % 5 == 0 && level() instanceof ServerLevel serverLevel) {
@@ -251,14 +343,22 @@ public final class HeartSuccessorEntity extends PathfinderMob {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (!(source.getEntity() instanceof Player) || amount <= 0.0F
-                || mode() == HeartSuccessorPolicy.Mode.ASSEMBLING) {
+                || mode() == HeartSuccessorPolicy.Mode.ASSEMBLING || isDying()) {
             return false;
         }
         if (level().isClientSide()) {
             return true;
         }
+        float healthBefore = getHealth();
+        boolean lethal = amount + 0.001F >= healthBefore;
+        if (lethal) {
+            beginDeathSequence();
+            return true;
+        }
+        if (!super.hurt(source, amount)) {
+            return false;
+        }
         disruptionDamage += amount;
-        hurtTime = hurtDuration = 10;
         if (disruptionDamage >= HeartSuccessorPolicy.staggerThreshold(
                 generation(), fieldStrength())) {
             disruptionDamage = 0.0F;
@@ -276,6 +376,24 @@ public final class HeartSuccessorEntity extends PathfinderMob {
             }
         }
         return true;
+    }
+
+    private void beginDeathSequence() {
+        setHealth(1.0F);
+        entityData.set(DATA_DEATH_TICKS, 1);
+        setMode(HeartSuccessorPolicy.Mode.STAGGERED);
+        setStaggerTicks(0);
+        setHealTargetId(-1);
+        clearLinkTargets();
+        setDeltaMovement(Vec3.ZERO);
+        if (level() instanceof ServerLevel serverLevel) {
+            serverLevel.playSound(null, blockPosition(),
+                    ModSounds.HEART_SUCCESSOR_DEATH.get(),
+                    SoundSource.HOSTILE, 2.5F, 0.74F);
+            serverLevel.sendParticles(ParticleTypes.SCULK_SOUL,
+                    getX(), getY() + 1.25D, getZ(), 36,
+                    0.65D, 1.25D, 0.65D, 0.08D);
+        }
     }
 
     @Override
@@ -306,6 +424,8 @@ public final class HeartSuccessorEntity extends PathfinderMob {
                 tag.getFloat("FieldStrength"));
         setMode(readMode(tag.getString("Mode")));
         setStaggerTicks(tag.getInt("StaggerTicks"));
+        entityData.set(DATA_DEATH_TICKS,
+                Math.max(0, tag.getInt("DeathTicks")));
         disruptionDamage = Math.max(0.0F, tag.getFloat("DisruptionDamage"));
     }
 
@@ -321,6 +441,7 @@ public final class HeartSuccessorEntity extends PathfinderMob {
         tag.putFloat("FieldStrength", fieldStrength());
         tag.putString("Mode", mode().name());
         tag.putInt("StaggerTicks", staggerTicks());
+        tag.putInt("DeathTicks", deathTicks());
         tag.putFloat("DisruptionDamage", disruptionDamage);
     }
 

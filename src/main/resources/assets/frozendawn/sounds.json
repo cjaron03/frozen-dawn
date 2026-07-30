@@ -1198,6 +1198,15 @@
       { "name": "minecraft:block.glass.break", "type": "event", "volume": 1.2, "pitch": 0.64 }
     ]
   },
+  "entity.heart_successor.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.death",
+    "sounds": [
+      { "name": "frozendawn:entity/heart_successor/voice_dont", "volume": 1.5, "pitch": 0.48 },
+      { "name": "minecraft:entity.warden.death", "type": "event", "volume": 1.35, "pitch": 0.52 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.05, "pitch": 0.62 }
+    ]
+  },
   "entity.heart_successor.voice_why": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_why",
