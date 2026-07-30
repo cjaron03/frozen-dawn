@@ -62,6 +62,25 @@ public class SoundMuffler {
             return;
         }
 
+        float heartQuiet = HeartQuietClient.environmentMultiplier();
+        boolean quietsWithHeart = original.getSource() == SoundSource.AMBIENT
+                || original.getSource() == SoundSource.WEATHER
+                || original.getSource() == SoundSource.HOSTILE
+                || original.getSource() == SoundSource.NEUTRAL;
+        boolean isHeartSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.startsWith("entity.thae_iven_heart.")
+                || soundPath.startsWith("entity.heart_successor.")
+                || soundPath.startsWith("music.thae_iven_heart."));
+        if (quietsWithHeart && !isHeartSound && heartQuiet < 0.995F) {
+            if (heartQuiet <= 0.01F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(
+                        original, heartQuiet, 0.96F + heartQuiet * 0.04F));
+            }
+            return;
+        }
+
         if (MasterArchitectFloodClient.isActive()) {
             boolean isMasterFightMusic = soundLocation.getNamespace().equals(
                     FrozenDawn.MOD_ID)

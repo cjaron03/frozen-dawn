@@ -5,6 +5,7 @@ import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.FrostmiteRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
+import com.frozendawn.client.renderer.HeartSuccessorRenderer;
 import com.frozendawn.client.renderer.HollowRenderer;
 import com.frozendawn.client.renderer.ArchitectRenderer;
 import com.frozendawn.client.renderer.AlarmBeaconRenderer;
@@ -212,6 +213,9 @@ public class ClientEvents {
         event.registerEntityRenderer(
                 ModEntities.THAE_IVEN_HEART.get(),
                 ThaeIvenHeartRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.HEART_SUCCESSOR.get(),
+                HeartSuccessorRenderer::new);
         event.registerEntityRenderer(ModEntities.ROCKET_LAUNCH.get(), RocketLaunchRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);

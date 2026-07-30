@@ -17,6 +17,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -179,6 +180,13 @@ public class HollowEntity extends PathfinderMob {
                     fleeingTicks--;
                     // Keep current momentum — don't override with drift
                 } else {
+                    LivingEntity directedTarget = getTarget();
+                    if (directedTarget != null && directedTarget.isAlive()) {
+                        driftTargetX = directedTarget.getX();
+                        driftTargetY = directedTarget.getY() + 0.35D;
+                        driftTargetZ = directedTarget.getZ();
+                        driftTicks = Math.max(driftTicks, 12);
+                    }
                     // --- Normal drift movement ---
                     driftTicks--;
                     if (driftTicks <= 0) {
@@ -250,6 +258,17 @@ public class HollowEntity extends PathfinderMob {
 
                 // Grab nearby player
                 if (grabCooldown <= 0) {
+                    LivingEntity directedTarget = getTarget();
+                    if (directedTarget != null && directedTarget.isAlive()
+                            && distanceToSqr(directedTarget) <= 2.7D * 2.7D
+                            && !(directedTarget instanceof Player)) {
+                        directedTarget.hurt(damageSources().mobAttack(this), 3.0F);
+                        directedTarget.setTicksFrozen(
+                                Math.min(300, directedTarget.getTicksFrozen() + 80));
+                        grabCooldown = 40;
+                        playSound(ModSounds.HOLLOW_GRAB.get(), 0.9F,
+                                0.72F + random.nextFloat() * 0.18F);
+                    }
                     List<Player> nearbyPlayers = level().getEntitiesOfClass(Player.class,
                             getBoundingBox().inflate(3.0), p -> !p.isSpectator() && !p.isCreative());
 
@@ -292,6 +311,16 @@ public class HollowEntity extends PathfinderMob {
             iceBlocksPlaced = 0;
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 3, true, false));
             playSound(ModSounds.HOLLOW_GRAB.get(), 1.0f, 0.8f + random.nextFloat() * 0.4f);
+        }
+    }
+
+    public void setHeartScavengerTarget(LivingEntity target) {
+        if (target != null && target.isAlive()) {
+            setTarget(target);
+            driftTargetX = target.getX();
+            driftTargetY = target.getY() + 0.35D;
+            driftTargetZ = target.getZ();
+            driftTicks = 20;
         }
     }
 

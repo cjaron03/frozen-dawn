@@ -3,8 +3,11 @@ package com.frozendawn.client.renderer;
 import com.frozendawn.client.CognitiveLoadClientState;
 import com.frozendawn.client.HeartEchoClient;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
+import com.frozendawn.homo.CognitiveLoadPolicy;
+import com.frozendawn.homo.HeartCollapseStage;
 import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HeartLattice;
+import com.mojang.math.Axis;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -50,10 +53,17 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
             case HOLD, LIVE -> 1.0F;
             default -> 0.0F;
         };
-        boolean descended = stage == HeartFormationStage.LIVE;
-        if (descended) {
+        HeartCollapseStage collapseStage = heart.collapseStage();
+        renderFrostBlooms(heart, poseStack, buffers);
+        boolean transformed = stage == HeartFormationStage.LIVE;
+        if (transformed) {
             poseStack.pushPose();
-            poseStack.translate(0.0D, -CognitiveLoadClientState.heartDescentBlocks(), 0.0D);
+            float descent = collapseStage == HeartCollapseStage.NONE
+                    ? CognitiveLoadClientState.heartDescentBlocks()
+                    : CognitiveLoadPolicy.heartDescentBlocks(
+                    HeartLattice.requiredLoad(HeartLattice.NODE_COUNT - 1));
+            poseStack.translate(0.0D, -descent, 0.0D);
+            applyCollapsePose(heart, poseStack, partialTick);
         }
         int destroyedMask = heart.destroyedNodeMask();
         HeartLattice.Lattice lattice = CACHE.computeIfAbsent(
@@ -64,6 +74,10 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
         for (int index = 0; index < visible; index++) {
             HeartLattice.Segment segment = lattice.segments().get(index);
             if (removedByDestroyedNode(segment.group(), destroyedMask)) {
+                continue;
+            }
+            if (!survivesCollapse(index, collapseStage,
+                    heart.collapseProgress())) {
                 continue;
             }
             float pulse = 0.86F + 0.14F * Mth.sin(
@@ -96,9 +110,74 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                     echoExposed ? 1.0F : active ? 0.88F : 0.28F,
                     1.0F, alpha);
         }
+        if (heart.maeveExposed()) {
+            renderDormantMaeve(heart, poseStack, buffers, partialTick);
+        }
         super.render(heart, yaw, partialTick, poseStack, buffers, packedLight);
-        if (descended) {
+        if (transformed) {
             poseStack.popPose();
+        }
+    }
+
+    private static void applyCollapsePose(
+            ThaeIvenHeartEntity heart, PoseStack poseStack, float partialTick) {
+        HeartCollapseStage stage = heart.collapseStage();
+        float progress = heart.collapseProgress();
+        if (stage == HeartCollapseStage.NONE) {
+            return;
+        }
+        if (stage == HeartCollapseStage.RUPTURE) {
+            float shake = (0.03F + progress * 0.11F)
+                    * Mth.sin((heart.tickCount + partialTick) * 1.7F);
+            poseStack.translate(shake, Math.abs(shake) * 0.45F, -shake * 0.6F);
+            return;
+        }
+        float fall = stage == HeartCollapseStage.FALL ? progress : 1.0F;
+        poseStack.translate(0.0D, -2.4D * fall, 0.0D);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(14.0F * fall));
+        poseStack.mulPose(Axis.XP.rotationDegrees(-5.0F * fall));
+        if (stage == HeartCollapseStage.SETTLE) {
+            float settle = (1.0F - progress) * 0.05F
+                    * Mth.sin((heart.tickCount + partialTick) * 0.9F);
+            poseStack.translate(settle, 0.0D, -settle);
+        }
+    }
+
+    private static boolean survivesCollapse(
+            int segmentIndex, HeartCollapseStage stage, float progress) {
+        if (stage == HeartCollapseStage.NONE || stage == HeartCollapseStage.RUPTURE) {
+            return true;
+        }
+        float removal = stage == HeartCollapseStage.FALL
+                ? progress * 0.72F : 0.72F;
+        float deterministic = Math.floorMod(segmentIndex * 37 + 11, 101) / 100.0F;
+        return deterministic >= removal;
+    }
+
+    private static void renderDormantMaeve(
+            ThaeIvenHeartEntity heart,
+            PoseStack poseStack,
+            MultiBufferSource buffers,
+            float partialTick) {
+        Matrix4f matrix = poseStack.last().pose();
+        float pulse = 0.78F + 0.22F * Mth.sin(
+                (heart.tickCount + partialTick) * 0.045F);
+        VertexConsumer shell = buffers.getBuffer(RenderType.debugQuads());
+        cube(matrix, shell, -0.7F, -3.4F, 0.2F, 2.8F,
+                0.005F, 0.012F, 0.026F, 0.96F);
+        cube(matrix, shell, -0.7F, -3.4F, 0.2F, 2.15F,
+                0.018F, 0.045F, 0.080F, 0.88F);
+        VertexConsumer core = buffers.getBuffer(RenderType.lightning());
+        cube(matrix, core, -0.7F, -3.4F, 0.2F, 0.72F,
+                0.10F, 0.72F, 1.0F, 0.76F * pulse);
+        for (int branch = 0; branch < 7; branch++) {
+            double angle = branch * Math.PI * 2.0D / 7.0D + 0.35D;
+            float x = -0.7F + (float) Math.cos(angle) * 3.7F;
+            float y = -3.4F + (branch % 3 - 1) * 1.25F;
+            float z = 0.2F + (float) Math.sin(angle) * 2.8F;
+            beam(matrix, core, new HeartLattice.Segment(
+                    -0.7F, -3.4F, 0.2F, x, y, z, 0.11F, 0),
+                    0.04F, 0.36F, 0.72F, 0.48F * pulse);
         }
     }
 
@@ -133,6 +212,51 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                 float width = 0.05F;
                 quad(matrix, consumer, x0, y, z0, x1, y, z1, width,
                         0.03F, 0.22F, 0.34F, pulse);
+            }
+        }
+    }
+
+    private static void renderFrostBlooms(
+            ThaeIvenHeartEntity heart,
+            PoseStack poseStack,
+            MultiBufferSource buffers) {
+        int rings = Math.min(4, HeartLattice.destroyedCount(
+                heart.destroyedNodeMask()));
+        if (rings <= 0) {
+            return;
+        }
+        VertexConsumer consumer = buffers.getBuffer(RenderType.lightning());
+        Matrix4f matrix = poseStack.last().pose();
+        float y = -29.90F;
+        int segments = 72;
+        for (int ring = 0; ring < rings; ring++) {
+            float baseRadius = 7.0F + ring * 4.2F;
+            float alpha = 0.29F - ring * 0.025F;
+            for (int index = 0; index < segments; index++) {
+                double a0 = index * Math.PI * 2.0D / segments;
+                double a1 = (index + 1) * Math.PI * 2.0D / segments;
+                float wobble0 = 0.34F * Mth.sin(
+                        index * 1.91F + ring * 2.37F
+                                + (heart.layoutSeed() & 31L));
+                float wobble1 = 0.34F * Mth.sin(
+                        (index + 1) * 1.91F + ring * 2.37F
+                                + (heart.layoutSeed() & 31L));
+                float radius0 = baseRadius + wobble0;
+                float radius1 = baseRadius + wobble1;
+                quad(
+                        matrix,
+                        consumer,
+                        (float) Math.cos(a0) * radius0,
+                        y,
+                        (float) Math.sin(a0) * radius0,
+                        (float) Math.cos(a1) * radius1,
+                        y,
+                        (float) Math.sin(a1) * radius1,
+                        0.10F,
+                        0.16F,
+                        0.72F,
+                        0.92F,
+                        alpha);
             }
         }
     }

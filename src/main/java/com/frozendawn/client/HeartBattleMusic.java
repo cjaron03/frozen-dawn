@@ -24,7 +24,7 @@ public final class HeartBattleMusic {
 
     public static void update(HeartMusicStatePayload payload) {
         if (!payload.active()) {
-            hardStop();
+            active = false;
             return;
         }
         if (!active) {
@@ -91,7 +91,17 @@ public final class HeartBattleMusic {
         @Override
         public void tick() {
             if (!HeartBattleMusic.active) {
-                stop();
+                volume = net.minecraft.util.Mth.approach(
+                        volume, 0.0F, 0.015F);
+                if (volume <= 0.001F) {
+                    stop();
+                    if (HeartBattleMusic.track == this) {
+                        HeartBattleMusic.track = null;
+                    }
+                }
+            } else {
+                volume = net.minecraft.util.Mth.approach(
+                        volume, 0.92F, 0.02F);
             }
         }
     }

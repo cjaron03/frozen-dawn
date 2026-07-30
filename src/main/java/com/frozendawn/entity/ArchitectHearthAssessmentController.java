@@ -7,6 +7,7 @@ import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.OrsaEquipmentDetector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -41,6 +42,12 @@ final class ArchitectHearthAssessmentController {
      * @return true when neutral assessment mode handled this tick; false lets the normal combat brain run.
      */
     boolean tick(ServerLevel level) {
+        UUID activeHearthId = architect.getHearthAssessorId().orElse(null);
+        if (HeartScavengerWaveManager.isHeartScavenger(
+                architect.getTarget(), activeHearthId)) {
+            resetAssessmentCycle();
+            return false;
+        }
         if (findHostileTarget(level) != null) {
             resetAssessmentCycle();
             return false;

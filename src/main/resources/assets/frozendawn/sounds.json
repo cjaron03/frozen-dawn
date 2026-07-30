@@ -571,6 +571,24 @@
       { "name": "minecraft:block.sculk.charge", "type": "event", "volume": 0.62, "pitch": 0.54 }
     ]
   },
+  "entity.thae_iven_heart.collapse": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.collapse",
+    "sounds": [
+      { "name": "minecraft:block.beacon.deactivate", "type": "event", "volume": 1.45, "pitch": 0.50 },
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.25, "pitch": 0.58 },
+      { "name": "minecraft:block.glass.break", "type": "event", "volume": 1.05, "pitch": 0.42 }
+    ]
+  },
+  "entity.thae_iven_heart.swarm_wail": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.swarm_wail",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.tether_wail", "type": "event", "volume": 1.45, "pitch": 0.72 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.15, "pitch": 0.48 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.0, "pitch": 0.42 }
+    ]
+  },
   "music.sad.moog_city_2": {
     "category": "music",
     "sounds": [
@@ -1139,6 +1157,71 @@
     "sounds": [
       { "name": "frozendawn:ui/master_architect/aura_fight", "stream": true }
     ]
+  },
+  "entity.heart_successor.assemble": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.assemble",
+    "sounds": [
+      { "name": "minecraft:block.deepslate_bricks.break", "type": "event", "volume": 1.4, "pitch": 0.52 },
+      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 1.1, "pitch": 0.62 }
+    ]
+  },
+  "entity.heart_successor.conduct": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.conduct",
+    "sounds": [
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 0.85, "pitch": 0.44 },
+      { "name": "minecraft:block.respawn_anchor.ambient", "type": "event", "volume": 0.7, "pitch": 0.58 }
+    ]
+  },
+  "entity.heart_successor.heal": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.heal",
+    "sounds": [
+      { "name": "minecraft:block.beacon.ambient", "type": "event", "volume": 0.75, "pitch": 0.55 },
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.6, "pitch": 0.66 }
+    ]
+  },
+  "entity.heart_successor.stagger": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.stagger",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.2, "pitch": 0.62 },
+      { "name": "minecraft:entity.allay.hurt", "type": "event", "volume": 0.9, "pitch": 0.48 }
+    ]
+  },
+  "entity.heart_successor.snap": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.snap",
+    "sounds": [
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.35, "pitch": 0.56 },
+      { "name": "minecraft:block.glass.break", "type": "event", "volume": 1.2, "pitch": 0.64 }
+    ]
+  },
+  "entity.heart_successor.voice_why": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_why",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_why" ]
+  },
+  "entity.heart_successor.voice_cold": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_cold",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_cold" ]
+  },
+  "entity.heart_successor.voice_hello": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_hello",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_hello" ]
+  },
+  "entity.heart_successor.voice_kevin": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_kevin",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_kevin" ]
+  },
+  "entity.heart_successor.voice_dont": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_dont",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_dont" ]
   },
   "ui.thaeven_interrupt": {
     "category": "master",

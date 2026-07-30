@@ -8,6 +8,7 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.OrsaEquipmentDetector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -42,6 +43,13 @@ final class ArchitectHearthResidentController {
      * @return true when neutral resident behavior handled this tick.
      */
     boolean tick(ServerLevel level) {
+        UUID hearthId = architect.getHearthPopulationId().orElse(null);
+        if (HeartScavengerWaveManager.isHeartScavenger(
+                architect.getTarget(), hearthId)) {
+            resetAssessmentTarget();
+            patrolCooldown = 0;
+            return false;
+        }
         if (findHostileTarget(level) != null) {
             patrolCooldown = 0;
             return false;

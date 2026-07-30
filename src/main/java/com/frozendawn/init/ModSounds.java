@@ -322,6 +322,30 @@ public class ModSounds {
             "entity.thae_iven_heart.echo_scream");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_ECHO_BREAK = register(
             "entity.thae_iven_heart.echo_break");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_COLLAPSE = register(
+            "entity.thae_iven_heart.collapse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_SWARM_WAIL = register(
+            "entity.thae_iven_heart.swarm_wail");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_ASSEMBLE = register(
+            "entity.heart_successor.assemble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_CONDUCT = register(
+            "entity.heart_successor.conduct");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_HEAL = register(
+            "entity.heart_successor.heal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_STAGGER = register(
+            "entity.heart_successor.stagger");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_SNAP = register(
+            "entity.heart_successor.snap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_WHY = register(
+            "entity.heart_successor.voice_why");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_COLD = register(
+            "entity.heart_successor.voice_cold");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_HELLO = register(
+            "entity.heart_successor.voice_hello");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_KEVIN = register(
+            "entity.heart_successor.voice_kevin");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEART_SUCCESSOR_VOICE_DONT = register(
+            "entity.heart_successor.voice_dont");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_DEATH = register(
             "entity.master_architect.aura_death");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_AURA_TEMPERATURE_TTS = register(

@@ -356,6 +356,7 @@ public final class CognitiveLoadClientState {
         BYPASS_INPUTS.clear();
         discardWatchers();
         stopAudio();
+        HeartQuietClient.reset();
         highToneTicks = 700;
         choirDelayTicks = 240;
         choirBurstTicks = 0;
@@ -516,9 +517,15 @@ public final class CognitiveLoadClientState {
     }
 
     private static void tickWatchers(Minecraft minecraft) {
+        int destroyedNodes = HeartQuietClient.destroyedNodes();
+        boolean closeWitness = FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
+                && heartLive && destroyedNodes >= 3;
         int desired = FrozenDawnConfig.ENABLE_COGNITIVE_LOAD_EFFECTS.get()
                 && heartLive && !HeartEchoClient.hasClarity()
                 ? CognitiveLoadPolicy.watcherCount(displayedLoad) : 0;
+        if (closeWitness) {
+            desired = Math.max(1, desired);
+        }
         if (desired == 0 || minecraft.player == null
                 || minecraft.player.distanceToSqr(Vec3.atCenterOf(BlockPos.of(heartAnchor)))
                 > 150.0D * 150.0D) {
@@ -545,6 +552,10 @@ public final class CognitiveLoadClientState {
         double time = minecraft.level.getGameTime() * 0.0018D;
         for (int index = 0; index < WATCHERS.size(); index++) {
             ShadowFigureEntity watcher = WATCHERS.get(index);
+            if (closeWitness && index == 0) {
+                followPlayer(minecraft, watcher, anchor);
+                continue;
+            }
             double angle = index * Math.PI * 2.0D / Math.max(1, WATCHERS.size())
                     + time + (index % 3) * 0.12D;
             double radius = 47.0D + (index % 4) * 2.15D;
@@ -557,6 +568,46 @@ public final class CognitiveLoadClientState {
                     : anchor.getY();
             watcher.setPos(x + 0.5D, y, z + 0.5D);
         }
+    }
+
+    private static void followPlayer(
+            Minecraft minecraft,
+            ShadowFigureEntity watcher,
+            BlockPos anchor) {
+        Vec3 playerPosition = minecraft.player.position();
+        Vec3 awayFromHeart = playerPosition.subtract(Vec3.atCenterOf(anchor))
+                .multiply(1.0D, 0.0D, 1.0D);
+        if (awayFromHeart.lengthSqr() < 0.01D) {
+            awayFromHeart = minecraft.player.getLookAngle()
+                    .multiply(-1.0D, 0.0D, -1.0D);
+        }
+        Vec3 target = playerPosition.add(awayFromHeart.normalize().scale(5.5D));
+        int targetX = Mth.floor(target.x);
+        int targetZ = Mth.floor(target.z);
+        int targetY = minecraft.level.getHeight(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ);
+        target = new Vec3(targetX + 0.5D, targetY, targetZ + 0.5D);
+
+        if (watcher.getTicksAlive() <= 1) {
+            Vec3 ringStart = Vec3.atCenterOf(anchor).add(
+                    awayFromHeart.normalize().scale(47.0D));
+            int startX = Mth.floor(ringStart.x);
+            int startZ = Mth.floor(ringStart.z);
+            int startY = minecraft.level.getHeight(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, startX, startZ);
+            watcher.setPos(startX + 0.5D, startY, startZ + 0.5D);
+        } else {
+            Vec3 delta = target.subtract(watcher.position());
+            double distance = delta.length();
+            if (distance > 0.04D) {
+                double step = Math.min(0.18D, distance);
+                watcher.setPos(watcher.position().add(
+                        delta.scale(step / distance)));
+            }
+        }
+        Vec3 towardPlayer = playerPosition.subtract(watcher.position());
+        watcher.setYRot((float) (Mth.atan2(
+                towardPlayer.z, towardPlayer.x) * Mth.RAD_TO_DEG) - 90.0F);
     }
 
     private static void discardWatchers() {
@@ -673,7 +724,8 @@ public final class CognitiveLoadClientState {
         }
         String path = location.getPath();
         return path.equals("entity.master_architect.infrasound")
-                || path.equals("entity.thae_iven_heart.formation")
+                || path.startsWith("entity.thae_iven_heart.")
+                || path.startsWith("entity.heart_successor.")
                 || path.equals("ui.thaeven_contact");
     }
 

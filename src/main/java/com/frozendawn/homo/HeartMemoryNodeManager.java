@@ -2,10 +2,12 @@ package com.frozendawn.homo;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HeartMemoryNodeEventPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -85,7 +87,11 @@ public final class HeartMemoryNodeManager {
         }
         for (int hit = hearth.heartActiveNodeDamage();
              hit < HeartLattice.HITS_PER_NODE; hit++) {
-            data.damageHeartMemoryNode(hearth.id(), requestedNode);
+            data.damageHeartMemoryNode(
+                    hearth.id(), requestedNode, level.getGameTime());
+        }
+        if (requestedNode == HeartLattice.NODE_COUNT - 1) {
+            data.startHeartCollapse(hearth.id(), level.getGameTime());
         }
         return true;
     }
@@ -104,7 +110,8 @@ public final class HeartMemoryNodeManager {
             boolean applyPlayerConsequences) {
         MemorySnapshot memory = snapshotMemory(data, hearth, player);
         ReturnedHearthSavedData.HeartNodeDamageResult result =
-                data.damageHeartMemoryNode(hearth.id(), nodeIndex);
+                data.damageHeartMemoryNode(
+                        hearth.id(), nodeIndex, level.getGameTime());
         if (!result.accepted()) {
             return;
         }
@@ -122,6 +129,11 @@ public final class HeartMemoryNodeManager {
         }
         if (result.destroyed() && nodeIndex == HeartLattice.NODE_COUNT - 1) {
             data.erasePlayerFromHive(player.getUUID());
+            if (data.startHeartCollapse(hearth.id(), level.getGameTime())) {
+                level.playSound(null, BlockPos.containing(nodePosition),
+                        ModSounds.THAE_IVEN_HEART_COLLAPSE.get(),
+                        SoundSource.AMBIENT, 2.4F, 0.74F);
+            }
         }
 
         ThaeIvenHeartEntity heart = hearth.heartEntityId()
@@ -136,7 +148,11 @@ public final class HeartMemoryNodeManager {
                             .orElse(hearth.center())),
                     hearth.heartAnchor().orElse(hearth.center()).asLong(),
                     hearth.heartFieldStrength(), HeartFormationStage.LIVE, 1.0F,
-                    result.destroyedMask(), result.activeDamage());
+                    result.destroyedMask(), result.activeDamage(),
+                    result.destroyed() && nodeIndex == HeartLattice.NODE_COUNT - 1
+                            ? HeartCollapseStage.RUPTURE : heart.collapseStage(),
+                    0.0F,
+                    false);
         }
 
         for (ServerPlayer witness : level.players()) {

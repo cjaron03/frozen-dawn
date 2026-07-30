@@ -9,9 +9,11 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthHeartManager;
+import com.frozendawn.homo.HeartCollapseStage;
 import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HeartLattice;
 import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -113,7 +115,23 @@ final class FrozenDawnHearthCommand {
                                                         FrozenDawnHearthCommand::heartNodeDestroy)))
                                 .then(Commands.literal("reset")
                                         .executes(
-                                                FrozenDawnHearthCommand::heartNodesReset))))
+                                                FrozenDawnHearthCommand::heartNodesReset)))
+                        .then(Commands.literal("collapse")
+                                .executes(FrozenDawnHearthCommand::heartStatus)
+                                .then(Commands.literal("start")
+                                        .executes(FrozenDawnHearthCommand::heartCollapseStart))
+                                .then(Commands.literal("setstage")
+                                        .then(heartCollapseStage("rupture",
+                                                HeartCollapseStage.RUPTURE))
+                                        .then(heartCollapseStage("fall",
+                                                HeartCollapseStage.FALL))
+                                        .then(heartCollapseStage("settle",
+                                                HeartCollapseStage.SETTLE))
+                                        .then(heartCollapseStage("dormant",
+                                                HeartCollapseStage.DORMANT)))
+                                .then(Commands.literal("reset")
+                                        .executes(
+                                                FrozenDawnHearthCommand::heartCollapseReset))))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -217,6 +235,8 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thae Iven Heart: " + HearthHeartManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
+                "  Heart scavengers: " + HeartScavengerWaveManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
@@ -312,6 +332,9 @@ final class FrozenDawnHearthCommand {
                 "--- Thae Iven Heart ---"), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  " + HearthHeartManager.describe(context.getSource().getLevel())), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Encounter: " + HeartScavengerWaveManager.describe(
+                        context.getSource().getLevel())), false);
         return 1;
     }
 
@@ -332,6 +355,37 @@ final class FrozenDawnHearthCommand {
                             + (changed ? "" : " (unchanged)")), true);
             return heartStatus(context);
         });
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> heartCollapseStage(
+            String name, HeartCollapseStage stage) {
+        return Commands.literal(name).executes(context -> {
+            boolean changed = HearthHeartManager.setCollapseStageForDebug(
+                    context.getSource().getLevel(), stage);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Set Heart collapse to " + stage.name().toLowerCase(Locale.ROOT)
+                            + (changed ? "" : " (unchanged)")), true);
+            return heartStatus(context);
+        });
+    }
+
+    private static int heartCollapseStart(
+            CommandContext<CommandSourceStack> context) {
+        boolean changed = HearthHeartManager.startCollapseForDebug(
+                context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Started Heart collapse" + (changed ? "" : " (unchanged)")), true);
+        return heartStatus(context);
+    }
+
+    private static int heartCollapseReset(
+            CommandContext<CommandSourceStack> context) {
+        int removed = HearthHeartManager.resetCollapseForDebug(
+                context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Heart collapse; removed " + removed
+                        + " transient fragment(s)"), true);
+        return heartStatus(context);
     }
 
     private static int heartReset(CommandContext<CommandSourceStack> context) {
