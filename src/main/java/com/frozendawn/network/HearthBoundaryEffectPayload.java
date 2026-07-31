@@ -14,6 +14,9 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int ORSATHAE = 1;
     public static final int MAEVE_BREAK = 2;
     public static final int LAST_WITNESS_RESCUE = 3;
+    public static final int MAEVE_DEATH = 4;
+    public static final int WORLD_EVENT_SILENCE = 5;
+    public static final int WORLD_EVENT_OMEN = 6;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -39,6 +42,18 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload lastWitnessRescue() {
         return new HearthBoundaryEffectPayload(LAST_WITNESS_RESCUE);
+    }
+
+    public static HearthBoundaryEffectPayload maeveDeath() {
+        return new HearthBoundaryEffectPayload(MAEVE_DEATH);
+    }
+
+    public static HearthBoundaryEffectPayload worldEventSilence() {
+        return new HearthBoundaryEffectPayload(WORLD_EVENT_SILENCE);
+    }
+
+    public static HearthBoundaryEffectPayload worldEventOmen() {
+        return new HearthBoundaryEffectPayload(WORLD_EVENT_OMEN);
     }
 
     @Override

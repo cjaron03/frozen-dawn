@@ -13,8 +13,13 @@ import com.frozendawn.network.HearthBoundaryEffectPayload;
 import com.mojang.math.Transformation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,6 +53,15 @@ import java.util.UUID;
 
 /** Reconciles the one persistent post-storm Heart without force-loading chunks. */
 public final class HearthHeartManager {
+    private static final int MAEVE_DEATH_COLUMN_TICKS = 38;
+    private static final int MAEVE_COLLECTIVE_DIES_TICK = 130;
+    private static final int MAEVE_OMEN_SEED_START_TICK = 130;
+    private static final int MAEVE_OMEN_SEED_TICKS = 108;
+    private static final int MAEVE_DEATH_COLUMN_START_TICK = 238;
+    private static final int MAEVE_SKY_BURST_START_TICK = 288;
+    private static final int MAEVE_SKY_BURST_TICKS = 18;
+    private static final int[] MAEVE_OMEN_TICKS = {148, 188, 228};
+    private static final int MAEVE_WORLD_MESSAGE_TICK = 388;
     private static final String FRAGMENT_TAG_PREFIX = "frozendawn_heart_fragment_";
     private static final String COLLAPSE_FRAGMENT_TAG_PREFIX =
             "frozendawn_heart_collapse_fragment_";
@@ -58,6 +72,10 @@ public final class HearthHeartManager {
             new HashMap<>();
     private static final Map<UUID, Map<Integer, UUID>> ACTIVE_NODE_DEBRIS =
             new HashMap<>();
+    private static final DustColorTransitionOptions MAEVE_CONVERGENCE_DUST =
+            new DustColorTransitionOptions(
+                    new Vector3f(0.02F, 0.20F, 0.52F),
+                    new Vector3f(0.72F, 0.98F, 1.0F), 1.45F);
     private static long heartsSpawned;
     private static long heartsAdopted;
     private static long formationsCompleted;
@@ -123,16 +141,57 @@ public final class HearthHeartManager {
                 level.getGameTime() - hearth.heartMaeveErasureStartGameTime()))
                 && data.completeHeartMaeveErasure(hearth.id());
         hearth = data.hearth(hearth.id()).orElse(hearth);
+        if (forgeJustAnnounced) {
+            data.stopHeartMusic(hearth.id());
+        }
 
         if (hearth.heartMaeveErasureComplete()) {
+            long aftermathElapsed = Math.max(0L,
+                    maeveElapsed - HeartMaeveErasurePolicy.TOTAL_TICKS);
             if (erasureJustCompleted) {
                 CognitiveLoadManager.clearForHeartErasure(level);
                 Vec3 maeve = HeartLattice.maevePosition(anchor);
                 level.playSound(null, BlockPos.containing(maeve),
-                        ModSounds.THAE_IVEN_HEART_MAEVE_ERASURE.get(),
-                        SoundSource.AMBIENT, 4.5F, 0.82F);
+                        ModSounds.THAE_IVEN_HEART_MAEVE_DEATH_WAIL.get(),
+                        SoundSource.VOICE, 10.0F, 1.0F);
+                beginMaeveDeathImpact(level, maeve);
                 shatterHeart(level, hearth, anchor);
                 releaseLastWitness(level, data, hearth, maeve);
+            }
+            if (aftermathElapsed >= MAEVE_OMEN_SEED_START_TICK
+                    && aftermathElapsed < MAEVE_OMEN_SEED_START_TICK
+                    + MAEVE_OMEN_SEED_TICKS && level.hasChunkAt(anchor)) {
+                spawnMaeveOmenSeed(level, anchor,
+                        (int) aftermathElapsed - MAEVE_OMEN_SEED_START_TICK);
+            }
+            if (aftermathElapsed >= MAEVE_DEATH_COLUMN_START_TICK
+                    && aftermathElapsed < MAEVE_DEATH_COLUMN_START_TICK
+                    + MAEVE_DEATH_COLUMN_TICKS
+                    && level.hasChunkAt(anchor)) {
+                spawnMaeveDeathColumn(level, anchor,
+                        (int) aftermathElapsed - MAEVE_DEATH_COLUMN_START_TICK);
+            }
+            if (aftermathElapsed >= MAEVE_COLLECTIVE_DIES_TICK
+                    && data.markHeartMaeveAftermathSound(hearth.id(), 4)) {
+                level.playSound(null, anchor,
+                        ModSounds.THAE_IVEN_HEART_MAEVE_ERASURE.get(),
+                        SoundSource.VOICE, 7.5F, 1.0F);
+            }
+            if (aftermathElapsed >= MAEVE_SKY_BURST_START_TICK
+                    && aftermathElapsed < MAEVE_SKY_BURST_START_TICK
+                    + MAEVE_SKY_BURST_TICKS && level.hasChunkAt(anchor)) {
+                spawnMaeveCardinalBurst(level, anchor,
+                        (int) aftermathElapsed - MAEVE_SKY_BURST_START_TICK);
+            }
+            if (aftermathElapsed >= MAEVE_SKY_BURST_START_TICK
+                    && data.markHeartMaeveAftermathSound(hearth.id(), 3)) {
+                playMaeveSkyBurst(level, anchor);
+            }
+            playMaeveAftermathOmens(level, data, hearth, anchor,
+                    aftermathElapsed);
+            if (aftermathElapsed >= MAEVE_WORLD_MESSAGE_TICK
+                    && data.markHeartMaeveWorldMessageShown(hearth.id())) {
+                broadcastMaeveWorldMessage(level);
             }
             if (level.hasChunkAt(anchor)) {
                 removeHeartEntities(level, hearth.id(), anchor);
@@ -175,6 +234,7 @@ public final class HearthHeartManager {
             beginLastWitnessForge(level, anchor);
         }
         if (maeveErasureProgress > 0.0F
+                && !HeartMaeveErasurePolicy.forging(maeveElapsed)
                 && level.getGameTime() % 2L == 0L) {
             Vec3 maeve = HeartLattice.maevePosition(anchor);
             level.sendParticles(
@@ -1013,13 +1073,13 @@ public final class HearthHeartManager {
             ServerLevel level, BlockPos anchor, float progress) {
         Vec3 maeve = HeartLattice.maevePosition(anchor);
         RandomSource random = level.getRandom();
-        int count = 7 + Mth.floor(progress * 8.0F);
+        int count = 12 + Mth.floor(progress * 18.0F);
         double rippleRadius = 3.0D + Mth.sin(
                 level.getGameTime() * 0.38F) * (0.8D + progress * 0.9D);
         for (int ripple = 0; ripple < 12; ripple++) {
             double angle = ripple * Math.PI * 2.0D / 12.0D
                     + level.getGameTime() * 0.12D;
-            level.sendParticles(ParticleTypes.REVERSE_PORTAL,
+            level.sendParticles(MAEVE_CONVERGENCE_DUST,
                     maeve.x + Math.cos(angle) * rippleRadius,
                     maeve.y + Math.sin(angle * 2.0D) * 1.25D,
                     maeve.z + Math.sin(angle) * rippleRadius,
@@ -1027,17 +1087,228 @@ public final class HearthHeartManager {
         }
         for (int i = 0; i < count; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
-            double radius = 5.0D + random.nextDouble() * 7.0D;
+            double radius = 7.0D + random.nextDouble() * 9.0D;
             Vec3 from = new Vec3(
                     maeve.x + Math.cos(angle) * radius,
                     maeve.y + (random.nextDouble() - 0.5D) * 8.0D,
                     maeve.z + Math.sin(angle) * radius);
             Vec3 velocity = maeve.subtract(from).normalize()
-                    .scale(0.11D + progress * 0.15D);
+                    .scale(0.18D + progress * 0.22D);
             level.sendParticles(i % 3 == 0
-                            ? ParticleTypes.END_ROD : ParticleTypes.SCULK_SOUL,
+                            ? MAEVE_CONVERGENCE_DUST
+                            : ParticleTypes.FIREWORK,
                     from.x, from.y, from.z, 0,
                     velocity.x, velocity.y, velocity.z, 1.0D);
+        }
+        if (progress > 0.18F && level.getGameTime() % 8L == 0L) {
+            level.sendParticles(ParticleTypes.GUST_EMITTER_SMALL,
+                    maeve.x, maeve.y, maeve.z, 1,
+                    0.0D, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private static void beginMaeveDeathImpact(ServerLevel level, Vec3 maeve) {
+        level.sendParticles(ParticleTypes.GUST_EMITTER_LARGE,
+                maeve.x, maeve.y, maeve.z, 2,
+                0.0D, 0.0D, 0.0D, 0.0D);
+        level.sendParticles(ParticleTypes.FLASH,
+                maeve.x, maeve.y, maeve.z, 4,
+                0.7D, 0.7D, 0.7D, 0.0D);
+        for (ServerPlayer player : level.players()) {
+            if (player.position().distanceToSqr(maeve) <= 160.0D * 160.0D) {
+                PacketDistributor.sendToPlayer(
+                        player, HearthBoundaryEffectPayload.maeveDeath());
+            }
+        }
+    }
+
+    private static void spawnMaeveOmenSeed(
+            ServerLevel level, BlockPos anchor, int elapsedTicks) {
+        Vec3 maeve = HeartLattice.maevePosition(anchor);
+        float rawProgress = Mth.clamp(
+                elapsedTicks / (float) (MAEVE_OMEN_SEED_TICKS - 1),
+                0.0F, 1.0F);
+        float progress = rawProgress * rawProgress * (3.0F - 2.0F * rawProgress);
+        double radius = Mth.lerp(progress, 0.35D, 7.5D);
+        int points = 7 + Mth.floor(progress * 7.0F);
+        for (ServerPlayer player : level.players()) {
+            if (player.position().distanceToSqr(maeve) > 160.0D * 160.0D) {
+                continue;
+            }
+            for (int point = 0; point < points; point++) {
+                double vertical = 1.0D - 2.0D
+                        * (point + 0.5D) / points;
+                double planar = Math.sqrt(Math.max(0.0D,
+                        1.0D - vertical * vertical));
+                double angle = point * 2.399963229728653D
+                        + elapsedTicks * (0.08D + progress * 0.11D);
+                double x = maeve.x + Math.cos(angle) * planar * radius;
+                double y = maeve.y + vertical * radius * 0.78D;
+                double z = maeve.z + Math.sin(angle) * planar * radius;
+                level.sendParticles(player, MAEVE_CONVERGENCE_DUST, true,
+                        x, y, z, 2,
+                        0.10D, 0.10D, 0.10D, 0.02D);
+            }
+            if (elapsedTicks % 2 == 0) {
+                level.sendParticles(player, ParticleTypes.GLOW_SQUID_INK, true,
+                        maeve.x, maeve.y, maeve.z,
+                        5 + Mth.floor(progress * 10.0F),
+                        radius * 0.28D, radius * 0.22D,
+                        radius * 0.28D, 0.025D);
+            }
+        }
+    }
+
+    private static void spawnMaeveDeathColumn(
+            ServerLevel level, BlockPos anchor, int elapsedTicks) {
+        Vec3 maeve = HeartLattice.maevePosition(anchor);
+        float progress = Mth.clamp(
+                elapsedTicks / (float) (MAEVE_DEATH_COLUMN_TICKS - 1),
+                0.0F, 1.0F);
+        double y = maeve.y + progress * 112.0D;
+        double radius = Mth.lerp(progress, 1.4D, 4.8D);
+        for (ServerPlayer player : level.players()) {
+            if (player.position().distanceToSqr(maeve) > 192.0D * 192.0D) {
+                continue;
+            }
+            level.sendParticles(player, MAEVE_CONVERGENCE_DUST, true,
+                    maeve.x, y, maeve.z,
+                    28, radius, 1.0D + progress * 1.8D, radius, 0.20D);
+            level.sendParticles(player, ParticleTypes.FIREWORK, true,
+                    maeve.x, y, maeve.z,
+                    9, radius * 0.72D, 0.8D, radius * 0.72D, 0.12D);
+            spawnMaeveRisingStream(level, player, maeve, elapsedTicks);
+            if (elapsedTicks % 6 == 0) {
+                level.sendParticles(player, ParticleTypes.GUST_EMITTER_LARGE,
+                        true, maeve.x, y, maeve.z, 1,
+                        0.0D, 0.0D, 0.0D, 0.0D);
+            }
+        }
+    }
+
+    private static void spawnMaeveRisingStream(
+            ServerLevel level,
+            ServerPlayer player,
+            Vec3 maeve,
+            int elapsedTicks) {
+        double sourceY = maeve.y - 5.5D;
+        for (int strand = 0; strand < 7; strand++) {
+            double angle = strand * Math.PI * 2.0D / 7.0D
+                    + elapsedTicks * 0.31D;
+            double radius = 0.45D + strand % 3 * 0.38D;
+            double x = maeve.x + Math.cos(angle) * radius;
+            double z = maeve.z + Math.sin(angle) * radius;
+            double horizontal = 0.035D + strand % 2 * 0.018D;
+            double velocityY = 2.25D + strand * 0.13D;
+            level.sendParticles(player, MAEVE_CONVERGENCE_DUST, true,
+                    x, sourceY, z, 0,
+                    Math.cos(angle) * horizontal, velocityY,
+                    Math.sin(angle) * horizontal, 1.0D);
+            level.sendParticles(player, ParticleTypes.FIREWORK, true,
+                    x, sourceY + 0.4D, z, 0,
+                    Math.cos(angle) * horizontal * 1.4D,
+                    velocityY * 1.08D,
+                    Math.sin(angle) * horizontal * 1.4D, 1.0D);
+        }
+    }
+
+    private static void playMaeveAftermathOmens(
+            ServerLevel level,
+            ReturnedHearthSavedData data,
+            ReturnedHearthSavedData.HearthRecord hearth,
+            BlockPos anchor,
+            long elapsedTicks) {
+        for (int index = 0; index < MAEVE_OMEN_TICKS.length; index++) {
+            if (elapsedTicks < MAEVE_OMEN_TICKS[index]
+                    || !data.markHeartMaeveAftermathSound(hearth.id(), index)) {
+                continue;
+            }
+            var sound = switch (index) {
+                case 0 -> ModSounds.THAE_IVEN_HEART_MAEVE_OMEN_ONE.get();
+                case 1 -> ModSounds.THAE_IVEN_HEART_MAEVE_OMEN_TWO.get();
+                default -> ModSounds.THAE_IVEN_HEART_MAEVE_OMEN_THREE.get();
+            };
+            if (index == 0) {
+                Vec3 maeve = HeartLattice.maevePosition(anchor);
+                for (ServerPlayer player : level.players()) {
+                    if (player.position().distanceToSqr(maeve)
+                            <= 224.0D * 224.0D) {
+                        PacketDistributor.sendToPlayer(
+                                player,
+                                HearthBoundaryEffectPayload.worldEventOmen());
+                    }
+                }
+            }
+            float volume = switch (index) {
+                case 0 -> 4.5F;
+                case 1 -> 7.0F;
+                default -> 10.0F;
+            };
+            level.playSound(null, anchor, sound,
+                    SoundSource.VOICE, volume, 1.0F);
+        }
+    }
+
+    private static void spawnMaeveCardinalBurst(
+            ServerLevel level, BlockPos anchor, int elapsedTicks) {
+        Vec3 maeve = HeartLattice.maevePosition(anchor);
+        Vec3 summit = maeve.add(0.0D, 112.0D, 0.0D);
+        double distance = 2.0D + elapsedTicks * 5.5D;
+        double[][] directions = {
+                {1.0D, 0.0D}, {-1.0D, 0.0D}, {0.0D, 1.0D}, {0.0D, -1.0D}
+        };
+        for (ServerPlayer player : level.players()) {
+            if (player.position().distanceToSqr(maeve) > 224.0D * 224.0D) {
+                continue;
+            }
+            for (double[] direction : directions) {
+                double x = summit.x + direction[0] * distance;
+                double z = summit.z + direction[1] * distance;
+                level.sendParticles(player, MAEVE_CONVERGENCE_DUST, true,
+                        x, summit.y, z, 18,
+                        1.8D, 1.2D, 1.8D, 0.18D);
+                level.sendParticles(player, ParticleTypes.FIREWORK, true,
+                        x, summit.y, z, 5,
+                        1.0D, 0.7D, 1.0D, 0.10D);
+            }
+            if (elapsedTicks == 0) {
+                level.sendParticles(player, ParticleTypes.GUST_EMITTER_LARGE,
+                        true, summit.x, summit.y, summit.z, 3,
+                        0.0D, 0.0D, 0.0D, 0.0D);
+                level.sendParticles(player, ParticleTypes.FLASH,
+                        true, summit.x, summit.y, summit.z, 4,
+                        1.0D, 1.0D, 1.0D, 0.0D);
+            }
+        }
+    }
+
+    private static void playMaeveSkyBurst(ServerLevel level, BlockPos anchor) {
+        Vec3 maeve = HeartLattice.maevePosition(anchor);
+        Vec3 summit = maeve.add(0.0D, 112.0D, 0.0D);
+        BlockPos soundPos = BlockPos.containing(summit);
+        level.playSound(null, soundPos,
+                ModSounds.MASTER_ARCHITECT_THUNDERSNOW_CLOSE.get(),
+                SoundSource.VOICE, 12.0F, 0.68F);
+        level.playSound(null, soundPos,
+                ModSounds.LAST_WITNESS_FORGE.get(),
+                SoundSource.VOICE, 10.0F, 0.78F);
+    }
+
+    private static void broadcastMaeveWorldMessage(ServerLevel level) {
+        ClientboundSetTitlesAnimationPacket timing =
+                new ClientboundSetTitlesAnimationPacket(20, 80, 40);
+        ClientboundSetSubtitleTextPacket subtitle =
+                new ClientboundSetSubtitleTextPacket(
+                Component.translatable(
+                        "title.frozendawn.nothing_holding_together"));
+        ClientboundSetTitleTextPacket title =
+                new ClientboundSetTitleTextPacket(Component.empty());
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            PacketDistributor.sendToPlayer(
+                    player, HearthBoundaryEffectPayload.worldEventSilence());
+            player.connection.send(timing);
+            player.connection.send(subtitle);
+            player.connection.send(title);
         }
     }
 

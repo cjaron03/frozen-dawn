@@ -74,9 +74,10 @@ public final class StormExposureController {
             return 0.0F;
         }
         boolean masterStormRequested = MasterArchitectWeather.isRequested();
+        boolean heartStormRequested = HeartQuietClient.localStormStrength() > 0.02F;
         if (phase < 3
                 || (PhaseManager.isVacuumActive(phase, progress)
-                        && !masterStormRequested)
+                        && !masterStormRequested && !heartStormRequested)
                 || mc.player.blockPosition().getY() < 50) {
             coveredGraceTicks = 0;
             return 0.0F;

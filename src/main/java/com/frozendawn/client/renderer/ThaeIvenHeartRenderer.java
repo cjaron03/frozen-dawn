@@ -36,9 +36,9 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
     private static final ResourceLocation END_CRYSTAL_TEXTURE =
             ResourceLocation.withDefaultNamespace(
                     "textures/entity/end_crystal/end_crystal.png");
-    private static final RenderType CRYSTAL_RENDER_TYPE =
+    private static final RenderType CRYSTAL_CORE_RENDER_TYPE =
             RenderType.entityCutoutNoCull(END_CRYSTAL_TEXTURE);
-    private static final RenderType CRYSTAL_DISTORTION_RENDER_TYPE =
+    private static final RenderType CRYSTAL_SHELL_RENDER_TYPE =
             RenderType.entityTranslucent(END_CRYSTAL_TEXTURE);
     private static final float SIN_45 = (float) Math.sin(Math.PI / 4.0D);
     private final ModelPart crystalCube;
@@ -194,43 +194,52 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
         float channel = HeartMemoryNodeClient.maeveChannelProgress(heart);
         float pulse = 0.78F + 0.22F * Mth.sin(
                 (heart.tickCount + partialTick) * 0.045F);
-        float shellScale = (forge > 0.0F
-                ? Mth.lerp(forge, 0.30F, 0.12F)
-                : 1.0F - erasure * 0.70F) * formationScale;
+        float shellFade = 1.0F - erasure;
+        shellFade = shellFade * shellFade * (3.0F - 2.0F * shellFade);
+        float shellScale = Mth.lerp(erasure, 1.0F, 0.38F) * formationScale;
         float coreScale = (forge > 0.0F
-                ? Mth.lerp(forge, 0.34F, 0.18F)
-                : 1.0F + channel * 0.80F - erasure * 0.68F)
+                ? Mth.lerp(forge, 0.52F, 0.68F)
+                : Mth.lerp(erasure, 1.0F + channel * 0.80F, 0.52F))
                 * Mth.lerp(formation, 0.18F, 1.0F);
         float age = heart.tickCount + partialTick;
+        float shellRotation = age * (1.25F + channel * 1.8F);
+        float coreRotation = age * (2.2F + erasure * 1.8F + forge * 42.0F);
 
-        if (forge > 0.0F) {
-            renderMaeveDistortion(poseStack, buffers, age, forge);
-        }
-        poseStack.pushPose();
         float assemblyDrift = 1.0F - formation;
-        poseStack.translate(
-                -0.7F + Mth.sin(age * 0.11F) * assemblyDrift * 1.6F,
-                -3.4F + assemblyDrift * 2.8F,
-                0.2F + Mth.cos(age * 0.09F) * assemblyDrift * 1.3F);
-        poseStack.scale(5.4F * shellScale, 5.4F * shellScale,
-                5.4F * shellScale);
-        VertexConsumer crystal = buffers.getBuffer(CRYSTAL_RENDER_TYPE);
         int overlay = OverlayTexture.NO_OVERLAY;
-        float rotation = age * (1.25F + channel * 1.8F
-                + forge * forge * 24.0F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(rotation));
-        poseStack.mulPose(new Quaternionf().setAngleAxis(
-                (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
-        crystalGlass.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
-                overlay, 0xFF082238);
-        poseStack.scale(0.82F, 0.82F, 0.82F);
-        poseStack.mulPose(Axis.XP.rotationDegrees(-rotation * 0.72F));
-        poseStack.mulPose(new Quaternionf().setAngleAxis(
-                (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
-        crystalGlass.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
-                overlay, 0xFF0A5475);
-        poseStack.scale(0.78F, 0.78F, 0.78F);
-        poseStack.mulPose(Axis.ZP.rotationDegrees(rotation * 1.18F));
+        if (shellFade > 0.01F && shellScale > 0.01F) {
+            VertexConsumer shell = buffers.getBuffer(CRYSTAL_SHELL_RENDER_TYPE);
+            int outerAlpha = Mth.clamp(Math.round(shellFade * 255.0F), 0, 255);
+            int innerAlpha = Mth.clamp(Math.round(shellFade * 230.0F), 0, 255);
+            poseStack.pushPose();
+            poseStack.translate(
+                    -0.7F + Mth.sin(age * 0.11F) * assemblyDrift * 1.6F,
+                    -3.4F + assemblyDrift * 2.8F,
+                    0.2F + Mth.cos(age * 0.09F) * assemblyDrift * 1.3F);
+            poseStack.scale(5.4F * shellScale, 5.4F * shellScale,
+                    5.4F * shellScale);
+            poseStack.mulPose(Axis.YP.rotationDegrees(shellRotation));
+            poseStack.mulPose(new Quaternionf().setAngleAxis(
+                    (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
+            crystalGlass.render(poseStack, shell, LightTexture.FULL_BRIGHT,
+                    overlay, outerAlpha << 24 | 0x082238);
+            poseStack.scale(0.82F, 0.82F, 0.82F);
+            poseStack.mulPose(Axis.XP.rotationDegrees(-shellRotation * 0.72F));
+            poseStack.mulPose(new Quaternionf().setAngleAxis(
+                    (float) (Math.PI / 3.0D), SIN_45, 0.0F, SIN_45));
+            crystalGlass.render(poseStack, shell, LightTexture.FULL_BRIGHT,
+                    overlay, innerAlpha << 24 | 0x0A5475);
+            poseStack.popPose();
+        }
+
+        VertexConsumer crystal = buffers.getBuffer(CRYSTAL_CORE_RENDER_TYPE);
+        poseStack.pushPose();
+        poseStack.translate(-0.7F, -3.4F, 0.2F);
+        float visibleCoreScale = 3.45F * coreScale;
+        poseStack.scale(visibleCoreScale, visibleCoreScale, visibleCoreScale);
+        poseStack.mulPose(Axis.YP.rotationDegrees(coreRotation));
+        poseStack.mulPose(Axis.XP.rotationDegrees(coreRotation * 0.61F));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(-coreRotation * 0.37F));
         crystalCube.render(poseStack, crystal, LightTexture.FULL_BRIGHT,
                 overlay, 0xFF14BEE6);
         poseStack.popPose();
@@ -254,35 +263,6 @@ public final class ThaeIvenHeartRenderer extends EntityRenderer<ThaeIvenHeartEnt
                     0.36F + channel * 0.30F,
                     0.72F + erasure * 0.28F,
                     0.48F * pulse * formation * (1.0F - erasure * 0.82F));
-        }
-    }
-
-    private void renderMaeveDistortion(
-            PoseStack poseStack,
-            MultiBufferSource buffers,
-            float age,
-            float forge) {
-        VertexConsumer distortion = buffers.getBuffer(
-                CRYSTAL_DISTORTION_RENDER_TYPE);
-        for (int shell = 0; shell < 3; shell++) {
-            float phase = age * (0.75F + shell * 0.19F)
-                    * (1.0F + forge * 2.8F);
-            float breathing = 1.0F + Mth.sin(
-                    age * 0.16F + shell * 1.9F) * 0.10F;
-            float scale = (6.6F + shell * 1.35F)
-                    * breathing * (1.0F - forge * 0.16F);
-            int alpha = Mth.clamp(
-                    Math.round((30.0F - shell * 6.0F) * (0.45F + forge * 0.55F)),
-                    0, 255);
-            int color = alpha << 24 | (shell == 0 ? 0x146783 : 0x0A314A);
-            poseStack.pushPose();
-            poseStack.translate(-0.7F, -3.4F, 0.2F);
-            poseStack.scale(scale, scale, scale);
-            poseStack.mulPose(Axis.YP.rotationDegrees(phase));
-            poseStack.mulPose(Axis.XP.rotationDegrees(-phase * 0.61F));
-            crystalGlass.render(poseStack, distortion,
-                    LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, color);
-            poseStack.popPose();
         }
     }
 

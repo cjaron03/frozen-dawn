@@ -7,6 +7,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,12 +21,17 @@ public final class HearthBoundaryEffects {
     private static final int PULSE_DURATION_TICKS = 34;
     private static final int SHAKE_DURATION_TICKS = 18;
     private static final int MAEVE_SHAKE_DURATION_TICKS = 52;
+    private static final int MAEVE_DEATH_SHAKE_DURATION_TICKS = 100;
     private static final int RESCUE_DURATION_TICKS = 56;
+    private static final int WORLD_EVENT_SILENCE_TICKS = 140;
+    private static final int WORLD_EVENT_OMEN_TICKS = 260;
 
     private static int pulseTicks;
     private static int shakeTicks;
     private static int shakeDuration = SHAKE_DURATION_TICKS;
     private static int rescueTicks;
+    private static int silenceTicks;
+    private static int omenTicks;
 
     private HearthBoundaryEffects() {
     }
@@ -52,6 +58,23 @@ public final class HearthBoundaryEffects {
             shakeDuration = 24;
             minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
                     ModSounds.LAST_WITNESS_SAVE.get(), 1.0F, 1.0F));
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.MAEVE_DEATH) {
+            shakeTicks = MAEVE_DEATH_SHAKE_DURATION_TICKS;
+            shakeDuration = MAEVE_DEATH_SHAKE_DURATION_TICKS;
+            return;
+        }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.WORLD_EVENT_SILENCE) {
+            silenceTicks = WORLD_EVENT_SILENCE_TICKS;
+            omenTicks = 0;
+            stopWorldAmbience(minecraft);
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.WORLD_EVENT_OMEN) {
+            omenTicks = WORLD_EVENT_OMEN_TICKS;
+            stopCompetingAudio(minecraft);
             return;
         }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
@@ -106,6 +129,18 @@ public final class HearthBoundaryEffects {
         if (rescueTicks > 0) {
             rescueTicks--;
         }
+        if (silenceTicks > 0) {
+            silenceTicks--;
+            if (silenceTicks % 5 == 0) {
+                stopWorldAmbience(minecraft);
+            }
+        }
+        if (omenTicks > 0) {
+            omenTicks--;
+            if (omenTicks % 5 == 0) {
+                stopCompetingAudio(minecraft);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -116,7 +151,8 @@ public final class HearthBoundaryEffects {
         }
         float strength = shakeTicks / (float) Math.max(1, shakeDuration);
         float magnitude = shakeDuration == MAEVE_SHAKE_DURATION_TICKS
-                ? 2.35F : rescueTicks > 0 ? 0.55F : 1.0F;
+                ? 2.35F : shakeDuration == MAEVE_DEATH_SHAKE_DURATION_TICKS
+                        ? 4.8F : rescueTicks > 0 ? 0.55F : 1.0F;
         double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);
         float yaw = (float) (Math.cos(time * 4.9D) * 0.92D * strength);
@@ -169,5 +205,22 @@ public final class HearthBoundaryEffects {
 
     private static int argb(int alpha, int rgb) {
         return Mth.clamp(alpha, 0, 255) << 24 | rgb & 0x00FFFFFF;
+    }
+
+    private static void stopWorldAmbience(Minecraft minecraft) {
+        minecraft.getMusicManager().stopPlaying();
+        minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
+        minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
+        minecraft.getSoundManager().stop(null, SoundSource.WEATHER);
+        minecraft.getSoundManager().stop(null, SoundSource.RECORDS);
+        minecraft.getSoundManager().stop(null, SoundSource.VOICE);
+    }
+
+    private static void stopCompetingAudio(Minecraft minecraft) {
+        minecraft.getMusicManager().stopPlaying();
+        minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
+        minecraft.getSoundManager().stop(null, SoundSource.AMBIENT);
+        minecraft.getSoundManager().stop(null, SoundSource.WEATHER);
+        minecraft.getSoundManager().stop(null, SoundSource.RECORDS);
     }
 }

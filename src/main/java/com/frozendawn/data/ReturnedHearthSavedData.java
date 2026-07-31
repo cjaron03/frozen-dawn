@@ -682,7 +682,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
-    /** Future canonical Heart death calls this to release the client music channel. */
+    /** Releases the Heart's exclusive music channel before final erasure. */
     public boolean stopHeartMusic(UUID hearthId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || !hearth.heartMusicActive) {
@@ -820,6 +820,30 @@ public final class ReturnedHearthSavedData extends SavedData {
             return false;
         }
         hearth.heartMaeveForgeAnnounced = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveAftermathSound(UUID hearthId, int soundIndex) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || soundIndex < 0 || soundIndex >= 5) {
+            return false;
+        }
+        int bit = 1 << soundIndex;
+        if ((hearth.heartMaeveAftermathSoundMask & bit) != 0) {
+            return false;
+        }
+        hearth.heartMaeveAftermathSoundMask |= bit;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveWorldMessageShown(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveWorldMessageShown) {
+            return false;
+        }
+        hearth.heartMaeveWorldMessageShown = true;
         setDirty();
         return true;
     }
@@ -964,6 +988,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartMaeveErasureComplete = false;
         hearth.heartMaeveEraserId = null;
         hearth.heartMaeveForgeAnnounced = false;
+        hearth.heartMaeveAftermathSoundMask = 0;
+        hearth.heartMaeveWorldMessageShown = false;
         hearth.heartLastWitnessDropped = false;
         hearth.heartFinalAdvancementGranted = false;
     }
@@ -2064,6 +2090,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean heartMaeveErasureComplete;
         private UUID heartMaeveEraserId;
         private boolean heartMaeveForgeAnnounced;
+        private int heartMaeveAftermathSoundMask;
+        private boolean heartMaeveWorldMessageShown;
         private boolean heartLastWitnessDropped;
         private boolean heartFinalAdvancementGranted;
         private boolean heartSwarmAnnounced;
@@ -2213,6 +2241,15 @@ public final class ReturnedHearthSavedData extends SavedData {
                     ? tag.getUUID("heartMaeveEraserId") : null;
             record.heartMaeveForgeAnnounced =
                     tag.getBoolean("heartMaeveForgeAnnounced");
+            record.heartMaeveAftermathSoundMask =
+                    tag.getInt("heartMaeveAftermathSoundMask") & 0b11111;
+            record.heartMaeveWorldMessageShown =
+                    tag.getBoolean("heartMaeveWorldMessageShown");
+            if (record.heartMaeveErasureComplete
+                    && !tag.contains("heartMaeveWorldMessageShown")) {
+                record.heartMaeveAftermathSoundMask = 0b11111;
+                record.heartMaeveWorldMessageShown = true;
+            }
             record.heartLastWitnessDropped =
                     tag.getBoolean("heartLastWitnessDropped");
             record.heartFinalAdvancementGranted =
@@ -2386,6 +2423,10 @@ public final class ReturnedHearthSavedData extends SavedData {
                 tag.putUUID("heartMaeveEraserId", heartMaeveEraserId);
             }
             tag.putBoolean("heartMaeveForgeAnnounced", heartMaeveForgeAnnounced);
+            tag.putInt("heartMaeveAftermathSoundMask",
+                    heartMaeveAftermathSoundMask);
+            tag.putBoolean("heartMaeveWorldMessageShown",
+                    heartMaeveWorldMessageShown);
             tag.putBoolean("heartLastWitnessDropped", heartLastWitnessDropped);
             tag.putBoolean("heartFinalAdvancementGranted",
                     heartFinalAdvancementGranted);
@@ -2656,6 +2697,14 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean heartMaeveForgeAnnounced() {
             return heartMaeveForgeAnnounced;
+        }
+
+        public int heartMaeveAftermathSoundMask() {
+            return heartMaeveAftermathSoundMask;
+        }
+
+        public boolean heartMaeveWorldMessageShown() {
+            return heartMaeveWorldMessageShown;
         }
 
         public boolean heartLastWitnessDropped() {

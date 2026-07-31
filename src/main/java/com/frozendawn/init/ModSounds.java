@@ -326,6 +326,14 @@ public class ModSounds {
             "entity.thae_iven_heart.collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_ERASURE = register(
             "entity.thae_iven_heart.maeve_erasure");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_DEATH_WAIL = register(
+            "entity.thae_iven_heart.maeve_death_wail");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_OMEN_ONE = register(
+            "entity.thae_iven_heart.maeve_omen_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_OMEN_TWO = register(
+            "entity.thae_iven_heart.maeve_omen_two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_OMEN_THREE = register(
+            "entity.thae_iven_heart.maeve_omen_three");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_BREAK = register(
             "entity.thae_iven_heart.maeve_break");
     public static final DeferredHolder<SoundEvent, SoundEvent> LAST_WITNESS_FORGE = register(

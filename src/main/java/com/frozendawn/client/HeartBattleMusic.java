@@ -25,6 +25,12 @@ public final class HeartBattleMusic {
     public static void update(HeartMusicStatePayload payload) {
         HeartQuietClient.setWorldErased(payload.erased());
         if (!payload.active()) {
+            if (active) {
+                Minecraft minecraft = Minecraft.getInstance();
+                hardStop();
+                minecraft.getMusicManager().stopPlaying();
+                minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
+            }
             active = false;
             return;
         }

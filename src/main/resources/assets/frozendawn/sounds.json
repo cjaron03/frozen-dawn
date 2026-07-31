@@ -557,8 +557,6 @@
     "category": "master",
     "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_scream",
     "sounds": [
-      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.35, "pitch": 0.64 },
-      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.15, "pitch": 0.74 },
       { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.92, "pitch": 0.62 }
     ]
   },
@@ -1236,19 +1234,41 @@
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_erasure",
     "sounds": [
-      { "name": "frozendawn:entity/master_architect/voice_death", "volume": 2.4, "pitch": 0.72 },
-      { "name": "minecraft:entity.allay.death", "type": "event", "volume": 1.8, "pitch": 0.48 },
-      { "name": "minecraft:entity.ghast.death", "type": "event", "volume": 1.15, "pitch": 0.62 },
-      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.6, "pitch": 0.42 },
-      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.2, "pitch": 0.50 }
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_erasure_collective", "volume": 1.5 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_death_wail": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_death_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_death_wail", "volume": 1.5 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_one": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_1", "volume": 1.35 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_two": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_2", "volume": 1.35 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_three": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_3", "volume": 1.4 }
     ]
   },
   "entity.thae_iven_heart.maeve_break": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_break",
     "sounds": [
-      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 2.2, "pitch": 0.38 },
-      { "name": "minecraft:entity.warden.death", "type": "event", "volume": 1.7, "pitch": 0.46 },
       { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.8, "pitch": 0.44 }
     ]
   },
@@ -1256,8 +1276,6 @@
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_forge",
     "sounds": [
-      { "name": "minecraft:block.beacon.activate", "type": "event", "volume": 1.6, "pitch": 0.48 },
-      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 2.0, "pitch": 0.74 },
       { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 1.35, "pitch": 0.62 }
     ]
   },
