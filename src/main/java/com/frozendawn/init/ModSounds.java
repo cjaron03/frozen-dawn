@@ -63,6 +63,9 @@ public class ModSounds {
             register("ui.suit.leak_hiss");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =
             register("ui.suit.emergency_reserve");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            SUIT_BIOLOGICAL_ACTIVITY_WARNING =
+            register("ui.suit.biological_activity_warning");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = SOUNDS.register("ambient.sanity_whisper",
             () -> SoundEvent.createVariableRangeEvent(
@@ -326,6 +329,9 @@ public class ModSounds {
             "entity.thae_iven_heart.collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_ERASURE = register(
             "entity.thae_iven_heart.maeve_erasure");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            THAE_IVEN_HEART_COLLAPSE_RESPONSE = register(
+            "entity.thae_iven_heart.collapse_response");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_DEATH_WAIL = register(
             "entity.thae_iven_heart.maeve_death_wail");
     public static final DeferredHolder<SoundEvent, SoundEvent> THAE_IVEN_HEART_MAEVE_OMEN_ONE = register(

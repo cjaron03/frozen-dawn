@@ -62,6 +62,13 @@ public final class HearthHeartManager {
     private static final int MAEVE_SKY_BURST_TICKS = 18;
     private static final int[] MAEVE_OMEN_TICKS = {148, 188, 228};
     private static final int MAEVE_WORLD_MESSAGE_TICK = 388;
+    private static final int MAEVE_COLLAPSE_RESPONSE_DELAY_TICKS = 20;
+    private static final int MAEVE_COLLAPSE_RESPONSE_TICK =
+            MAEVE_WORLD_MESSAGE_TICK + MAEVE_COLLAPSE_RESPONSE_DELAY_TICKS;
+    private static final int MAEVE_COLLAPSE_RESPONSE_DURATION_TICKS = 480;
+    private static final int MAEVE_BIOLOGICAL_WARNING_TICK =
+            MAEVE_COLLAPSE_RESPONSE_TICK
+                    + MAEVE_COLLAPSE_RESPONSE_DURATION_TICKS;
     private static final String FRAGMENT_TAG_PREFIX = "frozendawn_heart_fragment_";
     private static final String COLLAPSE_FRAGMENT_TAG_PREFIX =
             "frozendawn_heart_collapse_fragment_";
@@ -192,6 +199,16 @@ public final class HearthHeartManager {
             if (aftermathElapsed >= MAEVE_WORLD_MESSAGE_TICK
                     && data.markHeartMaeveWorldMessageShown(hearth.id())) {
                 broadcastMaeveWorldMessage(level);
+            }
+            if (aftermathElapsed >= MAEVE_COLLAPSE_RESPONSE_TICK
+                    && data.markHeartMaeveCollapseResponsePlayed(hearth.id())) {
+                broadcastMaeveWorldEffect(level,
+                        HearthBoundaryEffectPayload.worldEventCollapseResponse());
+            }
+            if (aftermathElapsed >= MAEVE_BIOLOGICAL_WARNING_TICK
+                    && data.markHeartMaeveBiologicalWarningPlayed(hearth.id())) {
+                broadcastMaeveWorldEffect(level,
+                        HearthBoundaryEffectPayload.worldEventBiologicalWarning());
             }
             if (level.hasChunkAt(anchor)) {
                 removeHeartEntities(level, hearth.id(), anchor);
@@ -1309,6 +1326,13 @@ public final class HearthHeartManager {
             player.connection.send(timing);
             player.connection.send(subtitle);
             player.connection.send(title);
+        }
+    }
+
+    private static void broadcastMaeveWorldEffect(
+            ServerLevel level, HearthBoundaryEffectPayload payload) {
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            PacketDistributor.sendToPlayer(player, payload);
         }
     }
 

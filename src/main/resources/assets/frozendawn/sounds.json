@@ -113,6 +113,13 @@
       { "name": "frozendawn:ui/suit/emergency_reserve", "stream": true }
     ]
   },
+  "ui.suit.biological_activity_warning": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.suit.biological_activity_warning",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/biological_activity_warning", "stream": true }
+    ]
+  },
   "ambient.eva_suffocate": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.eva_suffocate",
@@ -1235,6 +1242,13 @@
     "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_erasure",
     "sounds": [
       { "name": "frozendawn:entity/thae_iven_heart/maeve_erasure_collective", "volume": 1.5 }
+    ]
+  },
+  "entity.thae_iven_heart.collapse_response": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.collapse_response",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/the_undone_collapse", "stream": true }
     ]
   },
   "entity.thae_iven_heart.maeve_death_wail": {

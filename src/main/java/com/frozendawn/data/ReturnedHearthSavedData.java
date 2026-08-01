@@ -848,6 +848,26 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean markHeartMaeveCollapseResponsePlayed(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveCollapseResponsePlayed) {
+            return false;
+        }
+        hearth.heartMaeveCollapseResponsePlayed = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveBiologicalWarningPlayed(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveBiologicalWarningPlayed) {
+            return false;
+        }
+        hearth.heartMaeveBiologicalWarningPlayed = true;
+        setDirty();
+        return true;
+    }
+
     public boolean markHeartLastWitnessDropped(UUID hearthId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || hearth.heartLastWitnessDropped) {
@@ -990,6 +1010,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartMaeveForgeAnnounced = false;
         hearth.heartMaeveAftermathSoundMask = 0;
         hearth.heartMaeveWorldMessageShown = false;
+        hearth.heartMaeveCollapseResponsePlayed = false;
+        hearth.heartMaeveBiologicalWarningPlayed = false;
         hearth.heartLastWitnessDropped = false;
         hearth.heartFinalAdvancementGranted = false;
     }
@@ -2092,6 +2114,8 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean heartMaeveForgeAnnounced;
         private int heartMaeveAftermathSoundMask;
         private boolean heartMaeveWorldMessageShown;
+        private boolean heartMaeveCollapseResponsePlayed;
+        private boolean heartMaeveBiologicalWarningPlayed;
         private boolean heartLastWitnessDropped;
         private boolean heartFinalAdvancementGranted;
         private boolean heartSwarmAnnounced;
@@ -2245,10 +2269,20 @@ public final class ReturnedHearthSavedData extends SavedData {
                     tag.getInt("heartMaeveAftermathSoundMask") & 0b11111;
             record.heartMaeveWorldMessageShown =
                     tag.getBoolean("heartMaeveWorldMessageShown");
+            record.heartMaeveCollapseResponsePlayed = tag.contains(
+                    "heartMaeveCollapseResponsePlayed", Tag.TAG_BYTE)
+                    ? tag.getBoolean("heartMaeveCollapseResponsePlayed")
+                    : record.heartMaeveWorldMessageShown;
+            record.heartMaeveBiologicalWarningPlayed = tag.contains(
+                    "heartMaeveBiologicalWarningPlayed", Tag.TAG_BYTE)
+                    ? tag.getBoolean("heartMaeveBiologicalWarningPlayed")
+                    : record.heartMaeveWorldMessageShown;
             if (record.heartMaeveErasureComplete
                     && !tag.contains("heartMaeveWorldMessageShown")) {
                 record.heartMaeveAftermathSoundMask = 0b11111;
                 record.heartMaeveWorldMessageShown = true;
+                record.heartMaeveCollapseResponsePlayed = true;
+                record.heartMaeveBiologicalWarningPlayed = true;
             }
             record.heartLastWitnessDropped =
                     tag.getBoolean("heartLastWitnessDropped");
@@ -2427,6 +2461,10 @@ public final class ReturnedHearthSavedData extends SavedData {
                     heartMaeveAftermathSoundMask);
             tag.putBoolean("heartMaeveWorldMessageShown",
                     heartMaeveWorldMessageShown);
+            tag.putBoolean("heartMaeveCollapseResponsePlayed",
+                    heartMaeveCollapseResponsePlayed);
+            tag.putBoolean("heartMaeveBiologicalWarningPlayed",
+                    heartMaeveBiologicalWarningPlayed);
             tag.putBoolean("heartLastWitnessDropped", heartLastWitnessDropped);
             tag.putBoolean("heartFinalAdvancementGranted",
                     heartFinalAdvancementGranted);

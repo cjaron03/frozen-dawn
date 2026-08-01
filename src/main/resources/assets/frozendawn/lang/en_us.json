@@ -112,6 +112,7 @@
   "ui.frozendawn.suit.patch_complete": "Suit seal restored.",
   "ui.frozendawn.suit.patch_degraded": "Warning: temporary suit seal failure.",
   "ui.frozendawn.suit.emergency_reserve": "Emergency reserve engaged. Please seek pressurized shelter.",
+  "ui.frozendawn.suit.biological_activity_warning": "Anomalous biological activity detected across all survey bands. Recommend elevated caution.",
   "message.frozendawn.emergency_o2.requires_eva": "A sealed EVA rig is required.",
   "message.frozendawn.emergency_o2.requires_canister": "No O2 canister is connected.",
   "message.frozendawn.emergency_o2.full": "O2 reserves are already full.",
@@ -120,6 +121,7 @@
   "subtitle.frozendawn.ui.suit.oxygen_beep": "Suit oxygen alarm beeps",
   "subtitle.frozendawn.ui.suit.leak_hiss": "Air hisses from the suit",
   "subtitle.frozendawn.ui.suit.emergency_reserve": "Emergency oxygen reserve engages",
+  "subtitle.frozendawn.ui.suit.biological_activity_warning": "Anomalous biological activity detected across all survey bands. Recommend elevated caution.",
 
   "command.frozendawn.status.header": "--- Frozen Dawn Status ---",
   "command.frozendawn.status.day": "  Day: %s / %s",
@@ -752,6 +754,7 @@
   "subtitle.frozendawn.entity.heart_successor.death": "The Successor comes apart",
   "subtitle.frozendawn.entity.thae_iven_heart.swarm_wail": "The exposed archive calls the dead",
   "subtitle.frozendawn.entity.thae_iven_heart.maeve_erasure": "The last memory breaks",
+  "subtitle.frozendawn.entity.thae_iven_heart.collapse_response": "Something distant answers",
   "subtitle.frozendawn.entity.thae_iven_heart.maeve_death_wail": "Maeve wails",
   "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen": "Something answers",
   "title.frozendawn.nothing_holding_together": "Nothing is holding them together now",

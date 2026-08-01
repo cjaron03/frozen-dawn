@@ -25,6 +25,7 @@ public final class HearthBoundaryEffects {
     private static final int RESCUE_DURATION_TICKS = 56;
     private static final int WORLD_EVENT_SILENCE_TICKS = 140;
     private static final int WORLD_EVENT_OMEN_TICKS = 260;
+    private static final int COLLAPSE_RESPONSE_TICKS = 480;
 
     private static int pulseTicks;
     private static int shakeTicks;
@@ -75,6 +76,25 @@ public final class HearthBoundaryEffects {
         if (payload.effectType() == HearthBoundaryEffectPayload.WORLD_EVENT_OMEN) {
             omenTicks = WORLD_EVENT_OMEN_TICKS;
             stopCompetingAudio(minecraft);
+            return;
+        }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.WORLD_EVENT_COLLAPSE_RESPONSE) {
+            silenceTicks = 0;
+            omenTicks = COLLAPSE_RESPONSE_TICKS;
+            stopCompetingAudio(minecraft);
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.THAE_IVEN_HEART_COLLAPSE_RESPONSE.get(), 1.0F, 1.0F));
+            return;
+        }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.WORLD_EVENT_BIOLOGICAL_WARNING) {
+            omenTicks = Math.max(omenTicks, 140);
+            stopCompetingAudio(minecraft);
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.SUIT_BIOLOGICAL_ACTIVITY_WARNING.get(), 1.0F, 1.0F));
+            MasterArchitectFloodClient.showWarningSuitDialogue(
+                    "ui.frozendawn.suit.biological_activity_warning");
             return;
         }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {

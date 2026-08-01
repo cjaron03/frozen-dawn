@@ -17,6 +17,8 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int MAEVE_DEATH = 4;
     public static final int WORLD_EVENT_SILENCE = 5;
     public static final int WORLD_EVENT_OMEN = 6;
+    public static final int WORLD_EVENT_COLLAPSE_RESPONSE = 7;
+    public static final int WORLD_EVENT_BIOLOGICAL_WARNING = 8;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -54,6 +56,14 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload worldEventOmen() {
         return new HearthBoundaryEffectPayload(WORLD_EVENT_OMEN);
+    }
+
+    public static HearthBoundaryEffectPayload worldEventCollapseResponse() {
+        return new HearthBoundaryEffectPayload(WORLD_EVENT_COLLAPSE_RESPONSE);
+    }
+
+    public static HearthBoundaryEffectPayload worldEventBiologicalWarning() {
+        return new HearthBoundaryEffectPayload(WORLD_EVENT_BIOLOGICAL_WARNING);
     }
 
     @Override
