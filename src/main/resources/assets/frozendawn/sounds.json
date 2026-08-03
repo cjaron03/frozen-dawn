@@ -1441,5 +1441,28 @@
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.thaeven_interrupt",
     "sounds": [ "frozendawn:ui/thaeven_interrupt" ]
+  },
+  "ui.suit.bloom_contact": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.suit.bloom_contact",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/bloom_contact", "stream": true }
+    ]
+  },
+  "ambient.bloom.drone": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:ambient/bloom/drone", "stream": true }
+    ]
+  },
+  "ambient.bloom.crack": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.crack",
+    "sounds": [ "frozendawn:ambient/bloom/crack" ]
+  },
+  "ambient.bloom.shimmer": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.shimmer",
+    "sounds": [ "frozendawn:ambient/bloom/shimmer" ]
   }
 }

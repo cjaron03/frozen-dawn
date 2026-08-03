@@ -2,6 +2,9 @@ package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.FuelProcessingSiloMultiblock;
+import com.frozendawn.block.BloomMassBlock;
+import com.frozendawn.bloom.BloomBand;
+import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import com.frozendawn.world.ThermalVentRegistry;
@@ -419,24 +422,37 @@ public final class UndoneArchitectEntity extends Monster {
         }
         BlockPos below = pos.below();
         boolean supported = level.getBlockState(below).isSolidRender(level, below)
-                || builtIce.contains(below);
+                || builtIce.contains(below)
+                || isBloom(level.getBlockState(below));
         boolean attached = supported;
+        boolean bloomAttached = isBloom(level.getBlockState(below));
         for (Direction direction : Direction.Plane.HORIZONTAL) {
-            attached |= level.getBlockState(pos.relative(direction))
-                    .isSolidRender(level, pos.relative(direction));
+            BlockPos side = pos.relative(direction);
+            BlockState sideState = level.getBlockState(side);
+            attached |= sideState.isSolidRender(level, side);
+            bloomAttached |= isBloom(sideState);
         }
         if (!attached) {
             return false;
         }
-        BlockState ice = random.nextInt(5) == 0
-                ? Blocks.ICE.defaultBlockState()
-                : Blocks.PACKED_ICE.defaultBlockState();
+        BlockState ice = bloomAttached && random.nextInt(3) == 0
+                ? ModBlocks.BLOOM_MASS.get().defaultBlockState()
+                        .setValue(BloomMassBlock.BAND, BloomBand.MID)
+                : random.nextInt(5) == 0
+                        ? Blocks.ICE.defaultBlockState()
+                        : Blocks.PACKED_ICE.defaultBlockState();
         level.setBlock(pos, ice, 3);
         builtIce.add(pos.immutable());
         level.sendParticles(ParticleTypes.SNOWFLAKE,
                 pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
                 8, 0.28D, 0.35D, 0.28D, 0.025D);
         return true;
+    }
+
+    private static boolean isBloom(BlockState state) {
+        return state.is(ModBlocks.BLOOM_MASS.get())
+                || state.is(ModBlocks.BLOOM_CRUST.get())
+                || state.is(ModBlocks.BLOOM_TIP.get());
     }
 
     private boolean isProtectedInfrastructure(ServerLevel level, BlockPos pos) {
