@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.network.PostMaeveWorldStatePayload;
+import com.frozendawn.network.BloomStatePayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -83,6 +84,9 @@ public final class PostMaeveWorldState {
                 erased,
                 erased && (FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get()
                         || data.undoneSpawningReleased())));
+        if (!erased || player.serverLevel().dimension() != Level.OVERWORLD) {
+            PacketDistributor.sendToPlayer(player, new BloomStatePayload(0.0F, 0));
+        }
     }
 
     public static void syncAll(MinecraftServer server) {

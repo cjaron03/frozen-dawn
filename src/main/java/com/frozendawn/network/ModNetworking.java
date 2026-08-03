@@ -220,6 +220,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handlePostMaeveWorldState(payload))
         );
         registrar.playToClient(
+                BloomStatePayload.TYPE,
+                BloomStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleBloomState(payload))
+        );
+        registrar.playToClient(
                 HeartEchoStatePayload.TYPE,
                 HeartEchoStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
