@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
+import com.frozendawn.block.BloomMassBlock;
 import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
@@ -19,6 +20,7 @@ import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.RocketEngineBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
+import com.frozendawn.block.SealedLatticeBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
@@ -545,4 +547,45 @@ public class ModBlocks {
                             .isViewBlocking((state, level, pos) -> false)
                             .isSuffocating((state, level, pos) -> false)
                             .pushReaction(PushReaction.BLOCK)));
+
+    // --- Post-Maeve Bloom ---
+    public static final DeferredBlock<BloomMassBlock> BLOOM_MASS = BLOCKS.register("bloom_mass",
+            () -> new BloomMassBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .requiresCorrectToolForDrops()
+                    .strength(2.2F, 4.0F)
+                    .sound(SoundType.CALCITE)));
+
+    public static final DeferredBlock<SnowLayerBlock> BLOOM_CRUST = BLOCKS.register("bloom_crust",
+            () -> new SnowLayerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .strength(0.25F)
+                    .sound(SoundType.MOSS)
+                    .replaceable()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<Block> BLOOM_TIP = BLOCKS.register("bloom_tip",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .strength(0.4F)
+                    .sound(SoundType.AMETHYST_CLUSTER)
+                    .noCollission()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<Block> INERT_ACHERONITE = BLOCKS.register("inert_acheronite",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F, 8.0F)
+                    .sound(SoundType.DEEPSLATE)));
+
+    public static final DeferredBlock<SealedLatticeBlock> SEALED_LATTICE =
+            BLOCKS.register("sealed_lattice",
+                    () -> new SealedLatticeBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                            .requiresCorrectToolForDrops()
+                            .strength(5.0F, 12.0F)
+                            .sound(SoundType.METAL)));
 }

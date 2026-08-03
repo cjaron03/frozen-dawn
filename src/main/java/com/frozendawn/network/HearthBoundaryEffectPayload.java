@@ -20,6 +20,7 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int WORLD_EVENT_COLLAPSE_RESPONSE = 7;
     public static final int WORLD_EVENT_BIOLOGICAL_WARNING = 8;
     public static final int UNDONE_CONTACT = 9;
+    public static final int BLOOM_CONTACT = 10;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -69,6 +70,10 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload undoneContact() {
         return new HearthBoundaryEffectPayload(UNDONE_CONTACT);
+    }
+
+    public static HearthBoundaryEffectPayload bloomContact() {
+        return new HearthBoundaryEffectPayload(BLOOM_CONTACT);
     }
 
     @Override

@@ -1,0 +1,1 @@
+{ "parent": "minecraft:block/cube_all", "render_type": "minecraft:cutout", "textures": { "all": "frozendawn:block/bloom_mass_frontier" } }

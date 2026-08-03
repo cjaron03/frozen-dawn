@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "wear=0": { "model": "frozendawn:block/sealed_lattice_0" },
+    "wear=1": { "model": "frozendawn:block/sealed_lattice_1" },
+    "wear=2": { "model": "frozendawn:block/sealed_lattice_2" },
+    "wear=3": { "model": "frozendawn:block/sealed_lattice_3" }
+  }
+}
