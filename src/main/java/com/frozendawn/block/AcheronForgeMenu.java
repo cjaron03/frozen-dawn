@@ -37,7 +37,7 @@ public class AcheronForgeMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        // Input slot (shards only)
+        // Input slot (Acheronite or post-Maeve lattice material)
         addSlot(new ShardSlot(container, 0, 56, 35));
         // Output slot (extraction only)
         addSlot(new OutputSlot(container, 1, 116, 35));
@@ -93,7 +93,8 @@ public class AcheronForgeMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.is(ModItems.ACHERONITE_SHARD.get());
+            return stack.is(ModItems.ACHERONITE_SHARD.get())
+                    || stack.is(ModItems.SPENT_LATTICE.get());
         }
     }
 
