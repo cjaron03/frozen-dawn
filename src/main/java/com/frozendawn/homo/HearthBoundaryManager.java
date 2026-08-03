@@ -41,6 +41,11 @@ public final class HearthBoundaryManager {
     }
 
     public static void tick(ServerLevel level) {
+        if (PostMaeveWorldState.isErased(level)) {
+            playerStates.clear();
+            particleCueCache.clear();
+            return;
+        }
         if (level.dimension() != ServerLevel.OVERWORLD) {
             return;
         }
@@ -91,6 +96,9 @@ public final class HearthBoundaryManager {
 
     public static void triggerOrsathaeEffect(
             ServerLevel level, UUID hearthId, ServerPlayer violator) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return;
+        }
         ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
                 .get(level.getServer()).hearth(hearthId).orElse(null);
         if (hearth == null) {

@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthSurveyPolicy;
+import com.frozendawn.homo.PostMaeveWorldState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -21,6 +22,9 @@ public final class HearthSurveyScanner {
 
     public static Optional<HearthSignal> scan(ServerPlayer player,
                                               SurveyorLensScanner.LensProfile lensProfile) {
+        if (PostMaeveWorldState.isErased(player.serverLevel())) {
+            return Optional.empty();
+        }
         HearthSurveyPolicy.SignalProfile signalProfile = signalProfile(lensProfile);
         if (signalProfile == null) {
             return Optional.empty();
@@ -54,6 +58,9 @@ public final class HearthSurveyScanner {
 
     public static Optional<HearthSignal> sample(ServerPlayer player,
                                                 SurveyorLensScanner.LensProfile lensProfile) {
+        if (PostMaeveWorldState.isErased(player.serverLevel())) {
+            return Optional.empty();
+        }
         HearthSurveyPolicy.SignalProfile signalProfile = signalProfile(lensProfile);
         if (signalProfile == null) {
             return Optional.empty();

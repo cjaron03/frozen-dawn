@@ -40,6 +40,10 @@ import com.frozendawn.homo.HearthReconciliationManager;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSurveySignalManager;
 import com.frozendawn.homo.HearthWatcherManager;
+import com.frozendawn.homo.HearthDarkeningManager;
+import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.world.UndoneSpawner;
+import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
@@ -223,6 +227,10 @@ public class WorldTickHandler {
 
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
+        PostMaeveWorldState.tick(overworld);
+        UndoneSpawner.tick(overworld);
+        UndoneArchitectSpawner.tick(overworld);
+        HearthDarkeningManager.tick(overworld);
         if ((tick & 1L) == 0L) {
             BlastPitPlacement.tickPlacement(overworld);
         } else {
@@ -474,6 +482,7 @@ public class WorldTickHandler {
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
             RocketLaunchManager.syncLaunchState(player);
+            PostMaeveWorldState.sync(player);
 
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);

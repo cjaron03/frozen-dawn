@@ -27,6 +27,7 @@ public class WeatherParticles {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
         if (mc.level.dimension() != Level.OVERWORLD) return;
+        if (PostMaeveClientState.isMaeveErased()) return;
 
         if (mc.options.particles().get() == net.minecraft.client.ParticleStatus.MINIMAL) return;
 

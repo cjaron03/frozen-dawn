@@ -7,6 +7,7 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -126,7 +127,12 @@ public class MimicEntity extends Monster {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new MimicCombatGoal(this));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8, 60));
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 48.0f));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 48.0f) {
+            @Override
+            public boolean canUse() {
+                return !isPostMaeveHearthResident() && super.canUse();
+            }
+        });
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // Only target players when in Phase 1+ (not during observation)
@@ -291,6 +297,26 @@ public class MimicEntity extends Monster {
 
         int phase = getMimicPhase();
         long gameTick = level().getGameTime();
+
+        if (isPostMaeveHearthResident()) {
+            LivingEntity attacker = getLastHurtByMob();
+            if (attacker != null && attacker.isAlive()) {
+                setTarget(attacker);
+                engaged = true;
+                if (phase != PHASE_COMBAT) {
+                    transitionToPhase(PHASE_COMBAT);
+                }
+            } else {
+                setTarget(null);
+                engaged = false;
+                if (phase != PHASE_OBSERVATION) {
+                    transitionToPhase(PHASE_OBSERVATION);
+                }
+                getNavigation().stop();
+            }
+            despawnTimer = 0;
+            return;
+        }
 
         switch (phase) {
             case PHASE_OBSERVATION -> tickObservation();
@@ -570,6 +596,13 @@ public class MimicEntity extends Monster {
             return false;
         }
         boolean hurt = super.hurt(source, decision.amount());
+        if (hurt && isPostMaeveHearthResident()
+                && source.getEntity() instanceof LivingEntity attacker) {
+            setLastHurtByMob(attacker);
+            setTarget(attacker);
+            engaged = true;
+            transitionToPhase(PHASE_COMBAT);
+        }
         if (hurt && isHearthPopulationResident()
                 && level() instanceof ServerLevel serverLevel
                 && source.getEntity() instanceof ServerPlayer attacker
@@ -776,7 +809,8 @@ public class MimicEntity extends Monster {
         if (!isHearthPopulationResident()) {
             return true;
         }
-        return candidate instanceof ServerPlayer player
+        return !isPostMaeveHearthResident()
+                && candidate instanceof ServerPlayer player
                 && level() instanceof ServerLevel serverLevel
                 && HearthPopulationPolicy.isHostileRelationship(
                         HearthMemoryManager.relationship(serverLevel, player.getUUID()))
@@ -786,6 +820,9 @@ public class MimicEntity extends Monster {
 
     private void clearDeescalatedHearthAggression() {
         if (!isHearthPopulationResident() || !(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (PostMaeveWorldState.isErased(serverLevel)) {
             return;
         }
         boolean reset = false;
@@ -808,6 +845,7 @@ public class MimicEntity extends Monster {
 
     private void enforceHearthEncounterRole() {
         if (hearthPopulationId != null && level() instanceof ServerLevel serverLevel
+                && !PostMaeveWorldState.isErased(serverLevel)
                 && HearthCombatRosterManager.enforcePassiveRole(
                         serverLevel, hearthPopulationId, this)) {
             engaged = false;
@@ -815,6 +853,12 @@ public class MimicEntity extends Monster {
                 transitionToPhase(PHASE_OBSERVATION);
             }
         }
+    }
+
+    private boolean isPostMaeveHearthResident() {
+        return isHearthPopulationResident()
+                && level() instanceof ServerLevel serverLevel
+                && PostMaeveWorldState.isErased(serverLevel);
     }
 
     public void setHeartScavengerTarget(LivingEntity target) {

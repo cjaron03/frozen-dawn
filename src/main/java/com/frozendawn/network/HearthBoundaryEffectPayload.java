@@ -19,6 +19,7 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int WORLD_EVENT_OMEN = 6;
     public static final int WORLD_EVENT_COLLAPSE_RESPONSE = 7;
     public static final int WORLD_EVENT_BIOLOGICAL_WARNING = 8;
+    public static final int UNDONE_CONTACT = 9;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -64,6 +65,10 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload worldEventBiologicalWarning() {
         return new HearthBoundaryEffectPayload(WORLD_EVENT_BIOLOGICAL_WARNING);
+    }
+
+    public static HearthBoundaryEffectPayload undoneContact() {
+        return new HearthBoundaryEffectPayload(UNDONE_CONTACT);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -32,6 +33,7 @@ public class WindAmbience {
     private static int ticksUntilNext = 0;
     private static int creakCooldown = 0;
     private static float currentBasePitch = 1.0f;
+    private static boolean currentPostMaeve;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -43,17 +45,23 @@ public class WindAmbience {
         float progress = ApocalypseClientData.getProgress();
         boolean underground = mc.player.blockPosition().getY() < 50;
         float masterStrength = MasterArchitectWeather.getStrength();
+        boolean postMaeve = PostMaeveClientState.isMaeveErased();
+
+        if (currentSound != null && currentPostMaeve != postMaeve) {
+            stopAll(mc);
+        }
 
         boolean shouldStop = shouldStopWind(
-                phase, progress, underground, masterStrength);
+                phase, progress, underground, masterStrength, postMaeve);
         if (shouldStop) {
             stopAll(mc);
             return;
         }
 
-        float targetVolume = Math.max(
-                getTargetWindVolume(phase, progress),
-                0.9F * masterStrength);
+        float targetVolume = postMaeve
+                ? FrozenDawnConfig.POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER.get().floatValue()
+                : Math.max(getTargetWindVolume(phase, progress),
+                        0.9F * masterStrength);
 
         float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
@@ -103,8 +111,13 @@ public class WindAmbience {
         targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
+        currentPostMaeve = postMaeve;
         currentSound = new TickableWindSound(
-                strong ? ModSounds.WIND_STRONG.get() : ModSounds.WIND_LIGHT.get(),
+                postMaeve
+                        ? strong ? ModSounds.WIND_POST_MAEVE_STRONG.get()
+                                : ModSounds.WIND_POST_MAEVE_LIGHT.get()
+                        : strong ? ModSounds.WIND_STRONG.get()
+                                : ModSounds.WIND_LIGHT.get(),
                 targetVolume, targetPitch, clipDuration);
         mc.getSoundManager().play(currentSound);
 
@@ -129,11 +142,13 @@ public class WindAmbience {
         ticksUntilNext = 0;
         creakCooldown = 0;
         currentBasePitch = 1.0f;
+        currentPostMaeve = false;
     }
 
     private static boolean shouldStopWind(
-            int phase, float progress, boolean underground, float masterStrength) {
-        return underground || (masterStrength <= 0.01F
+            int phase, float progress, boolean underground, float masterStrength,
+            boolean postMaeve) {
+        return underground || (!postMaeve && masterStrength <= 0.01F
                 && (phase < 3 || PhaseManager.isVacuumActive(phase, progress)));
     }
 

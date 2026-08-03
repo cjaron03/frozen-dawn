@@ -436,6 +436,9 @@ public class ModBlocks {
                     .sound(SoundType.AMETHYST_CLUSTER)
                     .noOcclusion()
                     .lightLevel(state -> {
+                        if (state.getValue(AcheroniteCrystalBlock.DARK)) {
+                            return 0;
+                        }
                         int base = switch (state.getValue(AcheroniteCrystalBlock.AGE)) {
                             case 0 -> 3;
                             case 1 -> 5;
@@ -463,7 +466,7 @@ public class ModBlocks {
                     .noOcclusion()
                     .isViewBlocking((state, level, pos) -> false)
                     .isSuffocating((state, level, pos) -> false)
-                    .lightLevel(state -> 2)
+                    .lightLevel(state -> state.getValue(FrozenAtmosphereBlock.DARK) ? 0 : 2)
                     .pushReaction(PushReaction.DESTROY)));
 
     // Architect Mask: placeable Architect head trophy

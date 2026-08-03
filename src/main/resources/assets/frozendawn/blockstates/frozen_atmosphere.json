@@ -1,5 +1,6 @@
 {
   "variants": {
-    "": { "model": "frozendawn:block/frozen_atmosphere" }
+    "dark=false": { "model": "frozendawn:block/frozen_atmosphere" },
+    "dark=true": { "model": "frozendawn:block/frozen_atmosphere" }
   }
 }

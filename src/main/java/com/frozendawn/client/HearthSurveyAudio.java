@@ -79,7 +79,7 @@ public final class HearthSurveyAudio {
                 proximity, minecraft.level.random.nextFloat());
     }
 
-    private static void reset() {
+    public static void reset() {
         active = false;
         proximity = 0.0F;
         signalTimeout = 0;

@@ -8,6 +8,7 @@ import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthWatcherPolicy;
 import com.frozendawn.homo.OrsaEquipmentDetector;
+import com.frozendawn.homo.PostMaeveWorldState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -42,7 +43,9 @@ public final class ReturnedHearthWatchGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return returned.isHearthBound() && returned.getTarget() == null;
+        return returned.isHearthBound() && returned.getTarget() == null
+                && !(returned.level() instanceof ServerLevel level
+                && PostMaeveWorldState.isErased(level));
     }
 
     @Override

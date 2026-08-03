@@ -42,6 +42,17 @@ public final class HearthMasterArchitectWeatherManager {
     }
 
     public static void tick(ServerLevel level, int phase, float progress) {
+        if (PostMaeveWorldState.isErased(level)) {
+            for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+                PacketDistributor.sendToPlayer(
+                        player, MasterArchitectWeatherPayload.inactive());
+            }
+            lastSentState.clear();
+            lastSentGameTime.clear();
+            nextStrikeGameTime.clear();
+            nextArcGameTime.clear();
+            return;
+        }
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         ReturnedHearthSavedData.HearthRecord major = data
                 .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);

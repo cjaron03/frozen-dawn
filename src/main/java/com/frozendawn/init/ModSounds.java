@@ -25,6 +25,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_STRONG = SOUNDS.register("ambient.wind_strong",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_strong")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_POST_MAEVE_LIGHT =
+            register("ambient.wind_post_maeve_light");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_POST_MAEVE_STRONG =
+            register("ambient.wind_post_maeve_strong");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SHELTER_CREAK = SOUNDS.register("ambient.shelter_creak",
             () -> SoundEvent.createVariableRangeEvent(
@@ -199,6 +203,49 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RETURNED_STEP = SOUNDS.register("entity.returned.step",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.returned.step")));
+
+    // --- The Undone ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_AMBIENT_ONE =
+            register("entity.undone.ambient_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_AMBIENT_TWO =
+            register("entity.undone.ambient_two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_AMBIENT_THREE =
+            register("entity.undone.ambient_three");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_FAILED_WORD =
+            register("entity.undone.failed_word");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_ATTACK =
+            register("entity.undone.attack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_HURT =
+            register("entity.undone.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_GRASP_CAST =
+            register("entity.undone.grasp_cast");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_GRASP_HOLD =
+            register("entity.undone.grasp_hold");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_GRASP_BREAK =
+            register("entity.undone.grasp_break");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_DEATH =
+            register("entity.undone.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UNDONE_STEP =
+            register("entity.undone.step");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_UNDONE_CONTACT =
+            register("ui.suit.undone_contact");
+
+    // --- The Undone Architect ---
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            UNDONE_ARCHITECT_AMBIENT =
+            register("entity.undone_architect.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            UNDONE_ARCHITECT_HURT =
+            register("entity.undone_architect.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            UNDONE_ARCHITECT_DEATH =
+            register("entity.undone_architect.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            UNDONE_ARCHITECT_ATTACK =
+            register("entity.undone_architect.attack");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            UNDONE_ARCHITECT_ACCRETE =
+            register("entity.undone_architect.accrete");
 
     // --- Mimic Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> MIMIC_HURT = SOUNDS.register("entity.mimic.hurt",

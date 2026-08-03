@@ -48,6 +48,7 @@ public final class HeartMaeveErasureManager {
         CHANNELS.remove(player.getUUID());
         if (data.startHeartMaeveErasure(
                 hearth.id(), now, player.getUUID())) {
+            PostMaeveWorldState.markErased(level);
             BlockPos anchor = hearth.heartAnchor().orElse(hearth.center());
             level.playSound(null, BlockPos.containing(HeartLattice.maevePosition(anchor)),
                     ModSounds.THAE_IVEN_HEART_COLLAPSE.get(),

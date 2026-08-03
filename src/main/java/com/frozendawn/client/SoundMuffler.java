@@ -160,7 +160,8 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
-            if (isWindAmbience && MasterArchitectWeather.getStrength() > 0.01F) return;
+            if (isWindAmbience && (PostMaeveClientState.isMaeveErased()
+                    || MasterArchitectWeather.getStrength() > 0.01F)) return;
             if (isGeothermalCue) {
                 // Let geothermal vibration cues survive as near-silent suit/structure transmission
                 // so vanilla subtitles can still track them in vacuum.

@@ -8,6 +8,8 @@ import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.entity.UndoneEntity;
+import com.frozendawn.entity.UndoneArchitectEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -21,6 +23,9 @@ public class ModEntityAttributes {
         event.put(ModEntities.FROSTMITE.get(), FrostmiteEntity.createAttributes().build());
         event.put(ModEntities.HOLLOW.get(), HollowEntity.createAttributes().build());
         event.put(ModEntities.RETURNED.get(), ReturnedEntity.createAttributes().build());
+        event.put(ModEntities.UNDONE.get(), UndoneEntity.createAttributes().build());
+        event.put(ModEntities.UNDONE_ARCHITECT.get(),
+                UndoneArchitectEntity.createAttributes().build());
         event.put(ModEntities.MIMIC.get(), MimicEntity.createAttributes().build());
         event.put(ModEntities.ARCHITECT.get(), ArchitectEntity.createAttributes().build());
         event.put(ModEntities.HEART_SUCCESSOR.get(), HeartSuccessorEntity.createAttributes().build());

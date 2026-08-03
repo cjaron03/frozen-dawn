@@ -24,7 +24,8 @@ public final class HearthMemoryManager {
     }
 
     public static void tick(ServerLevel level) {
-        if (level.dimension() != ServerLevel.OVERWORLD
+        if (PostMaeveWorldState.isErased(level)
+                || level.dimension() != ServerLevel.OVERWORLD
                 || level.getGameTime() % CONTACT_SCAN_INTERVAL_TICKS != 0L) {
             return;
         }
@@ -70,6 +71,9 @@ public final class HearthMemoryManager {
 
     public static boolean recordHearthEntityAttack(ServerLevel level, UUID hearthId,
                                                    ServerPlayer attacker, String role) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return false;
+        }
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         ReturnedHearthSavedData.HiveRelationship before = data.relationship(attacker.getUUID());
         boolean changed = data.markPlayerOrsathae(
@@ -91,6 +95,9 @@ public final class HearthMemoryManager {
     public static boolean recordProtectedViolation(
             ServerLevel level, UUID hearthId, ServerPlayer player,
             ReturnedHearthSavedData.HearthViolationReason reason) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return false;
+        }
         ReturnedHearthSavedData.ViolationResult result =
                 ReturnedHearthSavedData.get(level.getServer()).recordHearthViolation(
                         player.getUUID(), hearthId, level.getGameTime(), reason);

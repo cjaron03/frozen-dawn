@@ -14,6 +14,7 @@ import com.frozendawn.homo.HeartEchoManager;
 import com.frozendawn.homo.HeartMemoryNodeManager;
 import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
+import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -213,6 +214,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleCognitiveLoad(payload))
         );
         registrar.playToClient(
+                PostMaeveWorldStatePayload.TYPE,
+                PostMaeveWorldStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handlePostMaeveWorldState(payload))
+        );
+        registrar.playToClient(
                 HeartEchoStatePayload.TYPE,
                 HeartEchoStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
@@ -233,6 +240,23 @@ public class ModNetworking {
                     if (context.player() instanceof ServerPlayer sp) {
                         CognitiveLoadManager.handleResistance(sp, payload.resistance());
                     }
+                })
+        );
+        registrar.playToServer(
+                UndoneStrugglePayload.TYPE,
+                UndoneStrugglePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (!(context.player() instanceof ServerPlayer player)
+                            || !Float.isFinite(payload.input())) {
+                        return;
+                    }
+                    player.serverLevel().getEntitiesOfClass(
+                            UndoneEntity.class,
+                            player.getBoundingBox().inflate(16.0D),
+                            undone -> undone.getGraspTargetId() == player.getId())
+                            .stream().findFirst()
+                            .ifPresent(undone -> undone.applyStruggle(
+                                    player, payload.input()));
                 })
         );
         registrar.playToServer(

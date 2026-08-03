@@ -19,6 +19,20 @@
       }
     ]
   },
+  "ambient.wind_post_maeve_light": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      { "name": "frozendawn:ambient/wind_post_maeve_light", "stream": true }
+    ]
+  },
+  "ambient.wind_post_maeve_strong": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      { "name": "frozendawn:ambient/wind_post_maeve_strong", "stream": true }
+    ]
+  },
   "ambient.shelter_creak": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.shelter_creak",
@@ -388,6 +402,116 @@
       { "name": "minecraft:entity.zombie.step", "type": "event" },
       { "name": "minecraft:entity.zombie.step", "type": "event" },
       { "name": "minecraft:entity.zombie.step", "type": "event" }
+    ]
+  },
+  "entity.undone.ambient_one": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_1" ]
+  },
+  "entity.undone.ambient_two": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_2" ]
+  },
+  "entity.undone.ambient_three": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_3" ]
+  },
+  "entity.undone.failed_word": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/failed_word" ]
+  },
+  "entity.undone.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/attack" ]
+  },
+  "entity.undone.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/hurt" ]
+  },
+  "entity.undone.grasp_cast": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_cast" ]
+  },
+  "entity.undone.grasp_hold": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_hold" ]
+  },
+  "entity.undone.grasp_break": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_break" ]
+  },
+  "entity.undone.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/death" ]
+  },
+  "entity.undone.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" }
+    ]
+  },
+  "entity.undone_architect.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",
+    "sounds": [
+      "frozendawn:entity/undone_architect/ambient_1",
+      "frozendawn:entity/undone_architect/ambient_2",
+      "frozendawn:entity/undone_architect/ambient_3"
+    ]
+  },
+  "entity.undone_architect.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.hurt",
+    "sounds": [
+      "frozendawn:entity/undone_architect/hurt_1",
+      "frozendawn:entity/undone_architect/hurt_2"
+    ]
+  },
+  "entity.undone_architect.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.attack",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/attack", "volume": 1.15 },
+      { "name": "frozendawn:entity/undone_architect/attack_2", "volume": 1.12 },
+      { "name": "frozendawn:entity/undone_architect/attack_3", "volume": 1.18 }
+    ]
+  },
+  "entity.undone_architect.accrete": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.accrete",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/accrete", "volume": 1.2 },
+      { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.65, "pitch": 0.58 }
+    ]
+  },
+  "entity.undone_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.death",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/death", "volume": 1.25 },
+      { "name": "minecraft:block.blue_ice.break", "type": "event", "volume": 0.7, "pitch": 0.55 }
+    ]
+  },
+  "ui.suit.undone_contact": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.ui.suit.undone_contact",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/undone_contact", "stream": true }
     ]
   },
   "entity.mimic.hurt": {

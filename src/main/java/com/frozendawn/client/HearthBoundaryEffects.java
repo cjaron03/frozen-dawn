@@ -97,6 +97,13 @@ public final class HearthBoundaryEffects {
                     "ui.frozendawn.suit.biological_activity_warning");
             return;
         }
+        if (payload.effectType() == HearthBoundaryEffectPayload.UNDONE_CONTACT) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.SUIT_UNDONE_CONTACT.get(), 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(
+                    "ui.frozendawn.suit.undone_contact");
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }

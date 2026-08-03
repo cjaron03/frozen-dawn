@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -17,10 +18,12 @@ public class HollowSpawner {
     private HollowSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
-        if (currentPhase < 5) return;
+        boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
+                level.getServer());
+        if (!postMaeve && currentPhase < 5) return;
         if (!FrozenDawnConfig.ENABLE_HOLLOW.get()) return;
         // Stop spawning in phase 6 late (atmosphere gone — even vapors freeze solid)
-        if (PhaseManager.isVacuumActive(currentPhase, progress)) return;
+        if (!postMaeve && PhaseManager.isVacuumActive(currentPhase, progress)) return;
 
         long gameTick = level.getGameTime();
         if (gameTick % 200 != 0) return; // Every 10 seconds
@@ -34,7 +37,9 @@ public class HollowSpawner {
         // Phase 6 late local window (0.7-1.0): tapers to 0% at vacuum onset
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
         float spawnChance;
-        if (currentPhase == 5) {
+        if (postMaeve) {
+            spawnChance = 0.12f;
+        } else if (currentPhase == 5) {
             spawnChance = 0.15f;
         } else if (BrutalPhase6SpawnCurves.isActive()) {
             spawnChance = BrutalPhase6SpawnCurves.hollowChance(progress);
@@ -57,7 +62,7 @@ public class HollowSpawner {
         }
         if (spawnChance <= 0.0f) return;
         spawnChance = Math.min(0.8f, spawnChance * mobMult);
-        int maxHollow = Math.max(1, (int) (4 * mobMult));
+        int maxHollow = Math.max(1, (int) ((postMaeve ? 5 : 4) * mobMult));
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
@@ -69,7 +74,11 @@ public class HollowSpawner {
                     player.getBoundingBox().inflate(48.0)).size();
             if (nearbyCount >= maxHollow) continue;
 
-            BlockPos spawnPos = findSpawnPos(level, player, random);
+            BlockPos spawnPos = postMaeve
+                    ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
+                            level, player, random, 24, 56, 28,
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                    : findSpawnPos(level, player, random);
             if (spawnPos == null) continue;
 
             HollowEntity hollow = ModEntities.HOLLOW.get().create(level, null, spawnPos,

@@ -76,6 +76,10 @@ public final class MasterArchitectSkyFaceRenderer {
     }
 
     public static void tick() {
+        if (PostMaeveClientState.isMaeveErased()) {
+            clear();
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
             clear();
@@ -135,6 +139,9 @@ public final class MasterArchitectSkyFaceRenderer {
             boolean fightActive,
             int aftermathTicks,
             float aftermathStrength) {
+        if (PostMaeveClientState.isMaeveErased()) {
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (!FrozenDawnConfig.ENABLE_MASTER_SKY_FACE.get()
                 || minecraft.level == null
