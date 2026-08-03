@@ -229,6 +229,14 @@ public class ModSounds {
             register("entity.undone.step");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_UNDONE_CONTACT =
             register("ui.suit.undone_contact");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_BLOOM_CONTACT =
+            register("ui.suit.bloom_contact");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_DRONE =
+            register("ambient.bloom.drone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_CRACK =
+            register("ambient.bloom.crack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_SHIMMER =
+            register("ambient.bloom.shimmer");
 
     // --- The Undone Architect ---
     public static final DeferredHolder<SoundEvent, SoundEvent>

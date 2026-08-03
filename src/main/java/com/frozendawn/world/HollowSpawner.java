@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.homo.PostMaeveWorldState;
@@ -67,7 +68,11 @@ public class HollowSpawner {
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
 
-            if (random.nextFloat() > spawnChance) continue;
+            float localChance = postMaeve
+                    ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
+                    level, player.blockPosition()))
+                    : spawnChance;
+            if (random.nextFloat() > localChance) continue;
 
             // Density cap: max 4 within 48 blocks (scaled by multiplier)
             int nearbyCount = level.getEntitiesOfClass(HollowEntity.class,

@@ -1,0 +1,15 @@
+{
+  "parent": "frozendawn:no_one_else_remembers_now",
+  "display": {
+    "icon": { "id": "frozendawn:bloom_tip" },
+    "title": { "translate": "advancement.frozendawn.it_kept_going.title" },
+    "description": { "translate": "advancement.frozendawn.it_kept_going.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": { "trigger": "minecraft:impossible" }
+  }
+}

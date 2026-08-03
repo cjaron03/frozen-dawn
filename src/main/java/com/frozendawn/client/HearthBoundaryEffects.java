@@ -104,6 +104,13 @@ public final class HearthBoundaryEffects {
                     "ui.frozendawn.suit.undone_contact");
             return;
         }
+        if (payload.effectType() == HearthBoundaryEffectPayload.BLOOM_CONTACT) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.SUIT_BLOOM_CONTACT.get(), 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(
+                    "ui.frozendawn.suit.bloom_contact");
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }
