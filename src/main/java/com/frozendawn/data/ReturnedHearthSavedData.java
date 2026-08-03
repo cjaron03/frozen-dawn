@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 16;
+    public static final int CURRENT_DATA_VERSION = 22;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -96,6 +96,7 @@ public final class ReturnedHearthSavedData extends SavedData {
             }
             HearthRecord record = HearthRecord.load(compound);
             if (record != null && loadedTypes.add(record.type())) {
+                record.migrateHeartState(storedVersion);
                 state.hearths.add(record);
             }
         }
@@ -647,6 +648,15 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartLive = false;
         hearth.heartConvergenceStarted = false;
         hearth.heartMusicActive = true;
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartSwarmAnnounced = false;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
         setDirty();
         return true;
     }
@@ -672,7 +682,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
-    /** Future canonical Heart death calls this to release the client music channel. */
+    /** Releases the Heart's exclusive music channel before final erasure. */
     public boolean stopHeartMusic(UUID hearthId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || !hearth.heartMusicActive) {
@@ -684,6 +694,11 @@ public final class ReturnedHearthSavedData extends SavedData {
     }
 
     public HeartNodeDamageResult damageHeartMemoryNode(UUID hearthId, int nodeIndex) {
+        return damageHeartMemoryNode(hearthId, nodeIndex, -1L);
+    }
+
+    public HeartNodeDamageResult damageHeartMemoryNode(
+            UUID hearthId, int nodeIndex, long gameTime) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || !hearth.heartLive
                 || nodeIndex != com.frozendawn.homo.HeartLattice.nextNode(
@@ -696,6 +711,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         if (destroyed) {
             hearth.heartDestroyedNodeMask |= 1 << nodeIndex;
             hearth.heartActiveNodeDamage = 0;
+            if (hearth.heartNodeDestroyedGameTimes[nodeIndex] < 0L) {
+                hearth.heartNodeDestroyedGameTimes[nodeIndex] = Math.max(0L, gameTime);
+            }
         }
         setDirty();
         return new HeartNodeDamageResult(
@@ -705,14 +723,266 @@ public final class ReturnedHearthSavedData extends SavedData {
                 hearth.heartDestroyedNodeMask);
     }
 
+    public boolean markHeartNodeDebrisLanded(UUID hearthId, int nodeIndex) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || nodeIndex < 0
+                || nodeIndex >= com.frozendawn.homo.HeartLattice.NODE_COUNT
+                || (hearth.heartDestroyedNodeMask & 1 << nodeIndex) == 0
+                || (hearth.heartDebrisLandedMask & 1 << nodeIndex) != 0) {
+            return false;
+        }
+        hearth.heartDebrisLandedMask |= 1 << nodeIndex;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartCollapseDebrisLanded(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartCollapseComplete
+                || hearth.heartCollapseDebrisLanded) {
+            return false;
+        }
+        hearth.heartCollapseDebrisLanded = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean startHeartCollapse(UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartLive
+                || hearth.heartCollapseStartGameTime >= 0L
+                || com.frozendawn.homo.HeartLattice.nextNode(
+                hearth.heartDestroyedNodeMask) >= 0) {
+            return false;
+        }
+        hearth.heartCollapseStartGameTime = Math.max(0L, gameTime);
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        hearth.heartLive = false;
+        hearth.heartActiveNodeDamage = 0;
+        setDirty();
+        return true;
+    }
+
+    public boolean completeHeartCollapse(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartCollapseStartGameTime < 0L
+                || hearth.heartCollapseComplete) {
+            return false;
+        }
+        hearth.heartCollapseComplete = true;
+        hearth.heartMaeveExposed = true;
+        hearth.heartLive = false;
+        hearth.heartActiveNodeDamage = 0;
+        setDirty();
+        return true;
+    }
+
+    public boolean startHeartMaeveErasure(
+            UUID hearthId, long gameTime, UUID eraserId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartCollapseComplete
+                || !hearth.heartMaeveExposed
+                || hearth.heartMaeveErasureStartGameTime >= 0L
+                || hearth.heartMaeveErasureComplete) {
+            return false;
+        }
+        hearth.heartMaeveErasureStartGameTime = Math.max(0L, gameTime);
+        hearth.heartMaeveEraserId = eraserId;
+        hearth.heartMaeveForgeAnnounced = false;
+        hearth.heartLastWitnessDropped = false;
+        hearth.heartFinalAdvancementGranted = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean completeHeartMaeveErasure(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveErasureStartGameTime < 0L
+                || hearth.heartMaeveErasureComplete) {
+            return false;
+        }
+        hearth.heartMaeveErasureComplete = true;
+        hearth.heartMaeveExposed = false;
+        hearth.heartMusicActive = false;
+        hearth.heartLive = false;
+        hearth.heartEntityId = null;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveForgeAnnounced(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveForgeAnnounced) {
+            return false;
+        }
+        hearth.heartMaeveForgeAnnounced = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveAftermathSound(UUID hearthId, int soundIndex) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || soundIndex < 0 || soundIndex >= 5) {
+            return false;
+        }
+        int bit = 1 << soundIndex;
+        if ((hearth.heartMaeveAftermathSoundMask & bit) != 0) {
+            return false;
+        }
+        hearth.heartMaeveAftermathSoundMask |= bit;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveWorldMessageShown(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveWorldMessageShown) {
+            return false;
+        }
+        hearth.heartMaeveWorldMessageShown = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveCollapseResponsePlayed(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveCollapseResponsePlayed) {
+            return false;
+        }
+        hearth.heartMaeveCollapseResponsePlayed = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartMaeveBiologicalWarningPlayed(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartMaeveBiologicalWarningPlayed) {
+            return false;
+        }
+        hearth.heartMaeveBiologicalWarningPlayed = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartLastWitnessDropped(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartLastWitnessDropped) {
+            return false;
+        }
+        hearth.heartLastWitnessDropped = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartFinalAdvancementGranted(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || !hearth.heartMaeveErasureComplete
+                || hearth.heartFinalAdvancementGranted) {
+            return false;
+        }
+        hearth.heartFinalAdvancementGranted = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean resetHeartMaeveErasureForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.heartMaeveErasureStartGameTime < 0L
+                && !hearth.heartMaeveErasureComplete
+                && hearth.heartMaeveEraserId == null
+                && !hearth.heartFinalAdvancementGranted)) {
+            return false;
+        }
+        resetMaeveErasure(hearth);
+        hearth.heartMaeveExposed = hearth.heartCollapseComplete;
+        hearth.heartMusicActive = hearth.heartFormationStartGameTime >= 0L;
+        setDirty();
+        return true;
+    }
+
     public boolean resetHeartMemoryNodesForDebug(UUID hearthId) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || (hearth.heartDestroyedNodeMask == 0
-                && hearth.heartActiveNodeDamage == 0)) {
+                && hearth.heartActiveNodeDamage == 0
+                && hearth.heartCollapseStartGameTime < 0L
+                && !hearth.heartCollapseComplete
+                && !hearth.heartMaeveExposed
+                && !hearth.heartSwarmAnnounced
+                && hearth.heartScavengerNextWaveGameTime < 0L
+                && hearth.heartSuccessorEntityId == null
+                && hearth.heartSuccessorRespawnGameTime < 0L)) {
             return false;
         }
         hearth.heartDestroyedNodeMask = 0;
         hearth.heartActiveNodeDamage = 0;
+        java.util.Arrays.fill(hearth.heartNodeDestroyedGameTimes, -1L);
+        hearth.heartDebrisLandedMask = 0;
+        hearth.heartCollapseDebrisLanded = false;
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartLive = hearth.heartFormationStartGameTime >= 0L;
+        hearth.heartMusicActive = hearth.heartFormationStartGameTime >= 0L;
+        hearth.heartSwarmAnnounced = false;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
+        setDirty();
+        return true;
+    }
+
+    public boolean setHeartCollapseStageForDebug(
+            UUID hearthId, long gameTime,
+            com.frozendawn.homo.HeartCollapseStage stage) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || stage == com.frozendawn.homo.HeartCollapseStage.NONE
+                || hearth.heartFormationStartGameTime < 0L) {
+            return false;
+        }
+        hearth.heartDestroyedNodeMask = (1 << com.frozendawn.homo.HeartLattice.NODE_COUNT) - 1;
+        hearth.heartActiveNodeDamage = 0;
+        long elapsed = com.frozendawn.homo.HeartCollapsePolicy
+                .elapsedAtStageStart(stage);
+        hearth.heartCollapseStartGameTime = Math.max(0L, gameTime - elapsed);
+        hearth.heartCollapseComplete = stage
+                == com.frozendawn.homo.HeartCollapseStage.DORMANT;
+        hearth.heartMaeveExposed = hearth.heartCollapseComplete;
+        resetMaeveErasure(hearth);
+        hearth.heartCollapseDebrisLanded = false;
+        hearth.heartLive = false;
+        hearth.heartMusicActive = true;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
+        setDirty();
+        return true;
+    }
+
+    public boolean resetHeartCollapseForDebug(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.heartCollapseStartGameTime < 0L
+                && !hearth.heartCollapseComplete && !hearth.heartMaeveExposed)) {
+            return false;
+        }
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartCollapseDebrisLanded = false;
+        hearth.heartLive = hearth.heartFormationStartGameTime >= 0L;
+        hearth.heartMusicActive = hearth.heartFormationStartGameTime >= 0L;
+        hearth.heartSwarmAnnounced = false;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
         setDirty();
         return true;
     }
@@ -731,6 +1001,19 @@ public final class ReturnedHearthSavedData extends SavedData {
             setDirty();
         }
         return changed;
+    }
+
+    private static void resetMaeveErasure(HearthRecord hearth) {
+        hearth.heartMaeveErasureStartGameTime = -1L;
+        hearth.heartMaeveErasureComplete = false;
+        hearth.heartMaeveEraserId = null;
+        hearth.heartMaeveForgeAnnounced = false;
+        hearth.heartMaeveAftermathSoundMask = 0;
+        hearth.heartMaeveWorldMessageShown = false;
+        hearth.heartMaeveCollapseResponsePlayed = false;
+        hearth.heartMaeveBiologicalWarningPlayed = false;
+        hearth.heartLastWitnessDropped = false;
+        hearth.heartFinalAdvancementGranted = false;
     }
 
     public boolean markHeartConvergenceStarted(UUID hearthId) {
@@ -764,6 +1047,65 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
+    public boolean scheduleHeartScavengerWave(UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        long next = Math.max(0L, gameTime);
+        if (hearth == null || hearth.heartScavengerNextWaveGameTime == next) {
+            return false;
+        }
+        hearth.heartScavengerNextWaveGameTime = next;
+        setDirty();
+        return true;
+    }
+
+    public boolean markHeartSwarmAnnounced(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || hearth.heartSwarmAnnounced) {
+            return false;
+        }
+        hearth.heartSwarmAnnounced = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean bindHeartSuccessor(
+            UUID hearthId, UUID entityId, int generation, long assemblyStartGameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null) {
+            return false;
+        }
+        hearth.heartSuccessorEntityId = entityId;
+        hearth.heartSuccessorGeneration = Math.max(0, generation);
+        hearth.heartSuccessorRespawnGameTime = Math.max(0L, assemblyStartGameTime);
+        setDirty();
+        return true;
+    }
+
+    public boolean scheduleHeartSuccessorRespawn(
+            UUID hearthId, int generation, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return false;
+        }
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorGeneration = Math.max(0, generation);
+        hearth.heartSuccessorRespawnGameTime = Math.max(0L, gameTime);
+        setDirty();
+        return true;
+    }
+
+    public boolean clearHeartSuccessor(UUID hearthId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || (hearth.heartSuccessorEntityId == null
+                && hearth.heartSuccessorRespawnGameTime < 0L)) {
+            return false;
+        }
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        setDirty();
+        return true;
+    }
+
     public boolean setHeartStageForDebug(
             UUID hearthId, long gameTime, com.frozendawn.homo.HeartFormationStage stage) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
@@ -786,6 +1128,15 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartLive = stage == com.frozendawn.homo.HeartFormationStage.LIVE;
         hearth.heartConvergenceStarted = false;
         hearth.heartMusicActive = true;
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartSwarmAnnounced = false;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
         setDirty();
         return true;
     }
@@ -809,6 +1160,18 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartEntityId = null;
         hearth.heartDestroyedNodeMask = 0;
         hearth.heartActiveNodeDamage = 0;
+        java.util.Arrays.fill(hearth.heartNodeDestroyedGameTimes, -1L);
+        hearth.heartDebrisLandedMask = 0;
+        hearth.heartCollapseDebrisLanded = false;
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartSwarmAnnounced = false;
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
         hearth.heartFragments.clear();
         setDirty();
         return true;
@@ -873,6 +1236,17 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartEntityId = null;
         hearth.heartDestroyedNodeMask = 0;
         hearth.heartActiveNodeDamage = 0;
+        java.util.Arrays.fill(hearth.heartNodeDestroyedGameTimes, -1L);
+        hearth.heartDebrisLandedMask = 0;
+        hearth.heartCollapseDebrisLanded = false;
+        hearth.heartCollapseStartGameTime = -1L;
+        hearth.heartCollapseComplete = false;
+        hearth.heartMaeveExposed = false;
+        resetMaeveErasure(hearth);
+        hearth.heartScavengerNextWaveGameTime = -1L;
+        hearth.heartSuccessorEntityId = null;
+        hearth.heartSuccessorRespawnGameTime = -1L;
+        hearth.heartSuccessorGeneration = 0;
         hearth.heartFragments.clear();
         hearth.combatRosterInitialized = false;
         hearth.combatRoster.clear();
@@ -1726,6 +2100,29 @@ public final class ReturnedHearthSavedData extends SavedData {
         private UUID heartEntityId;
         private int heartDestroyedNodeMask;
         private int heartActiveNodeDamage;
+        private final long[] heartNodeDestroyedGameTimes = {
+                -1L, -1L, -1L, -1L, -1L
+        };
+        private int heartDebrisLandedMask;
+        private boolean heartCollapseDebrisLanded;
+        private long heartCollapseStartGameTime = -1L;
+        private boolean heartCollapseComplete;
+        private boolean heartMaeveExposed;
+        private long heartMaeveErasureStartGameTime = -1L;
+        private boolean heartMaeveErasureComplete;
+        private UUID heartMaeveEraserId;
+        private boolean heartMaeveForgeAnnounced;
+        private int heartMaeveAftermathSoundMask;
+        private boolean heartMaeveWorldMessageShown;
+        private boolean heartMaeveCollapseResponsePlayed;
+        private boolean heartMaeveBiologicalWarningPlayed;
+        private boolean heartLastWitnessDropped;
+        private boolean heartFinalAdvancementGranted;
+        private boolean heartSwarmAnnounced;
+        private long heartScavengerNextWaveGameTime = -1L;
+        private UUID heartSuccessorEntityId;
+        private long heartSuccessorRespawnGameTime = -1L;
+        private int heartSuccessorGeneration;
         private final List<HeartFragmentSnapshot> heartFragments = new ArrayList<>();
         private long lastPlayerContactGameTime;
         private boolean firstAssessmentFired;
@@ -1849,6 +2246,57 @@ public final class ReturnedHearthSavedData extends SavedData {
                     record.heartDestroyedNodeMask) < 0) {
                 record.heartActiveNodeDamage = 0;
             }
+            long[] nodeTimes = tag.getLongArray("heartNodeDestroyedGameTimes");
+            System.arraycopy(nodeTimes, 0, record.heartNodeDestroyedGameTimes, 0,
+                    Math.min(nodeTimes.length, record.heartNodeDestroyedGameTimes.length));
+            record.heartDebrisLandedMask = tag.getInt("heartDebrisLandedMask")
+                    & ((1 << com.frozendawn.homo.HeartLattice.NODE_COUNT) - 1);
+            record.heartCollapseDebrisLanded =
+                    tag.getBoolean("heartCollapseDebrisLanded");
+            record.heartCollapseStartGameTime = readOptionalTime(
+                    tag, "heartCollapseStartGameTime");
+            record.heartCollapseComplete = tag.getBoolean("heartCollapseComplete");
+            record.heartMaeveExposed = tag.getBoolean("heartMaeveExposed");
+            record.heartMaeveErasureStartGameTime = readOptionalTime(
+                    tag, "heartMaeveErasureStartGameTime");
+            record.heartMaeveErasureComplete =
+                    tag.getBoolean("heartMaeveErasureComplete");
+            record.heartMaeveEraserId = tag.hasUUID("heartMaeveEraserId")
+                    ? tag.getUUID("heartMaeveEraserId") : null;
+            record.heartMaeveForgeAnnounced =
+                    tag.getBoolean("heartMaeveForgeAnnounced");
+            record.heartMaeveAftermathSoundMask =
+                    tag.getInt("heartMaeveAftermathSoundMask") & 0b11111;
+            record.heartMaeveWorldMessageShown =
+                    tag.getBoolean("heartMaeveWorldMessageShown");
+            record.heartMaeveCollapseResponsePlayed = tag.contains(
+                    "heartMaeveCollapseResponsePlayed", Tag.TAG_BYTE)
+                    ? tag.getBoolean("heartMaeveCollapseResponsePlayed")
+                    : record.heartMaeveWorldMessageShown;
+            record.heartMaeveBiologicalWarningPlayed = tag.contains(
+                    "heartMaeveBiologicalWarningPlayed", Tag.TAG_BYTE)
+                    ? tag.getBoolean("heartMaeveBiologicalWarningPlayed")
+                    : record.heartMaeveWorldMessageShown;
+            if (record.heartMaeveErasureComplete
+                    && !tag.contains("heartMaeveWorldMessageShown")) {
+                record.heartMaeveAftermathSoundMask = 0b11111;
+                record.heartMaeveWorldMessageShown = true;
+                record.heartMaeveCollapseResponsePlayed = true;
+                record.heartMaeveBiologicalWarningPlayed = true;
+            }
+            record.heartLastWitnessDropped =
+                    tag.getBoolean("heartLastWitnessDropped");
+            record.heartFinalAdvancementGranted =
+                    tag.getBoolean("heartFinalAdvancementGranted");
+            record.heartSwarmAnnounced = tag.getBoolean("heartSwarmAnnounced");
+            record.heartScavengerNextWaveGameTime = readOptionalTime(
+                    tag, "heartScavengerNextWaveGameTime");
+            record.heartSuccessorEntityId = tag.hasUUID("heartSuccessorEntityId")
+                    ? tag.getUUID("heartSuccessorEntityId") : null;
+            record.heartSuccessorRespawnGameTime = readOptionalTime(
+                    tag, "heartSuccessorRespawnGameTime");
+            record.heartSuccessorGeneration = Math.max(0,
+                    tag.getInt("heartSuccessorGeneration"));
             ListTag heartFragments = tag.getList("heartFragments", Tag.TAG_COMPOUND);
             for (Tag entry : heartFragments) {
                 if (entry instanceof CompoundTag fragmentTag) {
@@ -1891,6 +2339,44 @@ public final class ReturnedHearthSavedData extends SavedData {
                 }
             }
             return record;
+        }
+
+        private void migrateHeartState(int storedVersion) {
+            if (storedVersion < 17 && com.frozendawn.homo.HeartLattice.nextNode(
+                    heartDestroyedNodeMask) < 0) {
+                heartCollapseStartGameTime = 0L;
+                heartCollapseComplete = true;
+                heartMaeveExposed = true;
+                heartLive = false;
+                heartActiveNodeDamage = 0;
+            }
+            if (storedVersion < 18) {
+                for (int node = 0; node < heartNodeDestroyedGameTimes.length; node++) {
+                    if ((heartDestroyedNodeMask & 1 << node) != 0) {
+                        heartNodeDestroyedGameTimes[node] = 0L;
+                    }
+                }
+                heartDebrisLandedMask = heartDestroyedNodeMask;
+                heartCollapseDebrisLanded = heartCollapseComplete;
+            }
+            if (storedVersion < 19) {
+                heartScavengerNextWaveGameTime = -1L;
+                heartSuccessorEntityId = null;
+                heartSuccessorRespawnGameTime = -1L;
+                heartSuccessorGeneration = 0;
+            }
+            if (heartMaeveErasureComplete) {
+                heartMaeveExposed = false;
+                heartLive = false;
+                heartMusicActive = false;
+                heartEntityId = null;
+                heartScavengerNextWaveGameTime = -1L;
+                heartSuccessorEntityId = null;
+                heartSuccessorRespawnGameTime = -1L;
+            }
+            if (storedVersion < 20) {
+                heartSwarmAnnounced = false;
+            }
         }
 
         private CompoundTag save() {
@@ -1957,6 +2443,40 @@ public final class ReturnedHearthSavedData extends SavedData {
             }
             tag.putInt("heartDestroyedNodeMask", heartDestroyedNodeMask);
             tag.putInt("heartActiveNodeDamage", heartActiveNodeDamage);
+            tag.putLongArray("heartNodeDestroyedGameTimes", heartNodeDestroyedGameTimes);
+            tag.putInt("heartDebrisLandedMask", heartDebrisLandedMask);
+            tag.putBoolean("heartCollapseDebrisLanded", heartCollapseDebrisLanded);
+            tag.putLong("heartCollapseStartGameTime", heartCollapseStartGameTime);
+            tag.putBoolean("heartCollapseComplete", heartCollapseComplete);
+            tag.putBoolean("heartMaeveExposed", heartMaeveExposed);
+            tag.putLong("heartMaeveErasureStartGameTime",
+                    heartMaeveErasureStartGameTime);
+            tag.putBoolean("heartMaeveErasureComplete",
+                    heartMaeveErasureComplete);
+            if (heartMaeveEraserId != null) {
+                tag.putUUID("heartMaeveEraserId", heartMaeveEraserId);
+            }
+            tag.putBoolean("heartMaeveForgeAnnounced", heartMaeveForgeAnnounced);
+            tag.putInt("heartMaeveAftermathSoundMask",
+                    heartMaeveAftermathSoundMask);
+            tag.putBoolean("heartMaeveWorldMessageShown",
+                    heartMaeveWorldMessageShown);
+            tag.putBoolean("heartMaeveCollapseResponsePlayed",
+                    heartMaeveCollapseResponsePlayed);
+            tag.putBoolean("heartMaeveBiologicalWarningPlayed",
+                    heartMaeveBiologicalWarningPlayed);
+            tag.putBoolean("heartLastWitnessDropped", heartLastWitnessDropped);
+            tag.putBoolean("heartFinalAdvancementGranted",
+                    heartFinalAdvancementGranted);
+            tag.putBoolean("heartSwarmAnnounced", heartSwarmAnnounced);
+            tag.putLong("heartScavengerNextWaveGameTime",
+                    heartScavengerNextWaveGameTime);
+            if (heartSuccessorEntityId != null) {
+                tag.putUUID("heartSuccessorEntityId", heartSuccessorEntityId);
+            }
+            tag.putLong("heartSuccessorRespawnGameTime",
+                    heartSuccessorRespawnGameTime);
+            tag.putInt("heartSuccessorGeneration", heartSuccessorGeneration);
             ListTag heartFragments = new ListTag();
             for (HeartFragmentSnapshot fragment : this.heartFragments) {
                 heartFragments.add(fragment.save());
@@ -2174,6 +2694,83 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public int heartActiveNodeDamage() {
             return heartActiveNodeDamage;
+        }
+
+        public long heartNodeDestroyedGameTime(int nodeIndex) {
+            return nodeIndex >= 0 && nodeIndex < heartNodeDestroyedGameTimes.length
+                    ? heartNodeDestroyedGameTimes[nodeIndex] : -1L;
+        }
+
+        public int heartDebrisLandedMask() {
+            return heartDebrisLandedMask;
+        }
+
+        public boolean heartCollapseDebrisLanded() {
+            return heartCollapseDebrisLanded;
+        }
+
+        public long heartCollapseStartGameTime() {
+            return heartCollapseStartGameTime;
+        }
+
+        public boolean heartCollapseComplete() {
+            return heartCollapseComplete;
+        }
+
+        public boolean heartMaeveExposed() {
+            return heartMaeveExposed;
+        }
+
+        public long heartMaeveErasureStartGameTime() {
+            return heartMaeveErasureStartGameTime;
+        }
+
+        public boolean heartMaeveErasureComplete() {
+            return heartMaeveErasureComplete;
+        }
+
+        public Optional<UUID> heartMaeveEraserId() {
+            return Optional.ofNullable(heartMaeveEraserId);
+        }
+
+        public boolean heartMaeveForgeAnnounced() {
+            return heartMaeveForgeAnnounced;
+        }
+
+        public int heartMaeveAftermathSoundMask() {
+            return heartMaeveAftermathSoundMask;
+        }
+
+        public boolean heartMaeveWorldMessageShown() {
+            return heartMaeveWorldMessageShown;
+        }
+
+        public boolean heartLastWitnessDropped() {
+            return heartLastWitnessDropped;
+        }
+
+        public boolean heartFinalAdvancementGranted() {
+            return heartFinalAdvancementGranted;
+        }
+
+        public boolean heartSwarmAnnounced() {
+            return heartSwarmAnnounced;
+        }
+
+        public long heartScavengerNextWaveGameTime() {
+            return heartScavengerNextWaveGameTime;
+        }
+
+        public Optional<UUID> heartSuccessorEntityId() {
+            return Optional.ofNullable(heartSuccessorEntityId);
+        }
+
+        public long heartSuccessorRespawnGameTime() {
+            return heartSuccessorRespawnGameTime;
+        }
+
+        public int heartSuccessorGeneration() {
+            return heartSuccessorGeneration;
         }
 
         public List<HeartFragmentSnapshot> heartFragments() {

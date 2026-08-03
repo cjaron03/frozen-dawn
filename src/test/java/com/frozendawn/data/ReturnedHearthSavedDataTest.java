@@ -68,6 +68,10 @@ class ReturnedHearthSavedDataTest {
                     actual.heartDestroyedNodeMask());
             assertEquals(expected.heartActiveNodeDamage(),
                     actual.heartActiveNodeDamage());
+            assertEquals(expected.heartDebrisLandedMask(),
+                    actual.heartDebrisLandedMask());
+            assertEquals(expected.heartCollapseDebrisLanded(),
+                    actual.heartCollapseDebrisLanded());
             assertEquals(expected.heartMusicActive(), actual.heartMusicActive());
         }
     }
@@ -577,6 +581,191 @@ class ReturnedHearthSavedDataTest {
         assertEquals(0b00001, destroyed.destroyedMask());
         assertEquals(0, destroyed.activeDamage());
         assertTrue(loaded.damageHeartMemoryNode(restored.id(), 1).accepted());
+    }
+
+    @Test
+    void heartScavengerAndSuccessorAuthorityRoundTripsAndResets() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID successor = UUID.randomUUID();
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        assertTrue(state.markHeartSwarmAnnounced(major.id()));
+        assertFalse(state.markHeartSwarmAnnounced(major.id()));
+        assertTrue(state.scheduleHeartScavengerWave(major.id(), 5400L));
+        assertTrue(state.bindHeartSuccessor(major.id(), successor, 1, 5500L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.heartSwarmAnnounced());
+        assertEquals(5400L, restored.heartScavengerNextWaveGameTime());
+        assertEquals(successor, restored.heartSuccessorEntityId().orElseThrow());
+        assertEquals(1, restored.heartSuccessorGeneration());
+        assertEquals(5500L, restored.heartSuccessorRespawnGameTime());
+
+        assertTrue(loaded.scheduleHeartSuccessorRespawn(
+                restored.id(), 2, 6100L));
+        assertTrue(restored.heartSuccessorEntityId().isEmpty());
+        assertEquals(2, restored.heartSuccessorGeneration());
+        assertEquals(6100L, restored.heartSuccessorRespawnGameTime());
+        assertTrue(loaded.resetHeartMemoryNodesForDebug(restored.id()));
+        assertFalse(restored.heartSwarmAnnounced());
+        assertEquals(-1L, restored.heartScavengerNextWaveGameTime());
+        assertTrue(restored.heartSuccessorEntityId().isEmpty());
+        assertEquals(-1L, restored.heartSuccessorRespawnGameTime());
+        assertEquals(0, restored.heartSuccessorGeneration());
+    }
+
+    @Test
+    void heartDebrisLifecyclePersistsWithoutRecreatingLandedPieces() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+
+        for (int hit = 0; hit < 3; hit++) {
+            state.damageHeartMemoryNode(major.id(), 0, 5432L);
+        }
+        assertEquals(5432L, major.heartNodeDestroyedGameTime(0));
+        assertEquals(0, major.heartDebrisLandedMask());
+        assertTrue(state.markHeartNodeDebrisLanded(major.id(), 0));
+        assertFalse(state.markHeartNodeDebrisLanded(major.id(), 0));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(5432L, restored.heartNodeDestroyedGameTime(0));
+        assertEquals(0b00001, restored.heartDebrisLandedMask());
+        assertFalse(loaded.markHeartCollapseDebrisLanded(restored.id()));
+
+        for (int node = 1;
+             node < com.frozendawn.homo.HeartLattice.NODE_COUNT;
+             node++) {
+            for (int hit = 0;
+                 hit < com.frozendawn.homo.HeartLattice.HITS_PER_NODE;
+                 hit++) {
+                assertTrue(loaded.damageHeartMemoryNode(
+                        restored.id(), node, 5432L + node).accepted());
+            }
+        }
+        assertTrue(loaded.startHeartCollapse(restored.id(), 6200L));
+        assertTrue(loaded.completeHeartCollapse(restored.id()));
+        assertTrue(loaded.markHeartCollapseDebrisLanded(restored.id()));
+        assertFalse(loaded.markHeartCollapseDebrisLanded(restored.id()));
+
+        ReturnedHearthSavedData collapsed = ReturnedHearthSavedData.load(
+                loaded.save(new CompoundTag(), null), null);
+        assertTrue(major(collapsed).heartCollapseDebrisLanded());
+    }
+
+    @Test
+    void heartCollapsePersistsAndExposesMaeveWithoutStoppingMusic() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        destroyAllHeartNodes(state, major.id());
+
+        assertTrue(state.startHeartCollapse(major.id(), 6200L));
+        assertFalse(state.startHeartCollapse(major.id(), 6300L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(6200L, restored.heartCollapseStartGameTime());
+        assertFalse(restored.heartCollapseComplete());
+        assertFalse(restored.heartMaeveExposed());
+        assertFalse(restored.heartLive());
+
+        assertTrue(loaded.completeHeartCollapse(restored.id()));
+        assertFalse(restored.heartLive());
+        assertTrue(restored.heartCollapseComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertTrue(restored.heartMusicActive());
+    }
+
+    @Test
+    void maeveErasureIsDeliberatePersistentAndFinal() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID eraser = UUID.randomUUID();
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        assertFalse(state.startHeartMaeveErasure(major.id(), 6100L, eraser));
+        destroyAllHeartNodes(state, major.id());
+        assertTrue(state.startHeartCollapse(major.id(), 6200L));
+        assertTrue(state.completeHeartCollapse(major.id()));
+
+        assertTrue(state.startHeartMaeveErasure(major.id(), 7000L, eraser));
+        assertFalse(state.startHeartMaeveErasure(major.id(), 7001L, eraser));
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(7000L, restored.heartMaeveErasureStartGameTime());
+        assertEquals(eraser, restored.heartMaeveEraserId().orElseThrow());
+        assertFalse(restored.heartMaeveErasureComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertTrue(restored.heartMusicActive());
+
+        assertTrue(loaded.completeHeartMaeveErasure(restored.id()));
+        assertTrue(restored.heartMaeveErasureComplete());
+        assertFalse(restored.heartMaeveExposed());
+        assertFalse(restored.heartMusicActive());
+        assertTrue(restored.heartEntityId().isEmpty());
+        assertTrue(loaded.markHeartFinalAdvancementGranted(restored.id()));
+        assertFalse(loaded.markHeartFinalAdvancementGranted(restored.id()));
+
+        assertTrue(loaded.resetHeartMaeveErasureForDebug(restored.id()));
+        assertEquals(-1L, restored.heartMaeveErasureStartGameTime());
+        assertFalse(restored.heartMaeveErasureComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertFalse(restored.heartFinalAdvancementGranted());
+        assertTrue(restored.heartMusicActive());
+    }
+
+    @Test
+    void resettingHeartNodesAlsoResetsCollapseForAnotherSmokePass() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        destroyAllHeartNodes(state, major.id());
+        assertTrue(state.startHeartCollapse(major.id(), 6200L));
+        assertTrue(state.completeHeartCollapse(major.id()));
+
+        assertTrue(state.resetHeartMemoryNodesForDebug(major.id()));
+        assertEquals(0, major.heartDestroyedNodeMask());
+        assertEquals(-1L, major.heartCollapseStartGameTime());
+        assertFalse(major.heartCollapseComplete());
+        assertFalse(major.heartMaeveExposed());
+        assertTrue(major.heartLive());
+        assertEquals(0, major.heartDebrisLandedMask());
+        assertFalse(major.heartCollapseDebrisLanded());
+    }
+
+    @Test
+    void versionSixteenCompletedArchiveMigratesToDormantRemnant() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        destroyAllHeartNodes(state, major.id());
+        CompoundTag versionSixteen = state.save(new CompoundTag(), null);
+        versionSixteen.putInt("dataVersion", 16);
+        for (Tag entry : versionSixteen.getList("hearths", Tag.TAG_COMPOUND)) {
+            CompoundTag hearth = (CompoundTag) entry;
+            hearth.remove("heartCollapseStartGameTime");
+            hearth.remove("heartCollapseComplete");
+            hearth.remove("heartMaeveExposed");
+        }
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                versionSixteen, null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.heartCollapseComplete());
+        assertTrue(restored.heartMaeveExposed());
+        assertFalse(restored.heartLive());
     }
 
     @Test
@@ -1163,5 +1352,14 @@ class ReturnedHearthSavedDataTest {
 
     private static ReturnedHearthSavedData.HearthRecord major(ReturnedHearthSavedData state) {
         return state.hearth(HearthSelectionPolicy.HearthType.MAJOR).orElseThrow();
+    }
+
+    private static void destroyAllHeartNodes(
+            ReturnedHearthSavedData state, UUID hearthId) {
+        for (int node = 0; node < com.frozendawn.homo.HeartLattice.NODE_COUNT; node++) {
+            for (int hit = 0; hit < com.frozendawn.homo.HeartLattice.HITS_PER_NODE; hit++) {
+                assertTrue(state.damageHeartMemoryNode(hearthId, node).accepted());
+            }
+        }
     }
 }

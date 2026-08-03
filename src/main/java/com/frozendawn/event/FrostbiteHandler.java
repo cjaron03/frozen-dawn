@@ -91,6 +91,17 @@ final class FrostbiteHandler {
         frostbiteTicks.remove(id);
     }
 
+    static void clearForRescue(ServerPlayer player) {
+        UUID id = player.getUUID();
+        coolingTicks.remove(id);
+        frostbiteTicks.remove(id);
+        player.getPersistentData().remove(COOLING_TICKS_KEY);
+        player.getPersistentData().remove(FROSTBITE_TICKS_KEY);
+        player.setTicksFrozen(0);
+        player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        player.removeEffect(MobEffects.DIG_SLOWDOWN);
+    }
+
     /**
      * Returns the temperature penalty from frostbite for the HUD gauge.
      */

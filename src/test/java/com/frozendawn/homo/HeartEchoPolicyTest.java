@@ -8,10 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HeartEchoPolicyTest {
     @Test
-    void echoBeginsAtMemoryFailureWithoutRequiringTerminalLoad() {
-        assertFalse(HeartEchoPolicy.canSpawn(49.99F, true, 0));
-        assertTrue(HeartEchoPolicy.canSpawn(50.0F, true, 0));
-        assertFalse(HeartEchoPolicy.canSpawn(100.0F, false, 0));
+    void echoOnlyGuidesTheLastThreeNodes() {
+        assertFalse(HeartEchoPolicy.canSpawn(100.0F, true, 0));
+        assertFalse(HeartEchoPolicy.canSpawn(100.0F, true, 1));
+        assertFalse(HeartEchoPolicy.canSpawn(49.99F, true, 2));
+        assertTrue(HeartEchoPolicy.canSpawn(50.0F, true, 2));
+        assertFalse(HeartEchoPolicy.canSpawn(100.0F, false, 2));
         assertFalse(HeartEchoPolicy.canSpawn(100.0F, true, -1));
     }
 

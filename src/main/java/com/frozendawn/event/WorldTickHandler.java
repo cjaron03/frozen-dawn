@@ -29,6 +29,8 @@ import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthHeartManager;
 import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartMaeveErasureManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.HeartMusicManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationManager;
@@ -151,6 +153,8 @@ public class WorldTickHandler {
         HearthMasterArchitectWeatherManager.reset();
         HearthHeartManager.reset();
         HeartMemoryNodeManager.reset();
+        HeartMaeveErasureManager.reset();
+        HeartScavengerWaveManager.reset();
         HeartMusicManager.reset();
         CognitiveLoadManager.reset();
         HearthMemoryManager.reset();
@@ -238,6 +242,7 @@ public class WorldTickHandler {
         HearthMasterArchitectManager.tick(overworld);
         HearthMasterArchitectWeatherManager.tick(overworld, currentPhase, progress);
         HearthHeartManager.tick(overworld);
+        HeartScavengerWaveManager.tick(overworld);
         HeartMusicManager.tick(server);
         CognitiveLoadManager.tick(overworld, state);
         HearthTransmissionManager.tick(overworld);

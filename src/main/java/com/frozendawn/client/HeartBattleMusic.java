@@ -23,8 +23,15 @@ public final class HeartBattleMusic {
     }
 
     public static void update(HeartMusicStatePayload payload) {
+        HeartQuietClient.setWorldErased(payload.erased());
         if (!payload.active()) {
-            hardStop();
+            if (active) {
+                Minecraft minecraft = Minecraft.getInstance();
+                hardStop();
+                minecraft.getMusicManager().stopPlaying();
+                minecraft.getSoundManager().stop(null, SoundSource.MUSIC);
+            }
+            active = false;
             return;
         }
         if (!active) {
@@ -58,6 +65,7 @@ public final class HeartBattleMusic {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         hardStop();
+        HeartQuietClient.reset();
     }
 
     private static void ensureTrack() {
@@ -91,7 +99,17 @@ public final class HeartBattleMusic {
         @Override
         public void tick() {
             if (!HeartBattleMusic.active) {
-                stop();
+                volume = net.minecraft.util.Mth.approach(
+                        volume, 0.0F, 0.015F);
+                if (volume <= 0.001F) {
+                    stop();
+                    if (HeartBattleMusic.track == this) {
+                        HeartBattleMusic.track = null;
+                    }
+                }
+            } else {
+                volume = net.minecraft.util.Mth.approach(
+                        volume, 0.92F, 0.02F);
             }
         }
     }

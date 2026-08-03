@@ -107,6 +107,12 @@ public final class HearthCombatRosterManager {
             resident.setPose(Pose.CROUCHING);
             return true;
         }
+        if (HeartScavengerWaveManager.isHeartScavenger(
+                resident.getTarget(), hearthId)
+                || HeartScavengerWaveManager.isHeartScavenger(
+                resident.getLastHurtByMob(), hearthId)) {
+            return false;
+        }
         if (resident.getPose() == Pose.CROUCHING) {
             resident.setPose(Pose.STANDING);
         }
@@ -247,13 +253,16 @@ public final class HearthCombatRosterManager {
                 : null;
         boolean permanentCasualty = HearthCombatRosterPolicy.recordsPermanentCasualty(
                 role, player != null);
+        boolean killedByHeartScavenger = HeartScavengerWaveManager.isHeartScavenger(
+                source.getEntity(), hearthId);
         if (role == HearthEncounterRole.TETHERED) {
             data.setEncounterRole(hearthId, entityId, HearthEncounterRole.SPENT);
         }
 
         boolean bindingChanged = populationRole != null
                 && HearthPopulationManager.recordResidentDeath(
-                        level, hearthId, populationRole, entityId, permanentCasualty);
+                        level, hearthId, populationRole, entityId,
+                        permanentCasualty || killedByHeartScavenger);
         boolean casualtyChanged = permanentCasualty
                 && data.recordCongregationCasualty(
                         player.getUUID(), hearthId, entityId, level.getGameTime());

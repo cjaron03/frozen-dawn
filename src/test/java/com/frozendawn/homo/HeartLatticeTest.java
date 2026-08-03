@@ -38,6 +38,17 @@ class HeartLatticeTest {
     }
 
     @Test
+    void firstTwoNodesUseLoadAndLastThreeUseEchoExposure() {
+        assertTrue(HeartLattice.isNodeHittable(0, 25.0F, false));
+        assertTrue(HeartLattice.isNodeHittable(1, 42.0F, false));
+        assertFalse(HeartLattice.isNodeHittable(1, 41.99F, true));
+
+        assertFalse(HeartLattice.isNodeHittable(2, 100.0F, false));
+        assertTrue(HeartLattice.isNodeHittable(2, 0.0F, true));
+        assertTrue(HeartLattice.isNodeHittable(4, 0.0F, true));
+    }
+
+    @Test
     void raySelectionRejectsMissesAndOutOfRangeNodes() {
         Vec3 eye = Vec3.ZERO;
         Vec3 look = new Vec3(0.0D, 0.0D, 1.0D);

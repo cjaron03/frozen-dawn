@@ -60,6 +60,8 @@ public class WindAmbience {
         targetVolume *= Mth.lerp(exposure, 0.08f, 1.0f);
         targetVolume *= MasterArchitectFourthWallMoment.weatherAudioMultiplier();
         targetVolume *= MasterArchitectSeverTelegraph.weatherAudioMultiplier();
+        float heartQuiet = HeartQuietClient.environmentMultiplier();
+        targetVolume *= heartQuiet;
         float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
@@ -76,7 +78,7 @@ public class WindAmbience {
         }
 
         // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
-        if (!exposedToStorm && phase >= 4) {
+        if (!exposedToStorm && phase >= 4 && heartQuiet > 0.15F) {
             if (creakCooldown > 0) {
                 creakCooldown--;
             } else if (mc.level.random.nextFloat() < 0.015f) {

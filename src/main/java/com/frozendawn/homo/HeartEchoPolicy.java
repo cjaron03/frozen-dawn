@@ -19,7 +19,8 @@ public final class HeartEchoPolicy {
     }
 
     public static boolean canSpawn(float load, boolean heartLive, int nextNode) {
-        return heartLive && load >= SPAWN_LOAD && nextNode >= 0;
+        return heartLive && load >= SPAWN_LOAD
+                && HeartLattice.requiresEcho(nextNode);
     }
 
     /** Sparse surviving archives offer fewer chances to recover clarity. */

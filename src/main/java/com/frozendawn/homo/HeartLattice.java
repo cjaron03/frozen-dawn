@@ -11,9 +11,12 @@ import java.util.List;
 /** Shared deterministic geometry and interaction policy for the Thae Iven Heart. */
 public final class HeartLattice {
     public static final int NODE_COUNT = 5;
+    public static final int LOAD_GATED_NODE_COUNT = 2;
     public static final int HITS_PER_NODE = 3;
     public static final double MAX_STRIKE_DISTANCE = 40.0D;
     public static final double NODE_HIT_RADIUS = 3.0D;
+    public static final double MAX_MAEVE_INTERACTION_DISTANCE = 12.0D;
+    public static final double MAEVE_HIT_RADIUS = 2.6D;
     private static final double MAX_AIM_ASSIST_RADIUS = 4.5D;
     private static final double AIM_ASSIST_SLOPE = 0.10D;
 
@@ -81,6 +84,20 @@ public final class HeartLattice {
         return NODE_LOAD_THRESHOLDS[nodeIndex];
     }
 
+    public static boolean requiresEcho(int nodeIndex) {
+        return nodeIndex >= LOAD_GATED_NODE_COUNT && nodeIndex < NODE_COUNT;
+    }
+
+    public static boolean isNodeHittable(
+            int nodeIndex, float cognitiveLoad, boolean echoExposed) {
+        if (nodeIndex < 0 || nodeIndex >= NODE_COUNT) {
+            return false;
+        }
+        return requiresEcho(nodeIndex)
+                ? echoExposed
+                : cognitiveLoad + 0.001F >= requiredLoad(nodeIndex);
+    }
+
     public static int nextNode(int destroyedMask) {
         for (int index = 0; index < NODE_COUNT; index++) {
             if (!isDestroyed(destroyedMask, index)) {
@@ -115,6 +132,12 @@ public final class HeartLattice {
         return heartOrigin(anchor, load).add(node.x(), node.y(), node.z());
     }
 
+    /** Matches the exposed core's post-collapse renderer position within aim tolerance. */
+    public static Vec3 maevePosition(BlockPos anchor) {
+        return heartOrigin(anchor, requiredLoad(NODE_COUNT - 1))
+                .add(-0.7D, -5.8D, 0.2D);
+    }
+
     public static boolean raySelectsNode(
             Vec3 eye, Vec3 look, Vec3 nodePosition) {
         if (eye.distanceToSqr(nodePosition)
@@ -133,6 +156,23 @@ public final class HeartLattice {
                 Math.max(NODE_HIT_RADIUS, alongRay * AIM_ASSIST_SLOPE));
         return nearest.distanceToSqr(nodePosition)
                 <= effectiveRadius * effectiveRadius;
+    }
+
+    public static boolean raySelectsMaeve(
+            Vec3 eye, Vec3 look, Vec3 maevePosition) {
+        if (eye.distanceToSqr(maevePosition)
+                <= MAEVE_HIT_RADIUS * MAEVE_HIT_RADIUS) {
+            return true;
+        }
+        Vec3 direction = look.normalize();
+        Vec3 toMaeve = maevePosition.subtract(eye);
+        double alongRay = toMaeve.dot(direction);
+        if (alongRay < 0.0D || alongRay > MAX_MAEVE_INTERACTION_DISTANCE) {
+            return false;
+        }
+        Vec3 nearest = eye.add(direction.scale(alongRay));
+        return nearest.distanceToSqr(maevePosition)
+                <= MAEVE_HIT_RADIUS * MAEVE_HIT_RADIUS;
     }
 
     public record Segment(

@@ -7,6 +7,7 @@ import com.frozendawn.homo.HeartLattice;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HeartMemoryNodeEventPayload;
 import com.frozendawn.network.HeartMemoryNodeStrikePayload;
+import com.frozendawn.network.HeartMaeveErasePayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -29,6 +30,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /** Client selection, impact particles, and non-locking inner-memory presentation. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
@@ -39,6 +41,8 @@ public final class HeartMemoryNodeClient {
     private static int memoryVariant;
     private static int memoryVisits;
     private static int memoryCasualties;
+    private static int maeveChannelTicks;
+    private static UUID maeveChannelHeartId;
 
     private HeartMemoryNodeClient() {
     }
@@ -46,7 +50,7 @@ public final class HeartMemoryNodeClient {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onInteractionInput(
             InputEvent.InteractionKeyMappingTriggered event) {
-        if (!event.isAttack() || event.isCanceled()) {
+        if (event.isCanceled()) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -55,13 +59,21 @@ public final class HeartMemoryNodeClient {
             return;
         }
         ThaeIvenHeartEntity selected = selectedHeart(minecraft);
+        if (event.isUseItem() && selected != null
+                && maeveTargeted(minecraft, selected)) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!event.isAttack()) {
+            return;
+        }
         if (selected == null) {
             return;
         }
         int nodeIndex = HeartLattice.nextNode(selected.destroyedNodeMask());
-        if (nodeIndex < 0 || (CognitiveLoadClientState.loadPercent() + 0.001F
-                < HeartLattice.requiredLoad(nodeIndex)
-                && !HeartEchoClient.isNodeExposed(nodeIndex))) {
+        boolean echoExposed = HeartEchoClient.isNodeExposed(nodeIndex);
+        if (!HeartLattice.isNodeHittable(
+                nodeIndex, CognitiveLoadClientState.loadPercent(), echoExposed)) {
             return;
         }
         Vec3 nodePosition = HeartLattice.nodePosition(
@@ -85,6 +97,7 @@ public final class HeartMemoryNodeClient {
         if (memoryTicks > 0) {
             memoryTicks--;
         }
+        tickMaeveChannel();
     }
 
     @SubscribeEvent
@@ -168,6 +181,78 @@ public final class HeartMemoryNodeClient {
         memoryVariant = 0;
         memoryVisits = 0;
         memoryCasualties = 0;
+        maeveChannelTicks = 0;
+        maeveChannelHeartId = null;
+    }
+
+    public static float maeveChannelProgress(ThaeIvenHeartEntity heart) {
+        return maeveChannelHeartId != null
+                && maeveChannelHeartId.equals(heart.getUUID())
+                ? Mth.clamp(maeveChannelTicks
+                / (float) com.frozendawn.homo.HeartMaeveErasurePolicy.CHANNEL_TICKS,
+                0.0F, 1.0F)
+                : 0.0F;
+    }
+
+    private static void tickMaeveChannel() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.level == null
+                || minecraft.screen != null
+                || !minecraft.options.keyUse.isDown()) {
+            clearMaeveChannel();
+            return;
+        }
+        ThaeIvenHeartEntity heart = selectedHeart(minecraft);
+        if (heart == null || !maeveTargeted(minecraft, heart)) {
+            clearMaeveChannel();
+            return;
+        }
+        if (!heart.getUUID().equals(maeveChannelHeartId)) {
+            maeveChannelHeartId = heart.getUUID();
+            maeveChannelTicks = 0;
+        }
+        maeveChannelTicks++;
+        PacketDistributor.sendToServer(new HeartMaeveErasePayload());
+        Vec3 maeve = HeartLattice.maevePosition(BlockPos.of(heart.anchor()));
+        if ((maeveChannelTicks & 1) == 0) {
+            double angle = minecraft.level.random.nextDouble() * Math.PI * 2.0D;
+            double radius = 1.2D + minecraft.level.random.nextDouble() * 1.4D;
+            minecraft.level.addParticle(
+                    maeveChannelTicks % 6 == 0
+                            ? ParticleTypes.END_ROD : ParticleTypes.SCULK_SOUL,
+                    maeve.x + Math.cos(angle) * radius,
+                    maeve.y + (minecraft.level.random.nextDouble() - 0.5D) * 2.4D,
+                    maeve.z + Math.sin(angle) * radius,
+                    -Math.cos(angle) * 0.08D, 0.0D,
+                    -Math.sin(angle) * 0.08D);
+        }
+        if (maeveChannelTicks % 20 == 1) {
+            minecraft.level.playLocalSound(
+                    maeve.x, maeve.y, maeve.z,
+                    ModSounds.THAEVEN_INTERRUPT.get(),
+                    SoundSource.AMBIENT, 0.75F,
+                    0.52F + maeveChannelProgress(heart) * 0.42F, false);
+        }
+    }
+
+    private static boolean maeveTargeted(
+            Minecraft minecraft, ThaeIvenHeartEntity heart) {
+        if (!heart.maeveExposed() || heart.maeveErasureProgress() > 0.0F
+                || minecraft.player == null) {
+            return false;
+        }
+        Vec3 maeve = HeartLattice.maevePosition(BlockPos.of(heart.anchor()));
+        Vec3 eye = minecraft.player.getEyePosition();
+        return eye.distanceToSqr(maeve)
+                <= HeartLattice.MAX_MAEVE_INTERACTION_DISTANCE
+                * HeartLattice.MAX_MAEVE_INTERACTION_DISTANCE
+                && HeartLattice.raySelectsMaeve(
+                eye, minecraft.player.getViewVector(1.0F), maeve);
+    }
+
+    private static void clearMaeveChannel() {
+        maeveChannelTicks = 0;
+        maeveChannelHeartId = null;
     }
 
     private static ThaeIvenHeartEntity selectedHeart(Minecraft minecraft) {

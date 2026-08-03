@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
+import com.frozendawn.entity.HeartSuccessorEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
@@ -96,6 +97,17 @@ public class ModEntities {
                             .clientTrackingRange(64)
                             .updateInterval(2)
                             .build("thae_iven_heart"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HeartSuccessorEntity>>
+            HEART_SUCCESSOR = ENTITIES.register(
+                    "heart_successor", () -> EntityType.Builder
+                            .of(HeartSuccessorEntity::new, MobCategory.MISC)
+                            .sized(0.9F, 2.9F)
+                            .noSummon()
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(2)
+                            .build("heart_successor"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HeavySnowballEntity>> HEAVY_SNOWBALL =
             ENTITIES.register("heavy_snowball", () -> EntityType.Builder

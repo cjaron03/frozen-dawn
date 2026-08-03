@@ -39,15 +39,22 @@ public class WeatherParticles {
                 mc.player.position());
         float masterStrength = MasterArchitectWeather.getStrength()
                 * exposure * eyeStormFactor;
-        if (exposure <= 0.08F && masterStrength <= 0.08F) return;
+        float heartStrength = HeartQuietClient.localStormStrength() * exposure;
+        if (exposure <= 0.08F && masterStrength <= 0.08F
+                && heartStrength <= 0.08F) return;
 
         boolean vacuum = PhaseManager.isVacuumActive(phase, progress);
-        if (vacuum && masterStrength <= 0.0F) return;
+        if (vacuum && masterStrength <= 0.0F && heartStrength <= 0.0F) return;
 
         int globalParticleCount = vacuum
                 ? 0 : Math.round(getParticleCount(phase, progress) * exposure);
         int localParticleCount = Math.round(72.0F * masterStrength);
-        int totalParticleCount = Math.max(globalParticleCount, localParticleCount);
+        int heartParticleCount = Math.round(28.0F * heartStrength);
+        float heartQuiet = HeartQuietClient.environmentMultiplier();
+        globalParticleCount = Math.round(globalParticleCount * heartQuiet);
+        localParticleCount = Math.round(localParticleCount * heartQuiet);
+        int totalParticleCount = globalParticleCount
+                + localParticleCount + heartParticleCount;
         if (totalParticleCount <= 0) return;
 
         RandomSource random = mc.level.random;
@@ -60,9 +67,11 @@ public class WeatherParticles {
         if (phase >= 5) {
             // Phase 5+: particles blow sideways at surface level, like a ground blizzard
             float globalWindSpeed = BlizzardWindHelper.getSurfaceWindSpeed(
-                    phase, progress, gameTime) * exposure;
+                    phase, progress, gameTime) * exposure * heartQuiet;
             float localWindSpeed = BlizzardWindHelper.getMasterArchitectWindSpeed(
-                    gameTime, masterStrength);
+                    gameTime, masterStrength) * heartQuiet;
+            float heartWindSpeed = BlizzardWindHelper.getMasterArchitectWindSpeed(
+                    gameTime, heartStrength * 0.72F);
             float windAngle = BlizzardWindHelper.getWindAngleRad(gameTime);
             spawnHorizontalSnow(
                     mc,
@@ -80,16 +89,28 @@ public class WeatherParticles {
                     px,
                     py,
                     pz,
-                    Math.max(0, totalParticleCount - globalParticleCount),
+                    localParticleCount,
                     localWindSpeed * Mth.sin(windAngle),
                     localWindSpeed * Mth.cos(windAngle),
                     true);
+            spawnHorizontalSnow(
+                    mc,
+                    random,
+                    px,
+                    py,
+                    pz,
+                    heartParticleCount,
+                    heartWindSpeed * Mth.sin(windAngle),
+                    heartWindSpeed * Mth.cos(windAngle),
+                    false);
         } else {
             // Phase 3-4: normal falling snow with mild wind
             float windStrength = 0.5f + 0.5f * (float) Math.sin(gameTime * 0.02);
             float windMult = phase >= 4 ? 0.4f : 0.2f;
-            float windX = windStrength * windMult * exposure * (float) Math.sin(gameTime * 0.007);
-            float windZ = windStrength * windMult * exposure * (float) Math.cos(gameTime * 0.011);
+            float windX = windStrength * windMult * exposure * heartQuiet
+                    * (float) Math.sin(gameTime * 0.007);
+            float windZ = windStrength * windMult * exposure * heartQuiet
+                    * (float) Math.cos(gameTime * 0.011);
             double fallSpeed = -0.3;
 
             for (int i = 0; i < totalParticleCount; i++) {

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "frozendawn:item/the_last_witness_one"
+  }
+}

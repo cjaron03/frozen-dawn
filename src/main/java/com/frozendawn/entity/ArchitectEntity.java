@@ -33,6 +33,7 @@ import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.MasterArchitectBossBarPolicy;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
@@ -1298,6 +1299,13 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
+        LivingEntity current = getTarget();
+        UUID hearthId = isHearthAssessor()
+                ? getHearthAssessorId().orElse(null)
+                : getHearthPopulationId().orElse(null);
+        if (HeartScavengerWaveManager.isHeartScavenger(current, hearthId)) {
+            return current;
+        }
         if (isHearthAssessor() && level() instanceof ServerLevel serverLevel) {
             return hearthAssessmentController.findHostileTarget(serverLevel);
         }

@@ -7,8 +7,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/** Persistent server authority for the Heart-owned world score. */
-public record HeartMusicStatePayload(boolean active) implements CustomPacketPayload {
+/** Persistent server authority for the Heart-owned score and erased-world quiet. */
+public record HeartMusicStatePayload(boolean active, boolean erased)
+        implements CustomPacketPayload {
     public static final Type<HeartMusicStatePayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
                     FrozenDawn.MOD_ID, "heart_music_state"));
@@ -16,6 +17,8 @@ public record HeartMusicStatePayload(boolean active) implements CustomPacketPayl
             StreamCodec.composite(
                     ByteBufCodecs.BOOL,
                     HeartMusicStatePayload::active,
+                    ByteBufCodecs.BOOL,
+                    HeartMusicStatePayload::erased,
                     HeartMusicStatePayload::new);
 
     @Override

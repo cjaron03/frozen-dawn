@@ -9,9 +9,11 @@ import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
 import com.frozendawn.homo.HearthHeartManager;
+import com.frozendawn.homo.HeartCollapseStage;
 import com.frozendawn.homo.HeartFormationStage;
 import com.frozendawn.homo.HeartLattice;
 import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -113,7 +115,31 @@ final class FrozenDawnHearthCommand {
                                                         FrozenDawnHearthCommand::heartNodeDestroy)))
                                 .then(Commands.literal("reset")
                                         .executes(
-                                                FrozenDawnHearthCommand::heartNodesReset))))
+                                                FrozenDawnHearthCommand::heartNodesReset)))
+                        .then(Commands.literal("collapse")
+                                .executes(FrozenDawnHearthCommand::heartStatus)
+                                .then(Commands.literal("start")
+                                        .executes(FrozenDawnHearthCommand::heartCollapseStart))
+                                .then(Commands.literal("setstage")
+                                        .then(heartCollapseStage("rupture",
+                                                HeartCollapseStage.RUPTURE))
+                                        .then(heartCollapseStage("fall",
+                                                HeartCollapseStage.FALL))
+                                        .then(heartCollapseStage("settle",
+                                                HeartCollapseStage.SETTLE))
+                                        .then(heartCollapseStage("dormant",
+                                                HeartCollapseStage.DORMANT)))
+                                .then(Commands.literal("reset")
+                                        .executes(
+                                                FrozenDawnHearthCommand::heartCollapseReset)))
+                        .then(Commands.literal("maeve")
+                                .executes(FrozenDawnHearthCommand::heartMaeveStatus)
+                                .then(Commands.literal("start")
+                                        .executes(FrozenDawnHearthCommand::heartMaeveStart))
+                                .then(Commands.literal("complete")
+                                        .executes(FrozenDawnHearthCommand::heartMaeveComplete))
+                                .then(Commands.literal("reset")
+                                        .executes(FrozenDawnHearthCommand::heartMaeveReset))))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -217,6 +243,8 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thae Iven Heart: " + HearthHeartManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
+                "  Heart scavengers: " + HeartScavengerWaveManager.statusLine()), false);
+        context.getSource().sendSuccess(() -> Component.literal(
                 "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
@@ -312,6 +340,9 @@ final class FrozenDawnHearthCommand {
                 "--- Thae Iven Heart ---"), false);
         context.getSource().sendSuccess(() -> Component.literal(
                 "  " + HearthHeartManager.describe(context.getSource().getLevel())), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "  Encounter: " + HeartScavengerWaveManager.describe(
+                        context.getSource().getLevel())), false);
         return 1;
     }
 
@@ -332,6 +363,107 @@ final class FrozenDawnHearthCommand {
                             + (changed ? "" : " (unchanged)")), true);
             return heartStatus(context);
         });
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> heartCollapseStage(
+            String name, HeartCollapseStage stage) {
+        return Commands.literal(name).executes(context -> {
+            boolean changed = HearthHeartManager.setCollapseStageForDebug(
+                    context.getSource().getLevel(), stage);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Set Heart collapse to " + stage.name().toLowerCase(Locale.ROOT)
+                            + (changed ? "" : " (unchanged)")), true);
+            return heartStatus(context);
+        });
+    }
+
+    private static int heartCollapseStart(
+            CommandContext<CommandSourceStack> context) {
+        boolean changed = HearthHeartManager.startCollapseForDebug(
+                context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Started Heart collapse" + (changed ? "" : " (unchanged)")), true);
+        return heartStatus(context);
+    }
+
+    private static int heartCollapseReset(
+            CommandContext<CommandSourceStack> context) {
+        int removed = HearthHeartManager.resetCollapseForDebug(
+                context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Heart collapse; removed " + removed
+                        + " transient fragment(s)"), true);
+        return heartStatus(context);
+    }
+
+    private static int heartMaeveStatus(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(context.getSource().getServer())
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (hearth == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "Major Hearth does not exist"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Maeve: exposed=" + yesNo(hearth.heartMaeveExposed())
+                        + " erasureStart=" + hearth.heartMaeveErasureStartGameTime()
+                        + " erased=" + yesNo(hearth.heartMaeveErasureComplete())
+                        + " advancement="
+                        + yesNo(hearth.heartFinalAdvancementGranted())), false);
+        return 1;
+    }
+
+    private static int heartMaeveStart(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        boolean changed = hearth != null && data.startHeartMaeveErasure(
+                hearth.id(), context.getSource().getLevel().getGameTime(),
+                player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Started Maeve erasure" + (changed ? "" : " (unchanged)")), true);
+        HearthHeartManager.tick(context.getSource().getLevel());
+        return heartMaeveStatus(context);
+    }
+
+    private static int heartMaeveComplete(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        boolean completed = false;
+        if (hearth != null) {
+            data.resetHeartMaeveErasureForDebug(hearth.id());
+            long completionStart = Math.max(0L,
+                    context.getSource().getLevel().getGameTime()
+                            - com.frozendawn.homo.HeartMaeveErasurePolicy.UNMAKING_TICKS);
+            completed = data.startHeartMaeveErasure(
+                    hearth.id(), completionStart, player.getUUID());
+        }
+        boolean changed = completed;
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Completed Maeve erasure" + (changed ? "" : " (unchanged)")), true);
+        HearthHeartManager.tick(context.getSource().getLevel());
+        return heartMaeveStatus(context);
+    }
+
+    private static int heartMaeveReset(CommandContext<CommandSourceStack> context) {
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(
+                context.getSource().getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        boolean changed = hearth != null
+                && data.resetHeartMaeveErasureForDebug(hearth.id());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset Maeve erasure" + (changed ? "" : " (unchanged)")), true);
+        HearthHeartManager.tick(context.getSource().getLevel());
+        return heartMaeveStatus(context);
     }
 
     private static int heartReset(CommandContext<CommandSourceStack> context) {

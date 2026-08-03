@@ -816,4 +816,12 @@ public class MimicEntity extends Monster {
             }
         }
     }
+
+    public void setHeartScavengerTarget(LivingEntity target) {
+        setTarget(target);
+        engaged = true;
+        if (getMimicPhase() != PHASE_COMBAT) {
+            transitionToPhase(PHASE_COMBAT);
+        }
+    }
 }

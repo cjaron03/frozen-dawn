@@ -53,4 +53,11 @@ public class ModDataComponents {
                             .persistent(Codec.BOOL)
                             .networkSynchronized(ByteBufCodecs.BOOL)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> LAST_WITNESS_READY_TIME =
+            DATA_COMPONENTS.register("last_witness_ready_time", () ->
+                    DataComponentType.<Long>builder()
+                            .persistent(Codec.LONG)
+                            .networkSynchronized(ByteBufCodecs.VAR_LONG)
+                            .build());
 }
