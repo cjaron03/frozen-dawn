@@ -2,6 +2,7 @@ package com.frozendawn.command;
 
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthBoundaryManager;
@@ -77,6 +78,24 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
                         .then(Commands.literal("debug-reset-undone-contact")
                                 .executes(FrozenDawnHearthCommand::postMaeveResetContact)))
+                .then(Commands.literal("bloom")
+                        .executes(FrozenDawnHearthCommand::bloomStatus)
+                        .then(Commands.literal("status")
+                                .executes(FrozenDawnHearthCommand::bloomStatus))
+                        .then(Commands.literal("seed")
+                                .executes(FrozenDawnHearthCommand::bloomSeed))
+                        .then(Commands.literal("advance")
+                                .then(Commands.argument("days",
+                                                IntegerArgumentType.integer(0, 3_650))
+                                        .executes(FrozenDawnHearthCommand::bloomAdvance)))
+                        .then(Commands.literal("setradius")
+                                .then(Commands.argument("radius",
+                                                IntegerArgumentType.integer(0, 1_000))
+                                        .executes(FrozenDawnHearthCommand::bloomSetRadius)))
+                        .then(Commands.literal("profile")
+                                .executes(FrozenDawnHearthCommand::bloomProfile))
+                        .then(Commands.literal("purge-loaded")
+                                .executes(FrozenDawnHearthCommand::bloomPurgeLoaded)))
                 .then(Commands.literal("reconcile")
                         .executes(FrozenDawnHearthCommand::reconcile))
                 .then(Commands.literal("watcher")
@@ -536,6 +555,64 @@ final class FrozenDawnHearthCommand {
                         + spawn.toShortString()
                         : "Could not create an Undone Architect"), false);
         return spawned ? 1 : 0;
+    }
+
+    private static int bloomStatus(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        String status = BloomGrowthManager.statusLine(
+                server.overworld(), ApocalypseState.get(server));
+        context.getSource().sendSuccess(() -> Component.literal(
+                "--- Frozen Dawn Bloom ---\n" + status), false);
+        return 1;
+    }
+
+    private static int bloomSeed(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        if (!PostMaeveWorldState.isErased(server)) {
+            context.getSource().sendFailure(Component.literal(
+                    "Bloom is dormant until Maeve is erased"));
+            return 0;
+        }
+        int edits = BloomGrowthManager.debugSeed(server.overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Seeded loaded Hearth centers | edits=" + edits), true);
+        return 1;
+    }
+
+    private static int bloomAdvance(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        int days = IntegerArgumentType.getInteger(context, "days");
+        BloomGrowthManager.debugAdvance(server.overworld(),
+                days * HearthMaturationPolicy.MINECRAFT_DAY_TICKS);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Advanced loaded-time Bloom clocks by " + days + " day(s)"), true);
+        return bloomStatus(context);
+    }
+
+    private static int bloomSetRadius(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        int radius = IntegerArgumentType.getInteger(context, "radius");
+        BloomGrowthManager.debugSetRadius(server.overworld(), radius);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Bloom debug radius set to " + radius + " blocks"), true);
+        return bloomStatus(context);
+    }
+
+    private static int bloomProfile(CommandContext<CommandSourceStack> context) {
+        int result = bloomStatus(context);
+        BloomGrowthManager.resetProfile();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Bloom max profiler counter reset"), false);
+        return result;
+    }
+
+    private static int bloomPurgeLoaded(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        int removed = BloomGrowthManager.debugPurgeLoaded(server.overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged loaded Bloom test blocks and reset Bloom authority | removed="
+                        + removed), true);
+        return 1;
     }
 
     private static int heartMaeveReset(CommandContext<CommandSourceStack> context) {

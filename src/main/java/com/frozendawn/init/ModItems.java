@@ -96,6 +96,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> ROCKET_FIN = ITEMS.registerSimpleBlockItem("rocket_fin", ModBlocks.ROCKET_FIN);
     public static final DeferredItem<BlockItem> ROCKET_HULL = ITEMS.registerSimpleBlockItem("rocket_hull", ModBlocks.ROCKET_HULL);
     public static final DeferredItem<BlockItem> ROCKET_NOSE_CONE = ITEMS.registerSimpleBlockItem("rocket_nose_cone", ModBlocks.ROCKET_NOSE_CONE);
+    public static final DeferredItem<BlockItem> BLOOM_MASS = ITEMS.registerSimpleBlockItem("bloom_mass", ModBlocks.BLOOM_MASS);
+    public static final DeferredItem<BlockItem> BLOOM_CRUST = ITEMS.registerSimpleBlockItem("bloom_crust", ModBlocks.BLOOM_CRUST);
+    public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
+    public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
+    public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
@@ -106,6 +111,8 @@ public class ModItems {
     public static final DeferredItem<Item> ROCKET_FUEL_CELL = ITEMS.register("rocket_fuel_cell",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
+    public static final DeferredItem<Item> SPENT_LATTICE = ITEMS.register("spent_lattice",
+            () -> new Item(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<BoardPacketItem> BOARD_PACKET = ITEMS.register("board_packet",
             () -> new BoardPacketItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
@@ -400,6 +407,8 @@ public class ModItems {
                         output.accept(SULFUR_ORE.get());
                         output.accept(HYDROTHERMAL_ROCK.get());
                         output.accept(VOLCANIC_ASH.get());
+                        output.accept(INERT_ACHERONITE.get());
+                        output.accept(SEALED_LATTICE.get());
                         // Player agency
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
@@ -431,6 +440,7 @@ public class ModItems {
                         output.accept(LIQUID_OXIDIZER.get());
                         output.accept(ROCKET_FUEL_CELL.get());
                         output.accept(THERMAL_CORE.get());
+                        output.accept(SPENT_LATTICE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(BOARD_PACKET.get());
                         output.accept(MARTIAN_COMMAND_PACKET.get());
