@@ -161,6 +161,9 @@ public class ClientEvents {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.THERMAL_VENT_POOL.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.VENT_LAVA.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.VOLCANIC_ASH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.BLOOM_MASS.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.BLOOM_CRUST.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.BLOOM_TIP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModFluids.SOURCE_VENT_LAVA.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_VENT_LAVA.get(), RenderType.translucent());
             ItemProperties.register(
