@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 22;
+    public static final int CURRENT_DATA_VERSION = 23;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -47,6 +47,9 @@ public final class ReturnedHearthSavedData extends SavedData {
     private BlockPos transponderAnchor;
     private boolean selectionComplete;
     private long selectionGameTime = -1L;
+    private boolean maeveErased;
+    private long maeveErasedGameTime = -1L;
+    private boolean undoneSpawningReleased;
     private HiveRelationship legacyRelationship = HiveRelationship.NEUTRAL;
     private final Map<UUID, PlayerHiveMemory> playerMemories = new LinkedHashMap<>();
     private final List<HearthRecord> hearths = new ArrayList<>();
@@ -74,6 +77,11 @@ public final class ReturnedHearthSavedData extends SavedData {
         state.selectionGameTime = tag.contains("selectionGameTime", Tag.TAG_LONG)
                 ? tag.getLong("selectionGameTime")
                 : -1L;
+        state.maeveErased = tag.getBoolean("maeveErased");
+        state.maeveErasedGameTime = tag.contains("maeveErasedGameTime", Tag.TAG_LONG)
+                ? tag.getLong("maeveErasedGameTime")
+                : -1L;
+        state.undoneSpawningReleased = tag.getBoolean("undoneSpawningReleased");
         state.legacyRelationship = loadLegacyRelationship(tag, storedVersion);
 
         ListTag playerList = tag.getList("playerMemories", Tag.TAG_COMPOUND);
@@ -102,6 +110,16 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
 
         state.selectionComplete = state.selectionComplete || !state.hearths.isEmpty();
+        if (!tag.contains("maeveErased", Tag.TAG_BYTE)) {
+            state.maeveErased = state.hearths.stream()
+                    .anyMatch(hearth -> hearth.heartMaeveErasureStartGameTime() >= 0L);
+            if (state.maeveErased) {
+                state.maeveErasedGameTime = state.hearths.stream()
+                        .mapToLong(HearthRecord::heartMaeveErasureStartGameTime)
+                        .filter(time -> time >= 0L)
+                        .min().orElse(0L);
+            }
+        }
         boolean conductChanged = state.recomputeAllHearthConduct();
         state.dataVersion = CURRENT_DATA_VERSION;
         if (storedVersion != CURRENT_DATA_VERSION || conductChanged) {
@@ -122,6 +140,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         tag.putBoolean("selectionComplete", selectionComplete);
         tag.putLong("selectionGameTime", selectionGameTime);
+        tag.putBoolean("maeveErased", maeveErased);
+        tag.putLong("maeveErasedGameTime", maeveErasedGameTime);
+        tag.putBoolean("undoneSpawningReleased", undoneSpawningReleased);
         tag.putString("legacyRelationship", legacyRelationship.name());
 
         ListTag playerList = new ListTag();
@@ -143,6 +164,52 @@ public final class ReturnedHearthSavedData extends SavedData {
             return false;
         }
         transponderAnchor = pos.immutable();
+        setDirty();
+        return true;
+    }
+
+    public boolean maeveErased() {
+        return maeveErased;
+    }
+
+    public long maeveErasedGameTime() {
+        return maeveErasedGameTime;
+    }
+
+    public boolean undoneSpawningReleased() {
+        return undoneSpawningReleased;
+    }
+
+    /** Production transition. Maeve erasure is deliberately one-way. */
+    public boolean markMaeveErased(long gameTime) {
+        if (maeveErased) {
+            return false;
+        }
+        maeveErased = true;
+        maeveErasedGameTime = Math.max(0L, gameTime);
+        undoneSpawningReleased = false;
+        setDirty();
+        return true;
+    }
+
+    public boolean markUndoneSpawningReleased() {
+        if (!maeveErased || undoneSpawningReleased) {
+            return false;
+        }
+        undoneSpawningReleased = true;
+        setDirty();
+        return true;
+    }
+
+    /** Debug-only escape hatch used by the explicit post-Maeve test command. */
+    public boolean setMaeveErasedForDebug(boolean erased, long gameTime) {
+        if (maeveErased == erased
+                && (erased || maeveErasedGameTime < 0L)) {
+            return false;
+        }
+        maeveErased = erased;
+        maeveErasedGameTime = erased ? Math.max(0L, gameTime) : -1L;
+        undoneSpawningReleased = erased;
         setDirty();
         return true;
     }
@@ -2743,6 +2810,10 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean heartMaeveWorldMessageShown() {
             return heartMaeveWorldMessageShown;
+        }
+
+        public boolean heartMaeveBiologicalWarningPlayed() {
+            return heartMaeveBiologicalWarningPlayed;
         }
 
         public boolean heartLastWitnessDropped() {

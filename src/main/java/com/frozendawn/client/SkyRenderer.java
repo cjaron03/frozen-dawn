@@ -71,7 +71,8 @@ public class SkyRenderer {
             float targetG = PHASE_COLORS[idx][1] * brightness;
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
-            float whiteoutMix = getWhiteoutMix(phase, progress) * skyColorExposure;
+            float whiteoutMix = PostMaeveClientState.isMaeveErased()
+                    ? 0.0F : getWhiteoutMix(phase, progress) * skyColorExposure;
             if (whiteoutMix > 0.0f) {
                 targetR = Mth.lerp(whiteoutMix, targetR, getStormHazeRed(phase));
                 targetG = Mth.lerp(whiteoutMix, targetG, getStormHazeGreen(phase));
@@ -86,7 +87,8 @@ public class SkyRenderer {
                 targetB = Mth.lerp(blackTransition, targetB, 0.005f);
             }
 
-            float eyeStormFactor = MasterArchitectAuraClient.localStormFactor(
+            float eyeStormFactor = PostMaeveClientState.isMaeveErased() ? 0.0F
+                    : MasterArchitectAuraClient.localStormFactor(
                     mc.player.position());
             float viewFogFactor = MasterArchitectEyeWallPolicy.directionalFogFactor(
                     mc.gameRenderer.getMainCamera().getXRot());
@@ -98,7 +100,8 @@ public class SkyRenderer {
                 targetG = Mth.lerp(masterWhiteout, targetG, getStormHazeGreen(6));
                 targetB = Mth.lerp(masterWhiteout, targetB, getStormHazeBlue(6));
             }
-            float heartWhiteout = HeartQuietClient.localStormStrength()
+            float heartWhiteout = PostMaeveClientState.isMaeveErased() ? 0.0F
+                    : HeartQuietClient.localStormStrength()
                     * exposure * HEART_WHITEOUT_MIX;
             if (heartWhiteout > 0.0F) {
                 targetR = Mth.lerp(heartWhiteout, targetR, getStormHazeRed(5));
@@ -120,6 +123,7 @@ public class SkyRenderer {
 
     @SubscribeEvent
     public static void onRenderFog(ViewportEvent.RenderFog event) {
+        if (PostMaeveClientState.isMaeveErased()) return;
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 

@@ -33,6 +33,7 @@ import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.MasterArchitectBossBarPolicy;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
@@ -525,13 +526,30 @@ public class ArchitectEntity extends Monster {
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY();
         ensureAmbientHelmet();
 
-        if (isHearthAssessor() && level() instanceof ServerLevel serverLevel
+        boolean postMaeveHearthResident = isPostMaeveHearthResident(
+                (ServerLevel) level());
+        if (postMaeveHearthResident) {
+            LivingEntity attacker = getLastHurtByMob();
+            if (attacker == null || !attacker.isAlive()) {
+                prepareHearthAssessmentMode();
+                setTarget(null);
+                getNavigation().stop();
+                updateHeldItem();
+                syncRenderState();
+                return;
+            }
+            setTarget(attacker);
+        }
+
+        if (!postMaeveHearthResident
+                && isHearthAssessor() && level() instanceof ServerLevel serverLevel
                 && hearthAssessmentController.tick(serverLevel)) {
             updateHeldItem();
             syncRenderState();
             return;
         }
-        if (isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
+        if (!postMaeveHearthResident
+                && isHearthPopulationResident() && level() instanceof ServerLevel serverLevel
                 && hearthResidentController.tick(serverLevel)) {
             updateHeldItem();
             syncRenderState();
@@ -1300,6 +1318,15 @@ public class ArchitectEntity extends Monster {
     @Nullable
     private LivingEntity findTarget() {
         LivingEntity current = getTarget();
+        LivingEntity directAttacker = getLastHurtByMob();
+        if (directAttacker instanceof UndoneEntity && directAttacker.isAlive()) {
+            return directAttacker;
+        }
+        if (level() instanceof ServerLevel serverLevel
+                && isPostMaeveHearthResident(serverLevel)) {
+            return directAttacker != null && directAttacker.isAlive()
+                    ? directAttacker : null;
+        }
         UUID hearthId = isHearthAssessor()
                 ? getHearthAssessorId().orElse(null)
                 : getHearthPopulationId().orElse(null);
@@ -1836,9 +1863,18 @@ public class ArchitectEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
+        if (level() instanceof ServerLevel serverLevel
+                && isPostMaeveHearthResident(serverLevel)) {
+            return null;
+        }
         return isMasterArchitectVisual()
                 ? ModSounds.MASTER_ARCHITECT_AMBIENT.get()
                 : ModSounds.ARCHITECT_AMBIENT.get();
+    }
+
+    private boolean isPostMaeveHearthResident(ServerLevel level) {
+        return (isHearthAssessor() || isHearthPopulationResident())
+                && PostMaeveWorldState.isErased(level);
     }
 
     @Nullable

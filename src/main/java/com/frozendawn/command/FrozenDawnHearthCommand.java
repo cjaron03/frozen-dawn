@@ -24,6 +24,9 @@ import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthWatcherManager;
+import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.world.UndoneSpawner;
+import com.frozendawn.world.UndoneArchitectSpawner;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -60,6 +63,20 @@ final class FrozenDawnHearthCommand {
                                         context, HearthSelectionPolicy.HearthType.MINOR))))
                 .then(Commands.literal("force-select")
                         .executes(FrozenDawnHearthCommand::forceSelect))
+                .then(Commands.literal("postmaeve")
+                        .executes(FrozenDawnHearthCommand::postMaeveStatus)
+                        .then(Commands.literal("status")
+                                .executes(FrozenDawnHearthCommand::postMaeveStatus))
+                        .then(Commands.literal("debug-set-erased")
+                                .executes(context -> postMaeveSet(context, true)))
+                        .then(Commands.literal("debug-reset-erased")
+                                .executes(context -> postMaeveSet(context, false)))
+                        .then(Commands.literal("debug-spawn-undone")
+                                .executes(FrozenDawnHearthCommand::postMaeveSpawnUndone))
+                        .then(Commands.literal("debug-spawn-undone-architect")
+                                .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
+                        .then(Commands.literal("debug-reset-undone-contact")
+                                .executes(FrozenDawnHearthCommand::postMaeveResetContact)))
                 .then(Commands.literal("reconcile")
                         .executes(FrozenDawnHearthCommand::reconcile))
                 .then(Commands.literal("watcher")
@@ -424,6 +441,9 @@ final class FrozenDawnHearthCommand {
         boolean changed = hearth != null && data.startHeartMaeveErasure(
                 hearth.id(), context.getSource().getLevel().getGameTime(),
                 player.getUUID());
+        if (changed) {
+            PostMaeveWorldState.markErased(context.getSource().getLevel());
+        }
         context.getSource().sendSuccess(() -> Component.literal(
                 "Started Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());
@@ -445,12 +465,77 @@ final class FrozenDawnHearthCommand {
                             - com.frozendawn.homo.HeartMaeveErasurePolicy.UNMAKING_TICKS);
             completed = data.startHeartMaeveErasure(
                     hearth.id(), completionStart, player.getUUID());
+            if (completed) {
+                PostMaeveWorldState.markErased(context.getSource().getLevel());
+            }
         }
         boolean changed = completed;
         context.getSource().sendSuccess(() -> Component.literal(
                 "Completed Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());
         return heartMaeveStatus(context);
+    }
+
+    private static int postMaeveStatus(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Post-Maeve: effective=" + yesNo(PostMaeveWorldState.isErased(server))
+                        + " saved=" + yesNo(data.maeveErased())
+                        + " erasedAt=" + data.maeveErasedGameTime()
+                        + " undoneReleased="
+                        + yesNo(PostMaeveWorldState.isUndoneSpawningReleased(server))), false);
+        return 1;
+    }
+
+    private static int postMaeveSet(
+            CommandContext<CommandSourceStack> context, boolean erased) {
+        PostMaeveWorldState.setForDebug(context.getSource().getServer(), erased);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "DEBUG post-Maeve saved state set to " + yesNo(erased)), true);
+        return postMaeveStatus(context);
+    }
+
+    private static int postMaeveSpawnUndone(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        BlockPos probe = player.blockPosition().offset(4, 0, 4);
+        BlockPos spawn = player.serverLevel().getHeightmapPos(
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                probe);
+        boolean spawned = UndoneSpawner.spawn(player.serverLevel(), spawn) != null;
+        context.getSource().sendSuccess(() -> Component.literal(
+                spawned ? "Spawned debug Undone at " + spawn.toShortString()
+                        : "Could not create an Undone"), false);
+        return spawned ? 1 : 0;
+    }
+
+    private static int postMaeveResetContact(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        player.getPersistentData().remove("frozendawnUndoneContact");
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Reset first Undone contact for " + player.getName().getString()), false);
+        return 1;
+    }
+
+    private static int postMaeveSpawnUndoneArchitect(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        BlockPos probe = player.blockPosition().offset(6, 0, 4);
+        BlockPos spawn = player.serverLevel().getHeightmapPos(
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                probe);
+        boolean spawned = UndoneArchitectSpawner.spawn(
+                player.serverLevel(), spawn) != null;
+        context.getSource().sendSuccess(() -> Component.literal(
+                spawned ? "Spawned debug Undone Architect at "
+                        + spawn.toShortString()
+                        : "Could not create an Undone Architect"), false);
+        return spawned ? 1 : 0;
     }
 
     private static int heartMaeveReset(CommandContext<CommandSourceStack> context) {

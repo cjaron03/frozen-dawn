@@ -1,6 +1,7 @@
 package com.frozendawn.event;
 
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.homo.PostMaeveWorldState;
 import net.minecraft.server.level.ServerLevel;
 
 /**
@@ -37,6 +38,13 @@ public final class WeatherHandler {
     }
 
     public static void tick(ServerLevel overworld, int phase, float progress) {
+        if (PostMaeveWorldState.isErased(overworld)) {
+            if (overworld.isRaining() || overworld.isThundering()) {
+                overworld.setWeatherParameters(LOCKED_DURATION, 0, false, false);
+            }
+            clearTickCounter = 0;
+            return;
+        }
         if (phase <= 0) return;
 
         switch (phase) {

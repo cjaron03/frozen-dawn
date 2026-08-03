@@ -1,12 +1,20 @@
 {
   "variants": {
-    "age=0,buried=false": { "model": "frozendawn:block/acheronite_crystal_0" },
-    "age=0,buried=true": { "model": "frozendawn:block/acheronite_crystal_buried_0" },
-    "age=1,buried=false": { "model": "frozendawn:block/acheronite_crystal_1" },
-    "age=1,buried=true": { "model": "frozendawn:block/acheronite_crystal_buried_1" },
-    "age=2,buried=false": { "model": "frozendawn:block/acheronite_crystal_2" },
-    "age=2,buried=true": { "model": "frozendawn:block/acheronite_crystal_buried_2" },
-    "age=3,buried=false": { "model": "frozendawn:block/acheronite_crystal_3" },
-    "age=3,buried=true": { "model": "frozendawn:block/acheronite_crystal_buried_3" }
+    "age=0,buried=false,dark=false": { "model": "frozendawn:block/acheronite_crystal_0" },
+    "age=0,buried=false,dark=true": { "model": "frozendawn:block/acheronite_crystal_0" },
+    "age=0,buried=true,dark=false": { "model": "frozendawn:block/acheronite_crystal_buried_0" },
+    "age=0,buried=true,dark=true": { "model": "frozendawn:block/acheronite_crystal_buried_0" },
+    "age=1,buried=false,dark=false": { "model": "frozendawn:block/acheronite_crystal_1" },
+    "age=1,buried=false,dark=true": { "model": "frozendawn:block/acheronite_crystal_1" },
+    "age=1,buried=true,dark=false": { "model": "frozendawn:block/acheronite_crystal_buried_1" },
+    "age=1,buried=true,dark=true": { "model": "frozendawn:block/acheronite_crystal_buried_1" },
+    "age=2,buried=false,dark=false": { "model": "frozendawn:block/acheronite_crystal_2" },
+    "age=2,buried=false,dark=true": { "model": "frozendawn:block/acheronite_crystal_2" },
+    "age=2,buried=true,dark=false": { "model": "frozendawn:block/acheronite_crystal_buried_2" },
+    "age=2,buried=true,dark=true": { "model": "frozendawn:block/acheronite_crystal_buried_2" },
+    "age=3,buried=false,dark=false": { "model": "frozendawn:block/acheronite_crystal_3" },
+    "age=3,buried=false,dark=true": { "model": "frozendawn:block/acheronite_crystal_3" },
+    "age=3,buried=true,dark=false": { "model": "frozendawn:block/acheronite_crystal_buried_3" },
+    "age=3,buried=true,dark=true": { "model": "frozendawn:block/acheronite_crystal_buried_3" }
   }
 }

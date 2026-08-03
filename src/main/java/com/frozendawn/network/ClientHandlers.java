@@ -18,6 +18,7 @@ import com.frozendawn.client.MasterArchitectFloodClient;
 import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
+import com.frozendawn.client.PostMaeveClientState;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
@@ -208,6 +209,11 @@ public final class ClientHandlers {
 
     public static void handleCognitiveLoad(CognitiveLoadPayload payload) {
         CognitiveLoadClientState.update(payload);
+    }
+
+    public static void handlePostMaeveWorldState(
+            PostMaeveWorldStatePayload payload) {
+        PostMaeveClientState.update(payload);
     }
 
     public static void handleHeartEchoState(HeartEchoStatePayload payload) {

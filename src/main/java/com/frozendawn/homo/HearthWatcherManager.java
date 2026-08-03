@@ -69,6 +69,9 @@ public final class HearthWatcherManager {
     }
 
     private static int reconcile(ServerLevel level) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return 0;
+        }
         if (!FrozenDawnConfig.ENABLE_RETURNED.get()) {
             return 0;
         }

@@ -10,6 +10,8 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.MasterArchitectLightningEntity;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
+import com.frozendawn.entity.UndoneEntity;
+import com.frozendawn.entity.UndoneArchitectEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -60,6 +62,20 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("returned"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<UndoneEntity>> UNDONE =
+            ENTITIES.register("undone", () -> EntityType.Builder
+                    .of(UndoneEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(12)
+                    .build("undone"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<UndoneArchitectEntity>>
+            UNDONE_ARCHITECT = ENTITIES.register("undone_architect", () -> EntityType.Builder
+                    .of(UndoneArchitectEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(12)
+                    .build("undone_architect"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MimicEntity>> MIMIC =
             ENTITIES.register("mimic", () -> EntityType.Builder

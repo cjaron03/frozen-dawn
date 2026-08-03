@@ -44,6 +44,10 @@ public final class CognitiveLoadManager {
     }
 
     public static void tick(ServerLevel level, ApocalypseState apocalypse) {
+        if (PostMaeveWorldState.isErased(level)) {
+            clearForHeartErasure(level);
+            return;
+        }
         ReturnedHearthSavedData.HearthRecord heart = ReturnedHearthSavedData
                 .get(level.getServer())
                 .hearth(HearthSelectionPolicy.HearthType.MAJOR)
@@ -138,7 +142,8 @@ public final class CognitiveLoadManager {
     }
 
     public static void handleResistance(ServerPlayer player, float resistance) {
-        if (!Float.isFinite(resistance)) {
+        if (PostMaeveWorldState.isErased(player.serverLevel())
+                || !Float.isFinite(resistance)) {
             return;
         }
         CognitiveLoadState state = player.getData(ModAttachments.COGNITIVE_LOAD);

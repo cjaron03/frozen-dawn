@@ -44,7 +44,8 @@ public final class HearthTransmissionManager {
 
     public static boolean tryStart(ServerLevel level, Mob source,
                                    ServerPlayer player, UUID hearthId, boolean replay) {
-        if (activeSessions.containsKey(player.getUUID())
+        if (PostMaeveWorldState.isErased(level)
+                || activeSessions.containsKey(player.getUUID())
                 || (!replay && awaitingContactExit.containsKey(player.getUUID()))
                 || HearthMemoryManager.isPermanentOrsathae(level, player.getUUID())
                 || !validHearthSource(source, hearthId)
@@ -90,6 +91,10 @@ public final class HearthTransmissionManager {
     }
 
     public static void tick(ServerLevel level) {
+        if (PostMaeveWorldState.isErased(level)) {
+            cancelAll(level);
+            return;
+        }
         updateContactRearming(level);
 
         Iterator<Map.Entry<UUID, Session>> iterator = activeSessions.entrySet().iterator();
@@ -189,6 +194,19 @@ public final class HearthTransmissionManager {
         sessionsStarted = 0L;
         sessionsCompleted = 0L;
         sessionsInterrupted = 0L;
+    }
+
+    public static void cancelAll(ServerLevel level) {
+        for (Session session : activeSessions.values()) {
+            ServerPlayer player = level.getServer().getPlayerList()
+                    .getPlayer(session.playerId());
+            if (player != null) {
+                PacketDistributor.sendToPlayer(player,
+                        new CancelThaevenTransmissionPayload(session.sessionId()));
+            }
+        }
+        activeSessions.clear();
+        awaitingContactExit.clear();
     }
 
     private static boolean validContact(ServerLevel level, ServerPlayer player,

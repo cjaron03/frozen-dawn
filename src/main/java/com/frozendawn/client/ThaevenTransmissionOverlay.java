@@ -84,6 +84,10 @@ public final class ThaevenTransmissionOverlay {
         return active;
     }
 
+    public static void clearForPostMaeve() {
+        stop(false, false, false);
+    }
+
     public static boolean isTransmissionSound(ResourceLocation location) {
         return FrozenDawn.MOD_ID.equals(location.getNamespace())
                 && location.getPath().startsWith("ui.thaeven_");

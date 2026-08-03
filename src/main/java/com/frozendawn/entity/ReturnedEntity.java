@@ -10,6 +10,7 @@ import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
 import com.frozendawn.homo.HearthPopulationRole;
 import com.frozendawn.homo.HearthWatcherPolicy;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -101,7 +102,12 @@ public class ReturnedEntity extends Monster {
         this.goalSelector.addGoal(4, new ReturnedHearthWatchGoal(this));
         this.goalSelector.addGoal(5, new ReturnedBreakLightGoal(this));
         this.goalSelector.addGoal(6, new ReturnedHostileStrollGoal(this, 1.0, 40));
-        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 8.0f));
+        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 8.0f) {
+            @Override
+            public boolean canUse() {
+                return !isPostMaeveHearthResident() && super.canUse();
+            }
+        });
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
@@ -247,6 +253,9 @@ public class ReturnedEntity extends Monster {
                 || !(level() instanceof ServerLevel serverLevel)) {
             return false;
         }
+        if (PostMaeveWorldState.isErased(serverLevel)) {
+            return false;
+        }
         return HearthWatcherPolicy.canProactivelyTargetPlayer(true,
                 HearthMemoryManager.relationship(serverLevel, player.getUUID()))
                 && HearthCombatRosterManager.canEngagePlayer(
@@ -315,6 +324,17 @@ public class ReturnedEntity extends Monster {
             return;
         }
 
+        if (PostMaeveWorldState.isErased(serverLevel)) {
+            LivingEntity attacker = getLastHurtByMob();
+            if (attacker != null && attacker.isAlive()) {
+                setTarget(attacker);
+            } else {
+                setTarget(null);
+                getNavigation().stop();
+            }
+            return;
+        }
+
         boolean navigationStopped = false;
         if (getTarget() instanceof ServerPlayer player
                 && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
@@ -333,6 +353,9 @@ public class ReturnedEntity extends Monster {
 
     private void enforceHearthEncounterRole() {
         if (hearthId != null && level() instanceof ServerLevel serverLevel) {
+            if (PostMaeveWorldState.isErased(serverLevel)) {
+                return;
+            }
             HearthCombatRosterManager.enforcePassiveRole(
                     serverLevel, hearthId, this);
         }
@@ -366,7 +389,12 @@ public class ReturnedEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
-        return ModSounds.RETURNED_AMBIENT.get();
+        return isPostMaeveHearthResident() ? null : ModSounds.RETURNED_AMBIENT.get();
+    }
+
+    private boolean isPostMaeveHearthResident() {
+        return isHearthBound() && level() instanceof ServerLevel serverLevel
+                && PostMaeveWorldState.isErased(serverLevel);
     }
 
     @Override

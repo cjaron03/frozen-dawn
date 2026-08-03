@@ -84,6 +84,9 @@ public final class MasterArchitectAuraClient {
     }
 
     public static void handleEvent(MasterArchitectAuraEventPayload payload) {
+        if (PostMaeveClientState.isMaeveErased()) {
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
             return;
@@ -1569,7 +1572,7 @@ public final class MasterArchitectAuraClient {
                 false);
     }
 
-    private static void clear() {
+    public static void clear() {
         Minecraft minecraft = Minecraft.getInstance();
         if (hum != null) {
             minecraft.getSoundManager().stop(hum);

@@ -7,6 +7,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -16,11 +18,19 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * above -150C. Drops Frozen Atmosphere Shard when mined.
  */
 public class FrozenAtmosphereBlock extends Block {
+    public static final BooleanProperty DARK = BooleanProperty.create("dark");
 
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 2, 16);
 
     public FrozenAtmosphereBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any().setValue(DARK, false));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(
+            StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(DARK);
     }
 
     @Override

@@ -81,6 +81,9 @@ public final class HearthArchitectManager {
     }
 
     private static int reconcile(ServerLevel level) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return 0;
+        }
         if (!FrozenDawnConfig.ENABLE_ARCHITECT.get()) {
             return 0;
         }

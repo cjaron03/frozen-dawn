@@ -2,6 +2,7 @@ package com.frozendawn.item;
 
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthSurveyPolicy;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,11 @@ public class SurveyorLensItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
+            if (PostMaeveWorldState.isErased(serverLevel)) {
+                displayPostMaeveReading(serverPlayer);
+                serverPlayer.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
+                return InteractionResultHolder.sidedSuccess(stack, false);
+            }
             List<SurveyorLensScanner.HeatSignature> signatures = SurveyorLensScanner.collectHeatSignatures(
                     serverLevel,
                     serverPlayer.position(),
@@ -81,6 +87,24 @@ public class SurveyorLensItem extends Item {
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    private void displayPostMaeveReading(ServerPlayer player) {
+        String[] directions = {
+                "north", "northeast", "east", "southeast",
+                "south", "southwest", "west", "northwest"
+        };
+        long bucket = player.serverLevel().getGameTime() / 40L;
+        long mixed = player.getUUID().getMostSignificantBits()
+                ^ player.getUUID().getLeastSignificantBits()
+                ^ bucket * 0x9E3779B97F4A7C15L;
+        String direction = directions[Math.floorMod((int) (mixed ^ mixed >>> 32),
+                directions.length)];
+        player.displayClientMessage(Component.translatable(
+                "message.frozendawn.surveyor_lens.post_maeve", direction)
+                .withStyle(ChatFormatting.DARK_GRAY), true);
+        player.playNotifySound(ModSounds.RADIO_STATIC_AMBIENT.get(),
+                SoundSource.MASTER, 0.24F, 0.62F);
     }
 
     private void displayHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {

@@ -15,6 +15,8 @@ import com.frozendawn.client.renderer.MasterArchitectLightningRenderer;
 import com.frozendawn.client.renderer.ThaeIvenHeartRenderer;
 import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
+import com.frozendawn.client.renderer.UndoneRenderer;
+import com.frozendawn.client.renderer.UndoneArchitectRenderer;
 import com.frozendawn.client.renderer.RocketLaunchModel;
 import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -205,6 +207,9 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), HollowRenderer::new);
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
+        event.registerEntityRenderer(ModEntities.UNDONE.get(), UndoneRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.UNDONE_ARCHITECT.get(), UndoneArchitectRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
         event.registerEntityRenderer(

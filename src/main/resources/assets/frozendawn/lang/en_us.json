@@ -493,6 +493,8 @@
   "advancement.frozendawn.cryo_fuel_heater.description": "Burn frozen ghost breath to heat your base. ORSA Thermodynamics Division has concerns.",
 
   "entity.frozendawn.returned": "Returned Hunter",
+  "entity.frozendawn.undone": "The Undone",
+  "entity.frozendawn.undone_architect": "The Undone Architect",
   "item.frozendawn.remnant_ember": "Remnant Ember",
   "item.frozendawn.tattered_clothing_scrap": "Tattered Clothing Scrap",
   "item.frozendawn.orsa_id_badge": "ORSA ID Badge",
@@ -507,6 +509,16 @@
   "subtitle.frozendawn.entity.returned.hurt": "Returned cries out",
   "subtitle.frozendawn.entity.returned.death": "Returned collapses",
   "subtitle.frozendawn.entity.returned.step": "Returned footsteps",
+  "subtitle.frozendawn.entity.undone.moves": "Something moves",
+  "subtitle.frozendawn.entity.undone.grab": "Something takes hold",
+  "subtitle.frozendawn.entity.undone_architect.ambient": "Something settles into place",
+  "subtitle.frozendawn.entity.undone_architect.hurt": "Something fractures",
+  "subtitle.frozendawn.entity.undone_architect.attack": "Something rushes forward",
+  "subtitle.frozendawn.entity.undone_architect.accrete": "Something incorporates the remains",
+  "subtitle.frozendawn.entity.undone_architect.death": "Something comes apart",
+  "ui.frozendawn.suit.undone_contact": "Contact. Signature does not match known profiles.",
+  "subtitle.frozendawn.ui.suit.undone_contact": "Contact. Signature does not match known profiles.",
+  "message.frozendawn.surveyor_lens.post_maeve": "UNCLASSIFIED RETURN // weak bearing %s",
 
   "death.attack.frozendawn.returned": "%1$s was killed by a Returned",
 

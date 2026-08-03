@@ -725,6 +725,64 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void postMaeveAuthorityIsIrreversibleAndPersistsReleaseState() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+
+        assertTrue(state.markMaeveErased(7200L));
+        assertFalse(state.markMaeveErased(7300L));
+        assertTrue(state.markUndoneSpawningReleased());
+        assertFalse(state.markUndoneSpawningReleased());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        assertTrue(loaded.maeveErased());
+        assertEquals(7200L, loaded.maeveErasedGameTime());
+        assertTrue(loaded.undoneSpawningReleased());
+    }
+
+    @Test
+    void legacyStartedMaeveErasureMigratesToPostMaeveAuthority() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+        destroyAllHeartNodes(state, major.id());
+        assertTrue(state.startHeartCollapse(major.id(), 6200L));
+        assertTrue(state.completeHeartCollapse(major.id()));
+        assertTrue(state.startHeartMaeveErasure(major.id(), 7000L, UUID.randomUUID()));
+
+        CompoundTag legacy = state.save(new CompoundTag(), null);
+        legacy.putInt("dataVersion", 22);
+        legacy.remove("maeveErased");
+        legacy.remove("maeveErasedGameTime");
+        legacy.remove("undoneSpawningReleased");
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(legacy, null);
+        assertTrue(loaded.maeveErased());
+        assertEquals(7000L, loaded.maeveErasedGameTime());
+        assertFalse(loaded.undoneSpawningReleased());
+    }
+
+    @Test
+    void legacyHeartOnlySaveDoesNotMigrateToMaeveErased() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        assertTrue(state.startHeartFormation(major.id(), 5000L));
+        assertTrue(state.markHeartLive(major.id()));
+
+        CompoundTag legacy = state.save(new CompoundTag(), null);
+        legacy.putInt("dataVersion", 22);
+        legacy.remove("maeveErased");
+        legacy.remove("maeveErasedGameTime");
+        legacy.remove("undoneSpawningReleased");
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(legacy, null);
+        assertFalse(loaded.maeveErased());
+        assertEquals(-1L, loaded.maeveErasedGameTime());
+        assertFalse(loaded.undoneSpawningReleased());
+    }
+
+    @Test
     void resettingHeartNodesAlsoResetsCollapseForAnotherSmokePass() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);

@@ -70,6 +70,10 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue IMPROVISED_PATCH_DEGRADE_CHANCE;
     public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MIN_SEAL_SECONDS;
     public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MAX_SEAL_SECONDS;
+    public static final ModConfigSpec.DoubleValue UNDONE_SPAWN_CHANCE_PER_CHECK;
+    public static final ModConfigSpec.DoubleValue UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK;
+    public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
+    public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
     // Client
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
@@ -322,6 +326,18 @@ public class FrozenDawnConfig {
         IMPROVISED_PATCH_MAX_SEAL_SECONDS = BUILDER
                 .comment("Maximum lifetime of a degrading improvised seal.")
                 .defineInRange("improvisedPatchMaxSealSeconds", 120, 10, 1800);
+        UNDONE_SPAWN_CHANCE_PER_CHECK = BUILDER
+                .comment("Chance per eligible player every 200 ticks to spawn one Undone after Maeve is erased.")
+                .defineInRange("undoneSpawnChancePerCheck", 0.011D, 0.0D, 1.0D);
+        UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK = BUILDER
+                .comment("Chance per eligible player every 600 ticks to spawn one Undone Architect after Maeve is erased.")
+                .defineInRange("undoneArchitectSpawnChancePerCheck", 0.025D, 0.0D, 1.0D);
+        POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
+                .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
+                .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);
+        DEBUG_FORCE_MAEVE_ERASED = BUILDER
+                .comment("DEBUG ONLY: treat Maeve as erased without changing saved world state.")
+                .define("debugForceMaeveErased", false);
         BUILDER.pop();
 
         BUILDER.push("client");

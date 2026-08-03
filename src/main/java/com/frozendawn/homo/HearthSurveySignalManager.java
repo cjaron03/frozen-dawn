@@ -43,6 +43,13 @@ public final class HearthSurveySignalManager {
             return;
         }
 
+        if (PostMaeveWorldState.isErased(player.serverLevel())) {
+            PacketDistributor.sendToPlayer(player,
+                    new HearthSurveyAudioPayload(true, 0.08F));
+            activePlayers.add(player.getUUID());
+            return;
+        }
+
         HearthSurveyScanner.HearthSignal signal = HearthSurveyScanner.sample(player, profile).orElse(null);
         if (signal == null) {
             deactivate(player);

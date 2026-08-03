@@ -96,7 +96,8 @@ public final class SurveyorLensVision {
         boolean gogglesEquipped = CuriosCompat.hasBlizzardGogglesEquipped(mc.player);
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        boolean blizzardAvailable = gogglesEquipped && BlizzardGogglesHandler.isVisionActive(phase, progress);
+        boolean blizzardAvailable = !PostMaeveClientState.isMaeveErased()
+                && gogglesEquipped && BlizzardGogglesHandler.isVisionActive(phase, progress);
         blizzardPluginDetected = visorEquipped && gogglesEquipped;
         blizzardModeReady = blizzardPluginDetected && blizzardAvailable;
         SurveyorLensScanner.LensProfile heldProfile = SurveyorLensScanner.heldProfile(
@@ -249,7 +250,8 @@ public final class SurveyorLensVision {
     }
 
     public static boolean isBlizzardFilterActive() {
-        return activeVisionMode == VisionMode.BLIZZARD
+        return !PostMaeveClientState.isMaeveErased()
+                && activeVisionMode == VisionMode.BLIZZARD
                 && BlizzardGogglesHandler.isVisionActive(
                 ApocalypseClientData.getPhase(),
                 ApocalypseClientData.getProgress()

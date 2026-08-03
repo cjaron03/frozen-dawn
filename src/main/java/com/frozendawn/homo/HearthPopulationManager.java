@@ -121,6 +121,9 @@ public final class HearthPopulationManager {
     }
 
     private static int reconcile(ServerLevel level) {
+        if (PostMaeveWorldState.isErased(level)) {
+            return 0;
+        }
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         ReturnedHearthSavedData.HearthRecord hearth = data
                 .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);

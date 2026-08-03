@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -16,9 +17,11 @@ public class FrostbittenSpawner {
     private FrostbittenSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
-        if (currentPhase < 4) return;
+        boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
+                level.getServer());
+        if (!postMaeve && currentPhase < 4) return;
         if (!FrozenDawnConfig.ENABLE_FROSTBITTEN.get()) return;
-        if (currentPhase >= 6 && progress >= 0.92f) return;
+        if (!postMaeve && currentPhase >= 6 && progress >= 0.92f) return;
 
         long gameTick = level.getGameTime();
         if (gameTick % 100 != 0) return; // Every 5 seconds
@@ -30,7 +33,11 @@ public class FrostbittenSpawner {
         float spawnChance;
         int maxNearby;
         int groupSize;
-        if (currentPhase == 4) {
+        if (postMaeve) {
+            spawnChance = Math.min(0.8f, 0.22f * mobMult);
+            maxNearby = Math.max(2, (int) (6 * mobMult));
+            groupSize = Math.max(1, (int) (3 * mobMult));
+        } else if (currentPhase == 4) {
             spawnChance = Math.min(0.8f, 0.25f * mobMult);
             maxNearby = Math.max(1, (int) (4 * mobMult));
             groupSize = Math.max(1, (int) (2 * mobMult));
@@ -57,7 +64,11 @@ public class FrostbittenSpawner {
             if (spawnCount <= 0) continue;
 
             // Find one group spawn point, then cluster the group around it
-            BlockPos groupCenter = findSpawnPos(level, player, random);
+            BlockPos groupCenter = postMaeve
+                    ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
+                            level, player, random, 20, 52, 28,
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                    : findSpawnPos(level, player, random);
             if (groupCenter == null) continue;
 
             int spawned = 0;
@@ -67,7 +78,8 @@ public class FrostbittenSpawner {
                 if (i == 0) {
                     spawnPos = groupCenter;
                 } else {
-                    spawnPos = findNearbySpawnPos(level, groupCenter, random);
+                    spawnPos = findNearbySpawnPos(
+                            level, groupCenter, random, postMaeve);
                     if (spawnPos == null) spawnPos = groupCenter;
                 }
 
@@ -115,7 +127,9 @@ public class FrostbittenSpawner {
     }
 
     /** Find a spawn position 1-3 blocks from the group center. */
-    private static BlockPos findNearbySpawnPos(ServerLevel level, BlockPos center, RandomSource random) {
+    private static BlockPos findNearbySpawnPos(
+            ServerLevel level, BlockPos center, RandomSource random,
+            boolean unrestricted) {
         for (int attempt = 0; attempt < 5; attempt++) {
             int dx = random.nextIntBetweenInclusive(-3, 3);
             int dz = random.nextIntBetweenInclusive(-3, 3);
@@ -123,14 +137,15 @@ public class FrostbittenSpawner {
                     net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                     center.offset(dx, 0, dz));
 
-            if (candidate.getY() < 60) continue;
+            if (!unrestricted && candidate.getY() < 60) continue;
             if (!level.getBlockState(candidate).isAir()) continue;
             if (!level.getBlockState(candidate.above()).isAir()) continue;
             BlockPos below = candidate.below();
             if (!level.getBlockState(below).isSolidRender(level, below)) continue;
 
             // Must have sky access or be underground (below Y=60)
-            if (!level.canSeeSky(candidate) && candidate.getY() >= 60) continue;
+            if (!unrestricted && !level.canSeeSky(candidate)
+                    && candidate.getY() >= 60) continue;
 
             return candidate;
         }
