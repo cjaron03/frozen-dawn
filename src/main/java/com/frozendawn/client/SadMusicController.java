@@ -100,10 +100,11 @@ public final class SadMusicController {
         boolean shouldUseBloomMusic = PostMaeveClientState.isMaeveErased()
                 && BloomClientState.density() > 0.08F;
         if (shouldUseBloomMusic != bloomMode) {
-            stopCurrentTrack(mc);
             bloomMode = shouldUseBloomMusic;
-            ticksUntilNext = bloomMode ? randomDelay(40, 140)
-                    : randomDelay(BETWEEN_TRACK_DELAY_MIN, BETWEEN_TRACK_DELAY_MAX);
+            if (currentTrack == null) {
+                ticksUntilNext = bloomMode ? randomDelay(40, 140)
+                        : randomDelay(BETWEEN_TRACK_DELAY_MIN, BETWEEN_TRACK_DELAY_MAX);
+            }
         }
 
         if (currentTrack != null && !mc.getSoundManager().isActive(currentTrack)) {

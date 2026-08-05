@@ -3,6 +3,8 @@ package com.frozendawn.block;
 import com.frozendawn.bloom.BloomBand;
 import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.init.ModParticles;
+import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -44,6 +46,30 @@ public final class BloomMassBlock extends Block {
         super.onRemove(state, level, pos, newState, movedByPiston);
         if (!level.isClientSide() && !newState.is(this) && level instanceof ServerLevel server) {
             com.frozendawn.bloom.BloomGrowthManager.reactivateAround(server, pos);
+        }
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (random.nextInt(18) != 0) {
+            return;
+        }
+        Direction direction = Direction.getRandom(random);
+        BlockPos adjacent = pos.relative(direction);
+        if (!com.frozendawn.bloom.BloomGrowthManager.isBloomState(
+                level.getBlockState(adjacent))) {
+            return;
+        }
+        double sx = pos.getX() + 0.5D;
+        double sy = pos.getY() + 0.5D;
+        double sz = pos.getZ() + 0.5D;
+        double dx = direction.getStepX() * 0.16D;
+        double dy = direction.getStepY() * 0.16D;
+        double dz = direction.getStepZ() * 0.16D;
+        for (int step = 0; step < 4; step++) {
+            level.addParticle(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                    sx + dx * step, sy + dy * step, sz + dz * step,
+                    dx * 0.025D, dy * 0.025D, dz * 0.025D);
         }
     }
 }

@@ -12,6 +12,8 @@ import com.frozendawn.entity.MasterArchitectLightningEntity;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.entity.UndoneArchitectEntity;
+import com.frozendawn.entity.BloomSporeEntity;
+import com.frozendawn.entity.BloomSporeCorpseEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -83,6 +85,23 @@ public class ModEntities {
                     .sized(0.6F, 1.95F)
                     .clientTrackingRange(12)
                     .build("undone_architect"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<BloomSporeEntity>>
+            BLOOM_SPORE = ENTITIES.register("bloom_spore", () -> EntityType.Builder
+                    .of(BloomSporeEntity::new, MobCategory.MISC)
+                    .sized(0.68F, 2.05F)
+                    .clientTrackingRange(14)
+                    .updateInterval(2)
+                    .build("bloom_spore"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<BloomSporeCorpseEntity>>
+            BLOOM_SPORE_CORPSE = ENTITIES.register("bloom_spore_corpse",
+                    () -> EntityType.Builder
+                            .of(BloomSporeCorpseEntity::new, MobCategory.MISC)
+                            .sized(1.65F, 0.55F)
+                            .clientTrackingRange(14)
+                            .updateInterval(10)
+                            .build("bloom_spore_corpse"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MimicEntity>> MIMIC =
             ENTITIES.register("mimic", () -> EntityType.Builder

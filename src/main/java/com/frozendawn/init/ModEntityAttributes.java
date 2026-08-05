@@ -10,6 +10,8 @@ import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.entity.UndoneArchitectEntity;
+import com.frozendawn.entity.BloomSporeEntity;
+import com.frozendawn.entity.BloomSporeCorpseEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -28,6 +30,10 @@ public class ModEntityAttributes {
                 UndoneEntity.createBloomboundAttributes().build());
         event.put(ModEntities.UNDONE_ARCHITECT.get(),
                 UndoneArchitectEntity.createAttributes().build());
+        event.put(ModEntities.BLOOM_SPORE.get(),
+                BloomSporeEntity.createAttributes().build());
+        event.put(ModEntities.BLOOM_SPORE_CORPSE.get(),
+                BloomSporeCorpseEntity.createAttributes().build());
         event.put(ModEntities.MIMIC.get(), MimicEntity.createAttributes().build());
         event.put(ModEntities.ARCHITECT.get(), ArchitectEntity.createAttributes().build());
         event.put(ModEntities.HEART_SUCCESSOR.get(), HeartSuccessorEntity.createAttributes().build());

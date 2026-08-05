@@ -6,6 +6,7 @@ import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.BloomMassBlock;
 import com.frozendawn.block.BloomCoreBlock;
+import com.frozendawn.block.BloomTipBlock;
 import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
@@ -566,8 +567,8 @@ public class ModBlocks {
                     .noOcclusion()
                     .pushReaction(PushReaction.DESTROY)));
 
-    public static final DeferredBlock<Block> BLOOM_TIP = BLOCKS.register("bloom_tip",
-            () -> new Block(BlockBehaviour.Properties.of()
+    public static final DeferredBlock<BloomTipBlock> BLOOM_TIP = BLOCKS.register("bloom_tip",
+            () -> new BloomTipBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_LIGHT_GREEN)
                     .strength(0.4F)
                     .sound(SoundType.AMETHYST_CLUSTER)

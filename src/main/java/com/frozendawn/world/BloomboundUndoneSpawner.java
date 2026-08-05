@@ -1,7 +1,9 @@
 package com.frozendawn.world;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomBand;
 import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.homo.PostMaeveWorldState;
@@ -16,7 +18,7 @@ import net.minecraft.world.phys.AABB;
 /** Rare Undone encounters physically overtaken by mature Bloom. */
 public final class BloomboundUndoneSpawner {
     private static final int CHECK_INTERVAL = 200;
-    private static final double LOCAL_CAP_RADIUS = 128.0D;
+    private static final int LOCAL_CAP = 3;
 
     private BloomboundUndoneSpawner() {
     }
@@ -24,21 +26,30 @@ public final class BloomboundUndoneSpawner {
     public static void tick(ServerLevel level) {
         if (level.dimension() != Level.OVERWORLD
                 || level.getGameTime() % CHECK_INTERVAL != 0L
-                || !PostMaeveWorldState.isUndoneSpawningReleased(level.getServer())) {
+                || !PostMaeveWorldState.isUndoneSpawningReleased(level.getServer())
+                || !PostMaeveWorldState.isBloomReleased(level.getServer())) {
             return;
         }
         for (ServerPlayer player : level.players()) {
-            if (player.isCreative() || player.isSpectator() || !player.isAlive()
-                    || level.random.nextDouble()
-                    >= FrozenDawnConfig.BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK.get()
+            float density = BloomGrowthManager.localDensity(
+                    level, player.blockPosition());
+            double spawnChance = BloomGrowthPolicy.bloomboundSpawnChance(
+                    FrozenDawnConfig.BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK.get(),
+                    density);
+            if (player.isSpectator() || !player.isAlive()
+                    || level.random.nextDouble() >= spawnChance
                     || !BloomGrowthManager.hasBandNear(
                     level, player.blockPosition(), BloomBand.CORE, 28)
-                    || hasNearbyUndone(level, player.blockPosition())) {
+                    || hasNearbyUndone(level, player.blockPosition(), density)) {
                 continue;
             }
             BlockPos spawnPos = findCoreSpawn(level, player);
             if (spawnPos != null) {
-                spawn(level, spawnPos);
+                if (spawn(level, spawnPos) != null) {
+                    FrozenDawn.LOGGER.info(
+                            "[Bloombound] Naturally spawned near {} density={} chance={}",
+                            player.getName().getString(), density, spawnChance);
+                }
             }
         }
     }
@@ -65,12 +76,19 @@ public final class BloomboundUndoneSpawner {
         undone.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                 level.random.nextFloat() * 360.0F, 0.0F);
         undone.setPersistenceRequired();
-        level.addFreshEntity(undone);
+        if (!level.addFreshEntity(undone)) {
+            return null;
+        }
+        undone.beginBloomEmergence();
         return undone;
     }
 
-    private static boolean hasNearbyUndone(ServerLevel level, BlockPos center) {
-        return !level.getEntitiesOfClass(UndoneEntity.class,
-                new AABB(center).inflate(LOCAL_CAP_RADIUS)).isEmpty();
+    private static boolean hasNearbyUndone(ServerLevel level, BlockPos center,
+                                           float localDensity) {
+        return level.getEntitiesOfClass(UndoneEntity.class,
+                new AABB(center).inflate(
+                        BloomGrowthPolicy.undoneLocalCapRadius(localDensity)),
+                entity -> entity.getType()
+                        == ModEntities.BLOOMBOUND_UNDONE.get()).size() >= LOCAL_CAP;
     }
 }

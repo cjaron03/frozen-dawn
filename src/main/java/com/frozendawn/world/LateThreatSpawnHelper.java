@@ -1,5 +1,7 @@
 package com.frozendawn.world;
 
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthBoundaryPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -61,6 +63,11 @@ final class LateThreatSpawnHelper {
 
         return findSurfaceSpawn(
                 level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+    }
+
+    static boolean isInsideHearthBoundary(ServerLevel level, BlockPos pos) {
+        return pos != null && HearthBoundaryPolicy.contactAt(
+                ReturnedHearthSavedData.get(level.getServer()), pos).isPresent();
     }
 
     private static BlockPos randomXZAround(ServerPlayer player, RandomSource random,

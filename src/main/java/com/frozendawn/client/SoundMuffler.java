@@ -57,8 +57,9 @@ public class SoundMuffler {
         boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);
         boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
         boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
+        boolean isBloomSporeCue = isBloomSporeCue(soundLocation, soundPath);
 
-        if (isThaevenSound || isSurveyorLensCue) {
+        if (isThaevenSound || isSurveyorLensCue || isBloomSporeCue) {
             return;
         }
 
@@ -307,6 +308,11 @@ public class SoundMuffler {
     private static boolean isSurveyorLensCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.equals("item.surveyor_lens.tick");
+    }
+
+    private static boolean isBloomSporeCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.startsWith("entity.bloom_spore.");
     }
 
     private static boolean isWindAmbienceCue(ResourceLocation location, String path) {

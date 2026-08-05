@@ -17,6 +17,10 @@ import com.frozendawn.client.renderer.PhaseBarometerRenderer;
 import com.frozendawn.client.renderer.ReturnedRenderer;
 import com.frozendawn.client.renderer.UndoneRenderer;
 import com.frozendawn.client.renderer.UndoneArchitectRenderer;
+import com.frozendawn.client.renderer.BloomSporeRenderer;
+import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
+import com.frozendawn.client.particle.BloomSporeRootParticle;
+import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.renderer.RocketLaunchModel;
 import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -28,6 +32,7 @@ import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModSkullTypes;
 import net.minecraft.client.model.SkullModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -54,6 +59,7 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
 import java.io.IOException;
@@ -67,6 +73,14 @@ public class ClientEvents {
 
     private static final ResourceLocation VENT_LAVA_STILL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava");
     private static final ResourceLocation VENT_LAVA_FLOW = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "block/vent_lava_flow");
+
+    @SubscribeEvent
+    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                BloomSporeRootParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.BLOOM_DRIFT.get(),
+                BloomDriftParticle.Provider::new);
+    }
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
@@ -214,6 +228,9 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.BLOOMBOUND_UNDONE.get(), UndoneRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.UNDONE_ARCHITECT.get(), UndoneArchitectRenderer::new);
+        event.registerEntityRenderer(ModEntities.BLOOM_SPORE.get(), BloomSporeRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.BLOOM_SPORE_CORPSE.get(), BloomSporeCorpseRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
         event.registerEntityRenderer(

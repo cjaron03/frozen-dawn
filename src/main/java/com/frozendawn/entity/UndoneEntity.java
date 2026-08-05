@@ -4,6 +4,7 @@ import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.init.ModParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -52,6 +53,8 @@ public class UndoneEntity extends Monster {
             SynchedEntityData.defineId(UndoneEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_GRASP_STATE =
             SynchedEntityData.defineId(UndoneEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_BLOOM_EMERGENCE_TICKS =
+            SynchedEntityData.defineId(UndoneEntity.class, EntityDataSerializers.INT);
 
     private static final int TARGET_SCAN_INTERVAL = 20;
     private static final double PURSUIT_SPEED = 1.16D;
@@ -62,6 +65,7 @@ public class UndoneEntity extends Monster {
     private static final int GRASP_COOLDOWN = 160;
     private static final double GRASP_RANGE = 8.5D;
     private static final float GRASP_ESCAPE_PER_TICK = 0.040F;
+    public static final int BLOOM_EMERGENCE_DURATION = 36;
     private static final String CONTACT_FLAG = "frozendawnUndoneContact";
 
     private final Map<UUID, Integer> excludedTargets = new HashMap<>();
@@ -113,6 +117,7 @@ public class UndoneEntity extends Monster {
         builder.define(DATA_PAUSED, false);
         builder.define(DATA_GRASP_TARGET_ID, -1);
         builder.define(DATA_GRASP_STATE, 0);
+        builder.define(DATA_BLOOM_EMERGENCE_TICKS, 0);
     }
 
     @Override
@@ -122,24 +127,27 @@ public class UndoneEntity extends Monster {
         goalSelector.addGoal(2, new MeleeAttackGoal(this, PURSUIT_SPEED, false) {
             @Override
             public boolean canUse() {
-                return !isPaused() && !isGrasping() && super.canUse();
+                return !isBloomEmerging() && !isPaused() && !isGrasping()
+                        && super.canUse();
             }
 
             @Override
             public boolean canContinueToUse() {
-                return !isPaused() && !isGrasping() && super.canContinueToUse();
+                return !isBloomEmerging() && !isPaused() && !isGrasping()
+                        && super.canContinueToUse();
             }
         });
         goalSelector.addGoal(6, new RandomStrollGoal(this, 0.96D) {
             @Override
             public boolean canUse() {
-                return !isPaused() && !isGrasping() && getTarget() == null && super.canUse();
+                return !isBloomEmerging() && !isPaused() && !isGrasping()
+                        && getTarget() == null && super.canUse();
             }
         });
         goalSelector.addGoal(7, new RandomLookAroundGoal(this) {
             @Override
             public boolean canUse() {
-                return !isPaused() && super.canUse();
+                return !isBloomEmerging() && !isPaused() && super.canUse();
             }
         });
     }
@@ -148,6 +156,11 @@ public class UndoneEntity extends Monster {
     public void aiStep() {
         super.aiStep();
         if (level().isClientSide()) {
+            return;
+        }
+
+        if (isBloomEmerging()) {
+            tickBloomEmergence();
             return;
         }
 
@@ -237,6 +250,43 @@ public class UndoneEntity extends Monster {
         return getType() == ModEntities.BLOOMBOUND_UNDONE.get();
     }
 
+    public boolean isBloomEmerging() {
+        return entityData.get(DATA_BLOOM_EMERGENCE_TICKS) > 0;
+    }
+
+    public int getBloomEmergenceTicks() {
+        return entityData.get(DATA_BLOOM_EMERGENCE_TICKS);
+    }
+
+    public void beginBloomEmergence() {
+        if (!isBloombound()) {
+            return;
+        }
+        entityData.set(DATA_BLOOM_EMERGENCE_TICKS, BLOOM_EMERGENCE_DURATION);
+        setTarget(null);
+        getNavigation().stop();
+        if (level() instanceof ServerLevel serverLevel) {
+            playSound(ModSounds.BLOOM_CRACK.get(), 1.1F, 0.72F);
+            serverLevel.sendParticles(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                    getX(), getY() + 0.2D, getZ(),
+                    30, 0.48D, 0.18D, 0.48D, 0.035D);
+        }
+    }
+
+    private void tickBloomEmergence() {
+        int ticks = getBloomEmergenceTicks();
+        entityData.set(DATA_BLOOM_EMERGENCE_TICKS, Math.max(0, ticks - 1));
+        setTarget(null);
+        getNavigation().stop();
+        setDeltaMovement(0.0D, getDeltaMovement().y, 0.0D);
+        if (level() instanceof ServerLevel serverLevel && ticks % 3 == 0) {
+            double height = 0.2D + (1.0D - ticks / (double) BLOOM_EMERGENCE_DURATION) * 1.4D;
+            serverLevel.sendParticles(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                    getX(), getY() + height, getZ(),
+                    4, 0.32D, 0.12D, 0.32D, 0.018D);
+        }
+    }
+
     public void applyStruggle(ServerPlayer player, float input) {
         if (player.getId() != getGraspTargetId() || !Float.isFinite(input)) {
             return;
@@ -295,9 +345,16 @@ public class UndoneEntity extends Monster {
         }
     }
 
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        super.setTarget(isSporeTarget(target) ? null : target);
+    }
+
     private boolean isValidTarget(@Nullable LivingEntity candidate) {
         if (candidate == null || candidate == this || !candidate.isAlive()
-                || candidate == getVehicle() || candidate.hasPassenger(this)) {
+                || candidate == getVehicle() || candidate.hasPassenger(this)
+                || candidate instanceof BloomSporeEntity
+                || candidate instanceof BloomSporeCorpseEntity) {
             return false;
         }
         if (candidate instanceof Player player) {
@@ -400,6 +457,11 @@ public class UndoneEntity extends Monster {
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (isBloomEmerging() || isSporeTarget(target)) {
+            setTarget(null);
+            getNavigation().stop();
+            return false;
+        }
         boolean hit = super.doHurtTarget(target);
         if (!hit) {
             return false;
@@ -413,6 +475,11 @@ public class UndoneEntity extends Monster {
             beginGrasp(living);
         }
         return true;
+    }
+
+    private static boolean isSporeTarget(@Nullable Entity target) {
+        return target instanceof BloomSporeEntity
+                || target instanceof BloomSporeCorpseEntity;
     }
 
     private void beginGrasp(LivingEntity target) {
@@ -533,7 +600,7 @@ public class UndoneEntity extends Monster {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source.is(DamageTypeTags.IS_FREEZING)) {
+        if (isBloomEmerging() || source.is(DamageTypeTags.IS_FREEZING)) {
             return false;
         }
         if (source.getEntity() instanceof ArchitectEntity) {
@@ -624,6 +691,7 @@ public class UndoneEntity extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putInt("GraspCooldown", graspCooldown);
         tag.putInt("PauseTicks", pauseTicks);
+        tag.putInt("BloomEmergenceTicks", getBloomEmergenceTicks());
     }
 
     @Override
@@ -632,6 +700,8 @@ public class UndoneEntity extends Monster {
         graspCooldown = Math.max(0, tag.contains("GraspCooldown")
                 ? tag.getInt("GraspCooldown") : tag.getInt("GrabCooldown"));
         pauseTicks = Math.max(0, tag.getInt("PauseTicks"));
+        entityData.set(DATA_BLOOM_EMERGENCE_TICKS,
+                Math.max(0, tag.getInt("BloomEmergenceTicks")));
         entityData.set(DATA_PAUSED, pauseTicks > 0);
         graspTarget = null;
         graspTicks = 0;

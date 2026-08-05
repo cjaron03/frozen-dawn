@@ -8,17 +8,23 @@ import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModParticles;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.mixin.ChunkMapAccessor;
 import com.frozendawn.network.BloomStatePayload;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
 import com.frozendawn.world.ChunkCatchUpManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
@@ -40,10 +46,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /** Loaded-chunk-only terrain growth with a shared hard edit/time budget. */
 public final class BloomGrowthManager {
@@ -51,14 +59,17 @@ public final class BloomGrowthManager {
     public static final long MAX_NANOS_PER_TICK = 1_500_000L;
     private static final int CHUNK_COLUMNS = 16 * 16;
     private static final int SCAN_INTERVAL = 20;
+    private static final int MAX_DISCOVERY_CHUNKS_PER_SCAN = 96;
     private static final int MAX_COLUMN_STEPS_PER_SLICE = 32;
-    private static final int MAX_BLOOM_HEIGHT_ABOVE_TERRAIN = 40;
+    private static final int MAX_BLOOM_COLUMN_HEIGHT = 30;
 
     private static long lastTickNanos;
     private static long maxTickNanos;
     private static int lastEdits;
     private static int lastColumns;
     private static boolean deferred;
+    private static long workRotation;
+    private static long discoveryRotation;
 
     private BloomGrowthManager() {
     }
@@ -68,7 +79,31 @@ public final class BloomGrowthManager {
         lastEdits = 0;
         lastColumns = 0;
         deferred = false;
-        if (!PostMaeveWorldState.isErased(level.getServer())) {
+        BloomSavedData bloom = BloomSavedData.get(level.getServer());
+        boolean releaseElapsed = PostMaeveWorldState.isBloomReleased(level.getServer());
+        if (!releaseElapsed && !bloom.firstEruptionStarted()
+                && !bloom.firstEruptionComplete()) {
+            if (level.getGameTime() % 20L == 0L) {
+                syncEmptyBloomState(level);
+            }
+            return;
+        }
+        // Radius zero is the explicit debug-purge pause. Do not let the exact
+        // Hearth-center column remain a valid zero-distance growth candidate.
+        if (bloom.debugRadius() == 0) {
+            if (level.getGameTime() % 20L == 0L) {
+                syncEmptyBloomState(level);
+            }
+            return;
+        }
+        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
+        if (!bloom.firstEruptionComplete()) {
+            int eruptionEdits = tickFirstEruption(level, bloom, hearths,
+                    releaseElapsed || bloom.firstEruptionStarted());
+            lastEdits = eruptionEdits;
+            if (level.getGameTime() % 20L == 0L) {
+                syncEmptyBloomState(level);
+            }
             return;
         }
         long start = System.nanoTime();
@@ -87,8 +122,6 @@ public final class BloomGrowthManager {
             return;
         }
 
-        BloomSavedData bloom = BloomSavedData.get(level.getServer());
-        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
         long duration = BloomGrowthPolicy.presetDurationTicks(apocalypse.getPresetName());
 
         for (ReturnedHearthSavedData.HearthRecord hearth : hearths.hearths()) {
@@ -98,13 +131,19 @@ public final class BloomGrowthManager {
         }
 
         if (level.getGameTime() % SCAN_INTERVAL == 0L) {
-            discoverLoadedChunks(level, hearths, bloom, duration);
+            discoverLoadedChunks(level, hearths, bloom, duration, start);
         }
 
         List<BloomSavedData.ChunkGrowth> work = new ArrayList<>(bloom.chunks());
-        work.removeIf(BloomSavedData.ChunkGrowth::complete);
-        work.sort(Comparator.comparingDouble(record -> nearestPlayerDistanceSq(
-                level, new ChunkPos(record.chunkPos()))));
+        work.removeIf(record -> record.complete() || !level.hasChunk(
+                new ChunkPos(record.chunkPos()).x,
+                new ChunkPos(record.chunkPos()).z));
+        work.sort(Comparator.comparingLong(BloomSavedData.ChunkGrowth::chunkPos)
+                .thenComparing(record -> record.hearthId().toString()));
+        if (!work.isEmpty()) {
+            int startIndex = (int) Math.floorMod(workRotation++, work.size());
+            Collections.rotate(work, -startIndex);
+        }
 
         int edits = 0;
         int columns = 0;
@@ -114,15 +153,32 @@ public final class BloomGrowthManager {
                 break;
             }
             BloomSavedData.HearthGrowth growth = bloom.hearth(hearth.id());
-            if (growth.seeded() || !level.hasChunk(
-                    hearth.center().getX() >> 4, hearth.center().getZ() >> 4)) {
-                continue;
+            boolean centerLoaded = level.hasChunk(
+                    hearth.center().getX() >> 4, hearth.center().getZ() >> 4);
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    && growth.originRootBase().isEmpty()) {
+                BlockPos anchor = originRootAnchor(hearth);
+                if (level.hasChunk(anchor.getX() >> 4, anchor.getZ() >> 4)) {
+                    growth.rememberOriginRootBase(resolveOriginRootBase(level, hearth));
+                }
             }
-            int seedEdits = formLivingSeed(
-                    level, hearth, MAX_EDITS_PER_TICK - edits);
-            edits += seedEdits;
-            if (seedEdits > 0) {
-                growth.markSeeded();
+            if (!growth.seeded() && centerLoaded) {
+                int seedEdits = formLivingSeed(
+                        level, hearth, MAX_EDITS_PER_TICK - edits);
+                edits += seedEdits;
+                if (seedEdits > 0) {
+                    growth.markSeeded();
+                }
+            }
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    && !growth.originRootFormed()
+                    && BloomOriginRootPolicy.canForm(
+                    growth.activeTicks(), growth.seeded())) {
+                BlockPos anchor = originRootAnchor(hearth);
+                if (level.hasChunk(anchor.getX() >> 4, anchor.getZ() >> 4)) {
+                    edits += formOriginRoot(level, hearth, growth,
+                            MAX_EDITS_PER_TICK - edits);
+                }
             }
         }
         for (BloomSavedData.ChunkGrowth record : work) {
@@ -170,10 +226,199 @@ public final class BloomGrowthManager {
                 record.finishPass(band, overlaps);
             }
         }
+        edits += BloomSporeManager.tick(level, apocalypse, bloom, hearths, duration,
+                start, MAX_EDITS_PER_TICK - edits);
         lastTickNanos = System.nanoTime() - start;
         maxTickNanos = Math.max(maxTickNanos, lastTickNanos);
         lastEdits = edits;
         lastColumns = columns;
+    }
+
+    private static void syncEmptyBloomState(ServerLevel level) {
+        for (ServerPlayer player : level.players()) {
+            PacketDistributor.sendToPlayer(player, new BloomStatePayload(0.0F, 0));
+        }
+    }
+
+    private static int tickFirstEruption(
+            ServerLevel level, BloomSavedData bloom,
+            ReturnedHearthSavedData hearths, boolean mayBegin) {
+        if (!bloom.firstEruptionStarted()) {
+            if (!mayBegin) {
+                return 0;
+            }
+            ReturnedHearthSavedData.HearthRecord hearth = firstLoadedEruptionHearth(
+                    level, hearths);
+            if (hearth == null) {
+                return 0;
+            }
+            BlockPos base = resolveFirstEruptionBase(level, hearth);
+            if (base == null || !bloom.startFirstEruption(
+                    hearth.id(), base, level.getGameTime())) {
+                return 0;
+            }
+            sendEruptionEffect(level, base,
+                    HearthBoundaryEffectPayload.bloomEruptionRumble(), 160.0D);
+        }
+
+        BlockPos base = bloom.firstEruptionBase().orElse(null);
+        UUID hearthId = bloom.firstEruptionHearthId().orElse(null);
+        if (base == null || hearthId == null || !level.isLoaded(base)) {
+            return 0;
+        }
+        long elapsed = Math.max(0L,
+                level.getGameTime() - bloom.firstEruptionStartGameTime());
+        BloomEruptionPolicy.Stage stage = BloomEruptionPolicy.stage(elapsed);
+        if (stage == BloomEruptionPolicy.Stage.RUMBLING) {
+            spawnEruptionRumble(level, base, elapsed);
+            return 0;
+        }
+
+        int edits = 0;
+        if (!bloom.firstEruptionImpactPlayed()) {
+            edits += eruptFirstCrystal(level, base);
+            bloom.markFirstEruptionImpactPlayed();
+            sendEruptionEffect(level, base,
+                    HearthBoundaryEffectPayload.bloomEruptionImpact(), 192.0D);
+            spawnEruptionImpact(level, base);
+        } else if (stage == BloomEruptionPolicy.Stage.ERUPTING
+                && elapsed % 3L == 0L) {
+            spawnEruptionLift(level, base, 18);
+        }
+
+        if (stage != BloomEruptionPolicy.Stage.COMPLETE) {
+            return edits;
+        }
+        ReturnedHearthSavedData.HearthRecord hearth = hearths.hearth(hearthId)
+                .orElse(null);
+        if (hearth != null) {
+            BloomSavedData.HearthGrowth growth = bloom.hearth(hearth.id());
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR) {
+                growth.rememberOriginRootBase(base);
+            }
+            edits += formLivingSeed(level, hearth,
+                    Math.max(0, MAX_EDITS_PER_TICK - edits));
+            growth.markSeeded();
+        }
+        bloom.completeFirstEruption();
+        grantEruptionContact(level, base);
+        return edits;
+    }
+
+    private static ReturnedHearthSavedData.HearthRecord firstLoadedEruptionHearth(
+            ServerLevel level, ReturnedHearthSavedData hearths) {
+        return hearths.hearths().stream()
+                .filter(hearth -> {
+                    BlockPos anchor = hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                            ? originRootAnchor(hearth) : hearth.center();
+                    return level.hasChunk(anchor.getX() >> 4, anchor.getZ() >> 4);
+                })
+                .min(Comparator.comparingInt(hearth ->
+                        hearth.type() == HearthSelectionPolicy.HearthType.MAJOR ? 0 : 1))
+                .orElse(null);
+    }
+
+    private static BlockPos resolveFirstEruptionBase(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth) {
+        BlockPos anchor = hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                ? originRootAnchor(hearth) : hearth.center();
+        long seed = BloomGrowthPolicy.mix(level.getSeed() ^ hearth.layoutSeed()
+                ^ 0x4552555054494F4EL);
+        for (int attempt = 0; attempt < 65; attempt++) {
+            int radius = attempt == 0 ? 0 : 1 + (attempt - 1) / 8;
+            double angle = (attempt + (seed & 31L)) * 2.399963229728653D;
+            int x = anchor.getX() + Mth.floor(Math.cos(angle) * radius);
+            int z = anchor.getZ() + Mth.floor(Math.sin(angle) * radius);
+            if (!level.hasChunk(x >> 4, z >> 4)) {
+                continue;
+            }
+            BlockPos surface = level.getHeightmapPos(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    new BlockPos(x, 0, z));
+            BlockState mass = ModBlocks.BLOOM_MASS.get().defaultBlockState()
+                    .setValue(BloomMassBlock.BAND, BloomBand.CORE);
+            if (!isProtected(level, surface) && canPlaceAt(level, surface, mass)) {
+                return surface;
+            }
+        }
+        return null;
+    }
+
+    private static int eruptFirstCrystal(ServerLevel level, BlockPos base) {
+        int edits = 0;
+        edits += placeOriginRootPart(level, base,
+                BloomOriginRootPolicy.Material.MASS) ? 1 : 0;
+        edits += placeOriginRootPart(level, base.above(),
+                BloomOriginRootPolicy.Material.CORE) ? 1 : 0;
+        edits += placeOriginRootPart(level, base.above(2),
+                BloomOriginRootPolicy.Material.MASS) ? 1 : 0;
+        edits += placeOriginRootPart(level, base.above(3),
+                BloomOriginRootPolicy.Material.TIP) ? 1 : 0;
+        return edits;
+    }
+
+    private static void spawnEruptionRumble(
+            ServerLevel level, BlockPos base, long elapsed) {
+        if (elapsed % 4L != 0L) {
+            return;
+        }
+        float progress = BloomEruptionPolicy.rumbleProgress(elapsed);
+        int count = 5 + Mth.floor(progress * 18.0F);
+        level.sendParticles(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                base.getX() + 0.5D, base.getY() + 0.08D, base.getZ() + 0.5D,
+                count, 0.8D + progress * 1.8D, 0.05D,
+                0.8D + progress * 1.8D, 0.015D + progress * 0.025D);
+        if (elapsed > 0L && elapsed % 20L == 0L) {
+            level.playSound(null, base, ModSounds.BLOOM_CRACK.get(),
+                    SoundSource.AMBIENT, 1.3F, 0.62F + progress * 0.18F);
+        }
+    }
+
+    private static void spawnEruptionImpact(ServerLevel level, BlockPos base) {
+        spawnEruptionLift(level, base, 120);
+        BlockParticleOption debris = new BlockParticleOption(
+                ParticleTypes.BLOCK,
+                ModBlocks.BLOOM_MASS.get().defaultBlockState()
+                        .setValue(BloomMassBlock.BAND, BloomBand.CORE));
+        level.sendParticles(debris,
+                base.getX() + 0.5D, base.getY() + 0.5D, base.getZ() + 0.5D,
+                96, 1.4D, 0.35D, 1.4D, 0.42D);
+    }
+
+    private static void spawnEruptionLift(
+            ServerLevel level, BlockPos base, int count) {
+        level.sendParticles(ModParticles.BLOOM_SPORE_ROOTING.get(),
+                base.getX() + 0.5D, base.getY() + 1.0D, base.getZ() + 0.5D,
+                count, 2.2D, 0.45D, 2.2D, 0.18D);
+    }
+
+    private static void sendEruptionEffect(
+            ServerLevel level, BlockPos base,
+            HearthBoundaryEffectPayload payload, double radius) {
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            if (!player.isSpectator() && player.distanceToSqr(
+                    base.getX() + 0.5D, base.getY() + 0.5D,
+                    base.getZ() + 0.5D) <= radiusSqr) {
+                PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+    }
+
+    private static void grantEruptionContact(ServerLevel level, BlockPos base) {
+        double radiusSqr = 112.0D * 112.0D;
+        for (ServerPlayer player : level.players()) {
+            if (player.isSpectator() || player.distanceToSqr(
+                    base.getX() + 0.5D, base.getY() + 0.5D,
+                    base.getZ() + 0.5D) > radiusSqr) {
+                continue;
+            }
+            if (!hasAdvancement(player, "it_kept_going")) {
+                WorldTickHandler.grantAdvancement(player, "it_kept_going");
+            }
+            PacketDistributor.sendToPlayer(
+                    player, HearthBoundaryEffectPayload.bloomContact());
+        }
     }
 
     private static void syncPlayerStates(ServerLevel level) {
@@ -256,10 +501,14 @@ public final class BloomGrowthManager {
     }
 
     public static float pressureMultiplier(ServerLevel level, BlockPos pos) {
-        if (!PostMaeveWorldState.isErased(level.getServer())) {
-            return 1.0F;
+        return 1.0F + 1.25F * localDensity(level, pos);
+    }
+
+    public static float localDensity(ServerLevel level, BlockPos pos) {
+        if (!PostMaeveWorldState.isBloomReleased(level.getServer())) {
+            return 0.0F;
         }
-        return 1.0F + 1.25F * sampleAround(level, pos, 12).density;
+        return sampleAround(level, pos, 12).density;
     }
 
     private static boolean hasLineOfSight(ServerLevel level, ServerPlayer player,
@@ -283,36 +532,49 @@ public final class BloomGrowthManager {
 
     private static void discoverLoadedChunks(ServerLevel level,
                                              ReturnedHearthSavedData hearths,
-                                             BloomSavedData bloom, long duration) {
-        int viewDistance = Math.max(2, level.getServer().getPlayerList().getViewDistance());
-        for (ServerPlayer player : level.players()) {
-            if (player.isSpectator()) {
-                continue;
-            }
-            ChunkPos playerChunk = player.chunkPosition();
-            for (int dz = -viewDistance; dz <= viewDistance; dz++) {
-                for (int dx = -viewDistance; dx <= viewDistance; dx++) {
-                    int chunkX = playerChunk.x + dx;
-                    int chunkZ = playerChunk.z + dz;
-                    if (!level.hasChunk(chunkX, chunkZ)) {
-                        continue;
-                    }
-                    ChunkPos chunk = new ChunkPos(chunkX, chunkZ);
-                    for (ReturnedHearthSavedData.HearthRecord hearth : hearths.hearths()) {
-                        int radius = effectiveRadius(bloom, hearth.id(), duration);
-                        if (!chunkIntersectsRadius(chunk, hearth.center(), radius)) {
-                            continue;
-                        }
-                        BloomSavedData.ChunkGrowth record = bloom.chunk(
-                                hearth.id(), chunk.toLong());
-                        BlockPos center = chunk.getMiddleBlockPosition(0);
-                        record.prepareFor(BloomGrowthPolicy.band(
-                                        horizontalDistance(center, hearth.center()), radius)
-                                .ordinal(), overlapCount(hearths, bloom, center, duration));
-                    }
+                                             BloomSavedData bloom, long duration,
+                                             long tickStartNanos) {
+        List<LevelChunk> loaded = loadedChunks(level);
+        loaded.sort(Comparator.comparingLong(chunk -> chunk.getPos().toLong()));
+        if (loaded.isEmpty()) {
+            return;
+        }
+        int startIndex = (int) Math.floorMod(discoveryRotation, loaded.size());
+        int processed = 0;
+        int limit = Math.min(MAX_DISCOVERY_CHUNKS_PER_SCAN, loaded.size());
+        while (processed < limit
+                && System.nanoTime() - tickStartNanos < MAX_NANOS_PER_TICK) {
+            LevelChunk loadedChunk = loaded.get((startIndex + processed) % loaded.size());
+            ChunkPos chunk = loadedChunk.getPos();
+            for (ReturnedHearthSavedData.HearthRecord hearth : hearths.hearths()) {
+                int radius = effectiveRadius(bloom, hearth.id(), duration);
+                if (!chunkIntersectsRadius(chunk, hearth.center(), radius)) {
+                    continue;
                 }
+                BloomSavedData.ChunkGrowth record = bloom.chunk(
+                        hearth.id(), chunk.toLong());
+                BlockPos center = chunk.getMiddleBlockPosition(0);
+                record.prepareFor(BloomGrowthPolicy.band(
+                                horizontalDistance(center, hearth.center()), radius)
+                        .ordinal(), overlapCount(hearths, bloom, center, duration));
+            }
+            processed++;
+        }
+        discoveryRotation += processed;
+    }
+
+    private static List<LevelChunk> loadedChunks(ServerLevel level) {
+        List<LevelChunk> loaded = new ArrayList<>();
+        Iterable<ChunkHolder> holders = ((ChunkMapAccessor) (Object)
+                level.getChunkSource().chunkMap).frozendawn$getChunks();
+        for (ChunkHolder holder : holders) {
+            ChunkPos pos = holder.getPos();
+            LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
+            if (chunk != null) {
+                loaded.add(chunk);
             }
         }
+        return loaded;
     }
 
     private static int attemptChunkSeed(ServerLevel level,
@@ -366,6 +628,98 @@ public final class BloomGrowthManager {
         return edits;
     }
 
+    private static int formOriginRoot(ServerLevel level,
+                                      ReturnedHearthSavedData.HearthRecord hearth,
+                                      BloomSavedData.HearthGrowth growth,
+                                      int remainingEdits) {
+        if (remainingEdits <= 0 || growth.originRootFormed()) {
+            return 0;
+        }
+        List<BloomOriginRootPolicy.Placement> layout = BloomOriginRootPolicy.layout(
+                level.getSeed() ^ hearth.layoutSeed());
+        int cursor = Math.min(growth.originRootCursor(), layout.size());
+        BlockPos base = growth.originRootBase().orElseGet(() -> {
+            BlockPos resolved = resolveOriginRootBase(level, hearth);
+            growth.rememberOriginRootBase(resolved);
+            return resolved;
+        });
+        int edits = 0;
+        int steps = 0;
+        int editLimit = Math.min(remainingEdits,
+                BloomOriginRootPolicy.MAX_PLACEMENTS_PER_TICK);
+        while (cursor < layout.size() && edits < editLimit && steps < 12) {
+            BloomOriginRootPolicy.Placement placement = layout.get(cursor);
+            BlockPos target = base.offset(placement.offset());
+            if (!level.isLoaded(target)) {
+                break;
+            }
+            if (placeOriginRootPart(level, target, placement.material())) {
+                edits++;
+            }
+            cursor++;
+            steps++;
+        }
+        growth.setOriginRootCursor(cursor);
+        if (cursor >= layout.size()) {
+            growth.markOriginRootFormed();
+        }
+        return edits;
+    }
+
+    private static BlockPos resolveOriginRootBase(
+            ServerLevel level, ReturnedHearthSavedData.HearthRecord hearth) {
+        BlockPos resolved = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, originRootAnchor(hearth));
+        for (int depth = 0; depth < MAX_BLOOM_COLUMN_HEIGHT + 4; depth++) {
+            BlockState below = level.getBlockState(resolved.below());
+            if (!isBloomBlock(below) && !below.is(Blocks.SNOW)
+                    && !below.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
+                break;
+            }
+            resolved = resolved.below();
+        }
+        return resolved;
+    }
+
+    private static BlockPos originRootAnchor(
+            ReturnedHearthSavedData.HearthRecord hearth) {
+        BlockPos anchor = hearth.heartAnchor().orElse(hearth.center());
+        return new BlockPos(anchor.getX(), 0, anchor.getZ());
+    }
+
+    private static boolean placeOriginRootPart(
+            ServerLevel level, BlockPos pos, BloomOriginRootPolicy.Material material) {
+        if (isProtected(level, pos)) {
+            return false;
+        }
+        BlockState current = level.getBlockState(pos);
+        BlockState target = switch (material) {
+            case MASS -> ModBlocks.BLOOM_MASS.get().defaultBlockState()
+                    .setValue(BloomMassBlock.BAND, BloomBand.CORE);
+            case CORE -> ModBlocks.BLOOM_CORE.get().defaultBlockState();
+            case TIP -> ModBlocks.BLOOM_TIP.get().defaultBlockState();
+        };
+        if (current == target || current.equals(target)) {
+            return false;
+        }
+        if (current.is(ModBlocks.BLOOM_CORE.get())) {
+            return false;
+        }
+        if (isBloomBlock(current)) {
+            if (material == BloomOriginRootPolicy.Material.TIP
+                    && !current.is(ModBlocks.BLOOM_TIP.get())) {
+                return false;
+            }
+            level.setBlock(pos, target, 2);
+            return true;
+        }
+        if (!canPlaceAtIgnoringOriginCrown(level, pos, target)) {
+            return false;
+        }
+        level.setBlock(pos, target, 2);
+        return true;
+    }
+
     private static int processColumn(ServerLevel level,
                                      ReturnedHearthSavedData hearths,
                                      BloomSavedData bloom,
@@ -379,21 +733,26 @@ public final class BloomGrowthManager {
         int z = chunk.getMinBlockZ() + ((cursor >>> 4) & 15);
         BlockPos surface = level.getHeightmapPos(
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
-        BlockPos top = surface.below();
+        BlockPos rawTop = surface.below();
+        BlockPos coveredBloomTop = findBloomTopBelowSurfaceCover(level, rawTop);
+        BlockPos top = coveredBloomTop == null ? rawTop : coveredBloomTop;
         int existingHeight = 0;
-        while (existingHeight <= MAX_BLOOM_HEIGHT_ABOVE_TERRAIN
+        while (existingHeight <= MAX_BLOOM_COLUMN_HEIGHT
                 && isBloomBlock(level.getBlockState(top))) {
             existingHeight++;
             top = top.below();
         }
         // The old 64-block scan could mistake a tall Bloom column for terrain and
         // stack another column above it. Legacy columns beyond the cap stay inert.
-        if (existingHeight > MAX_BLOOM_HEIGHT_ABOVE_TERRAIN) {
+        if (existingHeight > MAX_BLOOM_COLUMN_HEIGHT) {
             return 0;
         }
         int existingAboveBase = Math.max(0, existingHeight - 1);
         BlockPos base = existingHeight > 0 ? top.above() : top;
-        int maxGrowthY = base.getY() + MAX_BLOOM_HEIGHT_ABOVE_TERRAIN;
+        if (isOriginCrownClearance(level, base)) {
+            return 0;
+        }
+        int maxGrowthY = base.getY() + MAX_BLOOM_COLUMN_HEIGHT - 1;
         BlockPos openSurface = base.above(existingAboveBase + 1);
         double distance = horizontalDistance(base, hearth.center());
         if (distance > radius) {
@@ -443,8 +802,9 @@ public final class BloomGrowthManager {
             edits++;
         }
         int height = BloomGrowthPolicy.maxHeight(band, hash, overlaps);
+        int targetAboveBase = Math.max(0, height - 1);
         // Each pass adds only a short visible segment; repeated loaded passes build height.
-        int segment = Math.min(Math.max(0, height - existingAboveBase),
+        int segment = Math.min(Math.max(0, targetAboveBase - existingAboveBase),
                 Math.min(4, remainingEdits - edits));
         segment = Math.min(segment, Math.max(0,
                 maxGrowthY - base.above(existingAboveBase).getY()));
@@ -487,6 +847,23 @@ public final class BloomGrowthManager {
             }
         }
         return edits;
+    }
+
+    private static BlockPos findBloomTopBelowSurfaceCover(ServerLevel level,
+                                                           BlockPos surfaceTop) {
+        BlockPos probe = surfaceTop;
+        for (int depth = 0; depth < 4; depth++) {
+            BlockState state = level.getBlockState(probe);
+            if (isBloomBlock(state)) {
+                return probe;
+            }
+            if (!state.is(Blocks.SNOW)
+                    && !state.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
+                return null;
+            }
+            probe = probe.below();
+        }
+        return isBloomBlock(level.getBlockState(probe)) ? probe : null;
     }
 
     private static int placeMalformedDoorframe(ServerLevel level, BlockPos origin,
@@ -746,6 +1123,14 @@ public final class BloomGrowthManager {
     }
 
     private static boolean canPlaceAt(ServerLevel level, BlockPos pos, BlockState state) {
+        if (isOriginCrownClearance(level, pos)) {
+            return false;
+        }
+        return canPlaceAtIgnoringOriginCrown(level, pos, state);
+    }
+
+    private static boolean canPlaceAtIgnoringOriginCrown(
+            ServerLevel level, BlockPos pos, BlockState state) {
         if (!level.getBlockState(pos).canBeReplaced()) {
             return false;
         }
@@ -755,6 +1140,19 @@ public final class BloomGrowthManager {
         }
         net.minecraft.world.phys.shapes.VoxelShape shape = state.getCollisionShape(level, pos);
         return shape.isEmpty() || level.getEntities(null, shape.bounds().move(pos)).isEmpty();
+    }
+
+    private static boolean isOriginCrownClearance(ServerLevel level, BlockPos pos) {
+        ReturnedHearthSavedData.HearthRecord major = ReturnedHearthSavedData
+                .get(level.getServer()).hearth(HearthSelectionPolicy.HearthType.MAJOR)
+                .orElse(null);
+        if (major == null) {
+            return false;
+        }
+        BlockPos base = BloomSavedData.get(level.getServer()).hearth(major.id())
+                .originRootBase().orElse(null);
+        return base != null && BloomOriginRootPolicy.reservesCrownClearance(
+                level.getSeed() ^ major.layoutSeed(), pos.subtract(base));
     }
 
     private static boolean isExposed(ServerLevel level, BlockPos block) {
@@ -816,6 +1214,10 @@ public final class BloomGrowthManager {
                 || state.is(ModBlocks.BLOOM_CRUST.get())
                 || state.is(ModBlocks.BLOOM_TIP.get())
                 || state.is(ModBlocks.BLOOM_CORE.get());
+    }
+
+    public static boolean isBloomState(BlockState state) {
+        return isBloomBlock(state);
     }
 
     private static BloomBand bandForState(BlockState state) {
@@ -934,6 +1336,137 @@ public final class BloomGrowthManager {
                 bloom.hearth(hearthId).activeTicks(), duration));
     }
 
+    static int effectiveRadiusFor(BloomSavedData bloom, java.util.UUID hearthId,
+                                  long duration) {
+        return effectiveRadius(bloom, hearthId, duration);
+    }
+
+    static BlockPos findFrontierSporeSpawn(ServerLevel level, BlockPos center,
+                                           double edgeRadius, long seed) {
+        int radius = Math.max(BloomGrowthPolicy.INITIAL_RADIUS,
+                Mth.floor(edgeRadius));
+        for (int attempt = 0; attempt < 32; attempt++) {
+            long mixed = BloomGrowthPolicy.mix(seed + attempt * 0x9E3779B97F4A7C15L);
+            double angle = ((mixed >>> 11) & 0xFFFFFFL)
+                    / (double) 0xFFFFFFL * Math.PI * 2.0D;
+            double inward = Math.floorMod(mixed >>> 35, 13L);
+            double distance = Math.max(4.0D, radius - inward);
+            int x = Mth.floor(center.getX() + Math.cos(angle) * distance);
+            int z = Mth.floor(center.getZ() + Math.sin(angle) * distance);
+            if (!level.hasChunk(x >> 4, z >> 4)) {
+                continue;
+            }
+            BlockPos stand = level.getHeightmapPos(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
+            if (isProtected(level, stand) || sealedOnLine(level, center, stand)
+                    || !level.getBlockState(stand).isAir()
+                    || !level.getBlockState(stand.above()).isAir()
+                    || !level.getBlockState(stand.below()).isSolidRender(level, stand.below())
+                    || !hasExactBandNear(level, stand, BloomBand.FRONTIER, 6)) {
+                continue;
+            }
+            return stand;
+        }
+        return null;
+    }
+
+    private static boolean hasExactBandNear(ServerLevel level, BlockPos center,
+                                            BloomBand band, int radius) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int y = -4; y <= 5; y++) {
+            for (int z = -radius; z <= radius; z++) {
+                for (int x = -radius; x <= radius; x++) {
+                    if (x * x + z * z > radius * radius) {
+                        continue;
+                    }
+                    cursor.set(center.getX() + x, center.getY() + y, center.getZ() + z);
+                    if (level.isLoaded(cursor)
+                            && bandForState(level.getBlockState(cursor)) == band) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    static boolean placeSporeTrailTip(ServerLevel level, BlockPos near) {
+        if (!level.hasChunkAt(near)) {
+            return false;
+        }
+        BlockPos surface = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, near);
+        if (isProtected(level, surface) || hasSealedNearby(level, surface, 3)
+                || !level.getBlockState(surface.below()).isSolidRender(level, surface.below())
+                || !isExposed(level, surface.below())) {
+            return false;
+        }
+        return placeTipIfClear(level, surface, surface.getY() + 1);
+    }
+
+    static int placeSatelliteColumn(ServerLevel level, BlockPos anchor, long layoutSeed,
+                                    int cursor, int remainingEdits) {
+        if (remainingEdits <= 0) {
+            return 0;
+        }
+        int permuted = BloomSporePolicy.permutedColumn(cursor, layoutSeed);
+        int dx = BloomSporePolicy.columnX(permuted);
+        int dz = BloomSporePolicy.columnZ(permuted);
+        if (!BloomSporePolicy.acceptsColumn(layoutSeed, dx, dz)) {
+            return 0;
+        }
+        BlockPos sample = anchor.offset(dx, 0, dz);
+        if (!level.hasChunkAt(sample)) {
+            return 0;
+        }
+        BlockPos surface = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sample);
+        int bloomHeight = 0;
+        BlockPos probe = surface.below();
+        while (bloomHeight <= BloomSporePolicy.MAX_SATELLITE_HEIGHT
+                && isBloomBlock(level.getBlockState(probe))) {
+            bloomHeight++;
+            probe = probe.below();
+        }
+        if (bloomHeight > BloomSporePolicy.MAX_SATELLITE_HEIGHT) {
+            return 0;
+        }
+        BlockPos base = bloomHeight > 0 ? probe.above() : probe;
+        if (isProtected(level, base) || sealedOnLine(level, anchor, base)
+                || !isExposed(level, base)) {
+            return 0;
+        }
+        int edits = 0;
+        if (bloomHeight == 0 && convert(level, base, BloomBand.FRONTIER)) {
+            edits++;
+            bloomHeight = 1;
+        }
+        int targetHeight = BloomSporePolicy.columnHeight(layoutSeed, dx, dz);
+        while (bloomHeight < targetHeight && edits < remainingEdits) {
+            BlockPos place = base.above(bloomHeight);
+            if (!placeMassIfClear(level, place, BloomBand.FRONTIER,
+                    base.getY() + BloomSporePolicy.MAX_SATELLITE_HEIGHT)) {
+                break;
+            }
+            edits++;
+            bloomHeight++;
+        }
+        if (edits == 0 && bloomHeight == 0 && placeSporeTrailTip(level, surface)) {
+            return 1;
+        }
+        return edits;
+    }
+
+    private static boolean hasSealedNearby(ServerLevel level, BlockPos center, int radius) {
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -2, -radius),
+                center.offset(radius, 3, radius))) {
+            if (level.getBlockState(pos).is(ModBlocks.SEALED_LATTICE.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean loadedAreaIntersects(ServerLevel level, BlockPos center) {
         double extra = level.getServer().getPlayerList().getViewDistance() * 16.0D;
         double range = BloomGrowthPolicy.MAX_RADIUS + extra;
@@ -962,16 +1495,6 @@ public final class BloomGrowthManager {
         double dx = a.getX() - b.getX();
         double dz = a.getZ() - b.getZ();
         return Math.sqrt(dx * dx + dz * dz);
-    }
-
-    private static double nearestPlayerDistanceSq(ServerLevel level, ChunkPos chunk) {
-        double best = Double.MAX_VALUE;
-        for (ServerPlayer player : level.players()) {
-            double dx = player.getX() - (chunk.getMinBlockX() + 8.0D);
-            double dz = player.getZ() - (chunk.getMinBlockZ() + 8.0D);
-            best = Math.min(best, dx * dx + dz * dz);
-        }
-        return best;
     }
 
     public static void tickSealedLattice(ServerLevel level, BlockPos pos, BlockState state) {
@@ -1010,6 +1533,7 @@ public final class BloomGrowthManager {
         ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
         long duration = BloomGrowthPolicy.presetDurationTicks(apocalypse.getPresetName());
         StringBuilder radii = new StringBuilder();
+        String originRoot = "none";
         for (ReturnedHearthSavedData.HearthRecord hearth : hearths.hearths()) {
             if (!radii.isEmpty()) {
                 radii.append(',');
@@ -1021,8 +1545,19 @@ public final class BloomGrowthManager {
                     .append(String.format(java.util.Locale.ROOT, "%.2fd",
                             bloom.hearth(hearth.id()).activeTicks()
                                     / (double) BloomGrowthPolicy.DAY_TICKS));
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR) {
+                BloomSavedData.HearthGrowth growth = bloom.hearth(hearth.id());
+                originRoot = growth.originRootFormed() ? "formed"
+                        : growth.originRootCursor() + "/"
+                        + BloomOriginRootPolicy.layout(
+                        level.getSeed() ^ hearth.layoutSeed()).size();
+            }
         }
         return "radii=" + (radii.isEmpty() ? "none" : radii)
+                + " releaseIn=" + String.format(java.util.Locale.ROOT, "%.1fs",
+                PostMaeveWorldState.bloomReleaseRemainingTicks(level.getServer()) / 20.0D)
+                + " eruption=" + firstEruptionStatus(bloom, level.getGameTime())
+                + " originRoot=" + originRoot
                 + " records=" + bloom.recordCount()
                 + " pending=" + bloom.pendingCount()
                 + " sealed=" + bloom.sealedRecordCount()
@@ -1035,11 +1570,25 @@ public final class BloomGrowthManager {
                 + " deferred=" + deferred;
     }
 
+    private static String firstEruptionStatus(BloomSavedData bloom, long gameTime) {
+        if (bloom.firstEruptionComplete()) {
+            return "complete";
+        }
+        if (!bloom.firstEruptionStarted()) {
+            return bloom.debugRadius() == 0 ? "paused" : "waiting";
+        }
+        long elapsed = Math.max(0L, gameTime - bloom.firstEruptionStartGameTime());
+        return BloomEruptionPolicy.stage(elapsed).name().toLowerCase()
+                + "@" + String.format(java.util.Locale.ROOT, "%.1fs", elapsed / 20.0D);
+    }
+
     public static void resetProfile() {
         lastTickNanos = 0L;
         maxTickNanos = 0L;
         lastEdits = 0;
         lastColumns = 0;
+        workRotation = 0L;
+        discoveryRotation = 0L;
     }
 
     public static int debugSeed(ServerLevel level) {
@@ -1047,29 +1596,87 @@ public final class BloomGrowthManager {
         BloomSavedData bloom = BloomSavedData.get(level.getServer());
         int edits = 0;
         for (ReturnedHearthSavedData.HearthRecord hearth : hearths.hearths()) {
-            if (!level.isLoaded(hearth.center())) {
+            BlockPos seedAnchor = hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    ? originRootAnchor(hearth) : hearth.center();
+            if (!level.isLoaded(seedAnchor)) {
                 continue;
             }
+            BloomSavedData.HearthGrowth growth = bloom.hearth(hearth.id());
             int seedEdits = formLivingSeed(level, hearth, MAX_EDITS_PER_TICK - edits);
             edits += seedEdits;
             if (seedEdits > 0) {
-                bloom.hearth(hearth.id()).markSeeded();
+                growth.markSeeded();
             }
             if (edits >= MAX_EDITS_PER_TICK) {
                 break;
             }
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR) {
+                if (growth.originRootFormed()) {
+                    growth.resetOriginRootForDebug();
+                }
+                growth.rememberOriginRootBase(resolveOriginRootBase(level, hearth));
+                edits += formOriginRoot(level, hearth, growth,
+                        MAX_EDITS_PER_TICK - edits);
+            }
+            if (edits >= MAX_EDITS_PER_TICK) {
+                break;
+            }
+        }
+        if (edits > 0) {
+            bloom.completeFirstEruption();
         }
         return edits;
     }
 
     public static void debugAdvance(ServerLevel level, long ticks) {
         BloomSavedData bloom = BloomSavedData.get(level.getServer());
+        if (bloom.debugRadius() == 0) {
+            bloom.restartGrowthAuthorityForDebug();
+        } else {
+            bloom.setDebugRadius(-1);
+        }
+        if (!bloom.firstEruptionComplete()) {
+            debugSeed(level);
+        }
         for (ReturnedHearthSavedData.HearthRecord hearth
                 : ReturnedHearthSavedData.get(level.getServer()).hearths()) {
             bloom.hearth(hearth.id()).advance(ticks);
         }
         for (BloomSavedData.ChunkGrowth chunk : bloom.chunks()) {
             chunk.resetPass();
+        }
+    }
+
+    public static int debugStartNormalProgression(ServerLevel level) {
+        BloomSavedData bloom = BloomSavedData.get(level.getServer());
+        bloom.restartGrowthAuthorityForDebug();
+        resetProfile();
+        ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
+        ReturnedHearthSavedData.HearthRecord hearth = hearths
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (hearth == null) {
+            return 0;
+        }
+        hearths.replayHeartMaeveBiologicalWarningForDebug(
+                hearth.id(), level.getGameTime());
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            PacketDistributor.sendToPlayer(player,
+                    HearthBoundaryEffectPayload.worldEventBiologicalWarning());
+        }
+        return 0;
+    }
+
+    public static void debugResetEruptionForMaeveReplay(ServerLevel level) {
+        BloomSavedData bloom = BloomSavedData.get(level.getServer());
+        bloom.resetFirstEruption();
+        bloom.setDebugRadius(-1);
+        resetProfile();
+    }
+
+    public static void resumePurgedGrowthForMaeveSequence(ServerLevel level) {
+        BloomSavedData bloom = BloomSavedData.get(level.getServer());
+        if (bloom.resumePurgedGrowthForMaeveSequence()) {
+            resetProfile();
         }
     }
 
@@ -1083,53 +1690,83 @@ public final class BloomGrowthManager {
 
     public static int debugPurgeLoaded(ServerLevel level) {
         BloomSavedData bloom = BloomSavedData.get(level.getServer());
-        List<LevelChunk> loadedChunks = new ArrayList<>();
-        Iterable<ChunkHolder> holders = ((ChunkMapAccessor) (Object)
-                level.getChunkSource().chunkMap).frozendawn$getChunks();
-        for (ChunkHolder holder : holders) {
-            ChunkPos pos = holder.getPos();
-            LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
-            if (chunk != null) {
-                loadedChunks.add(chunk);
-            }
-        }
+        bloom.setDebugRadius(0);
+        List<LevelChunk> loadedChunks = loadedChunks(level);
 
-        int removed = 0;
+        Set<Long> bloomPositions = new HashSet<>();
+        Set<Long> atmospherePositions = new HashSet<>();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (LevelChunk chunk : loadedChunks) {
             LevelChunkSection[] sections = chunk.getSections();
             ChunkPos chunkPos = chunk.getPos();
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 LevelChunkSection section = sections[sectionIndex];
-                if (!section.maybeHas(BloomGrowthManager::isDebugPurgeBlock)) {
+                if (!section.maybeHas(state -> isDebugPurgeBlock(state)
+                        || state.is(ModBlocks.FROZEN_ATMOSPHERE.get()))) {
                     continue;
                 }
                 int sectionMinY = chunk.getSectionYFromSectionIndex(sectionIndex) << 4;
                 for (int localY = 0; localY < 16; localY++) {
                     for (int localZ = 0; localZ < 16; localZ++) {
                         for (int localX = 0; localX < 16; localX++) {
-                            if (!isDebugPurgeBlock(section.getBlockState(
-                                    localX, localY, localZ))) {
+                            BlockState state = section.getBlockState(localX, localY, localZ);
+                            if (!isDebugPurgeBlock(state)
+                                    && !state.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
                                 continue;
                             }
                             cursor.set(chunkPos.getMinBlockX() + localX,
                                     sectionMinY + localY,
                                     chunkPos.getMinBlockZ() + localZ);
-                            level.setBlock(cursor, Blocks.AIR.defaultBlockState(), 2);
-                            removed++;
+                            if (isDebugPurgeBlock(state)) {
+                                bloomPositions.add(cursor.asLong());
+                            } else {
+                                atmospherePositions.add(cursor.asLong());
+                            }
                         }
                     }
                 }
             }
         }
+        int removed = 0;
+        for (long packed : atmospherePositions) {
+            BlockPos atmosphere = BlockPos.of(packed);
+            if (isAtmosphereOnBloom(atmosphere, bloomPositions, atmospherePositions)) {
+                level.setBlock(atmosphere, Blocks.AIR.defaultBlockState(), 2);
+                removed++;
+            }
+        }
+        for (long packed : bloomPositions) {
+            level.setBlock(BlockPos.of(packed), Blocks.AIR.defaultBlockState(), 2);
+            removed++;
+        }
+        BloomSporeManager.debugPurgeLoaded(level);
         bloom.resetAuthority();
         bloom.setDebugRadius(0);
         for (ReturnedHearthSavedData.HearthRecord hearth
                 : ReturnedHearthSavedData.get(level.getServer()).hearths()) {
-            bloom.hearth(hearth.id()).markSeeded();
+            BloomSavedData.HearthGrowth growth = bloom.hearth(hearth.id());
+            growth.markSeeded();
+            growth.markOriginRootFormed();
         }
         resetProfile();
         return removed;
+    }
+
+    private static boolean isAtmosphereOnBloom(BlockPos atmosphere,
+                                                Set<Long> bloomPositions,
+                                                Set<Long> atmospherePositions) {
+        BlockPos.MutableBlockPos below = atmosphere.mutable().move(Direction.DOWN);
+        for (int depth = 0; depth < 4; depth++) {
+            long packed = below.asLong();
+            if (bloomPositions.contains(packed)) {
+                return true;
+            }
+            if (!atmospherePositions.contains(packed)) {
+                return false;
+            }
+            below.move(Direction.DOWN);
+        }
+        return false;
     }
 
     private static boolean isDebugPurgeBlock(BlockState state) {

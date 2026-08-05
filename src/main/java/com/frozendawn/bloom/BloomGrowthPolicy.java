@@ -62,7 +62,7 @@ public final class BloomGrowthPolicy {
             case MID -> 4 + (int) Math.floorMod(deterministicBits, 9L);
             case CORE -> 18 + (int) Math.floorMod(deterministicBits, 23L);
         };
-        return Math.min(48, base + Math.max(0, overlapCount - 1) * 8);
+        return Math.min(30, base + Math.max(0, overlapCount - 1) * 8);
     }
 
     public static long sealedLifetimeTicks(BloomBand band) {
@@ -71,6 +71,26 @@ public final class BloomGrowthPolicy {
             case MID -> 3L * DAY_TICKS;
             case CORE -> (3L * DAY_TICKS) / 2L;
         };
+    }
+
+    public static double undoneSpawnChance(double baseChance, float localDensity) {
+        return scaledSpawnChance(baseChance, localDensity, 8.0D);
+    }
+
+    public static double bloomboundSpawnChance(double baseChance, float localDensity) {
+        return scaledSpawnChance(baseChance, localDensity, 8.0D);
+    }
+
+    public static double undoneLocalCapRadius(float localDensity) {
+        return Mth.lerp(Mth.clamp(localDensity, 0.0F, 1.0F), 128.0D, 64.0D);
+    }
+
+    private static double scaledSpawnChance(double baseChance, float localDensity,
+                                            double maximumMultiplier) {
+        double density = Mth.clamp(localDensity, 0.0F, 1.0F);
+        // Even sparse visible Bloom should announce the post-Maeve ecology.
+        double multiplier = Mth.lerp(Math.sqrt(density), 1.0D, maximumMultiplier);
+        return Mth.clamp(baseChance * multiplier, 0.0D, 1.0D);
     }
 
     public static int sealedWearStage(long contactTicks, BloomBand band) {

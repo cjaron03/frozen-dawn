@@ -741,6 +741,33 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void biologicalWarningTimePersistsForBloomReleaseClock() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markHeartMaeveBiologicalWarningPlayed(
+                major.id(), 8_088L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.heartMaeveBiologicalWarningPlayed());
+        assertEquals(8_088L, restored.heartMaeveBiologicalWarningGameTime());
+    }
+
+    @Test
+    void debugBiologicalWarningReplayReplacesTheReleaseClock() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markHeartMaeveBiologicalWarningPlayed(
+                major.id(), 8_088L));
+        assertTrue(state.replayHeartMaeveBiologicalWarningForDebug(
+                major.id(), 19_000L));
+        assertEquals(19_000L, major.heartMaeveBiologicalWarningGameTime());
+    }
+
+    @Test
     void legacyStartedMaeveErasureMigratesToPostMaeveAuthority() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);

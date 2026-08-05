@@ -37,7 +37,7 @@ class BloomGrowthPolicyTest {
         double overlap = BloomGrowthPolicy.coverage(BloomBand.MID, hash, 2);
         assertEquals(0.25D, overlap - single, 0.0001D);
         assertTrue(BloomGrowthPolicy.coverage(BloomBand.CORE, hash, 8) <= 0.85D);
-        assertTrue(BloomGrowthPolicy.maxHeight(BloomBand.CORE, hash, 8) <= 48);
+        assertEquals(30, BloomGrowthPolicy.maxHeight(BloomBand.CORE, hash, 8));
     }
 
     @Test
@@ -67,5 +67,21 @@ class BloomGrowthPolicyTest {
         assertEquals(0, BloomGrowthPolicy.spentLatticeDrops(BloomBand.MID, 0.25F));
         assertEquals(2, BloomGrowthPolicy.spentLatticeDrops(BloomBand.CORE, 0.24F));
         assertEquals(1, BloomGrowthPolicy.spentLatticeDrops(BloomBand.CORE, 0.25F));
+    }
+
+    @Test
+    void bloomDensityRaisesUndoneAndBloomboundSpawnChancesWithinCaps() {
+        assertEquals(0.011D, BloomGrowthPolicy.undoneSpawnChance(0.011D, 0.0F),
+                0.000001D);
+        assertEquals(0.088D, BloomGrowthPolicy.undoneSpawnChance(0.011D, 1.0F),
+                0.000001D);
+        assertEquals(0.0495D, BloomGrowthPolicy.undoneSpawnChance(0.011D, 0.25F),
+                0.000001D);
+        assertEquals(0.144D, BloomGrowthPolicy.bloomboundSpawnChance(0.018D, 1.0F),
+                0.000001D);
+        assertEquals(1.0D, BloomGrowthPolicy.bloomboundSpawnChance(0.9D, 1.0F),
+                0.0D);
+        assertEquals(128.0D, BloomGrowthPolicy.undoneLocalCapRadius(0.0F), 0.0D);
+        assertEquals(64.0D, BloomGrowthPolicy.undoneLocalCapRadius(1.0F), 0.0D);
     }
 }

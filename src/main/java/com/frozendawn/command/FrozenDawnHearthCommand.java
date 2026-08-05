@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.bloom.BloomSporeManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthBoundaryManager;
@@ -85,6 +86,8 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::bloomStatus))
                         .then(Commands.literal("seed")
                                 .executes(FrozenDawnHearthCommand::bloomSeed))
+                        .then(Commands.literal("start")
+                                .executes(FrozenDawnHearthCommand::bloomStart))
                         .then(Commands.literal("advance")
                                 .then(Commands.argument("days",
                                                 IntegerArgumentType.integer(0, 3_650))
@@ -97,6 +100,22 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::bloomProfile))
                         .then(Commands.literal("debug-spawn-bloombound")
                                 .executes(FrozenDawnHearthCommand::bloomSpawnBloombound))
+                        .then(Commands.literal("debug-spawn-spore")
+                                .executes(FrozenDawnHearthCommand::bloomSpawnSpore))
+                        .then(Commands.literal("spore")
+                                .executes(FrozenDawnHearthCommand::bloomSporeStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::bloomSporeStatus))
+                                .then(Commands.literal("root-nearest")
+                                        .executes(FrozenDawnHearthCommand::bloomSporeRootNearest))
+                                .then(Commands.literal("advance")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(
+                                                        FrozenDawnHearthCommand::bloomSporeAdvance)))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(
+                                                FrozenDawnHearthCommand::bloomSporePurgeLoaded)))
                         .then(Commands.literal("purge-loaded")
                                 .executes(FrozenDawnHearthCommand::bloomPurgeLoaded)))
                 .then(Commands.literal("reconcile")
@@ -592,6 +611,20 @@ final class FrozenDawnHearthCommand {
         return bloomStatus(context);
     }
 
+    private static int bloomStart(CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        if (!PostMaeveWorldState.isErased(server)) {
+            context.getSource().sendFailure(Component.literal(
+                    "Bloom is dormant until Maeve is erased"));
+            return 0;
+        }
+        int edits = BloomGrowthManager.debugStartNormalProgression(server.overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Replayed ORSA biological warning | Bloom eruption in 10 seconds"
+                        + " | initialEdits=" + edits), true);
+        return bloomStatus(context);
+    }
+
     private static int bloomSetRadius(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         int radius = IntegerArgumentType.getInteger(context, "radius");
@@ -625,12 +658,60 @@ final class FrozenDawnHearthCommand {
         return spawned ? 1 : 0;
     }
 
+    private static int bloomSpawnSpore(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        var spore = BloomSporeManager.debugSpawn(player);
+        context.getSource().sendSuccess(() -> Component.literal(spore == null
+                ? "Could not create The Spore; a loaded Hearth source must be free"
+                : "Spawned The Spore from source " + spore.getSourceId()), false);
+        return spore == null ? 0 : 1;
+    }
+
+    private static int bloomSporeStatus(CommandContext<CommandSourceStack> context) {
+        String status = BloomSporeManager.statusLine(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "--- Bloom Spore Relays ---\n" + status), false);
+        return 1;
+    }
+
+    private static int bloomSporeRootNearest(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        boolean rooted = BloomSporeManager.debugRootNearest(player);
+        context.getSource().sendSuccess(() -> Component.literal(rooted
+                ? "Forced the nearest Spore to begin rooting"
+                : "No traveling Spore found within 96 blocks"), false);
+        return rooted ? 1 : 0;
+    }
+
+    private static int bloomSporeAdvance(CommandContext<CommandSourceStack> context) {
+        int days = IntegerArgumentType.getInteger(context, "days");
+        BloomSporeManager.debugAdvance(context.getSource().getServer().overworld(),
+                days * HearthMaturationPolicy.MINECRAFT_DAY_TICKS);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Advanced loaded satellite clocks by " + days + " day(s)"), true);
+        return bloomSporeStatus(context);
+    }
+
+    private static int bloomSporePurgeLoaded(
+            CommandContext<CommandSourceStack> context) {
+        int removed = BloomSporeManager.debugPurgeLoaded(
+                context.getSource().getServer().overworld());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged loaded Spore entities, corpses, satellite growth, and records"
+                        + " | removed=" + removed), true);
+        return 1;
+    }
+
     private static int bloomPurgeLoaded(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         int removed = BloomGrowthManager.debugPurgeLoaded(server.overworld());
         context.getSource().sendSuccess(() -> Component.literal(
                 "Purged all loaded Bloom blocks and paused growth at radius 0 | removed="
-                        + removed + " | use setradius + seed to restart"), true);
+                        + removed + " | use start to restart normal progression"), true);
         return 1;
     }
 
@@ -641,6 +722,10 @@ final class FrozenDawnHearthCommand {
                 .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
         boolean changed = hearth != null
                 && data.resetHeartMaeveErasureForDebug(hearth.id());
+        if (changed) {
+            BloomGrowthManager.debugResetEruptionForMaeveReplay(
+                    context.getSource().getServer().overworld());
+        }
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reset Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());

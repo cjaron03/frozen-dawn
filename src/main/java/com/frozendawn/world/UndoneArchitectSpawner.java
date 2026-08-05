@@ -1,5 +1,8 @@
 package com.frozendawn.world;
 
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.UndoneArchitectEntity;
 import com.frozendawn.homo.PostMaeveWorldState;
@@ -15,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 public final class UndoneArchitectSpawner {
     private static final int CHECK_INTERVAL = 600;
     private static final double LOCAL_CAP_RADIUS = 192.0D;
+    private static final int LOCAL_CAP = 2;
 
     private UndoneArchitectSpawner() {
     }
@@ -26,9 +30,13 @@ public final class UndoneArchitectSpawner {
             return;
         }
         for (ServerPlayer player : level.players()) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()
-                    || level.random.nextDouble()
-                    >= FrozenDawnConfig.UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK.get()
+            float density = BloomGrowthManager.localDensity(
+                    level, player.blockPosition());
+            double spawnChance = BloomGrowthPolicy.undoneSpawnChance(
+                    FrozenDawnConfig.UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK.get(),
+                    density);
+            if (!player.isAlive() || player.isSpectator()
+                    || level.random.nextDouble() >= spawnChance
                     || hasNearby(level, player.blockPosition())) {
                 continue;
             }
@@ -36,7 +44,12 @@ public final class UndoneArchitectSpawner {
                     level, player, level.random, 48, 80, 32,
                     LateThreatSpawnHelper.NO_LIGHT_LIMIT);
             if (pos != null && level.hasChunkAt(pos)) {
-                spawn(level, pos);
+                UndoneArchitectEntity spawned = spawn(level, pos);
+                if (spawned != null) {
+                    FrozenDawn.LOGGER.info(
+                            "[UndoneArchitect] Naturally spawned near {} density={} chance={}",
+                            player.getName().getString(), density, spawnChance);
+                }
             }
         }
     }
@@ -50,13 +63,18 @@ public final class UndoneArchitectSpawner {
         architect.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                 level.random.nextFloat() * 360.0F, 0.0F);
         architect.setPersistenceRequired();
-        level.addFreshEntity(architect);
+        if (!level.addFreshEntity(architect)) {
+            return null;
+        }
+        if (BloomGrowthManager.localDensity(level, pos) > 0.02F) {
+            architect.beginBloomEmergence();
+        }
         return architect;
     }
 
     private static boolean hasNearby(ServerLevel level, BlockPos pos) {
-        return !level.getEntitiesOfClass(
+        return level.getEntitiesOfClass(
                 UndoneArchitectEntity.class,
-                new AABB(pos).inflate(LOCAL_CAP_RADIUS)).isEmpty();
+                new AABB(pos).inflate(LOCAL_CAP_RADIUS)).size() >= LOCAL_CAP;
     }
 }

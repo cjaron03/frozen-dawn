@@ -16,3 +16,8 @@ recorded performance.
 The three Bloom music beds combine the processed Bloom drone with locally
 synthesized low-frequency tonal layers. They contain no additional recorded
 source material and are reproducible with `tools/generate_bloom_music.sh`.
+
+The Spore's hum, footsteps, contact scrape, death impact, collapse, rooting, and corpse
+fracture sounds are newly processed only from the same CC0 ice source. They are
+reproducible with `tools/generate_bloom_spore_sounds.sh` and contain no vocal
+or creature recordings.

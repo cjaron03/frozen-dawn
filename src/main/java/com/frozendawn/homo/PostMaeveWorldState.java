@@ -1,6 +1,7 @@
 package com.frozendawn.homo;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.network.PostMaeveWorldStatePayload;
@@ -18,6 +19,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /** Authoritative irreversible switch for the post-Maeve world. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class PostMaeveWorldState {
+    public static final long BLOOM_RELEASE_DELAY_TICKS = 10L * 20L;
+
     private PostMaeveWorldState() {
     }
 
@@ -39,7 +42,53 @@ public final class PostMaeveWorldState {
                 || ReturnedHearthSavedData.get(server).undoneSpawningReleased();
     }
 
+    public static boolean isBloomReleased(MinecraftServer server) {
+        if (server == null || !isErased(server)) {
+            return false;
+        }
+        if (FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get()) {
+            return true;
+        }
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
+        return bloomDelayElapsed(server.overworld().getGameTime(),
+                bloomSignalGameTime(data));
+    }
+
+    public static long bloomReleaseRemainingTicks(MinecraftServer server) {
+        if (server == null || !isErased(server)
+                || FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get()) {
+            return 0L;
+        }
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
+        long erasedAt = bloomSignalGameTime(data);
+        long now = server.overworld().getGameTime();
+        if (erasedAt < 0L || now < erasedAt) {
+            return BLOOM_RELEASE_DELAY_TICKS;
+        }
+        return Math.max(0L, BLOOM_RELEASE_DELAY_TICKS - (now - erasedAt));
+    }
+
+    static boolean bloomDelayElapsed(long gameTime, long erasedAt) {
+        return erasedAt >= 0L && gameTime >= erasedAt
+                && gameTime - erasedAt >= BLOOM_RELEASE_DELAY_TICKS;
+    }
+
+    private static long bloomSignalGameTime(ReturnedHearthSavedData data) {
+        ReturnedHearthSavedData.HearthRecord major = data
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        if (major != null && major.heartMaeveBiologicalWarningGameTime() >= 0L) {
+            return major.heartMaeveBiologicalWarningGameTime();
+        }
+        if (major != null && major.heartMaeveBiologicalWarningPlayed()
+                && data.maeveErasedGameTime() >= 0L) {
+            return data.maeveErasedGameTime()
+                    + HearthHeartManager.maeveBiologicalWarningDelayAfterErasureTicks();
+        }
+        return -1L;
+    }
+
     public static boolean markErased(ServerLevel level) {
+        BloomGrowthManager.resumePurgedGrowthForMaeveSequence(level);
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         if (!data.markMaeveErased(level.getGameTime())) {
             return false;
@@ -84,7 +133,8 @@ public final class PostMaeveWorldState {
                 erased,
                 erased && (FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get()
                         || data.undoneSpawningReleased())));
-        if (!erased || player.serverLevel().dimension() != Level.OVERWORLD) {
+        if (!erased || !isBloomReleased(player.getServer())
+                || player.serverLevel().dimension() != Level.OVERWORLD) {
             PacketDistributor.sendToPlayer(player, new BloomStatePayload(0.0F, 0));
         }
     }
