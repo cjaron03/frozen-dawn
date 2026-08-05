@@ -28,6 +28,7 @@ import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
+import com.frozendawn.world.BloomboundUndoneSpawner;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -94,6 +95,8 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::bloomSetRadius)))
                         .then(Commands.literal("profile")
                                 .executes(FrozenDawnHearthCommand::bloomProfile))
+                        .then(Commands.literal("debug-spawn-bloombound")
+                                .executes(FrozenDawnHearthCommand::bloomSpawnBloombound))
                         .then(Commands.literal("purge-loaded")
                                 .executes(FrozenDawnHearthCommand::bloomPurgeLoaded)))
                 .then(Commands.literal("reconcile")
@@ -606,12 +609,28 @@ final class FrozenDawnHearthCommand {
         return result;
     }
 
+    private static int bloomSpawnBloombound(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        BlockPos probe = player.blockPosition().offset(5, 0, 3);
+        BlockPos spawn = player.serverLevel().getHeightmapPos(
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                probe);
+        boolean spawned = BloomboundUndoneSpawner.spawn(
+                player.serverLevel(), spawn) != null;
+        context.getSource().sendSuccess(() -> Component.literal(
+                spawned ? "Spawned debug Bloombound at " + spawn.toShortString()
+                        : "Could not create a Bloombound"), false);
+        return spawned ? 1 : 0;
+    }
+
     private static int bloomPurgeLoaded(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         int removed = BloomGrowthManager.debugPurgeLoaded(server.overworld());
         context.getSource().sendSuccess(() -> Component.literal(
-                "Purged loaded Bloom test blocks and reset Bloom authority | removed="
-                        + removed), true);
+                "Purged all loaded Bloom blocks and paused growth at radius 0 | removed="
+                        + removed + " | use setradius + seed to restart"), true);
         return 1;
     }
 

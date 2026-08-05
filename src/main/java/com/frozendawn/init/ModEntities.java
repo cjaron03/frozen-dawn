@@ -70,6 +70,13 @@ public class ModEntities {
                     .clientTrackingRange(12)
                     .build("undone"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<UndoneEntity>> BLOOMBOUND_UNDONE =
+            ENTITIES.register("bloombound_undone", () -> EntityType.Builder
+                    .of(UndoneEntity::new, MobCategory.MONSTER)
+                    .sized(0.68F, 2.05F)
+                    .clientTrackingRange(14)
+                    .build("bloombound_undone"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<UndoneArchitectEntity>>
             UNDONE_ARCHITECT = ENTITIES.register("undone_architect", () -> EntityType.Builder
                     .of(UndoneArchitectEntity::new, MobCategory.MONSTER)

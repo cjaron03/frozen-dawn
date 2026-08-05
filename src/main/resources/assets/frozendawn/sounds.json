@@ -465,6 +465,41 @@
       { "name": "minecraft:entity.zombie.step", "type": "event" }
     ]
   },
+  "block.bloom_core.pulse": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.pulse",
+    "sounds": [ "frozendawn:block/bloom_core/pulse" ]
+  },
+  "block.bloom_core.break": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.break",
+    "sounds": [ "frozendawn:block/bloom_core/break" ]
+  },
+  "entity.bloombound_undone.ambient_one": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_1" ]
+  },
+  "entity.bloombound_undone.ambient_two": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_2" ]
+  },
+  "entity.bloombound_undone.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.attack",
+    "sounds": [ "frozendawn:entity/bloombound_undone/attack" ]
+  },
+  "entity.bloombound_undone.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.hurt",
+    "sounds": [ "frozendawn:entity/bloombound_undone/hurt" ]
+  },
+  "entity.bloombound_undone.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.death",
+    "sounds": [ "frozendawn:entity/bloombound_undone/death" ]
+  },
   "entity.undone_architect.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",
@@ -1464,5 +1499,23 @@
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.bloom.shimmer",
     "sounds": [ "frozendawn:ambient/bloom/shimmer" ]
+  },
+  "music.bloom.roots": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/roots", "stream": true }
+    ]
+  },
+  "music.bloom.hollow": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/hollow", "stream": true }
+    ]
+  },
+  "music.bloom.pale": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/pale", "stream": true }
+    ]
   }
 }

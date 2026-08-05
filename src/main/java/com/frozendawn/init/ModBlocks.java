@@ -5,6 +5,7 @@ import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
 import com.frozendawn.block.BloomMassBlock;
+import com.frozendawn.block.BloomCoreBlock;
 import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
@@ -573,6 +574,14 @@ public class ModBlocks {
                     .noCollission()
                     .noOcclusion()
                     .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<BloomCoreBlock> BLOOM_CORE = BLOCKS.register("bloom_core",
+            () -> new BloomCoreBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SNOW)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.4F, 7.0F)
+                    .sound(SoundType.AMETHYST)
+                    .lightLevel(state -> 6)));
 
     public static final DeferredBlock<Block> INERT_ACHERONITE = BLOCKS.register("inert_acheronite",
             () -> new Block(BlockBehaviour.Properties.of()

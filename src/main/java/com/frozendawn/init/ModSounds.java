@@ -237,6 +237,26 @@ public class ModSounds {
             register("ambient.bloom.crack");
     public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_SHIMMER =
             register("ambient.bloom.shimmer");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_MUSIC_ROOTS =
+            register("music.bloom.roots");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_MUSIC_HOLLOW =
+            register("music.bloom.hollow");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_MUSIC_PALE =
+            register("music.bloom.pale");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_CORE_PULSE =
+            register("block.bloom_core.pulse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_CORE_BREAK =
+            register("block.bloom_core.break");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOMBOUND_UNDONE_AMBIENT_ONE =
+            register("entity.bloombound_undone.ambient_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOMBOUND_UNDONE_AMBIENT_TWO =
+            register("entity.bloombound_undone.ambient_two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOMBOUND_UNDONE_ATTACK =
+            register("entity.bloombound_undone.attack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOMBOUND_UNDONE_HURT =
+            register("entity.bloombound_undone.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLOOMBOUND_UNDONE_DEATH =
+            register("entity.bloombound_undone.death");
 
     // --- The Undone Architect ---
     public static final DeferredHolder<SoundEvent, SoundEvent>

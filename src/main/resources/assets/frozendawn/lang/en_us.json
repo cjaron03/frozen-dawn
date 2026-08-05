@@ -49,6 +49,7 @@
   "block.frozendawn.bloom_mass": "Bloom Mass",
   "block.frozendawn.bloom_crust": "Bloom Crust",
   "block.frozendawn.bloom_tip": "Living Bloom Tip",
+  "block.frozendawn.bloom_core": "Bloom Core",
   "block.frozendawn.inert_acheronite": "Inert Acheronite",
   "block.frozendawn.sealed_lattice": "Sealed Lattice",
 
@@ -500,6 +501,7 @@
 
   "entity.frozendawn.returned": "Returned Hunter",
   "entity.frozendawn.undone": "The Undone",
+  "entity.frozendawn.bloombound_undone": "The Bloombound",
   "entity.frozendawn.undone_architect": "The Undone Architect",
   "item.frozendawn.remnant_ember": "Remnant Ember",
   "item.frozendawn.tattered_clothing_scrap": "Tattered Clothing Scrap",
@@ -517,6 +519,12 @@
   "subtitle.frozendawn.entity.returned.step": "Returned footsteps",
   "subtitle.frozendawn.entity.undone.moves": "Something moves",
   "subtitle.frozendawn.entity.undone.grab": "Something takes hold",
+  "subtitle.frozendawn.block.bloom_core.pulse": "Something pulses in the growth",
+  "subtitle.frozendawn.block.bloom_core.break": "A living knot ruptures",
+  "subtitle.frozendawn.entity.bloombound_undone.ambient": "Something crystallizes",
+  "subtitle.frozendawn.entity.bloombound_undone.attack": "Something splinters forward",
+  "subtitle.frozendawn.entity.bloombound_undone.hurt": "Something cracks",
+  "subtitle.frozendawn.entity.bloombound_undone.death": "Something ruptures",
   "subtitle.frozendawn.entity.undone_architect.ambient": "Something settles into place",
   "subtitle.frozendawn.entity.undone_architect.hurt": "Something fractures",
   "subtitle.frozendawn.entity.undone_architect.attack": "Something rushes forward",

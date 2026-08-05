@@ -24,6 +24,8 @@ public class ModEntityAttributes {
         event.put(ModEntities.HOLLOW.get(), HollowEntity.createAttributes().build());
         event.put(ModEntities.RETURNED.get(), ReturnedEntity.createAttributes().build());
         event.put(ModEntities.UNDONE.get(), UndoneEntity.createAttributes().build());
+        event.put(ModEntities.BLOOMBOUND_UNDONE.get(),
+                UndoneEntity.createBloomboundAttributes().build());
         event.put(ModEntities.UNDONE_ARCHITECT.get(),
                 UndoneArchitectEntity.createAttributes().build());
         event.put(ModEntities.MIMIC.get(), MimicEntity.createAttributes().build());

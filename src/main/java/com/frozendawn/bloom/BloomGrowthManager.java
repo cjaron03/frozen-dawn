@@ -10,6 +10,7 @@ import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.mixin.ChunkMapAccessor;
 import com.frozendawn.network.BloomStatePayload;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
 import com.frozendawn.world.ChunkCatchUpManager;
@@ -17,6 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
@@ -27,6 +29,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -48,6 +52,7 @@ public final class BloomGrowthManager {
     private static final int CHUNK_COLUMNS = 16 * 16;
     private static final int SCAN_INTERVAL = 20;
     private static final int MAX_COLUMN_STEPS_PER_SLICE = 32;
+    private static final int MAX_BLOOM_HEIGHT_ABOVE_TERRAIN = 40;
 
     private static long lastTickNanos;
     private static long maxTickNanos;
@@ -205,13 +210,7 @@ public final class BloomGrowthManager {
                     }
                     cursor.set(center.getX() + x, center.getY() + y, center.getZ() + z);
                     BlockState state = level.getBlockState(cursor);
-                    BloomBand band = null;
-                    if (state.is(ModBlocks.BLOOM_MASS.get())) {
-                        band = state.getValue(BloomMassBlock.BAND);
-                    } else if (state.is(ModBlocks.BLOOM_CRUST.get())
-                            || state.is(ModBlocks.BLOOM_TIP.get())) {
-                        band = BloomBand.FRONTIER;
-                    }
+                    BloomBand band = bandForState(state);
                     if (band == null) {
                         continue;
                     }
@@ -245,7 +244,8 @@ public final class BloomGrowthManager {
                     BlockState state = level.getBlockState(cursor);
                     if (state.is(ModBlocks.BLOOM_MASS.get())
                             || state.is(ModBlocks.BLOOM_CRUST.get())
-                            || state.is(ModBlocks.BLOOM_TIP.get())) {
+                            || state.is(ModBlocks.BLOOM_TIP.get())
+                            || state.is(ModBlocks.BLOOM_CORE.get())) {
                         nearestDistance = distanceSqr;
                         nearest = cursor.immutable();
                     }
@@ -381,12 +381,19 @@ public final class BloomGrowthManager {
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
         BlockPos top = surface.below();
         int existingHeight = 0;
-        while (existingHeight < 64 && isBloomBlock(level.getBlockState(top))) {
+        while (existingHeight <= MAX_BLOOM_HEIGHT_ABOVE_TERRAIN
+                && isBloomBlock(level.getBlockState(top))) {
             existingHeight++;
             top = top.below();
         }
+        // The old 64-block scan could mistake a tall Bloom column for terrain and
+        // stack another column above it. Legacy columns beyond the cap stay inert.
+        if (existingHeight > MAX_BLOOM_HEIGHT_ABOVE_TERRAIN) {
+            return 0;
+        }
         int existingAboveBase = Math.max(0, existingHeight - 1);
         BlockPos base = existingHeight > 0 ? top.above() : top;
+        int maxGrowthY = base.getY() + MAX_BLOOM_HEIGHT_ABOVE_TERRAIN;
         BlockPos openSurface = base.above(existingAboveBase + 1);
         double distance = horizontalDistance(base, hearth.center());
         if (distance > radius) {
@@ -439,9 +446,11 @@ public final class BloomGrowthManager {
         // Each pass adds only a short visible segment; repeated loaded passes build height.
         int segment = Math.min(Math.max(0, height - existingAboveBase),
                 Math.min(4, remainingEdits - edits));
+        segment = Math.min(segment, Math.max(0,
+                maxGrowthY - base.above(existingAboveBase).getY()));
         for (int y = existingAboveBase + 1; y <= existingAboveBase + segment; y++) {
             BlockPos place = base.above(y);
-            if (!canPlaceAt(level, place,
+            if (place.getY() > maxGrowthY || !canPlaceAt(level, place,
                     ModBlocks.BLOOM_MASS.get().defaultBlockState().setValue(
                             BloomMassBlock.BAND, band)) || isProtected(level, place)) {
                 break;
@@ -450,42 +459,61 @@ public final class BloomGrowthManager {
                     .setValue(BloomMassBlock.BAND, band), 2);
             edits++;
         }
+        int visibleHeight = existingAboveBase + segment;
+        BlockPos crown = base.above(Math.max(1, visibleHeight));
+        boolean atMatureHeight = visibleHeight >= height - 1;
         if (band == BloomBand.MID && Math.floorMod(hash, 37L) == 0L
                 && edits < remainingEdits) {
             edits += placeMalformedDoorframe(level, base.above(), hash,
-                    remainingEdits - edits);
+                    remainingEdits - edits, maxGrowthY);
         } else if (band == BloomBand.CORE && Math.floorMod(hash, 29L) == 0L
                 && edits < remainingEdits) {
             edits += placeFusedCore(level, base.above(), hash,
-                    remainingEdits - edits);
+                    remainingEdits - edits, maxGrowthY);
+        } else if (Math.floorMod(hash >>> 6, 5L) == 0L && edits < remainingEdits) {
+            int motif = (int) Math.floorMod(hash >>> 13, 4L);
+            if (motif == 0) {
+                edits += placeRootFan(level, base, hash, band,
+                        remainingEdits - edits, maxGrowthY);
+            } else if (motif == 1 && atMatureHeight) {
+                edits += placeBranchingCrown(level, crown, hash, band,
+                        remainingEdits - edits, maxGrowthY);
+            } else if (motif == 2 && band == BloomBand.CORE && atMatureHeight) {
+                edits += placeHollowKnot(level, crown.below(1), hash,
+                        remainingEdits - edits, maxGrowthY);
+            } else if (motif == 3 && atMatureHeight) {
+                edits += placeCrossLink(level, crown, hash, band,
+                        remainingEdits - edits, maxGrowthY);
+            }
         }
         return edits;
     }
 
     private static int placeMalformedDoorframe(ServerLevel level, BlockPos origin,
-                                               long hash, int remainingEdits) {
+                                               long hash, int remainingEdits,
+                                               int maxGrowthY) {
         Direction axis = (hash & 1L) == 0L ? Direction.EAST : Direction.SOUTH;
         int height = 4 + (int) Math.floorMod(hash >>> 8, 5L);
         int edits = 0;
         for (int y = 0; y < height && edits < remainingEdits; y++) {
             edits += placeMassIfClear(level, origin.relative(axis).above(y),
-                    BloomBand.MID) ? 1 : 0;
+                    BloomBand.MID, maxGrowthY) ? 1 : 0;
             if (edits >= remainingEdits) {
                 break;
             }
             edits += placeMassIfClear(level, origin.relative(axis.getOpposite()).above(y),
-                    BloomBand.MID) ? 1 : 0;
+                    BloomBand.MID, maxGrowthY) ? 1 : 0;
         }
         BlockPos crown = origin.above(height - 1);
         for (int offset = -1; offset <= 1 && edits < remainingEdits; offset++) {
             edits += placeMassIfClear(level, crown.relative(axis, offset),
-                    BloomBand.MID) ? 1 : 0;
+                    BloomBand.MID, maxGrowthY) ? 1 : 0;
         }
         return edits;
     }
 
     private static int placeFusedCore(ServerLevel level, BlockPos origin,
-                                      long hash, int remainingEdits) {
+                                      long hash, int remainingEdits, int maxGrowthY) {
         int edits = 0;
         int height = 5 + (int) Math.floorMod(hash >>> 10, 8L);
         for (Direction direction : Direction.Plane.HORIZONTAL) {
@@ -496,17 +524,156 @@ public final class BloomGrowthManager {
                     direction.get2DDataValue() * 3 + (int) hash, 4));
             for (int y = 0; y < sideHeight && edits < remainingEdits; y++) {
                 edits += placeMassIfClear(level, origin.relative(direction).above(y),
-                        BloomBand.CORE) ? 1 : 0;
+                        BloomBand.CORE, maxGrowthY) ? 1 : 0;
+            }
+        }
+        if (edits < remainingEdits && Math.floorMod(hash >>> 17, 4L) == 0L
+                && placeCore(level, origin.above(Math.min(4, height - 1)), maxGrowthY)) {
+            edits++;
+        }
+        return edits;
+    }
+
+    private static int placeRootFan(ServerLevel level, BlockPos origin, long hash,
+                                    BloomBand band, int remainingEdits, int maxGrowthY) {
+        int edits = 0;
+        Direction first = Direction.from2DDataValue((int) Math.floorMod(hash, 4L));
+        int arms = band == BloomBand.CORE ? 2 : 1;
+        for (int arm = 0; arm < arms && edits < remainingEdits; arm++) {
+            Direction direction = arm == 0 ? first : first.getClockWise();
+            int length = 3 + (int) Math.floorMod(hash >>> (8 + arm * 4), 4L);
+            for (int step = 1; step <= length && edits < remainingEdits; step++) {
+                BlockPos sample = origin.relative(direction, step);
+                BlockPos surface = level.getHeightmapPos(
+                        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sample);
+                if (band == BloomBand.CORE && step % 3 == 0) {
+                    edits += placeMassIfClear(level, surface, BloomBand.CORE,
+                            maxGrowthY) ? 1 : 0;
+                } else {
+                    edits += placeCrustIfClear(level, surface,
+                            2 + (int) Math.floorMod(hash + step, 3L), maxGrowthY) ? 1 : 0;
+                }
             }
         }
         return edits;
     }
 
+    private static int placeBranchingCrown(ServerLevel level, BlockPos origin, long hash,
+                                           BloomBand band, int remainingEdits,
+                                           int maxGrowthY) {
+        int edits = 0;
+        Direction first = Direction.from2DDataValue((int) Math.floorMod(hash >>> 3, 4L));
+        int arms = band == BloomBand.CORE ? 3 : 2;
+        for (int arm = 0; arm < arms && edits < remainingEdits; arm++) {
+            Direction direction = arm == 0 ? first
+                    : arm == 1 ? first.getOpposite() : first.getClockWise();
+            int length = 2 + (int) Math.floorMod(hash >>> (11 + arm * 3), 3L);
+            for (int step = 1; step <= length && edits < remainingEdits; step++) {
+                int rise = step >= 3 ? 1 : 0;
+                edits += placeMassIfClear(level,
+                        origin.relative(direction, step).above(rise), band,
+                        maxGrowthY) ? 1 : 0;
+            }
+            if (edits < remainingEdits) {
+                BlockPos tip = origin.relative(direction, length).above(length >= 3 ? 2 : 1);
+                edits += placeTipIfClear(level, tip, maxGrowthY) ? 1 : 0;
+            }
+        }
+        return edits;
+    }
+
+    private static int placeHollowKnot(ServerLevel level, BlockPos center, long hash,
+                                       int remainingEdits, int maxGrowthY) {
+        int edits = 0;
+        for (int dy = -1; dy <= 1 && edits < remainingEdits; dy++) {
+            for (int dz = -1; dz <= 1 && edits < remainingEdits; dz++) {
+                for (int dx = -1; dx <= 1 && edits < remainingEdits; dx++) {
+                    int distance = Math.abs(dx) + Math.abs(dy) + Math.abs(dz);
+                    if (distance < 2 || Math.floorMod(
+                            hash + dx * 17L + dy * 31L + dz * 47L, 5L) == 0L) {
+                        continue;
+                    }
+                    edits += placeMassIfClear(level, center.offset(dx, dy, dz),
+                            BloomBand.CORE, maxGrowthY) ? 1 : 0;
+                }
+            }
+        }
+        if (edits < remainingEdits && placeCore(level, center, maxGrowthY)) {
+            edits++;
+        }
+        return edits;
+    }
+
+    private static int placeCrossLink(ServerLevel level, BlockPos origin, long hash,
+                                      BloomBand band, int remainingEdits, int maxGrowthY) {
+        Direction direction = Direction.from2DDataValue((int) Math.floorMod(hash >>> 4, 4L));
+        BlockPos target = null;
+        int distance = 0;
+        int targetDy = 0;
+        for (int step = 4; step <= 8 && target == null; step++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                BlockPos candidate = origin.relative(direction, step).above(dy);
+                if (level.isLoaded(candidate) && isBloomBlock(level.getBlockState(candidate))) {
+                    target = candidate;
+                    distance = step;
+                    targetDy = dy;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            return 0;
+        }
+        int edits = 0;
+        for (int step = 1; step < distance && edits < remainingEdits; step++) {
+            int rise = Mth.floor(Mth.lerp(step / (double) distance, 0.0D, targetDy));
+            edits += placeMassIfClear(level,
+                    origin.relative(direction, step).above(rise), band,
+                    maxGrowthY) ? 1 : 0;
+        }
+        return edits;
+    }
+
+    private static boolean placeCrustIfClear(ServerLevel level, BlockPos pos, int layers,
+                                             int maxGrowthY) {
+        BlockState state = ModBlocks.BLOOM_CRUST.get().defaultBlockState()
+                .setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS,
+                        Mth.clamp(layers, 1, 8));
+        if (pos.getY() > maxGrowthY || isProtected(level, pos)
+                || !canPlaceAt(level, pos, state)) {
+            return false;
+        }
+        level.setBlock(pos, state, 2);
+        return true;
+    }
+
+    private static boolean placeTipIfClear(ServerLevel level, BlockPos pos, int maxGrowthY) {
+        BlockState state = ModBlocks.BLOOM_TIP.get().defaultBlockState();
+        if (pos.getY() > maxGrowthY || isProtected(level, pos)
+                || !canPlaceAt(level, pos, state)) {
+            return false;
+        }
+        level.setBlock(pos, state, 2);
+        return true;
+    }
+
+    private static boolean placeCore(ServerLevel level, BlockPos pos, int maxGrowthY) {
+        BlockState current = level.getBlockState(pos);
+        BlockState core = ModBlocks.BLOOM_CORE.get().defaultBlockState();
+        if (pos.getY() > maxGrowthY || isProtected(level, pos)
+                || (!current.is(ModBlocks.BLOOM_MASS.get()) && !canPlaceAt(level, pos, core))) {
+            return false;
+        }
+        level.setBlock(pos, core, 2);
+        return true;
+    }
+
     private static boolean placeMassIfClear(ServerLevel level, BlockPos pos,
-                                            BloomBand band) {
+                                            BloomBand band, int maxGrowthY) {
         BlockState state = ModBlocks.BLOOM_MASS.get().defaultBlockState()
                 .setValue(BloomMassBlock.BAND, band);
-        if (isProtected(level, pos) || !canPlaceAt(level, pos, state)) {
+        if (pos.getY() > maxGrowthY || isProtected(level, pos)
+                || !canPlaceAt(level, pos, state)) {
             return false;
         }
         level.setBlock(pos, state, 2);
@@ -515,7 +682,8 @@ public final class BloomGrowthManager {
 
     private static boolean convert(ServerLevel level, BlockPos pos, BloomBand band) {
         BlockState state = level.getBlockState(pos);
-        if (state.is(ModBlocks.SEALED_LATTICE.get()) || state.is(Blocks.BEDROCK)) {
+        if (state.is(ModBlocks.SEALED_LATTICE.get())
+                || state.is(ModBlocks.BLOOM_CORE.get()) || state.is(Blocks.BEDROCK)) {
             return false;
         }
         if (state.is(ModBlocks.BLOOM_MASS.get())) {
@@ -646,7 +814,45 @@ public final class BloomGrowthManager {
     private static boolean isBloomBlock(BlockState state) {
         return state.is(ModBlocks.BLOOM_MASS.get())
                 || state.is(ModBlocks.BLOOM_CRUST.get())
-                || state.is(ModBlocks.BLOOM_TIP.get());
+                || state.is(ModBlocks.BLOOM_TIP.get())
+                || state.is(ModBlocks.BLOOM_CORE.get());
+    }
+
+    private static BloomBand bandForState(BlockState state) {
+        if (state.is(ModBlocks.BLOOM_MASS.get())) {
+            return state.getValue(BloomMassBlock.BAND);
+        }
+        if (state.is(ModBlocks.BLOOM_CORE.get())) {
+            return BloomBand.CORE;
+        }
+        if (state.is(ModBlocks.BLOOM_CRUST.get()) || state.is(ModBlocks.BLOOM_TIP.get())) {
+            return BloomBand.FRONTIER;
+        }
+        return null;
+    }
+
+    public static boolean hasBandNear(ServerLevel level, BlockPos center,
+                                      BloomBand minimum, int radius) {
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        int vertical = Math.min(16, radius);
+        for (int y = -vertical; y <= vertical; y += 2) {
+            for (int z = -radius; z <= radius; z += 2) {
+                for (int x = -radius; x <= radius; x += 2) {
+                    if (x * x + z * z > radius * radius) {
+                        continue;
+                    }
+                    cursor.set(center.getX() + x, center.getY() + y, center.getZ() + z);
+                    if (!level.isLoaded(cursor)) {
+                        continue;
+                    }
+                    BloomBand band = bandForState(level.getBlockState(cursor));
+                    if (band != null && band.ordinal() >= minimum.ordinal()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public static void reactivateAround(ServerLevel level, BlockPos pos) {
@@ -780,6 +986,8 @@ public final class BloomGrowthManager {
             } else if (adjacent.is(ModBlocks.BLOOM_CRUST.get())
                     || adjacent.is(ModBlocks.BLOOM_TIP.get())) {
                 strongest = strongest == null ? BloomBand.FRONTIER : strongest;
+            } else if (adjacent.is(ModBlocks.BLOOM_CORE.get())) {
+                strongest = BloomBand.CORE;
             }
         }
         BloomSavedData data = BloomSavedData.get(level.getServer());
@@ -875,32 +1083,38 @@ public final class BloomGrowthManager {
 
     public static int debugPurgeLoaded(ServerLevel level) {
         BloomSavedData bloom = BloomSavedData.get(level.getServer());
-        Set<Long> chunks = new HashSet<>();
-        for (BloomSavedData.ChunkGrowth record : bloom.chunks()) {
-            chunks.add(record.chunkPos());
+        List<LevelChunk> loadedChunks = new ArrayList<>();
+        Iterable<ChunkHolder> holders = ((ChunkMapAccessor) (Object)
+                level.getChunkSource().chunkMap).frozendawn$getChunks();
+        for (ChunkHolder holder : holders) {
+            ChunkPos pos = holder.getPos();
+            LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x, pos.z);
+            if (chunk != null) {
+                loadedChunks.add(chunk);
+            }
         }
+
         int removed = 0;
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (long packed : chunks) {
-            ChunkPos chunk = new ChunkPos(packed);
-            if (!level.hasChunk(chunk.x, chunk.z)) {
-                continue;
-            }
-            for (int z = chunk.getMinBlockZ(); z <= chunk.getMaxBlockZ(); z++) {
-                for (int x = chunk.getMinBlockX(); x <= chunk.getMaxBlockX(); x++) {
-                    int top = level.getHeightmapPos(
-                            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                            new BlockPos(x, 0, z)).getY();
-                    int bottom = Math.max(level.getMinBuildHeight(), top - 64);
-                    for (int y = bottom; y <= Math.min(
-                            level.getMaxBuildHeight() - 1, top + 1); y++) {
-                        cursor.set(x, y, z);
-                        BlockState state = level.getBlockState(cursor);
-                        if (state.is(ModBlocks.BLOOM_MASS.get())
-                                || state.is(ModBlocks.BLOOM_CRUST.get())
-                                || state.is(ModBlocks.BLOOM_TIP.get())
-                                || state.is(ModBlocks.INERT_ACHERONITE.get())
-                                || state.is(ModBlocks.SEALED_LATTICE.get())) {
+        for (LevelChunk chunk : loadedChunks) {
+            LevelChunkSection[] sections = chunk.getSections();
+            ChunkPos chunkPos = chunk.getPos();
+            for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+                LevelChunkSection section = sections[sectionIndex];
+                if (!section.maybeHas(BloomGrowthManager::isDebugPurgeBlock)) {
+                    continue;
+                }
+                int sectionMinY = chunk.getSectionYFromSectionIndex(sectionIndex) << 4;
+                for (int localY = 0; localY < 16; localY++) {
+                    for (int localZ = 0; localZ < 16; localZ++) {
+                        for (int localX = 0; localX < 16; localX++) {
+                            if (!isDebugPurgeBlock(section.getBlockState(
+                                    localX, localY, localZ))) {
+                                continue;
+                            }
+                            cursor.set(chunkPos.getMinBlockX() + localX,
+                                    sectionMinY + localY,
+                                    chunkPos.getMinBlockZ() + localZ);
                             level.setBlock(cursor, Blocks.AIR.defaultBlockState(), 2);
                             removed++;
                         }
@@ -909,7 +1123,21 @@ public final class BloomGrowthManager {
             }
         }
         bloom.resetAuthority();
+        bloom.setDebugRadius(0);
+        for (ReturnedHearthSavedData.HearthRecord hearth
+                : ReturnedHearthSavedData.get(level.getServer()).hearths()) {
+            bloom.hearth(hearth.id()).markSeeded();
+        }
         resetProfile();
         return removed;
+    }
+
+    private static boolean isDebugPurgeBlock(BlockState state) {
+        return state.is(ModBlocks.BLOOM_MASS.get())
+                || state.is(ModBlocks.BLOOM_CRUST.get())
+                || state.is(ModBlocks.BLOOM_TIP.get())
+                || state.is(ModBlocks.BLOOM_CORE.get())
+                || state.is(ModBlocks.INERT_ACHERONITE.get())
+                || state.is(ModBlocks.SEALED_LATTICE.get());
     }
 }

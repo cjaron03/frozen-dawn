@@ -211,6 +211,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);
         event.registerEntityRenderer(ModEntities.UNDONE.get(), UndoneRenderer::new);
+        event.registerEntityRenderer(ModEntities.BLOOMBOUND_UNDONE.get(), UndoneRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.UNDONE_ARCHITECT.get(), UndoneArchitectRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
