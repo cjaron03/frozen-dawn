@@ -1,5 +1,8 @@
 package com.frozendawn.world;
 
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.homo.PostMaeveWorldState;
@@ -14,7 +17,7 @@ import net.minecraft.world.phys.AABB;
 /** Sparse, player-local post-Maeve encounters without chunk tickets. */
 public final class UndoneSpawner {
     private static final int CHECK_INTERVAL = 200;
-    private static final double LOCAL_CAP_RADIUS = 128.0D;
+    private static final int LOCAL_CAP = 4;
 
     private UndoneSpawner() {
     }
@@ -27,12 +30,16 @@ public final class UndoneSpawner {
         }
 
         for (ServerPlayer player : level.players()) {
-            if (player.isCreative() || player.isSpectator() || !player.isAlive()
-                    || level.random.nextDouble()
-                            >= FrozenDawnConfig.UNDONE_SPAWN_CHANCE_PER_CHECK.get()) {
+            float density = BloomGrowthManager.localDensity(
+                    level, player.blockPosition());
+            double spawnChance = BloomGrowthPolicy.undoneSpawnChance(
+                    FrozenDawnConfig.UNDONE_SPAWN_CHANCE_PER_CHECK.get(),
+                    density);
+            if (player.isSpectator() || !player.isAlive()
+                    || level.random.nextDouble() >= spawnChance) {
                 continue;
             }
-            if (hasNearbyUndone(level, player.blockPosition())) {
+            if (hasNearbyUndone(level, player.blockPosition(), density)) {
                 continue;
             }
             BlockPos spawnPos = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
@@ -41,7 +48,11 @@ public final class UndoneSpawner {
             if (spawnPos == null || !level.hasChunkAt(spawnPos)) {
                 continue;
             }
-            spawn(level, spawnPos);
+            if (spawn(level, spawnPos) != null) {
+                FrozenDawn.LOGGER.info(
+                        "[Undone] Naturally spawned near {} density={} chance={}",
+                        player.getName().getString(), density, spawnChance);
+            }
         }
     }
 
@@ -58,8 +69,12 @@ public final class UndoneSpawner {
         return undone;
     }
 
-    private static boolean hasNearbyUndone(ServerLevel level, BlockPos center) {
-        AABB bounds = new AABB(center).inflate(LOCAL_CAP_RADIUS);
-        return !level.getEntitiesOfClass(UndoneEntity.class, bounds).isEmpty();
+    private static boolean hasNearbyUndone(ServerLevel level, BlockPos center,
+                                           float localDensity) {
+        AABB bounds = new AABB(center).inflate(
+                BloomGrowthPolicy.undoneLocalCapRadius(localDensity));
+        return level.getEntitiesOfClass(UndoneEntity.class, bounds,
+                entity -> entity.getType() == ModEntities.UNDONE.get()).size()
+                >= LOCAL_CAP;
     }
 }

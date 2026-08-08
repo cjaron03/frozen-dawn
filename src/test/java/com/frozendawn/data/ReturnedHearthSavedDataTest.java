@@ -114,6 +114,44 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void postMaeveMoonTimelinePersistsAndIgnoresRollback() {
+        ReturnedHearthSavedData state = new ReturnedHearthSavedData();
+        long seed = 0x4D4F4F4E5F544553L;
+
+        assertTrue(state.setMaeveErasedForDebug(true, 500L));
+        assertTrue(state.schedulePostMaeveMoonrise(12_000L, 11_000L, seed));
+        assertFalse(state.postMaeveMoonriseStarted());
+        state.advancePostMaeveMoon(12_000L);
+        state.advancePostMaeveMoon(12_025L);
+        state.advancePostMaeveMoon(11_900L);
+
+        assertTrue(state.postMaeveMoonriseStarted());
+        assertEquals(25L, state.postMaeveMoonElapsedDayTicks());
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        assertEquals(12_000L, loaded.postMaeveMoonriseStartDayTime());
+        assertEquals(25L, loaded.postMaeveMoonElapsedDayTicks());
+        assertEquals(11_900L, loaded.postMaeveMoonLastDayTime());
+        assertEquals(seed, loaded.postMaeveMoonVisualSeed());
+        assertTrue(loaded.postMaeveMoonriseStarted());
+    }
+
+    @Test
+    void legacyPostMaeveSaveWaitsForANewMoonriseSchedule() {
+        CompoundTag legacy = new CompoundTag();
+        legacy.putInt("dataVersion", ReturnedHearthSavedData.CURRENT_DATA_VERSION - 1);
+        legacy.putBoolean("maeveErased", true);
+        legacy.putLong("maeveErasedGameTime", 4_000L);
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(legacy, null);
+
+        assertTrue(loaded.maeveErased());
+        assertEquals(-1L, loaded.postMaeveMoonriseStartDayTime());
+        assertEquals(-1L, loaded.postMaeveMoonElapsedDayTicks());
+        assertFalse(loaded.postMaeveMoonriseStarted());
+    }
+
+    @Test
     void phaseGatingDoesNotBankIneligibleWorldTime() {
         ReturnedHearthSavedData state = selectedState(1000L);
 
@@ -738,6 +776,33 @@ class ReturnedHearthSavedDataTest {
         assertTrue(loaded.maeveErased());
         assertEquals(7200L, loaded.maeveErasedGameTime());
         assertTrue(loaded.undoneSpawningReleased());
+    }
+
+    @Test
+    void biologicalWarningTimePersistsForBloomReleaseClock() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markHeartMaeveBiologicalWarningPlayed(
+                major.id(), 8_088L));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertTrue(restored.heartMaeveBiologicalWarningPlayed());
+        assertEquals(8_088L, restored.heartMaeveBiologicalWarningGameTime());
+    }
+
+    @Test
+    void debugBiologicalWarningReplayReplacesTheReleaseClock() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+
+        assertTrue(state.markHeartMaeveBiologicalWarningPlayed(
+                major.id(), 8_088L));
+        assertTrue(state.replayHeartMaeveBiologicalWarningForDebug(
+                major.id(), 19_000L));
+        assertEquals(19_000L, major.heartMaeveBiologicalWarningGameTime());
     }
 
     @Test

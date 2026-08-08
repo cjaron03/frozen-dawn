@@ -206,7 +206,8 @@ public final class HearthHeartManager {
                         HearthBoundaryEffectPayload.worldEventCollapseResponse());
             }
             if (aftermathElapsed >= MAEVE_BIOLOGICAL_WARNING_TICK
-                    && data.markHeartMaeveBiologicalWarningPlayed(hearth.id())) {
+                    && data.markHeartMaeveBiologicalWarningPlayed(
+                    hearth.id(), level.getGameTime())) {
                 broadcastMaeveWorldEffect(level,
                         HearthBoundaryEffectPayload.worldEventBiologicalWarning());
             }
@@ -1334,6 +1335,10 @@ public final class HearthHeartManager {
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             PacketDistributor.sendToPlayer(player, payload);
         }
+    }
+
+    static long maeveBiologicalWarningDelayAfterErasureTicks() {
+        return HeartMaeveErasurePolicy.TOTAL_TICKS + MAEVE_BIOLOGICAL_WARNING_TICK;
     }
 
     private static void drawParticlesIntoMaeveFormation(

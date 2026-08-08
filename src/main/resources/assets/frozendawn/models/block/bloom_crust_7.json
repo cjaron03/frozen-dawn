@@ -1,0 +1,1 @@
+{ "parent": "minecraft:block/snow_height14", "textures": { "particle": "frozendawn:block/bloom_crust", "texture": "frozendawn:block/bloom_crust" } }

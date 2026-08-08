@@ -1147,6 +1147,19 @@ public final class ChunkCatchUpManager {
                 + "/p" + millis(maxProcessNanos);
     }
 
+    /** Bloom yields whenever chunk catch-up is spending its elevated burst budget. */
+    public static boolean isBloomDeferred() {
+        return lastMode == CatchUpMode.BURST || lastMode == CatchUpMode.PREWARM;
+    }
+
+    /** Reuses the catch-up system's conservative ORSA footprint guard. */
+    public static boolean isBloomOrsaProtected(ServerLevel level, BlockPos pos) {
+        return isProtectedOrsaChunk(level, pos.getX() >> 4, pos.getZ() >> 4)
+                || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
+                || ThermalVentRegistry.isFreezeProtected(level, pos)
+                || ThermalVentRegistry.isVolcanicField(level, pos);
+    }
+
     private static String millis(long nanos) {
         return String.format("%.3f", nanos / 1_000_000.0D);
     }

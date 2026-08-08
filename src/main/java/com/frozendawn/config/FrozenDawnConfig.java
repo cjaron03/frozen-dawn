@@ -72,6 +72,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue IMPROVISED_PATCH_MAX_SEAL_SECONDS;
     public static final ModConfigSpec.DoubleValue UNDONE_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK;
+    public static final ModConfigSpec.DoubleValue BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -92,6 +93,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_IN_SECONDS;
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_OUT_SECONDS;
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_RENDER_DISTANCE;
+    public static final ModConfigSpec.BooleanValue ENABLE_POST_MAEVE_MOON;
+    public static final ModConfigSpec.DoubleValue POST_MAEVE_DEBRIS_DENSITY;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
@@ -332,6 +335,9 @@ public class FrozenDawnConfig {
         UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK = BUILDER
                 .comment("Chance per eligible player every 600 ticks to spawn one Undone Architect after Maeve is erased.")
                 .defineInRange("undoneArchitectSpawnChancePerCheck", 0.025D, 0.0D, 1.0D);
+        BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK = BUILDER
+                .comment("Chance per eligible player every 200 ticks to spawn one Bloombound Undone near Core-density Bloom.")
+                .defineInRange("bloomboundUndoneSpawnChancePerCheck", 0.018D, 0.0D, 1.0D);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);
@@ -395,6 +401,12 @@ public class FrozenDawnConfig {
                 .comment("Maximum horizontal distance for the sky-face beacon.",
                         "It recedes with true distance and fades near the configured boundary.")
                 .defineInRange("masterSkyFaceRenderDistance", 2500, 128, 8000);
+        ENABLE_POST_MAEVE_MOON = BUILDER
+                .comment("Render the damaged Moon and orbital debris after Maeve is erased.")
+                .define("enablePostMaeveMoon", true);
+        POST_MAEVE_DEBRIS_DENSITY = BUILDER
+                .comment("Scales visual-only post-Maeve orbital debris without changing progression.")
+                .defineInRange("postMaeveDebrisDensity", 1.0D, 0.0D, 1.0D);
         ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
                 .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
                 .define("enableSuitPunctureOverlay", true);

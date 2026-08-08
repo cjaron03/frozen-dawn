@@ -70,6 +70,7 @@ public class WindAmbience {
         targetVolume *= MasterArchitectSeverTelegraph.weatherAudioMultiplier();
         float heartQuiet = HeartQuietClient.environmentMultiplier();
         targetVolume *= heartQuiet;
+        targetVolume *= BloomClientState.windMultiplier();
         float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
@@ -132,6 +133,7 @@ public class WindAmbience {
         TemperatureHud.reset();
         AirStatusHud.reset();
         SanityClientData.reset();
+        BloomClientState.reset();
     }
 
     private static void stopAll(Minecraft mc) {

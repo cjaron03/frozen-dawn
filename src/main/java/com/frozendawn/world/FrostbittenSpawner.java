@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.homo.PostMaeveWorldState;
@@ -53,7 +54,11 @@ public class FrostbittenSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
-            if (random.nextFloat() > spawnChance) continue;
+            float localChance = postMaeve
+                    ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
+                    level, player.blockPosition()))
+                    : spawnChance;
+            if (random.nextFloat() > localChance) continue;
 
             int nearbyCount = level.getEntitiesOfClass(FrostbittenEntity.class,
                     player.getBoundingBox().inflate(48.0)).size();

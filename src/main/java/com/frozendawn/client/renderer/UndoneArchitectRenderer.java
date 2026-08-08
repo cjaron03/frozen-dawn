@@ -58,6 +58,15 @@ public final class UndoneArchitectRenderer
             return;
         }
         poseStack.pushPose();
+        if (entity.getBloomEmergenceTicks() > 0) {
+            float remaining = Math.max(0.0F,
+                    (entity.getBloomEmergenceTicks() - partialTick)
+                            / UndoneArchitectEntity.BLOOM_EMERGENCE_DURATION);
+            poseStack.translate(0.0F, -1.55F * remaining * remaining, 0.0F);
+            poseStack.mulPose(Axis.YP.rotationDegrees(
+                    Mth.sin((entity.tickCount + partialTick) * 1.25F)
+                            * remaining * 3.0F));
+        }
         poseStack.mulPose(Axis.ZP.rotationDegrees(2.8F));
         int accretionStage = entity.getAccretionVisualStage();
         float widthScale = 1.0F + accretionStage * 0.045F;

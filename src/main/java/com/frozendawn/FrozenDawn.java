@@ -12,6 +12,7 @@ import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModRecipeSerializers;
 import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
@@ -43,6 +44,7 @@ public class FrozenDawn {
         ModRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
+        ModParticles.PARTICLES.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);

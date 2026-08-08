@@ -1,8 +1,10 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -13,11 +15,17 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
 
 public class ReturnedSpawner {
+    private static final float POST_MAEVE_CHANCE = 0.012F;
+    private static final float POST_MAEVE_BRUTAL_CHANCE = 0.018F;
 
     private ReturnedSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
-        if (currentPhase < 6) return;
+        boolean maeveErased = PostMaeveWorldState.isErased(level);
+        boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
+                level.getServer());
+        if (maeveErased && !postMaeve) return;
+        if (!postMaeve && currentPhase < 6) return;
         if (!FrozenDawnConfig.ENABLE_RETURNED.get()) return;
 
         long gameTick = level.getGameTime();
@@ -26,26 +34,36 @@ public class ReturnedSpawner {
         RandomSource random = level.random;
 
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float baseChance = BrutalPhase6SpawnCurves.isActive()
-                ? BrutalPhase6SpawnCurves.returnedHunterChance(progress)
-                : 0.008f;
+        float baseChance = postMaeve
+                ? (BrutalPhase6SpawnCurves.isActive()
+                ? POST_MAEVE_BRUTAL_CHANCE : POST_MAEVE_CHANCE)
+                : BrutalPhase6SpawnCurves.isActive()
+                ? BrutalPhase6SpawnCurves.returnedHunterChance(progress) : 0.008F;
         if (baseChance <= 0.0f) return;
         float spawnChance = Math.min(0.8f, baseChance * mobMult);
-        int maxReturned = Math.max(1, (int) (2 * mobMult));
+        int maxReturned = Math.max(1, (int) ((postMaeve ? 3 : 2) * mobMult));
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
 
-            // Base chance 0.008 per check (~20-30 min average), scaled by multiplier
-            if (random.nextFloat() > spawnChance) continue;
+            float localChance = postMaeve
+                    ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
+                    level, player.blockPosition()))
+                    : spawnChance;
+            if (random.nextFloat() > localChance) continue;
 
-            // Density cap: max 2 within 96 blocks (scaled by multiplier)
+            // Roaming pressure rises after Maeve, but the Hearth roster remains untouched.
             int nearbyCount = level.getEntitiesOfClass(ReturnedEntity.class,
                     player.getBoundingBox().inflate(96.0)).size();
             if (nearbyCount >= maxReturned) continue;
 
-            BlockPos spawnPos = findSpawnPos(level, player, random);
-            if (spawnPos == null) continue;
+            BlockPos spawnPos = postMaeve
+                    ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
+                            level, player, random, 32, 56, 24,
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                    : findSpawnPos(level, player, random);
+            if (spawnPos == null || (postMaeve
+                    && LateThreatSpawnHelper.isInsideHearthBoundary(level, spawnPos))) continue;
 
             ReturnedEntity returned = ModEntities.RETURNED.get().create(level, null, spawnPos,
                     MobSpawnType.NATURAL, true, false);
@@ -54,8 +72,9 @@ public class ReturnedSpawner {
                 // Play door creak sound on spawn (audible at 32 blocks)
                 level.playSound(null, spawnPos, SoundEvents.WOODEN_DOOR_OPEN,
                         SoundSource.HOSTILE, 2.0f, 0.5f);
-                FrozenDawn.LOGGER.info("[Returned] Spawned near {} at phase {}",
-                        player.getName().getString(), currentPhase);
+                FrozenDawn.LOGGER.info("[Returned] Spawned near {} at phase {}{}",
+                        player.getName().getString(), currentPhase,
+                        postMaeve ? " (post-Maeve)" : "");
             }
         }
     }

@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 23;
+    public static final int CURRENT_DATA_VERSION = 26;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -50,6 +50,11 @@ public final class ReturnedHearthSavedData extends SavedData {
     private boolean maeveErased;
     private long maeveErasedGameTime = -1L;
     private boolean undoneSpawningReleased;
+    private long postMaeveMoonriseStartDayTime = -1L;
+    private long postMaeveMoonElapsedDayTicks = -1L;
+    private long postMaeveMoonLastDayTime = -1L;
+    private long postMaeveMoonVisualSeed;
+    private boolean postMaeveMoonriseStarted;
     private HiveRelationship legacyRelationship = HiveRelationship.NEUTRAL;
     private final Map<UUID, PlayerHiveMemory> playerMemories = new LinkedHashMap<>();
     private final List<HearthRecord> hearths = new ArrayList<>();
@@ -82,6 +87,17 @@ public final class ReturnedHearthSavedData extends SavedData {
                 ? tag.getLong("maeveErasedGameTime")
                 : -1L;
         state.undoneSpawningReleased = tag.getBoolean("undoneSpawningReleased");
+        state.postMaeveMoonriseStartDayTime = readOptionalTime(
+                tag, "postMaeveMoonriseStartDayTime");
+        state.postMaeveMoonElapsedDayTicks = readOptionalTime(
+                tag, "postMaeveMoonElapsedDayTicks");
+        state.postMaeveMoonLastDayTime = readOptionalTime(
+                tag, "postMaeveMoonLastDayTime");
+        state.postMaeveMoonVisualSeed = tag.contains(
+                "postMaeveMoonVisualSeed", Tag.TAG_LONG)
+                ? tag.getLong("postMaeveMoonVisualSeed") : 0L;
+        state.postMaeveMoonriseStarted = tag.getBoolean(
+                "postMaeveMoonriseStarted");
         state.legacyRelationship = loadLegacyRelationship(tag, storedVersion);
 
         ListTag playerList = tag.getList("playerMemories", Tag.TAG_COMPOUND);
@@ -143,6 +159,11 @@ public final class ReturnedHearthSavedData extends SavedData {
         tag.putBoolean("maeveErased", maeveErased);
         tag.putLong("maeveErasedGameTime", maeveErasedGameTime);
         tag.putBoolean("undoneSpawningReleased", undoneSpawningReleased);
+        tag.putLong("postMaeveMoonriseStartDayTime", postMaeveMoonriseStartDayTime);
+        tag.putLong("postMaeveMoonElapsedDayTicks", postMaeveMoonElapsedDayTicks);
+        tag.putLong("postMaeveMoonLastDayTime", postMaeveMoonLastDayTime);
+        tag.putLong("postMaeveMoonVisualSeed", postMaeveMoonVisualSeed);
+        tag.putBoolean("postMaeveMoonriseStarted", postMaeveMoonriseStarted);
         tag.putString("legacyRelationship", legacyRelationship.name());
 
         ListTag playerList = new ListTag();
@@ -180,6 +201,117 @@ public final class ReturnedHearthSavedData extends SavedData {
         return undoneSpawningReleased;
     }
 
+    public long postMaeveMoonriseStartDayTime() {
+        return postMaeveMoonriseStartDayTime;
+    }
+
+    public long postMaeveMoonElapsedDayTicks() {
+        return postMaeveMoonElapsedDayTicks;
+    }
+
+    public long postMaeveMoonLastDayTime() {
+        return postMaeveMoonLastDayTime;
+    }
+
+    public long postMaeveMoonVisualSeed() {
+        return postMaeveMoonVisualSeed;
+    }
+
+    public boolean postMaeveMoonriseStarted() {
+        return postMaeveMoonriseStarted;
+    }
+
+    public boolean schedulePostMaeveMoonrise(
+            long startDayTime, long currentDayTime, long visualSeed) {
+        if (!maeveErased || postMaeveMoonriseStartDayTime >= 0L) {
+            return false;
+        }
+        postMaeveMoonriseStartDayTime = Math.max(0L, startDayTime);
+        postMaeveMoonElapsedDayTicks = 0L;
+        postMaeveMoonLastDayTime = Math.max(0L, currentDayTime);
+        postMaeveMoonVisualSeed = visualSeed;
+        postMaeveMoonriseStarted = currentDayTime >= startDayTime;
+        setDirty();
+        return true;
+    }
+
+    /** Advances only on positive day-time movement; clock rollback never heals the Moon. */
+    public long advancePostMaeveMoon(long currentDayTime) {
+        if (postMaeveMoonriseStartDayTime < 0L) {
+            return 0L;
+        }
+        long current = Math.max(0L, currentDayTime);
+        long previous = postMaeveMoonLastDayTime < 0L
+                ? current : postMaeveMoonLastDayTime;
+        long delta = 0L;
+        if (!postMaeveMoonriseStarted) {
+            if (current >= postMaeveMoonriseStartDayTime) {
+                postMaeveMoonriseStarted = true;
+                delta = Math.max(0L, current
+                        - Math.max(previous, postMaeveMoonriseStartDayTime));
+            }
+        } else {
+            delta = com.frozendawn.homo.PostMaeveMoonPolicy
+                    .positiveDayTimeAdvance(previous, current);
+        }
+        postMaeveMoonLastDayTime = current;
+        if (delta > 0L) {
+            postMaeveMoonElapsedDayTicks = Math.max(0L,
+                    postMaeveMoonElapsedDayTicks) + delta;
+        }
+        if (delta > 0L || current != previous || postMaeveMoonriseStarted) {
+            setDirty();
+        }
+        return delta;
+    }
+
+    public boolean startPostMaeveMoonriseForDebug(long dayTime, long visualSeed) {
+        if (!maeveErased) {
+            return false;
+        }
+        postMaeveMoonriseStartDayTime = Math.max(0L, dayTime);
+        postMaeveMoonElapsedDayTicks = 0L;
+        postMaeveMoonLastDayTime = Math.max(0L, dayTime);
+        postMaeveMoonVisualSeed = visualSeed;
+        postMaeveMoonriseStarted = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean setPostMaeveMoonDamageAgeForDebug(
+            long damageAgeTicks, long dayTime, long visualSeed) {
+        if (!maeveErased) {
+            return false;
+        }
+        postMaeveMoonriseStartDayTime = Math.max(0L,
+                dayTime - com.frozendawn.homo.PostMaeveMoonPolicy.FIRST_RISE_TICKS
+                        - Math.max(0L, damageAgeTicks));
+        postMaeveMoonElapsedDayTicks = com.frozendawn.homo.PostMaeveMoonPolicy
+                .FIRST_RISE_TICKS + Math.max(0L, damageAgeTicks);
+        postMaeveMoonLastDayTime = Math.max(0L, dayTime);
+        postMaeveMoonVisualSeed = visualSeed;
+        postMaeveMoonriseStarted = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean resetPostMaeveMoonForDebug() {
+        boolean changed = postMaeveMoonriseStartDayTime >= 0L
+                || postMaeveMoonElapsedDayTicks >= 0L
+                || postMaeveMoonLastDayTime >= 0L
+                || postMaeveMoonVisualSeed != 0L
+                || postMaeveMoonriseStarted;
+        postMaeveMoonriseStartDayTime = -1L;
+        postMaeveMoonElapsedDayTicks = -1L;
+        postMaeveMoonLastDayTime = -1L;
+        postMaeveMoonVisualSeed = 0L;
+        postMaeveMoonriseStarted = false;
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
     /** Production transition. Maeve erasure is deliberately one-way. */
     public boolean markMaeveErased(long gameTime) {
         if (maeveErased) {
@@ -188,6 +320,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         maeveErased = true;
         maeveErasedGameTime = Math.max(0L, gameTime);
         undoneSpawningReleased = false;
+        resetPostMaeveMoonForDebug();
         setDirty();
         return true;
     }
@@ -210,6 +343,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         maeveErased = erased;
         maeveErasedGameTime = erased ? Math.max(0L, gameTime) : -1L;
         undoneSpawningReleased = erased;
+        resetPostMaeveMoonForDebug();
         setDirty();
         return true;
     }
@@ -925,12 +1059,26 @@ public final class ReturnedHearthSavedData extends SavedData {
         return true;
     }
 
-    public boolean markHeartMaeveBiologicalWarningPlayed(UUID hearthId) {
+    public boolean markHeartMaeveBiologicalWarningPlayed(
+            UUID hearthId, long gameTime) {
         HearthRecord hearth = hearth(hearthId).orElse(null);
         if (hearth == null || hearth.heartMaeveBiologicalWarningPlayed) {
             return false;
         }
         hearth.heartMaeveBiologicalWarningPlayed = true;
+        hearth.heartMaeveBiologicalWarningGameTime = Math.max(0L, gameTime);
+        setDirty();
+        return true;
+    }
+
+    public boolean replayHeartMaeveBiologicalWarningForDebug(
+            UUID hearthId, long gameTime) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null) {
+            return false;
+        }
+        hearth.heartMaeveBiologicalWarningPlayed = true;
+        hearth.heartMaeveBiologicalWarningGameTime = Math.max(0L, gameTime);
         setDirty();
         return true;
     }
@@ -1079,6 +1227,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         hearth.heartMaeveWorldMessageShown = false;
         hearth.heartMaeveCollapseResponsePlayed = false;
         hearth.heartMaeveBiologicalWarningPlayed = false;
+        hearth.heartMaeveBiologicalWarningGameTime = -1L;
         hearth.heartLastWitnessDropped = false;
         hearth.heartFinalAdvancementGranted = false;
     }
@@ -2183,6 +2332,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         private boolean heartMaeveWorldMessageShown;
         private boolean heartMaeveCollapseResponsePlayed;
         private boolean heartMaeveBiologicalWarningPlayed;
+        private long heartMaeveBiologicalWarningGameTime = -1L;
         private boolean heartLastWitnessDropped;
         private boolean heartFinalAdvancementGranted;
         private boolean heartSwarmAnnounced;
@@ -2344,6 +2494,8 @@ public final class ReturnedHearthSavedData extends SavedData {
                     "heartMaeveBiologicalWarningPlayed", Tag.TAG_BYTE)
                     ? tag.getBoolean("heartMaeveBiologicalWarningPlayed")
                     : record.heartMaeveWorldMessageShown;
+            record.heartMaeveBiologicalWarningGameTime = readOptionalTime(
+                    tag, "heartMaeveBiologicalWarningGameTime");
             if (record.heartMaeveErasureComplete
                     && !tag.contains("heartMaeveWorldMessageShown")) {
                 record.heartMaeveAftermathSoundMask = 0b11111;
@@ -2532,6 +2684,8 @@ public final class ReturnedHearthSavedData extends SavedData {
                     heartMaeveCollapseResponsePlayed);
             tag.putBoolean("heartMaeveBiologicalWarningPlayed",
                     heartMaeveBiologicalWarningPlayed);
+            tag.putLong("heartMaeveBiologicalWarningGameTime",
+                    heartMaeveBiologicalWarningGameTime);
             tag.putBoolean("heartLastWitnessDropped", heartLastWitnessDropped);
             tag.putBoolean("heartFinalAdvancementGranted",
                     heartFinalAdvancementGranted);
@@ -2814,6 +2968,10 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public boolean heartMaeveBiologicalWarningPlayed() {
             return heartMaeveBiologicalWarningPlayed;
+        }
+
+        public long heartMaeveBiologicalWarningGameTime() {
+            return heartMaeveBiologicalWarningGameTime;
         }
 
         public boolean heartLastWitnessDropped() {

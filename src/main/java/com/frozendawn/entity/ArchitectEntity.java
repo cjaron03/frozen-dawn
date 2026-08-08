@@ -1319,7 +1319,9 @@ public class ArchitectEntity extends Monster {
     private LivingEntity findTarget() {
         LivingEntity current = getTarget();
         LivingEntity directAttacker = getLastHurtByMob();
-        if (directAttacker instanceof UndoneEntity && directAttacker.isAlive()) {
+        if ((directAttacker instanceof UndoneEntity
+                || directAttacker instanceof UndoneArchitectEntity)
+                && directAttacker.isAlive()) {
             return directAttacker;
         }
         if (level() instanceof ServerLevel serverLevel

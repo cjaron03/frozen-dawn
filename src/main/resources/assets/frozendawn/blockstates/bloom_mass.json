@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "band=frontier": { "model": "frozendawn:block/bloom_mass_frontier" },
+    "band=mid": { "model": "frozendawn:block/bloom_mass_mid" },
+    "band=core": { "model": "frozendawn:block/bloom_mass_core" }
+  }
+}

@@ -54,11 +54,17 @@ public final class SadMusicController {
             track(ModSounds.SAD_MINECRAFT, 1),
             track(ModSounds.SAD_CLARK, 1)
     );
+    private static final List<TrackEntry> BLOOM_TRACKS = List.of(
+            track(ModSounds.BLOOM_MUSIC_ROOTS, 1),
+            track(ModSounds.BLOOM_MUSIC_HOLLOW, 1),
+            track(ModSounds.BLOOM_MUSIC_PALE, 1)
+    );
 
     private static SoundInstance currentTrack;
     private static ResourceLocation lastTrackId;
     private static int ticksUntilNext = 0;
     private static boolean needsWorldEntryDelay = true;
+    private static boolean bloomMode;
 
     private SadMusicController() {}
 
@@ -89,6 +95,16 @@ public final class SadMusicController {
             enterMutedState(mc);
             mc.getSoundManager().stop(null, SoundSource.MUSIC);
             return;
+        }
+
+        boolean shouldUseBloomMusic = PostMaeveClientState.isMaeveErased()
+                && BloomClientState.density() > 0.08F;
+        if (shouldUseBloomMusic != bloomMode) {
+            bloomMode = shouldUseBloomMusic;
+            if (currentTrack == null) {
+                ticksUntilNext = bloomMode ? randomDelay(40, 140)
+                        : randomDelay(BETWEEN_TRACK_DELAY_MIN, BETWEEN_TRACK_DELAY_MAX);
+            }
         }
 
         if (currentTrack != null && !mc.getSoundManager().isActive(currentTrack)) {
@@ -133,17 +149,20 @@ public final class SadMusicController {
             return;
         }
 
-        playTrack(mc, selected, 0.85f);
+        playTrack(mc, selected, bloomMode ? 0.62F : 0.85F);
     }
 
     private static TrackEntry chooseTrack(int phase) {
-        List<TrackEntry> candidates = new ArrayList<>(MELANCHOLY_TRACKS);
-        if (phase == 3) {
-            candidates.add(PHASE3_FROSTBITTEN_TRACK);
-        } else if (phase == 5) {
-            candidates.add(PHASE5_IGLOO_TRACK);
-        } else if (phase >= 6) {
-            candidates.add(PHASE6_SUB_ZERO_TRACK);
+        List<TrackEntry> candidates = new ArrayList<>(
+                bloomMode ? BLOOM_TRACKS : MELANCHOLY_TRACKS);
+        if (!bloomMode) {
+            if (phase == 3) {
+                candidates.add(PHASE3_FROSTBITTEN_TRACK);
+            } else if (phase == 5) {
+                candidates.add(PHASE5_IGLOO_TRACK);
+            } else if (phase >= 6) {
+                candidates.add(PHASE6_SUB_ZERO_TRACK);
+            }
         }
 
         if (candidates.isEmpty()) {
@@ -193,6 +212,7 @@ public final class SadMusicController {
         stopCurrentTrack(mc);
         ticksUntilNext = 0;
         needsWorldEntryDelay = true;
+        bloomMode = false;
     }
 
     private static void hardReset(Minecraft mc) {
@@ -200,6 +220,7 @@ public final class SadMusicController {
         lastTrackId = null;
         ticksUntilNext = 0;
         needsWorldEntryDelay = true;
+        bloomMode = false;
     }
 
     private static void stopCurrentTrack(Minecraft mc) {

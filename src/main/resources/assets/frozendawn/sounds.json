@@ -465,6 +465,41 @@
       { "name": "minecraft:entity.zombie.step", "type": "event" }
     ]
   },
+  "block.bloom_core.pulse": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.pulse",
+    "sounds": [ "frozendawn:block/bloom_core/pulse" ]
+  },
+  "block.bloom_core.break": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.break",
+    "sounds": [ "frozendawn:block/bloom_core/break" ]
+  },
+  "entity.bloombound_undone.ambient_one": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_1" ]
+  },
+  "entity.bloombound_undone.ambient_two": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_2" ]
+  },
+  "entity.bloombound_undone.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.attack",
+    "sounds": [ "frozendawn:entity/bloombound_undone/attack" ]
+  },
+  "entity.bloombound_undone.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.hurt",
+    "sounds": [ "frozendawn:entity/bloombound_undone/hurt" ]
+  },
+  "entity.bloombound_undone.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.death",
+    "sounds": [ "frozendawn:entity/bloombound_undone/death" ]
+  },
   "entity.undone_architect.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",
@@ -1441,5 +1476,86 @@
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.thaeven_interrupt",
     "sounds": [ "frozendawn:ui/thaeven_interrupt" ]
+  },
+  "ui.suit.bloom_contact": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.suit.bloom_contact",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/bloom_contact", "stream": true }
+    ]
+  },
+  "ambient.bloom.drone": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:ambient/bloom/drone", "stream": true }
+    ]
+  },
+  "ambient.bloom.crack": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.crack",
+    "sounds": [ "frozendawn:ambient/bloom/crack" ]
+  },
+  "ambient.bloom.shimmer": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.shimmer",
+    "sounds": [ "frozendawn:ambient/bloom/shimmer" ]
+  },
+  "music.bloom.roots": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/roots", "stream": true }
+    ]
+  },
+  "music.bloom.hollow": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/hollow", "stream": true }
+    ]
+  },
+  "music.bloom.pale": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/pale", "stream": true }
+    ]
+  },
+  "entity.bloom_spore.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.ambient",
+    "sounds": [ "frozendawn:entity/bloom_spore/ambient" ]
+  },
+  "entity.bloom_spore.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.step",
+    "sounds": [ "frozendawn:entity/bloom_spore/step" ]
+  },
+  "entity.bloom_spore.contact": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.contact",
+    "sounds": [ "frozendawn:entity/bloom_spore/contact" ]
+  },
+  "entity.bloom_spore.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.death",
+    "sounds": [ "frozendawn:entity/bloom_spore/death" ]
+  },
+  "entity.bloom_spore.collapse": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.collapse",
+    "sounds": [ "frozendawn:entity/bloom_spore/collapse" ]
+  },
+  "entity.bloom_spore.growth_start": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.growth_start",
+    "sounds": [ "frozendawn:entity/bloom_spore/growth_start" ]
+  },
+  "entity.bloom_spore.corpse_strike": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.corpse_strike",
+    "sounds": [ "frozendawn:entity/bloom_spore/corpse_strike" ]
+  },
+  "entity.bloom_spore.corpse_break": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.corpse_break",
+    "sounds": [ "frozendawn:entity/bloom_spore/corpse_break" ]
   }
 }

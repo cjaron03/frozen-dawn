@@ -42,8 +42,10 @@ import com.frozendawn.homo.HearthSurveySignalManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.HearthDarkeningManager;
 import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
+import com.frozendawn.world.BloomboundUndoneSpawner;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
@@ -228,6 +230,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        BloomboundUndoneSpawner.tick(overworld);
         UndoneSpawner.tick(overworld);
         UndoneArchitectSpawner.tick(overworld);
         HearthDarkeningManager.tick(overworld);
@@ -242,6 +245,7 @@ public class WorldTickHandler {
         MonitoringStationPlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
         ChunkCatchUpManager.tick(overworld, state);
+        BloomGrowthManager.tick(overworld, state);
         HearthSelectionManager.tick(overworld, state);
         HearthMaturationManager.tick(overworld, state);
         HearthReconciliationManager.tick(overworld, state);

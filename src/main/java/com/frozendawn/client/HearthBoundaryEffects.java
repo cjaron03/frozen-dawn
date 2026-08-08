@@ -26,6 +26,8 @@ public final class HearthBoundaryEffects {
     private static final int WORLD_EVENT_SILENCE_TICKS = 140;
     private static final int WORLD_EVENT_OMEN_TICKS = 260;
     private static final int COLLAPSE_RESPONSE_TICKS = 480;
+    private static final int BLOOM_RUMBLE_SHAKE_TICKS = 60;
+    private static final int BLOOM_IMPACT_SHAKE_TICKS = 36;
 
     private static int pulseTicks;
     private static int shakeTicks;
@@ -104,6 +106,33 @@ public final class HearthBoundaryEffects {
                     "ui.frozendawn.suit.undone_contact");
             return;
         }
+        if (payload.effectType() == HearthBoundaryEffectPayload.BLOOM_CONTACT) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.SUIT_BLOOM_CONTACT.get(), 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(
+                    "ui.frozendawn.suit.bloom_contact");
+            return;
+        }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.BLOOM_ERUPTION_RUMBLE) {
+            shakeTicks = BLOOM_RUMBLE_SHAKE_TICKS;
+            shakeDuration = BLOOM_RUMBLE_SHAKE_TICKS;
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.BLOOM_DRONE.get(), 0.56F, 1.45F));
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.BLOOM_CRACK.get(), 0.64F, 0.72F));
+            return;
+        }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.BLOOM_ERUPTION_IMPACT) {
+            shakeTicks = BLOOM_IMPACT_SHAKE_TICKS;
+            shakeDuration = BLOOM_IMPACT_SHAKE_TICKS;
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.BLOOM_CORE_BREAK.get(), 0.72F, 1.8F));
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.BLOOM_SPORE_GROWTH_START.get(), 0.76F, 1.65F));
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }
@@ -176,10 +205,17 @@ public final class HearthBoundaryEffects {
         if (shakeTicks <= 0 || minecraft.level == null) {
             return;
         }
-        float strength = shakeTicks / (float) Math.max(1, shakeDuration);
+        float remaining = shakeTicks / (float) Math.max(1, shakeDuration);
+        float strength = remaining;
         float magnitude = shakeDuration == MAEVE_SHAKE_DURATION_TICKS
                 ? 2.35F : shakeDuration == MAEVE_DEATH_SHAKE_DURATION_TICKS
-                        ? 4.8F : rescueTicks > 0 ? 0.55F : 1.0F;
+                        ? 4.8F : shakeDuration == BLOOM_IMPACT_SHAKE_TICKS
+                        ? 5.2F : rescueTicks > 0 ? 0.55F : 1.0F;
+        if (shakeDuration == BLOOM_RUMBLE_SHAKE_TICKS) {
+            float progress = 1.0F - remaining;
+            strength = 0.25F + progress * 0.75F;
+            magnitude = 0.25F + progress * 1.35F;
+        }
         double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);
         float yaw = (float) (Math.cos(time * 4.9D) * 0.92D * strength);

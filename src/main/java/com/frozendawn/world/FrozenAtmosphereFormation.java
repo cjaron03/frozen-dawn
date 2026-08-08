@@ -65,6 +65,10 @@ public final class FrozenAtmosphereFormation {
                         // Already a frozen atmosphere deposit here
                         if (at.is(ModBlocks.FROZEN_ATMOSPHERE.get())) break;
 
+                        // Bloom columns are not terrain. Depositing here can make the
+                        // heightmap treat an old column as a fresh surface and stack it.
+                        if (isBloomSupport(at)) break;
+
                         // Need a sturdy surface block below
                         if (!at.isFaceSturdy(level, mutable, Direction.UP)) break;
 
@@ -136,6 +140,15 @@ public final class FrozenAtmosphereFormation {
                 }
             }
         }
+    }
+
+    private static boolean isBloomSupport(BlockState state) {
+        return state.is(ModBlocks.BLOOM_MASS.get())
+                || state.is(ModBlocks.BLOOM_CRUST.get())
+                || state.is(ModBlocks.BLOOM_TIP.get())
+                || state.is(ModBlocks.BLOOM_CORE.get())
+                || state.is(ModBlocks.INERT_ACHERONITE.get())
+                || state.is(ModBlocks.SEALED_LATTICE.get());
     }
 
     private static void clearSnowAround(ServerLevel level, BlockPos center, int radius,

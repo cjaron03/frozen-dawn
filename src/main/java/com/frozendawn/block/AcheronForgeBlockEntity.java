@@ -22,7 +22,7 @@ import net.minecraft.world.MenuProvider;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Acheron Forge block entity. Processes 2 Acheronite Shards into 1 Refined Acheronite.
+ * Acheron Forge block entity. Processes Acheronite and post-Maeve lattice recipes.
  * Requires: below Y=0 AND nearby heat source (heater or geothermal core).
  */
 public class AcheronForgeBlockEntity extends BlockEntity implements MenuProvider {
@@ -97,15 +97,17 @@ public class AcheronForgeBlockEntity extends BlockEntity implements MenuProvider
         ItemStack input = items.get(0);
         ItemStack output = items.get(1);
 
-        boolean canProcess = input.is(ModItems.ACHERONITE_SHARD.get()) && input.getCount() >= 2
-                && (output.isEmpty() || (output.is(ModItems.REFINED_ACHERONITE.get()) && output.getCount() < output.getMaxStackSize()));
+        ForgeRecipe recipe = recipeFor(input);
+        boolean canProcess = recipe != null && input.getCount() >= recipe.inputCount
+                && (output.isEmpty() || (output.is(recipe.output)
+                && output.getCount() < output.getMaxStackSize()));
 
         if (canProcess) {
             processingProgress++;
             if (processingProgress >= PROCESS_TIME) {
-                input.shrink(2);
+                input.shrink(recipe.inputCount);
                 if (output.isEmpty()) {
-                    items.set(1, new ItemStack(ModItems.REFINED_ACHERONITE.get()));
+                    items.set(1, new ItemStack(recipe.output));
                 } else {
                     output.grow(1);
                 }
@@ -115,6 +117,19 @@ public class AcheronForgeBlockEntity extends BlockEntity implements MenuProvider
         } else {
             processingProgress = 0;
         }
+    }
+
+    private static ForgeRecipe recipeFor(ItemStack input) {
+        if (input.is(ModItems.ACHERONITE_SHARD.get())) {
+            return new ForgeRecipe(2, ModItems.REFINED_ACHERONITE.get());
+        }
+        if (input.is(ModItems.SPENT_LATTICE.get())) {
+            return new ForgeRecipe(4, ModItems.SEALED_LATTICE.get());
+        }
+        return null;
+    }
+
+    private record ForgeRecipe(int inputCount, net.minecraft.world.item.Item output) {
     }
 
     private boolean checkNearbyHeat() {
