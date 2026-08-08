@@ -93,6 +93,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_IN_SECONDS;
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_FADE_OUT_SECONDS;
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_RENDER_DISTANCE;
+    public static final ModConfigSpec.BooleanValue ENABLE_POST_MAEVE_MOON;
+    public static final ModConfigSpec.DoubleValue POST_MAEVE_DEBRIS_DENSITY;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
@@ -399,6 +401,12 @@ public class FrozenDawnConfig {
                 .comment("Maximum horizontal distance for the sky-face beacon.",
                         "It recedes with true distance and fades near the configured boundary.")
                 .defineInRange("masterSkyFaceRenderDistance", 2500, 128, 8000);
+        ENABLE_POST_MAEVE_MOON = BUILDER
+                .comment("Render the damaged Moon and orbital debris after Maeve is erased.")
+                .define("enablePostMaeveMoon", true);
+        POST_MAEVE_DEBRIS_DENSITY = BUILDER
+                .comment("Scales visual-only post-Maeve orbital debris without changing progression.")
+                .defineInRange("postMaeveDebrisDensity", 1.0D, 0.0D, 1.0D);
         ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
                 .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
                 .define("enableSuitPunctureOverlay", true);

@@ -3,6 +3,7 @@ package com.frozendawn.mixin;
 import com.frozendawn.client.ApocalypseClientData;
 import com.frozendawn.client.AlarmDynamicLightManager;
 import com.frozendawn.client.MasterArchitectAuraClient;
+import com.frozendawn.client.PostMaeveMoonRenderer;
 import com.frozendawn.client.SurveyorLensVision;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
@@ -189,6 +190,12 @@ public class LevelRendererMixin {
         starBuffer.bind();
         starBuffer.drawWithShader(poseStack.last().pose(), projectionMatrix, GameRenderer.getPositionShader());
         VertexBuffer.unbind();
+
+        // Vanilla's moon is suppressed with the rest of the Phase 6 sky. The
+        // post-Maeve renderer exclusively occupies that celestial slot.
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.defaultBlendFunc();
+        PostMaeveMoonRenderer.render(frustumMatrix, projectionMatrix, partialTick);
 
         // Restore fog
         skyFogSetup.run();

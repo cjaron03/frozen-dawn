@@ -103,6 +103,7 @@ public final class PostMaeveWorldState {
     public static void tick(ServerLevel overworld) {
         MinecraftServer server = overworld.getServer();
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
+        PostMaeveMoonManager.tick(overworld);
         if (!isErased(server) || data.undoneSpawningReleased()) {
             return;
         }
@@ -132,7 +133,12 @@ public final class PostMaeveWorldState {
         PacketDistributor.sendToPlayer(player, new PostMaeveWorldStatePayload(
                 erased,
                 erased && (FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get()
-                        || data.undoneSpawningReleased())));
+                        || data.undoneSpawningReleased()),
+                data.postMaeveMoonriseStartDayTime(),
+                data.postMaeveMoonElapsedDayTicks(),
+                data.postMaeveMoonLastDayTime(),
+                data.postMaeveMoonVisualSeed(),
+                data.postMaeveMoonriseStarted()));
         if (!erased || !isBloomReleased(player.getServer())
                 || player.serverLevel().dimension() != Level.OVERWORLD) {
             PacketDistributor.sendToPlayer(player, new BloomStatePayload(0.0F, 0));

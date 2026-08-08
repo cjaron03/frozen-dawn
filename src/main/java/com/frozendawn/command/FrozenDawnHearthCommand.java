@@ -27,6 +27,8 @@ import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HearthViolationManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.homo.PostMaeveMoonManager;
+import com.frozendawn.homo.PostMaeveMoonPolicy;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
@@ -40,6 +42,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Locale;
@@ -79,7 +82,19 @@ final class FrozenDawnHearthCommand {
                         .then(Commands.literal("debug-spawn-undone-architect")
                                 .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
                         .then(Commands.literal("debug-reset-undone-contact")
-                                .executes(FrozenDawnHearthCommand::postMaeveResetContact)))
+                                .executes(FrozenDawnHearthCommand::postMaeveResetContact))
+                        .then(Commands.literal("moon")
+                                .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::postMaeveMoonStatus))
+                                .then(Commands.literal("debug-start-rise")
+                                        .executes(FrozenDawnHearthCommand::postMaeveMoonStartRise))
+                                .then(Commands.literal("debug-set-age")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(FrozenDawnHearthCommand::postMaeveMoonSetAge)))
+                                .then(Commands.literal("debug-reset")
+                                        .executes(FrozenDawnHearthCommand::postMaeveMoonReset))))
                 .then(Commands.literal("bloom")
                         .executes(FrozenDawnHearthCommand::bloomStatus)
                         .then(Commands.literal("status")
@@ -535,6 +550,67 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "DEBUG post-Maeve saved state set to " + yesNo(erased)), true);
         return postMaeveStatus(context);
+    }
+
+    private static int postMaeveMoonStatus(
+            CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
+        PostMaeveMoonPolicy.Snapshot snapshot = PostMaeveMoonManager.snapshot(data);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Post-Maeve Moon: stage=" + snapshot.stage().name().toLowerCase(Locale.ROOT)
+                        + " scheduledAt=" + data.postMaeveMoonriseStartDayTime()
+                        + " started=" + yesNo(data.postMaeveMoonriseStarted())
+                        + " elapsed=" + data.postMaeveMoonElapsedDayTicks()
+                        + " damageDays=" + String.format(Locale.ROOT, "%.2f",
+                        snapshot.damageAgeTicks() < 0L ? 0.0D
+                                : snapshot.damageAgeTicks()
+                                / (double) PostMaeveMoonPolicy.DAY_TICKS)
+                        + " debris=" + snapshot.debrisCount()
+                        + " ring=" + String.format(Locale.ROOT, "%.2f",
+                        snapshot.ringAlpha())), false);
+        return 1;
+    }
+
+    private static int postMaeveMoonStartRise(
+            CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        boolean changed = data.startPostMaeveMoonriseForDebug(
+                level.getDayTime(), PostMaeveMoonManager.visualSeed(level));
+        PostMaeveWorldState.syncAll(level.getServer());
+        context.getSource().sendSuccess(() -> Component.literal(changed
+                ? "DEBUG Moon first rise started now"
+                : "Moon first rise requires saved maeveErased state"), true);
+        return changed ? postMaeveMoonStatus(context) : 0;
+    }
+
+    private static int postMaeveMoonSetAge(
+            CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        int days = IntegerArgumentType.getInteger(context, "days");
+        ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
+        boolean changed = data.setPostMaeveMoonDamageAgeForDebug(
+                days * PostMaeveMoonPolicy.DAY_TICKS,
+                level.getDayTime(), PostMaeveMoonManager.visualSeed(level));
+        PostMaeveWorldState.syncAll(level.getServer());
+        context.getSource().sendSuccess(() -> Component.literal(changed
+                ? "DEBUG Moon damage age set to " + days + " days"
+                : "Moon age requires saved maeveErased state"), true);
+        return changed ? postMaeveMoonStatus(context) : 0;
+    }
+
+    private static int postMaeveMoonReset(
+            CommandContext<CommandSourceStack> context) {
+        MinecraftServer server = context.getSource().getServer();
+        boolean changed = ReturnedHearthSavedData.get(server)
+                .resetPostMaeveMoonForDebug();
+        PostMaeveWorldState.syncAll(server);
+        context.getSource().sendSuccess(() -> Component.literal(
+                changed
+                        ? "DEBUG Moon timeline reset; next eligible tick schedules the next dusk"
+                        : "DEBUG Moon timeline was already reset"), true);
+        return postMaeveMoonStatus(context);
     }
 
     private static int postMaeveSpawnUndone(
