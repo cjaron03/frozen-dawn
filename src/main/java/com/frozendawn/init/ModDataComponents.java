@@ -60,4 +60,11 @@ public class ModDataComponents {
                             .persistent(Codec.LONG)
                             .networkSynchronized(ByteBufCodecs.VAR_LONG)
                             .build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HEARTHROT_COLONIZATION =
+            DATA_COMPONENTS.register("hearthrot_colonization", () ->
+                    DataComponentType.<Integer>builder()
+                            .persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.INT)
+                            .build());
 }

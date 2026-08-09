@@ -12,6 +12,7 @@ import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.SuitPatchItem;
+import com.frozendawn.hearthrot.HearthrotManager;
 import com.frozendawn.network.SuitIntegrityPayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.TemperatureManager;
@@ -101,6 +102,7 @@ public final class SuitIntegrityHandler {
                 String.format("%.2f", chance),
                 state.punctures());
         sync(player, state, SuitIntegrityPayload.PUNCTURED);
+        HearthrotManager.onPuncture(player);
     }
 
     @SubscribeEvent
@@ -186,11 +188,12 @@ public final class SuitIntegrityHandler {
         state.setPatchTicks(-1);
         state.clearWarnings();
         if (!permanent
-                && ThreadLocalRandom.current().nextDouble()
-                        < FrozenDawnConfig.IMPROVISED_PATCH_DEGRADE_CHANCE.get()) {
+                && (HearthrotManager.improvisedPatchMustDegrade(player)
+                || ThreadLocalRandom.current().nextDouble()
+                        < FrozenDawnConfig.IMPROVISED_PATCH_DEGRADE_CHANCE.get())) {
             state.setTemporarySeals(state.temporarySeals() + 1);
             if (state.temporarySeals() == 1) {
-                state.setTemporarySealTicks(randomTemporarySealTicks());
+                state.setTemporarySealTicks(randomTemporarySealTicks(player));
             }
         }
         sync(player, state, SuitIntegrityPayload.PATCHED);
@@ -337,20 +340,23 @@ public final class SuitIntegrityHandler {
         }
         state.setTemporarySeals(state.temporarySeals() - 1);
         if (state.temporarySeals() > 0) {
-            state.setTemporarySealTicks(randomTemporarySealTicks());
+            state.setTemporarySealTicks(randomTemporarySealTicks(player));
         }
         if (state.punctures() < FrozenDawnConfig.SUIT_PUNCTURE_MAX_CONCURRENT.get()) {
             state.setPunctures(state.punctures() + 1);
             state.setGraceTicks(FrozenDawnConfig.SUIT_PUNCTURE_GRACE_TICKS.get());
             sync(player, state, SuitIntegrityPayload.PATCH_DEGRADED);
+            HearthrotManager.onPuncture(player);
         }
         return true;
     }
 
-    private static int randomTemporarySealTicks() {
+    private static int randomTemporarySealTicks(ServerPlayer player) {
         int min = FrozenDawnConfig.IMPROVISED_PATCH_MIN_SEAL_SECONDS.get();
         int max = Math.max(min, FrozenDawnConfig.IMPROVISED_PATCH_MAX_SEAL_SECONDS.get());
-        return ThreadLocalRandom.current().nextInt(min, max + 1) * 20;
+        int base = ThreadLocalRandom.current().nextInt(min, max + 1) * 20;
+        return Math.max(20, (int) Math.round(base
+                * HearthrotManager.temporarySealLifetimeMultiplier(player)));
     }
 
     private static int thresholdEvent(SuitIntegrity state, int current, int max) {

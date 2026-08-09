@@ -152,6 +152,22 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void hearthrotSalvationIsWorldGlobalPersistentAndDebugResettable() {
+        ReturnedHearthSavedData state = new ReturnedHearthSavedData();
+
+        assertFalse(state.hearthrotSalvationFired());
+        assertTrue(state.markHearthrotSalvationFired());
+        assertFalse(state.markHearthrotSalvationFired());
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        assertTrue(loaded.hearthrotSalvationFired());
+        assertTrue(loaded.resetHearthrotSalvationForDebug());
+        assertFalse(loaded.hearthrotSalvationFired());
+        assertFalse(loaded.resetHearthrotSalvationForDebug());
+    }
+
+    @Test
     void phaseGatingDoesNotBankIneligibleWorldTime() {
         ReturnedHearthSavedData state = selectedState(1000L);
 

@@ -31,6 +31,9 @@ public class O2BubbleHud {
         if (OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
             return;
         }
+        if (HearthrotClientState.shouldFlickerSensors()) {
+            return;
+        }
         if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
             renderMindOverride(
                     graphics,

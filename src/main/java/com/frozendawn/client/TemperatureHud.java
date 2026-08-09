@@ -51,6 +51,7 @@ public class TemperatureHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (mc.options.hideGui) return;
+        if (HearthrotClientState.shouldFlickerSensors()) return;
 
         int blinkTicks = Math.max(0, introBlinkEndTick - mc.player.tickCount);
         if (blinkTicks > 8 && ((blinkTicks / 4) & 1) == 0) {

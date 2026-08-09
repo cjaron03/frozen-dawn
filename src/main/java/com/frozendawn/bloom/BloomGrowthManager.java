@@ -511,6 +511,15 @@ public final class BloomGrowthManager {
         return sampleAround(level, pos, 12).density;
     }
 
+    /** Returns -1 outside Bloom, otherwise the strongest local density band ordinal. */
+    public static int localBandOrdinal(ServerLevel level, BlockPos pos) {
+        if (!PostMaeveWorldState.isBloomReleased(level.getServer())) {
+            return -1;
+        }
+        PlayerBloomSample sample = sampleAround(level, pos, 12);
+        return sample.nearest == null ? -1 : sample.band.ordinal();
+    }
+
     private static boolean hasLineOfSight(ServerLevel level, ServerPlayer player,
                                           BlockPos target) {
         Vec3 start = player.getEyePosition();

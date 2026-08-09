@@ -2,9 +2,11 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -58,6 +60,17 @@ public class SoundMuffler {
         boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
         boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
         boolean isBloomSporeCue = isBloomSporeCue(soundLocation, soundPath);
+        boolean isLocalHearthrotHurtCue = isLocalHearthrotHurtCue(
+                mc, original, soundLocation, soundPath);
+
+        if (shouldReplaceLocalPlayerHurt(
+                mc, original, soundLocation, soundPath)) {
+            event.setSound(SimpleSoundInstance.forUI(
+                    randomHearthrotHurtSound(mc),
+                    0.94F + mc.player.getRandom().nextFloat() * 0.12F,
+                    1.15F));
+            return;
+        }
 
         if (isThaevenSound || isSurveyorLensCue || isBloomSporeCue) {
             return;
@@ -161,6 +174,7 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
+            if (isLocalHearthrotHurtCue) return;
             if (isWindAmbience && (PostMaeveClientState.isMaeveErased()
                     || MasterArchitectWeather.getStrength() > 0.01F)) return;
             if (isGeothermalCue) {
@@ -313,6 +327,55 @@ public class SoundMuffler {
     private static boolean isBloomSporeCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.startsWith("entity.bloom_spore.");
+    }
+
+    private static boolean isLocalHearthrotHurtCue(
+            Minecraft minecraft,
+            SoundInstance sound,
+            ResourceLocation location,
+            String path) {
+        if (!location.getNamespace().equals(FrozenDawn.MOD_ID)
+                || !path.startsWith("player.hearthrot.hurt_crack_")) {
+            return false;
+        }
+        double dx = minecraft.player.getX() - sound.getX();
+        double dy = minecraft.player.getY() - sound.getY();
+        double dz = minecraft.player.getZ() - sound.getZ();
+        return dx * dx + dy * dy + dz * dz <= 1.0D;
+    }
+
+    private static boolean shouldReplaceLocalPlayerHurt(
+            Minecraft minecraft,
+            SoundInstance sound,
+            ResourceLocation location,
+            String path) {
+        if (HearthrotClientState.stage() < 3
+                || sound.getSource() != SoundSource.PLAYERS
+                || !location.getNamespace().equals("minecraft")
+                || !isVanillaPlayerHurtPath(path)) {
+            return false;
+        }
+        double dx = minecraft.player.getX() - sound.getX();
+        double dy = minecraft.player.getY() - sound.getY();
+        double dz = minecraft.player.getZ() - sound.getZ();
+        return dx * dx + dy * dy + dz * dz <= 1.0D;
+    }
+
+    private static boolean isVanillaPlayerHurtPath(String path) {
+        return path.equals("entity.player.hurt")
+                || path.equals("entity.player.hurt_drown")
+                || path.equals("entity.player.hurt_freeze")
+                || path.equals("entity.player.hurt_on_fire")
+                || path.equals("entity.player.hurt_sweet_berry_bush");
+    }
+
+    private static net.minecraft.sounds.SoundEvent randomHearthrotHurtSound(
+            Minecraft minecraft) {
+        return switch (minecraft.player.getRandom().nextInt(3)) {
+            case 1 -> ModSounds.HEARTHROT_HURT_CRACK_TWO.get();
+            case 2 -> ModSounds.HEARTHROT_HURT_CRACK_THREE.get();
+            default -> ModSounds.HEARTHROT_HURT_CRACK_ONE.get();
+        };
     }
 
     private static boolean isWindAmbienceCue(ResourceLocation location, String path) {

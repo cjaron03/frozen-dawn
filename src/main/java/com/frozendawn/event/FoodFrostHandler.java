@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.ThermalContainerItem;
+import com.frozendawn.hearthrot.HearthrotManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -82,6 +83,7 @@ public class FoodFrostHandler {
             int frostRate = 0;
             if (freezing) {
                 frostRate = (int) Math.min(60, 15 + (-30f - temp) * (35f / 60f));
+                frostRate *= HearthrotManager.foodFreezeMultiplier(player);
             }
             int thawRate = thawing ? (temp > 30f ? 80 : 40) : 0;
 

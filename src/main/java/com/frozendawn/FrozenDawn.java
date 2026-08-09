@@ -8,6 +8,7 @@ import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
@@ -46,6 +47,7 @@ public class FrozenDawn {
         ModSounds.SOUNDS.register(modEventBus);
         ModParticles.PARTICLES.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
+        ModEffects.EFFECTS.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
 

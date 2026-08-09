@@ -19,6 +19,7 @@ import com.frozendawn.client.renderer.UndoneRenderer;
 import com.frozendawn.client.renderer.UndoneArchitectRenderer;
 import com.frozendawn.client.renderer.BloomSporeRenderer;
 import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
+import com.frozendawn.client.renderer.HearthrotSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.renderer.RocketLaunchModel;
@@ -41,6 +42,7 @@ import net.minecraft.client.color.item.ItemColor;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.item.CompassItemPropertyFunction;
 import net.minecraft.client.renderer.item.ItemProperties;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -159,6 +161,11 @@ public class ClientEvents {
                         FrozenDawn.MOD_ID, "heart_memory_node"),
                 HeartMemoryNodeClient::render
         );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "hearthrot"),
+                HearthrotClientState::render
+        );
     }
 
     @SubscribeEvent
@@ -214,6 +221,16 @@ public class ClientEvents {
                 MasterArchitectAdornmentModel.LAYER_LOCATION,
                 MasterArchitectAdornmentModel::createBodyLayer);
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
+    }
+
+    @SubscribeEvent
+    public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
+        for (var skin : event.getSkins()) {
+            PlayerRenderer renderer = event.getSkin(skin);
+            if (renderer != null) {
+                renderer.addLayer(new HearthrotSuitLayer(renderer));
+            }
+        }
     }
 
     @SubscribeEvent

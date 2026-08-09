@@ -1557,5 +1557,62 @@
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.entity.bloom_spore.corpse_break",
     "sounds": [ "frozendawn:entity/bloom_spore/corpse_break" ]
+  },
+  "ui.suit.hearthrot_contamination": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.ui.suit.hearthrot_contamination",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/hearthrot_contamination", "stream": true }
+    ]
+  },
+  "ambient.hearthrot_rasp": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.hearthrot_rasp",
+    "sounds": [ "frozendawn:ambient/hearthrot_rasp" ]
+  },
+  "player.hearthrot.cough_one": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_one" ]
+  },
+  "player.hearthrot.cough_two": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_two" ]
+  },
+  "player.hearthrot.cough_three": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_three" ]
+  },
+  "player.hearthrot.wheeze": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.wheeze",
+    "sounds": [ "frozendawn:player/hearthrot/wheeze" ]
+  },
+  "player.hearthrot.breath_catch": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.breath_catch",
+    "sounds": [ "frozendawn:player/hearthrot/breath_catch" ]
+  },
+  "player.hearthrot.crystallize": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.crystallize",
+    "sounds": [ "frozendawn:player/hearthrot/crystallize" ]
+  },
+  "player.hearthrot.hurt_crack_one": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_one" ]
+  },
+  "player.hearthrot.hurt_crack_two": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_two" ]
+  },
+  "player.hearthrot.hurt_crack_three": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_three" ]
   }
 }

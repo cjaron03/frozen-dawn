@@ -37,7 +37,7 @@ import java.util.UUID;
  * after chunk unloads or server restarts without duplicating scene pieces.
  */
 public final class ReturnedHearthSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 26;
+    public static final int CURRENT_DATA_VERSION = 27;
     public static final long CONTACT_SAVE_INTERVAL_TICKS = 200L;
     public static final long NEW_VISIT_GAP_TICKS = 1_200L;
 
@@ -55,6 +55,7 @@ public final class ReturnedHearthSavedData extends SavedData {
     private long postMaeveMoonLastDayTime = -1L;
     private long postMaeveMoonVisualSeed;
     private boolean postMaeveMoonriseStarted;
+    private boolean hearthrotSalvationFired;
     private HiveRelationship legacyRelationship = HiveRelationship.NEUTRAL;
     private final Map<UUID, PlayerHiveMemory> playerMemories = new LinkedHashMap<>();
     private final List<HearthRecord> hearths = new ArrayList<>();
@@ -98,6 +99,8 @@ public final class ReturnedHearthSavedData extends SavedData {
                 ? tag.getLong("postMaeveMoonVisualSeed") : 0L;
         state.postMaeveMoonriseStarted = tag.getBoolean(
                 "postMaeveMoonriseStarted");
+        state.hearthrotSalvationFired = tag.getBoolean(
+                "hearthrotSalvationFired");
         state.legacyRelationship = loadLegacyRelationship(tag, storedVersion);
 
         ListTag playerList = tag.getList("playerMemories", Tag.TAG_COMPOUND);
@@ -164,6 +167,7 @@ public final class ReturnedHearthSavedData extends SavedData {
         tag.putLong("postMaeveMoonLastDayTime", postMaeveMoonLastDayTime);
         tag.putLong("postMaeveMoonVisualSeed", postMaeveMoonVisualSeed);
         tag.putBoolean("postMaeveMoonriseStarted", postMaeveMoonriseStarted);
+        tag.putBoolean("hearthrotSalvationFired", hearthrotSalvationFired);
         tag.putString("legacyRelationship", legacyRelationship.name());
 
         ListTag playerList = new ListTag();
@@ -219,6 +223,28 @@ public final class ReturnedHearthSavedData extends SavedData {
 
     public boolean postMaeveMoonriseStarted() {
         return postMaeveMoonriseStarted;
+    }
+
+    public boolean hearthrotSalvationFired() {
+        return hearthrotSalvationFired;
+    }
+
+    public boolean markHearthrotSalvationFired() {
+        if (hearthrotSalvationFired) {
+            return false;
+        }
+        hearthrotSalvationFired = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean resetHearthrotSalvationForDebug() {
+        if (!hearthrotSalvationFired) {
+            return false;
+        }
+        hearthrotSalvationFired = false;
+        setDirty();
+        return true;
     }
 
     public boolean schedulePostMaeveMoonrise(
