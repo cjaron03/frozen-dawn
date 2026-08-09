@@ -32,6 +32,7 @@ import com.frozendawn.homo.PostMaeveMoonPolicy;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
+import com.frozendawn.world.ArchivistManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -83,6 +84,20 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
                         .then(Commands.literal("debug-reset-undone-contact")
                                 .executes(FrozenDawnHearthCommand::postMaeveResetContact))
+                        .then(Commands.literal("archivist")
+                                .executes(FrozenDawnHearthCommand::archivistStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::archivistStatus))
+                                .then(Commands.literal("debug-spawn")
+                                        .executes(FrozenDawnHearthCommand::archivistDebugSpawn))
+                                .then(Commands.literal("debug-create-site")
+                                        .executes(FrozenDawnHearthCommand::archivistCreateSite))
+                                .then(Commands.literal("debug-fill-site")
+                                        .executes(FrozenDawnHearthCommand::archivistFillSite))
+                                .then(Commands.literal("force-sort-nearest")
+                                        .executes(FrozenDawnHearthCommand::archivistForceSort))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::archivistPurgeLoaded)))
                         .then(Commands.literal("moon")
                                 .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
                                 .then(Commands.literal("status")
@@ -653,6 +668,70 @@ final class FrozenDawnHearthCommand {
                         + spawn.toShortString()
                         : "Could not create an Undone Architect"), false);
         return spawned ? 1 : 0;
+    }
+
+    private static int archivistStatus(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Archivists: " + ArchivistManager.statusLine(level)), false);
+        return 1;
+    }
+
+    private static int archivistDebugSpawn(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        var spawned = ArchivistManager.debugSpawn(player);
+        context.getSource().sendSuccess(() -> Component.literal(spawned == null
+                ? "Could not create an Archivist"
+                : "Spawned debug Archivist bound to site "
+                + spawned.siteId().map(Object::toString).orElse("none")), false);
+        return spawned == null ? 0 : 1;
+    }
+
+    private static int archivistCreateSite(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int created = ArchivistManager.debugCreateSite(player);
+        context.getSource().sendSuccess(() -> Component.literal(
+                created > 0 ? "Created debug Archivist collection site"
+                        : "Could not create collection site"), false);
+        return created;
+    }
+
+    private static int archivistFillSite(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int added = ArchivistManager.debugFillNearest(player);
+        context.getSource().sendSuccess(() -> Component.literal(
+                added > 0 ? "Added " + added + " arranged relics"
+                        : "No collection site found within 96 blocks"), false);
+        return added > 0 ? 1 : 0;
+    }
+
+    private static int archivistForceSort(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        boolean sorted = ArchivistManager.forceSortNearest(player);
+        context.getSource().sendSuccess(() -> Component.literal(sorted
+                ? "Forced the nearest Archivist to rearrange one relic"
+                : "No sortable Archivist collection found"), false);
+        return sorted ? 1 : 0;
+    }
+
+    private static int archivistPurgeLoaded(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = ArchivistManager.purgeLoaded(player.serverLevel(),
+                player.blockPosition(), 512.0D);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Archivist entities/relics and nearby sites"),
+                true);
+        return 1;
     }
 
     private static int bloomStatus(CommandContext<CommandSourceStack> context) {

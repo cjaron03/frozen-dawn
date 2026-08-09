@@ -271,6 +271,10 @@ public class ModItems {
     public static final DeferredItem<Item> REMEMBERED_KEEPSAKE = ITEMS.register(
             "remembered_keepsake",
             () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Hidden advancement icon for surviving the Archivist's terminal notice.
+    public static final DeferredItem<Item> MARKED_EYE = ITEMS.register(
+            "marked_eye",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     // Unique Maeve-erasure relic. Intentionally absent from creative tabs and recipes.
     public static final DeferredItem<LastWitnessItem> THE_LAST_WITNESS = ITEMS.register(
             "the_last_witness",

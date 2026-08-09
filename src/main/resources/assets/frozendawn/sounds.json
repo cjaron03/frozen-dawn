@@ -1614,5 +1614,79 @@
     "category": "players",
     "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
     "sounds": [ "frozendawn:player/hearthrot/hurt_crack_three" ]
+  },
+  "entity.archivist.pack": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.pack",
+    "sounds": [
+      "frozendawn:entity/archivist/pack_1",
+      "frozendawn:entity/archivist/pack_2"
+    ]
+  },
+  "entity.archivist.sort": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.sort",
+    "sounds": [
+      "frozendawn:entity/archivist/sort_1",
+      "frozendawn:entity/archivist/sort_2"
+    ]
+  },
+  "entity.archivist.step": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.step",
+    "sounds": [
+      "frozendawn:entity/archivist/step_1",
+      "frozendawn:entity/archivist/step_2"
+    ]
+  },
+  "entity.archivist.death": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.death",
+    "sounds": [ "frozendawn:entity/archivist/death" ]
+  },
+  "entity.archivist.ambient": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.ambient",
+    "sounds": [
+      "frozendawn:entity/archivist/ambient_1",
+      "frozendawn:entity/archivist/ambient_2",
+      "frozendawn:entity/archivist/ambient_3"
+    ]
+  },
+  "entity.archivist.hurt": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.hurt",
+    "sounds": [
+      "frozendawn:entity/archivist/hurt_1",
+      "frozendawn:entity/archivist/hurt_2"
+    ]
+  },
+  "entity.archivist.sob": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.sob",
+    "sounds": [
+      "frozendawn:entity/archivist/sob_1",
+      "frozendawn:entity/archivist/sob_2",
+      "frozendawn:entity/archivist/sob_3",
+      "frozendawn:entity/archivist/sob_4",
+      "frozendawn:entity/archivist/sob_5",
+      "frozendawn:entity/archivist/sob_6",
+      "frozendawn:entity/archivist/sob_7",
+      "frozendawn:entity/archivist/sob_8"
+    ]
+  },
+  "entity.archivist.scream": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.archivist.scream",
+    "sounds": [
+      { "name": "frozendawn:entity/archivist/scream", "stream": true }
+    ]
+  },
+  "entity.archivist.marked": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.archivist.marked",
+    "sounds": [
+      { "name": "minecraft:entity.elder_guardian.curse", "type": "event", "volume": 1.0, "pitch": 0.92 }
+    ]
   }
 }

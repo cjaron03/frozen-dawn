@@ -73,6 +73,7 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue UNDONE_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK;
+    public static final ModConfigSpec.DoubleValue ARCHIVIST_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -338,6 +339,9 @@ public class FrozenDawnConfig {
         BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK = BUILDER
                 .comment("Chance per eligible player every 200 ticks to spawn one Bloombound Undone near Core-density Bloom.")
                 .defineInRange("bloomboundUndoneSpawnChancePerCheck", 0.018D, 0.0D, 1.0D);
+        ARCHIVIST_SPAWN_CHANCE_PER_CHECK = BUILDER
+                .comment("Chance per eligible loaded 32x32-chunk region every 600 ticks to spawn one Archivist.")
+                .defineInRange("archivistSpawnChancePerCheck", 0.004D, 0.0D, 1.0D);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);

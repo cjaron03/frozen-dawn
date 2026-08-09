@@ -302,7 +302,8 @@ public final class UndoneArchitectEntity extends Monster {
 
     @Override
     public void setTarget(@Nullable LivingEntity target) {
-        super.setTarget(isSporeTarget(target) ? null : target);
+        super.setTarget(isSporeTarget(target) || target instanceof ArchivistEntity
+                ? null : target);
     }
 
     private void tickAttentionSpan() {
@@ -324,6 +325,7 @@ public final class UndoneArchitectEntity extends Monster {
     private boolean isValidTarget(@Nullable LivingEntity candidate) {
         if (candidate == null || candidate == this || !candidate.isAlive()
                 || candidate == getVehicle() || candidate.hasPassenger(this)
+                || candidate instanceof ArchivistEntity
                 || candidate instanceof BloomSporeEntity
                 || candidate instanceof BloomSporeCorpseEntity) {
             return false;

@@ -846,6 +846,10 @@
   "overlay.frozendawn.heart_memory.node_5.casualties": "Congregation deaths remembered: %s",
   "overlay.frozendawn.heart_memory.node_5.erased": "Now they do not remember you.",
   "effect.frozendawn.hearthrot": "Hearthrot",
+  "effect.frozendawn.marked": "Marked",
+  "item.frozendawn.marked_eye": "Frostbound Eye",
+  "advancement.frozendawn.now_all_of_china_knows.title": "Now all of China knows you're here!",
+  "advancement.frozendawn.now_all_of_china_knows.description": "The scream carried.",
   "ui.frozendawn.suit.hearthrot_contamination": "Internal contamination detected.",
   "subtitle.frozendawn.ui.suit.hearthrot_contamination": "Internal contamination detected",
   "subtitle.frozendawn.ambient.hearthrot_rasp": "Crystals rasp against the suit intake",
@@ -855,5 +859,16 @@
   "subtitle.frozendawn.player.hearthrot.crystallize": "A heart crystallizes and breaks",
   "subtitle.frozendawn.player.hearthrot.hurt_crack": "Something cracks beneath the suit",
   "message.frozendawn.hearthrot.sleep_refused": "The growth will not let your body settle.",
-  "overlay.frozendawn.hearthrot.salvation": "We are your salvation"
+  "overlay.frozendawn.hearthrot.salvation": "We are your salvation",
+  "entity.frozendawn.archivist": "The Archivist",
+  "entity.frozendawn.archivist_relic": "Arranged Relic",
+  "subtitle.frozendawn.entity.archivist.pack": "Objects settle against a burdened frame",
+  "subtitle.frozendawn.entity.archivist.sort": "Something is carefully rearranged",
+  "subtitle.frozendawn.entity.archivist.step": "A laden figure moves",
+  "subtitle.frozendawn.entity.archivist.death": "Ice and keepsakes collapse",
+  "subtitle.frozendawn.entity.archivist.ambient": "A burdened frame settles",
+  "subtitle.frozendawn.entity.archivist.hurt": "A breath is cut short",
+  "subtitle.frozendawn.entity.archivist.sob": "Someone quietly sobs",
+  "subtitle.frozendawn.entity.archivist.scream": "The Archivist screams",
+  "subtitle.frozendawn.entity.archivist.marked": "Something has seen you"
 }

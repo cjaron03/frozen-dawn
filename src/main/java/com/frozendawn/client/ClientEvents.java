@@ -19,6 +19,8 @@ import com.frozendawn.client.renderer.UndoneRenderer;
 import com.frozendawn.client.renderer.UndoneArchitectRenderer;
 import com.frozendawn.client.renderer.BloomSporeRenderer;
 import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
+import com.frozendawn.client.renderer.ArchivistRenderer;
+import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
@@ -248,6 +250,9 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.BLOOM_SPORE.get(), BloomSporeRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.BLOOM_SPORE_CORPSE.get(), BloomSporeCorpseRenderer::new);
+        event.registerEntityRenderer(ModEntities.ARCHIVIST.get(), ArchivistRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.ARCHIVIST_RELIC.get(), ArchivistRelicRenderer::new);
         event.registerEntityRenderer(ModEntities.MIMIC.get(), MimicRenderer::new);
         event.registerEntityRenderer(ModEntities.ARCHITECT.get(), ArchitectRenderer::new);
         event.registerEntityRenderer(

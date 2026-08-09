@@ -14,6 +14,8 @@ import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.entity.UndoneArchitectEntity;
 import com.frozendawn.entity.BloomSporeEntity;
 import com.frozendawn.entity.BloomSporeCorpseEntity;
+import com.frozendawn.entity.ArchivistEntity;
+import com.frozendawn.entity.ArchivistRelicEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -102,6 +104,22 @@ public class ModEntities {
                             .clientTrackingRange(14)
                             .updateInterval(10)
                             .build("bloom_spore_corpse"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ArchivistEntity>>
+            ARCHIVIST = ENTITIES.register("archivist", () -> EntityType.Builder
+                    .of(ArchivistEntity::new, MobCategory.MISC)
+                    .sized(0.68F, 1.95F)
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("archivist"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ArchivistRelicEntity>>
+            ARCHIVIST_RELIC = ENTITIES.register("archivist_relic", () -> EntityType.Builder
+                    .of(ArchivistRelicEntity::new, MobCategory.MISC)
+                    .sized(0.55F, 0.24F)
+                    .clientTrackingRange(12)
+                    .updateInterval(10)
+                    .build("archivist_relic"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<MimicEntity>> MIMIC =
             ENTITIES.register("mimic", () -> EntityType.Builder
