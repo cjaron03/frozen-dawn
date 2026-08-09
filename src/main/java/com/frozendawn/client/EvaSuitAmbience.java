@@ -75,7 +75,10 @@ public class EvaSuitAmbience {
 
         // Update volume on current sound
         if (currentSound != null && !currentSound.isStopped()) {
-            currentSound.setTargetVolume(TARGET_VOLUME);
+            float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
+            currentSound.setTargetVolume(
+                    TARGET_VOLUME * breathingMultiplier,
+                    breathingMultiplier < 1.0F ? 0.10F : 0.035F);
             currentSound.setTargetPitch(
                     currentBasePitch * MasterArchitectSeverTelegraph.evaPitchMultiplier());
         }

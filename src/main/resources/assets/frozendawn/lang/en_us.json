@@ -844,5 +844,16 @@
   "overlay.frozendawn.heart_memory.node_5.variant_3": "They kept the names of those you removed.",
   "overlay.frozendawn.heart_memory.node_5.visits": "Visits remembered: %s",
   "overlay.frozendawn.heart_memory.node_5.casualties": "Congregation deaths remembered: %s",
-  "overlay.frozendawn.heart_memory.node_5.erased": "Now they do not remember you."
+  "overlay.frozendawn.heart_memory.node_5.erased": "Now they do not remember you.",
+  "effect.frozendawn.hearthrot": "Hearthrot",
+  "ui.frozendawn.suit.hearthrot_contamination": "Internal contamination detected.",
+  "subtitle.frozendawn.ui.suit.hearthrot_contamination": "Internal contamination detected",
+  "subtitle.frozendawn.ambient.hearthrot_rasp": "Crystals rasp against the suit intake",
+  "subtitle.frozendawn.player.hearthrot.cough": "A cough catches in the suit microphone",
+  "subtitle.frozendawn.player.hearthrot.wheeze": "A wheeze strains through the suit microphone",
+  "subtitle.frozendawn.player.hearthrot.breath_catch": "Breathing catches in the suit microphone",
+  "subtitle.frozendawn.player.hearthrot.crystallize": "A heart crystallizes and breaks",
+  "subtitle.frozendawn.player.hearthrot.hurt_crack": "Something cracks beneath the suit",
+  "message.frozendawn.hearthrot.sleep_refused": "The growth will not let your body settle.",
+  "overlay.frozendawn.hearthrot.salvation": "We are your salvation"
 }

@@ -8,6 +8,7 @@ import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
+import com.frozendawn.hearthrot.HearthrotManager;
 import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.phase.PhaseManager;
@@ -113,7 +114,9 @@ final class PlayerTickHandler {
     }
 
     static float getFreezeResolvedTemperature(ServerPlayer player, ApocalypseState state) {
-        return getDisplayedTemperature(player, state) + MobFreezeHandler.getArmorColdResistance(player);
+        return getDisplayedTemperature(player, state)
+                + MobFreezeHandler.getArmorColdResistance(player)
+                - HearthrotManager.hiddenColdPenalty(player);
     }
 
     static void syncBreathableState(ServerPlayer player) {
@@ -366,7 +369,9 @@ final class PlayerTickHandler {
                                 && (!visorRig || state.getApocalypseTicks() % 2 == 0)
                                 && O2EfficiencyModuleItem.consumesBaselineO2(
                                         player, state.getApocalypseTicks())) {
-                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
+                            int consumed = Math.min(
+                                    o2, HearthrotManager.baselineO2Units(player));
+                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
                         }
                         suffocationTimer.put(id, 0);
                         continue;

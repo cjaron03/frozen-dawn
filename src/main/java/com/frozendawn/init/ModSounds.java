@@ -70,6 +70,29 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent>
             SUIT_BIOLOGICAL_ACTIVITY_WARNING =
             register("ui.suit.biological_activity_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            SUIT_HEARTHROT_CONTAMINATION =
+            register("ui.suit.hearthrot_contamination");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_RASP =
+            register("ambient.hearthrot_rasp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_COUGH_ONE =
+            register("player.hearthrot.cough_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_COUGH_TWO =
+            register("player.hearthrot.cough_two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_COUGH_THREE =
+            register("player.hearthrot.cough_three");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_WHEEZE =
+            register("player.hearthrot.wheeze");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_BREATH_CATCH =
+            register("player.hearthrot.breath_catch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_CRYSTALLIZE =
+            register("player.hearthrot.crystallize");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_HURT_CRACK_ONE =
+            register("player.hearthrot.hurt_crack_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_HURT_CRACK_TWO =
+            register("player.hearthrot.hurt_crack_two");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HEARTHROT_HURT_CRACK_THREE =
+            register("player.hearthrot.hurt_crack_three");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = SOUNDS.register("ambient.sanity_whisper",
             () -> SoundEvent.createVariableRangeEvent(

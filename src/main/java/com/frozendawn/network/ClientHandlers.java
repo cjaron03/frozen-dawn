@@ -20,6 +20,7 @@ import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.PostMaeveClientState;
 import com.frozendawn.client.BloomClientState;
+import com.frozendawn.client.HearthrotClientState;
 import com.frozendawn.client.RocketLaunchClientController;
 import com.frozendawn.client.SanityClientData;
 import com.frozendawn.client.ThermalVentClientEffects;
@@ -219,6 +220,14 @@ public final class ClientHandlers {
 
     public static void handleBloomState(BloomStatePayload payload) {
         BloomClientState.update(payload);
+    }
+
+    public static void handleHearthrot(HearthrotPayload payload) {
+        HearthrotClientState.update(payload);
+    }
+
+    public static void handleHearthrotSalvation() {
+        HearthrotClientState.showSalvation();
     }
 
     public static void handleHeartEchoState(HeartEchoStatePayload payload) {

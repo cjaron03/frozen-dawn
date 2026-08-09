@@ -226,6 +226,18 @@ public class ModNetworking {
                         () -> ClientHandlers.handleBloomState(payload))
         );
         registrar.playToClient(
+                HearthrotPayload.TYPE,
+                HearthrotPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleHearthrot(payload))
+        );
+        registrar.playToClient(
+                HearthrotSalvationPayload.TYPE,
+                HearthrotSalvationPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        ClientHandlers::handleHearthrotSalvation)
+        );
+        registrar.playToClient(
                 HeartEchoStatePayload.TYPE,
                 HeartEchoStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
