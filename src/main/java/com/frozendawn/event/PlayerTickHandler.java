@@ -15,6 +15,7 @@ import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.ThermalVentRegistry;
 import com.frozendawn.world.ThaeIvenMindDimension;
@@ -272,6 +273,9 @@ final class PlayerTickHandler {
                 temp -= 40f;
                 break;
             }
+        }
+        if (player.hasEffect(ModEffects.RESONANT_GRASP)) {
+            temp -= 35.0F;
         }
 
         return MasterArchitectThermalSever.adjustTemperature(player, temp);

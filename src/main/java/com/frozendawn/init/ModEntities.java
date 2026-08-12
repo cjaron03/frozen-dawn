@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.RimeLanceEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
@@ -63,6 +64,14 @@ public class ModEntities {
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build("rime_lance"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ResonantEntity>> RESONANT =
+            ENTITIES.register("resonant", () -> EntityType.Builder
+                    .of(ResonantEntity::new, MobCategory.MONSTER)
+                    .sized(0.68F, 2.28F)
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("resonant"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FrostmiteEntity>> FROSTMITE =
             ENTITIES.register("frostmite", () -> EntityType.Builder

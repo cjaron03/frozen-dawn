@@ -222,6 +222,28 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_BREAK_FREE =
             register("entity.rimebound.break_free");
 
+    // --- Resonant ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_KNOCK =
+            register("entity.resonant.knock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_PHASE =
+            register("entity.resonant.phase");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_PULSE_WINDUP =
+            register("entity.resonant.pulse_windup");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_PULSE =
+            register("entity.resonant.pulse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_BREACH =
+            register("entity.resonant.breach");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_GRAB =
+            register("entity.resonant.grab");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_RELEASE =
+            register("entity.resonant.release");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_HURT =
+            register("entity.resonant.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_DEATH =
+            register("entity.resonant.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_DEATH_COLLAPSE =
+            register("entity.resonant.death_collapse");
+
     // --- Frostmite Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_AMBIENT = SOUNDS.register("entity.frostmite.ambient",
             () -> SoundEvent.createVariableRangeEvent(

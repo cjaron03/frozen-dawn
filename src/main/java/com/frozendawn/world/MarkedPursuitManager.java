@@ -6,6 +6,10 @@ import com.frozendawn.entity.RimeboundBurrowController;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundPolicy;
 import com.frozendawn.entity.RimeboundState;
+import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.ResonantPhaseController;
+import com.frozendawn.entity.ResonantPolicy;
+import com.frozendawn.entity.ResonantState;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.WorldTickHandler;
@@ -244,6 +248,22 @@ public final class MarkedPursuitManager {
                 type = ModEntities.RIMEBOUND.get();
             }
         }
+        if (type == ModEntities.HOLLOW.get()
+                && FrozenDawnConfig.ENABLE_RESONANT.get()) {
+            float evolutionChance = ResonantPolicy.evolutionChance(
+                    ResonantManager.ticksSinceErasure(level),
+                    BloomGrowthManager.pressureMultiplier(level, spawn),
+                    FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
+            int nearby = level.getEntitiesOfClass(ResonantEntity.class,
+                    new AABB(spawn).inflate(64.0D)).size();
+            BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, spawn);
+            if (concealed != null
+                    && nearby < FrozenDawnConfig.RESONANT_NEARBY_CAP.get()
+                    && random.nextFloat() < evolutionChance) {
+                type = ModEntities.RESONANT.get();
+                spawn = concealed;
+            }
+        }
         Mob mob = type.create(level, null, spawn, MobSpawnType.EVENT, true, false);
         if (mob == null) {
             return false;
@@ -253,6 +273,8 @@ public final class MarkedPursuitManager {
             frostbitten.setEmerging(true);
         } else if (mob instanceof RimeboundEntity rimebound) {
             rimebound.setActivityState(RimeboundState.STALKING);
+        } else if (mob instanceof ResonantEntity resonant) {
+            resonant.setActivityState(ResonantState.PHASING);
         }
         if (!level.addFreshEntity(mob)) {
             mob.discard();
@@ -306,6 +328,10 @@ public final class MarkedPursuitManager {
     }
 
     private static void forcePursuit(Mob mob, ServerPlayer player) {
+        if (mob instanceof ResonantEntity resonant) {
+            resonant.forceMarkedTarget(player);
+            return;
+        }
         mob.setTarget(player);
         mob.setSprinting(true);
         if (mob.tickCount % 5 == 0 || mob.getNavigation().isDone()) {
@@ -314,6 +340,10 @@ public final class MarkedPursuitManager {
     }
 
     private static void stopWithoutForgetting(Mob mob) {
+        if (mob instanceof ResonantEntity resonant) {
+            resonant.setConfidence(Math.min(resonant.confidence(), 54.0F));
+            return;
+        }
         if (mob.getTarget() instanceof ServerPlayer) {
             mob.setTarget(null);
         }
@@ -328,6 +358,9 @@ public final class MarkedPursuitManager {
             mob.getNavigation().stop();
         }
         mob.setSprinting(false);
+        if (mob instanceof ResonantEntity resonant) {
+            resonant.setConfidence(Math.min(resonant.confidence(), 54.0F));
+        }
         AttributeInstance followRange = mob.getAttribute(Attributes.FOLLOW_RANGE);
         if (followRange != null) {
             followRange.removeModifier(FOLLOW_RANGE_ID);

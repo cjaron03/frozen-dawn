@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.effect.HearthrotEffect;
 import com.frozendawn.effect.MarkedEffect;
 import com.frozendawn.effect.RimeboundEncasementEffect;
+import com.frozendawn.effect.ResonantGraspEffect;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -20,6 +21,8 @@ public final class ModEffects {
     public static final DeferredHolder<MobEffect, RimeboundEncasementEffect>
             RIMEBOUND_ENCASEMENT = EFFECTS.register(
                     "rimebound_encasement", RimeboundEncasementEffect::new);
+    public static final DeferredHolder<MobEffect, ResonantGraspEffect> RESONANT_GRASP =
+            EFFECTS.register("resonant_grasp", ResonantGraspEffect::new);
 
     private ModEffects() {
     }

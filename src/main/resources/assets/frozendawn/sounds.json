@@ -1780,5 +1780,45 @@
   "entity.rimebound.break_free": {
     "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.break_free",
     "sounds": [{"name":"frozendawn:entity/rimebound/break_free","volume":1.25}]
+  },
+  "entity.resonant.knock": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.knock",
+    "sounds": [{"name":"frozendawn:entity/resonant/knock","attenuation_distance":48}]
+  },
+  "entity.resonant.phase": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.phase",
+    "sounds": [{"name":"frozendawn:entity/resonant/phase","attenuation_distance":48}]
+  },
+  "entity.resonant.pulse_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.pulse",
+    "sounds": [{"name":"frozendawn:entity/resonant/pulse_windup","attenuation_distance":56}]
+  },
+  "entity.resonant.pulse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.pulse",
+    "sounds": [{"name":"frozendawn:entity/resonant/pulse","volume":1.2,"attenuation_distance":64}]
+  },
+  "entity.resonant.breach": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.breach",
+    "sounds": [{"name":"frozendawn:entity/resonant/breach","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.resonant.grab": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.grab",
+    "sounds": [{"name":"frozendawn:entity/resonant/grab","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.resonant.release": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.release",
+    "sounds": ["frozendawn:entity/resonant/release"]
+  },
+  "entity.resonant.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.hurt",
+    "sounds": ["frozendawn:entity/resonant/hurt_1","frozendawn:entity/resonant/hurt_2"]
+  },
+  "entity.resonant.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.death",
+    "sounds": [{"name":"frozendawn:entity/resonant/death","volume":1.2,"attenuation_distance":48}]
+  },
+  "entity.resonant.death_collapse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.death_collapse",
+    "sounds": [{"name":"frozendawn:entity/resonant/death_collapse","volume":1.35,"attenuation_distance":56}]
   }
 }

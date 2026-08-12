@@ -77,6 +77,9 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_RIMEBOUND;
     public static final ModConfigSpec.DoubleValue RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER;
     public static final ModConfigSpec.IntValue RIMEBOUND_NEARBY_CAP;
+    public static final ModConfigSpec.BooleanValue ENABLE_RESONANT;
+    public static final ModConfigSpec.DoubleValue RESONANT_EVOLUTION_SHARE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue RESONANT_NEARBY_CAP;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -354,6 +357,15 @@ public class FrozenDawnConfig {
         RIMEBOUND_NEARBY_CAP = BUILDER
                 .comment("Maximum ordinary Rimebound within 64 blocks.")
                 .defineInRange("rimeboundNearbyCap", 2, 1, 8);
+        ENABLE_RESONANT = BUILDER
+                .comment("Enable post-Maeve Hollow evolution into Resonant encounters.")
+                .define("enableResonant", true);
+        RESONANT_EVOLUTION_SHARE_MULTIPLIER = BUILDER
+                .comment("Multiplier for the Resonant share of Hollow spawn rolls.")
+                .defineInRange("resonantEvolutionShareMultiplier", 1.0D, 0.0D, 4.0D);
+        RESONANT_NEARBY_CAP = BUILDER
+                .comment("Maximum ordinary Resonants within 64 blocks.")
+                .defineInRange("resonantNearbyCap", 2, 1, 8);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);

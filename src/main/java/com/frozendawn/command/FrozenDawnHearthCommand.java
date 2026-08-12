@@ -34,8 +34,12 @@ import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
 import com.frozendawn.world.ArchivistManager;
 import com.frozendawn.world.RimeboundManager;
+import com.frozendawn.world.ResonantManager;
+import com.frozendawn.world.ResonanceEventManager;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundState;
+import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.ResonantState;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -126,6 +130,35 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::rimeboundForceFreeze))
                                 .then(Commands.literal("purge-loaded")
                                         .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded)))
+                        .then(Commands.literal("resonant")
+                                .executes(FrozenDawnHearthCommand::resonantStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::resonantStatus))
+                                .then(Commands.literal("debug-spawn")
+                                        .then(Commands.literal("listening")
+                                                .executes(context -> resonantSpawn(
+                                                        context, ResonantState.LISTENING)))
+                                        .then(Commands.literal("stalking")
+                                                .executes(context -> resonantSpawn(
+                                                        context, ResonantState.STALKING))))
+                                .then(Commands.literal("debug-set-age")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(FrozenDawnHearthCommand::resonantSetAge)))
+                                .then(Commands.literal("debug-set-confidence")
+                                        .then(Commands.argument("confidence",
+                                                        FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(
+                                                        FrozenDawnHearthCommand::resonantSetConfidence)))
+                                .then(Commands.literal("debug-emit")
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(FrozenDawnHearthCommand::resonantEmit)))
+                                .then(Commands.literal("debug-force-pulse")
+                                        .executes(FrozenDawnHearthCommand::resonantForcePulse))
+                                .then(Commands.literal("debug-force-breach")
+                                        .executes(FrozenDawnHearthCommand::resonantForceBreach))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::resonantPurgeLoaded)))
                         .then(Commands.literal("moon")
                                 .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
                                 .then(Commands.literal("status")
@@ -864,6 +897,110 @@ final class FrozenDawnHearthCommand {
     private static int noRimebound(CommandContext<CommandSourceStack> context) {
         context.getSource().sendFailure(Component.literal(
                 "No loaded Rimebound within 96 blocks"));
+        return 0;
+    }
+
+    private static int resonantStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Resonant: " + ResonantManager.statusLine(context.getSource().getLevel())),
+                false);
+        return 1;
+    }
+
+    private static int resonantSpawn(CommandContext<CommandSourceStack> context,
+                                     ResonantState state)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ResonantEntity entity = ResonantManager.debugSpawn(
+                context.getSource().getPlayerOrException(), state);
+        context.getSource().sendSuccess(() -> Component.literal(entity == null
+                ? "Could not find a loaded concealed surface for a Resonant"
+                : "Spawned debug Resonant in " + state.name()), false);
+        return entity == null ? 0 : 1;
+    }
+
+    private static int resonantSetAge(CommandContext<CommandSourceStack> context) {
+        int days = IntegerArgumentType.getInteger(context, "days");
+        ResonantManager.debugSetAgeDays(days);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set debug Resonant evolution age to " + days + " days"), false);
+        return 1;
+    }
+
+    private static int resonantSetConfidence(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ResonantEntity entity = ResonantManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noResonant(context);
+        float confidence = FloatArgumentType.getFloat(context, "confidence");
+        entity.setConfidence(confidence);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set nearest Resonant confidence to " + confidence), false);
+        return 1;
+    }
+
+    private static int resonantEmit(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        String raw = StringArgumentType.getString(context, "type");
+        ResonanceEventManager.Type type = ResonanceEventManager.Type.byName(raw);
+        if (type == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "Unknown event type: " + raw));
+            return 0;
+        }
+        float strength = switch (type) {
+            case WALK -> 1.0F;
+            case SPRINT, DOOR, ITEM_IMPACT -> 3.0F;
+            case LAND, PLACE, MACHINERY -> 4.0F;
+            case STONE_MINE, PROJECTILE_IMPACT -> 5.0F;
+            case RESPIRATORY -> 6.0F;
+            case METAL_MINE -> 7.0F;
+            case PISTON -> 8.0F;
+            case EXPLOSION -> 15.0F;
+        };
+        ResonanceEventManager.emit(player.serverLevel(), player.position(), strength,
+                type, player.getUUID());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Emitted " + type.name() + " resonance at strength " + strength), false);
+        return 1;
+    }
+
+    private static int resonantForcePulse(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ResonantEntity entity = ResonantManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noResonant(context);
+        entity.forcePulse();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Resonant pulse windup"), false);
+        return 1;
+    }
+
+    private static int resonantForceBreach(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ResonantEntity entity = ResonantManager.nearest(player);
+        if (entity == null) return noResonant(context);
+        boolean started = entity.forceBreach(player);
+        context.getSource().sendSuccess(() -> Component.literal(started
+                ? "Locked a Resonant breach surface"
+                : "No safe two-block breach surface found"), false);
+        return started ? 1 : 0;
+    }
+
+    private static int resonantPurgeLoaded(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = ResonantManager.purgeLoaded(player.serverLevel(),
+                player.blockPosition(), 512.0D);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Resonants and cleared resonance events"), true);
+        return 1;
+    }
+
+    private static int noResonant(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendFailure(Component.literal(
+                "No loaded Resonant within 96 blocks"));
         return 0;
     }
 

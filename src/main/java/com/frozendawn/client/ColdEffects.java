@@ -36,6 +36,7 @@ public class ColdEffects {
         // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
         if (MobFreezeHandler.getFullSetTier(mc.player) == 3
                 && !mc.player.hasEffect(ModEffects.RIMEBOUND_ENCASEMENT)
+                && !mc.player.hasEffect(ModEffects.RESONANT_GRASP)
                 && mc.player.getTicksFrozen() > 0) {
             mc.player.setTicksFrozen(0);
         }

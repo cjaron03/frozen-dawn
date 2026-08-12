@@ -10,6 +10,7 @@ import com.frozendawn.event.SuitIntegrityHandler;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.UndoneEntity;
@@ -22,6 +23,7 @@ import com.frozendawn.init.ModItems;
 import com.frozendawn.network.HearthrotPayload;
 import com.frozendawn.network.HearthrotSalvationPayload;
 import com.frozendawn.world.TemperatureManager;
+import com.frozendawn.world.ResonanceEventManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -540,6 +542,8 @@ public final class HearthrotManager {
             ServerPlayer player, double radius) {
         ServerLevel level = player.serverLevel();
         level.gameEvent(player, GameEvent.ENTITY_ACTION, player.position());
+        ResonanceEventManager.emit(level, player.position(), 6.0F,
+                ResonanceEventManager.Type.RESPIRATORY, player.getUUID());
         level.sendParticles(
                 ParticleTypes.SNOWFLAKE,
                 player.getX(), player.getEyeY() - 0.12D, player.getZ(),
@@ -547,6 +551,9 @@ public final class HearthrotManager {
         AABB area = player.getBoundingBox().inflate(radius);
         for (PathfinderMob mob : level.getEntitiesOfClass(
                 PathfinderMob.class, area, HearthrotManager::isRespiratoryThreat)) {
+            if (mob instanceof ResonantEntity) {
+                continue;
+            }
             if (mob.getTarget() != null || mob.isPassenger()) {
                 continue;
             }
@@ -566,6 +573,7 @@ public final class HearthrotManager {
         }
         return mob instanceof FrostbittenEntity
                 || mob instanceof RimeboundEntity
+                || mob instanceof ResonantEntity
                 || mob instanceof HollowEntity
                 || mob instanceof UndoneEntity;
     }

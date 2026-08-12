@@ -1,5 +1,7 @@
 package com.frozendawn.block;
 
+import com.frozendawn.event.ResonanceEventHooks;
+
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModItems;
@@ -141,6 +143,10 @@ public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuPr
         progressUnits += heaterSpeedUnits;
         processing = true;
         updateControllerLit(true);
+        if (level instanceof ServerLevel serverLevel
+                && serverLevel.getGameTime() % 20L == 0L) {
+            ResonanceEventHooks.emitMachinery(serverLevel, worldPosition);
+        }
 
         if (progressUnits >= progressTargetUnits) {
             recipe.consumeInputs(items, INPUT_SLOTS, level, worldPosition);

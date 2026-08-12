@@ -3,6 +3,7 @@ package com.frozendawn.event;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.compat.curios.CuriosCompat;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.network.IceClawsInputState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -173,7 +174,8 @@ public final class IceClawsHandler {
                 && !entity.isInWaterOrBubble()
                 && !entity.isInLava()
                 && !player.isPassenger()
-                && !isGrabbedByHollow(entity);
+                && !isGrabbedByHollow(entity)
+                && !entity.hasEffect(ModEffects.RESONANT_GRASP);
     }
 
     private static boolean isGrabbedByHollow(LivingEntity entity) {

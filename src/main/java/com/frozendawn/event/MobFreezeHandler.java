@@ -6,6 +6,7 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.world.TemperatureManager;
@@ -105,6 +106,13 @@ public class MobFreezeHandler {
         // controller owns the frost rendering even through climate-controlled EVA.
         if (entity instanceof ServerPlayer serverPlayer
                 && RimeboundEncasement.amount(serverPlayer) > 0.0F) {
+            return;
+        }
+
+        // Resonant frost is physically forced across the suit during a grab.
+        // The entity owns buildup and damage cadence; EVA may not erase the tell.
+        if (entity instanceof ServerPlayer serverPlayer
+                && serverPlayer.hasEffect(ModEffects.RESONANT_GRASP)) {
             return;
         }
 

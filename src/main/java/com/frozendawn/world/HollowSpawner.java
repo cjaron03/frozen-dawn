@@ -4,6 +4,10 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.ResonantPhaseController;
+import com.frozendawn.entity.ResonantPolicy;
+import com.frozendawn.entity.ResonantState;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.phase.PhaseManager;
@@ -13,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 
 public class HollowSpawner {
 
@@ -86,13 +91,41 @@ public class HollowSpawner {
                     : findSpawnPos(level, player, random);
             if (spawnPos == null) continue;
 
-            HollowEntity hollow = ModEntities.HOLLOW.get().create(level, null, spawnPos,
-                    MobSpawnType.NATURAL, true, false);
-            if (hollow != null) {
-                level.addFreshEntity(hollow);
-                FrozenDawn.LOGGER.info("[Hollow] Spawned near {} at phase {}", player.getName().getString(), currentPhase);
+            if (postMaeve && trySpawnResonant(level, spawnPos, random)) {
+                continue;
+            }
+            HollowEntity hollow = ModEntities.HOLLOW.get().create(
+                    level, null, spawnPos, MobSpawnType.NATURAL, true, false);
+            if (hollow != null && level.addFreshEntity(hollow)) {
+                FrozenDawn.LOGGER.info("[Hollow] Spawned near {} at phase {}",
+                        player.getName().getString(), currentPhase);
             }
         }
+    }
+
+    private static boolean trySpawnResonant(ServerLevel level, BlockPos encounter,
+                                            RandomSource random) {
+        if (!FrozenDawnConfig.ENABLE_RESONANT.get()) return false;
+        float chance = ResonantPolicy.evolutionChance(
+                ResonantManager.ticksSinceErasure(level),
+                BloomGrowthManager.pressureMultiplier(level, encounter),
+                FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
+        if (random.nextFloat() >= chance) return false;
+        int nearby = level.getEntitiesOfClass(ResonantEntity.class,
+                new AABB(encounter).inflate(64.0D)).size();
+        if (nearby >= FrozenDawnConfig.RESONANT_NEARBY_CAP.get()) return false;
+        BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, encounter);
+        if (concealed == null) return false;
+        ResonantEntity resonant = ModEntities.RESONANT.get().create(
+                level, null, concealed, MobSpawnType.NATURAL, true, false);
+        if (resonant == null) return false;
+        resonant.setActivityState(ResonantState.LISTENING);
+        if (!level.addFreshEntity(resonant)) {
+            resonant.discard();
+            return false;
+        }
+        FrozenDawn.LOGGER.info("[Resonant] Hollow evolution concealed at {}", concealed);
+        return true;
     }
 
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
