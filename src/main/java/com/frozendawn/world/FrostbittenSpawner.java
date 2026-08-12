@@ -4,6 +4,10 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundBurrowController;
+import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.RimeboundPolicy;
+import com.frozendawn.entity.RimeboundState;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import net.minecraft.core.BlockPos;
@@ -75,6 +79,11 @@ public class FrostbittenSpawner {
                             LateThreatSpawnHelper.NO_LIGHT_LIMIT)
                     : findSpawnPos(level, player, random);
             if (groupCenter == null) continue;
+
+            if (postMaeve && trySpawnRimeboundEncounter(
+                    level, groupCenter, player, random)) {
+                continue;
+            }
 
             int spawned = 0;
             for (int i = 0; i < spawnCount; i++) {
@@ -157,5 +166,55 @@ public class FrostbittenSpawner {
         return null;
     }
 
-    public static void reset() {}
+    public static void reset() {
+        RimeboundManager.reset();
+    }
+
+    private static boolean trySpawnRimeboundEncounter(
+            ServerLevel level, BlockPos groupCenter, ServerPlayer player,
+            RandomSource random) {
+        if (!FrozenDawnConfig.ENABLE_RIMEBOUND.get()) {
+            return false;
+        }
+        float pressure = BloomGrowthManager.pressureMultiplier(level, groupCenter);
+        float chance = RimeboundPolicy.evolutionChance(
+                RimeboundManager.ticksSinceErasure(level), pressure,
+                FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get());
+        if (random.nextFloat() >= chance
+                || !RimeboundBurrowController.validDormantTerrain(level, groupCenter)) {
+            return false;
+        }
+
+        int cap = FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get();
+        int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
+                new net.minecraft.world.phys.AABB(groupCenter).inflate(64.0D)).size();
+        if (nearby >= cap) {
+            return false;
+        }
+        int desired = random.nextFloat() < 0.20F ? 2 : 1;
+        int spawned = 0;
+        for (int i = 0; i < Math.min(desired, cap - nearby); i++) {
+            BlockPos spawn = i == 0 ? groupCenter
+                    : findNearbySpawnPos(level, groupCenter, random, true);
+            if (spawn == null
+                    || !RimeboundBurrowController.validDormantTerrain(level, spawn)) {
+                continue;
+            }
+            RimeboundEntity entity = ModEntities.RIMEBOUND.get().create(
+                    level, null, spawn, MobSpawnType.NATURAL, true, false);
+            if (entity == null) {
+                continue;
+            }
+            entity.setActivityState(RimeboundState.DORMANT);
+            level.addFreshEntity(entity);
+            spawned++;
+        }
+        if (spawned > 0) {
+            FrozenDawn.LOGGER.info(
+                    "[Rimebound] Evolved {} Frostbitten spawn(s) near {} at age {} ticks",
+                    spawned, player.getName().getString(),
+                    RimeboundManager.ticksSinceErasure(level));
+        }
+        return spawned > 0;
+    }
 }

@@ -1688,5 +1688,97 @@
     "sounds": [
       { "name": "minecraft:entity.elder_guardian.curse", "type": "event", "volume": 1.0, "pitch": 0.92 }
     ]
+  },
+  "entity.rimebound.ambient": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.ambient",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.ambient","type":"event","volume":1.05,"pitch":0.82}]
+  },
+  "entity.rimebound.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.hurt",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.hurt","type":"event","volume":1.05,"pitch":0.8}]
+  },
+  "entity.rimebound.attack": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.attack",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.hurt","type":"event","volume":0.72,"pitch":0.9}]
+  },
+  "entity.rimebound.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.death",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.death","type":"event","volume":1.1,"pitch":0.78}]
+  },
+  "entity.rimebound.resonance_ambient": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.ambient","type":"event","volume":0.3,"pitch":1.3}]
+  },
+  "entity.rimebound.resonance_hurt": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.hurt","type":"event","volume":0.34,"pitch":1.25}]
+  },
+  "entity.rimebound.resonance_death": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.death","type":"event","volume":0.42,"pitch":1.42}]
+  },
+  "entity.rimebound.resonance_attack": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.shoot","type":"event","volume":0.24,"pitch":1.35}]
+  },
+  "entity.rimebound.contraction": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.contraction",
+    "sounds": ["frozendawn:entity/rimebound/contraction"]
+  },
+  "entity.rimebound.burrow": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.burrow",
+    "sounds": [{"name":"frozendawn:entity/rimebound/burrow","attenuation_distance":48},{"name":"frozendawn:entity/rimebound/burrow_2","attenuation_distance":48}]
+  },
+  "entity.rimebound.eruption": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.eruption",
+    "sounds": [{"name":"frozendawn:entity/rimebound/eruption","volume":1.25,"attenuation_distance":48},{"name":"frozendawn:entity/rimebound/eruption_2","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.rimebound.lance_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance_windup",
+    "sounds": ["frozendawn:entity/rimebound/lance_windup"]
+  },
+  "entity.rimebound.lance": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance",
+    "sounds": ["frozendawn:entity/rimebound/lance"]
+  },
+  "entity.rimebound.lance_embed": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance_embed",
+    "sounds": ["frozendawn:entity/rimebound/lance_embed"]
+  },
+  "entity.rimebound.shell_crack": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.shell_crack",
+    "sounds": ["frozendawn:entity/rimebound/shell_crack"]
+  },
+  "entity.rimebound.shell_shatter": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.shell_shatter",
+    "sounds": ["frozendawn:entity/rimebound/shell_shatter"]
+  },
+  "entity.rimebound.armor": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.armor",
+    "sounds": ["frozendawn:entity/rimebound/armor"]
+  },
+  "entity.rimebound.freeze_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.freeze_windup",
+    "sounds": ["frozendawn:entity/rimebound/freeze_windup", "frozendawn:entity/rimebound/freeze_windup_2"]
+  },
+  "entity.rimebound.freeze": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.freeze",
+    "sounds": ["frozendawn:entity/rimebound/freeze"]
+  },
+  "entity.rimebound.leap": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.leap",
+    "sounds": ["frozendawn:entity/rimebound/leap"]
+  },
+  "entity.rimebound.fire_scream": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.fire_scream",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.death","type":"event","volume":1.2,"pitch":1.08,"attenuation_distance":48}]
+  },
+  "entity.rimebound.encase": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.encase",
+    "sounds": [{"name":"frozendawn:entity/rimebound/encase","volume":1.15}]
+  },
+  "entity.rimebound.solidify": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.solidify",
+    "sounds": [{"name":"frozendawn:entity/rimebound/solidify","volume":1.4}]
+  },
+  "entity.rimebound.break_free": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.break_free",
+    "sounds": [{"name":"frozendawn:entity/rimebound/break_free","volume":1.25}]
   }
 }

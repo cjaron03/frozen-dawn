@@ -2,6 +2,12 @@ package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundBurrowController;
+import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.RimeboundPolicy;
+import com.frozendawn.entity.RimeboundState;
+import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModEntities;
@@ -224,6 +230,20 @@ public final class MarkedPursuitManager {
         }
         EntityType<? extends Mob> type = selectReinforcementType(random,
                 DURATION_TICKS - player.getPersistentData().getInt(MARK_TICKS_TAG));
+        if (type == ModEntities.FROSTBITTEN.get()
+                && FrozenDawnConfig.ENABLE_RIMEBOUND.get()
+                && RimeboundBurrowController.validDormantTerrain(level, spawn)) {
+            float evolutionChance = RimeboundPolicy.evolutionChance(
+                    RimeboundManager.ticksSinceErasure(level),
+                    BloomGrowthManager.pressureMultiplier(level, spawn),
+                    FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get());
+            int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
+                    new AABB(spawn).inflate(64.0D)).size();
+            if (nearby < FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get()
+                    && random.nextFloat() < evolutionChance) {
+                type = ModEntities.RIMEBOUND.get();
+            }
+        }
         Mob mob = type.create(level, null, spawn, MobSpawnType.EVENT, true, false);
         if (mob == null) {
             return false;
@@ -231,6 +251,8 @@ public final class MarkedPursuitManager {
         mob.getPersistentData().putBoolean(REINFORCEMENT_TAG, true);
         if (mob instanceof FrostbittenEntity frostbitten) {
             frostbitten.setEmerging(true);
+        } else if (mob instanceof RimeboundEntity rimebound) {
+            rimebound.setActivityState(RimeboundState.STALKING);
         }
         if (!level.addFreshEntity(mob)) {
             mob.discard();

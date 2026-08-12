@@ -13,6 +13,7 @@ import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
+import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.ThermalVentRegistry;
@@ -65,6 +66,7 @@ final class PlayerTickHandler {
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
         MasterArchitectThermalSever.reset();
+        RimeboundEncasement.reset();
         FrostbiteHandler.reset();
         SanityHandler.reset();
     }
@@ -76,6 +78,7 @@ final class PlayerTickHandler {
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
         MasterArchitectThermalSever.onPlayerLogout(player);
+        RimeboundEncasement.clear(player);
         SnowshoesHandler.clearBoost(player);
         IceClawsHandler.onPlayerLogout(player);
         FrostbiteHandler.onPlayerLogout(player);
@@ -84,6 +87,7 @@ final class PlayerTickHandler {
     }
 
     static void onPlayerLogin(ServerPlayer player) {
+        RimeboundEncasement.clear(player);
         FrostbiteHandler.onPlayerLogin(player);
     }
 
@@ -95,6 +99,7 @@ final class PlayerTickHandler {
         frostmiteTemperatureDrain.remove(playerId);
         FrostbiteHandler.clearForRescue(player);
         MasterArchitectThermalSever.clearForRescue(player);
+        RimeboundEncasement.clear(player);
         syncBreathableState(player);
     }
 
@@ -203,6 +208,7 @@ final class PlayerTickHandler {
             SnowshoesHandler.tick(player);
             BlizzardGogglesHandler.tick(player, currentPhase, progress);
             IceClawsHandler.tick(player);
+            RimeboundEncasement.tick(player);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
                 PlayerEndStats.tickJourneyStats(player, state, currentPhase);
@@ -260,7 +266,6 @@ final class PlayerTickHandler {
 
         temp -= FrostbiteHandler.getTemperatureDrain(player);
         temp -= getFrostmiteTemperatureDrain(player);
-
         // Hollow grab: massive temperature plunge
         for (var passenger : player.getPassengers()) {
             if (passenger instanceof HollowEntity) {

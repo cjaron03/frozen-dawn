@@ -33,9 +33,13 @@ import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
 import com.frozendawn.world.ArchivistManager;
+import com.frozendawn.world.RimeboundManager;
+import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.RimeboundState;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -98,6 +102,30 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::archivistForceSort))
                                 .then(Commands.literal("purge-loaded")
                                         .executes(FrozenDawnHearthCommand::archivistPurgeLoaded)))
+                        .then(Commands.literal("rimebound")
+                                .executes(FrozenDawnHearthCommand::rimeboundStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::rimeboundStatus))
+                                .then(Commands.literal("debug-spawn")
+                                        .then(Commands.literal("dormant")
+                                                .executes(context -> rimeboundSpawn(context, true)))
+                                        .then(Commands.literal("stalking")
+                                                .executes(context -> rimeboundSpawn(context, false))))
+                                .then(Commands.literal("debug-set-age")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(FrozenDawnHearthCommand::rimeboundSetAge)))
+                                .then(Commands.literal("debug-setstate")
+                                        .then(Commands.argument("state", StringArgumentType.word())
+                                                .executes(FrozenDawnHearthCommand::rimeboundSetState)))
+                                .then(Commands.literal("debug-force-burrow")
+                                        .executes(FrozenDawnHearthCommand::rimeboundForceBurrow))
+                                .then(Commands.literal("debug-force-lance")
+                                        .executes(FrozenDawnHearthCommand::rimeboundForceLance))
+                                .then(Commands.literal("debug-force-freeze")
+                                        .executes(FrozenDawnHearthCommand::rimeboundForceFreeze))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded)))
                         .then(Commands.literal("moon")
                                 .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
                                 .then(Commands.literal("status")
@@ -732,6 +760,111 @@ final class FrozenDawnHearthCommand {
                 "Purged " + removed + " loaded Archivist entities/relics and nearby sites"),
                 true);
         return 1;
+    }
+
+    private static int rimeboundStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Rimebound: " + RimeboundManager.statusLine(
+                        context.getSource().getLevel())), false);
+        return 1;
+    }
+
+    private static int rimeboundSpawn(
+            CommandContext<CommandSourceStack> context, boolean dormant)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        RimeboundEntity spawned = RimeboundManager.debugSpawn(player, dormant);
+        context.getSource().sendSuccess(() -> Component.literal(spawned == null
+                ? "Could not create a Rimebound on loaded terrain"
+                : "Spawned debug Rimebound in " + spawned.activityState().name()), false);
+        return spawned == null ? 0 : 1;
+    }
+
+    private static int rimeboundSetAge(CommandContext<CommandSourceStack> context) {
+        int days = IntegerArgumentType.getInteger(context, "days");
+        RimeboundManager.debugSetAgeDays(days);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set debug Rimebound evolution age to " + days + " days"), false);
+        return 1;
+    }
+
+    private static int rimeboundSetState(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        RimeboundEntity entity = RimeboundManager.nearest(player);
+        if (entity == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "No loaded Rimebound within 96 blocks"));
+            return 0;
+        }
+        String raw = StringArgumentType.getString(context, "state");
+        try {
+            RimeboundState state = RimeboundState.valueOf(raw.toUpperCase(Locale.ROOT));
+            entity.setActivityState(state);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Set nearest Rimebound to " + state.name()), false);
+            return 1;
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal(
+                    "Unknown Rimebound state: " + raw));
+            return 0;
+        }
+    }
+
+    private static int rimeboundForceBurrow(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RimeboundEntity entity = RimeboundManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) {
+            return noRimebound(context);
+        }
+        entity.forceBurrow();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Rimebound burrow attempt"), false);
+        return 1;
+    }
+
+    private static int rimeboundForceLance(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RimeboundEntity entity = RimeboundManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) {
+            return noRimebound(context);
+        }
+        entity.setTarget(context.getSource().getPlayerOrException());
+        entity.forceLance();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Rimebound lance"), false);
+        return 1;
+    }
+
+    private static int rimeboundForceFreeze(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RimeboundEntity entity = RimeboundManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) {
+            return noRimebound(context);
+        }
+        entity.forceFreeze();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Rimebound Flash Freeze"), false);
+        return 1;
+    }
+
+    private static int rimeboundPurgeLoaded(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = RimeboundManager.purgeLoaded(player.serverLevel(),
+                player.blockPosition(), 512.0D);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Rimebound/lance entities"), true);
+        return 1;
+    }
+
+    private static int noRimebound(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendFailure(Component.literal(
+                "No loaded Rimebound within 96 blocks"));
+        return 0;
     }
 
     private static int bloomStatus(CommandContext<CommandSourceStack> context) {

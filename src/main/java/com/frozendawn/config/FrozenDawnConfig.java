@@ -74,6 +74,9 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK;
     public static final ModConfigSpec.DoubleValue ARCHIVIST_SPAWN_CHANCE_PER_CHECK;
+    public static final ModConfigSpec.BooleanValue ENABLE_RIMEBOUND;
+    public static final ModConfigSpec.DoubleValue RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue RIMEBOUND_NEARBY_CAP;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -342,6 +345,15 @@ public class FrozenDawnConfig {
         ARCHIVIST_SPAWN_CHANCE_PER_CHECK = BUILDER
                 .comment("Chance per eligible loaded 32x32-chunk region every 600 ticks to spawn one Archivist.")
                 .defineInRange("archivistSpawnChancePerCheck", 0.004D, 0.0D, 1.0D);
+        ENABLE_RIMEBOUND = BUILDER
+                .comment("Enable post-Maeve Frostbitten evolution into Rimebound encounters.")
+                .define("enableRimebound", true);
+        RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER = BUILDER
+                .comment("Multiplier for the Rimebound share of Frostbitten spawn rolls.")
+                .defineInRange("rimeboundEvolutionShareMultiplier", 1.0D, 0.0D, 4.0D);
+        RIMEBOUND_NEARBY_CAP = BUILDER
+                .comment("Maximum ordinary Rimebound within 64 blocks.")
+                .defineInRange("rimeboundNearbyCap", 2, 1, 8);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);
