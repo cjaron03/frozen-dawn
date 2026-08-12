@@ -3,6 +3,7 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.effect.HearthrotEffect;
 import com.frozendawn.effect.MarkedEffect;
+import com.frozendawn.effect.RimeboundEncasementEffect;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -16,6 +17,9 @@ public final class ModEffects {
             EFFECTS.register("hearthrot", HearthrotEffect::new);
     public static final DeferredHolder<MobEffect, MarkedEffect> MARKED =
             EFFECTS.register("marked", MarkedEffect::new);
+    public static final DeferredHolder<MobEffect, RimeboundEncasementEffect>
+            RIMEBOUND_ENCASEMENT = EFFECTS.register(
+                    "rimebound_encasement", RimeboundEncasementEffect::new);
 
     private ModEffects() {
     }

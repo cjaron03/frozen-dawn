@@ -3,6 +3,9 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
+import com.frozendawn.client.renderer.RimeboundModel;
+import com.frozendawn.client.renderer.RimeboundRenderer;
+import com.frozendawn.client.renderer.RimeLanceRenderer;
 import com.frozendawn.client.renderer.FrostmiteRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.HeartSuccessorRenderer;
@@ -223,6 +226,8 @@ public class ClientEvents {
                 MasterArchitectAdornmentModel.LAYER_LOCATION,
                 MasterArchitectAdornmentModel::createBodyLayer);
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
+        event.registerLayerDefinition(
+                RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -239,6 +244,8 @@ public class ClientEvents {
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
+        event.registerEntityRenderer(ModEntities.RIMEBOUND.get(), RimeboundRenderer::new);
+        event.registerEntityRenderer(ModEntities.RIME_LANCE.get(), RimeLanceRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTMITE.get(), FrostmiteRenderer::new);
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), HollowRenderer::new);
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);

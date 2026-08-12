@@ -17,6 +17,7 @@ import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
@@ -354,6 +355,7 @@ public class WorldTickHandler {
 
     private static boolean isFrozenDawnManagedHostile(net.minecraft.world.entity.Entity entity) {
         return entity instanceof FrostbittenEntity
+                || entity instanceof RimeboundEntity
                 || entity instanceof FrostmiteEntity
                 || entity instanceof ReturnedEntity
                 || entity instanceof MimicEntity

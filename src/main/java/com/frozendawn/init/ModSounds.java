@@ -172,6 +172,56 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostbitten.emerge")));
 
+    // --- Rimebound ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_AMBIENT =
+            register("entity.rimebound.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_HURT =
+            register("entity.rimebound.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_ATTACK =
+            register("entity.rimebound.attack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_RESONANCE_AMBIENT =
+            register("entity.rimebound.resonance_ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_RESONANCE_HURT =
+            register("entity.rimebound.resonance_hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_RESONANCE_DEATH =
+            register("entity.rimebound.resonance_death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_RESONANCE_ATTACK =
+            register("entity.rimebound.resonance_attack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_DEATH =
+            register("entity.rimebound.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_CONTRACTION =
+            register("entity.rimebound.contraction");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_BURROW =
+            register("entity.rimebound.burrow");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_ERUPTION =
+            register("entity.rimebound.eruption");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_LANCE_WINDUP =
+            register("entity.rimebound.lance_windup");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_LANCE =
+            register("entity.rimebound.lance");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_LANCE_EMBED =
+            register("entity.rimebound.lance_embed");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_SHELL_CRACK =
+            register("entity.rimebound.shell_crack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_SHELL_SHATTER =
+            register("entity.rimebound.shell_shatter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_ARMOR =
+            register("entity.rimebound.armor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_FREEZE_WINDUP =
+            register("entity.rimebound.freeze_windup");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_FREEZE =
+            register("entity.rimebound.freeze");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_LEAP =
+            register("entity.rimebound.leap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_FIRE_SCREAM =
+            register("entity.rimebound.fire_scream");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_ENCASE =
+            register("entity.rimebound.encase");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_SOLIDIFY =
+            register("entity.rimebound.solidify");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIMEBOUND_BREAK_FREE =
+            register("entity.rimebound.break_free");
+
     // --- Frostmite Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_AMBIENT = SOUNDS.register("entity.frostmite.ambient",
             () -> SoundEvent.createVariableRangeEvent(

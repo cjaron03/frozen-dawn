@@ -3,6 +3,8 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundEntity;
+import com.frozendawn.entity.RimeLanceEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
 import com.frozendawn.entity.HollowEntity;
@@ -45,6 +47,22 @@ public class ModEntities {
                     .sized(0.6f, 1.95f)
                     .clientTrackingRange(10)
                     .build("frostbitten"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RimeboundEntity>> RIMEBOUND =
+            ENTITIES.register("rimebound", () -> EntityType.Builder
+                    .of(RimeboundEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("rimebound"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RimeLanceEntity>> RIME_LANCE =
+            ENTITIES.register("rime_lance", () -> EntityType.Builder
+                    .<RimeLanceEntity>of(RimeLanceEntity::new, MobCategory.MISC)
+                    .sized(0.3F, 0.3F)
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+                    .build("rime_lance"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FrostmiteEntity>> FROSTMITE =
             ENTITIES.register("frostmite", () -> EntityType.Builder

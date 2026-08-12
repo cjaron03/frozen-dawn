@@ -7,6 +7,7 @@ import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -97,6 +98,13 @@ public class MobFreezeHandler {
                 && MasterArchitectThermalSever.isSevering(serverPlayer)) {
             entity.setTicksFrozen(Math.max(
                     entity.getTicksFrozen(), entity.getTicksRequiredToFreeze() + 20));
+            return;
+        }
+
+        // Rimebound ice is physical encasement, not environmental cold. Its
+        // controller owns the frost rendering even through climate-controlled EVA.
+        if (entity instanceof ServerPlayer serverPlayer
+                && RimeboundEncasement.amount(serverPlayer) > 0.0F) {
             return;
         }
 

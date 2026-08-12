@@ -9,6 +9,7 @@ import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.event.SuitIntegrityHandler;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.UndoneEntity;
@@ -564,6 +565,7 @@ public final class HearthrotManager {
             return !mimic.isHearthPopulationResident();
         }
         return mob instanceof FrostbittenEntity
+                || mob instanceof RimeboundEntity
                 || mob instanceof HollowEntity
                 || mob instanceof UndoneEntity;
     }
