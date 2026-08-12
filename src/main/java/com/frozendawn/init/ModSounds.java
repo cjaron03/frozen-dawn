@@ -297,6 +297,26 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> BLOOM_SPORE_CORPSE_BREAK =
             register("entity.bloom_spore.corpse_break");
 
+    // --- The Archivist ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_PACK =
+            register("entity.archivist.pack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_SORT =
+            register("entity.archivist.sort");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_STEP =
+            register("entity.archivist.step");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_DEATH =
+            register("entity.archivist.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_AMBIENT =
+            register("entity.archivist.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_HURT =
+            register("entity.archivist.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_SOB =
+            register("entity.archivist.sob");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_SCREAM =
+            register("entity.archivist.scream");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHIVIST_MARKED =
+            register("entity.archivist.marked");
+
     // --- The Undone Architect ---
     public static final DeferredHolder<SoundEvent, SoundEvent>
             UNDONE_ARCHITECT_AMBIENT =

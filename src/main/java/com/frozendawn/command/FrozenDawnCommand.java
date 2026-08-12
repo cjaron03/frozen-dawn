@@ -66,6 +66,7 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate all"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn suit status | punctures <0-2>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn suit hearthrot status | infect | setstage | setprogress | setcolonization"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth postmaeve archivist status | debug-spawn | debug-create-site | debug-fill-site"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn win satellite"), false);
         return 1;
     }
