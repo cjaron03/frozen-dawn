@@ -80,6 +80,9 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_RESONANT;
     public static final ModConfigSpec.DoubleValue RESONANT_EVOLUTION_SHARE_MULTIPLIER;
     public static final ModConfigSpec.IntValue RESONANT_NEARBY_CAP;
+    public static final ModConfigSpec.BooleanValue ENABLE_FROSTWRITHE;
+    public static final ModConfigSpec.DoubleValue FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue FROSTWRITHE_NEARBY_CAP;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -366,6 +369,15 @@ public class FrozenDawnConfig {
         RESONANT_NEARBY_CAP = BUILDER
                 .comment("Maximum ordinary Resonants within 64 blocks.")
                 .defineInRange("resonantNearbyCap", 2, 1, 8);
+        ENABLE_FROSTWRITHE = BUILDER
+                .comment("Enable post-Maeve Frostmite colony formation into Frostwrithe encounters.")
+                .define("enableFrostwrithe", true);
+        FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER = BUILDER
+                .comment("Multiplier for the Frostwrithe share of successful Frostmite spawn rolls.")
+                .defineInRange("frostwritheEvolutionShareMultiplier", 1.0D, 0.0D, 4.0D);
+        FROSTWRITHE_NEARBY_CAP = BUILDER
+                .comment("Maximum assembled Frostwrithe within 64 blocks.")
+                .defineInRange("frostwritheNearbyCap", 1, 1, 4);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);

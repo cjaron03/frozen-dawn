@@ -291,6 +291,55 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.frostmite.step")));
 
+    // --- Frostwrithe colony ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_MOVEMENT =
+            register("entity.frostwrithe.movement");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_ASSEMBLE =
+            register("entity.frostwrithe.assemble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_SHELL =
+            register("entity.frostwrithe.shell");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_SHED =
+            register("entity.frostwrithe.shed");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_DISASSEMBLE =
+            register("entity.frostwrithe.disassemble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_REGROUP =
+            register("entity.frostwrithe.regroup");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_BODY_CHECK =
+            register("entity.frostwrithe.body_check");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_CLIMB =
+            register("entity.frostwrithe.climb");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_BRIDGE =
+            register("entity.frostwrithe.bridge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_OVERRUN =
+            register("entity.frostwrithe.overrun");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_TERMINAL =
+            register("entity.frostwrithe.terminal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_ARCHITECT =
+            register("entity.frostwrithe.imitate_architect");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_HOLLOW =
+            register("entity.frostwrithe.imitate_hollow");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_FROSTBITTEN =
+            register("entity.frostwrithe.imitate_frostbitten");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_RETURNED =
+            register("entity.frostwrithe.imitate_returned");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_UNDONE =
+            register("entity.frostwrithe.imitate_undone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_BLOOMBOUND =
+            register("entity.frostwrithe.imitate_bloombound");
+    public static final DeferredHolder<SoundEvent, SoundEvent>
+            FROSTWRITHE_IMITATE_UNDONE_ARCHITECT =
+            register("entity.frostwrithe.imitate_undone_architect");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_RIMEBOUND =
+            register("entity.frostwrithe.imitate_rimebound");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_RESONANT =
+            register("entity.frostwrithe.imitate_resonant");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_REMNANT =
+            register("entity.frostwrithe.imitate_remnant");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_ARCHIVIST =
+            register("entity.frostwrithe.imitate_archivist");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FROSTWRITHE_IMITATE_MIMIC =
+            register("entity.frostwrithe.imitate_mimic");
+
     // --- Hollow Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> HOLLOW_AMBIENT = SOUNDS.register("entity.hollow.ambient",
             () -> SoundEvent.createVariableRangeEvent(

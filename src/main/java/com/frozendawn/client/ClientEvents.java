@@ -10,6 +10,8 @@ import com.frozendawn.client.renderer.ResonantModel;
 import com.frozendawn.client.renderer.ResonantRenderer;
 import com.frozendawn.client.renderer.RemnantRenderer;
 import com.frozendawn.client.renderer.FrostmiteRenderer;
+import com.frozendawn.client.renderer.FrostwritheModel;
+import com.frozendawn.client.renderer.FrostwritheRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.HeartSuccessorRenderer;
 import com.frozendawn.client.renderer.HollowRenderer;
@@ -108,6 +110,11 @@ public class ClientEvents {
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
+        );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "frostwrithe_overrun"),
+                FrostwritheOverrunOverlay::render
         );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "heat_overlay"),
@@ -233,6 +240,8 @@ public class ClientEvents {
                 RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
         event.registerLayerDefinition(
                 ResonantModel.LAYER_LOCATION, ResonantModel::createBodyLayer);
+        event.registerLayerDefinition(
+                FrostwritheModel.LAYER_LOCATION, FrostwritheModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -254,6 +263,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RESONANT.get(), ResonantRenderer::new);
         event.registerEntityRenderer(ModEntities.REMNANT.get(), RemnantRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTMITE.get(), FrostmiteRenderer::new);
+        event.registerEntityRenderer(ModEntities.FROSTWRITHE.get(), FrostwritheRenderer::new);
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), HollowRenderer::new);
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);

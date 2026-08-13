@@ -36,6 +36,7 @@ import com.frozendawn.world.ArchivistManager;
 import com.frozendawn.world.RimeboundManager;
 import com.frozendawn.world.ResonantManager;
 import com.frozendawn.world.ResonanceEventManager;
+import com.frozendawn.world.FrostwritheManager;
 import com.frozendawn.world.remnant.RemnantLureManager;
 import com.frozendawn.world.remnant.RemnantLureTemplate;
 import com.frozendawn.entity.RemnantEntity;
@@ -44,6 +45,8 @@ import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundState;
 import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantState;
+import com.frozendawn.entity.FrostwritheEntity;
+import com.frozendawn.entity.FrostwritheState;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -134,6 +137,38 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::rimeboundForceFreeze))
                                 .then(Commands.literal("purge-loaded")
                                         .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded)))
+                        .then(Commands.literal("frostwrithe")
+                                .executes(FrozenDawnHearthCommand::frostwritheStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::frostwritheStatus))
+                                .then(Commands.literal("debug-spawn")
+                                        .executes(FrozenDawnHearthCommand::frostwritheSpawn))
+                                .then(Commands.literal("debug-set-age")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(FrozenDawnHearthCommand::frostwritheSetAge)))
+                                .then(Commands.literal("debug-set-cohesion")
+                                        .then(Commands.argument("cohesion",
+                                                        FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(FrozenDawnHearthCommand::frostwritheSetCohesion)))
+                                .then(Commands.literal("debug-force-disassemble")
+                                        .executes(FrozenDawnHearthCommand::frostwritheDisassemble))
+                                .then(Commands.literal("debug-force-regroup")
+                                        .executes(FrozenDawnHearthCommand::frostwritheRegroup))
+                                .then(Commands.literal("debug-force-burrow")
+                                        .executes(FrozenDawnHearthCommand::frostwritheBurrow))
+                                .then(Commands.literal("debug-force-shell")
+                                        .executes(FrozenDawnHearthCommand::frostwritheShell))
+                                .then(Commands.literal("debug-force-climb")
+                                        .executes(FrozenDawnHearthCommand::frostwritheClimb))
+                                .then(Commands.literal("debug-force-bridge")
+                                        .executes(FrozenDawnHearthCommand::frostwritheBridge))
+                                .then(Commands.literal("debug-force-overrun")
+                                        .executes(FrozenDawnHearthCommand::frostwritheOverrun))
+                                .then(Commands.literal("debug-force-mimic")
+                                        .executes(FrozenDawnHearthCommand::frostwritheMimic))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::frostwrithePurgeLoaded)))
                         .then(Commands.literal("resonant")
                                 .executes(FrozenDawnHearthCommand::resonantStatus)
                                 .then(Commands.literal("status")
@@ -928,6 +963,162 @@ final class FrozenDawnHearthCommand {
     private static int noRimebound(CommandContext<CommandSourceStack> context) {
         context.getSource().sendFailure(Component.literal(
                 "No loaded Rimebound within 96 blocks"));
+        return 0;
+    }
+
+    private static int frostwritheStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Frostwrithe: " + FrostwritheManager.statusLine(
+                        context.getSource().getLevel())), false);
+        return 1;
+    }
+
+    private static int frostwritheSpawn(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.debugSpawn(
+                context.getSource().getPlayerOrException(), FrostwritheState.CRAWLER);
+        context.getSource().sendSuccess(() -> Component.literal(entity == null
+                ? "Could not find enough loaded space for a Frostwrithe"
+                : "Spawned debug Frostwrithe"), false);
+        return entity == null ? 0 : 1;
+    }
+
+    private static int frostwritheSetAge(CommandContext<CommandSourceStack> context) {
+        int days = IntegerArgumentType.getInteger(context, "days");
+        FrostwritheManager.debugSetAgeDays(days);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set debug Frostwrithe evolution age to " + days + " days"), false);
+        return 1;
+    }
+
+    private static int frostwritheSetCohesion(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        float cohesion = FloatArgumentType.getFloat(context, "cohesion");
+        entity.debugSetCohesion(cohesion);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set nearest Frostwrithe cohesion to " + cohesion), false);
+        return 1;
+    }
+
+    private static int frostwritheDisassemble(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceDisassemble();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe to disassemble"), false);
+        return 1;
+    }
+
+    private static int frostwritheRegroup(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        boolean regrouped = FrostwritheManager.forceRegroup(
+                context.getSource().getPlayerOrException());
+        context.getSource().sendSuccess(() -> Component.literal(regrouped
+                ? "Forced the nearest loose colony to rally"
+                : "No loose Frostwrithe representatives within 96 blocks"), false);
+        return regrouped ? 1 : 0;
+    }
+
+    private static int frostwritheBurrow(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        boolean started = entity.forceBurrow();
+        context.getSource().sendSuccess(() -> Component.literal(started
+                ? "Forced nearest Frostwrithe underground"
+                : "Frostwrithe could not find a loaded natural route"), false);
+        return started ? 1 : 0;
+    }
+
+    private static int frostwritheShell(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceShell();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe into Shell"), false);
+        return 1;
+    }
+
+    private static int frostwritheClimb(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceClimb();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe climbing attempt"), false);
+        return 1;
+    }
+
+    private static int frostwritheBridge(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceBridge();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe bridge attempt"), false);
+        return 1;
+    }
+
+    private static int frostwritheOverrun(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceOverrun();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe Overrun"), false);
+        return 1;
+    }
+
+    private static int frostwritheMimic(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        boolean mimicked = entity.forceMimicNearby();
+        if (!mimicked) {
+            context.getSource().sendFailure(Component.literal(
+                    "No Architect, Rimebound, Resonant, Remnant, Undone, "
+                            + "Bloombound, or Undone Architect within 80 blocks"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe to repeat a nearby creature"), false);
+        return 1;
+    }
+
+    private static FrostwritheEntity targetedFrostwrithe(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        FrostwritheEntity entity = FrostwritheManager.nearest(player);
+        if (entity != null) entity.setTarget(player);
+        return entity;
+    }
+
+    private static int frostwrithePurgeLoaded(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = FrostwritheManager.purgeLoaded(player.serverLevel(),
+                player.blockPosition(), 512.0D);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Frostwrithe/colony representatives"), true);
+        return 1;
+    }
+
+    private static int noFrostwrithe(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendFailure(Component.literal(
+                "No loaded Frostwrithe within 96 blocks"));
         return 0;
     }
 
