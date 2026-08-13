@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.RoofCollapseSnowTracker;
@@ -223,6 +224,10 @@ public final class BlockFreezer {
 
     private static void applyStructuralStress(ServerLevel level, BlockPos pos, BlockState state,
                                               int phase, float progress) {
+        if (RemnantLureSavedData.get(level.getServer()).protectsFromEnvironmentalMutation(pos)) {
+            StructureStressTracker.clear(level, pos);
+            return;
+        }
         boolean wood = isWoodStructure(state);
         boolean masonry = isMasonryStructure(state);
         if (!wood && !masonry) {

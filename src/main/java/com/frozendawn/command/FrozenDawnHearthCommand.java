@@ -36,6 +36,10 @@ import com.frozendawn.world.ArchivistManager;
 import com.frozendawn.world.RimeboundManager;
 import com.frozendawn.world.ResonantManager;
 import com.frozendawn.world.ResonanceEventManager;
+import com.frozendawn.world.remnant.RemnantLureManager;
+import com.frozendawn.world.remnant.RemnantLureTemplate;
+import com.frozendawn.entity.RemnantEntity;
+import com.frozendawn.entity.RemnantState;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundState;
 import com.frozendawn.entity.ResonantEntity;
@@ -159,6 +163,33 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::resonantForceBreach))
                                 .then(Commands.literal("purge-loaded")
                                         .executes(FrozenDawnHearthCommand::resonantPurgeLoaded)))
+                        .then(Commands.literal("remnant")
+                                .executes(FrozenDawnHearthCommand::remnantStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::remnantStatus))
+                                .then(Commands.literal("debug-dry-run")
+                                        .then(Commands.argument("template", StringArgumentType.word())
+                                                .executes(FrozenDawnHearthCommand::remnantDryRun)))
+                                .then(Commands.literal("debug-place")
+                                        .then(Commands.argument("template", StringArgumentType.word())
+                                                .executes(FrozenDawnHearthCommand::remnantPlace)))
+                                .then(Commands.literal("debug-spawn-exposed")
+                                        .executes(FrozenDawnHearthCommand::remnantSpawnExposed))
+                                .then(Commands.literal("debug-commit")
+                                        .executes(FrozenDawnHearthCommand::remnantCommit))
+                                .then(Commands.literal("debug-setstate")
+                                        .then(Commands.argument("state", StringArgumentType.word())
+                                                .executes(FrozenDawnHearthCommand::remnantSetState)))
+                                .then(Commands.literal("debug-force-slip")
+                                        .executes(FrozenDawnHearthCommand::remnantForceSlip))
+                                .then(Commands.literal("debug-force-grab")
+                                        .executes(FrozenDawnHearthCommand::remnantForceGrab))
+                                .then(Commands.literal("debug-collapse")
+                                        .executes(FrozenDawnHearthCommand::remnantCollapse))
+                                .then(Commands.literal("validate-nearest")
+                                        .executes(FrozenDawnHearthCommand::remnantValidateNearest))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::remnantPurgeLoaded)))
                         .then(Commands.literal("moon")
                                 .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
                                 .then(Commands.literal("status")
@@ -1001,6 +1032,140 @@ final class FrozenDawnHearthCommand {
     private static int noResonant(CommandContext<CommandSourceStack> context) {
         context.getSource().sendFailure(Component.literal(
                 "No loaded Resonant within 96 blocks"));
+        return 0;
+    }
+
+    private static int remnantStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Remnant: " + RemnantLureManager.statusLine(context.getSource().getLevel())), false);
+        return 1;
+    }
+
+    private static RemnantLureTemplate.Kind remnantTemplate(
+            CommandContext<CommandSourceStack> context) {
+        return RemnantLureTemplate.Kind.parse(
+                StringArgumentType.getString(context, "template"));
+    }
+
+    private static int remnantDryRun(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        var result = RemnantLureManager.debugDryRun(
+                context.getSource().getPlayerOrException(), remnantTemplate(context));
+        if (result.accepted()) context.getSource().sendSuccess(
+                () -> Component.literal("Remnant placement accepted"), false);
+        else context.getSource().sendFailure(Component.literal(
+                "Remnant placement rejected: " + result.reason()));
+        return result.accepted() ? 1 : 0;
+    }
+
+    private static int remnantPlace(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        var record = RemnantLureManager.debugPlace(
+                context.getSource().getPlayerOrException(), remnantTemplate(context));
+        if (record == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "Could not place a protected one-chunk Remnant shelter"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Placed " + record.templateId() + " lure at "
+                        + record.origin().toShortString()
+                        + ". Its body remains hidden in the shelter until commitment."), false);
+        return 1;
+    }
+
+    private static int remnantSpawnExposed(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RemnantEntity entity = RemnantLureManager.debugSpawnExposed(
+                context.getSource().getPlayerOrException());
+        context.getSource().sendSuccess(() -> Component.literal(entity == null
+                ? "Could not spawn exposed Remnant"
+                : "Spawned exposed Remnant at " + entity.blockPosition().toShortString()), false);
+        return entity == null ? 0 : 1;
+    }
+
+    private static int remnantCommit(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        boolean changed = RemnantLureManager.debugCommit(
+                context.getSource().getPlayerOrException());
+        context.getSource().sendSuccess(() -> Component.literal(changed
+                ? "Committed nearest Remnant lure" : "No uncommitted Remnant lure nearby"), false);
+        return changed ? 1 : 0;
+    }
+
+    private static int remnantSetState(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        RemnantState state;
+        try {
+            state = RemnantState.valueOf(StringArgumentType.getString(context, "state")
+                    .toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal("Unknown Remnant state"));
+            return 0;
+        }
+        boolean changed = RemnantLureManager.debugSetState(
+                context.getSource().getPlayerOrException(), state);
+        context.getSource().sendSuccess(() -> Component.literal(
+                changed ? "Set nearest Remnant to " + state : "No Remnant lure nearby"), false);
+        return changed ? 1 : 0;
+    }
+
+    private static int remnantForceSlip(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        boolean changed = RemnantLureManager.debugForceSlip(
+                context.getSource().getPlayerOrException());
+        if (changed) context.getSource().sendSuccess(
+                () -> Component.literal("Forced Remnant Wall Slip"), false);
+        else context.getSource().sendFailure(Component.literal(
+                "Wall Slip failed: Remnant must be HUNTING inside a bound lure with clear interior space"));
+        return changed ? 1 : 0;
+    }
+
+    private static int remnantForceGrab(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        boolean changed = RemnantLureManager.debugForceGrab(
+                context.getSource().getPlayerOrException());
+        context.getSource().sendSuccess(() -> Component.literal(
+                changed ? "Forced Remnant Wall Grab" : "No loaded Remnant nearby"), false);
+        return changed ? 1 : 0;
+    }
+
+    private static int remnantCollapse(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        var nearest = RemnantLureManager.nearest(player);
+        if (nearest.isEmpty()) return noRemnant(context);
+        RemnantLureManager.beginCollapse(player.serverLevel(), nearest.get().id());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Started nearest Remnant collapse"), false);
+        return 1;
+    }
+
+    private static int remnantValidateNearest(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        var nearest = RemnantLureManager.nearest(player);
+        if (nearest.isEmpty()) return noRemnant(context);
+        var record = nearest.get();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Remnant " + record.id() + " | template=" + record.templateId()
+                        + " | state=" + record.state() + " | entity="
+                        + record.entityId().map(Object::toString).orElse("missing")), false);
+        return 1;
+    }
+
+    private static int remnantPurgeLoaded(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = RemnantLureManager.purgeLoaded(
+                player.serverLevel(), player.blockPosition(), 512);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Remnant lures"), true);
+        return 1;
+    }
+
+    private static int noRemnant(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendFailure(Component.literal("No loaded Remnant lure within range"));
         return 0;
     }
 

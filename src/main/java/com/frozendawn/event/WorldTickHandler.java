@@ -48,6 +48,7 @@ import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
 import com.frozendawn.world.ArchivistManager;
+import com.frozendawn.world.remnant.RemnantLureManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
@@ -236,6 +237,7 @@ public class WorldTickHandler {
         UndoneSpawner.tick(overworld);
         UndoneArchitectSpawner.tick(overworld);
         ArchivistManager.tick(overworld);
+        RemnantLureManager.tick(overworld);
         HearthDarkeningManager.tick(overworld);
         if ((tick & 1L) == 0L) {
             BlastPitPlacement.tickPlacement(overworld);

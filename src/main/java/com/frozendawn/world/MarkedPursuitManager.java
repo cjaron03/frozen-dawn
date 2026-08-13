@@ -10,6 +10,7 @@ import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantPhaseController;
 import com.frozendawn.entity.ResonantPolicy;
 import com.frozendawn.entity.ResonantState;
+import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.WorldTickHandler;
@@ -330,6 +331,10 @@ public final class MarkedPursuitManager {
     private static void forcePursuit(Mob mob, ServerPlayer player) {
         if (mob instanceof ResonantEntity resonant) {
             resonant.forceMarkedTarget(player);
+            return;
+        }
+        if (mob instanceof RemnantEntity remnant) {
+            remnant.forceMarkedTarget(player);
             return;
         }
         mob.setTarget(player);

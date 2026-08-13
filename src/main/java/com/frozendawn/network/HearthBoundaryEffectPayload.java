@@ -23,6 +23,11 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int BLOOM_CONTACT = 10;
     public static final int BLOOM_ERUPTION_RUMBLE = 11;
     public static final int BLOOM_ERUPTION_IMPACT = 12;
+    public static final int REMNANT_RADIO_ROOM = 13;
+    public static final int REMNANT_RADIO_WARM = 14;
+    public static final int REMNANT_RADIO_ALONE = 15;
+    public static final int REMNANT_RADIO_FORGIVE = 16;
+    public static final int REMNANT_RADIO_CUTOFF = 17;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -84,6 +89,15 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload bloomEruptionImpact() {
         return new HearthBoundaryEffectPayload(BLOOM_ERUPTION_IMPACT);
+    }
+
+    public static HearthBoundaryEffectPayload remnantRadioVoice(int line) {
+        return new HearthBoundaryEffectPayload(REMNANT_RADIO_ROOM
+                + Math.clamp(line, 0, 3));
+    }
+
+    public static HearthBoundaryEffectPayload remnantRadioCutoff() {
+        return new HearthBoundaryEffectPayload(REMNANT_RADIO_CUTOFF);
     }
 
     @Override

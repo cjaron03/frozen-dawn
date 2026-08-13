@@ -101,6 +101,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
     public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
     public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
+    // Remnant lure blocks intentionally have no item or creative-tab entry.
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");

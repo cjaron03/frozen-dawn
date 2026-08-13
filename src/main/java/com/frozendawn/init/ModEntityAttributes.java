@@ -5,6 +5,7 @@ import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
@@ -27,6 +28,7 @@ public class ModEntityAttributes {
         event.put(ModEntities.FROSTBITTEN.get(), FrostbittenEntity.createAttributes().build());
         event.put(ModEntities.RIMEBOUND.get(), RimeboundEntity.createAttributes().build());
         event.put(ModEntities.RESONANT.get(), ResonantEntity.createAttributes().build());
+        event.put(ModEntities.REMNANT.get(), RemnantEntity.createAttributes().build());
         event.put(ModEntities.FROSTMITE.get(), FrostmiteEntity.createAttributes().build());
         event.put(ModEntities.HOLLOW.get(), HollowEntity.createAttributes().build());
         event.put(ModEntities.RETURNED.get(), ReturnedEntity.createAttributes().build());

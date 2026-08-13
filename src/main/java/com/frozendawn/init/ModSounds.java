@@ -244,6 +244,36 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RESONANT_DEATH_COLLAPSE =
             register("entity.resonant.death_collapse");
 
+    // --- Remnant ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_LATCH =
+            register("entity.remnant.latch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_WALL_PRESSURE =
+            register("entity.remnant.wall_pressure");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_WALL_SHIFT =
+            register("entity.remnant.wall_shift");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_GRAB =
+            register("entity.remnant.grab");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_AMBIENT =
+            register("entity.remnant.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_HURT =
+            register("entity.remnant.hurt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_DEATH =
+            register("entity.remnant.death");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_COLLAPSE =
+            register("entity.remnant.collapse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_FALSE_RADIO =
+            register("entity.remnant.false_radio");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_RADIO_ROOM =
+            register("entity.remnant.radio_room");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_RADIO_WARM =
+            register("entity.remnant.radio_warm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_RADIO_ALONE =
+            register("entity.remnant.radio_alone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_RADIO_FORGIVE =
+            register("entity.remnant.radio_forgive");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REMNANT_FALSE_HEATER =
+            register("entity.remnant.false_heater");
+
     // --- Frostmite Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> FROSTMITE_AMBIENT = SOUNDS.register("entity.frostmite.ambient",
             () -> SoundEvent.createVariableRangeEvent(

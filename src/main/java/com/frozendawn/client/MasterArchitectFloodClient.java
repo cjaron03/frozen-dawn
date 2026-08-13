@@ -87,6 +87,8 @@ public final class MasterArchitectFloodClient {
     private static int suitDialogueTicks;
     private static int suitDialogueAge;
     private static boolean suitDialogueWarning;
+    private static String suitDialogueSpeakerKey;
+    private static boolean suitDialogueCorrupted;
     private static int ivenStacks;
     private static int exposureCycle;
     private static boolean coreExposed;
@@ -499,6 +501,8 @@ public final class MasterArchitectFloodClient {
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
         suitDialogueAge = 0;
         suitDialogueWarning = false;
+        suitDialogueSpeakerKey = "ui.frozendawn.master_architect.suit_speaker";
+        suitDialogueCorrupted = false;
     }
 
     public static void showWarningSuitDialogue(String translationKey) {
@@ -506,6 +510,21 @@ public final class MasterArchitectFloodClient {
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
         suitDialogueAge = 0;
         suitDialogueWarning = true;
+        suitDialogueSpeakerKey = "ui.frozendawn.master_architect.suit_speaker_warning";
+        suitDialogueCorrupted = false;
+    }
+
+    public static void showRadioDialogue(String translationKey) {
+        suitDialogueKey = translationKey;
+        suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
+        suitDialogueAge = 0;
+        suitDialogueWarning = false;
+        suitDialogueSpeakerKey = "ui.frozendawn.remnant.radio_speaker";
+        suitDialogueCorrupted = true;
+    }
+
+    public static void clearRadioDialogue() {
+        if (suitDialogueCorrupted) clearSuitDialogue();
     }
 
     public static float getDeathRitualProgress() {
@@ -521,6 +540,8 @@ public final class MasterArchitectFloodClient {
         suitDialogueTicks = 0;
         suitDialogueAge = 0;
         suitDialogueWarning = false;
+        suitDialogueSpeakerKey = null;
+        suitDialogueCorrupted = false;
     }
 
     private static void renderSuitDialogue(GuiGraphics graphics) {
@@ -534,6 +555,9 @@ public final class MasterArchitectFloodClient {
         int revealedCharacters = Math.min(
                 fullText.length(), suitDialogueAge * SUIT_DIALOGUE_CHARS_PER_TICK);
         String visibleText = fullText.substring(0, revealedCharacters);
+        if (suitDialogueCorrupted && !visibleText.isEmpty()) {
+            visibleText = corruptRadioText(visibleText, suitDialogueAge);
+        }
         if (revealedCharacters < fullText.length() && (suitDialogueAge / 5 & 1) == 0) {
             visibleText += "_";
         }
@@ -548,10 +572,15 @@ public final class MasterArchitectFloodClient {
         int panelHeight = 17 + visibleLines * 10;
         float fade = Mth.clamp(suitDialogueTicks / 16.0F, 0.0F, 1.0F);
 
-        int panelColor = suitDialogueWarning ? 0x181407 : 0x071319;
-        int accentColor = suitDialogueWarning ? 0xF0C934 : 0x20DCE7;
-        int speakerColor = suitDialogueWarning ? 0xFFE06A : 0x54EAF1;
-        int textColor = suitDialogueWarning ? 0xFFF3C4 : 0xD5EEF2;
+        boolean corruptPulse = suitDialogueCorrupted && suitDialogueAge % 17 < 3;
+        int panelColor = suitDialogueWarning ? 0x181407
+                : suitDialogueCorrupted ? 0x07100F : 0x071319;
+        int accentColor = suitDialogueWarning ? 0xF0C934
+                : corruptPulse ? 0xE7F9E2 : 0x20DCE7;
+        int speakerColor = suitDialogueWarning ? 0xFFE06A
+                : suitDialogueCorrupted ? 0xB9D8CF : 0x54EAF1;
+        int textColor = suitDialogueWarning ? 0xFFF3C4
+                : suitDialogueCorrupted ? 0xD8E4DE : 0xD5EEF2;
         graphics.fill(x + 1, y, x + panelWidth - 1, y + panelHeight,
                 argb(Math.round(224.0F * fade), panelColor));
         graphics.fill(x, y + 1, x + panelWidth, y + panelHeight - 1,
@@ -563,9 +592,9 @@ public final class MasterArchitectFloodClient {
 
         graphics.drawString(
                 minecraft.font,
-                Component.translatable(suitDialogueWarning
-                        ? "ui.frozendawn.master_architect.suit_speaker_warning"
-                        : "ui.frozendawn.master_architect.suit_speaker"),
+                Component.translatable(suitDialogueSpeakerKey == null
+                        ? "ui.frozendawn.master_architect.suit_speaker"
+                        : suitDialogueSpeakerKey),
                 x + 7,
                 y + 5,
                 argb(Math.round(255.0F * fade), speakerColor),
@@ -579,6 +608,19 @@ public final class MasterArchitectFloodClient {
                     argb(Math.round(255.0F * fade), textColor),
                     false);
         }
+    }
+
+    private static String corruptRadioText(String text, int age) {
+        if (age % 11 >= 3) return text;
+        char[] characters = text.toCharArray();
+        char[] noise = {'#', '/', '?', ':', '0'};
+        int first = Math.floorMod(age * 7 + text.length() * 3, characters.length);
+        int second = Math.floorMod(first + 5 + age, characters.length);
+        if (characters[first] != ' ') characters[first] = noise[Math.floorMod(age, noise.length)];
+        if (characters[second] != ' ') {
+            characters[second] = noise[Math.floorMod(age + 2, noise.length)];
+        }
+        return new String(characters);
     }
 
     private static void renderDoorMemory(
