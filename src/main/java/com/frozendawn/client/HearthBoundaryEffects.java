@@ -133,6 +133,24 @@ public final class HearthBoundaryEffects {
                     ModSounds.BLOOM_SPORE_GROWTH_START.get(), 0.76F, 1.65F));
             return;
         }
+        if (payload.effectType() >= HearthBoundaryEffectPayload.REMNANT_RADIO_ROOM
+                && payload.effectType() <= HearthBoundaryEffectPayload.REMNANT_RADIO_FORGIVE) {
+            String key = switch (payload.effectType()) {
+                case HearthBoundaryEffectPayload.REMNANT_RADIO_WARM ->
+                        "ui.frozendawn.remnant.radio_warm";
+                case HearthBoundaryEffectPayload.REMNANT_RADIO_ALONE ->
+                        "ui.frozendawn.remnant.radio_alone";
+                case HearthBoundaryEffectPayload.REMNANT_RADIO_FORGIVE ->
+                        "ui.frozendawn.remnant.radio_forgive";
+                default -> "ui.frozendawn.remnant.radio_room";
+            };
+            MasterArchitectFloodClient.showRadioDialogue(key);
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.REMNANT_RADIO_CUTOFF) {
+            MasterArchitectFloodClient.clearRadioDialogue();
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }

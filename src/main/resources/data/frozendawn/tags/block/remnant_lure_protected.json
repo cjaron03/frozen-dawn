@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:bedrock",
+    "minecraft:respawn_anchor",
+    "#minecraft:beds",
+    "frozendawn:sealed_lattice",
+    "frozendawn:launch_pad",
+    "frozendawn:transponder",
+    "frozendawn:rocket_engine",
+    "frozendawn:rocket_hull",
+    "frozendawn:rocket_fin",
+    "frozendawn:rocket_nose_cone"
+  ]
+}

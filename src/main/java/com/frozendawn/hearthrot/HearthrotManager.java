@@ -11,6 +11,7 @@ import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.UndoneEntity;
@@ -574,6 +575,7 @@ public final class HearthrotManager {
         return mob instanceof FrostbittenEntity
                 || mob instanceof RimeboundEntity
                 || mob instanceof ResonantEntity
+                || mob instanceof RemnantEntity
                 || mob instanceof HollowEntity
                 || mob instanceof UndoneEntity;
     }

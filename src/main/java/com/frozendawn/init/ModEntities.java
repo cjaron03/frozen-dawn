@@ -5,6 +5,7 @@ import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.ResonantEntity;
+import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.RimeLanceEntity;
 import com.frozendawn.entity.HeavySnowballEntity;
 import com.frozendawn.entity.HeartSuccessorEntity;
@@ -72,6 +73,14 @@ public class ModEntities {
                     .clientTrackingRange(12)
                     .updateInterval(2)
                     .build("resonant"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<RemnantEntity>> REMNANT =
+            ENTITIES.register("remnant", () -> EntityType.Builder
+                    .of(RemnantEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F)
+                    .clientTrackingRange(14)
+                    .updateInterval(2)
+                    .build("remnant"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<FrostmiteEntity>> FROSTMITE =
             ENTITIES.register("frostmite", () -> EntityType.Builder

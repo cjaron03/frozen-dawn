@@ -17,6 +17,9 @@ import com.frozendawn.block.CampRadioBlock;
 import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.MiteAwayBlock;
+import com.frozendawn.block.RemnantMembraneBlock;
+import com.frozendawn.block.RemnantPropBlock;
+import com.frozendawn.block.RemnantSeamBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
@@ -598,4 +601,21 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .strength(5.0F, 12.0F)
                             .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<RemnantMembraneBlock> REMNANT_MEMBRANE =
+            BLOCKS.register("remnant_membrane", () -> new RemnantMembraneBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(3.0F, 8.0F).sound(SoundType.SCULK)
+                            .noLootTable().noOcclusion()));
+    public static final DeferredBlock<RemnantSeamBlock> REMNANT_SEAM =
+            BLOCKS.register("remnant_seam", () -> new RemnantSeamBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(2.0F, 6.0F).sound(SoundType.WOOD)
+                            .lightLevel(state -> 4).noLootTable()));
+    public static final DeferredBlock<RemnantPropBlock> REMNANT_PROP =
+            BLOCKS.register("remnant_prop", () -> new RemnantPropBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(2.5F, 6.0F).sound(SoundType.METAL)
+                            .lightLevel(state -> state.getValue(RemnantPropBlock.LIT) ? 5 : 0)
+                            .noLootTable()));
 }

@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -98,6 +99,8 @@ public final class VegetationDecay {
     }
 
     private static void decaySurface(ServerLevel level, BlockPos pos, BlockState state, int phase) {
+        if (isRemnantShelterBlock(level, pos)) return;
+
         if (state.is(BlockTags.FLOWERS) && phase >= 2) {
             if (state.getBlock() instanceof DoublePlantBlock) {
                 boolean isUpper = state.getValue(DoublePlantBlock.HALF) == DoubleBlockHalf.UPPER;
@@ -172,6 +175,8 @@ public final class VegetationDecay {
     }
 
     private static void decayVolume(ServerLevel level, BlockPos pos, BlockState state, int phase, RandomSource random) {
+        if (isRemnantShelterBlock(level, pos)) return;
+
         // --- Leaf decay chain: gradual, phase-dependent chance ---
         if (state.is(BlockTags.LEAVES)) {
             float leafDeathChance = switch (phase) {
@@ -259,6 +264,7 @@ public final class VegetationDecay {
 
         while (!fillQueue.isEmpty() && removed < MAX_COLLAPSE_BLOCKS) {
             BlockPos current = fillQueue.poll();
+            if (isRemnantShelterBlock(level, current)) continue;
             BlockState state = level.getBlockState(current);
 
             boolean isTreeBlock = state.is(ModBlocks.DEAD_LOG.get())
@@ -293,6 +299,8 @@ public final class VegetationDecay {
      * it remains as a stump. Creates a broken-tree look.
      */
     private static void snapTree(ServerLevel level, BlockPos snapPoint) {
+        if (isRemnantShelterBlock(level, snapPoint)) return;
+
         // First, break the snap point itself
         level.destroyBlock(snapPoint, true);
 
@@ -311,6 +319,7 @@ public final class VegetationDecay {
 
         while (!fillQueue.isEmpty() && removed < MAX_SNAP_BLOCKS) {
             BlockPos current = fillQueue.poll();
+            if (isRemnantShelterBlock(level, current)) continue;
             BlockState state = level.getBlockState(current);
 
             boolean isTreeBlock = state.is(ModBlocks.DEAD_LOG.get())
@@ -423,5 +432,10 @@ public final class VegetationDecay {
 
     private static boolean isKelp(BlockState state) {
         return state.is(Blocks.KELP) || state.is(Blocks.KELP_PLANT);
+    }
+
+    private static boolean isRemnantShelterBlock(ServerLevel level, BlockPos pos) {
+        return RemnantLureSavedData.get(level.getServer())
+                .protectsFromEnvironmentalMutation(pos);
     }
 }

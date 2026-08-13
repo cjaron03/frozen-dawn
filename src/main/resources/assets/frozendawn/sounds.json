@@ -1820,5 +1820,61 @@
   "entity.resonant.death_collapse": {
     "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.death_collapse",
     "sounds": [{"name":"frozendawn:entity/resonant/death_collapse","volume":1.35,"attenuation_distance":56}]
+  },
+  "entity.remnant.latch": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.latch",
+    "sounds": [{"name":"frozendawn:entity/remnant/latch","volume":1.2,"attenuation_distance":40}]
+  },
+  "entity.remnant.wall_pressure": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.wall_pressure",
+    "sounds": [{"name":"frozendawn:entity/remnant/wall_pressure","volume":1.15,"attenuation_distance":48}]
+  },
+  "entity.remnant.wall_shift": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.wall_shift",
+    "sounds": [{"name":"frozendawn:entity/remnant/wall_shift","volume":1.2,"attenuation_distance":48}]
+  },
+  "entity.remnant.grab": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.grab",
+    "sounds": [{"name":"frozendawn:entity/remnant/grab","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.remnant.ambient": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.ambient",
+    "sounds": [{"name":"frozendawn:entity/remnant/ambient","volume":0.9,"attenuation_distance":40}]
+  },
+  "entity.remnant.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.hurt",
+    "sounds": [{"name":"frozendawn:entity/remnant/hurt","volume":1.15,"attenuation_distance":40}]
+  },
+  "entity.remnant.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.death",
+    "sounds": [{"name":"frozendawn:entity/remnant/death","volume":1.55,"attenuation_distance":64}]
+  },
+  "entity.remnant.collapse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.collapse",
+    "sounds": [{"name":"frozendawn:entity/remnant/collapse","volume":1.4,"attenuation_distance":64}]
+  },
+  "entity.remnant.false_radio": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.false_radio",
+    "sounds": [{"name":"frozendawn:entity/remnant/false_radio","volume":0.55,"attenuation_distance":24}]
+  },
+  "entity.remnant.radio_room": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_room",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_room","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_warm": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_warm",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_warm","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_alone": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_alone",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_alone","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_forgive": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_forgive",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_forgive","volume":1.15,"attenuation_distance":28}]
+  },
+  "entity.remnant.false_heater": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.false_heater",
+    "sounds": [{"name":"frozendawn:entity/remnant/false_heater","volume":0.5,"attenuation_distance":24}]
   }
 }
