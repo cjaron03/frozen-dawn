@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.entity.FrostwrithePolicy;
@@ -96,7 +97,8 @@ public final class FrostmiteSpawner {
         float chance = FrostwrithePolicy.evolutionChance(
                 FrostwritheManager.ticksSinceErasure(level),
                 BloomGrowthManager.pressureMultiplier(level, encounter),
-                FrozenDawnConfig.FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER.get(),
+                FrozenDawnConfig.FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER.get()
+                        * PostMaeveEvolutionDifficulty.evolutionMultiplier(),
                 infestedBreak);
         if (random.nextFloat() >= chance) return false;
 
