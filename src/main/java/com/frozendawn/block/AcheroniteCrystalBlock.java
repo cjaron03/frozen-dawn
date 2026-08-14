@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +23,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
@@ -75,6 +78,16 @@ public class AcheroniteCrystalBlock extends Block {
             case 2 -> SHAPE_2;
             default -> SHAPE_3;
         };
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                                        BlockPos pos, CollisionContext context) {
+        if (context instanceof EntityCollisionContext entityContext
+                && entityContext.getEntity() instanceof FrostwritheEntity) {
+            return Shapes.empty();
+        }
+        return getShape(state, level, pos, context);
     }
 
     @Override

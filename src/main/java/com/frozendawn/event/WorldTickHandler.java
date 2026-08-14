@@ -436,7 +436,8 @@ public class WorldTickHandler {
             tracker.markRemoved(event.getPos());
             queueArchitectBreakUpdate(serverLevel, event.getPos());
             if (event.getPlayer() instanceof ServerPlayer player) {
-                FrostmiteSpawner.trySpawnInfestedBreak(serverLevel, event.getPos(), serverLevel.getBlockState(event.getPos()), player);
+                FrostmiteSpawner.trySpawnInfestedBreak(
+                        serverLevel, event.getPos(), event.getState(), player);
             }
         }
     }

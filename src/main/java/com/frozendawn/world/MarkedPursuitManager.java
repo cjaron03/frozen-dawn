@@ -13,6 +13,7 @@ import com.frozendawn.entity.ResonantState;
 import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModEntities;
@@ -241,7 +242,8 @@ public final class MarkedPursuitManager {
             float evolutionChance = RimeboundPolicy.evolutionChance(
                     RimeboundManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
-                    FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get());
+                    FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get()
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier());
             int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             if (nearby < FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get()
@@ -254,7 +256,8 @@ public final class MarkedPursuitManager {
             float evolutionChance = ResonantPolicy.evolutionChance(
                     ResonantManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
-                    FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
+                    FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get()
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier());
             int nearby = level.getEntitiesOfClass(ResonantEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, spawn);

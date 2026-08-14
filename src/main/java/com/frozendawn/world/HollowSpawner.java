@@ -3,6 +3,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantPhaseController;
@@ -109,7 +110,8 @@ public class HollowSpawner {
         float chance = ResonantPolicy.evolutionChance(
                 ResonantManager.ticksSinceErasure(level),
                 BloomGrowthManager.pressureMultiplier(level, encounter),
-                FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
+                FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get()
+                        * PostMaeveEvolutionDifficulty.evolutionMultiplier());
         if (random.nextFloat() >= chance) return false;
         int nearby = level.getEntitiesOfClass(ResonantEntity.class,
                 new AABB(encounter).inflate(64.0D)).size();

@@ -1,6 +1,7 @@
 package com.frozendawn.world.remnant;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
 import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.RemnantPolicy;
@@ -74,7 +75,8 @@ public final class RemnantLureManager {
                 PostMaeveWorldState.isUndoneSpawningReleased(level.getServer()),
                 data.unresolvedInRegion(region).isPresent(), loadedCount,
                 level.getGameTime(), data.cooldown(region))
-                || level.random.nextDouble() >= RemnantPolicy.SPAWN_CHANCE_PER_CHECK) return;
+                || level.random.nextDouble() >= RemnantPolicy.SPAWN_CHANCE_PER_CHECK
+                * PostMaeveEvolutionDifficulty.remnantMultiplier()) return;
 
         RemnantLureTemplate.Kind[] kinds = RemnantLureTemplate.Kind.values();
         RemnantLureTemplate.Kind kind = kinds[level.random.nextInt(kinds.length)];
