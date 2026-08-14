@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
@@ -44,8 +45,8 @@ public final class AggregateEncounterManager {
                 preset, AggregateCombatPolicy.effectiveOverfeed(
                         data.overfeedPressure(), dominant))
                 * AggregateCombatPolicy.participantMultiplier(count);
-        aggregate.moveTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D,
-                anchor.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
+        placeOnLoadedGround(level, aggregate, anchor,
+                level.random.nextFloat() * 360.0F);
         aggregate.initialize(maxHealth, traits, dominant);
         AggregatePressureHandler.markIgnored(aggregate);
         if (!level.addFreshEntity(aggregate)) return;
@@ -124,5 +125,25 @@ public final class AggregateEncounterManager {
             }
         }
         data.clearTemporaryBlocks();
+    }
+
+    private static void placeOnLoadedGround(ServerLevel level, AggregateEntity aggregate,
+                                            BlockPos anchor, float yaw) {
+        for (int radius = 0; radius <= 4; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (radius > 0 && Math.abs(dx) != radius && Math.abs(dz) != radius) continue;
+                    BlockPos column = anchor.offset(dx, 0, dz);
+                    if (!level.hasChunkAt(column)) continue;
+                    int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                            column.getX(), column.getZ());
+                    aggregate.moveTo(column.getX() + 0.5D, surfaceY,
+                            column.getZ() + 0.5D, yaw, 0.0F);
+                    if (level.noCollision(aggregate)) return;
+                }
+            }
+        }
+        aggregate.moveTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D,
+                anchor.getZ() + 0.5D, yaw, 0.0F);
     }
 }

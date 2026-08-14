@@ -4,7 +4,7 @@
 from pathlib import Path
 import json
 import random
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTITY = ROOT / "src/main/resources/assets/frozendawn/textures/entity"
@@ -16,7 +16,9 @@ REGIONS = {
     "tissue": (0, 0, 128, 148),
     "bone": (128, 0, 176, 180),
     "lineage": (176, 0, 252, 204),
+    "face": (0, 148, 128, 180),
     "debris": (0, 180, 176, 252),
+    "void": (176, 204, 208, 252),
     "core": (208, 208, 252, 252),
 }
 
@@ -28,44 +30,109 @@ def shade(base, spread, rng):
 
 def generate_atlas():
     rng = random.Random(0xA66E6A7E)
-    image = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    # Large Minecraft creatures read through broad value groups, not per-pixel noise.
+    # Start with a mid-value connective material so every box UV remains visible.
+    image = Image.new("RGBA", (256, 256), (78, 82, 80, 255))
     pixels = image.load()
     palettes = {
-        "tissue": ((38, 40, 39), 15),
-        "bone": ((183, 181, 165), 22),
-        "lineage": ((158, 171, 165), 24),
-        "debris": ((101, 79, 64), 23),
-        "core": ((166, 186, 163), 20),
+        "tissue": ((73, 77, 75), (104, 110, 105), (45, 48, 47)),
+        "bone": ((194, 195, 181), (222, 220, 201), (121, 124, 117)),
+        "lineage": ((151, 169, 160), (190, 204, 188), (89, 104, 99)),
+        "face": ((163, 160, 147), (211, 207, 187), (83, 83, 78)),
+        "debris": ((126, 91, 68), (164, 122, 87), (70, 58, 51)),
+        "void": ((18, 20, 20), (37, 40, 39), (7, 8, 8)),
+        "core": ((179, 193, 161), (236, 231, 187), (101, 116, 96)),
     }
+    draw = ImageDraw.Draw(image)
     for name, (x0, y0, x1, y1) in REGIONS.items():
-        base, spread = palettes[name]
-        for y in range(y0, y1):
-            for x in range(x0, x1):
-                value = shade(base, spread, rng)
-                if ((x * 17 + y * 31 + rng.randrange(29)) % 47) < 3:
-                    value = shade((24, 27, 27), 8, rng)
-                pixels[x, y] = value
-    # Bone pitting, embedded charcoal, and rust inclusions keep the broad shape legible.
-    for _ in range(620):
-        x = rng.randrange(128, 252)
-        y = rng.randrange(0, 204)
-        radius = rng.choice((1, 1, 1, 2))
-        color = shade((52, 56, 54), 12, rng)
-        for yy in range(max(0, y - radius), min(256, y + radius + 1)):
-            for xx in range(max(0, x - radius), min(256, x + radius + 1)):
-                pixels[xx, yy] = color
-    for _ in range(230):
-        x = rng.randrange(0, 176)
-        y = rng.randrange(180, 252)
-        pixels[x, y] = shade((141, 100, 69), 18, rng)
+        base, highlight, shadow = palettes[name]
+        draw.rectangle((x0, y0, x1 - 1, y1 - 1), fill=base + (255,))
+
+        # Four-to-eight-pixel plates give the material a Minecraft-scale grain.
+        cell = 8 if name in ("tissue", "debris") else 6
+        for y in range(y0, y1, cell):
+            for x in range(x0, x1, cell):
+                tone = rng.choice((base, base, base, highlight, shadow))
+                inset = rng.choice((0, 1, 1, 2))
+                draw.rectangle((min(x1 - 1, x + inset), min(y1 - 1, y + inset),
+                                min(x1 - 1, x + cell - 1),
+                                min(y1 - 1, y + cell - 1)),
+                               fill=shade(tone, 7, rng))
+
+        # Material planes get a light top/left edge and a dark lower edge.
+        draw.line((x0, y0, x1 - 1, y0), fill=shade(highlight, 5, rng), width=2)
+        draw.line((x0, y0, x0, y1 - 1), fill=shade(highlight, 5, rng), width=1)
+        draw.line((x0, y1 - 2, x1 - 1, y1 - 2), fill=shade(shadow, 5, rng), width=2)
+
+        # A few irregular stepped fissures, deliberately thin and non-uniform.
+        fissures = 7 if name == "tissue" else 4
+        for _ in range(fissures):
+            x = rng.randrange(x0 + 3, max(x0 + 4, x1 - 8))
+            y = rng.randrange(y0 + 2, max(y0 + 3, y1 - 8))
+            points = [(x, y)]
+            for _ in range(rng.randint(2, 5)):
+                x += rng.choice((-3, -2, 2, 3, 4))
+                y += rng.choice((2, 3, 4, 5))
+                points.append((max(x0, min(x1 - 1, x)), max(y0, min(y1 - 1, y))))
+            draw.line(points, fill=shade(shadow, 4, rng), width=1)
+
+    # Pale ossified islands keep the body readable behind the separate mask assembly.
+    for _ in range(18):
+        x = rng.randrange(7, 112)
+        y = rng.randrange(5, 138)
+        width = rng.randrange(5, 15)
+        height = rng.randrange(3, 9)
+        draw.rectangle((x, y, min(126, x + width), min(146, y + height)),
+                       fill=shade((160, 162, 151), 12, rng))
+        draw.line((x, y, min(126, x + width), y),
+                  fill=shade((206, 204, 187), 8, rng), width=1)
+
+    # The face is carved material rather than an image of a face. Broad stepped
+    # planes and thin fractures survive the box UV wrapping at Minecraft scale.
+    draw.rectangle((0, 148, 127, 179), fill=(158, 157, 146, 255))
+    for y in range(148, 180, 8):
+        offset = 4 if (y // 8) % 2 else 0
+        for x in range(-offset, 128, 12):
+            tone = rng.choice(((180, 178, 164), (137, 139, 133), (199, 195, 176)))
+            draw.rectangle((max(0, x), y, min(127, x + 10), min(179, y + 6)),
+                           fill=shade(tone, 6, rng))
+    for points in (
+            [(7, 150), (18, 156), (15, 164), (29, 173)],
+            [(45, 148), (41, 155), (53, 160), (49, 178)],
+            [(91, 151), (84, 160), (96, 166), (88, 179)],
+            [(116, 149), (107, 157), (113, 166), (103, 176)]):
+        draw.line(points, fill=(72, 73, 70, 255), width=1)
+
+    # Socket and mouth backing must remain nearly black under the renderer's
+    # minimum light so the recesses read from the boss-fight distance.
+    draw.rectangle((176, 204, 207, 251), fill=(12, 14, 14, 255))
+    for _ in range(12):
+        x = rng.randrange(178, 205)
+        y = rng.randrange(206, 249)
+        draw.rectangle((x, y, min(207, x + rng.randrange(1, 4)),
+                        min(251, y + rng.randrange(1, 3))),
+                       fill=shade((31, 34, 33), 4, rng))
+
+    # Rusted architecture remains in coherent slabs rather than orange static.
+    for _ in range(13):
+        x = rng.randrange(4, 158)
+        y = rng.randrange(184, 239)
+        width = rng.randrange(8, 24)
+        height = rng.randrange(4, 11)
+        draw.rectangle((x, y, min(174, x + width), min(250, y + height)),
+                       fill=shade((143, 101, 72), 10, rng))
+        draw.line((x, y, min(174, x + width), y), fill=(190, 145, 101, 255))
     # The convergence core is muted and warm-white, never cyan or Thae Iven blue.
     for y in range(208, 252):
         for x in range(208, 252):
             distance = ((x - 232) ** 2 + (y - 232) ** 2) ** 0.5
             glow = max(0.0, 1.0 - distance / 34.0)
             pixels[x, y] = (
-                int(112 + 112 * glow), int(126 + 106 * glow),
-                int(108 + 88 * glow), 255)
+                int(132 + 108 * glow), int(145 + 96 * glow),
+                int(119 + 91 * glow), 255)
+    # Padding markers stay transparent and no authored UV may touch them.
+    for point in ((255, 0), (0, 255), (255, 255)):
+        pixels[point[0], point[1]] = (0, 0, 0, 0)
     image.save(ATLAS)
 
 
@@ -148,6 +215,9 @@ def validate():
             assert u >= 0 and v >= 0, (bone["name"], u, v)
             assert u + 2 * (width + depth) <= 256, (bone["name"], u, width, depth)
             assert v + height + depth <= 256, (bone["name"], v, height, depth)
+            for yy in range(int(v), int(v + height + depth)):
+                for xx in range(int(u), int(u + 2 * (width + depth))):
+                    assert image.getpixel((xx, yy))[3] > 0, (bone["name"], xx, yy)
     assert cube_count <= 180, cube_count
     assert len(geometry["bones"]) <= 60, len(geometry["bones"])
 

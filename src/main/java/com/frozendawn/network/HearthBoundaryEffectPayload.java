@@ -28,6 +28,8 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int REMNANT_RADIO_ALONE = 15;
     public static final int REMNANT_RADIO_FORGIVE = 16;
     public static final int REMNANT_RADIO_CUTOFF = 17;
+    public static final int AGGREGATE_FORMATION_RUMBLE = 18;
+    public static final int AGGREGATE_IMPACT = 19;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -98,6 +100,14 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload remnantRadioCutoff() {
         return new HearthBoundaryEffectPayload(REMNANT_RADIO_CUTOFF);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateFormationRumble() {
+        return new HearthBoundaryEffectPayload(AGGREGATE_FORMATION_RUMBLE);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateImpact() {
+        return new HearthBoundaryEffectPayload(AGGREGATE_IMPACT);
     }
 
     @Override

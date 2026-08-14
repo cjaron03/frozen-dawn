@@ -100,9 +100,7 @@ public final class AggregateCombatController {
     }
 
     private void tickSlam(ServerLevel level, AggregateEntity aggregate, int tick) {
-        if (tick == 12) aggregate.playSound(ModSounds.AGGREGATE_SLAM_WINDUP.get(), 2.1F, 0.58F);
         if (tick != 32) return;
-        aggregate.playSound(ModSounds.AGGREGATE_SLAM.get(), 3.2F, 0.54F);
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
                         level.getBlockState(aggregate.blockPosition().below())),
                 aggregate.getX(), aggregate.getY() + 0.2D, aggregate.getZ(),

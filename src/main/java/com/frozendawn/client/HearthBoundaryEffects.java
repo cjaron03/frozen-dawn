@@ -28,6 +28,8 @@ public final class HearthBoundaryEffects {
     private static final int COLLAPSE_RESPONSE_TICKS = 480;
     private static final int BLOOM_RUMBLE_SHAKE_TICKS = 60;
     private static final int BLOOM_IMPACT_SHAKE_TICKS = 36;
+    private static final int AGGREGATE_FORMATION_SHAKE_TICKS = 96;
+    private static final int AGGREGATE_IMPACT_SHAKE_TICKS = 28;
 
     private static int pulseTicks;
     private static int shakeTicks;
@@ -151,6 +153,17 @@ public final class HearthBoundaryEffects {
             MasterArchitectFloodClient.clearRadioDialogue();
             return;
         }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.AGGREGATE_FORMATION_RUMBLE) {
+            shakeTicks = AGGREGATE_FORMATION_SHAKE_TICKS;
+            shakeDuration = AGGREGATE_FORMATION_SHAKE_TICKS;
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.AGGREGATE_IMPACT) {
+            shakeTicks = AGGREGATE_IMPACT_SHAKE_TICKS;
+            shakeDuration = AGGREGATE_IMPACT_SHAKE_TICKS;
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }
@@ -228,11 +241,17 @@ public final class HearthBoundaryEffects {
         float magnitude = shakeDuration == MAEVE_SHAKE_DURATION_TICKS
                 ? 2.35F : shakeDuration == MAEVE_DEATH_SHAKE_DURATION_TICKS
                         ? 4.8F : shakeDuration == BLOOM_IMPACT_SHAKE_TICKS
-                        ? 5.2F : rescueTicks > 0 ? 0.55F : 1.0F;
+                        ? 5.2F : shakeDuration == AGGREGATE_IMPACT_SHAKE_TICKS
+                        ? 3.8F : rescueTicks > 0 ? 0.55F : 1.0F;
         if (shakeDuration == BLOOM_RUMBLE_SHAKE_TICKS) {
             float progress = 1.0F - remaining;
             strength = 0.25F + progress * 0.75F;
             magnitude = 0.25F + progress * 1.35F;
+        }
+        if (shakeDuration == AGGREGATE_FORMATION_SHAKE_TICKS) {
+            float progress = 1.0F - remaining;
+            strength = 0.18F + progress * 0.82F;
+            magnitude = 0.3F + progress * 2.0F;
         }
         double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);

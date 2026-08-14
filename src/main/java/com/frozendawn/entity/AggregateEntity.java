@@ -7,9 +7,11 @@ import com.frozendawn.aggregate.AggregateLineage;
 import com.frozendawn.aggregate.AggregatePhase;
 import com.frozendawn.aggregate.AggregateSavedData;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.HearthBoundaryEffectPayload;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -36,6 +38,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -80,6 +83,15 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     private static final RawAnimation REALLOCATE = RawAnimation.begin().thenPlay("animation.aggregate.reallocate");
     private static final RawAnimation SHED = RawAnimation.begin().thenPlay("animation.aggregate.shed");
     private static final RawAnimation DEATH = RawAnimation.begin().thenPlayAndHold("animation.aggregate.death");
+    private static final RawAnimation RUSH = RawAnimation.begin().thenPlay("animation.aggregate.rush");
+    private static final RawAnimation PULSE = RawAnimation.begin().thenPlay("animation.aggregate.pulse");
+    private static final RawAnimation FALSE_OPENING = RawAnimation.begin()
+            .thenPlay("animation.aggregate.false_opening");
+    private static final RawAnimation DISASSEMBLE = RawAnimation.begin()
+            .thenPlay("animation.aggregate.disassembly");
+    private static final RawAnimation CONSTRUCT = RawAnimation.begin()
+            .thenPlay("animation.aggregate.construction");
+    private static final String ACTION_CONTROLLER = "aggregate_actions";
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private final AggregateCombatController combatController = new AggregateCombatController();
@@ -147,6 +159,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         setPhase(AggregatePhase.AWAKENING);
         awakeningTicks = 0;
         setNoAi(true);
+        setNoGravity(true);
     }
 
     public AggregatePhase phase() {
@@ -203,6 +216,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         entityData.set(DATA_ACTION_TICK, 0);
         entityData.set(DATA_ACTION_DURATION, Math.max(1, duration));
         getNavigation().stop();
+        triggerActionAnimation(action);
     }
 
     public void debugForceAction(AggregateAction action) {
@@ -246,6 +260,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         updateCombatPhase(server);
         tickFailureShedding(server);
         tickActionClock();
+        tickActionPresentation(server);
         combatController.tick(server, this);
         snapshot(server);
     }
@@ -253,15 +268,43 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     private void tickAwakening(ServerLevel level) {
         setDeltaMovement(Vec3.ZERO);
         if (++awakeningTicks == 1) {
+            triggerAnim(ACTION_CONTROLLER, "awaken");
             playSound(ModSounds.AGGREGATE_AWAKEN.get(), 3.4F, 0.62F);
+            sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateFormationRumble(), 96.0D);
         }
-        if (awakeningTicks % 6 == 0) {
+        if (awakeningTicks <= 84 && awakeningTicks % 2 == 0) {
+            double progress = awakeningTicks / 84.0D;
+            double radius = Mth.lerp(progress, 10.5D, 2.4D);
+            ParticleOptions material = awakeningTicks % 6 == 0
+                    ? new BlockParticleOption(ParticleTypes.BLOCK,
+                            com.frozendawn.init.ModBlocks.AGGREGATE_RIB.get()
+                                    .defaultBlockState())
+                    : new BlockParticleOption(ParticleTypes.BLOCK,
+                            com.frozendawn.init.ModBlocks.AGGREGATE_MASS.get()
+                                    .defaultBlockState());
+            emitInwardStreams(level, material, radius,
+                    0.4D + progress * 1.15D, 12, 0.16D + progress * 0.13D);
+        }
+        if (awakeningTicks % 5 == 0 && awakeningTicks < 88) {
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
                             level.getBlockState(blockPosition().below())),
-                    getX(), getY() + 1.0D, getZ(), 22,
-                    2.7D, 1.2D, 2.7D, 0.12D);
+                    getX(), getY() + 0.25D, getZ(), 18,
+                    3.8D, 0.25D, 3.8D, 0.09D);
+        }
+        if (awakeningTicks == 84) {
+            sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateImpact(), 96.0D);
+            emitGroundImpact(level, 7.5D, 128);
+            level.sendParticles(ParticleTypes.FLASH,
+                    getX(), getY() + 1.1D, getZ(), 2,
+                    0.4D, 0.25D, 0.4D, 0.0D);
+        }
+        if (awakeningTicks >= 84 && awakeningTicks <= 94
+                && awakeningTicks % 2 == 0) {
+            emitRing(level, ParticleTypes.POOF,
+                    1.5D + (awakeningTicks - 84) * 0.72D, 0.2D, 30);
         }
         if (awakeningTicks >= 100) {
+            setNoGravity(false);
             setNoAi(false);
             setPhase(AggregatePhase.COHERENT);
         }
@@ -297,6 +340,8 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         setNoAi(true);
         getNavigation().stop();
         entityData.set(DATA_ACTION, AggregateAction.NONE.ordinal());
+        triggerAnim(ACTION_CONTROLLER, phase == AggregatePhase.REALLOCATION
+                ? "reallocate" : "shed");
     }
 
     private void tickPhaseTransition(ServerLevel level) {
@@ -345,6 +390,189 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         }
     }
 
+    private void tickActionPresentation(ServerLevel level) {
+        int tick = actionTick();
+        switch (action()) {
+            case SWEEP -> {
+                if (tick >= 8 && tick <= 24 && tick % 2 == 0) {
+                    emitForwardArc(level, ParticleTypes.SNOWFLAKE,
+                            2.2D + (tick - 8) * 0.18D, 0.8D, 13);
+                }
+            }
+            case SLAM -> {
+                if (tick == 12) {
+                    playSound(ModSounds.AGGREGATE_SLAM_WINDUP.get(), 2.1F, 0.58F);
+                }
+                if (tick >= 9 && tick <= 31 && tick % 3 == 0) {
+                    double radius = 7.2D - (tick - 9) * 0.25D;
+                    emitRing(level, ParticleTypes.WHITE_ASH, radius, 0.18D, 22);
+                }
+                if (tick >= 12 && tick <= 31 && tick % 2 == 0) {
+                    emitInwardStreams(level,
+                            new BlockParticleOption(ParticleTypes.BLOCK,
+                                    level.getBlockState(blockPosition().below())),
+                            7.0D - (tick - 12) * 0.22D, 0.25D,
+                            10, 0.2D);
+                }
+                if (tick == 32) {
+                    playSound(ModSounds.AGGREGATE_SLAM.get(), 3.2F, 0.54F);
+                    sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateImpact(), 72.0D);
+                    emitGroundImpact(level, 9.0D, 144);
+                    level.sendParticles(ParticleTypes.FLASH,
+                            getX(), getY() + 0.35D, getZ(), 1,
+                            0.0D, 0.0D, 0.0D, 0.0D);
+                }
+                if (tick >= 32 && tick <= 40 && tick % 2 == 0) {
+                    emitRing(level, ParticleTypes.POOF,
+                            1.2D + (tick - 32) * 1.1D, 0.18D, 34);
+                }
+            }
+            case LURCH -> {
+                if (tick >= 10 && tick <= 25) {
+                    level.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.45D, getZ(),
+                            5, 1.5D, 0.25D, 1.5D, 0.025D);
+                }
+            }
+            case RIMEBOUND_RUSH -> {
+                if (tick >= 8 && tick <= 36 && tick % 2 == 0) {
+                    emitRing(level, ParticleTypes.ITEM_SNOWBALL, 1.8D, 0.08D, 16);
+                }
+            }
+            case RIMEBOUND_LANCE -> {
+                if (tick >= 8 && tick <= 27 && tick % 2 == 0) {
+                    level.sendParticles(ParticleTypes.SNOWFLAKE,
+                            getX(), getY() + 2.25D, getZ() - 0.4D,
+                            10, 1.2D, 0.8D, 1.2D, 0.035D);
+                }
+            }
+            case RESONANCE_PULSE -> {
+                if (tick >= 8 && tick <= 30 && tick % 4 == 2) {
+                    emitRing(level, ParticleTypes.ELECTRIC_SPARK,
+                            1.0D + tick * 0.16D, 1.25D, 28);
+                }
+            }
+            case FALSE_OPENING -> {
+                if (tick >= 8 && tick <= 34 && tick % 3 == 0) {
+                    emitRing(level, ParticleTypes.LARGE_SMOKE,
+                            2.1D + tick * 0.035D, 0.9D, 18);
+                }
+            }
+            case DISASSEMBLY -> {
+                if (tick >= 9 && tick <= 35 && tick % 3 == 0) {
+                    level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                                    com.frozendawn.init.ModBlocks.AGGREGATE_MASS.get()
+                                            .defaultBlockState()),
+                            getX(), getY() + 1.3D, getZ(), 18,
+                            2.2D, 1.1D, 2.2D, 0.11D);
+                }
+            }
+            case ACCRETION_CONSTRUCTION -> {
+                if (tick >= 8 && tick <= 34 && tick % 3 == 0) {
+                    level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                                    com.frozendawn.init.ModBlocks.AGGREGATE_RIB.get()
+                                            .defaultBlockState()),
+                            getX(), getY() + 0.35D, getZ(), 14,
+                            2.6D, 0.35D, 2.6D, 0.07D);
+                }
+            }
+            case REALLOCATION_BEAT -> {
+                if (tick % 3 == 0) {
+                    emitRing(level, ParticleTypes.WHITE_ASH,
+                            1.4D + tick * 0.12D, 1.1D, 18);
+                }
+            }
+            case NONE -> {
+            }
+        }
+    }
+
+    private void emitRing(ServerLevel level, ParticleOptions particle, double radius,
+                          double height, int points) {
+        for (int i = 0; i < points; i++) {
+            double angle = Math.PI * 2.0D * i / points;
+            level.sendParticles(particle,
+                    getX() + Math.cos(angle) * radius,
+                    getY() + height,
+                    getZ() + Math.sin(angle) * radius,
+                    1, 0.0D, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private void emitInwardStreams(ServerLevel level, ParticleOptions particle,
+                                   double radius, double targetHeight, int points,
+                                   double speed) {
+        double phase = tickCount * 0.19D;
+        Vec3 target = new Vec3(getX(), getY() + targetHeight, getZ());
+        for (int i = 0; i < points; i++) {
+            double angle = phase + Math.PI * 2.0D * i / points;
+            double vertical = getY() + 0.2D + ((i * 7) % 11) * 0.23D;
+            Vec3 source = new Vec3(
+                    getX() + Math.cos(angle) * radius,
+                    vertical,
+                    getZ() + Math.sin(angle) * radius);
+            Vec3 velocity = target.subtract(source).normalize().scale(speed);
+            level.sendParticles(particle, source.x, source.y, source.z,
+                    0, velocity.x, velocity.y, velocity.z, 1.0D);
+        }
+    }
+
+    private void emitGroundImpact(ServerLevel level, double radius, int debrisCount) {
+        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                        level.getBlockState(blockPosition().below())),
+                getX(), getY() + 0.12D, getZ(), debrisCount,
+                radius * 0.52D, 0.35D, radius * 0.52D, 0.24D);
+        level.sendParticles(ParticleTypes.CLOUD,
+                getX(), getY() + 0.12D, getZ(), Math.max(24, debrisCount / 3),
+                radius * 0.45D, 0.18D, radius * 0.45D, 0.12D);
+        for (int ring = 0; ring < 3; ring++) {
+            emitRing(level, ring == 1 ? ParticleTypes.WHITE_ASH : ParticleTypes.POOF,
+                    radius * (0.36D + ring * 0.23D), 0.14D + ring * 0.05D,
+                    30 + ring * 8);
+        }
+    }
+
+    private void sendLocalEffect(ServerLevel level, HearthBoundaryEffectPayload payload,
+                                 double radius) {
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(this) <= radiusSqr) {
+                PacketDistributor.sendToPlayer(player, payload);
+            }
+        }
+    }
+
+    private void emitForwardArc(ServerLevel level, ParticleOptions particle, double radius,
+                                double height, int points) {
+        double facing = Math.toRadians(getYRot()) + Math.PI / 2.0D;
+        for (int i = 0; i < points; i++) {
+            double spread = Mth.lerp(i / (double) (points - 1), -1.9D, 1.9D);
+            double angle = facing + spread;
+            level.sendParticles(particle,
+                    getX() + Math.cos(angle) * radius,
+                    getY() + height,
+                    getZ() + Math.sin(angle) * radius,
+                    1, 0.0D, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private void triggerActionAnimation(AggregateAction action) {
+        if (level().isClientSide || action == AggregateAction.NONE) return;
+        String trigger = switch (action) {
+            case SWEEP -> "sweep";
+            case SLAM -> "slam";
+            case LURCH -> "lurch";
+            case RIMEBOUND_RUSH -> "rush";
+            case RIMEBOUND_LANCE -> "lance";
+            case RESONANCE_PULSE -> "pulse";
+            case FALSE_OPENING -> "false_opening";
+            case DISASSEMBLY -> "disassembly";
+            case ACCRETION_CONSTRUCTION -> "construction";
+            case REALLOCATION_BEAT -> "reallocate";
+            case NONE -> "";
+        };
+        triggerAnim(ACTION_CONTROLLER, trigger);
+    }
+
     public void setRimeboundSubmerged(boolean submerged) {
         noPhysics = submerged;
         setInvisible(submerged);
@@ -376,8 +604,10 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         if (phase() == AggregatePhase.DYING || phase() == AggregatePhase.DEAD) return;
         setPhase(AggregatePhase.DYING);
         setNoAi(true);
+        setNoGravity(true);
         getNavigation().stop();
         setDeltaMovement(Vec3.ZERO);
+        triggerAnim(ACTION_CONTROLLER, "death");
         playSound(ModSounds.AGGREGATE_DEATH.get(), 4.0F, 0.58F);
         if (level() instanceof ServerLevel server) {
             AggregateSavedData.get(server.getServer()).snapshotFight(
@@ -504,7 +734,11 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         }
         if (phase() == AggregatePhase.AWAKENING
                 || phase() == AggregatePhase.REALLOCATION
-                || phase() == AggregatePhase.FAILURE_TRANSITION) setNoAi(true);
+                || phase() == AggregatePhase.FAILURE_TRANSITION) {
+            setNoAi(true);
+        }
+        setNoGravity(phase() == AggregatePhase.AWAKENING
+                || phase() == AggregatePhase.DYING);
     }
 
     private void writeTraits(List<AggregateLineage> traits, boolean dominant) {
@@ -541,31 +775,37 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         return ordinal >= 0 && ordinal < values.length ? values[ordinal] : fallback;
     }
 
-    private PlayState animationPredicate(AnimationState<AggregateEntity> state) {
-        if (phase() == AggregatePhase.DYING || phase() == AggregatePhase.DEAD) {
-            return state.setAndContinue(DEATH);
+    private PlayState locomotionPredicate(AnimationState<AggregateEntity> state) {
+        if (phase() == AggregatePhase.AWAKENING
+                || phase() == AggregatePhase.REALLOCATION
+                || phase() == AggregatePhase.FAILURE_TRANSITION
+                || phase() == AggregatePhase.DYING
+                || phase() == AggregatePhase.DEAD
+                || action() != AggregateAction.NONE) {
+            return PlayState.STOP;
         }
-        if (phase() == AggregatePhase.AWAKENING) return state.setAndContinue(AWAKEN);
-        if (phase() == AggregatePhase.REALLOCATION) return state.setAndContinue(REALLOCATE);
-        if (phase() == AggregatePhase.FAILURE_TRANSITION) return state.setAndContinue(SHED);
-        return switch (action()) {
-            case SWEEP -> state.setAndContinue(SWEEP);
-            case SLAM -> state.setAndContinue(SLAM);
-            case LURCH, RIMEBOUND_RUSH -> state.setAndContinue(LURCH);
-            case RIMEBOUND_LANCE -> state.setAndContinue(LANCE);
-            case RESONANCE_PULSE -> state.setAndContinue(REALLOCATE);
-            case FALSE_OPENING -> state.setAndContinue(SWEEP);
-            case DISASSEMBLY -> state.setAndContinue(SHED);
-            case ACCRETION_CONSTRUCTION -> state.setAndContinue(SLAM);
-            case REALLOCATION_BEAT -> state.setAndContinue(REALLOCATE);
-            default -> state.setAndContinue(state.isMoving() ? WALK : IDLE);
-        };
+        return state.setAndContinue(state.isMoving() ? WALK : IDLE);
     }
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "aggregate_controller", 4,
-                this::animationPredicate));
+        controllers.add(new AnimationController<>(this, "aggregate_locomotion", 5,
+                this::locomotionPredicate));
+        controllers.add(new AnimationController<>(this, ACTION_CONTROLLER, 1,
+                state -> PlayState.STOP)
+                .triggerableAnim("awaken", AWAKEN)
+                .triggerableAnim("sweep", SWEEP)
+                .triggerableAnim("slam", SLAM)
+                .triggerableAnim("lurch", LURCH)
+                .triggerableAnim("rush", RUSH)
+                .triggerableAnim("lance", LANCE)
+                .triggerableAnim("pulse", PULSE)
+                .triggerableAnim("false_opening", FALSE_OPENING)
+                .triggerableAnim("disassembly", DISASSEMBLE)
+                .triggerableAnim("construction", CONSTRUCT)
+                .triggerableAnim("reallocate", REALLOCATE)
+                .triggerableAnim("shed", SHED)
+                .triggerableAnim("death", DEATH));
     }
 
     @Override
