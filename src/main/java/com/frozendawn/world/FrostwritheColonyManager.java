@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.entity.FrostwrithePolicy;
@@ -46,6 +47,7 @@ public final class FrostwritheColonyManager {
         }
         BlockPos rally = mite.colonyRallyPos();
         if (rally == null || !level.isLoaded(rally)
+                || StillpointPolicy.isSuppressed(level, rally)
                 || MiteAwayRegistry.isProtected(level, mite.position())
                 || MiteAwayRegistry.isProtected(level, rally.getCenter())) {
             return false;
@@ -162,6 +164,7 @@ public final class FrostwritheColonyManager {
 
         BlockPos rally = clusterCenter(cluster);
         if (!level.isLoaded(rally)
+                || StillpointPolicy.isSuppressed(level, rally)
                 || MiteAwayRegistry.isProtected(level, rally.getCenter())) {
             AMBIENT_CLUSTER_ATTEMPTS.remove(leader.getUUID());
             return false;

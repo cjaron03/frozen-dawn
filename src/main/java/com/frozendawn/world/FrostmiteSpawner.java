@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.entity.FrostwrithePolicy;
@@ -98,7 +100,9 @@ public final class FrostmiteSpawner {
                 FrostwritheManager.ticksSinceErasure(level),
                 BloomGrowthManager.pressureMultiplier(level, encounter),
                 FrozenDawnConfig.FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER.get()
-                        * PostMaeveEvolutionDifficulty.evolutionMultiplier(),
+                        * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                        * StillpointPolicy.evolvedWeightMultiplier(level, encounter)
+                        * AggregateGrowthManager.evolvedWeightMultiplier(level, encounter),
                 infestedBreak);
         if (random.nextFloat() >= chance) return false;
 

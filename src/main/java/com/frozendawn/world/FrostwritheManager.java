@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.FrostwritheEntity;
@@ -75,6 +76,7 @@ public final class FrostwritheManager {
                 FrostwritheEntity entity = tryDebugColumn(
                         level, x, z, origin.getY(), state);
                 if (entity == null) continue;
+                AggregatePressureHandler.markIgnored(entity);
                 if (state == FrostwritheState.CRAWLER) entity.setTarget(player);
                 return entity;
             }

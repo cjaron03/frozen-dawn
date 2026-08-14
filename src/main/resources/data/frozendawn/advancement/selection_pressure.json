@@ -1,0 +1,13 @@
+{
+  "parent": "frozendawn:no_one_else_remembers_now",
+  "display": {
+    "icon": { "id": "minecraft:bone" },
+    "title": { "translate": "advancement.frozendawn.selection_pressure.title" },
+    "description": { "translate": "advancement.frozendawn.selection_pressure.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "frozendawn:block/aggregate_rib_top",
+    "side": "frozendawn:block/aggregate_rib"
+  }
+}

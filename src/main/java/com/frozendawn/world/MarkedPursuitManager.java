@@ -14,6 +14,8 @@ import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModEntities;
@@ -243,7 +245,9 @@ public final class MarkedPursuitManager {
                     RimeboundManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
                     FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get()
-                            * PostMaeveEvolutionDifficulty.evolutionMultiplier());
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                            * StillpointPolicy.evolvedWeightMultiplier(level, spawn)
+                            * AggregateGrowthManager.evolvedWeightMultiplier(level, spawn));
             int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             if (nearby < FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get()
@@ -257,7 +261,9 @@ public final class MarkedPursuitManager {
                     ResonantManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
                     FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get()
-                            * PostMaeveEvolutionDifficulty.evolutionMultiplier());
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                            * StillpointPolicy.evolvedWeightMultiplier(level, spawn)
+                            * AggregateGrowthManager.evolvedWeightMultiplier(level, spawn));
             int nearby = level.getEntitiesOfClass(ResonantEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, spawn);

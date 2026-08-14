@@ -44,6 +44,7 @@ import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.HearthDarkeningManager;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.aggregate.AggregateGrowthManager;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
@@ -233,6 +234,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        AggregateGrowthManager.tick(overworld);
         BloomboundUndoneSpawner.tick(overworld);
         UndoneSpawner.tick(overworld);
         UndoneArchitectSpawner.tick(overworld);

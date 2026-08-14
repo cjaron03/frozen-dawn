@@ -1,6 +1,6 @@
 {
+  "replace": false,
   "values": [
-    "frozendawn:remnant",
-    "frozendawn:frostwrithe"
+    "frozendawn:aggregate"
   ]
 }

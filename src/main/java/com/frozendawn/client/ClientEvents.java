@@ -3,6 +3,8 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
+import com.frozendawn.client.renderer.AggregateRenderer;
+import com.frozendawn.client.renderer.AggregateFragmentRenderer;
 import com.frozendawn.client.renderer.RimeboundModel;
 import com.frozendawn.client.renderer.RimeboundRenderer;
 import com.frozendawn.client.renderer.RimeLanceRenderer;
@@ -256,6 +258,9 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
         event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
         event.registerEntityRenderer(ModEntities.RIMEBOUND.get(), RimeboundRenderer::new);

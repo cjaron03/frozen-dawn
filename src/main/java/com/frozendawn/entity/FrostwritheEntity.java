@@ -2,6 +2,7 @@ package com.frozendawn.entity;
 
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.FrostwritheColonyManager;
 import com.frozendawn.world.MiteAwayRegistry;
@@ -794,6 +795,9 @@ public final class FrostwritheEntity extends Monster {
             mite.joinColony(id,
                     FrostwrithePolicy.splitBiomass(totalBiomass, count, index),
                     rally, scatterUntil, regroupDeadline);
+            if (getPersistentData().getBoolean(AggregatePressureHandler.IGNORE_PRESSURE_TAG)) {
+                AggregatePressureHandler.markIgnored(mite);
+            }
             mite.setDeltaMovement(Math.cos(angle) * 0.24D,
                     0.13D + random.nextDouble() * 0.08D,
                     Math.sin(angle) * 0.24D);

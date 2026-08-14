@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
@@ -35,6 +36,9 @@ public final class UndoneArchitectSpawner {
             double spawnChance = BloomGrowthPolicy.undoneSpawnChance(
                     FrozenDawnConfig.UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK.get(),
                     density);
+            if (StillpointPolicy.isSuppressed(level, player.blockPosition())) {
+                spawnChance *= 0.20D;
+            }
             if (!player.isAlive() || player.isSpectator()
                     || level.random.nextDouble() >= spawnChance
                     || hasNearby(level, player.blockPosition())) {

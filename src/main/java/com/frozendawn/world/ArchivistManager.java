@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ArchivistSavedData;
@@ -162,6 +163,7 @@ public final class ArchivistManager {
             data.clearRegionBinding(region, 0L);
             ArchivistEntity archivist = spawn(level, spawn, site, region, true);
             if (archivist != null) {
+                AggregatePressureHandler.markIgnored(archivist);
                 FrozenDawn.LOGGER.info("[Archivist] Debug-spawned at {} after {} attempt(s)",
                         spawn.toShortString(), attempt + 1);
                 return archivist;

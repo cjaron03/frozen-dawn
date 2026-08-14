@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.bloom.BloomBand;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.bloom.BloomGrowthPolicy;
@@ -36,6 +37,9 @@ public final class BloomboundUndoneSpawner {
             double spawnChance = BloomGrowthPolicy.bloomboundSpawnChance(
                     FrozenDawnConfig.BLOOMBOUND_UNDONE_SPAWN_CHANCE_PER_CHECK.get(),
                     density);
+            if (StillpointPolicy.isSuppressed(level, player.blockPosition())) {
+                spawnChance *= 0.20D;
+            }
             if (player.isSpectator() || !player.isAlive()
                     || level.random.nextDouble() >= spawnChance
                     || !BloomGrowthManager.hasBandNear(

@@ -17,6 +17,8 @@ import com.frozendawn.entity.UndoneArchitectEntity;
 import com.frozendawn.entity.BloomSporeEntity;
 import com.frozendawn.entity.BloomSporeCorpseEntity;
 import com.frozendawn.entity.ArchivistEntity;
+import com.frozendawn.entity.AggregateEntity;
+import com.frozendawn.entity.AggregateFragmentEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -26,6 +28,9 @@ public class ModEntityAttributes {
 
     @SubscribeEvent
     public static void onRegisterAttributes(EntityAttributeCreationEvent event) {
+        event.put(ModEntities.AGGREGATE.get(), AggregateEntity.createAttributes().build());
+        event.put(ModEntities.AGGREGATE_FRAGMENT.get(),
+                AggregateFragmentEntity.createAttributes().build());
         event.put(ModEntities.FROSTBITTEN.get(), FrostbittenEntity.createAttributes().build());
         event.put(ModEntities.RIMEBOUND.get(), RimeboundEntity.createAttributes().build());
         event.put(ModEntities.RESONANT.get(), ResonantEntity.createAttributes().build());

@@ -2,6 +2,9 @@ package com.frozendawn.world.remnant;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregatePressureHandler;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.RemnantPolicy;
@@ -68,6 +71,7 @@ public final class RemnantLureManager {
     }
 
     private static void tryNaturalPlacement(ServerLevel level, ServerPlayer player, long region) {
+        if (StillpointPolicy.isSuppressed(level, player.blockPosition())) return;
         RemnantLureSavedData data = RemnantLureSavedData.get(level.getServer());
         int loadedCount = (int) data.lures().stream().filter(record ->
                 record.state() != RemnantState.RESOLVED && level.isLoaded(record.origin())).count();
@@ -76,7 +80,9 @@ public final class RemnantLureManager {
                 data.unresolvedInRegion(region).isPresent(), loadedCount,
                 level.getGameTime(), data.cooldown(region))
                 || level.random.nextDouble() >= RemnantPolicy.SPAWN_CHANCE_PER_CHECK
-                * PostMaeveEvolutionDifficulty.remnantMultiplier()) return;
+                * PostMaeveEvolutionDifficulty.remnantMultiplier()
+                * AggregateGrowthManager.evolvedWeightMultiplier(
+                level, player.blockPosition())) return;
 
         RemnantLureTemplate.Kind[] kinds = RemnantLureTemplate.Kind.values();
         RemnantLureTemplate.Kind kind = kinds[level.random.nextInt(kinds.length)];
@@ -88,6 +94,7 @@ public final class RemnantLureManager {
             if (!level.hasChunk(x >> 4, z >> 4)) continue;
             BlockPos origin = alignInsideChunkAtSurface(level, x, z,
                     RemnantLureTemplate.create(kind).radius());
+            if (StillpointPolicy.isSuppressed(level, origin)) continue;
             long originRegion = RemnantPolicy.regionKey(origin);
             if (data.unresolvedInRegion(originRegion).isPresent()
                     || level.getGameTime() < data.cooldown(originRegion)) continue;
@@ -753,6 +760,7 @@ public final class RemnantLureManager {
         RemnantEntity entity = ModEntities.REMNANT.get().create(level, null, pos,
                 MobSpawnType.COMMAND, true, false);
         if (entity == null) return null;
+        AggregatePressureHandler.markIgnored(entity);
         entity.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                 player.getYRot() + 180.0F, 0.0F);
         entity.exposeWithoutLure(player);

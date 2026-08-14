@@ -1,0 +1,13 @@
+{
+  "parent": "frozendawn:selection_pressure",
+  "display": {
+    "icon": { "id": "minecraft:bone_block" },
+    "title": { "translate": "advancement.frozendawn.convergence.title" },
+    "description": { "translate": "advancement.frozendawn.convergence.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

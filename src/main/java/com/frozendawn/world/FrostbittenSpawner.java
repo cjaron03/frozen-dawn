@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundBurrowController;
 import com.frozendawn.entity.RimeboundEntity;
@@ -181,7 +183,9 @@ public class FrostbittenSpawner {
         float chance = RimeboundPolicy.evolutionChance(
                 RimeboundManager.ticksSinceErasure(level), pressure,
                 FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get()
-                        * PostMaeveEvolutionDifficulty.evolutionMultiplier());
+                        * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                        * StillpointPolicy.evolvedWeightMultiplier(level, groupCenter)
+                        * AggregateGrowthManager.evolvedWeightMultiplier(level, groupCenter));
         if (random.nextFloat() >= chance
                 || !RimeboundBurrowController.validDormantTerrain(level, groupCenter)) {
             return false;

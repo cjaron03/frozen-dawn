@@ -21,6 +21,8 @@ import com.frozendawn.entity.BloomSporeEntity;
 import com.frozendawn.entity.BloomSporeCorpseEntity;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.entity.ArchivistRelicEntity;
+import com.frozendawn.entity.AggregateEntity;
+import com.frozendawn.entity.AggregateFragmentEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -33,6 +35,24 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(Registries.ENTITY_TYPE, FrozenDawn.MOD_ID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateEntity>> AGGREGATE =
+            ENTITIES.register("aggregate", () -> EntityType.Builder
+                    .of(AggregateEntity::new, MobCategory.MONSTER)
+                    .sized(3.2F, 3.15F)
+                    .fireImmune()
+                    .clientTrackingRange(20)
+                    .updateInterval(1)
+                    .build("aggregate"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateFragmentEntity>>
+            AGGREGATE_FRAGMENT = ENTITIES.register("aggregate_fragment", () -> EntityType.Builder
+                    .of(AggregateFragmentEntity::new, MobCategory.MONSTER)
+                    .sized(0.72F, 0.48F)
+                    .fireImmune()
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("aggregate_fragment"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ShadowFigureEntity>> SHADOW_FIGURE =
             ENTITIES.register("shadow_figure", () -> EntityType.Builder

@@ -1,5 +1,6 @@
 package com.frozendawn.command;
 
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.bloom.BloomGrowthManager;
@@ -763,7 +764,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = UndoneSpawner.spawn(player.serverLevel(), spawn) != null;
+        var entity = UndoneSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Undone at " + spawn.toShortString()
                         : "Could not create an Undone"), false);
@@ -788,8 +791,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = UndoneArchitectSpawner.spawn(
-                player.serverLevel(), spawn) != null;
+        var entity = UndoneArchitectSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Undone Architect at "
                         + spawn.toShortString()
@@ -1431,8 +1435,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = BloomboundUndoneSpawner.spawn(
-                player.serverLevel(), spawn) != null;
+        var entity = BloomboundUndoneSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Bloombound at " + spawn.toShortString()
                         : "Could not create a Bloombound"), false);

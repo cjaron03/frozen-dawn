@@ -21,6 +21,13 @@ def enableEnhancedClassRedefinition = providers
 repositories {
     maven { url "https://maven.blamejared.com" }
     maven { url "https://maven.theillusivec4.top/" }
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroup 'software.bernie.geckolib'
+        }
+    }
 }
 
 base {
@@ -101,6 +108,7 @@ configurations {
 
 dependencies {
     implementation "vazkii.patchouli:Patchouli:1.21.1-92-NEOFORGE"
+    implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}+${minecraft_version}:api"
