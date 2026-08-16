@@ -343,6 +343,12 @@ public class ModSounds {
     // --- Aggregate ---
     public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_AMBIENT =
             register("entity.aggregate.ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_ROAR =
+            register("entity.aggregate.roar");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_DISCHARGE_CHARGE =
+            register("entity.aggregate.discharge_charge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_DISCHARGE_BURST =
+            register("entity.aggregate.discharge_burst");
     public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_AWAKEN =
             register("entity.aggregate.awaken");
     public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_HURT =

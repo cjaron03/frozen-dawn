@@ -5,6 +5,7 @@ import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.AggregateRenderer;
 import com.frozendawn.client.renderer.AggregateFragmentRenderer;
+import com.frozendawn.client.renderer.AggregateShedChunkRenderer;
 import com.frozendawn.client.renderer.RimeboundModel;
 import com.frozendawn.client.renderer.RimeboundRenderer;
 import com.frozendawn.client.renderer.RimeLanceRenderer;
@@ -34,6 +35,8 @@ import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
+import com.frozendawn.client.particle.AggregateConvergenceParticle;
+import com.frozendawn.client.particle.AggregateExpulsionParticle;
 import com.frozendawn.client.renderer.RocketLaunchModel;
 import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -94,6 +97,10 @@ public class ClientEvents {
                 BloomSporeRootParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_DRIFT.get(),
                 BloomDriftParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_CONVERGENCE.get(),
+                AggregateConvergenceParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_EXPULSION.get(),
+                AggregateExpulsionParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -261,6 +268,8 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
         event.registerEntityRenderer(
                 ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.AGGREGATE_SHED_CHUNK.get(), AggregateShedChunkRenderer::new);
         event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
         event.registerEntityRenderer(ModEntities.RIMEBOUND.get(), RimeboundRenderer::new);

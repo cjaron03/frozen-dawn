@@ -23,6 +23,7 @@ import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.entity.ArchivistRelicEntity;
 import com.frozendawn.entity.AggregateEntity;
 import com.frozendawn.entity.AggregateFragmentEntity;
+import com.frozendawn.entity.AggregateShedChunkEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -53,6 +54,18 @@ public class ModEntities {
                     .clientTrackingRange(12)
                     .updateInterval(2)
                     .build("aggregate_fragment"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateShedChunkEntity>>
+            AGGREGATE_SHED_CHUNK = ENTITIES.register(
+                    "aggregate_shed_chunk", () -> EntityType.Builder
+                            .of(AggregateShedChunkEntity::new, MobCategory.MISC)
+                            .sized(0.9F, 0.9F)
+                            .noSave()
+                            .noSummon()
+                            .fireImmune()
+                            .clientTrackingRange(32)
+                            .updateInterval(1)
+                            .build("aggregate_shed_chunk"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ShadowFigureEntity>> SHADOW_FIGURE =
             ENTITIES.register("shadow_figure", () -> EntityType.Builder

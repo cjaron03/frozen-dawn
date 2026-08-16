@@ -1,11 +1,15 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.aggregate.AggregateAction;
 import com.frozendawn.aggregate.AggregateCombatController;
 import com.frozendawn.aggregate.AggregateEncounterManager;
 import com.frozendawn.aggregate.AggregateLineage;
 import com.frozendawn.aggregate.AggregatePhase;
 import com.frozendawn.aggregate.AggregateSavedData;
+import com.frozendawn.aggregate.AggregateDischargePolicy;
+import com.frozendawn.aggregate.AggregateReinforcementManager;
+import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -51,6 +55,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /** The once-per-world body assembled from post-Maeve convergence pressure. */
 public final class AggregateEntity extends Monster implements GeoEntity {
@@ -72,6 +77,8 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             SynchedEntityData.defineId(AggregateEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_DEATH_TICK =
             SynchedEntityData.defineId(AggregateEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_DISCHARGE_SCARS =
+            SynchedEntityData.defineId(AggregateEntity.class, EntityDataSerializers.INT);
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.aggregate.idle");
     private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.aggregate.walk");
@@ -91,6 +98,8 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             .thenPlay("animation.aggregate.disassembly");
     private static final RawAnimation CONSTRUCT = RawAnimation.begin()
             .thenPlay("animation.aggregate.construction");
+    private static final RawAnimation DISCHARGE = RawAnimation.begin()
+            .thenPlay("animation.aggregate.discharge");
     private static final String ACTION_CONTROLLER = "aggregate_actions";
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
@@ -101,6 +110,14 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     private int awakeningTicks;
     private int phaseTransitionTicks;
     private int deathPresentationTicks;
+    private int currentDischargeWave = -1;
+    private float dischargeInterruptDamage;
+    private int armorVulnerabilityTicks;
+    private int ambientRoarCooldown = 80;
+    @Nullable
+    private UUID coreMeteorId;
+    private boolean coreMeteorReleased;
+    private boolean coreMeteorImpactPlayed;
 
     public AggregateEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -139,6 +156,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         builder.define(DATA_TERTIARY, -1);
         builder.define(DATA_DOMINANT, false);
         builder.define(DATA_DEATH_TICK, 0);
+        builder.define(DATA_DISCHARGE_SCARS, 0);
     }
 
     @Override
@@ -196,6 +214,18 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         return entityData.get(DATA_DEATH_TICK);
     }
 
+    public int dischargeScars() {
+        return entityData.get(DATA_DISCHARGE_SCARS);
+    }
+
+    public void restoreDischargeScars(int scars) {
+        entityData.set(DATA_DISCHARGE_SCARS, Math.clamp(scars, 0, 2));
+    }
+
+    public int currentDischargeWave() {
+        return currentDischargeWave;
+    }
+
     public int activeTraitCount() {
         return com.frozendawn.aggregate.AggregateCombatPolicy.activeTraitCount(
                 phase(), traits().size(), dominantUpgrade());
@@ -219,8 +249,29 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         triggerActionAnimation(action);
     }
 
-    public void debugForceAction(AggregateAction action) {
+    public boolean debugForceAction(AggregateAction action) {
         entityData.set(DATA_ACTION, AggregateAction.NONE.ordinal());
+        if (action == AggregateAction.CONVERGENCE_DISCHARGE
+                && level() instanceof ServerLevel server) {
+            AggregateSavedData data = AggregateSavedData.get(server.getServer());
+            ensureDebugDischargeTraits();
+            if (data.dischargeSpent(AggregateDischargePolicy.PRIMARY_WAVE)
+                    && data.dischargeSpent(AggregateDischargePolicy.SECONDARY_WAVE)) {
+                AggregateReinforcementManager.cleanupLoaded(server, data);
+                data.debugResetDischarges();
+            }
+            int wave = data.dischargeSpent(AggregateDischargePolicy.PRIMARY_WAVE)
+                    ? AggregateDischargePolicy.SECONDARY_WAVE
+                    : AggregateDischargePolicy.PRIMARY_WAVE;
+            if (beginConvergenceDischarge(server, wave)) return true;
+            if (wave == AggregateDischargePolicy.SECONDARY_WAVE) {
+                AggregateReinforcementManager.cleanupLoaded(server, data);
+                data.debugResetDischarges();
+                return beginConvergenceDischarge(server,
+                        AggregateDischargePolicy.PRIMARY_WAVE);
+            }
+            return false;
+        }
         beginAction(action, switch (action) {
             case SWEEP -> 42;
             case SLAM -> 54;
@@ -229,9 +280,24 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             case FALSE_OPENING -> 64;
             case DISASSEMBLY -> 88;
             case ACCRETION_CONSTRUCTION -> 72;
-            case REALLOCATION_BEAT -> 20;
+            case REALLOCATION_BEAT -> 60;
+            case CONVERGENCE_DISCHARGE -> AggregateDischargePolicy.WINDUP_TICKS;
             case NONE -> 1;
         });
+        return this.action() == action;
+    }
+
+    private void ensureDebugDischargeTraits() {
+        List<AggregateLineage> current = new ArrayList<>(traits());
+        for (AggregateLineage fallback : List.of(
+                AggregateLineage.RIMEBOUND,
+                AggregateLineage.RESONANT,
+                AggregateLineage.REMNANT)) {
+            if (current.size() >= 3) break;
+            if (!current.contains(fallback)) current.add(fallback);
+        }
+        writeTraits(current, dominantUpgrade());
+        combatController.configure(traits());
     }
 
     @Override
@@ -241,8 +307,19 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         ServerLevel server = (ServerLevel) level();
         clearInvalidTarget();
         updateBossBar();
+        tickAmbientRoar();
 
         if (phase() == AggregatePhase.DYING || phase() == AggregatePhase.DEAD) {
+            return;
+        }
+
+        // Discharge is an overriding body state. Debug forcing and save recovery may
+        // begin it while another phase owns the normal tick path, so it must tick first.
+        if (action() == AggregateAction.CONVERGENCE_DISCHARGE) {
+            tickArmorVulnerability();
+            tickActionClock();
+            tickActionPresentation(server);
+            snapshot(server);
             return;
         }
 
@@ -259,6 +336,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         }
         updateCombatPhase(server);
         tickFailureShedding(server);
+        tickArmorVulnerability();
         tickActionClock();
         tickActionPresentation(server);
         combatController.tick(server, this);
@@ -347,6 +425,41 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     private void tickPhaseTransition(ServerLevel level) {
         setDeltaMovement(Vec3.ZERO);
         phaseTransitionTicks++;
+        boolean failureRupture = phase() == AggregatePhase.FAILURE_TRANSITION;
+        boolean primaryReallocation = phase() == AggregatePhase.REALLOCATION;
+        if (primaryReallocation && phaseTransitionTicks <= 44
+                && phaseTransitionTicks % 2 == 0) {
+            double progress = phaseTransitionTicks / 44.0D;
+            emitInwardStreams(level, ModParticles.AGGREGATE_CONVERGENCE.get(),
+                    Mth.lerp(progress, 7.5D, 1.25D), 1.1D + progress * 0.55D,
+                    14, 0.16D + progress * 0.12D);
+        }
+        if (primaryReallocation && phaseTransitionTicks == 45) {
+            level.sendParticles(ParticleTypes.FLASH,
+                    getX(), getY() + 1.5D, getZ(), 1,
+                    0.0D, 0.0D, 0.0D, 0.0D);
+            emitRing(level, ModParticles.AGGREGATE_EXPULSION.get(),
+                    2.4D, 1.25D, 54);
+            sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateImpact(), 88.0D);
+            playSound(ModSounds.AGGREGATE_REALLOCATION.get(), 3.4F, 0.48F);
+        }
+        if (failureRupture && phaseTransitionTicks == 1) {
+            sendLocalEffect(level,
+                    HearthBoundaryEffectPayload.aggregateFormationRumble(), 96.0D);
+        }
+        if (failureRupture
+                && (phaseTransitionTicks == 5
+                || phaseTransitionTicks == 10
+                || phaseTransitionTicks == 15)) {
+            float angle = phaseTransitionTicks * 53.0F;
+            AggregateShedChunkEntity.spawn(level, this,
+                    phaseTransitionTicks / 5, angle, 1.15F);
+            level.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                    getX(), getY() + 1.45D, getZ(), 48,
+                    2.0D, 1.2D, 2.0D, 0.48D);
+            playSound(ModSounds.AGGREGATE_FRAGMENT_BREAK.get(), 3.0F,
+                    0.56F + phaseTransitionTicks * 0.006F);
+        }
         if (phaseTransitionTicks % 4 == 0) {
             level.sendParticles(ParticleTypes.WHITE_ASH,
                     getX(), getY() + 1.4D, getZ(), 16,
@@ -364,8 +477,10 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                 player.push(shove.x, 0.2D, shove.z);
             }
         }
-        if (phaseTransitionTicks < 20) return;
-        if (phase() == AggregatePhase.REALLOCATION) {
+        int transitionDuration = primaryReallocation ? 60 : 20;
+        if (phaseTransitionTicks < transitionDuration) return;
+        AggregatePhase completed = phase();
+        if (completed == AggregatePhase.REALLOCATION) {
             setPhase(AggregatePhase.REALLOCATED);
         } else {
             setPhase(AggregatePhase.CONVERGENCE_FAILURE);
@@ -373,6 +488,49 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.31D);
         }
         setNoAi(false);
+        beginConvergenceDischarge(level,
+                completed == AggregatePhase.REALLOCATION
+                        ? AggregateDischargePolicy.PRIMARY_WAVE
+                        : AggregateDischargePolicy.SECONDARY_WAVE);
+    }
+
+    private boolean beginConvergenceDischarge(ServerLevel level, int wave) {
+        if (!AggregateReinforcementManager.beginDischarge(level, this, wave)) {
+            entityData.set(DATA_DISCHARGE_SCARS,
+                    AggregateSavedData.get(level.getServer()).dischargeScars());
+            return false;
+        }
+        currentDischargeWave = wave;
+        dischargeInterruptDamage = 0.0F;
+        setNoAi(true);
+        getNavigation().stop();
+        setDeltaMovement(Vec3.ZERO);
+        entityData.set(DATA_DISCHARGE_SCARS,
+                AggregateSavedData.get(level.getServer()).dischargeScars());
+        beginAction(AggregateAction.CONVERGENCE_DISCHARGE,
+                AggregateDischargePolicy.WINDUP_TICKS);
+        if (action() == AggregateAction.CONVERGENCE_DISCHARGE) {
+            int chunks = wave == AggregateDischargePolicy.SECONDARY_WAVE ? 2 : 1;
+            for (int index = 0; index < chunks; index++) {
+                AggregateShedChunkEntity.spawn(
+                        level, this, wave + index, index == 0 ? -62.0F : 68.0F);
+            }
+            FrozenDawn.LOGGER.info("[Aggregate] Convergence discharge wave {} started with {} reserved reinforcement(s)",
+                    wave, AggregateSavedData.get(level.getServer())
+                            .pendingReinforcements(wave).size());
+        }
+        return action() == AggregateAction.CONVERGENCE_DISCHARGE;
+    }
+
+    private void tickArmorVulnerability() {
+        if (armorVulnerabilityTicks > 0) armorVulnerabilityTicks--;
+        double phaseArmor = phase() == AggregatePhase.CONVERGENCE_FAILURE ? 6.0D : 12.0D;
+        double targetArmor = armorVulnerabilityTicks > 0
+                ? Math.max(2.0D, phaseArmor - 4.0D) : phaseArmor;
+        if (getAttribute(Attributes.ARMOR) != null
+                && Double.compare(getAttributeBaseValue(Attributes.ARMOR), targetArmor) != 0) {
+            getAttribute(Attributes.ARMOR).setBaseValue(targetArmor);
+        }
     }
 
     private void tickActionClock() {
@@ -386,8 +544,18 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             entityData.set(DATA_ACTION_DURATION, 0);
             if (active == AggregateAction.RIMEBOUND_RUSH) {
                 setRimeboundSubmerged(false);
+            } else if (active == AggregateAction.CONVERGENCE_DISCHARGE) {
+                currentDischargeWave = -1;
+                dischargeInterruptDamage = 0.0F;
+                restoreAiAfterDischarge();
             }
         }
+    }
+
+    private void restoreAiAfterDischarge() {
+        setNoAi(phase() == AggregatePhase.AWAKENING
+                || phase() == AggregatePhase.REALLOCATION
+                || phase() == AggregatePhase.FAILURE_TRANSITION);
     }
 
     private void tickActionPresentation(ServerLevel level) {
@@ -457,6 +625,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                             2.1D + tick * 0.035D, 0.9D, 18);
                 }
             }
+            case CONVERGENCE_DISCHARGE -> tickConvergenceDischarge(level, tick);
             case DISASSEMBLY -> {
                 if (tick >= 9 && tick <= 35 && tick % 3 == 0) {
                     level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
@@ -476,13 +645,85 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                 }
             }
             case REALLOCATION_BEAT -> {
-                if (tick % 3 == 0) {
-                    emitRing(level, ParticleTypes.WHITE_ASH,
-                            1.4D + tick * 0.12D, 1.1D, 18);
+                setDeltaMovement(Vec3.ZERO);
+                getNavigation().stop();
+                if (tick <= 42 && tick % 2 == 0) {
+                    double progress = tick / 42.0D;
+                    emitInwardStreams(level, ModParticles.AGGREGATE_CONVERGENCE.get(),
+                            Mth.lerp(progress, 5.5D, 1.0D), 1.2D,
+                            10, 0.14D + progress * 0.1D);
+                }
+                if (tick == 44) {
+                    level.sendParticles(ParticleTypes.FLASH,
+                            getX(), getY() + 1.45D, getZ(), 1,
+                            0.0D, 0.0D, 0.0D, 0.0D);
+                    emitRing(level, ModParticles.AGGREGATE_EXPULSION.get(),
+                            2.0D, 1.15D, 40);
+                    playSound(ModSounds.AGGREGATE_REALLOCATION.get(), 3.0F, 0.63F);
                 }
             }
             case NONE -> {
             }
+        }
+    }
+
+    private void tickConvergenceDischarge(ServerLevel level, int tick) {
+        setDeltaMovement(Vec3.ZERO);
+        getNavigation().stop();
+        if (tick == 1) {
+            playSound(ModSounds.AGGREGATE_DISCHARGE_CHARGE.get(), 4.2F, 0.92F);
+            sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateFormationRumble(), 88.0D);
+        }
+        if (tick <= 42 && tick % 2 == 0) {
+            double progress = tick / 42.0D;
+            emitInwardStreams(level,
+                    ModParticles.AGGREGATE_CONVERGENCE.get(),
+                    Mth.lerp(progress, 8.0D, 2.3D), 1.0D + progress * 0.8D,
+                    16, 0.20D + progress * 0.11D);
+        }
+        if (tick >= AggregateDischargePolicy.CORE_EXPOSED_TICK
+                && tick < AggregateDischargePolicy.EJECTION_TICK) {
+            if (tick % 2 == 0) {
+                level.sendParticles(ParticleTypes.END_ROD,
+                        getX(), getY() + 1.72D, getZ(), 8,
+                        0.55D, 0.48D, 0.55D, 0.035D);
+                emitRing(level, ParticleTypes.ELECTRIC_SPARK,
+                        1.4D + (tick - AggregateDischargePolicy.CORE_EXPOSED_TICK) * 0.035D,
+                        1.55D, 18);
+                emitRing(level, ModParticles.AGGREGATE_CONVERGENCE.get(),
+                        1.1D + (tick - AggregateDischargePolicy.CORE_EXPOSED_TICK) * 0.022D,
+                        1.62D, 14);
+            }
+            if (tick == AggregateDischargePolicy.CORE_EXPOSED_TICK) {
+                playSound(ModSounds.AGGREGATE_ROAR.get(), 4.6F, 0.86F);
+                level.sendParticles(ParticleTypes.FLASH,
+                        getX(), getY() + 1.72D, getZ(), 1,
+                        0.0D, 0.0D, 0.0D, 0.0D);
+            }
+        }
+        if (tick == AggregateDischargePolicy.EJECTION_TICK - 4) {
+            AggregateReinforcementManager.telegraphLandings(
+                    level, this, currentDischargeWave);
+        }
+        if (tick == AggregateDischargePolicy.EJECTION_TICK) {
+            int spawned = AggregateReinforcementManager.eject(
+                    level, this, currentDischargeWave);
+            armorVulnerabilityTicks = AggregateDischargePolicy.VULNERABILITY_TICKS;
+            playSound(ModSounds.AGGREGATE_DISCHARGE_BURST.get(), 4.8F, 0.9F);
+            FrozenDawn.LOGGER.info(
+                    "[Aggregate] Convergence discharge wave {} ejected {} reinforcement(s)",
+                    currentDischargeWave, spawned);
+            sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateImpact(), 88.0D);
+            level.sendParticles(ParticleTypes.POOF,
+                    getX(), getY() + 1.25D, getZ(), 110,
+                    2.8D, 1.5D, 2.8D, 0.24D);
+            level.sendParticles(ParticleTypes.WHITE_ASH,
+                    getX(), getY() + 1.35D, getZ(), 90,
+                    3.5D, 1.8D, 3.5D, 0.18D);
+            level.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                    getX(), getY() + 1.55D, getZ(), 120,
+                    2.1D, 1.25D, 2.1D, 0.68D);
+            emitRing(level, ParticleTypes.SNOWFLAKE, 5.8D, 0.8D, 48);
         }
     }
 
@@ -541,6 +782,17 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         }
     }
 
+    private void tickAmbientRoar() {
+        if (phase() != AggregatePhase.COHERENT
+                && phase() != AggregatePhase.REALLOCATED
+                && phase() != AggregatePhase.CONVERGENCE_FAILURE) return;
+        if (action() != AggregateAction.NONE) return;
+        if (--ambientRoarCooldown > 0) return;
+        playSound(ModSounds.AGGREGATE_ROAR.get(), 4.0F,
+                0.82F + random.nextFloat() * 0.14F);
+        ambientRoarCooldown = 240 + random.nextInt(241);
+    }
+
     private void emitForwardArc(ServerLevel level, ParticleOptions particle, double radius,
                                 double height, int points) {
         double facing = Math.toRadians(getYRot()) + Math.PI / 2.0D;
@@ -568,6 +820,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
             case DISASSEMBLY -> "disassembly";
             case ACCRETION_CONSTRUCTION -> "construction";
             case REALLOCATION_BEAT -> "reallocate";
+            case CONVERGENCE_DISCHARGE -> "discharge";
             case NONE -> "";
         };
         triggerAnim(ACTION_CONTROLLER, trigger);
@@ -596,7 +849,37 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                 || phase() == AggregatePhase.REALLOCATION
                 || phase() == AggregatePhase.FAILURE_TRANSITION
                 || phase() == AggregatePhase.DYING) return false;
-        return super.hurt(source, amount);
+        boolean exposed = action() == AggregateAction.CONVERGENCE_DISCHARGE
+                && actionTick() >= AggregateDischargePolicy.CORE_EXPOSED_TICK
+                && source.getEntity() instanceof Player;
+        float applied = exposed ? amount * AggregateDischargePolicy.exposedDamageMultiplier(
+                currentDischargeWave) : amount;
+        boolean hurt = super.hurt(source, applied);
+        if (hurt && exposed && isAlive()) {
+            dischargeInterruptDamage += applied;
+            if (dischargeInterruptDamage >= AggregateDischargePolicy.interruptThreshold(
+                    getMaxHealth(), currentDischargeWave)) {
+                if (level() instanceof ServerLevel server) interruptDischarge(server);
+            }
+        }
+        return hurt;
+    }
+
+    private void interruptDischarge(ServerLevel level) {
+        AggregateReinforcementManager.cancel(level, currentDischargeWave);
+        entityData.set(DATA_ACTION, AggregateAction.NONE.ordinal());
+        entityData.set(DATA_ACTION_TICK, 0);
+        entityData.set(DATA_ACTION_DURATION, 0);
+        level.sendParticles(ParticleTypes.POOF,
+                getX(), getY() + 1.55D, getZ(), 72,
+                1.8D, 1.0D, 1.8D, 0.16D);
+        level.sendParticles(ParticleTypes.CRIT,
+                getX(), getY() + 1.65D, getZ(), 42,
+                1.1D, 0.8D, 1.1D, 0.12D);
+        playSound(ModSounds.AGGREGATE_HURT.get(), 3.0F, 0.42F);
+        currentDischargeWave = -1;
+        dischargeInterruptDamage = 0.0F;
+        restoreAiAfterDischarge();
     }
 
     @Override
@@ -608,7 +891,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         getNavigation().stop();
         setDeltaMovement(Vec3.ZERO);
         triggerAnim(ACTION_CONTROLLER, "death");
-        playSound(ModSounds.AGGREGATE_DEATH.get(), 4.0F, 0.58F);
+        playSound(ModSounds.AGGREGATE_DEATH_LINEAGE.get(), 3.4F, 0.48F);
         if (level() instanceof ServerLevel server) {
             AggregateSavedData.get(server.getServer()).snapshotFight(
                     getUUID(), blockPosition(), 0.0F, getMaxHealth(), AggregatePhase.DYING);
@@ -621,21 +904,105 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         deathPresentationTicks++;
         entityData.set(DATA_DEATH_TICK, deathPresentationTicks);
         deathTime = deathPresentationTicks;
+        hurtTime = 0;
+        hurtDuration = 0;
         setDeltaMovement(Vec3.ZERO);
         if (level() instanceof ServerLevel server) {
-            if (deathPresentationTicks == 24) {
-                playSound(ModSounds.AGGREGATE_DEATH_LINEAGE.get(), 3.0F, 0.74F);
+            if (deathPresentationTicks == 1) {
+                sendLocalEffect(server,
+                        HearthBoundaryEffectPayload.aggregateFormationRumble(), 112.0D);
             }
-            if (deathPresentationTicks == 48) {
-                playSound(ModSounds.AGGREGATE_DEATH_LINEAGE.get(), 2.8F, 0.56F);
+            if (deathPresentationTicks == 30
+                    || deathPresentationTicks == 64
+                    || deathPresentationTicks == 90) {
+                playSound(ModSounds.AGGREGATE_DEATH_LINEAGE.get(),
+                        deathPresentationTicks == 30 ? 3.2F : 3.8F,
+                        deathPresentationTicks == 30 ? 0.72F
+                                : deathPresentationTicks == 64 ? 0.56F : 0.43F);
             }
-            if (deathPresentationTicks % 4 == 0) {
-                server.sendParticles(deathPresentationTicks < 55
-                                ? ParticleTypes.WHITE_ASH : ParticleTypes.POOF,
-                        getX(), getY() + 1.2D, getZ(), 18,
-                        2.6D, 1.5D, 2.6D, 0.08D);
+            if (deathPresentationTicks >= 12 && deathPresentationTicks <= 94
+                    && deathPresentationTicks % 6 == 0) {
+                int chunks = deathPresentationTicks < 54 ? 1 : 2;
+                for (int index = 0; index < chunks; index++) {
+                    float angle = deathPresentationTicks * 31.0F + index * 137.0F;
+                    AggregateShedChunkEntity.spawn(server, this,
+                            deathPresentationTicks / 6 + index, angle, 1.1F);
+                }
+                server.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                        getX(), getY() + 1.35D, getZ(), 36,
+                        1.6D, 1.0D, 1.6D, 0.42D);
             }
-            if (deathPresentationTicks >= 90) {
+            if (deathPresentationTicks % 2 == 0 && deathPresentationTicks < 100) {
+                double collapseProgress = deathPresentationTicks / 100.0D;
+                emitInwardStreams(server, ModParticles.AGGREGATE_CONVERGENCE.get(),
+                        Mth.lerp(collapseProgress, 7.2D, 0.8D),
+                        0.65D + collapseProgress * 0.8D, 12,
+                        0.16D + collapseProgress * 0.18D);
+                server.sendParticles(ParticleTypes.WHITE_ASH,
+                        getX(), getY() + 1.2D, getZ(), 22,
+                        Mth.lerp(collapseProgress, 2.8D, 0.45D),
+                        Mth.lerp(collapseProgress, 1.6D, 0.35D),
+                        Mth.lerp(collapseProgress, 2.8D, 0.45D), 0.11D);
+            }
+            if (deathPresentationTicks == 100) {
+                for (int index = 0; index < 7; index++) {
+                    AggregateShedChunkEntity.spawn(
+                            server, this, index, index * 51.4F, 1.3F);
+                }
+                playSound(ModSounds.AGGREGATE_DEATH.get(), 5.0F, 0.55F);
+                sendLocalEffect(server, HearthBoundaryEffectPayload.aggregateImpact(), 128.0D);
+                server.explode(this, getX(), getY() + 0.2D, getZ(), 4.25F,
+                        Level.ExplosionInteraction.TNT);
+                server.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                        getX(), getY() + 1.4D, getZ(), 320,
+                        3.8D, 2.4D, 3.8D, 0.85D);
+                server.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                                com.frozendawn.init.ModBlocks.AGGREGATE_MASS.get()
+                                        .defaultBlockState()),
+                        getX(), getY() + 1.2D, getZ(), 210,
+                        3.4D, 2.1D, 3.4D, 0.58D);
+                server.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
+                        getX(), getY() + 1.25D, getZ(), 3,
+                        1.2D, 0.8D, 1.2D, 0.0D);
+                server.sendParticles(ParticleTypes.FLASH,
+                        getX(), getY() + 1.3D, getZ(), 4,
+                        0.8D, 0.5D, 0.8D, 0.0D);
+            }
+            if (deathPresentationTicks == 130 && !coreMeteorReleased) {
+                coreMeteorReleased = true;
+                coreMeteorId = AggregateEncounterManager.releaseCoreFromSky(server, this);
+                playSound(ModSounds.AGGREGATE_DISCHARGE_BURST.get(), 4.8F, 0.48F);
+                sendLocalEffect(server, HearthBoundaryEffectPayload.aggregateImpact(), 128.0D);
+            }
+            if (coreMeteorId != null && !coreMeteorImpactPlayed) {
+                net.minecraft.world.entity.Entity meteor = server.getEntity(coreMeteorId);
+                if (meteor != null) {
+                    server.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                            meteor.getX(), meteor.getY() + 0.5D, meteor.getZ(), 24,
+                            0.42D, 0.7D, 0.42D, 0.22D);
+                    server.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                                    com.frozendawn.init.ModBlocks.INERT_CONVERGENCE_CORE.get()
+                                            .defaultBlockState()),
+                            meteor.getX(), meteor.getY() + 0.5D, meteor.getZ(), 12,
+                            0.3D, 0.35D, 0.3D, 0.12D);
+                } else {
+                    coreMeteorImpactPlayed = true;
+                    int impactY = server.getHeight(
+                            net.minecraft.world.level.levelgen.Heightmap.Types
+                                    .MOTION_BLOCKING_NO_LEAVES,
+                            blockPosition().getX(), blockPosition().getZ());
+                    server.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
+                            getX(), impactY + 0.2D, getZ(), 2,
+                            0.4D, 0.2D, 0.4D, 0.0D);
+                    server.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
+                            getX(), impactY + 0.3D, getZ(), 180,
+                            2.2D, 1.4D, 2.2D, 0.62D);
+                    playSound(ModSounds.AGGREGATE_SLAM.get(), 4.6F, 0.46F);
+                    sendLocalEffect(server,
+                            HearthBoundaryEffectPayload.aggregateImpact(), 128.0D);
+                }
+            }
+            if (deathPresentationTicks >= 170) {
                 setPhase(AggregatePhase.DEAD);
                 AggregateEncounterManager.resolve(server, this);
                 remove(RemovalReason.KILLED);
@@ -651,7 +1018,12 @@ public final class AggregateEntity extends Monster implements GeoEntity {
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return random.nextInt(5) == 0 ? ModSounds.AGGREGATE_AMBIENT.get() : null;
+        return ModSounds.AGGREGATE_AMBIENT.get();
+    }
+
+    @Override
+    public int getAmbientSoundInterval() {
+        return 160;
     }
 
     @Override
@@ -707,6 +1079,14 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         tag.putInt("awakeningTicks", awakeningTicks);
         tag.putInt("phaseTransitionTicks", phaseTransitionTicks);
         tag.putInt("deathPresentationTicks", aggregateDeathTick());
+        tag.putInt("dischargeScars", dischargeScars());
+        tag.putInt("currentDischargeWave", currentDischargeWave);
+        tag.putFloat("dischargeInterruptDamage", dischargeInterruptDamage);
+        tag.putInt("armorVulnerabilityTicks", armorVulnerabilityTicks);
+        tag.putInt("ambientRoarCooldown", ambientRoarCooldown);
+        tag.putBoolean("coreMeteorReleased", coreMeteorReleased);
+        tag.putBoolean("coreMeteorImpactPlayed", coreMeteorImpactPlayed);
+        if (coreMeteorId != null) tag.putUUID("coreMeteorId", coreMeteorId);
     }
 
     @Override
@@ -725,6 +1105,16 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         phaseTransitionTicks = Math.max(0, tag.getInt("phaseTransitionTicks"));
         deathPresentationTicks = Math.max(0, tag.getInt("deathPresentationTicks"));
         entityData.set(DATA_DEATH_TICK, deathPresentationTicks);
+        entityData.set(DATA_DISCHARGE_SCARS, Math.max(0, tag.getInt("dischargeScars")));
+        currentDischargeWave = tag.contains("currentDischargeWave", net.minecraft.nbt.Tag.TAG_INT)
+                ? tag.getInt("currentDischargeWave") : -1;
+        dischargeInterruptDamage = Math.max(0.0F, tag.getFloat("dischargeInterruptDamage"));
+        armorVulnerabilityTicks = Math.max(0, tag.getInt("armorVulnerabilityTicks"));
+        ambientRoarCooldown = tag.contains("ambientRoarCooldown", net.minecraft.nbt.Tag.TAG_INT)
+                ? Math.max(20, tag.getInt("ambientRoarCooldown")) : 80;
+        coreMeteorReleased = tag.getBoolean("coreMeteorReleased");
+        coreMeteorImpactPlayed = tag.getBoolean("coreMeteorImpactPlayed");
+        coreMeteorId = tag.hasUUID("coreMeteorId") ? tag.getUUID("coreMeteorId") : null;
         combatController.configure(traits());
         setRimeboundSubmerged(false);
         if (action() == AggregateAction.RIMEBOUND_RUSH) {
@@ -803,6 +1193,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                 .triggerableAnim("false_opening", FALSE_OPENING)
                 .triggerableAnim("disassembly", DISASSEMBLE)
                 .triggerableAnim("construction", CONSTRUCT)
+                .triggerableAnim("discharge", DISCHARGE)
                 .triggerableAnim("reallocate", REALLOCATE)
                 .triggerableAnim("shed", SHED)
                 .triggerableAnim("death", DEATH));

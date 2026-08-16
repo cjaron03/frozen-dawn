@@ -41,6 +41,7 @@ public final class AggregateGrowthManager {
                             AggregateEncounterManager.awaken(overworld, data, player)));
         }
         AggregateEncounterManager.reconcile(overworld, data);
+        AggregateReinforcementManager.tick(overworld, data);
     }
 
     private static void advanceGrowth(ServerLevel level, AggregateSavedData data) {

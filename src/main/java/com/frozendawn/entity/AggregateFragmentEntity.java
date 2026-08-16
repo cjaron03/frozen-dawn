@@ -4,6 +4,7 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.aggregate.AggregateCombatPolicy;
 import com.frozendawn.aggregate.AggregatePhase;
 import com.frozendawn.aggregate.AggregatePressureHandler;
+import com.frozendawn.aggregate.AggregateReinforcementManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -73,12 +74,14 @@ public final class AggregateFragmentEntity extends Monster {
             discard();
             return;
         }
-        if (owner.phase() == AggregatePhase.CONVERGENCE_FAILURE
+        boolean dischargeChild = AggregateReinforcementManager.isChild(this);
+        if ((!dischargeChild && owner.phase() == AggregatePhase.CONVERGENCE_FAILURE)
                 || owner.phase() == AggregatePhase.DYING
                 || owner.phase() == AggregatePhase.DEAD) {
             discard();
             return;
         }
+        if (dischargeChild) return;
         if (returnTicks-- > 0) return;
         setTarget(null);
         getNavigation().moveTo(owner, 1.35D);

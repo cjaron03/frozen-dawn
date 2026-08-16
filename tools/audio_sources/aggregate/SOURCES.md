@@ -17,4 +17,6 @@ headroom for Minecraft's vacuum-aware playback path.
 | `phantom_groan.mp3` | https://freesound.org/s/473525/ | Kneeling | reversed broken vocal layer |
 
 No source is shipped unmodified as an in-game event. The two vocal recordings are
-mixed below structural material, never form words, and are not used as a conventional roar.
+mixed with structural material and never form words. `generate_roars.py` uses those
+same verified CC0 recordings for the Aggregate's louder physical roar, convergence
+charge, and body-expulsion rupture events.

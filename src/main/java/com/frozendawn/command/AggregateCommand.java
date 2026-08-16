@@ -3,6 +3,7 @@ package com.frozendawn.command;
 import com.frozendawn.aggregate.AggregateAction;
 import com.frozendawn.aggregate.AggregateEncounterManager;
 import com.frozendawn.aggregate.AggregateLineage;
+import com.frozendawn.aggregate.AggregateReinforcementManager;
 import com.frozendawn.aggregate.AggregateSavedData;
 import com.frozendawn.aggregate.AggregateStage;
 import com.frozendawn.aggregate.AggregatePressurePolicy;
@@ -79,6 +80,9 @@ final class AggregateCommand {
                 data.fightStarted(), data.resolved(), data.fightHealth(), data.fightMaxHealth(),
                 data.ossuaryPos().map(BlockPos::toShortString).orElse("unselected"))), false);
         context.getSource().sendSuccess(() -> Component.literal("Lineages: " + traits), false);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Discharge: scars=" + data.dischargeScars()
+                        + " reinforcements=" + data.reinforcements().size()), false);
         return 1;
     }
 
@@ -128,6 +132,15 @@ final class AggregateCommand {
         }
         ServerLevel level = player.serverLevel();
         AggregateSavedData data = data(context);
+        AggregateReinforcementManager.cleanupLoaded(level, data);
+        AggregateEncounterManager.cleanupTemporary(level, data);
+        data.activeAggregateId().map(level::getEntity)
+                .filter(AggregateEntity.class::isInstance)
+                .map(AggregateEntity.class::cast)
+                .ifPresent(AggregateEntity::discard);
+        AggregateEntity stale = nearest(level, player.getX(), player.getY(), player.getZ());
+        if (stale != null) stale.discard();
+        data.debugRearmFight();
         BlockPos anchor = BlockPos.containing(player.position().add(
                 player.getLookAngle().multiply(10.0D, 0.0D, 10.0D)));
         if (data.ossuaryPos().isEmpty()) data.setOssuary(anchor, level.getSeed() ^ anchor.asLong());
@@ -135,6 +148,11 @@ final class AggregateCommand {
         data.debugSetStage(AggregateStage.AWAKENING_ELIGIBLE,
                 Math.floorDiv(level.getDayTime(), 24_000L));
         AggregateEncounterManager.awaken(level, data, player);
+        if (data.activeAggregateId().isEmpty()) {
+            context.getSource().sendFailure(Component.literal(
+                    "Could not force Aggregate awakening in the loaded area."));
+            return 0;
+        }
         context.getSource().sendSuccess(() -> Component.literal("Forced Aggregate awakening."), true);
         return 1;
     }
@@ -164,7 +182,14 @@ final class AggregateCommand {
                 context.getSource().sendFailure(Component.literal("No loaded Aggregate nearby."));
                 return 0;
             }
-            aggregate.debugForceAction(action);
+            if (!aggregate.debugForceAction(action)) {
+                context.getSource().sendFailure(Component.literal(
+                        action == AggregateAction.CONVERGENCE_DISCHARGE
+                                ? "Could not start convergence discharge: no valid loaded landing positions."
+                                : "Could not start Aggregate action "
+                                        + action.name().toLowerCase(Locale.ROOT) + "."));
+                return 0;
+            }
             context.getSource().sendSuccess(() -> Component.literal(
                     "Forced Aggregate action " + action.name().toLowerCase(Locale.ROOT) + "."), false);
             return 1;
@@ -190,6 +215,7 @@ final class AggregateCommand {
     private static int reset(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
         AggregateSavedData data = data(context);
+        com.frozendawn.aggregate.AggregateReinforcementManager.cleanupLoaded(level, data);
         AggregateEncounterManager.cleanupTemporary(level, data);
         data.activeAggregateId().map(level::getEntity)
                 .filter(AggregateEntity.class::isInstance)

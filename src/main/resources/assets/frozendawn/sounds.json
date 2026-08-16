@@ -1984,6 +1984,22 @@
       {"name":"frozendawn:entity/aggregate/ambient_3","volume":0.72,"attenuation_distance":72}
     ]
   },
+  "entity.aggregate.roar": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.roar",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/roar_1","volume":1.55,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/roar_2","volume":1.55,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/roar_3","volume":1.55,"attenuation_distance":128}
+    ]
+  },
+  "entity.aggregate.discharge_charge": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.discharge_charge",
+    "sounds": [{"name":"frozendawn:entity/aggregate/discharge_charge","volume":1.65,"attenuation_distance":128}]
+  },
+  "entity.aggregate.discharge_burst": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.discharge_burst",
+    "sounds": [{"name":"frozendawn:entity/aggregate/discharge_burst","volume":1.75,"attenuation_distance":144}]
+  },
   "entity.aggregate.awaken": {
     "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.awaken",
     "sounds": [

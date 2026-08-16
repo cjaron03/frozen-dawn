@@ -40,11 +40,30 @@ public final class AggregateModel extends GeoModel<AggregateEntity> {
         setLineageVisible("lineage_architect", entity, AggregateLineage.ARCHITECT);
         setLineageVisible("lineage_undone", entity, AggregateLineage.UNDONE);
         getBone("root").ifPresent(root -> {
-            float scale = entity.hasDominantTrait(AggregateLineage.UNDONE) ? 1.08F : 1.0F;
-            root.setScaleX(scale);
-            root.setScaleY(scale);
-            root.setScaleZ(scale);
+            float baseScale = entity.hasDominantTrait(AggregateLineage.UNDONE) ? 1.08F : 1.0F;
+            float deathProgress = Math.min(1.0F, entity.aggregateDeathTick() / 100.0F);
+            float collapse = deathProgress * deathProgress * (3.0F - 2.0F * deathProgress);
+            root.setScaleX(baseScale * (1.0F - collapse * 0.68F));
+            root.setScaleY(baseScale * (1.0F - collapse * 0.38F));
+            root.setScaleZ(baseScale * (1.0F - collapse * 0.72F));
+            if (entity.aggregateDeathTick() > 0 && entity.aggregateDeathTick() < 100) {
+                float tremor = (float)Math.sin(entity.aggregateDeathTick() * 1.73F)
+                        * (0.015F + deathProgress * 0.11F);
+                root.setRotY(root.getRotY() + tremor);
+                root.setRotZ(root.getRotZ() - tremor * 0.72F);
+                root.setPosY(root.getPosY() - collapse * 2.8F);
+            }
+            root.setHidden(entity.aggregateDeathTick() >= 100);
         });
+        float massScale = com.frozendawn.aggregate.AggregateDischargePolicy
+                .massScaleForScars(entity.dischargeScars());
+        float deathLoss = entity.aggregateDeathTick() <= 0 ? 1.0F
+                : 1.0F - Math.min(0.68F, entity.aggregateDeathTick() / 100.0F * 0.68F);
+        setMassScale("dragged_residue", massScale * deathLoss);
+        setMassScale("shoulder_mass",
+                (0.94F + (massScale - 0.79F) * 0.29F) * deathLoss);
+        setMassScale("pelvis_mass",
+                (0.92F + (massScale - 0.79F) * 0.38F) * deathLoss);
     }
 
     private void setLineageVisible(String bone, AggregateEntity entity,
@@ -54,5 +73,13 @@ public final class AggregateModel extends GeoModel<AggregateEntity> {
         if (index >= 0 && entity.aggregateDeathTick() >= 18 + (2 - index) * 18) {
             getBone(bone).ifPresent(value -> value.setHidden(true));
         }
+    }
+
+    private void setMassScale(String bone, float scale) {
+        getBone(bone).ifPresent(value -> {
+            value.setScaleX(scale);
+            value.setScaleY(scale);
+            value.setScaleZ(scale);
+        });
     }
 }
