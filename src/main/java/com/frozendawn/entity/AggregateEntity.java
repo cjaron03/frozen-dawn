@@ -34,7 +34,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MoveTowardsTargetGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -163,6 +166,9 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(4, new MoveTowardsTargetGoal(this, 1.0D, 64.0F));
+        goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.72D, 60));
+        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 24.0F));
+        goalSelector.addGoal(9, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
                 this, Player.class, true, AggregateEntity::combatPlayer));
@@ -176,6 +182,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         combatController.configure(traits);
         setPhase(AggregatePhase.AWAKENING);
         awakeningTicks = 0;
+        restrictTo(blockPosition(), 48);
         setNoAi(true);
         setNoGravity(true);
     }
@@ -495,11 +502,8 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     }
 
     private boolean beginConvergenceDischarge(ServerLevel level, int wave) {
-        if (!AggregateReinforcementManager.beginDischarge(level, this, wave)) {
-            entityData.set(DATA_DISCHARGE_SCARS,
-                    AggregateSavedData.get(level.getServer()).dischargeScars());
-            return false;
-        }
+        boolean reinforcementsReserved = AggregateReinforcementManager.beginDischarge(
+                level, this, wave);
         currentDischargeWave = wave;
         dischargeInterruptDamage = 0.0F;
         setNoAi(true);
@@ -515,9 +519,10 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                 AggregateShedChunkEntity.spawn(
                         level, this, wave + index, index == 0 ? -62.0F : 68.0F);
             }
-            FrozenDawn.LOGGER.info("[Aggregate] Convergence discharge wave {} started with {} reserved reinforcement(s)",
+            FrozenDawn.LOGGER.info(
+                    "[Aggregate] Convergence discharge wave {} started with {} reserved reinforcement(s); reservation={}",
                     wave, AggregateSavedData.get(level.getServer())
-                            .pendingReinforcements(wave).size());
+                            .pendingReinforcements(wave).size(), reinforcementsReserved);
         }
         return action() == AggregateAction.CONVERGENCE_DISCHARGE;
     }
@@ -670,6 +675,14 @@ public final class AggregateEntity extends Monster implements GeoEntity {
     private void tickConvergenceDischarge(ServerLevel level, int tick) {
         setDeltaMovement(Vec3.ZERO);
         getNavigation().stop();
+        for (int strike = 0; strike < AggregateDischargePolicy.bodiesForWave(
+                currentDischargeWave); strike++) {
+            if (tick == AggregateDischargePolicy.strikeTick(
+                    currentDischargeWave, strike)) {
+                AggregateReinforcementManager.strikeForWave(
+                        level, this, currentDischargeWave, strike);
+            }
+        }
         if (tick == 1) {
             playSound(ModSounds.AGGREGATE_DISCHARGE_CHARGE.get(), 4.2F, 0.92F);
             sendLocalEffect(level, HearthBoundaryEffectPayload.aggregateFormationRumble(), 88.0D);
@@ -682,7 +695,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                     16, 0.20D + progress * 0.11D);
         }
         if (tick >= AggregateDischargePolicy.CORE_EXPOSED_TICK
-                && tick < AggregateDischargePolicy.EJECTION_TICK) {
+                && tick < AggregateDischargePolicy.RIBS_HOLD_END_TICK) {
             if (tick % 2 == 0) {
                 level.sendParticles(ParticleTypes.END_ROD,
                         getX(), getY() + 1.72D, getZ(), 8,

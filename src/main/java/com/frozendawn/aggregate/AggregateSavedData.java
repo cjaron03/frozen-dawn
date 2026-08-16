@@ -226,6 +226,16 @@ public final class AggregateSavedData extends SavedData {
         setDirty();
     }
 
+    /** Explicit test-only relocation used by the debug spawn command. */
+    public void debugRelocateOssuary(BlockPos pos, long seed) {
+        if (pos == null) return;
+        ossuaryPos = pos.immutable();
+        ossuarySeed = seed;
+        ossuaryBlocks.clear();
+        temporaryBlocks.clear();
+        setDirty();
+    }
+
     public boolean awakeningEligible() {
         return awakeningEligible && !fightStarted && !aggregateResolved;
     }

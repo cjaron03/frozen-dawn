@@ -6,8 +6,10 @@ import java.util.List;
 /** Pure tuning and selection policy for the Aggregate's finite expulsion waves. */
 public final class AggregateDischargePolicy {
     public static final int WINDUP_TICKS = 96;
+    public static final int RIBS_FULLY_OPEN_TICK = 36;
     public static final int CORE_EXPOSED_TICK = 44;
     public static final int EJECTION_TICK = 72;
+    public static final int RIBS_HOLD_END_TICK = 80;
     public static final int VULNERABILITY_TICKS = 80;
     public static final int CHILD_LIFETIME_TICKS = 1_800;
     public static final int PRIMARY_WAVE = 0;
@@ -47,6 +49,15 @@ public final class AggregateDischargePolicy {
 
     public static int substantialBodiesPerLineage() {
         return 2;
+    }
+
+    public static int bodiesForWave(int wave) {
+        return wave == SECONDARY_WAVE ? 3 : 2;
+    }
+
+    public static int strikeTick(int wave, int strikeIndex) {
+        if (strikeIndex < 0 || strikeIndex >= bodiesForWave(wave)) return -1;
+        return 1 + strikeIndex * (wave == SECONDARY_WAVE ? 9 : 11);
     }
 
     public static float massScaleForScars(int scars) {

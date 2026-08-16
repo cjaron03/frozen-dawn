@@ -19,6 +19,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -63,12 +64,14 @@ public final class AggregateReinforcementManager {
         }
 
         List<AggregateLineage> expanded = new ArrayList<>();
+        int waveBodyCap = AggregateDischargePolicy.bodiesForWave(wave);
         for (AggregateLineage lineage : selected) {
             int bodies = lineage == AggregateLineage.FROSTWRITHE
                     ? AggregateDischargePolicy.frostwritheFragmentCount(
                             aggregate.hasDominantTrait(AggregateLineage.FROSTWRITHE))
                     : AggregateDischargePolicy.substantialBodiesPerLineage();
             for (int copy = 0; copy < bodies; copy++) {
+                if (expanded.size() >= waveBodyCap) break;
                 if (lineage != AggregateLineage.FROSTWRITHE
                         && data.activeSubstantialReinforcements()
                                 + countSubstantial(expanded)
@@ -77,6 +80,7 @@ public final class AggregateReinforcementManager {
                 }
                 expanded.add(lineage);
             }
+            if (expanded.size() >= waveBodyCap) break;
         }
 
         List<AggregateLineage> validLineages = new ArrayList<>();
@@ -140,29 +144,53 @@ public final class AggregateReinforcementManager {
         for (AggregateSavedData.ReinforcementSnapshot record
                 : data.pendingReinforcements(wave)) {
             BlockPos target = record.lastPosition();
-            float intensity = 1.28F;
-            long seed = record.id().getMostSignificantBits()
-                    ^ record.id().getLeastSignificantBits();
-            MasterArchitectLightningEntity.spawn(
-                    level,
-                    target.getX() + 0.5D,
-                    target.getY(),
-                    target.getZ() + 0.5D,
-                    72.0F,
-                    intensity,
-                    seed);
-            HearthMasterArchitectWeatherManager.broadcastAuraEvent(
-                    level,
-                    MasterArchitectAuraEventPayload.AGGREGATE_BOLT,
-                    target.above(72),
-                    target,
-                    intensity);
             level.sendParticles(ModParticles.AGGREGATE_EXPULSION.get(),
                     target.getX() + 0.5D,
                     target.getY() + 0.2D,
                     target.getZ() + 0.5D,
                     28, 0.38D, 0.18D, 0.38D, 0.34D);
         }
+    }
+
+    /** Strikes each reserved landing in sequence, with an arena fallback for visual continuity. */
+    public static void strikeForWave(
+            ServerLevel level, AggregateEntity aggregate, int wave, int strikeIndex) {
+        List<AggregateSavedData.ReinforcementSnapshot> pending = AggregateSavedData
+                .get(level.getServer()).pendingReinforcements(wave);
+        BlockPos target = strikeIndex < pending.size()
+                ? pending.get(strikeIndex).lastPosition()
+                : fallbackStrikePosition(level, aggregate, wave, strikeIndex);
+        float intensity = wave == AggregateDischargePolicy.SECONDARY_WAVE ? 1.65F : 1.48F;
+        long seed = aggregate.getUUID().getMostSignificantBits()
+                ^ aggregate.getUUID().getLeastSignificantBits()
+                ^ (long)wave * 0x9E3779B97F4A7C15L
+                ^ (long)strikeIndex * 0xC2B2AE3D27D4EB4FL;
+        MasterArchitectLightningEntity.spawn(
+                level, target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D,
+                84.0F, intensity, seed);
+        HearthMasterArchitectWeatherManager.broadcastAuraEvent(
+                level,
+                MasterArchitectAuraEventPayload.AGGREGATE_BOLT,
+                target.above(84),
+                target,
+                intensity);
+        level.sendParticles(ParticleTypes.FLASH,
+                target.getX() + 0.5D, target.getY() + 1.0D, target.getZ() + 0.5D,
+                2, 0.2D, 0.3D, 0.2D, 0.0D);
+    }
+
+    private static BlockPos fallbackStrikePosition(
+            ServerLevel level, AggregateEntity aggregate, int wave, int strikeIndex) {
+        double angle = aggregate.getYRot() * Mth.DEG_TO_RAD
+                + (Math.PI * 2.0D * strikeIndex
+                / AggregateDischargePolicy.bodiesForWave(wave))
+                + (wave == AggregateDischargePolicy.SECONDARY_WAVE ? 0.42D : 0.0D);
+        int radius = 7 + strikeIndex * 2;
+        int x = Mth.floor(aggregate.getX() + Math.cos(angle) * radius);
+        int z = Mth.floor(aggregate.getZ() + Math.sin(angle) * radius);
+        if (!level.hasChunk(x >> 4, z >> 4)) return aggregate.blockPosition();
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+        return new BlockPos(x, y, z);
     }
 
     public static void cancel(ServerLevel level, int wave) {

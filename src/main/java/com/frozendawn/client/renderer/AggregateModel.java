@@ -1,6 +1,8 @@
 package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.AggregateAction;
+import com.frozendawn.aggregate.AggregateDischargePolicy;
 import com.frozendawn.aggregate.AggregateLineage;
 import com.frozendawn.entity.AggregateEntity;
 import net.minecraft.resources.ResourceLocation;
@@ -39,6 +41,7 @@ public final class AggregateModel extends GeoModel<AggregateEntity> {
         setLineageVisible("lineage_frostwrithe", entity, AggregateLineage.FROSTWRITHE);
         setLineageVisible("lineage_architect", entity, AggregateLineage.ARCHITECT);
         setLineageVisible("lineage_undone", entity, AggregateLineage.UNDONE);
+        holdOpenDischargeCore(entity);
         getBone("root").ifPresent(root -> {
             float baseScale = entity.hasDominantTrait(AggregateLineage.UNDONE) ? 1.08F : 1.0F;
             float deathProgress = Math.min(1.0F, entity.aggregateDeathTick() / 100.0F);
@@ -80,6 +83,40 @@ public final class AggregateModel extends GeoModel<AggregateEntity> {
             value.setScaleX(scale);
             value.setScaleY(scale);
             value.setScaleZ(scale);
+        });
+    }
+
+    private void holdOpenDischargeCore(AggregateEntity entity) {
+        if (entity.action() != AggregateAction.CONVERGENCE_DISCHARGE
+                || entity.actionTick() < AggregateDischargePolicy.CORE_EXPOSED_TICK
+                || entity.actionTick() >= AggregateDischargePolicy.RIBS_HOLD_END_TICK) {
+            return;
+        }
+
+        getBone("rib_left").ifPresent(rib -> {
+            rib.setPosX(-9.0F);
+            rib.setPosY(3.0F);
+            rib.setPosZ(2.0F);
+            rib.setRotY((float)Math.toRadians(-39.0D));
+            rib.setRotZ((float)Math.toRadians(-67.0D));
+        });
+        getBone("rib_right").ifPresent(rib -> {
+            rib.setPosX(9.0F);
+            rib.setPosY(3.0F);
+            rib.setPosZ(2.0F);
+            rib.setRotY((float)Math.toRadians(39.0D));
+            rib.setRotZ((float)Math.toRadians(70.0D));
+        });
+        getBone("core_cage").ifPresent(core -> {
+            core.setScaleX(1.58F);
+            core.setScaleY(0.62F);
+            core.setScaleZ(1.48F);
+        });
+        getBone("core_inner").ifPresent(core -> {
+            float pulse = 2.02F + (float)Math.sin(entity.actionTick() * 0.52F) * 0.13F;
+            core.setScaleX(pulse);
+            core.setScaleY(pulse);
+            core.setScaleZ(pulse);
         });
     }
 }

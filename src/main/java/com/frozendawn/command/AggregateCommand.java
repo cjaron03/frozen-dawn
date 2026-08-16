@@ -143,8 +143,14 @@ final class AggregateCommand {
         data.debugRearmFight();
         BlockPos anchor = BlockPos.containing(player.position().add(
                 player.getLookAngle().multiply(10.0D, 0.0D, 10.0D)));
-        if (data.ossuaryPos().isEmpty()) data.setOssuary(anchor, level.getSeed() ^ anchor.asLong());
+        data.debugRelocateOssuary(anchor, level.getSeed() ^ anchor.asLong());
         data.debugSetPressure(Math.max(400.0D, data.pressure()));
+        if (AggregatePressurePolicy.lockTraits(
+                data.lineagePressure(), data.ossuarySeed()).size() < 2) {
+            data.debugSetLineage(AggregateLineage.RIMEBOUND, 160.0D);
+            data.debugSetLineage(AggregateLineage.RESONANT, 130.0D);
+            data.debugSetLineage(AggregateLineage.REMNANT, 110.0D);
+        }
         data.debugSetStage(AggregateStage.AWAKENING_ELIGIBLE,
                 Math.floorDiv(level.getDayTime(), 24_000L));
         AggregateEncounterManager.awaken(level, data, player);
