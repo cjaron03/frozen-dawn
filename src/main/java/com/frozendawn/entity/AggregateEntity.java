@@ -905,6 +905,7 @@ public final class AggregateEntity extends Monster implements GeoEntity {
         setDeltaMovement(Vec3.ZERO);
         triggerAnim(ACTION_CONTROLLER, "death");
         playSound(ModSounds.AGGREGATE_DEATH_LINEAGE.get(), 3.4F, 0.48F);
+        playSound(ModSounds.AGGREGATE_DEATH.get(), 5.0F, 0.92F);
         if (level() instanceof ServerLevel server) {
             AggregateSavedData.get(server.getServer()).snapshotFight(
                     getUUID(), blockPosition(), 0.0F, getMaxHealth(), AggregatePhase.DYING);
@@ -962,7 +963,6 @@ public final class AggregateEntity extends Monster implements GeoEntity {
                     AggregateShedChunkEntity.spawn(
                             server, this, index, index * 51.4F, 1.3F);
                 }
-                playSound(ModSounds.AGGREGATE_DEATH.get(), 5.0F, 0.55F);
                 sendLocalEffect(server, HearthBoundaryEffectPayload.aggregateImpact(), 128.0D);
                 server.explode(this, getX(), getY() + 0.2D, getZ(), 4.25F,
                         Level.ExplosionInteraction.TNT);

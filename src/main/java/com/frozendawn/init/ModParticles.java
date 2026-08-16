@@ -26,6 +26,9 @@ public final class ModParticles {
     public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
             AGGREGATE_EXPULSION = PARTICLES.register("aggregate_expulsion",
                     () -> new SimpleParticleType(false));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            AGGREGATE_PRESSURE_SIGNAL = PARTICLES.register("aggregate_pressure_signal",
+                    () -> new SimpleParticleType(false));
 
     private ModParticles() {
     }

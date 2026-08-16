@@ -2046,11 +2046,7 @@
   },
   "entity.aggregate.death": {
     "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.death",
-    "sounds": [
-      {"name":"frozendawn:entity/aggregate/death_1","volume":1.4,"attenuation_distance":144},
-      {"name":"frozendawn:entity/aggregate/death_2","volume":1.4,"attenuation_distance":144},
-      {"name":"frozendawn:entity/aggregate/death_3","volume":1.4,"attenuation_distance":144}
-    ]
+    "sounds": [{"name":"frozendawn:entity/aggregate/death_candidate_scream","volume":1.7,"attenuation_distance":160}]
   },
   "entity.aggregate.death_lineage": {
     "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.death_lineage",

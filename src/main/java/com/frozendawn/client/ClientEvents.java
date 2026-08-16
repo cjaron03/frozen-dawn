@@ -37,6 +37,7 @@ import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.particle.AggregateConvergenceParticle;
 import com.frozendawn.client.particle.AggregateExpulsionParticle;
+import com.frozendawn.client.particle.AggregatePressureSignalParticle;
 import com.frozendawn.client.renderer.RocketLaunchModel;
 import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -101,6 +102,8 @@ public class ClientEvents {
                 AggregateConvergenceParticle.Provider::new);
         event.registerSpriteSet(ModParticles.AGGREGATE_EXPULSION.get(),
                 AggregateExpulsionParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_PRESSURE_SIGNAL.get(),
+                AggregatePressureSignalParticle.Provider::new);
     }
 
     @SubscribeEvent
