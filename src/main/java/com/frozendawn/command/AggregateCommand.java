@@ -114,6 +114,8 @@ final class AggregateCommand {
             }
             data.debugSetStage(stage, Math.floorDiv(level.getDayTime(), 24_000L));
             AggregateOssuaryBuilder.buildStage(level, data, stage);
+            com.frozendawn.aggregate.AggregateGrowthManager.playStageDiagnostic(
+                    level, data, stage);
             return status(context);
         } catch (Exception exception) {
             context.getSource().sendFailure(Component.literal(
@@ -141,9 +143,11 @@ final class AggregateCommand {
         AggregateEntity stale = nearest(level, player.getX(), player.getY(), player.getZ());
         if (stale != null) stale.discard();
         data.debugRearmFight();
-        BlockPos anchor = BlockPos.containing(player.position().add(
-                player.getLookAngle().multiply(10.0D, 0.0D, 10.0D)));
-        data.debugRelocateOssuary(anchor, level.getSeed() ^ anchor.asLong());
+        if (data.ossuaryPos().isEmpty()) {
+            BlockPos anchor = BlockPos.containing(player.position().add(
+                    player.getLookAngle().multiply(10.0D, 0.0D, 10.0D)));
+            data.debugRelocateOssuary(anchor, level.getSeed() ^ anchor.asLong());
+        }
         data.debugSetPressure(Math.max(400.0D, data.pressure()));
         if (AggregatePressurePolicy.lockTraits(
                 data.lineagePressure(), data.ossuarySeed()).size() < 2) {

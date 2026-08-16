@@ -2072,5 +2072,21 @@
   },
   "entity.aggregate.fragment_break": {
     "category": "hostile", "sounds": [{"name":"frozendawn:entity/aggregate/slam_3","volume":0.55,"pitch":1.45,"attenuation_distance":48}]
+  },
+  "ui.suit.aggregate_deposit": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_deposit",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_deposit","stream":true}]
+  },
+  "ui.suit.aggregate_ossuary": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_ossuary",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_ossuary","stream":true}]
+  },
+  "ui.suit.aggregate_gestation": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_gestation",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_gestation","stream":true}]
+  },
+  "ui.suit.aggregate_resolved": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_resolved",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_resolved","stream":true}]
   }
 }

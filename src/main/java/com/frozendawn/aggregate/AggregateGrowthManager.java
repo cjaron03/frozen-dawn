@@ -14,6 +14,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.Level;
 import net.minecraft.sounds.SoundSource;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Cheap threshold-driven growth authority. It never force-loads or scans globally. */
 public final class AggregateGrowthManager {
@@ -56,6 +57,25 @@ public final class AggregateGrowthManager {
         }
         data.advanceStage(next, day);
         AggregateOssuaryBuilder.buildStage(level, data, next);
+        playStageDiagnostic(level, data, next);
+    }
+
+    public static void playStageDiagnostic(
+            ServerLevel level, AggregateSavedData data, AggregateStage stage) {
+        int line = switch (stage) {
+            case DEPOSIT -> 0;
+            case OSSUARY -> 1;
+            case GESTATION -> 2;
+            default -> -1;
+        };
+        BlockPos anchor = data.ossuaryPos().orElse(null);
+        if (line < 0 || anchor == null) return;
+        for (ServerPlayer player : level.getPlayers(candidate -> !candidate.isSpectator()
+                && candidate.distanceToSqr(anchor.getCenter()) <= 128.0D * 128.0D)) {
+            PacketDistributor.sendToPlayer(
+                    player, com.frozendawn.network.HearthBoundaryEffectPayload
+                            .aggregateDiagnostic(line));
+        }
     }
 
     private static boolean chooseAnchor(ServerLevel level, AggregateSavedData data) {

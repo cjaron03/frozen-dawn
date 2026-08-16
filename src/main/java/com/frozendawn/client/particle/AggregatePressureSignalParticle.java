@@ -11,35 +11,53 @@ import net.minecraft.util.Mth;
 
 /** A narrow pressure filament rising from a player-attributed post-Maeve kill. */
 public final class AggregatePressureSignalParticle extends TextureSheetParticle {
+    private static final int HOVER_TICKS = 14;
+
     private final float initialSize;
+    private final double launchSpeed;
+    private final SpriteSet sprites;
 
     private AggregatePressureSignalParticle(
             ClientLevel level, double x, double y, double z,
             double xSpeed, double ySpeed, double zSpeed, SpriteSet sprites) {
         super(level, x, y, z);
-        xd = xSpeed;
-        yd = ySpeed;
-        zd = zSpeed;
+        this.sprites = sprites;
+        launchSpeed = ySpeed;
+        xd = xSpeed * 0.35D;
+        yd = 0.006D + random.nextDouble() * 0.008D;
+        zd = zSpeed * 0.35D;
         gravity = 0.0F;
         friction = 0.992F;
         hasPhysics = false;
-        lifetime = 42 + random.nextInt(9);
-        initialSize = 0.12F + random.nextFloat() * 0.08F;
+        lifetime = 72 + random.nextInt(10);
+        initialSize = 0.15F + random.nextFloat() * 0.09F;
         quadSize = initialSize;
-        setColor(0.76F, 0.79F, 0.76F);
-        setAlpha(0.92F);
-        pickSprite(sprites);
+        setColor(0.98F, 0.98F, 1.0F);
+        setAlpha(0.96F);
+        setSpriteFromAge(sprites);
     }
 
     @Override
     public void tick() {
         super.tick();
         if (removed) return;
+        setSpriteFromAge(sprites);
         float progress = age / (float)lifetime;
-        xd += (random.nextDouble() - 0.5D) * 0.0012D;
-        zd += (random.nextDouble() - 0.5D) * 0.0012D;
+        if (age < HOVER_TICKS) {
+            yd *= 0.76D;
+            xd += (random.nextDouble() - 0.5D) * 0.0035D;
+            zd += (random.nextDouble() - 0.5D) * 0.0035D;
+        } else if (age == HOVER_TICKS) {
+            yd = launchSpeed * 0.46D;
+            xd *= 0.45D;
+            zd *= 0.45D;
+        } else {
+            yd = Math.min(0.42D, yd + 0.0045D);
+            xd *= 0.97D;
+            zd *= 0.97D;
+        }
         quadSize = initialSize * Mth.lerp(progress, 1.0F, 0.3F);
-        setAlpha(Mth.clamp((1.0F - progress) * 1.28F, 0.0F, 0.92F));
+        setAlpha(Mth.clamp((1.0F - progress) * 1.35F, 0.0F, 0.96F));
     }
 
     @Override

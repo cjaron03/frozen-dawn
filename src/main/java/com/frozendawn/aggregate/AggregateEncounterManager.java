@@ -8,6 +8,8 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -50,8 +53,8 @@ public final class AggregateEncounterManager {
                 preset, AggregateCombatPolicy.effectiveOverfeed(
                         data.overfeedPressure(), dominant))
                 * AggregateCombatPolicy.participantMultiplier(count);
-        placeOnLoadedGround(level, aggregate, anchor,
-                level.random.nextFloat() * 360.0F);
+        ruptureAwakeningCavity(level, data, anchor);
+        placeAtOssuaryBase(aggregate, anchor, level.random.nextFloat() * 360.0F);
         aggregate.initialize(maxHealth, traits, dominant);
         AggregatePressureHandler.markIgnored(aggregate);
         if (!level.addFreshEntity(aggregate)) return;
@@ -159,6 +162,8 @@ public final class AggregateEncounterManager {
         for (ServerPlayer player : level.getPlayers(candidate -> !candidate.isSpectator()
                 && candidate.distanceToSqr(centerPoint) <= 128.0D * 128.0D)) {
             WorldTickHandler.grantAdvancement(player, "nothing_left_to_become");
+            PacketDistributor.sendToPlayer(player,
+                    com.frozendawn.network.HearthBoundaryEffectPayload.aggregateDiagnostic(3));
         }
         data.resolve();
     }
@@ -212,23 +217,50 @@ public final class AggregateEncounterManager {
         data.clearTemporaryBlocks();
     }
 
-    private static void placeOnLoadedGround(ServerLevel level, AggregateEntity aggregate,
-                                            BlockPos anchor, float yaw) {
-        for (int radius = 0; radius <= 4; radius++) {
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (radius > 0 && Math.abs(dx) != radius && Math.abs(dz) != radius) continue;
-                    BlockPos column = anchor.offset(dx, 0, dz);
-                    if (!level.hasChunkAt(column)) continue;
-                    int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                            column.getX(), column.getZ());
-                    aggregate.moveTo(column.getX() + 0.5D, surfaceY,
-                            column.getZ() + 0.5D, yaw, 0.0F);
-                    if (level.noCollision(aggregate)) return;
-                }
+    private static void placeAtOssuaryBase(
+            AggregateEntity aggregate, BlockPos anchor, float yaw) {
+        aggregate.moveTo(anchor.getX() + 0.5D, anchor.getY(),
+                anchor.getZ() + 0.5D, yaw, 0.0F);
+    }
+
+    private static void ruptureAwakeningCavity(
+            ServerLevel level, AggregateSavedData data, BlockPos anchor) {
+        int debrisBudget = 30;
+        for (long packed : data.ossuaryBlocks()) {
+            BlockPos pos = BlockPos.of(packed);
+            int dx = pos.getX() - anchor.getX();
+            int dz = pos.getZ() - anchor.getZ();
+            int dy = pos.getY() - anchor.getY();
+            if (dx * dx + dz * dz > 25 || dy < 0 || dy > 7 || !level.isLoaded(pos)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (!isOssuaryMaterial(state)) continue;
+            double horizontal = Math.max(1.0D, Math.sqrt(dx * dx + dz * dz));
+            if (debrisBudget-- > 0 && level.random.nextFloat() < 0.72F) {
+                FallingBlockEntity debris = FallingBlockEntity.fall(level, pos, state);
+                double force = 0.24D + level.random.nextDouble() * 0.28D;
+                debris.setDeltaMovement(dx / horizontal * force,
+                        0.36D + level.random.nextDouble() * 0.42D,
+                        dz / horizontal * force);
+                debris.setHurtsEntities(2.0F, 8);
+            } else {
+                level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR
+                        .defaultBlockState(), 3);
             }
         }
-        aggregate.moveTo(anchor.getX() + 0.5D, anchor.getY() + 1.0D,
-                anchor.getZ() + 0.5D, yaw, 0.0F);
+        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,
+                        ModBlocks.AGGREGATE_MASS.get().defaultBlockState()),
+                anchor.getX() + 0.5D, anchor.getY() + 1.8D, anchor.getZ() + 0.5D,
+                180, 3.6D, 2.2D, 3.6D, 0.32D);
+        level.sendParticles(ParticleTypes.EXPLOSION,
+                anchor.getX() + 0.5D, anchor.getY() + 1.0D, anchor.getZ() + 0.5D,
+                8, 2.2D, 1.2D, 2.2D, 0.08D);
+    }
+
+    private static boolean isOssuaryMaterial(BlockState state) {
+        return state.is(ModBlocks.AGGREGATE_MASS.get())
+                || state.is(ModBlocks.AGGREGATE_RIB.get())
+                || state.is(ModBlocks.AGGREGATE_RESIDUE.get());
     }
 }

@@ -383,6 +383,14 @@ public class ModSounds {
             register("entity.aggregate.fragment_hurt");
     public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_FRAGMENT_BREAK =
             register("entity.aggregate.fragment_break");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_DEPOSIT_TTS =
+            register("ui.suit.aggregate_deposit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_OSSUARY_TTS =
+            register("ui.suit.aggregate_ossuary");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_GESTATION_TTS =
+            register("ui.suit.aggregate_gestation");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_RESOLVED_TTS =
+            register("ui.suit.aggregate_resolved");
 
     // --- Hollow Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> HOLLOW_AMBIENT = SOUNDS.register("entity.hollow.ambient",

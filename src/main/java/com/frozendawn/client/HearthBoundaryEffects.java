@@ -164,6 +164,27 @@ public final class HearthBoundaryEffects {
             shakeDuration = AGGREGATE_IMPACT_SHAKE_TICKS;
             return;
         }
+        if (payload.effectType() >= HearthBoundaryEffectPayload.AGGREGATE_DEPOSIT_DIAGNOSTIC
+                && payload.effectType()
+                <= HearthBoundaryEffectPayload.AGGREGATE_RESOLVED_DIAGNOSTIC) {
+            int line = payload.effectType()
+                    - HearthBoundaryEffectPayload.AGGREGATE_DEPOSIT_DIAGNOSTIC;
+            var sound = switch (line) {
+                case 1 -> ModSounds.AGGREGATE_OSSUARY_TTS.get();
+                case 2 -> ModSounds.AGGREGATE_GESTATION_TTS.get();
+                case 3 -> ModSounds.AGGREGATE_RESOLVED_TTS.get();
+                default -> ModSounds.AGGREGATE_DEPOSIT_TTS.get();
+            };
+            String key = switch (line) {
+                case 1 -> "ui.frozendawn.suit.aggregate_ossuary";
+                case 2 -> "ui.frozendawn.suit.aggregate_gestation";
+                case 3 -> "ui.frozendawn.suit.aggregate_resolved";
+                default -> "ui.frozendawn.suit.aggregate_deposit";
+            };
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(key);
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }

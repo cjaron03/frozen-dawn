@@ -30,6 +30,10 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int REMNANT_RADIO_CUTOFF = 17;
     public static final int AGGREGATE_FORMATION_RUMBLE = 18;
     public static final int AGGREGATE_IMPACT = 19;
+    public static final int AGGREGATE_DEPOSIT_DIAGNOSTIC = 20;
+    public static final int AGGREGATE_OSSUARY_DIAGNOSTIC = 21;
+    public static final int AGGREGATE_GESTATION_DIAGNOSTIC = 22;
+    public static final int AGGREGATE_RESOLVED_DIAGNOSTIC = 23;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -108,6 +112,11 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload aggregateImpact() {
         return new HearthBoundaryEffectPayload(AGGREGATE_IMPACT);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateDiagnostic(int line) {
+        return new HearthBoundaryEffectPayload(AGGREGATE_DEPOSIT_DIAGNOSTIC
+                + Math.clamp(line, 0, 3));
     }
 
     @Override

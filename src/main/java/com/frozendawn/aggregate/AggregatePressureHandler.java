@@ -49,14 +49,15 @@ public final class AggregatePressureHandler {
     }
 
     private static void emitPressureSignal(ServerLevel level, Entity source) {
-        for (int strand = 0; strand < 18; strand++) {
+        for (int strand = 0; strand < 12; strand++) {
             double angle = strand * 2.399963229728653D;
             double radius = 0.08D + (strand % 4) * 0.045D;
             double x = source.getX() + Math.cos(angle) * radius;
             double z = source.getZ() + Math.sin(angle) * radius;
-            double rise = 0.52D + strand * 0.012D;
+            double rise = 0.58D + strand * 0.014D;
             level.sendParticles(ModParticles.AGGREGATE_PRESSURE_SIGNAL.get(),
-                    x, source.getY() + 0.35D + (strand % 3) * 0.12D, z,
+                    x, source.getY() + source.getBbHeight() + 0.25D
+                            + (strand % 3) * 0.10D, z,
                     0, Math.cos(angle) * 0.012D, rise,
                     Math.sin(angle) * 0.012D, 1.0D);
         }
