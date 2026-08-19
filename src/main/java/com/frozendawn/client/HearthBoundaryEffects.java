@@ -32,6 +32,7 @@ public final class HearthBoundaryEffects {
     private static final int AGGREGATE_IMPACT_SHAKE_TICKS = 28;
     private static final int STILLPOINT_CHARGE_SHAKE_TICKS = 80;
     private static final int STILLPOINT_FORMATION_SHAKE_TICKS = 26;
+    private static final int STILLPOINT_COLLAPSE_SHAKE_TICKS = 30;
 
     private static int pulseTicks;
     private static int shakeTicks;
@@ -57,6 +58,16 @@ public final class HearthBoundaryEffects {
     public static void trigger(HearthBoundaryEffectPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getSoundManager() == null) {
+            return;
+        }
+        if (payload.effectType() >= HearthBoundaryEffectPayload.STILLPOINT_BREAK_ONE
+                && payload.effectType()
+                <= HearthBoundaryEffectPayload.STILLPOINT_BREAK_FINAL) {
+            int use = payload.effectType()
+                    - HearthBoundaryEffectPayload.STILLPOINT_BREAK_ONE + 1;
+            shakeTicks = use >= 3 ? STILLPOINT_COLLAPSE_SHAKE_TICKS : 12;
+            shakeDuration = shakeTicks;
+            StillpointAmbientSound.triggerCoreBreak(use);
             return;
         }
         if (payload.effectType() == HearthBoundaryEffectPayload.WARNING) {

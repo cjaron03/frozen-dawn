@@ -9,5 +9,7 @@ Both shipped sounds are original procedural assets generated for Frozen Dawn.
 The intermediate WAV files were encoded as mono Vorbis with `oggenc`. No third-party recordings or external game assets are present in these files. `generate_stillpoint_audio.sh` and `generate_stillpoint_hum.sh` contain the complete deterministic synthesis pipelines.
 
 - `enter.ogg` and `exit.ogg`: original procedural pressure sweeps made from filtered deterministic noise and synthesized low-frequency transients.
+- `use.ogg`: original short crystalline pressure release synthesized from layered tones and filtered noise.
+- `exhaust.ogg`: original terminal pressure rupture synthesized from low-frequency impulses, noise, and a decaying metallic body.
 
 `stillpoint_field.ogg` is generated locally with macOS Samantha through Frozen Dawn's existing ORSA TTS helper, then filtered and encoded with FFmpeg. The complete command and exact spoken line are recorded in `generate_stillpoint_tts.sh`.

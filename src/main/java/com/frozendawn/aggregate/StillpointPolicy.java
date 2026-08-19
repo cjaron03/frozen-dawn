@@ -5,7 +5,18 @@ import net.minecraft.server.level.ServerLevel;
 import com.frozendawn.config.FrozenDawnConfig;
 
 public final class StillpointPolicy {
+    public static final int MAX_CORE_USES = 3;
+
     private StillpointPolicy() {
+    }
+
+    public static boolean isFinalCoreBreak(int usesBeforeBreak) {
+        return Math.clamp(usesBeforeBreak, 0, MAX_CORE_USES - 1)
+                == MAX_CORE_USES - 1;
+    }
+
+    public static int coreUsesAfterBreak(int usesBeforeBreak) {
+        return Math.clamp(usesBeforeBreak + 1, 0, MAX_CORE_USES);
     }
 
     public static boolean isSuppressed(ServerLevel level, BlockPos pos) {

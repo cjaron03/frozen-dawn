@@ -1,1 +1,14 @@
-{ "variants": { "": { "model": "frozendawn:block/inert_convergence_core" } } }
+{
+  "multipart": [
+    { "when": { "final_stage": "0" }, "apply": { "model": "frozendawn:block/inert_convergence_core" } },
+    { "when": { "final_stage": "1" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_1" } },
+    { "when": { "final_stage": "2" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_2" } },
+    { "when": { "final_stage": "3" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_3" } },
+    { "when": { "final_stage": "4" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_1" } },
+    { "when": { "final_stage": "5" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_2" } },
+    { "when": { "final_stage": "6" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_3" } },
+    { "when": { "final_stage": "7" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_1" } },
+    { "when": { "final_stage": "8" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_2" } },
+    { "when": { "final_stage": "9" }, "apply": { "model": "frozendawn:block/inert_convergence_core_breaking_3" } }
+  ]
+}

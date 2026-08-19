@@ -41,7 +41,7 @@ public final class StillpointFieldRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL
                 || shader == null
                 || !FrozenDawnConfig.ENABLE_STILLPOINT_FIELD_EFFECTS.get()
-                || !StillpointClientState.isActiveHere()) {
+                || !StillpointClientState.isRenderableHere()) {
             return;
         }
         render(event);
@@ -57,7 +57,7 @@ public final class StillpointFieldRenderer {
         copySceneColor(mainTarget, sceneCopy);
         mainTarget.bindWrite(true);
         Vec3 camera = event.getCamera().getPosition();
-        Vec3 center = StillpointClientState.center().getCenter();
+        Vec3 center = StillpointClientState.renderCenter().getCenter();
         float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float time = (minecraft.level.getGameTime() + partialTick) / 20.0F;
         float formationAge = StillpointClientState.formationAgeTicks(partialTick);
@@ -80,7 +80,8 @@ public final class StillpointFieldRenderer {
         shader.safeGetUniform("uCenter").set(
                 (float) center.x, (float) center.y, (float) center.z);
         shader.safeGetUniform("uRadius").set(
-                Math.max(0.05F, StillpointClientState.radius() * expansion));
+                Math.max(0.05F, StillpointClientState.renderRadius()
+                        * expansion * StillpointClientState.collapseScale(partialTick)));
         shader.safeGetUniform("uTime").set(time);
         shader.safeGetUniform("uIntensity").set(intensity);
         setRippleUniforms(minecraft.level.getGameTime() + partialTick);

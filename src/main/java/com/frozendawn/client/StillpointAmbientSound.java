@@ -21,6 +21,8 @@ public final class StillpointAmbientSound {
     private static boolean crossingStateInitialized;
     private static boolean fieldWasAvailable;
     private static boolean listenerWasInside;
+    private static int useCueTicks;
+    private static int pendingUse;
 
     private StillpointAmbientSound() {
     }
@@ -28,6 +30,13 @@ public final class StillpointAmbientSound {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (useCueTicks > 0 && --useCueTicks == 0 && pendingUse < 3
+                && minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.STILLPOINT_USE.get(),
+                    0.88F + pendingUse * 0.10F, 1.35F));
+            pendingUse = 0;
+        }
         boolean fieldAvailable = minecraft.level != null && minecraft.player != null
                 && StillpointClientState.isActiveHere();
         boolean listenerInside = fieldAvailable
@@ -62,6 +71,17 @@ public final class StillpointAmbientSound {
         crossingStateInitialized = false;
         fieldWasAvailable = false;
         listenerWasInside = false;
+        useCueTicks = 0;
+        pendingUse = 0;
+    }
+
+    public static void triggerCoreBreak(int use) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.getSoundManager() == null) return;
+        minecraft.getSoundManager().stop();
+        hum = null;
+        pendingUse = Math.clamp(use, 1, 3);
+        useCueTicks = pendingUse >= 3 ? 0 : 8;
     }
 
     private static final class FieldHum extends AbstractTickableSoundInstance {

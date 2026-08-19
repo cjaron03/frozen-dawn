@@ -1,9 +1,11 @@
 package com.frozendawn.aggregate;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.block.StillpointCoreBlock;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
 import com.frozendawn.network.StillpointFieldPayload;
@@ -20,14 +22,19 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
@@ -53,6 +60,61 @@ public final class StillpointFieldManager {
         syncAll(level.getServer());
     }
 
+    @SubscribeEvent
+    public static void onCoreBreak(BlockEvent.BreakEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level)
+                || !(event.getPlayer() instanceof ServerPlayer player)) {
+            return;
+        }
+        BlockState state = event.getState();
+        if (!state.is(ModBlocks.INERT_CONVERGENCE_CORE.get())) return;
+        event.setCanceled(true);
+        if (state.getValue(StillpointCoreBlock.FINAL_STAGE) > 0) return;
+
+        ItemStack tool = player.getMainHandItem();
+        if (!tool.is(ModItems.ACHERONITE_PICKAXE.get())) {
+            level.playSound(null, event.getPos(), net.minecraft.sounds.SoundEvents.ANVIL_LAND,
+                    SoundSource.BLOCKS, 0.45F, 1.65F);
+            return;
+        }
+
+        BlockPos pos = event.getPos();
+        tool.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+        level.levelEvent(player, 2001, pos, Block.getId(state));
+        if (!state.getValue(StillpointCoreBlock.DEPLOYED)) {
+            level.removeBlock(pos, false);
+            Block.popResource(level, pos,
+                    new ItemStack(ModItems.INERT_CONVERGENCE_CORE.get()));
+            return;
+        }
+
+        int usesBeforeBreak = state.getValue(StillpointCoreBlock.USES);
+        int usesAfterBreak = StillpointPolicy.coreUsesAfterBreak(usesBeforeBreak);
+        if (StillpointPolicy.isFinalCoreBreak(usesBeforeBreak)) {
+            AggregateSavedData.get(level.getServer()).clearStillpoint(level, pos);
+            syncAll(level.getServer());
+            announceBreak(level, pos, usesAfterBreak);
+            StillpointCoreBlock.beginFinalCollapse(level, pos, state);
+            return;
+        }
+
+        level.removeBlock(pos, false);
+        ItemStack core = new ItemStack(ModItems.INERT_CONVERGENCE_CORE.get());
+        core.setDamageValue(usesAfterBreak);
+        Block.popResource(level, pos, core);
+        announceBreak(level, pos, usesAfterBreak);
+    }
+
+    private static void announceBreak(ServerLevel level, BlockPos pos, int uses) {
+        double range = FrozenDawnConfig.STILLPOINT_RADIUS.get() + 24.0D;
+        for (ServerPlayer witness : level.players()) {
+            if (witness.distanceToSqr(pos.getCenter()) <= range * range) {
+                PacketDistributor.sendToPlayer(witness,
+                        HearthBoundaryEffectPayload.stillpointBreak(uses));
+            }
+        }
+    }
+
     public static void tick(MinecraftServer server) {
         AggregateSavedData data = AggregateSavedData.get(server);
         BlockPos center = data.stillpointPos().orElse(null);
@@ -67,6 +129,16 @@ public final class StillpointFieldManager {
             data.clearStillpoint(level, center);
             syncAll(server);
             return;
+        }
+        if (level.hasChunkAt(center)) {
+            BlockState coreState = level.getBlockState(center);
+            if (coreState.is(ModBlocks.INERT_CONVERGENCE_CORE.get())
+                    && !coreState.getValue(StillpointCoreBlock.DEPLOYED)) {
+                // Cores saved before the inert/deployed split already owned a field.
+                level.setBlock(center,
+                        coreState.setValue(StillpointCoreBlock.DEPLOYED, true),
+                        Block.UPDATE_ALL);
+            }
         }
 
         long elapsed = Math.max(0L, level.getGameTime() - data.stillpointChargeStart());

@@ -259,9 +259,11 @@ final class AggregateCommand {
             ServerLevel level = player.serverLevel();
             BlockPos pos = player.blockPosition().relative(player.getDirection(), 3);
             level.setBlock(pos, ModBlocks.INERT_CONVERGENCE_CORE.get()
-                    .defaultBlockState(), 3);
+                    .defaultBlockState()
+                    .setValue(com.frozendawn.block.StillpointCoreBlock.DEPLOYED, true), 3);
             AggregateSavedData.get(level.getServer()).armStillpoint(
                     level, pos, player.getUUID());
+            com.frozendawn.aggregate.StillpointFieldManager.announceCharge(level, pos);
             return stillpointStatus(context);
         } catch (Exception exception) {
             context.getSource().sendFailure(Component.literal(

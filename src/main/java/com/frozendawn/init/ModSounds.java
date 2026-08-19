@@ -39,6 +39,10 @@ public class ModSounds {
             register("block.stillpoint_core.enter");
     public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_EXIT =
             register("block.stillpoint_core.exit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_USE =
+            register("block.stillpoint_core.use");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_EXHAUST =
+            register("block.stillpoint_core.exhaust");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SHELTER_CREAK = SOUNDS.register("ambient.shelter_creak",
             () -> SoundEvent.createVariableRangeEvent(

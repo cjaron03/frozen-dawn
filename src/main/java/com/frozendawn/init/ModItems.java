@@ -105,7 +105,8 @@ public class ModItems {
     public static final DeferredItem<InertConvergenceCoreItem> INERT_CONVERGENCE_CORE =
             ITEMS.register("inert_convergence_core", () -> new InertConvergenceCoreItem(
                     ModBlocks.INERT_CONVERGENCE_CORE.get(), new Item.Properties()
-                    .stacksTo(1).rarity(Rarity.EPIC).fireResistant()));
+                    .durability(InertConvergenceCoreItem.MAX_USES)
+                    .rarity(Rarity.EPIC).fireResistant()));
     // Remnant lure blocks intentionally have no item or creative-tab entry.
 
     // --- Items ---

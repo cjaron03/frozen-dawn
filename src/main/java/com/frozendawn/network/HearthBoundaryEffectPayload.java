@@ -35,6 +35,9 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int AGGREGATE_GESTATION_DIAGNOSTIC = 22;
     public static final int AGGREGATE_RESOLVED_DIAGNOSTIC = 23;
     public static final int STILLPOINT_FIELD_DIAGNOSTIC = 24;
+    public static final int STILLPOINT_BREAK_ONE = 25;
+    public static final int STILLPOINT_BREAK_TWO = 26;
+    public static final int STILLPOINT_BREAK_FINAL = 27;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -122,6 +125,11 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload stillpointFieldDiagnostic() {
         return new HearthBoundaryEffectPayload(STILLPOINT_FIELD_DIAGNOSTIC);
+    }
+
+    public static HearthBoundaryEffectPayload stillpointBreak(int uses) {
+        return new HearthBoundaryEffectPayload(STILLPOINT_BREAK_ONE
+                + Math.clamp(uses - 1, 0, 2));
     }
 
     @Override

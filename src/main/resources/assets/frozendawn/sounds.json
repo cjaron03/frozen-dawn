@@ -2109,6 +2109,14 @@
     "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.exit",
     "sounds": [{"name":"frozendawn:block/stillpoint_core/exit","volume":1.35}]
   },
+  "block.stillpoint_core.use": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.use",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/use","volume":1.3}]
+  },
+  "block.stillpoint_core.exhaust": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.exhaust",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/exhaust","volume":1.5,"attenuation_distance":96}]
+  },
   "ui.suit.stillpoint_field": {
     "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.stillpoint_field",
     "sounds": [{"name":"frozendawn:ui/suit/stillpoint_field","stream":true}]

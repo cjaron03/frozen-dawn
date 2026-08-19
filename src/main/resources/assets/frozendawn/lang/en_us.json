@@ -1001,6 +1001,10 @@
   "subtitle.frozendawn.block.stillpoint_core.hum": "Pressure holds at the boundary",
   "subtitle.frozendawn.block.stillpoint_core.enter": "Pressure folds inward",
   "subtitle.frozendawn.block.stillpoint_core.exit": "Pressure rushes back",
+  "subtitle.frozendawn.block.stillpoint_core.use": "A reserve is spent",
+  "subtitle.frozendawn.block.stillpoint_core.exhaust": "The Stillpoint exhausts itself",
+  "tooltip.frozendawn.inert_convergence_core.uses": "Placements remaining: %s/%s",
+  "tooltip.frozendawn.inert_convergence_core.tool": "Can only be recovered with an Acheronite Pickaxe",
   "ui.frozendawn.suit.stillpoint_field": "Localized exclusion field detected. Acoustic transmission will resume within established boundary.",
   "subtitle.frozendawn.ui.suit.stillpoint_field": "ORSA suit diagnostic"
 }

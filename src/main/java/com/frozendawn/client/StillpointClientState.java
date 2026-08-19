@@ -10,6 +10,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -19,6 +20,7 @@ import java.util.List;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class StillpointClientState {
     private static final int MAX_RIPPLES = 4;
+    private static final int COLLAPSE_TICKS = 24;
     private static boolean present;
     private static boolean active;
     private static ResourceLocation dimension;
@@ -26,6 +28,10 @@ public final class StillpointClientState {
     private static int radius = 48;
     private static long chargeStartGameTime = -1L;
     private static int pulseSequence;
+    private static int collapseTicks;
+    private static ResourceLocation collapseDimension;
+    private static BlockPos collapseCenter = BlockPos.ZERO;
+    private static int collapseRadius = 48;
     private static final Deque<Ripple> ripples = new ArrayDeque<>();
 
     private StillpointClientState() {
@@ -35,6 +41,15 @@ public final class StillpointClientState {
         boolean wasPresent = present;
         boolean wasActive = active;
         long previousChargeStart = chargeStartGameTime;
+        ResourceLocation previousDimension = dimension;
+        BlockPos previousCenter = center;
+        int previousRadius = radius;
+        if (wasActive && !payload.active()) {
+            collapseTicks = COLLAPSE_TICKS;
+            collapseDimension = previousDimension;
+            collapseCenter = previousCenter;
+            collapseRadius = previousRadius;
+        }
         present = payload.present();
         active = payload.active();
         dimension = payload.dimension();
@@ -60,7 +75,7 @@ public final class StillpointClientState {
             while (ripples.size() > MAX_RIPPLES) ripples.removeLast();
         }
         pulseSequence = payload.pulseSequence();
-        if (!present) ripples.clear();
+        if (!present && collapseTicks <= 0) ripples.clear();
     }
 
     public static boolean isPresentHere() {
@@ -71,6 +86,13 @@ public final class StillpointClientState {
 
     public static boolean isActiveHere() {
         return active && isPresentHere();
+    }
+
+    public static boolean isRenderableHere() {
+        Minecraft minecraft = Minecraft.getInstance();
+        return isActiveHere() || collapseTicks > 0 && minecraft.level != null
+                && collapseDimension != null
+                && collapseDimension.equals(minecraft.level.dimension().location());
     }
 
     public static boolean isChargingHere() {
@@ -93,8 +115,22 @@ public final class StillpointClientState {
         return center;
     }
 
+    public static BlockPos renderCenter() {
+        return isActiveHere() ? center : collapseCenter;
+    }
+
     public static int radius() {
         return radius;
+    }
+
+    public static int renderRadius() {
+        return isActiveHere() ? radius : collapseRadius;
+    }
+
+    public static float collapseScale(float partialTick) {
+        if (isActiveHere()) return 1.0F;
+        return Math.clamp((collapseTicks - partialTick) / COLLAPSE_TICKS,
+                0.0F, 1.0F);
     }
 
     public static long chargeStartGameTime() {
@@ -115,6 +151,15 @@ public final class StillpointClientState {
     }
 
     @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        if (collapseTicks > 0 && --collapseTicks == 0) {
+            collapseDimension = null;
+            collapseCenter = BlockPos.ZERO;
+            ripples.clear();
+        }
+    }
+
+    @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         present = false;
         active = false;
@@ -122,6 +167,10 @@ public final class StillpointClientState {
         center = BlockPos.ZERO;
         chargeStartGameTime = -1L;
         pulseSequence = 0;
+        collapseTicks = 0;
+        collapseDimension = null;
+        collapseCenter = BlockPos.ZERO;
+        collapseRadius = 48;
         ripples.clear();
     }
 
