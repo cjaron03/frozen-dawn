@@ -1,7 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -40,7 +40,7 @@ public final class StillpointFieldRenderer {
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL
                 || shader == null
-                || !FrozenDawnConfig.ENABLE_STILLPOINT_FIELD_EFFECTS.get()
+                || !FrozenDawnClientConfig.ENABLE_STILLPOINT_FIELD_EFFECTS.get()
                 || !StillpointClientState.isRenderableHere()) {
             return;
         }
@@ -63,7 +63,7 @@ public final class StillpointFieldRenderer {
         float formationAge = StillpointClientState.formationAgeTicks(partialTick);
         float expansion = formationAge >= 24.0F ? 1.0F
                 : 1.0F - (float) Math.pow(1.0F - formationAge / 24.0F, 3.0D);
-        float intensity = FrozenDawnConfig.STILLPOINT_DISTORTION_INTENSITY
+        float intensity = FrozenDawnClientConfig.STILLPOINT_DISTORTION_INTENSITY
                 .get().floatValue();
 
         Matrix4f inverseProjection = new Matrix4f(event.getProjectionMatrix()).invert();

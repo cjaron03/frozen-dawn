@@ -122,10 +122,6 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.IntValue MASTER_SKY_FACE_RENDER_DISTANCE;
     public static final ModConfigSpec.BooleanValue ENABLE_POST_MAEVE_MOON;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_DEBRIS_DENSITY;
-    public static final ModConfigSpec.BooleanValue ENABLE_STILLPOINT_FIELD_EFFECTS;
-    public static final ModConfigSpec.DoubleValue STILLPOINT_DISTORTION_INTENSITY;
-    public static final ModConfigSpec.DoubleValue STILLPOINT_PARTICLE_DENSITY;
-    public static final ModConfigSpec.BooleanValue ENABLE_STILLPOINT_AUDIO_MUFFLING;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
     public static final ModConfigSpec SPEC;
@@ -509,19 +505,6 @@ public class FrozenDawnConfig {
         POST_MAEVE_DEBRIS_DENSITY = BUILDER
                 .comment("Scales visual-only post-Maeve orbital debris without changing progression.")
                 .defineInRange("postMaeveDebrisDensity", 1.0D, 0.0D, 1.0D);
-        ENABLE_STILLPOINT_FIELD_EFFECTS = BUILDER
-                .comment("Render the depth-aware Stillpoint sanctuary boundary.",
-                        "Disabling this never disables server-side protection.")
-                .define("enableStillpointFieldEffects", true);
-        STILLPOINT_DISTORTION_INTENSITY = BUILDER
-                .comment("Scales Stillpoint refraction and inverted-mirror color shift.")
-                .defineInRange("stillpointDistortionIntensity", 1.0D, 0.0D, 1.0D);
-        STILLPOINT_PARTICLE_DENSITY = BUILDER
-                .comment("Scales client-only Stillpoint charge and boundary particles.")
-                .defineInRange("stillpointParticleDensity", 1.0D, 0.0D, 1.0D);
-        ENABLE_STILLPOINT_AUDIO_MUFFLING = BUILDER
-                .comment("Muffle positional sounds originating outside an active Stillpoint field.")
-                .define("enableStillpointAudioMuffling", true);
         ENABLE_SUIT_PUNCTURE_OVERLAY = BUILDER
                 .comment("Show red viewport cracks while the equipped EVA suit is punctured.")
                 .define("enableSuitPunctureOverlay", true);

@@ -40,8 +40,11 @@ public final class UndoneArchitectSpawner {
                 spawnChance *= 0.20D;
             }
             if (!player.isAlive() || player.isSpectator()
-                    || level.random.nextDouble() >= spawnChance
                     || hasNearby(level, player.blockPosition())) {
+                continue;
+            }
+            if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                    PostMaeveEncounterType.UNDONE_ARCHITECT, spawnChance)) {
                 continue;
             }
             BlockPos pos = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
@@ -50,10 +53,20 @@ public final class UndoneArchitectSpawner {
             if (pos != null && level.hasChunkAt(pos)) {
                 UndoneArchitectEntity spawned = spawn(level, pos);
                 if (spawned != null) {
+                    PostMaeveEncounterDirector.successPlayer(level, player,
+                            PostMaeveEncounterType.UNDONE_ARCHITECT);
                     FrozenDawn.LOGGER.info(
                             "[UndoneArchitect] Naturally spawned near {} density={} chance={}",
                             player.getName().getString(), density, spawnChance);
+                } else {
+                    PostMaeveEncounterDirector.blockedPlayer(level, player,
+                            PostMaeveEncounterType.UNDONE_ARCHITECT,
+                            "entity creation or insertion failed");
                 }
+            } else {
+                PostMaeveEncounterDirector.blockedPlayer(level, player,
+                        PostMaeveEncounterType.UNDONE_ARCHITECT,
+                        "no loaded hybrid spawn position");
             }
         }
     }

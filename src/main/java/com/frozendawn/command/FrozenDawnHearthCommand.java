@@ -38,9 +38,12 @@ import com.frozendawn.world.RimeboundManager;
 import com.frozendawn.world.ResonantManager;
 import com.frozendawn.world.ResonanceEventManager;
 import com.frozendawn.world.FrostwritheManager;
+import com.frozendawn.world.PostMaeveEncounterDirector;
+import com.frozendawn.world.PostMaeveEncounterType;
 import com.frozendawn.world.remnant.RemnantLureManager;
 import com.frozendawn.world.remnant.RemnantLureTemplate;
 import com.frozendawn.entity.RemnantEntity;
+import com.frozendawn.entity.RemnantPolicy;
 import com.frozendawn.entity.RemnantState;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundState;
@@ -100,6 +103,18 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
                         .then(Commands.literal("debug-reset-undone-contact")
                                 .executes(FrozenDawnHearthCommand::postMaeveResetContact))
+                        .then(Commands.literal("encounters")
+                                .executes(FrozenDawnHearthCommand::encounterStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::encounterStatus))
+                                .then(Commands.literal("debug-ready")
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(
+                                                        FrozenDawnHearthCommand::encounterDebugReady)))
+                                .then(Commands.literal("debug-reset")
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(
+                                                        FrozenDawnHearthCommand::encounterDebugReset))))
                         .then(Commands.literal("archivist")
                                 .executes(FrozenDawnHearthCommand::archivistStatus)
                                 .then(Commands.literal("status")
@@ -684,6 +699,18 @@ final class FrozenDawnHearthCommand {
                         + " erasedAt=" + data.maeveErasedGameTime()
                         + " undoneReleased="
                         + yesNo(PostMaeveWorldState.isUndoneSpawningReleased(server))), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            ServerLevel level = player.serverLevel();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Undone: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE)), false);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Undone Architect: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE_ARCHITECT)), false);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Bloombound: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.BLOOMBOUND)), false);
+        }
         return 1;
     }
 
@@ -693,6 +720,75 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "DEBUG post-Maeve saved state set to " + yesNo(erased)), true);
         return postMaeveStatus(context);
+    }
+
+    private static int encounterStatus(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        long region = RemnantPolicy.regionKey(player.blockPosition());
+        for (PostMaeveEncounterType type : PostMaeveEncounterType.values()) {
+            String status = isRegionEncounter(type)
+                    ? PostMaeveEncounterDirector.regionStatus(
+                    player.serverLevel(), region, type)
+                    : PostMaeveEncounterDirector.playerStatus(
+                    player.serverLevel(), player, type);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    type.name().toLowerCase(Locale.ROOT) + ": " + status), false);
+        }
+        return 1;
+    }
+
+    private static int encounterDebugReady(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        PostMaeveEncounterType type = encounterType(context);
+        if (type == null) return 0;
+        if (isRegionEncounter(type)) {
+            PostMaeveEncounterDirector.debugReadyRegion(
+                    player.serverLevel(), RemnantPolicy.regionKey(player.blockPosition()), type);
+        } else {
+            PostMaeveEncounterDirector.debugReadyPlayer(
+                    player.serverLevel(), player, type);
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "DEBUG " + type.name().toLowerCase(Locale.ROOT)
+                        + " is guaranteed on its next valid natural check"), true);
+        return 1;
+    }
+
+    private static int encounterDebugReset(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        PostMaeveEncounterType type = encounterType(context);
+        if (type == null) return 0;
+        if (isRegionEncounter(type)) {
+            PostMaeveEncounterDirector.debugResetRegion(
+                    player.serverLevel(), RemnantPolicy.regionKey(player.blockPosition()), type);
+        } else {
+            PostMaeveEncounterDirector.debugResetPlayer(
+                    player.serverLevel(), player, type);
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "DEBUG reset encounter pressure for "
+                        + type.name().toLowerCase(Locale.ROOT)), true);
+        return 1;
+    }
+
+    private static PostMaeveEncounterType encounterType(
+            CommandContext<CommandSourceStack> context) {
+        String raw = StringArgumentType.getString(context, "type");
+        try {
+            return PostMaeveEncounterType.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            context.getSource().sendFailure(Component.literal(
+                    "Unknown encounter type: " + raw));
+            return null;
+        }
+    }
+
+    private static boolean isRegionEncounter(PostMaeveEncounterType type) {
+        return type == PostMaeveEncounterType.REMNANT
+                || type == PostMaeveEncounterType.ARCHIVIST;
     }
 
     private static int postMaeveMoonStatus(
@@ -805,6 +901,13 @@ final class FrozenDawnHearthCommand {
         ServerLevel level = context.getSource().getLevel();
         context.getSource().sendSuccess(() -> Component.literal(
                 "Archivists: " + ArchivistManager.statusLine(level)), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            long region = com.frozendawn.homo.ArchivistPolicy.regionKey(
+                    player.blockPosition());
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
+                            level, region, PostMaeveEncounterType.ARCHIVIST)), false);
+        }
         return 1;
     }
 
@@ -869,6 +972,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Rimebound: " + RimeboundManager.statusLine(
                         context.getSource().getLevel())), false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.RIMEBOUND);
         return 1;
     }
 
@@ -974,6 +1078,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Frostwrithe: " + FrostwritheManager.statusLine(
                         context.getSource().getLevel())), false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.FROSTWRITHE);
         return 1;
     }
 
@@ -1130,6 +1235,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Resonant: " + ResonantManager.statusLine(context.getSource().getLevel())),
                 false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.RESONANT);
         return 1;
     }
 
@@ -1233,7 +1339,23 @@ final class FrozenDawnHearthCommand {
     private static int remnantStatus(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Remnant: " + RemnantLureManager.statusLine(context.getSource().getLevel())), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            long region = RemnantPolicy.regionKey(player.blockPosition());
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
+                            player.serverLevel(), region,
+                            PostMaeveEncounterType.REMNANT)), false);
+        }
         return 1;
+    }
+
+    private static void sendPlayerEncounterStatus(
+            CommandContext<CommandSourceStack> context,
+            PostMaeveEncounterType type) {
+        if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return;
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Encounter: " + PostMaeveEncounterDirector.playerStatus(
+                        player.serverLevel(), player, type)), false);
     }
 
     private static RemnantLureTemplate.Kind remnantTemplate(

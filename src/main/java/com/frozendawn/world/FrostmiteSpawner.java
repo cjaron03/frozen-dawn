@@ -21,6 +21,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
 import java.util.UUID;
@@ -48,14 +49,24 @@ public final class FrostmiteSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
-            if (player.isCreative()) continue;
-            if (level.random.nextFloat() > spawnChance) continue;
-
-            int nearby = level.getEntitiesOfClass(FrostmiteEntity.class, player.getBoundingBox().inflate(32.0)).size();
-            if (nearby >= maxNearby) continue;
+            boolean forcedEvolution = postMaeve
+                    && PostMaeveEncounterDirector.isDebugReadyPlayer(
+                    level, player, PostMaeveEncounterType.FROSTWRITHE);
+            if (player.isCreative() && !forcedEvolution) continue;
+            if (!forcedEvolution && level.random.nextFloat() > spawnChance) continue;
 
             BlockPos center = findSpawnPos(level, player, level.random);
-            if (center == null) continue;
+            if (center == null && forcedEvolution) {
+                center = findDebugEncounterPos(level, player, level.random);
+            }
+            if (center == null) {
+                if (forcedEvolution) {
+                    PostMaeveEncounterDirector.blockedPlayer(level, player,
+                            PostMaeveEncounterType.FROSTWRITHE,
+                            "no loaded Frostmite encounter surface");
+                }
+                continue;
+            }
 
             long evolutionCell = evolutionCell(center);
             if (postMaeve && checkedEvolutionCells.add(evolutionCell)
@@ -63,6 +74,10 @@ public final class FrostmiteSpawner {
                     level, center, player, level.random, false)) {
                 continue;
             }
+
+            int nearby = level.getEntitiesOfClass(FrostmiteEntity.class,
+                    player.getBoundingBox().inflate(32.0)).size();
+            if (nearby >= maxNearby) continue;
 
             int groupSize = Math.min(maxGroup, maxNearby - nearby);
             groupSize = 1 + level.random.nextInt(groupSize);
@@ -104,7 +119,7 @@ public final class FrostmiteSpawner {
                         * StillpointPolicy.evolvedWeightMultiplier(level, encounter)
                         * AggregateGrowthManager.evolvedWeightMultiplier(level, encounter),
                 infestedBreak);
-        if (random.nextFloat() >= chance) return false;
+        if (chance <= 0.0F) return false;
 
         int cap = FrozenDawnConfig.FROSTWRITHE_NEARBY_CAP.get();
         int nearby = level.getEntitiesOfClass(FrostwritheEntity.class,
@@ -112,19 +127,45 @@ public final class FrostmiteSpawner {
         boolean unresolvedColony = !level.getEntitiesOfClass(
                 FrostmiteEntity.class, new AABB(encounter).inflate(64.0D),
                 FrostmiteEntity::hasColony).isEmpty();
-        if (nearby >= cap || unresolvedColony) return false;
+        if (nearby >= cap) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.FROSTWRITHE,
+                    "nearby Frostwrithe cap reached");
+            return false;
+        }
+        if (unresolvedColony) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.FROSTWRITHE,
+                    "unresolved Frostwrithe colony nearby");
+            return false;
+        }
 
         BlockPos formation = findFormationPos(level, encounter, random);
         if (formation == null
                 || MiteAwayRegistry.isProtected(level, formation.getCenter())) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.FROSTWRITHE,
+                    formation == null ? "no clear colony formation surface"
+                            : "MiteAway coverage");
+            return false;
+        }
+        if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                PostMaeveEncounterType.FROSTWRITHE, chance)) {
             return false;
         }
         FrostwritheEntity entity = FrostwritheManager.createAt(
                 level, formation, infestedBreak ? MobSpawnType.TRIGGERED
                         : MobSpawnType.NATURAL, UUID.randomUUID(), 100,
                 FrostwritheState.ASSEMBLING);
-        if (entity == null) return false;
+        if (entity == null) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.FROSTWRITHE,
+                    "entity creation or insertion failed");
+            return false;
+        }
         entity.setTarget(player);
+        PostMaeveEncounterDirector.successPlayer(level, player,
+                PostMaeveEncounterType.FROSTWRITHE);
         FrozenDawn.LOGGER.info(
                 "[Frostwrithe] Evolved Frostmite encounter near {} at age {} ticks{}",
                 player.getName().getString(),
@@ -135,19 +176,27 @@ public final class FrostmiteSpawner {
 
     private static BlockPos findFormationPos(ServerLevel level, BlockPos origin,
                                              RandomSource random) {
-        for (int attempt = 0; attempt < 12; attempt++) {
-            BlockPos candidate = attempt == 0 ? origin : origin.offset(
-                    random.nextIntBetweenInclusive(-3, 3),
-                    random.nextIntBetweenInclusive(-1, 1),
-                    random.nextIntBetweenInclusive(-3, 3));
+        for (int attempt = 0; attempt < 40; attempt++) {
+            BlockPos candidate;
+            if (attempt == 0) {
+                candidate = origin;
+            } else {
+                int radius = 3 + attempt / 8;
+                int x = origin.getX()
+                        + random.nextIntBetweenInclusive(-radius, radius);
+                int z = origin.getZ()
+                        + random.nextIntBetweenInclusive(-radius, radius);
+                candidate = level.getHeightmapPos(
+                        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                        new BlockPos(x, origin.getY(), z));
+            }
             if (!isValidSpawnPos(level, candidate)) continue;
             boolean clear = true;
             for (int x = -1; x <= 1 && clear; x++) {
                 for (int z = -1; z <= 1; z++) {
                     BlockPos space = candidate.offset(x, 0, z);
-                    if (!level.isLoaded(space)
-                            || !level.getBlockState(space).getCollisionShape(
-                            level, space).isEmpty()) {
+                    if (!isOpenSpace(level, space)
+                            || !isOpenSpace(level, space.above())) {
                         clear = false;
                         break;
                     }
@@ -208,6 +257,22 @@ public final class FrostmiteSpawner {
         return null;
     }
 
+    private static BlockPos findDebugEncounterPos(ServerLevel level,
+                                                  ServerPlayer player,
+                                                  RandomSource random) {
+        for (int attempt = 0; attempt < 48; attempt++) {
+            double angle = random.nextDouble() * Mth.TWO_PI;
+            double distance = 8.0D + random.nextDouble() * 20.0D;
+            int x = Mth.floor(player.getX() + Math.cos(angle) * distance);
+            int z = Mth.floor(player.getZ() + Math.sin(angle) * distance);
+            BlockPos surface = level.getHeightmapPos(
+                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    new BlockPos(x, player.getBlockY(), z));
+            if (isValidSpawnPos(level, surface)) return surface;
+        }
+        return null;
+    }
+
     private static BlockPos findNearbySpawnPos(ServerLevel level, BlockPos origin, RandomSource random) {
         for (int attempt = 0; attempt < 6; attempt++) {
             BlockPos candidate = origin.offset(
@@ -224,10 +289,18 @@ public final class FrostmiteSpawner {
 
     private static boolean isValidSpawnPos(ServerLevel level, BlockPos candidate) {
         if (!level.isInWorldBounds(candidate)) return false;
-        if (!level.getBlockState(candidate).isAir()) return false;
-        if (!level.getBlockState(candidate.above()).isAir()) return false;
+        if (!isOpenSpace(level, candidate) || !isOpenSpace(level, candidate.above())) {
+            return false;
+        }
         BlockPos below = candidate.below();
         return level.getBlockState(below).isSolidRender(level, below);
+    }
+
+    private static boolean isOpenSpace(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return false;
+        BlockState state = level.getBlockState(pos);
+        return state.getFluidState().isEmpty()
+                && state.getCollisionShape(level, pos).isEmpty();
     }
 
     public static void reset() {

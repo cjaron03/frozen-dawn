@@ -1,6 +1,7 @@
 package com.frozendawn;
 
 import com.frozendawn.compat.curios.CuriosCompat;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModAttachments;
@@ -50,6 +51,7 @@ public class FrozenDawn {
         ModEffects.EFFECTS.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, FrozenDawnClientConfig.SPEC);
 
         LOGGER.info("Frozen Dawn initialized. The sun grows cold...");
     }

@@ -17,6 +17,8 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.event.RemnantLureInteractionHandler;
 import com.frozendawn.mixin.BlockDisplayAccessor;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
+import com.frozendawn.world.PostMaeveEncounterDirector;
+import com.frozendawn.world.PostMaeveEncounterType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -78,11 +80,13 @@ public final class RemnantLureManager {
         if (!RemnantPolicy.canNaturalPlace(PostMaeveWorldState.isErased(level),
                 PostMaeveWorldState.isUndoneSpawningReleased(level.getServer()),
                 data.unresolvedInRegion(region).isPresent(), loadedCount,
-                level.getGameTime(), data.cooldown(region))
-                || level.random.nextDouble() >= RemnantPolicy.SPAWN_CHANCE_PER_CHECK
+                level.getGameTime(), data.cooldown(region))) return;
+        double chance = RemnantPolicy.SPAWN_CHANCE_PER_CHECK
                 * PostMaeveEvolutionDifficulty.remnantMultiplier()
                 * AggregateGrowthManager.evolvedWeightMultiplier(
-                level, player.blockPosition())) return;
+                level, player.blockPosition());
+        if (!PostMaeveEncounterDirector.rollRegion(level, region,
+                PostMaeveEncounterType.REMNANT, chance)) return;
 
         RemnantLureTemplate.Kind[] kinds = RemnantLureTemplate.Kind.values();
         RemnantLureTemplate.Kind kind = kinds[level.random.nextInt(kinds.length)];
@@ -104,8 +108,18 @@ public final class RemnantLureManager {
             DummySightEntity sight = new DummySightEntity(level, origin);
             if (level.players().stream().filter(ServerPlayer::isAlive)
                     .anyMatch(observer -> observer.hasLineOfSight(sight))) continue;
-            if (place(level, origin, kind, level.random.nextInt(4), originRegion) != null) return;
+            if (place(level, origin, kind, level.random.nextInt(4), originRegion) != null) {
+                PostMaeveEncounterDirector.successRegion(level, region,
+                        PostMaeveEncounterType.REMNANT);
+                FrozenDawn.LOGGER.info(
+                        "[Remnant] Placed hidden {} lure for {} at {}",
+                        kind.id(), player.getName().getString(), origin.toShortString());
+                return;
+            }
         }
+        PostMaeveEncounterDirector.blockedRegion(level, region,
+                PostMaeveEncounterType.REMNANT,
+                "no hidden protected shelter footprint");
     }
 
     public static RemnantLureSavedData.LureRecord place(ServerLevel level, BlockPos origin,
@@ -797,9 +811,13 @@ public final class RemnantLureManager {
 
     public static String statusLine(ServerLevel level) {
         RemnantLureSavedData data = RemnantLureSavedData.get(level.getServer());
-        long loaded = data.lures().stream().filter(record -> level.isLoaded(record.origin())
-                && record.state() != RemnantState.RESOLVED).count();
-        return "records=" + data.lures().size() + ", loaded=" + loaded;
+        var loadedRecords = data.lures().stream().filter(record ->
+                level.isLoaded(record.origin())
+                        && record.state() != RemnantState.RESOLVED).toList();
+        String anchor = loadedRecords.isEmpty() ? ""
+                : ", loadedAnchor=" + loadedRecords.getFirst().origin().toShortString();
+        return "records=" + data.lures().size() + ", loaded="
+                + loadedRecords.size() + anchor;
     }
 
     public static boolean debugCommit(ServerPlayer player) {

@@ -1,7 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
@@ -24,7 +24,7 @@ public final class StillpointClientParticles {
                 || !StillpointClientState.isPresentHere()) {
             return;
         }
-        double density = FrozenDawnConfig.STILLPOINT_PARTICLE_DENSITY.get();
+        double density = FrozenDawnClientConfig.STILLPOINT_PARTICLE_DENSITY.get();
         if (density <= 0.0D) return;
         Vec3 center = StillpointClientState.center().getCenter();
         RandomSource random = minecraft.level.random;

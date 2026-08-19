@@ -1,7 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.mixin.ChannelAccessor;
 import com.frozendawn.mixin.SoundEngineAccessor;
 import com.frozendawn.mixin.SoundManagerAccessor;
@@ -51,7 +51,7 @@ public final class StillpointAudioFilter {
         if (minecraft.level == null || minecraft.player == null) return;
         boolean soundPhysics = ModList.get().isLoaded("sound_physics_remastered");
 
-        boolean listenerInside = FrozenDawnConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
+        boolean listenerInside = FrozenDawnClientConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
                 && StillpointClientState.isListenerInside();
         transition = approach(transition, listenerInside ? 1.0F : 0.0F, 0.5F);
         SoundEngine engine = ((SoundManagerAccessor) minecraft.getSoundManager())
@@ -97,7 +97,7 @@ public final class StillpointAudioFilter {
     }
 
     public static boolean useFallback() {
-        if (!FrozenDawnConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()) return false;
+        if (!FrozenDawnClientConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()) return false;
         if (ModList.get().isLoaded("sound_physics_remastered")) return true;
         return checkedSupport && !supported;
     }

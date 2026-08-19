@@ -209,6 +209,12 @@ public final class FrostwritheColonyManager {
         FrozenDawn.LOGGER.info(
                 "[Frostwrithe] {} ordinary Frostmites began spontaneous convergence at {}",
                 cluster.size(), rally);
+        level.getPlayers(player -> player.isAlive() && !player.isSpectator()
+                        && player.distanceToSqr(rally.getCenter()) <= 64.0D * 64.0D)
+                .stream().min(Comparator.comparingDouble(
+                        player -> player.distanceToSqr(rally.getCenter())))
+                .ifPresent(player -> PostMaeveEncounterDirector.successPlayer(
+                        level, player, PostMaeveEncounterType.FROSTWRITHE));
         level.playSound(null, rally, ModSounds.FROSTWRITHE_ASSEMBLE.get(),
                 net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 1.12F);
         return true;

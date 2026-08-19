@@ -76,7 +76,7 @@ public final class StillpointCoreBlock extends Block {
                 || !player.getMainHandItem().is(ModItems.ACHERONITE_PICKAXE.get())) {
             return 0.0F;
         }
-        return super.getDestroyProgress(state, player, level, pos);
+        return super.getDestroyProgress(state, player, level, pos) * 1.6F;
     }
 
     @Override

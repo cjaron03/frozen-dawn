@@ -61,19 +61,14 @@ public class FrostbittenSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
+            boolean forcedEvolution = postMaeve
+                    && PostMaeveEncounterDirector.isDebugReadyPlayer(
+                    level, player, PostMaeveEncounterType.RIMEBOUND);
             float localChance = postMaeve
                     ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
                     level, player.blockPosition()))
                     : spawnChance;
-            if (random.nextFloat() > localChance) continue;
-
-            int nearbyCount = level.getEntitiesOfClass(FrostbittenEntity.class,
-                    player.getBoundingBox().inflate(48.0)).size();
-            if (nearbyCount >= maxNearby) continue;
-
-            int spawnCount = 1 + random.nextInt(groupSize);
-            spawnCount = Math.min(spawnCount, maxNearby - nearbyCount);
-            if (spawnCount <= 0) continue;
+            if (!forcedEvolution && random.nextFloat() > localChance) continue;
 
             // Find one group spawn point, then cluster the group around it
             BlockPos groupCenter = postMaeve
@@ -87,6 +82,14 @@ public class FrostbittenSpawner {
                     level, groupCenter, player, random)) {
                 continue;
             }
+
+            int nearbyCount = level.getEntitiesOfClass(FrostbittenEntity.class,
+                    player.getBoundingBox().inflate(48.0)).size();
+            if (nearbyCount >= maxNearby) continue;
+
+            int spawnCount = 1 + random.nextInt(groupSize);
+            spawnCount = Math.min(spawnCount, maxNearby - nearbyCount);
+            if (spawnCount <= 0) continue;
 
             int spawned = 0;
             for (int i = 0; i < spawnCount; i++) {
@@ -186,15 +189,23 @@ public class FrostbittenSpawner {
                         * PostMaeveEvolutionDifficulty.evolutionMultiplier()
                         * StillpointPolicy.evolvedWeightMultiplier(level, groupCenter)
                         * AggregateGrowthManager.evolvedWeightMultiplier(level, groupCenter));
-        if (random.nextFloat() >= chance
-                || !RimeboundBurrowController.validDormantTerrain(level, groupCenter)) {
+        if (chance <= 0.0F) {
             return false;
         }
-
         int cap = FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get();
         int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
                 new net.minecraft.world.phys.AABB(groupCenter).inflate(64.0D)).size();
         if (nearby >= cap) {
+            return false;
+        }
+        if (!RimeboundBurrowController.validDormantTerrain(level, groupCenter)) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.RIMEBOUND,
+                    "no compatible burial surface");
+            return false;
+        }
+        if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                PostMaeveEncounterType.RIMEBOUND, chance)) {
             return false;
         }
         int desired = random.nextFloat() < 0.20F ? 2 : 1;
@@ -216,10 +227,17 @@ public class FrostbittenSpawner {
             spawned++;
         }
         if (spawned > 0) {
+            PostMaeveEncounterDirector.successPlayer(level, player,
+                    PostMaeveEncounterType.RIMEBOUND);
             FrozenDawn.LOGGER.info(
                     "[Rimebound] Evolved {} Frostbitten spawn(s) near {} at age {} ticks",
                     spawned, player.getName().getString(),
                     RimeboundManager.ticksSinceErasure(level));
+        }
+        if (spawned == 0) {
+            PostMaeveEncounterDirector.blockedPlayer(level, player,
+                    PostMaeveEncounterType.RIMEBOUND,
+                    "entity creation or nearby burial failed");
         }
         return spawned > 0;
     }

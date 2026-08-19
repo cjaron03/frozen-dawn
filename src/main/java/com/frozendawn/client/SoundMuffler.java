@@ -1,7 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
@@ -81,7 +81,7 @@ public class SoundMuffler {
             return;
         }
 
-        if (FrozenDawnConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
+        if (FrozenDawnClientConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
                 && StillpointClientState.isListenerInside()) {
             SoundSource stillpointSource = original.getSource();
             boolean protectedSource = original.isRelative()

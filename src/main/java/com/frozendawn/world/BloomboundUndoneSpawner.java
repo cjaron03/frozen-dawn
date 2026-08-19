@@ -41,19 +41,32 @@ public final class BloomboundUndoneSpawner {
                 spawnChance *= 0.20D;
             }
             if (player.isSpectator() || !player.isAlive()
-                    || level.random.nextDouble() >= spawnChance
                     || !BloomGrowthManager.hasBandNear(
                     level, player.blockPosition(), BloomBand.CORE, 28)
                     || hasNearbyUndone(level, player.blockPosition(), density)) {
                 continue;
             }
+            if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                    PostMaeveEncounterType.BLOOMBOUND, spawnChance)) {
+                continue;
+            }
             BlockPos spawnPos = findCoreSpawn(level, player);
             if (spawnPos != null) {
                 if (spawn(level, spawnPos) != null) {
+                    PostMaeveEncounterDirector.successPlayer(level, player,
+                            PostMaeveEncounterType.BLOOMBOUND);
                     FrozenDawn.LOGGER.info(
                             "[Bloombound] Naturally spawned near {} density={} chance={}",
                             player.getName().getString(), density, spawnChance);
+                } else {
+                    PostMaeveEncounterDirector.blockedPlayer(level, player,
+                            PostMaeveEncounterType.BLOOMBOUND,
+                            "entity creation or insertion failed");
                 }
+            } else {
+                PostMaeveEncounterDirector.blockedPlayer(level, player,
+                        PostMaeveEncounterType.BLOOMBOUND,
+                        "no Core-density spawn position");
             }
         }
     }
