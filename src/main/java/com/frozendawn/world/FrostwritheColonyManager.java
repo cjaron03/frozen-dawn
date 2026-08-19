@@ -25,6 +25,9 @@ import java.util.UUID;
 public final class FrostwritheColonyManager {
     private static final Map<UUID, Long> LAST_DECISION_TICK = new HashMap<>();
     private static final Map<UUID, Long> RALLY_READY_TICK = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_ASSEMBLY_ATTEMPT_TICK = new HashMap<>();
+    private static final Map<UUID, Long> LAST_ASSEMBLY_WARNING_TICK = new HashMap<>();
+    private static final Map<UUID, Long> AMBIENT_MITE_COOLDOWN_UNTIL = new HashMap<>();
     private static final Map<UUID, AmbientClusterAttempt> AMBIENT_CLUSTER_ATTEMPTS =
             new HashMap<>();
 
@@ -92,6 +95,9 @@ public final class FrostwritheColonyManager {
                 level.isLoaded(rally), MiteAwayRegistry.isProtected(level, rally.getCenter()))) {
             return true;
         }
+        long retryAt = NEXT_ASSEMBLY_ATTEMPT_TICK.getOrDefault(
+                colonyId, Long.MIN_VALUE);
+        if (!FrostwrithePolicy.mayRetryAssembly(now, retryAt)) return true;
 
         FrostwritheEntity assembled = ModEntities.FROSTWRITHE.get().create(
                 level, null, rally, MobSpawnType.EVENT, true, false);
@@ -100,9 +106,16 @@ public final class FrostwritheColonyManager {
         }
         BlockPos assemblyPosition = findAssemblyPosition(level, assembled, rally);
         if (assemblyPosition == null) {
-            FrozenDawn.LOGGER.warn(
-                    "[Frostwrithe] Colony {} gathered {} representatives with {} biomass at {}, but no terrain-clear assembly point was available",
-                    colonyId, gathered.size(), biomass, rally);
+            NEXT_ASSEMBLY_ATTEMPT_TICK.put(colonyId,
+                    now + FrostwrithePolicy.ASSEMBLY_RETRY_TICKS);
+            long lastWarning = LAST_ASSEMBLY_WARNING_TICK.getOrDefault(
+                    colonyId, -1L);
+            if (FrostwrithePolicy.shouldLogAssemblyFailure(now, lastWarning)) {
+                FrozenDawn.LOGGER.warn(
+                        "[Frostwrithe] Colony {} gathered {} representatives with {} biomass at {}, but no terrain-clear assembly point was available; retrying with backoff",
+                        colonyId, gathered.size(), biomass, rally);
+                LAST_ASSEMBLY_WARNING_TICK.put(colonyId, now);
+            }
             assembled.discard();
             return true;
         }
@@ -125,8 +138,7 @@ public final class FrostwritheColonyManager {
             if (gathered.contains(member)) member.discard();
             else member.clearColony();
         }
-        LAST_DECISION_TICK.remove(colonyId);
-        RALLY_READY_TICK.remove(colonyId);
+        clearColonyDecisionState(colonyId);
         return true;
     }
 
@@ -139,10 +151,16 @@ public final class FrostwritheColonyManager {
             return false;
         }
         long now = level.getGameTime();
+        long cooldownUntil = AMBIENT_MITE_COOLDOWN_UNTIL.getOrDefault(
+                mite.getUUID(), Long.MIN_VALUE);
+        if (now < cooldownUntil) return false;
+        AMBIENT_MITE_COOLDOWN_UNTIL.remove(mite.getUUID());
         if (Math.floorMod(mite.getId(), 20) != Math.floorMod(now, 20L)) return false;
         if (now % 200L == 0L) {
             AMBIENT_CLUSTER_ATTEMPTS.entrySet().removeIf(
                     entry -> now - entry.getValue().lastSeenTick() > 240L);
+            AMBIENT_MITE_COOLDOWN_UNTIL.entrySet().removeIf(
+                    entry -> now >= entry.getValue());
         }
 
         List<FrostmiteEntity> cluster = level.getEntitiesOfClass(
@@ -150,6 +168,8 @@ public final class FrostwritheColonyManager {
                         mite.getBoundingBox().inflate(FrostwrithePolicy.AMBIENT_CLUSTER_RADIUS),
                         candidate -> candidate.isAlive() && !candidate.hasColony()
                                 && !candidate.isLatched()
+                                && now >= AMBIENT_MITE_COOLDOWN_UNTIL.getOrDefault(
+                                candidate.getUUID(), Long.MIN_VALUE)
                                 && !MiteAwayRegistry.isProtected(level, candidate.position()))
                 .stream()
                 .sorted(Comparator.comparing(entity -> entity.getUUID().toString()))
@@ -290,15 +310,18 @@ public final class FrostwritheColonyManager {
                                            BlockPos rally) {
         if (colonyId == null) return;
         List<FrostmiteEntity> members = loadedMembers(level, rally, colonyId);
+        long cooldownUntil = level.getGameTime()
+                + FrostwrithePolicy.AMBIENT_FAILURE_BACKOFF_TICKS;
         for (FrostmiteEntity member : members) {
+            AMBIENT_MITE_COOLDOWN_UNTIL.put(member.getUUID(), cooldownUntil);
+            AMBIENT_CLUSTER_ATTEMPTS.remove(member.getUUID());
             member.clearColony();
         }
         if (!members.isEmpty()) {
             level.playSound(null, rally, ModSounds.FROSTWRITHE_TERMINAL.get(),
                     net.minecraft.sounds.SoundSource.HOSTILE, 1.15F, 0.9F);
         }
-        LAST_DECISION_TICK.remove(colonyId);
-        RALLY_READY_TICK.remove(colonyId);
+        clearColonyDecisionState(colonyId);
     }
 
     public static List<FrostmiteEntity> loadedMembers(ServerLevel level, BlockPos center,
@@ -311,7 +334,17 @@ public final class FrostwritheColonyManager {
     public static void reset() {
         LAST_DECISION_TICK.clear();
         RALLY_READY_TICK.clear();
+        NEXT_ASSEMBLY_ATTEMPT_TICK.clear();
+        LAST_ASSEMBLY_WARNING_TICK.clear();
+        AMBIENT_MITE_COOLDOWN_UNTIL.clear();
         AMBIENT_CLUSTER_ATTEMPTS.clear();
+    }
+
+    private static void clearColonyDecisionState(UUID colonyId) {
+        LAST_DECISION_TICK.remove(colonyId);
+        RALLY_READY_TICK.remove(colonyId);
+        NEXT_ASSEMBLY_ATTEMPT_TICK.remove(colonyId);
+        LAST_ASSEMBLY_WARNING_TICK.remove(colonyId);
     }
 
     private record AmbientClusterAttempt(long eligibleAt, long lastSeenTick) {

@@ -111,4 +111,15 @@ class FrostwrithePolicyTest {
         assertEquals(6, FrostwrithePolicy.AMBIENT_CLUSTER_MIN_MITES);
         assertEquals(400, FrostwrithePolicy.AMBIENT_CLUSTER_DWELL_TICKS);
     }
+
+    @Test
+    void blockedAssemblyUsesBoundedRetryAndWarningIntervals() {
+        assertFalse(FrostwrithePolicy.mayRetryAssembly(1_059L, 1_060L));
+        assertTrue(FrostwrithePolicy.mayRetryAssembly(1_060L, 1_060L));
+        assertTrue(FrostwrithePolicy.shouldLogAssemblyFailure(1_000L, -1L));
+        assertFalse(FrostwrithePolicy.shouldLogAssemblyFailure(1_199L, 1_000L));
+        assertTrue(FrostwrithePolicy.shouldLogAssemblyFailure(1_200L, 1_000L));
+        assertEquals(60, FrostwrithePolicy.ASSEMBLY_RETRY_TICKS);
+        assertEquals(1_200, FrostwrithePolicy.AMBIENT_FAILURE_BACKOFF_TICKS);
+    }
 }

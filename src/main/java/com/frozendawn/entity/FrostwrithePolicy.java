@@ -10,7 +10,10 @@ public final class FrostwrithePolicy {
     public static final int AMBIENT_CLUSTER_DWELL_TICKS = 400;
     public static final int AMBIENT_CLUSTER_DWELL_VARIANCE = 80;
     public static final int AMBIENT_CLUSTER_RETRY_TICKS = 200;
+    public static final int AMBIENT_FAILURE_BACKOFF_TICKS = 1_200;
     public static final float AMBIENT_CLUSTER_FORMATION_CHANCE = 0.40F;
+    public static final int ASSEMBLY_RETRY_TICKS = 60;
+    public static final int ASSEMBLY_WARNING_INTERVAL_TICKS = 200;
     public static final int ASSEMBLY_TICKS = 60;
     public static final int DISASSEMBLY_TICKS = 18;
     public static final int BURROW_MAX_TICKS = 100;
@@ -34,6 +37,15 @@ public final class FrostwrithePolicy {
 
     public static boolean ambientClusterForms(float roll) {
         return roll < AMBIENT_CLUSTER_FORMATION_CHANCE;
+    }
+
+    public static boolean mayRetryAssembly(long now, long retryAt) {
+        return now >= retryAt;
+    }
+
+    public static boolean shouldLogAssemblyFailure(long now, long lastWarningTick) {
+        return lastWarningTick < 0L
+                || now - lastWarningTick >= ASSEMBLY_WARNING_INTERVAL_TICKS;
     }
 
     public static float baseEvolutionChance(long ticksSinceErasure) {
