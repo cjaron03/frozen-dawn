@@ -24,6 +24,9 @@
     "SplashManagerMixin",
     "ReceivingLevelScreenMixin",
     "ScreenMixin",
+    "ChannelAccessor",
+    "SoundEngineAccessor",
+    "SoundManagerAccessor",
     "NeoForgeLoadingOverlayMixin"
   ],
   "injectors": {

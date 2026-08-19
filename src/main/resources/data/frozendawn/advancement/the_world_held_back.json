@@ -1,0 +1,13 @@
+{
+  "parent": "frozendawn:nothing_left_to_become",
+  "display": {
+    "icon": { "id": "frozendawn:inert_convergence_core" },
+    "title": { "translate": "advancement.frozendawn.the_world_held_back.title" },
+    "description": { "translate": "advancement.frozendawn.the_world_held_back.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

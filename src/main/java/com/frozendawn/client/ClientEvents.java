@@ -115,6 +115,13 @@ public class ClientEvents {
                                 FrozenDawn.MOD_ID, "master_architect_eye_volume"),
                         DefaultVertexFormat.POSITION),
                 MasterArchitectEyeWallRenderer::setShader);
+        event.registerShader(
+                new ShaderInstance(
+                        event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(
+                                FrozenDawn.MOD_ID, "stillpoint_field"),
+                        DefaultVertexFormat.POSITION),
+                StillpointFieldRenderer::setShader);
     }
 
     @SubscribeEvent

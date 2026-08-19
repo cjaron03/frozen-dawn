@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.init.ModToolTiers;
@@ -377,6 +378,10 @@ public final class ResonantEntity extends Monster {
     private void tickGrab(ServerLevel level) {
         if (!(level.getEntity(grabTargetId()) instanceof ServerPlayer player)
                 || !player.isAlive() || player.isCreative() || player.isSpectator()) {
+            releaseGrab();
+            return;
+        }
+        if (StillpointPolicy.isSuppressed(level, player.blockPosition())) {
             releaseGrab();
             return;
         }

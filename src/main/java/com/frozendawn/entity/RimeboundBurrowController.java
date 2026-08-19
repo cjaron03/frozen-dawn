@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthProtectionPolicy;
@@ -52,6 +53,9 @@ public final class RimeboundBurrowController {
         lastSearchTick = now;
         route.clear();
         routeIndex = 0;
+        if (StillpointPolicy.isSuppressed(level, desiredSurface)) {
+            return false;
+        }
 
         BlockPos start = surface(level, startSurface);
         if (start == null) {
@@ -96,6 +100,7 @@ public final class RimeboundBurrowController {
             for (Direction direction : Direction.Plane.HORIZONTAL) {
                 BlockPos next = surface(level, current.relative(direction));
                 if (next == null || Math.abs(next.getY() - current.getY()) > 2
+                        || StillpointPolicy.isSuppressed(level, next)
                         || start.distManhattan(next) > MAX_SEGMENT_BLOCKS
                         || !visited.add(next.asLong())) {
                     continue;

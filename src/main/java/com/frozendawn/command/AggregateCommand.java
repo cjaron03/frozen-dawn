@@ -18,7 +18,9 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -65,6 +67,18 @@ final class AggregateCommand {
                         .then(Commands.argument("action", StringArgumentType.word())
                                 .executes(AggregateCommand::forceAction)))
                 .then(Commands.literal("resolve").executes(AggregateCommand::resolve))
+                .then(Commands.literal("stillpoint")
+                        .executes(AggregateCommand::stillpointStatus)
+                        .then(Commands.literal("status")
+                                .executes(AggregateCommand::stillpointStatus))
+                        .then(Commands.literal("debug-place")
+                                .executes(AggregateCommand::stillpointPlace))
+                        .then(Commands.literal("debug-activate")
+                                .executes(AggregateCommand::stillpointActivate))
+                        .then(Commands.literal("debug-pulse")
+                                .executes(AggregateCommand::stillpointPulse))
+                        .then(Commands.literal("debug-reset")
+                                .executes(AggregateCommand::stillpointReset)))
                 .then(Commands.literal("reset").executes(AggregateCommand::reset));
     }
 
@@ -220,6 +234,86 @@ final class AggregateCommand {
         AggregateEncounterManager.resolve(level, aggregate);
         aggregate.discard();
         return 1;
+    }
+
+    private static int stillpointStatus(CommandContext<CommandSourceStack> context) {
+        AggregateSavedData data = data(context);
+        long elapsed = data.stillpointChargeStart() < 0L ? 0L
+                : Math.max(0L, context.getSource().getLevel().getGameTime()
+                - data.stillpointChargeStart());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Stillpoint: present=" + data.stillpointPos().isPresent()
+                        + " active=" + data.stillpointActive()
+                        + " activationProcessed=" + data.stillpointActivationProcessed()
+                        + " charge=" + Math.min(
+                        com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS, elapsed)
+                        + "/" + com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS
+                        + " pos=" + data.stillpointPos().map(BlockPos::toShortString)
+                        .orElse("none")), false);
+        return 1;
+    }
+
+    private static int stillpointPlace(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer player = context.getSource().getPlayerOrException();
+            ServerLevel level = player.serverLevel();
+            BlockPos pos = player.blockPosition().relative(player.getDirection(), 3);
+            level.setBlock(pos, ModBlocks.INERT_CONVERGENCE_CORE.get()
+                    .defaultBlockState(), 3);
+            AggregateSavedData.get(level.getServer()).armStillpoint(
+                    level, pos, player.getUUID());
+            return stillpointStatus(context);
+        } catch (Exception exception) {
+            context.getSource().sendFailure(Component.literal(
+                    "Run this command as a player in a loaded dimension."));
+            return 0;
+        }
+    }
+
+    private static int stillpointActivate(CommandContext<CommandSourceStack> context) {
+        AggregateSavedData data = data(context);
+        if (data.stillpointPos().isEmpty()) {
+            context.getSource().sendFailure(Component.literal("No Stillpoint Core is armed."));
+            return 0;
+        }
+        data.debugActivateStillpoint(context.getSource().getLevel().getGameTime());
+        com.frozendawn.aggregate.StillpointFieldManager.tick(context.getSource().getServer());
+        return stillpointStatus(context);
+    }
+
+    private static int stillpointPulse(CommandContext<CommandSourceStack> context) {
+        AggregateSavedData data = data(context);
+        BlockPos pos = data.stillpointPos().orElse(null);
+        if (pos == null || data.stillpointDimension()
+                .filter(context.getSource().getLevel().dimension().location()::equals)
+                .isEmpty()) {
+            context.getSource().sendFailure(Component.literal(
+                    "No Stillpoint Core is loaded in this dimension."));
+            return 0;
+        }
+        com.frozendawn.aggregate.StillpointFieldManager.broadcastPulse(
+                context.getSource().getLevel(), pos.getCenter(), 1.0F);
+        return 1;
+    }
+
+    private static int stillpointReset(CommandContext<CommandSourceStack> context) {
+        AggregateSavedData data = data(context);
+        BlockPos pos = data.stillpointPos().orElse(null);
+        ServerLevel level = data.stillpointDimension()
+                .map(id -> context.getSource().getServer().getLevel(
+                        ResourceKey.create(Registries.DIMENSION, id)))
+                .orElse(null);
+        if (pos != null && level != null) {
+            if (level.hasChunkAt(pos)
+                    && level.getBlockState(pos).is(ModBlocks.INERT_CONVERGENCE_CORE.get())) {
+                level.destroyBlock(pos, false);
+            } else {
+                data.clearStillpoint(level, pos);
+            }
+        }
+        com.frozendawn.aggregate.StillpointFieldManager.syncAll(
+                context.getSource().getServer());
+        return stillpointStatus(context);
     }
 
     private static int reset(CommandContext<CommandSourceStack> context) {

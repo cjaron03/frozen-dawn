@@ -25,7 +25,7 @@ import java.util.UUID;
 /** World-global authority for the once-per-world Aggregate lifecycle. */
 public final class AggregateSavedData extends SavedData {
     private static final String DATA_NAME = FrozenDawn.MOD_ID + "_aggregate";
-    private static final int CURRENT_VERSION = 2;
+    private static final int CURRENT_VERSION = 3;
 
     private double convergencePressure;
     private final EnumMap<AggregateLineage, Double> lineagePressure =
@@ -52,6 +52,10 @@ public final class AggregateSavedData extends SavedData {
     private final Set<Long> temporaryBlocks = new LinkedHashSet<>();
     private BlockPos stillpointPos;
     private ResourceLocation stillpointDimension;
+    private long stillpointChargeStart = -1L;
+    private boolean stillpointActive;
+    private boolean stillpointActivationProcessed;
+    private UUID stillpointPlacer;
     private UUID fightId;
     private int dischargeMask;
     private final List<ReinforcementRecord> reinforcements = new ArrayList<>();
@@ -65,6 +69,7 @@ public final class AggregateSavedData extends SavedData {
     public static AggregateSavedData load(
             CompoundTag tag, HolderLookup.Provider registries) {
         AggregateSavedData data = new AggregateSavedData();
+        int dataVersion = tag.getInt("dataVersion");
         data.convergencePressure = Math.max(0.0D, tag.getDouble("pressure"));
         for (AggregateLineage lineage : AggregateLineage.values()) {
             data.lineagePressure.put(lineage, Math.max(0.0D,
@@ -112,6 +117,19 @@ public final class AggregateSavedData extends SavedData {
         if (tag.contains("stillpointDimension", Tag.TAG_STRING)) {
             data.stillpointDimension = ResourceLocation.tryParse(
                     tag.getString("stillpointDimension"));
+        }
+        data.stillpointChargeStart = tag.contains("stillpointChargeStart", Tag.TAG_LONG)
+                ? tag.getLong("stillpointChargeStart") : -1L;
+        data.stillpointActive = tag.getBoolean("stillpointActive");
+        data.stillpointActivationProcessed = tag.getBoolean(
+                "stillpointActivationProcessed");
+        data.stillpointPlacer = tag.hasUUID("stillpointPlacer")
+                ? tag.getUUID("stillpointPlacer") : null;
+        if (dataVersion < 3 && data.stillpointPos != null) {
+            // Existing cores were immediately active before the charge sequence existed.
+            data.stillpointActive = true;
+            data.stillpointActivationProcessed = true;
+            data.stillpointChargeStart = 0L;
         }
         data.dischargeMask = Math.max(0, tag.getInt("dischargeMask"));
         for (Tag value : tag.getList("reinforcements", Tag.TAG_COMPOUND)) {
@@ -166,6 +184,10 @@ public final class AggregateSavedData extends SavedData {
         if (stillpointDimension != null) {
             tag.putString("stillpointDimension", stillpointDimension.toString());
         }
+        tag.putLong("stillpointChargeStart", stillpointChargeStart);
+        tag.putBoolean("stillpointActive", stillpointActive);
+        tag.putBoolean("stillpointActivationProcessed", stillpointActivationProcessed);
+        if (stillpointPlacer != null) tag.putUUID("stillpointPlacer", stillpointPlacer);
         tag.putInt("dischargeMask", dischargeMask);
         ListTag reinforcementTags = new ListTag();
         for (ReinforcementRecord record : reinforcements) {
@@ -506,9 +528,56 @@ public final class AggregateSavedData extends SavedData {
         return Optional.ofNullable(stillpointDimension);
     }
 
-    public void setStillpoint(Level level, BlockPos pos) {
+    public long stillpointChargeStart() {
+        return stillpointChargeStart;
+    }
+
+    public boolean stillpointActive() {
+        return stillpointActive;
+    }
+
+    public boolean stillpointActivationProcessed() {
+        return stillpointActivationProcessed;
+    }
+
+    public Optional<UUID> stillpointPlacer() {
+        return Optional.ofNullable(stillpointPlacer);
+    }
+
+    public void armStillpoint(Level level, BlockPos pos, UUID placer) {
+        boolean sameCore = stillpointPos != null && stillpointPos.equals(pos)
+                && stillpointDimension != null
+                && stillpointDimension.equals(level.dimension().location());
         stillpointPos = pos.immutable();
         stillpointDimension = level.dimension().location();
+        if (!sameCore) {
+            stillpointChargeStart = level.getGameTime();
+            stillpointActive = false;
+            stillpointActivationProcessed = false;
+        }
+        if (placer != null) stillpointPlacer = placer;
+        setDirty();
+    }
+
+    public boolean activateStillpoint() {
+        if (stillpointPos == null || stillpointActive) return false;
+        stillpointActive = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean markStillpointActivationProcessed() {
+        if (!stillpointActive || stillpointActivationProcessed) return false;
+        stillpointActivationProcessed = true;
+        setDirty();
+        return true;
+    }
+
+    public void debugActivateStillpoint(long gameTime) {
+        if (stillpointPos == null) return;
+        stillpointChargeStart = gameTime - StillpointFieldManager.CHARGE_TICKS;
+        stillpointActive = true;
+        stillpointActivationProcessed = false;
         setDirty();
     }
 
@@ -518,6 +587,10 @@ public final class AggregateSavedData extends SavedData {
                 && stillpointDimension.equals(level.dimension().location())) {
             stillpointPos = null;
             stillpointDimension = null;
+            stillpointChargeStart = -1L;
+            stillpointActive = false;
+            stillpointActivationProcessed = false;
+            stillpointPlacer = null;
             setDirty();
         }
     }
@@ -597,6 +670,10 @@ public final class AggregateSavedData extends SavedData {
         temporaryBlocks.clear();
         stillpointPos = null;
         stillpointDimension = null;
+        stillpointChargeStart = -1L;
+        stillpointActive = false;
+        stillpointActivationProcessed = false;
+        stillpointPlacer = null;
         setDirty();
     }
 

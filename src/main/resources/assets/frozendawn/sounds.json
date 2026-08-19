@@ -2088,5 +2088,29 @@
   "ui.suit.aggregate_resolved": {
     "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_resolved",
     "sounds": [{"name":"frozendawn:ui/suit/aggregate_resolved","stream":true}]
+  },
+  "block.stillpoint_core.charge": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.charge",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/charge","volume":1.15,"attenuation_distance":64}]
+  },
+  "block.stillpoint_core.form": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.form",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/form","volume":1.35,"attenuation_distance":96}]
+  },
+  "block.stillpoint_core.hum": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.hum",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/hum","volume":1.2,"attenuation_distance":80}]
+  },
+  "block.stillpoint_core.enter": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.enter",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/enter","volume":1.35}]
+  },
+  "block.stillpoint_core.exit": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.exit",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/exit","volume":1.35}]
+  },
+  "ui.suit.stillpoint_field": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.stillpoint_field",
+    "sounds": [{"name":"frozendawn:ui/suit/stillpoint_field","stream":true}]
   }
 }

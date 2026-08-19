@@ -233,7 +233,7 @@ public final class MarkedPursuitManager {
         BlockPos spawn = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                 level, player, random, 18, 44, 32,
                 LateThreatSpawnHelper.NO_LIGHT_LIMIT);
-        if (spawn == null) {
+        if (spawn == null || StillpointPolicy.isSuppressed(level, spawn)) {
             return false;
         }
         EntityType<? extends Mob> type = selectReinforcementType(random,
@@ -338,6 +338,10 @@ public final class MarkedPursuitManager {
     }
 
     private static void forcePursuit(Mob mob, ServerPlayer player) {
+        if (StillpointPolicy.isSuppressed(player.serverLevel(), player.blockPosition())) {
+            stopWithoutForgetting(mob);
+            return;
+        }
         if (mob instanceof ResonantEntity resonant) {
             resonant.forceMarkedTarget(player);
             return;

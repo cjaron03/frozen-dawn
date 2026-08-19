@@ -1,6 +1,7 @@
 package com.frozendawn.aggregate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -23,6 +24,32 @@ class AggregateSavedDataTest {
         BlockPos anchor = BlockPos.ZERO;
         assertTrue(StillpointPolicy.isWithinRadius(anchor, new BlockPos(48, 0, 0), 48));
         assertFalse(StillpointPolicy.isWithinRadius(anchor, new BlockPos(49, 0, 0), 48));
+    }
+
+    @Test
+    void stillpointChargeCompletesExactlyAtEightyTicks() {
+        assertFalse(StillpointPolicy.chargeComplete(100L, 179L, 80));
+        assertTrue(StillpointPolicy.chargeComplete(100L, 180L, 80));
+        assertFalse(StillpointPolicy.chargeComplete(-1L, 999L, 80));
+    }
+
+    @Test
+    void stillpointDetectsFastCrossingWithBothEndpointsOutside() {
+        BlockPos anchor = BlockPos.ZERO;
+        assertTrue(StillpointPolicy.segmentEnters(anchor,
+                new Vec3(-60.0D, 0.5D, 0.5D),
+                new Vec3(60.0D, 0.5D, 0.5D), 48.0D));
+        assertFalse(StillpointPolicy.segmentEnters(anchor,
+                new Vec3(-60.0D, 60.0D, 0.5D),
+                new Vec3(60.0D, 60.0D, 0.5D), 48.0D));
+    }
+
+    @Test
+    void stillpointClampReturnsTheSourceSideOfTheShell() {
+        Vec3 clamped = StillpointPolicy.clampOutside(BlockPos.ZERO,
+                new Vec3(-60.0D, 0.5D, 0.5D), 48.0D);
+        assertTrue(clamped.x < 0.0D);
+        assertEquals(48.35D, clamped.distanceTo(BlockPos.ZERO.getCenter()), 0.0001D);
     }
 
     @Test

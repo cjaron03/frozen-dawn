@@ -34,6 +34,7 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int AGGREGATE_OSSUARY_DIAGNOSTIC = 21;
     public static final int AGGREGATE_GESTATION_DIAGNOSTIC = 22;
     public static final int AGGREGATE_RESOLVED_DIAGNOSTIC = 23;
+    public static final int STILLPOINT_FIELD_DIAGNOSTIC = 24;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -117,6 +118,10 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static HearthBoundaryEffectPayload aggregateDiagnostic(int line) {
         return new HearthBoundaryEffectPayload(AGGREGATE_DEPOSIT_DIAGNOSTIC
                 + Math.clamp(line, 0, 3));
+    }
+
+    public static HearthBoundaryEffectPayload stillpointFieldDiagnostic() {
+        return new HearthBoundaryEffectPayload(STILLPOINT_FIELD_DIAGNOSTIC);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.frozendawn.entity;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.aggregate.AggregatePressureHandler;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.FrostwritheColonyManager;
 import com.frozendawn.world.MiteAwayRegistry;
@@ -740,6 +741,7 @@ public final class FrostwritheEntity extends Monster {
     private void tickOverrun(ServerLevel level) {
         LivingEntity target = getTarget();
         if (target == null || !target.isAlive()
+                || StillpointPolicy.isSuppressed(level, target.blockPosition())
                 || stateTicks() >= FrostwrithePolicy.OVERRUN_TICKS) {
             overrunCooldown = 240;
             surfaceAttackTicks = 0;

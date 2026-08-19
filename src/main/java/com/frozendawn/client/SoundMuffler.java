@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
@@ -60,6 +61,8 @@ public class SoundMuffler {
         boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
         boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
         boolean isBloomSporeCue = isBloomSporeCue(soundLocation, soundPath);
+        boolean isStillpointCue = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && soundPath.startsWith("block.stillpoint_core.");
         boolean isLocalHearthrotHurtCue = isLocalHearthrotHurtCue(
                 mc, original, soundLocation, soundPath);
 
@@ -70,6 +73,37 @@ public class SoundMuffler {
                     0.94F + mc.player.getRandom().nextFloat() * 0.12F,
                     1.15F));
             return;
+        }
+
+        // The Core's charge and formation are structural transmission cues. They
+        // remain audible before the field creates an acoustic pocket of its own.
+        if (isStillpointCue) {
+            return;
+        }
+
+        if (FrozenDawnConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
+                && StillpointClientState.isListenerInside()) {
+            SoundSource stillpointSource = original.getSource();
+            boolean protectedSource = original.isRelative()
+                    || stillpointSource == SoundSource.MASTER
+                    || stillpointSource == SoundSource.MUSIC
+                    || stillpointSource == SoundSource.VOICE;
+            if (isWindAmbience) {
+                event.setSound(new MuffledSound(original, 0.12F, 0.92F));
+                return;
+            }
+            if (!protectedSource) {
+                if (StillpointClientState.isOutsideSource(
+                        original.getX(), original.getY(), original.getZ())) {
+                    event.setSound(null);
+                    return;
+                }
+                float volume = StillpointAudioFilter.useFallback() ? 0.54F : 0.76F;
+                event.setSound(new MuffledSound(original, volume, 0.90F));
+                // Sounds born inside the field form a muffled acoustic pocket. Returning
+                // here keeps Phase 6 vacuum suppression from canceling them below.
+                return;
+            }
         }
 
         if (isThaevenSound || isSurveyorLensCue || isBloomSporeCue) {

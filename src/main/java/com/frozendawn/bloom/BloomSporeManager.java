@@ -311,6 +311,17 @@ public final class BloomSporeManager {
             spore.discard();
             return;
         }
+        if (com.frozendawn.aggregate.StillpointPolicy.isSuppressed(
+                level, spore.blockPosition())) {
+            BlockPos field = com.frozendawn.aggregate.AggregateSavedData
+                    .get(level.getServer()).stillpointPos().orElse(null);
+            if (field != null) {
+                Vec3 safe = com.frozendawn.aggregate.StillpointPolicy.clampOutside(
+                        field, spore.position(),
+                        com.frozendawn.config.FrozenDawnConfig.STILLPOINT_RADIUS.get());
+                spore.teleportTo(safe.x, safe.y, safe.z);
+            }
+        }
         BlockPos anchor = supportBeneath(level, spore);
         UUID nodeId = UUID.randomUUID();
         BloomSavedData.SporeFront node = bloom.sporeFront(nodeId, source.lineageId(),

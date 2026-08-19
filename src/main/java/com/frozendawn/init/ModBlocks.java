@@ -610,7 +610,8 @@ public class ModBlocks {
             BLOCKS.register("inert_convergence_core", () -> new StillpointCoreBlock(
                     BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
                             .requiresCorrectToolForDrops().strength(5.0F, 1_200.0F)
-                            .lightLevel(state -> 5).sound(SoundType.DEEPSLATE)));
+                            .lightLevel(state -> 5).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)));
 
     public static final DeferredBlock<Block> INERT_ACHERONITE = BLOCKS.register("inert_acheronite",
             () -> new Block(BlockBehaviour.Properties.of()

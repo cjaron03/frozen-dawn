@@ -1,5 +1,6 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.FuelProcessingSiloMultiblock;
 import com.frozendawn.block.BloomMassBlock;
@@ -513,7 +514,8 @@ public final class UndoneArchitectEntity extends Monster {
     }
 
     private boolean isProtectedInfrastructure(ServerLevel level, BlockPos pos) {
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
+        if (StillpointPolicy.isSuppressed(level, pos)
+                || BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 || ThermalVentRegistry.isVolcanicField(level, pos)
                 || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(
                         level, pos)) {

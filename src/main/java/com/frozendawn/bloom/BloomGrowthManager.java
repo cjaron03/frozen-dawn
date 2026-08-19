@@ -16,6 +16,7 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.mixin.ChunkMapAccessor;
 import com.frozendawn.network.BloomStatePayload;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.world.ChunkCatchUpManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -1116,6 +1117,9 @@ public final class BloomGrowthManager {
     }
 
     private static boolean isProtected(ServerLevel level, BlockPos pos) {
+        if (StillpointPolicy.isSuppressed(level, pos)) {
+            return true;
+        }
         BlockState state = level.getBlockState(pos);
         BlockState below = level.getBlockState(pos.below());
         if (ChunkCatchUpManager.isBloomOrsaProtected(level, pos)

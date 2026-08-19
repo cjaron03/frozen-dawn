@@ -29,6 +29,16 @@ public class ModSounds {
             register("ambient.wind_post_maeve_light");
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_POST_MAEVE_STRONG =
             register("ambient.wind_post_maeve_strong");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_CHARGE =
+            register("block.stillpoint_core.charge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_FORM =
+            register("block.stillpoint_core.form");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_HUM =
+            register("block.stillpoint_core.hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_ENTER =
+            register("block.stillpoint_core.enter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_EXIT =
+            register("block.stillpoint_core.exit");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> SHELTER_CREAK = SOUNDS.register("ambient.shelter_creak",
             () -> SoundEvent.createVariableRangeEvent(
@@ -391,6 +401,8 @@ public class ModSounds {
             register("ui.suit.aggregate_gestation");
     public static final DeferredHolder<SoundEvent, SoundEvent> AGGREGATE_RESOLVED_TTS =
             register("ui.suit.aggregate_resolved");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_FIELD_TTS =
+            register("ui.suit.stillpoint_field");
 
     // --- Hollow Mob ---
     public static final DeferredHolder<SoundEvent, SoundEvent> HOLLOW_AMBIENT = SOUNDS.register("entity.hollow.ambient",

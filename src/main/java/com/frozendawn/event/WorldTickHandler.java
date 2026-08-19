@@ -174,6 +174,7 @@ public class WorldTickHandler {
         HearthCombatRosterManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
+        com.frozendawn.aggregate.StillpointFieldManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
@@ -234,6 +235,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        com.frozendawn.aggregate.StillpointFieldManager.tick(server);
         AggregateGrowthManager.tick(overworld);
         BloomboundUndoneSpawner.tick(overworld);
         UndoneSpawner.tick(overworld);

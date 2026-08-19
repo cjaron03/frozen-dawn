@@ -19,6 +19,7 @@ import com.frozendawn.client.MasterArchitectSeverTelegraph;
 import com.frozendawn.client.MonitoringTerminalScreen;
 import com.frozendawn.client.OrsaAwakeningIntro;
 import com.frozendawn.client.PostMaeveClientState;
+import com.frozendawn.client.StillpointClientState;
 import com.frozendawn.client.BloomClientState;
 import com.frozendawn.client.HearthrotClientState;
 import com.frozendawn.client.RocketLaunchClientController;
@@ -216,6 +217,10 @@ public final class ClientHandlers {
     public static void handlePostMaeveWorldState(
             PostMaeveWorldStatePayload payload) {
         PostMaeveClientState.update(payload);
+    }
+
+    public static void handleStillpointField(StillpointFieldPayload payload) {
+        StillpointClientState.update(payload);
     }
 
     public static void handleBloomState(BloomStatePayload payload) {
