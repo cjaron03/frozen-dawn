@@ -28,6 +28,8 @@ import com.frozendawn.client.ThermalVentClientEffects;
 import com.frozendawn.client.SuitIntegrityClient;
 import com.frozendawn.client.TemperatureHud;
 import com.frozendawn.client.ThaevenTransmissionOverlay;
+import com.frozendawn.client.ThaevenLoreClientState;
+import com.frozendawn.client.ThaevenLoreScreen;
 import com.frozendawn.client.TowerTerminalScreen;
 import com.frozendawn.entity.ArchitectEntity;
 import net.minecraft.client.gui.screens.inventory.BookViewScreen;
@@ -217,6 +219,16 @@ public final class ClientHandlers {
     public static void handlePostMaeveWorldState(
             PostMaeveWorldStatePayload payload) {
         PostMaeveClientState.update(payload);
+    }
+
+    public static void handleThaevenLoreSync(ThaevenLoreSyncPayload payload) {
+        ThaevenLoreClientState.update(payload);
+    }
+
+    public static void handleOpenThaevenArchive(
+            OpenThaevenArchivePayload payload) {
+        Minecraft.getInstance().setScreen(new ThaevenLoreScreen(
+                payload.focusRecord(), payload.rawOnly()));
     }
 
     public static void handleStillpointField(StillpointFieldPayload payload) {

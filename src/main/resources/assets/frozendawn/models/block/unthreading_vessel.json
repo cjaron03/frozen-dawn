@@ -1,0 +1,10 @@
+{
+  "textures":{"shell":"frozendawn:block/aggregate_residue","memory":"frozendawn:block/bloom_core","particle":"frozendawn:block/aggregate_residue"},
+  "elements":[
+    {"from":[2,0,2],"to":[14,3,14],"faces":{"down":{"texture":"#shell"},"up":{"texture":"#shell"},"north":{"texture":"#shell"},"south":{"texture":"#shell"},"west":{"texture":"#shell"},"east":{"texture":"#shell"}}},
+    {"from":[4,3,4],"to":[12,18,12],"rotation":{"origin":[8,10.5,8],"axis":"y","angle":45},"faces":{"down":{"texture":"#shell"},"up":{"texture":"#shell"},"north":{"texture":"#shell"},"south":{"texture":"#shell"},"west":{"texture":"#shell"},"east":{"texture":"#shell"}}},
+    {"from":[5,15,5],"to":[11,28,11],"rotation":{"origin":[8,18,8],"axis":"z","angle":-22.5},"faces":{"down":{"texture":"#shell"},"up":{"texture":"#shell"},"north":{"texture":"#shell"},"south":{"texture":"#shell"},"west":{"texture":"#shell"},"east":{"texture":"#shell"}}},
+    {"from":[6,5,3.5],"to":[10,15,4],"faces":{"north":{"texture":"#memory"},"south":{"texture":"#memory"}}},
+    {"from":[7,17,4.5],"to":[9,25,5],"faces":{"north":{"texture":"#memory"},"south":{"texture":"#memory"}}}
+  ]
+}

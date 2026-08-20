@@ -1,0 +1,21 @@
+{
+  "type": "frozendawn:thaeven_translator_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ASA",
+    "RMR",
+    "CCC"
+  ],
+  "key": {
+    "A": {"item": "frozendawn:acheronite_shard"},
+    "S": {"item": "minecraft:spyglass"},
+    "R": {"item": "minecraft:redstone"},
+    "M": {"item": "frozendawn:orsa_multitool"},
+    "C": {"item": "minecraft:copper_ingot"}
+  },
+  "result": {
+    "id": "frozendawn:thaeven_translator",
+    "count": 1
+  },
+  "show_notification": true
+}

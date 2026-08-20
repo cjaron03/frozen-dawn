@@ -4,6 +4,7 @@ import com.frozendawn.block.FuelProcessingSiloMultiblock;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -75,6 +76,7 @@ public final class FrozenAtmosphereFormation {
                         // Check the position above for placement
                         BlockPos placePos = mutable.above();
                         if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, placePos)) break;
+                        if (ThaevenLoreWorldManager.protectsCarrier(level, placePos)) break;
                         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)) break;
                         if (ThermalVentRegistry.isVolcanicField(level, placePos)) break;
                         if (FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, placePos)) break;

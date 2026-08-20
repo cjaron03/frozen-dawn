@@ -1,0 +1,17 @@
+{
+  "title": "Record IV — The Heart Beneath",
+  "rawPages": [
+    "Vel-an.\nVel-an.\nIven sha-mae.\nVel orren Vesh.\nIven vel-an eth.",
+    "Vel-an eth.\nVel-an iven.\nVel-an thae.\nThae Iven vel-an.",
+    "Thae. Thae. Thae.\nThae Iven ethven.\nIven vel-an.\nIven orren: …",
+    "Vel ethven.\nVel orren.\nIven vel-an.\nVesh eth.\nVel: iven.",
+    "Iven-an-thae vaen.\nSha-mae.\nVel-an.\nThae Iven: vel-an."
+  ],
+  "translatedPages": [
+    {"segments":[{"id":"heart_beneath_01","baseText":"Beneath the white, the roads continue.\nBeneath the roads, the footsteps remain.\nWarmth traveled from door to door.\nNames slept beneath the dead lights.\nThe world was not lost.\nIt was carried below.","semanticOverrides":{},"revealTiming":0,"uncertainty":false}]},
+    {"segments":[{"id":"heart_beneath_02","baseText":"Houses leaned into the dark.\nBridges kept the shape of rivers.\nWindows held the last blue of evening.\nA thousand rooms forgot the sun.\nStill, in every wall,\na life pressed outward.","semanticOverrides":{},"revealTiming":14,"uncertainty":false}]},
+    {"segments":[{"id":"heart_beneath_03","baseText":"Many voices entered one silence.\nMany hands entered one keeping.\nA child’s name. A worker’s song.\nRain striking metal.\nA face beside the fire.\nNothing was permitted to end.","semanticOverrides":{},"revealTiming":28,"uncertainty":false}]},
+    {"segments":[{"id":"heart_beneath_04","baseText":"The surface was wounded.\nCold entered through the wound.\nWhat was taken above\nwas gathered below.\nThe sky became distance.\nThe world became memory.","semanticOverrides":{},"revealTiming":42,"uncertainty":false}]},
+    {"segments":[{"id":"heart_beneath_05","baseText":"The keeper stood over the roads.\nThe keeper made a passage,\nthen closed it.\nNot a tomb.\nNot sleep.\nA place for everything lost\nto remain.\nWhen the lid fell,\nthe dark did not speak.\nIt opened its buried doors.\nBeneath the world,\nthe world was kept.","semanticOverrides":{},"revealTiming":58,"uncertainty":false}]}
+  ]
+}

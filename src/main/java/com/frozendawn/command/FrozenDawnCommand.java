@@ -61,6 +61,7 @@ public class FrozenDawnCommand {
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth relationship [set <neutral|suspicious|orsathae>]"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth mood set <major|minor|all> <mood>"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth advance <ticks|days> <amount>"), false);
+        context.getSource().sendSuccess(() -> Component.literal("  /frozendawn hearth lore status | grant | spawn-carrier | explain"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate orsa"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents"), false);
         context.getSource().sendSuccess(() -> Component.literal("  /frozendawn locate vents rupture"), false);
