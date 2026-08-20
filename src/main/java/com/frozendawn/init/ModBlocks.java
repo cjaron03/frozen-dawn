@@ -32,6 +32,8 @@ import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.ThermalVentPoolBlock;
+import com.frozendawn.block.ThaevenCarrierBlock;
+import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
@@ -643,5 +645,31 @@ public class ModBlocks {
                     BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
                             .strength(2.5F, 6.0F).sound(SoundType.METAL)
                             .lightLevel(state -> state.getValue(RemnantPropBlock.LIT) ? 5 : 0)
-                            .noLootTable()));
+                    .noLootTable()));
+
+    // World-shared lore carriers intentionally have no block items.
+    public static final DeferredBlock<ThaevenCarrierBlock> VEL_AN_RELIC =
+            BLOCKS.register("vel_an_relic", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.VEL_AN, ThaevenCarrierBlock.Form.RELIC));
+    public static final DeferredBlock<ThaevenCarrierBlock> VEL_AN_MEMORY_WALL =
+            BLOCKS.register("vel_an_memory_wall", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.THE_FIRST_CROSSING,
+                    ThaevenCarrierBlock.Form.WALL));
+    public static final DeferredBlock<ThaevenCarrierBlock> UNTHREADING_VESSEL =
+            BLOCKS.register("unthreading_vessel", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.SCULK)
+                            .lightLevel(state -> 8)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.THE_UNTHREADING,
+                    ThaevenCarrierBlock.Form.RESIDUE));
 }

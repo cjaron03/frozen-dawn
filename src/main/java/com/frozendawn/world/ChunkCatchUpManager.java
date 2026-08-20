@@ -8,6 +8,7 @@ import com.frozendawn.data.ChunkEpochState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.homo.HearthProtectionPolicy;
@@ -927,6 +928,7 @@ public final class ChunkCatchUpManager {
                 && !protectionContext.isFuelSiloProtected(pos)
                 && !protectionContext.isHearthProtected(pos)
                 && !protectionContext.isRemnantLureProtected(pos)
+                && !ThaevenLoreWorldManager.protectsCarrier(level, pos)
                 && !BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 && !ThermalVentRegistry.isVolcanicField(level, pos);
     }

@@ -4,6 +4,8 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.lore.ThaevenLoreManager;
+import com.frozendawn.lore.ThaevenSemanticKey;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
@@ -742,6 +744,8 @@ final class MasterArchitectFloodController {
             return;
         }
         mindDeathKillerId = killer == null ? null : killer.getUUID();
+        ThaevenLoreManager.unlockSemantic(originLevel.getServer(),
+                ThaevenSemanticKey.ARCHITECT_LID_REVEAL);
         if (killer != null) {
             architect.getHearthMasterArchitectId().ifPresent(hearthId -> {
                 WorldTickHandler.grantAdvancement(killer, "decoherence");

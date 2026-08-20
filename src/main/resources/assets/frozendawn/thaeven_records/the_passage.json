@@ -1,0 +1,26 @@
+{
+  "title": "Record II — The Passage",
+  "rawPages": [
+    "Vel-an.\nThae Iven.\nIven vel-an.",
+    "Orsha orren vel.\nVel ethven.",
+    "Sha-mae-vel-thae.\nMaeven vel.",
+    "Vel-an thaeven.\nVel-an sha-mae.",
+    "Vesh thaeven.\nVel-thae ethven.",
+    "Thae Iven vaen.\nIven thaeven.",
+    "Vel-an.\nSha-mae-vel-thae.\nVel-thae orren.",
+    "Iven-an.\nIven-an-thae."
+  ],
+  "translatedPages": [
+    {"segments":[{"id":"passage_01","baseText":"Hearth. Shared mind. Memory remains.","semanticOverrides":{},"revealTiming":0,"uncertainty":true}]},
+    {"segments":[{"id":"passage_02","baseText":"Orsha took warmth. The world entered cold.","semanticOverrides":{},"revealTiming":8,"uncertainty":false}]},
+    {"segments":[{"id":"passage_03","baseText":"One who makes… a passage through… the world.","semanticOverrides":{},"revealTiming":16,"uncertainty":true}]},
+    {"segments":[{"id":"passage_04","baseText":"The Hearth returns through. The Hearth makes passage.","semanticOverrides":{},"revealTiming":24,"uncertainty":true}]},
+    {"segments":[{"id":"passage_05","baseText":"Above answers. The warm-one enters cold.","semanticOverrides":{},"revealTiming":32,"uncertainty":true}]},
+    {"segments":[{"id":"passage_06","baseText":"Shared mind witnesses. Memory turns the blow aside.","semanticOverrides":{},"revealTiming":40,"uncertainty":true}]},
+    {"segments":[{"id":"passage_07","baseText":"The Hearth remains. The passage-maker remains. The warm-one is refused.","semanticOverrides":{},"revealTiming":48,"uncertainty":false}]},
+    {"segments":[
+      {"id":"heart_term_01","baseText":"Memory kept… What is held…","semanticOverrides":{"1":"The Heart."},"revealTiming":56,"uncertainty":true},
+      {"id":"heart_keeper_01","baseText":"The living one who keeps it…","semanticOverrides":{"1":"the one who held the Heart."},"revealTiming":68,"uncertainty":true}
+    ]}
+  ]
+}

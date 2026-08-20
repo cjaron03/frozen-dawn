@@ -38,6 +38,9 @@ import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
+import com.frozendawn.item.ThaevenCarrierItem;
+import com.frozendawn.item.ThaevenTranslatorItem;
+import com.frozendawn.lore.ThaevenRecordId;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -133,6 +136,33 @@ public class ModItems {
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
             () -> new OrsaMultiToolItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ThaevenTranslatorItem> THAEVEN_TRANSLATOR = ITEMS.register(
+            "thaeven_translator", () -> new ThaevenTranslatorItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<ThaevenCarrierItem> HUMAN_CARRIER = ITEMS.register(
+            "human_carrier", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    ThaevenRecordId.THE_PASSAGE));
+    public static final DeferredItem<ThaevenCarrierItem> PATTERN_RESIDUE_RECORD = ITEMS.register(
+            "pattern_residue_record", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC),
+                    ThaevenRecordId.PATTERN_RESIDUE));
+    public static final DeferredItem<ThaevenCarrierItem> ACCRETED_REMNANT = ITEMS.register(
+            "accreted_remnant", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC),
+                    ThaevenRecordId.THE_HEART_BENEATH));
+    public static final DeferredItem<Item> RIMEBOUND_PATTERN_FRAGMENT = ITEMS.register(
+            "rimebound_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> RESONANT_PATTERN_FRAGMENT = ITEMS.register(
+            "resonant_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> REMNANT_PATTERN_FRAGMENT = ITEMS.register(
+            "remnant_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> FROSTWRITHE_PATTERN_FRAGMENT = ITEMS.register(
+            "frostwrithe_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<O2TankItem> O2_TANK = ITEMS.register("o2_tank",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER1_MAX), O2TankItem.TIER1_MAX));
@@ -458,6 +488,7 @@ public class ModItems {
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
+                        output.accept(THAEVEN_TRANSLATOR.get());
                         ItemStack guideBook = StarterBooks.createGuideBook();
                         if (guideBook != null) {
                             output.accept(guideBook);

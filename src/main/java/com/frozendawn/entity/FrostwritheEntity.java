@@ -5,6 +5,7 @@ import com.frozendawn.init.ModEntities;
 import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.lore.ThaevenLoreAcquisitionHandler;
 import com.frozendawn.world.FrostwritheColonyManager;
 import com.frozendawn.world.MiteAwayRegistry;
 import net.minecraft.core.BlockPos;
@@ -15,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
@@ -35,6 +37,7 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -75,6 +78,8 @@ public final class FrostwritheEntity extends Monster {
     private @Nullable Vec3 actionDestination;
     private @Nullable BlockPos disassemblyRally;
     private @Nullable BlockPos burrowSurface;
+    private @Nullable UUID loreDisassemblyCredit;
+    private boolean loreFragmentReleased;
     private final FrostwritheBurrowController burrowController =
             new FrostwritheBurrowController();
 
@@ -773,8 +778,18 @@ public final class FrostwritheEntity extends Monster {
                     1.15D, 0.35D, 1.15D, 0.12D);
         }
         if (stateTicks() < FrostwrithePolicy.DISASSEMBLY_TICKS) return;
+        releaseLoreFragment(level);
         spawnRepresentatives(level);
         discard();
+    }
+
+    private void releaseLoreFragment(ServerLevel level) {
+        if (loreFragmentReleased || loreDisassemblyCredit == null) return;
+        ServerPlayer player = level.getServer().getPlayerList()
+                .getPlayer(loreDisassemblyCredit);
+        if (player == null) return;
+        loreFragmentReleased = true;
+        ThaevenLoreAcquisitionHandler.onFrostwritheDisassembled(player, this);
     }
 
     private void spawnRepresentatives(ServerLevel level) {
@@ -887,6 +902,10 @@ public final class FrostwritheEntity extends Monster {
                 || state == FrostwritheState.DISASSEMBLING || state == FrostwritheState.DEAD) {
             return false;
         }
+        ServerPlayer responsiblePlayer = responsiblePlayer(source);
+        if (responsiblePlayer != null) {
+            loreDisassemblyCredit = responsiblePlayer.getUUID();
+        }
         boolean fire = source.is(DamageTypeTags.IS_FIRE);
         boolean projectile = source.is(DamageTypeTags.IS_PROJECTILE);
         boolean explosion = source.is(DamageTypeTags.IS_EXPLOSION);
@@ -912,6 +931,16 @@ public final class FrostwritheEntity extends Monster {
             pressureHits = 0;
         }
         return hurt;
+    }
+
+    @Nullable
+    private static ServerPlayer responsiblePlayer(DamageSource source) {
+        if (source.getEntity() instanceof ServerPlayer player) return player;
+        if (source.getDirectEntity() instanceof Projectile projectile
+                && projectile.getOwner() instanceof ServerPlayer player) {
+            return player;
+        }
+        return null;
     }
 
     private void shedRepresentative() {
@@ -954,6 +983,11 @@ public final class FrostwritheEntity extends Monster {
         if (disassemblyRally != null) {
             tag.putLong("FrostwritheRally", disassemblyRally.asLong());
         }
+        if (loreDisassemblyCredit != null) {
+            tag.putUUID("FrostwritheLoreCredit", loreDisassemblyCredit);
+        }
+        tag.putBoolean("FrostwritheLoreFragmentReleased",
+                loreFragmentReleased);
         tag.putInt("FrostwritheShellCooldown", shellCooldown);
         tag.putInt("FrostwritheBridgeCooldown", bridgeCooldown);
         tag.putInt("FrostwritheOverrunCooldown", overrunCooldown);
@@ -984,6 +1018,10 @@ public final class FrostwritheEntity extends Monster {
                 ? tag.getUUID("FrostwritheColony") : UUID.randomUUID();
         disassemblyRally = tag.contains("FrostwritheRally")
                 ? BlockPos.of(tag.getLong("FrostwritheRally")) : null;
+        loreDisassemblyCredit = tag.hasUUID("FrostwritheLoreCredit")
+                ? tag.getUUID("FrostwritheLoreCredit") : null;
+        loreFragmentReleased = tag.getBoolean(
+                "FrostwritheLoreFragmentReleased");
         shellCooldown = Math.max(0, tag.getInt("FrostwritheShellCooldown"));
         bridgeCooldown = Math.max(0, tag.getInt("FrostwritheBridgeCooldown"));
         overrunCooldown = Math.max(0, tag.getInt("FrostwritheOverrunCooldown"));

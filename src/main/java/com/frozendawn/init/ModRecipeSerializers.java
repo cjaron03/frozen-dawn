@@ -3,6 +3,7 @@ package com.frozendawn.init;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.recipe.BlueprintLockedPatternRecipe;
 import com.frozendawn.recipe.CaloricLinedEvaUpgradeRecipe;
+import com.frozendawn.recipe.ThaevenTranslatorRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
@@ -19,6 +20,9 @@ public final class ModRecipeSerializers {
 
     public static final DeferredHolder<RecipeSerializer<?>, BlueprintLockedPatternRecipe.Serializer> BLUEPRINT_LOCKED_SHAPED =
             RECIPE_SERIALIZERS.register("blueprint_locked_shaped", BlueprintLockedPatternRecipe.Serializer::new);
+
+    public static final DeferredHolder<RecipeSerializer<?>, ThaevenTranslatorRecipe.Serializer> THAEVEN_TRANSLATOR_SHAPED =
+            RECIPE_SERIALIZERS.register("thaeven_translator_shaped", ThaevenTranslatorRecipe.Serializer::new);
 
     private ModRecipeSerializers() {
     }

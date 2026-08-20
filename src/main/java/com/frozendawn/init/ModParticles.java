@@ -30,6 +30,14 @@ public final class ModParticles {
             AGGREGATE_PRESSURE_SIGNAL = PARTICLES.register("aggregate_pressure_signal",
                     () -> new SimpleParticleType(false));
 
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            UNTHREADING_MEMORY = PARTICLES.register("unthreading_memory",
+                    () -> new SimpleParticleType(false));
+
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            UNTHREADING_RESIDUE = PARTICLES.register("unthreading_residue",
+                    () -> new SimpleParticleType(false));
+
     private ModParticles() {
     }
 }

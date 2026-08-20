@@ -1,0 +1,8 @@
+{
+  "textures":{"stone":"frozendawn:block/inert_acheronite","memory":"frozendawn:block/bloom_core","particle":"frozendawn:block/inert_acheronite"},
+  "elements":[
+    {"from":[3,0,3],"to":[13,3,13],"faces":{"down":{"texture":"#stone"},"up":{"texture":"#stone"},"north":{"texture":"#stone"},"south":{"texture":"#stone"},"west":{"texture":"#stone"},"east":{"texture":"#stone"}}},
+    {"from":[5,3,5],"to":[11,8,11],"faces":{"down":{"texture":"#stone"},"up":{"texture":"#stone"},"north":{"texture":"#stone"},"south":{"texture":"#stone"},"west":{"texture":"#stone"},"east":{"texture":"#stone"}}},
+    {"from":[6,8,6],"to":[10,12,10],"rotation":{"origin":[8,10,8],"axis":"y","angle":45},"faces":{"down":{"texture":"#memory"},"up":{"texture":"#memory"},"north":{"texture":"#memory"},"south":{"texture":"#memory"},"west":{"texture":"#memory"},"east":{"texture":"#memory"}}}
+  ]
+}

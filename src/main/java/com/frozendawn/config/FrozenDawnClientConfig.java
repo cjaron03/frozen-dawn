@@ -10,6 +10,7 @@ public final class FrozenDawnClientConfig {
     public static final ModConfigSpec.DoubleValue STILLPOINT_DISTORTION_INTENSITY;
     public static final ModConfigSpec.DoubleValue STILLPOINT_PARTICLE_DENSITY;
     public static final ModConfigSpec.BooleanValue ENABLE_STILLPOINT_AUDIO_MUFFLING;
+    public static final ModConfigSpec.BooleanValue REDUCED_THAEVEN_INK_ANIMATION;
 
     public static final ModConfigSpec SPEC;
 
@@ -28,6 +29,11 @@ public final class FrozenDawnClientConfig {
         ENABLE_STILLPOINT_AUDIO_MUFFLING = BUILDER
                 .comment("Muffle positional sounds originating outside an active Stillpoint field.")
                 .define("enableAudioMuffling", true);
+        BUILDER.pop();
+        BUILDER.push("thaevenLore");
+        REDUCED_THAEVEN_INK_ANIMATION = BUILDER
+                .comment("Resolve translator ink immediately without changing lore unlocks.")
+                .define("reducedInkAnimation", false);
         BUILDER.pop();
         SPEC = BUILDER.build();
     }

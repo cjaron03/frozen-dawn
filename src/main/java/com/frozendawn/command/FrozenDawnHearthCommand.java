@@ -89,6 +89,7 @@ final class FrozenDawnHearthCommand {
                                         context, HearthSelectionPolicy.HearthType.MINOR))))
                 .then(Commands.literal("force-select")
                         .executes(FrozenDawnHearthCommand::forceSelect))
+                .then(ThaevenLoreCommand.commands())
                 .then(Commands.literal("postmaeve")
                         .executes(FrozenDawnHearthCommand::postMaeveStatus)
                         .then(Commands.literal("status")

@@ -43,6 +43,9 @@ import com.frozendawn.homo.HearthSurveySignalManager;
 import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.HearthDarkeningManager;
 import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.lore.ThaevenLoreManager;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
+import com.frozendawn.lore.ThaevenLoreAcquisitionHandler;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.aggregate.AggregateGrowthManager;
 import com.frozendawn.world.UndoneSpawner;
@@ -231,10 +234,14 @@ public class WorldTickHandler {
 
         // Per-player effects: temperature, heat damage, wind chill, suffocation
         PlayerTickHandler.tick(server, state, currentPhase, currentDay, progress);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            ThaevenLoreAcquisitionHandler.tickPlayer(player);
+        }
 
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        ThaevenLoreWorldManager.tick(overworld);
         com.frozendawn.aggregate.StillpointFieldManager.tick(server);
         AggregateGrowthManager.tick(overworld);
         BloomboundUndoneSpawner.tick(overworld);
@@ -498,6 +505,7 @@ public class WorldTickHandler {
             PlayerTickHandler.syncBreathableState(player);
             RocketLaunchManager.syncLaunchState(player);
             PostMaeveWorldState.sync(player);
+            ThaevenLoreManager.sync(player);
 
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);
@@ -524,6 +532,7 @@ public class WorldTickHandler {
             orsaAwakeningFreezeAnchor.remove(playerId);
             PlayerTickHandler.onPlayerLogout(player);
             CognitiveLoadManager.onPlayerLogout(player);
+            ThaevenLoreAcquisitionHandler.clearPlayer(player);
         }
     }
 

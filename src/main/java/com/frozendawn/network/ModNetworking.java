@@ -14,6 +14,8 @@ import com.frozendawn.homo.HeartEchoManager;
 import com.frozendawn.homo.HeartMemoryNodeManager;
 import com.frozendawn.homo.HeartMaeveErasureManager;
 import com.frozendawn.homo.MasterArchitectFourthWallManager;
+import com.frozendawn.lore.ThaevenLoreManager;
+import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.entity.UndoneEntity;
 import com.frozendawn.world.RocketLaunchManager;
 import net.minecraft.ChatFormatting;
@@ -220,6 +222,18 @@ public class ModNetworking {
                         () -> ClientHandlers.handlePostMaeveWorldState(payload))
         );
         registrar.playToClient(
+                ThaevenLoreSyncPayload.TYPE,
+                ThaevenLoreSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleThaevenLoreSync(payload))
+        );
+        registrar.playToClient(
+                OpenThaevenArchivePayload.TYPE,
+                OpenThaevenArchivePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleOpenThaevenArchive(payload))
+        );
+        registrar.playToClient(
                 StillpointFieldPayload.TYPE,
                 StillpointFieldPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(
@@ -419,6 +433,20 @@ public class ModNetworking {
                         HearthTransmissionManager.handleResult(
                                 sp, payload.sessionId(), payload.completed());
                     }
+                })
+        );
+        registrar.playToServer(
+                ThaevenLoreViewedPayload.TYPE,
+                ThaevenLoreViewedPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (!(context.player() instanceof ServerPlayer sp)
+                            || payload.record() < 0
+                            || payload.record() >= ThaevenRecordId.values().length) {
+                        return;
+                    }
+                    ThaevenLoreManager.markViewed(sp,
+                            ThaevenRecordId.values()[payload.record()],
+                            payload.revision());
                 })
         );
     }

@@ -5,6 +5,7 @@ import com.frozendawn.block.SealedLatticeBlock;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.BloomSavedData;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.event.WorldTickHandler;
@@ -1117,7 +1118,8 @@ public final class BloomGrowthManager {
     }
 
     private static boolean isProtected(ServerLevel level, BlockPos pos) {
-        if (StillpointPolicy.isSuppressed(level, pos)) {
+        if (StillpointPolicy.isSuppressed(level, pos)
+                || ThaevenLoreWorldManager.protectsCarrier(level, pos)) {
             return true;
         }
         BlockState state = level.getBlockState(pos);

@@ -1,6 +1,7 @@
 package com.frozendawn.homo;
 
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.data.ThaevenLoreSavedData;
 import com.frozendawn.entity.ThaeIvenHeartEntity;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.HeartMemoryNodeEventPayload;
@@ -130,6 +131,8 @@ public final class HeartMemoryNodeManager {
             }
         }
         if (result.destroyed() && nodeIndex == HeartLattice.NODE_COUNT - 1) {
+            ThaevenLoreSavedData.get(level.getServer()).setHeartScarAnchor(
+                    level.dimension(), hearth.heartAnchor().orElse(hearth.center()));
             data.erasePlayerFromHive(player.getUUID());
             if (data.startHeartCollapse(hearth.id(), level.getGameTime())) {
                 level.playSound(null, BlockPos.containing(nodePosition),
