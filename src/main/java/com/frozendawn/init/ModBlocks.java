@@ -26,6 +26,8 @@ import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.RocketEngineBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
 import com.frozendawn.block.SealedLatticeBlock;
+import com.frozendawn.block.StillpointCoreBlock;
+import com.frozendawn.block.AggregateResidueBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
@@ -586,6 +588,30 @@ public class ModBlocks {
                     .strength(3.4F, 7.0F)
                     .sound(SoundType.AMETHYST)
                     .lightLevel(state -> 6)));
+
+    // --- Aggregate scar and temporary encounter material ---
+    public static final DeferredBlock<AggregateResidueBlock> AGGREGATE_RESIDUE = BLOCKS.register(
+            "aggregate_residue", () -> new AggregateResidueBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY).strength(0.8F, 3.0F)
+                    .sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<Block> AGGREGATE_MASS = BLOCKS.register(
+            "aggregate_mass", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.QUARTZ).requiresCorrectToolForDrops()
+                    .strength(2.8F, 8.0F).sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<RotatedPillarBlock> AGGREGATE_RIB = BLOCKS.register(
+            "aggregate_rib", () -> new RotatedPillarBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.QUARTZ).requiresCorrectToolForDrops()
+                    .strength(3.2F, 9.0F).sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<Block> AGGREGATE_TEMPORARY_MASS = BLOCKS.register(
+            "aggregate_temporary_mass", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY).strength(1.8F, 5.0F)
+                    .sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<StillpointCoreBlock> INERT_CONVERGENCE_CORE =
+            BLOCKS.register("inert_convergence_core", () -> new StillpointCoreBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .requiresCorrectToolForDrops().strength(5.0F, 1_200.0F)
+                            .lightLevel(state -> 5).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)));
 
     public static final DeferredBlock<Block> INERT_ACHERONITE = BLOCKS.register("inert_acheronite",
             () -> new Block(BlockBehaviour.Properties.of()

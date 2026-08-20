@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": { "all": "frozendawn:block/inert_convergence_core_exhausted", "particle": "#all" },
+  "elements": [{
+    "from": [-0.5, 0.1, 0.5], "to": [15.5, 16.1, 16.5],
+    "faces": {
+      "down": { "texture": "#all", "cullface": "down" },
+      "up": { "texture": "#all", "cullface": "up" },
+      "north": { "texture": "#all" }, "south": { "texture": "#all" },
+      "west": { "texture": "#all" }, "east": { "texture": "#all" }
+    }
+  }]
+}

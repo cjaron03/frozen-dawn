@@ -3,6 +3,9 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
+import com.frozendawn.client.renderer.AggregateRenderer;
+import com.frozendawn.client.renderer.AggregateFragmentRenderer;
+import com.frozendawn.client.renderer.AggregateShedChunkRenderer;
 import com.frozendawn.client.renderer.RimeboundModel;
 import com.frozendawn.client.renderer.RimeboundRenderer;
 import com.frozendawn.client.renderer.RimeLanceRenderer;
@@ -10,6 +13,8 @@ import com.frozendawn.client.renderer.ResonantModel;
 import com.frozendawn.client.renderer.ResonantRenderer;
 import com.frozendawn.client.renderer.RemnantRenderer;
 import com.frozendawn.client.renderer.FrostmiteRenderer;
+import com.frozendawn.client.renderer.FrostwritheModel;
+import com.frozendawn.client.renderer.FrostwritheRenderer;
 import com.frozendawn.client.renderer.HeavySnowballRenderer;
 import com.frozendawn.client.renderer.HeartSuccessorRenderer;
 import com.frozendawn.client.renderer.HollowRenderer;
@@ -30,6 +35,9 @@ import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
+import com.frozendawn.client.particle.AggregateConvergenceParticle;
+import com.frozendawn.client.particle.AggregateExpulsionParticle;
+import com.frozendawn.client.particle.AggregatePressureSignalParticle;
 import com.frozendawn.client.renderer.RocketLaunchModel;
 import com.frozendawn.client.renderer.RocketLaunchRenderer;
 import com.frozendawn.client.renderer.OrsaFlagRenderer;
@@ -90,6 +98,12 @@ public class ClientEvents {
                 BloomSporeRootParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_DRIFT.get(),
                 BloomDriftParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_CONVERGENCE.get(),
+                AggregateConvergenceParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_EXPULSION.get(),
+                AggregateExpulsionParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.AGGREGATE_PRESSURE_SIGNAL.get(),
+                AggregatePressureSignalParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -101,6 +115,13 @@ public class ClientEvents {
                                 FrozenDawn.MOD_ID, "master_architect_eye_volume"),
                         DefaultVertexFormat.POSITION),
                 MasterArchitectEyeWallRenderer::setShader);
+        event.registerShader(
+                new ShaderInstance(
+                        event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(
+                                FrozenDawn.MOD_ID, "stillpoint_field"),
+                        DefaultVertexFormat.POSITION),
+                StillpointFieldRenderer::setShader);
     }
 
     @SubscribeEvent
@@ -108,6 +129,11 @@ public class ClientEvents {
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
+        );
+        event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(
+                        FrozenDawn.MOD_ID, "frostwrithe_overrun"),
+                FrostwritheOverrunOverlay::render
         );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "heat_overlay"),
@@ -233,6 +259,8 @@ public class ClientEvents {
                 RimeboundModel.LAYER_LOCATION, RimeboundModel::createBodyLayer);
         event.registerLayerDefinition(
                 ResonantModel.LAYER_LOCATION, ResonantModel::createBodyLayer);
+        event.registerLayerDefinition(
+                FrostwritheModel.LAYER_LOCATION, FrostwritheModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -247,6 +275,11 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AGGREGATE.get(), AggregateRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.AGGREGATE_FRAGMENT.get(), AggregateFragmentRenderer::new);
+        event.registerEntityRenderer(
+                ModEntities.AGGREGATE_SHED_CHUNK.get(), AggregateShedChunkRenderer::new);
         event.registerEntityRenderer(ModEntities.SHADOW_FIGURE.get(), ShadowFigureRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTBITTEN.get(), FrostbittenRenderer::new);
         event.registerEntityRenderer(ModEntities.RIMEBOUND.get(), RimeboundRenderer::new);
@@ -254,6 +287,7 @@ public class ClientEvents {
         event.registerEntityRenderer(ModEntities.RESONANT.get(), ResonantRenderer::new);
         event.registerEntityRenderer(ModEntities.REMNANT.get(), RemnantRenderer::new);
         event.registerEntityRenderer(ModEntities.FROSTMITE.get(), FrostmiteRenderer::new);
+        event.registerEntityRenderer(ModEntities.FROSTWRITHE.get(), FrostwritheRenderer::new);
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), HollowRenderer::new);
         event.registerEntityRenderer(ModEntities.HEAVY_SNOWBALL.get(), HeavySnowballRenderer::new);
         event.registerEntityRenderer(ModEntities.RETURNED.get(), ReturnedRenderer::new);

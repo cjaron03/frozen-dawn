@@ -1,5 +1,6 @@
 package com.frozendawn.command;
 
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.bloom.BloomGrowthManager;
@@ -36,14 +37,20 @@ import com.frozendawn.world.ArchivistManager;
 import com.frozendawn.world.RimeboundManager;
 import com.frozendawn.world.ResonantManager;
 import com.frozendawn.world.ResonanceEventManager;
+import com.frozendawn.world.FrostwritheManager;
+import com.frozendawn.world.PostMaeveEncounterDirector;
+import com.frozendawn.world.PostMaeveEncounterType;
 import com.frozendawn.world.remnant.RemnantLureManager;
 import com.frozendawn.world.remnant.RemnantLureTemplate;
 import com.frozendawn.entity.RemnantEntity;
+import com.frozendawn.entity.RemnantPolicy;
 import com.frozendawn.entity.RemnantState;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.RimeboundState;
 import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantState;
+import com.frozendawn.entity.FrostwritheEntity;
+import com.frozendawn.entity.FrostwritheState;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -96,6 +103,18 @@ final class FrozenDawnHearthCommand {
                                 .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
                         .then(Commands.literal("debug-reset-undone-contact")
                                 .executes(FrozenDawnHearthCommand::postMaeveResetContact))
+                        .then(Commands.literal("encounters")
+                                .executes(FrozenDawnHearthCommand::encounterStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::encounterStatus))
+                                .then(Commands.literal("debug-ready")
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(
+                                                        FrozenDawnHearthCommand::encounterDebugReady)))
+                                .then(Commands.literal("debug-reset")
+                                        .then(Commands.argument("type", StringArgumentType.word())
+                                                .executes(
+                                                        FrozenDawnHearthCommand::encounterDebugReset))))
                         .then(Commands.literal("archivist")
                                 .executes(FrozenDawnHearthCommand::archivistStatus)
                                 .then(Commands.literal("status")
@@ -134,6 +153,38 @@ final class FrozenDawnHearthCommand {
                                         .executes(FrozenDawnHearthCommand::rimeboundForceFreeze))
                                 .then(Commands.literal("purge-loaded")
                                         .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded)))
+                        .then(Commands.literal("frostwrithe")
+                                .executes(FrozenDawnHearthCommand::frostwritheStatus)
+                                .then(Commands.literal("status")
+                                        .executes(FrozenDawnHearthCommand::frostwritheStatus))
+                                .then(Commands.literal("debug-spawn")
+                                        .executes(FrozenDawnHearthCommand::frostwritheSpawn))
+                                .then(Commands.literal("debug-set-age")
+                                        .then(Commands.argument("days",
+                                                        IntegerArgumentType.integer(0, 3_650))
+                                                .executes(FrozenDawnHearthCommand::frostwritheSetAge)))
+                                .then(Commands.literal("debug-set-cohesion")
+                                        .then(Commands.argument("cohesion",
+                                                        FloatArgumentType.floatArg(0.0F, 100.0F))
+                                                .executes(FrozenDawnHearthCommand::frostwritheSetCohesion)))
+                                .then(Commands.literal("debug-force-disassemble")
+                                        .executes(FrozenDawnHearthCommand::frostwritheDisassemble))
+                                .then(Commands.literal("debug-force-regroup")
+                                        .executes(FrozenDawnHearthCommand::frostwritheRegroup))
+                                .then(Commands.literal("debug-force-burrow")
+                                        .executes(FrozenDawnHearthCommand::frostwritheBurrow))
+                                .then(Commands.literal("debug-force-shell")
+                                        .executes(FrozenDawnHearthCommand::frostwritheShell))
+                                .then(Commands.literal("debug-force-climb")
+                                        .executes(FrozenDawnHearthCommand::frostwritheClimb))
+                                .then(Commands.literal("debug-force-bridge")
+                                        .executes(FrozenDawnHearthCommand::frostwritheBridge))
+                                .then(Commands.literal("debug-force-overrun")
+                                        .executes(FrozenDawnHearthCommand::frostwritheOverrun))
+                                .then(Commands.literal("debug-force-mimic")
+                                        .executes(FrozenDawnHearthCommand::frostwritheMimic))
+                                .then(Commands.literal("purge-loaded")
+                                        .executes(FrozenDawnHearthCommand::frostwrithePurgeLoaded)))
                         .then(Commands.literal("resonant")
                                 .executes(FrozenDawnHearthCommand::resonantStatus)
                                 .then(Commands.literal("status")
@@ -648,6 +699,18 @@ final class FrozenDawnHearthCommand {
                         + " erasedAt=" + data.maeveErasedGameTime()
                         + " undoneReleased="
                         + yesNo(PostMaeveWorldState.isUndoneSpawningReleased(server))), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            ServerLevel level = player.serverLevel();
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Undone: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE)), false);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Undone Architect: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE_ARCHITECT)), false);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Bloombound: " + PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.BLOOMBOUND)), false);
+        }
         return 1;
     }
 
@@ -657,6 +720,75 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "DEBUG post-Maeve saved state set to " + yesNo(erased)), true);
         return postMaeveStatus(context);
+    }
+
+    private static int encounterStatus(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        long region = RemnantPolicy.regionKey(player.blockPosition());
+        for (PostMaeveEncounterType type : PostMaeveEncounterType.values()) {
+            String status = isRegionEncounter(type)
+                    ? PostMaeveEncounterDirector.regionStatus(
+                    player.serverLevel(), region, type)
+                    : PostMaeveEncounterDirector.playerStatus(
+                    player.serverLevel(), player, type);
+            context.getSource().sendSuccess(() -> Component.literal(
+                    type.name().toLowerCase(Locale.ROOT) + ": " + status), false);
+        }
+        return 1;
+    }
+
+    private static int encounterDebugReady(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        PostMaeveEncounterType type = encounterType(context);
+        if (type == null) return 0;
+        if (isRegionEncounter(type)) {
+            PostMaeveEncounterDirector.debugReadyRegion(
+                    player.serverLevel(), RemnantPolicy.regionKey(player.blockPosition()), type);
+        } else {
+            PostMaeveEncounterDirector.debugReadyPlayer(
+                    player.serverLevel(), player, type);
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "DEBUG " + type.name().toLowerCase(Locale.ROOT)
+                        + " is guaranteed on its next valid natural check"), true);
+        return 1;
+    }
+
+    private static int encounterDebugReset(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        PostMaeveEncounterType type = encounterType(context);
+        if (type == null) return 0;
+        if (isRegionEncounter(type)) {
+            PostMaeveEncounterDirector.debugResetRegion(
+                    player.serverLevel(), RemnantPolicy.regionKey(player.blockPosition()), type);
+        } else {
+            PostMaeveEncounterDirector.debugResetPlayer(
+                    player.serverLevel(), player, type);
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "DEBUG reset encounter pressure for "
+                        + type.name().toLowerCase(Locale.ROOT)), true);
+        return 1;
+    }
+
+    private static PostMaeveEncounterType encounterType(
+            CommandContext<CommandSourceStack> context) {
+        String raw = StringArgumentType.getString(context, "type");
+        try {
+            return PostMaeveEncounterType.valueOf(raw.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            context.getSource().sendFailure(Component.literal(
+                    "Unknown encounter type: " + raw));
+            return null;
+        }
+    }
+
+    private static boolean isRegionEncounter(PostMaeveEncounterType type) {
+        return type == PostMaeveEncounterType.REMNANT
+                || type == PostMaeveEncounterType.ARCHIVIST;
     }
 
     private static int postMaeveMoonStatus(
@@ -728,7 +860,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = UndoneSpawner.spawn(player.serverLevel(), spawn) != null;
+        var entity = UndoneSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Undone at " + spawn.toShortString()
                         : "Could not create an Undone"), false);
@@ -753,8 +887,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = UndoneArchitectSpawner.spawn(
-                player.serverLevel(), spawn) != null;
+        var entity = UndoneArchitectSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Undone Architect at "
                         + spawn.toShortString()
@@ -766,6 +901,13 @@ final class FrozenDawnHearthCommand {
         ServerLevel level = context.getSource().getLevel();
         context.getSource().sendSuccess(() -> Component.literal(
                 "Archivists: " + ArchivistManager.statusLine(level)), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            long region = com.frozendawn.homo.ArchivistPolicy.regionKey(
+                    player.blockPosition());
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
+                            level, region, PostMaeveEncounterType.ARCHIVIST)), false);
+        }
         return 1;
     }
 
@@ -830,6 +972,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Rimebound: " + RimeboundManager.statusLine(
                         context.getSource().getLevel())), false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.RIMEBOUND);
         return 1;
     }
 
@@ -931,10 +1074,168 @@ final class FrozenDawnHearthCommand {
         return 0;
     }
 
+    private static int frostwritheStatus(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Frostwrithe: " + FrostwritheManager.statusLine(
+                        context.getSource().getLevel())), false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.FROSTWRITHE);
+        return 1;
+    }
+
+    private static int frostwritheSpawn(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.debugSpawn(
+                context.getSource().getPlayerOrException(), FrostwritheState.CRAWLER);
+        context.getSource().sendSuccess(() -> Component.literal(entity == null
+                ? "Could not find enough loaded space for a Frostwrithe"
+                : "Spawned debug Frostwrithe"), false);
+        return entity == null ? 0 : 1;
+    }
+
+    private static int frostwritheSetAge(CommandContext<CommandSourceStack> context) {
+        int days = IntegerArgumentType.getInteger(context, "days");
+        FrostwritheManager.debugSetAgeDays(days);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set debug Frostwrithe evolution age to " + days + " days"), false);
+        return 1;
+    }
+
+    private static int frostwritheSetCohesion(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        float cohesion = FloatArgumentType.getFloat(context, "cohesion");
+        entity.debugSetCohesion(cohesion);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Set nearest Frostwrithe cohesion to " + cohesion), false);
+        return 1;
+    }
+
+    private static int frostwritheDisassemble(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceDisassemble();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe to disassemble"), false);
+        return 1;
+    }
+
+    private static int frostwritheRegroup(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        boolean regrouped = FrostwritheManager.forceRegroup(
+                context.getSource().getPlayerOrException());
+        context.getSource().sendSuccess(() -> Component.literal(regrouped
+                ? "Forced the nearest loose colony to rally"
+                : "No loose Frostwrithe representatives within 96 blocks"), false);
+        return regrouped ? 1 : 0;
+    }
+
+    private static int frostwritheBurrow(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        boolean started = entity.forceBurrow();
+        context.getSource().sendSuccess(() -> Component.literal(started
+                ? "Forced nearest Frostwrithe underground"
+                : "Frostwrithe could not find a loaded natural route"), false);
+        return started ? 1 : 0;
+    }
+
+    private static int frostwritheShell(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceShell();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe into Shell"), false);
+        return 1;
+    }
+
+    private static int frostwritheClimb(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceClimb();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe climbing attempt"), false);
+        return 1;
+    }
+
+    private static int frostwritheBridge(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceBridge();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe bridge attempt"), false);
+        return 1;
+    }
+
+    private static int frostwritheOverrun(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = targetedFrostwrithe(context);
+        if (entity == null) return noFrostwrithe(context);
+        entity.forceOverrun();
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe Overrun"), false);
+        return 1;
+    }
+
+    private static int frostwritheMimic(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        FrostwritheEntity entity = FrostwritheManager.nearest(
+                context.getSource().getPlayerOrException());
+        if (entity == null) return noFrostwrithe(context);
+        boolean mimicked = entity.forceMimicNearby();
+        if (!mimicked) {
+            context.getSource().sendFailure(Component.literal(
+                    "No Architect, Rimebound, Resonant, Remnant, Undone, "
+                            + "Bloombound, or Undone Architect within 80 blocks"));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Forced nearest Frostwrithe to repeat a nearby creature"), false);
+        return 1;
+    }
+
+    private static FrostwritheEntity targetedFrostwrithe(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        FrostwritheEntity entity = FrostwritheManager.nearest(player);
+        if (entity != null) entity.setTarget(player);
+        return entity;
+    }
+
+    private static int frostwrithePurgeLoaded(
+            CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        int removed = FrostwritheManager.purgeLoaded(player.serverLevel(),
+                player.blockPosition(), 512.0D);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Purged " + removed + " loaded Frostwrithe/colony representatives"), true);
+        return 1;
+    }
+
+    private static int noFrostwrithe(CommandContext<CommandSourceStack> context) {
+        context.getSource().sendFailure(Component.literal(
+                "No loaded Frostwrithe within 96 blocks"));
+        return 0;
+    }
+
     private static int resonantStatus(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Resonant: " + ResonantManager.statusLine(context.getSource().getLevel())),
                 false);
+        sendPlayerEncounterStatus(context, PostMaeveEncounterType.RESONANT);
         return 1;
     }
 
@@ -1038,7 +1339,23 @@ final class FrozenDawnHearthCommand {
     private static int remnantStatus(CommandContext<CommandSourceStack> context) {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Remnant: " + RemnantLureManager.statusLine(context.getSource().getLevel())), false);
+        if (context.getSource().getEntity() instanceof ServerPlayer player) {
+            long region = RemnantPolicy.regionKey(player.blockPosition());
+            context.getSource().sendSuccess(() -> Component.literal(
+                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
+                            player.serverLevel(), region,
+                            PostMaeveEncounterType.REMNANT)), false);
+        }
         return 1;
+    }
+
+    private static void sendPlayerEncounterStatus(
+            CommandContext<CommandSourceStack> context,
+            PostMaeveEncounterType type) {
+        if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return;
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Encounter: " + PostMaeveEncounterDirector.playerStatus(
+                        player.serverLevel(), player, type)), false);
     }
 
     private static RemnantLureTemplate.Kind remnantTemplate(
@@ -1240,8 +1557,9 @@ final class FrozenDawnHearthCommand {
         BlockPos spawn = player.serverLevel().getHeightmapPos(
                 net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 probe);
-        boolean spawned = BloomboundUndoneSpawner.spawn(
-                player.serverLevel(), spawn) != null;
+        var entity = BloomboundUndoneSpawner.spawn(player.serverLevel(), spawn);
+        if (entity != null) AggregatePressureHandler.markIgnored(entity);
+        boolean spawned = entity != null;
         context.getSource().sendSuccess(() -> Component.literal(
                 spawned ? "Spawned debug Bloombound at " + spawn.toShortString()
                         : "Could not create a Bloombound"), false);

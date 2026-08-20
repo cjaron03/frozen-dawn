@@ -2,6 +2,7 @@ package com.frozendawn.init;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.FrostmiteEntity;
+import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.entity.FrostbittenEntity;
 import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.ResonantEntity;
@@ -20,6 +21,9 @@ import com.frozendawn.entity.BloomSporeEntity;
 import com.frozendawn.entity.BloomSporeCorpseEntity;
 import com.frozendawn.entity.ArchivistEntity;
 import com.frozendawn.entity.ArchivistRelicEntity;
+import com.frozendawn.entity.AggregateEntity;
+import com.frozendawn.entity.AggregateFragmentEntity;
+import com.frozendawn.entity.AggregateShedChunkEntity;
 import com.frozendawn.entity.RocketLaunchEntity;
 import com.frozendawn.entity.ReturnedEntity;
 import com.frozendawn.entity.ShadowFigureEntity;
@@ -32,6 +36,36 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(Registries.ENTITY_TYPE, FrozenDawn.MOD_ID);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateEntity>> AGGREGATE =
+            ENTITIES.register("aggregate", () -> EntityType.Builder
+                    .of(AggregateEntity::new, MobCategory.MONSTER)
+                    .sized(3.2F, 3.15F)
+                    .fireImmune()
+                    .clientTrackingRange(20)
+                    .updateInterval(1)
+                    .build("aggregate"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateFragmentEntity>>
+            AGGREGATE_FRAGMENT = ENTITIES.register("aggregate_fragment", () -> EntityType.Builder
+                    .of(AggregateFragmentEntity::new, MobCategory.MONSTER)
+                    .sized(0.72F, 0.48F)
+                    .fireImmune()
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("aggregate_fragment"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AggregateShedChunkEntity>>
+            AGGREGATE_SHED_CHUNK = ENTITIES.register(
+                    "aggregate_shed_chunk", () -> EntityType.Builder
+                            .of(AggregateShedChunkEntity::new, MobCategory.MISC)
+                            .sized(0.9F, 0.9F)
+                            .noSave()
+                            .noSummon()
+                            .fireImmune()
+                            .clientTrackingRange(32)
+                            .updateInterval(1)
+                            .build("aggregate_shed_chunk"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ShadowFigureEntity>> SHADOW_FIGURE =
             ENTITIES.register("shadow_figure", () -> EntityType.Builder
@@ -88,6 +122,14 @@ public class ModEntities {
                     .sized(0.45f, 0.3f)
                     .clientTrackingRange(8)
                     .build("frostmite"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<FrostwritheEntity>> FROSTWRITHE =
+            ENTITIES.register("frostwrithe", () -> EntityType.Builder
+                    .of(FrostwritheEntity::new, MobCategory.MONSTER)
+                    .sized(2.25F, 0.72F)
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .build("frostwrithe"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HollowEntity>> HOLLOW =
             ENTITIES.register("hollow", () -> EntityType.Builder

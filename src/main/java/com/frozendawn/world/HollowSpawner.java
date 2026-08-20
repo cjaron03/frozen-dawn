@@ -3,6 +3,9 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.entity.HollowEntity;
 import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantPhaseController;
@@ -72,17 +75,15 @@ public class HollowSpawner {
 
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
+            boolean forcedEvolution = postMaeve
+                    && PostMaeveEncounterDirector.isDebugReadyPlayer(
+                    level, player, PostMaeveEncounterType.RESONANT);
 
             float localChance = postMaeve
                     ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
                     level, player.blockPosition()))
                     : spawnChance;
-            if (random.nextFloat() > localChance) continue;
-
-            // Density cap: max 4 within 48 blocks (scaled by multiplier)
-            int nearbyCount = level.getEntitiesOfClass(HollowEntity.class,
-                    player.getBoundingBox().inflate(48.0)).size();
-            if (nearbyCount >= maxHollow) continue;
+            if (!forcedEvolution && random.nextFloat() > localChance) continue;
 
             BlockPos spawnPos = postMaeve
                     ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
@@ -91,9 +92,15 @@ public class HollowSpawner {
                     : findSpawnPos(level, player, random);
             if (spawnPos == null) continue;
 
-            if (postMaeve && trySpawnResonant(level, spawnPos, random)) {
+            if (postMaeve && trySpawnResonant(level, spawnPos, player)) {
                 continue;
             }
+
+            // Ordinary Hollows retain their own density cap, but a full local
+            // population must not starve the separate Resonant encounter roll.
+            int nearbyCount = level.getEntitiesOfClass(HollowEntity.class,
+                    player.getBoundingBox().inflate(48.0)).size();
+            if (nearbyCount >= maxHollow) continue;
             HollowEntity hollow = ModEntities.HOLLOW.get().create(
                     level, null, spawnPos, MobSpawnType.NATURAL, true, false);
             if (hollow != null && level.addFreshEntity(hollow)) {
@@ -104,26 +111,55 @@ public class HollowSpawner {
     }
 
     private static boolean trySpawnResonant(ServerLevel level, BlockPos encounter,
-                                            RandomSource random) {
+                                            ServerPlayer owner) {
         if (!FrozenDawnConfig.ENABLE_RESONANT.get()) return false;
         float chance = ResonantPolicy.evolutionChance(
                 ResonantManager.ticksSinceErasure(level),
                 BloomGrowthManager.pressureMultiplier(level, encounter),
-                FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
-        if (random.nextFloat() >= chance) return false;
+                FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get()
+                        * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                        * StillpointPolicy.evolvedWeightMultiplier(level, encounter)
+                        * AggregateGrowthManager.evolvedWeightMultiplier(level, encounter));
+        if (chance <= 0.0F) return false;
         int nearby = level.getEntitiesOfClass(ResonantEntity.class,
                 new AABB(encounter).inflate(64.0D)).size();
         if (nearby >= FrozenDawnConfig.RESONANT_NEARBY_CAP.get()) return false;
-        BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, encounter);
-        if (concealed == null) return false;
-        ResonantEntity resonant = ModEntities.RESONANT.get().create(
-                level, null, concealed, MobSpawnType.NATURAL, true, false);
-        if (resonant == null) return false;
-        resonant.setActivityState(ResonantState.LISTENING);
-        if (!level.addFreshEntity(resonant)) {
-            resonant.discard();
+        BlockPos concealed = ResonantPhaseController.findConcealedSpawn(
+                level, owner.blockPosition());
+        if (concealed == null) {
+            concealed = ResonantPhaseController.findConcealedSpawn(level, encounter);
+        }
+        if (concealed == null) {
+            PostMaeveEncounterDirector.blockedPlayer(level, owner,
+                    PostMaeveEncounterType.RESONANT,
+                    "no concealed breach surface");
             return false;
         }
+        if (!PostMaeveEncounterDirector.rollPlayer(
+                level, owner, PostMaeveEncounterType.RESONANT, chance)) {
+            return false;
+        }
+        // A Resonant begins inside its concealed solid. The positioned create
+        // overload validates ordinary mob placement and rejects that intended
+        // phase state, so initialize it explicitly like authored reinforcements.
+        ResonantEntity resonant = ModEntities.RESONANT.get().create(level);
+        if (resonant == null) {
+            PostMaeveEncounterDirector.blockedPlayer(level, owner,
+                    PostMaeveEncounterType.RESONANT, "entity creation failed");
+            return false;
+        }
+        resonant.moveTo(concealed.getX() + 0.5D, concealed.getY() + 0.5D,
+                concealed.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
+        resonant.finalizeSpawn(level, level.getCurrentDifficultyAt(concealed),
+                MobSpawnType.NATURAL, null);
+        if (!level.addFreshEntity(resonant)) {
+            resonant.discard();
+            PostMaeveEncounterDirector.blockedPlayer(level, owner,
+                    PostMaeveEncounterType.RESONANT, "entity insertion failed");
+            return false;
+        }
+        PostMaeveEncounterDirector.successPlayer(level, owner,
+                PostMaeveEncounterType.RESONANT);
         FrozenDawn.LOGGER.info("[Resonant] Hollow evolution concealed at {}", concealed);
         return true;
     }

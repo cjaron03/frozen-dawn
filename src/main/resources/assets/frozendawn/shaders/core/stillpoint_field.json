@@ -1,0 +1,22 @@
+{
+  "blend": { "func": "add", "srcrgb": "one", "dstrgb": "zero" },
+  "vertex": "frozendawn:stillpoint_field",
+  "fragment": "frozendawn:stillpoint_field",
+  "attributes": [ "Position" ],
+  "samplers": [ { "name": "uScene" }, { "name": "uDepth" } ],
+  "uniforms": [
+    { "name": "uInverseProjection", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "uCameraWorld", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "uCameraPosition", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "uFar", "type": "float", "count": 1, "values": [ 192.0 ] },
+    { "name": "uCenter", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+    { "name": "uRadius", "type": "float", "count": 1, "values": [ 48.0 ] },
+    { "name": "uTime", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "uIntensity", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "uRipple0", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "uRipple1", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "uRipple2", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "uRipple3", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "uRippleAges", "type": "float", "count": 4, "values": [ 99.0, 99.0, 99.0, 99.0 ] }
+  ]
+}

@@ -28,6 +28,16 @@ public record HearthBoundaryEffectPayload(int effectType)
     public static final int REMNANT_RADIO_ALONE = 15;
     public static final int REMNANT_RADIO_FORGIVE = 16;
     public static final int REMNANT_RADIO_CUTOFF = 17;
+    public static final int AGGREGATE_FORMATION_RUMBLE = 18;
+    public static final int AGGREGATE_IMPACT = 19;
+    public static final int AGGREGATE_DEPOSIT_DIAGNOSTIC = 20;
+    public static final int AGGREGATE_OSSUARY_DIAGNOSTIC = 21;
+    public static final int AGGREGATE_GESTATION_DIAGNOSTIC = 22;
+    public static final int AGGREGATE_RESOLVED_DIAGNOSTIC = 23;
+    public static final int STILLPOINT_FIELD_DIAGNOSTIC = 24;
+    public static final int STILLPOINT_BREAK_ONE = 25;
+    public static final int STILLPOINT_BREAK_TWO = 26;
+    public static final int STILLPOINT_BREAK_FINAL = 27;
 
     public static final Type<HearthBoundaryEffectPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(
@@ -98,6 +108,28 @@ public record HearthBoundaryEffectPayload(int effectType)
 
     public static HearthBoundaryEffectPayload remnantRadioCutoff() {
         return new HearthBoundaryEffectPayload(REMNANT_RADIO_CUTOFF);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateFormationRumble() {
+        return new HearthBoundaryEffectPayload(AGGREGATE_FORMATION_RUMBLE);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateImpact() {
+        return new HearthBoundaryEffectPayload(AGGREGATE_IMPACT);
+    }
+
+    public static HearthBoundaryEffectPayload aggregateDiagnostic(int line) {
+        return new HearthBoundaryEffectPayload(AGGREGATE_DEPOSIT_DIAGNOSTIC
+                + Math.clamp(line, 0, 3));
+    }
+
+    public static HearthBoundaryEffectPayload stillpointFieldDiagnostic() {
+        return new HearthBoundaryEffectPayload(STILLPOINT_FIELD_DIAGNOSTIC);
+    }
+
+    public static HearthBoundaryEffectPayload stillpointBreak(int uses) {
+        return new HearthBoundaryEffectPayload(STILLPOINT_BREAK_ONE
+                + Math.clamp(uses - 1, 0, 2));
     }
 
     @Override

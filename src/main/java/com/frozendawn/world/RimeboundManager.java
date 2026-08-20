@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.RimeLanceEntity;
 import com.frozendawn.entity.RimeboundBurrowController;
@@ -74,6 +75,7 @@ public final class RimeboundManager {
         }
         entity.setActivityState(dormant && RimeboundBurrowController.validDormantTerrain(level, spawn)
                 ? RimeboundState.DORMANT : RimeboundState.STALKING);
+        AggregatePressureHandler.markIgnored(entity);
         level.addFreshEntity(entity);
         if (!dormant) {
             entity.setTarget(player);

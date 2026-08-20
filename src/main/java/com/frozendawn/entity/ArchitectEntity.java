@@ -38,6 +38,7 @@ import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.MasterArchitectBossBarPolicy;
 import com.frozendawn.homo.MasterArchitectCombatPhase;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
+import com.frozendawn.aggregate.AggregateReinforcementManager;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
@@ -216,6 +217,7 @@ public class ArchitectEntity extends Monster {
     // --- Despawn ---
     private int despawnTimer = 0;
     private static final int DESPAWN_TIMEOUT = 6000;
+    private int aggregateReinforcementAttackCooldown;
 
     // --- Misc ---
     private int peekTicks = 0;
@@ -503,6 +505,11 @@ public class ArchitectEntity extends Monster {
             }
             return;
         }
+        if (!level().isClientSide() && AggregateReinforcementManager.isChild(this)) {
+            super.aiStep();
+            tickAggregateReinforcement((ServerLevel) level());
+            return;
+        }
         // Warmup: skip all AI for first 2 seconds after spawn/load
         // Prevents pathfinding freeze when entity loads before chunks are ready
         if (tickCount < 40) {
@@ -669,6 +676,44 @@ public class ArchitectEntity extends Monster {
 
         setSprinting(shouldSprintRetreat(target) || approachState.sprintRequested);
 
+        updateHeldItem();
+        syncRenderState();
+    }
+
+    private void tickAggregateReinforcement(ServerLevel level) {
+        if (aggregateReinforcementAttackCooldown > 0) {
+            aggregateReinforcementAttackCooldown--;
+        }
+        LivingEntity target = getTarget();
+        if (!(target instanceof Player player) || !player.isAlive()
+                || player.isCreative() || player.isSpectator()) {
+            target = level.getNearestPlayer(this, 48.0D);
+            if (target instanceof Player nearest
+                    && !nearest.isCreative() && !nearest.isSpectator()) {
+                setTarget(nearest);
+            } else {
+                setTarget(null);
+                getNavigation().stop();
+                transitionToAction(ACTION_OBSERVE);
+                syncRenderState();
+                return;
+            }
+        }
+        double distance = distanceToSqr(target);
+        if (distance > 6.25D) {
+            transitionToAction(ACTION_APPROACH);
+            getNavigation().moveTo(target, 1.18D);
+        } else {
+            transitionToAction(ACTION_ATTACK_MELEE);
+            getNavigation().stop();
+            getLookControl().setLookAt(target, 30.0F, 30.0F);
+            if (aggregateReinforcementAttackCooldown <= 0
+                    && getSensing().hasLineOfSight(target)) {
+                swing(InteractionHand.MAIN_HAND);
+                doHurtTarget(target);
+                aggregateReinforcementAttackCooldown = 18;
+            }
+        }
         updateHeldItem();
         syncRenderState();
     }

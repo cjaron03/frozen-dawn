@@ -1,6 +1,10 @@
 package com.frozendawn.world.remnant;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregatePressureHandler;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.entity.RemnantPolicy;
@@ -13,6 +17,8 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.event.RemnantLureInteractionHandler;
 import com.frozendawn.mixin.BlockDisplayAccessor;
 import com.frozendawn.network.HearthBoundaryEffectPayload;
+import com.frozendawn.world.PostMaeveEncounterDirector;
+import com.frozendawn.world.PostMaeveEncounterType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -67,14 +73,20 @@ public final class RemnantLureManager {
     }
 
     private static void tryNaturalPlacement(ServerLevel level, ServerPlayer player, long region) {
+        if (StillpointPolicy.isSuppressed(level, player.blockPosition())) return;
         RemnantLureSavedData data = RemnantLureSavedData.get(level.getServer());
         int loadedCount = (int) data.lures().stream().filter(record ->
                 record.state() != RemnantState.RESOLVED && level.isLoaded(record.origin())).count();
         if (!RemnantPolicy.canNaturalPlace(PostMaeveWorldState.isErased(level),
                 PostMaeveWorldState.isUndoneSpawningReleased(level.getServer()),
                 data.unresolvedInRegion(region).isPresent(), loadedCount,
-                level.getGameTime(), data.cooldown(region))
-                || level.random.nextDouble() >= RemnantPolicy.SPAWN_CHANCE_PER_CHECK) return;
+                level.getGameTime(), data.cooldown(region))) return;
+        double chance = RemnantPolicy.SPAWN_CHANCE_PER_CHECK
+                * PostMaeveEvolutionDifficulty.remnantMultiplier()
+                * AggregateGrowthManager.evolvedWeightMultiplier(
+                level, player.blockPosition());
+        if (!PostMaeveEncounterDirector.rollRegion(level, region,
+                PostMaeveEncounterType.REMNANT, chance)) return;
 
         RemnantLureTemplate.Kind[] kinds = RemnantLureTemplate.Kind.values();
         RemnantLureTemplate.Kind kind = kinds[level.random.nextInt(kinds.length)];
@@ -86,6 +98,7 @@ public final class RemnantLureManager {
             if (!level.hasChunk(x >> 4, z >> 4)) continue;
             BlockPos origin = alignInsideChunkAtSurface(level, x, z,
                     RemnantLureTemplate.create(kind).radius());
+            if (StillpointPolicy.isSuppressed(level, origin)) continue;
             long originRegion = RemnantPolicy.regionKey(origin);
             if (data.unresolvedInRegion(originRegion).isPresent()
                     || level.getGameTime() < data.cooldown(originRegion)) continue;
@@ -95,8 +108,18 @@ public final class RemnantLureManager {
             DummySightEntity sight = new DummySightEntity(level, origin);
             if (level.players().stream().filter(ServerPlayer::isAlive)
                     .anyMatch(observer -> observer.hasLineOfSight(sight))) continue;
-            if (place(level, origin, kind, level.random.nextInt(4), originRegion) != null) return;
+            if (place(level, origin, kind, level.random.nextInt(4), originRegion) != null) {
+                PostMaeveEncounterDirector.successRegion(level, region,
+                        PostMaeveEncounterType.REMNANT);
+                FrozenDawn.LOGGER.info(
+                        "[Remnant] Placed hidden {} lure for {} at {}",
+                        kind.id(), player.getName().getString(), origin.toShortString());
+                return;
+            }
         }
+        PostMaeveEncounterDirector.blockedRegion(level, region,
+                PostMaeveEncounterType.REMNANT,
+                "no hidden protected shelter footprint");
     }
 
     public static RemnantLureSavedData.LureRecord place(ServerLevel level, BlockPos origin,
@@ -751,6 +774,7 @@ public final class RemnantLureManager {
         RemnantEntity entity = ModEntities.REMNANT.get().create(level, null, pos,
                 MobSpawnType.COMMAND, true, false);
         if (entity == null) return null;
+        AggregatePressureHandler.markIgnored(entity);
         entity.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                 player.getYRot() + 180.0F, 0.0F);
         entity.exposeWithoutLure(player);
@@ -787,9 +811,13 @@ public final class RemnantLureManager {
 
     public static String statusLine(ServerLevel level) {
         RemnantLureSavedData data = RemnantLureSavedData.get(level.getServer());
-        long loaded = data.lures().stream().filter(record -> level.isLoaded(record.origin())
-                && record.state() != RemnantState.RESOLVED).count();
-        return "records=" + data.lures().size() + ", loaded=" + loaded;
+        var loadedRecords = data.lures().stream().filter(record ->
+                level.isLoaded(record.origin())
+                        && record.state() != RemnantState.RESOLVED).toList();
+        String anchor = loadedRecords.isEmpty() ? ""
+                : ", loadedAnchor=" + loadedRecords.getFirst().origin().toShortString();
+        return "records=" + data.lures().size() + ", loaded="
+                + loadedRecords.size() + anchor;
     }
 
     public static boolean debugCommit(ServerPlayer player) {

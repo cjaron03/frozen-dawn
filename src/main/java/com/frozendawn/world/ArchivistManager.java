@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ArchivistSavedData;
@@ -77,13 +78,19 @@ public final class ArchivistManager {
         if (!ArchivistPolicy.canSpawn(PostMaeveWorldState.isErased(level),
                 PostMaeveWorldState.isUndoneSpawningReleased(level.getServer()),
                 occupied, neighborOccupied, level.getGameTime(),
-                region.nextSpawnGameTime())
-                || level.random.nextDouble()
-                >= FrozenDawnConfig.ARCHIVIST_SPAWN_CHANCE_PER_CHECK.get()) {
+                region.nextSpawnGameTime())) {
+            return;
+        }
+        if (!PostMaeveEncounterDirector.rollRegion(level, regionKey,
+                PostMaeveEncounterType.ARCHIVIST,
+                FrozenDawnConfig.ARCHIVIST_SPAWN_CHANCE_PER_CHECK.get())) {
             return;
         }
         BlockPos attraction = findAttraction(level, player);
         if (attraction == null) {
+            PostMaeveEncounterDirector.blockedRegion(level, regionKey,
+                    PostMaeveEncounterType.ARCHIVIST,
+                    "no nearby dark Hearth or Bloom attraction");
             return;
         }
         BlockPos siteAnchor = data.siteForRegion(regionKey)
@@ -91,18 +98,30 @@ public final class ArchivistManager {
                 .orElseGet(() -> findSiteAnchor(level, attraction,
                         level.random.nextLong()));
         if (siteAnchor == null) {
+            PostMaeveEncounterDirector.blockedRegion(level, regionKey,
+                    PostMaeveEncounterType.ARCHIVIST,
+                    "no exposed collection-site anchor");
             return;
         }
         BlockPos spawnPos = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                 level, player, level.random, 48, 96, 36,
                 LateThreatSpawnHelper.NO_LIGHT_LIMIT);
         if (spawnPos == null || !level.hasChunkAt(spawnPos)) {
+            PostMaeveEncounterDirector.blockedRegion(level, regionKey,
+                    PostMaeveEncounterType.ARCHIVIST,
+                    "no loaded approach position");
             return;
         }
         ArchivistEntity spawned = spawn(level, spawnPos, siteAnchor, regionKey, true);
         if (spawned != null) {
+            PostMaeveEncounterDirector.successRegion(level, regionKey,
+                    PostMaeveEncounterType.ARCHIVIST);
             FrozenDawn.LOGGER.info("[Archivist] Naturally spawned near {} region={} site={}",
                     player.getName().getString(), regionKey, siteAnchor.toShortString());
+        } else {
+            PostMaeveEncounterDirector.blockedRegion(level, regionKey,
+                    PostMaeveEncounterType.ARCHIVIST,
+                    "entity creation or insertion failed");
         }
     }
 
@@ -162,6 +181,7 @@ public final class ArchivistManager {
             data.clearRegionBinding(region, 0L);
             ArchivistEntity archivist = spawn(level, spawn, site, region, true);
             if (archivist != null) {
+                AggregatePressureHandler.markIgnored(archivist);
                 FrozenDawn.LOGGER.info("[Archivist] Debug-spawned at {} after {} attempt(s)",
                         spawn.toShortString(), attempt + 1);
                 return archivist;

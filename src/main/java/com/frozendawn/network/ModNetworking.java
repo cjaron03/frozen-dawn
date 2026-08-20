@@ -220,6 +220,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handlePostMaeveWorldState(payload))
         );
         registrar.playToClient(
+                StillpointFieldPayload.TYPE,
+                StillpointFieldPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleStillpointField(payload))
+        );
+        registrar.playToClient(
                 BloomStatePayload.TYPE,
                 BloomStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

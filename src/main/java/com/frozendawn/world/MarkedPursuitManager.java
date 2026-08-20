@@ -13,6 +13,9 @@ import com.frozendawn.entity.ResonantState;
 import com.frozendawn.entity.RemnantEntity;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.config.PostMaeveEvolutionDifficulty;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModEntities;
@@ -230,7 +233,7 @@ public final class MarkedPursuitManager {
         BlockPos spawn = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                 level, player, random, 18, 44, 32,
                 LateThreatSpawnHelper.NO_LIGHT_LIMIT);
-        if (spawn == null) {
+        if (spawn == null || StillpointPolicy.isSuppressed(level, spawn)) {
             return false;
         }
         EntityType<? extends Mob> type = selectReinforcementType(random,
@@ -241,7 +244,10 @@ public final class MarkedPursuitManager {
             float evolutionChance = RimeboundPolicy.evolutionChance(
                     RimeboundManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
-                    FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get());
+                    FrozenDawnConfig.RIMEBOUND_EVOLUTION_SHARE_MULTIPLIER.get()
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                            * StillpointPolicy.evolvedWeightMultiplier(level, spawn)
+                            * AggregateGrowthManager.evolvedWeightMultiplier(level, spawn));
             int nearby = level.getEntitiesOfClass(RimeboundEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             if (nearby < FrozenDawnConfig.RIMEBOUND_NEARBY_CAP.get()
@@ -254,7 +260,10 @@ public final class MarkedPursuitManager {
             float evolutionChance = ResonantPolicy.evolutionChance(
                     ResonantManager.ticksSinceErasure(level),
                     BloomGrowthManager.pressureMultiplier(level, spawn),
-                    FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get());
+                    FrozenDawnConfig.RESONANT_EVOLUTION_SHARE_MULTIPLIER.get()
+                            * PostMaeveEvolutionDifficulty.evolutionMultiplier()
+                            * StillpointPolicy.evolvedWeightMultiplier(level, spawn)
+                            * AggregateGrowthManager.evolvedWeightMultiplier(level, spawn));
             int nearby = level.getEntitiesOfClass(ResonantEntity.class,
                     new AABB(spawn).inflate(64.0D)).size();
             BlockPos concealed = ResonantPhaseController.findConcealedSpawn(level, spawn);
@@ -329,6 +338,10 @@ public final class MarkedPursuitManager {
     }
 
     private static void forcePursuit(Mob mob, ServerPlayer player) {
+        if (StillpointPolicy.isSuppressed(player.serverLevel(), player.blockPosition())) {
+            stopWithoutForgetting(mob);
+            return;
+        }
         if (mob instanceof ResonantEntity resonant) {
             resonant.forceMarkedTarget(player);
             return;

@@ -19,6 +19,17 @@ public final class ModParticles {
             BLOOM_DRIFT = PARTICLES.register("bloom_drift",
                     () -> new SimpleParticleType(false));
 
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            AGGREGATE_CONVERGENCE = PARTICLES.register("aggregate_convergence",
+                    () -> new SimpleParticleType(false));
+
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            AGGREGATE_EXPULSION = PARTICLES.register("aggregate_expulsion",
+                    () -> new SimpleParticleType(false));
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType>
+            AGGREGATE_PRESSURE_SIGNAL = PARTICLES.register("aggregate_pressure_signal",
+                    () -> new SimpleParticleType(false));
+
     private ModParticles() {
     }
 }

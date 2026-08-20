@@ -28,6 +28,11 @@ public final class HearthBoundaryEffects {
     private static final int COLLAPSE_RESPONSE_TICKS = 480;
     private static final int BLOOM_RUMBLE_SHAKE_TICKS = 60;
     private static final int BLOOM_IMPACT_SHAKE_TICKS = 36;
+    private static final int AGGREGATE_FORMATION_SHAKE_TICKS = 96;
+    private static final int AGGREGATE_IMPACT_SHAKE_TICKS = 28;
+    private static final int STILLPOINT_CHARGE_SHAKE_TICKS = 80;
+    private static final int STILLPOINT_FORMATION_SHAKE_TICKS = 26;
+    private static final int STILLPOINT_COLLAPSE_SHAKE_TICKS = 30;
 
     private static int pulseTicks;
     private static int shakeTicks;
@@ -39,9 +44,30 @@ public final class HearthBoundaryEffects {
     private HearthBoundaryEffects() {
     }
 
+    public static void triggerStillpointCharge(int remainingTicks) {
+        shakeTicks = Math.max(shakeTicks, Math.min(
+                STILLPOINT_CHARGE_SHAKE_TICKS, remainingTicks));
+        shakeDuration = STILLPOINT_CHARGE_SHAKE_TICKS;
+    }
+
+    public static void triggerStillpointFormation() {
+        shakeTicks = STILLPOINT_FORMATION_SHAKE_TICKS;
+        shakeDuration = STILLPOINT_FORMATION_SHAKE_TICKS;
+    }
+
     public static void trigger(HearthBoundaryEffectPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getSoundManager() == null) {
+            return;
+        }
+        if (payload.effectType() >= HearthBoundaryEffectPayload.STILLPOINT_BREAK_ONE
+                && payload.effectType()
+                <= HearthBoundaryEffectPayload.STILLPOINT_BREAK_FINAL) {
+            int use = payload.effectType()
+                    - HearthBoundaryEffectPayload.STILLPOINT_BREAK_ONE + 1;
+            shakeTicks = use >= 3 ? STILLPOINT_COLLAPSE_SHAKE_TICKS : 12;
+            shakeDuration = shakeTicks;
+            StillpointAmbientSound.triggerCoreBreak(use);
             return;
         }
         if (payload.effectType() == HearthBoundaryEffectPayload.WARNING) {
@@ -151,6 +177,45 @@ public final class HearthBoundaryEffects {
             MasterArchitectFloodClient.clearRadioDialogue();
             return;
         }
+        if (payload.effectType()
+                == HearthBoundaryEffectPayload.AGGREGATE_FORMATION_RUMBLE) {
+            shakeTicks = AGGREGATE_FORMATION_SHAKE_TICKS;
+            shakeDuration = AGGREGATE_FORMATION_SHAKE_TICKS;
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.AGGREGATE_IMPACT) {
+            shakeTicks = AGGREGATE_IMPACT_SHAKE_TICKS;
+            shakeDuration = AGGREGATE_IMPACT_SHAKE_TICKS;
+            return;
+        }
+        if (payload.effectType() >= HearthBoundaryEffectPayload.AGGREGATE_DEPOSIT_DIAGNOSTIC
+                && payload.effectType()
+                <= HearthBoundaryEffectPayload.AGGREGATE_RESOLVED_DIAGNOSTIC) {
+            int line = payload.effectType()
+                    - HearthBoundaryEffectPayload.AGGREGATE_DEPOSIT_DIAGNOSTIC;
+            var sound = switch (line) {
+                case 1 -> ModSounds.AGGREGATE_OSSUARY_TTS.get();
+                case 2 -> ModSounds.AGGREGATE_GESTATION_TTS.get();
+                case 3 -> ModSounds.AGGREGATE_RESOLVED_TTS.get();
+                default -> ModSounds.AGGREGATE_DEPOSIT_TTS.get();
+            };
+            String key = switch (line) {
+                case 1 -> "ui.frozendawn.suit.aggregate_ossuary";
+                case 2 -> "ui.frozendawn.suit.aggregate_gestation";
+                case 3 -> "ui.frozendawn.suit.aggregate_resolved";
+                default -> "ui.frozendawn.suit.aggregate_deposit";
+            };
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(key);
+            return;
+        }
+        if (payload.effectType() == HearthBoundaryEffectPayload.STILLPOINT_FIELD_DIAGNOSTIC) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.STILLPOINT_FIELD_TTS.get(), 1.0F, 1.0F));
+            MasterArchitectFloodClient.showSuitDialogue(
+                    "ui.frozendawn.suit.stillpoint_field");
+            return;
+        }
         if (payload.effectType() != HearthBoundaryEffectPayload.ORSATHAE) {
             return;
         }
@@ -220,7 +285,8 @@ public final class HearthBoundaryEffects {
     @SubscribeEvent
     public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (shakeTicks <= 0 || minecraft.level == null) {
+        if (shakeTicks <= 0 || minecraft.level == null
+                || !com.frozendawn.config.FrozenDawnConfig.ENABLE_FLOOD_SCREEN_EFFECTS.get()) {
             return;
         }
         float remaining = shakeTicks / (float) Math.max(1, shakeDuration);
@@ -228,11 +294,24 @@ public final class HearthBoundaryEffects {
         float magnitude = shakeDuration == MAEVE_SHAKE_DURATION_TICKS
                 ? 2.35F : shakeDuration == MAEVE_DEATH_SHAKE_DURATION_TICKS
                         ? 4.8F : shakeDuration == BLOOM_IMPACT_SHAKE_TICKS
-                        ? 5.2F : rescueTicks > 0 ? 0.55F : 1.0F;
+                        ? 5.2F : shakeDuration == AGGREGATE_IMPACT_SHAKE_TICKS
+                        ? 3.8F : rescueTicks > 0 ? 0.55F : 1.0F;
         if (shakeDuration == BLOOM_RUMBLE_SHAKE_TICKS) {
             float progress = 1.0F - remaining;
             strength = 0.25F + progress * 0.75F;
             magnitude = 0.25F + progress * 1.35F;
+        }
+        if (shakeDuration == AGGREGATE_FORMATION_SHAKE_TICKS) {
+            float progress = 1.0F - remaining;
+            strength = 0.18F + progress * 0.82F;
+            magnitude = 0.3F + progress * 2.0F;
+        }
+        if (shakeDuration == STILLPOINT_CHARGE_SHAKE_TICKS) {
+            float progress = 1.0F - remaining;
+            strength = 0.16F + progress * 0.84F;
+            magnitude = 0.18F + progress * 0.72F;
+        } else if (shakeDuration == STILLPOINT_FORMATION_SHAKE_TICKS) {
+            magnitude = 1.65F;
         }
         double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);

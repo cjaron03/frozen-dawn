@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
@@ -35,23 +36,38 @@ public final class UndoneSpawner {
             double spawnChance = BloomGrowthPolicy.undoneSpawnChance(
                     FrozenDawnConfig.UNDONE_SPAWN_CHANCE_PER_CHECK.get(),
                     density);
-            if (player.isSpectator() || !player.isAlive()
-                    || level.random.nextDouble() >= spawnChance) {
+            if (StillpointPolicy.isSuppressed(level, player.blockPosition())) {
+                spawnChance *= 0.20D;
+            }
+            if (player.isSpectator() || !player.isAlive()) {
                 continue;
             }
             if (hasNearbyUndone(level, player.blockPosition(), density)) {
+                continue;
+            }
+            if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                    PostMaeveEncounterType.UNDONE, spawnChance)) {
                 continue;
             }
             BlockPos spawnPos = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                     level, player, level.random, 40, 72, 28,
                     LateThreatSpawnHelper.NO_LIGHT_LIMIT);
             if (spawnPos == null || !level.hasChunkAt(spawnPos)) {
+                PostMaeveEncounterDirector.blockedPlayer(level, player,
+                        PostMaeveEncounterType.UNDONE,
+                        "no loaded hybrid spawn position");
                 continue;
             }
             if (spawn(level, spawnPos) != null) {
+                PostMaeveEncounterDirector.successPlayer(level, player,
+                        PostMaeveEncounterType.UNDONE);
                 FrozenDawn.LOGGER.info(
                         "[Undone] Naturally spawned near {} density={} chance={}",
                         player.getName().getString(), density, spawnChance);
+            } else {
+                PostMaeveEncounterDirector.blockedPlayer(level, player,
+                        PostMaeveEncounterType.UNDONE,
+                        "entity creation or insertion failed");
             }
         }
     }

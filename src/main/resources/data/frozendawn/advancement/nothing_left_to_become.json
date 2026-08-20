@@ -1,0 +1,13 @@
+{
+  "parent": "frozendawn:convergence",
+  "display": {
+    "icon": { "id": "frozendawn:inert_convergence_core" },
+    "title": { "translate": "advancement.frozendawn.nothing_left_to_become.title" },
+    "description": { "translate": "advancement.frozendawn.nothing_left_to_become.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": { "impossible": { "trigger": "minecraft:impossible" } }
+}

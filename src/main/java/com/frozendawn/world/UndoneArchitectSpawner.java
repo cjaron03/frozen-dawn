@@ -1,6 +1,7 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.bloom.BloomGrowthPolicy;
 import com.frozendawn.config.FrozenDawnConfig;
@@ -35,9 +36,15 @@ public final class UndoneArchitectSpawner {
             double spawnChance = BloomGrowthPolicy.undoneSpawnChance(
                     FrozenDawnConfig.UNDONE_ARCHITECT_SPAWN_CHANCE_PER_CHECK.get(),
                     density);
+            if (StillpointPolicy.isSuppressed(level, player.blockPosition())) {
+                spawnChance *= 0.20D;
+            }
             if (!player.isAlive() || player.isSpectator()
-                    || level.random.nextDouble() >= spawnChance
                     || hasNearby(level, player.blockPosition())) {
+                continue;
+            }
+            if (!PostMaeveEncounterDirector.rollPlayer(level, player,
+                    PostMaeveEncounterType.UNDONE_ARCHITECT, spawnChance)) {
                 continue;
             }
             BlockPos pos = LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
@@ -46,10 +53,20 @@ public final class UndoneArchitectSpawner {
             if (pos != null && level.hasChunkAt(pos)) {
                 UndoneArchitectEntity spawned = spawn(level, pos);
                 if (spawned != null) {
+                    PostMaeveEncounterDirector.successPlayer(level, player,
+                            PostMaeveEncounterType.UNDONE_ARCHITECT);
                     FrozenDawn.LOGGER.info(
                             "[UndoneArchitect] Naturally spawned near {} density={} chance={}",
                             player.getName().getString(), density, spawnChance);
+                } else {
+                    PostMaeveEncounterDirector.blockedPlayer(level, player,
+                            PostMaeveEncounterType.UNDONE_ARCHITECT,
+                            "entity creation or insertion failed");
                 }
+            } else {
+                PostMaeveEncounterDirector.blockedPlayer(level, player,
+                        PostMaeveEncounterType.UNDONE_ARCHITECT,
+                        "no loaded hybrid spawn position");
             }
         }
     }

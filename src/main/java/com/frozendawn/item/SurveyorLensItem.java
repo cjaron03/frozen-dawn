@@ -1,9 +1,12 @@
 package com.frozendawn.item;
 
+import com.frozendawn.aggregate.AggregateSavedData;
+import com.frozendawn.aggregate.AggregateStage;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthSurveyPolicy;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
+import net.minecraft.core.BlockPos;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -37,7 +40,9 @@ public class SurveyorLensItem extends Item {
 
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
             if (PostMaeveWorldState.isErased(serverLevel)) {
-                displayPostMaeveReading(serverPlayer);
+                if (!displayAggregateReading(serverPlayer)) {
+                    displayPostMaeveReading(serverPlayer);
+                }
                 serverPlayer.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
                 return InteractionResultHolder.sidedSuccess(stack, false);
             }
@@ -105,6 +110,61 @@ public class SurveyorLensItem extends Item {
                 .withStyle(ChatFormatting.DARK_GRAY), true);
         player.playNotifySound(ModSounds.RADIO_STATIC_AMBIENT.get(),
                 SoundSource.MASTER, 0.24F, 0.62F);
+    }
+
+    private boolean displayAggregateReading(ServerPlayer player) {
+        AggregateSavedData data = AggregateSavedData.get(player.getServer());
+        AggregateStage stage = data.stage();
+        if (stage.ordinal() < AggregateStage.RESIDUE.ordinal()) {
+            return false;
+        }
+        BlockPos anchor = data.ossuaryPos().orElse(null);
+        String direction = anchor == null ? "indeterminate"
+                : describeDirection(player.getX(), player.getZ(), anchor);
+        int distance = anchor == null ? 0 : (int) Math.sqrt(anchor.distToCenterSqr(
+                player.getX(), player.getY(), player.getZ()));
+        String key = switch (stage) {
+            case RESIDUE -> "message.frozendawn.surveyor_lens.aggregate.residue";
+            case DEPOSIT -> "message.frozendawn.surveyor_lens.aggregate.deposit";
+            case OSSUARY -> "message.frozendawn.surveyor_lens.aggregate.ossuary";
+            case GESTATION, AWAKENING_ELIGIBLE ->
+                    "message.frozendawn.surveyor_lens.aggregate.gestation";
+            case ACTIVE -> "message.frozendawn.surveyor_lens.aggregate.active";
+            case RESOLVED -> "message.frozendawn.surveyor_lens.aggregate.resolved";
+            default -> null;
+        };
+        if (key == null) return false;
+        Component reading;
+        if (stage.ordinal() < AggregateStage.OSSUARY.ordinal()) {
+            reading = Component.translatable(key, direction);
+        } else if (stage == AggregateStage.OSSUARY || stage == AggregateStage.ACTIVE) {
+            reading = Component.translatable(key, deterministicMass(data), distance, direction);
+        } else if (stage == AggregateStage.RESOLVED) {
+            reading = Component.translatable(key, distance, direction);
+        } else {
+            reading = Component.translatable(key, distance, direction);
+        }
+        player.displayClientMessage(reading.copy().withStyle(ChatFormatting.GRAY), true);
+        player.playNotifySound(ModSounds.RADIO_STATIC_HEAVY.get(),
+                SoundSource.MASTER, 0.38F, 0.54F);
+        return true;
+    }
+
+    private static int deterministicMass(AggregateSavedData data) {
+        return 17_800 + (int) Math.floorMod(data.ossuarySeed(), 1_401L);
+    }
+
+    private static String describeDirection(double originX, double originZ,
+                                            net.minecraft.core.BlockPos target) {
+        double dx = target.getX() + 0.5D - originX;
+        double dz = target.getZ() + 0.5D - originZ;
+        String[] directions = {
+                "east", "southeast", "south", "southwest",
+                "west", "northwest", "north", "northeast"
+        };
+        int index = Math.floorMod((int) Math.round(
+                Math.atan2(dz, dx) / (Math.PI / 4.0D)), directions.length);
+        return directions[index];
     }
 
     private void displayHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {

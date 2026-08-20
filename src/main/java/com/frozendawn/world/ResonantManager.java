@@ -1,5 +1,6 @@
 package com.frozendawn.world;
 
+import com.frozendawn.aggregate.AggregatePressureHandler;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.ResonantEntity;
 import com.frozendawn.entity.ResonantPhaseController;
@@ -50,6 +51,7 @@ public final class ResonantManager {
         ResonantEntity entity = ModEntities.RESONANT.get().create(
                 level, null, concealed, MobSpawnType.COMMAND, true, false);
         if (entity == null) return null;
+        AggregatePressureHandler.markIgnored(entity);
         entity.setActivityState(state);
         if (state == ResonantState.STALKING) {
             entity.forceMarkedTarget(player);

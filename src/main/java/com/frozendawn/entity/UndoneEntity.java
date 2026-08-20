@@ -1,5 +1,6 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModEntities;
@@ -509,6 +510,10 @@ public class UndoneEntity extends Monster {
         if (!(level() instanceof ServerLevel serverLevel) || graspTarget == null
                 || !(serverLevel.getEntity(graspTarget) instanceof LivingEntity target)
                 || !isValidTarget(target) || distanceToSqr(target) > 196.0D) {
+            releaseGrasp(false);
+            return;
+        }
+        if (StillpointPolicy.isSuppressed(serverLevel, target.blockPosition())) {
             releaseGrasp(false);
             return;
         }

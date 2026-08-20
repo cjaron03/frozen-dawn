@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Aggregate Geometry Inspection</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #101212; color: #e4e8e5; overflow: hidden; }
+    canvas { width: 100vw; height: 100vh; display: block; }
+    aside { position: fixed; inset: 12px auto auto 12px; width: 290px; padding: 12px;
+      background: rgba(16,18,18,.92); border: 1px solid #59605d; }
+    h1 { margin: 0 0 9px; font-size: 15px; font-weight: 650; }
+    label { display: grid; grid-template-columns: 92px 1fr; align-items: center;
+      gap: 8px; margin: 7px 0; font-size: 12px; }
+    select, input { width: 100%; }
+    .traits { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 10px; }
+    .traits label { display: flex; gap: 5px; margin: 0; }
+    .traits input { width: auto; }
+    #status { margin-top: 9px; color: #aeb8b3; font: 11px ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<aside>
+  <h1>Aggregate shipped-asset inspection</h1>
+  <label>View <select id="angle"><option value="35">three-quarter</option><option value="0">front</option><option value="90">side</option><option value="180">rear</option></select></label>
+  <label>Distance <select id="distance"><option>8</option><option>24</option><option selected>48</option><option>64</option></select></label>
+  <label>Environment <select id="environment"><option value="day">day</option><option value="night" selected>night</option><option value="snow">snow</option><option value="bloom">Bloom</option></select></label>
+  <label>Orbit <input id="orbit" type="checkbox" checked></label>
+  <div class="traits" id="traits"></div>
+  <div id="status">Loading exported geometry and texture...</div>
+</aside>
+<script>
+const standalone=location.port==='8772'||location.pathname.includes('aggregate-inspection');
+const GEO=standalone?'./aggregate.geo.json':'/src/main/resources/assets/frozendawn/geo/aggregate.geo.json';
+const TEX=standalone?'./aggregate.png':'/src/main/resources/assets/frozendawn/textures/entity/aggregate.png';
+const canvas=document.querySelector('#view'), gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+const status=document.querySelector('#status');
+const lineage=['rimebound','resonant','remnant','frostwrithe','architect','undone'];
+for(const name of lineage){const l=document.createElement('label');l.innerHTML=`<input type="checkbox" data-trait="${name}" checked>${name}`;document.querySelector('#traits').append(l)}
+const vs=`attribute vec3 p;attribute vec2 uv;attribute vec3 n;uniform mat4 mvp;uniform mat4 model;varying vec2 vuv;varying float light;void main(){vec3 nn=normalize((model*vec4(n,0.)).xyz);light=.27+max(0.,dot(nn,normalize(vec3(-.4,.8,.25))))*.73;vuv=uv;gl_Position=mvp*vec4(p,1.);}`;
+const fs=`precision mediump float;uniform sampler2D tex;uniform vec3 tint;varying vec2 vuv;varying float light;void main(){vec4 c=texture2D(tex,vuv);if(c.a<.08)discard;gl_FragColor=vec4(c.rgb*light*tint,c.a);}`;
+function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s}
+const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);gl.useProgram(prog);
+const loc={p:gl.getAttribLocation(prog,'p'),uv:gl.getAttribLocation(prog,'uv'),n:gl.getAttribLocation(prog,'n'),mvp:gl.getUniformLocation(prog,'mvp'),model:gl.getUniformLocation(prog,'model'),tint:gl.getUniformLocation(prog,'tint')};
+function mul(a,b){const o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o}
+function ident(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])}
+function trans(x,y,z){const m=ident();m[12]=x;m[13]=y;m[14]=z;return m}
+function rot(x,y,z){x*=Math.PI/180;y*=Math.PI/180;z*=Math.PI/180;const rx=new Float32Array([1,0,0,0,0,Math.cos(x),Math.sin(x),0,0,-Math.sin(x),Math.cos(x),0,0,0,0,1]);const ry=new Float32Array([Math.cos(y),0,-Math.sin(y),0,0,1,0,0,Math.sin(y),0,Math.cos(y),0,0,0,0,1]);const rz=new Float32Array([Math.cos(z),Math.sin(z),0,0,-Math.sin(z),Math.cos(z),0,0,0,0,1,0,0,0,0,1]);return mul(mul(rz,ry),rx)}
+function perspective(fov,aspect,n,f){const q=1/Math.tan(fov*Math.PI/360),m=new Float32Array(16);m[0]=q/aspect;m[5]=q;m[10]=(f+n)/(n-f);m[11]=-1;m[14]=2*f*n/(n-f);return m}
+function lookAt(e,t){let z=norm(sub(e,t)),x=norm(cross([0,1,0],z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,e),-dot(y,e),-dot(z,e),1])}
+const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{const l=Math.hypot(...a)||1;return a.map(v=>v/l)};
+let boneData,texture,mesh,started=performance.now();
+function face(out,a,b,c,d,n,uv){for(const i of [a,b,c,a,c,d])out.p.push(...i);for(let i=0;i<6;i++)out.n.push(...n);out.uv.push(...uv[0],...uv[1],...uv[2],...uv[0],...uv[2],...uv[3])}
+function transformPoint(m,p){return [m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]]}
+function rebuild(){if(!boneData)return;const enabled=new Set([...document.querySelectorAll('[data-trait]:checked')].map(x=>x.dataset.trait));const out={p:[],uv:[],n:[]}, byName=new Map(boneData.map(b=>[b.name,b])),cache=new Map();
+ const matrix=b=>{if(cache.has(b.name))return cache.get(b.name);const pv=b.pivot||[0,0,0],local=mul(mul(trans(...pv.map(v=>v/16)),rot(...(b.rotation||[0,0,0]))),trans(...pv.map(v=>-v/16)));const m=b.parent?mul(matrix(byName.get(b.parent)),local):local;cache.set(b.name,m);return m};
+ for(const b of boneData){if(b.name.startsWith('lineage_')&&!enabled.has(b.name.slice(8)))continue;const m=matrix(b);for(const c of b.cubes||[]){const o=c.origin.map(v=>v/16),s=c.size.map(v=>v/16),x=o[0],y=o[1],z=o[2],X=x+s[0],Y=y+s[1],Z=z+s[2],v=[[x,y,z],[X,y,z],[X,Y,z],[x,Y,z],[x,y,Z],[X,y,Z],[X,Y,Z],[x,Y,Z]].map(p=>transformPoint(m,p));const u=(c.uv?.[0]||0)/256,w=Math.max(3,c.size[0])/256,V=(c.uv?.[1]||0)/256,h=Math.max(3,c.size[1])/256,q=[[u,V+h],[u+w,V+h],[u+w,V],[u,V]];face(out,v[0],v[1],v[2],v[3],[0,0,-1],q);face(out,v[5],v[4],v[7],v[6],[0,0,1],q);face(out,v[4],v[0],v[3],v[7],[-1,0,0],q);face(out,v[1],v[5],v[6],v[2],[1,0,0],q);face(out,v[3],v[2],v[6],v[7],[0,1,0],q);face(out,v[4],v[5],v[1],v[0],[0,-1,0],q)}}
+ mesh={count:out.p.length/3};for(const [k,size] of [['p',3],['uv',2],['n',3]]){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(out[k]),gl.STATIC_DRAW);mesh[k]=b;mesh[k+'Size']=size}status.textContent=`Actual shipped assets • ${boneData.length} bones • ${mesh.count/36} cubes`;}
+function bind(name){gl.bindBuffer(gl.ARRAY_BUFFER,mesh[name]);gl.enableVertexAttribArray(loc[name]);gl.vertexAttribPointer(loc[name],mesh[name+'Size'],gl.FLOAT,false,0,0)}
+function draw(now){resize();const env=document.querySelector('#environment').value,colors={day:[.48,.53,.54],night:[.018,.024,.028],snow:[.37,.42,.44],bloom:[.22,.26,.22]};gl.clearColor(...colors[env],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);if(mesh){bind('p');bind('uv');bind('n');const distance=+document.querySelector('#distance').value,base=+document.querySelector('#angle').value,spin=document.querySelector('#orbit').checked?(now-started)*.0025:0,a=(base+spin)*Math.PI/180;const apparent=Math.max(9,distance);const eye=[Math.sin(a)*apparent,4.8,Math.cos(a)*apparent];const view=lookAt(eye,[0,1.2,1.0]),proj=perspective(70,canvas.width/canvas.height,.1,180),model=ident();gl.uniformMatrix4fv(loc.mvp,false,mul(proj,mul(view,model)));gl.uniformMatrix4fv(loc.model,false,model);gl.uniform3fv(loc.tint,env==='bloom'?[.91,1,.91]:env==='night'?[.8,.88,.91]:[1,1,1]);gl.drawArrays(gl.TRIANGLES,0,mesh.count)}requestAnimationFrame(draw)}
+function resize(){const d=Math.min(2,devicePixelRatio||1),w=innerWidth*d,h=innerHeight*d;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h)}}
+Promise.all([fetch(GEO).then(r=>r.json()),new Promise((ok,no)=>{const i=new Image;i.onload=()=>ok(i);i.onerror=no;i.src=TEX})]).then(([geo,img])=>{boneData=geo['minecraft:geometry'][0].bones;texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);rebuild();requestAnimationFrame(draw)}).catch(e=>status.textContent='Load failed: '+e);
+document.querySelectorAll('select,input').forEach(e=>e.addEventListener('change',()=>e.dataset.trait!==undefined&&rebuild()));
+</script>
+</body>
+</html>

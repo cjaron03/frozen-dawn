@@ -17,6 +17,7 @@ import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
 import com.frozendawn.item.EmergencyO2CartridgeItem;
 import com.frozendawn.item.IceClawsItem;
+import com.frozendawn.item.InertConvergenceCoreItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
 import com.frozendawn.item.LastWitnessItem;
 import com.frozendawn.item.MiteAwayBlockItem;
@@ -101,6 +102,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
     public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
     public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
+    public static final DeferredItem<InertConvergenceCoreItem> INERT_CONVERGENCE_CORE =
+            ITEMS.register("inert_convergence_core", () -> new InertConvergenceCoreItem(
+                    ModBlocks.INERT_CONVERGENCE_CORE.get(), new Item.Properties()
+                    .durability(InertConvergenceCoreItem.MAX_USES)
+                    .rarity(Rarity.EPIC).fireResistant()));
     // Remnant lure blocks intentionally have no item or creative-tab entry.
 
     // --- Items ---

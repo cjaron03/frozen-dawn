@@ -84,7 +84,8 @@ public final class MasterArchitectAuraClient {
     }
 
     public static void handleEvent(MasterArchitectAuraEventPayload payload) {
-        if (PostMaeveClientState.isMaeveErased()) {
+        if (PostMaeveClientState.isMaeveErased()
+                && payload.eventType() != MasterArchitectAuraEventPayload.AGGREGATE_BOLT) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -92,7 +93,8 @@ public final class MasterArchitectAuraClient {
             return;
         }
         switch (payload.eventType()) {
-            case MasterArchitectAuraEventPayload.BOLT -> scheduleThunder(payload);
+            case MasterArchitectAuraEventPayload.BOLT,
+                    MasterArchitectAuraEventPayload.AGGREGATE_BOLT -> scheduleThunder(payload);
             case MasterArchitectAuraEventPayload.ARC -> playArc(payload);
             case MasterArchitectAuraEventPayload.TETHER_SHUDDER,
                     MasterArchitectAuraEventPayload.EXPOSURE_STUTTER ->

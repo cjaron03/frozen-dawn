@@ -52,3 +52,11 @@ Earth becomes a rogue planet. The sun recedes, the world freezes, and survival s
     versionRange="[9,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="required"
+    reason="Animates the Aggregate consequence encounter"
+    versionRange="[4.8.4,5)"
+    ordering="AFTER"
+    side="BOTH"

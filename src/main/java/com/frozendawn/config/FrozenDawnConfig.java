@@ -80,6 +80,26 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_RESONANT;
     public static final ModConfigSpec.DoubleValue RESONANT_EVOLUTION_SHARE_MULTIPLIER;
     public static final ModConfigSpec.IntValue RESONANT_NEARBY_CAP;
+    public static final ModConfigSpec.BooleanValue ENABLE_FROSTWRITHE;
+    public static final ModConfigSpec.DoubleValue FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER;
+    public static final ModConfigSpec.IntValue FROSTWRITHE_NEARBY_CAP;
+    public static final ModConfigSpec.BooleanValue ENABLE_AGGREGATE;
+    public static final ModConfigSpec.IntValue AGGREGATE_RESIDUE_PRESSURE;
+    public static final ModConfigSpec.IntValue AGGREGATE_DEPOSIT_PRESSURE;
+    public static final ModConfigSpec.IntValue AGGREGATE_OSSUARY_PRESSURE;
+    public static final ModConfigSpec.IntValue AGGREGATE_GESTATION_PRESSURE;
+    public static final ModConfigSpec.IntValue AGGREGATE_AWAKENING_PRESSURE;
+    public static final ModConfigSpec.IntValue AGGREGATE_CINEMATIC_HEALTH;
+    public static final ModConfigSpec.IntValue AGGREGATE_NORMAL_HEALTH;
+    public static final ModConfigSpec.IntValue AGGREGATE_BRUTAL_HEALTH;
+    public static final ModConfigSpec.IntValue AGGREGATE_CINEMATIC_OVERFED_CAP;
+    public static final ModConfigSpec.IntValue AGGREGATE_NORMAL_OVERFED_CAP;
+    public static final ModConfigSpec.IntValue AGGREGATE_BRUTAL_OVERFED_CAP;
+    public static final ModConfigSpec.DoubleValue AGGREGATE_TWO_PLAYER_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue AGGREGATE_THREE_PLAYER_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue AGGREGATE_FOUR_PLAYER_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue AGGREGATE_FIVE_PLAYER_MULTIPLIER;
+    public static final ModConfigSpec.IntValue STILLPOINT_RADIUS;
     public static final ModConfigSpec.DoubleValue POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
@@ -366,6 +386,56 @@ public class FrozenDawnConfig {
         RESONANT_NEARBY_CAP = BUILDER
                 .comment("Maximum ordinary Resonants within 64 blocks.")
                 .defineInRange("resonantNearbyCap", 2, 1, 8);
+        ENABLE_FROSTWRITHE = BUILDER
+                .comment("Enable post-Maeve Frostmite colony formation into Frostwrithe encounters.")
+                .define("enableFrostwrithe", true);
+        FROSTWRITHE_EVOLUTION_SHARE_MULTIPLIER = BUILDER
+                .comment("Multiplier for the Frostwrithe share of successful Frostmite spawn rolls.")
+                .defineInRange("frostwritheEvolutionShareMultiplier", 1.0D, 0.0D, 4.0D);
+        FROSTWRITHE_NEARBY_CAP = BUILDER
+                .comment("Maximum assembled Frostwrithe within 64 blocks.")
+                .defineInRange("frostwritheNearbyCap", 1, 1, 4);
+        ENABLE_AGGREGATE = BUILDER
+                .comment("Enable the optional once-per-world post-Maeve Aggregate ecology.")
+                .define("enableAggregate", true);
+        AGGREGATE_RESIDUE_PRESSURE = BUILDER
+                .comment("Convergence pressure required before Aggregate residue appears.")
+                .defineInRange("aggregateResiduePressure", 60, 1, 100_000);
+        AGGREGATE_DEPOSIT_PRESSURE = BUILDER
+                .comment("Convergence pressure required to form the Deposit.")
+                .defineInRange("aggregateDepositPressure", 140, 1, 100_000);
+        AGGREGATE_OSSUARY_PRESSURE = BUILDER
+                .comment("Convergence pressure required to form the Ossuary.")
+                .defineInRange("aggregateOssuaryPressure", 240, 1, 100_000);
+        AGGREGATE_GESTATION_PRESSURE = BUILDER
+                .comment("Convergence pressure required to begin gestation.")
+                .defineInRange("aggregateGestationPressure", 340, 1, 100_000);
+        AGGREGATE_AWAKENING_PRESSURE = BUILDER
+                .comment("Convergence pressure required to arm Aggregate awakening.")
+                .defineInRange("aggregateAwakeningPressure", 400, 1, 100_000);
+        AGGREGATE_CINEMATIC_HEALTH = BUILDER
+                .defineInRange("aggregateCinematicHealth", 500, 1, 100_000);
+        AGGREGATE_NORMAL_HEALTH = BUILDER
+                .defineInRange("aggregateNormalHealth", 700, 1, 100_000);
+        AGGREGATE_BRUTAL_HEALTH = BUILDER
+                .defineInRange("aggregateBrutalHealth", 1_000, 1, 100_000);
+        AGGREGATE_CINEMATIC_OVERFED_CAP = BUILDER
+                .defineInRange("aggregateCinematicOverfedCap", 650, 1, 100_000);
+        AGGREGATE_NORMAL_OVERFED_CAP = BUILDER
+                .defineInRange("aggregateNormalOverfedCap", 900, 1, 100_000);
+        AGGREGATE_BRUTAL_OVERFED_CAP = BUILDER
+                .defineInRange("aggregateBrutalOverfedCap", 1_300, 1, 100_000);
+        AGGREGATE_TWO_PLAYER_MULTIPLIER = BUILDER
+                .defineInRange("aggregateTwoPlayerMultiplier", 1.4D, 1.0D, 10.0D);
+        AGGREGATE_THREE_PLAYER_MULTIPLIER = BUILDER
+                .defineInRange("aggregateThreePlayerMultiplier", 1.8D, 1.0D, 10.0D);
+        AGGREGATE_FOUR_PLAYER_MULTIPLIER = BUILDER
+                .defineInRange("aggregateFourPlayerMultiplier", 2.2D, 1.0D, 10.0D);
+        AGGREGATE_FIVE_PLAYER_MULTIPLIER = BUILDER
+                .defineInRange("aggregateFivePlayerMultiplier", 2.6D, 1.0D, 10.0D);
+        STILLPOINT_RADIUS = BUILDER
+                .comment("Quiet radius created by the placed Stillpoint Core.")
+                .defineInRange("stillpointRadius", 48, 8, 256);
         POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER = BUILDER
                 .comment("Permanent ambient-wind volume multiplier after Maeve is erased.")
                 .defineInRange("postMaeveAmbientVolumeMultiplier", 0.45D, 0.0D, 1.0D);

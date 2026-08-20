@@ -1,5 +1,6 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.aggregate.StillpointPolicy;
 import com.frozendawn.data.RemnantLureSavedData;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
@@ -838,6 +839,10 @@ public final class RemnantEntity extends Monster {
         if (!(level() instanceof ServerLevel server)
                 || !(server.getEntity(grabTargetId()) instanceof ServerPlayer player)
                 || !player.isAlive() || stateTicks() >= RemnantPolicy.GRAB_MAX_TICKS) {
+            releaseGrab();
+            return;
+        }
+        if (StillpointPolicy.isSuppressed(server, player.blockPosition())) {
             releaseGrab();
             return;
         }

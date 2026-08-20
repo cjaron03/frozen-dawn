@@ -44,6 +44,7 @@ import com.frozendawn.homo.HearthWatcherManager;
 import com.frozendawn.homo.HearthDarkeningManager;
 import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.aggregate.AggregateGrowthManager;
 import com.frozendawn.world.UndoneSpawner;
 import com.frozendawn.world.UndoneArchitectSpawner;
 import com.frozendawn.world.BloomboundUndoneSpawner;
@@ -173,6 +174,7 @@ public class WorldTickHandler {
         HearthCombatRosterManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
+        com.frozendawn.aggregate.StillpointFieldManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
@@ -233,6 +235,8 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        com.frozendawn.aggregate.StillpointFieldManager.tick(server);
+        AggregateGrowthManager.tick(overworld);
         BloomboundUndoneSpawner.tick(overworld);
         UndoneSpawner.tick(overworld);
         UndoneArchitectSpawner.tick(overworld);
@@ -436,7 +440,8 @@ public class WorldTickHandler {
             tracker.markRemoved(event.getPos());
             queueArchitectBreakUpdate(serverLevel, event.getPos());
             if (event.getPlayer() instanceof ServerPlayer player) {
-                FrostmiteSpawner.trySpawnInfestedBreak(serverLevel, event.getPos(), serverLevel.getBlockState(event.getPos()), player);
+                FrostmiteSpawner.trySpawnInfestedBreak(
+                        serverLevel, event.getPos(), event.getState(), player);
             }
         }
     }

@@ -1,0 +1,128 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.aggregate",
+        "texture_width": 256,
+        "texture_height": 256,
+        "visible_bounds_width": 7.5,
+        "visible_bounds_height": 4.5,
+        "visible_bounds_offset": [0, 1.5, 0]
+      },
+      "bones": [
+        {"name":"root","pivot":[0,0,0]},
+        {"name":"pelvis_mass","parent":"root","pivot":[0,18,19],"rotation":[-3,4,2],"cubes":[
+          {"origin":[-14,8,8],"size":[28,21,27],"inflate":0.4,"uv":[0,0]},
+          {"origin":[-10,6,26],"size":[21,15,16],"uv":[0,48]},
+          {"origin":[-16,13,17],"size":[7,12,12],"uv":[42,62]}
+        ]},
+        {"name":"thorax","parent":"root","pivot":[0,20,-8],"rotation":[2,-3,-2],"cubes":[
+          {"origin":[-13,9,-25],"size":[27,24,36],"inflate":0.6,"uv":[0,80]},
+          {"origin":[-17,15,-15],"size":[8,13,24],"uv":[54,90]},
+          {"origin":[9,11,-21],"size":[8,17,27],"uv":[82,88]}
+        ]},
+        {"name":"shoulder_mass","parent":"thorax","pivot":[0,24,-18],"rotation":[0,0,4],"cubes":[
+          {"origin":[-20,18,-25],"size":[40,10,16],"uv":[0,0]},
+          {"origin":[-8,26,-24],"size":[18,10,14],"uv":[0,40]}
+        ]},
+        {"name":"neck_mass","parent":"thorax","pivot":[0,20,-23],"rotation":[5,2,0],"cubes":[
+          {"origin":[-8,12,-33],"size":[16,15,13],"inflate":0.25,"uv":[0,80]},
+          {"origin":[-11,17,-29],"size":[22,9,8],"uv":[48,118]}
+        ]},
+        {"name":"mask_face","parent":"neck_mass","pivot":[0,19,-32],"rotation":[-3,-2,1],"cubes":[
+          {"origin":[-10,22,-40],"size":[20,5,8],"inflate":0.2,"uv":[0,148]},
+          {"origin":[-10,15,-39],"size":[3,8,7],"uv":[58,148]},
+          {"origin":[7,14,-39],"size":[3,9,7],"uv":[78,148]},
+          {"origin":[-2,16,-43],"size":[4,8,11],"inflate":0.15,"uv":[98,148]},
+          {"origin":[-8,13,-40],"size":[15,4,8],"rotation":[0,0,-3],"pivot":[0,16,-36],"uv":[0,164]},
+          {"origin":[-7,17,-33],"size":[5,5,2],"uv":[176,204]},
+          {"origin":[2,17,-33],"size":[5,5,2],"uv":[188,204]}
+        ]},
+        {"name":"broken_jaw","parent":"mask_face","pivot":[1,14,-36],"rotation":[8,0,-5],"cubes":[
+          {"origin":[-7,8,-40],"size":[14,6,8],"uv":[64,164]},
+          {"origin":[-5,12,-42],"size":[3,4,3],"uv":[200,204]},
+          {"origin":[1,11,-42],"size":[3,5,3],"uv":[208,204]}
+        ]},
+        {"name":"core_cage","parent":"thorax","pivot":[0,21,-9],"cubes":[
+          {"origin":[-10,13,-19],"size":[3,19,23],"uv":[136,0]},
+          {"origin":[7,12,-18],"size":[3,20,22],"uv":[144,0]},
+          {"origin":[-7,29,-17],"size":[14,3,20],"uv":[152,0]},
+          {"origin":[-8,13,-17],"size":[16,3,20],"uv":[152,28]}
+        ]},
+        {"name":"core_inner","parent":"core_cage","pivot":[0,21,-8],"cubes":[
+          {"origin":[-5,16,-14],"size":[10,11,12],"inflate":0.3,"uv":[208,208]}
+        ]},
+        {"name":"core_membrane","parent":"core_inner","pivot":[0,21,-8],"rotation":[7,11,0],"cubes":[
+          {"origin":[-3,18,-17],"size":[6,7,18],"uv":[196,220]}
+        ]},
+        {"name":"front_left_upper","parent":"root","pivot":[14,20,-19],"rotation":[-10,0,-14],"cubes":[
+          {"origin":[10,7,-24],"size":[10,18,12],"uv":[136,58]}
+        ]},
+        {"name":"front_left_lower","parent":"front_left_upper","pivot":[16,9,-18],"rotation":[8,0,9],"cubes":[
+          {"origin":[12,0,-22],"size":[8,13,10],"uv":[174,58]},
+          {"origin":[10,0,-26],"size":[13,4,17],"uv":[190,54]}
+        ]},
+        {"name":"front_right_upper","parent":"root","pivot":[-13,21,-17],"rotation":[8,0,18],"cubes":[
+          {"origin":[-20,8,-23],"size":[11,18,13],"uv":[136,92]}
+        ]},
+        {"name":"front_right_lower","parent":"front_right_upper","pivot":[-15,10,-17],"rotation":[-5,0,-12],"cubes":[
+          {"origin":[-20,0,-22],"size":[8,14,9],"uv":[178,94]},
+          {"origin":[-23,0,-25],"size":[15,4,16],"uv":[188,92]}
+        ]},
+        {"name":"rear_left_upper","parent":"pelvis_mass","pivot":[14,19,27],"rotation":[10,0,-18],"cubes":[
+          {"origin":[9,8,21],"size":[12,18,14],"uv":[136,130]}
+        ]},
+        {"name":"rear_left_lower","parent":"rear_left_upper","pivot":[16,10,28],"rotation":[-8,0,14],"cubes":[
+          {"origin":[12,0,23],"size":[9,14,11],"uv":[180,132]},
+          {"origin":[10,0,20],"size":[15,4,18],"uv":[186,130]}
+        ]},
+        {"name":"rear_right_upper","parent":"pelvis_mass","pivot":[-14,18,30],"rotation":[-7,0,12],"cubes":[
+          {"origin":[-21,7,23],"size":[12,17,15],"uv":[136,168]}
+        ]},
+        {"name":"rear_right_lower","parent":"rear_right_upper","pivot":[-16,9,30],"rotation":[11,0,-8],"cubes":[
+          {"origin":[-21,0,25],"size":[9,13,11],"uv":[180,170]},
+          {"origin":[-24,0,22],"size":[16,4,19],"uv":[180,168]}
+        ]},
+        {"name":"dragged_residue","parent":"pelvis_mass","pivot":[0,9,37],"rotation":[5,0,0],"cubes":[
+          {"origin":[-9,2,34],"size":[18,10,19],"uv":[64,188]},
+          {"origin":[-6,1,49],"size":[12,6,21],"uv":[108,200]},
+          {"origin":[-3,0,67],"size":[7,4,16],"uv":[148,214]}
+        ]},
+        {"name":"rib_left","parent":"thorax","pivot":[-11,22,-8],"rotation":[0,0,-8],"cubes":[
+          {"origin":[-19,25,-20],"size":[13,3,25],"uv":[64,0]},
+          {"origin":[-20,18,-18],"size":[14,3,22],"uv":[64,32]}
+        ]},
+        {"name":"rib_right","parent":"thorax","pivot":[11,21,-7],"rotation":[0,0,12],"cubes":[
+          {"origin":[6,26,-20],"size":[15,3,25],"uv":[64,60]},
+          {"origin":[6,17,-17],"size":[14,3,22],"uv":[64,92]}
+        ]},
+        {"name":"lineage_rimebound","parent":"shoulder_mass","pivot":[14,29,-17],"rotation":[0,0,15],"cubes":[
+          {"origin":[11,27,-22],"size":[7,15,10],"uv":[176,0]},
+          {"origin":[15,34,-19],"size":[5,13,7],"uv":[202,0]}
+        ]},
+        {"name":"lineage_resonant","parent":"core_cage","pivot":[-9,24,-8],"rotation":[0,0,-18],"cubes":[
+          {"origin":[-15,18,-13],"size":[5,18,8],"uv":[176,34]},
+          {"origin":[-17,15,-11],"size":[3,11,5],"uv":[200,38]}
+        ]},
+        {"name":"lineage_remnant","parent":"pelvis_mass","pivot":[-10,25,20],"rotation":[8,0,-9],"cubes":[
+          {"origin":[-19,22,12],"size":[12,4,22],"uv":[128,218]},
+          {"origin":[-17,27,17],"size":[8,9,13],"uv":[178,218]}
+        ]},
+        {"name":"lineage_frostwrithe","parent":"dragged_residue","pivot":[0,8,44],"cubes":[
+          {"origin":[-12,7,39],"size":[5,5,10],"uv":[176,74]},
+          {"origin":[-4,8,43],"size":[6,5,11],"uv":[198,74]},
+          {"origin":[5,6,38],"size":[5,5,12],"uv":[212,74]}
+        ]},
+        {"name":"lineage_architect","parent":"shoulder_mass","pivot":[-15,29,-14],"rotation":[0,0,-11],"cubes":[
+          {"origin":[-23,27,-21],"size":[11,5,17],"uv":[128,184]},
+          {"origin":[-21,32,-17],"size":[7,8,10],"uv":[172,184]}
+        ]},
+        {"name":"lineage_undone","parent":"pelvis_mass","pivot":[10,26,25],"rotation":[-8,0,10],"cubes":[
+          {"origin":[8,25,21],"size":[5,15,8],"uv":[176,106]},
+          {"origin":[13,22,25],"size":[4,12,6],"uv":[198,108]}
+        ]}
+      ]
+    }
+  ]
+}
