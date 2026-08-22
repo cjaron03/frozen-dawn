@@ -2,10 +2,19 @@ package com.frozendawn.homo;
 
 /** Pure roster and casualty rules for the Master Architect encounter. */
 public final class HearthCombatRosterPolicy {
+    public static final int MAJOR_CONGREGATION_SIZE = 6;
     public static final int MIN_DISPATCHED = 2;
     public static final int MAX_DISPATCHED = 3;
 
     private HearthCombatRosterPolicy() {
+    }
+
+    public static boolean canFreezeMajorRoster(
+            int candidateCount, int livingCandidateCount, int spentCount) {
+        int accountedSlots = Math.max(0, candidateCount) + Math.max(0, spentCount);
+        int resolvedSlots = Math.max(0, livingCandidateCount) + Math.max(0, spentCount);
+        return accountedSlots >= MAJOR_CONGREGATION_SIZE
+                && resolvedSlots >= MAJOR_CONGREGATION_SIZE;
     }
 
     public static int dispatchedCount(int livingResidents) {

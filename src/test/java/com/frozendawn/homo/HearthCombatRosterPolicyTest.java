@@ -9,6 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HearthCombatRosterPolicyTest {
 
     @Test
+    void majorRosterWaitsForAllSixAccountedResidents() {
+        assertTrue(HearthCombatRosterPolicy.canFreezeMajorRoster(6, 6, 0));
+        assertTrue(HearthCombatRosterPolicy.canFreezeMajorRoster(5, 5, 1));
+        assertTrue(HearthCombatRosterPolicy.canFreezeMajorRoster(4, 4, 2));
+        assertFalse(HearthCombatRosterPolicy.canFreezeMajorRoster(5, 5, 0));
+        assertFalse(HearthCombatRosterPolicy.canFreezeMajorRoster(5, 4, 1));
+    }
+
+    @Test
     void onlyPartOfTheCongregationIsDispatched() {
         assertEquals(0, HearthCombatRosterPolicy.dispatchedCount(0));
         assertEquals(0, HearthCombatRosterPolicy.dispatchedCount(1));

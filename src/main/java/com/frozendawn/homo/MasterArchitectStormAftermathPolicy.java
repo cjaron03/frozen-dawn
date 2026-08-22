@@ -2,7 +2,7 @@ package com.frozendawn.homo;
 
 import net.minecraft.util.Mth;
 
-/** Pure timing and survivor-scaling rules for the Master Architect storm collapse. */
+/** Pure timing rules for the Master Architect storm collapse. */
 public final class MasterArchitectStormAftermathPolicy {
     public static final int FULL_EYE_END_TICK = 100;
     public static final int FULL_RUPTURE_END_TICK = 400;
@@ -11,6 +11,14 @@ public final class MasterArchitectStormAftermathPolicy {
     public static final int EMPTY_FADE_TICKS = 200;
 
     private MasterArchitectStormAftermathPolicy() {
+    }
+
+    /**
+     * Survivor strength still shapes the Heart, but the storm's death remains
+     * a complete world event even when the congregation has been destroyed.
+     */
+    public static float spectacleStrength(float fieldStrength) {
+        return 1.0F;
     }
 
     public static Timeline timeline(float fieldStrength) {

@@ -380,7 +380,8 @@ public final class HearthMasterArchitectWeatherManager {
         int elapsed = aftermathElapsed(level, major);
         MasterArchitectStormAftermathPolicy.Timeline timeline =
                 MasterArchitectStormAftermathPolicy.timeline(
-                        major.masterStormAftermathStrength());
+                        MasterArchitectStormAftermathPolicy.spectacleStrength(
+                                major.masterStormAftermathStrength()));
         if (elapsed < timeline.completeTick()) {
             return;
         }
@@ -442,10 +443,8 @@ public final class HearthMasterArchitectWeatherManager {
 
     private static void tickAftermathAuraEvents(
             ServerLevel level, ReturnedHearthSavedData.HearthRecord major) {
-        float fieldStrength = major.masterStormAftermathStrength();
-        if (fieldStrength <= 0.001F) {
-            return;
-        }
+        float fieldStrength = MasterArchitectStormAftermathPolicy
+                .spectacleStrength(major.masterStormAftermathStrength());
         int elapsed = aftermathElapsed(level, major);
         MasterArchitectStormAftermathPolicy.Stage stage =
                 MasterArchitectStormAftermathPolicy.stage(elapsed, fieldStrength);
