@@ -27,6 +27,7 @@ public final class HearthCombatRosterManager {
     private static final double TETHER_CANDIDATE_RANGE_SQUARED = 48.0D * 48.0D;
     private static final Map<UUID, CastWindow> ACTIVE_CASTS = new HashMap<>();
     private static final Set<UUID> ACTIVE_FLOOD_HEARTHS = new HashSet<>();
+    private static final Map<UUID, Long> NEXT_INCOMPLETE_ROSTER_LOG = new HashMap<>();
 
     private static long rostersCreated;
     private static long residentsSpent;
@@ -44,8 +45,49 @@ public final class HearthCombatRosterManager {
         }
 
         if (!hearth.combatRosterInitialized()) {
-            List<ResidentCandidate> candidates = residentCandidates(hearth);
+            // Hostility can begin between the managers' normal reconciliation ticks.
+            // Reconcile every Major-Hearth role before assignments become permanent.
+            HearthPopulationManager.reconcileNow(level);
+            HearthWatcherManager.reconcileNow(level);
+            HearthArchitectManager.reconcileNow(level);
+            hearth = data.hearth(hearthId).orElse(hearth);
+
+            residentCandidates(hearth).stream()
+                    .filter(candidate -> !isLivingMob(level.getEntity(candidate.entityId())))
+                    .map(ResidentCandidate::entityId)
+                    .filter(data::isRecordedCongregationCasualty)
+                    .forEach(entityId -> data.recordPreRosterCasualty(hearthId, entityId));
+            hearth = data.hearth(hearthId).orElse(hearth);
+
+            Set<UUID> spentIds = hearth.combatRoster().entrySet().stream()
+                    .filter(entry -> entry.getValue() == HearthEncounterRole.SPENT)
+                    .map(Map.Entry::getKey)
+                    .collect(java.util.stream.Collectors.toSet());
+            List<ResidentCandidate> candidates = residentCandidates(hearth).stream()
+                    .filter(candidate -> !spentIds.contains(candidate.entityId()))
+                    .toList();
+            int livingCandidateCount = (int) candidates.stream()
+                    .filter(candidate -> isLivingMob(level.getEntity(candidate.entityId())))
+                    .count();
+            if (hearth.type() == HearthSelectionPolicy.HearthType.MAJOR
+                    && !HearthCombatRosterPolicy.canFreezeMajorRoster(
+                            candidates.size(), livingCandidateCount, spentIds.size())) {
+                long nextLog = NEXT_INCOMPLETE_ROSTER_LOG.getOrDefault(hearthId, 0L);
+                if (level.getGameTime() >= nextLog) {
+                    FrozenDawn.LOGGER.info(
+                            "Waiting to initialize Hearth combat roster {}: "
+                                    + "living congregation={}/{} "
+                                    + "(bound candidates={}, pre-roster casualties={})",
+                            shortId(hearthId), livingCandidateCount,
+                            HearthCombatRosterPolicy.MAJOR_CONGREGATION_SIZE,
+                            candidates.size(), spentIds.size());
+                    NEXT_INCOMPLETE_ROSTER_LOG.put(hearthId, level.getGameTime() + 100L);
+                }
+                return;
+            }
             Map<UUID, HearthEncounterRole> assignments = new LinkedHashMap<>();
+            spentIds.forEach(entityId -> assignments.put(
+                    entityId, HearthEncounterRole.SPENT));
             candidates.forEach(candidate -> assignments.put(
                     candidate.entityId(), HearthEncounterRole.RESERVED));
 
@@ -62,11 +104,13 @@ public final class HearthCombatRosterManager {
             }
 
             if (data.initializeCombatRoster(hearthId, assignments)) {
+                NEXT_INCOMPLETE_ROSTER_LOG.remove(hearthId);
                 rostersCreated++;
                 FrozenDawn.LOGGER.info(
-                        "Initialized Hearth combat roster {} with {} dispatched and {} tether reserves",
+                        "Initialized Hearth combat roster {} with {} dispatched, "
+                                + "{} tether reserves, and {} pre-roster casualties",
                         shortId(hearthId), dispatchCount,
-                        Math.max(0, assignments.size() - dispatchCount));
+                        Math.max(0, living.size() - dispatchCount), spentIds.size());
                 hearth = data.hearth(hearthId).orElse(hearth);
             }
         }
@@ -253,6 +297,9 @@ public final class HearthCombatRosterManager {
                 : null;
         boolean permanentCasualty = HearthCombatRosterPolicy.recordsPermanentCasualty(
                 role, player != null);
+        if (permanentCasualty && role == HearthEncounterRole.UNASSIGNED) {
+            data.recordPreRosterCasualty(hearthId, entityId);
+        }
         boolean killedByHeartScavenger = HeartScavengerWaveManager.isHeartScavenger(
                 source.getEntity(), hearthId);
         if (role == HearthEncounterRole.TETHERED) {
@@ -296,6 +343,7 @@ public final class HearthCombatRosterManager {
         casualtiesRecorded = 0L;
         ACTIVE_CASTS.clear();
         ACTIVE_FLOOD_HEARTHS.clear();
+        NEXT_INCOMPLETE_ROSTER_LOG.clear();
     }
 
     public static FloodPopulation floodPopulation(

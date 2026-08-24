@@ -76,6 +76,16 @@ class MasterArchitectFloodPolicyTest {
     }
 
     @Test
+    void destroyedCongregationStillProvidesMinimalThroneHealing() {
+        assertEquals(0.15F,
+                MasterArchitectFloodPolicy.healingStrength(0.0F), 0.0001F);
+        assertEquals(0.50F,
+                MasterArchitectFloodPolicy.healingStrength(0.50F), 0.0001F);
+        assertEquals(1.0F,
+                MasterArchitectFloodPolicy.healingStrength(1.0F), 0.0001F);
+    }
+
+    @Test
     void throneHealingEscalatesByPresetAndPressure() {
         assertEquals(1, MasterArchitectFloodPolicy.healingTier(
                 "default", 1799, 1800, 3600, 1200, 2400));

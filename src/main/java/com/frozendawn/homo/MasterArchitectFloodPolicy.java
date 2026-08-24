@@ -26,6 +26,7 @@ public final class MasterArchitectFloodPolicy {
     public static final float ENTRY_HEALTH_FRACTION = 0.10F;
     public static final float RETREAT_HEALTH_FRACTION = 0.12F;
     public static final float THRONE_EJECTION_HEALTH_FRACTION = 0.50F;
+    public static final float MINIMUM_HEALING_STRENGTH = 0.15F;
     public static final double MEMORY_LOCK_EPSILON = 0.06D;
 
     private MasterArchitectFloodPolicy() {
@@ -112,6 +113,15 @@ public final class MasterArchitectFloodPolicy {
             return 0.04F;
         }
         return 0.06F;
+    }
+
+    /**
+     * A destroyed congregation leaves the throne badly weakened, not inert.
+     * This keeps the Fold mechanically complete even when no residents survive.
+     */
+    public static float healingStrength(float floodStrength) {
+        return Mth.clamp(Math.max(MINIMUM_HEALING_STRENGTH, floodStrength),
+                0.0F, 1.0F);
     }
 
     public static int healingTier(

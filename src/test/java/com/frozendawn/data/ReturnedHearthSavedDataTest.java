@@ -447,6 +447,33 @@ class ReturnedHearthSavedDataTest {
     }
 
     @Test
+    void preRosterCasualtiesPersistAndRemainSpentWhenRosterInitializes() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        UUID casualty = UUID.randomUUID();
+        UUID survivor = UUID.randomUUID();
+
+        assertTrue(state.recordPreRosterCasualty(major.id(), casualty));
+        assertFalse(major.combatRosterInitialized());
+        assertEquals(HearthEncounterRole.SPENT,
+                state.encounterRole(major.id(), casualty));
+
+        ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
+                state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertFalse(restored.combatRosterInitialized());
+        assertEquals(HearthEncounterRole.SPENT,
+                loaded.encounterRole(restored.id(), casualty));
+        assertTrue(loaded.initializeCombatRoster(restored.id(), Map.of(
+                survivor, HearthEncounterRole.DISPATCHED)));
+        assertEquals(HearthEncounterRole.SPENT,
+                loaded.encounterRole(restored.id(), casualty));
+        assertEquals(HearthEncounterRole.DISPATCHED,
+                loaded.encounterRole(restored.id(), survivor));
+        assertFalse(loaded.recordPreRosterCasualty(restored.id(), UUID.randomUUID()));
+    }
+
+    @Test
     void legacyUntetheredBystandersMigrateToActiveReserves() {
         ReturnedHearthSavedData state = selectedState(1000L);
         ReturnedHearthSavedData.HearthRecord major = major(state);
@@ -472,6 +499,8 @@ class ReturnedHearthSavedDataTest {
                 player, major.id(), casualty, 8000L));
         assertFalse(state.recordCongregationCasualty(
                 player, major.id(), casualty, 9000L));
+        assertTrue(state.isRecordedCongregationCasualty(casualty));
+        assertFalse(state.isRecordedCongregationCasualty(UUID.randomUUID()));
 
         ReturnedHearthSavedData loaded = ReturnedHearthSavedData.load(
                 state.save(new CompoundTag(), null), null);

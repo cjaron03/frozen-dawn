@@ -688,13 +688,31 @@ public final class ReturnedHearthSavedData extends SavedData {
         if (hearth == null || hearth.combatRosterInitialized || assignments == null) {
             return false;
         }
+        Map<UUID, HearthEncounterRole> preRosterCasualties = new LinkedHashMap<>();
+        hearth.combatRoster.forEach((entityId, role) -> {
+            if (role == HearthEncounterRole.SPENT) {
+                preRosterCasualties.put(entityId, role);
+            }
+        });
         hearth.combatRoster.clear();
+        hearth.combatRoster.putAll(preRosterCasualties);
         assignments.forEach((entityId, role) -> {
             if (entityId != null && role != null && role != HearthEncounterRole.UNASSIGNED) {
-                hearth.combatRoster.put(entityId, role);
+                hearth.combatRoster.putIfAbsent(entityId, role);
             }
         });
         hearth.combatRosterInitialized = true;
+        setDirty();
+        return true;
+    }
+
+    public boolean recordPreRosterCasualty(UUID hearthId, UUID entityId) {
+        HearthRecord hearth = hearth(hearthId).orElse(null);
+        if (hearth == null || entityId == null || hearth.combatRosterInitialized
+                || hearth.combatRoster.containsKey(entityId)) {
+            return false;
+        }
+        hearth.combatRoster.put(entityId, HearthEncounterRole.SPENT);
         setDirty();
         return true;
     }
@@ -776,6 +794,11 @@ public final class ReturnedHearthSavedData extends SavedData {
         }
         setDirty();
         return true;
+    }
+
+    public boolean isRecordedCongregationCasualty(UUID entityId) {
+        return entityId != null && playerMemories.values().stream()
+                .anyMatch(memory -> memory.congregationCasualtyIds.contains(entityId));
     }
 
     public int clearPopulationBindingsForDebug(UUID hearthId) {

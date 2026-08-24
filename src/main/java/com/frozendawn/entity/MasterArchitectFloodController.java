@@ -336,7 +336,8 @@ final class MasterArchitectFloodController {
                     FrozenDawnConfig.MIND_HEAL_TIER_THREE_MULTIPLIER.get().floatValue(),
                     FrozenDawnConfig.BRUTAL_MIND_HEAL_TIER_THREE_MULTIPLIER.get()
                             .floatValue());
-            float amount = copy.getMaxHealth() * rate * tierMultiplier * floodStrength;
+            float amount = copy.getMaxHealth() * rate * tierMultiplier
+                    * MasterArchitectFloodPolicy.healingStrength(floodStrength);
             float ejectionHealth = copy.getMaxHealth()
                     * MasterArchitectFloodPolicy.THRONE_EJECTION_HEALTH_FRACTION;
             amount = Math.min(amount, Math.max(0.0F, ejectionHealth - copy.getHealth()));

@@ -48,7 +48,8 @@ final class MasterArchitectStormDebrisManager {
             return;
         }
 
-        float strength = hearth.masterStormAftermathStrength();
+        float strength = MasterArchitectStormAftermathPolicy
+                .spectacleStrength(hearth.masterStormAftermathStrength());
         MasterArchitectStormAftermathPolicy.Stage stage =
                 MasterArchitectStormAftermathPolicy.stage(elapsedTicks, strength);
         if (stage == MasterArchitectStormAftermathPolicy.Stage.STILLNESS

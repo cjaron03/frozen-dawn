@@ -31,7 +31,7 @@ class MasterArchitectStormAftermathPolicyTest {
     }
 
     @Test
-    void emptyCongregationOnlyFadesBeforeStillness() {
+    void emptyCongregationFaceFadesButWeatherKeepsFullStrength() {
         MasterArchitectStormAftermathPolicy.Timeline timeline =
                 MasterArchitectStormAftermathPolicy.timeline(0.0F);
 
@@ -42,5 +42,7 @@ class MasterArchitectStormAftermathPolicyTest {
                 MasterArchitectStormAftermathPolicy.stage(20, 0.0F));
         assertEquals(MasterArchitectStormAftermathPolicy.Stage.STILLNESS,
                 MasterArchitectStormAftermathPolicy.stage(200, 0.0F));
+        assertEquals(1.0F,
+                MasterArchitectStormAftermathPolicy.spectacleStrength(0.0F), 0.0001F);
     }
 }
