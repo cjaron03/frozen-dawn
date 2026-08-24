@@ -17,6 +17,8 @@ import net.minecraft.world.level.Level;
 /** Single-use emergency oxygen reserve. It restores air, never suit integrity. */
 public final class EmergencyO2CartridgeItem extends Item {
 
+    private static final int ACTIVATION_COOLDOWN_TICKS = 80;
+
     public EmergencyO2CartridgeItem(Properties properties) {
         super(properties);
     }
@@ -29,6 +31,9 @@ public final class EmergencyO2CartridgeItem extends Item {
             return InteractionResultHolder.sidedSuccess(stack, true);
         }
         if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResultHolder.fail(stack);
+        }
+        if (serverPlayer.getCooldowns().isOnCooldown(this)) {
             return InteractionResultHolder.fail(stack);
         }
 
@@ -54,6 +59,7 @@ public final class EmergencyO2CartridgeItem extends Item {
         }
 
         player.awardStat(Stats.ITEM_USED.get(this));
+        serverPlayer.getCooldowns().addCooldown(this, ACTIVATION_COOLDOWN_TICKS);
         if (!player.getAbilities().instabuild) {
             stack.shrink(1);
         }
