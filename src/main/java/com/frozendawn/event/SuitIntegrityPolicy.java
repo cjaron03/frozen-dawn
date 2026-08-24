@@ -7,6 +7,7 @@ public final class SuitIntegrityPolicy {
 
     public static final int EMERGENCY_REFILL_CAP_TICKS = 1200;
     public static final float EMERGENCY_REFILL_FRACTION = 0.35F;
+    public static final float MAX_FALL_PUNCTURE_CHANCE = 0.30F;
 
     public enum SourceKind {
         MASTER_ARCHITECT,
@@ -45,7 +46,7 @@ public final class SuitIntegrityPolicy {
             case FALL -> Mth.clamp(
                     Math.max(0.0F, fallDistance) * Math.max(0.0F, fallChancePerBlock),
                     0.0F,
-                    0.60F);
+                    MAX_FALL_PUNCTURE_CHANCE);
         };
     }
 

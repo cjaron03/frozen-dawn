@@ -316,22 +316,22 @@ public class FrozenDawnConfig {
                 .defineInRange("masterAuraStormResponseSeconds", 5.0D, 0.5D, 30.0D);
         SUIT_PUNCTURE_MASTER_CHANCE = BUILDER
                 .comment("Chance that a Master Architect melee hit punctures a sealed EVA suit.")
-                .defineInRange("suitPunctureMasterChance", 0.10D, 0.0D, 1.0D);
+                .defineInRange("suitPunctureMasterChance", 0.06D, 0.0D, 1.0D);
         SUIT_PUNCTURE_ARCHITECT_CHANCE = BUILDER
                 .comment("Chance that a base Architect melee hit punctures a sealed EVA suit.")
-                .defineInRange("suitPunctureArchitectChance", 0.33D, 0.0D, 1.0D);
+                .defineInRange("suitPunctureArchitectChance", 0.12D, 0.0D, 1.0D);
         SUIT_PUNCTURE_MIMIC_AMBUSH_CHANCE = BUILDER
                 .comment("Chance that a Mimic's first ambush hit punctures a sealed EVA suit.")
-                .defineInRange("suitPunctureMimicAmbushChance", 0.65D, 0.0D, 1.0D);
+                .defineInRange("suitPunctureMimicAmbushChance", 0.30D, 0.0D, 1.0D);
         SUIT_PUNCTURE_PHYSICAL_CHANCE = BUILDER
                 .comment("Baseline puncture chance for whitelisted physical damage.")
-                .defineInRange("suitPuncturePhysicalChance", 0.20D, 0.0D, 1.0D);
+                .defineInRange("suitPuncturePhysicalChance", 0.05D, 0.0D, 1.0D);
         SUIT_PUNCTURE_FALL_CHANCE_PER_BLOCK = BUILDER
-                .comment("Puncture chance added per block of fall distance, capped at 60%.")
-                .defineInRange("suitPunctureFallChancePerBlock", 0.03D, 0.0D, 0.20D);
+                .comment("Puncture chance added per block of fall distance, capped at 30%.")
+                .defineInRange("suitPunctureFallChancePerBlock", 0.01D, 0.0D, 0.20D);
         SUIT_PUNCTURE_GRACE_TICKS = BUILDER
                 .comment("Ticks after a puncture during which another puncture cannot occur.")
-                .defineInRange("suitPunctureGraceTicks", 100, 1, 1200);
+                .defineInRange("suitPunctureGraceTicks", 300, 1, 1200);
         SUIT_PUNCTURE_MAX_CONCURRENT = BUILDER
                 .comment("Maximum concurrent EVA suit punctures. Hard-capped at two.")
                 .defineInRange("suitPunctureMaxConcurrent", 2, 1, 2);

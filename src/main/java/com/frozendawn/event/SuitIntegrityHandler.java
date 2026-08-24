@@ -79,6 +79,14 @@ public final class SuitIntegrityHandler {
             return;
         }
 
+        Entity directSource = source.getDirectEntity();
+        Entity attacker = directSource != null ? directSource : source.getEntity();
+        if (!state.claimPunctureRoll(
+                player.level().getGameTime(),
+                attacker != null ? attacker.getUUID() : null)) {
+            return;
+        }
+
         SuitIntegrityPolicy.SourceKind kind = classifySource(source);
         float chance = SuitIntegrityPolicy.chance(
                 kind,

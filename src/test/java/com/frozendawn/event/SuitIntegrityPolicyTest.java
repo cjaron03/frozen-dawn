@@ -1,25 +1,39 @@
 package com.frozendawn.event;
 
+import com.frozendawn.data.SuitIntegrity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class SuitIntegrityPolicyTest {
 
     @Test
     void sourceChancesUseConfiguredValues() {
-        assertEquals(0.45F, chance(SuitIntegrityPolicy.SourceKind.MASTER_ARCHITECT));
-        assertEquals(0.33F, chance(SuitIntegrityPolicy.SourceKind.ARCHITECT_HEAVY));
-        assertEquals(0.65F, chance(SuitIntegrityPolicy.SourceKind.MIMIC_AMBUSH));
-        assertEquals(0.20F, chance(SuitIntegrityPolicy.SourceKind.ORDINARY_PHYSICAL));
+        assertEquals(0.06F, chance(SuitIntegrityPolicy.SourceKind.MASTER_ARCHITECT));
+        assertEquals(0.12F, chance(SuitIntegrityPolicy.SourceKind.ARCHITECT_HEAVY));
+        assertEquals(0.30F, chance(SuitIntegrityPolicy.SourceKind.MIMIC_AMBUSH));
+        assertEquals(0.05F, chance(SuitIntegrityPolicy.SourceKind.ORDINARY_PHYSICAL));
     }
 
     @Test
-    void fallChanceScalesAndCapsAtSixtyPercent() {
-        assertEquals(0.30F, chance(SuitIntegrityPolicy.SourceKind.FALL, 10.0F), 0.0001F);
-        assertEquals(0.60F, chance(SuitIntegrityPolicy.SourceKind.FALL, 100.0F), 0.0001F);
+    void fallChanceScalesAndCapsAtThirtyPercent() {
+        assertEquals(0.10F, chance(SuitIntegrityPolicy.SourceKind.FALL, 10.0F), 0.0001F);
+        assertEquals(0.30F, chance(SuitIntegrityPolicy.SourceKind.FALL, 100.0F), 0.0001F);
+    }
+
+    @Test
+    void oneAttackerImpactCannotRollTwice() {
+        SuitIntegrity state = new SuitIntegrity();
+        UUID mimic = UUID.randomUUID();
+
+        assertTrue(state.claimPunctureRoll(120L, mimic));
+        assertFalse(state.claimPunctureRoll(120L, mimic));
+        assertTrue(state.claimPunctureRoll(121L, mimic));
+        assertTrue(state.claimPunctureRoll(121L, UUID.randomUUID()));
+        assertTrue(state.claimPunctureRoll(121L, null));
     }
 
     @Test
@@ -51,6 +65,6 @@ class SuitIntegrityPolicyTest {
 
     private static float chance(SuitIntegrityPolicy.SourceKind source, float fallDistance) {
         return SuitIntegrityPolicy.chance(
-                source, fallDistance, 0.45F, 0.33F, 0.65F, 0.20F, 0.03F);
+                source, fallDistance, 0.06F, 0.12F, 0.30F, 0.05F, 0.01F);
     }
 }
