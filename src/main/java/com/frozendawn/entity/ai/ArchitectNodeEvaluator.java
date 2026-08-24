@@ -212,11 +212,11 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         BlockPos above = nodePos.above();
         BlockPos twoAbove = nodePos.above(2);
 
-        if (!this.currentContext.getBlockState(above).isAir()) return count;
+        if (!isDryPassage(above)) return count;
         // Allow scaffold-up even if twoAbove is a breakable block (entity will mine headroom).
         // This handles roofs overhanging walls — the architect can pillar up AND breach the ceiling.
         BlockState twoAboveState = this.currentContext.getBlockState(twoAbove);
-        if (!twoAboveState.isAir()) {
+        if (!isDryPassage(twoAbove)) {
             if (!allowBreach) return count;
             if (ArchitectBreakPolicy.isProtectedBlock(twoAboveState)) return count;
             float hardness = twoAboveState.getDestroySpeed(this.currentContext.level(), twoAbove);
@@ -232,7 +232,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         // WALKABLE → OPEN during node expansion).
         boolean onPlannedScaffold = !onSolidGround
                 && node.costMalus >= SCAFFOLD_COST
-                && this.currentContext.getBlockState(nodePos).isAir();
+                && isDryPassage(nodePos);
 
         if (!onSolidGround && !onPlannedScaffold) return count;
 
@@ -296,7 +296,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         // WALKABLE → OPEN during node expansion).
         boolean onPlannedBridge = !onSolidGround
                 && node.costMalus >= BRIDGE_COST
-                && this.currentContext.getBlockState(nodePos).isAir();
+                && isDryPassage(nodePos);
 
         if (!onSolidGround && !onPlannedBridge) return count;
 
@@ -308,7 +308,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
             BlockState belowNeighbor = this.currentContext.getBlockState(neighbor.below());
 
             // Only bridge over air gaps — solid neighbors handled by vanilla
-            if (!neighborState.isAir()) continue;
+            if (!isDryPassage(neighbor)) continue;
             // If there's ground below neighbor, vanilla walking handles it
             if (belowNeighbor.isSolid()) continue;
 
@@ -322,7 +322,7 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
             if (!isWithinBridgeSpan(neighbor)) continue;
 
             // Need 2-high clearance for entity to walk through
-            if (!this.currentContext.getBlockState(neighbor.above()).isAir()) continue;
+            if (!isDryPassage(neighbor.above())) continue;
 
             Node bridgeNode = this.getNode(neighbor.getX(), neighbor.getY(), neighbor.getZ());
             if (bridgeNode.closed) continue; // Don't modify already-explored nodes
@@ -333,6 +333,12 @@ public class ArchitectNodeEvaluator extends WalkNodeEvaluator {
         }
 
         return count;
+    }
+
+    private boolean isDryPassage(BlockPos pos) {
+        BlockState state = this.currentContext.getBlockState(pos);
+        return ArchitectBreakPolicy.isDryPassableForArchitect(
+                state, this.currentContext.level(), pos);
     }
 
     private boolean isDangerousBelow(BlockPos pos) {

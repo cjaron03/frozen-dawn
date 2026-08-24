@@ -413,7 +413,8 @@ final class ArchitectApproachWalkSupport {
                 WALK_CORRIDOR_LOOKAHEAD_STEPS,
                 WALK_AUTO_JUMP_MIN_VERTICAL_DELTA,
                 WALK_AUTO_JUMP_MAX_HORIZONTAL_SQR,
-                corridorSupport::getPrimaryHorizontalDirection);
+                corridorSupport::getPrimaryHorizontalDirection,
+                this::walkSurfaceY);
         if (motion == null) {
             return false;
         }
@@ -466,6 +467,12 @@ final class ArchitectApproachWalkSupport {
 
     private boolean isLastResortBreakBlock(BlockPos pos) {
         return ArchitectBreakPolicy.isLastResortBreakBlock(architect.level().getBlockState(pos));
+    }
+
+    private double walkSurfaceY(BlockPos pos) {
+        BlockState state = architect.level().getBlockState(pos);
+        return pos.getY() + ArchitectBreakPolicy.traversableSurfaceOffset(
+                state, architect.level(), pos);
     }
 
     private void startWalkCorridorBreak(BlockPos breakTarget) {

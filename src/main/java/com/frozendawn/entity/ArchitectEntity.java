@@ -687,7 +687,12 @@ public class ArchitectEntity extends Monster {
         LivingEntity target = getTarget();
         if (!(target instanceof Player player) || !player.isAlive()
                 || player.isCreative() || player.isSpectator()) {
-            target = level.getNearestPlayer(this, 48.0D);
+            target = level.getNearestPlayer(
+                    getX(), getY(), getZ(), 48.0D,
+                    candidate -> candidate instanceof Player nearby
+                            && nearby.isAlive()
+                            && !nearby.isCreative()
+                            && !nearby.isSpectator());
             if (target instanceof Player nearest
                     && !nearest.isCreative() && !nearest.isSpectator()) {
                 setTarget(nearest);
