@@ -914,7 +914,7 @@ public class ArchitectEntity extends Monster {
                 1.25);
     }
 
-    private boolean canCommitToMelee(LivingEntity target) {
+    boolean canCommitToMelee(LivingEntity target) {
         return ArchitectMeleeEngagement.canCommitToMelee(
                 this,
                 target,

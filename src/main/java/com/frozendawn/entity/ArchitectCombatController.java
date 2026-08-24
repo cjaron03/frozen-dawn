@@ -37,11 +37,10 @@ final class ArchitectCombatController {
         double hDist = target != null ? architect.horizontalDistanceTo(target) : Double.MAX_VALUE;
         double vDist = target != null ? architect.verticalDistanceTo(target) : Double.MAX_VALUE;
         float dist3d = target != null ? architect.distanceTo(target) : Float.MAX_VALUE;
-        boolean hasLos = target != null && architect.hasLineOfSight(target);
         if (target == null
                 || hDist > ArchitectEntity.MELEE_COMMIT_HORIZONTAL_RANGE
                 || vDist > ArchitectEntity.MELEE_COMMIT_VERTICAL_RANGE
-                || (!hasLos && hDist > ArchitectEntity.MELEE_COMMIT_LOS_GRACE_RANGE)) {
+                || !architect.canCommitToMelee(target)) {
             architect.clearMeleeCommit();
             architect.triggerReeval();
             return;
