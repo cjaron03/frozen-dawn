@@ -186,7 +186,6 @@ public class ArchitectEntity extends Monster {
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
-    static final double RETREAT_DISTANCE = 16.0;
     private static final int MAX_SAFE_FALL_DISTANCE = 10;
 
     // --- Burst Damage Tracking ---
@@ -412,6 +411,8 @@ public class ArchitectEntity extends Monster {
     void resetRetreatState() {
         combatState.retreatPhase = 0;
         combatState.retreatCoverBuilt = 0;
+        combatState.retreatStartPosition = null;
+        combatState.retreatRunTicks = 0;
     }
 
     void setTrapCooldown(int ticks) {
@@ -973,7 +974,10 @@ public class ArchitectEntity extends Monster {
         resetWalkCellHistory();
         resetUnstickBreakTracker();
         if (oldAction != ACTION_APPROACH) blockBreaker.clearTarget();
-        if (oldAction == ACTION_RETREAT && combatState.isDrinkingPotion) cancelDrinking();
+        if (oldAction == ACTION_RETREAT) {
+            if (combatState.isDrinkingPotion) cancelDrinking();
+            ArchitectActionTransitionSupport.onLeaveRetreat(combatState);
+        }
         if (newAction == ACTION_RETREAT) {
             ArchitectActionTransitionSupport.onEnterRetreat(combatState);
         }
