@@ -1,5 +1,6 @@
 package com.frozendawn.event;
 
+import com.frozendawn.item.O2TankItem;
 import net.minecraft.util.Mth;
 
 /** Pure tuning math for suit punctures, kept separate from event plumbing. */
@@ -28,6 +29,17 @@ public final class SuitIntegrityPolicy {
         return Math.min(
                 EMERGENCY_REFILL_CAP_TICKS,
                 Math.max(1, (int) Math.ceil(totalCapacity * EMERGENCY_REFILL_FRACTION)));
+    }
+
+    public static boolean shouldConsumeBaselineO2(
+            long gameTime, boolean visorRig, boolean efficiencyModule) {
+        int interval = O2TankItem.BASE_CONSUMPTION_INTERVAL_TICKS
+                * (visorRig ? 2 : 1);
+        if (Math.floorMod(gameTime, interval) != 0) {
+            return false;
+        }
+        long consumptionIndex = Math.floorDiv(gameTime, interval);
+        return !efficiencyModule || Math.floorMod(consumptionIndex, 4L) != 0L;
     }
 
     public static float chance(

@@ -59,6 +59,26 @@ class SuitIntegrityPolicyTest {
         assertEquals(0, SuitIntegrityPolicy.emergencyRefillAmount(0));
     }
 
+    @Test
+    void baselineConsumptionSchedulesComposeWithoutAliasing() {
+        assertEquals(8, baselineConsumptions(false, false, 16));
+        assertEquals(6, baselineConsumptions(false, true, 16));
+        assertEquals(4, baselineConsumptions(true, false, 16));
+        assertEquals(3, baselineConsumptions(true, true, 16));
+    }
+
+    private static int baselineConsumptions(
+            boolean visorRig, boolean efficiencyModule, int ticks) {
+        int consumed = 0;
+        for (int tick = 0; tick < ticks; tick++) {
+            if (SuitIntegrityPolicy.shouldConsumeBaselineO2(
+                    tick, visorRig, efficiencyModule)) {
+                consumed++;
+            }
+        }
+        return consumed;
+    }
+
     private static float chance(SuitIntegrityPolicy.SourceKind source) {
         return chance(source, 0.0F);
     }

@@ -375,9 +375,10 @@ final class PlayerTickHandler {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
                         if (!SuitIntegrityHandler.hasPuncture(player)
-                                && (!visorRig || state.getApocalypseTicks() % 2 == 0)
-                                && O2EfficiencyModuleItem.consumesBaselineO2(
-                                        player, state.getApocalypseTicks())) {
+                                && SuitIntegrityPolicy.shouldConsumeBaselineO2(
+                                        state.getApocalypseTicks(),
+                                        visorRig,
+                                        O2EfficiencyModuleItem.isInstalled(player))) {
                             int consumed = Math.min(
                                     o2, HearthrotManager.baselineO2Units(player));
                             tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);

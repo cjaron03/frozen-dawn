@@ -17,7 +17,7 @@
     {
       "type": "patchouli:text",
       "title": "Mk.I — O2 Canister",
-      "text": "$(bold)Capacity:$() 60 seconds$(br)$(bold)Bar Color:$() Cyan$(br2)The standard-issue canister. One minute of breathable air. That's how long ORSA thought you'd need between airlocks. ORSA assumed you'd have airlocks.$(br2)$(italic)\"We allocated portable airlock budget. Kevin spent it on a breakroom espresso machine. It's frozen now too.\"$()"
+      "text": "$(bold)Capacity:$() 120 seconds$(br)$(bold)Bar Color:$() Cyan$(br2)The standard-issue canister. Two minutes of breathable air. That's how long ORSA thought you'd need between airlocks. ORSA assumed you'd have airlocks.$(br2)$(italic)\"We allocated portable airlock budget. Kevin spent it on a breakroom espresso machine. It's frozen now too.\"$()"
     },
     {
       "type": "patchouli:crafting",
@@ -27,7 +27,7 @@
     {
       "type": "patchouli:text",
       "title": "Mk.II — O2 Canister Mk.II",
-      "text": "$(bold)Capacity:$() 120 seconds$(br)$(bold)Bar Color:$() Blue$(br2)Diamond-reinforced casing, double compression. Two minutes of air. Enough to walk somewhere, realize you forgot something, and walk back.$(br2)$(italic)ORSA Procurement notes this is the most expensive air you will ever breathe. Until the Mk.III.$()"
+      "text": "$(bold)Capacity:$() 240 seconds$(br)$(bold)Bar Color:$() Blue$(br2)Diamond-reinforced casing, double compression. Four minutes of air. Enough to leave shelter, finish a real field task, and make it back without packing half an inventory of pressure vessels.$(br2)$(italic)ORSA Procurement notes this is the most expensive air you will ever breathe. Until the Mk.III.$()"
     },
     {
       "type": "patchouli:crafting",
@@ -37,7 +37,7 @@
     {
       "type": "patchouli:text",
       "title": "Mk.III — O2 Canister Mk.III",
-      "text": "$(bold)Capacity:$() 180 seconds$(br)$(bold)Bar Color:$() Purple$(br2)$(l:advanced/frozen_atmosphere_shard)Frozen Atmosphere Shards$(/l) and blue ice create a cryogenic chamber holding three minutes of air at absurd density. The canister is cold to the touch. Uncomfortably cold.$(br2)$(italic)\"Three minutes doesn't sound like much. But when there's no air outside your helmet, it's everything.\"$()"
+      "text": "$(bold)Capacity:$() 360 seconds$(br)$(bold)Bar Color:$() Purple$(br2)$(l:advanced/frozen_atmosphere_shard)Frozen Atmosphere Shards$(/l) and blue ice create a cryogenic chamber holding six minutes of air at absurd density. The canister is cold to the touch. Uncomfortably cold.$(br2)$(italic)\"Six minutes doesn't sound like much. But when there's no air outside your helmet, it's everything.\"$()"
     },
     {
       "type": "patchouli:crafting",
