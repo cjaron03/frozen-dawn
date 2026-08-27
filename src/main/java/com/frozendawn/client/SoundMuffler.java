@@ -1,9 +1,13 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -53,10 +57,148 @@ public class SoundMuffler {
         }
         String soundPath = soundLocation.getPath();
         boolean isGeothermalCue = isGeothermalCue(soundLocation, soundPath);
+        boolean isThaevenSound = ThaevenTransmissionOverlay.isTransmissionSound(soundLocation);
+        boolean isSurveyorLensCue = isSurveyorLensCue(soundLocation, soundPath);
+        boolean isWindAmbience = isWindAmbienceCue(soundLocation, soundPath);
+        boolean isBloomSporeCue = isBloomSporeCue(soundLocation, soundPath);
+        boolean isStillpointCue = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && soundPath.startsWith("block.stillpoint_core.");
+        boolean isLocalHearthrotHurtCue = isLocalHearthrotHurtCue(
+                mc, original, soundLocation, soundPath);
+
+        if (shouldReplaceLocalPlayerHurt(
+                mc, original, soundLocation, soundPath)) {
+            event.setSound(SimpleSoundInstance.forUI(
+                    randomHearthrotHurtSound(mc),
+                    0.94F + mc.player.getRandom().nextFloat() * 0.12F,
+                    1.15F));
+            return;
+        }
+
+        // The Core's charge and formation are structural transmission cues. They
+        // remain audible before the field creates an acoustic pocket of its own.
+        if (isStillpointCue) {
+            return;
+        }
+
+        if (FrozenDawnClientConfig.ENABLE_STILLPOINT_AUDIO_MUFFLING.get()
+                && StillpointClientState.isListenerInside()) {
+            SoundSource stillpointSource = original.getSource();
+            boolean protectedSource = original.isRelative()
+                    || stillpointSource == SoundSource.MASTER
+                    || stillpointSource == SoundSource.MUSIC
+                    || stillpointSource == SoundSource.VOICE;
+            if (isWindAmbience) {
+                event.setSound(new MuffledSound(original, 0.12F, 0.92F));
+                return;
+            }
+            if (!protectedSource) {
+                if (StillpointClientState.isOutsideSource(
+                        original.getX(), original.getY(), original.getZ())) {
+                    event.setSound(null);
+                    return;
+                }
+                float volume = StillpointAudioFilter.useFallback() ? 0.54F : 0.76F;
+                event.setSound(new MuffledSound(original, volume, 0.90F));
+                // Sounds born inside the field form a muffled acoustic pocket. Returning
+                // here keeps Phase 6 vacuum suppression from canceling them below.
+                return;
+            }
+        }
+
+        if (isThaevenSound || isSurveyorLensCue || isBloomSporeCue) {
+            return;
+        }
+
+        float heartQuiet = HeartQuietClient.environmentMultiplier();
+        boolean quietsWithHeart = original.getSource() == SoundSource.AMBIENT
+                || original.getSource() == SoundSource.WEATHER
+                || original.getSource() == SoundSource.HOSTILE
+                || original.getSource() == SoundSource.NEUTRAL;
+        boolean isHeartSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.startsWith("entity.thae_iven_heart.")
+                || soundPath.startsWith("entity.heart_successor.")
+                || soundPath.startsWith("music.thae_iven_heart."));
+        if (quietsWithHeart && !isHeartSound && heartQuiet < 0.995F) {
+            if (heartQuiet <= 0.01F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(
+                        original, heartQuiet, 0.96F + heartQuiet * 0.04F));
+            }
+            return;
+        }
+
+        if (MasterArchitectFloodClient.isActive()) {
+            boolean isMasterFightMusic = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("music.master_architect.");
+            boolean isMasterArchitectSound = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("entity.master_architect.");
+            boolean isMasterArchitectUi = soundLocation.getNamespace().equals(
+                    FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("ui.master_architect.");
+            boolean isMindWitnessCue = ThaeIvenMindDimension.isMindLevel(mc.level)
+                    && soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                    && soundPath.startsWith("ambient.sanity_");
+            boolean isMindTransitionCue = soundLocation.getNamespace().equals("minecraft")
+                    && soundPath.equals("block.portal.travel");
+            if (isMasterFightMusic || isMasterArchitectSound || isMasterArchitectUi
+                    || isMindWitnessCue || isMindTransitionCue) {
+                return;
+            }
+            if (original.getSource() == SoundSource.MUSIC) {
+                event.setSound(null);
+                return;
+            }
+            event.setSound(new MuffledSound(
+                    original,
+                    MasterArchitectFloodClient.audioDuckFactor(),
+                    0.94F));
+            return;
+        }
+
+        if (CognitiveLoadClientState.shouldMuffleWorldSound(original)) {
+            float factor = CognitiveLoadClientState.worldSoundVolumeFactor();
+            if (factor <= 0.01F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(original, factor, 0.94F));
+            }
+            return;
+        }
+
+        boolean isMasterAuraSound = soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.startsWith("entity.master_architect.")
+                || soundPath.startsWith("ui.master_architect."));
+        float auraSilence = MasterArchitectAuraClient.silenceFactor();
+        boolean isAuraAmbientSource = original.getSource() == SoundSource.AMBIENT
+                || original.getSource() == SoundSource.WEATHER
+                || original.getSource() == SoundSource.HOSTILE
+                || original.getSource() == SoundSource.NEUTRAL;
+        if (!isMasterAuraSound
+                && original.getSource() != SoundSource.MASTER
+                && original.getSource() != SoundSource.MUSIC
+                && isAuraAmbientSource
+                && auraSilence > 0.01F) {
+            if (auraSilence >= 0.96F) {
+                event.setSound(null);
+            } else {
+                event.setSound(new MuffledSound(
+                        original,
+                        1.0F - auraSilence,
+                        1.0F - auraSilence * 0.12F));
+            }
+            return;
+        }
 
         // All Frozen Dawn mob sounds are immune from ALL sound suppression,
         // including late-phase vacuum muting.
         if (isFrozenDawnEntitySound(soundLocation, soundPath)) {
+            if (ThaevenTransmissionOverlay.isActive()) {
+                event.setSound(new MuffledSound(original, 0.35F, 0.96F));
+            }
             return;
         }
 
@@ -66,6 +208,9 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
+            if (isLocalHearthrotHurtCue) return;
+            if (isWindAmbience && (PostMaeveClientState.isMaeveErased()
+                    || MasterArchitectWeather.getStrength() > 0.01F)) return;
             if (isGeothermalCue) {
                 // Let geothermal vibration cues survive as near-silent suit/structure transmission
                 // so vanilla subtitles can still track them in vacuum.
@@ -73,6 +218,12 @@ public class SoundMuffler {
                 return;
             }
             event.setSound(null);
+            return;
+        }
+
+        if (ThaevenTransmissionOverlay.isActive()
+                && original.getSource() != SoundSource.MASTER) {
+            event.setSound(new MuffledSound(original, 0.35F, 0.96F));
             return;
         }
 
@@ -119,7 +270,7 @@ public class SoundMuffler {
         if (original.getSource() == SoundSource.MUSIC) return;
         if (original.getSource() == SoundSource.MASTER) return;
         String path = original.getLocation().getPath();
-        if (path.startsWith("ambient/wind")) return;
+        if (isWindAmbienceCue(original.getLocation(), path)) return;
 
         // Muffle intensity: 0 at -15C, full at -45C
         float intensity = Math.min(1f, (-temp - 15f) / 30f);
@@ -200,5 +351,71 @@ public class SoundMuffler {
     private static boolean isGeothermalCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
                 && path.startsWith("ambient.geothermal_");
+    }
+
+    private static boolean isSurveyorLensCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.equals("item.surveyor_lens.tick");
+    }
+
+    private static boolean isBloomSporeCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && path.startsWith("entity.bloom_spore.");
+    }
+
+    private static boolean isLocalHearthrotHurtCue(
+            Minecraft minecraft,
+            SoundInstance sound,
+            ResourceLocation location,
+            String path) {
+        if (!location.getNamespace().equals(FrozenDawn.MOD_ID)
+                || !path.startsWith("player.hearthrot.hurt_crack_")) {
+            return false;
+        }
+        double dx = minecraft.player.getX() - sound.getX();
+        double dy = minecraft.player.getY() - sound.getY();
+        double dz = minecraft.player.getZ() - sound.getZ();
+        return dx * dx + dy * dy + dz * dz <= 1.0D;
+    }
+
+    private static boolean shouldReplaceLocalPlayerHurt(
+            Minecraft minecraft,
+            SoundInstance sound,
+            ResourceLocation location,
+            String path) {
+        if (HearthrotClientState.stage() < 3
+                || sound.getSource() != SoundSource.PLAYERS
+                || !location.getNamespace().equals("minecraft")
+                || !isVanillaPlayerHurtPath(path)) {
+            return false;
+        }
+        double dx = minecraft.player.getX() - sound.getX();
+        double dy = minecraft.player.getY() - sound.getY();
+        double dz = minecraft.player.getZ() - sound.getZ();
+        return dx * dx + dy * dy + dz * dz <= 1.0D;
+    }
+
+    private static boolean isVanillaPlayerHurtPath(String path) {
+        return path.equals("entity.player.hurt")
+                || path.equals("entity.player.hurt_drown")
+                || path.equals("entity.player.hurt_freeze")
+                || path.equals("entity.player.hurt_on_fire")
+                || path.equals("entity.player.hurt_sweet_berry_bush");
+    }
+
+    private static net.minecraft.sounds.SoundEvent randomHearthrotHurtSound(
+            Minecraft minecraft) {
+        return switch (minecraft.player.getRandom().nextInt(3)) {
+            case 1 -> ModSounds.HEARTHROT_HURT_CRACK_TWO.get();
+            case 2 -> ModSounds.HEARTHROT_HURT_CRACK_THREE.get();
+            default -> ModSounds.HEARTHROT_HURT_CRACK_ONE.get();
+        };
+    }
+
+    private static boolean isWindAmbienceCue(ResourceLocation location, String path) {
+        return location.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (path.equals("ambient.wind_light")
+                        || path.equals("ambient.wind_strong")
+                        || path.startsWith("ambient/wind"));
     }
 }

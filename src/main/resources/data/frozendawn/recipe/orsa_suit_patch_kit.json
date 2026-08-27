@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ICI",
+    "CSC",
+    "ICI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_nugget" },
+    "C": { "item": "frozendawn:tattered_clothing_scrap" },
+    "S": { "item": "frozendawn:frozen_atmosphere_shard" }
+  },
+  "result": {
+    "id": "frozendawn:orsa_suit_patch_kit",
+    "count": 1
+  }
+}

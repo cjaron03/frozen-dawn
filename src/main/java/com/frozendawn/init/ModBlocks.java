@@ -4,24 +4,36 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.AcheroniteCrystalBlock;
 import com.frozendawn.block.AlarmBeaconBlock;
 import com.frozendawn.block.AcheronForgeBlock;
+import com.frozendawn.block.BloomMassBlock;
+import com.frozendawn.block.BloomCoreBlock;
+import com.frozendawn.block.BloomTipBlock;
 import com.frozendawn.block.EmergencyLightBlock;
 import com.frozendawn.block.FuelProcessingSiloControllerBlock;
 import com.frozendawn.block.FrozenAtmosphereBlock;
 import com.frozendawn.block.GeothermalCoreBlock;
+import com.frozendawn.block.HearthBoundaryMarkerBlock;
 import com.frozendawn.block.IcicleBlock;
 import com.frozendawn.block.CampRadioBlock;
 import com.frozendawn.block.LaunchPadBlock;
 import com.frozendawn.block.MonitoringStationTerminalBlock;
 import com.frozendawn.block.MiteAwayBlock;
+import com.frozendawn.block.RemnantMembraneBlock;
+import com.frozendawn.block.RemnantPropBlock;
+import com.frozendawn.block.RemnantSeamBlock;
 import com.frozendawn.block.OrsaFlagBlock;
 import com.frozendawn.block.OrsaSupplyCrateBlock;
 import com.frozendawn.block.PhaseBarometerBlock;
 import com.frozendawn.block.RocketEngineBlock;
 import com.frozendawn.block.ScorchedGroundBlock;
+import com.frozendawn.block.SealedLatticeBlock;
+import com.frozendawn.block.StillpointCoreBlock;
+import com.frozendawn.block.AggregateResidueBlock;
 import com.frozendawn.block.StreetLightBlock;
 import com.frozendawn.block.SulfurCrustBlock;
 import com.frozendawn.block.ThermalHeaterBlock;
 import com.frozendawn.block.ThermalVentPoolBlock;
+import com.frozendawn.block.ThaevenCarrierBlock;
+import com.frozendawn.lore.ThaevenRecordId;
 import com.frozendawn.block.TownPASpeakerBlock;
 import com.frozendawn.block.TowerAntennaConsoleBlock;
 import com.frozendawn.block.TransponderBlock;
@@ -435,6 +447,9 @@ public class ModBlocks {
                     .sound(SoundType.AMETHYST_CLUSTER)
                     .noOcclusion()
                     .lightLevel(state -> {
+                        if (state.getValue(AcheroniteCrystalBlock.DARK)) {
+                            return 0;
+                        }
                         int base = switch (state.getValue(AcheroniteCrystalBlock.AGE)) {
                             case 0 -> 3;
                             case 1 -> 5;
@@ -462,7 +477,7 @@ public class ModBlocks {
                     .noOcclusion()
                     .isViewBlocking((state, level, pos) -> false)
                     .isSuffocating((state, level, pos) -> false)
-                    .lightLevel(state -> 2)
+                    .lightLevel(state -> state.getValue(FrozenAtmosphereBlock.DARK) ? 0 : 2)
                     .pushReaction(PushReaction.DESTROY)));
 
     // Architect Mask: placeable Architect head trophy
@@ -527,4 +542,134 @@ public class ModBlocks {
                     .strength(50.0F, 1200.0F)
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 5)));
+
+    // Legacy migration marker retained so experimental Hearth saves can reconcile it away.
+    public static final DeferredBlock<HearthBoundaryMarkerBlock> HEARTH_BOUNDARY_MARKER =
+            BLOCKS.register("hearth_boundary_marker",
+                    () -> new HearthBoundaryMarkerBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_CYAN)
+                            .strength(3.0F, 8.0F)
+                            .sound(SoundType.AMETHYST)
+                            .lightLevel(state -> 7)
+                            .noCollission()
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false)
+                            .isSuffocating((state, level, pos) -> false)
+                            .pushReaction(PushReaction.BLOCK)));
+
+    // --- Post-Maeve Bloom ---
+    public static final DeferredBlock<BloomMassBlock> BLOOM_MASS = BLOCKS.register("bloom_mass",
+            () -> new BloomMassBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .requiresCorrectToolForDrops()
+                    .strength(2.2F, 4.0F)
+                    .sound(SoundType.CALCITE)));
+
+    public static final DeferredBlock<SnowLayerBlock> BLOOM_CRUST = BLOCKS.register("bloom_crust",
+            () -> new SnowLayerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .strength(0.25F)
+                    .sound(SoundType.MOSS)
+                    .replaceable()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<BloomTipBlock> BLOOM_TIP = BLOCKS.register("bloom_tip",
+            () -> new BloomTipBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .strength(0.4F)
+                    .sound(SoundType.AMETHYST_CLUSTER)
+                    .noCollission()
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<BloomCoreBlock> BLOOM_CORE = BLOCKS.register("bloom_core",
+            () -> new BloomCoreBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.SNOW)
+                    .requiresCorrectToolForDrops()
+                    .strength(3.4F, 7.0F)
+                    .sound(SoundType.AMETHYST)
+                    .lightLevel(state -> 6)));
+
+    // --- Aggregate scar and temporary encounter material ---
+    public static final DeferredBlock<AggregateResidueBlock> AGGREGATE_RESIDUE = BLOCKS.register(
+            "aggregate_residue", () -> new AggregateResidueBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY).strength(0.8F, 3.0F)
+                    .sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<Block> AGGREGATE_MASS = BLOCKS.register(
+            "aggregate_mass", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.QUARTZ).requiresCorrectToolForDrops()
+                    .strength(2.8F, 8.0F).sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<RotatedPillarBlock> AGGREGATE_RIB = BLOCKS.register(
+            "aggregate_rib", () -> new RotatedPillarBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.QUARTZ).requiresCorrectToolForDrops()
+                    .strength(3.2F, 9.0F).sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<Block> AGGREGATE_TEMPORARY_MASS = BLOCKS.register(
+            "aggregate_temporary_mass", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY).strength(1.8F, 5.0F)
+                    .sound(SoundType.BONE_BLOCK).noLootTable()));
+    public static final DeferredBlock<StillpointCoreBlock> INERT_CONVERGENCE_CORE =
+            BLOCKS.register("inert_convergence_core", () -> new StillpointCoreBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .requiresCorrectToolForDrops().strength(5.0F, 1_200.0F)
+                            .lightLevel(state -> 5).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)));
+
+    public static final DeferredBlock<Block> INERT_ACHERONITE = BLOCKS.register("inert_acheronite",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(4.0F, 8.0F)
+                    .sound(SoundType.DEEPSLATE)));
+
+    public static final DeferredBlock<SealedLatticeBlock> SEALED_LATTICE =
+            BLOCKS.register("sealed_lattice",
+                    () -> new SealedLatticeBlock(BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_LIGHT_GRAY)
+                            .requiresCorrectToolForDrops()
+                            .strength(5.0F, 12.0F)
+                            .sound(SoundType.METAL)));
+
+    public static final DeferredBlock<RemnantMembraneBlock> REMNANT_MEMBRANE =
+            BLOCKS.register("remnant_membrane", () -> new RemnantMembraneBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(3.0F, 8.0F).sound(SoundType.SCULK)
+                            .noLootTable().noOcclusion()));
+    public static final DeferredBlock<RemnantSeamBlock> REMNANT_SEAM =
+            BLOCKS.register("remnant_seam", () -> new RemnantSeamBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(2.0F, 6.0F).sound(SoundType.WOOD)
+                            .lightLevel(state -> 4).noLootTable()));
+    public static final DeferredBlock<RemnantPropBlock> REMNANT_PROP =
+            BLOCKS.register("remnant_prop", () -> new RemnantPropBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(2.5F, 6.0F).sound(SoundType.METAL)
+                            .lightLevel(state -> state.getValue(RemnantPropBlock.LIT) ? 5 : 0)
+                    .noLootTable()));
+
+    // World-shared lore carriers intentionally have no block items.
+    public static final DeferredBlock<ThaevenCarrierBlock> VEL_AN_RELIC =
+            BLOCKS.register("vel_an_relic", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.VEL_AN, ThaevenCarrierBlock.Form.RELIC));
+    public static final DeferredBlock<ThaevenCarrierBlock> VEL_AN_MEMORY_WALL =
+            BLOCKS.register("vel_an_memory_wall", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.DEEPSLATE)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.THE_FIRST_CROSSING,
+                    ThaevenCarrierBlock.Form.WALL));
+    public static final DeferredBlock<ThaevenCarrierBlock> UNTHREADING_VESSEL =
+            BLOCKS.register("unthreading_vessel", () -> new ThaevenCarrierBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                            .strength(-1.0F, 3600000.0F).sound(SoundType.SCULK)
+                            .lightLevel(state -> 8)
+                            .pushReaction(PushReaction.BLOCK)
+                            .noOcclusion().noLootTable(),
+                    ThaevenRecordId.THE_UNTHREADING,
+                    ThaevenCarrierBlock.Form.RESIDUE));
 }

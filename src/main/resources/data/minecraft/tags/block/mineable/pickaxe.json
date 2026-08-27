@@ -9,6 +9,7 @@
     "frozendawn:frozen_coal_ore",
     "frozendawn:sulfur_ore",
     "frozendawn:geothermal_core",
+    "frozendawn:phase_barometer",
     "frozendawn:fuel_processing_silo_controller",
     "frozendawn:rocket_engine",
     "frozendawn:rocket_fin",
@@ -18,6 +19,10 @@
     "frozendawn:acheronite_crystal",
     "frozendawn:acheron_forge",
     "frozendawn:acheronite_block",
-    "frozendawn:frozen_atmosphere"
+    "frozendawn:frozen_atmosphere",
+    "frozendawn:bloom_mass",
+    "frozendawn:bloom_core",
+    "frozendawn:inert_acheronite",
+    "frozendawn:sealed_lattice"
   ]
 }

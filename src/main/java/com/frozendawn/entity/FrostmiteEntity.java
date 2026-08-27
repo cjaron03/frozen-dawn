@@ -4,7 +4,9 @@ import com.frozendawn.block.MiteAwayBlockEntity;
 import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
+import com.frozendawn.world.FrostwritheColonyManager;
 import com.frozendawn.world.MiteAwayRegistry;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -72,6 +74,12 @@ public class FrostmiteEntity extends Monster {
     private int retargetTicks;
     private int latchTicks;
     private float orbitSeed;
+    private @Nullable UUID colonyId;
+    private int colonyBiomassUnits;
+    private @Nullable BlockPos colonyRallyPos;
+    private long colonyScatterUntil;
+    private long colonyRegroupDeadline;
+    private boolean colonyRegrouping;
 
     public FrostmiteEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -128,6 +136,11 @@ public class FrostmiteEntity extends Monster {
             tickLatch();
             return;
         }
+
+        if (FrostwritheColonyManager.tickMite(this)) {
+            return;
+        }
+        colonyRegrouping = false;
 
         super.customServerAiStep();
 
@@ -409,6 +422,72 @@ public class FrostmiteEntity extends Monster {
         return isLatchedToHeater() && latchedHeaterPos != null && latchedHeaterPos.equals(heaterPos);
     }
 
+    public void joinColony(UUID id, int biomassUnits, BlockPos rallyPos,
+                           long scatterUntil, long regroupDeadline) {
+        colonyId = id;
+        colonyBiomassUnits = Math.max(1, biomassUnits);
+        colonyRallyPos = rallyPos.immutable();
+        colonyScatterUntil = scatterUntil;
+        colonyRegroupDeadline = Math.max(scatterUntil + 1L, regroupDeadline);
+        colonyRegrouping = false;
+    }
+
+    public void forceColonyRally(UUID id, int biomassUnits, BlockPos rallyPos,
+                                 long now, long regroupDeadline) {
+        clearLatch();
+        setTarget(null);
+        getNavigation().stop();
+        joinColony(id, biomassUnits, rallyPos, now, regroupDeadline);
+    }
+
+    public void clearColony() {
+        colonyId = null;
+        colonyBiomassUnits = 0;
+        colonyRallyPos = null;
+        colonyScatterUntil = 0L;
+        colonyRegroupDeadline = 0L;
+        colonyRegrouping = false;
+    }
+
+    public boolean hasColony() {
+        return colonyId != null && colonyRallyPos != null && colonyBiomassUnits > 0;
+    }
+
+    @Nullable
+    public UUID colonyId() {
+        return colonyId;
+    }
+
+    public int colonyBiomassUnits() {
+        return colonyBiomassUnits;
+    }
+
+    public void setColonyBiomassUnits(int units) {
+        colonyBiomassUnits = Math.max(0, units);
+        if (colonyBiomassUnits == 0) clearColony();
+    }
+
+    @Nullable
+    public BlockPos colonyRallyPos() {
+        return colonyRallyPos;
+    }
+
+    public long colonyScatterUntil() {
+        return colonyScatterUntil;
+    }
+
+    public long colonyRegroupDeadline() {
+        return colonyRegroupDeadline;
+    }
+
+    public boolean isColonyRegrouping() {
+        return colonyRegrouping;
+    }
+
+    public void setColonyRegrouping(boolean regrouping) {
+        colonyRegrouping = regrouping;
+    }
+
     private @Nullable ServerPlayer getPreferredPlayer() {
         if (!(level() instanceof ServerLevel serverLevel) || preferredPlayerId == null) return null;
         Player player = serverLevel.getPlayerByUUID(preferredPlayerId);
@@ -462,6 +541,33 @@ public class FrostmiteEntity extends Monster {
             return false;
         }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        if (colonyId != null && colonyRallyPos != null) {
+            tag.putUUID("FrostwritheColony", colonyId);
+            tag.putInt("FrostwritheBiomass", colonyBiomassUnits);
+            tag.putLong("FrostwritheRally", colonyRallyPos.asLong());
+            tag.putLong("FrostwritheScatterUntil", colonyScatterUntil);
+            tag.putLong("FrostwritheRegroupDeadline", colonyRegroupDeadline);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.hasUUID("FrostwritheColony") && tag.contains("FrostwritheRally")) {
+            colonyId = tag.getUUID("FrostwritheColony");
+            colonyBiomassUnits = Math.max(1, tag.getInt("FrostwritheBiomass"));
+            colonyRallyPos = BlockPos.of(tag.getLong("FrostwritheRally"));
+            colonyScatterUntil = tag.getLong("FrostwritheScatterUntil");
+            colonyRegroupDeadline = Math.max(colonyScatterUntil + 1L,
+                    tag.getLong("FrostwritheRegroupDeadline"));
+        } else {
+            clearColony();
+        }
     }
 
     @Override

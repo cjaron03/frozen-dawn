@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -18,7 +19,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * Uses TickableWindSound for smooth per-frame volume transitions (no hard cuts).
  * Next clip starts 5s before the current one ends for seamless overlap.
  *
- * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence.
+ * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence,
+ * except inside a living Master Architect's local Hearth storm.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class WindAmbience {
@@ -31,6 +33,7 @@ public class WindAmbience {
     private static int ticksUntilNext = 0;
     private static int creakCooldown = 0;
     private static float currentBasePitch = 1.0f;
+    private static boolean currentPostMaeve;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -41,23 +44,39 @@ public class WindAmbience {
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
         boolean underground = mc.player.blockPosition().getY() < 50;
+        float masterStrength = MasterArchitectWeather.getStrength();
+        boolean postMaeve = PostMaeveClientState.isMaeveErased();
 
-        boolean shouldStop = shouldStopWind(phase, progress, underground);
+        if (currentSound != null && currentPostMaeve != postMaeve) {
+            stopAll(mc);
+        }
+
+        boolean shouldStop = shouldStopWind(
+                phase, progress, underground, masterStrength, postMaeve);
         if (shouldStop) {
             stopAll(mc);
             return;
         }
 
-        float targetVolume = getTargetWindVolume(phase, progress);
+        float targetVolume = postMaeve
+                ? FrozenDawnConfig.POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER.get().floatValue()
+                : Math.max(getTargetWindVolume(phase, progress),
+                        0.9F * masterStrength);
 
         float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
         targetVolume *= Mth.lerp(exposure, 0.08f, 1.0f);
+        targetVolume *= MasterArchitectFourthWallMoment.weatherAudioMultiplier();
+        targetVolume *= MasterArchitectSeverTelegraph.weatherAudioMultiplier();
+        float heartQuiet = HeartQuietClient.environmentMultiplier();
+        targetVolume *= heartQuiet;
+        targetVolume *= BloomClientState.windMultiplier();
         float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
 
         // Update volume on the currently playing sound — it fades smoothly per-frame
         if (currentSound != null && !currentSound.isStopped()) {
-            currentSound.setTargetVolume(targetVolume);
+            currentSound.setTargetVolume(
+                    targetVolume, MasterArchitectSeverTelegraph.windFadeRate());
             currentSound.setTargetPitch(targetPitch);
         }
 
@@ -68,7 +87,7 @@ public class WindAmbience {
         }
 
         // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
-        if (!exposedToStorm && phase >= 4) {
+        if (!exposedToStorm && phase >= 4 && heartQuiet > 0.15F) {
             if (creakCooldown > 0) {
                 creakCooldown--;
             } else if (mc.level.random.nextFloat() < 0.015f) {
@@ -88,13 +107,18 @@ public class WindAmbience {
         }
 
         // Start next clip — old one still playing for 5s overlap
-        boolean strong = phase >= 4;
+        boolean strong = phase >= 4 || masterStrength > 0.05F;
         currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
         targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
+        currentPostMaeve = postMaeve;
         currentSound = new TickableWindSound(
-                strong ? ModSounds.WIND_STRONG.get() : ModSounds.WIND_LIGHT.get(),
+                postMaeve
+                        ? strong ? ModSounds.WIND_POST_MAEVE_STRONG.get()
+                                : ModSounds.WIND_POST_MAEVE_LIGHT.get()
+                        : strong ? ModSounds.WIND_STRONG.get()
+                                : ModSounds.WIND_LIGHT.get(),
                 targetVolume, targetPitch, clipDuration);
         mc.getSoundManager().play(currentSound);
 
@@ -109,6 +133,7 @@ public class WindAmbience {
         TemperatureHud.reset();
         AirStatusHud.reset();
         SanityClientData.reset();
+        BloomClientState.reset();
     }
 
     private static void stopAll(Minecraft mc) {
@@ -119,10 +144,14 @@ public class WindAmbience {
         ticksUntilNext = 0;
         creakCooldown = 0;
         currentBasePitch = 1.0f;
+        currentPostMaeve = false;
     }
 
-    private static boolean shouldStopWind(int phase, float progress, boolean underground) {
-        return phase < 3 || underground || PhaseManager.isVacuumActive(phase, progress);
+    private static boolean shouldStopWind(
+            int phase, float progress, boolean underground, float masterStrength,
+            boolean postMaeve) {
+        return underground || (!postMaeve && masterStrength <= 0.01F
+                && (phase < 3 || PhaseManager.isVacuumActive(phase, progress)));
     }
 
     private static float getTargetWindVolume(int phase, float progress) {

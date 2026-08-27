@@ -1,8 +1,10 @@
 package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.bloom.BloomGrowthManager;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.entity.MimicEntity;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -15,7 +17,9 @@ public class MimicSpawner {
     private MimicSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
-        if (currentPhase < 6 || progress < 0.5f) return;
+        boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
+                level.getServer());
+        if (!postMaeve && (currentPhase < 6 || progress < 0.5f)) return;
         if (!FrozenDawnConfig.ENABLE_MIMIC.get()) return;
 
         long gameTick = level.getGameTime();
@@ -24,7 +28,7 @@ public class MimicSpawner {
         RandomSource random = level.random;
 
         float mobMult = (float) FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get().doubleValue();
-        float baseChance = BrutalPhase6SpawnCurves.isActive()
+        float baseChance = postMaeve ? 0.015f : BrutalPhase6SpawnCurves.isActive()
                 ? BrutalPhase6SpawnCurves.mimicChance(progress)
                 : 0.005f;
         if (baseChance <= 0.0f) return;
@@ -33,14 +37,22 @@ public class MimicSpawner {
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator()) continue;
 
-            if (random.nextFloat() > spawnChance) continue;
+            float localChance = postMaeve
+                    ? Math.min(0.95F, spawnChance * BloomGrowthManager.pressureMultiplier(
+                    level, player.blockPosition()))
+                    : spawnChance;
+            if (random.nextFloat() > localChance) continue;
 
             // Density cap: max 1 Mimic within 128 blocks
             int nearbyCount = level.getEntitiesOfClass(MimicEntity.class,
                     player.getBoundingBox().inflate(128.0)).size();
             if (nearbyCount >= 1) continue;
 
-            BlockPos spawnPos = findSpawnPos(level, player, random);
+            BlockPos spawnPos = postMaeve
+                    ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
+                            level, player, random, 32, 64, 28,
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                    : findSpawnPos(level, player, random);
             if (spawnPos == null) continue;
 
             MimicEntity mimic = ModEntities.MIMIC.get().create(level, null, spawnPos,

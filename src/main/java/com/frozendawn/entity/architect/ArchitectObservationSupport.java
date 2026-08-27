@@ -1,8 +1,10 @@
 package com.frozendawn.entity.architect;
 
+import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -28,8 +30,8 @@ public final class ArchitectObservationSupport {
                 BlockPos pos = center.offset(dx, 0, dz);
                 for (int dy = -4; dy <= 4; dy++) {
                     BlockPos check = pos.offset(0, dy, 0);
-                    if (level.getBlockState(check).isAir()
-                            && level.getBlockState(check.above()).isAir()
+                    if (isDryPassage(level, check)
+                            && isDryPassage(level, check.above())
                             && level.getBlockState(check.below()).isSolid()) {
                         boolean nearWall = false;
                         for (Direction dir : Direction.Plane.HORIZONTAL) {
@@ -46,6 +48,11 @@ public final class ArchitectObservationSupport {
                 }
             }
         }
+    }
+
+    private static boolean isDryPassage(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return ArchitectBreakPolicy.isDryPassableForArchitect(state, level, pos);
     }
 
     public static boolean shouldMarkObserveDirty(

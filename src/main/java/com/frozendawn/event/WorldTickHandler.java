@@ -17,9 +17,42 @@ import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.entity.FrostbittenEntity;
+import com.frozendawn.entity.RimeboundEntity;
 import com.frozendawn.entity.FrostmiteEntity;
 import com.frozendawn.entity.MimicEntity;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.homo.CognitiveLoadManager;
+import com.frozendawn.homo.HearthMaturationManager;
+import com.frozendawn.homo.HearthArchitectManager;
+import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthMasterArchitectManager;
+import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
+import com.frozendawn.homo.HearthHeartManager;
+import com.frozendawn.homo.HeartMemoryNodeManager;
+import com.frozendawn.homo.HeartMaeveErasureManager;
+import com.frozendawn.homo.HeartScavengerWaveManager;
+import com.frozendawn.homo.HeartMusicManager;
+import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.HearthPopulationManager;
+import com.frozendawn.homo.HearthTransmissionManager;
+import com.frozendawn.homo.HearthViolationManager;
+import com.frozendawn.homo.HearthReconciliationManager;
+import com.frozendawn.homo.HearthSelectionManager;
+import com.frozendawn.homo.HearthSurveySignalManager;
+import com.frozendawn.homo.HearthWatcherManager;
+import com.frozendawn.homo.HearthDarkeningManager;
+import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.lore.ThaevenLoreManager;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
+import com.frozendawn.lore.ThaevenLoreAcquisitionHandler;
+import com.frozendawn.bloom.BloomGrowthManager;
+import com.frozendawn.aggregate.AggregateGrowthManager;
+import com.frozendawn.world.UndoneSpawner;
+import com.frozendawn.world.UndoneArchitectSpawner;
+import com.frozendawn.world.BloomboundUndoneSpawner;
+import com.frozendawn.world.ArchivistManager;
+import com.frozendawn.world.remnant.RemnantLureManager;
 import com.frozendawn.phase.FrozenDawnPhaseTracker;
 import com.frozendawn.world.AcheroniteGrowth;
 import com.frozendawn.world.BlockFreezer;
@@ -93,6 +126,7 @@ public class WorldTickHandler {
      */
     private static final Map<ResourceKey<Level>, Set<BlockPos>> pendingArchitectBreakUpdates = new HashMap<>();
     private static final String ORSA_AWAKENING_SEEN_TAG = "frozendawn:orsa_awakening_seen";
+    private static final String SKIP_ORSA_AWAKENING_PROPERTY = "frozendawn.dev.skipOrsaAwakening";
     private static final long ORSA_AWAKENING_FREEZE_TICKS = 340L;
     private static final Map<UUID, Long> orsaAwakeningFreezeUntil = new HashMap<>();
     private static final Map<UUID, Vec3> orsaAwakeningFreezeAnchor = new HashMap<>();
@@ -125,6 +159,25 @@ public class WorldTickHandler {
         TowerPlacement.reset();
         CampPlacement.reset();
         ChunkCatchUpManager.reset();
+        HearthReconciliationManager.reset();
+        HearthArchitectManager.reset();
+        HearthPopulationManager.reset();
+        HearthMasterArchitectManager.reset();
+        HearthMasterArchitectWeatherManager.reset();
+        HearthHeartManager.reset();
+        HeartMemoryNodeManager.reset();
+        HeartMaeveErasureManager.reset();
+        HeartScavengerWaveManager.reset();
+        HeartMusicManager.reset();
+        CognitiveLoadManager.reset();
+        HearthMemoryManager.reset();
+        HearthTransmissionManager.reset();
+        HearthSurveySignalManager.reset();
+        HearthBoundaryManager.reset();
+        HearthCombatRosterManager.reset();
+        HearthViolationManager.reset();
+        HearthWatcherManager.reset();
+        com.frozendawn.aggregate.StillpointFieldManager.reset();
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
@@ -181,9 +234,22 @@ public class WorldTickHandler {
 
         // Per-player effects: temperature, heat damage, wind chill, suffocation
         PlayerTickHandler.tick(server, state, currentPhase, currentDay, progress);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            ThaevenLoreAcquisitionHandler.tickPlayer(player);
+        }
 
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
+        PostMaeveWorldState.tick(overworld);
+        ThaevenLoreWorldManager.tick(overworld);
+        com.frozendawn.aggregate.StillpointFieldManager.tick(server);
+        AggregateGrowthManager.tick(overworld);
+        BloomboundUndoneSpawner.tick(overworld);
+        UndoneSpawner.tick(overworld);
+        UndoneArchitectSpawner.tick(overworld);
+        ArchivistManager.tick(overworld);
+        RemnantLureManager.tick(overworld);
+        HearthDarkeningManager.tick(overworld);
         if ((tick & 1L) == 0L) {
             BlastPitPlacement.tickPlacement(overworld);
         } else {
@@ -195,6 +261,23 @@ public class WorldTickHandler {
         MonitoringStationPlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
         ChunkCatchUpManager.tick(overworld, state);
+        BloomGrowthManager.tick(overworld, state);
+        HearthSelectionManager.tick(overworld, state);
+        HearthMaturationManager.tick(overworld, state);
+        HearthReconciliationManager.tick(overworld, state);
+        HearthArchitectManager.tick(overworld);
+        HearthPopulationManager.tick(overworld);
+        HearthMasterArchitectManager.tick(overworld);
+        HearthMasterArchitectWeatherManager.tick(overworld, currentPhase, progress);
+        HearthHeartManager.tick(overworld);
+        HeartScavengerWaveManager.tick(overworld);
+        HeartMusicManager.tick(server);
+        CognitiveLoadManager.tick(overworld, state);
+        HearthTransmissionManager.tick(overworld);
+        HearthSurveySignalManager.tick(server);
+        HearthBoundaryManager.tick(overworld);
+        HearthMemoryManager.tick(overworld);
+        HearthWatcherManager.tick(overworld);
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
@@ -285,6 +368,7 @@ public class WorldTickHandler {
 
     private static boolean isFrozenDawnManagedHostile(net.minecraft.world.entity.Entity entity) {
         return entity instanceof FrostbittenEntity
+                || entity instanceof RimeboundEntity
                 || entity instanceof FrostmiteEntity
                 || entity instanceof ReturnedEntity
                 || entity instanceof MimicEntity
@@ -363,7 +447,8 @@ public class WorldTickHandler {
             tracker.markRemoved(event.getPos());
             queueArchitectBreakUpdate(serverLevel, event.getPos());
             if (event.getPlayer() instanceof ServerPlayer player) {
-                FrostmiteSpawner.trySpawnInfestedBreak(serverLevel, event.getPos(), serverLevel.getBlockState(event.getPos()), player);
+                FrostmiteSpawner.trySpawnInfestedBreak(
+                        serverLevel, event.getPos(), event.getState(), player);
             }
         }
     }
@@ -419,6 +504,8 @@ public class WorldTickHandler {
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
             RocketLaunchManager.syncLaunchState(player);
+            PostMaeveWorldState.sync(player);
+            ThaevenLoreManager.sync(player);
 
             grantPhaseAdvancements(player, state.getPhase());
             SanityHandler.onPlayerLogin(player);
@@ -444,6 +531,8 @@ public class WorldTickHandler {
             orsaAwakeningFreezeUntil.remove(playerId);
             orsaAwakeningFreezeAnchor.remove(playerId);
             PlayerTickHandler.onPlayerLogout(player);
+            CognitiveLoadManager.onPlayerLogout(player);
+            ThaevenLoreAcquisitionHandler.clearPlayer(player);
         }
     }
 
@@ -453,6 +542,9 @@ public class WorldTickHandler {
     }
 
     public static void trySendOrsaAwakening(ServerPlayer player) {
+        if (Boolean.getBoolean(SKIP_ORSA_AWAKENING_PROPERTY)) {
+            return;
+        }
         net.minecraft.nbt.CompoundTag persistentData = player.getPersistentData();
         if (persistentData.getBoolean(ORSA_AWAKENING_SEEN_TAG)) {
             return;

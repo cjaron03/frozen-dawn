@@ -1,0 +1,17 @@
+{
+  "title": "Record I — Vel-an",
+  "rawPages": [
+    "Vel-thae.\nVel-an.",
+    "Thae Iven vel-an.\nVel-an vaen.",
+    "Maevethae vel-an.\nIven vel-an.",
+    "Kael orren vel.\nOrsha orren vel.",
+    "Vel-thae vaen.\nVel-an thae.\nThae Iven."
+  ],
+  "translatedPages": [
+    {"segments":[{"id":"vel_an_01","baseText":"The warm-one.\nThe Hearth.","semanticOverrides":{},"revealTiming":0,"uncertainty":true}]},
+    {"segments":[{"id":"vel_an_02","baseText":"Shared mind remains in the Hearth.\nThe Hearth witnesses.","semanticOverrides":{},"revealTiming":14,"uncertainty":false}]},
+    {"segments":[{"id":"vel_an_03","baseText":"Those who returned remain as part of the Hearth.\nMemory remains.","semanticOverrides":{},"revealTiming":24,"uncertainty":true}]},
+    {"segments":[{"id":"vel_an_04","baseText":"The origin-kind took warmth.\nOrsha took what belonged.","semanticOverrides":{},"revealTiming":34,"uncertainty":false}]},
+    {"segments":[{"id":"vel_an_05","baseText":"The warm-one is witnessed.\nThe Hearth is alive.\nYou are not alone.","semanticOverrides":{},"revealTiming":46,"uncertainty":false}]}
+  ]
+}

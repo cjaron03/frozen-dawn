@@ -1,5 +1,6 @@
 package com.frozendawn.block;
 
+import com.frozendawn.entity.FrostwritheEntity;
 import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +23,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
@@ -34,6 +37,7 @@ public class AcheroniteCrystalBlock extends Block {
 
     public static final IntegerProperty AGE = BlockStateProperties.AGE_3;
     public static final BooleanProperty BURIED = BooleanProperty.create("buried");
+    public static final BooleanProperty DARK = BooleanProperty.create("dark");
 
     private static final VoxelShape SHAPE_0 = Block.box(5, 0, 5, 11, 6, 11);   // small bud
     private static final VoxelShape SHAPE_1 = Block.box(4, 0, 4, 12, 10, 12);  // medium bud
@@ -46,12 +50,15 @@ public class AcheroniteCrystalBlock extends Block {
 
     public AcheroniteCrystalBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(AGE, 0).setValue(BURIED, false));
+        registerDefaultState(stateDefinition.any()
+                .setValue(AGE, 0)
+                .setValue(BURIED, false)
+                .setValue(DARK, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(AGE, BURIED);
+        builder.add(AGE, BURIED, DARK);
     }
 
     @Override
@@ -71,6 +78,16 @@ public class AcheroniteCrystalBlock extends Block {
             case 2 -> SHAPE_2;
             default -> SHAPE_3;
         };
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                                        BlockPos pos, CollisionContext context) {
+        if (context instanceof EntityCollisionContext entityContext
+                && entityContext.getEntity() instanceof FrostwritheEntity) {
+            return Shapes.empty();
+        }
+        return getShape(state, level, pos, context);
     }
 
     @Override
@@ -106,6 +123,9 @@ public class AcheroniteCrystalBlock extends Block {
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (state.getValue(DARK)) {
+            return;
+        }
         int nearbyCrystals = countNearbyCrystals(level, pos, 4, 7);
         if (state.getValue(BURIED)) {
             int buriedDivisor = nearbyCrystals >= 6 ? 5 : nearbyCrystals >= 3 ? 3 : 2;

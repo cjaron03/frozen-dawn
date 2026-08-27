@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:mob_attack",
+    "minecraft:mob_attack_no_aggro",
+    "minecraft:player_attack",
+    "minecraft:sting",
+    "minecraft:thorns",
+    "minecraft:falling_block",
+    "minecraft:falling_anvil",
+    "minecraft:fly_into_wall",
+    "minecraft:sonic_boom",
+    "#minecraft:is_projectile",
+    "#minecraft:is_explosion",
+    "#minecraft:is_fall"
+  ]
+}

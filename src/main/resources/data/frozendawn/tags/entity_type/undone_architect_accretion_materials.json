@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:frostbitten",
+    "frozendawn:rimebound",
+    "frozendawn:resonant",
+    "frozendawn:remnant",
+    "frozendawn:hollow",
+    "frozendawn:mimic",
+    "frozendawn:returned",
+    "frozendawn:architect",
+    "frozendawn:undone",
+    "frozendawn:undone_architect"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:master_architect_staff"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.host_has_joined_the_game.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.host_has_joined_the_game.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

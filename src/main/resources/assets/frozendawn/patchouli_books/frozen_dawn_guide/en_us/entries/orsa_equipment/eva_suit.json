@@ -25,6 +25,11 @@
       "text": "RUPTURE calderas run hot enough to cook a standard EVA shell from the inside.$(br2)If you already have an $(l:orsa_rd/lined_eva)Acheronite-Lined EVA Suit$(/l), combine it with $(bold)Sulfur Crust$() and $(bold)Volcanic Tuff$() to add a caloric barrier.$(br2)The retrofit suppresses caldera overheat, but it does $(bold)not$() protect against direct lava contact.$(br2)$(italic)ORSA Materials: If the suit starts smelling like minerals and bad decisions, the seal probably took.$()"
     },
     {
+      "type": "patchouli:text",
+      "title": "Hull Integrity",
+      "text": "In vacuum, physical impacts can $(bold)puncture a sealed EVA suit$(). A breach vents carried O2; two breaches drain twice as fast. Cold, hunger, and suffocation cannot create punctures.$(br2)Hold $(item)Tattered Clothing Scrap$() to improvise a slow seal. It may fail later. An $(item)ORSA Suit Patch Kit$() seals one breach quickly and permanently. External damage interrupts either repair.$(br2)Breaches stop venting in breathable shelter, but remain until patched."
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_chestplate",
       "text": "The chestplate requires a Frozen Heart core. Don't worry, it's not YOUR heart."
@@ -43,6 +48,12 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:eva_boots",
       "text": "Seal the suit from the ground up. Vacuum is a terrible thing to step into."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_suit_patch_kit",
+      "title": "ORSA Suit Patch Kit",
+      "text": "A permanent pressure seal. Intact Major Hearths may also contain salvaged kits, assuming the collective permits recovery."
     },
     {
       "type": "patchouli:crafting",

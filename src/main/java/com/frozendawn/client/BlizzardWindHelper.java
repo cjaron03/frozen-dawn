@@ -57,6 +57,11 @@ public final class BlizzardWindHelper {
         return Mth.clamp(getSurfaceWindSpeed(phase, progress, gameTime) / maxWindSpeed, 0.0f, 1.0f);
     }
 
+    public static float getMasterArchitectWindSpeed(long gameTime, float strength) {
+        float windSpeed = (1.5F + 0.5F * Mth.sin(gameTime * 0.015F)) * 1.3F;
+        return windSpeed * Mth.clamp(strength, 0.0F, 1.0F);
+    }
+
     public static float getWindX(int phase, float progress, long gameTime) {
         return getSurfaceWindSpeed(phase, progress, gameTime) * Mth.sin(getWindAngleRad(gameTime));
     }

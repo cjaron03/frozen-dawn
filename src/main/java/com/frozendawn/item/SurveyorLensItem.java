@@ -1,10 +1,19 @@
 package com.frozendawn.item;
 
+import com.frozendawn.aggregate.AggregateSavedData;
+import com.frozendawn.aggregate.AggregateStage;
+import com.frozendawn.homo.HearthSelectionPolicy;
+import com.frozendawn.homo.HearthSurveyPolicy;
+import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.init.ModSounds;
+import net.minecraft.core.BlockPos;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
@@ -13,6 +22,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Optional;
 
 public class SurveyorLensItem extends Item {
 
@@ -29,6 +39,13 @@ public class SurveyorLensItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel) {
+            if (PostMaeveWorldState.isErased(serverLevel)) {
+                if (!displayAggregateReading(serverPlayer)) {
+                    displayPostMaeveReading(serverPlayer);
+                }
+                serverPlayer.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
+                return InteractionResultHolder.sidedSuccess(stack, false);
+            }
             List<SurveyorLensScanner.HeatSignature> signatures = SurveyorLensScanner.collectHeatSignatures(
                     serverLevel,
                     serverPlayer.position(),
@@ -36,7 +53,12 @@ public class SurveyorLensItem extends Item {
                     lensProfile
             );
 
-            if (signatures.isEmpty()) {
+            Optional<HearthSurveyScanner.HearthSignal> hearthSignal =
+                    HearthSurveyScanner.scan(serverPlayer, lensProfile);
+
+            if (hearthSignal.isPresent()) {
+                displayHearthSignal(serverPlayer, hearthSignal.orElseThrow());
+            } else if (signatures.isEmpty()) {
                 serverPlayer.displayClientMessage(
                         Component.translatable("message.frozendawn.surveyor_lens.none")
                                 .withStyle(ChatFormatting.GRAY),
@@ -60,6 +82,9 @@ public class SurveyorLensItem extends Item {
                         );
 
                 serverPlayer.displayClientMessage(message.withStyle(ChatFormatting.AQUA), true);
+            }
+
+            if (!signatures.isEmpty()) {
                 markHeatSources(serverLevel, serverPlayer, signatures);
             }
 
@@ -67,6 +92,157 @@ public class SurveyorLensItem extends Item {
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+    }
+
+    private void displayPostMaeveReading(ServerPlayer player) {
+        String[] directions = {
+                "north", "northeast", "east", "southeast",
+                "south", "southwest", "west", "northwest"
+        };
+        long bucket = player.serverLevel().getGameTime() / 40L;
+        long mixed = player.getUUID().getMostSignificantBits()
+                ^ player.getUUID().getLeastSignificantBits()
+                ^ bucket * 0x9E3779B97F4A7C15L;
+        String direction = directions[Math.floorMod((int) (mixed ^ mixed >>> 32),
+                directions.length)];
+        player.displayClientMessage(Component.translatable(
+                "message.frozendawn.surveyor_lens.post_maeve", direction)
+                .withStyle(ChatFormatting.DARK_GRAY), true);
+        player.playNotifySound(ModSounds.RADIO_STATIC_AMBIENT.get(),
+                SoundSource.MASTER, 0.24F, 0.62F);
+    }
+
+    private boolean displayAggregateReading(ServerPlayer player) {
+        AggregateSavedData data = AggregateSavedData.get(player.getServer());
+        AggregateStage stage = data.stage();
+        if (stage.ordinal() < AggregateStage.RESIDUE.ordinal()) {
+            return false;
+        }
+        BlockPos anchor = data.ossuaryPos().orElse(null);
+        String direction = anchor == null ? "indeterminate"
+                : describeDirection(player.getX(), player.getZ(), anchor);
+        int distance = anchor == null ? 0 : (int) Math.sqrt(anchor.distToCenterSqr(
+                player.getX(), player.getY(), player.getZ()));
+        String key = switch (stage) {
+            case RESIDUE -> "message.frozendawn.surveyor_lens.aggregate.residue";
+            case DEPOSIT -> "message.frozendawn.surveyor_lens.aggregate.deposit";
+            case OSSUARY -> "message.frozendawn.surveyor_lens.aggregate.ossuary";
+            case GESTATION, AWAKENING_ELIGIBLE ->
+                    "message.frozendawn.surveyor_lens.aggregate.gestation";
+            case ACTIVE -> "message.frozendawn.surveyor_lens.aggregate.active";
+            case RESOLVED -> "message.frozendawn.surveyor_lens.aggregate.resolved";
+            default -> null;
+        };
+        if (key == null) return false;
+        Component reading;
+        if (stage.ordinal() < AggregateStage.OSSUARY.ordinal()) {
+            reading = Component.translatable(key, direction);
+        } else if (stage == AggregateStage.OSSUARY || stage == AggregateStage.ACTIVE) {
+            reading = Component.translatable(key, deterministicMass(data), distance, direction);
+        } else if (stage == AggregateStage.RESOLVED) {
+            reading = Component.translatable(key, distance, direction);
+        } else {
+            reading = Component.translatable(key, distance, direction);
+        }
+        player.displayClientMessage(reading.copy().withStyle(ChatFormatting.GRAY), true);
+        player.playNotifySound(ModSounds.RADIO_STATIC_HEAVY.get(),
+                SoundSource.MASTER, 0.38F, 0.54F);
+        return true;
+    }
+
+    private static int deterministicMass(AggregateSavedData data) {
+        return 17_800 + (int) Math.floorMod(data.ossuarySeed(), 1_401L);
+    }
+
+    private static String describeDirection(double originX, double originZ,
+                                            net.minecraft.core.BlockPos target) {
+        double dx = target.getX() + 0.5D - originX;
+        double dz = target.getZ() + 0.5D - originZ;
+        String[] directions = {
+                "east", "southeast", "south", "southwest",
+                "west", "northwest", "north", "northeast"
+        };
+        int index = Math.floorMod((int) Math.round(
+                Math.atan2(dz, dx) / (Math.PI / 4.0D)), directions.length);
+        return directions[index];
+    }
+
+    private void displayHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {
+        MutableComponent message = switch (signal.band()) {
+            case STATIC -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.static_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.static");
+            case CARRIER -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.carrier_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.carrier",
+                    signal.direction());
+            case FRAGMENT -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.fragment_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.fragment",
+                    signal.direction());
+            case LOCK -> Component.translatable(
+                    "message.frozendawn.surveyor_lens.hearth.lock",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction());
+            case CATALOGUED -> Component.translatable(
+                    signal.hostile()
+                            ? "message.frozendawn.surveyor_lens.hearth.catalogued_hostile"
+                            : "message.frozendawn.surveyor_lens.hearth.catalogued",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction());
+            case NONE -> Component.translatable("message.frozendawn.surveyor_lens.none");
+        };
+
+        ChatFormatting color = signal.hostile()
+                ? ChatFormatting.DARK_RED
+                : signal.suspicious() ? ChatFormatting.GOLD : ChatFormatting.AQUA;
+        player.displayClientMessage(message.withStyle(color), true);
+
+        if (signal.newlyDiscovered()) {
+            player.sendSystemMessage(Component.translatable(
+                    "message.frozendawn.surveyor_lens.hearth.catalogued_chat",
+                    hearthTypeName(signal.hearthType()),
+                    signal.distanceBlocks(),
+                    signal.direction()).withStyle(ChatFormatting.GOLD));
+        }
+
+        playHearthSignal(player, signal);
+    }
+
+    private void playHearthSignal(ServerPlayer player, HearthSurveyScanner.HearthSignal signal) {
+        SoundEvent sound;
+        if (signal.hostile()
+                && signal.band() != HearthSurveyPolicy.SignalBand.LOCK
+                && signal.band() != HearthSurveyPolicy.SignalBand.CATALOGUED) {
+            sound = ModSounds.RADIO_STATIC_HEAVY.get();
+        } else {
+            sound = switch (signal.band()) {
+                case STATIC -> ModSounds.RADIO_STATIC_BURST.get();
+                case CARRIER -> ModSounds.RADIO_STATIC_MEDIUM.get();
+                case FRAGMENT -> ModSounds.THAEVEN_CONTACT.get();
+                case LOCK, CATALOGUED -> ModSounds.RADIO_SIGNAL_LOCK.get();
+                case NONE -> ModSounds.RADIO_STATIC_AMBIENT.get();
+            };
+        }
+
+        float volume = 0.35F + signal.observedStrength() * 0.5F;
+        float pitch = signal.hostile()
+                ? 0.68F + signal.observedStrength() * 0.08F
+                : 0.80F + signal.observedStrength() * 0.18F;
+        // Hearth scans are suit-internal instrument feedback and remain audible in vacuum.
+        player.playNotifySound(sound, SoundSource.MASTER, volume, pitch);
+    }
+
+    private static Component hearthTypeName(HearthSelectionPolicy.HearthType type) {
+        String key = type == HearthSelectionPolicy.HearthType.MAJOR
+                ? "message.frozendawn.surveyor_lens.hearth.type.major"
+                : "message.frozendawn.surveyor_lens.hearth.type.minor";
+        return Component.translatable(key);
     }
 
     private void markHeatSources(ServerLevel level, ServerPlayer player, List<SurveyorLensScanner.HeatSignature> signatures) {

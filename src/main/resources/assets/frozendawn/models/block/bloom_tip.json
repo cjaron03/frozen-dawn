@@ -1,0 +1,5 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": { "cross": "frozendawn:block/bloom_tip" },
+  "render_type": "minecraft:cutout"
+}

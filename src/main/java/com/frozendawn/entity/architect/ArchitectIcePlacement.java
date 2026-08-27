@@ -1,6 +1,9 @@
 package com.frozendawn.entity.architect;
 
+import com.frozendawn.aggregate.StillpointPolicy;
+import com.frozendawn.init.ModBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -84,8 +87,14 @@ public final class ArchitectIcePlacement {
     }
 
     private static boolean canPlaceIce(Level level, BlockPos pos) {
+        if (level instanceof ServerLevel serverLevel
+                && StillpointPolicy.isSuppressed(serverLevel, pos)) {
+            return false;
+        }
         BlockState state = level.getBlockState(pos);
-        if (state.isAir() || state.canBeReplaced()) {
+        if (state.isAir()
+                || state.canBeReplaced()
+                || state.is(ModBlocks.FROZEN_ATMOSPHERE.get())) {
             return true;
         }
         // Destroy small plants/flowers (instant-break blocks) to make room for ice.

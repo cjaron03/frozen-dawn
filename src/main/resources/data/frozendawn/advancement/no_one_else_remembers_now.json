@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:the_watching_never_stopped",
+  "display": {
+    "icon": {
+      "id": "frozendawn:memory_node_empty"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.no_one_else_remembers_now.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.no_one_else_remembers_now.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

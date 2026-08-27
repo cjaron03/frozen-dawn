@@ -5,6 +5,7 @@ import com.frozendawn.entity.ShadowFigureEntity;
 import com.frozendawn.init.ModEntities;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.WatcherSeenPayload;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
@@ -42,6 +43,12 @@ public class SanityEffects {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
+
+        if (ThaeIvenMindDimension.isMindLevel(mc.level)) {
+            discardAllShadows();
+            discardWatcher();
+            return;
+        }
 
         // No sanity effects in creative or spectator
         if (mc.player.isCreative() || mc.player.isSpectator()) {

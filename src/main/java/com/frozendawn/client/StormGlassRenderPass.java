@@ -69,6 +69,10 @@ public final class StormGlassRenderPass {
         if (mc.level == null || mc.player == null || mc.level.dimension() != Level.OVERWORLD) {
             return false;
         }
+        if (PostMaeveClientState.isMaeveErased()) {
+            clear();
+            return false;
+        }
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();

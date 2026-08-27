@@ -1,0 +1,17 @@
+{
+  "title": "Record III — Pattern Residue",
+  "rawPages": [
+    "Vel-thae thaeven.\nVel-thae thaeven.\nIven vel-an.\nEth-iven sha-mae.\nVel thaeven.\nIven sha-mae.",
+    "Vel-thae sha-mae vel.\nThae Iven vel-an.\nVel vaen Vesh.\nVel vaen.\nVel-iven.\nIven sha-mae.",
+    "Vel-thae thaeven vel-an.\nVel-an orren Vesh.\nVel-an eth.\nEth vel-an.\nVel vaen.\nVel-an sha-mae.",
+    "Thae ethven.\nIven vel-an.\nEth orren thae.\nMaevethae thaeven.\nThae orren.\nThaeven vel-an.\n… thae.\n… Kael.\nIven vel-an.",
+    "Maeve: …\nIven: vel-an."
+  ],
+  "translatedPages": [
+    {"segments":[{"id":"pattern_ground_01","baseText":"The warm-one crossed here.\nThen crossed here again.\nThe ground kept the shape.\nCold remembered the passage.\nWhen warmth returned,\nthe old path answered—","semanticOverrides":{},"revealTiming":0,"uncertainty":false}]},
+    {"segments":[{"id":"pattern_wall_01","baseText":"—through stone.\nMovement entered the wall.\nThe wall carried it farther than sight.\nOnce was noise.\nTwice was pattern.\nPattern became direction.","semanticOverrides":{},"revealTiming":16,"uncertainty":false}]},
+    {"segments":[{"id":"pattern_shelter_01","baseText":"Warmth entered what appeared safe.\nThe door closed behind it.\nShelter became boundary.\nBoundary became body.\nWhat was trusted\nbecame the place of approach.","semanticOverrides":{},"revealTiming":30,"uncertainty":false}]},
+    {"segments":[{"id":"pattern_colony_01","baseText":"The body broke.\nThe pieces remained.\nDistance separated them.\nCold gathered them again.\nThe shape was lost.\nThe returning was not.\nNo voice selected the pattern.\nNo hand carried it forward.\nStill, it remained.","semanticOverrides":{},"revealTiming":46,"uncertainty":false}]},
+    {"segments":[{"id":"pattern_resolution_01","baseText":"Director: absent.\nDirective: retained.","semanticOverrides":{},"revealTiming":72,"uncertainty":false}]}
+  ]
+}

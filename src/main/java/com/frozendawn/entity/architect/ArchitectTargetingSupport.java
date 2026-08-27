@@ -30,8 +30,13 @@ public final class ArchitectTargetingSupport {
     ) {
         double playerRange = roamingAfterTargetLoss ? observeReacquireRange : baseRange;
         // Find nearest survival/adventure player (exclude creative & spectator).
-        Player nearestPlayer = level.getNearestPlayer(actor, playerRange);
-        if (nearestPlayer != null && !nearestPlayer.isCreative() && !nearestPlayer.isSpectator()) {
+        Player nearestPlayer = level.getNearestPlayer(
+                actor.getX(), actor.getY(), actor.getZ(), playerRange,
+                candidate -> candidate instanceof Player player
+                        && player.isAlive()
+                        && !player.isCreative()
+                        && !player.isSpectator());
+        if (nearestPlayer != null) {
             return nearestPlayer;
         }
 

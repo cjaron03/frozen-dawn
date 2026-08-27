@@ -30,7 +30,11 @@ public final class ArchitectWalkBreakPlanner {
         candidates.add(from.above());
         if (toward != null) {
             BlockPos front = from.relative(toward);
-            candidates.add(front);
+            // During a step-up, front is the ledge supporting the destination.
+            // Mining it converts a valid jump into a trench and repeats forever.
+            if (!steppingUp) {
+                candidates.add(front);
+            }
             candidates.add(front.above());
             if (steppingDown) {
                 candidates.add(front.above().above());

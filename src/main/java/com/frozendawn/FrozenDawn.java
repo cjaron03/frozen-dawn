@@ -1,16 +1,20 @@
 package com.frozendawn;
 
 import com.frozendawn.compat.curios.CuriosCompat;
+import com.frozendawn.config.FrozenDawnClientConfig;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.init.ModArmorMaterials;
+import com.frozendawn.init.ModAttachments;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModEntities;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.init.ModFluids;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModLootModifiers;
 import com.frozendawn.init.ModMenuTypes;
+import com.frozendawn.init.ModParticles;
 import com.frozendawn.init.ModRecipeSerializers;
 import com.frozendawn.init.ModSounds;
 import com.mojang.logging.LogUtils;
@@ -30,6 +34,7 @@ public class FrozenDawn {
         modEventBus.addListener(ModItems::addToVanillaCreativeTabs);
 
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
+        ModAttachments.ATTACHMENTS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
@@ -41,9 +46,12 @@ public class FrozenDawn {
         ModRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
         ModSounds.SOUNDS.register(modEventBus);
+        ModParticles.PARTICLES.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);
+        ModEffects.EFFECTS.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, FrozenDawnConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, FrozenDawnClientConfig.SPEC);
 
         LOGGER.info("Frozen Dawn initialized. The sun grows cold...");
     }

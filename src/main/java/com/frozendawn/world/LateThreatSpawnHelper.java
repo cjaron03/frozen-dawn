@@ -1,5 +1,7 @@
 package com.frozendawn.world;
 
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.homo.HearthBoundaryPolicy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,13 +39,35 @@ final class LateThreatSpawnHelper {
         for (int attempt = 0; attempt < attempts; attempt++) {
             BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
             BlockPos vertical = findValidVerticalSpawn(level, sample.getX(), sample.getZ(),
-                    player.getBlockY(), maxLightLevel);
+                    player.getBlockY(), maxLightLevel, true);
             if (vertical != null) {
                 return vertical;
             }
         }
 
         return findSurfaceSpawn(level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+    }
+
+    static BlockPos findUnrestrictedHybridSpawn(
+            ServerLevel level, ServerPlayer player, RandomSource random,
+            int minDistance, int maxDistance, int attempts, int maxLightLevel) {
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            BlockPos sample = randomXZAround(player, random, minDistance, maxDistance);
+            BlockPos vertical = findValidVerticalSpawn(
+                    level, sample.getX(), sample.getZ(), player.getBlockY(),
+                    maxLightLevel, false);
+            if (vertical != null) {
+                return vertical;
+            }
+        }
+
+        return findSurfaceSpawn(
+                level, player, random, minDistance, maxDistance, attempts, maxLightLevel);
+    }
+
+    static boolean isInsideHearthBoundary(ServerLevel level, BlockPos pos) {
+        return pos != null && HearthBoundaryPolicy.contactAt(
+                ReturnedHearthSavedData.get(level.getServer()), pos).isPresent();
     }
 
     private static BlockPos randomXZAround(ServerPlayer player, RandomSource random,
@@ -55,14 +79,15 @@ final class LateThreatSpawnHelper {
         return new BlockPos(x, player.getBlockY(), z);
     }
 
-    private static BlockPos findValidVerticalSpawn(ServerLevel level, int x, int z, int playerY,
-                                                   int maxLightLevel) {
+    private static BlockPos findValidVerticalSpawn(
+            ServerLevel level, int x, int z, int playerY,
+            int maxLightLevel, boolean requireSurfaceSky) {
         int topY = Math.min(level.getMaxBuildHeight() - 2, playerY + VERTICAL_SCAN_UP);
         int bottomY = Math.max(level.getMinBuildHeight() + 1, playerY - VERTICAL_SCAN_DOWN);
 
         for (int y = topY; y >= bottomY; y--) {
             BlockPos pos = new BlockPos(x, y, z);
-            if (isValidHybridSpawn(level, pos, maxLightLevel)) {
+            if (isValidHybridSpawn(level, pos, maxLightLevel, requireSurfaceSky)) {
                 return pos;
             }
         }
@@ -75,8 +100,10 @@ final class LateThreatSpawnHelper {
                 && hasValidMobSpace(level, pos, maxLightLevel);
     }
 
-    private static boolean isValidHybridSpawn(ServerLevel level, BlockPos pos, int maxLightLevel) {
-        if (pos.getY() >= SEA_LEVEL && !hasSkyAccess(level, pos)) {
+    private static boolean isValidHybridSpawn(
+            ServerLevel level, BlockPos pos, int maxLightLevel,
+            boolean requireSurfaceSky) {
+        if (requireSurfaceSky && pos.getY() >= SEA_LEVEL && !hasSkyAccess(level, pos)) {
             return false;
         }
         return hasValidMobSpace(level, pos, maxLightLevel);

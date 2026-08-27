@@ -4,6 +4,7 @@ import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.entity.FrostmiteEntity;
+import com.frozendawn.event.ResonanceEventHooks;
 import com.frozendawn.init.ModBlockEntities;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.world.HeaterRegistry;
@@ -66,6 +67,10 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             industrialDrainWarningTicks--;
         }
         if (burnTimeRemaining > 0) {
+            if (level instanceof ServerLevel serverLevel
+                    && serverLevel.getGameTime() % 20L == 0L) {
+                ResonanceEventHooks.emitMachinery(serverLevel, worldPosition);
+            }
             int totalDrain = getPhaseConsumption() + getFrostmiteFuelDrain();
             if (level instanceof ServerLevel serverLevel) {
                 PlayerEndStats.addFuelBurnedNearby(serverLevel, worldPosition, Math.min(burnTimeRemaining, totalDrain));

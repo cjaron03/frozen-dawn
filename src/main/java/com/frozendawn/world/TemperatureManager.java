@@ -53,6 +53,20 @@ public final class TemperatureManager {
      *                   Use for mobs where exact best-warmth isn't needed.
      */
     public static float getTemperatureAt(Level level, BlockPos pos, int currentDay, int totalDays, boolean quickScan) {
+        return getTemperatureAt(level, pos, currentDay, totalDays, quickScan, false);
+    }
+
+    /**
+     * Bounded temperature sample for world catch-up work. It preserves loaded
+     * heat sources while refusing to query neighboring chunks that are not
+     * already available.
+     */
+    public static float getLoadedTemperatureAt(Level level, BlockPos pos, int currentDay, int totalDays) {
+        return getTemperatureAt(level, pos, currentDay, totalDays, true, true);
+    }
+
+    private static float getTemperatureAt(Level level, BlockPos pos, int currentDay, int totalDays,
+                                          boolean quickScan, boolean loadedOnly) {
         // Clamp inputs to prevent bad interpolation from corrupted world data
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
@@ -60,7 +74,7 @@ public final class TemperatureManager {
         float depthTemp = PhaseManager.getDepthModifier(pos.getY())
                 * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
         float shelterTemp = getShelterModifier(level, pos);
-        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan)
+        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly)
                 * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
         float finalTemp = phaseTemp + depthTemp + shelterTemp + heatTemp;
 
@@ -72,6 +86,8 @@ public final class TemperatureManager {
             finalTemp = Math.max(finalTemp, ventFloor);
         }
         finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
+        finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
+                .temperatureOffset(level, pos);
         return finalTemp;
     }
 
@@ -130,9 +146,15 @@ public final class TemperatureManager {
      */
     public static boolean hasBreathableAir(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) return true;
-        if (isInsideGeothermalO2Range(level, pos)) return true;
+        if (hasOxygenSupport(level, pos)) return true;
         return isInsideSealedRoom(level, pos);
+    }
+
+    /** Active infrastructure that can repressurize an intact EVA suit. */
+    public static boolean hasOxygenSupport(Level level, BlockPos pos) {
+        if (level.dimension() != Level.OVERWORLD) return false;
+        return BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
+                || isInsideGeothermalO2Range(level, pos);
     }
 
     private static boolean isInsideGeothermalO2Range(Level level, BlockPos pos) {
@@ -227,11 +249,19 @@ public final class TemperatureManager {
      * @param quickScan  Reduced radius + early exit on first heat found (for mobs)
      */
     public static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays, boolean quickScan) {
+        return getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, false);
+    }
+
+    private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
+                                               boolean quickScan, boolean loadedOnly) {
         float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
 
         // --- Registered thermal heaters (no block scan needed) ---
         for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
+            if (loadedOnly && !level.isLoaded(heaterPos)) {
+                continue;
+            }
             int distSq = (int) pos.distSqr(heaterPos);
             BlockState state = level.getBlockState(heaterPos);
             boolean sheltered = false;
@@ -260,6 +290,9 @@ public final class TemperatureManager {
                 for (int dz = -radius; dz <= radius; dz++) {
                     int distSq = dx * dx + dy * dy + dz * dz;
                     checkPos.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
+                    if (loadedOnly && !level.isLoaded(checkPos)) {
+                        continue;
+                    }
                     BlockState state = level.getBlockState(checkPos);
                     float warmth = getAmbientHeat(state, distSq);
                     if (warmth > 0) {
@@ -272,6 +305,9 @@ public final class TemperatureManager {
 
         // --- Registered geothermal cores (range up to 32, beyond block scan radius) ---
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
+            if (loadedOnly && !level.isLoaded(corePos)) {
+                continue;
+            }
             double distSq = pos.distSqr(corePos);
             float coreRange, coreTemp;
 

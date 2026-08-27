@@ -6,14 +6,19 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModDamageTypes;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
+import com.frozendawn.hearthrot.HearthrotManager;
 import com.frozendawn.network.BreathableStatePayload;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
+import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.entity.HollowEntity;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.world.TemperatureManager;
 import com.frozendawn.world.ThermalVentRegistry;
+import com.frozendawn.world.ThaeIvenMindDimension;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -61,6 +66,8 @@ final class PlayerTickHandler {
         suffocationTimer.clear();
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
+        MasterArchitectThermalSever.reset();
+        RimeboundEncasement.reset();
         FrostbiteHandler.reset();
         SanityHandler.reset();
     }
@@ -71,6 +78,8 @@ final class PlayerTickHandler {
         suffocationTimer.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
+        MasterArchitectThermalSever.onPlayerLogout(player);
+        RimeboundEncasement.clear(player);
         SnowshoesHandler.clearBoost(player);
         IceClawsHandler.onPlayerLogout(player);
         FrostbiteHandler.onPlayerLogout(player);
@@ -79,7 +88,20 @@ final class PlayerTickHandler {
     }
 
     static void onPlayerLogin(ServerPlayer player) {
+        RimeboundEncasement.clear(player);
         FrostbiteHandler.onPlayerLogin(player);
+    }
+
+    static void stabilizeAfterRescue(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        breathableCache.remove(playerId);
+        suffocationTimer.remove(playerId);
+        playerTemperatures.remove(playerId);
+        frostmiteTemperatureDrain.remove(playerId);
+        FrostbiteHandler.clearForRescue(player);
+        MasterArchitectThermalSever.clearForRescue(player);
+        RimeboundEncasement.clear(player);
+        syncBreathableState(player);
     }
 
     /** Returns the last-calculated temperature for a player (updated every 10 ticks). */
@@ -98,7 +120,9 @@ final class PlayerTickHandler {
     }
 
     static float getFreezeResolvedTemperature(ServerPlayer player, ApocalypseState state) {
-        return getDisplayedTemperature(player, state) + MobFreezeHandler.getArmorColdResistance(player);
+        return getDisplayedTemperature(player, state)
+                + MobFreezeHandler.getArmorColdResistance(player)
+                - HearthrotManager.hiddenColdPenalty(player);
     }
 
     static void syncBreathableState(ServerPlayer player) {
@@ -122,6 +146,7 @@ final class PlayerTickHandler {
      * Called every server tick from WorldTickHandler.
      */
     static void tick(MinecraftServer server, ApocalypseState state, int currentPhase, int currentDay, float progress) {
+        MasterArchitectThermalSever.tick(server);
         if (state.getApocalypseTicks() % FROSTMITE_DRAIN_STEP_INTERVAL == 0) {
             tickFrostmiteDrain(server);
         }
@@ -184,6 +209,7 @@ final class PlayerTickHandler {
             SnowshoesHandler.tick(player);
             BlizzardGogglesHandler.tick(player, currentPhase, progress);
             IceClawsHandler.tick(player);
+            RimeboundEncasement.tick(player);
             if (player.level().dimension() == Level.OVERWORLD) {
                 SanityHandler.tick(player, currentPhase, sanitySpeed);
                 PlayerEndStats.tickJourneyStats(player, state, currentPhase);
@@ -241,7 +267,6 @@ final class PlayerTickHandler {
 
         temp -= FrostbiteHandler.getTemperatureDrain(player);
         temp -= getFrostmiteTemperatureDrain(player);
-
         // Hollow grab: massive temperature plunge
         for (var passenger : player.getPassengers()) {
             if (passenger instanceof HollowEntity) {
@@ -249,8 +274,11 @@ final class PlayerTickHandler {
                 break;
             }
         }
+        if (player.hasEffect(ModEffects.RESONANT_GRASP)) {
+            temp -= 35.0F;
+        }
 
-        return temp;
+        return MasterArchitectThermalSever.adjustTemperature(player, temp);
     }
 
     private static void applyHeatDamage(ServerPlayer player, float temp, float progress) {
@@ -323,7 +351,10 @@ final class PlayerTickHandler {
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD) continue;
+            if (player.level().dimension() != Level.OVERWORLD
+                    && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+                continue;
+            }
 
             UUID id = player.getUUID();
             if (refreshCache || !breathableCache.containsKey(id)) {
@@ -343,8 +374,14 @@ final class PlayerTickHandler {
                 if (!tank.isEmpty()) {
                     int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
                     if (o2 > 0) {
-                        if (!visorRig || state.getApocalypseTicks() % 2 == 0) {
-                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - 1);
+                        if (!SuitIntegrityHandler.hasPuncture(player)
+                                && SuitIntegrityPolicy.shouldConsumeBaselineO2(
+                                        state.getApocalypseTicks(),
+                                        visorRig,
+                                        O2EfficiencyModuleItem.isInstalled(player))) {
+                            int consumed = Math.min(
+                                    o2, HearthrotManager.baselineO2Units(player));
+                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
                         }
                         suffocationTimer.put(id, 0);
                         continue;
@@ -353,6 +390,9 @@ final class PlayerTickHandler {
             }
 
             int ticks = suffocationTimer.getOrDefault(id, 0);
+            if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
+                ticks = Math.max(ticks, SUFFOCATION_DURATION);
+            }
             if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
                 ticks++;
             }

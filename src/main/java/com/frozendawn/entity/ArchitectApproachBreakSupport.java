@@ -22,6 +22,44 @@ final class ArchitectApproachBreakSupport {
     private ArchitectApproachBreakSupport() {
     }
 
+    static boolean tryStartContactBreach(
+            ArchitectEntity architect,
+            ArchitectApproachState approachState,
+            ArchitectBlockBreaker blockBreaker,
+            LivingEntity target
+    ) {
+        double horizontalDistance = architect.horizontalDistanceTo(target);
+        double verticalDistance = architect.verticalDistanceTo(target);
+        if (!ArchitectBreachPlanner.shouldAttemptContactBreach(
+                architect.hasLineOfSight(target),
+                blockBreaker.hasTarget(),
+                horizontalDistance,
+                verticalDistance)) {
+            return false;
+        }
+
+        BlockPos wallBlock = ArchitectBreachPlanner.findDirectWallBlock(
+                architect,
+                target,
+                architect::isBreakableBlock);
+        if (wallBlock == null || architect.position().distanceToSqr(
+                wallBlock.getX() + 0.5D,
+                wallBlock.getY() + 0.5D,
+                wallBlock.getZ() + 0.5D) > 4.5D * 4.5D) {
+            return false;
+        }
+
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        architect.clearWalkNavigationState(true);
+        architect.clearCommittedWalk();
+        architect.resetWalkStuckTracker();
+        blockBreaker.setTarget(wallBlock);
+        LOGGER.info("[Architect] CONTACT BREACH at {} toward enclosed target", wallBlock);
+        architect.walkToBreakTarget();
+        return true;
+    }
+
     static boolean continueBreaking(
             ArchitectEntity architect,
             ArchitectApproachState approachState,

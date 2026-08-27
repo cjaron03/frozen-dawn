@@ -8,6 +8,10 @@ import com.frozendawn.data.ChunkEpochState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.data.PlayerPlacedBlockTracker;
+import com.frozendawn.lore.ThaevenLoreWorldManager;
+import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.data.RemnantLureSavedData;
+import com.frozendawn.homo.HearthProtectionPolicy;
 import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.core.BlockPos;
@@ -823,11 +827,21 @@ public final class ChunkCatchUpManager {
                                                BlockPos supportPos, int chunkX, int chunkZ, TickEditBudget editBudget,
                                                MutationProtectionContext protectionContext) {
         BlockPos placePos = supportPos.above();
+
+        // Most columns do not receive Frozen Atmosphere. Resolve the stable
+        // placement roll before protection, exposure, or temperature work so
+        // failed candidates remain effectively free during chunk bursts.
+        RandomSource random = randomFor(level, chunkX, chunkZ, placePos, 0xA7105000);
+        float chance = 0.06f + (apocalypse.getProgress() - PhaseManager.PHASE6_VACUUM_START) * 0.35f;
+        if (random.nextFloat() > Math.max(0.04f, Math.min(0.18f, chance))) {
+            return;
+        }
+
         if (!canMutate(level, placePos, protectionContext)
                 || BlastPitWarmZoneRegistry.isInsideWarmZone(level, placePos)
                 || ThermalVentRegistry.isVolcanicField(level, placePos)
                 || protectionContext.isFuelSiloProtected(placePos)
-                || !level.canSeeSky(placePos)
+                || !isOpenToSnow(level, placePos)
                 || !level.getBlockState(supportPos).isFaceSturdy(level, supportPos, Direction.UP)) {
             return;
         }
@@ -837,15 +851,9 @@ public final class ChunkCatchUpManager {
             return;
         }
 
-        float temp = TemperatureManager.getTemperatureAt(level, placePos,
+        float temp = TemperatureManager.getLoadedTemperatureAt(level, placePos,
                 apocalypse.getCurrentDay(), apocalypse.getTotalDays());
         if (temp > FROZEN_ATMOSPHERE_TEMP) {
-            return;
-        }
-
-        RandomSource random = randomFor(level, chunkX, chunkZ, placePos, 0xA7105000);
-        float chance = 0.06f + (apocalypse.getProgress() - PhaseManager.PHASE6_VACUUM_START) * 0.35f;
-        if (random.nextFloat() > Math.max(0.04f, Math.min(0.18f, chance))) {
             return;
         }
         setEpochBlock(level, placePos, ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState(), editBudget);
@@ -922,6 +930,9 @@ public final class ChunkCatchUpManager {
         }
         return !protectionContext.isPlayerPlaced(pos)
                 && !protectionContext.isFuelSiloProtected(pos)
+                && !protectionContext.isHearthProtected(pos)
+                && !protectionContext.isRemnantLureProtected(pos)
+                && !ThaevenLoreWorldManager.protectsCarrier(level, pos)
                 && !BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 && !ThermalVentRegistry.isVolcanicField(level, pos);
     }
@@ -930,10 +941,22 @@ public final class ChunkCatchUpManager {
         private final ServerLevel level;
         private final Map<Long, Boolean> nearbyPlayerPlacedCells = new HashMap<>();
         private final Map<Long, Boolean> fuelSiloProtectedPositions = new HashMap<>();
+        private final ReturnedHearthSavedData hearths;
+        private final RemnantLureSavedData remnantLures;
         private PlayerPlacedBlockTracker tracker;
 
         private MutationProtectionContext(ServerLevel level) {
             this.level = level;
+            this.hearths = ReturnedHearthSavedData.get(level.getServer());
+            this.remnantLures = RemnantLureSavedData.get(level.getServer());
+        }
+
+        private boolean isHearthProtected(BlockPos pos) {
+            return HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, pos);
+        }
+
+        private boolean isRemnantLureProtected(BlockPos pos) {
+            return remnantLures.protectsFromEnvironmentalMutation(pos);
         }
 
         private boolean isPlayerPlaced(BlockPos pos) {
@@ -1136,6 +1159,19 @@ public final class ChunkCatchUpManager {
                 + "/s" + millis(maxSelectNanos)
                 + "/b" + millis(maxBookkeepingNanos)
                 + "/p" + millis(maxProcessNanos);
+    }
+
+    /** Bloom yields whenever chunk catch-up is spending its elevated burst budget. */
+    public static boolean isBloomDeferred() {
+        return lastMode == CatchUpMode.BURST || lastMode == CatchUpMode.PREWARM;
+    }
+
+    /** Reuses the catch-up system's conservative ORSA footprint guard. */
+    public static boolean isBloomOrsaProtected(ServerLevel level, BlockPos pos) {
+        return isProtectedOrsaChunk(level, pos.getX() >> 4, pos.getZ() >> 4)
+                || FuelProcessingSiloMultiblock.isProtectedFromEnvironmentalDeposit(level, pos)
+                || ThermalVentRegistry.isFreezeProtected(level, pos)
+                || ThermalVentRegistry.isVolcanicField(level, pos);
     }
 
     private static String millis(long nanos) {

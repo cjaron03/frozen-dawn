@@ -51,6 +51,7 @@ public class TemperatureHud {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (mc.options.hideGui) return;
+        if (HearthrotClientState.shouldFlickerSensors()) return;
 
         int blinkTicks = Math.max(0, introBlinkEndTick - mc.player.tickCount);
         if (blinkTicks > 8 && ((blinkTicks / 4) & 1) == 0) {
@@ -61,7 +62,20 @@ public class TemperatureHud {
         float lerpSpeed = 0.1f;
         displayedTemp += (targetTemp - displayedTemp) * lerpSpeed;
 
-        String tempText = String.format("%.0f\u00B0C", displayedTemp);
+        if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
+            renderPanel(
+                    graphics,
+                    mc,
+                    MasterArchitectFloodClient.corruptedTemperatureText(),
+                    MasterArchitectFloodClient.corruptedTemperatureVisual());
+            return;
+        }
+
+        renderPanel(graphics, mc, String.format("%.0f\u00B0C", displayedTemp), displayedTemp);
+    }
+
+    private static void renderPanel(
+            GuiGraphics graphics, Minecraft mc, String tempText, float visualTemp) {
         int textWidth = mc.font.width(tempText);
 
         // Layout: [4px bar] [2px gap] [text] — all inside a padded background
@@ -87,13 +101,13 @@ public class TemperatureHud {
         // Thermometer bar — vertical color strip on the left
         int barX = x + padding;
         int barY = y + padding;
-        int barColor = getTemperatureColor(displayedTemp);
+        int barColor = getTemperatureColor(visualTemp);
         graphics.fill(barX, barY, barX + barWidth, barY + innerHeight, barColor);
 
         // Temperature text
         int textX = barX + barWidth + gap;
         int textY = barY + 1;
-        int textColor = getTextColor(displayedTemp);
+        int textColor = getTextColor(visualTemp);
         graphics.drawString(mc.font, tempText, textX, textY, textColor, false);
     }
 

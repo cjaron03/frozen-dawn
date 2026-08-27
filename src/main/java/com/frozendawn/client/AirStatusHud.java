@@ -1,10 +1,13 @@
 package com.frozendawn.client;
 
+import com.frozendawn.init.ModItems;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Compact EVA air-state readout stacked under the temperature HUD.
@@ -20,12 +23,17 @@ public final class AirStatusHud {
     private static final int PADDING_Y = 2;
     private static final int PANEL_HEIGHT = 22;
     private static final int PULSE_DURATION = 12;
+    private static final int MODULE_ICON_SIZE = 8;
+    private static final int MODULE_ICON_GAP = 3;
+    private static final float ETA_SMOOTHING = 0.22F;
     private static final int BG_COLOR = 0xAA0B1217;
     private static final int PREFIX_COLOR = 0xFF8A9AA4;
     private static final int TANK_PREFIX_COLOR = 0xFF6F7F89;
 
     private static AirStatusTelemetry.State lastState = null;
     private static int pulseTicks = 0;
+    private static int lastEtaTick = Integer.MIN_VALUE;
+    private static float displayedEtaSeconds = AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
 
     private AirStatusHud() {
     }
@@ -33,6 +41,8 @@ public final class AirStatusHud {
     public static void reset() {
         lastState = null;
         pulseTicks = 0;
+        lastEtaTick = Integer.MIN_VALUE;
+        displayedEtaSeconds = AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
     }
 
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -45,11 +55,46 @@ public final class AirStatusHud {
             return;
         }
 
+        if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
+            renderMindOverride(
+                    graphics, MasterArchitectFloodClient.corruptedOxygenText());
+            return;
+        }
+        if (MasterArchitectAuraClient.shouldFlickerO2()) {
+            renderMindOverride(graphics, "RECAL...");
+            return;
+        }
+
         AirStatusTelemetry.Reading reading = AirStatusTelemetry.resolveReading(mc.player);
         if (reading == null) {
             reset();
             return;
         }
+        renderReading(graphics, mc, reading, null);
+    }
+
+    /** Draws the existing EVA panel with a temporary mind-stage tank value. */
+    static void renderMindOverride(GuiGraphics graphics, String tankValueOverride) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.options.hideGui
+                || mc.player.isCreative() || mc.player.isSpectator()) {
+            return;
+        }
+        AirStatusTelemetry.TankTelemetry tankTelemetry =
+                AirStatusTelemetry.getTankTelemetry(mc.player);
+        renderReading(
+                graphics,
+                mc,
+                new AirStatusTelemetry.Reading(
+                        AirStatusTelemetry.State.EVA_SUPPLY, tankTelemetry),
+                tankValueOverride);
+    }
+
+    private static void renderReading(
+            GuiGraphics graphics,
+            Minecraft mc,
+            AirStatusTelemetry.Reading reading,
+            String tankValueOverride) {
         AirStatusTelemetry.State state = reading.state();
         AirStatusTelemetry.TankTelemetry tankTelemetry = reading.tankTelemetry();
 
@@ -63,7 +108,20 @@ public final class AirStatusHud {
         String prefix = "AIR:";
         String label = state.label();
         String tankPrefix = "TANK:";
-        String tankValue = tankTelemetry.hasAnyTank() ? tankTelemetry.fillPercent() + "%" : "NONE";
+        boolean showModule = tankValueOverride == null
+                && tankTelemetry.hasAnyTank()
+                && O2EfficiencyModuleItem.isInstalled(mc.player);
+        String tankValue;
+        if (tankValueOverride != null) {
+            tankValue = tankValueOverride;
+        } else if (tankTelemetry.hasAnyTank()) {
+            int eta = smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(
+                    mc.player, reading));
+            tankValue = tankTelemetry.fillPercent() + "%  "
+                    + AirStatusEtaPolicy.format(eta);
+        } else {
+            tankValue = "NONE";
+        }
         int prefixWidth = mc.font.width(prefix);
         int labelWidth = mc.font.width(label);
         int tankPrefixWidth = mc.font.width(tankPrefix);
@@ -71,6 +129,7 @@ public final class AirStatusHud {
         int contentWidth = Math.max(
                 prefixWidth + 3 + labelWidth,
                 tankPrefixWidth + 3 + tankValueWidth
+                        + (showModule ? MODULE_ICON_GAP + MODULE_ICON_SIZE : 0)
         );
         int totalWidth = PADDING_X * 2
                 + ACCENT_WIDTH
@@ -111,7 +170,40 @@ public final class AirStatusHud {
         graphics.drawString(mc.font, prefix, textX, airTextY, mixTowardWhite(PREFIX_COLOR, 0.10F * pulse), false);
         graphics.drawString(mc.font, label, textX + prefixWidth + 3, airTextY, textColor, false);
         graphics.drawString(mc.font, tankPrefix, textX, tankTextY, mixTowardWhite(TANK_PREFIX_COLOR, 0.08F * pulse), false);
-        graphics.drawString(mc.font, tankValue, textX + tankPrefixWidth + 3, tankTextY, tankValueColor, false);
+        int tankValueX = textX + tankPrefixWidth + 3;
+        graphics.drawString(mc.font, tankValue, tankValueX, tankTextY, tankValueColor, false);
+        if (showModule) {
+            renderModuleIcon(
+                    graphics,
+                    tankValueX + tankValueWidth + MODULE_ICON_GAP,
+                    tankTextY);
+        }
+    }
+
+    private static int smoothEta(Minecraft minecraft, int targetSeconds) {
+        if (targetSeconds < 0) {
+            displayedEtaSeconds = AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
+            lastEtaTick = minecraft.player.tickCount;
+            return AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
+        }
+        int currentTick = minecraft.player.tickCount;
+        if (displayedEtaSeconds < 0.0F || lastEtaTick == Integer.MIN_VALUE) {
+            displayedEtaSeconds = targetSeconds;
+        } else if (currentTick != lastEtaTick) {
+            int elapsed = Math.max(1, currentTick - lastEtaTick);
+            float weight = 1.0F - (float) Math.pow(1.0F - ETA_SMOOTHING, elapsed);
+            displayedEtaSeconds = Mth.lerp(weight, displayedEtaSeconds, targetSeconds);
+        }
+        lastEtaTick = currentTick;
+        return Math.max(0, Math.round(displayedEtaSeconds));
+    }
+
+    private static void renderModuleIcon(GuiGraphics graphics, int x, int y) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(0.5F, 0.5F, 1.0F);
+        graphics.renderItem(new ItemStack(ModItems.O2_EFFICIENCY_MODULE.get()), 0, 0);
+        graphics.pose().popPose();
     }
 
     private static int mixTowardWhite(int color, float amount) {

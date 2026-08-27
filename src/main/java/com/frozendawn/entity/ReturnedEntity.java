@@ -2,7 +2,15 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ReturnedBreakLightGoal;
 import com.frozendawn.entity.ai.ReturnedExtinguishHeaterGoal;
+import com.frozendawn.entity.ai.ReturnedHearthWatchGoal;
+import com.frozendawn.entity.ai.ReturnedHostileStrollGoal;
 import com.frozendawn.event.WorldTickHandler;
+import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthMemoryManager;
+import com.frozendawn.homo.HearthPopulationPolicy;
+import com.frozendawn.homo.HearthPopulationRole;
+import com.frozendawn.homo.HearthWatcherPolicy;
+import com.frozendawn.homo.PostMaeveWorldState;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import net.minecraft.core.BlockPos;
@@ -12,6 +20,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.DamageTypeTags;
@@ -31,7 +40,6 @@ import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -41,8 +49,12 @@ import net.minecraft.world.level.ServerLevelAccessor;
 
 import javax.annotation.Nullable;
 import java.util.Set;
+import java.util.Optional;
+import java.util.UUID;
 
 public class ReturnedEntity extends Monster {
+
+    public static final double MAX_HEALTH = 50.0D;
 
     private static final EntityDataAccessor<Integer> DATA_TEXTURE_VARIANT =
             SynchedEntityData.defineId(ReturnedEntity.class, EntityDataSerializers.INT);
@@ -51,6 +63,12 @@ public class ReturnedEntity extends Monster {
 
     private int despawnTimer = 0;
     private static final int DESPAWN_TIMEOUT = 6000; // 5 minutes
+    @Nullable
+    private UUID hearthId;
+    @Nullable
+    private BlockPos hearthCenter;
+    @Nullable
+    private HearthPopulationRole hearthPopulationRole;
 
     public ReturnedEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -60,7 +78,7 @@ public class ReturnedEntity extends Monster {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 60.0)
+                .add(Attributes.MAX_HEALTH, MAX_HEALTH)
                 .add(Attributes.ATTACK_DAMAGE, 8.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.ARMOR, 8.0)
@@ -81,13 +99,21 @@ public class ReturnedEntity extends Monster {
         this.goalSelector.addGoal(1, new ReturnedExtinguishHeaterGoal(this));
         this.goalSelector.addGoal(2, new OpenDoorGoal(this, false));
         this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0, false));
-        this.goalSelector.addGoal(4, new ReturnedBreakLightGoal(this));
-        this.goalSelector.addGoal(5, new net.minecraft.world.entity.ai.goal.RandomStrollGoal(this, 1.0, 40));
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0f));
-        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(4, new ReturnedHearthWatchGoal(this));
+        this.goalSelector.addGoal(5, new ReturnedBreakLightGoal(this));
+        this.goalSelector.addGoal(6, new ReturnedHostileStrollGoal(this, 1.0, 40));
+        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 8.0f) {
+            @Override
+            public boolean canUse() {
+                return !isPostMaeveHearthResident() && super.canUse();
+            }
+        });
+        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(
+                this, Player.class, true,
+                candidate -> canProactivelyTargetPlayer(candidate)));
     }
 
     // --- Spawn Setup ---
@@ -109,6 +135,59 @@ public class ReturnedEntity extends Monster {
 
     public void setTextureVariant(int variant) {
         entityData.set(DATA_TEXTURE_VARIANT, variant);
+    }
+
+    public void bindToHearth(UUID id, BlockPos center, int textureVariant) {
+        hearthId = id;
+        hearthCenter = center.immutable();
+        hearthPopulationRole = null;
+        setTextureVariant(textureVariant);
+        setPersistenceRequired();
+        restrictTo(hearthCenter, HearthWatcherPolicy.HOME_RADIUS);
+        setTarget(null);
+        getNavigation().stop();
+        despawnTimer = 0;
+    }
+
+    public void bindToHearthPopulation(UUID id, HearthPopulationRole role, BlockPos home,
+                                       int textureVariant) {
+        hearthId = id;
+        hearthCenter = home.immutable();
+        hearthPopulationRole = role;
+        setTextureVariant(textureVariant);
+        setPersistenceRequired();
+        restrictTo(hearthCenter, HearthPopulationPolicy.homeRadius(role));
+        setTarget(null);
+        getNavigation().stop();
+        despawnTimer = 0;
+    }
+
+    public boolean isHearthBound() {
+        return hearthId != null && hearthCenter != null;
+    }
+
+    public boolean isBoundToHearth(UUID id) {
+        return id != null && id.equals(hearthId);
+    }
+
+    public Optional<UUID> getHearthId() {
+        return Optional.ofNullable(hearthId);
+    }
+
+    public Optional<BlockPos> getHearthCenter() {
+        return Optional.ofNullable(hearthCenter);
+    }
+
+    public boolean isHearthPopulationResident() {
+        return isHearthBound() && hearthPopulationRole != null;
+    }
+
+    public boolean isBoundToHearthPopulation(UUID id, HearthPopulationRole role) {
+        return id != null && id.equals(hearthId) && role != null && role == hearthPopulationRole;
+    }
+
+    public Optional<HearthPopulationRole> getHearthPopulationRole() {
+        return Optional.ofNullable(hearthPopulationRole);
     }
 
     // --- Death Animation ---
@@ -152,12 +231,45 @@ public class ReturnedEntity extends Monster {
         if (source.is(DamageTypeTags.IS_FIRE)) {
             amount *= 1.5f;
         }
-        return super.hurt(source, amount);
+        boolean hurt = super.hurt(source, amount);
+        if (hurt && isHearthBound()
+                && level() instanceof ServerLevel serverLevel
+                && source.getEntity() instanceof ServerPlayer attacker) {
+            if (hearthPopulationRole != null && hearthId != null) {
+                HearthMemoryManager.recordHearthEntityAttack(
+                        serverLevel, hearthId, attacker, hearthPopulationRole.serializedName());
+            } else {
+                HearthMemoryManager.recordWatcherAttack(serverLevel, this, attacker);
+            }
+        }
+        return hurt;
+    }
+
+    private boolean canProactivelyTargetPlayer(LivingEntity candidate) {
+        if (!isHearthBound()) {
+            return true;
+        }
+        if (!(candidate instanceof ServerPlayer player)
+                || !(level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        if (PostMaeveWorldState.isErased(serverLevel)) {
+            return false;
+        }
+        return HearthWatcherPolicy.canProactivelyTargetPlayer(true,
+                HearthMemoryManager.relationship(serverLevel, player.getUUID()))
+                && HearthCombatRosterManager.canEngagePlayer(
+                        serverLevel, hearthId, getUUID());
     }
 
     @Override
     public void die(DamageSource source) {
         super.die(source);
+        if (isHearthBound() && level() instanceof ServerLevel serverLevel
+                && hearthId != null) {
+            HearthCombatRosterManager.recordResidentDeath(
+                    serverLevel, hearthId, getUUID(), hearthPopulationRole, source);
+        }
         if (!level().isClientSide() && source.getEntity() instanceof ServerPlayer killer) {
             WorldTickHandler.grantAdvancement(killer, "returned_killed");
         }
@@ -167,6 +279,8 @@ public class ReturnedEntity extends Monster {
 
     @Override
     public void aiStep() {
+        enforceHearthEncounterRole();
+        clearDeescalatedHearthAggression();
         super.aiStep();
 
         if (!level().isClientSide()) {
@@ -184,8 +298,10 @@ public class ReturnedEntity extends Monster {
                 }
             }
 
-            // 5-minute despawn timer: no target + no player within 48 blocks
-            if (getTarget() == null) {
+            // Hearth watchers are persistent. Ordinary Returned retain the custom timer.
+            if (isHearthBound()) {
+                despawnTimer = 0;
+            } else if (getTarget() == null) {
                 boolean playerNearby = !level().getEntitiesOfClass(Player.class,
                         getBoundingBox().inflate(48.0),
                         p -> !p.isSpectator()).isEmpty();
@@ -200,6 +316,48 @@ public class ReturnedEntity extends Monster {
             } else {
                 despawnTimer = 0;
             }
+        }
+    }
+
+    private void clearDeescalatedHearthAggression() {
+        if (!isHearthBound() || !(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        if (PostMaeveWorldState.isErased(serverLevel)) {
+            LivingEntity attacker = getLastHurtByMob();
+            if (attacker != null && attacker.isAlive()) {
+                setTarget(attacker);
+            } else {
+                setTarget(null);
+                getNavigation().stop();
+            }
+            return;
+        }
+
+        boolean navigationStopped = false;
+        if (getTarget() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setTarget(null);
+            navigationStopped = true;
+        }
+        if (getLastHurtByMob() instanceof ServerPlayer player
+                && !HearthMemoryManager.isPermanentOrsathae(serverLevel, player.getUUID())) {
+            setLastHurtByMob(null);
+            navigationStopped = true;
+        }
+        if (navigationStopped) {
+            getNavigation().stop();
+        }
+    }
+
+    private void enforceHearthEncounterRole() {
+        if (hearthId != null && level() instanceof ServerLevel serverLevel) {
+            if (PostMaeveWorldState.isErased(serverLevel)) {
+                return;
+            }
+            HearthCombatRosterManager.enforcePassiveRole(
+                    serverLevel, hearthId, this);
         }
     }
 
@@ -231,7 +389,12 @@ public class ReturnedEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
-        return ModSounds.RETURNED_AMBIENT.get();
+        return isPostMaeveHearthResident() ? null : ModSounds.RETURNED_AMBIENT.get();
+    }
+
+    private boolean isPostMaeveHearthResident() {
+        return isHearthBound() && level() instanceof ServerLevel serverLevel
+                && PostMaeveWorldState.isErased(serverLevel);
     }
 
     @Override
@@ -251,13 +414,48 @@ public class ReturnedEntity extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putInt("TextureVariant", getTextureVariant());
         tag.putInt("DespawnTimer", despawnTimer);
+        if (hearthId != null && hearthCenter != null) {
+            tag.putUUID("HearthId", hearthId);
+            tag.putLong("HearthCenter", hearthCenter.asLong());
+            if (hearthPopulationRole != null) {
+                tag.putString("HearthPopulationRole", hearthPopulationRole.serializedName());
+            }
+        }
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        applyCurrentHealthBalance();
         setTextureVariant(tag.getInt("TextureVariant"));
         despawnTimer = tag.getInt("DespawnTimer");
+        if (tag.hasUUID("HearthId") && tag.contains("HearthCenter")) {
+            hearthId = tag.getUUID("HearthId");
+            hearthCenter = BlockPos.of(tag.getLong("HearthCenter"));
+            hearthPopulationRole = HearthPopulationRole.fromSerializedName(
+                    tag.getString("HearthPopulationRole"));
+            setPersistenceRequired();
+            restrictTo(hearthCenter, hearthPopulationRole == null
+                    ? HearthWatcherPolicy.HOME_RADIUS
+                    : HearthPopulationPolicy.homeRadius(hearthPopulationRole));
+            despawnTimer = 0;
+        } else {
+            hearthId = null;
+            hearthCenter = null;
+            hearthPopulationRole = null;
+        }
+    }
+
+    private void applyCurrentHealthBalance() {
+        var maxHealthAttribute = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealthAttribute == null) {
+            return;
+        }
+        float previousMax = getMaxHealth();
+        float healthFraction = previousMax > 0.0F ? getHealth() / previousMax : 1.0F;
+        maxHealthAttribute.setBaseValue(MAX_HEALTH);
+        setHealth(Math.max(0.0F, Math.min(getMaxHealth(),
+                getMaxHealth() * healthFraction)));
     }
 
     // --- Prevent natural despawn (custom timer handles it) ---
@@ -274,6 +472,6 @@ public class ReturnedEntity extends Monster {
 
     @Override
     public boolean shouldDespawnInPeaceful() {
-        return true;
+        return !isHearthPopulationResident();
     }
 }

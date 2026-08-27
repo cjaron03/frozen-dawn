@@ -16,7 +16,7 @@ public class TickableWindSound extends AbstractTickableSoundInstance {
 
     private float targetVolume;
     private float targetPitch;
-    private final float fadeRate;
+    private float fadeRate;
     private final float pitchFadeRate;
     private int ticksRemaining;
 
@@ -37,6 +37,11 @@ public class TickableWindSound extends AbstractTickableSoundInstance {
 
     public void setTargetVolume(float target) {
         this.targetVolume = target;
+    }
+
+    public void setTargetVolume(float target, float transitionRate) {
+        this.targetVolume = target;
+        this.fadeRate = Math.max(0.001F, transitionRate);
     }
 
     public void setTargetPitch(float target) {

@@ -1,8 +1,11 @@
 package com.frozendawn.client;
 
 import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.hearthrot.HearthrotPolicy;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
@@ -129,5 +132,22 @@ public final class AirStatusTelemetry {
 
     public static boolean hasUsableO2Tank(Player player) {
         return getTankTelemetry(player).hasUsableO2();
+    }
+
+    public static int estimateRemainingSeconds(Player player, Reading reading) {
+        TankTelemetry tank = reading.tankTelemetry();
+        boolean activeDrain = reading.state() != State.BREATHABLE;
+        boolean efficiencyModule = O2EfficiencyModuleItem.isInstalled(player);
+        return AirStatusEtaPolicy.estimateSeconds(
+                tank.totalO2(),
+                tank.maxO2(),
+                activeDrain,
+                SuitIntegrityClient.punctures(),
+                FrozenDawnConfig.SUIT_PUNCTURE_VENT_SECONDS.get(),
+                MobFreezeHandler.hasThermalVisorRig(player),
+                efficiencyModule,
+                HearthrotPolicy.externalO2Multiplier(
+                        HearthrotClientState.visualColonizationStage()),
+                HearthrotPolicy.diseaseO2Multiplier(HearthrotClientState.stage()));
     }
 }

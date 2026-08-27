@@ -6,7 +6,9 @@ import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.init.ModArmorMaterials;
 import com.frozendawn.init.ModDataComponents;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.entity.RimeboundEncasement;
 import com.frozendawn.world.TemperatureManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -92,6 +94,28 @@ public class MobFreezeHandler {
     }
 
     private static void applyFreezeEffects(LivingEntity entity, float temp, boolean isPlayer, ApocalypseState state) {
+        // Thermal Sever owns its exact damage cadence and bypasses EVA climate control.
+        if (entity instanceof ServerPlayer serverPlayer
+                && MasterArchitectThermalSever.isSevering(serverPlayer)) {
+            entity.setTicksFrozen(Math.max(
+                    entity.getTicksFrozen(), entity.getTicksRequiredToFreeze() + 20));
+            return;
+        }
+
+        // Rimebound ice is physical encasement, not environmental cold. Its
+        // controller owns the frost rendering even through climate-controlled EVA.
+        if (entity instanceof ServerPlayer serverPlayer
+                && RimeboundEncasement.amount(serverPlayer) > 0.0F) {
+            return;
+        }
+
+        // Resonant frost is physically forced across the suit during a grab.
+        // The entity owns buildup and damage cadence; EVA may not erase the tell.
+        if (entity instanceof ServerPlayer serverPlayer
+                && serverPlayer.hasEffect(ModEffects.RESONANT_GRASP)) {
+            return;
+        }
+
         // Phase 6 late without breathable air: skip freeze — suffocation replaces freezing
         if (entity instanceof ServerPlayer serverPlayer
                 && PhaseManager.isVacuumActive(state.getPhase(), state.getProgress())

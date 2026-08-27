@@ -2,6 +2,7 @@ package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.event.MobFreezeHandler;
+import com.frozendawn.init.ModEffects;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleTypes;
@@ -33,7 +34,10 @@ public class ColdEffects {
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
         // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
-        if (MobFreezeHandler.getFullSetTier(mc.player) == 3 && mc.player.getTicksFrozen() > 0) {
+        if (MobFreezeHandler.getFullSetTier(mc.player) == 3
+                && !mc.player.hasEffect(ModEffects.RIMEBOUND_ENCASEMENT)
+                && !mc.player.hasEffect(ModEffects.RESONANT_GRASP)
+                && mc.player.getTicksFrozen() > 0) {
             mc.player.setTicksFrozen(0);
         }
 

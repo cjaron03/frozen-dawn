@@ -19,6 +19,20 @@
       }
     ]
   },
+  "ambient.wind_post_maeve_light": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      { "name": "frozendawn:ambient/wind_post_maeve_light", "stream": true }
+    ]
+  },
+  "ambient.wind_post_maeve_strong": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      { "name": "frozendawn:ambient/wind_post_maeve_strong", "stream": true }
+    ]
+  },
   "ambient.shelter_creak": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.shelter_creak",
@@ -81,6 +95,43 @@
         "name": "frozendawn:ambient/eva_breathing",
         "stream": true
       }
+    ]
+  },
+  "ui.suit.puncture_warning": {
+    "subtitle": "subtitle.frozendawn.ui.suit.puncture_warning",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/puncture_warning", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_critical",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/oxygen_critical", "stream": true }
+    ]
+  },
+  "ui.suit.oxygen_beep": {
+    "subtitle": "subtitle.frozendawn.ui.suit.oxygen_beep",
+    "sounds": [
+      "frozendawn:ui/suit/oxygen_beep"
+    ]
+  },
+  "ui.suit.leak_hiss": {
+    "subtitle": "subtitle.frozendawn.ui.suit.leak_hiss",
+    "sounds": [
+      "frozendawn:ui/suit/leak_hiss"
+    ]
+  },
+  "ui.suit.emergency_reserve": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_reserve", "stream": true }
+    ]
+  },
+  "ui.suit.biological_activity_warning": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.suit.biological_activity_warning",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/biological_activity_warning", "stream": true }
     ]
   },
   "ambient.eva_suffocate": {
@@ -353,6 +404,151 @@
       { "name": "minecraft:entity.zombie.step", "type": "event" }
     ]
   },
+  "entity.undone.ambient_one": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_1" ]
+  },
+  "entity.undone.ambient_two": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_2" ]
+  },
+  "entity.undone.ambient_three": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/ambient_3" ]
+  },
+  "entity.undone.failed_word": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/failed_word" ]
+  },
+  "entity.undone.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/attack" ]
+  },
+  "entity.undone.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/hurt" ]
+  },
+  "entity.undone.grasp_cast": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_cast" ]
+  },
+  "entity.undone.grasp_hold": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_hold" ]
+  },
+  "entity.undone.grasp_break": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.grab",
+    "sounds": [ "frozendawn:entity/undone/grasp_break" ]
+  },
+  "entity.undone.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [ "frozendawn:entity/undone/death" ]
+  },
+  "entity.undone.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone.moves",
+    "sounds": [
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" },
+      { "name": "minecraft:entity.zombie.step", "type": "event" }
+    ]
+  },
+  "block.bloom_core.pulse": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.pulse",
+    "sounds": [ "frozendawn:block/bloom_core/pulse" ]
+  },
+  "block.bloom_core.break": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.block.bloom_core.break",
+    "sounds": [ "frozendawn:block/bloom_core/break" ]
+  },
+  "entity.bloombound_undone.ambient_one": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_1" ]
+  },
+  "entity.bloombound_undone.ambient_two": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.ambient",
+    "sounds": [ "frozendawn:entity/bloombound_undone/ambient_2" ]
+  },
+  "entity.bloombound_undone.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.attack",
+    "sounds": [ "frozendawn:entity/bloombound_undone/attack" ]
+  },
+  "entity.bloombound_undone.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.hurt",
+    "sounds": [ "frozendawn:entity/bloombound_undone/hurt" ]
+  },
+  "entity.bloombound_undone.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloombound_undone.death",
+    "sounds": [ "frozendawn:entity/bloombound_undone/death" ]
+  },
+  "entity.undone_architect.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",
+    "sounds": [
+      "frozendawn:entity/undone_architect/ambient_1",
+      "frozendawn:entity/undone_architect/ambient_2",
+      "frozendawn:entity/undone_architect/ambient_3"
+    ]
+  },
+  "entity.undone_architect.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.hurt",
+    "sounds": [
+      "frozendawn:entity/undone_architect/hurt_1",
+      "frozendawn:entity/undone_architect/hurt_2"
+    ]
+  },
+  "entity.undone_architect.attack": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.attack",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/attack", "volume": 1.15 },
+      { "name": "frozendawn:entity/undone_architect/attack_2", "volume": 1.12 },
+      { "name": "frozendawn:entity/undone_architect/attack_3", "volume": 1.18 }
+    ]
+  },
+  "entity.undone_architect.accrete": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.accrete",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/accrete", "volume": 1.2 },
+      { "name": "minecraft:block.packed_ice.break", "type": "event", "volume": 0.65, "pitch": 0.58 }
+    ]
+  },
+  "entity.undone_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.undone_architect.death",
+    "sounds": [
+      { "name": "frozendawn:entity/undone_architect/death", "volume": 1.25 },
+      { "name": "minecraft:block.blue_ice.break", "type": "event", "volume": 0.7, "pitch": 0.55 }
+    ]
+  },
+  "ui.suit.undone_contact": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.ui.suit.undone_contact",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/undone_contact", "stream": true }
+    ]
+  },
   "entity.mimic.hurt": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.mimic.hurt",
@@ -449,6 +645,112 @@
         "name": "frozendawn:music/the_summer_solstice_2077",
         "stream": true
       }
+    ]
+  },
+  "music.master_architect.ghost": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/continuity_ghost",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.tethers": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/thae_iven_tethers",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.last_wall": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/last_wall_memory",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.mind": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/thae_iven_v3",
+        "stream": true
+      }
+    ]
+  },
+  "music.master_architect.orren": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/master_architect/orren",
+        "stream": true
+      }
+    ]
+  },
+  "music.thae_iven_heart": {
+    "category": "music",
+    "sounds": [
+      {
+        "name": "frozendawn:music/heart/iven_battle_loop",
+        "stream": true
+      }
+    ]
+  },
+  "entity.thae_iven_heart.echo_acknowledge": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_acknowledge",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.95, "pitch": 0.72 },
+      { "name": "minecraft:entity.allay.item_thrown", "type": "event", "volume": 0.72, "pitch": 0.58 },
+      { "name": "minecraft:block.sculk_sensor.clicking", "type": "event", "volume": 0.55, "pitch": 0.64 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_appear": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_appear",
+    "sounds": [
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 1.35, "pitch": 0.58 },
+      { "name": "minecraft:entity.enderman.stare", "type": "event", "volume": 0.82, "pitch": 0.52 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 0.78, "pitch": 1.38 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_scream": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_scream",
+    "sounds": [
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.92, "pitch": 0.62 }
+    ]
+  },
+  "entity.thae_iven_heart.echo_break": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.echo_break",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.break", "type": "event", "volume": 1.0, "pitch": 0.58 },
+      { "name": "minecraft:block.chain.break", "type": "event", "volume": 0.68, "pitch": 0.72 },
+      { "name": "minecraft:block.sculk.charge", "type": "event", "volume": 0.62, "pitch": 0.54 }
+    ]
+  },
+  "entity.thae_iven_heart.collapse": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.collapse",
+    "sounds": [
+      { "name": "minecraft:block.beacon.deactivate", "type": "event", "volume": 1.45, "pitch": 0.50 },
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.25, "pitch": 0.58 },
+      { "name": "minecraft:block.glass.break", "type": "event", "volume": 1.05, "pitch": 0.42 }
+    ]
+  },
+  "entity.thae_iven_heart.swarm_wail": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.swarm_wail",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.tether_wail", "type": "event", "volume": 1.45, "pitch": 0.72 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.15, "pitch": 0.48 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.0, "pitch": 0.42 }
     ]
   },
   "music.sad.moog_city_2": {
@@ -621,6 +923,245 @@
       { "name": "minecraft:block.stone.break", "type": "event", "volume": 0.5, "pitch": 0.6 }
     ]
   },
+  "entity.master_architect.cast": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.cast",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/cast", "volume": 1.35 }
+    ]
+  },
+  "entity.master_architect.staff": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.staff",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/staff", "volume": 1.35 },
+      { "name": "minecraft:block.amethyst_block.hit", "type": "event", "volume": 0.38, "pitch": 0.62 }
+    ]
+  },
+  "entity.master_architect.fracture": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.fracture",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/continuity_fracture", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.thermal_sever": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_sever",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/thermal_sever", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.last_wall": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.last_wall",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/last_wall", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.construction": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.construction",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/cast", "volume": 0.85, "pitch": 0.64 },
+      { "name": "minecraft:block.piston.extend", "type": "event", "volume": 0.8, "pitch": 0.55 },
+      { "name": "minecraft:block.packed_ice.place", "type": "event", "volume": 1.05, "pitch": 0.62 }
+    ]
+  },
+  "entity.master_architect.thermal_pulse": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_pulse",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/thermal_pulse", "volume": 1.3 }
+    ]
+  },
+  "entity.master_architect.storm_maintain": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.storm_maintain",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/storm_maintain", "volume": 1.4 }
+    ]
+  },
+  "entity.master_architect.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.ambient",
+    "sounds": [
+      { "name": "frozendawn:entity.architect.ambient", "type": "event", "volume": 0.58, "pitch": 0.88 },
+      { "name": "minecraft:entity.enderman.ambient", "type": "event", "volume": 0.95, "pitch": 1.25 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.4, "pitch": 0.92 }
+    ]
+  },
+  "entity.master_architect.hurt": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.hurt",
+    "sounds": [
+      { "name": "frozendawn:entity.architect.hurt", "type": "event", "volume": 0.42, "pitch": 0.85 },
+      { "name": "minecraft:entity.enderman.hurt", "type": "event", "volume": 1.15, "pitch": 1.2 },
+      { "name": "minecraft:entity.warden.hurt", "type": "event", "volume": 0.52, "pitch": 0.78 },
+      { "name": "frozendawn:entity/master_architect/voice_hurt", "volume": 1.4, "pitch": 0.95 }
+    ]
+  },
+  "entity.master_architect.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.death",
+    "sounds": [
+      { "name": "minecraft:entity.wither.death", "type": "event", "volume": 1.0, "pitch": 1.3 }
+    ]
+  },
+  "entity.master_architect.detonate": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.detonate",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.45 }
+    ]
+  },
+  "entity.master_architect.tether_deflect": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_deflect",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 1.05, "pitch": 1.35 },
+      { "name": "minecraft:block.chain.hit", "type": "event", "volume": 0.72, "pitch": 1.45 }
+    ]
+  },
+  "entity.master_architect.tether_strain": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_strain",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.break", "type": "event", "volume": 0.92, "pitch": 0.72 },
+      { "name": "minecraft:block.chain.break", "type": "event", "volume": 0.78, "pitch": 0.68 },
+      { "name": "minecraft:block.sculk.charge", "type": "event", "volume": 0.52, "pitch": 0.56 }
+    ]
+  },
+  "entity.master_architect.tether_deploy": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_deploy",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.cast", "type": "event", "volume": 0.82, "pitch": 0.72 },
+      { "name": "minecraft:block.conduit.activate", "type": "event", "volume": 1.15, "pitch": 0.74 },
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 0.92, "pitch": 0.62 },
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.72, "pitch": 1.18 }
+    ]
+  },
+  "entity.master_architect.tether_wail": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.tether_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.2, "pitch": 0.56 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.25, "pitch": 0.60 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.85, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.obstruction_smash": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.obstruction_smash",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.staff", "type": "event", "volume": 1.0, "pitch": 0.72 },
+      { "name": "minecraft:entity.iron_golem.attack", "type": "event", "volume": 1.15, "pitch": 0.68 }
+    ]
+  },
+  "entity.master_architect.flood_begin": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_begin",
+    "sounds": [
+      { "name": "frozendawn:ui.thaeven_contact", "type": "event", "volume": 1.25, "pitch": 0.66 },
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.45, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.flood_mote": {
+    "replace": false,
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_mote",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.92, "pitch": 0.72 },
+      { "name": "minecraft:block.sculk_sensor.clicking", "type": "event", "volume": 0.68, "pitch": 0.58 }
+    ]
+  },
+  "entity.master_architect.core_reveal": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.core_reveal",
+    "sounds": [
+      { "name": "minecraft:entity.allay.item_given", "type": "event", "volume": 1.55, "pitch": 0.48 },
+      { "name": "minecraft:entity.warden.heartbeat", "type": "event", "volume": 1.45, "pitch": 0.72 },
+      { "name": "minecraft:block.amethyst_cluster.step", "type": "event", "volume": 1.10, "pitch": 0.42 }
+    ]
+  },
+  "entity.master_architect.flood_hit": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_hit",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 1.65, "pitch": 0.46 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 0.82, "pitch": 0.48 },
+      { "name": "minecraft:block.sculk_catalyst.bloom", "type": "event", "volume": 0.78, "pitch": 0.54 }
+    ]
+  },
+  "entity.master_architect.flood_return": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.flood_return",
+    "sounds": [
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.5, "pitch": 0.55 },
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 0.9, "pitch": 0.62 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 0.72, "pitch": 0.52 }
+    ]
+  },
+  "entity.master_architect.mind_death_wail": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.mind_death_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_death", "volume": 2.4, "pitch": 0.66 },
+      { "name": "minecraft:entity.enderman.scream", "type": "event", "volume": 1.55, "pitch": 0.46 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.2, "pitch": 0.68 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.15, "pitch": 0.44 }
+    ]
+  },
+  "entity.master_architect.mind_heal_escalate": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.mind_heal_escalate",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/voice_ambient", "volume": 2.8, "pitch": 0.43 },
+      { "name": "minecraft:entity.warden.roar", "type": "event", "volume": 1.8, "pitch": 0.50 },
+      { "name": "minecraft:block.end_portal.spawn", "type": "event", "volume": 1.45, "pitch": 0.62 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.35, "pitch": 0.38 }
+    ]
+  },
+  "entity.master_architect.thermal_charge": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_charge",
+    "sounds": [
+      { "name": "frozendawn:entity.master_architect.cast", "type": "event", "volume": 0.68, "pitch": 0.62 },
+      { "name": "minecraft:block.respawn_anchor.ambient", "type": "event", "volume": 1.18, "pitch": 0.50 },
+      { "name": "minecraft:block.beacon.deactivate", "type": "event", "volume": 0.78, "pitch": 0.58 }
+    ]
+  },
+  "entity.master_architect.thermal_commit": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_commit",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.12, "pitch": 0.72 },
+      { "name": "minecraft:block.respawn_anchor.charge", "type": "event", "volume": 1.08, "pitch": 0.64 },
+      { "name": "minecraft:entity.warden.sonic_charge", "type": "event", "volume": 0.65, "pitch": 1.25 }
+    ]
+  },
+  "entity.master_architect.thermal_cancel": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thermal_cancel",
+    "sounds": [
+      { "name": "minecraft:block.fire.extinguish", "type": "event", "volume": 0.82, "pitch": 1.42 },
+      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 0.54, "pitch": 0.68 }
+    ]
+  },
+  "entity.hearth.boundary_warning": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.hearth.boundary_warning",
+    "sounds": [
+      { "name": "frozendawn:entity/hearth/boundary_warning", "volume": 1.35 }
+    ]
+  },
+  "entity.hearth.orsathae": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.hearth.orsathae",
+    "sounds": [
+      { "name": "frozendawn:entity/hearth/orsathae", "volume": 1.45 }
+    ]
+  },
   "radio.static_burst": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.radio.static",
@@ -643,6 +1184,10 @@
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.radio.signal_lock",
     "sounds": [ "frozendawn:radio/signal_lock" ]
+  },
+  "item.surveyor_lens.tick": {
+    "category": "player",
+    "sounds": [ "frozendawn:item/surveyor_lens_tick" ]
   },
   "radio.martian_command_message": {
     "category": "record",
@@ -678,5 +1223,902 @@
   "radio.voice.field_unit": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_field_unit" ] },
   "radio.voice.repeat": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_repeat" ] },
   "radio.voice.unable": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_unable" ] },
-  "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] }
+  "radio.voice.no_lock": { "category": "ambient", "sounds": [ "frozendawn:radio/voice_no_lock" ] },
+  "ui.master_architect.mind_scan": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.mind_scan",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/mind_scan", "stream": true }
+    ]
+  },
+  "ui.master_architect.telemetry_mismatch": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.telemetry_mismatch",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/telemetry_mismatch", "stream": true }
+    ]
+  },
+  "ui.master_architect.telemetry_restored": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.telemetry_restored",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/telemetry_restored", "stream": true }
+    ]
+  },
+  "ui.thaeven_contact": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_contact",
+    "sounds": [ "frozendawn:ui/thaeven_contact" ]
+  },
+  "ui.thaeven_orsha": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_orsha",
+    "sounds": [ "frozendawn:ui/thaeven_orsha" ]
+  },
+  "ui.thaeven_resolve": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_resolve",
+    "sounds": [ "frozendawn:ui/thaeven_resolve" ]
+  },
+  "entity.master_architect.thundersnow_close": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_close",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_close", "stream": true }
+    ]
+  },
+  "entity.master_architect.thundersnow_mid": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_mid",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_mid", "stream": true }
+    ]
+  },
+  "entity.master_architect.thundersnow_distant": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.thundersnow_distant",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/thundersnow_distant", "stream": true }
+    ]
+  },
+  "entity.master_architect.arc_crackle": {
+    "category": "weather",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.arc_crackle",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/arc_crackle" }
+    ]
+  },
+  "entity.master_architect.infrasound": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:entity/master_architect/aura/infrasound", "stream": true }
+    ]
+  },
+  "entity.thae_iven_heart.formation": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:music/master_architect/thae_iven_v3", "stream": true }
+    ]
+  },
+  "entity.master_architect.aura_death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.master_architect.aura_death",
+    "sounds": [
+      { "name": "minecraft:entity.wither.death", "type": "event", "volume": 2.2, "pitch": 0.62 },
+      { "name": "frozendawn:entity/master_architect/death_detonate", "volume": 1.6, "pitch": 0.72 }
+    ]
+  },
+  "ui.master_architect.aura_temperature": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.aura_temperature",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/aura_temperature", "stream": true }
+    ]
+  },
+  "ui.master_architect.aura_fight": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.master_architect.aura_fight",
+    "sounds": [
+      { "name": "frozendawn:ui/master_architect/aura_fight", "stream": true }
+    ]
+  },
+  "entity.heart_successor.assemble": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.assemble",
+    "sounds": [
+      { "name": "minecraft:block.deepslate_bricks.break", "type": "event", "volume": 1.4, "pitch": 0.52 },
+      { "name": "minecraft:block.amethyst_block.resonate", "type": "event", "volume": 1.1, "pitch": 0.62 }
+    ]
+  },
+  "entity.heart_successor.conduct": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.conduct",
+    "sounds": [
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 0.85, "pitch": 0.44 },
+      { "name": "minecraft:block.respawn_anchor.ambient", "type": "event", "volume": 0.7, "pitch": 0.58 }
+    ]
+  },
+  "entity.heart_successor.heal": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.heal",
+    "sounds": [
+      { "name": "minecraft:block.beacon.ambient", "type": "event", "volume": 0.75, "pitch": 0.55 },
+      { "name": "minecraft:block.amethyst_block.chime", "type": "event", "volume": 0.6, "pitch": 0.66 }
+    ]
+  },
+  "entity.heart_successor.stagger": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.stagger",
+    "sounds": [
+      { "name": "minecraft:block.amethyst_cluster.break", "type": "event", "volume": 1.2, "pitch": 0.62 },
+      { "name": "minecraft:entity.allay.hurt", "type": "event", "volume": 0.9, "pitch": 0.48 }
+    ]
+  },
+  "entity.heart_successor.snap": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.snap",
+    "sounds": [
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.35, "pitch": 0.56 },
+      { "name": "minecraft:block.glass.break", "type": "event", "volume": 1.2, "pitch": 0.64 }
+    ]
+  },
+  "entity.heart_successor.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.death",
+    "sounds": [
+      { "name": "frozendawn:entity/heart_successor/voice_dont", "volume": 1.5, "pitch": 0.48 },
+      { "name": "minecraft:entity.warden.death", "type": "event", "volume": 1.35, "pitch": 0.52 },
+      { "name": "minecraft:block.sculk_shrieker.shriek", "type": "event", "volume": 1.05, "pitch": 0.62 }
+    ]
+  },
+  "entity.heart_successor.voice_why": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_why",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_why" ]
+  },
+  "entity.heart_successor.voice_cold": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_cold",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_cold" ]
+  },
+  "entity.heart_successor.voice_hello": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_hello",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_hello" ]
+  },
+  "entity.heart_successor.voice_kevin": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_kevin",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_kevin" ]
+  },
+  "entity.heart_successor.voice_dont": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.heart_successor.voice_dont",
+    "sounds": [ "frozendawn:entity/heart_successor/voice_dont" ]
+  },
+  "entity.thae_iven_heart.maeve_erasure": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_erasure",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_erasure_collective", "volume": 1.5 }
+    ]
+  },
+  "entity.thae_iven_heart.collapse_response": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.collapse_response",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/the_undone_collapse", "stream": true }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_death_wail": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_death_wail",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_death_wail", "volume": 1.5 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_one": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_1", "volume": 1.35 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_two": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_2", "volume": 1.35 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_omen_three": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_omen",
+    "sounds": [
+      { "name": "frozendawn:entity/thae_iven_heart/maeve_omen_3", "volume": 1.4 }
+    ]
+  },
+  "entity.thae_iven_heart.maeve_break": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.maeve_break",
+    "sounds": [
+      { "name": "minecraft:block.respawn_anchor.deplete", "type": "event", "volume": 1.8, "pitch": 0.44 }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_forge": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_forge",
+    "sounds": [
+      { "name": "minecraft:entity.warden.sonic_boom", "type": "event", "volume": 1.35, "pitch": 0.62 }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_converge": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_converge",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/thae_iven_heart/last_witness_converge",
+        "volume": 1.65
+      }
+    ]
+  },
+  "entity.thae_iven_heart.last_witness_save": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.entity.thae_iven_heart.last_witness_save",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/thae_iven_heart/last_witness_save",
+        "volume": 1.55
+      }
+    ]
+  },
+  "ui.thaeven_interrupt": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.thaeven_interrupt",
+    "sounds": [ "frozendawn:ui/thaeven_interrupt" ]
+  },
+  "ui.suit.bloom_contact": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.suit.bloom_contact",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/bloom_contact", "stream": true }
+    ]
+  },
+  "ambient.bloom.drone": {
+    "category": "ambient",
+    "sounds": [
+      { "name": "frozendawn:ambient/bloom/drone", "stream": true }
+    ]
+  },
+  "ambient.bloom.crack": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.crack",
+    "sounds": [ "frozendawn:ambient/bloom/crack" ]
+  },
+  "ambient.bloom.shimmer": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.bloom.shimmer",
+    "sounds": [ "frozendawn:ambient/bloom/shimmer" ]
+  },
+  "music.bloom.roots": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/roots", "stream": true }
+    ]
+  },
+  "music.bloom.hollow": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/hollow", "stream": true }
+    ]
+  },
+  "music.bloom.pale": {
+    "category": "music",
+    "sounds": [
+      { "name": "frozendawn:music/bloom/pale", "stream": true }
+    ]
+  },
+  "entity.bloom_spore.ambient": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.ambient",
+    "sounds": [ "frozendawn:entity/bloom_spore/ambient" ]
+  },
+  "entity.bloom_spore.step": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.step",
+    "sounds": [ "frozendawn:entity/bloom_spore/step" ]
+  },
+  "entity.bloom_spore.contact": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.contact",
+    "sounds": [ "frozendawn:entity/bloom_spore/contact" ]
+  },
+  "entity.bloom_spore.death": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.death",
+    "sounds": [ "frozendawn:entity/bloom_spore/death" ]
+  },
+  "entity.bloom_spore.collapse": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.collapse",
+    "sounds": [ "frozendawn:entity/bloom_spore/collapse" ]
+  },
+  "entity.bloom_spore.growth_start": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.growth_start",
+    "sounds": [ "frozendawn:entity/bloom_spore/growth_start" ]
+  },
+  "entity.bloom_spore.corpse_strike": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.corpse_strike",
+    "sounds": [ "frozendawn:entity/bloom_spore/corpse_strike" ]
+  },
+  "entity.bloom_spore.corpse_break": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.entity.bloom_spore.corpse_break",
+    "sounds": [ "frozendawn:entity/bloom_spore/corpse_break" ]
+  },
+  "ui.suit.hearthrot_contamination": {
+    "category": "voice",
+    "subtitle": "subtitle.frozendawn.ui.suit.hearthrot_contamination",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/hearthrot_contamination", "stream": true }
+    ]
+  },
+  "ambient.hearthrot_rasp": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.hearthrot_rasp",
+    "sounds": [ "frozendawn:ambient/hearthrot_rasp" ]
+  },
+  "player.hearthrot.cough_one": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_one" ]
+  },
+  "player.hearthrot.cough_two": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_two" ]
+  },
+  "player.hearthrot.cough_three": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.cough",
+    "sounds": [ "frozendawn:player/hearthrot/cough_three" ]
+  },
+  "player.hearthrot.wheeze": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.wheeze",
+    "sounds": [ "frozendawn:player/hearthrot/wheeze" ]
+  },
+  "player.hearthrot.breath_catch": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.breath_catch",
+    "sounds": [ "frozendawn:player/hearthrot/breath_catch" ]
+  },
+  "player.hearthrot.crystallize": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.crystallize",
+    "sounds": [ "frozendawn:player/hearthrot/crystallize" ]
+  },
+  "player.hearthrot.hurt_crack_one": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_one" ]
+  },
+  "player.hearthrot.hurt_crack_two": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_two" ]
+  },
+  "player.hearthrot.hurt_crack_three": {
+    "category": "players",
+    "subtitle": "subtitle.frozendawn.player.hearthrot.hurt_crack",
+    "sounds": [ "frozendawn:player/hearthrot/hurt_crack_three" ]
+  },
+  "entity.archivist.pack": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.pack",
+    "sounds": [
+      "frozendawn:entity/archivist/pack_1",
+      "frozendawn:entity/archivist/pack_2"
+    ]
+  },
+  "entity.archivist.sort": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.sort",
+    "sounds": [
+      "frozendawn:entity/archivist/sort_1",
+      "frozendawn:entity/archivist/sort_2"
+    ]
+  },
+  "entity.archivist.step": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.step",
+    "sounds": [
+      "frozendawn:entity/archivist/step_1",
+      "frozendawn:entity/archivist/step_2"
+    ]
+  },
+  "entity.archivist.death": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.death",
+    "sounds": [ "frozendawn:entity/archivist/death" ]
+  },
+  "entity.archivist.ambient": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.ambient",
+    "sounds": [
+      "frozendawn:entity/archivist/ambient_1",
+      "frozendawn:entity/archivist/ambient_2",
+      "frozendawn:entity/archivist/ambient_3"
+    ]
+  },
+  "entity.archivist.hurt": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.hurt",
+    "sounds": [
+      "frozendawn:entity/archivist/hurt_1",
+      "frozendawn:entity/archivist/hurt_2"
+    ]
+  },
+  "entity.archivist.sob": {
+    "category": "neutral",
+    "subtitle": "subtitle.frozendawn.entity.archivist.sob",
+    "sounds": [
+      "frozendawn:entity/archivist/sob_1",
+      "frozendawn:entity/archivist/sob_2",
+      "frozendawn:entity/archivist/sob_3",
+      "frozendawn:entity/archivist/sob_4",
+      "frozendawn:entity/archivist/sob_5",
+      "frozendawn:entity/archivist/sob_6",
+      "frozendawn:entity/archivist/sob_7",
+      "frozendawn:entity/archivist/sob_8"
+    ]
+  },
+  "entity.archivist.scream": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.archivist.scream",
+    "sounds": [
+      { "name": "frozendawn:entity/archivist/scream", "stream": true }
+    ]
+  },
+  "entity.archivist.marked": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.archivist.marked",
+    "sounds": [
+      { "name": "minecraft:entity.elder_guardian.curse", "type": "event", "volume": 1.0, "pitch": 0.92 }
+    ]
+  },
+  "entity.rimebound.ambient": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.ambient",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.ambient","type":"event","volume":1.05,"pitch":0.82}]
+  },
+  "entity.rimebound.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.hurt",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.hurt","type":"event","volume":1.05,"pitch":0.8}]
+  },
+  "entity.rimebound.attack": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.attack",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.hurt","type":"event","volume":0.72,"pitch":0.9}]
+  },
+  "entity.rimebound.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.death",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.death","type":"event","volume":1.1,"pitch":0.78}]
+  },
+  "entity.rimebound.resonance_ambient": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.ambient","type":"event","volume":0.3,"pitch":1.3}]
+  },
+  "entity.rimebound.resonance_hurt": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.hurt","type":"event","volume":0.34,"pitch":1.25}]
+  },
+  "entity.rimebound.resonance_death": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.death","type":"event","volume":0.42,"pitch":1.42}]
+  },
+  "entity.rimebound.resonance_attack": {
+    "category": "hostile", "sounds": [{"name":"minecraft:entity.wither.shoot","type":"event","volume":0.24,"pitch":1.35}]
+  },
+  "entity.rimebound.contraction": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.contraction",
+    "sounds": ["frozendawn:entity/rimebound/contraction"]
+  },
+  "entity.rimebound.burrow": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.burrow",
+    "sounds": [{"name":"frozendawn:entity/rimebound/burrow","attenuation_distance":48},{"name":"frozendawn:entity/rimebound/burrow_2","attenuation_distance":48}]
+  },
+  "entity.rimebound.eruption": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.eruption",
+    "sounds": [{"name":"frozendawn:entity/rimebound/eruption","volume":1.25,"attenuation_distance":48},{"name":"frozendawn:entity/rimebound/eruption_2","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.rimebound.lance_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance_windup",
+    "sounds": ["frozendawn:entity/rimebound/lance_windup"]
+  },
+  "entity.rimebound.lance": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance",
+    "sounds": ["frozendawn:entity/rimebound/lance"]
+  },
+  "entity.rimebound.lance_embed": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.lance_embed",
+    "sounds": ["frozendawn:entity/rimebound/lance_embed"]
+  },
+  "entity.rimebound.shell_crack": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.shell_crack",
+    "sounds": ["frozendawn:entity/rimebound/shell_crack"]
+  },
+  "entity.rimebound.shell_shatter": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.shell_shatter",
+    "sounds": ["frozendawn:entity/rimebound/shell_shatter"]
+  },
+  "entity.rimebound.armor": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.armor",
+    "sounds": ["frozendawn:entity/rimebound/armor"]
+  },
+  "entity.rimebound.freeze_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.freeze_windup",
+    "sounds": ["frozendawn:entity/rimebound/freeze_windup", "frozendawn:entity/rimebound/freeze_windup_2"]
+  },
+  "entity.rimebound.freeze": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.freeze",
+    "sounds": ["frozendawn:entity/rimebound/freeze"]
+  },
+  "entity.rimebound.leap": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.leap",
+    "sounds": ["frozendawn:entity/rimebound/leap"]
+  },
+  "entity.rimebound.fire_scream": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.rimebound.fire_scream",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.death","type":"event","volume":1.2,"pitch":1.08,"attenuation_distance":48}]
+  },
+  "entity.rimebound.encase": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.encase",
+    "sounds": [{"name":"frozendawn:entity/rimebound/encase","volume":1.15}]
+  },
+  "entity.rimebound.solidify": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.solidify",
+    "sounds": [{"name":"frozendawn:entity/rimebound/solidify","volume":1.4}]
+  },
+  "entity.rimebound.break_free": {
+    "category": "players", "subtitle": "subtitle.frozendawn.entity.rimebound.break_free",
+    "sounds": [{"name":"frozendawn:entity/rimebound/break_free","volume":1.25}]
+  },
+  "entity.resonant.knock": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.knock",
+    "sounds": [{"name":"frozendawn:entity/resonant/knock","attenuation_distance":48}]
+  },
+  "entity.resonant.phase": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.phase",
+    "sounds": [{"name":"frozendawn:entity/resonant/phase","attenuation_distance":48}]
+  },
+  "entity.resonant.pulse_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.pulse",
+    "sounds": [{"name":"frozendawn:entity/resonant/pulse_windup","attenuation_distance":56}]
+  },
+  "entity.resonant.pulse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.pulse",
+    "sounds": [{"name":"frozendawn:entity/resonant/pulse","volume":1.2,"attenuation_distance":64}]
+  },
+  "entity.resonant.breach": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.breach",
+    "sounds": [{"name":"frozendawn:entity/resonant/breach","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.resonant.grab": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.grab",
+    "sounds": [{"name":"frozendawn:entity/resonant/grab","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.resonant.release": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.release",
+    "sounds": ["frozendawn:entity/resonant/release"]
+  },
+  "entity.resonant.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.hurt",
+    "sounds": ["frozendawn:entity/resonant/hurt_1","frozendawn:entity/resonant/hurt_2"]
+  },
+  "entity.resonant.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.death",
+    "sounds": [{"name":"frozendawn:entity/resonant/death","volume":1.2,"attenuation_distance":48}]
+  },
+  "entity.resonant.death_collapse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.resonant.death_collapse",
+    "sounds": [{"name":"frozendawn:entity/resonant/death_collapse","volume":1.35,"attenuation_distance":56}]
+  },
+  "entity.remnant.latch": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.latch",
+    "sounds": [{"name":"frozendawn:entity/remnant/latch","volume":1.2,"attenuation_distance":40}]
+  },
+  "entity.remnant.wall_pressure": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.wall_pressure",
+    "sounds": [{"name":"frozendawn:entity/remnant/wall_pressure","volume":1.15,"attenuation_distance":48}]
+  },
+  "entity.remnant.wall_shift": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.wall_shift",
+    "sounds": [{"name":"frozendawn:entity/remnant/wall_shift","volume":1.2,"attenuation_distance":48}]
+  },
+  "entity.remnant.grab": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.grab",
+    "sounds": [{"name":"frozendawn:entity/remnant/grab","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.remnant.ambient": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.ambient",
+    "sounds": [{"name":"frozendawn:entity/remnant/ambient","volume":0.9,"attenuation_distance":40}]
+  },
+  "entity.remnant.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.hurt",
+    "sounds": [{"name":"frozendawn:entity/remnant/hurt","volume":1.15,"attenuation_distance":40}]
+  },
+  "entity.remnant.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.death",
+    "sounds": [{"name":"frozendawn:entity/remnant/death","volume":1.55,"attenuation_distance":64}]
+  },
+  "entity.remnant.collapse": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.remnant.collapse",
+    "sounds": [{"name":"frozendawn:entity/remnant/collapse","volume":1.4,"attenuation_distance":64}]
+  },
+  "entity.remnant.false_radio": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.false_radio",
+    "sounds": [{"name":"frozendawn:entity/remnant/false_radio","volume":0.55,"attenuation_distance":24}]
+  },
+  "entity.remnant.radio_room": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_room",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_room","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_warm": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_warm",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_warm","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_alone": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_alone",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_alone","volume":1.2,"attenuation_distance":32}]
+  },
+  "entity.remnant.radio_forgive": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.radio_forgive",
+    "sounds": [{"name":"frozendawn:entity/remnant/radio_forgive","volume":1.15,"attenuation_distance":28}]
+  },
+  "entity.remnant.false_heater": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.entity.remnant.false_heater",
+    "sounds": [{"name":"frozendawn:entity/remnant/false_heater","volume":0.5,"attenuation_distance":24}]
+  },
+  "entity.frostwrithe.movement": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.movement",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/movement","volume":0.8,"attenuation_distance":32}]
+  },
+  "entity.frostwrithe.assemble": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.assemble",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/assemble","volume":1.2,"attenuation_distance":48}]
+  },
+  "entity.frostwrithe.shell": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.shell",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/shell","volume":1.1,"attenuation_distance":40}]
+  },
+  "entity.frostwrithe.shed": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.shed",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/shed","volume":1.0,"attenuation_distance":36}]
+  },
+  "entity.frostwrithe.disassemble": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.disassemble",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/disassemble","volume":1.35,"attenuation_distance":48}]
+  },
+  "entity.frostwrithe.regroup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.regroup",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/regroup","volume":1.25,"attenuation_distance":48}]
+  },
+  "entity.frostwrithe.body_check": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.body_check",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/body_check","volume":1.0,"attenuation_distance":32}]
+  },
+  "entity.frostwrithe.climb": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.climb",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/climb","volume":1.0,"attenuation_distance":36}]
+  },
+  "entity.frostwrithe.bridge": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.bridge",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/bridge","volume":1.1,"attenuation_distance":40}]
+  },
+  "entity.frostwrithe.overrun": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.overrun",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/overrun","volume":1.15,"attenuation_distance":36}]
+  },
+  "entity.frostwrithe.terminal": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.terminal",
+    "sounds": [{"name":"frozendawn:entity/frostwrithe/terminal","volume":1.15,"attenuation_distance":40}]
+  },
+  "entity.frostwrithe.imitate_architect": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_architect",
+    "sounds": [{"name":"frozendawn:entity.architect.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_hollow": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_hollow",
+    "sounds": [{"name":"frozendawn:entity.hollow.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_frostbitten": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_frostbitten",
+    "sounds": [{"name":"frozendawn:entity.frostbitten.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_returned": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_returned",
+    "sounds": [{"name":"frozendawn:entity.returned.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_undone": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_undone",
+    "sounds": [
+      {"name":"frozendawn:entity.undone.ambient_one","type":"event","attenuation_distance":36},
+      {"name":"frozendawn:entity.undone.ambient_two","type":"event","attenuation_distance":36},
+      {"name":"frozendawn:entity.undone.ambient_three","type":"event","attenuation_distance":36}
+    ]
+  },
+  "entity.frostwrithe.imitate_bloombound": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_bloombound",
+    "sounds": [
+      {"name":"frozendawn:entity.bloombound_undone.ambient_one","type":"event","attenuation_distance":36},
+      {"name":"frozendawn:entity.bloombound_undone.ambient_two","type":"event","attenuation_distance":36}
+    ]
+  },
+  "entity.frostwrithe.imitate_undone_architect": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_undone_architect",
+    "sounds": [{"name":"frozendawn:entity.undone_architect.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_rimebound": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_rimebound",
+    "sounds": [{"name":"frozendawn:entity.rimebound.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_resonant": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_resonant",
+    "sounds": [{"name":"frozendawn:entity.resonant.knock","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_remnant": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_remnant",
+    "sounds": [{"name":"frozendawn:entity.remnant.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_archivist": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_archivist",
+    "sounds": [{"name":"frozendawn:entity.archivist.ambient","type":"event","attenuation_distance":36}]
+  },
+  "entity.frostwrithe.imitate_mimic": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.frostwrithe.imitate_mimic",
+    "sounds": [{"name":"frozendawn:entity.mimic.stare","type":"event","attenuation_distance":36}]
+  },
+  "entity.aggregate.ambient": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.ambient",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/ambient_1","volume":0.72,"attenuation_distance":72},
+      {"name":"frozendawn:entity/aggregate/ambient_2","volume":0.72,"attenuation_distance":72},
+      {"name":"frozendawn:entity/aggregate/ambient_3","volume":0.72,"attenuation_distance":72}
+    ]
+  },
+  "entity.aggregate.roar": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.roar",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/roar_1","volume":1.55,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/roar_2","volume":1.55,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/roar_3","volume":1.55,"attenuation_distance":128}
+    ]
+  },
+  "entity.aggregate.discharge_charge": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.discharge_charge",
+    "sounds": [{"name":"frozendawn:entity/aggregate/discharge_charge","volume":1.65,"attenuation_distance":128}]
+  },
+  "entity.aggregate.discharge_burst": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.discharge_burst",
+    "sounds": [{"name":"frozendawn:entity/aggregate/discharge_burst","volume":1.75,"attenuation_distance":144}]
+  },
+  "entity.aggregate.awaken": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.awaken",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/awaken_1","volume":1.35,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/awaken_2","volume":1.35,"attenuation_distance":128},
+      {"name":"frozendawn:entity/aggregate/awaken_3","volume":1.35,"attenuation_distance":128}
+    ]
+  },
+  "entity.aggregate.hurt": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.hurt",
+    "sounds": [{"name":"frozendawn:entity/aggregate/ambient_2","volume":0.9,"pitch":1.18,"attenuation_distance":64}]
+  },
+  "entity.aggregate.sweep": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.sweep",
+    "sounds": [{"name":"frozendawn:entity/aggregate/slam_2","volume":0.72,"pitch":1.18,"attenuation_distance":72}]
+  },
+  "entity.aggregate.slam_windup": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.slam_windup",
+    "sounds": [{"name":"frozendawn:entity/aggregate/ambient_3","volume":0.9,"pitch":0.72,"attenuation_distance":80}]
+  },
+  "entity.aggregate.slam": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.slam",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/slam_1","volume":1.4,"attenuation_distance":112},
+      {"name":"frozendawn:entity/aggregate/slam_2","volume":1.4,"attenuation_distance":112},
+      {"name":"frozendawn:entity/aggregate/slam_3","volume":1.4,"attenuation_distance":112}
+    ]
+  },
+  "entity.aggregate.lurch": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.lurch",
+    "sounds": [{"name":"frozendawn:entity/aggregate/slam_1","volume":0.82,"pitch":1.2,"attenuation_distance":72}]
+  },
+  "entity.aggregate.reallocation": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.reallocation",
+    "sounds": [
+      {"name":"frozendawn:entity/aggregate/reallocation_1","volume":1.2,"attenuation_distance":96},
+      {"name":"frozendawn:entity/aggregate/reallocation_2","volume":1.2,"attenuation_distance":96},
+      {"name":"frozendawn:entity/aggregate/reallocation_3","volume":1.2,"attenuation_distance":96}
+    ]
+  },
+  "entity.aggregate.shedding": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.shedding",
+    "sounds": [{"name":"frozendawn:entity/aggregate/reallocation_3","volume":1.05,"pitch":1.2,"attenuation_distance":80}]
+  },
+  "entity.aggregate.death": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.death",
+    "sounds": [{"name":"frozendawn:entity/aggregate/death_candidate_scream","volume":1.7,"attenuation_distance":160}]
+  },
+  "entity.aggregate.death_lineage": {
+    "category": "hostile", "subtitle": "subtitle.frozendawn.entity.aggregate.death_lineage",
+    "sounds": [{"name":"frozendawn:entity/aggregate/ambient_1","volume":0.88,"pitch":1.28,"attenuation_distance":96}]
+  },
+  "entity.aggregate.trait_rimebound": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity.rimebound.burrow","type":"event","volume":0.45}]
+  },
+  "entity.aggregate.trait_resonant": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity.resonant.knock","type":"event","volume":0.45}]
+  },
+  "entity.aggregate.trait_remnant": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity.remnant.latch","type":"event","volume":0.45}]
+  },
+  "entity.aggregate.trait_frostwrithe": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity.frostwrithe.disassemble","type":"event","volume":0.45}]
+  },
+  "entity.aggregate.trait_architect": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity.architect.ice_place","type":"event","volume":0.45}]
+  },
+  "entity.aggregate.fragment_hurt": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity/aggregate/ambient_2","volume":0.45,"pitch":1.5,"attenuation_distance":32}]
+  },
+  "entity.aggregate.fragment_break": {
+    "category": "hostile", "sounds": [{"name":"frozendawn:entity/aggregate/slam_3","volume":0.55,"pitch":1.45,"attenuation_distance":48}]
+  },
+  "ui.suit.aggregate_deposit": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_deposit",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_deposit","stream":true}]
+  },
+  "ui.suit.aggregate_ossuary": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_ossuary",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_ossuary","stream":true}]
+  },
+  "ui.suit.aggregate_gestation": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_gestation",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_gestation","stream":true}]
+  },
+  "ui.suit.aggregate_resolved": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.aggregate_resolved",
+    "sounds": [{"name":"frozendawn:ui/suit/aggregate_resolved","stream":true}]
+  },
+  "block.stillpoint_core.charge": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.charge",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/charge","volume":1.15,"attenuation_distance":64}]
+  },
+  "block.stillpoint_core.form": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.form",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/form","volume":1.35,"attenuation_distance":96}]
+  },
+  "block.stillpoint_core.hum": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.hum",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/hum","volume":1.2,"attenuation_distance":80}]
+  },
+  "block.stillpoint_core.enter": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.enter",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/enter","volume":1.35}]
+  },
+  "block.stillpoint_core.exit": {
+    "category": "ambient", "subtitle": "subtitle.frozendawn.block.stillpoint_core.exit",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/exit","volume":1.35}]
+  },
+  "block.stillpoint_core.use": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.use",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/use","volume":1.3}]
+  },
+  "block.stillpoint_core.exhaust": {
+    "category": "blocks", "subtitle": "subtitle.frozendawn.block.stillpoint_core.exhaust",
+    "sounds": [{"name":"frozendawn:block/stillpoint_core/exhaust","volume":1.5,"attenuation_distance":96}]
+  },
+  "ui.suit.stillpoint_field": {
+    "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.stillpoint_field",
+    "sounds": [{"name":"frozendawn:ui/suit/stillpoint_field","stream":true}]
+  }
 }

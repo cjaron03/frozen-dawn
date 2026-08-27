@@ -15,6 +15,11 @@
       "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, surfaced $(l:heating/geothermal_vents)geothermal vents$(/l), $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
     },
     {
+      "type": "patchouli:text",
+      "title": "Low-Band Carriers",
+      "text": "Late in the event, the optic may catch a carrier that is $(bold)not thermal$(). Right-click again while moving through the search area.$(br2)Distant interference has no usable bearing. A stronger pulse resolves into a directional bias, then broken language. Close-range lock stores the signature as a Hearth contact.$(br2)The calibrated lens reaches much farther and can isolate weaker secondary carriers.$(br2)$(italic)No map point is generated. ORSA cannot map something that appears to be listening back.$()"
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:calibrated_surveyor_lens",
       "title": "Calibrated Array",

@@ -12,9 +12,10 @@ import java.util.List;
 
 public class O2TankItem extends Item {
 
-    public static final int TIER1_MAX = 1200;  // 60 seconds
-    public static final int TIER2_MAX = 2400;  // 120 seconds
-    public static final int TIER3_MAX = 3600;  // 180 seconds
+    public static final int TIER1_MAX = 1200;  // 120 seconds
+    public static final int TIER2_MAX = 2400;  // 240 seconds
+    public static final int TIER3_MAX = 3600;  // 360 seconds
+    public static final int BASE_CONSUMPTION_INTERVAL_TICKS = 2;
 
     private final int maxO2;
 
@@ -90,7 +91,7 @@ public class O2TankItem extends Item {
 
         int o2 = stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), maxO2);
         int percent = Math.round(100f * o2 / maxO2);
-        int seconds = o2 / 20;
+        int seconds = o2 * BASE_CONSUMPTION_INTERVAL_TICKS / 20;
 
         tooltip.add(Component.literal(tierName + " — O2: " + percent + "%").withStyle(tierColor));
         tooltip.add(Component.literal(seconds + "s of air remaining").withStyle(ChatFormatting.GRAY));

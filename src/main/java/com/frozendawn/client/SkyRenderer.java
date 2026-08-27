@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.event.BlizzardGogglesHandler;
 import com.frozendawn.event.BlizzardGogglesLogic;
+import com.frozendawn.homo.MasterArchitectEyeWallPolicy;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.Minecraft;
@@ -35,6 +36,10 @@ public class SkyRenderer {
     private static final float[] PHASE_BLEND = {0.2f, 0.4f, 0.7f, 0.9f, 1.0f, 1.0f};
     private static final float[] PHASE_FLOOR = {0.15f, 0.15f, 0.10f, 0.08f, 0.04f, 0.01f};
     private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
+    private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.48F;
+    private static final float MASTER_ARCHITECT_VISIBILITY = 14.0F;
+    private static final float HEART_WHITEOUT_MIX = 0.30F;
+    private static final float HEART_VISIBILITY = 30.0F;
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
@@ -66,7 +71,8 @@ public class SkyRenderer {
             float targetG = PHASE_COLORS[idx][1] * brightness;
             float targetB = PHASE_COLORS[idx][2] * brightness;
 
-            float whiteoutMix = getWhiteoutMix(phase, progress) * skyColorExposure;
+            float whiteoutMix = PostMaeveClientState.isMaeveErased()
+                    ? 0.0F : getWhiteoutMix(phase, progress) * skyColorExposure;
             if (whiteoutMix > 0.0f) {
                 targetR = Mth.lerp(whiteoutMix, targetR, getStormHazeRed(phase));
                 targetG = Mth.lerp(whiteoutMix, targetG, getStormHazeGreen(phase));
@@ -79,6 +85,28 @@ public class SkyRenderer {
                 targetR = Mth.lerp(blackTransition, targetR, 0.0f);
                 targetG = Mth.lerp(blackTransition, targetG, 0.0f);
                 targetB = Mth.lerp(blackTransition, targetB, 0.005f);
+            }
+
+            float eyeStormFactor = PostMaeveClientState.isMaeveErased() ? 0.0F
+                    : MasterArchitectAuraClient.localStormFactor(
+                    mc.player.position());
+            float viewFogFactor = MasterArchitectEyeWallPolicy.directionalFogFactor(
+                    mc.gameRenderer.getMainCamera().getXRot());
+            float masterWhiteout = MasterArchitectWeather.getStrength()
+                    * exposure * eyeStormFactor * viewFogFactor
+                    * MASTER_ARCHITECT_WHITEOUT_MIX;
+            if (masterWhiteout > 0.0F) {
+                targetR = Mth.lerp(masterWhiteout, targetR, getStormHazeRed(6));
+                targetG = Mth.lerp(masterWhiteout, targetG, getStormHazeGreen(6));
+                targetB = Mth.lerp(masterWhiteout, targetB, getStormHazeBlue(6));
+            }
+            float heartWhiteout = PostMaeveClientState.isMaeveErased() ? 0.0F
+                    : HeartQuietClient.localStormStrength()
+                    * exposure * HEART_WHITEOUT_MIX;
+            if (heartWhiteout > 0.0F) {
+                targetR = Mth.lerp(heartWhiteout, targetR, getStormHazeRed(5));
+                targetG = Mth.lerp(heartWhiteout, targetG, getStormHazeGreen(5));
+                targetB = Mth.lerp(heartWhiteout, targetB, getStormHazeBlue(5));
             }
 
             event.setRed(Mth.lerp(blend, event.getRed() * skyLight, targetR));
@@ -95,6 +123,7 @@ public class SkyRenderer {
 
     @SubscribeEvent
     public static void onRenderFog(ViewportEvent.RenderFog event) {
+        if (PostMaeveClientState.isMaeveErased()) return;
         int phase = ApocalypseClientData.getPhase();
         if (phase < 3) return;
 
@@ -103,14 +132,29 @@ public class SkyRenderer {
 
         float progress = ApocalypseClientData.getProgress();
 
-        float visibility = getTargetVisibility(phase, progress);
+        float targetVisibility = getTargetVisibility(phase, progress);
         if (SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
                 && BlizzardGogglesLogic.isVisionActive(phase, progress)) {
-            visibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
+            targetVisibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
         }
 
         float currentFar = event.getFarPlaneDistance();
-        visibility = Mth.lerp(exposure, currentFar, visibility);
+        float visibility = Mth.lerp(exposure, currentFar, targetVisibility);
+        float masterStrength = MasterArchitectWeather.getStrength()
+                * exposure
+                * MasterArchitectAuraClient.localStormFactor(
+                Minecraft.getInstance().player.position())
+                * MasterArchitectEyeWallPolicy.directionalFogFactor(
+                        Minecraft.getInstance().gameRenderer.getMainCamera().getXRot());
+        if (masterStrength > 0.0F) {
+            visibility = Math.min(visibility, Mth.lerp(
+                    masterStrength, currentFar, MASTER_ARCHITECT_VISIBILITY));
+        }
+        float heartStrength = HeartQuietClient.localStormStrength() * exposure;
+        if (heartStrength > 0.0F) {
+            visibility = Math.min(visibility, Mth.lerp(
+                    heartStrength, currentFar, HEART_VISIBILITY));
+        }
         if (visibility < currentFar) {
             event.setFarPlaneDistance(visibility);
             event.setNearPlaneDistance(visibility * 0.05f);

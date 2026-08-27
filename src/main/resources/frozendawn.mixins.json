@@ -5,6 +5,9 @@
   "minVersion": "0.8",
   "mixins": [
     "BiomeMixin",
+    "BlockDisplayAccessor",
+    "ChunkMapAccessor",
+    "DisplayAccessor",
     "IceBlockMixin",
     "LivingEntityMixin"
   ],
@@ -21,6 +24,9 @@
     "SplashManagerMixin",
     "ReceivingLevelScreenMixin",
     "ScreenMixin",
+    "ChannelAccessor",
+    "SoundEngineAccessor",
+    "SoundManagerAccessor",
     "NeoForgeLoadingOverlayMixin"
   ],
   "injectors": {

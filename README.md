@@ -20,6 +20,12 @@ Answers are not handed to the player. Frozen Dawn's lore is spread across recove
 
 Over 120 in-game days, the world progresses through 6 phases of an apocalyptic freeze. Surface temperatures plummet to -273°C, water turns to blue ice, vegetation dies, lava solidifies, the sky grows dark, and ultimately the atmosphere itself freezes and collapses. Players must adapt by building Thermal Heaters, sealing shelters, upgrading survival gear, following ORSA signals, and assembling the final escape route before the surface goes silent.
 
+## The Long Silence
+
+The Long Silence is Frozen Dawn's major late-game expansion. Hearths now support a longer discovery and encounter arc, the world can enter a persistent post-game condition, and familiar survival systems continue evolving after the original campaign threshold. The expansion adds new terrain growth, sky phenomena, physical lore discoveries, long-term suit pressure, an altered hostile ecology, and optional endgame encounters without replacing the existing Project Exodus route.
+
+This README stays spoiler-safe. Exact encounter identities, triggers, outcomes, advancement names, spawn policies, and operator commands are documented separately in the [technical and spoiler changelog](docs/releases/THE_LONG_SILENCE_TECHNICAL_CHANGELOG.md).
+
 ## What Makes Frozen Dawn Different
 
 - **The world is the timer.** The apocalypse is not a biome or weather preset; it is a server-authoritative phase system that rewrites terrain, atmosphere, light, sound, spawns, and survival pressure over time.
@@ -85,6 +91,13 @@ Three tiers of insulated armor allow players to survive progressively colder sur
 
 Armor pieces can be mixed across tiers. Full set bonuses (wind chill, suffocation) require 4 pieces of that tier or higher.
 
+### Expanded Suit Survival
+- **Persistent oxygen capacity** — EVA oxygen now uses tiered tank capacity, module-aware drain, emergency reserves, and an ETA readout derived from actual consumption.
+- **Suit punctures** — Physical damage can breach EVA equipment, creating audible leaks and temporary or permanent repair decisions without replacing the ordinary armor-durability loop.
+- **ORSA recovery equipment** — Field loot includes permanent patch kits, emergency cartridges, trauma support, and efficiency upgrades.
+- **Long-term contamination** — Post-game exploration can create visible exterior suit growth and a permanent, manageable condition when a contaminated pressure seal is breached. Warmth can clean equipment but cannot reverse an internal condition.
+- **Accessibility-aware presentation** — Visor occlusion, sensor disruption, camera feedback, and other screen effects respect the existing client accessibility settings while their server-side mechanics remain authoritative.
+
 ### Nether Severance
 At phase 5+, dimensional links are severed. Existing nether portals break and new ones cannot be lit. Attempting to light a portal with flint & steel grants a hidden advancement: *"Huh. Thought That Works."*
 
@@ -125,6 +138,19 @@ Project Exodus is the final content chain. It starts through nonlinear ORSA disc
 
 Late-game story details are intentionally not documented here.
 
+### Hearths and the Post-Game
+- **Expanded Hearth progression** — Major and Minor Hearths mature through persistent, server-authoritative state, resident roles, conduct memory, transmissions, physical construction, and late-game encounter phases.
+- **Persistent aftermath** — Completing the Hearth arc can permanently alter weather, sound, the night sky, terrain, creature behavior, and the meaning of previously discovered places.
+- **Growing world pressure** — A loaded-chunk-only growth system expands from Hearth regions under strict edit and time budgets. It supports clearing, finite satellite growth, resource recovery, and player-built containment.
+- **Changed ecology** — Familiar Frozen Dawn creatures remain, while rare post-game behaviors and forms emerge according to elapsed world state, local conditions, difficulty, caps, and pity timers.
+- **Optional consequences** — Additional world-scoped encounters can form from accumulated player actions. Their rewards provide strong local protection without becoming mandatory campaign gates.
+
+### Lore Archive and Translation
+- **Six physical memory records** — Shared world objects can be found, assembled, or recovered through Hearth and post-game exploration.
+- **Per-player archive** — Discoveries are synchronized and persisted per player even though their physical carriers remain shared world objects.
+- **Thaeven Translator** — A reusable late-game tool reconstructs records through an animated translation interface and preserves later semantic revisions.
+- **Existing ORSA archive preserved** — The Patchouli field guide and original ORSA books remain separate from the dynamic Thaeven archive.
+
 ### World Generation
 - **Frozen Towns** — Large jigsaw towns with squares, civic/commercial/residential layouts, authored sirens, street lights, rooftop PA speakers, and phase-aware emergency infrastructure
 - **ORSA field camps** — Deterministic evacuation camps with radios, documents, flags, and linked evac-vehicle support when the site allows it
@@ -148,8 +174,8 @@ Those core books are discoverable without beating the game. Additional lore can 
 - **Custom survival + world blocks/items** — Frozen terrain variants, ORSA props, thermal progression components, armor tiers, town infrastructure, and landmark rewards
 - **Advancements + Patchouli support** — Phase milestones, hidden discoveries, progression unlocks, and the in-game "Frozen Dawn Field Guide"
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
-- **Admin tooling** — world-state controls, locate helpers, and win-condition inspection through the `/frozendawn` command tree
-- **Config presets** — `/frozendawn world preset default|cinematic|brutal` for quick difficulty tuning
+- **Admin tooling** — Read-only status and locate helpers remain under `/frozendawn`; operator mutations and forensic diagnostics live under `/fd`
+- **Config presets** — `/fd world preset <default|cinematic|brutal>` for quick difficulty tuning
 - **Fully configurable** — 30+ config options covering temperature, spawning, visuals, win-condition flow, and gameplay
 
 ## Hostile Ecosystem
@@ -186,45 +212,77 @@ Returned Architects can drop two progression-defining rewards: the **Surveyor Le
 - **[Patchouli](https://www.curseforge.com/minecraft/mc-mods/patchouli)** (required)
 - **[Curios API 9.5.1+1.21.1](https://maven.theillusivec4.top/top/theillusivec4/curios/curios-neoforge/9.5.1+1.21.1/curios-neoforge-9.5.1+1.21.1.jar)** (required)
 - **[Just Enough Items (JEI) 19.x for NeoForge 1.21.1](https://modrinth.com/mod/jei/versions?l=neoforge&g=1.21.1)** (required)
+- **[GeckoLib 4.8.4+ for NeoForge 1.21.1](https://modrinth.com/mod/geckolib/versions?l=neoforge&g=1.21.1)** (required; version must remain below 5.0)
 
 ### Playing
 1. Install [NeoForge for Minecraft 1.21.1](https://neoforged.net/)
-2. Download the latest `frozendawn-x.x.x.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
+2. Download `frozendawn-1.1.0-alpha.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
 3. Download [Patchouli for NeoForge 1.21.1](https://www.curseforge.com/minecraft/mc-mods/patchouli/files?gameVersionTypeId=6&version=1.21.1)
 4. Download [Curios API 9.5.1+1.21.1 for NeoForge](https://maven.theillusivec4.top/top/theillusivec4/curios/curios-neoforge/9.5.1+1.21.1/curios-neoforge-9.5.1+1.21.1.jar)
 5. Download [Just Enough Items (JEI) for NeoForge 1.21.1](https://modrinth.com/mod/jei/versions?l=neoforge&g=1.21.1)
-6. Drop Frozen Dawn, Patchouli, Curios, and JEI into your `.minecraft/mods/` folder
-7. Launch Minecraft with the NeoForge profile
+6. Download [GeckoLib 4.8.4 or newer 4.x for NeoForge 1.21.1](https://modrinth.com/mod/geckolib/versions?l=neoforge&g=1.21.1)
+7. Drop Frozen Dawn, Patchouli, Curios, JEI, and GeckoLib into your `.minecraft/mods/` folder
+8. Launch Minecraft with the NeoForge profile
 
-Fresh towns and other authored landmark changes require newly generated chunks to appear in an existing world.
+### Existing Worlds
+
+Existing worlds are supported. **Back up important saves before entering late-game content or upgrading an established world.** Persistent Hearth, Heart, post-game, lore, and encounter data migrate or reconcile as their relevant chunks load; the mod does not force-load distant regions to perform that work.
+
+New authored world-generation revisions, untouched landmark sites, and some structure-backed discoveries require fresh chunks. Existing generated towns and ORSA structures are not destructively rebuilt merely to add a new revision. For the most complete campaign experience, explore newly generated terrain after upgrading.
 
 ### Development
 1. Clone the repo: `git clone https://github.com/cjaron03/frozen-dawn.git`
 2. Open in your IDE (IntelliJ recommended) or build from terminal
-3. Patchouli, Curios, and JEI are included as development dependencies — no manual download needed
+3. Patchouli, Curios, JEI, and GeckoLib are included as development dependencies — no manual download needed
 4. Run `./gradlew runClient` to launch a dev instance with the mod loaded
 
 ## Commands
 
-All commands require OP level 2.
+The public command surface is read-only. Mutation commands require OP level 2 and live
+under `/frozendawn debug`; `/fd` is its shortcut. Tab completion is the authoritative
+command index.
 
-### Root
-
-| Command | Description |
-|---------|-------------|
-| `/frozendawn` | Show the command help summary |
-| `/frozendawn help` | Show the command help summary |
-
-### World Controls
+### Diagnostics
 
 | Command | Description |
 |---------|-------------|
-| `/frozendawn world status` | Show current day, phase, preset, temperature, sun state, and major landmark/win-condition status |
-| `/frozendawn world setday <day>` | Jump to a specific apocalypse day |
-| `/frozendawn world setphase <0-6> [early\|mid\|late]` | Jump to a phase; sub-stages are only used for phase 6 |
-| `/frozendawn world pause` | Toggle apocalypse progression |
-| `/frozendawn world reset` | Reset the apocalypse back to day 0 |
-| `/frozendawn world preset <default\|cinematic\|brutal>` | Apply a built-in difficulty preset |
+| `/frozendawn` | Show the concise command overview |
+| `/frozendawn status` | Show the current apocalypse and progression state |
+| `/frozendawn help <world\|hearth\|heart\|postmaeve\|aggregate\|suit\|lore>` | Show focused examples |
+| `/frozendawn locate <all\|orsa\|towns\|vents>` | Locate world landmarks |
+| `/frozendawn win status` | Show ORSA signal and late-game progression state |
+
+### Debug Controls
+
+| Command | Description |
+|---------|-------------|
+| `/fd world ...` | Time, phase, presets, pause, and chunk catch-up |
+| `/fd hearth ...` | Hearth selection, maturation, population, conduct, and Master state |
+| `/fd heart ...` | Formation, Cognitive Load, nodes, collapse, and Maeve |
+| `/fd postmaeve ...` | Bloom, Moon, evolved encounters, and post-Maeve state |
+| `/fd aggregate ...` | Aggregate pressure, encounter actions, and Stillpoint field |
+| `/fd suit ...` | Suit integrity and Hearthrot |
+| `/fd lore ...` | Thaeven records, carriers, and semantic state |
+
+Primary `status` commands show a compact operator summary. Add `verbose` for
+schema versions, UUID bindings, exact ticks, seeds, and reconciliation counters;
+for example, `/fd hearth status verbose` or `/fd suit hearthrot status verbose`.
+
+Destructive `reset`, `purge-loaded`, `resolve`, and finale-completion commands require
+an explicit trailing `confirm`. Examples: `/fd world reset confirm` and
+`/fd heart maeve complete confirm`.
+
+Common path migrations:
+
+| Previous path | Current path |
+|---------------|--------------|
+| `/frozendawn world setphase ...` | `/fd world set phase ...` |
+| `/frozendawn hearth heart ...` | `/fd heart ...` |
+| `/frozendawn hearth postmaeve ...` | `/fd postmaeve ...` |
+| `/frozendawn hearth bloom ...` | `/fd postmaeve bloom ...` |
+| `/frozendawn hearth lore ...` | `/fd lore ...` |
+| `/frozendawn aggregate ...` | `/fd aggregate ...` |
+| `/frozendawn suit ...` | `/fd suit ...` |
 
 ### Locate
 
@@ -233,12 +291,19 @@ All commands require OP level 2.
 | `/frozendawn locate all` | Show a combined landmark summary including ORSA points of interest and Frozen Towns |
 | `/frozendawn locate orsa` | Show the nearest ORSA landmark set: blast pit, towers, camps, cargo drops, and monitoring stations |
 | `/frozendawn locate towns` | Find the nearest Frozen Town |
+| `/frozendawn locate vents` | Find known geothermal vent activity |
 
 ### Win Condition
 
 | Command | Description |
 |---------|-------------|
 | `/frozendawn win satellite` | Show the current ORSA signal and late-game progression state |
+
+### Operator Debugging
+
+Use `/fd <category> ...` with tab completion. Compact status is the default; append `verbose` where offered to expose IDs, seeds, bindings, tick counters, reconciliation cursors, and spawn-director internals. Persisted reset, purge, resolve, and completion actions require an explicit `confirm` argument.
+
+Exact operator routes and spoiler-bearing examples are kept in the [technical and spoiler changelog](docs/releases/THE_LONG_SILENCE_TECHNICAL_CHANGELOG.md), not in the public feature overview.
 
 ## Config Presets
 
@@ -300,6 +365,7 @@ Edit `config/frozendawn-common.toml` after first launch.
 
 - **Minecraft**: 1.21.1
 - **NeoForge**: 21.1.219+
+- **GeckoLib**: Required on client and server, version 4.8.4 through the latest compatible 4.x release
 - **Dimensions**: All world systems (freezing, decay, snow, weather) operate in the overworld only. Other dimensions are unaffected.
 - **Servers**: Fully server-authoritative. All temperature calculations, block transformations, and loot modifications run server-side. Client only handles visual effects (sky, particles, overlay).
 - **Worldgen updates**: Authored structures such as Frozen Town revisions, PA speakers, street lights, and roof changes appear only in fresh towns/newly generated chunks.
@@ -312,10 +378,10 @@ cd frozen-dawn
 ./gradlew build
 ```
 
-The built jar will be in `build/libs/`.
+The release build is `build/libs/frozendawn-1.1.0-alpha.jar`.
 
 ## License
 
 Frozen Dawn source code is copyright (C) 2026 Jaron Cabral and is licensed under the GNU Lesser General Public License v3.0 or later (`LGPL-3.0-or-later`). See [LICENSE](LICENSE) for the unmodified LGPL license text.
 
-Original visual, branding, music, and audio asset ownership is tracked separately in [ASSETS.md](ASSETS.md). Third-party asset notes and dependency distribution notes are tracked in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
+Original visual, branding, music, and audio asset ownership is tracked separately in [ASSETS.md](ASSETS.md). Audio rights, generated voices, and recording provenance are covered by the separate [AUDIO_NOTICE.md](AUDIO_NOTICE.md). Third-party asset notes and dependency distribution notes are tracked in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).

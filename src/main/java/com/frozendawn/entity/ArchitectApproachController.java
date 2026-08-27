@@ -80,16 +80,6 @@ final class ArchitectApproachController {
             return;
         }
 
-        // Scaffold pacing: wait after placing ice, then jump up.
-        if (ArchitectApproachMovementSupport.tickPendingScaffold(architect, approachState, blockBreaker)) {
-            return;
-        }
-
-        // Handle smooth step-off lerp.
-        if (ArchitectApproachMovementSupport.tickStepOffLerp(architect, approachState)) {
-            return;
-        }
-
         if (blockBreaker.isMining() && ArchitectApproachBreakSupport.continueBreaking(
                 architect,
                 approachState,
@@ -107,6 +97,23 @@ final class ArchitectApproachController {
                     approachState.ceilingBreachPos = null;
                 }
             }
+        }
+
+        // A target pressed against the far side of a wall must produce a doorway,
+        // not a climb-over route or a no-LOS melee handoff.
+        if (ArchitectApproachBreakSupport.tryStartContactBreach(
+                architect, approachState, blockBreaker, target)) {
+            return;
+        }
+
+        // Scaffold pacing: wait after placing ice, then jump up.
+        if (ArchitectApproachMovementSupport.tickPendingScaffold(architect, approachState, blockBreaker)) {
+            return;
+        }
+
+        // Handle smooth step-off lerp.
+        if (ArchitectApproachMovementSupport.tickStepOffLerp(architect, approachState)) {
+            return;
         }
 
         if (architect.shouldPreferMeleeOverApproach(target)) {

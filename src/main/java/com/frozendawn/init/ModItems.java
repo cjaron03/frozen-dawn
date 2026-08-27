@@ -10,12 +10,16 @@ import com.frozendawn.item.ArchitectMaskItem;
 import com.frozendawn.item.AcheroniteSwordItem;
 import com.frozendawn.item.ArchitectSoulItem;
 import com.frozendawn.item.BoardPacketItem;
+import com.frozendawn.item.BlackglassArchiveCardItem;
 import com.frozendawn.item.BlizzardGogglesItem;
 import com.frozendawn.item.ComfortItem;
 import com.frozendawn.item.FrozenAtmosphereShardItem;
 import com.frozendawn.item.FrozenMeatItem;
+import com.frozendawn.item.EmergencyO2CartridgeItem;
 import com.frozendawn.item.IceClawsItem;
+import com.frozendawn.item.InertConvergenceCoreItem;
 import com.frozendawn.item.LinedEvaChestplateItem;
+import com.frozendawn.item.LastWitnessItem;
 import com.frozendawn.item.MiteAwayBlockItem;
 import com.frozendawn.item.MeteorologistJournalItem;
 import com.frozendawn.item.MartianCommandPacketItem;
@@ -24,13 +28,19 @@ import com.frozendawn.item.OrsaDocumentItem;
 import com.frozendawn.item.OrsaIdBadgeItem;
 import com.frozendawn.item.OrsaThermalVisorItem;
 import com.frozendawn.item.O2TankItem;
+import com.frozendawn.item.O2EfficiencyModuleItem;
+import com.frozendawn.item.OrsaTraumaKitItem;
 import com.frozendawn.item.OrsaMultiToolItem;
 import com.frozendawn.item.MirroredFragmentItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.item.SnowshoesItem;
 import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
+import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
+import com.frozendawn.item.ThaevenCarrierItem;
+import com.frozendawn.item.ThaevenTranslatorItem;
+import com.frozendawn.lore.ThaevenRecordId;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -90,6 +100,17 @@ public class ModItems {
     public static final DeferredItem<BlockItem> ROCKET_FIN = ITEMS.registerSimpleBlockItem("rocket_fin", ModBlocks.ROCKET_FIN);
     public static final DeferredItem<BlockItem> ROCKET_HULL = ITEMS.registerSimpleBlockItem("rocket_hull", ModBlocks.ROCKET_HULL);
     public static final DeferredItem<BlockItem> ROCKET_NOSE_CONE = ITEMS.registerSimpleBlockItem("rocket_nose_cone", ModBlocks.ROCKET_NOSE_CONE);
+    public static final DeferredItem<BlockItem> BLOOM_MASS = ITEMS.registerSimpleBlockItem("bloom_mass", ModBlocks.BLOOM_MASS);
+    public static final DeferredItem<BlockItem> BLOOM_CRUST = ITEMS.registerSimpleBlockItem("bloom_crust", ModBlocks.BLOOM_CRUST);
+    public static final DeferredItem<BlockItem> BLOOM_TIP = ITEMS.registerSimpleBlockItem("bloom_tip", ModBlocks.BLOOM_TIP);
+    public static final DeferredItem<BlockItem> INERT_ACHERONITE = ITEMS.registerSimpleBlockItem("inert_acheronite", ModBlocks.INERT_ACHERONITE);
+    public static final DeferredItem<BlockItem> SEALED_LATTICE = ITEMS.registerSimpleBlockItem("sealed_lattice", ModBlocks.SEALED_LATTICE);
+    public static final DeferredItem<InertConvergenceCoreItem> INERT_CONVERGENCE_CORE =
+            ITEMS.register("inert_convergence_core", () -> new InertConvergenceCoreItem(
+                    ModBlocks.INERT_CONVERGENCE_CORE.get(), new Item.Properties()
+                    .durability(InertConvergenceCoreItem.MAX_USES)
+                    .rarity(Rarity.EPIC).fireResistant()));
+    // Remnant lure blocks intentionally have no item or creative-tab entry.
 
     // --- Items ---
     public static final DeferredItem<Item> ICE_SHARD = ITEMS.registerSimpleItem("ice_shard");
@@ -100,6 +121,8 @@ public class ModItems {
     public static final DeferredItem<Item> ROCKET_FUEL_CELL = ITEMS.register("rocket_fuel_cell",
             () -> new Item(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> THERMAL_CORE = ITEMS.registerSimpleItem("thermal_core");
+    public static final DeferredItem<Item> SPENT_LATTICE = ITEMS.register("spent_lattice",
+            () -> new Item(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> FROZEN_HEART = ITEMS.registerSimpleItem("frozen_heart");
     public static final DeferredItem<BoardPacketItem> BOARD_PACKET = ITEMS.register("board_packet",
             () -> new BoardPacketItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
@@ -113,6 +136,33 @@ public class ModItems {
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
             () -> new OrsaMultiToolItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ThaevenTranslatorItem> THAEVEN_TRANSLATOR = ITEMS.register(
+            "thaeven_translator", () -> new ThaevenTranslatorItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<ThaevenCarrierItem> HUMAN_CARRIER = ITEMS.register(
+            "human_carrier", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    ThaevenRecordId.THE_PASSAGE));
+    public static final DeferredItem<ThaevenCarrierItem> PATTERN_RESIDUE_RECORD = ITEMS.register(
+            "pattern_residue_record", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC),
+                    ThaevenRecordId.PATTERN_RESIDUE));
+    public static final DeferredItem<ThaevenCarrierItem> ACCRETED_REMNANT = ITEMS.register(
+            "accreted_remnant", () -> new ThaevenCarrierItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC),
+                    ThaevenRecordId.THE_HEART_BENEATH));
+    public static final DeferredItem<Item> RIMEBOUND_PATTERN_FRAGMENT = ITEMS.register(
+            "rimebound_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> RESONANT_PATTERN_FRAGMENT = ITEMS.register(
+            "resonant_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> REMNANT_PATTERN_FRAGMENT = ITEMS.register(
+            "remnant_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> FROSTWRITHE_PATTERN_FRAGMENT = ITEMS.register(
+            "frostwrithe_pattern_fragment", () -> new Item(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<O2TankItem> O2_TANK = ITEMS.register("o2_tank",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER1_MAX), O2TankItem.TIER1_MAX));
@@ -122,6 +172,22 @@ public class ModItems {
     public static final DeferredItem<O2TankItem> O2_TANK_MK3 = ITEMS.register("o2_tank_mk3",
             () -> new O2TankItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.O2_LEVEL.get(), O2TankItem.TIER3_MAX), O2TankItem.TIER3_MAX));
+    public static final DeferredItem<EmergencyO2CartridgeItem> EMERGENCY_O2_CARTRIDGE = ITEMS.register(
+            "emergency_o2_cartridge",
+            () -> new EmergencyO2CartridgeItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<O2EfficiencyModuleItem> O2_EFFICIENCY_MODULE = ITEMS.register(
+            "o2_efficiency_module",
+            () -> new O2EfficiencyModuleItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<OrsaTraumaKitItem> ORSA_TRAUMA_KIT = ITEMS.register(
+            "orsa_trauma_kit",
+            () -> new OrsaTraumaKitItem(
+                    new Item.Properties().stacksTo(4).rarity(Rarity.RARE)));
+    public static final DeferredItem<BlackglassArchiveCardItem> BLACKGLASS_ARCHIVE_CARD =
+            ITEMS.register("blackglass_archive_card",
+                    () -> new BlackglassArchiveCardItem(
+                            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SULFUR_LAVA_BUCKET = ITEMS.register("sulfur_lava_bucket",
             () -> new BucketItem(ModFluids.SOURCE_VENT_LAVA.get(),
                     new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
@@ -213,7 +279,13 @@ public class ModItems {
     public static final DeferredItem<RemnantEmberItem> REMNANT_EMBER = ITEMS.register("remnant_ember",
             () -> new RemnantEmberItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
                     .component(ModDataComponents.WARMTH_REMAINING.get(), RemnantEmberItem.MAX_WARMTH)));
-    public static final DeferredItem<Item> TATTERED_CLOTHING_SCRAP = ITEMS.registerSimpleItem("tattered_clothing_scrap");
+    public static final DeferredItem<SuitPatchItem> TATTERED_CLOTHING_SCRAP = ITEMS.register(
+            "tattered_clothing_scrap",
+            () -> new SuitPatchItem(new Item.Properties().stacksTo(32), false));
+    public static final DeferredItem<SuitPatchItem> ORSA_SUIT_PATCH_KIT = ITEMS.register(
+            "orsa_suit_patch_kit",
+            () -> new SuitPatchItem(
+                    new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON), true));
     public static final DeferredItem<OrsaIdBadgeItem> ORSA_ID_BADGE = ITEMS.register("orsa_id_badge",
             () -> new OrsaIdBadgeItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
@@ -222,8 +294,31 @@ public class ModItems {
             () -> new MirroredFragmentItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
 
     // --- Architect Mob Drops ---
+    // Entity-only equipment: intentionally omitted from recipes and creative tabs.
+    public static final DeferredItem<Item> MASTER_ARCHITECT_STAFF = ITEMS.register(
+            "master_architect_staff",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectSoulItem> ARCHITECT_SOUL = ITEMS.register("architect_soul",
             () -> new ArchitectSoulItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    // Future Maeve-erasure icon. Intentionally absent from creative tabs and recipes.
+    public static final DeferredItem<Item> MEMORY_NODE_EMPTY = ITEMS.register(
+            "memory_node_empty",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Hidden advancement icon for the first time The Last Witness denies a death.
+    public static final DeferredItem<Item> REMEMBERED_KEEPSAKE = ITEMS.register(
+            "remembered_keepsake",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Hidden advancement icon for surviving the Archivist's terminal notice.
+    public static final DeferredItem<Item> MARKED_EYE = ITEMS.register(
+            "marked_eye",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    // Unique Maeve-erasure relic. Intentionally absent from creative tabs and recipes.
+    public static final DeferredItem<LastWitnessItem> THE_LAST_WITNESS = ITEMS.register(
+            "the_last_witness",
+            () -> new LastWitnessItem(new Item.Properties()
+                    .stacksTo(1)
+                    .durability(LastWitnessItem.MAX_CHARGES)
+                    .rarity(Rarity.EPIC)));
     public static final DeferredItem<ArchitectMaskItem> ARCHITECT_MASK = ITEMS.register("architect_mask",
             () -> new ArchitectMaskItem(
                     ModBlocks.ARCHITECT_MASK.get(),
@@ -353,6 +448,8 @@ public class ModItems {
                         output.accept(SULFUR_ORE.get());
                         output.accept(HYDROTHERMAL_ROCK.get());
                         output.accept(VOLCANIC_ASH.get());
+                        output.accept(INERT_ACHERONITE.get());
+                        output.accept(SEALED_LATTICE.get());
                         // Player agency
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
@@ -384,12 +481,14 @@ public class ModItems {
                         output.accept(LIQUID_OXIDIZER.get());
                         output.accept(ROCKET_FUEL_CELL.get());
                         output.accept(THERMAL_CORE.get());
+                        output.accept(SPENT_LATTICE.get());
                         output.accept(FROZEN_HEART.get());
                         output.accept(BOARD_PACKET.get());
                         output.accept(MARTIAN_COMMAND_PACKET.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
                         output.accept(ORSA_MULTITOOL.get());
+                        output.accept(THAEVEN_TRANSLATOR.get());
                         ItemStack guideBook = StarterBooks.createGuideBook();
                         if (guideBook != null) {
                             output.accept(guideBook);
@@ -397,6 +496,10 @@ public class ModItems {
                         output.accept(O2_TANK.get());
                         output.accept(O2_TANK_MK2.get());
                         output.accept(O2_TANK_MK3.get());
+                        output.accept(EMERGENCY_O2_CARTRIDGE.get());
+                        output.accept(O2_EFFICIENCY_MODULE.get());
+                        output.accept(ORSA_TRAUMA_KIT.get());
+                        output.accept(BLACKGLASS_ARCHIVE_CARD.get());
                         output.accept(SULFUR_LAVA_BUCKET.get());
                         // Armor - Tier 1
                         output.accept(INSULATED_HELMET.get());
@@ -446,6 +549,7 @@ public class ModItems {
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());
                         output.accept(TATTERED_CLOTHING_SCRAP.get());
+                        output.accept(ORSA_SUIT_PATCH_KIT.get());
                         output.accept(ORSA_ID_BADGE.get());
                         output.accept(MIRRORED_FRAGMENT.get());
                         output.accept(ARCHITECT_SOUL.get());
