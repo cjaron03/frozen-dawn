@@ -51,4 +51,32 @@ public final class ArchitectBreakPolicy {
         }
         return shape.max(Direction.Axis.Y) >= MIN_OBSTRUCTION_HEIGHT;
     }
+
+    /**
+     * Space the Architect can physically occupy without mining. Thin deposits
+     * remain perceptible terrain, but they are not promoted to breach targets.
+     */
+    public static boolean isDryPassableForArchitect(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getFluidState().isEmpty()
+                && !isObstructiveForArchitect(state, level, pos);
+    }
+
+    public static boolean isThinTraversableSurface(BlockState state, BlockGetter level, BlockPos pos) {
+        if (state.isAir() || !state.getFluidState().isEmpty()) {
+            return false;
+        }
+        VoxelShape shape = state.getCollisionShape(level, pos);
+        if (shape.isEmpty()) {
+            return false;
+        }
+        double height = shape.max(Direction.Axis.Y);
+        return height > 0.0D && height < MIN_OBSTRUCTION_HEIGHT;
+    }
+
+    public static double traversableSurfaceOffset(BlockState state, BlockGetter level, BlockPos pos) {
+        if (!isThinTraversableSurface(state, level, pos)) {
+            return 0.0D;
+        }
+        return state.getCollisionShape(level, pos).max(Direction.Axis.Y);
+    }
 }

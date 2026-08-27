@@ -4,6 +4,7 @@ import com.frozendawn.event.MobFreezeHandler;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
@@ -104,7 +105,10 @@ public class O2BubbleHud {
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         int baseX = screenWidth / 2 + 91;
-        int baseY = screenHeight - 49;
+        int baseY = O2HudLayoutPolicy.baseY(
+                screenHeight,
+                playerAirMeterVisible(mc.player)
+        );
 
         // Calculate full/partial bubbles
         int fullBubbles;
@@ -157,6 +161,12 @@ public class O2BubbleHud {
                 drawEmptyBubble(graphics, bx, by);
             }
         }
+    }
+
+    private static boolean playerAirMeterVisible(Player player) {
+        int maxAir = player.getMaxAirSupply();
+        int currentAir = Math.min(player.getAirSupply(), maxAir);
+        return player.isEyeInFluid(FluidTags.WATER) || currentAir < maxAir;
     }
 
     /** Returns {outline, fill, highlight, glow} colors for a tier. */

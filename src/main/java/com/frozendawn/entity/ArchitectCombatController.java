@@ -2,6 +2,7 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.architect.ArchitectCombatState;
+import com.frozendawn.entity.architect.ArchitectRetreatPolicy;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -37,11 +38,10 @@ final class ArchitectCombatController {
         double hDist = target != null ? architect.horizontalDistanceTo(target) : Double.MAX_VALUE;
         double vDist = target != null ? architect.verticalDistanceTo(target) : Double.MAX_VALUE;
         float dist3d = target != null ? architect.distanceTo(target) : Float.MAX_VALUE;
-        boolean hasLos = target != null && architect.hasLineOfSight(target);
         if (target == null
                 || hDist > ArchitectEntity.MELEE_COMMIT_HORIZONTAL_RANGE
                 || vDist > ArchitectEntity.MELEE_COMMIT_VERTICAL_RANGE
-                || (!hasLos && hDist > ArchitectEntity.MELEE_COMMIT_LOS_GRACE_RANGE)) {
+                || !architect.canCommitToMelee(target)) {
             architect.clearMeleeCommit();
             architect.triggerReeval();
             return;
@@ -118,9 +118,29 @@ final class ArchitectCombatController {
 
         switch (combatState.retreatPhase) {
             case 0 -> {
-                if (dist >= ArchitectEntity.RETREAT_DISTANCE || target == null) {
-                    LOGGER.info("[Architect] RETREAT: reached safe distance ({}), building cover",
-                            String.format("%.1f", dist));
+                if (combatState.retreatStartPosition == null) {
+                    combatState.retreatStartPosition = architect.position();
+                    combatState.retreatRunTicks = 0;
+                }
+                Vec3 retreatStart = combatState.retreatStartPosition;
+                double committedTravel = Math.hypot(
+                        architect.getX() - retreatStart.x,
+                        architect.getZ() - retreatStart.z
+                );
+                ArchitectRetreatPolicy.RunEndReason runEndReason = ArchitectRetreatPolicy.runEndReason(
+                        dist,
+                        committedTravel,
+                        combatState.retreatRunTicks
+                );
+                if (runEndReason != ArchitectRetreatPolicy.RunEndReason.CONTINUE) {
+                    LOGGER.info(
+                            "[Architect] RETREAT: run ended by {} after {} blocks / {} ticks "
+                                    + "(target distance {}), building cover",
+                            runEndReason,
+                            String.format("%.1f", committedTravel),
+                            combatState.retreatRunTicks,
+                            String.format("%.1f", dist)
+                    );
                     architect.getNavigation().stop();
                     combatState.retreatPhase = 1;
                     combatState.retreatCoverBuilt = 0;
@@ -144,14 +164,15 @@ final class ArchitectCombatController {
                 );
                 if (architect.isPathRecalcReady()) {
                     architect.getNavigation().moveTo(
-                            architect.getX() + away.x * ArchitectEntity.RETREAT_DISTANCE,
+                            architect.getX() + away.x * ArchitectRetreatPolicy.SAFE_TARGET_DISTANCE,
                             architect.getY(),
-                            architect.getZ() + away.z * ArchitectEntity.RETREAT_DISTANCE,
+                            architect.getZ() + away.z * ArchitectRetreatPolicy.SAFE_TARGET_DISTANCE,
                             1.3
                     );
                     architect.setPathRecalcCooldown(10);
                 }
                 architect.decrementPathRecalcCooldown();
+                combatState.retreatRunTicks++;
             }
             case 1 -> {
                 architect.getNavigation().stop();

@@ -6,7 +6,6 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 
 final class FrozenDawnWinCommand {
@@ -16,6 +15,8 @@ final class FrozenDawnWinCommand {
 
     static LiteralArgumentBuilder<CommandSourceStack> winCommands() {
         return Commands.literal("win")
+                .executes(FrozenDawnWinCommand::satellite)
+                .then(Commands.literal("status").executes(FrozenDawnWinCommand::satellite))
                 .then(Commands.literal("satellite").executes(FrozenDawnWinCommand::satellite));
     }
 
@@ -23,17 +24,21 @@ final class FrozenDawnWinCommand {
         MinecraftServer server = context.getSource().getServer();
         WinConditionState winState = WinConditionState.get(server);
         BlockPos pos = winState.getSatellitePos();
+        FrozenDawnCommandOutput.heading(context.getSource(), "Win Condition");
         if (pos == null) {
-            context.getSource().sendSuccess(() -> Component.literal("  Satellite: not yet initialized"), false);
+            FrozenDawnCommandOutput.line(context.getSource(), "Satellite",
+                    "not initialized");
         } else {
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  Satellite: (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")"
-                            + " | Placed: " + winState.isSatellitePlaced()
-                            + " | Schematic: " + winState.isSchematicUnlocked()
-                            + " | Conspiracy: " + winState.isConspiracyDiscovered()
-                            + " | Rocket: " + winState.isRocketBlueprintUnlocked()
-                            + " | Martian Reply: " + winState.isMartianReplySent()
-                            + " | Launched: " + winState.isLaunchCompleted()), false);
+            FrozenDawnCommandOutput.line(context.getSource(), "Satellite",
+                    pos.toShortString() + " - "
+                            + (winState.isSatellitePlaced() ? "placed" : "pending"));
+            FrozenDawnCommandOutput.line(context.getSource(), "Unlocks",
+                    "schematic=" + winState.isSchematicUnlocked()
+                            + " conspiracy=" + winState.isConspiracyDiscovered()
+                            + " rocket=" + winState.isRocketBlueprintUnlocked());
+            FrozenDawnCommandOutput.line(context.getSource(), "Outcome",
+                    "reply=" + winState.isMartianReplySent()
+                            + " launched=" + winState.isLaunchCompleted());
         }
         return 1;
     }

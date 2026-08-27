@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.function.BiFunction;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Plans one committed-walk movement step and advances committed-walk tick
@@ -27,7 +28,8 @@ public final class ArchitectWalkMotionPlanner {
             int lookAheadSteps,
             double autoJumpMinVerticalDelta,
             double autoJumpMaxHorizontalSqr,
-            BiFunction<BlockPos, BlockPos, Direction> primaryHorizontalDirection
+            BiFunction<BlockPos, BlockPos, Direction> primaryHorizontalDirection,
+            ToDoubleFunction<BlockPos> surfaceY
     ) {
         BlockPos steeringTarget = ArchitectWalkCorridorState.getSteeringTarget(approachState);
         if (steeringTarget == null || approachState.committedWalkTicks <= 0) {
@@ -38,7 +40,8 @@ public final class ArchitectWalkMotionPlanner {
                 approachState,
                 steeringTarget,
                 lookAheadSteps,
-                primaryHorizontalDirection);
+                primaryHorizontalDirection,
+                surfaceY);
         Vec3 lookTarget = ArchitectWalkCorridorState.getLookTarget(
                 moveTarget,
                 currentX,
@@ -49,9 +52,14 @@ public final class ArchitectWalkMotionPlanner {
                 -0.15,
                 0.35);
 
-        double horizontalDistSqr = (moveTarget.x - currentX) * (moveTarget.x - currentX)
-                + (moveTarget.z - currentZ) * (moveTarget.z - currentZ);
-        double verticalDelta = steeringTarget.getY() - currentY;
+        // Keep smooth lookahead steering, but decide when to jump from the
+        // immediate route cell. Measuring against moveTarget suppresses every
+        // step-up when a straight upper corridor extends beyond the ledge.
+        double steeringX = steeringTarget.getX() + 0.5D;
+        double steeringZ = steeringTarget.getZ() + 0.5D;
+        double horizontalDistSqr = (steeringX - currentX) * (steeringX - currentX)
+                + (steeringZ - currentZ) * (steeringZ - currentZ);
+        double verticalDelta = surfaceY.applyAsDouble(steeringTarget) - currentY;
         boolean shouldJump = verticalDelta >= autoJumpMinVerticalDelta
                 && horizontalDistSqr <= autoJumpMaxHorizontalSqr
                 && onGround;

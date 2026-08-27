@@ -4,6 +4,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
+import java.util.UUID;
+
 /** Persistent, server-authoritative EVA suit integrity state for one player. */
 public final class SuitIntegrity implements INBTSerializable<CompoundTag> {
 
@@ -16,6 +18,8 @@ public final class SuitIntegrity implements INBTSerializable<CompoundTag> {
     private double ventAccumulator;
     private boolean warned25;
     private boolean warned10;
+    private long lastPunctureRollTick = Long.MIN_VALUE;
+    private UUID lastPunctureRollSource;
 
     public int punctures() {
         return punctures;
@@ -94,6 +98,19 @@ public final class SuitIntegrity implements INBTSerializable<CompoundTag> {
         warned10 = false;
     }
 
+    /** Prevents one attacker impact that emits multiple damage events from rolling twice. */
+    public boolean claimPunctureRoll(long gameTime, UUID sourceId) {
+        if (sourceId == null) {
+            return true;
+        }
+        if (lastPunctureRollTick == gameTime && sourceId.equals(lastPunctureRollSource)) {
+            return false;
+        }
+        lastPunctureRollTick = gameTime;
+        lastPunctureRollSource = sourceId;
+        return true;
+    }
+
     public void resetAfterDeath() {
         punctures = 0;
         o2Ticks = 0;
@@ -102,6 +119,8 @@ public final class SuitIntegrity implements INBTSerializable<CompoundTag> {
         temporarySeals = 0;
         temporarySealTicks = 0;
         ventAccumulator = 0.0D;
+        lastPunctureRollTick = Long.MIN_VALUE;
+        lastPunctureRollSource = null;
         clearWarnings();
     }
 

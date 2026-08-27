@@ -114,7 +114,7 @@ final class FrozenDawnLocateCommand {
     private static int locateOrsa(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
         refreshLandmarks(server);
-        context.getSource().sendSuccess(() -> Component.literal("--- ORSA Locate ---"), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "ORSA Locate");
         blastPit(context);
         towers(context);
         camps(context);
@@ -124,7 +124,7 @@ final class FrozenDawnLocateCommand {
     }
 
     private static int locateAll(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal("--- Locate Summary ---"), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Locate Summary");
         locateOrsa(context);
         vents(context);
         towns(context);

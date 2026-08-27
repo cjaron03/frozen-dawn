@@ -27,11 +27,16 @@ final class ThaevenLoreCommand {
 
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("lore")
-                .executes(ThaevenLoreCommand::status)
+                .executes(context -> status(context, false))
                 .then(Commands.literal("status")
-                        .executes(ThaevenLoreCommand::status))
+                        .executes(context -> status(context, false))
+                        .then(Commands.literal("verbose")
+                                .executes(context -> status(context, true))))
                 .then(Commands.literal("grant")
                         .then(Commands.argument("record", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                        ThaevenRecordId.class,
+                                        ThaevenRecordId::serializedName))
                                 .executes(context -> grant(context,
                                         context.getSource().getPlayerOrException()))
                                 .then(Commands.argument("player", EntityArgument.player())
@@ -40,42 +45,61 @@ final class ThaevenLoreCommand {
                                                         context, "player"))))))
                 .then(Commands.literal("spawn-carrier")
                         .then(Commands.argument("record", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                        ThaevenRecordId.class,
+                                        ThaevenRecordId::serializedName))
                                 .executes(ThaevenLoreCommand::spawnCarrier)))
                 .then(Commands.literal("unlock-semantic")
                         .then(Commands.argument("key", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                        ThaevenSemanticKey.class))
                                 .executes(ThaevenLoreCommand::unlockSemantic)))
                 .then(Commands.literal("assemble-record3")
                         .executes(ThaevenLoreCommand::assembleRecordThree))
                 .then(Commands.literal("reset-player")
                         .then(Commands.argument("player", EntityArgument.player())
-                                .executes(ThaevenLoreCommand::resetPlayer)))
-                .then(Commands.literal("debug-reset-world-semantic")
-                        .executes(ThaevenLoreCommand::resetWorldSemantics))
+                                .then(Commands.literal("confirm")
+                                        .executes(ThaevenLoreCommand::resetPlayer))))
+                .then(Commands.literal("reset-world-semantic")
+                        .then(Commands.literal("confirm")
+                                .executes(ThaevenLoreCommand::resetWorldSemantics)))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("record", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                        ThaevenRecordId.class,
+                                        ThaevenRecordId::serializedName))
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(ThaevenLoreCommand::explain))));
     }
 
-    private static int status(CommandContext<CommandSourceStack> context)
+    private static int status(
+            CommandContext<CommandSourceStack> context, boolean verbose)
             throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ThaevenLoreSavedData data = ThaevenLoreSavedData.get(
                 context.getSource().getServer());
         ThaevenLoreSavedData.ArchiveSnapshot snapshot =
                 data.snapshot(player.getUUID());
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Lore archive " + player.getGameProfile().getName()
-                        + " | records=" + Long.bitCount(snapshot.discoveredMask())
-                        + "/" + ThaevenRecordId.values().length
-                        + " | recipe=" + snapshot.recipeDiscovered()
-                        + " | architectRevision="
-                        + snapshot.architectLidRevision()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Heart Scar: " + data.heartScarAnchor()
-                        .map(anchor -> anchor.dimension().location() + " "
-                                + formatPos(anchor.pos()))
-                        .orElse("unresolved")), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Lore Archive");
+        FrozenDawnCommandOutput.line(context.getSource(), "Player",
+                player.getGameProfile().getName());
+        FrozenDawnCommandOutput.line(context.getSource(), "Records",
+                Long.bitCount(snapshot.discoveredMask()) + "/"
+                        + ThaevenRecordId.values().length);
+        FrozenDawnCommandOutput.line(context.getSource(), "Translator recipe",
+                snapshot.recipeDiscovered() ? "discovered" : "locked");
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Architect revision",
+                    snapshot.architectLidRevision());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Heart Scar",
+                    data.heartScarAnchor()
+                            .map(anchor -> anchor.dimension().location() + " "
+                                    + formatPos(anchor.pos()))
+                            .orElse("unresolved"));
+        } else {
+            FrozenDawnCommandOutput.hint(context.getSource(),
+                    "/fd lore status verbose");
+        }
         return 1;
     }
 
@@ -163,7 +187,7 @@ final class ThaevenLoreCommand {
                 .resetPlayer(player.getUUID());
         ThaevenLoreManager.sync(player);
         context.getSource().sendSuccess(() -> Component.literal(
-                "[debug] Reset lore archive for "
+                "Reset lore archive for "
                         + player.getGameProfile().getName()), true);
         return 1;
     }
@@ -177,7 +201,7 @@ final class ThaevenLoreCommand {
             ThaevenLoreManager.sync(player);
         }
         context.getSource().sendSuccess(() -> Component.literal(
-                "[debug] Reset all world semantic revisions"), true);
+                "Reset all world semantic revisions"), true);
         return 1;
     }
 
@@ -194,29 +218,31 @@ final class ThaevenLoreCommand {
                 data.snapshot(player.getUUID());
         int seen = snapshot.seenRevisions()[record.ordinal()];
         int current = data.currentRevision(record);
-        context.getSource().sendSuccess(() -> Component.literal(
-                record.serializedName().toUpperCase(java.util.Locale.ROOT)
-                        + " | discovered=" + data.hasRecord(player.getUUID(), record)
-                        + " | seenRevision=" + seen
-                        + " | currentRevision=" + current), false);
+        FrozenDawnCommandOutput.heading(context.getSource(),
+                "Lore / " + record.serializedName());
+        FrozenDawnCommandOutput.line(context.getSource(), "Discovered",
+                data.hasRecord(player.getUUID(), record));
+        FrozenDawnCommandOutput.line(context.getSource(), "Revision",
+                seen + " seen / " + current + " current");
         if (record == ThaevenRecordId.THE_PASSAGE) {
             boolean permanentDefeat = ReturnedHearthSavedData.get(
                     context.getSource().getServer())
                     .hearth(HearthSelectionPolicy.HearthType.MAJOR)
                     .map(ReturnedHearthSavedData.HearthRecord::decoherenceGranted)
                     .orElse(false);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "permanentMasterDefeat=" + permanentDefeat
-                            + " | ARCHITECT_LID_REVEAL="
-                            + data.semanticRevision(
-                            ThaevenSemanticKey.ARCHITECT_LID_REVEAL)), false);
+            FrozenDawnCommandOutput.detail(context.getSource(),
+                    "Permanent Master defeat", permanentDefeat);
+            FrozenDawnCommandOutput.detail(context.getSource(),
+                    "Architect lid revision", data.semanticRevision(
+                            ThaevenSemanticKey.ARCHITECT_LID_REVEAL));
         }
-        context.getSource().sendSuccess(() -> Component.literal(
-                "carrier=" + carrierState(data, record, player)
-                        + " | heartScar=" + data.heartScarAnchor()
+        FrozenDawnCommandOutput.detail(context.getSource(), "Carrier",
+                carrierState(data, record, player));
+        FrozenDawnCommandOutput.detail(context.getSource(), "Heart Scar",
+                data.heartScarAnchor()
                         .map(anchor -> anchor.dimension().location() + " "
                                 + formatPos(anchor.pos()))
-                        .orElse("unresolved")), false);
+                        .orElse("unresolved"));
         return 1;
     }
 

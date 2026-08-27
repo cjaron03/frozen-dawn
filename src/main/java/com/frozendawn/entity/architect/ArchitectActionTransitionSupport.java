@@ -23,6 +23,13 @@ public final class ArchitectActionTransitionSupport {
     public static void onEnterRetreat(ArchitectCombatState combatState) {
         combatState.retreatPhase = 0;
         combatState.retreatCoverBuilt = 0;
+        combatState.retreatStartPosition = null;
+        combatState.retreatRunTicks = 0;
+    }
+
+    public static void onLeaveRetreat(ArchitectCombatState combatState) {
+        combatState.retreatStartPosition = null;
+        combatState.retreatRunTicks = 0;
     }
 
     public static void primeMeleeHandoffState(

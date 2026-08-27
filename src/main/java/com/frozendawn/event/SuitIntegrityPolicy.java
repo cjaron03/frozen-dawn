@@ -1,5 +1,6 @@
 package com.frozendawn.event;
 
+import com.frozendawn.item.O2TankItem;
 import net.minecraft.util.Mth;
 
 /** Pure tuning math for suit punctures, kept separate from event plumbing. */
@@ -7,6 +8,7 @@ public final class SuitIntegrityPolicy {
 
     public static final int EMERGENCY_REFILL_CAP_TICKS = 1200;
     public static final float EMERGENCY_REFILL_FRACTION = 0.35F;
+    public static final float MAX_FALL_PUNCTURE_CHANCE = 0.30F;
 
     public enum SourceKind {
         MASTER_ARCHITECT,
@@ -29,6 +31,17 @@ public final class SuitIntegrityPolicy {
                 Math.max(1, (int) Math.ceil(totalCapacity * EMERGENCY_REFILL_FRACTION)));
     }
 
+    public static boolean shouldConsumeBaselineO2(
+            long gameTime, boolean visorRig, boolean efficiencyModule) {
+        int interval = O2TankItem.BASE_CONSUMPTION_INTERVAL_TICKS
+                * (visorRig ? 2 : 1);
+        if (Math.floorMod(gameTime, interval) != 0) {
+            return false;
+        }
+        long consumptionIndex = Math.floorDiv(gameTime, interval);
+        return !efficiencyModule || Math.floorMod(consumptionIndex, 4L) != 0L;
+    }
+
     public static float chance(
             SourceKind source,
             float fallDistance,
@@ -45,7 +58,7 @@ public final class SuitIntegrityPolicy {
             case FALL -> Mth.clamp(
                     Math.max(0.0F, fallDistance) * Math.max(0.0F, fallChancePerBlock),
                     0.0F,
-                    0.60F);
+                    MAX_FALL_PUNCTURE_CHANCE);
         };
     }
 

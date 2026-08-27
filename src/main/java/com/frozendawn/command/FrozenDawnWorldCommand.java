@@ -39,29 +39,36 @@ final class FrozenDawnWorldCommand {
 
     static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
         return Commands.literal("world")
-                .then(Commands.literal("status").executes(FrozenDawnWorldCommand::status))
+                .executes(context -> status(context, false))
+                .then(Commands.literal("status")
+                        .executes(context -> status(context, false))
+                        .then(Commands.literal("verbose")
+                                .executes(context -> status(context, true))))
                 .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
-                .then(Commands.literal("setday")
-                        .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
-                                .executes(FrozenDawnWorldCommand::setDay)))
-                .then(Commands.literal("setphase")
-                        .then(Commands.argument("phase", IntegerArgumentType.integer(0, 6))
-                                .executes(FrozenDawnWorldCommand::setPhase)
-                                .then(Commands.argument("substage", StringArgumentType.word())
-                                        .suggests(SUBSTAGE_SUGGESTIONS)
-                                        .executes(FrozenDawnWorldCommand::setPhaseSubstage))))
-                .then(Commands.literal("settotaldays")
-                        .then(Commands.argument("days", IntegerArgumentType.integer(7, 10000))
-                                .executes(FrozenDawnWorldCommand::setTotalDays)))
+                .then(Commands.literal("set")
+                        .then(Commands.literal("day")
+                                .then(Commands.argument("day", IntegerArgumentType.integer(0, 10000))
+                                        .executes(FrozenDawnWorldCommand::setDay)))
+                        .then(Commands.literal("phase")
+                                .then(Commands.argument("phase", IntegerArgumentType.integer(0, 6))
+                                        .executes(FrozenDawnWorldCommand::setPhase)
+                                        .then(Commands.argument("substage", StringArgumentType.word())
+                                                .suggests(SUBSTAGE_SUGGESTIONS)
+                                                .executes(FrozenDawnWorldCommand::setPhaseSubstage))))
+                        .then(Commands.literal("total-days")
+                                .then(Commands.argument("days", IntegerArgumentType.integer(7, 10000))
+                                        .executes(FrozenDawnWorldCommand::setTotalDays))))
                 .then(Commands.literal("pause").executes(FrozenDawnWorldCommand::togglePause))
-                .then(Commands.literal("reset").executes(FrozenDawnWorldCommand::reset))
+                .then(Commands.literal("reset")
+                        .then(Commands.literal("confirm")
+                                .executes(FrozenDawnWorldCommand::reset)))
                 .then(Commands.literal("preset")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnWorldCommand::applyPreset)));
     }
 
-    private static int status(CommandContext<CommandSourceStack> context) {
+    private static int status(CommandContext<CommandSourceStack> context, boolean verbose) {
         MinecraftServer server = context.getSource().getServer();
         ApocalypseState state = ApocalypseState.get(server);
         ConfigPresets activePreset = ConfigPresets.detectCurrentPreset();
@@ -71,47 +78,59 @@ final class FrozenDawnWorldCommand {
         String phaseName = phase >= 0 && phase <= 6 ? phaseNames[phase] : "Unknown";
         boolean paused = FrozenDawnConfig.PAUSE_PROGRESSION.get();
 
-        context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Status ---"), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Day: " + state.getCurrentDay() + " / " + state.getTotalDays()), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Phase: " + phase + " (" + phaseName + ")"), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Preset: " + formatPresetName(activePreset)), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Temperature: " + String.format(Locale.ROOT, "%.1f", state.getTemperatureOffset()) + "C"), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Sun Scale: " + String.format(Locale.ROOT, "%.2f", state.getSunScale())
-                        + " | Sky Light: " + String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100)), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Progression: " + (paused ? "Paused" : "Running")), false);
-
         boolean winEnabled = FrozenDawnConfig.ENABLE_WIN_CONDITION.get();
-        context.getSource().sendSuccess(() -> Component.literal("  Win Condition: " + (winEnabled ? "Enabled" : "Disabled")), false);
-        if (winEnabled) {
-            WinConditionState winState = WinConditionState.get(server);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  Satellite Placed: " + yesNo(winState.isSatellitePlaced())
-                            + " | Schematic: " + yesNo(winState.isSchematicUnlocked())
-                            + " | Conspiracy: " + yesNo(winState.isConspiracyDiscovered())
-                            + " | Rocket Unlock: " + yesNo(winState.isRocketBlueprintUnlocked())
-                            + " | Launch Complete: " + yesNo(winState.isLaunchCompleted())), false);
-        }
-
         OrsaStructureState orsaState = OrsaStructureState.get(server);
         BlockPos blastPitPos = orsaState.getBlastPitPos();
-        if (blastPitPos != null) {
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  Blast Pit: final (" + blastPitPos.getX() + ", " + blastPitPos.getY() + ", " + blastPitPos.getZ() + ")"
-                            + " | Placed: " + yesNo(orsaState.isBlastPitPlaced())), false);
-        } else if (orsaState.getBlastPitTargetPos() != null) {
-            BlockPos anchor = orsaState.getBlastPitTargetPos();
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  Blast Pit: final anchor (" + anchor.getX() + ", " + anchor.getY() + ", " + anchor.getZ() + ") | awaiting chunk load"), false);
+        String blastPit = blastPitPos != null
+                ? (orsaState.isBlastPitPlaced() ? "placed" : "selected")
+                : orsaState.getBlastPitTargetPos() != null ? "awaiting chunk" : "unselected";
+
+        FrozenDawnCommandOutput.heading(context.getSource(), "World");
+        FrozenDawnCommandOutput.line(context.getSource(), "Timeline",
+                "day " + state.getCurrentDay() + "/" + state.getTotalDays()
+                        + " - phase " + phase + " (" + phaseName + ")");
+        FrozenDawnCommandOutput.line(context.getSource(), "Environment",
+                String.format(Locale.ROOT, "%.1fC - %s preset",
+                        state.getTemperatureOffset(), formatPresetName(activePreset)));
+        FrozenDawnCommandOutput.line(context.getSource(), "Progression",
+                (paused ? "paused" : "running") + " - win condition "
+                        + (winEnabled ? "enabled" : "disabled"));
+        FrozenDawnCommandOutput.line(context.getSource(), "Infrastructure",
+                orsaState.getTowers().size() + " tower(s) - blast pit " + blastPit);
+
+        if (!verbose) {
+            FrozenDawnCommandOutput.hint(context.getSource(), "/fd world status verbose");
+            return 1;
         }
-        context.getSource().sendSuccess(() -> Component.literal("  Towers: " + orsaState.getTowers().size()), false);
+
+        FrozenDawnCommandOutput.detail(context.getSource(), "Sun scale",
+                String.format(Locale.ROOT, "%.2f", state.getSunScale()));
+        FrozenDawnCommandOutput.detail(context.getSource(), "Sky light",
+                String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100));
+        if (winEnabled) {
+            WinConditionState winState = WinConditionState.get(server);
+            FrozenDawnCommandOutput.detail(context.getSource(), "Win state",
+                    "satellite=" + yesNo(winState.isSatellitePlaced())
+                            + " schematic=" + yesNo(winState.isSchematicUnlocked())
+                            + " conspiracy=" + yesNo(winState.isConspiracyDiscovered())
+                            + " rocket=" + yesNo(winState.isRocketBlueprintUnlocked())
+                            + " launched=" + yesNo(winState.isLaunchCompleted()));
+        }
+        if (blastPitPos != null) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Blast pit position",
+                    blastPitPos.toShortString());
+        } else if (orsaState.getBlastPitTargetPos() != null) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Blast pit anchor",
+                    orsaState.getBlastPitTargetPos().toShortString());
+        }
         return 1;
     }
 
     private static int catchupStatus(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
-        context.getSource().sendSuccess(() -> Component.literal("--- Frozen Dawn Chunk Catch-Up ---"), false);
-        context.getSource().sendSuccess(() -> Component.literal("  " + ChunkCatchUpManager.statusLine(server.overworld())), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Chunk Catch-Up");
+        FrozenDawnCommandOutput.line(context.getSource(), "Queue",
+                ChunkCatchUpManager.statusLine(server.overworld()));
         return 1;
     }
 

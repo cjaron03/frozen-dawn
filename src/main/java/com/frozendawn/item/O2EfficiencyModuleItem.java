@@ -27,10 +27,6 @@ public final class O2EfficiencyModuleItem extends Item {
         return false;
     }
 
-    public static boolean consumesBaselineO2(Player player, long gameTime) {
-        return !isInstalled(player) || Math.floorMod(gameTime, 4L) != 0L;
-    }
-
     public static double consumptionMultiplier(Player player) {
         return isInstalled(player) ? CONSUMPTION_MULTIPLIER : 1.0D;
     }

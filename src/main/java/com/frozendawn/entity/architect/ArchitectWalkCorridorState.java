@@ -90,7 +90,8 @@ public final class ArchitectWalkCorridorState {
             ArchitectApproachState approachState,
             BlockPos steeringTarget,
             int lookAheadSteps,
-            BiFunction<BlockPos, BlockPos, Direction> primaryHorizontalDirection
+            BiFunction<BlockPos, BlockPos, Direction> primaryHorizontalDirection,
+            ToDoubleFunction<BlockPos> surfaceY
     ) {
         BlockPos moveTarget = steeringTarget;
         if (!approachState.committedWalkCorridor.isEmpty()) {
@@ -127,7 +128,7 @@ public final class ArchitectWalkCorridorState {
 
         return new Vec3(
                 moveTarget.getX() + 0.5,
-                steeringTarget.getY(),
+                surfaceY.applyAsDouble(steeringTarget),
                 moveTarget.getZ() + 0.5);
     }
 

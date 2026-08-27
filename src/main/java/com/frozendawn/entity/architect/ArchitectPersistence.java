@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -18,6 +19,10 @@ public final class ArchitectPersistence {
     private static final String KEY_OBSERVE_DIRTY = "ObserveDirty";
     private static final String KEY_RANGED_HITS_RECEIVED = "RangedHitsReceived";
     private static final String KEY_HEAL_COOLDOWN = "HealCooldown";
+    private static final String KEY_RETREAT_START_X = "RetreatStartX";
+    private static final String KEY_RETREAT_START_Y = "RetreatStartY";
+    private static final String KEY_RETREAT_START_Z = "RetreatStartZ";
+    private static final String KEY_RETREAT_RUN_TICKS = "RetreatRunTicks";
     private static final String KEY_SURFACE_Y = "SurfaceY";
     private static final String KEY_TOWER_ENCOUNTER = "TowerEncounter";
     private static final String KEY_TOWER_ENCOUNTER_ID = "TowerEncounterId";
@@ -82,11 +87,29 @@ public final class ArchitectPersistence {
     public static void writeCombatState(CompoundTag tag, ArchitectCombatState combatState) {
         tag.putInt(KEY_RANGED_HITS_RECEIVED, combatState.rangedHitsReceived);
         tag.putInt(KEY_HEAL_COOLDOWN, combatState.healCooldown);
+        tag.putInt(KEY_RETREAT_RUN_TICKS, combatState.retreatRunTicks);
+        if (combatState.retreatStartPosition != null) {
+            tag.putDouble(KEY_RETREAT_START_X, combatState.retreatStartPosition.x);
+            tag.putDouble(KEY_RETREAT_START_Y, combatState.retreatStartPosition.y);
+            tag.putDouble(KEY_RETREAT_START_Z, combatState.retreatStartPosition.z);
+        }
     }
 
     public static void readCombatState(CompoundTag tag, ArchitectCombatState combatState) {
         combatState.rangedHitsReceived = tag.getInt(KEY_RANGED_HITS_RECEIVED);
         combatState.healCooldown = tag.getInt(KEY_HEAL_COOLDOWN);
+        combatState.retreatRunTicks = tag.getInt(KEY_RETREAT_RUN_TICKS);
+        if (tag.contains(KEY_RETREAT_START_X)
+                && tag.contains(KEY_RETREAT_START_Y)
+                && tag.contains(KEY_RETREAT_START_Z)) {
+            combatState.retreatStartPosition = new Vec3(
+                    tag.getDouble(KEY_RETREAT_START_X),
+                    tag.getDouble(KEY_RETREAT_START_Y),
+                    tag.getDouble(KEY_RETREAT_START_Z)
+            );
+        } else {
+            combatState.retreatStartPosition = null;
+        }
     }
 
     public static void writeApproachState(

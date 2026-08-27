@@ -12,6 +12,9 @@ import java.util.function.Predicate;
  */
 public final class ArchitectBreachPlanner {
 
+    private static final double CONTACT_BREACH_HORIZONTAL_RANGE = 4.25D;
+    private static final double CONTACT_BREACH_VERTICAL_RANGE = 3.0D;
+
     private ArchitectBreachPlanner() {
     }
 
@@ -86,7 +89,32 @@ public final class ArchitectBreachPlanner {
             }
         }
 
-        // Priority 2: Block at feet level in direction of target (+ headroom cell).
+        return findDirectWallBlock(actor, target, isBreakableBlock);
+    }
+
+    public static boolean shouldAttemptContactBreach(
+            boolean hasLineOfSight,
+            boolean alreadyBreaking,
+            double horizontalDistance,
+            double verticalDistance
+    ) {
+        return !hasLineOfSight
+                && !alreadyBreaking
+                && horizontalDistance <= CONTACT_BREACH_HORIZONTAL_RANGE
+                && verticalDistance <= CONTACT_BREACH_VERTICAL_RANGE;
+    }
+
+    @Nullable
+    public static BlockPos findDirectWallBlock(
+            LivingEntity actor,
+            @Nullable LivingEntity target,
+            Predicate<BlockPos> isBreakableBlock
+    ) {
+        if (target == null) {
+            return null;
+        }
+
+        // Prefer a body-height opening directly toward the target.
         {
             double dx = target.getX() - actor.getX();
             double dz = target.getZ() - actor.getZ();
@@ -106,7 +134,7 @@ public final class ArchitectBreachPlanner {
             }
         }
 
-        // Priority 3: Raycast fallback from actor toward target.
+        // Raycast fallback from actor toward target.
         Vec3 start = actor.position().add(0, actor.getEyeHeight() * 0.5, 0);
         Vec3 dir = target.position().add(0, target.getEyeHeight() * 0.5, 0).subtract(start).normalize();
 

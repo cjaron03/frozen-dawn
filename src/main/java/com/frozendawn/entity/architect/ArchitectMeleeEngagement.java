@@ -81,14 +81,25 @@ public final class ArchitectMeleeEngagement {
         if (!isWithinMeleeGeometry(actor, target, commitHorizontalRange, commitVerticalRange)) {
             return false;
         }
-        if (!hasLineOfSight && actor.distanceTo(target) >= losGraceRange) {
-            return false;
+        if (!hasLineOfSight) {
+            boolean cleanApproach = hasCleanReachableApproachPath(navigation, target);
+            if (!canCommitWithoutLineOfSight(actor.distanceTo(target), losGraceRange, cleanApproach)) {
+                return false;
+            }
         }
         if (horizontalDistanceTo(actor, target) <= directHorizontalRange
                 && verticalDistanceTo(actor, target) <= directVerticalRange) {
             return true;
         }
         return hasCleanReachableApproachPath(navigation, target);
+    }
+
+    public static boolean canCommitWithoutLineOfSight(
+            double distance,
+            double losGraceRange,
+            boolean hasCleanReachableApproachPath
+    ) {
+        return distance < losGraceRange && hasCleanReachableApproachPath;
     }
 
     public static Vec3 blendCombatHorizontalMotion(

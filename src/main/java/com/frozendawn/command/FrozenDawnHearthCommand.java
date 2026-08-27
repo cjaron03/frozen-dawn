@@ -78,8 +78,14 @@ final class FrozenDawnHearthCommand {
     static LiteralArgumentBuilder<CommandSourceStack> hearthCommands() {
         return Commands.literal("hearth")
                 .executes(FrozenDawnHearthCommand::status)
-                .then(Commands.literal("status").executes(FrozenDawnHearthCommand::status))
-                .then(Commands.literal("list").executes(FrozenDawnHearthCommand::list))
+                .then(Commands.literal("status")
+                        .executes(FrozenDawnHearthCommand::status)
+                        .then(Commands.literal("verbose")
+                                .executes(FrozenDawnHearthCommand::statusVerbose)))
+                .then(Commands.literal("list")
+                        .executes(FrozenDawnHearthCommand::list)
+                        .then(Commands.literal("verbose")
+                                .executes(FrozenDawnHearthCommand::listVerbose)))
                 .then(Commands.literal("locate")
                         .then(Commands.literal("major")
                                 .executes(context -> locate(
@@ -93,167 +99,194 @@ final class FrozenDawnHearthCommand {
                 .then(Commands.literal("postmaeve")
                         .executes(FrozenDawnHearthCommand::postMaeveStatus)
                         .then(Commands.literal("status")
-                                .executes(FrozenDawnHearthCommand::postMaeveStatus))
-                        .then(Commands.literal("debug-set-erased")
+                                .executes(FrozenDawnHearthCommand::postMaeveStatus)
+                                .then(Commands.literal("verbose")
+                                        .executes(
+                                                FrozenDawnHearthCommand::postMaeveStatusVerbose)))
+                        .then(Commands.literal("set-erased")
                                 .executes(context -> postMaeveSet(context, true)))
-                        .then(Commands.literal("debug-reset-erased")
-                                .executes(context -> postMaeveSet(context, false)))
-                        .then(Commands.literal("debug-spawn-undone")
-                                .executes(FrozenDawnHearthCommand::postMaeveSpawnUndone))
-                        .then(Commands.literal("debug-spawn-undone-architect")
-                                .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect))
-                        .then(Commands.literal("debug-reset-undone-contact")
+                        .then(Commands.literal("reset-erased")
+                                .then(Commands.literal("confirm")
+                                        .executes(context -> postMaeveSet(context, false))))
+                        .then(Commands.literal("spawn")
+                                .then(Commands.literal("undone")
+                                        .executes(FrozenDawnHearthCommand::postMaeveSpawnUndone))
+                                .then(Commands.literal("undone-architect")
+                                        .executes(FrozenDawnHearthCommand::postMaeveSpawnUndoneArchitect)))
+                        .then(Commands.literal("reset-undone-contact")
                                 .executes(FrozenDawnHearthCommand::postMaeveResetContact))
                         .then(Commands.literal("encounters")
                                 .executes(FrozenDawnHearthCommand::encounterStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::encounterStatus))
-                                .then(Commands.literal("debug-ready")
+                                .then(Commands.literal("ready")
                                         .then(Commands.argument("type", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        PostMaeveEncounterType.class))
                                                 .executes(
                                                         FrozenDawnHearthCommand::encounterDebugReady)))
-                                .then(Commands.literal("debug-reset")
+                                .then(Commands.literal("reset")
                                         .then(Commands.argument("type", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        PostMaeveEncounterType.class))
                                                 .executes(
                                                         FrozenDawnHearthCommand::encounterDebugReset))))
                         .then(Commands.literal("archivist")
                                 .executes(FrozenDawnHearthCommand::archivistStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::archivistStatus))
-                                .then(Commands.literal("debug-spawn")
+                                .then(Commands.literal("spawn")
                                         .executes(FrozenDawnHearthCommand::archivistDebugSpawn))
-                                .then(Commands.literal("debug-create-site")
+                                .then(Commands.literal("create-site")
                                         .executes(FrozenDawnHearthCommand::archivistCreateSite))
-                                .then(Commands.literal("debug-fill-site")
+                                .then(Commands.literal("fill-site")
                                         .executes(FrozenDawnHearthCommand::archivistFillSite))
                                 .then(Commands.literal("force-sort-nearest")
                                         .executes(FrozenDawnHearthCommand::archivistForceSort))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(FrozenDawnHearthCommand::archivistPurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::archivistPurgeLoaded))))
                         .then(Commands.literal("rimebound")
                                 .executes(FrozenDawnHearthCommand::rimeboundStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::rimeboundStatus))
-                                .then(Commands.literal("debug-spawn")
+                                .then(Commands.literal("spawn")
                                         .then(Commands.literal("dormant")
                                                 .executes(context -> rimeboundSpawn(context, true)))
                                         .then(Commands.literal("stalking")
                                                 .executes(context -> rimeboundSpawn(context, false))))
-                                .then(Commands.literal("debug-set-age")
+                                .then(Commands.literal("set-age")
                                         .then(Commands.argument("days",
                                                         IntegerArgumentType.integer(0, 3_650))
                                                 .executes(FrozenDawnHearthCommand::rimeboundSetAge)))
-                                .then(Commands.literal("debug-setstate")
+                                .then(Commands.literal("set-state")
                                         .then(Commands.argument("state", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        RimeboundState.class))
                                                 .executes(FrozenDawnHearthCommand::rimeboundSetState)))
-                                .then(Commands.literal("debug-force-burrow")
+                                .then(Commands.literal("force-burrow")
                                         .executes(FrozenDawnHearthCommand::rimeboundForceBurrow))
-                                .then(Commands.literal("debug-force-lance")
+                                .then(Commands.literal("force-lance")
                                         .executes(FrozenDawnHearthCommand::rimeboundForceLance))
-                                .then(Commands.literal("debug-force-freeze")
+                                .then(Commands.literal("force-freeze")
                                         .executes(FrozenDawnHearthCommand::rimeboundForceFreeze))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::rimeboundPurgeLoaded))))
                         .then(Commands.literal("frostwrithe")
                                 .executes(FrozenDawnHearthCommand::frostwritheStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::frostwritheStatus))
-                                .then(Commands.literal("debug-spawn")
+                                .then(Commands.literal("spawn")
                                         .executes(FrozenDawnHearthCommand::frostwritheSpawn))
-                                .then(Commands.literal("debug-set-age")
+                                .then(Commands.literal("set-age")
                                         .then(Commands.argument("days",
                                                         IntegerArgumentType.integer(0, 3_650))
                                                 .executes(FrozenDawnHearthCommand::frostwritheSetAge)))
-                                .then(Commands.literal("debug-set-cohesion")
+                                .then(Commands.literal("set-cohesion")
                                         .then(Commands.argument("cohesion",
                                                         FloatArgumentType.floatArg(0.0F, 100.0F))
                                                 .executes(FrozenDawnHearthCommand::frostwritheSetCohesion)))
-                                .then(Commands.literal("debug-force-disassemble")
+                                .then(Commands.literal("force-disassemble")
                                         .executes(FrozenDawnHearthCommand::frostwritheDisassemble))
-                                .then(Commands.literal("debug-force-regroup")
+                                .then(Commands.literal("force-regroup")
                                         .executes(FrozenDawnHearthCommand::frostwritheRegroup))
-                                .then(Commands.literal("debug-force-burrow")
+                                .then(Commands.literal("force-burrow")
                                         .executes(FrozenDawnHearthCommand::frostwritheBurrow))
-                                .then(Commands.literal("debug-force-shell")
+                                .then(Commands.literal("force-shell")
                                         .executes(FrozenDawnHearthCommand::frostwritheShell))
-                                .then(Commands.literal("debug-force-climb")
+                                .then(Commands.literal("force-climb")
                                         .executes(FrozenDawnHearthCommand::frostwritheClimb))
-                                .then(Commands.literal("debug-force-bridge")
+                                .then(Commands.literal("force-bridge")
                                         .executes(FrozenDawnHearthCommand::frostwritheBridge))
-                                .then(Commands.literal("debug-force-overrun")
+                                .then(Commands.literal("force-overrun")
                                         .executes(FrozenDawnHearthCommand::frostwritheOverrun))
-                                .then(Commands.literal("debug-force-mimic")
+                                .then(Commands.literal("force-mimic")
                                         .executes(FrozenDawnHearthCommand::frostwritheMimic))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(FrozenDawnHearthCommand::frostwrithePurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::frostwrithePurgeLoaded))))
                         .then(Commands.literal("resonant")
                                 .executes(FrozenDawnHearthCommand::resonantStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::resonantStatus))
-                                .then(Commands.literal("debug-spawn")
+                                .then(Commands.literal("spawn")
                                         .then(Commands.literal("listening")
                                                 .executes(context -> resonantSpawn(
                                                         context, ResonantState.LISTENING)))
                                         .then(Commands.literal("stalking")
                                                 .executes(context -> resonantSpawn(
                                                         context, ResonantState.STALKING))))
-                                .then(Commands.literal("debug-set-age")
+                                .then(Commands.literal("set-age")
                                         .then(Commands.argument("days",
                                                         IntegerArgumentType.integer(0, 3_650))
                                                 .executes(FrozenDawnHearthCommand::resonantSetAge)))
-                                .then(Commands.literal("debug-set-confidence")
+                                .then(Commands.literal("set-confidence")
                                         .then(Commands.argument("confidence",
                                                         FloatArgumentType.floatArg(0.0F, 100.0F))
                                                 .executes(
                                                         FrozenDawnHearthCommand::resonantSetConfidence)))
-                                .then(Commands.literal("debug-emit")
+                                .then(Commands.literal("emit")
                                         .then(Commands.argument("type", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        ResonanceEventManager.Type.class))
                                                 .executes(FrozenDawnHearthCommand::resonantEmit)))
-                                .then(Commands.literal("debug-force-pulse")
+                                .then(Commands.literal("force-pulse")
                                         .executes(FrozenDawnHearthCommand::resonantForcePulse))
-                                .then(Commands.literal("debug-force-breach")
+                                .then(Commands.literal("force-breach")
                                         .executes(FrozenDawnHearthCommand::resonantForceBreach))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(FrozenDawnHearthCommand::resonantPurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::resonantPurgeLoaded))))
                         .then(Commands.literal("remnant")
                                 .executes(FrozenDawnHearthCommand::remnantStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::remnantStatus))
-                                .then(Commands.literal("debug-dry-run")
+                                .then(Commands.literal("dry-run")
                                         .then(Commands.argument("template", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        RemnantLureTemplate.Kind.class,
+                                                        RemnantLureTemplate.Kind::id))
                                                 .executes(FrozenDawnHearthCommand::remnantDryRun)))
-                                .then(Commands.literal("debug-place")
+                                .then(Commands.literal("place")
                                         .then(Commands.argument("template", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        RemnantLureTemplate.Kind.class,
+                                                        RemnantLureTemplate.Kind::id))
                                                 .executes(FrozenDawnHearthCommand::remnantPlace)))
-                                .then(Commands.literal("debug-spawn-exposed")
+                                .then(Commands.literal("spawn-exposed")
                                         .executes(FrozenDawnHearthCommand::remnantSpawnExposed))
-                                .then(Commands.literal("debug-commit")
+                                .then(Commands.literal("commit")
                                         .executes(FrozenDawnHearthCommand::remnantCommit))
-                                .then(Commands.literal("debug-setstate")
+                                .then(Commands.literal("set-state")
                                         .then(Commands.argument("state", StringArgumentType.word())
+                                                .suggests(FrozenDawnCommandSuggestions.enums(
+                                                        RemnantState.class))
                                                 .executes(FrozenDawnHearthCommand::remnantSetState)))
-                                .then(Commands.literal("debug-force-slip")
+                                .then(Commands.literal("force-slip")
                                         .executes(FrozenDawnHearthCommand::remnantForceSlip))
-                                .then(Commands.literal("debug-force-grab")
+                                .then(Commands.literal("force-grab")
                                         .executes(FrozenDawnHearthCommand::remnantForceGrab))
-                                .then(Commands.literal("debug-collapse")
+                                .then(Commands.literal("collapse")
                                         .executes(FrozenDawnHearthCommand::remnantCollapse))
                                 .then(Commands.literal("validate-nearest")
                                         .executes(FrozenDawnHearthCommand::remnantValidateNearest))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(FrozenDawnHearthCommand::remnantPurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::remnantPurgeLoaded))))
                         .then(Commands.literal("moon")
                                 .executes(FrozenDawnHearthCommand::postMaeveMoonStatus)
                                 .then(Commands.literal("status")
                                         .executes(FrozenDawnHearthCommand::postMaeveMoonStatus))
-                                .then(Commands.literal("debug-start-rise")
+                                .then(Commands.literal("start-rise")
                                         .executes(FrozenDawnHearthCommand::postMaeveMoonStartRise))
-                                .then(Commands.literal("debug-set-age")
+                                .then(Commands.literal("set-age")
                                         .then(Commands.argument("days",
                                                         IntegerArgumentType.integer(0, 3_650))
                                                 .executes(FrozenDawnHearthCommand::postMaeveMoonSetAge)))
-                                .then(Commands.literal("debug-reset")
-                                        .executes(FrozenDawnHearthCommand::postMaeveMoonReset))))
+                                .then(Commands.literal("reset")
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::postMaeveMoonReset)))))
                 .then(Commands.literal("bloom")
                         .executes(FrozenDawnHearthCommand::bloomStatus)
                         .then(Commands.literal("status")
@@ -266,15 +299,15 @@ final class FrozenDawnHearthCommand {
                                 .then(Commands.argument("days",
                                                 IntegerArgumentType.integer(0, 3_650))
                                         .executes(FrozenDawnHearthCommand::bloomAdvance)))
-                        .then(Commands.literal("setradius")
+                        .then(Commands.literal("set-radius")
                                 .then(Commands.argument("radius",
                                                 IntegerArgumentType.integer(0, 1_000))
                                         .executes(FrozenDawnHearthCommand::bloomSetRadius)))
                         .then(Commands.literal("profile")
                                 .executes(FrozenDawnHearthCommand::bloomProfile))
-                        .then(Commands.literal("debug-spawn-bloombound")
+                        .then(Commands.literal("spawn-bloombound")
                                 .executes(FrozenDawnHearthCommand::bloomSpawnBloombound))
-                        .then(Commands.literal("debug-spawn-spore")
+                        .then(Commands.literal("spawn-spore")
                                 .executes(FrozenDawnHearthCommand::bloomSpawnSpore))
                         .then(Commands.literal("spore")
                                 .executes(FrozenDawnHearthCommand::bloomSporeStatus)
@@ -288,10 +321,12 @@ final class FrozenDawnHearthCommand {
                                                 .executes(
                                                         FrozenDawnHearthCommand::bloomSporeAdvance)))
                                 .then(Commands.literal("purge-loaded")
-                                        .executes(
-                                                FrozenDawnHearthCommand::bloomSporePurgeLoaded)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(
+                                                        FrozenDawnHearthCommand::bloomSporePurgeLoaded))))
                         .then(Commands.literal("purge-loaded")
-                                .executes(FrozenDawnHearthCommand::bloomPurgeLoaded)))
+                                .then(Commands.literal("confirm")
+                                        .executes(FrozenDawnHearthCommand::bloomPurgeLoaded))))
                 .then(Commands.literal("reconcile")
                         .executes(FrozenDawnHearthCommand::reconcile))
                 .then(Commands.literal("watcher")
@@ -318,17 +353,20 @@ final class FrozenDawnHearthCommand {
                 .then(Commands.literal("heart")
                         .executes(FrozenDawnHearthCommand::heartStatus)
                         .then(Commands.literal("status")
-                                .executes(FrozenDawnHearthCommand::heartStatus))
+                                .executes(FrozenDawnHearthCommand::heartStatus)
+                                .then(Commands.literal("verbose")
+                                        .executes(FrozenDawnHearthCommand::heartStatusVerbose)))
                         .then(Commands.literal("start")
                                 .executes(FrozenDawnHearthCommand::heartStart))
-                        .then(Commands.literal("setstage")
+                        .then(Commands.literal("set-stage")
                                 .then(heartStage("dead_air", HeartFormationStage.DEAD_AIR))
                                 .then(heartStage("shake", HeartFormationStage.SHAKE))
                                 .then(heartStage("gather", HeartFormationStage.GATHER))
                                 .then(heartStage("hold", HeartFormationStage.HOLD))
                                 .then(heartStage("live", HeartFormationStage.LIVE)))
                         .then(Commands.literal("reset")
-                                .executes(FrozenDawnHearthCommand::heartReset))
+                                .then(Commands.literal("confirm")
+                                        .executes(FrozenDawnHearthCommand::heartReset)))
                         .then(Commands.literal("load")
                                 .executes(FrozenDawnHearthCommand::heartLoadStatus)
                                 .then(Commands.literal("set")
@@ -346,13 +384,14 @@ final class FrozenDawnHearthCommand {
                                                 .executes(
                                                         FrozenDawnHearthCommand::heartNodeDestroy)))
                                 .then(Commands.literal("reset")
-                                        .executes(
-                                                FrozenDawnHearthCommand::heartNodesReset)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(
+                                                        FrozenDawnHearthCommand::heartNodesReset))))
                         .then(Commands.literal("collapse")
                                 .executes(FrozenDawnHearthCommand::heartStatus)
                                 .then(Commands.literal("start")
                                         .executes(FrozenDawnHearthCommand::heartCollapseStart))
-                                .then(Commands.literal("setstage")
+                                .then(Commands.literal("set-stage")
                                         .then(heartCollapseStage("rupture",
                                                 HeartCollapseStage.RUPTURE))
                                         .then(heartCollapseStage("fall",
@@ -362,16 +401,19 @@ final class FrozenDawnHearthCommand {
                                         .then(heartCollapseStage("dormant",
                                                 HeartCollapseStage.DORMANT)))
                                 .then(Commands.literal("reset")
-                                        .executes(
-                                                FrozenDawnHearthCommand::heartCollapseReset)))
+                                        .then(Commands.literal("confirm")
+                                                .executes(
+                                                        FrozenDawnHearthCommand::heartCollapseReset))))
                         .then(Commands.literal("maeve")
                                 .executes(FrozenDawnHearthCommand::heartMaeveStatus)
                                 .then(Commands.literal("start")
                                         .executes(FrozenDawnHearthCommand::heartMaeveStart))
                                 .then(Commands.literal("complete")
-                                        .executes(FrozenDawnHearthCommand::heartMaeveComplete))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::heartMaeveComplete)))
                                 .then(Commands.literal("reset")
-                                        .executes(FrozenDawnHearthCommand::heartMaeveReset))))
+                                        .then(Commands.literal("confirm")
+                                                .executes(FrozenDawnHearthCommand::heartMaeveReset)))))
                 .then(Commands.literal("architect")
                         .executes(FrozenDawnHearthCommand::architect)
                         .then(Commands.literal("respawn")
@@ -421,6 +463,15 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int status(CommandContext<CommandSourceStack> context) {
+        return status(context, false);
+    }
+
+    private static int statusVerbose(CommandContext<CommandSourceStack> context) {
+        return status(context, true);
+    }
+
+    private static int status(
+            CommandContext<CommandSourceStack> context, boolean verbose) {
         MinecraftServer server = context.getSource().getServer();
         ReturnedHearthSavedData hearthState = ReturnedHearthSavedData.get(server);
         ApocalypseState apocalypse = ApocalypseState.get(server);
@@ -446,68 +497,96 @@ final class FrozenDawnHearthCommand {
                 .orElse("not recorded");
         boolean maturationActive = HearthSelectionPolicy.isSelectionEligible(
                 apocalypse.getApocalypseTicks(), apocalypse.getTotalDays());
-
-        context.getSource().sendSuccess(() -> Component.literal("--- Homo Reliquus Hearths ---"), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Schema: " + hearthState.dataVersion()
-                        + " | Records: " + hearthState.hearths().size()), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Transponder anchor: " + anchor), false);
-        context.getSource().sendSuccess(() -> Component.literal("  Selection: " + selectionGate), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Maturation clock: " + (maturationActive ? "active" : "phase-gated")), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Hive memories: " + hearthState.playerMemories().size()
-                        + " player(s) | Legacy default: "
-                        + hearthState.legacyRelationship().name().toLowerCase(Locale.ROOT)), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Contact memory: " + HearthMemoryManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Reconciliation: " + HearthReconciliationManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Watchers: " + HearthWatcherManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  INTACT population: " + HearthPopulationManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Master Architect: " + HearthMasterArchitectManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Master weather: "
-                        + HearthMasterArchitectWeatherManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Thae Iven Heart: " + HearthHeartManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Heart scavengers: " + HeartScavengerWaveManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Architect assessor: " + HearthArchitectManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Thaeven transmissions: " + HearthTransmissionManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Protected conduct: " + HearthViolationManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Boundary response: " + HearthBoundaryManager.statusLine()), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Master encounter roster: "
-                        + HearthCombatRosterManager.statusLine()), false);
         long discovered = hearthState.hearths().stream()
                 .filter(ReturnedHearthSavedData.HearthRecord::discovered)
                 .count();
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  ORSA survey: " + discovered + "/" + hearthState.hearths().size()
-                        + " Hearth(s) catalogued"), false);
+
+        FrozenDawnCommandOutput.heading(context.getSource(), "Hearths");
+        FrozenDawnCommandOutput.line(context.getSource(), "Sites",
+                hearthState.hearths().size() + " selected - " + discovered
+                        + " surveyed");
+        FrozenDawnCommandOutput.line(context.getSource(), "Selection", selectionGate);
+        hearthState.hearth(HearthSelectionPolicy.HearthType.MAJOR)
+                .ifPresentOrElse(
+                        hearth -> FrozenDawnCommandOutput.line(context.getSource(),
+                                "Major", compactHearth(hearth)),
+                        () -> FrozenDawnCommandOutput.line(context.getSource(),
+                                "Major", "not selected"));
+        hearthState.hearth(HearthSelectionPolicy.HearthType.MINOR)
+                .ifPresentOrElse(
+                        hearth -> FrozenDawnCommandOutput.line(context.getSource(),
+                                "Minor", compactHearth(hearth)),
+                        () -> FrozenDawnCommandOutput.line(context.getSource(),
+                                "Minor", "not selected"));
+
+        if (!verbose) {
+            FrozenDawnCommandOutput.hint(context.getSource(), "/fd hearth status verbose");
+            return 1;
+        }
+
+        FrozenDawnCommandOutput.detail(context.getSource(), "Schema",
+                hearthState.dataVersion());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Transponder anchor", anchor);
+        FrozenDawnCommandOutput.detail(context.getSource(), "Maturation clock",
+                maturationActive ? "active" : "phase-gated");
+        FrozenDawnCommandOutput.detail(context.getSource(), "Hive memories",
+                hearthState.playerMemories().size() + " player(s) - legacy "
+                        + hearthState.legacyRelationship().name().toLowerCase(Locale.ROOT));
+        FrozenDawnCommandOutput.detail(context.getSource(), "Contact memory",
+                HearthMemoryManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Reconciliation",
+                HearthReconciliationManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Watchers",
+                HearthWatcherManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "INTACT population",
+                HearthPopulationManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Master Architect",
+                HearthMasterArchitectManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Master weather",
+                HearthMasterArchitectWeatherManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Thae Iven Heart",
+                HearthHeartManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Heart scavengers",
+                HeartScavengerWaveManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Architect assessor",
+                HearthArchitectManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Thaeven transmissions",
+                HearthTransmissionManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Protected conduct",
+                HearthViolationManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Boundary response",
+                HearthBoundaryManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Master encounter roster",
+                HearthCombatRosterManager.statusLine());
         return 1;
     }
 
     private static int list(CommandContext<CommandSourceStack> context) {
+        return list(context, false);
+    }
+
+    private static int listVerbose(CommandContext<CommandSourceStack> context) {
+        return list(context, true);
+    }
+
+    private static int list(
+            CommandContext<CommandSourceStack> context, boolean verbose) {
         ReturnedHearthSavedData state = ReturnedHearthSavedData.get(context.getSource().getServer());
-        context.getSource().sendSuccess(() -> Component.literal("--- Returned Hearth Records ---"), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Hearth Records");
         if (state.hearths().isEmpty()) {
-            context.getSource().sendSuccess(() -> Component.literal("  No sites selected"), false);
+            FrozenDawnCommandOutput.warning(context.getSource(), "No sites selected.");
             return 1;
         }
 
         for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
+            if (!verbose) {
+                FrozenDawnCommandOutput.item(context.getSource(),
+                        displayName(hearth.type()) + " - " + compactHearth(hearth));
+                continue;
+            }
             String id = hearth.id().toString().substring(0, 8);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  " + hearth.type().name().toLowerCase(Locale.ROOT)
+            FrozenDawnCommandOutput.item(context.getSource(),
+                    hearth.type().name().toLowerCase(Locale.ROOT)
                             + " [" + id + "]"
                             + " center=" + formatHorizontalPos(hearth.center())
                             + " stage=" + hearth.stage().name().toLowerCase(Locale.ROOT)
@@ -535,26 +614,30 @@ final class FrozenDawnHearthCommand {
                             + " discovered=" + yesNo(hearth.discovered())
                             + " signal=" + String.format(Locale.ROOT, "%.2f", hearth.signalStrength())
                             + " lootOpened=" + yesNo(hearth.lootTaken())
-                            + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
+                            + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT));
+        }
+        if (!verbose) {
+            FrozenDawnCommandOutput.hint(context.getSource(), "/fd hearth list verbose");
         }
         return state.hearths().size();
     }
 
     private static int survey(CommandContext<CommandSourceStack> context) {
         ReturnedHearthSavedData state = ReturnedHearthSavedData.get(context.getSource().getServer());
-        context.getSource().sendSuccess(() -> Component.literal("--- ORSA Hearth Survey ---"), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "ORSA Hearth Survey");
         if (state.hearths().isEmpty()) {
-            context.getSource().sendSuccess(() -> Component.literal("  No Hearth signals selected"), false);
+            FrozenDawnCommandOutput.warning(context.getSource(),
+                    "No Hearth signals selected.");
             return 1;
         }
 
         for (ReturnedHearthSavedData.HearthRecord hearth : state.hearths()) {
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "  " + displayName(hearth.type())
+            FrozenDawnCommandOutput.item(context.getSource(),
+                    displayName(hearth.type())
                             + " stage=" + hearth.stage().name().toLowerCase(Locale.ROOT)
                             + " discovered=" + yesNo(hearth.discovered())
                             + " signal=" + String.format(Locale.ROOT, "%.2f", hearth.signalStrength())
-                            + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT)), false);
+                            + " violation=" + hearth.violationState().name().toLowerCase(Locale.ROOT));
         }
         return state.hearths().size();
     }
@@ -568,21 +651,45 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int heartStatus(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal(
-                "--- Thae Iven Heart ---"), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  " + HearthHeartManager.describe(context.getSource().getLevel())), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "  Encounter: " + HeartScavengerWaveManager.describe(
-                        context.getSource().getLevel())), false);
+        return heartStatus(context, false);
+    }
+
+    private static int heartStatusVerbose(CommandContext<CommandSourceStack> context) {
+        return heartStatus(context, true);
+    }
+
+    private static int heartStatus(
+            CommandContext<CommandSourceStack> context, boolean verbose) {
+        ReturnedHearthSavedData.HearthRecord hearth = ReturnedHearthSavedData
+                .get(context.getSource().getServer())
+                .hearth(HearthSelectionPolicy.HearthType.MAJOR).orElse(null);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Thae Iven Heart");
+        if (hearth == null) {
+            FrozenDawnCommandOutput.warning(context.getSource(), "Major Hearth not selected.");
+            return 1;
+        }
+        FrozenDawnCommandOutput.line(context.getSource(), "State", compactHeartState(hearth));
+        FrozenDawnCommandOutput.line(context.getSource(), "Nodes",
+                HeartLattice.destroyedCount(hearth.heartDestroyedNodeMask())
+                        + "/" + HeartLattice.NODE_COUNT + " destroyed");
+        FrozenDawnCommandOutput.line(context.getSource(), "Field strength",
+                String.format(Locale.ROOT, "%.2f", hearth.heartFieldStrength()));
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Formation",
+                    HearthHeartManager.describe(context.getSource().getLevel()));
+            FrozenDawnCommandOutput.detail(context.getSource(), "Encounter",
+                    HeartScavengerWaveManager.describe(context.getSource().getLevel()));
+        } else {
+            FrozenDawnCommandOutput.hint(context.getSource(), "/fd heart status verbose");
+        }
         return 1;
     }
 
     private static int heartStart(CommandContext<CommandSourceStack> context) {
         HearthHeartManager.startForDebug(context.getSource().getLevel());
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Started Heart formation at the Major Hearth"), true);
-        return heartStatus(context);
+        FrozenDawnCommandOutput.success(context.getSource(),
+                "Started Heart formation at the Major Hearth.", true);
+        return 1;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> heartStage(
@@ -593,7 +700,7 @@ final class FrozenDawnHearthCommand {
             context.getSource().sendSuccess(() -> Component.literal(
                     "Set Heart formation to " + stage.name().toLowerCase(Locale.ROOT)
                             + (changed ? "" : " (unchanged)")), true);
-            return heartStatus(context);
+            return 1;
         });
     }
 
@@ -605,7 +712,7 @@ final class FrozenDawnHearthCommand {
             context.getSource().sendSuccess(() -> Component.literal(
                     "Set Heart collapse to " + stage.name().toLowerCase(Locale.ROOT)
                             + (changed ? "" : " (unchanged)")), true);
-            return heartStatus(context);
+            return 1;
         });
     }
 
@@ -615,7 +722,7 @@ final class FrozenDawnHearthCommand {
                 context.getSource().getLevel());
         context.getSource().sendSuccess(() -> Component.literal(
                 "Started Heart collapse" + (changed ? "" : " (unchanged)")), true);
-        return heartStatus(context);
+        return 1;
     }
 
     private static int heartCollapseReset(
@@ -625,7 +732,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reset Heart collapse; removed " + removed
                         + " transient fragment(s)"), true);
-        return heartStatus(context);
+        return 1;
     }
 
     private static int heartMaeveStatus(CommandContext<CommandSourceStack> context) {
@@ -637,12 +744,14 @@ final class FrozenDawnHearthCommand {
                     "Major Hearth does not exist"));
             return 0;
         }
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Maeve: exposed=" + yesNo(hearth.heartMaeveExposed())
-                        + " erasureStart=" + hearth.heartMaeveErasureStartGameTime()
-                        + " erased=" + yesNo(hearth.heartMaeveErasureComplete())
-                        + " advancement="
-                        + yesNo(hearth.heartFinalAdvancementGranted())), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Maeve");
+        FrozenDawnCommandOutput.line(context.getSource(), "State",
+                hearth.heartMaeveErasureComplete() ? "erased"
+                        : hearth.heartMaeveExposed() ? "exposed" : "sealed");
+        FrozenDawnCommandOutput.line(context.getSource(), "Final advancement",
+                hearth.heartFinalAdvancementGranted() ? "granted" : "pending");
+        FrozenDawnCommandOutput.detail(context.getSource(), "Erasure start",
+                hearth.heartMaeveErasureStartGameTime());
         return 1;
     }
 
@@ -662,7 +771,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Started Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());
-        return heartMaeveStatus(context);
+        return 1;
     }
 
     private static int heartMaeveComplete(CommandContext<CommandSourceStack> context)
@@ -688,29 +797,48 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Completed Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());
-        return heartMaeveStatus(context);
+        return 1;
     }
 
     private static int postMaeveStatus(CommandContext<CommandSourceStack> context) {
+        return postMaeveStatus(context, false);
+    }
+
+    private static int postMaeveStatusVerbose(
+            CommandContext<CommandSourceStack> context) {
+        return postMaeveStatus(context, true);
+    }
+
+    private static int postMaeveStatus(
+            CommandContext<CommandSourceStack> context, boolean verbose) {
         MinecraftServer server = context.getSource().getServer();
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Post-Maeve: effective=" + yesNo(PostMaeveWorldState.isErased(server))
-                        + " saved=" + yesNo(data.maeveErased())
-                        + " erasedAt=" + data.maeveErasedGameTime()
-                        + " undoneReleased="
-                        + yesNo(PostMaeveWorldState.isUndoneSpawningReleased(server))), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Post-Maeve");
+        FrozenDawnCommandOutput.line(context.getSource(), "World state",
+                PostMaeveWorldState.isErased(server) ? "active" : "inactive");
+        FrozenDawnCommandOutput.line(context.getSource(), "Encounter spawning",
+                PostMaeveWorldState.isUndoneSpawningReleased(server)
+                        ? "released" : "held");
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             ServerLevel level = player.serverLevel();
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "Undone: " + PostMaeveEncounterDirector.playerStatus(
-                            level, player, PostMaeveEncounterType.UNDONE)), false);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "Undone Architect: " + PostMaeveEncounterDirector.playerStatus(
-                            level, player, PostMaeveEncounterType.UNDONE_ARCHITECT)), false);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "Bloombound: " + PostMaeveEncounterDirector.playerStatus(
-                            level, player, PostMaeveEncounterType.BLOOMBOUND)), false);
+            FrozenDawnCommandOutput.detail(context.getSource(), "Undone",
+                    PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE));
+            FrozenDawnCommandOutput.detail(context.getSource(), "Undone Architect",
+                    PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.UNDONE_ARCHITECT));
+            FrozenDawnCommandOutput.detail(context.getSource(), "Bloombound",
+                    PostMaeveEncounterDirector.playerStatus(
+                            level, player, PostMaeveEncounterType.BLOOMBOUND));
+        }
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Saved flag",
+                    data.maeveErased());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Erased at",
+                    data.maeveErasedGameTime());
+        } else {
+            FrozenDawnCommandOutput.hint(context.getSource(),
+                    "/fd postmaeve status verbose");
         }
         return 1;
     }
@@ -719,22 +847,23 @@ final class FrozenDawnHearthCommand {
             CommandContext<CommandSourceStack> context, boolean erased) {
         PostMaeveWorldState.setForDebug(context.getSource().getServer(), erased);
         context.getSource().sendSuccess(() -> Component.literal(
-                "DEBUG post-Maeve saved state set to " + yesNo(erased)), true);
-        return postMaeveStatus(context);
+                "Post-Maeve saved state set to " + yesNo(erased)), true);
+        return 1;
     }
 
     private static int encounterStatus(CommandContext<CommandSourceStack> context)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         long region = RemnantPolicy.regionKey(player.blockPosition());
+        FrozenDawnCommandOutput.heading(context.getSource(), "Encounter Director");
         for (PostMaeveEncounterType type : PostMaeveEncounterType.values()) {
             String status = isRegionEncounter(type)
                     ? PostMaeveEncounterDirector.regionStatus(
                     player.serverLevel(), region, type)
                     : PostMaeveEncounterDirector.playerStatus(
                     player.serverLevel(), player, type);
-            context.getSource().sendSuccess(() -> Component.literal(
-                    type.name().toLowerCase(Locale.ROOT) + ": " + status), false);
+            FrozenDawnCommandOutput.item(context.getSource(),
+                    type.name().toLowerCase(Locale.ROOT) + " - " + status);
         }
         return 1;
     }
@@ -752,7 +881,7 @@ final class FrozenDawnHearthCommand {
                     player.serverLevel(), player, type);
         }
         context.getSource().sendSuccess(() -> Component.literal(
-                "DEBUG " + type.name().toLowerCase(Locale.ROOT)
+                type.name().toLowerCase(Locale.ROOT)
                         + " is guaranteed on its next valid natural check"), true);
         return 1;
     }
@@ -770,7 +899,7 @@ final class FrozenDawnHearthCommand {
                     player.serverLevel(), player, type);
         }
         context.getSource().sendSuccess(() -> Component.literal(
-                "DEBUG reset encounter pressure for "
+                "Reset encounter pressure for "
                         + type.name().toLowerCase(Locale.ROOT)), true);
         return 1;
     }
@@ -797,18 +926,22 @@ final class FrozenDawnHearthCommand {
         MinecraftServer server = context.getSource().getServer();
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(server);
         PostMaeveMoonPolicy.Snapshot snapshot = PostMaeveMoonManager.snapshot(data);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Post-Maeve Moon: stage=" + snapshot.stage().name().toLowerCase(Locale.ROOT)
-                        + " scheduledAt=" + data.postMaeveMoonriseStartDayTime()
-                        + " started=" + yesNo(data.postMaeveMoonriseStarted())
-                        + " elapsed=" + data.postMaeveMoonElapsedDayTicks()
-                        + " damageDays=" + String.format(Locale.ROOT, "%.2f",
+        FrozenDawnCommandOutput.heading(context.getSource(), "Post-Maeve Moon");
+        FrozenDawnCommandOutput.line(context.getSource(), "State",
+                snapshot.stage().name().toLowerCase(Locale.ROOT)
+                        + (data.postMaeveMoonriseStarted() ? " - started" : " - waiting"));
+        FrozenDawnCommandOutput.line(context.getSource(), "Damage age",
+                String.format(Locale.ROOT, "%.2f days",
                         snapshot.damageAgeTicks() < 0L ? 0.0D
                                 : snapshot.damageAgeTicks()
-                                / (double) PostMaeveMoonPolicy.DAY_TICKS)
-                        + " debris=" + snapshot.debrisCount()
-                        + " ring=" + String.format(Locale.ROOT, "%.2f",
-                        snapshot.ringAlpha())), false);
+                                / (double) PostMaeveMoonPolicy.DAY_TICKS));
+        FrozenDawnCommandOutput.line(context.getSource(), "Debris / ring",
+                snapshot.debrisCount() + " / "
+                        + String.format(Locale.ROOT, "%.2f", snapshot.ringAlpha()));
+        FrozenDawnCommandOutput.detail(context.getSource(), "Scheduled at",
+                data.postMaeveMoonriseStartDayTime());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Elapsed ticks",
+                data.postMaeveMoonElapsedDayTicks());
         return 1;
     }
 
@@ -820,9 +953,9 @@ final class FrozenDawnHearthCommand {
                 level.getDayTime(), PostMaeveMoonManager.visualSeed(level));
         PostMaeveWorldState.syncAll(level.getServer());
         context.getSource().sendSuccess(() -> Component.literal(changed
-                ? "DEBUG Moon first rise started now"
+                ? "Moon first rise started now"
                 : "Moon first rise requires saved maeveErased state"), true);
-        return changed ? postMaeveMoonStatus(context) : 0;
+        return changed ? 1 : 0;
     }
 
     private static int postMaeveMoonSetAge(
@@ -835,9 +968,9 @@ final class FrozenDawnHearthCommand {
                 level.getDayTime(), PostMaeveMoonManager.visualSeed(level));
         PostMaeveWorldState.syncAll(level.getServer());
         context.getSource().sendSuccess(() -> Component.literal(changed
-                ? "DEBUG Moon damage age set to " + days + " days"
+                ? "Moon damage age set to " + days + " days"
                 : "Moon age requires saved maeveErased state"), true);
-        return changed ? postMaeveMoonStatus(context) : 0;
+        return changed ? 1 : 0;
     }
 
     private static int postMaeveMoonReset(
@@ -848,9 +981,9 @@ final class FrozenDawnHearthCommand {
         PostMaeveWorldState.syncAll(server);
         context.getSource().sendSuccess(() -> Component.literal(
                 changed
-                        ? "DEBUG Moon timeline reset; next eligible tick schedules the next dusk"
-                        : "DEBUG Moon timeline was already reset"), true);
-        return postMaeveMoonStatus(context);
+                        ? "Moon timeline reset; next eligible tick schedules the next dusk"
+                        : "Moon timeline was already reset"), true);
+        return 1;
     }
 
     private static int postMaeveSpawnUndone(
@@ -900,14 +1033,15 @@ final class FrozenDawnHearthCommand {
 
     private static int archivistStatus(CommandContext<CommandSourceStack> context) {
         ServerLevel level = context.getSource().getLevel();
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Archivists: " + ArchivistManager.statusLine(level)), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Archivist");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                ArchivistManager.statusLine(level), 4);
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             long region = com.frozendawn.homo.ArchivistPolicy.regionKey(
                     player.blockPosition());
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
-                            level, region, PostMaeveEncounterType.ARCHIVIST)), false);
+            FrozenDawnCommandOutput.detail(context.getSource(), "Encounter",
+                    PostMaeveEncounterDirector.regionStatus(
+                            level, region, PostMaeveEncounterType.ARCHIVIST));
         }
         return 1;
     }
@@ -970,9 +1104,9 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int rimeboundStatus(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Rimebound: " + RimeboundManager.statusLine(
-                        context.getSource().getLevel())), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Rimebound");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                RimeboundManager.statusLine(context.getSource().getLevel()), 4);
         sendPlayerEncounterStatus(context, PostMaeveEncounterType.RIMEBOUND);
         return 1;
     }
@@ -1076,9 +1210,9 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int frostwritheStatus(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Frostwrithe: " + FrostwritheManager.statusLine(
-                        context.getSource().getLevel())), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Frostwrithe");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                FrostwritheManager.statusLine(context.getSource().getLevel()), 4);
         sendPlayerEncounterStatus(context, PostMaeveEncounterType.FROSTWRITHE);
         return 1;
     }
@@ -1233,9 +1367,9 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int resonantStatus(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Resonant: " + ResonantManager.statusLine(context.getSource().getLevel())),
-                false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Resonant");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                ResonantManager.statusLine(context.getSource().getLevel()), 4);
         sendPlayerEncounterStatus(context, PostMaeveEncounterType.RESONANT);
         return 1;
     }
@@ -1338,14 +1472,15 @@ final class FrozenDawnHearthCommand {
     }
 
     private static int remnantStatus(CommandContext<CommandSourceStack> context) {
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Remnant: " + RemnantLureManager.statusLine(context.getSource().getLevel())), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Remnant");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                RemnantLureManager.statusLine(context.getSource().getLevel()), 4);
         if (context.getSource().getEntity() instanceof ServerPlayer player) {
             long region = RemnantPolicy.regionKey(player.blockPosition());
-            context.getSource().sendSuccess(() -> Component.literal(
-                    "Encounter: " + PostMaeveEncounterDirector.regionStatus(
+            FrozenDawnCommandOutput.detail(context.getSource(), "Encounter",
+                    PostMaeveEncounterDirector.regionStatus(
                             player.serverLevel(), region,
-                            PostMaeveEncounterType.REMNANT)), false);
+                            PostMaeveEncounterType.REMNANT));
         }
         return 1;
     }
@@ -1354,9 +1489,9 @@ final class FrozenDawnHearthCommand {
             CommandContext<CommandSourceStack> context,
             PostMaeveEncounterType type) {
         if (!(context.getSource().getEntity() instanceof ServerPlayer player)) return;
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Encounter: " + PostMaeveEncounterDirector.playerStatus(
-                        player.serverLevel(), player, type)), false);
+        FrozenDawnCommandOutput.detail(context.getSource(), "Encounter",
+                PostMaeveEncounterDirector.playerStatus(
+                        player.serverLevel(), player, type));
     }
 
     private static RemnantLureTemplate.Kind remnantTemplate(
@@ -1491,8 +1626,8 @@ final class FrozenDawnHearthCommand {
         MinecraftServer server = context.getSource().getServer();
         String status = BloomGrowthManager.statusLine(
                 server.overworld(), ApocalypseState.get(server));
-        context.getSource().sendSuccess(() -> Component.literal(
-                "--- Frozen Dawn Bloom ---\n" + status), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Bloom");
+        FrozenDawnCommandOutput.metrics(context.getSource(), status, 4);
         return 1;
     }
 
@@ -1516,7 +1651,7 @@ final class FrozenDawnHearthCommand {
                 days * HearthMaturationPolicy.MINECRAFT_DAY_TICKS);
         context.getSource().sendSuccess(() -> Component.literal(
                 "Advanced loaded-time Bloom clocks by " + days + " day(s)"), true);
-        return bloomStatus(context);
+        return 1;
     }
 
     private static int bloomStart(CommandContext<CommandSourceStack> context) {
@@ -1530,7 +1665,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Replayed ORSA biological warning | Bloom eruption in 10 seconds"
                         + " | initialEdits=" + edits), true);
-        return bloomStatus(context);
+        return 1;
     }
 
     private static int bloomSetRadius(CommandContext<CommandSourceStack> context) {
@@ -1539,15 +1674,19 @@ final class FrozenDawnHearthCommand {
         BloomGrowthManager.debugSetRadius(server.overworld(), radius);
         context.getSource().sendSuccess(() -> Component.literal(
                 "Bloom debug radius set to " + radius + " blocks"), true);
-        return bloomStatus(context);
+        return 1;
     }
 
     private static int bloomProfile(CommandContext<CommandSourceStack> context) {
-        int result = bloomStatus(context);
+        String status = BloomGrowthManager.statusLine(
+                context.getSource().getServer().overworld(),
+                ApocalypseState.get(context.getSource().getServer()));
+        FrozenDawnCommandOutput.heading(context.getSource(), "Bloom Profile");
+        FrozenDawnCommandOutput.metrics(context.getSource(), status, 4);
         BloomGrowthManager.resetProfile();
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Bloom max profiler counter reset"), false);
-        return result;
+        FrozenDawnCommandOutput.success(context.getSource(),
+                "Bloom max profiler counter reset.", false);
+        return 1;
     }
 
     private static int bloomSpawnBloombound(
@@ -1580,8 +1719,8 @@ final class FrozenDawnHearthCommand {
     private static int bloomSporeStatus(CommandContext<CommandSourceStack> context) {
         String status = BloomSporeManager.statusLine(
                 context.getSource().getServer().overworld());
-        context.getSource().sendSuccess(() -> Component.literal(
-                "--- Bloom Spore Relays ---\n" + status), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Bloom Spore Relays");
+        FrozenDawnCommandOutput.metrics(context.getSource(), status, 4);
         return 1;
     }
 
@@ -1602,7 +1741,7 @@ final class FrozenDawnHearthCommand {
                 days * HearthMaturationPolicy.MINECRAFT_DAY_TICKS);
         context.getSource().sendSuccess(() -> Component.literal(
                 "Advanced loaded satellite clocks by " + days + " day(s)"), true);
-        return bloomSporeStatus(context);
+        return 1;
     }
 
     private static int bloomSporePurgeLoaded(
@@ -1638,7 +1777,7 @@ final class FrozenDawnHearthCommand {
         context.getSource().sendSuccess(() -> Component.literal(
                 "Reset Maeve erasure" + (changed ? "" : " (unchanged)")), true);
         HearthHeartManager.tick(context.getSource().getLevel());
-        return heartMaeveStatus(context);
+        return 1;
     }
 
     private static int heartReset(CommandContext<CommandSourceStack> context) {
@@ -1652,8 +1791,9 @@ final class FrozenDawnHearthCommand {
     private static int heartLoadStatus(CommandContext<CommandSourceStack> context)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Cognitive Load: " + CognitiveLoadManager.describe(player)), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Cognitive Load");
+        FrozenDawnCommandOutput.metrics(context.getSource(),
+                CognitiveLoadManager.describe(player), 4);
         return 1;
     }
 
@@ -1664,7 +1804,7 @@ final class FrozenDawnHearthCommand {
         CognitiveLoadManager.setLoadForDebug(player, value);
         context.getSource().sendSuccess(() -> Component.literal(
                 "Set Cognitive Load to " + String.format(Locale.ROOT, "%.1f", value)), true);
-        return heartLoadStatus(context);
+        return 1;
     }
 
     private static int heartLoadClear(CommandContext<CommandSourceStack> context)
@@ -1673,7 +1813,7 @@ final class FrozenDawnHearthCommand {
         CognitiveLoadManager.setLoadForDebug(player, 0.0F);
         context.getSource().sendSuccess(() -> Component.literal(
                 "Cleared Cognitive Load"), true);
-        return heartLoadStatus(context);
+        return 1;
     }
 
     private static int heartNodesStatus(CommandContext<CommandSourceStack> context) {
@@ -1686,15 +1826,16 @@ final class FrozenDawnHearthCommand {
             return 0;
         }
         int next = HeartLattice.nextNode(hearth.heartDestroyedNodeMask());
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Heart nodes: destroyed="
-                        + HeartLattice.destroyedCount(hearth.heartDestroyedNodeMask())
-                        + "/" + HeartLattice.NODE_COUNT
-                        + " mask=0x" + Integer.toHexString(
-                        hearth.heartDestroyedNodeMask())
-                        + " next=" + (next < 0 ? "none" : next + 1)
-                        + " damage=" + hearth.heartActiveNodeDamage()
-                        + "/" + HeartLattice.HITS_PER_NODE), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Heart Nodes");
+        FrozenDawnCommandOutput.line(context.getSource(), "Destroyed",
+                HeartLattice.destroyedCount(hearth.heartDestroyedNodeMask())
+                        + "/" + HeartLattice.NODE_COUNT);
+        FrozenDawnCommandOutput.line(context.getSource(), "Next vulnerable",
+                next < 0 ? "none" : next + 1);
+        FrozenDawnCommandOutput.line(context.getSource(), "Current damage",
+                hearth.heartActiveNodeDamage() + "/" + HeartLattice.HITS_PER_NODE);
+        FrozenDawnCommandOutput.detail(context.getSource(), "Mask",
+                "0x" + Integer.toHexString(hearth.heartDestroyedNodeMask()));
         return 1;
     }
 
@@ -2185,6 +2326,46 @@ final class FrozenDawnHearthCommand {
     private static String formatMaturity(long ticks) {
         double days = (double) ticks / HearthMaturationPolicy.MINECRAFT_DAY_TICKS;
         return ticks + "t (" + String.format(Locale.ROOT, "%.2f", days) + "d)";
+    }
+
+    private static String compactHearth(ReturnedHearthSavedData.HearthRecord hearth) {
+        long casualties = hearth.populationResidents().stream()
+                .filter(ReturnedHearthSavedData.HearthResidentBinding::permanentlyVacant)
+                .count();
+        long residents = hearth.populationResidents().size() - casualties;
+        String master = hearth.masterArchitectDefeated() ? "defeated"
+                : hearth.masterArchitectEntityId().isPresent() ? "present" : "absent";
+        return hearth.stage().name().toLowerCase(Locale.ROOT)
+                + " - " + hearth.mood().name().toLowerCase(Locale.ROOT)
+                + " - residents " + residents + "/"
+                + hearth.populationResidents().size()
+                + " - master " + master;
+    }
+
+    private static String compactHeartState(
+            ReturnedHearthSavedData.HearthRecord hearth) {
+        if (hearth.heartMaeveErasureComplete()) {
+            return "Maeve erased";
+        }
+        if (hearth.heartMaeveErasureStartGameTime() >= 0L) {
+            return "Maeve erasure active";
+        }
+        if (hearth.heartMaeveExposed()) {
+            return "Maeve exposed";
+        }
+        if (hearth.heartCollapseComplete()) {
+            return "collapse complete";
+        }
+        if (hearth.heartCollapseStartGameTime() >= 0L) {
+            return "collapsing";
+        }
+        if (hearth.heartLive()) {
+            return "live";
+        }
+        if (hearth.heartFormationStartGameTime() >= 0L) {
+            return "forming";
+        }
+        return "inactive";
     }
 
     private static String formatPopulation(ReturnedHearthSavedData.HearthRecord hearth) {
