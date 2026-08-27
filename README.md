@@ -149,7 +149,7 @@ Those core books are discoverable without beating the game. Additional lore can 
 - **Advancements + Patchouli support** — Phase milestones, hidden discoveries, progression unlocks, and the in-game "Frozen Dawn Field Guide"
 - **Patchouli guide book** — "Frozen Dawn Field Guide" given on first join. Covers survival basics, hypothermia, ORSA equipment (with crafting recipes), and lore — written in ORSA's dry, deadpan corporate tone
 - **Admin tooling** — world-state controls, locate helpers, and win-condition inspection through the `/frozendawn` command tree
-- **Config presets** — `/frozendawn world preset default|cinematic|brutal` for quick difficulty tuning
+- **Config presets** — `/fd world preset default|cinematic|brutal` for quick difficulty tuning
 - **Fully configurable** — 30+ config options covering temperature, spawning, visuals, win-condition flow, and gameplay
 
 ## Hostile Ecosystem
@@ -206,25 +206,51 @@ Fresh towns and other authored landmark changes require newly generated chunks t
 
 ## Commands
 
-All commands require OP level 2.
+The public command surface is read-only. Mutation commands require OP level 2 and live
+under `/frozendawn debug`; `/fd` is its shortcut. Tab completion is the authoritative
+command index.
 
-### Root
-
-| Command | Description |
-|---------|-------------|
-| `/frozendawn` | Show the command help summary |
-| `/frozendawn help` | Show the command help summary |
-
-### World Controls
+### Diagnostics
 
 | Command | Description |
 |---------|-------------|
-| `/frozendawn world status` | Show current day, phase, preset, temperature, sun state, and major landmark/win-condition status |
-| `/frozendawn world setday <day>` | Jump to a specific apocalypse day |
-| `/frozendawn world setphase <0-6> [early\|mid\|late]` | Jump to a phase; sub-stages are only used for phase 6 |
-| `/frozendawn world pause` | Toggle apocalypse progression |
-| `/frozendawn world reset` | Reset the apocalypse back to day 0 |
-| `/frozendawn world preset <default\|cinematic\|brutal>` | Apply a built-in difficulty preset |
+| `/frozendawn` | Show the concise command overview |
+| `/frozendawn status` | Show the current apocalypse and progression state |
+| `/frozendawn help <world\|hearth\|heart\|postmaeve\|aggregate\|suit\|lore>` | Show focused examples |
+| `/frozendawn locate <all\|orsa\|towns\|vents>` | Locate world landmarks |
+| `/frozendawn win status` | Show ORSA signal and late-game progression state |
+
+### Debug Controls
+
+| Command | Description |
+|---------|-------------|
+| `/fd world ...` | Time, phase, presets, pause, and chunk catch-up |
+| `/fd hearth ...` | Hearth selection, maturation, population, conduct, and Master state |
+| `/fd heart ...` | Formation, Cognitive Load, nodes, collapse, and Maeve |
+| `/fd postmaeve ...` | Bloom, Moon, evolved encounters, and post-Maeve state |
+| `/fd aggregate ...` | Aggregate pressure, encounter actions, and Stillpoint field |
+| `/fd suit ...` | Suit integrity and Hearthrot |
+| `/fd lore ...` | Thaeven records, carriers, and semantic state |
+
+Primary `status` commands show a compact operator summary. Add `verbose` for
+schema versions, UUID bindings, exact ticks, seeds, and reconciliation counters;
+for example, `/fd hearth status verbose` or `/fd suit hearthrot status verbose`.
+
+Destructive `reset`, `purge-loaded`, `resolve`, and finale-completion commands require
+an explicit trailing `confirm`. Examples: `/fd world reset confirm` and
+`/fd heart maeve complete confirm`.
+
+Common path migrations:
+
+| Previous path | Current path |
+|---------------|--------------|
+| `/frozendawn world setphase ...` | `/fd world set phase ...` |
+| `/frozendawn hearth heart ...` | `/fd heart ...` |
+| `/frozendawn hearth postmaeve ...` | `/fd postmaeve ...` |
+| `/frozendawn hearth bloom ...` | `/fd postmaeve bloom ...` |
+| `/frozendawn hearth lore ...` | `/fd lore ...` |
+| `/frozendawn aggregate ...` | `/fd aggregate ...` |
+| `/frozendawn suit ...` | `/fd suit ...` |
 
 ### Locate
 

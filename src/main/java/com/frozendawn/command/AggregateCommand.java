@@ -32,13 +32,13 @@ final class AggregateCommand {
 
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
         return Commands.literal("aggregate")
-                .executes(AggregateCommand::status)
-                .then(Commands.literal("status").executes(AggregateCommand::status))
+                .executes(context -> status(context, false))
+                .then(Commands.literal("status")
+                        .executes(context -> status(context, false))
+                        .then(Commands.literal("verbose")
+                                .executes(context -> status(context, true))))
                 .then(Commands.literal("pressure")
-                        .executes(AggregateCommand::status)
-                        .then(Commands.argument("value",
-                                        DoubleArgumentType.doubleArg(0.0D, 100_000.0D))
-                                .executes(AggregateCommand::setPressure))
+                        .executes(context -> status(context, false))
                         .then(Commands.literal("set")
                                 .then(Commands.argument("value",
                                                 DoubleArgumentType.doubleArg(0.0D, 100_000.0D))
@@ -47,63 +47,80 @@ final class AggregateCommand {
                                 .then(Commands.argument("value",
                                                 DoubleArgumentType.doubleArg(0.0D, 100_000.0D))
                                         .executes(AggregateCommand::addPressure))))
-                .then(Commands.literal("addpressure")
-                        .then(Commands.argument("value",
-                                        DoubleArgumentType.doubleArg(0.0D, 100_000.0D))
-                                .executes(AggregateCommand::addPressure)))
                 .then(Commands.literal("stage")
                         .then(Commands.argument("stage", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(AggregateStage.class))
                                 .executes(AggregateCommand::setStage)))
                 .then(Commands.literal("spawn").executes(AggregateCommand::spawn))
                 .then(Commands.literal("trait")
                         .then(Commands.argument("lineage", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(AggregateLineage.class))
                                 .then(Commands.argument("value",
                                                 DoubleArgumentType.doubleArg(0.0D, 100_000.0D))
                                         .executes(AggregateCommand::setTrait))))
-                .then(Commands.literal("visual")
+                .then(Commands.literal("force")
                         .then(Commands.argument("action", StringArgumentType.word())
+                                .suggests(FrozenDawnCommandSuggestions.enums(AggregateAction.class))
                                 .executes(AggregateCommand::forceAction)))
-                .then(Commands.literal("animation")
-                        .then(Commands.argument("action", StringArgumentType.word())
-                                .executes(AggregateCommand::forceAction)))
-                .then(Commands.literal("resolve").executes(AggregateCommand::resolve))
+                .then(Commands.literal("resolve")
+                        .then(Commands.literal("confirm")
+                                .executes(AggregateCommand::resolve)))
                 .then(Commands.literal("stillpoint")
-                        .executes(AggregateCommand::stillpointStatus)
+                        .executes(context -> stillpointStatus(context, false))
                         .then(Commands.literal("status")
-                                .executes(AggregateCommand::stillpointStatus))
-                        .then(Commands.literal("debug-place")
+                                .executes(context -> stillpointStatus(context, false))
+                                .then(Commands.literal("verbose")
+                                        .executes(context -> stillpointStatus(context, true))))
+                        .then(Commands.literal("place")
                                 .executes(AggregateCommand::stillpointPlace))
-                        .then(Commands.literal("debug-activate")
+                        .then(Commands.literal("activate")
                                 .executes(AggregateCommand::stillpointActivate))
-                        .then(Commands.literal("debug-pulse")
+                        .then(Commands.literal("pulse")
                                 .executes(AggregateCommand::stillpointPulse))
-                        .then(Commands.literal("debug-reset")
-                                .executes(AggregateCommand::stillpointReset)))
-                .then(Commands.literal("reset").executes(AggregateCommand::reset));
+                        .then(Commands.literal("reset")
+                                .then(Commands.literal("confirm")
+                                        .executes(AggregateCommand::stillpointReset))))
+                .then(Commands.literal("reset")
+                        .then(Commands.literal("confirm")
+                                .executes(AggregateCommand::reset)));
     }
 
-    private static int status(CommandContext<CommandSourceStack> context) {
+    private static int status(CommandContext<CommandSourceStack> context, boolean verbose) {
         AggregateSavedData data = data(context);
         String traits = data.lineagePressure().entrySet().stream()
                 .map(entry -> entry.getKey().name().toLowerCase(Locale.ROOT)
                         + "=" + String.format(Locale.ROOT, "%.2f", entry.getValue()))
                 .reduce((left, right) -> left + ", " + right).orElse("none");
-        context.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "Aggregate: stage=%s pressure=%.2f fight=%s resolved=%s health=%.1f/%.1f anchor=%s",
-                data.stage().name().toLowerCase(Locale.ROOT), data.pressure(),
-                data.fightStarted(), data.resolved(), data.fightHealth(), data.fightMaxHealth(),
-                data.ossuaryPos().map(BlockPos::toShortString).orElse("unselected"))), false);
-        context.getSource().sendSuccess(() -> Component.literal("Lineages: " + traits), false);
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Discharge: scars=" + data.dischargeScars()
-                        + " reinforcements=" + data.reinforcements().size()), false);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Aggregate");
+        FrozenDawnCommandOutput.line(context.getSource(), "State",
+                data.stage().name().toLowerCase(Locale.ROOT)
+                        + " - pressure " + String.format(Locale.ROOT, "%.1f", data.pressure())
+                        + (data.resolved() ? " - resolved" : ""));
+        FrozenDawnCommandOutput.line(context.getSource(), "Encounter",
+                data.fightStarted()
+                        ? String.format(Locale.ROOT, "active - %.1f/%.1f HP",
+                        data.fightHealth(), data.fightMaxHealth())
+                        : "inactive");
+        FrozenDawnCommandOutput.line(context.getSource(), "Ossuary",
+                data.ossuaryPos().map(BlockPos::toShortString).orElse("unselected"));
+        if (!verbose) {
+            FrozenDawnCommandOutput.hint(context.getSource(), "/fd aggregate status verbose");
+            return 1;
+        }
+        FrozenDawnCommandOutput.detail(context.getSource(), "Lineages", traits);
+        FrozenDawnCommandOutput.detail(context.getSource(), "Discharge",
+                "scars=" + data.dischargeScars()
+                        + " reinforcements=" + data.reinforcements().size());
         return 1;
     }
 
     private static int setPressure(CommandContext<CommandSourceStack> context) {
         AggregateSavedData data = data(context);
-        data.debugSetPressure(DoubleArgumentType.getDouble(context, "value"));
-        return status(context);
+        double value = DoubleArgumentType.getDouble(context, "value");
+        data.debugSetPressure(value);
+        FrozenDawnCommandOutput.success(context.getSource(),
+                String.format(Locale.ROOT, "Aggregate pressure set to %.1f.", value), false);
+        return 1;
     }
 
     private static int addPressure(CommandContext<CommandSourceStack> context) {
@@ -111,7 +128,10 @@ final class AggregateCommand {
         double amount = DoubleArgumentType.getDouble(context, "value");
         data.addPressure(new AggregatePressurePolicy.Contribution(
                 amount, AggregateLineage.NORMAL));
-        return status(context);
+        FrozenDawnCommandOutput.success(context.getSource(),
+                String.format(Locale.ROOT, "Added %.1f Aggregate pressure (now %.1f).",
+                        amount, data.pressure()), false);
+        return 1;
     }
 
     private static int setStage(CommandContext<CommandSourceStack> context) {
@@ -130,7 +150,10 @@ final class AggregateCommand {
             AggregateOssuaryBuilder.buildStage(level, data, stage);
             com.frozendawn.aggregate.AggregateGrowthManager.playStageDiagnostic(
                     level, data, stage);
-            return status(context);
+            FrozenDawnCommandOutput.success(context.getSource(),
+                    "Aggregate stage set to " + stage.name().toLowerCase(Locale.ROOT) + ".",
+                    false);
+            return 1;
         } catch (Exception exception) {
             context.getSource().sendFailure(Component.literal(
                     "Unknown Aggregate stage. Use dormant, residue, deposit, ossuary, gestation, awakening_eligible, active, or resolved."));
@@ -185,9 +208,12 @@ final class AggregateCommand {
         try {
             AggregateLineage lineage = AggregateLineage.valueOf(
                     StringArgumentType.getString(context, "lineage").toUpperCase(Locale.ROOT));
-            data(context).debugSetLineage(lineage,
-                    DoubleArgumentType.getDouble(context, "value"));
-            return status(context);
+            double value = DoubleArgumentType.getDouble(context, "value");
+            data(context).debugSetLineage(lineage, value);
+            FrozenDawnCommandOutput.success(context.getSource(),
+                    String.format(Locale.ROOT, "%s lineage set to %.1f.",
+                            lineage.name().toLowerCase(Locale.ROOT), value), false);
+            return 1;
         } catch (IllegalArgumentException exception) {
             context.getSource().sendFailure(Component.literal("Unknown Aggregate lineage."));
             return 0;
@@ -236,20 +262,31 @@ final class AggregateCommand {
         return 1;
     }
 
-    private static int stillpointStatus(CommandContext<CommandSourceStack> context) {
+    private static int stillpointStatus(
+            CommandContext<CommandSourceStack> context, boolean verbose) {
         AggregateSavedData data = data(context);
         long elapsed = data.stillpointChargeStart() < 0L ? 0L
                 : Math.max(0L, context.getSource().getLevel().getGameTime()
                 - data.stillpointChargeStart());
-        context.getSource().sendSuccess(() -> Component.literal(
-                "Stillpoint: present=" + data.stillpointPos().isPresent()
-                        + " active=" + data.stillpointActive()
-                        + " activationProcessed=" + data.stillpointActivationProcessed()
-                        + " charge=" + Math.min(
-                        com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS, elapsed)
-                        + "/" + com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS
-                        + " pos=" + data.stillpointPos().map(BlockPos::toShortString)
-                        .orElse("none")), false);
+        long charge = Math.min(
+                com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS, elapsed);
+        FrozenDawnCommandOutput.heading(context.getSource(), "Stillpoint");
+        FrozenDawnCommandOutput.line(context.getSource(), "Field",
+                data.stillpointActive() ? "active"
+                        : data.stillpointPos().isPresent() ? "charging" : "absent");
+        FrozenDawnCommandOutput.line(context.getSource(), "Core",
+                data.stillpointPos().map(BlockPos::toShortString).orElse("none"));
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Charge",
+                    charge + "/"
+                            + com.frozendawn.aggregate.StillpointFieldManager.CHARGE_TICKS
+                            + " ticks");
+            FrozenDawnCommandOutput.detail(context.getSource(), "Activation processed",
+                    data.stillpointActivationProcessed());
+        } else {
+            FrozenDawnCommandOutput.hint(context.getSource(),
+                    "/fd aggregate stillpoint status verbose");
+        }
         return 1;
     }
 
@@ -264,7 +301,9 @@ final class AggregateCommand {
             AggregateSavedData.get(level.getServer()).armStillpoint(
                     level, pos, player.getUUID());
             com.frozendawn.aggregate.StillpointFieldManager.announceCharge(level, pos);
-            return stillpointStatus(context);
+            FrozenDawnCommandOutput.success(context.getSource(),
+                    "Stillpoint Core placed at " + pos.toShortString() + ".", false);
+            return 1;
         } catch (Exception exception) {
             context.getSource().sendFailure(Component.literal(
                     "Run this command as a player in a loaded dimension."));
@@ -280,7 +319,9 @@ final class AggregateCommand {
         }
         data.debugActivateStillpoint(context.getSource().getLevel().getGameTime());
         com.frozendawn.aggregate.StillpointFieldManager.tick(context.getSource().getServer());
-        return stillpointStatus(context);
+        FrozenDawnCommandOutput.success(context.getSource(),
+                "Stillpoint field activated.", false);
+        return 1;
     }
 
     private static int stillpointPulse(CommandContext<CommandSourceStack> context) {
@@ -315,7 +356,9 @@ final class AggregateCommand {
         }
         com.frozendawn.aggregate.StillpointFieldManager.syncAll(
                 context.getSource().getServer());
-        return stillpointStatus(context);
+        FrozenDawnCommandOutput.success(context.getSource(),
+                "Stillpoint authority reset.", true);
+        return 1;
     }
 
     private static int reset(CommandContext<CommandSourceStack> context) {

@@ -20,7 +20,9 @@ final class FrozenDawnSuitCommand {
     static LiteralArgumentBuilder<CommandSourceStack> suitCommands() {
         return Commands.literal("suit")
                 .then(Commands.literal("status")
-                        .executes(context -> status(context.getSource())))
+                        .executes(context -> status(context.getSource(), false))
+                        .then(Commands.literal("verbose")
+                                .executes(context -> status(context.getSource(), true))))
                 .then(Commands.literal("punctures")
                         .then(Commands.argument("count", IntegerArgumentType.integer(0, 2))
                                 .executes(context -> setPunctures(
@@ -29,25 +31,28 @@ final class FrozenDawnSuitCommand {
                 .then(Commands.literal("hearthrot")
                         .then(Commands.literal("status")
                                 .executes(context -> hearthrotStatus(
-                                        context.getSource())))
+                                        context.getSource(), false))
+                                .then(Commands.literal("verbose")
+                                        .executes(context -> hearthrotStatus(
+                                                context.getSource(), true))))
                         .then(Commands.literal("infect")
                                 .executes(context -> infect(
                                         context.getSource())))
-                        .then(Commands.literal("setstage")
+                        .then(Commands.literal("set-stage")
                                 .then(Commands.argument(
                                                 "stage", IntegerArgumentType.integer(0, 6))
                                         .executes(context -> setStage(
                                                 context.getSource(),
                                                 IntegerArgumentType.getInteger(
                                                         context, "stage")))))
-                        .then(Commands.literal("setprogress")
+                        .then(Commands.literal("set-progress")
                                 .then(Commands.argument(
                                                 "percent", IntegerArgumentType.integer(0, 100))
                                         .executes(context -> setProgress(
                                                 context.getSource(),
                                                 IntegerArgumentType.getInteger(
                                                         context, "percent")))))
-                        .then(Commands.literal("setcolonization")
+                        .then(Commands.literal("set-colonization")
                                 .then(Commands.argument(
                                                 "amount", IntegerArgumentType.integer(
                                                         0, HearthrotPolicy.MAX_COLONIZATION))
@@ -55,42 +60,53 @@ final class FrozenDawnSuitCommand {
                                                 context.getSource(),
                                                 IntegerArgumentType.getInteger(
                                                         context, "amount")))))
-                        .then(Commands.literal("debug-clear-disease")
-                                .executes(context -> clear(
-                                        context.getSource(), false)))
-                        .then(Commands.literal("debug-clear-all")
-                                .executes(context -> clear(
-                                        context.getSource(), true)))
-                        .then(Commands.literal("debug-cough")
+                        .then(Commands.literal("clear-disease")
+                                .then(Commands.literal("confirm")
+                                        .executes(context -> clear(
+                                                context.getSource(), false))))
+                        .then(Commands.literal("clear-all")
+                                .then(Commands.literal("confirm")
+                                        .executes(context -> clear(
+                                                context.getSource(), true))))
+                        .then(Commands.literal("cough")
                                 .executes(context -> cough(
                                         context.getSource())))
-                        .then(Commands.literal("debug-wheeze")
+                        .then(Commands.literal("wheeze")
                                 .executes(context -> wheeze(
                                         context.getSource())))
-                        .then(Commands.literal("debug-breath-catch")
+                        .then(Commands.literal("breath-catch")
                                 .executes(context -> breathCatch(
                                         context.getSource())))
-                        .then(Commands.literal("debug-fire-salvation")
+                        .then(Commands.literal("fire-salvation")
                                 .executes(context -> fireSalvation(
                                         context.getSource())))
-                        .then(Commands.literal("debug-reset-salvation")
-                                .executes(context -> resetSalvation(
-                                        context.getSource()))));
+                        .then(Commands.literal("reset-salvation")
+                                .then(Commands.literal("confirm")
+                                        .executes(context -> resetSalvation(
+                                                context.getSource())))));
     }
 
-    private static int status(CommandSourceStack source) throws CommandSyntaxException {
+    private static int status(CommandSourceStack source, boolean verbose)
+            throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         SuitIntegrity state = SuitIntegrityHandler.getState(player);
-        source.sendSuccess(
-                () -> Component.literal(
-                        "Suit integrity: punctures=" + state.punctures()
-                                + " o2=" + state.o2Ticks()
-                                + " grace=" + state.graceTicks()
-                                + " patch=" + state.patchTicks()
-                                + " temporarySeals=" + state.temporarySeals()
-                                + " sealed=" + SuitIntegrityHandler.isWearingSealedSuit(player)
-                                + " vacuum=" + SuitIntegrityHandler.isVacuumExposure(player)),
-                false);
+        FrozenDawnCommandOutput.heading(source, "Suit");
+        FrozenDawnCommandOutput.line(source, "Seal",
+                state.punctures() == 0 ? "intact" : state.punctures() + " puncture(s)");
+        FrozenDawnCommandOutput.line(source, "O2",
+                state.o2Ticks() + " ticks (" + state.o2Ticks() / 20 + "s)");
+        FrozenDawnCommandOutput.line(source, "Exposure",
+                SuitIntegrityHandler.isVacuumExposure(player) ? "vacuum" : "pressurized");
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(source, "Sealed suit",
+                    SuitIntegrityHandler.isWearingSealedSuit(player));
+            FrozenDawnCommandOutput.detail(source, "Grace ticks", state.graceTicks());
+            FrozenDawnCommandOutput.detail(source, "Patch ticks", state.patchTicks());
+            FrozenDawnCommandOutput.detail(source, "Temporary seals",
+                    state.temporarySeals());
+        } else {
+            FrozenDawnCommandOutput.hint(source, "/fd suit status verbose");
+        }
         return state.punctures();
     }
 
@@ -103,23 +119,30 @@ final class FrozenDawnSuitCommand {
         return count;
     }
 
-    private static int hearthrotStatus(CommandSourceStack source)
+    private static int hearthrotStatus(CommandSourceStack source, boolean verbose)
             throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         var state = HearthrotManager.state(player);
         int colonization = HearthrotManager.effectiveColonization(player);
-        source.sendSuccess(() -> Component.literal(
-                "Hearthrot: stage=" + state.stage()
-                        + " progress=" + Math.round(
-                                HearthrotManager.progressRatio(player) * 100.0F) + "%"
-                        + " colonization=" + colonization + "/"
-                        + HearthrotPolicy.MAX_COLONIZATION
-                        + " visual=" + HearthrotPolicy.visualStage(colonization)
-                        + " warning=" + state.contaminationWarned()
-                        + " salvationRoll=" + state.stillnessEpisodeRolled()
-                        + " salvationFired="
-                        + com.frozendawn.data.ReturnedHearthSavedData
-                                .get(player.getServer()).hearthrotSalvationFired()), false);
+        FrozenDawnCommandOutput.heading(source, "Hearthrot");
+        FrozenDawnCommandOutput.line(source, "Disease",
+                "stage " + state.stage() + " - " + Math.round(
+                        HearthrotManager.progressRatio(player) * 100.0F) + "%");
+        FrozenDawnCommandOutput.line(source, "Exterior colonization",
+                colonization + "/" + HearthrotPolicy.MAX_COLONIZATION
+                        + " - visual stage " + HearthrotPolicy.visualStage(colonization));
+        if (verbose) {
+            FrozenDawnCommandOutput.detail(source, "Contamination warning",
+                    state.contaminationWarned());
+            FrozenDawnCommandOutput.detail(source, "Stillness roll",
+                    state.stillnessEpisodeRolled());
+            FrozenDawnCommandOutput.detail(source, "Salvation fired",
+                    com.frozendawn.data.ReturnedHearthSavedData
+                            .get(player.getServer()).hearthrotSalvationFired());
+        } else {
+            FrozenDawnCommandOutput.hint(source,
+                    "/fd suit hearthrot status verbose");
+        }
         return state.stage();
     }
 
@@ -128,7 +151,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.infectForDebug(player);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot infection applied"), false);
+                "Hearthrot infection applied"), false);
         return HearthrotManager.stage(player);
     }
 
@@ -137,7 +160,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.setStageForDebug(player, stage);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot stage set to " + stage), false);
+                "Hearthrot stage set to " + stage), false);
         return stage;
     }
 
@@ -146,7 +169,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.setProgressForDebug(player, percent);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot progress set to " + percent + "%"), false);
+                "Hearthrot progress set to " + percent + "%"), false);
         return percent;
     }
 
@@ -155,7 +178,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.setColonizationForDebug(player, amount);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: equipped EVA colonization set to " + amount), false);
+                "Equipped EVA colonization set to " + amount), false);
         return amount;
     }
 
@@ -164,8 +187,8 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.clearForDebug(player, all);
         source.sendSuccess(() -> Component.literal(all
-                ? "DEBUG: Hearthrot disease and inventory colonization cleared"
-                : "DEBUG: Hearthrot disease cleared; exterior colonization preserved"), false);
+                ? "Hearthrot disease and inventory colonization cleared"
+                : "Hearthrot disease cleared; exterior colonization preserved"), false);
         return 1;
     }
 
@@ -174,7 +197,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.coughForDebug(player);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot cough presentation fired"), false);
+                "Hearthrot cough presentation fired"), false);
         return 1;
     }
 
@@ -183,7 +206,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.wheezeForDebug(player);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot wheeze presentation fired"), false);
+                "Hearthrot wheeze presentation fired"), false);
         return 1;
     }
 
@@ -192,7 +215,7 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         HearthrotManager.breathCatchForDebug(player);
         source.sendSuccess(() -> Component.literal(
-                "DEBUG: Hearthrot breathing interruption fired"), false);
+                "Hearthrot breathing interruption fired"), false);
         return 1;
     }
 
@@ -201,8 +224,8 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         boolean changed = HearthrotManager.resetSalvationForDebug(player);
         source.sendSuccess(() -> Component.literal(changed
-                ? "DEBUG: world-global Hearthrot salvation flag reset"
-                : "DEBUG: Hearthrot salvation flag was already clear"), false);
+                ? "World-global Hearthrot salvation flag reset"
+                : "Hearthrot salvation flag was already clear"), false);
         return changed ? 1 : 0;
     }
 
@@ -211,8 +234,8 @@ final class FrozenDawnSuitCommand {
         ServerPlayer player = source.getPlayerOrException();
         boolean fired = HearthrotManager.fireSalvationForDebug(player);
         source.sendSuccess(() -> Component.literal(fired
-                ? "DEBUG: silent Hearthrot salvation payload fired globally"
-                : "DEBUG: salvation already fired; reset the debug flag first"), false);
+                ? "Silent Hearthrot salvation payload fired globally"
+                : "Salvation already fired; reset the flag first"), false);
         return fired ? 1 : 0;
     }
 }
