@@ -14,11 +14,17 @@ collapse.
   `852987__takareads__sobbing_crying_male.flac`. Embedded artist metadata names
   Louvie G Tucker. The shipped sounds are eight natural phrases split at the
   recording's silent gaps, level-matched, and lightly faded. The project owner
-  supplied the recording as Creative Commons material; retain this attribution
-  alongside the source file.
+  supplied the recording as Creative Commons material, but the exact source page,
+  license variant, and redistribution terms were not recorded. Treat this source
+  as unresolved until those details are documented; local metadata does not prove
+  release rights.
 - `scream_woman_pain_4.wav` was supplied by the project owner as
   `767890__valerie-vivegnis__scream-woman-pain-4.wav`. It is used only for the
-  Archivist's player-caused terminal scream. The project owner supplied the
-  recording as Creative Commons material; retain the source file and this note.
+  Archivist's player-caused terminal scream. The source is "Scream woman pain
+  4" by Valerie-Vivegnis, https://freesound.org/people/Valerie-Vivegnis/sounds/767890/,
+  licensed under Creative Commons Attribution 4.0 International. Release
+  attribution: "Scream woman pain 4" by Valerie-Vivegnis, CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/. The project owner's copy is
+  retained only as the supplied source archive.
 - Low pressure, frame resonance, and settling layers are procedurally generated
   noise and sine components authored by Frozen Dawn's build script.
