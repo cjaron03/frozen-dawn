@@ -10,15 +10,20 @@ collapse.
 - The two clipped hurt intakes use the CC0 source
   `../hearthrot/zombie_choking_cc0.wav`; attribution and source URL are
   documented in that folder's `SOURCES.md`.
-- `sobbing_crying_male.flac` was supplied by the project owner as
-  `852987__takareads__sobbing_crying_male.flac`. Embedded artist metadata names
-  Louvie G Tucker. The shipped sounds are eight natural phrases split at the
-  recording's silent gaps, level-matched, and lightly faded. The project owner
-  supplied the recording as Creative Commons material; retain this attribution
-  alongside the source file.
+- `man_sobbing_cc0.mp3` is the public high-quality preview of "Man sobbing,
+  crying, or whimpering.mp3" by SnowFightStudios, retrieved 2026-09-01 from
+  https://freesound.org/people/SnowFightStudios/sounds/643669/ and published
+  under CC0 1.0. Frozen Dawn splits the recording into eight short phrases,
+  varies their playback rates, level-matches them, and applies brief fades. The
+  archived source SHA-256 is
+  `786985fd1a83c59a99490c954279311329d6d35d2c3c5dc1cadd184f830007f0`.
 - `scream_woman_pain_4.wav` was supplied by the project owner as
   `767890__valerie-vivegnis__scream-woman-pain-4.wav`. It is used only for the
-  Archivist's player-caused terminal scream. The project owner supplied the
-  recording as Creative Commons material; retain the source file and this note.
+  Archivist's player-caused terminal scream. The source is "Scream woman pain
+  4" by Valerie-Vivegnis, https://freesound.org/people/Valerie-Vivegnis/sounds/767890/,
+  licensed under Creative Commons Attribution 4.0 International. Release
+  attribution: "Scream woman pain 4" by Valerie-Vivegnis, CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/. The project owner's copy is
+  retained only as the supplied source archive.
 - Low pressure, frame resonance, and settling layers are procedurally generated
   noise and sine components authored by Frozen Dawn's build script.

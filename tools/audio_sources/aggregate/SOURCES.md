@@ -1,7 +1,8 @@
 # Aggregate audio sources
 
-All source recordings below are published under Creative Commons 0 on Freesound.
-The checked-in `raw/` files are the public high-quality previews from those pages.
+The rows below are recorded as Creative Commons 0 on Freesound. The checked-in
+`raw/` files are source copies downloaded from those pages and retained for
+reproducible processing.
 `process_audio.py` deterministically converts them to mono OGG and controls sub-bass
 headroom for Minecraft's vacuum-aware playback path.
 
