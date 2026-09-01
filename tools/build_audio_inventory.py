@@ -22,10 +22,12 @@ def generated_voice_paths() -> set[str]:
 
 VOICE_PATHS = generated_voice_paths()
 INTERFACE_PATHS = {
-    "item/surveyor_lens_tick.ogg",
     "ui/orsa_awakening_ring.ogg",
     "ui/suit/leak_hiss.ogg",
     "ui/suit/oxygen_beep.ogg",
+}
+OWNER_INTERFACE_PATHS = {
+    "item/surveyor_lens_tick.ogg",
 }
 
 
@@ -35,6 +37,12 @@ def classify(path: str) -> tuple[str, str, str]:
             "generated_voice",
             "tools/audio_sources/generated_voice/NOTICE.md",
             "CC BY-SA 4.0",
+        )
+    if path in OWNER_INTERFACE_PATHS:
+        return (
+            "interface_owner_audio",
+            "ASSETS.md",
+            "Frozen Dawn original",
         )
     if path in INTERFACE_PATHS:
         return (
@@ -55,7 +63,7 @@ def classify(path: str) -> tuple[str, str, str]:
         (("entity/undone_architect/",), "undone_architect_mixed", "tools/audio_sources/undone_architect/SOURCES.md", "CC0 and source-site terms"),
         (("ambient/bloom/", "block/bloom_core/", "entity/bloom_spore/", "entity/bloombound_undone/", "music/bloom/"), "bloom_mixed", "tools/audio_sources/bloom/SOURCES.md", "Inherited source terms and original"),
         (("entity/archivist/",), "archivist_mixed", "tools/audio_sources/archivist/SOURCES.md", "CC0, CC BY 4.0, and original"),
-        (("entity/undone/",), "undone_procedural", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
+        (("entity/undone/",), "undone_owner_audio", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
         (("ambient/wind_post_maeve_",), "post_maeve_wind_procedural", "tools/audio_sources/post_maeve_wind/SOURCES.md", "Frozen Dawn original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:

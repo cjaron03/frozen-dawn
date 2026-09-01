@@ -4,8 +4,9 @@
 
 **Scope:** `feat/homo-reliquus` release candidate and its runtime audio assets
 **Conclusion:** the focused release blockers found on 2026-08-27 have been
-resolved. Undocumented Undone, post-Maeve wind, and interface recordings were
-replaced with deterministic procedural audio; the Archivist sobbing source was
+resolved. The project-owner-authored Undone set and Surveyor tick were restored
+unchanged; undocumented post-Maeve wind and interface recordings were replaced
+with deterministic procedural audio; the Archivist sobbing source was
 replaced with a verified CC0 recording; and all shipped generated speech was
 re-rendered through the documented Piper pipeline. Every runtime OGG is now
 listed in the generated shipped-audio inventory with a content hash, provenance
@@ -29,9 +30,10 @@ unlisted audio in the same feature family.
 | Stillpoint Core structural sounds | Cleared as original procedural audio | `tools/audio_sources/stillpoint_core/SOURCES.md` and the checked-in generators |
 | Master Architect and Thae Iven | Cleared by project-owner authorship declaration | `tools/audio_sources/master_architect/SOURCES.md`; no third-party or generated inputs are declared |
 | Generated voices | Cleared for distribution under the voice asset license | `tools/audio_sources/generated_voice/NOTICE.md`; 52 Piper `en_US-amy-medium` derivatives are attributed and distributed under CC BY-SA 4.0 |
-| Undone | Cleared as original procedural audio | `tools/audio_sources/undone/SOURCES.md` and `tools/generate_undone_sounds.sh` |
+| Undone | Cleared by project-owner authorship declaration | `tools/audio_sources/undone/SOURCES.md`; all 13 original pre-audit runtime assets are preserved with hashes |
 | Post-Maeve wind | Cleared as original procedural audio | `tools/audio_sources/post_maeve_wind/SOURCES.md` and `tools/generate_post_maeve_wind.sh` |
-| Surveyor and suit interface cues | Cleared as original procedural audio | `tools/audio_sources/interface/SOURCES.md` and `tools/generate_interface_sounds.sh` |
+| Surveyor Lens tick | Cleared by project-owner authorship declaration | `ASSETS.md`; the original pre-audit runtime asset is preserved unchanged |
+| Suit interface cues | Cleared as original procedural audio | `tools/audio_sources/interface/SOURCES.md` and `tools/generate_interface_sounds.sh` |
 | Aggregate | Cleared for the listed CC0 inputs | `tools/audio_sources/aggregate/SOURCES.md`; the linked Freesound pages were checked, including `animal_groan.mp3` by Lewis.B.M, sound 571386 |
 | Frostwrithe | Conditionally cleared | `tools/audio_sources/frostwrithe/SOURCES.md`; the ledger records CC0 terms, but this audit did not independently re-open every listed source page |
 | Hearthrot respiratory layers | Cleared for the listed CC0 inputs | `tools/audio_sources/hearthrot/SOURCES.md`; the cough, wheeze, and choking source pages identify CC0 terms |
@@ -53,8 +55,9 @@ statement.
   recorded in `tools/audio_sources/generated_voice/polly_manifest.tsv`.
 - Added the voice-model attribution, modification notice, and CC BY-SA 4.0 asset
   terms in `tools/audio_sources/generated_voice/NOTICE.md`.
-- Replaced undocumented Undone, post-Maeve wind, and Surveyor/UI recordings
-  with deterministic procedural synthesis.
+- Restored the owner-authored Undone set and Surveyor tick, while replacing
+  undocumented post-Maeve wind and suit-interface recordings with deterministic
+  procedural synthesis.
 - Replaced the owner-supplied Archivist sobbing file with SnowFightStudios'
   verified CC0 source and retained its page, creator, hash, and transformations.
 - Classified every shipped runtime OGG in
@@ -91,5 +94,5 @@ Piper engine and model weights are not bundled in the jar.
    the source tree alone.
 3. Keep the generated-voice CC BY-SA 4.0 notice and the Valerie-Vivegnis CC BY
    4.0 credit in release distributions and source archives.
-4. Restart the client and audition representative regenerated Undone, Archivist,
-   wind, interface, and spoken events before publishing.
+4. Restart the client and audition representative Archivist, wind, interface,
+   and spoken events before publishing.

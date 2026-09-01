@@ -4,18 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOUNDS="$ROOT/src/main/resources/assets/frozendawn/sounds"
 TMP="${TMPDIR:-/tmp}/frozendawn_interface.wav"
-mkdir -p "$SOUNDS/item" "$SOUNDS/ui/suit" "$SOUNDS/ui"
+mkdir -p "$SOUNDS/ui/suit" "$SOUNDS/ui"
 
 encode() {
   oggenc -Q -q 5 -o "$2" "$1"
 }
-
-# Thirty-millisecond survey chirp: intentionally precise and non-musical.
-ffmpeg -hide_banner -loglevel error -y \
-  -f lavfi -i "aevalsrc=0.48*sin(2*PI*(1180*t+17000*t*t))*exp(-58*t):s=44100:d=0.03" \
-  -filter_complex "[0:a]highpass=f=520,alimiter=limit=0.88,volume=0.62[out]" \
-  -map "[out]" -ac 1 -ar 44100 -c:a pcm_s16le "$TMP"
-encode "$TMP" "$SOUNDS/item/surveyor_lens_tick.ogg"
 
 # Short O2 telemetry pulse with a restrained upper harmonic.
 ffmpeg -hide_banner -loglevel error -y \
