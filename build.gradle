@@ -133,6 +133,17 @@ tasks.withType(ProcessResources).configureEach {
     filesMatching(['META-INF/neoforge.mods.toml']) {
         expand replaceProperties
     }
+
+    from('AUDIO_NOTICE.md') {
+        into 'META-INF/frozendawn'
+    }
+    from('tools/audio_sources/generated_voice/NOTICE.md') {
+        into 'META-INF/frozendawn'
+        rename { 'GENERATED_VOICE_NOTICE.md' }
+    }
+    from('docs/audio/SHIPPED_AUDIO_INVENTORY.tsv') {
+        into 'META-INF/frozendawn'
+    }
 }
 
 publishing {

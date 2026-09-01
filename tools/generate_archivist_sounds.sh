@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ICE="$ROOT/tools/audio_sources/undone_architect/ice_crack_2205.ogg"
 BREATH="$ROOT/tools/audio_sources/hearthrot/zombie_choking_cc0.wav"
-SOB="$ROOT/tools/audio_sources/archivist/sobbing_crying_male.flac"
+SOB="$ROOT/tools/audio_sources/archivist/man_sobbing_cc0.mp3"
 SCREAM="$ROOT/tools/audio_sources/archivist/scream_woman_pain_4.wav"
 OUT="$ROOT/src/main/resources/assets/frozendawn/sounds/entity/archivist"
 TMP="${TMPDIR:-/tmp}/frozendawn_archivist.wav"
@@ -89,22 +89,24 @@ sob() {
   local duration="$2"
   local output="$3"
   local fade_out="$4"
+  local rate="$5"
   ffmpeg -hide_banner -loglevel error -y -ss "$start" -t "$duration" -i "$SOB" \
     -filter_complex \
-    "[0:a]highpass=f=75,lowpass=f=7200,loudnorm=I=-18:LRA=7:TP=-2.0,\
+    "[0:a]asetrate=$rate,aresample=44100,highpass=f=75,lowpass=f=7200,\
+loudnorm=I=-18:LRA=7:TP=-2.0,\
 afade=t=in:st=0:d=0.035,afade=t=out:st=$fade_out:d=0.12,volume=0.78[out]" \
     -map "[out]" -ac 1 -ar 44100 -c:a pcm_s16le "$TMP"
   encode "$TMP" "$output"
 }
 
-sob 1.18 0.57 "$OUT/sob_1.ogg" 0.45
-sob 3.22 1.26 "$OUT/sob_2.ogg" 1.14
-sob 5.55 2.03 "$OUT/sob_3.ogg" 1.91
-sob 8.92 2.40 "$OUT/sob_4.ogg" 2.28
-sob 12.75 0.65 "$OUT/sob_5.ogg" 0.53
-sob 14.62 2.83 "$OUT/sob_6.ogg" 2.71
-sob 19.30 1.72 "$OUT/sob_7.ogg" 1.60
-sob 21.90 0.62 "$OUT/sob_8.ogg" 0.50
+sob 0.05 0.62 "$OUT/sob_1.ogg" 0.50 42800
+sob 0.55 0.88 "$OUT/sob_2.ogg" 0.76 45200
+sob 1.25 1.10 "$OUT/sob_3.ogg" 0.98 41400
+sob 2.05 1.30 "$OUT/sob_4.ogg" 1.18 44400
+sob 3.15 0.72 "$OUT/sob_5.ogg" 0.60 42100
+sob 3.75 1.25 "$OUT/sob_6.ogg" 1.13 46300
+sob 4.75 1.05 "$OUT/sob_7.ogg" 0.93 40800
+sob 5.35 0.65 "$OUT/sob_8.ogg" 0.53 43700
 
 # Preserve the human panic in the supplied scream, but seat it in the Archivist's
 # cold material register so it carries through Phase 6 vacuum filtering.

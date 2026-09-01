@@ -64,7 +64,25 @@ that `iven_battle_loop.ogg` was introduced by the Homo Reliquus work. The hash
 proves the reviewed checkout's identity only; it does not replace the owner's
 authorship declaration.
 
-The adjacent Thaeven UI files (`sounds/ui/thaeven_*.ogg`) and Heart Successor
-voice files are not included in this clearance because they are separate audio
-families and may contain generated voice material. They remain in the release
-review queue until their own provenance is documented.
+## Thaeven interface beds
+
+The project owner's authorship declaration also covers these non-spoken
+Thaeven interface beds. They contain no generated voice performance:
+
+- `src/main/resources/assets/frozendawn/sounds/ui/thaeven_contact.ogg`
+  (`d625e4aafa3b39b84cebbba272fdd2c1cc0ec83d0c738e9e958c45c9190cd8fc`)
+- `src/main/resources/assets/frozendawn/sounds/ui/thaeven_interrupt.ogg`
+  (`7210ecc335cfbdd0533f8a81c90590fcb34c12c8c33ed1cf9eba598889529520`)
+- `src/main/resources/assets/frozendawn/sounds/ui/thaeven_orsha.ogg`
+  (`1f708deaea2b5e8584bce5008560be87c7844d8c295580023071fbc982eaade0`)
+- `src/main/resources/assets/frozendawn/sounds/ui/thaeven_resolve.ogg`
+  (`98391ad27c095646ec27c3436c32cd7d6c1203c75ba07e7ac0dfa43526acd751`)
+
+Heart Successor voices are tracked separately in the generated-voice ledger.
+
+## Hearth state cues
+
+The same project-owner declaration covers these non-spoken Hearth cues:
+
+- `src/main/resources/assets/frozendawn/sounds/entity/hearth/boundary_warning.ogg`
+- `src/main/resources/assets/frozendawn/sounds/entity/hearth/orsathae.ogg`

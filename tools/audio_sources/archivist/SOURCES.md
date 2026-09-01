@@ -10,14 +10,13 @@ collapse.
 - The two clipped hurt intakes use the CC0 source
   `../hearthrot/zombie_choking_cc0.wav`; attribution and source URL are
   documented in that folder's `SOURCES.md`.
-- `sobbing_crying_male.flac` was supplied by the project owner as
-  `852987__takareads__sobbing_crying_male.flac`. Embedded artist metadata names
-  Louvie G Tucker. The shipped sounds are eight natural phrases split at the
-  recording's silent gaps, level-matched, and lightly faded. The project owner
-  supplied the recording as Creative Commons material, but the exact source page,
-  license variant, and redistribution terms were not recorded. Treat this source
-  as unresolved until those details are documented; local metadata does not prove
-  release rights.
+- `man_sobbing_cc0.mp3` is the public high-quality preview of "Man sobbing,
+  crying, or whimpering.mp3" by SnowFightStudios, retrieved 2026-09-01 from
+  https://freesound.org/people/SnowFightStudios/sounds/643669/ and published
+  under CC0 1.0. Frozen Dawn splits the recording into eight short phrases,
+  varies their playback rates, level-matches them, and applies brief fades. The
+  archived source SHA-256 is
+  `786985fd1a83c59a99490c954279311329d6d35d2c3c5dc1cadd184f830007f0`.
 - `scream_woman_pain_4.wav` was supplied by the project owner as
   `767890__valerie-vivegnis__scream-woman-pain-4.wav`. It is used only for the
   Archivist's player-caused terminal scream. The source is "Scream woman pain

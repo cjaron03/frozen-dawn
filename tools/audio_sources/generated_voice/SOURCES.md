@@ -1,17 +1,18 @@
 # Generated voice provenance
 
-**Review date:** 2026-08-27  
-**Status:** unresolved for public redistribution
+**Review date:** 2026-09-01
+**Status:** replaced with a reproducible, attributed local Piper pipeline
 
-This ledger covers spoken runtime assets whose performances were generated with
-a system voice or whose generation source is not recorded. The dialogue text,
-filtering, arrangement, and implementation may be Frozen Dawn-authored; that
-does not by itself grant a right to redistribute the resulting voice
-performance.
+This ledger covers every shipped synthesized spoken runtime asset. The current files were
+generated locally with Piper's `en_US-amy-medium` model and are listed
+individually in `polly_manifest.tsv`. The model card links to the Mycroft Mimic 3
+voices dataset under CC BY-SA 4.0. Required attribution, modification notice,
+and the ShareAlike declaration for the processed performances are preserved in
+`NOTICE.md`.
 
-## Reproducible macOS Samantha pipelines
+## Historical macOS pipelines
 
-The following scripts explicitly select the macOS `Samantha` system voice:
+The following older scripts explicitly select the macOS `Samantha` system voice:
 
 - `tools/generate_samantha_tts.m` (AppKit `NSSpeechSynthesizer` helper)
 - `tools/generate_aggregate_suit_tts.sh`
@@ -20,7 +21,9 @@ The following scripts explicitly select the macOS `Samantha` system voice:
 - `tools/audio_sources/stillpoint_core/generate_stillpoint_tts.sh` (direct
   `say -v Samantha`)
 
-Their generated runtime outputs include:
+They remain as historical development tooling only. Their former runtime
+outputs were replaced by commit `8978618`; do not run these scripts for a
+release build. The replaced groups include:
 
 - ORSA suit/interface: `ui/suit/aggregate_*.ogg`,
   `ui/suit/biological_activity_warning.ogg`,
@@ -29,31 +32,27 @@ Their generated runtime outputs include:
 - Remnant radio: `entity/remnant/radio_room.ogg`, `radio_warm.ogg`,
   `radio_alone.ogg`, and `radio_forgive.ogg`.
 
-The ORSA radio voice bank and `martian_command_message.ogg` are also speech
-assets, but their original generator and exact voice/platform terms were not
-preserved in this repository. Treat them as unresolved rather than assuming
-they used Samantha.
+The ORSA radio voice bank and `martian_command_message.ogg` were likewise
+reconstructed from their authoritative in-game text and replaced through the
+Piper manifest.
 
-## Legacy and unrecorded spoken assets
+## Replaced legacy spoken assets
 
-The following shipped groups have no source URL, generation-platform record,
-or redistribution permission in this checkout:
+The following groups previously lacked source or platform evidence and are now
+covered by the current Piper manifest:
 
 - `entity/heart_successor/voice_*.ogg` (`why`, `cold`, `hello`, `kevin`, and
   `dont`).
-- `ui/thaeven_contact.ogg`, `ui/thaeven_interrupt.ogg`,
-  `ui/thaeven_orsha.ogg`, and `ui/thaeven_resolve.ogg`.
 - `ui/orsa_awakening_voice.ogg`.
 - `ui/master_architect/mind_scan.ogg`, `telemetry_mismatch.ogg`, and
   `telemetry_restored.ogg`.
 - `radio/voice_*.ogg` and `radio/martian_command_message.ogg`.
 - Any additional spoken file later added without a matching ledger entry.
 
-No claim is made here about whether these files are human-recorded,
-system-generated, AI-generated, or mixed. Their status is unresolved because
-the evidence needed to make that distinction is absent.
+The non-spoken `ui/thaeven_*.ogg` transition beds are not voice assets and are
+documented separately in the Master Architect and Thae Iven source ledger.
 
-## Rights decision needed
+## Superseded platform warning
 
 Apple's macOS software license agreements have restricted System Voices to
 use with the software and personal, non-commercial original projects, with
@@ -64,11 +63,9 @@ performances until that permission is confirmed in writing or the files are
 replaced. See Apple's license hub:
 https://www.apple.com/legal/sla/.
 
-For every cleared replacement or permission grant, record the voice/provider,
-account or license terms and version, generation date, exact text, processing
-steps, and whether the processed result and raw intermediate may be published.
-If a provider permits only runtime/on-device synthesis, do not export and ship
-the performance in the jar.
+Frozen Dawn therefore does not ship the macOS exports. The current provider,
+model, dataset license, exact text, and processing paths are recorded here and
+in `NOTICE.md`.
 
 ## Replacement pipeline prepared
 
@@ -95,20 +92,18 @@ This makes the replacement reproducible, but the awakening asset should still
 be auditioned against the old file before release because the repository did
 not preserve a transcript of that binary.
 
-The following are intentionally outside the Polly replacement set because they
+The following are intentionally outside the Piper replacement set because they
 are not TTS performances: `ui/orsa_awakening_ring.ogg`, the four
 `ui/thaeven_*.ogg` transition beds, Master Architect entity vocal effects,
 Undone/creature vocal effects, and the `terminal/blackglass_segment_*.ogg`
-recordings. They require their own provenance decision if they are to ship;
-they are not silently treated as Polly speech.
+recordings. Their procedural or project-owner provenance is documented in their
+feature ledgers or `ASSETS.md`; they are not silently treated as generated
+speech.
 
-## Current recommendation
+## Current release state
 
-Use the local Piper path for development and replacement auditioning. The
-`en_US-amy-medium` model has a public model card and points to a CC BY-SA 4.0
-dataset license; preserve attribution and review whether the final processed
-performances satisfy ShareAlike before publishing the jar. Piper's GPL engine
-is generator-only and is not bundled. Do not describe the local export as the
-old Samantha voice; it matches the authorized text, not the prior voice
-identity. A model with clearer commercial redistribution terms or an original
-human performance is still preferable for the final release.
+Use the local Piper path for all release regeneration. The processed voice OGG
+files are distributed under CC BY-SA 4.0 with the attribution and modification
+notice in `NOTICE.md`. Piper's GPL engine and model weights are generator-only
+and are not bundled. Do not describe these exports as Samantha; they preserve
+the authorized text and Frozen Dawn processing profiles, not the old voice.
