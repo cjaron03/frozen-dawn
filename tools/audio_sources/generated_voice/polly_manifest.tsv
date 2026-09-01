@@ -1,0 +1,53 @@
+# output path relative to src/main/resources/assets/frozendawn/sounds	profile	exact spoken text
+ui/suit/aggregate_deposit.ogg	orsa	Biological material: multiple. Metabolic activity: none.
+ui/suit/aggregate_ossuary.ogg	orsa	Mass: eighteen thousand four hundred two kilograms. Metabolic activity: trace.
+ui/suit/aggregate_gestation.ogg	orsa	Cohesion: increasing.
+ui/suit/aggregate_resolved.ogg	orsa	Cohesion: zero point zero zero. Origin: multiple. Genetic consensus: none. Primary driver: repeated mortality.
+ui/suit/puncture_warning.ogg	orsa	Warning: suit puncture detected.
+ui/suit/oxygen_critical.ogg	orsa	Oxygen reserves critical.
+ui/suit/emergency_reserve.ogg	orsa	Emergency reserve engaged. Please seek pressurized shelter.
+ui/suit/biological_activity_warning.ogg	orsa	Anomalous biological activity detected across all survey bands. Recommend elevated caution.
+ui/suit/bloom_contact.ogg	orsa	Unclassified crystalline growth. No entry in materials database.
+ui/suit/hearthrot_contamination.ogg	orsa	Internal contamination detected.
+ui/suit/stillpoint_field.ogg	orsa	Localized exclusion field detected. Acoustic transmission will resume within established boundary.
+ui/suit/undone_contact.ogg	orsa	Contact. Signature does not match known profiles.
+ui/master_architect/mind_scan.ogg	orsa	Biometric scan detects... multiple occupants.
+ui/master_architect/telemetry_mismatch.ogg	orsa	Warning: telemetry mismatch. Location services unavailable. Please remain where you are.
+ui/master_architect/telemetry_restored.ogg	orsa	Telemetry restored. Have a productive day.
+ui/master_architect/aura_temperature.ogg	orsa	Localized temperature anomaly detected.
+ui/master_architect/aura_fight.ogg	orsa	Local storm convergence exceeds forecast parameters.
+ui/orsa_awakening_voice.ogg	orsa	Vitals: pulse elevated. Respiration irregular. Trauma: minor cranial concussion. Final surface shuttle: departed 03:17 UTC. Current time: 88:14 local. Clock compromised.
+entity/remnant/radio_room.ogg	radio	We made room for you.
+entity/remnant/radio_warm.ogg	radio	We kept you warm.
+entity/remnant/radio_alone.ogg	radio	You made us alone.
+entity/remnant/radio_forgive.ogg	radio	Come inside. We forgive you.
+entity/heart_successor/voice_why.ogg	successor	Why?
+entity/heart_successor/voice_cold.ogg	successor	It's cold.
+entity/heart_successor/voice_hello.ogg	successor	Hello?
+entity/heart_successor/voice_kevin.ogg	successor	Kevin.
+entity/heart_successor/voice_dont.ogg	successor	Don't.
+radio/voice_tower.ogg	radio	tower
+radio/voice_signal.ogg	radio	signal
+radio/voice_at.ogg	radio	at
+radio/voice_coordinates.ogg	radio	coordinates
+radio/voice_negative.ogg	radio	negative
+radio/voice_x_coord.ogg	radio	X coordinate
+radio/voice_z_coord.ogg	radio	Z coordinate
+radio/voice_zero.ogg	radio	zero
+radio/voice_one.ogg	radio	one
+radio/voice_two.ogg	radio	two
+radio/voice_three.ogg	radio	three
+radio/voice_four.ogg	radio	four
+radio/voice_five.ogg	radio	five
+radio/voice_six.ogg	radio	six
+radio/voice_seven.ogg	radio	seven
+radio/voice_eight.ogg	radio	eight
+radio/voice_nine.ogg	radio	nine
+radio/voice_hundred.ogg	radio	hundred
+radio/voice_thousand.ogg	radio	thousand
+radio/voice_orsa.ogg	radio	ORSA
+radio/voice_field_unit.ogg	radio	field unit
+radio/voice_repeat.ogg	radio	repeat
+radio/voice_unable.ogg	radio	unable
+radio/voice_no_lock.ogg	radio	no lock
+radio/martian_command_message.ogg	radio	Whoa, wait. I'm getting something here. Hello? Um... crap. Stick to the script. Martian Command to unidentified surface respondent. Never mind. That sounds too stupid. Whoever is still out there, we never expected anyone to even still be alive. If you are, I am sending over blueprints for a rocket. You'll need to use the ORSA blast pit. Good luck, and godspeed.

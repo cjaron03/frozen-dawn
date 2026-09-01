@@ -3,9 +3,11 @@
 **Audit date:** 2026-08-27  
 **Scope:** `feat/homo-reliquus` release candidate and its runtime audio assets  
 **Conclusion:** the branch is not yet ready for a public release artifact. Several
-late-game groups have usable source ledgers, but the older Master Architect,
-Heart/Thae Iven, Undone, Successor, wind, Surveyor/UI, and generated-voice groups
-do not currently have enough source or platform evidence to clear redistribution.
+late-game groups have usable source ledgers, but the older Undone, Successor,
+wind, Surveyor/UI, and generated-voice groups do not currently have enough
+source or platform evidence to clear redistribution. The Master Architect and
+Thae Iven core files are recorded as project-owner-authored in their ledger;
+adjacent spoken UI files remain separate and unresolved.
 
 This is a provenance review, not a legal opinion. A deterministic edit, a local
 file hash, or a filename is evidence of identity and processing, not evidence of
@@ -46,13 +48,13 @@ the source URL and terms, or the assets are replaced with original/procedural
 audio:
 
 - Undone entity audio and the post-Maeve wind variants.
-- Heart Successor voice files and adjacent Thaeven UI audio.
+- Heart Successor voice files, ORSA awakening speech, and adjacent Thaeven UI audio.
 - Surveyor Lens and UI/interface sounds whose source is not documented.
 - User-supplied files whose exact source license was not recorded, including the
   Archivist sobbing source. The local file metadata is not sufficient to establish
   redistribution rights.
-- macOS Samantha or other system-voice exports. Apple's software-license search
-  evidence places system voices in a personal/non-commercial use boundary; the
+- macOS Samantha or other system-voice exports. The inventory and generation
+  paths are recorded in `tools/audio_sources/generated_voice/SOURCES.md`; the
   applicable license version and redistribution permission for each generated
   performance must be confirmed before shipping. See Apple's license hub:
   https://www.apple.com/legal/sla/.
@@ -76,6 +78,12 @@ Local `ffprobe` metadata and matching hashes were used only to identify supplied
 and shipped derivatives. They do not establish ownership or redistribution
 permission. In particular, the owner-supplied Archivist sobbing file has no
 recoverable source-page/license evidence in this repository.
+
+The generated-voice inventory was checked against the tracked TTS scripts and
+runtime sound paths. The scripts establish that several outputs were rendered
+with macOS Samantha, but do not establish a redistribution grant for the
+exported performances. Legacy voice files without a retained generator remain
+unresolved rather than being inferred from filenames or timbre.
 
 ## Required release actions
 

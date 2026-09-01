@@ -32,3 +32,7 @@ CLAUDE.local.md
 .claude/
 .codex-preview/
 .codex/
+
+# Local TTS model weights and generated intermediates
+.local/piper-voices/
+:memory:.ses

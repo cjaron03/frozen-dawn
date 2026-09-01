@@ -37,9 +37,9 @@ CC0 recordings do not legally require attribution, but Frozen Dawn preserves att
 
 ## Generated Voices
 
-Voice assets created through macOS system voices, local TTS tooling, user-supplied generation, or other voice platforms require a separate platform-terms and distribution-rights review. Their inclusion in a deterministic processing script does not, by itself, establish ownership of the underlying generated performance.
+Voice assets created through macOS system voices, local TTS tooling, user-supplied generation, or other voice platforms require a separate platform-terms and distribution-rights review. Their inclusion in a deterministic processing script does not, by itself, establish ownership of the underlying generated performance. The preferred offline replacement uses Piper as a local GPL-3.0-or-later generator and the separately licensed voice model recorded in [the model ledger](tools/audio_sources/generated_voice/models/README.md); neither the Piper engine nor model weights are bundled in the jar.
 
-This category includes ORSA suit/interface lines, Remnant radio lines, Stillpoint field TTS, Aggregate suit lines, Heart Successor voices, and any other generated or transformed spoken asset unless a more specific source ledger resolves it.
+This category includes ORSA suit/interface lines, Remnant radio lines, Stillpoint field TTS, Aggregate suit lines, Heart Successor voices, adjacent Thaeven UI speech, and any other generated or transformed spoken asset unless a more specific source ledger resolves it. The file-level inventory and generation paths are recorded in [the generated-voice ledger](tools/audio_sources/generated_voice/SOURCES.md).
 
 ## Verification Required Before Release
 
@@ -52,6 +52,13 @@ The following groups are not granted a blanket original-audio designation by thi
 - User-supplied or macOS-generated TTS assets
 
 Verification should identify the source or generation platform, applicable terms on the generation/download date, allowed commercial redistribution, required attribution, and whether raw source material may remain in GitHub source archives.
+
+The current Piper development voice, `en_US-amy-medium`, points to the Mycroft
+Mimic 3 voices dataset, which is published under CC BY-SA 4.0. Any shipped
+processed performances must retain the required attribution and undergo a
+ShareAlike review. This local replacement preserves the exact dialogue text and
+Frozen Dawn processing profiles but does not claim to reproduce the former
+Samantha voice.
 
 ## Source Archives and Distribution
 
