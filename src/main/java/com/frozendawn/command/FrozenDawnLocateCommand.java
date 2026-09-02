@@ -7,16 +7,15 @@ import com.frozendawn.data.CargoDropState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.OrsaStructureState;
 import com.frozendawn.phase.PhaseManager;
-import com.frozendawn.world.BlastPitPlanner;
 import com.frozendawn.world.CampPlacement;
 import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
+import com.frozendawn.world.LandmarkPlanningCoordinator;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ThermalVentSavedData;
 import com.frozendawn.world.ThermalVentArchetype;
 import com.frozendawn.world.ThermalVentState;
 import com.frozendawn.world.ThermalVentSystem;
-import com.frozendawn.world.TowerPlanner;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.datafixers.util.Pair;
@@ -475,11 +474,7 @@ final class FrozenDawnLocateCommand {
     }
 
     private static void refreshLandmarks(MinecraftServer server) {
-        ServerLevel overworld = server.overworld();
-        for (int i = 0; i < 2; i++) {
-            BlastPitPlanner.ensurePlanned(overworld);
-            TowerPlanner.ensurePlanned(overworld);
-        }
+        LandmarkPlanningCoordinator.tick(server.overworld());
     }
 
     private static String yesNo(boolean value) {

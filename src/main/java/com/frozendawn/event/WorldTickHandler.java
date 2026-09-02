@@ -68,6 +68,7 @@ import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.ChunkCatchUpManager;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.FrozenTownRuntime;
+import com.frozendawn.world.LandmarkPlanningCoordinator;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
@@ -194,8 +195,7 @@ public class WorldTickHandler {
         // Initialize satellite coordinates once (no-op if already chosen or disabled).
         WinConditionState winState = WinConditionState.get(server);
         winState.initSatellitePosition(server.overworld());
-        BlastPitPlanner.ensurePlanned(server.overworld());
-        TowerPlanner.ensurePlanned(server.overworld());
+        LandmarkPlanningCoordinator.tick(server.overworld());
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
