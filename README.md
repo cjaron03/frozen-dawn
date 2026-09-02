@@ -216,7 +216,7 @@ Returned Architects can drop two progression-defining rewards: the **Surveyor Le
 
 ### Playing
 1. Install [NeoForge for Minecraft 1.21.1](https://neoforged.net/)
-2. Download `frozendawn-1.1.0-alpha.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
+2. Download `frozendawn-2.0.0-alpha.jar` from [Releases](https://github.com/cjaron03/frozen-dawn/releases)
 3. Download [Patchouli for NeoForge 1.21.1](https://www.curseforge.com/minecraft/mc-mods/patchouli/files?gameVersionTypeId=6&version=1.21.1)
 4. Download [Curios API 9.5.1+1.21.1 for NeoForge](https://maven.theillusivec4.top/top/theillusivec4/curios/curios-neoforge/9.5.1+1.21.1/curios-neoforge-9.5.1+1.21.1.jar)
 5. Download [Just Enough Items (JEI) for NeoForge 1.21.1](https://modrinth.com/mod/jei/versions?l=neoforge&g=1.21.1)
@@ -378,7 +378,7 @@ cd frozen-dawn
 ./gradlew build
 ```
 
-The release build is `build/libs/frozendawn-1.1.0-alpha.jar`.
+The release build is `build/libs/frozendawn-2.0.0-alpha.jar`.
 
 ## License
 

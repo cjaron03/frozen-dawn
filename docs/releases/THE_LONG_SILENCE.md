@@ -15,7 +15,7 @@ Existing worlds are supported. Back up important saves before entering late-game
 
 ## Installation Note
 
-The Long Silence requires Minecraft 1.21.1, NeoForge 21.1.219 or newer, Java 21, Patchouli, Curios API, JEI, and **GeckoLib 4.8.4 or a compatible newer 4.x release**. Install every dependency on the appropriate client/server before launching `frozendawn-1.1.0-alpha.jar`.
+The Long Silence requires Minecraft 1.21.1, NeoForge 21.1.219 or newer, Java 21, Patchouli, Curios API, JEI, and **GeckoLib 4.8.4 or a compatible newer 4.x release**. Install every dependency on the appropriate client/server before launching `frozendawn-2.0.0-alpha.jar`.
 
 Newly authored structure revisions and untouched landmark sites require fresh chunks. Persistent late-game systems migrate or reconcile in existing worlds as their relevant chunks load.
 
