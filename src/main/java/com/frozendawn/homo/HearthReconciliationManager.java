@@ -69,6 +69,7 @@ public final class HearthReconciliationManager {
     private static final int ENTITY_BLOCK_RETRY_LIMIT = 60;
     private static final int SET_BLOCK_RETRY_LIMIT = 8;
     private static final int SKIP_LOG_LIMIT = 12;
+    private static final long REAUDIT_DELAY_TICKS = 600L;
     private static final int SET_BLOCK_FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
     private static final Set<UUID> pending = ConcurrentHashMap.newKeySet();
@@ -181,6 +182,13 @@ public final class HearthReconciliationManager {
             }
 
             int cursor = Math.min(HearthReconciliationPolicy.resumeCursor(hearth), layout.size());
+            if (hearth.structurePlanVersion() != plan.version()) {
+                // Stamp the plan version before placing anything. recordDegradedPlacement keys
+                // off it, so without this a structural cell blocked during the very first tick
+                // of a new plan would be dropped instead of remembered.
+                data.recordStructureProgress(id, plan.version(), cursor,
+                        hearth.structureStageApplied(), false);
+            }
             while (cursor < layout.size()
                     && edits < EDIT_BUDGET
                     && System.nanoTime() - start < TICK_BUDGET_NANOS) {
@@ -219,7 +227,7 @@ public final class HearthReconciliationManager {
                             break;
                         }
                         skipped += skipBlockedPlacement(
-                                id, plan, cursor, placement, target, existing,
+                                data, id, plan, cursor, placement, target, existing,
                                 PlacementFailureKind.ENTITY, attempts);
                         cursor++;
                         pieces++;
@@ -235,7 +243,7 @@ public final class HearthReconciliationManager {
                             continue;
                         }
                         skipped += skipBlockedPlacement(
-                                id, plan, cursor, placement, target, existing,
+                                data, id, plan, cursor, placement, target, existing,
                                 PlacementFailureKind.PERMANENT_BLOCKER, 1);
                         cursor++;
                         pieces++;
@@ -250,7 +258,7 @@ public final class HearthReconciliationManager {
                             break;
                         }
                         skipped += skipBlockedPlacement(
-                                id, plan, cursor, placement, target, existing,
+                                data, id, plan, cursor, placement, target, existing,
                                 PlacementFailureKind.SET_BLOCK, attempts);
                         cursor++;
                         pieces++;
@@ -259,6 +267,9 @@ public final class HearthReconciliationManager {
                     edits++;
                 }
                 clearPlacementFailure(id, plan.version(), cursor);
+                if (hearth.hasDegradedPlacements()) {
+                    data.clearDegradedPlacement(id, plan.version(), cursor);
+                }
                 if (placement.piece() == HearthStructurePiece.ORSA_CRATE) {
                     initializeOrsaCrateLoot(
                             level, target, hearth.layoutSeed(), plan.stage());
@@ -271,16 +282,50 @@ public final class HearthReconciliationManager {
                 pieces++;
             }
 
-            boolean complete = cursor >= layout.size();
-            data.recordStructureProgress(id, plan.version(), cursor,
-                    complete ? plan.stage() : hearth.structureStageApplied(), complete);
-            if (complete) {
+            boolean reachedEnd = cursor >= layout.size();
+            if (!reachedEnd) {
+                data.recordStructureProgress(id, plan.version(), cursor,
+                        hearth.structureStageApplied(), false);
+                if (!waitReasons.containsKey(id)) {
+                    waitReasons.put(id, "budget@cursor=" + cursor);
+                }
+            } else if (!hearth.hasDegradedPlacements()) {
+                data.recordStructureProgress(id, plan.version(), cursor, plan.stage(), true);
                 completedScenes++;
                 removePending(id);
+                skippedLogCounts.remove(id);
                 FrozenDawn.LOGGER.info("Completed {} Hearth {} with {} planned pieces",
                         plan.stage().name().toLowerCase(), shortId(id), layout.size());
-            } else if (!waitReasons.containsKey(id)) {
-                waitReasons.put(id, "budget@cursor=" + cursor);
+            } else if (hearth.structureReconcileAttempts()
+                    >= HearthReconciliationPolicy.MAX_STRUCTURE_REAUDITS) {
+                // The obstruction has outlasted every re-audit, so it is almost certainly
+                // deliberate. Let the scene finish and keep the record of what is missing.
+                int missing = hearth.structureDegradedCursors().size();
+                data.acceptDegradedStructure(id, plan.version(), cursor, plan.stage());
+                completedScenes++;
+                removePending(id);
+                skippedLogCounts.remove(id);
+                FrozenDawn.LOGGER.warn(
+                        "Hearth {} {} plan {} accepted with {} unresolved structural "
+                                + "placement(s) after {} re-audits; the obstructions look "
+                                + "deliberate and will not be retried",
+                        shortId(id), plan.stage().name().toLowerCase(), plan.version(),
+                        missing, HearthReconciliationPolicy.MAX_STRUCTURE_REAUDITS);
+            } else {
+                // Rewind to the first degraded cell so the next pass actually revisits it;
+                // leaving the cursor at the end would make every later pass a no-op.
+                int rewind = hearth.lowestDegradedCursor().orElse(0);
+                int missing = hearth.structureDegradedCursors().size();
+                data.scheduleStructureReaudit(id, plan.version(), rewind, plan.stage());
+                retryAfter.put(id, gameTime + REAUDIT_DELAY_TICKS);
+                waitReasons.put(id, "degraded-reaudit#" + hearth.structureReconcileAttempts());
+                skippedLogCounts.remove(id);
+                FrozenDawn.LOGGER.info(
+                        "Hearth {} {} plan {} finished a pass with {} unresolved structural "
+                                + "placement(s); re-auditing from cursor {} (attempt {} of {})",
+                        shortId(id), plan.stage().name().toLowerCase(), plan.version(), missing,
+                        rewind, hearth.structureReconcileAttempts(),
+                        HearthReconciliationPolicy.MAX_STRUCTURE_REAUDITS);
             }
         }
 
@@ -295,6 +340,11 @@ public final class HearthReconciliationManager {
         ReturnedHearthSavedData data = ReturnedHearthSavedData.get(level.getServer());
         int before = pending.size();
         for (ReturnedHearthSavedData.HearthRecord hearth : data.hearths()) {
+            // An explicit operator retry is exactly the signal that the obstruction is gone,
+            // so it reopens scenes we had accepted with holes.
+            if (hearth.structureDegradedAccepted()) {
+                data.reopenDegradedStructure(hearth.id());
+            }
             if (HearthReconciliationPolicy.needsReconciliation(hearth)) {
                 pending.add(hearth.id());
                 retryAfter.remove(hearth.id());
@@ -562,6 +612,20 @@ public final class HearthReconciliationManager {
         };
     }
 
+    /**
+     * Pieces whose absence leaves the scene structurally or functionally broken rather than
+     * merely plainer. Only these hold a scene open for another pass; a missing snow marker is
+     * not worth keeping a hearth queued for.
+     */
+    static boolean isStructuralPiece(HearthStructurePiece piece) {
+        return switch (piece) {
+            case FOUNDATION_SUPPORT, PACKED_ICE_LOWER, FROZEN_PLANKS, FROZEN_STONE_BRICKS,
+                 DOOR_LOWER, DOOR_UPPER, BED_FOOT, BED_HEAD,
+                 ORSA_CRATE, PROTECTED_CHEST, SACRED_CHEST -> true;
+            default -> false;
+        };
+    }
+
     static boolean isOptionalTerrainDecoration(HearthStructurePiece piece) {
         return piece == HearthStructurePiece.SNOW_MARKER
                 || piece == HearthStructurePiece.FROZEN_ATMOSPHERE;
@@ -595,6 +659,7 @@ public final class HearthReconciliationManager {
     }
 
     private static int skipBlockedPlacement(
+            ReturnedHearthSavedData data,
             UUID hearthId,
             HearthReconciliationPolicy.StructurePlan plan,
             int cursor,
@@ -604,6 +669,11 @@ public final class HearthReconciliationManager {
             PlacementFailureKind kind,
             int attempts) {
         clearPlacementFailure(hearthId, plan.version(), cursor);
+        if (isStructuralPiece(placement.piece())) {
+            // Remembered, not just counted: the scene stays open until this cell is placed or
+            // we give up on it, and the record survives a restart.
+            data.recordDegradedPlacement(hearthId, plan.version(), cursor);
+        }
         int logCount = skippedLogCounts.merge(hearthId, 1, Integer::sum);
         if (logCount <= SKIP_LOG_LIMIT) {
             FrozenDawn.LOGGER.warn(

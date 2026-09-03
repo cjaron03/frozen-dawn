@@ -22,6 +22,7 @@ import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
+import com.frozendawn.homo.HearthReconciliationPolicy;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
@@ -2335,11 +2336,23 @@ final class FrozenDawnHearthCommand {
         long residents = hearth.populationResidents().size() - casualties;
         String master = hearth.masterArchitectDefeated() ? "defeated"
                 : hearth.masterArchitectEntityId().isPresent() ? "present" : "absent";
+        int degraded = hearth.structureDegradedCursors().size();
+        String structure;
+        if (degraded == 0) {
+            structure = "";
+        } else if (hearth.structureDegradedAccepted()) {
+            structure = " - structure " + degraded + " missing (accepted)";
+        } else {
+            structure = " - structure " + degraded + " missing (re-audit "
+                    + hearth.structureReconcileAttempts() + "/"
+                    + HearthReconciliationPolicy.MAX_STRUCTURE_REAUDITS + ")";
+        }
         return hearth.stage().name().toLowerCase(Locale.ROOT)
                 + " - " + hearth.mood().name().toLowerCase(Locale.ROOT)
                 + " - residents " + residents + "/"
                 + hearth.populationResidents().size()
-                + " - master " + master;
+                + " - master " + master
+                + structure;
     }
 
     private static String compactHeartState(
