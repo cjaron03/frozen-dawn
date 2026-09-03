@@ -134,6 +134,9 @@ public final class MasterArchitectEyeWallRenderer {
         shader.clear();
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
+        // defaultBlendFunc only sets the equation; without enableBlend the disableBlend above
+        // leaks out of this renderer and leaves blending off for the rest of the frame.
+        RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         mainTarget.bindWrite(true);
     }
