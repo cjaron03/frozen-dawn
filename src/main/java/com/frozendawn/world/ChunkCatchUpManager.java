@@ -37,8 +37,6 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -276,6 +274,8 @@ public final class ChunkCatchUpManager {
                                             long budgetNanos) {
         int passIndex = record.passIndex();
         int cursor = record.cursor();
+        int subCursor = record.subCursor();
+        int columnTopY = record.columnTopY();
         int processed = 0;
 
         try {
@@ -289,47 +289,58 @@ public final class ChunkCatchUpManager {
                         && System.nanoTime() - startNanos < budgetNanos) {
                     CatchUpTrace trace = activeTrace;
                     long applyStart = trace != null ? System.nanoTime() : 0L;
-                    applyPass(level, apocalypse, record.chunkX(), record.chunkZ(), pass, cursor, editBudget,
-                            protectionContext);
+                    CursorStep step = applyPass(level, apocalypse, record.chunkX(), record.chunkZ(), pass,
+                            cursor, subCursor, columnTopY, editBudget, protectionContext);
                     if (trace != null) {
                         trace.recordApply(record.chunkX(), record.chunkZ(), pass, cursor,
                                 System.nanoTime() - applyStart);
                     }
-                    cursor++;
+                    subCursor = step.subCursor();
+                    columnTopY = step.columnTopY();
+                    if (step.complete()) {
+                        cursor++;
+                        subCursor = 0;
+                        columnTopY = Integer.MIN_VALUE;
+                    }
                     processed++;
                 }
 
                 if (cursor >= max) {
                     passIndex++;
                     cursor = 0;
+                    subCursor = 0;
+                    columnTopY = Integer.MIN_VALUE;
                 }
             }
         } catch (EditBudgetExceeded ignored) {
         }
 
-        record.advance(passIndex, cursor, level.getGameTime());
+        record.advance(passIndex, cursor, subCursor, columnTopY, level.getGameTime());
         return new SliceResult(passIndex >= Pass.values().length, processed);
     }
 
-    private static void applyPass(ServerLevel level, ApocalypseState apocalypse, int chunkX, int chunkZ,
-                                  Pass pass, int cursor, TickEditBudget editBudget,
-                                  MutationProtectionContext protectionContext) {
+    private static CursorStep applyPass(ServerLevel level, ApocalypseState apocalypse, int chunkX, int chunkZ,
+                                        Pass pass, int cursor, int subCursor, int columnTopY,
+                                        TickEditBudget editBudget,
+                                        MutationProtectionContext protectionContext) {
         int x = (chunkX << 4) + (cursor & 15);
         int z = (chunkZ << 4) + ((cursor >> 4) & 15);
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
-        switch (pass) {
+        return switch (pass) {
             case TREE_CLEAR -> {
                 int column = cursor & 255;
                 int columnX = (chunkX << 4) + (column & 15);
                 int columnZ = (chunkZ << 4) + ((column >> 4) & 15);
-                clearTreeColumn(level, apocalypse, columnX, columnZ, editBudget, protectionContext);
+                yield clearTreeColumnStep(level, apocalypse, columnX, columnZ, subCursor, columnTopY,
+                        editBudget, protectionContext);
             }
             case DETACHED_SNOW -> {
                 int column = cursor & 255;
                 int columnX = (chunkX << 4) + (column & 15);
                 int columnZ = (chunkZ << 4) + ((column >> 4) & 15);
-                reconcileDetachedSnowColumn(level, columnX, columnZ, editBudget, protectionContext);
+                yield reconcileDetachedSnowColumnStep(level, columnX, columnZ, subCursor, columnTopY,
+                        editBudget, protectionContext);
             }
             case SURFACE -> {
                 CatchUpTrace trace = activeTrace;
@@ -340,7 +351,7 @@ public final class ChunkCatchUpManager {
                     trace.recordSurface(SurfacePart.GROUND_SCAN, System.nanoTime() - scanStart);
                 }
                 if (ground == null) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 long surfaceStart = trace != null ? System.nanoTime() : 0L;
                 applySurfaceCatchUp(level, apocalypse, ground, editBudget, protectionContext);
@@ -352,6 +363,7 @@ public final class ChunkCatchUpManager {
                 if (trace != null) {
                     trace.recordSurface(SurfacePart.SNOW, System.nanoTime() - snowStart);
                 }
+                yield CursorStep.completed();
             }
             case SURFACE_COLUMN -> {
                 int column = cursor & 255;
@@ -361,11 +373,12 @@ public final class ChunkCatchUpManager {
                 int offset = (cursor >> 8) - 8;
                 mutable.set(columnX, surfaceY + offset, columnZ);
                 if (!level.isLoaded(mutable)) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 BlockPos pos = mutable.immutable();
                 applyVegetationCatchUp(level, apocalypse, pos, chunkX, chunkZ, editBudget, protectionContext);
                 applyVolumeCatchUp(level, apocalypse, pos, editBudget, protectionContext);
+                yield CursorStep.completed();
             }
             case VOLUME_SAMPLE -> {
                 RandomSource random = randomFor(level, chunkX, chunkZ,
@@ -375,9 +388,10 @@ public final class ChunkCatchUpManager {
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
                 mutable.set(sampleX, y, sampleZ);
                 if (!level.isLoaded(mutable)) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 applyVolumeCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
+                yield CursorStep.completed();
             }
             case COAL_SAMPLE -> {
                 RandomSource random = randomFor(level, chunkX, chunkZ,
@@ -387,22 +401,24 @@ public final class ChunkCatchUpManager {
                 int y = random.nextIntBetweenInclusive(Math.max(0, level.getMinBuildHeight()), level.getMaxBuildHeight() - 1);
                 mutable.set(sampleX, y, sampleZ);
                 if (!level.isLoaded(mutable)) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 applyVolumeCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
+                yield CursorStep.completed();
             }
             case ATMOSPHERE -> {
                 if (!PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress())) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 BlockPos support = SurfaceColumnScanner.findSnowSupportBelowCover(
                         level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
                 if (support == null) {
-                    return;
+                    yield CursorStep.completed();
                 }
                 applyAtmosphereCatchUp(level, apocalypse, support, chunkX, chunkZ, editBudget, protectionContext);
+                yield CursorStep.completed();
             }
-        }
+        };
     }
 
     private static void applySurfaceCatchUp(ServerLevel level, ApocalypseState apocalypse, BlockPos pos,
@@ -475,66 +491,73 @@ public final class ChunkCatchUpManager {
         }
     }
 
-    private static void clearTreeColumn(ServerLevel level, ApocalypseState apocalypse, int x, int z,
-                                        TickEditBudget editBudget, MutationProtectionContext protectionContext) {
+    private static CursorStep clearTreeColumnStep(ServerLevel level, ApocalypseState apocalypse, int x, int z,
+                                                  int subCursor, int columnTopY,
+                                                  TickEditBudget editBudget,
+                                                  MutationProtectionContext protectionContext) {
         if (apocalypse.getPhase() < 3) {
-            return;
+            return CursorStep.completed();
         }
 
-        int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+        int surfaceY = columnTopY == Integer.MIN_VALUE
+                ? level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z)
+                : columnTopY;
+        int y = surfaceY - subCursor;
         int minY = Math.max(level.getMinBuildHeight(), surfaceY - TREE_CLEAR_DEPTH);
-        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
-        for (int y = surfaceY; y >= minY; y--) {
-            mutable.set(x, y, z);
-            if (!level.isLoaded(mutable)) {
-                return;
-            }
-            applyTreeClearCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
+        if (y < minY) {
+            return CursorStep.completed();
         }
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        mutable.set(x, y, z);
+        if (!level.isLoaded(mutable)) {
+            return CursorStep.completed();
+        }
+        applyTreeClearCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
+        int nextSubCursor = subCursor + 1;
+        return y <= minY
+                ? CursorStep.completed()
+                : CursorStep.inProgress(nextSubCursor, surfaceY);
     }
 
-    private static void reconcileDetachedSnowColumn(ServerLevel level, int x, int z,
-                                                     TickEditBudget editBudget,
-                                                     MutationProtectionContext protectionContext) {
-        int topY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+    private static CursorStep reconcileDetachedSnowColumnStep(ServerLevel level, int x, int z,
+                                                              int subCursor, int columnTopY,
+                                                              TickEditBudget editBudget,
+                                                              MutationProtectionContext protectionContext) {
+        int topY = columnTopY == Integer.MIN_VALUE
+                ? level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1
+                : columnTopY;
         if (topY < level.getMinBuildHeight()) {
-            return;
+            return CursorStep.completed();
         }
 
         int minY = Math.max(level.getMinBuildHeight(), topY - TREE_CLEAR_DEPTH);
+        int y = topY - subCursor;
+        if (y < minY) {
+            return CursorStep.completed();
+        }
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
-        List<BlockPos> detachedSnow = new ArrayList<>();
-        int detachedUnits = 0;
-
-        for (int y = topY; y >= minY; y--) {
-            mutable.set(x, y, z);
-            if (!level.isLoaded(mutable)) {
-                return;
-            }
-
-            BlockState state = level.getBlockState(mutable);
-            if ((!state.is(Blocks.SNOW) && !state.is(Blocks.SNOW_BLOCK))
-                    || !SurfaceColumnScanner.isDetachedSnow(level, mutable)
-                    || !canMutate(level, mutable, protectionContext)) {
-                continue;
-            }
-
-            detachedSnow.add(mutable.immutable());
-            detachedUnits += snowUnits(state);
+        mutable.set(x, y, z);
+        if (!level.isLoaded(mutable)) {
+            return CursorStep.completed();
         }
 
-        if (detachedSnow.isEmpty()) {
-            return;
-        }
-
-        // Keep removal and collapse in the same budget slice so a retry cannot
-        // lose the snow after the unsupported canopy cap has been cleared.
-        editBudget.requireCapacity(detachedSnow.size() + MAX_CATCH_UP_SNOW_DEPTH);
-        for (BlockPos snowPos : detachedSnow) {
+        BlockState state = level.getBlockState(mutable);
+        if ((state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK))
+                && canMutate(level, mutable, protectionContext)
+                && SurfaceColumnScanner.isDetachedSnow(level, mutable)) {
+            // Each transfer is individually atomic. A budget stop can therefore
+            // resume at this exact vertical position without losing snow units.
+            editBudget.requireCapacity(1 + MAX_CATCH_UP_SNOW_DEPTH);
+            int detachedUnits = snowUnits(state);
+            BlockPos snowPos = mutable.immutable();
             setEpochBlock(level, snowPos, Blocks.AIR.defaultBlockState(), editBudget);
+            collapseSnowToGround(level, x, z, detachedUnits, editBudget, protectionContext);
         }
 
-        collapseSnowToGround(level, x, z, detachedUnits, editBudget, protectionContext);
+        int nextSubCursor = subCursor + 1;
+        return y <= minY
+                ? CursorStep.completed()
+                : CursorStep.inProgress(nextSubCursor, topY);
     }
 
     private static void collapseSnowToGround(ServerLevel level, int x, int z, int detachedUnits,
@@ -1468,5 +1491,15 @@ public final class ChunkCatchUpManager {
     }
 
     private record SliceResult(boolean complete, int processed) {
+    }
+
+    private record CursorStep(boolean complete, int subCursor, int columnTopY) {
+        private static CursorStep completed() {
+            return new CursorStep(true, 0, Integer.MIN_VALUE);
+        }
+
+        private static CursorStep inProgress(int subCursor, int columnTopY) {
+            return new CursorStep(false, subCursor, columnTopY);
+        }
     }
 }
