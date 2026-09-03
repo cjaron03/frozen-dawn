@@ -37,6 +37,7 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
+def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
 
 // Minecraft GameTests live in their own source set: they stay out of the published jar
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
@@ -88,6 +89,10 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
+            // saved data from one gate run leak into the next, which makes any test that touches
+            // world state depend on what happened last time.
+            gameDirectory = gameTestRunDirectory
         }
 
         data {
@@ -217,11 +222,14 @@ idea {
 // JUnit-style report only exists if the run actually reached and finished a test batch.
 tasks.named('runGameTestServer') {
     def report = gameTestReport
+    def runDirectory = gameTestRunDirectory
     doFirst {
         // A stale report from an earlier green run would otherwise mask a crash today.
         def file = report.get().asFile
         file.parentFile.mkdirs()
         file.delete()
+        // Every gate run starts from an empty world, so results do not depend on run order.
+        delete(runDirectory)
     }
 }
 

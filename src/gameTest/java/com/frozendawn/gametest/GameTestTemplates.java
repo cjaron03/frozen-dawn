@@ -25,6 +25,16 @@ public final class GameTestTemplates {
     public static final int EMPTY_WIDTH = 9;
 
     /**
+     * A roomier empty template for tests that build real Hearth geometry. The framework encases
+     * every test area in barriers, so a scene wider or taller than its template gets skipped
+     * against {@code minecraft:barrier} rather than against whatever the test meant to place.
+     */
+    public static final String EMPTY_LARGE = "empty_21x16x21";
+
+    /** Edge length of {@link #EMPTY_LARGE} on the X and Z axes. */
+    public static final int EMPTY_LARGE_WIDTH = 21;
+
+    /**
      * Lays a stone floor across the bottom layer of the test area, so entities spawned at
      * relative y = 1 land inside the bounds instead of falling out of them.
      */
