@@ -1,5 +1,8 @@
 package com.frozendawn.data;
 
+import com.frozendawn.aggregate.AggregateSavedData;
+import com.frozendawn.world.PostMaeveEncounterType;
+import com.frozendawn.world.ThermalVentSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
@@ -164,6 +167,73 @@ class RestartCycleTest {
             mind.setTerminalTakeover(true);
             mind.setBreakoutTicks(12.5F);
         });
+    }
+
+    @Test
+    void encounterStateSurvivesTwoRestarts() {
+        assertStableAcrossRestarts(
+                PostMaeveEncounterSavedData::new,
+                (state, tag) -> state.save(tag, null),
+                tag -> PostMaeveEncounterSavedData.load(tag, null),
+                state -> {
+                    PostMaeveEncounterSavedData.OwnerRecord owner = state.owner("player:restart");
+                    PostMaeveEncounterSavedData.Entry entry =
+                            owner.entry(PostMaeveEncounterType.RESONANT);
+                    entry.begin(120L);
+                    entry.recordRoll(0.35D, false);
+                    entry.recordBlocked("too close to the hearth");
+                    entry.markDebugReady(12_500L, 6_000L);
+                    owner.recordSuccess(PostMaeveEncounterType.RESONANT, 12_000L);
+                });
+    }
+
+    /**
+     * The long tail: subsystems whose default state must still survive restarts untouched.
+     *
+     * <p>Populated fixtures for each of these would be a lot of bespoke setup for little return,
+     * since the key-symmetry audit already showed their fields round-trip. This is the cheap
+     * backstop — it catches a load path that throws, or a default that rewrites itself into
+     * something different on the way back out.
+     */
+    @Test
+    void remainingPersistedSubsystemsAreStableFromDefaults() {
+        assertDefaultsStable("CampSatelliteState",
+                new CampSatelliteState(), (t) -> CampSatelliteState.load(t, null));
+        assertDefaultsStable("CargoDropState",
+                new CargoDropState(), (t) -> CargoDropState.load(t, null));
+        assertDefaultsStable("MonitoringStationState",
+                new MonitoringStationState(), (t) -> MonitoringStationState.load(t, null));
+        assertDefaultsStable("FrozenTownState",
+                new FrozenTownState(), (t) -> FrozenTownState.load(t, null));
+        assertDefaultsStable("RemnantLureSavedData",
+                new RemnantLureSavedData(), (t) -> RemnantLureSavedData.load(t, null));
+        assertDefaultsStable("RoofCollapseSnowTracker",
+                new RoofCollapseSnowTracker(), (t) -> RoofCollapseSnowTracker.load(t, null));
+        assertDefaultsStable("SanityState",
+                new SanityState(), (t) -> SanityState.load(t, null));
+        assertDefaultsStable("ThermalVentSavedData",
+                new ThermalVentSavedData(), (t) -> ThermalVentSavedData.load(t, null));
+        assertDefaultsStable("AggregateSavedData",
+                new AggregateSavedData(), (t) -> AggregateSavedData.load(t, null));
+
+        // These four carry populated round-trip fixtures in their own test classes; they are
+        // listed here so this file asserts the whole persisted surface in one place and a newly
+        // added SavedData is obvious by its absence.
+        assertDefaultsStable("BloomSavedData",
+                new BloomSavedData(), (t) -> BloomSavedData.load(t, null));
+        assertDefaultsStable("ArchivistSavedData",
+                new ArchivistSavedData(), (t) -> ArchivistSavedData.load(t, null));
+        assertDefaultsStable("ThaevenLoreSavedData",
+                new ThaevenLoreSavedData(), (t) -> ThaevenLoreSavedData.load(t, null));
+        assertDefaultsStable("ReturnedHearthSavedData",
+                new ReturnedHearthSavedData(), (t) -> ReturnedHearthSavedData.load(t, null));
+    }
+
+    private static <T extends net.minecraft.world.level.saveddata.SavedData> void assertDefaultsStable(
+            String name, T original, Function<CompoundTag, T> load) {
+        CompoundTag firstCycle = original.save(new CompoundTag(), null);
+        CompoundTag secondCycle = load.apply(firstCycle).save(new CompoundTag(), null);
+        assertEquals(firstCycle, secondCycle, name + " did not survive a restart from defaults");
     }
 
     /** Attachment flavour of the same double-cycle property. */
