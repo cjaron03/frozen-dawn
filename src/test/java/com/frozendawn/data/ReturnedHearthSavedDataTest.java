@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -257,6 +258,122 @@ class ReturnedHearthSavedDataTest {
         assertEquals(ReturnedHearthSavedData.HearthStage.TRACE, restored.structureStageApplied());
         assertFalse(loaded.recordStructureProgress(restored.id(), 1, 48,
                 ReturnedHearthSavedData.HearthStage.TRACE, true));
+    }
+
+    @Test
+    void degradedStructuralPlacementsPersistAcrossReload() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 0,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+
+        assertTrue(state.recordDegradedPlacement(major.id(), 1, 40));
+        assertTrue(state.recordDegradedPlacement(major.id(), 1, 12));
+        assertFalse(state.recordDegradedPlacement(major.id(), 1, 12));
+        assertTrue(major.hasDegradedPlacements());
+        assertEquals(12, major.lowestDegradedCursor().orElseThrow());
+
+        // Without persistence a restart would forget the damage and let the next pass
+        // finish "clean", which is the silent-hole bug.
+        ReturnedHearthSavedData loaded =
+                ReturnedHearthSavedData.load(state.save(new CompoundTag(), null), null);
+        ReturnedHearthSavedData.HearthRecord restored = major(loaded);
+        assertEquals(Set.of(12, 40), restored.structureDegradedCursors());
+        assertEquals(12, restored.lowestDegradedCursor().orElseThrow());
+    }
+
+    @Test
+    void placingADegradedCellClearsIt() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 0,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+        state.recordDegradedPlacement(major.id(), 1, 12);
+
+        assertTrue(state.clearDegradedPlacement(major.id(), 1, 12));
+        assertFalse(state.clearDegradedPlacement(major.id(), 1, 12));
+        assertFalse(major.hasDegradedPlacements());
+    }
+
+    @Test
+    void reauditRewindsTheCursorAndKeepsTheSceneUnfinished() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+        state.recordDegradedPlacement(major.id(), 1, 12);
+
+        assertTrue(state.scheduleStructureReaudit(major.id(), 1, 12,
+                ReturnedHearthSavedData.HearthStage.TRACE));
+
+        // The rewind is the whole point: leaving the cursor at the end of the layout would
+        // make every later pass a no-op that re-reports completion.
+        assertEquals(12, major.structureCursor());
+        assertFalse(major.structurePlaced());
+        assertEquals(1, major.structureReconcileAttempts());
+        assertEquals(ReturnedHearthSavedData.HearthStage.TRACE, major.structureStageApplied());
+    }
+
+    @Test
+    void acceptingADegradedStructureFinishesTheSceneAndStopsRetrying() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+        state.recordDegradedPlacement(major.id(), 1, 12);
+
+        assertTrue(state.acceptDegradedStructure(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.TRACE));
+
+        assertTrue(major.structurePlaced());
+        assertTrue(major.structureDegradedAccepted());
+        // The record of what is missing outlives the decision to stop retrying.
+        assertEquals(Set.of(12), major.structureDegradedCursors());
+
+        ReturnedHearthSavedData loaded =
+                ReturnedHearthSavedData.load(state.save(new CompoundTag(), null), null);
+        assertTrue(major(loaded).structureDegradedAccepted());
+        assertEquals(Set.of(12), major(loaded).structureDegradedCursors());
+    }
+
+    @Test
+    void anAcceptedStructureCanBeReopenedByAnOperator() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+        state.recordDegradedPlacement(major.id(), 1, 12);
+        state.acceptDegradedStructure(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.TRACE);
+
+        assertTrue(state.reopenDegradedStructure(major.id()));
+
+        // Rewound to the missing cell and unfinished again, so the next pass can heal it.
+        assertFalse(major.structureDegradedAccepted());
+        assertFalse(major.structurePlaced());
+        assertEquals(12, major.structureCursor());
+        assertEquals(0, major.structureReconcileAttempts());
+
+        // Nothing to reopen on a scene that was never accepted.
+        assertFalse(state.reopenDegradedStructure(major.id()));
+    }
+
+    @Test
+    void aNewerPlanClearsDegradedBookkeeping() {
+        ReturnedHearthSavedData state = selectedState(1000L);
+        ReturnedHearthSavedData.HearthRecord major = major(state);
+        state.recordStructureProgress(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false);
+        state.recordDegradedPlacement(major.id(), 1, 12);
+        state.acceptDegradedStructure(major.id(), 1, 48,
+                ReturnedHearthSavedData.HearthStage.TRACE);
+
+        assertTrue(state.recordStructureProgress(major.id(), 2, 0,
+                ReturnedHearthSavedData.HearthStage.PLANNED, false));
+
+        assertFalse(major.hasDegradedPlacements());
+        assertFalse(major.structureDegradedAccepted());
+        assertEquals(0, major.structureReconcileAttempts());
     }
 
     @Test
