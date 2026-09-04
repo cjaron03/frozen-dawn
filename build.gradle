@@ -19,8 +19,8 @@ def enableEnhancedClassRedefinition = providers
         .getOrElse(false)
 
 repositories {
-    maven { url "https://maven.blamejared.com" }
-    maven { url "https://maven.theillusivec4.top/" }
+    maven { url = "https://maven.blamejared.com" }
+    maven { url = "https://maven.theillusivec4.top/" }
     maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
@@ -182,7 +182,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url = "file://${project.projectDir}/repo"
         }
     }
 }
