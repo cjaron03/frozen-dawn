@@ -35,7 +35,9 @@ public final class MasterArchitectEyeWallRenderer {
      * usable values on some graphics settings and garbage on others, which showed up as
      * speckled pixels shaded at reconstructed world positions that were never real.
      */
-    private static final int COPY_COLOR_AND_DEPTH = 16384 | 256;
+    private static final int COPY_COLOR_ONLY = 16384;
+    private static final int COPY_DEPTH_ONLY = 256;
+    private static final int COPY_COLOR_AND_DEPTH = COPY_COLOR_ONLY | COPY_DEPTH_ONLY;
 
     private static TextureTarget sceneCopy;
 
@@ -44,6 +46,22 @@ public final class MasterArchitectEyeWallRenderer {
 
     public static void setShader(ShaderInstance loadedShader) {
         shader = loadedShader;
+    }
+
+    /**
+     * Fabulous clears the main target's depth during its final transparency blit. Preserve
+     * the opaque scene depth while it is still available so the later full-screen pass can
+     * reconstruct world positions from the final composited colour.
+     */
+    public static void captureFabulousDepth() {
+        if (!Minecraft.useShaderTransparency()) {
+            return;
+        }
+        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        ensureSceneCopy(mainTarget.width, mainTarget.height);
+        if (sceneCopy != null && mainTarget.getDepthTextureId() >= 0) {
+            copyScene(mainTarget, sceneCopy, COPY_DEPTH_ONLY);
+        }
     }
 
     public static void render(
@@ -75,7 +93,10 @@ public final class MasterArchitectEyeWallRenderer {
             return;
         }
 
-        copyScene(mainTarget, sceneCopy);
+        copyScene(
+                mainTarget,
+                sceneCopy,
+                Minecraft.useShaderTransparency() ? COPY_COLOR_ONLY : COPY_COLOR_AND_DEPTH);
         mainTarget.bindWrite(true);
 
         Vec3 cameraPosition = event.getCamera().getPosition();
@@ -169,7 +190,9 @@ public final class MasterArchitectEyeWallRenderer {
         }
     }
 
-    private static void copyScene(RenderTarget source, RenderTarget destination) {
+    private static void copyScene(
+            RenderTarget source, RenderTarget destination, int bufferMask) {
+        int previous = GlStateManager.getBoundFramebuffer();
         GlStateManager._glBindFramebuffer(36008, source.frameBufferId);
         GlStateManager._glBindFramebuffer(36009, destination.frameBufferId);
         GlStateManager._glBlitFrameBuffer(
@@ -181,8 +204,8 @@ public final class MasterArchitectEyeWallRenderer {
                 0,
                 destination.width,
                 destination.height,
-                COPY_COLOR_AND_DEPTH,
+                bufferMask,
                 9728);
-        GlStateManager._glBindFramebuffer(36160, 0);
+        GlStateManager._glBindFramebuffer(36160, previous);
     }
 }

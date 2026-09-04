@@ -34,7 +34,9 @@ public final class StillpointFieldRenderer {
      * usable values on some graphics settings and garbage on others, which showed up as
      * speckled pixels shaded at reconstructed world positions that were never real.
      */
-    private static final int COPY_COLOR_AND_DEPTH = 16384 | 256;
+    private static final int COPY_COLOR_ONLY = 16384;
+    private static final int COPY_DEPTH_ONLY = 256;
+    private static final int COPY_COLOR_AND_DEPTH = COPY_COLOR_ONLY | COPY_DEPTH_ONLY;
 
     private static TextureTarget sceneCopy;
 
@@ -47,10 +49,16 @@ public final class StillpointFieldRenderer {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL
-                || shader == null
+        if (shader == null
                 || !FrozenDawnClientConfig.ENABLE_STILLPOINT_FIELD_EFFECTS.get()
                 || !StillpointClientState.isRenderableHere()) {
+            return;
+        }
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            captureFabulousDepth();
+            return;
+        }
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             return;
         }
         render(event);
@@ -63,7 +71,10 @@ public final class StillpointFieldRenderer {
         ensureSceneCopy(mainTarget.width, mainTarget.height);
         if (sceneCopy == null || mainTarget.getDepthTextureId() < 0) return;
 
-        copyScene(mainTarget, sceneCopy);
+        copyScene(
+                mainTarget,
+                sceneCopy,
+                Minecraft.useShaderTransparency() ? COPY_COLOR_ONLY : COPY_COLOR_AND_DEPTH);
         mainTarget.bindWrite(true);
         Vec3 camera = event.getCamera().getPosition();
         Vec3 center = StillpointClientState.renderCenter().getCenter();
@@ -156,11 +167,22 @@ public final class StillpointFieldRenderer {
         }
     }
 
-    private static void copyScene(RenderTarget source, RenderTarget destination) {
+    private static void captureFabulousDepth() {
+        if (!Minecraft.useShaderTransparency()) return;
+        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        ensureSceneCopy(mainTarget.width, mainTarget.height);
+        if (sceneCopy != null && mainTarget.getDepthTextureId() >= 0) {
+            copyScene(mainTarget, sceneCopy, COPY_DEPTH_ONLY);
+        }
+    }
+
+    private static void copyScene(
+            RenderTarget source, RenderTarget destination, int bufferMask) {
+        int previous = GlStateManager.getBoundFramebuffer();
         GlStateManager._glBindFramebuffer(36008, source.frameBufferId);
         GlStateManager._glBindFramebuffer(36009, destination.frameBufferId);
         GlStateManager._glBlitFrameBuffer(0, 0, source.width, source.height,
-                0, 0, destination.width, destination.height, 16384, 9728);
-        GlStateManager._glBindFramebuffer(36160, 0);
+                0, 0, destination.width, destination.height, bufferMask, 9728);
+        GlStateManager._glBindFramebuffer(36160, previous);
     }
 }

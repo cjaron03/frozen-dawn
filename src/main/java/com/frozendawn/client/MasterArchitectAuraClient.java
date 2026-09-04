@@ -251,6 +251,9 @@ public final class MasterArchitectAuraClient {
         if (minecraft.level == null || minecraft.player == null) {
             return;
         }
+        if (collapseTicks > 0 || MasterArchitectWeather.hasAuraAnchor()) {
+            MasterArchitectEyeWallRenderer.captureFabulousDepth();
+        }
         if (ThaeIvenMindDimension.isMindLevel(minecraft.level)
                 && MasterArchitectFloodClient.isDeathRitual()) {
             renderMindRift(event);
