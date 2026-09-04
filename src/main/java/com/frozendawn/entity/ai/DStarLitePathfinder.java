@@ -110,10 +110,14 @@ public class DStarLitePathfinder {
     private boolean searchComplete = false;
     private boolean oversizeEventLogged = false;
     private boolean reinitEventLogged = false;
+    private boolean searchAborted = false;
+    private boolean searchAbortEventLogged = false;
 
     // --- Public accessors ---
     public boolean isInitialized() { return initialized; }
     public boolean isSearchComplete() { return searchComplete; }
+    /** True when the last search gave up because the cell map hit MAX_INCREMENTAL_CELLS. */
+    public boolean isSearchAborted() { return searchAborted; }
     public void setSurfaceY(int y) { this.surfaceY = y; }
     public void addImmuneBlock(BlockPos pos) {
         immuneBlocks.add(pos.asLong());
@@ -122,6 +126,7 @@ public class DStarLitePathfinder {
     public void resetOverflowInvestigationEvents() {
         oversizeEventLogged = false;
         reinitEventLogged = false;
+        searchAbortEventLogged = false;
     }
 
     // ========================================
@@ -236,6 +241,7 @@ public class DStarLitePathfinder {
 
         initialized = true;
         searchComplete = false;
+        searchAborted = false;
     }
 
     /**
@@ -248,6 +254,27 @@ public class DStarLitePathfinder {
         int iterations = 0;
 
         while (iterations < maxIterations) {
+            // Enforce the cell ceiling during the search itself, not only when a block
+            // change arrives. Abort rather than reinitialize: the condition that grew
+            // the map (an unreachable goal inside SEARCH_RADIUS) survives a rebuild, so
+            // reinitializing here would spin forever and discard a plan the walk code
+            // may still be following. Callers already treat "not complete" as a cue to
+            // fall back to vanilla navigation.
+            if (cells.size() > MAX_INCREMENTAL_CELLS) {
+                if (!searchAbortEventLogged) {
+                    LOGGER.info("[Architect][DStarDiag] event=DSTAR_SEARCH_ABORT cellCount={} iterations={} maxIterations={} goal={} start={} reason=CELL_CAP",
+                            cells.size(),
+                            iterations,
+                            maxIterations,
+                            goalPos,
+                            startPos);
+                    searchAbortEventLogged = true;
+                }
+                searchAborted = true;
+                searchComplete = false;
+                return false;
+            }
+
             float[] topKey = queueTopKey();
             float[] startKey = calcKey(startPacked);
 
@@ -1091,7 +1118,9 @@ public class DStarLitePathfinder {
         immuneBlocks.clear();
         initialized = false;
         searchComplete = false;
+        searchAborted = false;
         oversizeEventLogged = false;
         reinitEventLogged = false;
+        searchAbortEventLogged = false;
     }
 }
