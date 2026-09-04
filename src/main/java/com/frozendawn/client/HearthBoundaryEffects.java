@@ -313,7 +313,7 @@ public final class HearthBoundaryEffects {
         } else if (shakeDuration == STILLPOINT_FORMATION_SHAKE_TICKS) {
             magnitude = 1.65F;
         }
-        double time = minecraft.level.getGameTime() + shakeTicks * 0.37D;
+        double time = minecraft.level.getGameTime() + event.getPartialTick();
         float pitch = (float) (Math.sin(time * 3.7D) * 0.72D * strength);
         float yaw = (float) (Math.cos(time * 4.9D) * 0.92D * strength);
         event.setPitch(event.getPitch() + pitch * magnitude);
