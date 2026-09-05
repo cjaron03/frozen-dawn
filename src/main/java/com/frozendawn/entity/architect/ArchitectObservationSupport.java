@@ -16,6 +16,15 @@ import java.util.List;
  */
 public final class ArchitectObservationSupport {
 
+    /** Blocks changed within this radius of the last observed position count toward the threshold. */
+    public static final double NEARBY_CHANGE_RADIUS = 16.0;
+
+    /** Changes this many ticks apart belong to separate bursts; the older one is forgotten. */
+    public static final int NEARBY_CHANGE_WINDOW_TICKS = 200;
+
+    /** Sentinel for "no nearby change recorded yet". */
+    public static final int NO_NEARBY_CHANGE_TICK = -1;
+
     private ArchitectObservationSupport() {
     }
 
@@ -60,9 +69,28 @@ public final class ArchitectObservationSupport {
             BlockPos changedPos,
             int changeCount
     ) {
+        return changeCount >= 5 && isWithinObserveRadius(lastObservedPos, changedPos);
+    }
+
+    /** True when a changed block is close enough to the last observation to matter. */
+    public static boolean isWithinObserveRadius(BlockPos lastObservedPos, BlockPos changedPos) {
         return lastObservedPos != null
-                && changeCount >= 5
-                && changedPos.closerToCenterThan(lastObservedPos.getCenter(), 16.0);
+                && changedPos.closerToCenterThan(lastObservedPos.getCenter(), NEARBY_CHANGE_RADIUS);
+    }
+
+    /**
+     * Sliding-window count of nearby changes. A change that lands within
+     * NEARBY_CHANGE_WINDOW_TICKS of the previous one continues that burst; a longer gap
+     * means the player stopped building, so the burst restarts at one. Without the decay
+     * the threshold would eventually trip on unrelated edits accumulated over a session.
+     */
+    public static int accumulateNearbyChange(int previousCount, int lastChangeTick, int currentTick) {
+        if (lastChangeTick == NO_NEARBY_CHANGE_TICK
+                || currentTick < lastChangeTick
+                || currentTick - lastChangeTick > NEARBY_CHANGE_WINDOW_TICKS) {
+            return 1;
+        }
+        return previousCount + 1;
     }
 
     public static boolean isPlayerFacing(Vec3 playerLook, Vec3 playerPos, Vec3 architectPos) {

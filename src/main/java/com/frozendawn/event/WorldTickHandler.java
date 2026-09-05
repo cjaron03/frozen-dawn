@@ -453,12 +453,16 @@ public class WorldTickHandler {
         }
     }
 
-    /** Notify Architect entities within 64 blocks of a block change so D* Lite can update costs. */
+    /**
+     * Notify Architect entities within 64 blocks of a block change. Routed through the entity
+     * rather than straight to the pathfinder so observation invalidation still runs; the entity
+     * forwards to D* Lite itself.
+     */
     private static void notifyNearbyArchitects(net.minecraft.world.level.LevelAccessor levelAccessor, net.minecraft.core.BlockPos pos) {
         if (!(levelAccessor instanceof ServerLevel serverLevel)) return;
         net.minecraft.world.phys.AABB searchBox = new net.minecraft.world.phys.AABB(pos).inflate(64);
         for (ArchitectEntity architect : serverLevel.getEntitiesOfClass(ArchitectEntity.class, searchBox)) {
-            architect.getDStarPathfinder().onBlockChanged(pos, serverLevel);
+            architect.onNearbyBlockChange(pos);
         }
     }
 

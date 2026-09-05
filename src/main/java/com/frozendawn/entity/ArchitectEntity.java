@@ -1340,13 +1340,22 @@ public class ArchitectEntity extends Monster {
     }
 
     /**
-     * Called when player places blocks near last observed position.
-     * Threshold: 5+ changes within 16 blocks.
+     * Called when a player changes a block near the Architect.
+     * Threshold: 5+ changes within 16 blocks of the last observed position, each within
+     * NEARBY_CHANGE_WINDOW_TICKS of the previous one. The count is tracked here rather than
+     * passed in so callers cannot forget to maintain it.
      */
-    public void onNearbyBlockChange(BlockPos changedPos, int changeCount) {
+    public void onNearbyBlockChange(BlockPos changedPos) {
         BlockPos lastObservedPos = observationMemory.getLastObservedPos();
-        if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
-            observationMemory.setObserveDirty(true);
+        if (ArchitectObservationSupport.isWithinObserveRadius(lastObservedPos, changedPos)) {
+            int changeCount = ArchitectObservationSupport.accumulateNearbyChange(
+                    observationMemory.getNearbyChangeCount(),
+                    observationMemory.getLastNearbyChangeTick(),
+                    tickCount);
+            observationMemory.recordNearbyChange(changeCount, tickCount);
+            if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
+                observationMemory.setObserveDirty(true);
+            }
         }
         LivingEntity target = getTarget();
         double targetDistance = target != null ? distanceTo(target) : -1.0;

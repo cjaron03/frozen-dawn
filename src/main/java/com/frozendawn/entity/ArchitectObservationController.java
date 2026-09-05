@@ -219,6 +219,7 @@ final class ArchitectObservationController {
     private void resetObserveCycle() {
         observationMemory.setHasObserved(false);
         observationMemory.setObserveDirty(false);
+        observationMemory.resetNearbyChanges();
         observationMemory.setObserveTicks(0);
         observationMemory.setObserveTargetTicks(0);
         observationMemory.setLastObservedPos(null);
@@ -239,6 +240,7 @@ final class ArchitectObservationController {
     private void markObserveComplete(float dist, String transitionSource) {
         observationMemory.setHasObserved(true);
         observationMemory.setObserveDirty(false);
+        observationMemory.resetNearbyChanges();
         if (!approachState.dstarObserveHandoffLogged) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("[Architect][DStarDiag] event=OBSERVE_HANDOFF cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={}",
