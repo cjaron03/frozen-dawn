@@ -311,6 +311,8 @@ final class ArchitectApproachWalkSupport {
             return;
         }
         if (!"TTL".equals(reason)) {
+            architect.notePursuitRouteChange("CORRIDOR_" + reason,
+                    "BLOCKED".equals(reason) ? getCommittedWalkSteeringTarget() : null);
             architect.recordDecision("WALK_INVALIDATED", null, "cause=" + reason);
         }
         if (LOGGER.isDebugEnabled()) {

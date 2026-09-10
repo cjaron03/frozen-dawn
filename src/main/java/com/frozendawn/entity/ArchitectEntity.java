@@ -129,6 +129,11 @@ public class ArchitectEntity extends Monster {
     private static final EntityDataAccessor<Integer> DATA_MASTER_AURA_TIER =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
 
+    private static final EntityDataAccessor<Integer> DATA_PURSUIT_POSE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
+    private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
+
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
     public static final int ACTION_APPROACH = 1;
@@ -335,6 +340,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_ARCHITECT, false);
         builder.define(DATA_MASTER_MIND_COPY, false);
         builder.define(DATA_MASTER_AURA_TIER, 0);
+        builder.define(DATA_PURSUIT_POSE, 0);
     }
 
     @Override
@@ -382,6 +388,18 @@ public class ArchitectEntity extends Monster {
         entityData.set(DATA_BUILDING_ICE, isBuildingIceNow());
         entityData.set(DATA_RENDER_FLAGS, getRenderFlagsNow());
         entityData.set(DATA_MINING_PROGRESS, blockBreaker.getMiningProgress());
+    }
+
+    void notePursuitRouteChange(String reason, @Nullable BlockPos focus) {
+        thinkingController.noteRouteChange(reason, focus);
+    }
+
+    public float getThinkingTilt(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, thinkingTiltOld, thinkingTilt);
+    }
+
+    public float getThinkingHand(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, thinkingHandOld, thinkingHand);
     }
 
     void resetReevalCooldown() {
@@ -503,6 +521,22 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
+        if (level().isClientSide()) {
+            thinkingTiltOld = thinkingTilt;
+            thinkingHandOld = thinkingHand;
+            int pose = entityData.get(DATA_PURSUIT_POSE);
+            boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
+                    && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
+                    && isAlive() && !isNoAi() && getDeathTicks() == 0;
+            thinkingTilt = net.minecraft.util.Mth.approach(thinkingTilt,
+                    allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
+            thinkingHand = net.minecraft.util.Mth.approach(thinkingHand,
+                    allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
+        } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
+                || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
+                || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
+            entityData.set(DATA_PURSUIT_POSE, 0);
+        }
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
         }
@@ -722,6 +756,14 @@ public class ArchitectEntity extends Monster {
         if (actionUs > SLOW_EXEC_ACTION_LOG_US && LOGGER.isDebugEnabled()) {
             LOGGER.debug("[Architect] executeAction({}) took {}us", getBrainAction(), actionUs);
         }
+
+        entityData.set(DATA_PURSUIT_POSE, thinkingController.tick(target,
+                getBrainAction() == ACTION_APPROACH && !blockBreaker.hasTarget()
+                        && !blockBreaker.isMining() && approachState.scaffoldTarget == null
+                        && approachState.stepOffTarget == null && onGround()
+                        && !isInWaterOrBubble() && !combatState.isDrinkingPotion
+                        && !isMasterArchitectVisual(),
+                !approachState.dstar.isSearchComplete()));
 
         emitActionTelegraphParticles(target);
 
