@@ -12,6 +12,7 @@ repo/
 .classpath
 *.launch
 .metadata
+bin/
 
 # NeoForge / Minecraft
 run/
@@ -36,3 +37,6 @@ CLAUDE.local.md
 # Local TTS model weights and generated intermediates
 .local/piper-voices/
 :memory:.ses
+
+# Nested git worktrees
+.worktrees/

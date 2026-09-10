@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -569,6 +571,9 @@ public final class ReturnedHearthSavedData extends SavedData {
             hearth.structurePlanVersion = planVersion;
             hearth.structureCursor = cursor;
             hearth.structurePlaced = false;
+            hearth.structureDegradedCursors.clear();
+            hearth.structureReconcileAttempts = 0;
+            hearth.structureDegradedAccepted = false;
             changed = true;
         } else if (planVersion == hearth.structurePlanVersion && cursor > hearth.structureCursor) {
             hearth.structureCursor = cursor;
@@ -587,6 +592,99 @@ public final class ReturnedHearthSavedData extends SavedData {
             setDirty();
         }
         return changed;
+    }
+
+    /**
+     * Remembers that a structural placement at {@code cursor} could not be applied. Recorded
+     * rather than merely counted, so a later pass knows where to go back to and
+     * {@code /fd hearth status verbose} can still report the damage after a restart.
+     */
+    public boolean recordDegradedPlacement(UUID id, int planVersion, int cursor) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || cursor < 0 || planVersion != hearth.structurePlanVersion) {
+            return false;
+        }
+        if (hearth.structureDegradedCursors.add(cursor)) {
+            setDirty();
+            return true;
+        }
+        return false;
+    }
+
+    /** Clears a previously degraded cursor once that cell has been placed successfully. */
+    public boolean clearDegradedPlacement(UUID id, int planVersion, int cursor) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || planVersion != hearth.structurePlanVersion
+                || hearth.structureDegradedCursors.isEmpty()) {
+            return false;
+        }
+        if (hearth.structureDegradedCursors.remove(cursor)) {
+            setDirty();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Rewinds the cursor so the next pass revisits the degraded cells, leaving the scene
+     * explicitly unfinished. Without the rewind the stored cursor sits at the end of the layout
+     * and every subsequent pass would be a no-op.
+     */
+    public boolean scheduleStructureReaudit(UUID id, int planVersion, int cursor,
+                                            HearthStage appliedStage) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || cursor < 0 || planVersion != hearth.structurePlanVersion) {
+            return false;
+        }
+        hearth.structureCursor = cursor;
+        hearth.structurePlaced = false;
+        hearth.structureReconcileAttempts++;
+        if (appliedStage.ordinal() > hearth.structureStageApplied.ordinal()) {
+            hearth.structureStageApplied = appliedStage;
+        }
+        setDirty();
+        return true;
+    }
+
+    /**
+     * Stops retrying and lets the scene finish with the holes it has. Used when an obstruction
+     * has outlasted every re-audit and is therefore something the player put there on purpose.
+     */
+    public boolean acceptDegradedStructure(UUID id, int planVersion, int cursor,
+                                           HearthStage appliedStage) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || cursor < 0 || planVersion != hearth.structurePlanVersion) {
+            return false;
+        }
+        hearth.structureCursor = cursor;
+        hearth.structurePlaced = true;
+        hearth.structureDegradedAccepted = true;
+        if (appliedStage.ordinal() > hearth.structureStageApplied.ordinal()) {
+            hearth.structureStageApplied = appliedStage;
+        }
+        setDirty();
+        return true;
+    }
+
+    /**
+     * Reopens a scene we had given up on, rewinding to the first cell still missing. Without
+     * this an accepted hole is permanent even after the player clears what caused it, which
+     * makes the give-up decision unrecoverable rather than merely final.
+     */
+    public boolean reopenDegradedStructure(UUID id) {
+        HearthRecord hearth = hearth(id).orElse(null);
+        if (hearth == null || !hearth.structureDegradedAccepted) {
+            return false;
+        }
+        hearth.structureDegradedAccepted = false;
+        hearth.structureReconcileAttempts = 0;
+        hearth.structurePlaced = false;
+        hearth.structureCursor = hearth.structureDegradedCursors.stream()
+                .mapToInt(Integer::intValue)
+                .min()
+                .orElse(0);
+        setDirty();
+        return true;
     }
 
     public boolean bindWatcher(UUID hearthId, UUID entityId, String profile) {
@@ -2334,6 +2432,9 @@ public final class ReturnedHearthSavedData extends SavedData {
         private HearthStage structureStageApplied;
         private int structurePlanVersion;
         private int structureCursor;
+        private final Set<Integer> structureDegradedCursors = new TreeSet<>();
+        private int structureReconcileAttempts;
+        private boolean structureDegradedAccepted;
         private float signalStrength;
         private String boundVariantProfile;
         private boolean watcherSpawned;
@@ -2446,6 +2547,15 @@ public final class ReturnedHearthSavedData extends SavedData {
                     HearthStage.class, HearthStage.PLANNED);
             record.structurePlanVersion = Math.max(0, tag.getInt("structurePlanVersion"));
             record.structureCursor = Math.max(0, tag.getInt("structureCursor"));
+            record.structureDegradedCursors.clear();
+            for (int degraded : tag.getIntArray("structureDegradedCursors")) {
+                if (degraded >= 0) {
+                    record.structureDegradedCursors.add(degraded);
+                }
+            }
+            record.structureReconcileAttempts =
+                    Math.max(0, tag.getInt("structureReconcileAttempts"));
+            record.structureDegradedAccepted = tag.getBoolean("structureDegradedAccepted");
             record.signalStrength = Math.max(0.0F, tag.getFloat("signalStrength"));
             record.boundVariantProfile = tag.getString("boundVariantProfile");
             record.watcherSpawned = tag.getBoolean("watcherSpawned");
@@ -2664,6 +2774,10 @@ public final class ReturnedHearthSavedData extends SavedData {
             tag.putString("structureStageApplied", structureStageApplied.name());
             tag.putInt("structurePlanVersion", structurePlanVersion);
             tag.putInt("structureCursor", structureCursor);
+            tag.putIntArray("structureDegradedCursors",
+                    structureDegradedCursors.stream().mapToInt(Integer::intValue).toArray());
+            tag.putInt("structureReconcileAttempts", structureReconcileAttempts);
+            tag.putBoolean("structureDegradedAccepted", structureDegradedAccepted);
             tag.putFloat("signalStrength", signalStrength);
             tag.putString("boundVariantProfile", boundVariantProfile);
             tag.putBoolean("watcherSpawned", watcherSpawned);
@@ -2840,6 +2954,29 @@ public final class ReturnedHearthSavedData extends SavedData {
 
         public int structureCursor() {
             return structureCursor;
+        }
+
+        /** Cursors whose structural piece could not be placed and still needs another pass. */
+        public Set<Integer> structureDegradedCursors() {
+            return Set.copyOf(structureDegradedCursors);
+        }
+
+        public boolean hasDegradedPlacements() {
+            return !structureDegradedCursors.isEmpty();
+        }
+
+        public OptionalInt lowestDegradedCursor() {
+            return structureDegradedCursors.stream().mapToInt(Integer::intValue).min();
+        }
+
+        /** Completed passes that ended with unresolved structural placements. */
+        public int structureReconcileAttempts() {
+            return structureReconcileAttempts;
+        }
+
+        /** True once the scene was allowed to finish with holes we stopped retrying. */
+        public boolean structureDegradedAccepted() {
+            return structureDegradedAccepted;
         }
 
         public float signalStrength() {

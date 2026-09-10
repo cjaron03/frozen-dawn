@@ -27,14 +27,16 @@ public final class TowerPlanner {
     private static final int BLAST_PIT_BUFFER = 900;
     private static final int DISTANCE_STEP = 192;
     private static final int FINAL_CANDIDATE_LIMIT = 24;
-    private static final int COARSE_BUDGET_PER_CALL = 192;
-
     private static final Map<MinecraftServer, TowerSearchSession> SEARCH_SESSIONS = new IdentityHashMap<>();
 
     private TowerPlanner() {
     }
 
     public static void ensurePlanned(ServerLevel overworld) {
+        ensurePlanned(overworld, LandmarkPlanningBudget.start());
+    }
+
+    static void ensurePlanned(ServerLevel overworld, LandmarkPlanningBudget budget) {
         OrsaStructureState state = OrsaStructureState.get(overworld.getServer());
         if (state.getTowers().size() >= TARGET_COUNT) {
             SEARCH_SESSIONS.remove(overworld.getServer());
@@ -54,7 +56,7 @@ public final class TowerPlanner {
             return;
         }
 
-        stepSearch(overworld, state, search, COARSE_BUDGET_PER_CALL);
+        stepSearch(overworld, state, search, budget);
     }
 
     public static boolean reroll(ServerLevel overworld, long towerId) {
@@ -81,8 +83,8 @@ public final class TowerPlanner {
     }
 
     private static void stepSearch(ServerLevel overworld, OrsaStructureState state,
-                                   TowerSearchSession search, int coarseBudget) {
-        while (!search.coarseComplete && coarseBudget-- > 0) {
+                                   TowerSearchSession search, LandmarkPlanningBudget budget) {
+        while (!search.coarseComplete && budget.tryAcquireCandidate()) {
             int distance = search.distance;
             int angleSteps = search.angleSteps;
             double angleT = angleSteps == 1 ? 0.5D : (double) search.angleStep / (double) (angleSteps - 1);

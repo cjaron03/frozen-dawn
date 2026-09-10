@@ -19,8 +19,8 @@ def enableEnhancedClassRedefinition = providers
         .getOrElse(false)
 
 repositories {
-    maven { url "https://maven.blamejared.com" }
-    maven { url "https://maven.theillusivec4.top/" }
+    maven { url = "https://maven.blamejared.com" }
+    maven { url = "https://maven.theillusivec4.top/" }
     maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
@@ -35,6 +35,19 @@ base {
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
+def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
+
+// Minecraft GameTests live in their own source set: they stay out of the published jar
+// and off the JUnit classpath, but are registered with the mod below so that NeoForge's
+// annotation scan (ModList#getAllScanData) can find the @GameTestHolder classes.
+sourceSets {
+    gameTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
 
 neoForge {
     version = project.neo_version
@@ -73,7 +86,13 @@ neoForge {
 
         gameTestServer {
             type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
+            // saved data from one gate run leak into the next, which makes any test that touches
+            // world state depend on what happened last time.
+            gameDirectory = gameTestRunDirectory
         }
 
         data {
@@ -90,6 +109,7 @@ neoForge {
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.gameTest)
         }
     }
 
@@ -99,11 +119,19 @@ neoForge {
     }
 }
 
+// Puts Minecraft and NeoForge on the gameTest compile/runtime classpath. Only the main
+// source set gets these implicitly.
+neoForge.addModdingDependenciesTo(sourceSets.gameTest)
+
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
     testRuntimeClasspath.extendsFrom localRuntime
+    gameTestCompileOnly.extendsFrom compileOnly
+    gameTestImplementation.extendsFrom implementation
+    gameTestRuntimeOnly.extendsFrom runtimeOnly
+    gameTestRuntimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
@@ -154,7 +182,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url = "file://${project.projectDir}/repo"
         }
     }
 }
@@ -169,7 +197,7 @@ tasks.withType(Test).configureEach {
 
 spotless {
     java {
-        target 'src/main/java/**/*.java'
+        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java'
         trimTrailingWhitespace()
         endWithNewline()
         leadingTabsToSpaces(4)
@@ -180,5 +208,63 @@ idea {
     module {
         downloadSources = true
         downloadJavadoc = true
+    }
+}
+
+// --- Release gate -----------------------------------------------------------------------
+//
+// runGameTestServer alone is not a gate. Vanilla's net.minecraft.server.Main wraps startup in
+// a catch that only logs, so a server that dies before the tests run still exits 0 and Gradle
+// still prints BUILD SUCCESSFUL. Test failures do fail the build (GameTestServer#onServerExit
+// exits with the failed count), but everything before that point is invisible.
+//
+// So the gate checks for a positive result artifact instead of trusting the exit code: the
+// JUnit-style report only exists if the run actually reached and finished a test batch.
+tasks.named('runGameTestServer') {
+    def report = gameTestReport
+    def runDirectory = gameTestRunDirectory
+    doFirst {
+        // A stale report from an earlier green run would otherwise mask a crash today.
+        def file = report.get().asFile
+        file.parentFile.mkdirs()
+        file.delete()
+        // Every gate run starts from an empty world, so results do not depend on run order.
+        delete(runDirectory)
+    }
+}
+
+tasks.register('gameTestGate') {
+    group = 'verification'
+    description = 'Runs the Frozen Dawn game tests and fails if the run did not actually happen.'
+    dependsOn tasks.named('runGameTestServer')
+
+    def report = gameTestReport
+    doLast {
+        def file = report.get().asFile
+        if (!file.exists()) {
+            throw new GradleException(
+                    "Game test gate failed: no report at ${file}.\n" +
+                    "The game test server exited without completing a test batch. Minecraft logs " +
+                    "this as an ERROR and then exits 0, so scroll up for 'Failed to start the " +
+                    "minecraft server' or a mod loading error — the exit code will not show it.")
+        }
+
+        def suite = new groovy.xml.XmlSlurper().parse(file)
+        def cases = suite.'**'.findAll { it.name() == 'testcase' }
+        def failures = suite.'**'.findAll { it.name() == 'failure' }
+
+        if (cases.isEmpty()) {
+            throw new GradleException(
+                    "Game test gate failed: ${file} records no tests. The server started but ran " +
+                    "nothing, so this build verified no gameplay behaviour at all.")
+        }
+        if (!failures.isEmpty()) {
+            def detail = failures.collect { "  - ${it.@message}" }.join('\n')
+            throw new GradleException(
+                    "Game test gate failed: ${failures.size()} of ${cases.size()} game tests " +
+                    "failed.\n${detail}")
+        }
+
+        logger.lifecycle("Game test gate passed: ${cases.size()} game tests ran, 0 failures.")
     }
 }

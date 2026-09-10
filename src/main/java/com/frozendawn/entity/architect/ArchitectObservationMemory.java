@@ -14,6 +14,10 @@ public final class ArchitectObservationMemory {
 
     private boolean hasObserved;
     private boolean observeDirty;
+    // Transient burst state: not persisted, because it is measured against the entity's
+    // tickCount, which restarts at zero whenever the Architect is reloaded.
+    private int nearbyChangeCount;
+    private int lastNearbyChangeTick = ArchitectObservationSupport.NO_NEARBY_CHANGE_TICK;
     private int observeTicks;
     private int observeTargetTicks;
     @Nullable
@@ -40,6 +44,24 @@ public final class ArchitectObservationMemory {
 
     public void setObserveDirty(boolean observeDirty) {
         this.observeDirty = observeDirty;
+    }
+
+    public int getNearbyChangeCount() {
+        return nearbyChangeCount;
+    }
+
+    public int getLastNearbyChangeTick() {
+        return lastNearbyChangeTick;
+    }
+
+    public void recordNearbyChange(int count, int currentTick) {
+        this.nearbyChangeCount = count;
+        this.lastNearbyChangeTick = currentTick;
+    }
+
+    public void resetNearbyChanges() {
+        this.nearbyChangeCount = 0;
+        this.lastNearbyChangeTick = ArchitectObservationSupport.NO_NEARBY_CHANGE_TICK;
     }
 
     public int getObserveTicks() {

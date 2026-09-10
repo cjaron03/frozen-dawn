@@ -47,15 +47,12 @@ public final class ArchitectWalkBreakPlanner {
             candidates.add(stepPos.above());
         }
 
-        // Slab/snow transitions can alternate between the same X/Z at Y and Y+1.
-        // Include lower cells for flat/descending moves, but avoid undercutting
-        // support while trying to climb upward.
-        if (!steppingUp) {
-            candidates.add(stepPos.below());
-            if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
-                candidates.add(stepPos.below(2));
-            }
-        }
+        // Nothing below stepPos is ever a candidate: that column is the surface the
+        // destination stands on, so it is solid on any walkable path and would always
+        // win selection once the real obstructions turn out to be air. Mining it drops
+        // the Architect into a pit, which re-triggers the stuck check one block lower
+        // and digs a trench. A slab or snow layer at the destination is stepPos itself,
+        // which is already covered above.
         return candidates;
     }
 

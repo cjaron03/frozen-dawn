@@ -378,7 +378,7 @@ cd frozen-dawn
 ./gradlew build
 ```
 
-The release build is `build/libs/frozendawn-2.0.0-alpha.jar`.
+The release build is `build/libs/frozendawn-2.0.1-alpha.jar`.
 
 ## License
 
