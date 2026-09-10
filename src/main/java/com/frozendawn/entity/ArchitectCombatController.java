@@ -82,8 +82,14 @@ final class ArchitectCombatController {
             combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
         }
 
-        if (hDist > 3.0) {
+        boolean footingApproach = dist3d >= 2.8
+                && com.frozendawn.entity.architect.ArchitectCombatFooting.needsNavigatedApproach(architect, target);
+        if (hDist > 3.0 || footingApproach) {
+            // Closing the last step up is path-following, not optional combat strafing.
+            // Do not zero its momentum through the lateral-footing filter.
             architect.getNavigation().moveTo(target, 1.0);
+            if (footingApproach && architect.tickCount % 20 == 0)
+                architect.recordDecision("COMBAT_FOOTING_APPROACH", null, "navigate_to_reach distance=" + dist3d);
         } else {
             architect.getNavigation().stop();
             Vec3 toTarget = target.position().subtract(architect.position()).normalize();

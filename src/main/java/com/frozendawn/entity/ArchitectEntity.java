@@ -1,6 +1,12 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+import com.frozendawn.entity.architect.ArchitectDecisionJournal;
+import com.frozendawn.entity.architect.ArchitectWalkBreakPlanner;
+
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectApproachRecovery;
 import com.frozendawn.entity.architect.ArchitectBrainState;
 import com.frozendawn.entity.architect.ArchitectCombatState;
 import com.frozendawn.entity.architect.ArchitectDecisionEngine;
@@ -193,7 +199,17 @@ public class ArchitectEntity extends Monster {
     private static final int BURST_WINDOW = 60; // 3 seconds
 
     // --- Block Breaker ---
-    private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
+    private final ArchitectDecisionJournal decisionJournal = new ArchitectDecisionJournal();
+    @Nullable private DStarLitePathfinder.NextStep debugStep;
+    private long lastDebugStepTick = Long.MIN_VALUE;
+    private String lastCandidateSignature = "";
+    private long lastCandidateTick = Long.MIN_VALUE;
+    @Nullable private Long debugSeed;
+    /** Lab-only target lock: pins {@link #findTarget()} so a nearby player cannot steal the run. */
+    @Nullable private UUID debugForcedTargetId;
+    @Nullable private UUID lastJournalTargetId;
+
+    private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -256,6 +272,8 @@ public class ArchitectEntity extends Monster {
     static final int STEP_OFF_DURATION = 4;
 
     // --- Scaffold pacing (player-like delay between place + jump) ---
+    /** Journal heartbeat cadence, so a recording never goes silent outside APPROACH. */
+    private static final int JOURNAL_HEARTBEAT_TICKS = 20;
     static final int SCAFFOLD_PLACE_TICKS = 12; // ~0.6s pause after placing before stepping up
 
     public ArchitectEntity(EntityType<? extends Monster> type, Level level) {
@@ -263,6 +281,10 @@ public class ArchitectEntity extends Monster {
         this.moveControl = new ArchitectMoveControl(this, WALK_MAX_ROTATE);
         setCustomName(Component.literal("The Architect"));
         setCustomNameVisible(true);
+        if (!level.isClientSide && decisionJournal.enabled()) {
+            Long seed = Long.getLong("frozendawn.debug.architectSeed");
+            if (seed != null) { random.setSeed(seed); debugSeed = seed; }
+        }
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -511,6 +533,12 @@ public class ArchitectEntity extends Monster {
             tickAggregateReinforcement((ServerLevel) level());
             return;
         }
+        // NoAI also governs the custom utility AI. Lab actors use it while prepared.
+        if (isNoAi()) {
+            getNavigation().stop();
+            super.aiStep();
+            return;
+        }
         // Warmup: skip all AI for first 2 seconds after spawn/load
         // Prevents pathfinding freeze when entity loads before chunks are ready
         if (tickCount < 40) {
@@ -575,8 +603,14 @@ public class ArchitectEntity extends Monster {
         // --- Target acquisition ---
         // Architect senses through blocks — always knows target position
         LivingEntity target = findTarget();
+        UUID selectedTargetId = target == null ? null : target.getUUID();
+        if (decisionJournal.enabled() && !java.util.Objects.equals(lastJournalTargetId, selectedTargetId)) {
+            lastJournalTargetId = selectedTargetId;
+            recordDecision("TARGET_CHANGE", null, "target=" + selectedTargetId);
+        }
 
         if (target == null) {
+            ArchitectApproachRecovery.resetProgress(approachState);
             if (!brainState.isRoamingAfterTargetLoss()) {
                 observationController.enterRoamModeAfterTargetLoss();
             }
@@ -587,6 +621,16 @@ public class ArchitectEntity extends Monster {
             brainState.setRoamingAfterTargetLoss(false);
             observationMemory.setLastKnownPlayerPos(target.blockPosition());
             observationMemory.setLastSeenTick(tickCount);
+        }
+
+        if (decisionJournal.heartbeatDue(gameTick, JOURNAL_HEARTBEAT_TICKS)) {
+            recordDecision("STATE", blockBreaker.getChoice(),
+                    "target=" + (target == null ? "none" : target.getName().getString())
+                            + " targetPos=" + decisionJournal.relative(target == null ? null : target.blockPosition())
+                            + " targetHealth=" + (target == null ? "-" : target.getHealth())
+                            + " mining=" + blockBreaker.isMining()
+                            + " collision=" + horizontalCollision
+                            + " locked=" + (debugForcedTargetId != null));
         }
 
         observationController.maybeTriggerSpawnObserveCue(target);
@@ -891,6 +935,10 @@ public class ArchitectEntity extends Monster {
         return walkSupport.handleWalkStuck(stepPos, target);
     }
 
+    boolean tryApproachProgressRecovery(LivingEntity target) {
+        return walkSupport.tryProgressRecovery(target);
+    }
+
     void executeVanillaWalkStep(DStarLitePathfinder.NextStep step, @Nullable LivingEntity target) {
         walkSupport.executeVanillaWalkStep(step, target);
     }
@@ -940,8 +988,194 @@ public class ArchitectEntity extends Monster {
         ArchitectBlockEnvironment.keepDoorOpenNear(this, center);
     }
 
-    boolean isBreakableBlock(BlockPos pos) {
-        return ArchitectBlockEnvironment.isBreakableBlock(level(), pos, scaffoldIce);
+    boolean isBreakableBlock(BlockPos pos) { return breakRejection(pos) == null; }
+
+    @Nullable String breakRejection(BlockPos pos) {
+        if (getBrainAction() == ACTION_APPROACH && !ArchitectApproachRecovery.canAttemptBreak(approachState, pos)) {
+            return approachState.blockedUnstickBreakCandidates.contains(pos) ? "BLACKLISTED" : "RETRY_BUDGET_EXHAUSTED";
+        }
+        return ArchitectBlockEnvironment.breakRejection(level(), pos, scaffoldIce);
+    }
+
+    public ArchitectDecisionJournal decisionJournal() { return decisionJournal; }
+    public long successfulBreakCount() { return blockBreaker.successfulBreakCount(); }
+    public void startDecisionRecording(@Nullable Long seed) {
+        startDecisionRecording(UUID.randomUUID(), seed, net.minecraft.world.level.block.Rotation.NONE);
+    }
+    public void startDecisionRecording(UUID runId, @Nullable Long seed, net.minecraft.world.level.block.Rotation rotation) {
+        lastJournalTargetId = null;
+        decisionJournal.start(runId, level().getGameTime(), blockPosition(), successfulBreakCount(), rotation);
+        lastDebugStepTick = lastCandidateTick = level().getGameTime();
+        lastCandidateSignature = "";
+        debugStep = null;
+        if (seed != null) { random.setSeed(seed); debugSeed = seed; }
+        recordDecision("RECORD_START", null, "seed=" + debugSeed);
+    }
+    /** Releases the lab target lock so normal targeting resumes. */
+    public void clearDebugTargetLock() {
+        debugForcedTargetId = null;
+    }
+    public void recordDecision(String event, @Nullable BreakChoice choice, String detail) {
+        if (level().isClientSide || !decisionJournal.enabled()) return;
+        decisionJournal.append(new ArchitectDecisionJournal.Entry(level().getGameTime(), event,
+                actionName(getBrainAction()), blockPosition().immutable(), debugStep == null ? null : debugStep.pos(),
+                debugStep == null ? "-" : debugStep.type().name(), approachState.committedWalkWaypoint,
+                choice, approachState.approachNoProgressTicks, approachState.blockedUnstickBreakCandidates.size(),
+                approachState.unstickReinitAttempts, successfulBreakCount(), detail));
+    }
+    void recordStep(DStarLitePathfinder.NextStep step) {
+        boolean changed = !step.equals(debugStep);
+        debugStep = step;
+        if (changed || level().getGameTime() - lastDebugStepTick >= 40) {
+            lastDebugStepTick = level().getGameTime();
+            recordDecision("PLAN_STEP", step.breakChoice(), "searchComplete=" + approachState.dstar.isSearchComplete());
+        }
+    }
+    @Nullable BreakChoice chooseBreak(String source, java.util.List<BreakChoice> choices,
+            java.util.function.Predicate<BlockPos> lastResort) {
+        java.util.List<ArchitectWalkBreakPlanner.CandidateDecision> trace = decisionJournal.enabled()
+                ? new java.util.ArrayList<>() : null;
+        BreakChoice chosen = ArchitectWalkBreakPlanner.selectChoice(choices,
+                approachState.blockedUnstickBreakCandidates, this::breakRejection, lastResort,
+                d -> { if (trace != null) trace.add(d); });
+        if (trace != null) {
+            String signature = source + trace;
+            if (!signature.equals(lastCandidateSignature) || level().getGameTime() - lastCandidateTick >= 40) {
+                lastCandidateSignature = signature;
+                lastCandidateTick = level().getGameTime();
+                for (var d : trace) recordDecision("CANDIDATE", d.candidate(), source + ":" + d.outcome());
+                recordDecision("BREAK_CHOICE", chosen, source);
+            }
+        }
+        return chosen;
+    }
+    public String inspectDecisions() {
+        return "Architect " + getId() + " " + getUUID() + " action=" + actionName(getBrainAction())
+                + " pos=" + blockPosition() + " lastPlannedStep=" + debugStep
+                + " waypoint=" + approachState.committedWalkWaypoint + " mining=" + blockBreaker.getChoice()
+                + " noProgress=" + approachState.approachNoProgressTicks
+                + " exclusions=" + approachState.blockedUnstickBreakCandidates
+                + " reinits=" + approachState.unstickReinitAttempts + " destroyed=" + successfulBreakCount()
+                + " recording=" + decisionJournal.enabled() + " retained=" + decisionJournal.entries().size()
+                + " dropped=" + decisionJournal.dropped() + " seed=" + debugSeed
+                + " targetLock=" + debugForcedTargetId;
+    }
+
+    // ========================
+    //  Lab harness (operator-only, never called by AI)
+    // ========================
+
+    /** One line per Architect for {@code /fd debug architect list}. */
+    public String labSummary() {
+        LivingEntity target = getTarget();
+        return "#" + getId() + " " + actionName(getBrainAction()) + " at " + blockPosition()
+                + " hp=" + (int) getHealth() + "/" + (int) getMaxHealth()
+                + " target=" + (target == null ? "none" : "#" + target.getId() + " " + target.getName().getString())
+                + " recording=" + decisionJournal.enabled();
+    }
+
+    /**
+     * Forces a live APPROACH at {@code target}, matching what game tests do through an NBT
+     * round trip. Clears retry suppression and every recovery budget so the run starts clean.
+     */
+    public void debugForceApproach(LivingEntity target) {
+        setPersistenceRequired();
+        observationMemory.setHasObserved(true);
+        observationMemory.setObserveDirty(false);
+        debugResetApproach();
+        debugForcedTargetId = target.getUUID();
+        setTarget(target);
+        brainState.setReevalCooldown(0);
+        transitionToAction(ACTION_APPROACH);
+        brainState.setActionHoldTicks(0);
+        setNoAi(false);
+        setNoGravity(false);
+        recordDecision("LAB_APPROACH", null, "target=locked_target");
+    }
+
+    /** Drops planner state, recovery budgets, the break blacklist and any retry suppression. */
+    public void debugResetApproach() {
+        debugForcedTargetId = null;
+        blockBreaker.clearTarget();
+        ArchitectApproachRecovery.resetProgress(approachState);
+        approachState.abandonedApproachTarget = null;
+        approachState.approachRetryAfterTick = 0;
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        approachState.dstar.cleanup();
+        approachState.dstarPrecomputed = false;
+        approachState.sprintRequested = false;
+        approachState.unreachableTicks = 0;
+        approachState.ceilingBreachPos = null;
+        approachState.stepOffStart = null;
+        approachState.stepOffTarget = null;
+        approachState.stepOffProgress = 0;
+        approachState.lastFallbackBreakPos = null;
+        approachState.fallbackBreakCooldown = 0;
+        approachState.dstarApproachEntryLogged = false;
+        approachState.dstarObserveHandoffLogged = false;
+        clearWalkNavigationState(true);
+        clearCommittedWalk();
+        getMoveControl().setWantedPosition(getX(), getY(), getZ(), 0);
+        setDeltaMovement(Vec3.ZERO);
+        setSpeed(0);
+        setJumping(false);
+        setTarget(null);
+        brainState.setMeleeCommitTicks(0);
+        brainState.setReevalCooldown(0);
+        pathRecalcCooldown = 0;
+        com.frozendawn.entity.architect.ArchitectWalkTracking.resetWalkStuckTracker(approachState);
+        com.frozendawn.entity.architect.ArchitectWalkTracking.resetWalkCellHistory(approachState);
+        debugStep = null;
+        lastCandidateSignature = "";
+        recordDecision("LAB_RESET", null, "");
+    }
+
+    private void onApproachBreakAttemptFinished(BlockPos pos) {
+        if (getBrainAction() != ACTION_APPROACH) {
+            return;
+        }
+        boolean obstructing = ArchitectBlockEnvironment.isPathObstructingState(level(), level().getBlockState(pos), pos);
+        if (ArchitectApproachRecovery.finishBreakAttempt(approachState, pos, obstructing)) {
+            LOGGER.info("[Architect] APPROACH_BREAK_FAILED entity={} candidate={} excluded={}",
+                    getId(), pos, approachState.blockedUnstickBreakCandidates.size());
+        }
+    }
+
+    public boolean isApproachTargetSuppressed(LivingEntity target) {
+        return ArchitectApproachRecovery.isTargetSuppressed(approachState, target.getUUID(), tickCount);
+    }
+
+    public int approachRetryTicksRemaining() {
+        return Math.max(0, approachState.approachRetryAfterTick - tickCount);
+    }
+
+    /** Dispose only lab-owned actors before restoring their fixture. */
+    public void discardLabActor() {
+        if (!getTags().contains("fd_lab")) throw new IllegalStateException("Not a lab actor");
+        blockBreaker.clearTarget();
+        cleanupAllIce();
+        approachState.dstar.cleanup();
+        discard();
+    }
+
+    void abandonApproach(LivingEntity target, String reason) {
+        recordDecision("ABANDON", blockBreaker.getChoice(), reason);
+        LOGGER.info("[Architect] APPROACH_ABANDON entity={} reason={} target={} pos={} noProgressTicks={} reinits={} retryAfterTicks={}",
+                getId(), reason, target.getUUID(), blockPosition(), approachState.approachNoProgressTicks,
+                approachState.unstickReinitAttempts, ArchitectApproachRecovery.TARGET_RETRY_COOLDOWN_TICKS);
+        blockBreaker.clearTarget();
+        ArchitectApproachRecovery.abandon(approachState, target.getUUID(), tickCount);
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        approachState.dstar.cleanup();
+        approachState.dstarPrecomputed = false;
+        approachState.sprintRequested = false;
+        brainState.setMeleeCommitTicks(0);
+        setTarget(null);
+        transitionToAction(ACTION_OBSERVE);
+        observationController.enterRoamModeAfterTargetLoss();
+        observationController.executeRoamAndRuin();
     }
 
     void applyCombatHorizontalMotion(double x, double z) {
@@ -953,7 +1187,11 @@ public class ArchitectEntity extends Monster {
                 z,
                 MELEE_AIR_CONTROL_SCALE,
                 MELEE_MAX_HORIZONTAL_SPEED);
-        setDeltaMovement(blended.x, current.y, blended.z);
+        Vec3 supported = com.frozendawn.entity.architect.ArchitectCombatFooting.constrain(this, blended);
+        if (supported.distanceToSqr(blended) > 1.0e-8 && tickCount % 20 == 0) {
+            recordDecision("COMBAT_FOOTING", null, "limited=" + blended + " allowed=" + supported);
+        }
+        setDeltaMovement(supported.x, current.y, supported.z);
     }
 
     // ========================
@@ -961,6 +1199,8 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void onActionChange(int oldAction, int newAction) {
+        recordDecision("ACTION_CHANGE", blockBreaker.getChoice(), actionName(oldAction) + "->" + actionName(newAction));
+        debugStep = null;
         if (oldAction == ACTION_OBSERVE) {
             ArchitectActionTransitionSupport.onLeaveObserve(observationMemory);
         }
@@ -972,7 +1212,6 @@ public class ArchitectEntity extends Monster {
         clearCommittedWalk();
         resetWalkStuckTracker();
         resetWalkCellHistory();
-        resetUnstickBreakTracker();
         if (oldAction != ACTION_APPROACH) blockBreaker.clearTarget();
         if (oldAction == ACTION_RETREAT) {
             if (combatState.isDrinkingPotion) cancelDrinking();
@@ -1045,6 +1284,7 @@ public class ArchitectEntity extends Monster {
         }
         boolean hit = super.doHurtTarget(target);
         if (hit && target instanceof LivingEntity living) {
+            recordDecision("MELEE_HIT", null, "target=" + target.getUUID() + " health=" + living.getHealth());
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
             living.setTicksFrozen(living.getTicksFrozen() + 60);
         }
@@ -1113,6 +1353,8 @@ public class ArchitectEntity extends Monster {
             suppressMasterHurtSound = false;
         }
         if (hurt && !level().isClientSide()) {
+            recordDecision("DAMAGE", blockBreaker.getChoice(),
+                    "type=" + source.getMsgId() + " amount=" + amount + " health=" + getHealth());
             if (isHearthAssessor()
                     && level() instanceof ServerLevel serverLevel
                     && source.getEntity() instanceof ServerPlayer attacker
@@ -1282,6 +1524,7 @@ public class ArchitectEntity extends Monster {
                 scaffoldIce,
                 MAX_SCAFFOLD_ICE,
                 blockPosition())) {
+            recordDecision("SCAFFOLD_PLACE", new BreakChoice(pos, BreakReason.SCAFFOLD), "placed");
             emitIcePlacementFx(pos);
             return true;
         }
@@ -1380,6 +1623,19 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
+        LivingEntity candidate = findTargetIgnoringApproachCooldown();
+        return candidate != null && isApproachTargetSuppressed(candidate) ? null : candidate;
+    }
+
+    @Nullable
+    private LivingEntity findTargetIgnoringApproachCooldown() {
+        if (debugForcedTargetId != null && level() instanceof ServerLevel lockLevel) {
+            net.minecraft.world.entity.Entity locked = lockLevel.getEntity(debugForcedTargetId);
+            if (locked instanceof LivingEntity lockedLiving && lockedLiving.isAlive()) {
+                return lockedLiving;
+            }
+            debugForcedTargetId = null; // Locked entity is gone — fall back to normal targeting.
+        }
         LivingEntity current = getTarget();
         LivingEntity directAttacker = getLastHurtByMob();
         if ((directAttacker instanceof UndoneEntity
@@ -1413,7 +1669,8 @@ public class ArchitectEntity extends Monster {
                 brainState.isRoamingAfterTargetLoss(),
                 getDetectionRange(),
                 OBSERVE_REACQUIRE_RANGE,
-                this::distanceToSqr);
+                this::distanceToSqr,
+                candidate -> !isApproachTargetSuppressed(candidate));
     }
 
     boolean isPlayerFacing(LivingEntity entity) {

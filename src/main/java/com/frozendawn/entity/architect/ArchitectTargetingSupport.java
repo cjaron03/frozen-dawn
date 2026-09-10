@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.ToDoubleFunction;
+import java.util.function.Predicate;
 
 /**
  * Target selection rules for Architect target acquisition.
@@ -26,7 +27,8 @@ public final class ArchitectTargetingSupport {
             boolean roamingAfterTargetLoss,
             double baseRange,
             double observeReacquireRange,
-            ToDoubleFunction<LivingEntity> distanceToSqr
+            ToDoubleFunction<LivingEntity> distanceToSqr,
+            Predicate<LivingEntity> canTarget
     ) {
         double playerRange = roamingAfterTargetLoss ? observeReacquireRange : baseRange;
         // Find nearest survival/adventure player (exclude creative & spectator).
@@ -35,14 +37,15 @@ public final class ArchitectTargetingSupport {
                 candidate -> candidate instanceof Player player
                         && player.isAlive()
                         && !player.isCreative()
-                        && !player.isSpectator());
+                        && !player.isSpectator()
+                        && canTarget.test(player));
         if (nearestPlayer != null) {
             return nearestPlayer;
         }
 
         // Fallback: target nearest villager (useful for testing & gameplay).
         AABB queryBox = actor.getBoundingBox().inflate(baseRange);
-        List<Villager> villagers = level.getEntitiesOfClass(Villager.class, queryBox, v -> v.isAlive());
+        List<Villager> villagers = level.getEntitiesOfClass(Villager.class, queryBox, v -> v.isAlive() && canTarget.test(v));
         if (villagers.isEmpty()) {
             return null;
         }

@@ -1,5 +1,9 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.ArchitectWalkGeometry;
+import com.frozendawn.entity.architect.BreakReason;
+
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
@@ -183,17 +187,6 @@ final class ArchitectApproachWalkSupport {
                 && desiredBreak != null
                 && breakTarget.equals(desiredBreak);
 
-        double dxToTarget = target != null ? target.getX() - architect.getX() : 0.0;
-        double dzToTarget = target != null ? target.getZ() - architect.getZ() : 0.0;
-        double horizontalTargetDelta = Math.sqrt(dxToTarget * dxToTarget + dzToTarget * dzToTarget);
-        boolean continuingDropInBreak = target != null
-                && step.type() == DStarLitePathfinder.StepType.SCAFFOLD_BRIDGE
-                && target.getY() < architect.getY() - 1.0
-                && horizontalTargetDelta <= 2.5
-                && breakTarget.getY() == architect.blockPosition().getY() - 1
-                && Math.abs(breakTarget.getX() - architect.blockPosition().getX()) <= 3
-                && Math.abs(breakTarget.getZ() - architect.blockPosition().getZ()) <= 3;
-
         boolean continuingWalkBreak = step.type() == DStarLitePathfinder.StepType.WALK
                 && corridorSupport.shouldContinueWalkObstructionBreak(
                         step,
@@ -201,7 +194,7 @@ final class ArchitectApproachWalkSupport {
                         architect::isBreakableBlock,
                         this::isLastResortBreakBlock);
 
-        if (!continuingBreak && !continuingDropInBreak && !continuingWalkBreak) {
+        if (!continuingBreak && !continuingWalkBreak) {
             blockBreaker.clearTarget();
             if (breakTarget.equals(approachState.ceilingBreachPos)) {
                 approachState.ceilingBreachPos = null;
@@ -243,6 +236,10 @@ final class ArchitectApproachWalkSupport {
         return unstickSupport.handleWalkStuck(stepPos, target, this::isLastResortBreakBlock);
     }
 
+    boolean tryProgressRecovery(LivingEntity target) {
+        return unstickSupport.tryProgressRecovery(target, this::isLastResortBreakBlock);
+    }
+
     void executeVanillaWalkStep(DStarLitePathfinder.NextStep step, @Nullable LivingEntity target) {
         BlockPos startPos = architect.blockPosition();
         BlockPos stepPos = step.pos();
@@ -254,9 +251,9 @@ final class ArchitectApproachWalkSupport {
             handleReverseOnlyWalkCorridor(stepPos, target);
             return;
         }
-        BlockPos corridorBreakTarget = ArchitectWalkBreakPlanner.findCorridorBreakTarget(
-                corridorNodes,
-                architect::isBreakableBlock,
+        BreakChoice corridorBreakTarget = architect.chooseBreak("WALK_CORRIDOR",
+                ArchitectWalkBreakPlanner.corridorChoices(corridorNodes.stream()
+                        .filter(node -> !ArchitectWalkGeometry.canStandOnPartialSurface(architect.level(), node)).toList()),
                 this::isLastResortBreakBlock);
         if (corridorBreakTarget != null) {
             startWalkCorridorBreak(corridorBreakTarget);
@@ -312,6 +309,9 @@ final class ArchitectApproachWalkSupport {
     private void invalidateCommittedWalk(String reason, @Nullable LivingEntity target) {
         if (approachState.committedWalkWaypoint == null) {
             return;
+        }
+        if (!"TTL".equals(reason)) {
+            architect.recordDecision("WALK_INVALIDATED", null, "cause=" + reason);
         }
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[Architect] WALK corridor invalidated: reason={} current={} firstStep={} waypoint={} age={} ttlLeft={} targetSnapshot={} targetNow={}",
@@ -444,8 +444,9 @@ final class ArchitectApproachWalkSupport {
 
         BlockState feetState = architect.level().getBlockState(steeringTarget);
         BlockState headState = architect.level().getBlockState(steeringTarget.above());
-        if (isPathObstructingState(feetState, steeringTarget)
-                || isPathObstructingState(headState, steeringTarget.above())) {
+        if (!ArchitectWalkGeometry.canStandOnPartialSurface(architect.level(), steeringTarget)
+                && (isPathObstructingState(feetState, steeringTarget)
+                || isPathObstructingState(headState, steeringTarget.above()))) {
             invalidateCommittedWalk("BLOCKED", target);
             return false;
         }
@@ -471,16 +472,17 @@ final class ArchitectApproachWalkSupport {
 
     private double walkSurfaceY(BlockPos pos) {
         BlockState state = architect.level().getBlockState(pos);
+        double partial = ArchitectWalkGeometry.partialSurfaceOffset(architect.level(), pos);
+        if (partial > 0) return pos.getY() + partial;
         return pos.getY() + ArchitectBreakPolicy.traversableSurfaceOffset(
                 state, architect.level(), pos);
     }
 
-    private void startWalkCorridorBreak(BlockPos breakTarget) {
+    private void startWalkCorridorBreak(BreakChoice breakTarget) {
         clearWalkNavigationState(true);
         clearCommittedWalk();
         resetWalkStuckTracker();
-        resetUnstickBreakTracker();
-        blockBreaker.setTarget(breakTarget.immutable());
+        blockBreaker.setChoice(breakTarget);
         LOGGER.info("[Architect] WALK corridor requires breach at {}", breakTarget);
         architect.walkToBreakTarget();
     }

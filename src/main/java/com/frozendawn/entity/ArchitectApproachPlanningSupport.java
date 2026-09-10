@@ -2,6 +2,7 @@ package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectApproachRecovery;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -53,6 +54,7 @@ final class ArchitectApproachPlanningSupport {
             approachState.dstar.setSurfaceY(approachState.surfaceY);
             approachState.dstar.initialize(targetPos, architect.blockPosition(), architect.level());
             approachState.dstarPrecomputed = false;
+            architect.resetUnstickBreakTracker();
             approachState.dstar.computePartial(800, architect.level());
         } else {
             approachState.dstar.updateStart(architect.blockPosition());
@@ -80,10 +82,20 @@ final class ArchitectApproachPlanningSupport {
         logPlanDistanceGateReleased(targetDistance);
 
         boolean reinitializedThisTick = false;
-        if (approachState.dstar.needsReinitialize(targetPos)) {
+        boolean outdatedGoal = needsGoalRefresh(targetPos);
+        if (outdatedGoal || approachState.dstar.needsReinitialize(targetPos)) {
+            boolean hadPlan = approachState.dstar.isInitialized();
+            if (outdatedGoal) {
+                architect.recordDecision("RETARGET_PLAN", null, "cause=NEAR_OLD_TARGET");
+            }
             approachState.dstar.setSurfaceY(approachState.surfaceY);
             approachState.dstar.initialize(targetPos, architect.blockPosition(), architect.level());
             approachState.dstar.computePartial(APPROACH_REINIT_COMPUTE_BUDGET, architect.level());
+            if (hadPlan) {
+                ArchitectApproachRecovery.recordReinit(approachState);
+            } else {
+                architect.resetUnstickBreakTracker();
+            }
             reinitializedThisTick = true;
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
@@ -117,6 +129,7 @@ final class ArchitectApproachPlanningSupport {
         // Reinitialize already seeds start to current position, so skip an extra
         // maintenance pass in that same tick to avoid compute spikes.
         if (reinitializedThisTick) {
+            logPlanReady(target);
             return true;
         }
 
@@ -139,6 +152,10 @@ final class ArchitectApproachPlanningSupport {
         return approachState.dstar.getNextStep(architect.blockPosition(), architect.level(), avoidImmediateBacktrack);
     }
 
+    boolean needsGoalRefresh(BlockPos targetPos) {
+        return approachState.dstar.isNearOutdatedGoal(architect.blockPosition(), targetPos);
+    }
+
     private void executePlanningFallbackChase(LivingEntity target) {
         ArchitectApproachMovementSupport.executeFallbackChase(
                 architect,
@@ -156,6 +173,10 @@ final class ArchitectApproachPlanningSupport {
             boolean reinitializedThisTick
     ) {
         planBlockedTicks++;
+        if (!planBlockedActive || !reason.equals(lastPlanBlockedReason)) {
+            architect.recordDecision("PLAN_WAIT", null,
+                    "cause=" + reason + " cells=" + approachState.dstar.getCellCount());
+        }
         boolean shouldLog = !planBlockedActive
                 || !reason.equals(lastPlanBlockedReason)
                 || planBlockedTicks % PLAN_BLOCKED_LOG_INTERVAL_TICKS == 0;
@@ -180,6 +201,7 @@ final class ArchitectApproachPlanningSupport {
         if (!planBlockedActive) {
             return;
         }
+        architect.recordDecision("PLAN_READY", null, "waitTicks=" + planBlockedTicks);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[Architect][DStarDiag] event=APPROACH_PLAN_READY blockedTicks={} cellCount={} searchComplete={} initialized={} targetDistance={} action={} transitionSource={}",
                     planBlockedTicks,
