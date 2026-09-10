@@ -43,22 +43,22 @@ public final class ArchitectBlockEnvironment {
     }
 
     public static boolean isBreakableBlock(Level level, BlockPos pos, Collection<BlockPos> scaffoldIce) {
-        if (scaffoldIce.contains(pos)) {
-            return false; // Don't break our own ice.
-        }
+        return breakRejection(level, pos, scaffoldIce) == null;
+    }
+
+    /** Null means eligible. Ordering matches the production break policy. */
+    @javax.annotation.Nullable
+    public static String breakRejection(Level level, BlockPos pos, Collection<BlockPos> scaffoldIce) {
+        if (scaffoldIce.contains(pos)) return "OWN_SCAFFOLD";
         BlockState state = level.getBlockState(pos);
-        if (state.is(BlockTags.WOODEN_DOORS)) {
-            return false; // Prefer opening wooden doors over mining them.
-        }
-        if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos)) {
-            return false;
-        }
+        if (state.is(BlockTags.WOODEN_DOORS)) return "OPEN_DOOR_INSTEAD";
+        if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos)) return "NOT_OBSTRUCTING";
         float hardness = state.getDestroySpeed(level, pos);
-        return hardness >= 0
-                && hardness < 25.0f
-                && !state.is(ModBlocks.ACHERONITE_BLOCK.get())
-                && !state.is(ModBlocks.TRANSPONDER.get())
-                && !wouldExposeHazard(level, pos);
+        if (hardness < 0) return "UNBREAKABLE";
+        if (hardness >= 25.0f) return "TOO_HARD";
+        if (state.is(ModBlocks.ACHERONITE_BLOCK.get()) || state.is(ModBlocks.TRANSPONDER.get())) return "PROTECTED";
+        if (wouldExposeHazard(level, pos)) return "EXPOSES_HAZARD";
+        return null;
     }
 
     private static void openWoodenDoorAt(LivingEntity actor, BlockPos pos) {

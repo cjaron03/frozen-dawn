@@ -1,4 +1,8 @@
 package com.frozendawn.entity.ai;
+
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.ArchitectWalkGeometry;
+import com.frozendawn.entity.architect.BreakReason;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -49,8 +53,13 @@ public class DStarLitePathfinder {
     private static final int INCREMENTAL_CELL_CRITICAL_CAP = (MAX_INCREMENTAL_CELLS * 9) / 10;
     private static final int OVERSIZE_REBUILD_BUDGET = 160;
     private static final float IMMEDIATE_BACKTRACK_PENALTY = 0.25f;
-    private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
-    private static final int MAX_VERTICAL_FALL_DEPTH = 10;
+    /**
+     * Total drop from the departure feet to the landing surface. Larger drops hurt the Architect.
+     * Three keeps the lab's {@code pit_side_steps} arena honest: at four deep it is the one pit the
+     * planner must refuse, forcing the side staircase. Lab runs disable fall damage, so this limit
+     * is the only thing that stops a direct descent. Every shallower pit stays a direct drop.
+     */
+    public static final int MAX_SAFE_FALL_DISTANCE = 3;
     private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
     private static final float CLIMB_TRANSITION_PENALTY = 8.0f;
     private static final double UNKNOWN_TARGET_DISTANCE = -1.0;
@@ -70,9 +79,12 @@ public class DStarLitePathfinder {
     }
 
     public record NextStep(BlockPos pos, StepType type,
-                           @Nullable BlockPos breakTarget) {
+                           @Nullable BreakChoice breakChoice) {
         public NextStep(BlockPos pos, StepType type) {
             this(pos, type, null);
+        }
+        @Nullable public BlockPos breakTarget() {
+            return breakChoice == null ? null : breakChoice.pos();
         }
     }
 
@@ -421,18 +433,19 @@ public class DStarLitePathfinder {
         StepType type = determineStepType(currentPos, nextPos, level);
 
         if (type == StepType.BREACH) {
-            BlockPos breakTarget = findBreachTarget(currentPos, nextPos, level);
+            BreakChoice breakTarget = findBreachTarget(currentPos, nextPos, level);
             return new NextStep(nextPos, type, breakTarget);
         }
 
         if (type == StepType.DIG_DOWN) {
-            return new NextStep(nextPos, type, nextPos);
+            return new NextStep(nextPos, type, new BreakChoice(nextPos, BreakReason.DIG_DOWN));
         }
 
         return new NextStep(nextPos, type);
     }
 
     private StepType determineStepType(BlockPos from, BlockPos to, Level level) {
+        if (ArchitectWalkGeometry.canWalkPartialTransition(level, from, to)) return StepType.WALK;
         int dy = to.getY() - from.getY();
         int dx = to.getX() - from.getX();
         int dz = to.getZ() - from.getZ();
@@ -447,6 +460,10 @@ public class DStarLitePathfinder {
         boolean headDoor = isWoodenDoor(headState);
         boolean nonDoorBlocked = isNonDoorObstruction(feetState, to, level)
                 || isNonDoorObstruction(headState, to.above(), level);
+
+        if (getStepUpClearanceBreakTarget(from, to, level) != null) {
+            return StepType.BREACH;
+        }
 
         // Vertical moves (same x/z)
         if (dx == 0 && dz == 0) {
@@ -484,6 +501,12 @@ public class DStarLitePathfinder {
             return StepType.WALK;
         }
 
+        // stepDownCost already checked a landing within the safe fall distance.
+        // An open descent is movement, even when the next cell is above the landing.
+        if (dy < 0) {
+            return StepType.WALK;
+        }
+
         // Scaffold bridge: no ground below
         if (!hasStandableSupport(groundPos, level)) {
             return StepType.SCAFFOLD_BRIDGE;
@@ -494,13 +517,15 @@ public class DStarLitePathfinder {
 
     /** Find the first solid block to break at a BREACH position (feet or head). */
     @Nullable
-    private BlockPos findBreachTarget(BlockPos from, BlockPos pos, Level level) {
+    private BreakChoice findBreachTarget(BlockPos from, BlockPos pos, Level level) {
+        BlockPos stepUpBreakTarget = getStepUpClearanceBreakTarget(from, pos, level);
+        if (stepUpBreakTarget != null) return new BreakChoice(stepUpBreakTarget, BreakReason.STEP_UP_CEILING);
         BlockState feetState = level.getBlockState(pos);
-        if (isNonDoorObstruction(feetState, pos, level)) return pos;
+        if (isNonDoorObstruction(feetState, pos, level)) return new BreakChoice(pos, BreakReason.CORRIDOR_NODE);
         BlockState headState = level.getBlockState(pos.above());
-        if (isNonDoorObstruction(headState, pos.above(), level)) return pos.above();
+        if (isNonDoorObstruction(headState, pos.above(), level)) return new BreakChoice(pos.above(), BreakReason.HEAD_CLEARANCE);
         BlockPos stepDownBreakTarget = getStepDownClearanceBreakTarget(from, pos, level);
-        if (stepDownBreakTarget != null) return stepDownBreakTarget;
+        if (stepDownBreakTarget != null) return new BreakChoice(stepDownBreakTarget, BreakReason.STEP_DOWN_CLEARANCE);
         return null;
     }
 
@@ -530,6 +555,16 @@ public class DStarLitePathfinder {
     public boolean needsReinitialize(BlockPos newGoal) {
         if (!initialized) return true;
         return newGoal.distManhattan(goalPos) > 16;
+    }
+
+    /**
+     * The normal goal tolerance is useful while travelling, but not after reaching
+     * the old target. Following its cost map here can circle that abandoned spot.
+     */
+    public boolean isNearOutdatedGoal(BlockPos currentPos, BlockPos newGoal) {
+        return initialized
+                && currentPos.distSqr(goalPos) <= 16.0
+                && newGoal.distSqr(goalPos) > 36.0;
     }
 
     // ========================================
@@ -656,6 +691,12 @@ public class DStarLitePathfinder {
                 }
             }
         }
+        // Step-up edges also depend on the departure ceiling, two cells overhead.
+        // Preserve that dependency when map pressure shrinks the generic seed radius.
+        long departurePacked = pos.below(2).asLong();
+        if (effectiveSeedRadius < 2 && cells.containsKey(departurePacked)) {
+            updateVertex(departurePacked, level);
+        }
         searchComplete = false;
     }
 
@@ -756,6 +797,8 @@ public class DStarLitePathfinder {
         // Must be cardinal horizontal
         if (Math.abs(dx) + Math.abs(dz) != 1) return INF;
 
+        if (ArchitectWalkGeometry.canWalkPartialTransition(level, fromPos, toPos)) return BASE_MOVE_COST;
+
         float cost;
         if (dy == 0) {
             cost = flatMoveCost(tx, ty, tz, level);
@@ -838,6 +881,14 @@ public class DStarLitePathfinder {
 
         float cost = BASE_MOVE_COST * 1.5f;
 
+        BlockPos departureCeiling = getStepUpClearanceBreakTarget(
+                new BlockPos(fx, fy, fz), new BlockPos(tx, ty, tz), level);
+        if (departureCeiling != null) {
+            float bc = breachCost(level.getBlockState(departureCeiling), departureCeiling, level);
+            if (bc >= INF) return INF;
+            cost += bc;
+        }
+
         BlockPos toPos = new BlockPos(tx, ty, tz);
         if (hasHazardAtOrAbove(toPos, level)) return INF;
         BlockState feetState = level.getBlockState(toPos);
@@ -896,7 +947,7 @@ public class DStarLitePathfinder {
         if (!hasStandableSupport(toPos.below(), level)) {
             if (isDangerousBelow(toPos, level)) return INF;
             // Check for ground within safe fall distance
-            for (int dy = 2; dy <= MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH; dy++) {
+            for (int dy = 2; dy <= MAX_SAFE_FALL_DISTANCE; dy++) {
                 BlockPos belowPos = toPos.below(dy);
                 BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;
@@ -961,7 +1012,7 @@ public class DStarLitePathfinder {
             BlockState ground = level.getBlockState(groundPos);
             if (isHazardous(ground)) return INF;
             if (hasStandableSupport(groundPos, level)) return BASE_MOVE_COST;
-            for (int dy = 2; dy <= MAX_VERTICAL_FALL_DEPTH; dy++) {
+            for (int dy = 2; dy <= MAX_SAFE_FALL_DISTANCE; dy++) {
                 BlockPos belowPos = toPos.below(dy);
                 BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;
@@ -995,6 +1046,16 @@ public class DStarLitePathfinder {
         float breakTime = ArchitectBlockBreaker.getEffectiveBreakTime(state, pos, level);
         float baseCost = breakTime * BREACH_MULTIPLIER;
         return ArchitectBreakPolicy.applyLastResortPenalty(state, baseCost);
+    }
+
+    @Nullable
+    private BlockPos getStepUpClearanceBreakTarget(BlockPos from, BlockPos to, Level level) {
+        if (to.getY() != from.getY() + 1
+                || Math.abs(to.getX() - from.getX()) + Math.abs(to.getZ() - from.getZ()) != 1) {
+            return null;
+        }
+        BlockPos ceiling = from.above(2);
+        return isNonDoorObstruction(level.getBlockState(ceiling), ceiling, level) ? ceiling : null;
     }
 
     @Nullable

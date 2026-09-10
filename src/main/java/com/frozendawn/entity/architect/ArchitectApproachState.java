@@ -6,7 +6,10 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Server-authoritative mutable state used only by the Architect's approach and path orchestration.
@@ -31,8 +34,17 @@ public final class ArchitectApproachState {
     @Nullable public BlockPos pendingWalkBacktrackPos;
     @Nullable public BlockPos lastCompletedWalkWaypointPos;
     @Nullable public BlockPos lastCompletedWalkBacktrackPos;
-    @Nullable public BlockPos lastUnstickBreakCandidate;
-    public int repeatedUnstickBreakAttempts;
+    /**
+     * Exact positions of unsuccessful break attempts in this local plan. Saturates rather
+     * than evicting old failures: rotating candidates must not reopen a failed position.
+     */
+    public final Set<BlockPos> blockedUnstickBreakCandidates = new LinkedHashSet<>();
+    public int unstickReinitAttempts;
+    @Nullable public UUID approachProgressTarget;
+    @Nullable public Vec3 approachProgressAnchor;
+    public int approachNoProgressTicks;
+    @Nullable public UUID abandonedApproachTarget;
+    public int approachRetryAfterTick;
     public int committedWalkTicks;
     public int committedWalkAgeTicks;
     public int committedWalkNoProgressTicks;

@@ -65,7 +65,6 @@ public final class ArchitectWalkTracking {
     }
 
     public static void resetUnstickBreakTracker(ArchitectApproachState approachState) {
-        approachState.lastUnstickBreakCandidate = null;
-        approachState.repeatedUnstickBreakAttempts = 0;
+        approachState.blockedUnstickBreakCandidates.clear();
     }
 }

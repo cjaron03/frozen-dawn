@@ -39,7 +39,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     private final MasterArchitectAdornmentLayer masterAdornmentLayer;
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
-        super(context, new ArchitectModel(context.bakeLayer(ModelLayers.ZOMBIE)), 0.5f);
+        super(context, new ArchitectModel(context.bakeLayer(ArchitectModel.LAYER_LOCATION)), 0.5f);
         this.addLayer(new HumanoidArmorLayer<>(
                 this,
                 new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),

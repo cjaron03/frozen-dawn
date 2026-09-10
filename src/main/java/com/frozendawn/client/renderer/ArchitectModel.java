@@ -1,6 +1,16 @@
 package com.frozendawn.client.renderer;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
 import com.frozendawn.entity.MasterArchitectCombatAction;
 import com.frozendawn.homo.MasterArchitectCombatPolicy;
 import com.frozendawn.homo.MasterArchitectFloodPolicy;
@@ -15,17 +25,48 @@ import net.minecraft.util.Mth;
  * Stiff arms only when observing (stalking).
  */
 public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
+            ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "architect"), "main");
+    private final ModelPart thinkingUpperArm;
+    private final ModelPart thinkingForearm;
+
     private static final float MASTER_WAND_HOLD_X = -0.42F;
     private static final float MASTER_WAND_HOLD_Y = -0.08F;
     private static final float MASTER_WAND_HOLD_Z = 0.07F;
 
     public ArchitectModel(ModelPart root) {
         super(root);
+        thinkingUpperArm = this.leftArm.getChild("thinking_upper_arm");
+        thinkingForearm = thinkingUpperArm.getChild("thinking_forearm");
+    }
+
+    public static LayerDefinition createBodyLayer() {
+        // Match ModelLayers.ZOMBIE's 64x64 layout and the Architect skin dimensions.
+        MeshDefinition mesh = HumanoidModel.createMesh(CubeDeformation.NONE, 0.0F);
+        PartDefinition arm = mesh.getRoot().getChild("left_arm");
+        PartDefinition upper = arm.addOrReplaceChild("thinking_upper_arm",
+                CubeListBuilder.create().texOffs(40, 16).mirror()
+                        .addBox(-1.0F, -2.0F, -2.0F, 4.0F, 6.0F, 4.0F), PartPose.ZERO);
+        upper.addOrReplaceChild("thinking_forearm",
+                CubeListBuilder.create().texOffs(40, 22).mirror()
+                        .addBox(-1.0F, 0.0F, -2.0F, 4.0F, 6.0F, 4.0F),
+                PartPose.offset(0.0F, 4.0F, 0.0F));
+        return LayerDefinition.create(mesh, 64, 64);
     }
 
     @Override
     public void setupAnim(ArchitectEntity entity, float limbSwing, float limbSwingAmount,
                            float ageInTicks, float netHeadYaw, float headPitch) {
+        // Model instances are shared by all rendered Architects. Clear the optional rig
+        // before every entity, including mining and all Master early returns.
+        this.leftArm.skipDraw = false;
+        this.thinkingUpperArm.visible = false;
+        this.thinkingForearm.xRot = 0.0F;
+        this.thinkingForearm.yRot = 0.0F;
+        this.thinkingForearm.zRot = 0.0F;
+        this.head.zRot = 0.0F;
+        this.body.xRot = 0.0F;
+        this.body.zRot = 0.0F;
         // super.setupAnim handles player-like walk animation (arm + leg swing)
         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.setAllVisible(true);
@@ -89,6 +130,11 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             this.rightArm.xRot -= 0.15f;
             this.leftArm.xRot -= 0.15f;
 
+            if (!entity.hasQueuedScaffoldStep() && entity.isAlive()
+                    && !entity.isNoAi() && entity.getDeathTicks() == 0) {
+                applyThinkingPose(entity, ageInTicks - entity.tickCount);
+            }
+
             if (entity.hasQueuedScaffoldStep()) {
                 this.rightArm.xRot = -0.95f;
                 this.leftArm.xRot = -0.55f;
@@ -116,6 +162,32 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.yRot = 0.20f;
             }
         }
+    }
+
+    private void applyThinkingPose(ArchitectEntity entity, float partialTick) {
+        float tilt = smooth(entity.getThinkingTilt(partialTick));
+        float hand = entity.getOffhandItem().isEmpty()
+                && entity.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                ? smooth(entity.getThinkingHand(partialTick)) : 0.0F;
+        this.head.zRot = -0.15F * tilt;
+        this.head.xRot += 0.035F * tilt;
+        this.body.xRot = 0.025F * tilt;
+        this.body.zRot = 0.015F * tilt;
+        if (hand > 0.0F) {
+            // A bent elbow brings the empty left hand toward the chin. Keep the tool arm free.
+            this.leftArm.skipDraw = true;
+            this.thinkingUpperArm.visible = true;
+            this.leftArm.xRot = Mth.lerp(hand, this.leftArm.xRot, -0.65F);
+            this.leftArm.yRot = Mth.lerp(hand, this.leftArm.yRot, 0.20F);
+            this.leftArm.zRot = Mth.lerp(hand, this.leftArm.zRot, 0.35F);
+            this.thinkingForearm.xRot = -1.85F * hand;
+            this.thinkingForearm.yRot = 0.55F * hand;
+        }
+    }
+
+    private static float smooth(float value) {
+        float t = Mth.clamp(value, 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
     }
 
     private void applyMasterCombatPose(int action, int actionTicks, float ageInTicks) {

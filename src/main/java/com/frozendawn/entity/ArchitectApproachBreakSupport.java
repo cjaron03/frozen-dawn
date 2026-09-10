@@ -1,5 +1,8 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.architect.ArchitectApproachState;
 import com.frozendawn.entity.architect.ArchitectBreachPlanner;
@@ -54,9 +57,42 @@ final class ArchitectApproachBreakSupport {
         architect.clearWalkNavigationState(true);
         architect.clearCommittedWalk();
         architect.resetWalkStuckTracker();
-        blockBreaker.setTarget(wallBlock);
+        blockBreaker.setChoice(new BreakChoice(wallBlock, BreakReason.CONTACT_BREACH));
         LOGGER.info("[Architect] CONTACT BREACH at {} toward enclosed target", wallBlock);
         architect.walkToBreakTarget();
+        return true;
+    }
+
+    /** A reachable walking route can make a previously valid breach obsolete. */
+    static boolean cancelBreakForOpenRoute(ArchitectEntity architect, ArchitectApproachState state,
+            ArchitectBlockBreaker breaker, LivingEntity target) {
+        // Bound path searches while retaining an opportunity to cancel before a block breaks.
+        if (!breaker.hasTarget() || (architect.tickCount % 5 != 0 && !breaker.willFinishNextTick())
+                || architect.horizontalDistanceTo(target) > 8.0
+                || architect.verticalDistanceTo(target) > 6.0) {
+            return false;
+        }
+        var navigation = architect.getNavigation();
+        navigation.stop(); // Force a fresh route; a cached path may predate the terrain change.
+        var path = navigation.createPath(target, 0);
+        if (path == null || !path.canReach() || path.getEndNode() == null
+                || !path.getEndNode().asBlockPos().equals(target.blockPosition())
+                || !ArchitectApproachMovementSupport.isSafeWalkingPath(architect, path)) {
+            return false;
+        }
+        architect.recordDecision("BREAK_CANCEL", breaker.getChoice(), "OPEN_ROUTE nodes=" + path.getNodeCount());
+        breaker.clearTarget();
+        state.ceilingBreachPos = null;
+        architect.clearCommittedWalk();
+        architect.resetWalkStuckTracker();
+        // setBlock callers need not emit a Forge placement/break event. Rebuild from
+        // current terrain so the old plan cannot immediately select the same breach.
+        state.dstar.setSurfaceY(state.surfaceY);
+        state.dstar.initialize(target.blockPosition(), architect.blockPosition(), architect.level());
+        state.dstarPrecomputed = false;
+        architect.recordDecision("REINIT", null, "OPEN_ROUTE_AFTER_BREAK_CANCEL");
+        navigation.moveTo(path, 1.0);
+        architect.getLookControl().setLookAt(target, 30f, 30f);
         return true;
     }
 
@@ -84,8 +120,6 @@ final class ArchitectApproachBreakSupport {
                     breakTarget.getZ() + 0.5);
             boolean broke = blockBreaker.tick();
             if (broke) {
-                architect.resetUnstickBreakTracker();
-
                 // Ceiling breach drop-through: teleport into the new opening.
                 if (approachState.ceilingBreachPos != null && breakTarget.equals(approachState.ceilingBreachPos)) {
                     architect.teleportTo(
@@ -128,7 +162,7 @@ final class ArchitectApproachBreakSupport {
                 if (above.getY() <= architect.blockPosition().getY() + 1
                         && architect.isBreakableBlock(above)
                         && architect.shouldContinueApproachBreak(target, above)) {
-                    blockBreaker.setTarget(above);
+                    blockBreaker.setChoice(new BreakChoice(above, BreakReason.HEAD_CLEARANCE));
                     LOGGER.info("[Architect] Chaining headroom break at {}", above);
                     return true;
                 }
@@ -169,7 +203,7 @@ final class ArchitectApproachBreakSupport {
                 wallBlock.getZ() + 0.5);
 
         if (blockDist <= 4.5 * 4.5) {
-            blockBreaker.setTarget(wallBlock);
+            blockBreaker.setChoice(new BreakChoice(wallBlock, BreakReason.LAST_RESORT));
             approachState.lastFallbackBreakPos = wallBlock.immutable();
             approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
             return;
@@ -183,19 +217,6 @@ final class ArchitectApproachBreakSupport {
         architect.setPathRecalcCooldown(5);
         approachState.lastFallbackBreakPos = wallBlock.immutable();
         approachState.fallbackBreakCooldown = FALLBACK_BREAK_COOLDOWN_TICKS;
-    }
-
-    @Nullable
-    static BlockPos findDropInBreakTarget(
-            ArchitectEntity architect,
-            @Nullable LivingEntity target,
-            BlockPos stepPos
-    ) {
-        return ArchitectBreachPlanner.findDropInBreakTarget(
-                architect,
-                target,
-                stepPos,
-                architect::isBreakableBlock);
     }
 
     @Nullable

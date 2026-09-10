@@ -19,31 +19,6 @@ public final class ArchitectBreachPlanner {
     }
 
     @Nullable
-    public static BlockPos findDropInBreakTarget(
-            LivingEntity actor,
-            @Nullable LivingEntity target,
-            BlockPos stepPos,
-            Predicate<BlockPos> isBreakableBlock
-    ) {
-        BlockPos below = actor.blockPosition().below();
-        if (isBreakableBlock.test(below)) {
-            return below;
-        }
-
-        BlockPos stepBelow = stepPos.below();
-        if (isBreakableBlock.test(stepBelow)) {
-            return stepBelow;
-        }
-
-        BlockPos fallback = findBreakableWallBlock(actor, target, isBreakableBlock);
-        if (fallback != null && fallback.getY() == actor.blockPosition().getY() - 1) {
-            return fallback;
-        }
-
-        return null;
-    }
-
-    @Nullable
     public static BlockPos findBreakableWallBlock(
             LivingEntity actor,
             @Nullable LivingEntity target,

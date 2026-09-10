@@ -258,6 +258,9 @@ public class ClientEvents {
     public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         CuriosClientCompat.registerLayerDefinitions(event);
         event.registerLayerDefinition(
+                com.frozendawn.client.renderer.ArchitectModel.LAYER_LOCATION,
+                com.frozendawn.client.renderer.ArchitectModel::createBodyLayer);
+        event.registerLayerDefinition(
                 MasterArchitectAdornmentModel.LAYER_LOCATION,
                 MasterArchitectAdornmentModel::createBodyLayer);
         event.registerLayerDefinition(RocketLaunchModel.LAYER_LOCATION, RocketLaunchModel::createBodyLayer);
