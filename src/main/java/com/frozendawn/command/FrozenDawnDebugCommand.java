@@ -14,7 +14,7 @@ import java.util.Locale;
 /** Composes the operator surface without duplicating any gameplay authority. */
 final class FrozenDawnDebugCommand {
     static final List<String> HELP_CATEGORIES = List.of(
-            "world", "hearth", "heart", "postmaeve", "aggregate", "suit", "lore");
+            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "suit", "lore");
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
@@ -44,6 +44,7 @@ final class FrozenDawnDebugCommand {
                 .then(requiredChild(legacyHearth, "heart"))
                 .then(postMaeve)
                 .then(AggregateCommand.commands())
+                .then(ArchitectDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(requiredChild(legacyHearth, "lore"));
     }
@@ -73,6 +74,16 @@ final class FrozenDawnDebugCommand {
                     "/fd aggregate status [verbose] | pressure | stage | spawn | trait",
                     "/fd aggregate stillpoint ...",
                     "/fd aggregate resolve confirm | reset confirm");
+            case "architect" -> List.of(
+                    "/fd architect lab setup|reset|run|dump|inspect",
+                    "/fd architect lab scenario <name> | target static|live | seed <seed>",
+                    "/fd architect list (every loaded Architect; use selectors or UUIDs)",
+                    "/fd architect inspect|dump|stop <entity>",
+                    "/fd architect record <entity> [seed] (starts a fresh journal)",
+                    "/fd architect mark <entity> <label>",
+                    "/fd architect approach <entity> <target> (forces a live approach run)",
+                    "/fd architect reset <entity> (clears planner and recovery state)",
+                    "Lab worlds: /function frozendawn:lab/help");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",
                     "/fd suit hearthrot status [verbose] | infect | set-stage ...");
@@ -81,7 +92,7 @@ final class FrozenDawnDebugCommand {
                     "/fd lore reset-player <player> confirm",
                     "/fd lore reset-world-semantic confirm");
             case "debug" -> List.of(
-                    "/fd <world|hearth|heart|postmaeve|aggregate|suit|lore> ...",
+                    "/fd <world|hearth|heart|postmaeve|aggregate|architect|suit|lore> ...",
                     "Destructive reset, purge, resolve, and completion actions require 'confirm'.",
                     "Use /frozendawn help <category> for focused examples.");
             default -> {

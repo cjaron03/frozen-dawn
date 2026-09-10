@@ -53,8 +53,13 @@ public class DStarLitePathfinder {
     private static final int INCREMENTAL_CELL_CRITICAL_CAP = (MAX_INCREMENTAL_CELLS * 9) / 10;
     private static final int OVERSIZE_REBUILD_BUDGET = 160;
     private static final float IMMEDIATE_BACKTRACK_PENALTY = 0.25f;
-    private static final int MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH = 6;
-    private static final int MAX_VERTICAL_FALL_DEPTH = 10;
+    /**
+     * Total drop from the departure feet to the landing surface. Larger drops hurt the Architect.
+     * Three keeps the lab's {@code pit_side_steps} arena honest: at four deep it is the one pit the
+     * planner must refuse, forcing the side staircase. Lab runs disable fall damage, so this limit
+     * is the only thing that stops a direct descent. Every shallower pit stays a direct drop.
+     */
+    public static final int MAX_SAFE_FALL_DISTANCE = 3;
     private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
     private static final float CLIMB_TRANSITION_PENALTY = 8.0f;
     private static final double UNKNOWN_TARGET_DISTANCE = -1.0;
@@ -942,7 +947,7 @@ public class DStarLitePathfinder {
         if (!hasStandableSupport(toPos.below(), level)) {
             if (isDangerousBelow(toPos, level)) return INF;
             // Check for ground within safe fall distance
-            for (int dy = 2; dy <= MAX_HORIZONTAL_STEPDOWN_FALL_DEPTH; dy++) {
+            for (int dy = 2; dy <= MAX_SAFE_FALL_DISTANCE; dy++) {
                 BlockPos belowPos = toPos.below(dy);
                 BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;
@@ -1007,7 +1012,7 @@ public class DStarLitePathfinder {
             BlockState ground = level.getBlockState(groundPos);
             if (isHazardous(ground)) return INF;
             if (hasStandableSupport(groundPos, level)) return BASE_MOVE_COST;
-            for (int dy = 2; dy <= MAX_VERTICAL_FALL_DEPTH; dy++) {
+            for (int dy = 2; dy <= MAX_SAFE_FALL_DISTANCE; dy++) {
                 BlockPos belowPos = toPos.below(dy);
                 BlockState below = level.getBlockState(belowPos);
                 if (isHazardous(below)) return INF;

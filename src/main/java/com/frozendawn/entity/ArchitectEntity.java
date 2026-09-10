@@ -192,7 +192,6 @@ public class ArchitectEntity extends Monster {
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
-    private static final int MAX_SAFE_FALL_DISTANCE = 10;
 
     // --- Burst Damage Tracking ---
     /** Damage taken in the last BURST_WINDOW ticks. Used to boost retreat scoring. */
@@ -308,9 +307,16 @@ public class ArchitectEntity extends Monster {
         return navigation;
     }
 
+    /**
+     * Kept in lockstep with the planner's fall limit. APPROACH reads this too: vanilla
+     * {@code createPath} uses it to build open-descent routes, and
+     * {@link ArchitectApproachMovementSupport#isSafeWalkingPath} gates each step against it.
+     * Raising it here lets the Architect drop into pits the planner would refuse -- verify
+     * with the {@code pit_side_steps} lab scenario before changing it.
+     */
     @Override
     public int getMaxFallDistance() {
-        return MAX_SAFE_FALL_DISTANCE;
+        return DStarLitePathfinder.MAX_SAFE_FALL_DISTANCE;
     }
 
     @Override

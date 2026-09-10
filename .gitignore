@@ -40,3 +40,6 @@ CLAUDE.local.md
 
 # Nested git worktrees
 .worktrees/
+
+# Disposable Architect test client
+run-lab/
