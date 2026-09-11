@@ -38,6 +38,9 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
 def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
+// Second dev client for multiplayer testing. Its own game directory: two JVMs sharing
+// run/ fight over the session lock and latest.log.
+def client2RunDirectory = layout.projectDirectory.dir('run2')
 
 // Minecraft GameTests live in their own source set: they stay out of the published jar
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
@@ -72,6 +75,17 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006'
+            if (enableEnhancedClassRedefinition) {
+                jvmArgument '-XX:+AllowEnhancedClassRedefinition'
+            }
+        }
+
+        client2 {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
+            programArguments.addAll '--username', 'Dev2'
+            gameDirectory = client2RunDirectory
             if (enableEnhancedClassRedefinition) {
                 jvmArgument '-XX:+AllowEnhancedClassRedefinition'
             }
