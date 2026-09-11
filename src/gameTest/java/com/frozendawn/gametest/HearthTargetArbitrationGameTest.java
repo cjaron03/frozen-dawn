@@ -284,7 +284,8 @@ public class HearthTargetArbitrationGameTest {
      * wins the commitment before this test has placed any of its own players, and the control
      * phase below simply times out reporting that its player was never assessed — which is true
      * but says nothing about the code under test. Catching it here turns 130 confusing ticks into
-     * one actionable message. Spectators are excluded because the controller excludes them too.
+     * one actionable message. Creative and spectator players are skipped because the controller
+     * skips them too, which is also why either mode is a valid way to get out of the way.
      */
     private static void assertNoRealPlayerInWatchRange(GameTestHelper helper, ServerLevel level,
                                                        Vec3 anchor) {
@@ -292,7 +293,7 @@ public class HearthTargetArbitrationGameTest {
                 * HearthPopulationPolicy.WATCH_DISTANCE;
         ServerPlayer intruder = null;
         for (ServerPlayer player : level.players()) {
-            if (player instanceof FakePlayer || player.isSpectator()) {
+            if (player instanceof FakePlayer || player.isCreative() || player.isSpectator()) {
                 continue;
             }
             if (player.position().distanceToSqr(anchor) <= watchRangeSquared) {
@@ -305,8 +306,9 @@ public class HearthTargetArbitrationGameTest {
                         + HearthPopulationPolicy.WATCH_DISTANCE + "-block watch radius. The"
                         + " resident controller commits to one assessment target and holds it, so"
                         + " that player wins the commitment and this test's own players are never"
-                        + " assessed. Move away from the test structure or run"
-                        + " /gamemode spectator, then run the test again. | intruder="
+                        + " assessed. Move away from the test structure, or run"
+                        + " /gamemode creative or /gamemode spectator, then run the test again."
+                        + " | intruder="
                         + (intruder == null ? "none" : intruder.getGameProfile().getName())
                         + " distance=" + (intruder == null ? -1L
                                 : Math.round(Math.sqrt(intruder.position().distanceToSqr(anchor))))

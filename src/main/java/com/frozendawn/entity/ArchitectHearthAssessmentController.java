@@ -166,10 +166,19 @@ final class ArchitectHearthAssessmentController {
                 .orElse(null);
     }
 
+    /**
+     * The player this Architect is assessing, or null when nobody qualifies.
+     *
+     * <p>Creative players are excluded for the same reason {@link #findHostileTarget}
+     * excludes them: they are not participants. Creative also means no armor, which
+     * wins {@link HearthTargetPolicy#BY_VULNERABILITY} outright, so an admin or builder
+     * standing near a Hearth would take the commitment and hold it while every survival
+     * player in range went unassessed.
+     */
     @Nullable
     private ServerPlayer mostVulnerablePlayer(ServerLevel level) {
         List<ServerPlayer> inRange = level.players().stream()
-                .filter(player -> player.isAlive() && !player.isSpectator())
+                .filter(player -> player.isAlive() && !player.isCreative() && !player.isSpectator())
                 .filter(player -> architect.distanceToSqr(player)
                         <= (double) HearthArchitectPolicy.WATCH_DISTANCE
                         * HearthArchitectPolicy.WATCH_DISTANCE)
@@ -195,14 +204,19 @@ final class ArchitectHearthAssessmentController {
 
     /**
      * Every player still assessable anywhere on the server. A committed target
-     * missing from this set has died or logged out and is forgotten; one that is
-     * present but out of range is only suspended.
+     * missing from this set has died, logged out or switched to creative and is
+     * forgotten; one that is present but out of range is only suspended.
+     *
+     * <p>Creative is a forget rather than a suspend on purpose. A bookmark lets its
+     * owner reclaim the commitment the instant it returns, without being re-scored
+     * against whoever the Architect picked up meanwhile. Someone who toggled into
+     * creative and back should not jump that queue.
      */
     private static Set<UUID> assessablePlayerIds(ServerLevel level) {
         Set<UUID> ids = new HashSet<>();
         for (ServerLevel dimension : level.getServer().getAllLevels()) {
             for (ServerPlayer player : dimension.players()) {
-                if (player.isAlive() && !player.isSpectator()) {
+                if (player.isAlive() && !player.isCreative() && !player.isSpectator()) {
                     ids.add(player.getUUID());
                 }
             }
