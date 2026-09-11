@@ -62,6 +62,17 @@ final class ArchitectAssessmentCommitment {
         return pick == null ? null : commitTo(pick.id());
     }
 
+    /**
+     * Hard-commits to one target, bypassing vulnerability scoring entirely.
+     *
+     * <p>Used for retaliation: whoever just hit the Architect becomes the
+     * commitment outright, rather than being thrown back into the pool and
+     * scored against everyone else in range.
+     */
+    void commitToTarget(UUID id) {
+        commitTo(id);
+    }
+
     /** Drops the commitment and the bookmark outright, as on taking damage. */
     void release() {
         committedId = null;

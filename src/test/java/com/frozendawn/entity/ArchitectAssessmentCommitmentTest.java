@@ -167,4 +167,44 @@ class ArchitectAssessmentCommitmentTest {
         assertNull(commitment.suspendedId());
         assertEquals(0, commitment.ticks());
     }
+
+    @Test
+    void retaliationTakesTheCommitmentFromAWeakerBystander() {
+        ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
+        assertEquals(ALICE, commitment.resolve(List.of(
+                new Candidate(ALICE, LEATHER, 100.0D),
+                new Candidate(BOB, IRON, 100.0D)), EVERYONE));
+
+        commitment.commitToTarget(BOB);
+
+        assertEquals(BOB, commitment.committedId());
+    }
+
+    @Test
+    void aRetaliationCommitmentSurvivesLaterTicks() {
+        ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
+        commitment.commitToTarget(BOB);
+        for (int tick = 0; tick < 120; tick++) {
+            assertEquals(BOB, commitment.resolve(List.of(
+                    new Candidate(ALICE, IRON, 100.0D),
+                    new Candidate(BOB, IRON, 400.0D)), EVERYONE),
+                    "retaliation commitment lost on tick " + tick);
+        }
+    }
+
+    @Test
+    void retaliationClearsAnExistingBookmarkForTheSamePlayer() {
+        ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
+        assertEquals(BOB, commitment.resolve(List.of(
+                new Candidate(BOB, LEATHER, 100.0D)), EVERYONE));
+        // Bob leaves the radius, so he is only bookmarked.
+        assertEquals(ALICE, commitment.resolve(List.of(
+                new Candidate(ALICE, IRON, 100.0D)), EVERYONE));
+        assertEquals(BOB, commitment.suspendedId());
+
+        commitment.commitToTarget(BOB);
+
+        assertEquals(BOB, commitment.committedId());
+        assertNull(commitment.suspendedId());
+    }
 }

@@ -28,6 +28,7 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthTargetPolicy.Candidate;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -210,6 +211,8 @@ public class ArchitectEntity extends Monster {
             new ArchitectHearthResidentController(this);
     private final ArchitectHearthMasterController hearthMasterController =
             new ArchitectHearthMasterController(this);
+    private final ArchitectAssessmentCommitment roamingCommitment =
+            new ArchitectAssessmentCommitment();
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -1407,6 +1410,83 @@ public class ArchitectEntity extends Monster {
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
             return hearthMasterController.findHostileTarget(serverLevel);
         }
+        if (level() instanceof ServerLevel serverLevel) {
+            return findRoamingTarget(serverLevel);
+        }
+        return villagerFallback();
+    }
+
+    /**
+     * Target selection for the ordinary roaming Architect.
+     *
+     * <p>Distance changes every tick, so picking the nearest player each tick
+     * makes the Architect swap which player it is stalking mid-observe — the
+     * approach destination jitters and the remembered player position
+     * ping-pongs. This commits to one player instead, and picks the weakest
+     * rather than the nearest, so a naturally spawned Architect walks past the
+     * armored player to stalk the unarmored one and then stays on them.
+     */
+    @Nullable
+    private LivingEntity findRoamingTarget(ServerLevel serverLevel) {
+        double range = brainState.isRoamingAfterTargetLoss()
+                ? OBSERVE_REACQUIRE_RANGE
+                : getDetectionRange();
+        double rangeSquared = range * range;
+
+        // Retaliation outranks scoring: whoever just hit us takes the commitment.
+        if (getLastHurtByMob() instanceof Player attacker
+                && isRoamingCandidate(attacker)
+                && distanceToSqr(attacker) <= rangeSquared) {
+            roamingCommitment.commitToTarget(attacker.getUUID());
+            return attacker;
+        }
+
+        List<ServerPlayer> inRange = new ArrayList<>();
+        List<Candidate> candidates = new ArrayList<>();
+        for (ServerPlayer player : serverLevel.players()) {
+            if (isRoamingCandidate(player) && distanceToSqr(player) <= rangeSquared) {
+                inRange.add(player);
+                candidates.add(new Candidate(player.getUUID(), player.getArmorValue(),
+                        distanceToSqr(player)));
+            }
+        }
+        UUID targetId = roamingCommitment.resolve(
+                candidates, onlineRoamingPlayerIds(serverLevel));
+        if (targetId != null) {
+            for (ServerPlayer player : inRange) {
+                if (player.getUUID().equals(targetId)) {
+                    return player;
+                }
+            }
+        }
+        return villagerFallback();
+    }
+
+    private static boolean isRoamingCandidate(Player player) {
+        return player.isAlive() && !player.isCreative() && !player.isSpectator();
+    }
+
+    /**
+     * Every player the roaming Architect could still stalk, in or out of range.
+     * A committed target missing from this set has died, logged out or switched
+     * to creative and is forgotten; one that is merely out of range is kept as a
+     * bookmark and reclaims the commitment when it comes back.
+     */
+    private static Set<UUID> onlineRoamingPlayerIds(ServerLevel level) {
+        Set<UUID> ids = new HashSet<>();
+        for (ServerLevel dimension : level.getServer().getAllLevels()) {
+            for (ServerPlayer player : dimension.players()) {
+                if (isRoamingCandidate(player)) {
+                    ids.add(player.getUUID());
+                }
+            }
+        }
+        return ids;
+    }
+
+    /** No player in range: fall back to the nearest villager, as before. */
+    @Nullable
+    private LivingEntity villagerFallback() {
         return ArchitectTargetingSupport.findTarget(
                 level(),
                 this,
