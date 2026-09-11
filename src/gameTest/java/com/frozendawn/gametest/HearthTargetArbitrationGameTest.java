@@ -118,6 +118,7 @@ public class HearthTargetArbitrationGameTest {
 
         BlockPos home = helper.absolutePos(new BlockPos(ARCHITECT_X, STAND_Y, ARCHITECT_Z));
         Vec3 anchor = new Vec3(home.getX() + 0.5D, home.getY(), home.getZ() + 0.5D);
+        assertNoRealPlayerInWatchRange(helper, level, anchor);
 
         ArchitectEntity architect = helper.spawn(
                 ModEntities.ARCHITECT.get(), new BlockPos(ARCHITECT_X, STAND_Y, ARCHITECT_Z));
@@ -272,6 +273,44 @@ public class HearthTargetArbitrationGameTest {
                 "no major hearth record exists, so the Architect has nothing to record an"
                         + " assessment against");
         return hearth;
+    }
+
+    /**
+     * Fails up front when a real player is close enough to steal the Architect's attention.
+     *
+     * <p>This test runs in a live client as well as headless, and the resident controller commits
+     * to a single assessment target and deliberately refuses to flip to a closer one. A developer
+     * standing inside {@link HearthPopulationPolicy#WATCH_DISTANCE} of the structure therefore
+     * wins the commitment before this test has placed any of its own players, and the control
+     * phase below simply times out reporting that its player was never assessed — which is true
+     * but says nothing about the code under test. Catching it here turns 130 confusing ticks into
+     * one actionable message. Spectators are excluded because the controller excludes them too.
+     */
+    private static void assertNoRealPlayerInWatchRange(GameTestHelper helper, ServerLevel level,
+                                                       Vec3 anchor) {
+        double watchRangeSquared = (double) HearthPopulationPolicy.WATCH_DISTANCE
+                * HearthPopulationPolicy.WATCH_DISTANCE;
+        ServerPlayer intruder = null;
+        for (ServerPlayer player : level.players()) {
+            if (player instanceof FakePlayer || player.isSpectator()) {
+                continue;
+            }
+            if (player.position().distanceToSqr(anchor) <= watchRangeSquared) {
+                intruder = player;
+                break;
+            }
+        }
+        helper.assertTrue(intruder == null,
+                "a real player is standing inside the Architect's "
+                        + HearthPopulationPolicy.WATCH_DISTANCE + "-block watch radius. The"
+                        + " resident controller commits to one assessment target and holds it, so"
+                        + " that player wins the commitment and this test's own players are never"
+                        + " assessed. Move away from the test structure or run"
+                        + " /gamemode spectator, then run the test again. | intruder="
+                        + (intruder == null ? "none" : intruder.getGameProfile().getName())
+                        + " distance=" + (intruder == null ? -1L
+                                : Math.round(Math.sqrt(intruder.position().distanceToSqr(anchor))))
+                        + " anchor=" + anchor);
     }
 
     /**
