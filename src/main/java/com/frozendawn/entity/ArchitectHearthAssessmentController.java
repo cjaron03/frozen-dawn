@@ -2,8 +2,10 @@ package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.entity.architect.ArchitectTargetingSupport;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthTargetPolicy;
@@ -20,9 +22,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -178,19 +178,25 @@ final class ArchitectHearthAssessmentController {
     @Nullable
     private ServerPlayer mostVulnerablePlayer(ServerLevel level) {
         List<ServerPlayer> inRange = level.players().stream()
-                .filter(player -> player.isAlive() && !player.isCreative() && !player.isSpectator())
+                .filter(ArchitectTargetingSupport::isTargetablePlayer)
                 .filter(player -> architect.distanceToSqr(player)
                         <= (double) HearthArchitectPolicy.WATCH_DISTANCE
                         * HearthArchitectPolicy.WATCH_DISTANCE)
                 .toList();
+        UUID hearthId = architect.getHearthAssessorId().orElse(null);
+        UUID architectId = architect.getUUID();
+        List<ServerPlayer> claimable = HearthAssessmentClaimManager.filterClaimed(
+                level.getGameTime(), hearthId, architectId, inRange, ServerPlayer::getUUID);
         UUID targetId = commitment.resolve(
-                inRange.stream().map(this::toCandidate).toList(),
-                assessablePlayerIds(level));
+                claimable.stream().map(this::toCandidate).toList(),
+                ArchitectTargetingSupport.targetablePlayerIds(level));
         if (targetId == null) {
             return null;
         }
-        for (ServerPlayer player : inRange) {
+        for (ServerPlayer player : claimable) {
             if (player.getUUID().equals(targetId)) {
+                HearthAssessmentClaimManager.claim(
+                        level.getGameTime(), hearthId, architectId, targetId);
                 return player;
             }
         }
@@ -200,28 +206,6 @@ final class ArchitectHearthAssessmentController {
     private Candidate toCandidate(ServerPlayer player) {
         return new Candidate(player.getUUID(), player.getArmorValue(),
                 architect.distanceToSqr(player));
-    }
-
-    /**
-     * Every player still assessable anywhere on the server. A committed target
-     * missing from this set has died, logged out or switched to creative and is
-     * forgotten; one that is present but out of range is only suspended.
-     *
-     * <p>Creative is a forget rather than a suspend on purpose. A bookmark lets its
-     * owner reclaim the commitment the instant it returns, without being re-scored
-     * against whoever the Architect picked up meanwhile. Someone who toggled into
-     * creative and back should not jump that queue.
-     */
-    private static Set<UUID> assessablePlayerIds(ServerLevel level) {
-        Set<UUID> ids = new HashSet<>();
-        for (ServerLevel dimension : level.getServer().getAllLevels()) {
-            for (ServerPlayer player : dimension.players()) {
-                if (player.isAlive() && !player.isCreative() && !player.isSpectator()) {
-                    ids.add(player.getUUID());
-                }
-            }
-        }
-        return ids;
     }
 
     private void holdWatchfulPerimeter(ServerPlayer player, BlockPos hearth) {
@@ -280,6 +264,7 @@ final class ArchitectHearthAssessmentController {
 
     private void resetAssessmentTarget() {
         commitment.release();
+        HearthAssessmentClaimManager.release(architect.getUUID());
     }
 
     private static String shortId(UUID id) {

@@ -1435,7 +1435,7 @@ public class ArchitectEntity extends Monster {
 
         // Retaliation outranks scoring: whoever just hit us takes the commitment.
         if (getLastHurtByMob() instanceof Player attacker
-                && isRoamingCandidate(attacker)
+                && ArchitectTargetingSupport.isTargetablePlayer(attacker)
                 && distanceToSqr(attacker) <= rangeSquared) {
             roamingCommitment.commitToTarget(attacker.getUUID());
             return attacker;
@@ -1444,14 +1444,14 @@ public class ArchitectEntity extends Monster {
         List<ServerPlayer> inRange = new ArrayList<>();
         List<Candidate> candidates = new ArrayList<>();
         for (ServerPlayer player : serverLevel.players()) {
-            if (isRoamingCandidate(player) && distanceToSqr(player) <= rangeSquared) {
+            if (ArchitectTargetingSupport.isTargetablePlayer(player) && distanceToSqr(player) <= rangeSquared) {
                 inRange.add(player);
                 candidates.add(new Candidate(player.getUUID(), player.getArmorValue(),
                         distanceToSqr(player)));
             }
         }
         UUID targetId = roamingCommitment.resolve(
-                candidates, onlineRoamingPlayerIds(serverLevel));
+                candidates, ArchitectTargetingSupport.targetablePlayerIds(serverLevel));
         if (targetId != null) {
             for (ServerPlayer player : inRange) {
                 if (player.getUUID().equals(targetId)) {
@@ -1460,28 +1460,6 @@ public class ArchitectEntity extends Monster {
             }
         }
         return villagerFallback();
-    }
-
-    private static boolean isRoamingCandidate(Player player) {
-        return player.isAlive() && !player.isCreative() && !player.isSpectator();
-    }
-
-    /**
-     * Every player the roaming Architect could still stalk, in or out of range.
-     * A committed target missing from this set has died, logged out or switched
-     * to creative and is forgotten; one that is merely out of range is kept as a
-     * bookmark and reclaims the commitment when it comes back.
-     */
-    private static Set<UUID> onlineRoamingPlayerIds(ServerLevel level) {
-        Set<UUID> ids = new HashSet<>();
-        for (ServerLevel dimension : level.getServer().getAllLevels()) {
-            for (ServerPlayer player : dimension.players()) {
-                if (isRoamingCandidate(player)) {
-                    ids.add(player.getUUID());
-                }
-            }
-        }
-        return ids;
     }
 
     /** No player in range: fall back to the nearest villager, as before. */
