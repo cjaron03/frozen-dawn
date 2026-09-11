@@ -57,7 +57,8 @@ public record Candidate(UUID id, int armorValue, double distanceSquared) {}
 
 - `Comparator<Candidate> BY_VULNERABILITY` — armor value ascending, then
   distance squared ascending, then UUID.
-- `static Optional<Candidate> mostVulnerable(Collection<Candidate>)`
+- `@Nullable static Candidate mostVulnerable(Collection<Candidate>)` — the
+  house idiom for absence is a `@Nullable` return, not `Optional`
 - `static boolean warrantsRetarget(int committedArmor, int candidateArmor)`
 - `static final int RETARGET_ARMOR_GAP = 8`
 
@@ -148,8 +149,17 @@ before either controller runs, but that path is mutually exclusive with them.
 
 Both controllers gain an early bail: if `getLastHurtByMob()` is a live entity,
 call `release()` and return `false`, handing the tick to the combat brain. An
-Architect being hit should fight, not scan. The retaliation itself already
-exists at `ArchitectEntity.java:540-549`; this is about not suppressing it.
+Architect being hit should fight, not scan.
+
+Handing the tick over is not enough on its own. `findTarget()` routes a Hearth
+assessor or resident straight to `controller.findHostileTarget(...)`, which
+filters on relationship (resident) or permanent orsathae (assessor) and never on
+who actually hit the Architect. A friendly player punching one would yield no
+target and no retaliation at all. So each `findHostileTarget` opens with a
+self-defense short-circuit: a live, non-creative, non-spectator `ServerPlayer` in
+`getLastHurtByMob()` is returned immediately, ahead of the
+`HearthCombatRosterManager` gate. Self-defense is unconditional and does not
+dogpile — each Architect only answers whoever hit *it*.
 
 ### 4. Wiring
 
@@ -161,6 +171,13 @@ with the same name**, and unifying them is out of scope:
 
 - `ArchitectHearthResidentController` — `HearthPopulationPolicy.WATCH_DISTANCE` = 28
 - `ArchitectHearthAssessmentController` — `HearthArchitectPolicy.WATCH_DISTANCE` = 32
+
+A committed target is forgotten only when it leaves the set of players still
+assessable **anywhere on the server** — every loaded dimension's `players()`,
+filtered to alive and non-spectator. Death, disconnect and entering spectator
+all drop out of that set; standing in another dimension does not, so a portal
+trip suspends rather than forgets. The set is built from levels rather than
+`PlayerList` so that a player inserted directly into a level counts as present.
 
 `nearestPlayer` / `nearestVisiblePlayer` become `mostVulnerablePlayer`, and
 `findHostileTarget` swaps its `.min(comparingDouble(...))` for the same
