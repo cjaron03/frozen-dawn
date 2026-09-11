@@ -21,6 +21,11 @@ import java.util.UUID;
  * forgotten. If it comes back it reclaims the commitment immediately, without
  * being re-scored against whoever the Architect picked up meanwhile. Only one
  * bookmark is kept — a second departure replaces the first.
+ *
+ * <p>Only distance earns a bookmark. A target who died, logged out or switched
+ * to creative is dropped without one and is re-scored normally on return: death
+ * changes the very armor being scored, and a creative toggle should not buy
+ * priority over the players who stayed.
  */
 final class ArchitectAssessmentCommitment {
     @Nullable
@@ -30,13 +35,15 @@ final class ArchitectAssessmentCommitment {
     private int ticks;
 
     /**
-     * @param candidates      players inside the watch radius this tick
-     * @param onlinePlayerIds every player still on the server, in or out of range
+     * @param candidates    players inside the watch radius this tick
+     * @param targetableIds every player this Architect may target at all, in or out
+     *                      of range — the alive, non-creative, non-spectator set,
+     *                      not merely everyone connected
      * @return the player to assess, or null when nobody is in range
      */
     @Nullable
-    UUID resolve(List<Candidate> candidates, Set<UUID> onlinePlayerIds) {
-        forgetDepartedPlayers(onlinePlayerIds);
+    UUID resolve(List<Candidate> candidates, Set<UUID> targetableIds) {
+        forgetUntargetablePlayers(targetableIds);
 
         if (suspendedId != null && contains(candidates, suspendedId)) {
             return commitTo(suspendedId);
@@ -102,12 +109,16 @@ final class ArchitectAssessmentCommitment {
         return suspendedId;
     }
 
-    private void forgetDepartedPlayers(Set<UUID> onlinePlayerIds) {
-        if (committedId != null && !onlinePlayerIds.contains(committedId)) {
+    /**
+     * Drops any id that is no longer targetable — dead, disconnected, or switched
+     * to creative. Deliberately not a suspend: see the class javadoc.
+     */
+    private void forgetUntargetablePlayers(Set<UUID> targetableIds) {
+        if (committedId != null && !targetableIds.contains(committedId)) {
             committedId = null;
             ticks = 0;
         }
-        if (suspendedId != null && !onlinePlayerIds.contains(suspendedId)) {
+        if (suspendedId != null && !targetableIds.contains(suspendedId)) {
             suspendedId = null;
         }
     }

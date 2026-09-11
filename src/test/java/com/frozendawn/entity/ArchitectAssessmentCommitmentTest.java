@@ -14,7 +14,7 @@ class ArchitectAssessmentCommitmentTest {
     private static final UUID ALICE = new UUID(0L, 1L);
     private static final UUID BOB = new UUID(0L, 2L);
     private static final UUID CARA = new UUID(0L, 3L);
-    private static final Set<UUID> EVERYONE = Set.of(ALICE, BOB, CARA);
+    private static final Set<UUID> ALL_TARGETABLE = Set.of(ALICE, BOB, CARA);
 
     private static final int LEATHER = 7;
     private static final int IRON = 15;
@@ -25,13 +25,13 @@ class ArchitectAssessmentCommitmentTest {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         assertEquals(ALICE, commitment.resolve(List.of(
                 new Candidate(BOB, ACHERONITE, 16.0D),
-                new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE));
+                new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE));
     }
 
     @Test
     void anEmptyWatchRadiusYieldsNoTarget() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        assertNull(commitment.resolve(List.of(), EVERYONE));
+        assertNull(commitment.resolve(List.of(), ALL_TARGETABLE));
     }
 
     @Test
@@ -41,7 +41,7 @@ class ArchitectAssessmentCommitmentTest {
             boolean aliceIsNearer = tick % 2 == 0;
             UUID target = commitment.resolve(List.of(
                     new Candidate(ALICE, IRON, aliceIsNearer ? 100.0D : 324.0D),
-                    new Candidate(BOB, IRON, aliceIsNearer ? 324.0D : 100.0D)), EVERYONE);
+                    new Candidate(BOB, IRON, aliceIsNearer ? 324.0D : 100.0D)), ALL_TARGETABLE);
             assertEquals(ALICE, target, "commitment flipped on tick " + tick);
             commitment.advanceTicks();
         }
@@ -53,7 +53,7 @@ class ArchitectAssessmentCommitmentTest {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         for (int tick = 0; tick < 59; tick++) {
             assertEquals(ALICE, commitment.resolve(
-                    List.of(new Candidate(ALICE, IRON, 576.0D - tick * 8.0D)), EVERYONE));
+                    List.of(new Candidate(ALICE, IRON, 576.0D - tick * 8.0D)), ALL_TARGETABLE));
             commitment.advanceTicks();
         }
         assertEquals(59, commitment.ticks());
@@ -63,11 +63,11 @@ class ArchitectAssessmentCommitmentTest {
     void aFarWeakerNewcomerStealsTheCommitment() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         assertEquals(BOB, commitment.resolve(
-                List.of(new Candidate(BOB, ACHERONITE, 100.0D)), EVERYONE));
+                List.of(new Candidate(BOB, ACHERONITE, 100.0D)), ALL_TARGETABLE));
         commitment.advanceTicks();
         assertEquals(ALICE, commitment.resolve(List.of(
                 new Candidate(BOB, ACHERONITE, 100.0D),
-                new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE));
+                new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE));
         assertEquals(0, commitment.ticks());
     }
 
@@ -75,33 +75,33 @@ class ArchitectAssessmentCommitmentTest {
     void aMarginallyWeakerNewcomerDoesNot() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         assertEquals(BOB, commitment.resolve(
-                List.of(new Candidate(BOB, IRON, 400.0D)), EVERYONE));
+                List.of(new Candidate(BOB, IRON, 400.0D)), ALL_TARGETABLE));
         commitment.advanceTicks();
         assertEquals(BOB, commitment.resolve(List.of(
                 new Candidate(BOB, IRON, 400.0D),
-                new Candidate(ALICE, IRON - 1, 16.0D)), EVERYONE));
+                new Candidate(ALICE, IRON - 1, 16.0D)), ALL_TARGETABLE));
         assertEquals(1, commitment.ticks());
     }
 
     @Test
     void walkingOutOfRangeSuspendsTheTargetInsteadOfForgettingIt() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE);
 
         assertEquals(BOB, commitment.resolve(
-                List.of(new Candidate(BOB, ACHERONITE, 100.0D)), EVERYONE));
+                List.of(new Candidate(BOB, ACHERONITE, 100.0D)), ALL_TARGETABLE));
         assertEquals(ALICE, commitment.suspendedId());
     }
 
     @Test
     void aSuspendedTargetReclaimsTheCommitmentWithoutBeingRescored() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, ACHERONITE, 400.0D)), EVERYONE);
-        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 100.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, ACHERONITE, 400.0D)), ALL_TARGETABLE);
+        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 100.0D)), ALL_TARGETABLE);
 
         assertEquals(ALICE, commitment.resolve(List.of(
                 new Candidate(BOB, LEATHER, 100.0D),
-                new Candidate(ALICE, ACHERONITE, 400.0D)), EVERYONE));
+                new Candidate(ALICE, ACHERONITE, 400.0D)), ALL_TARGETABLE));
         assertNull(commitment.suspendedId());
     }
 
@@ -110,20 +110,20 @@ class ArchitectAssessmentCommitmentTest {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         List<Candidate> inRange = List.of(new Candidate(ALICE, LEATHER, 400.0D));
         for (int tick = 0; tick < 30; tick++) {
-            commitment.resolve(inRange, EVERYONE);
+            commitment.resolve(inRange, ALL_TARGETABLE);
             commitment.advanceTicks();
         }
         assertEquals(30, commitment.ticks());
 
-        assertNull(commitment.resolve(List.of(), EVERYONE));
-        assertEquals(ALICE, commitment.resolve(inRange, EVERYONE));
+        assertNull(commitment.resolve(List.of(), ALL_TARGETABLE));
+        assertEquals(ALICE, commitment.resolve(inRange, ALL_TARGETABLE));
         assertEquals(0, commitment.ticks());
     }
 
     @Test
     void aDisconnectedTargetIsForgottenSoTheArchitectMovesOn() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE);
 
         assertEquals(BOB, commitment.resolve(
                 List.of(new Candidate(BOB, ACHERONITE, 100.0D)), Set.of(BOB, CARA)));
@@ -134,8 +134,8 @@ class ArchitectAssessmentCommitmentTest {
     @Test
     void aDisconnectedBookmarkNeverStallsALaterCommitment() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE);
-        commitment.resolve(List.of(), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE);
+        commitment.resolve(List.of(), ALL_TARGETABLE);
         assertEquals(ALICE, commitment.suspendedId());
 
         assertEquals(BOB, commitment.resolve(
@@ -146,11 +146,11 @@ class ArchitectAssessmentCommitmentTest {
     @Test
     void onlyTheMostRecentDepartureIsBookmarked() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE);
-        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 400.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE);
+        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 400.0D)), ALL_TARGETABLE);
         assertEquals(ALICE, commitment.suspendedId());
 
-        commitment.resolve(List.of(new Candidate(CARA, LEATHER, 400.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(CARA, LEATHER, 400.0D)), ALL_TARGETABLE);
         assertEquals(BOB, commitment.suspendedId());
         assertEquals(CARA, commitment.committedId());
     }
@@ -158,8 +158,8 @@ class ArchitectAssessmentCommitmentTest {
     @Test
     void damageReleasesBothTheCommitmentAndTheBookmark() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
-        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), EVERYONE);
-        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 400.0D)), EVERYONE);
+        commitment.resolve(List.of(new Candidate(ALICE, LEATHER, 400.0D)), ALL_TARGETABLE);
+        commitment.resolve(List.of(new Candidate(BOB, LEATHER, 400.0D)), ALL_TARGETABLE);
         commitment.advanceTicks();
 
         commitment.release();
@@ -173,7 +173,7 @@ class ArchitectAssessmentCommitmentTest {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         assertEquals(ALICE, commitment.resolve(List.of(
                 new Candidate(ALICE, LEATHER, 100.0D),
-                new Candidate(BOB, IRON, 100.0D)), EVERYONE));
+                new Candidate(BOB, IRON, 100.0D)), ALL_TARGETABLE));
 
         commitment.commitToTarget(BOB);
 
@@ -187,7 +187,7 @@ class ArchitectAssessmentCommitmentTest {
         for (int tick = 0; tick < 120; tick++) {
             assertEquals(BOB, commitment.resolve(List.of(
                     new Candidate(ALICE, IRON, 100.0D),
-                    new Candidate(BOB, IRON, 400.0D)), EVERYONE),
+                    new Candidate(BOB, IRON, 400.0D)), ALL_TARGETABLE),
                     "retaliation commitment lost on tick " + tick);
         }
     }
@@ -196,10 +196,10 @@ class ArchitectAssessmentCommitmentTest {
     void retaliationClearsAnExistingBookmarkForTheSamePlayer() {
         ArchitectAssessmentCommitment commitment = new ArchitectAssessmentCommitment();
         assertEquals(BOB, commitment.resolve(List.of(
-                new Candidate(BOB, LEATHER, 100.0D)), EVERYONE));
+                new Candidate(BOB, LEATHER, 100.0D)), ALL_TARGETABLE));
         // Bob leaves the radius, so he is only bookmarked.
         assertEquals(ALICE, commitment.resolve(List.of(
-                new Candidate(ALICE, IRON, 100.0D)), EVERYONE));
+                new Candidate(ALICE, IRON, 100.0D)), ALL_TARGETABLE));
         assertEquals(BOB, commitment.suspendedId());
 
         commitment.commitToTarget(BOB);
