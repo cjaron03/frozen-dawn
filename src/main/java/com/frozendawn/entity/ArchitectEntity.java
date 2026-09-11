@@ -213,6 +213,9 @@ public class ArchitectEntity extends Monster {
             new ArchitectHearthMasterController(this);
     private final ArchitectAssessmentCommitment roamingCommitment =
             new ArchitectAssessmentCommitment();
+    /** Debug only: last roaming target logged, so the line fires on change, not per tick. */
+    @Nullable
+    private UUID loggedRoamingTargetId;
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -1432,12 +1435,16 @@ public class ArchitectEntity extends Monster {
                 ? OBSERVE_REACQUIRE_RANGE
                 : getDetectionRange();
         double rangeSquared = range * range;
+        UUID previousCommitted = roamingCommitment.committedId();
+        UUID previousSuspended = roamingCommitment.suspendedId();
 
         // Retaliation outranks scoring: whoever just hit us takes the commitment.
         if (getLastHurtByMob() instanceof Player attacker
                 && ArchitectTargetingSupport.isTargetablePlayer(attacker)
                 && distanceToSqr(attacker) <= rangeSquared) {
             roamingCommitment.commitToTarget(attacker.getUUID());
+            logRoamingCommitment(serverLevel, attacker, "RETALIATION",
+                    previousCommitted, range, -1);
             return attacker;
         }
 
@@ -1450,16 +1457,71 @@ public class ArchitectEntity extends Monster {
                         distanceToSqr(player)));
             }
         }
+        boolean previousStillInRange = previousCommitted != null
+                && inRange.stream().anyMatch(p -> p.getUUID().equals(previousCommitted));
         UUID targetId = roamingCommitment.resolve(
                 candidates, ArchitectTargetingSupport.targetablePlayerIds(serverLevel));
         if (targetId != null) {
             for (ServerPlayer player : inRange) {
                 if (player.getUUID().equals(targetId)) {
+                    logRoamingCommitment(serverLevel, player,
+                            roamingSwitchReason(targetId, previousCommitted,
+                                    previousSuspended, previousStillInRange),
+                            previousCommitted, range, candidates.size());
                     return player;
                 }
             }
         }
+        loggedRoamingTargetId = null;
         return villagerFallback();
+    }
+
+    /**
+     * Debug: why the roaming commitment moved off the previous target.
+     *
+     * <p>{@code PREV_LEFT_RANGE} and {@code OUTSCORED} are the two that matter:
+     * the first means the candidate list dropped the committed player, the
+     * second means {@code warrantsRetarget} genuinely fired on an armor gap.
+     */
+    private static String roamingSwitchReason(UUID targetId, @Nullable UUID previousCommitted,
+            @Nullable UUID previousSuspended, boolean previousStillInRange) {
+        if (previousCommitted == null) {
+            return previousSuspended == null ? "FIRST_PICK" : "REPICK_AFTER_SUSPEND";
+        }
+        if (targetId.equals(previousCommitted)) {
+            return "HELD";
+        }
+        if (targetId.equals(previousSuspended)) {
+            return "BOOKMARK_RECLAIM";
+        }
+        return previousStillInRange ? "OUTSCORED" : "PREV_LEFT_RANGE";
+    }
+
+    /**
+     * Debug: one line each time the roaming commitment moves to a different player,
+     * so a two-player armor test can read the pick out of the log instead of
+     * inferring it from which way the Architect walks.
+     *
+     * <p>Logs the previous target's current distance and the range actually in
+     * force, since those are what decide whether the committed player stayed in
+     * the candidate list.
+     */
+    private void logRoamingCommitment(ServerLevel serverLevel, Player player, String reason,
+            @Nullable UUID previousId, double range, int candidateCount) {
+        if (player.getUUID().equals(loggedRoamingTargetId)) {
+            return;
+        }
+        loggedRoamingTargetId = player.getUUID();
+        Player previous = previousId == null ? null : serverLevel.getPlayerByUUID(previousId);
+        LOGGER.info(
+                "Roaming Architect {} -> {} | armor={} dist={} | reason={} prev={} prevDist={} range={} candidates={}",
+                getUUID().toString().substring(0, 8), player.getName().getString(),
+                player.getArmorValue(), String.format("%.1f", distanceTo(player)),
+                reason,
+                previous == null ? "none" : previous.getName().getString(),
+                previous == null ? "n/a" : String.format("%.1f", distanceTo(previous)),
+                String.format("%.0f", range),
+                candidateCount < 0 ? "n/a" : Integer.toString(candidateCount));
     }
 
     /** No player in range: fall back to the nearest villager, as before. */
