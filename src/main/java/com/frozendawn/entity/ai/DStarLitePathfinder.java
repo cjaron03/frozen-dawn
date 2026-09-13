@@ -2,6 +2,7 @@ package com.frozendawn.entity.ai;
 
 import com.frozendawn.entity.architect.BreakChoice;
 import com.frozendawn.entity.architect.ArchitectWalkGeometry;
+import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.frozendawn.entity.architect.BreakReason;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,7 +10,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
@@ -37,9 +37,9 @@ public class DStarLitePathfinder {
     private static final float BRIDGE_COST = 5.5f;
     private static final float BREACH_MULTIPLIER = 5.0f;
     private static final float BASE_MOVE_COST = 1.0f;
-    // Small negative bias to prefer using doors over equivalent non-door detours.
+    // Small negative bias to prefer using doors and gates over equivalent detours.
     // Still keeps all edge costs positive because BASE_MOVE_COST is 1.0f.
-    private static final float DOOR_PREFERENCE_BONUS = -0.25f;
+    private static final float PASSAGE_PREFERENCE_BONUS = -0.25f;
     private static final float DIG_DOWN_BASE = 6.0f;
     private static final float DIG_DOWN_DEPTH_PENALTY = 2.0f;
     private static final int MAX_DIG_DEPTH = 20;
@@ -61,6 +61,8 @@ public class DStarLitePathfinder {
      */
     public static final int MAX_SAFE_FALL_DISTANCE = 3;
     private static final double MIN_STANDABLE_SUPPORT_HEIGHT = 0.5;
+    private static final double MAX_STEP_SUPPORT_HEIGHT = 1.0;
+    private static final double SUPPORT_HEIGHT_EPSILON = 1.0e-6;
     private static final float CLIMB_TRANSITION_PENALTY = 8.0f;
     private static final double UNKNOWN_TARGET_DISTANCE = -1.0;
     private static final String ACTION_UNKNOWN = "UNKNOWN";
@@ -456,10 +458,10 @@ public class DStarLitePathfinder {
         BlockPos groundPos = to.below();
         boolean fromClimbable = isClimbable(fromFeetState);
         boolean toClimbable = isClimbable(feetState);
-        boolean feetDoor = isWoodenDoor(feetState);
-        boolean headDoor = isWoodenDoor(headState);
-        boolean nonDoorBlocked = isNonDoorObstruction(feetState, to, level)
-                || isNonDoorObstruction(headState, to.above(), level);
+        boolean feetPassage = isOpenablePassage(feetState);
+        boolean headPassage = isOpenablePassage(headState);
+        boolean nonPassageBlocked = isNonPassageObstruction(feetState, to, level)
+                || isNonPassageObstruction(headState, to.above(), level);
 
         if (getStepUpClearanceBreakTarget(from, to, level) != null) {
             return StepType.BREACH;
@@ -469,24 +471,24 @@ public class DStarLitePathfinder {
         if (dx == 0 && dz == 0) {
             if (dy == 1) {
                 if (fromClimbable || toClimbable) return StepType.WALK;
-                if (feetDoor || headDoor) return StepType.WALK;
-                if (nonDoorBlocked) return StepType.BREACH;
+                if (feetPassage || headPassage) return StepType.WALK;
+                if (nonPassageBlocked) return StepType.BREACH;
                 return StepType.SCAFFOLD_UP;
             }
             if (dy == -1) {
                 if (fromClimbable || toClimbable) return StepType.WALK;
-                if (nonDoorBlocked) return StepType.DIG_DOWN;
+                if (nonPassageBlocked) return StepType.DIG_DOWN;
                 return StepType.WALK; // fall
             }
         }
 
-        // Treat wooden doors as walk-through (Architect opens them), not breach targets.
-        if (feetDoor || headDoor) {
+        // Treat doors and fence gates as walk-through; the Architect opens them.
+        if (feetPassage || headPassage) {
             return StepType.WALK;
         }
 
-        // Breach: non-door solid blocks at feet or head level
-        if (nonDoorBlocked) {
+        // Breach: non-passage obstructions at feet or head level.
+        if (nonPassageBlocked) {
             return StepType.BREACH;
         }
 
@@ -521,9 +523,9 @@ public class DStarLitePathfinder {
         BlockPos stepUpBreakTarget = getStepUpClearanceBreakTarget(from, pos, level);
         if (stepUpBreakTarget != null) return new BreakChoice(stepUpBreakTarget, BreakReason.STEP_UP_CEILING);
         BlockState feetState = level.getBlockState(pos);
-        if (isNonDoorObstruction(feetState, pos, level)) return new BreakChoice(pos, BreakReason.CORRIDOR_NODE);
+        if (isNonPassageObstruction(feetState, pos, level)) return new BreakChoice(pos, BreakReason.CORRIDOR_NODE);
         BlockState headState = level.getBlockState(pos.above());
-        if (isNonDoorObstruction(headState, pos.above(), level)) return new BreakChoice(pos.above(), BreakReason.HEAD_CLEARANCE);
+        if (isNonPassageObstruction(headState, pos.above(), level)) return new BreakChoice(pos.above(), BreakReason.HEAD_CLEARANCE);
         BlockPos stepDownBreakTarget = getStepDownClearanceBreakTarget(from, pos, level);
         if (stepDownBreakTarget != null) return new BreakChoice(stepDownBreakTarget, BreakReason.STEP_DOWN_CLEARANCE);
         return null;
@@ -822,18 +824,18 @@ public class DStarLitePathfinder {
         if (hasHazardAtOrAbove(toPos, level)) return INF;
 
         BlockState feetState = level.getBlockState(toPos);
-        if (isWoodenDoor(feetState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(feetState, toPos, level)) {
+        if (isOpenablePassage(feetState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(feetState, toPos, level)) {
             float breach = breachCost(feetState, toPos, level);
             if (breach >= INF) return INF;
             cost += breach;
         }
 
         BlockState headState = level.getBlockState(toPos.above());
-        if (isWoodenDoor(headState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
+        if (isOpenablePassage(headState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(headState, toPos.above(), level)) {
             float breach = breachCost(headState, toPos.above(), level);
             if (breach >= INF) return INF;
             cost += breach;
@@ -848,18 +850,18 @@ public class DStarLitePathfinder {
         BlockPos toPos = new BlockPos(tx, ty, tz);
         if (hasHazardAtOrAbove(toPos, level)) return INF;
         BlockState feetState = level.getBlockState(toPos);
-        if (isWoodenDoor(feetState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(feetState, toPos, level)) {
+        if (isOpenablePassage(feetState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
         }
 
         BlockState headState = level.getBlockState(toPos.above());
-        if (isWoodenDoor(headState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
+        if (isOpenablePassage(headState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -892,18 +894,18 @@ public class DStarLitePathfinder {
         BlockPos toPos = new BlockPos(tx, ty, tz);
         if (hasHazardAtOrAbove(toPos, level)) return INF;
         BlockState feetState = level.getBlockState(toPos);
-        if (isWoodenDoor(feetState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(feetState, toPos, level)) {
+        if (isOpenablePassage(feetState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
         }
 
         BlockState headState = level.getBlockState(toPos.above());
-        if (isWoodenDoor(headState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
+        if (isOpenablePassage(headState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -920,18 +922,18 @@ public class DStarLitePathfinder {
         if (hasHazardAtOrAbove(toPos, level)) return INF;
         // Head at target = to.above() = from.y level
         BlockState headState = level.getBlockState(toPos.above());
-        if (isWoodenDoor(headState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
+        if (isOpenablePassage(headState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
         }
 
         BlockState feetState = level.getBlockState(toPos);
-        if (isWoodenDoor(feetState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(feetState, toPos, level)) {
+        if (isOpenablePassage(feetState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -981,18 +983,18 @@ public class DStarLitePathfinder {
         BlockPos toPos = new BlockPos(tx, ty, tz);
         if (hasHazardAtOrAbove(toPos, level)) return INF;
         BlockState feetState = level.getBlockState(toPos);
-        if (isWoodenDoor(feetState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(feetState, toPos, level)) {
+        if (isOpenablePassage(feetState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(feetState, toPos, level)) {
             float bc = breachCost(feetState, toPos, level);
             if (bc >= INF) return INF;
             cost += bc;
         }
 
         BlockState headState = level.getBlockState(toPos.above());
-        if (isWoodenDoor(headState)) {
-            cost += DOOR_PREFERENCE_BONUS;
-        } else if (isNonDoorObstruction(headState, toPos.above(), level)) {
+        if (isOpenablePassage(headState)) {
+            cost += PASSAGE_PREFERENCE_BONUS;
+        } else if (isNonPassageObstruction(headState, toPos.above(), level)) {
             float bc = breachCost(headState, toPos.above(), level);
             if (bc >= INF) return INF;
             cost += bc;
@@ -1006,7 +1008,7 @@ public class DStarLitePathfinder {
         BlockState toState = level.getBlockState(toPos);
         if (isHazardous(toState)) return INF;
 
-        if (!isNonDoorObstruction(toState, toPos, level)) {
+        if (!isNonPassageObstruction(toState, toPos, level)) {
             // Falling
             BlockPos groundPos = toPos.below();
             BlockState ground = level.getBlockState(groundPos);
@@ -1055,7 +1057,7 @@ public class DStarLitePathfinder {
             return null;
         }
         BlockPos ceiling = from.above(2);
-        return isNonDoorObstruction(level.getBlockState(ceiling), ceiling, level) ? ceiling : null;
+        return isNonPassageObstruction(level.getBlockState(ceiling), ceiling, level) ? ceiling : null;
     }
 
     @Nullable
@@ -1067,7 +1069,7 @@ public class DStarLitePathfinder {
         }
 
         BlockPos upperFront = to.above().above();
-        if (isNonDoorObstruction(level.getBlockState(upperFront), upperFront, level)) {
+        if (isNonPassageObstruction(level.getBlockState(upperFront), upperFront, level)) {
             return upperFront;
         }
 
@@ -1081,17 +1083,16 @@ public class DStarLitePathfinder {
         return hardness < 0 || hardness >= MAX_BREAKABLE_HARDNESS;
     }
 
-    private boolean isWoodenDoor(BlockState state) {
-        return state.is(BlockTags.WOODEN_DOORS)
-                && state.getBlock() instanceof DoorBlock;
+    private boolean isOpenablePassage(BlockState state) {
+        return ArchitectBlockEnvironment.isOpenablePassage(state);
     }
 
     private boolean isClimbable(BlockState state) {
         return state.is(BlockTags.CLIMBABLE);
     }
 
-    private boolean isNonDoorObstruction(BlockState state, BlockPos pos, Level level) {
-        if (isWoodenDoor(state)) {
+    private boolean isNonPassageObstruction(BlockState state, BlockPos pos, Level level) {
+        if (isOpenablePassage(state)) {
             return false;
         }
         return ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
@@ -1102,7 +1103,7 @@ public class DStarLitePathfinder {
         if (isClimbable(state)) {
             return false;
         }
-        if (isWoodenDoor(state)) {
+        if (isOpenablePassage(state)) {
             return false;
         }
         if (state.isFaceSturdy(level, pos, Direction.UP)) {
@@ -1112,7 +1113,12 @@ public class DStarLitePathfinder {
         if (supportShape.isEmpty()) {
             return false;
         }
-        return supportShape.max(Direction.Axis.Y) >= MIN_STANDABLE_SUPPORT_HEIGHT;
+        double supportHeight = supportShape.max(Direction.Axis.Y);
+        // Graph Y coordinates advance in whole blocks. A fence or wall reaches
+        // 1.5 blocks high, so treating it as a one-block step produces a route
+        // whose destination height the movement controller cannot occupy.
+        return supportHeight >= MIN_STANDABLE_SUPPORT_HEIGHT
+                && supportHeight <= MAX_STEP_SUPPORT_HEIGHT + SUPPORT_HEIGHT_EPSILON;
     }
 
     private boolean isWithinBridgeSpan(BlockPos pos, Level level) {

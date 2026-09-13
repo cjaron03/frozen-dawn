@@ -78,8 +78,8 @@ final class ArchitectApproachController {
 
         architect.recordWalkCellHistory();
 
-        // Proactively open nearby wooden doors before movement dispatch.
-        architect.keepNearbyWoodenDoorsOpen();
+        // Proactively open nearby doors and fence gates before movement dispatch.
+        architect.keepNearbyPassagesOpen();
 
         if (architect.tryApproachProgressRecovery(target)) {
             return;
@@ -163,7 +163,7 @@ final class ArchitectApproachController {
         BlockPos avoidImmediateBacktrack = architect.getImmediateBacktrackPos();
         DStarLitePathfinder.NextStep step = planningSupport.getNextStep(avoidImmediateBacktrack);
         architect.recordStep(step);
-        architect.keepDoorOpenNear(step.pos());
+        architect.keepPassageOpenNear(step.pos());
 
         if (ArchitectApproachMovementSupport.shouldUseDirectChase(architect, target, step)) {
             architect.executeDirectApproachChase(target);

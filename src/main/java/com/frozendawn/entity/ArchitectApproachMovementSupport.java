@@ -7,6 +7,7 @@ import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -311,7 +312,7 @@ final class ArchitectApproachMovementSupport {
 
     private static boolean isPassableForStand(BlockPos pos, Level level) {
         BlockState state = level.getBlockState(pos);
-        if (state.is(BlockTags.WOODEN_DOORS)) {
+        if (ArchitectBlockEnvironment.isOpenablePassage(state)) {
             return true;
         }
         return !ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
@@ -320,13 +321,13 @@ final class ArchitectApproachMovementSupport {
     @Nullable
     private static BlockPos selectScaffoldObstruction(BlockPos scaffoldTarget, Level level) {
         BlockState feet = level.getBlockState(scaffoldTarget);
-        if (!feet.is(BlockTags.WOODEN_DOORS)
+        if (!ArchitectBlockEnvironment.isOpenablePassage(feet)
                 && ArchitectBreakPolicy.isObstructiveForArchitect(feet, level, scaffoldTarget)) {
             return scaffoldTarget;
         }
         BlockPos headPos = scaffoldTarget.above();
         BlockState head = level.getBlockState(headPos);
-        if (!head.is(BlockTags.WOODEN_DOORS)
+        if (!ArchitectBlockEnvironment.isOpenablePassage(head)
                 && ArchitectBreakPolicy.isObstructiveForArchitect(head, level, headPos)) {
             return headPos;
         }

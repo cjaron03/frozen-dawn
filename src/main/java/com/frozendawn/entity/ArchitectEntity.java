@@ -696,11 +696,11 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
-        // --- Keep wooden doors open while pushing toward a target ---
+        // --- Keep doors and fence gates open while pushing toward a target ---
         if (getBrainAction() == ACTION_APPROACH
                 || getBrainAction() == ACTION_ATTACK_MELEE
                 || horizontalCollision) {
-            keepNearbyWoodenDoorsOpen();
+            keepNearbyPassagesOpen();
         }
 
         // --- Heater burn ---
@@ -1028,12 +1028,12 @@ public class ArchitectEntity extends Monster {
         walkSupport.clearWalkNavigationState(stopNavigation);
     }
 
-    void keepNearbyWoodenDoorsOpen() {
-        ArchitectBlockEnvironment.keepNearbyWoodenDoorsOpen(this);
+    void keepNearbyPassagesOpen() {
+        ArchitectBlockEnvironment.keepNearbyPassagesOpen(this);
     }
 
-    void keepDoorOpenNear(BlockPos center) {
-        ArchitectBlockEnvironment.keepDoorOpenNear(this, center);
+    void keepPassageOpenNear(BlockPos center) {
+        ArchitectBlockEnvironment.keepPassageOpenNear(this, center);
     }
 
     boolean isBreakableBlock(BlockPos pos) { return breakRejection(pos) == null; }

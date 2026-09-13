@@ -6,7 +6,10 @@ import com.frozendawn.debug.architect.ArchitectLab;
 import com.frozendawn.debug.architect.ArchitectLabFrame;
 import com.frozendawn.debug.architect.ArchitectLabRun;
 import com.frozendawn.debug.architect.ArchitectLabScenario;
+import com.frozendawn.entity.ai.DStarLitePathfinder;
+import com.frozendawn.init.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -15,6 +18,7 @@ import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -155,6 +159,70 @@ public final class ArchitectLabGameTest {
         level.setBlockAndUpdate(to.below(), Blocks.AIR.defaultBlockState());
         helper.assertTrue(!com.frozendawn.entity.architect.ArchitectWalkGeometry.canWalkPartialTransition(level, from, to),
                 "Missing support must not become a free walk edge");
+        helper.succeed();
+    }
+
+    @GameTest(template = "lab/clear_corridor", timeoutTicks = 40)
+    public static void dstarRoutesAroundFenceInsteadOfSteppingOntoIt(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos start = frame(helper).block(new BlockPos(7, 1, 10));
+        BlockPos fence = start.east();
+        BlockPos goal = start.east(3);
+        for (int x = start.getX() - 1; x <= goal.getX() + 1; x++) {
+            for (int z = start.getZ() - 2; z <= start.getZ() + 2; z++) {
+                BlockPos feet = new BlockPos(x, start.getY(), z);
+                level.setBlockAndUpdate(feet.below(), Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(feet, Blocks.AIR.defaultBlockState());
+                level.setBlockAndUpdate(feet.above(), Blocks.AIR.defaultBlockState());
+                level.setBlockAndUpdate(feet.above(2), Blocks.AIR.defaultBlockState());
+            }
+        }
+        level.setBlockAndUpdate(fence, Blocks.OAK_FENCE.defaultBlockState());
+
+        DStarLitePathfinder pathfinder = new DStarLitePathfinder();
+        pathfinder.initialize(goal, start, level);
+        helper.assertTrue(pathfinder.computePartial(10_000, level),
+                "The fence detour search must complete");
+        DStarLitePathfinder.NextStep step = pathfinder.getNextStep(start, level);
+        helper.assertTrue(step.type() == DStarLitePathfinder.StepType.WALK,
+                "An open lane around a fence must remain a walking route");
+        helper.assertTrue(!step.pos().equals(fence.above()),
+                "D* must not treat a 1.5-block fence as a one-block step");
+        helper.succeed();
+    }
+
+    @GameTest(template = "lab/clear_corridor", timeoutTicks = 40)
+    public static void dstarPrefersFenceGateAndArchitectOpensIt(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos start = frame(helper).block(new BlockPos(7, 1, 10));
+        BlockPos gate = start.east();
+        BlockPos goal = start.east(3);
+        for (int x = start.getX() - 1; x <= goal.getX() + 1; x++) {
+            for (int z = start.getZ() - 2; z <= start.getZ() + 2; z++) {
+                BlockPos feet = new BlockPos(x, start.getY(), z);
+                level.setBlockAndUpdate(feet.below(), Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(feet, Blocks.AIR.defaultBlockState());
+                level.setBlockAndUpdate(feet.above(), Blocks.AIR.defaultBlockState());
+            }
+        }
+        level.setBlockAndUpdate(gate, Blocks.OAK_FENCE_GATE.defaultBlockState()
+                .setValue(FenceGateBlock.FACING, Direction.EAST)
+                .setValue(FenceGateBlock.OPEN, false));
+
+        DStarLitePathfinder pathfinder = new DStarLitePathfinder();
+        pathfinder.initialize(goal, start, level);
+        helper.assertTrue(pathfinder.computePartial(10_000, level),
+                "The fence-gate route search must complete");
+        DStarLitePathfinder.NextStep step = pathfinder.getNextStep(start, level);
+        helper.assertTrue(step.type() == DStarLitePathfinder.StepType.WALK && step.pos().equals(gate),
+                "D* must prefer the fence gate as a walking passage");
+
+        ArchitectEntity architect = helper.spawnWithNoFreeWill(
+                ModEntities.ARCHITECT.get(),
+                helper.relativePos(start));
+        architect.keepPassageOpenNear(start);
+        helper.assertTrue(level.getBlockState(gate).getValue(FenceGateBlock.OPEN),
+                "The Architect passage interaction must open a closed fence gate");
         helper.succeed();
     }
 

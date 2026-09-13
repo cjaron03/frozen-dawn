@@ -148,7 +148,7 @@ final class ArchitectObservationController {
     }
 
     void executeRoamAndRuin() {
-        architect.keepNearbyWoodenDoorsOpen();
+        architect.keepNearbyPassagesOpen();
         blockBreaker.clearTarget();
 
         if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
