@@ -22,6 +22,12 @@ public final class ArchitectDebugReports {
     private ArchitectDebugReports() { }
 
     public static Path export(Path directory, ArchitectDecisionJournal journal, Map<String, ?> context) throws IOException {
+        return export(directory, journal, context, Map.of());
+    }
+
+    /** Publish the status pointer only after every linked trace is safely written. */
+    public static Path export(Path directory, ArchitectDecisionJournal journal, Map<String, ?> context,
+            Map<String, String> extraFiles) throws IOException {
         String id = journal.runId().toString();
         try {
             invalidate(directory, id, "WRITING", "Export in progress");
@@ -36,6 +42,12 @@ public final class ArchitectDebugReports {
             data.put("traceSha256", sha256(table.getBytes(StandardCharsets.UTF_8)));
             Files.writeString(trace, table, StandardCharsets.UTF_8);
             Files.writeString(summary, JSON.toJson(data), StandardCharsets.UTF_8);
+            for (var entry : extraFiles.entrySet()) {
+                if (!Path.of(entry.getKey()).getFileName().toString().equals(entry.getKey())) {
+                    throw new IOException("Extra report files must have a plain filename");
+                }
+                Files.writeString(export.resolve(entry.getKey()), entry.getValue(), StandardCharsets.UTF_8);
+            }
             // Compatibility aliases are useful for humans. Automation follows the immutable
             // paths in architect-latest.json, whose COMPLETE status is published last.
             atomicWrite(directory.resolve("architect-latest.tsv"), table);

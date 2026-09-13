@@ -35,6 +35,10 @@ public final class ArchitectLab {
     private static final Map<ServerLevel, CommandSourceStack> OWNERS = new HashMap<>();
     private ArchitectLab() { }
 
+    public static boolean isRunning(net.minecraft.server.MinecraftServer server) {
+        return RUNS.values().stream().anyMatch(r -> r.level.getServer() == server && r.status() == ArchitectLabRun.Status.RUNNING);
+    }
+
     public static Path reports(ServerLevel level) {
         return level.getServer().getWorldPath(LevelResource.ROOT).resolve("architect-debug");
     }
@@ -49,6 +53,8 @@ public final class ArchitectLab {
     public static int command(CommandSourceStack source, String operation, String argument) {
         ServerLevel level = source.getLevel();
         try {
+            if (ArchitectWildernessLab.isActive(source.getServer()) && !java.util.Set.of("dump", "inspect", "mark").contains(operation))
+                throw new IllegalStateException("Stop the wilderness run before changing the small lab");
             if (operation.equals("setup")) {
                 freeze(level);
                 Marker marker = marker(level, true, BlockPos.containing(source.getPosition()));

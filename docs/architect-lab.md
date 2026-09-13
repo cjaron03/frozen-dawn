@@ -1,5 +1,8 @@
 # Architect lab
 
+For the larger native-terrain encounters and thirty-minute pursuit, see the
+[wilderness lab guide](architect-wilderness-lab.md).
+
 The lab and headless GameTests load the same structure templates and use the same
 start procedure and assertions. Reset creates fresh actors and restores the selected
 terrain. Recording begins before the Architect can move or mine.

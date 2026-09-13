@@ -60,6 +60,24 @@ final class ArchitectDebugCommand {
                         .executes(c -> approach(c.getSource(), actor(EntityArgument.getEntity(c, "entity")),
                                 EntityArgument.getEntity(c, "target"))))));
         root.then(labCommands());
+        root.then(wildernessCommands());
+        return root;
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> wildernessCommands() {
+        var root = Commands.literal("wilderness");
+        for (String operation : new String[]{"setup", "reset", "run", "stop", "dump", "inspect", "tp", "leave"}) {
+            root.then(Commands.literal(operation).executes(c ->
+                    com.frozendawn.debug.architect.ArchitectWildernessLab.command(c.getSource(), operation, "")));
+        }
+        root.then(Commands.literal("seed").then(Commands.argument("seed", LongArgumentType.longArg())
+                .executes(c -> com.frozendawn.debug.architect.ArchitectWildernessLab.command(c.getSource(), "seed",
+                        Long.toString(LongArgumentType.getLong(c, "seed"))))));
+        root.then(Commands.literal("scenario").then(Commands.argument("scenario", StringArgumentType.word())
+                .suggests((c,b) -> net.minecraft.commands.SharedSuggestionProvider.suggest(
+                        com.frozendawn.debug.architect.ArchitectWildernessLab.scenarios(), b))
+                .executes(c -> com.frozendawn.debug.architect.ArchitectWildernessLab.command(c.getSource(), "scenario",
+                        StringArgumentType.getString(c, "scenario")))));
         return root;
     }
 
