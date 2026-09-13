@@ -82,11 +82,13 @@ final class ArchitectCombatController {
             combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
         }
 
-        boolean footingApproach = dist3d >= 2.8
+        boolean outsideAttackRange = dist3d >= 2.8;
+        boolean footingApproach = outsideAttackRange
                 && com.frozendawn.entity.architect.ArchitectCombatFooting.needsNavigatedApproach(architect, target);
-        if (hDist > 3.0 || footingApproach) {
-            // Closing the last step up is path-following, not optional combat strafing.
-            // Do not zero its momentum through the lateral-footing filter.
+        if (outsideAttackRange) {
+            // Keep path-following until the target is inside the actual attack range. Stopping
+            // at three blocks leaves a moving target in the gap above the 2.8-block hit check,
+            // where the slower lateral pull cannot close the remaining distance.
             architect.getNavigation().moveTo(target, 1.0);
             if (footingApproach && architect.tickCount % 20 == 0)
                 architect.recordDecision("COMBAT_FOOTING_APPROACH", null, "navigate_to_reach distance=" + dist3d);
@@ -103,7 +105,7 @@ final class ArchitectCombatController {
                     strafeZ + toTarget.z * pullStrength
             );
 
-            if (dist3d < 2.8 && architect.attackAnim == 0 && architect.hasLineOfSight(target)) {
+            if (architect.attackAnim == 0 && architect.hasLineOfSight(target)) {
                 architect.swing(InteractionHand.MAIN_HAND);
                 architect.doHurtTarget(target);
                 combatState.backoffTicks = 6 + architect.nextRandomInt(4);
