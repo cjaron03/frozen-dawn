@@ -45,6 +45,8 @@ public class ArchitectBlockBreaker {
     @Nullable private BreakChoice choice;
     private long successfulBreaks;
     public long successfulBreakCount() { return successfulBreaks; }
+    public int debugProgressTicks() { return breakProgress; }
+    public int debugRequiredTicks() { return breakTime; }
     @Nullable public BreakChoice getChoice() { return choice; }
     private void record(String event, String detail) {
         if (mob instanceof ArchitectEntity architect) architect.recordDecision(event, choice, detail);

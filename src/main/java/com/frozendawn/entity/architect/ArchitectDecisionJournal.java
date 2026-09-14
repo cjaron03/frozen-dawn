@@ -11,6 +11,7 @@ import java.util.UUID;
 
 /** Server-thread only. Transient diagnostics, never an input to the AI. */
 public final class ArchitectDecisionJournal {
+    private final com.frozendawn.debug.architect.ArchitectVisualTrace visual = new com.frozendawn.debug.architect.ArchitectVisualTrace();
     public static final int CAPACITY = 400;
     private int capacity = CAPACITY;
     private final ArrayDeque<Entry> entries = new ArrayDeque<>();
@@ -33,6 +34,7 @@ public final class ArchitectDecisionJournal {
                         long breaks, String detail) { }
 
     public boolean enabled() { return enabled; }
+    public com.frozendawn.debug.architect.ArchitectVisualTrace visual() { return visual; }
     public long dropped() { return dropped; }
     public long breaks() { return breaks; }
     public long elapsed(long tick) { return Math.max(0, tick - startTick); }
@@ -50,6 +52,7 @@ public final class ArchitectDecisionJournal {
         capacity = CAPACITY;
         eventCounts.clear();
         runId = id;
+        visual.start(id, tick);
         startTick = endTick = tick;
         breakBaseline = lifetimeBreaks;
         breaks = dropped = 0;
@@ -71,6 +74,7 @@ public final class ArchitectDecisionJournal {
         endTick = tick;
         outcome = status;
         outcomeReason = reason;
+        visual.seal();
         stop();
     }
 

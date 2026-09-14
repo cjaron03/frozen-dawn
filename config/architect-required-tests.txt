@@ -29,3 +29,5 @@ architectlab.slab_low_roof_live_s2026_r0 trace
 architectlab.slab_low_roof_live_s2026_r1 trace
 architectlab.slab_low_roof_live_s2026_r2 trace
 architectlab.slab_low_roof_live_s2026_r3 trace
+visualsnapshotpreservesnavigationandterminalevidence xml
+visualpacketpreservesfractionalcollisionandtargetroute xml

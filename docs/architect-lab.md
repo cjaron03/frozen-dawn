@@ -1,5 +1,7 @@
 # Architect lab
 
+See the [visual debugger guide](architect-visual-debugger.md) for routes, collision geometry, freeze/step controls, history, and visual evidence in logs and dumps.
+
 For the larger native-terrain encounters and thirty-minute pursuit, see the
 [wilderness lab guide](architect-wilderness-lab.md).
 

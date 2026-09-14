@@ -61,11 +61,13 @@ final class ArchitectDebugCommand {
                                 EntityArgument.getEntity(c, "target"))))));
         root.then(labCommands());
         root.then(wildernessCommands());
+        root.then(com.frozendawn.debug.architect.ArchitectVisualDebug.commands("auto"));
         return root;
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> wildernessCommands() {
         var root = Commands.literal("wilderness");
+        root.then(com.frozendawn.debug.architect.ArchitectVisualDebug.commands("wilderness"));
         for (String operation : new String[]{"setup", "reset", "run", "stop", "dump", "inspect", "tp", "leave"}) {
             root.then(Commands.literal(operation).executes(c ->
                     com.frozendawn.debug.architect.ArchitectWildernessLab.command(c.getSource(), operation, "")));
@@ -83,6 +85,7 @@ final class ArchitectDebugCommand {
 
     private static LiteralArgumentBuilder<CommandSourceStack> labCommands() {
         var lab = Commands.literal("lab");
+        lab.then(com.frozendawn.debug.architect.ArchitectVisualDebug.commands("lab"));
         for (String operation : new String[]{"setup", "reset", "run", "dump", "inspect", "tp"}) {
             lab.then(Commands.literal(operation).executes(c -> ArchitectLab.command(c.getSource(), operation, "")));
         }
@@ -148,6 +151,7 @@ final class ArchitectDebugCommand {
     private static int execute(CommandSourceStack source, ArchitectEntity architect, String operation) {
         if (operation.equals("stop")) {
             architect.recordDecision("RECORD_STOP", null, "");
+            com.frozendawn.debug.architect.ArchitectVisualDebug.capture(architect, true);
             architect.decisionJournal().finish(architect.level().getGameTime(), "STOPPED", "Stopped by operator");
             architect.clearDebugTargetLock();
         }
@@ -156,6 +160,7 @@ final class ArchitectDebugCommand {
             return 1;
         }
         try {
+            com.frozendawn.debug.architect.ArchitectVisualDebug.capture(architect, true);
             var path = ArchitectDebugReports.export(ArchitectLab.reports(source.getLevel()), architect.decisionJournal(),
                     java.util.Map.of("actorUuid", architect.getUUID().toString(), "inspection", architect.inspectDecisions()));
             ArchitectLab.reply(source, "Exported run " + architect.decisionJournal().runId() + " to " + path);

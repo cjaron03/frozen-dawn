@@ -212,6 +212,8 @@ public class ArchitectEntity extends Monster {
     /** Lab-only target lock: pins {@link #findTarget()} so a nearby player cannot steal the run. */
     @Nullable private UUID debugForcedTargetId;
     @Nullable private UUID lastJournalTargetId;
+    record MeleeDebugObservation(long gameTick, UUID target, boolean allowed) { }
+    @Nullable private MeleeDebugObservation meleeDebugObservation;
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectApproachWalkSupport walkSupport =
@@ -253,6 +255,7 @@ public class ArchitectEntity extends Monster {
     private static final float WALK_MAX_ROTATE = 35.0F;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     static final int MELEE_COMMIT_TICKS = 12;
+    static final double MELEE_ATTACK_RANGE = 2.8;
     static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
     private static final double MELEE_ENGAGE_HORIZONTAL_RANGE = 4.75;
     static final double MELEE_COMMIT_HORIZONTAL_RANGE = 5.25;
@@ -1012,7 +1015,7 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean canCommitToMelee(LivingEntity target) {
-        return ArchitectMeleeEngagement.canCommitToMelee(
+        boolean allowed = ArchitectMeleeEngagement.canCommitToMelee(
                 this,
                 target,
                 hasLineOfSight(target),
@@ -1022,6 +1025,10 @@ public class ArchitectEntity extends Monster {
                 MELEE_COMMIT_LOS_GRACE_RANGE,
                 2.25,
                 1.25);
+        if (decisionJournal.visual().enabled()) {
+            meleeDebugObservation = new MeleeDebugObservation(level().getGameTime(), target.getUUID(), allowed);
+        }
+        return allowed;
     }
 
     void clearWalkNavigationState(boolean stopNavigation) {
@@ -1046,6 +1053,10 @@ public class ArchitectEntity extends Monster {
     }
 
     public ArchitectDecisionJournal decisionJournal() { return decisionJournal; }
+    public com.frozendawn.debug.architect.ArchitectDebugSnapshot debugSnapshot(
+            com.frozendawn.debug.architect.ArchitectDebugSnapshot.Lab lab, boolean frozen) {
+        return ArchitectDebugSnapshotFactory.capture(this, approachState, combatState, blockBreaker, debugStep, meleeDebugObservation, lab, frozen);
+    }
     public long successfulBreakCount() { return blockBreaker.successfulBreakCount(); }
     public void startDecisionRecording(@Nullable Long seed) {
         startDecisionRecording(UUID.randomUUID(), seed, net.minecraft.world.level.block.Rotation.NONE);
@@ -1064,7 +1075,11 @@ public class ArchitectEntity extends Monster {
         debugForcedTargetId = null;
     }
     public void recordDecision(String event, @Nullable BreakChoice choice, String detail) {
-        if (level().isClientSide || !decisionJournal.enabled()) return;
+        if (level().isClientSide) return;
+        decisionJournal.visual().event(level().getGameTime(), event, detail,
+                choice == null ? null : ArchitectDebugSnapshotFactory.point(choice.pos()),
+                choice == null ? "" : choice.reason().name());
+        if (!decisionJournal.enabled()) return;
         decisionJournal.append(new ArchitectDecisionJournal.Entry(level().getGameTime(), event,
                 actionName(getBrainAction()), blockPosition().immutable(), debugStep == null ? null : debugStep.pos(),
                 debugStep == null ? "-" : debugStep.type().name(), approachState.committedWalkWaypoint,
@@ -1081,7 +1096,7 @@ public class ArchitectEntity extends Monster {
     }
     @Nullable BreakChoice chooseBreak(String source, java.util.List<BreakChoice> choices,
             java.util.function.Predicate<BlockPos> lastResort) {
-        java.util.List<ArchitectWalkBreakPlanner.CandidateDecision> trace = decisionJournal.enabled()
+        java.util.List<ArchitectWalkBreakPlanner.CandidateDecision> trace = (decisionJournal.enabled() || decisionJournal.visual().enabled())
                 ? new java.util.ArrayList<>() : null;
         BreakChoice chosen = ArchitectWalkBreakPlanner.selectChoice(choices,
                 approachState.blockedUnstickBreakCandidates, this::breakRejection, lastResort,

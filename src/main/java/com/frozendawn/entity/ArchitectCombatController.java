@@ -82,7 +82,7 @@ final class ArchitectCombatController {
             combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
         }
 
-        boolean outsideAttackRange = dist3d >= 2.8;
+        boolean outsideAttackRange = dist3d >= ArchitectEntity.MELEE_ATTACK_RANGE;
         boolean footingApproach = outsideAttackRange
                 && com.frozendawn.entity.architect.ArchitectCombatFooting.needsNavigatedApproach(architect, target);
         if (outsideAttackRange) {

@@ -365,14 +365,23 @@ final class ArchitectWildernessRun {
         if(architect.decisionJournal().enabled()){
             if(lastFrameTick!=elapsed())sample(elapsed());
             event("END",status+": "+reason);
+            ArchitectVisualDebug.capture(architect, true, debugContext());
             architect.decisionJournal().finish(end,status,reason);
         }
         architect.setNoAi(true);architect.getNavigation().stop();architect.setDeltaMovement(Vec3.ZERO);
         if(target==villager){villager.setNoAi(true);villager.getNavigation().stop();villager.setDeltaMovement(Vec3.ZERO);}
     }
 
+    ArchitectDebugSnapshot.Lab debugContext() {
+        Vec3 goal = scenario.exploratory() ? null : destination();
+        return new ArchitectDebugSnapshot.Lab("wilderness_" + scenario.id(), status, reason, elapsed(), scenario.duration,
+                goal == null ? null : new ArchitectDebugSnapshot.Point(goal.x, goal.y, goal.z),
+                scenario.exploratory() ? -1 : waypoint, lap, hitCount, actorStill, targetStill);
+    }
+
     Path export() throws IOException {
         if(status.equals("PREPARED"))throw new IllegalStateException("Start the wilderness run before exporting");
+        ArchitectVisualDebug.capture(architect, true, debugContext());
         Map<String,Object> context=new LinkedHashMap<>();
         context.put("scenario","wilderness_"+scenario.id());context.put("recipeVersion",ArchitectWildernessTerrain.RECIPE);
         context.put("worldSeed",level.getSeed());context.put("terrainSeed",terrain.seed);context.put("preparedTerrainSha256",terrain.hash());

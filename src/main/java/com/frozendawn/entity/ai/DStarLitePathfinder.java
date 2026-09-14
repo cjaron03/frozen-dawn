@@ -132,6 +132,12 @@ public class DStarLitePathfinder {
     public boolean isSearchComplete() { return searchComplete; }
     /** True when the last search gave up because the cell map hit MAX_INCREMENTAL_CELLS. */
     public boolean isSearchAborted() { return searchAborted; }
+    /** Observation only: does not pop the queue, evaluate edges, or advance the search. */
+    public record DebugState(boolean initialized, boolean complete, boolean aborted,
+                             int cells, int queueEntries, BlockPos goal) { }
+    public DebugState debugState() {
+        return new DebugState(initialized, searchComplete, searchAborted, cells.size(), queue.size(), goalPos);
+    }
     public void setSurfaceY(int y) { this.surfaceY = y; }
     public void addImmuneBlock(BlockPos pos) {
         immuneBlocks.add(pos.asLong());

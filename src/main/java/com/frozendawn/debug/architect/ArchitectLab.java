@@ -39,6 +39,17 @@ public final class ArchitectLab {
         return RUNS.values().stream().anyMatch(r -> r.level.getServer() == server && r.status() == ArchitectLabRun.Status.RUNNING);
     }
 
+    public static ArchitectEntity debugActor(ServerLevel level) {
+        var run = RUNS.get(level);
+        return run == null ? null : run.architect;
+    }
+
+    public static ArchitectDebugSnapshot.Lab debugContext(ArchitectEntity actor) {
+        var run = RUNS.get(actor.level());
+        if (run == null || run.architect != actor) return null;
+        return run.debugContext();
+    }
+
     public static Path reports(ServerLevel level) {
         return level.getServer().getWorldPath(LevelResource.ROOT).resolve("architect-debug");
     }
@@ -204,6 +215,7 @@ public final class ArchitectLab {
     }
 
     private static Path export(ArchitectLabRun run) throws IOException {
+        ArchitectVisualDebug.capture(run.architect, true);
         return ArchitectDebugReports.export(reports(run.level), run.architect.decisionJournal(), run.context());
     }
 

@@ -43,6 +43,16 @@ public final class ArchitectWildernessLab {
     public static boolean isActive(MinecraftServer server){Session s=SESSIONS.get(server);return s!=null&&(s.preparing||(s.run!=null&&s.run.running()));}
     public static List<String> scenarios(){return Arrays.stream(ArchitectWildernessRun.Scenario.values()).map(ArchitectWildernessRun.Scenario::id).toList();}
 
+    public static ArchitectEntity debugActor(MinecraftServer server) {
+        var session = SESSIONS.get(server);
+        return session == null || session.preparing || session.run == null ? null : session.run.architect;
+    }
+
+    public static ArchitectDebugSnapshot.Lab debugContext(ArchitectEntity actor) {
+        var session = SESSIONS.get(actor.getServer());
+        return session == null || session.run == null || session.run.architect != actor ? null : session.run.debugContext();
+    }
+
     public static int command(CommandSourceStack source,String operation,String argument){
         try{
             MinecraftServer server=source.getServer();

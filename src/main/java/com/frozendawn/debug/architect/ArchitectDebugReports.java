@@ -31,7 +31,7 @@ public final class ArchitectDebugReports {
         String id = journal.runId().toString();
         try {
             invalidate(directory, id, "WRITING", "Export in progress");
-            if (journal.entries().isEmpty()) throw new IOException("No decisions recorded for run " + id);
+            if (journal.entries().isEmpty() && journal.visual().latest() == null) throw new IOException("No decisions recorded for run " + id);
             Path export = Files.createTempDirectory(directory, "run-" + id + "-");
             Path trace = export.resolve("decisions.tsv");
             Path summary = export.resolve("summary.json");
@@ -40,9 +40,15 @@ public final class ArchitectDebugReports {
             data.put("context", context);
             data.put("build", buildInfo());
             data.put("traceSha256", sha256(table.getBytes(StandardCharsets.UTF_8)));
+            data.put("visualDebug", journal.visual().summary());
+            Map<String, String> attachments = new LinkedHashMap<>(extraFiles);
+            attachments.putAll(journal.visual().files());
+            Map<String, String> attachmentHashes = new LinkedHashMap<>();
+            for (var entry : attachments.entrySet()) attachmentHashes.put(entry.getKey(), sha256(entry.getValue().getBytes(StandardCharsets.UTF_8)));
+            data.put("attachmentSha256", attachmentHashes);
             Files.writeString(trace, table, StandardCharsets.UTF_8);
             Files.writeString(summary, JSON.toJson(data), StandardCharsets.UTF_8);
-            for (var entry : extraFiles.entrySet()) {
+            for (var entry : attachments.entrySet()) {
                 if (!Path.of(entry.getKey()).getFileName().toString().equals(entry.getKey())) {
                     throw new IOException("Extra report files must have a plain filename");
                 }

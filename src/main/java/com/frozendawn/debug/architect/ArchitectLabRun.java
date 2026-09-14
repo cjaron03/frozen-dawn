@@ -212,6 +212,11 @@ public final class ArchitectLabRun {
         return true;
     }
 
+    public ArchitectDebugSnapshot.Lab debugContext() {
+        return new ArchitectDebugSnapshot.Lab(scenario.id, status.name(), reason, elapsedTicks(), scenario.timeout,
+                null, -1, -1, architect.decisionJournal().eventCounts().getOrDefault("MELEE_HIT", 0L), 0, 0);
+    }
+
     public void finish(Status result, String detail) {
         if (done()) return;
         if (result == Status.RUNNING || result == Status.PREPARED) throw new IllegalArgumentException("Not a terminal result");
@@ -219,6 +224,7 @@ public final class ArchitectLabRun {
         reason = detail;
         completionTick = level.getGameTime();
         architect.recordDecision("RUN_END", null, result + ": " + detail);
+        ArchitectVisualDebug.capture(architect, true, debugContext());
         architect.decisionJournal().finish(completionTick, result.name(), detail);
         pauseActors();
     }

@@ -1,5 +1,7 @@
 # Architect wilderness lab
 
+See the [visual debugger guide](architect-visual-debugger.md) for routes, collision geometry, freeze/step controls, history, and visual evidence in logs and dumps.
+
 The wilderness lab prepares a 128×128 region in its own dimension, using native
 Overworld generation as the foundation. It adds Frozen Dawn blocks and connected
 trails through deep snow, Acheronite crystals, frozen atmosphere deposits, a cave,
@@ -16,7 +18,8 @@ ticks, so use a disposable test world.
 
 Restart the Minecraft client/server after installing this version so the new
 `frozendawn:architect_wilderness_lab` dimension loads. For this development checkout,
-launch from `.worktrees/architect-lab` with `./gradlew runClientLab`.
+launch with `./gradlew runClientLab` from the checkout containing the code you want to test.
+For the visual debugger branch, use `.worktrees/architect-visual-debugger`.
 Use a disposable world with cheats and operator permission level 2.
 
 ```mcfunction
