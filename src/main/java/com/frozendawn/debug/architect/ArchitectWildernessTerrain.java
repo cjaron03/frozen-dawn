@@ -28,9 +28,11 @@ import java.util.*;
 /** Chunk-bounded preparation of real Overworld terrain, in the disposable lab dimension only. */
 final class ArchitectWildernessTerrain {
     static final int SIZE = 128;
-    static final int RECIPE = 2;
+    static final int RECIPE = 3;
     final ServerLevel level;
     final long seed;
+    private final boolean construction;
+    ArchitectConstructionCourse course;
     final List<Vec3> surface = new ArrayList<>();
     final List<Vec3> cave = new ArrayList<>();
     final List<BlockPos> bridgeDeck = new ArrayList<>();
@@ -47,6 +49,11 @@ final class ArchitectWildernessTerrain {
     private record Edit(BlockPos pos, BlockState state) { }
 
     ArchitectWildernessTerrain(ServerLevel level, long seed) {
+        this(level, seed, false);
+    }
+
+    ArchitectWildernessTerrain(ServerLevel level, long seed, boolean construction) {
+        this.construction = construction;
         this.level = level;
         this.seed = seed;
         try { digest = MessageDigest.getInstance("SHA-256"); }
@@ -94,11 +101,7 @@ final class ArchitectWildernessTerrain {
         }
         if (!designed) { design(); designed = true; }
         if (editIndex < edits.size()) {
-            int end = Math.min(edits.size(), editIndex + 2048);
-            for (; editIndex < end; editIndex++) {
-                Edit e = edits.get(editIndex);
-                level.setBlock(e.pos, e.state, 3);
-            }
+            applyEdits(2048);
             return false;
         }
         if (hashColumn < SIZE * SIZE) {
@@ -235,6 +238,7 @@ final class ArchitectWildernessTerrain {
         // Fixed mutation stations are just ahead of the guided target's route.
         growth = floor(50,22).above();
         drift = floor(80,22).above();
+        if (construction) course = new ArchitectConstructionCourse(this);
     }
 
     static BlockPos decorationColumn(BlockPos centre, BlockPos next) {
@@ -314,7 +318,16 @@ final class ArchitectWildernessTerrain {
         }
     }
 
-    private void put(BlockPos pos,BlockState state) { if(!level.isOutsideBuildHeight(pos))edits.add(new Edit(pos,state)); }
+    boolean applyEdits(int budget) {
+        int end = Math.min(edits.size(), editIndex + budget);
+        for (; editIndex < end; editIndex++) {
+            Edit edit = edits.get(editIndex);
+            level.setBlock(edit.pos, edit.state, 3);
+        }
+        return editIndex == edits.size();
+    }
+
+    void put(BlockPos pos,BlockState state) { if(!level.isOutsideBuildHeight(pos))edits.add(new Edit(pos,state)); }
     private static long key(int x,int z){return ((long)x<<32) ^ (z&0xffffffffL);}
     BlockPos floor(int x,int z){return new BlockPos(x,trail.getOrDefault(key(x,z),groundY(x,z)),z);}
     boolean contains(Vec3 p){return p.x>=0 && p.x<SIZE && p.z>=0 && p.z<SIZE && p.y>level.getMinBuildHeight();}

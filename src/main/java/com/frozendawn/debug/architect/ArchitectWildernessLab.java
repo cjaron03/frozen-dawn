@@ -109,7 +109,7 @@ public final class ArchitectWildernessLab {
         List<net.minecraft.world.entity.Entity> leftovers=new ArrayList<>();
         for(var entity:session.level.getAllEntities())if(entity.getTags().contains("fd_wilderness"))leftovers.add(entity);
         for(var entity:leftovers){if(entity instanceof ArchitectEntity actor)actor.discardLabActor();else entity.discard();}
-        session.terrain=new ArchitectWildernessTerrain(session.level,session.seed);
+        session.terrain=new ArchitectWildernessTerrain(session.level,session.seed,session.scenario==ArchitectWildernessRun.Scenario.CONSTRUCTION);
         session.preparing=true;session.nextNotice=0;
         ArchitectDebugReports.invalidate(ArchitectLab.reports(session.level).resolve("wilderness"),"pending","PREPARING","Restoring native terrain and building wilderness recipe");
         ArchitectLab.reply(session.owner,"Preparing 128×128 wilderness, seed "+session.seed+", scenario "+session.scenario.id()+". Native terrain snapshots are preserved for replay. Building proceeds while ticks are frozen.");

@@ -23,7 +23,7 @@ import java.util.*;
 final class ArchitectWildernessRun {
     enum Scenario {
         SURFACE(3600), CAVES(6000), SHELTER_OPEN(6000), SHELTER_BREACH(6000),
-        CHANGING(9600), ENDURANCE(36000), ROAM(12000), PLAYER(36000);
+        CONSTRUCTION(18000), WEATHER(18000), CHANGING(9600), ENDURANCE(36000), ROAM(12000), PLAYER(36000);
         final int duration;
         Scenario(int duration){this.duration=duration;}
         boolean exploratory(){return this==ROAM || this==PLAYER;}
@@ -34,6 +34,7 @@ final class ArchitectWildernessRun {
     final ArchitectWildernessTerrain terrain;
     final ServerLevel level;
     final Scenario scenario;
+    private final ArchitectWildernessWeather weather;
     final ArchitectEntity architect;
     final ArchitectWildernessTarget villager;
     LivingEntity target;
@@ -64,6 +65,7 @@ final class ArchitectWildernessRun {
 
     ArchitectWildernessRun(ArchitectWildernessTerrain terrain,Scenario scenario){
         this.terrain=terrain;this.level=terrain.level;this.scenario=scenario;
+        weather=scenario==Scenario.WEATHER?new ArchitectWildernessWeather(level,terrain.seed):null;
         architect=ModEntities.ARCHITECT.get().create(level);
         if(architect==null)throw new IllegalStateException("Could not create wilderness Architect");
         villager=new ArchitectWildernessTarget(level);
@@ -82,6 +84,7 @@ final class ArchitectWildernessRun {
     }
 
     private void buildRoute(){
+        if(scenario==Scenario.CONSTRUCTION){route.addAll(Objects.requireNonNull(terrain.course).route);return;}
         route.addAll(terrain.surface);
         if(scenario==Scenario.CAVES || scenario==Scenario.ENDURANCE){
             int first=-1,last=-1;
@@ -103,7 +106,7 @@ final class ArchitectWildernessRun {
         // Preparation only: verify the target can physically travel every adjacent leg.
         // Failed target fixtures must never be presented as Architect failures.
         if(scenario.exploratory())return;
-        for(int i=0;i<route.size();i++){
+        for(int i=scenario==Scenario.CONSTRUCTION?1:0;i<(scenario==Scenario.CONSTRUCTION?route.size()-1:route.size());i++){
             villager.setPos(route.get(i));villager.setOnGround(true);villager.getNavigation().stop();
             var path=villager.getNavigation().createPath(BlockPos.containing(route.get((i+1)%route.size())),0);
             if(path==null||!path.canReach())throw new IllegalStateException("Target route is disconnected at waypoint "+i+": "+route.get(i)+" -> "+route.get((i+1)%route.size())+". Native terrain needs a trail adjustment; no Architect run has started.");
@@ -131,6 +134,7 @@ final class ArchitectWildernessRun {
         if(!scenario.exploratory())villager.guideTo(route.get(waypoint));
         previousActor=architect.position();previousTarget=target.position();targetProgress.reset(previousTarget);previousHealth=target.getHealth();previousYaw=architect.getYRot();
         status="RUNNING";reason="Pursuing moving target";
+        if(weather!=null){weather.begin();event("WEATHER_BEGIN",weather.summary().toString());}
         event("BEGIN","scenario="+scenario.id()+" target="+target.getUUID()+" health="+target.getHealth());
     }
 
@@ -183,11 +187,15 @@ final class ArchitectWildernessRun {
             turnWindow=actorWindowDistance=0;actorCells.clear();
         }
         if(!scenario.exploratory()){
-            guide(t);
-            mutate(t);
+            if(scenario==Scenario.CONSTRUCTION){
+                int stage=terrain.course.stage();
+                terrain.course.tick(this,t,hitCount,places,breaks);
+                if(stage!=terrain.course.stage()){waypoint=Math.min(4,terrain.course.stage()+2);hitThisLeg=false;progressCells.clear();stageBestDistance=Double.POSITIVE_INFINITY;}
+            }else{guide(t);mutate(t);}
+            if(weather!=null)weather.tick(t);
             if(!running())return;
             if(scenario==Scenario.SHELTER_OPEN && breaks>0){finish("FAILED","Open shelter control: unnecessary excavation despite the open entrances");return;}
-            if(targetStill==160)event("TARGET_STALL_WARNING","reachable="+villager.pathReachable()+" waypoint="+waypoint);
+            if(targetStill==160 && target.distanceToSqr(destination())>2)event("TARGET_STALL_WARNING","reachable="+villager.pathReachable()+" waypoint="+waypoint);
             if(targetStill>=400 && target.distanceToSqr(destination())>2){finish("TARGET_FAILED","Villager made no horizontal progress for 400 ticks; Architect result is inconclusive");return;}
             if(actorStill==160)event("ACTOR_STALL_WARNING","waypoint="+waypoint+" mining="+architect.isMiningBlock());
             if((actorStill>=600&&!architect.isMiningBlock())||t-lastProgress>=600){finish("FAILED","Architect made no useful pursuit progress for 600 ticks");return;}
@@ -197,7 +205,7 @@ final class ArchitectWildernessRun {
             if(architect.isInLava()||architect.isOnFire()){finish("FAILED","Architect entered lava or fire");return;}
             if(spinWarnings>=3||closeLoops>=3){finish("FAILED","Repeated spinning/circling during pursuit");return;}
             if(breaks>32+scenario.duration/1200*24 || places>64+scenario.duration/1200*32){finish("FAILED","Runaway excavation or scaffolding budget exceeded");return;}
-            if(t-checkpointTick>=1200 && !checkpoint(t))return;
+            if(scenario!=Scenario.CONSTRUCTION && t-checkpointTick>=1200 && !checkpoint(t))return;
         }
         largestFall=Math.max(largestFall,architect.fallDistance);
         if(architect.onGround()&&largestFall>0){if(largestFall>3)event("FALL","distance="+largestFall+" health="+architect.getHealth());largestFall=0;}
@@ -211,6 +219,7 @@ final class ArchitectWildernessRun {
     }
 
     private Vec3 destination(){
+        if(scenario==Scenario.CONSTRUCTION)return terrain.course.goal();
         if(jukeGoal!=null)return jukeGoal;
         if(holdShelter){int[][] points={{106,52},{110,52},{110,56},{106,56}};int[] p=points[shelterPatrol%4];return new Vec3(p[0]+0.5,terrain.shelterY+1,p[1]+0.5);}
         return route.get(waypoint);
@@ -325,6 +334,8 @@ final class ArchitectWildernessRun {
     }
 
     private String missingEvent(){
+        if(scenario==Scenario.CONSTRUCTION)return "Construction stations unfinished: "+terrain.course.summary();
+        if(weather!=null&&!weather.observedChange())return "No production snowfall mutations were observed";
         if((scenario==Scenario.SHELTER_BREACH||scenario==Scenario.ENDURANCE)&&!breachCompleted)return "Required shelter breach and verified catch did not occur";
         if(scenario.dynamic())for(String required:List.of("gate_closed","crystal_growth","drift_or_deposit","bridge_removed"))
             if(mutations.stream().noneMatch(e->e.endsWith(":"+required)))return "Progress trigger was never reached: "+required;
@@ -338,7 +349,7 @@ final class ArchitectWildernessRun {
         return null;
     }
 
-    private void event(String kind,String detail){
+    void event(String kind,String detail){
         events.add(Map.of("tick",elapsed(),"event",kind,"detail",detail));
         architect.recordDecision("WILDERNESS_"+kind,null,detail);
     }
@@ -363,6 +374,7 @@ final class ArchitectWildernessRun {
     void finish(String status,String reason){
         if(finished())return;
         end=level.getGameTime();this.status=status;this.reason=reason;
+        if(weather!=null){weather.close();event("WEATHER_END",weather.summary().toString());}
         if(architect.decisionJournal().enabled()){
             if(lastFrameTick!=elapsed())sample(elapsed());
             event("END",status+": "+reason);
@@ -384,6 +396,8 @@ final class ArchitectWildernessRun {
         if(status.equals("PREPARED"))throw new IllegalStateException("Start the wilderness run before exporting");
         ArchitectVisualDebug.capture(architect, true, debugContext());
         Map<String,Object> context=new LinkedHashMap<>();
+        if(weather!=null)context.put("weather",weather.summary());
+        if(scenario==Scenario.CONSTRUCTION)context.put("construction",terrain.course.summary());
         context.put("scenario","wilderness_"+scenario.id());context.put("recipeVersion",ArchitectWildernessTerrain.RECIPE);
         context.put("worldSeed",level.getSeed());context.put("terrainSeed",terrain.seed);context.put("preparedTerrainSha256",terrain.hash());
         context.put("difficulty",level.getDifficulty().name());
@@ -404,10 +418,11 @@ final class ArchitectWildernessRun {
         context.put("p95Server100TickMeanMs",sorted.isEmpty()?0:sorted.get(Math.min(sorted.size()-1,(int)(sorted.size()*0.95))));
         context.put("frameSha256",ArchitectDebugReports.sha256(frames.toString().getBytes(StandardCharsets.UTF_8)));
         String readme="# Wilderness "+scenario.id()+"\n\n"+status+": "+reason+"\n\nSeed: "+terrain.seed+". Recipe: "+ArchitectWildernessTerrain.RECIPE+".\n\nSee summary.json for every checkpoint and world change; movement.tsv contains both actors and rotation samples. TARGET_FAILED and SCENARIO_INCOMPLETE are inconclusive Architect results. OBSERVED is an ungraded exploratory capture. Tick costs describe the whole server, not this entity alone.\n";
-        return ArchitectDebugReports.export(ArchitectLab.reports(level).resolve("wilderness"),architect.decisionJournal(),context,
-                Map.of("movement.tsv",frames.toString(),"README.md",readme));
+        Map<String,String> files=new LinkedHashMap<>();files.put("movement.tsv",frames.toString());files.put("README.md",readme);
+        if(weather!=null)files.put("weather.tsv",weather.table());
+        return ArchitectDebugReports.export(ArchitectLab.reports(level).resolve("wilderness"),architect.decisionJournal(),context,files);
     }
 
-    void dispose(){architect.discardLabActor();villager.discard();}
+    void dispose(){if(weather!=null)weather.close();architect.discardLabActor();villager.discard();}
     Vec3 observation(){return route.get(0).add(0,8,0);}
 }

@@ -8,11 +8,11 @@ trails through deep snow, Acheronite crystals, frozen atmosphere deposits, a cav
 a fenced passage, a shelter, and a ravine crossing. The surrounding hills and
 underground terrain remain available for exploration.
 
-This is a landscape and navigation stress harness. Its environmental changes are
-scripted snapshots of late-phase conditions. It does not run the Overworld's
-apocalypse, snow accumulation, crystal growth, or atmosphere formation systems in
-the lab dimension. Existing world progression continues normally when you unfreeze
-ticks, so use a disposable test world.
+This is a landscape and navigation stress harness. Baseline scenarios use scripted
+late-phase terrain. The `weather` scenario additionally runs production snow
+accumulation and block freezing at a local phase-5 setting. It does not change
+Overworld apocalypse progression. Existing world progression continues normally
+when you unfreeze ticks, so use a disposable test world.
 
 ## Start watching
 
@@ -81,6 +81,8 @@ It is not invulnerable and can still die if trapped or repeatedly hit on one leg
 | `shelter_breach` | 5 minutes | Entrances close after the target enters; the Architect must break in and land a verified hit |
 | `changing` | 8 minutes | Gate closure with an open detour, crystal growth, snow growth, later atmosphere deposits, and loss of the crossing |
 | `endurance` | 30 minutes | Changing terrain, cave traversal, shelter breach, and a target direction change during mining or scaffolding in one continuous encounter |
+| `construction` | Up to 15 minutes | Six-block ascent, removed four-block crossing, closed wall, low ceiling, target movement during construction, and a verified final hit |
+| `weather` | 15 minutes | Surface pursuit with production phase-5 snowfall/freezing, minute checkpoints, and confirmed snowfall mutations |
 | `roam` | 10 minutes | Villager uses its normal autonomous brain; ungraded observation |
 | `player` | 30 minutes | Architect pursues the operator in Survival or Adventure; ungraded observation |
 
@@ -129,7 +131,7 @@ If you restart while inside the lab, return explicitly with
 
 ## Results and reports
 
-Every minute of a graded run must include both at least twelve blocks of horizontal target
+Every minute of a graded pursuit run (all except construction) must include both at least twelve blocks of horizontal target
 travel and an actual Architect melee hit confirmed by health loss. Later success
 cannot hide an earlier failed checkpoint. The harness also checks for prolonged
 lack of progress, repeated spinning/circling, leaving the region, falling into the
@@ -217,3 +219,48 @@ Restart Minecraft to load the fix, then use `/fd architect wilderness setup`
 to recreate the session with the default seed 1337 and recipe 2 before starting
 another run. Within an existing session, `wilderness reset` regenerates its selected seed.
 Existing exports preserve the original failure and terrain fingerprint.
+
+
+## Construction and production weather
+
+After setup, select one scenario and wait for **Wilderness ready**:
+
+```mcfunction
+/fd architect wilderness scenario construction
+/fd architect wilderness run
+/tick unfreeze
+```
+
+Construction builds an enclosed course in the landscape. The same villager
+moves through the intact course using normal navigation. The bridge is removed
+only after the target clears it; the wall closes and the ceiling lowers only when both actors are clear.
+Passing requires real scaffold placements and physical crossings, wall and
+ceiling destruction, target movement during a construction action, and a verified
+hit beyond the final obstacle. Station events and the `construction` summary
+record which requirements actually happened. Missing triggers yield
+`SCENARIO_INCOMPLETE`. Deliberate waits use station checks instead of the
+baseline target-travel minute quota.
+
+For weather, select `/fd architect wilderness scenario weather`, wait for
+readiness, then run and unfreeze. The scenario calls the same
+`SnowAccumulator` and `BlockFreezer` rules used in production, including snow
+layers becoming blocks, depth limits, freezing and structural snow stress.
+It uses phase 5 at progress 0.5, the configured snowfall rate, a seeded sampler,
+and a fixed radius-63 footprint centred at (64,64). Spectator movement and extra
+observers do not increase that workload. The existing prepared terrain remains
+the starting point.
+
+This exercises environmental block changes, not the entire apocalypse or all
+client phase effects: crystal growth, late atmosphere deposition, and phase
+transitions are not enabled by this scenario. Rain strength is local to the lab
+and restored on stop, reset, leave, or completion. Some production stress chances
+still use world randomness, so the seed does not promise identical outcomes.
+
+Reports include weather settings, successful snowfall mutation counts, and
+`weather.tsv`: 64 surface columns sampled per tick, with the latest 4096 changes
+retained and a dropped-change count. These sampled net changes include AI edits;
+the separate snowfall counter records successful production snow placements or
+layer increments. The prepared terrain hash describes the starting world.
+A weather pass also requires the normal moving-target catch checkpoints.
+A snow-trapped or dead villager remains `TARGET_FAILED`, with an inconclusive
+Architect result. Freeze and dump the run to preserve the obstacle and paths.
