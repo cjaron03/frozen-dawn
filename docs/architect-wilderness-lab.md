@@ -264,3 +264,11 @@ layer increments. The prepared terrain hash describes the starting world.
 A weather pass also requires the normal moving-target catch checkpoints.
 A snow-trapped or dead villager remains `TARGET_FAILED`, with an inconclusive
 Architect result. Freeze and dump the run to preserve the obstacle and paths.
+
+
+Weather waypoints follow the current collision surface within the production
+three-block snow depth. Arrival uses horizontal proximity and a small vertical
+tolerance for stepping and jumping. This prevents a villager that has reached a
+snow-covered waypoint from turning back toward its old buried coordinates.
+The debugger's target goal shows the adjusted height. Unresolved obstacles still
+produce an inconclusive target failure; the harness does not remove the snow.

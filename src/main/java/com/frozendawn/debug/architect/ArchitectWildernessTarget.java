@@ -28,6 +28,7 @@ final class ArchitectWildernessTarget extends Villager {
     }
 
     void guideTo(Vec3 destination) {
+        if (destination.equals(this.destination)) return;
         this.destination = destination;
         repath = 0;
     }

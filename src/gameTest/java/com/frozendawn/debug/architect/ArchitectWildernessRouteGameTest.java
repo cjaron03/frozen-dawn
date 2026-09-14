@@ -119,4 +119,40 @@ public final class ArchitectWildernessRouteGameTest {
             }
         });
     }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 200)
+    public static void wildernessTargetAdvancesPastSnowRaisedWaypoint(GameTestHelper helper) {
+        // Replay the failed weather waypoint: original feet Y + 1.625 from snow.
+        for(int x=2;x<=6;x++)for(int z=1;z<=7;z++){
+            helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
+            helper.setBlock(new BlockPos(x,1,z),Blocks.SNOW_BLOCK);
+            helper.setBlock(new BlockPos(x,2,z),Blocks.SNOW.defaultBlockState()
+                    .setValue(SnowLayerBlock.LAYERS,6));
+        }
+        var target=new ArchitectWildernessTarget(helper.getLevel());
+        Vec3 oldGoal=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,4)));
+        Vec3 next=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,1)));
+        target.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,7))).add(0,1.625,0));
+        target.setOnGround(true);
+        helper.getLevel().addFreshEntity(target);
+        boolean[] advanced={false};
+        helper.onEachTick(()->{
+            Vec3 original=advanced[0]?next:oldGoal;
+            Vec3 resolved=ArchitectWildernessWaypoint.surface(helper.getLevel(),target,original);
+            helper.assertTrue(Math.abs(resolved.y-original.y-1.625)<0.001,
+                    "Destination must use the snow collision surface");
+            target.guideTo(resolved);
+            if(ArchitectWildernessWaypoint.arrived(target.position(),resolved)){
+                if(!advanced[0]){
+                    helper.assertTrue(target.distanceToSqr(oldGoal)>2.25,
+                            "The old 3D arrival check must reproduce the missed waypoint");
+                    advanced[0]=true;
+                }else{
+                    helper.assertTrue(!ArchitectWildernessWaypoint.arrived(resolved.add(0,-5,0),resolved),
+                            "A different floor below the waypoint must not count as arrival");
+                    target.discard();helper.succeed();
+                }
+            }
+        });
+    }
 }

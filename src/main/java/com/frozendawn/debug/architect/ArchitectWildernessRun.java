@@ -222,7 +222,8 @@ final class ArchitectWildernessRun {
         if(scenario==Scenario.CONSTRUCTION)return terrain.course.goal();
         if(jukeGoal!=null)return jukeGoal;
         if(holdShelter){int[][] points={{106,52},{110,52},{110,56},{106,56}};int[] p=points[shelterPatrol%4];return new Vec3(p[0]+0.5,terrain.shelterY+1,p[1]+0.5);}
-        return route.get(waypoint);
+        Vec3 original=route.get(waypoint);
+        return weather==null?original:ArchitectWildernessWaypoint.surface(level,villager,original);
     }
 
     private void guide(long t){
@@ -232,7 +233,7 @@ final class ArchitectWildernessRun {
             event("TARGET_JUKE_END","resume waypoint="+waypoint);
         }
         Vec3 goal=destination();
-        if(jukeGoal==null && target.distanceToSqr(goal)<2.25){
+        if(jukeGoal==null && (weather==null?target.distanceToSqr(goal)<2.25:ArchitectWildernessWaypoint.arrived(target.position(),goal))){
             if(holdShelter)shelterPatrol++;
             else {waypoint=(waypoint+1)%route.size();if(waypoint==0)lap++;hitThisLeg=false;stageBestDistance=Double.POSITIVE_INFINITY;}
             goal=destination();
@@ -240,6 +241,7 @@ final class ArchitectWildernessRun {
             event("TARGET_WAYPOINT","index="+waypoint+" lap="+lap+" goal="+goal);
             villager.guideTo(goal);
         }
+        if(weather!=null)villager.guideTo(goal); // Refresh height when snowfall changes support.
         double gap=architect.distanceTo(target);
         villager.travelSpeed(gap>30?0.25:t<boostUntil?0.90:0.45);
     }
