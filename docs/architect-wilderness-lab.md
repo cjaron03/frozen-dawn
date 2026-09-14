@@ -129,7 +129,7 @@ If you restart while inside the lab, return explicitly with
 
 ## Results and reports
 
-Every minute of a graded run must include both at least twelve blocks of target
+Every minute of a graded run must include both at least twelve blocks of horizontal target
 travel and an actual Architect melee hit confirmed by health loss. Later success
 cannot hide an earlier failed checkpoint. The harness also checks for prolonged
 lack of progress, repeated spinning/circling, leaving the region, falling into the
@@ -192,3 +192,28 @@ the scene for inspection.
 
 This addition has received compilation and resource checks only. No simulations
 or visual runs were executed during implementation.
+
+## Snow-step target regression (recipe 2)
+
+The seed-1337 surface run captured on 2026-09-14 stalled at waypoint 43 near
+(22.5, 65, 40.3). Four decorative snow layers on the next raised trail block
+made the jump physically too tall despite vanilla reporting a reachable path.
+The villager bounced in place and died at tick 2419; the run was correctly
+classified TARGET_FAILED.
+
+Recipe 2 places optional snow/atmosphere decorations beside the three-block
+trail lane. The target stall timer now requires at least 0.25 blocks of net
+horizontal displacement to reset; vertical jumping and small collision jitter
+cannot reset it. Target travel totals and minute checkpoints also exclude
+vertical distance. The 160-tick warning and 400-tick target-failure thresholds
+remain in place. Deliberate scenario obstacles and mutations still apply.
+
+The physical GameTest uses the same four-layer snow/one-block-step collision
+geometry and actor seed 1337: it first requires the old target to get stuck,
+then relocates the decoration with the recipe's shoulder placement and requires
+the same villager to cross using ordinary navigation and physics.
+
+Restart Minecraft to load the fix, then use `/fd architect wilderness setup`
+to recreate the session with the default seed 1337 and recipe 2 before starting
+another run. Within an existing session, `wilderness reset` regenerates its selected seed.
+Existing exports preserve the original failure and terrain fingerprint.

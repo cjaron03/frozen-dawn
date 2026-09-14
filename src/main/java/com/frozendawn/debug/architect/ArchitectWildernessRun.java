@@ -46,6 +46,7 @@ final class ArchitectWildernessRun {
     private final StringBuilder frames=new StringBuilder("tick\tactorX\tactorY\tactorZ\tyaw\theadYaw\tbodyYaw\taction\ttargetX\ttargetY\ttargetZ\ttargetHealth\ttargetPathReady\twaypoint\tcatchCount\tbreaks\tplaces\tserverMeanMs\n");
     private String status="PREPARED",reason="Ready; start with wilderness run";
     private long start,lastTick=-1,end,hitCount,lastMelee,lastBreaks,lastPlaces,lastProgress;
+    private final ArchitectWildernessProgress targetProgress = new ArchitectWildernessProgress();
     private long actorStill,targetStill,maxActorStill,maxTargetStill,lastFrameTick,boostUntil;
     private long checkpointHits,checkpointTick;
     private double actorDistance,targetDistance,checkpointTargetDistance,checkpointActorDistance;
@@ -128,7 +129,7 @@ final class ArchitectWildernessRun {
         start=level.getGameTime();lastProgress=0;
         waypoint=2;boostUntil=40;
         if(!scenario.exploratory())villager.guideTo(route.get(waypoint));
-        previousActor=architect.position();previousTarget=target.position();previousHealth=target.getHealth();previousYaw=architect.getYRot();
+        previousActor=architect.position();previousTarget=target.position();targetProgress.reset(previousTarget);previousHealth=target.getHealth();previousYaw=architect.getYRot();
         status="RUNNING";reason="Pursuing moving target";
         event("BEGIN","scenario="+scenario.id()+" target="+target.getUUID()+" health="+target.getHealth());
     }
@@ -146,9 +147,9 @@ final class ArchitectWildernessRun {
         if(!target.isAlive()||target.isRemoved()||target.level()!=level){finish(scenario.exploratory()?"OBSERVED":"TARGET_FAILED","Target died, disconnected, or left the dimension");return;}
         if(!terrain.contains(architect.position())){finish("FAILED","Architect left the wilderness bounds");return;}
         if(!terrain.contains(target.position())){finish("TARGET_FAILED","Target left the wilderness bounds");return;}
-        double actorStep=previousActor.distanceTo(architect.position()),targetStep=previousTarget.distanceTo(target.position());
+        double actorStep=previousActor.distanceTo(architect.position()),targetStep=ArchitectWildernessProgress.horizontalDistance(previousTarget,target.position());
         actorDistance+=actorStep;targetDistance+=targetStep;actorWindowDistance+=actorStep;
-        actorStill=actorStep<0.025?actorStill+1:0;targetStill=targetStep<0.025?targetStill+1:0;
+        actorStill=actorStep<0.025?actorStill+1:0;targetStill=targetProgress.update(target.position());
         maxActorStill=Math.max(maxActorStill,actorStill);maxTargetStill=Math.max(maxTargetStill,targetStill);
         turnWindow+=Math.abs(Mth.wrapDegrees(architect.getYRot()-previousYaw));
         previousYaw=architect.getYRot();previousActor=architect.position();previousTarget=target.position();
@@ -187,7 +188,7 @@ final class ArchitectWildernessRun {
             if(!running())return;
             if(scenario==Scenario.SHELTER_OPEN && breaks>0){finish("FAILED","Open shelter control: unnecessary excavation despite the open entrances");return;}
             if(targetStill==160)event("TARGET_STALL_WARNING","reachable="+villager.pathReachable()+" waypoint="+waypoint);
-            if(targetStill>=400 && target.distanceToSqr(destination())>2){finish("TARGET_FAILED","Villager unable to advance for 400 ticks; Architect result is inconclusive");return;}
+            if(targetStill>=400 && target.distanceToSqr(destination())>2){finish("TARGET_FAILED","Villager made no horizontal progress for 400 ticks; Architect result is inconclusive");return;}
             if(actorStill==160)event("ACTOR_STALL_WARNING","waypoint="+waypoint+" mining="+architect.isMiningBlock());
             if((actorStill>=600&&!architect.isMiningBlock())||t-lastProgress>=600){finish("FAILED","Architect made no useful pursuit progress for 600 ticks");return;}
             Vec3 actorPos=architect.position();

@@ -28,7 +28,7 @@ import java.util.*;
 /** Chunk-bounded preparation of real Overworld terrain, in the disposable lab dimension only. */
 final class ArchitectWildernessTerrain {
     static final int SIZE = 128;
-    static final int RECIPE = 1;
+    static final int RECIPE = 2;
     final ServerLevel level;
     final long seed;
     final List<Vec3> surface = new ArrayList<>();
@@ -217,7 +217,14 @@ final class ArchitectWildernessTerrain {
         }
         for(int i=5;i<line.size();i+=17){
             if(i%8==0)continue; // Keep exact waypoint standing positions clear.
-            BlockPos p=line.get(i);BlockPos cap=floor(p.getX(),p.getZ()).above();
+            BlockPos p=line.get(i);
+            // Decorations on a one-block step can exceed the villager's physical jump height
+            // even when vanilla marks the node reachable. Keep the graded lane clear.
+            BlockPos next=line.get((i+1)%line.size());
+            BlockPos shoulder=decorationColumn(p,next);
+            int x=shoulder.getX(),z=shoulder.getZ();
+            if(trail.containsKey(key(x,z)))continue;
+            BlockPos cap=new BlockPos(x,groundY(x,z)+1,z);
             if((p.getX()==108&&p.getZ()>=38&&p.getZ()<=70)||(p.getZ()==104&&p.getX()>65&&p.getX()<80))continue;
             put(cap,i%2==0?ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState():Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS,1+(i%7)));
         }
@@ -228,6 +235,11 @@ final class ArchitectWildernessTerrain {
         // Fixed mutation stations are just ahead of the guided target's route.
         growth = floor(50,22).above();
         drift = floor(80,22).above();
+    }
+
+    static BlockPos decorationColumn(BlockPos centre, BlockPos next) {
+        int dx=Integer.signum(next.getX()-centre.getX()),dz=Integer.signum(next.getZ()-centre.getZ());
+        return centre.offset(-dz*2,0,dx*2);
     }
 
     private static boolean stationFloor(BlockPos p) {
