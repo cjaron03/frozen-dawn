@@ -11,10 +11,11 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectWildernessTarget extends Villager {
     private Vec3 destination;
     private Vec3 detour;
-    private net.minecraft.world.level.pathfinder.Path onwardPath, rejoinPath;
+    private net.minecraft.world.level.pathfinder.Path outwardPath, onwardPath, rejoinPath;
     private boolean recoveryEnabled;
     private int ineffectiveTicks, attempts, detourTicks, collisionTicks;
     private final ArchitectWildernessProgress movement = new ArchitectWildernessProgress();
+    private final ArchitectWildernessProgress detourMovement = new ArchitectWildernessProgress();
     private double bestDistance = Double.POSITIVE_INFINITY;
     private final java.util.Set<BlockPos> triedDetours = new java.util.HashSet<>();
     private String recoveryFailure;
@@ -40,7 +41,7 @@ final class ArchitectWildernessTarget extends Villager {
     void guideTo(Vec3 destination) {
         if (destination.equals(this.destination)) return;
         if(this.destination==null || ArchitectWildernessProgress.horizontalDistance(this.destination,destination)>0.1){
-            detour=null;onwardPath=rejoinPath=null;ineffectiveTicks=attempts=detourTicks=0;
+            detour=null;outwardPath=onwardPath=rejoinPath=null;ineffectiveTicks=attempts=detourTicks=0;
             bestDistance=Double.POSITIVE_INFINITY;triedDetours.clear();recoveryFailure=null;
             movement.reset(position());collisionTicks=0;
         }
@@ -67,15 +68,17 @@ final class ArchitectWildernessTarget extends Villager {
             detourTicks++;
             if(distanceToSqr(detour)<1){
                 recoveryEvents.accept("TARGET_DETOUR_REACHED","position="+position()+" resume="+destination);
-                detour=null;ineffectiveTicks=0;repath=0;
+                detour=null;outwardPath=null;ineffectiveTicks=0;repath=0;
                 rejoinPath=onwardPath;onwardPath=null;
                 if(rejoinPath!=null){
                     getNavigation().moveTo(rejoinPath,travelSpeed);
                     recoveryEvents.accept("TARGET_REJOIN_STARTED","goal="+destination+" nodes="+rejoinPath.getNodeCount());
                 }
-            }else if(detourTicks>=120){
-                recoveryEvents.accept("TARGET_DETOUR_BLOCKED","goal="+detour+" position="+position());
-                detour=null;onwardPath=rejoinPath=null;ineffectiveTicks=60;
+            }else if(detourMovement.update(position())>=40 || detourTicks>=120){
+                recoveryEvents.accept("TARGET_DETOUR_BLOCKED","goal="+detour+" position="+position()
+                        +" elapsedTicks="+detourTicks+" reason="+(detourTicks>=120?"time_budget":"no_horizontal_progress"));
+                getNavigation().stop();
+                detour=null;outwardPath=onwardPath=rejoinPath=null;ineffectiveTicks=60;
             }
         }
         if(detour==null && ineffectiveTicks>=60 && onGround() && (still>=40||collisionTicks>=20)){
@@ -88,6 +91,7 @@ final class ArchitectWildernessTarget extends Villager {
             }
             attempts++;
             detour=chooseDetour();
+            detourMovement.reset(position());
             ineffectiveTicks=0;detourTicks=0;repath=0;
             recoveryEvents.accept("TARGET_DETOUR_ATTEMPT","attempt="+attempts+" selected="+detour+" original="+destination);
         }
@@ -125,7 +129,7 @@ final class ArchitectWildernessTarget extends Villager {
             var onward=onwardRoute(probe,candidate,destination);
             if(onward==null)continue;
             double score=onward.getNodeCount()+path.getNodeCount()*0.5;
-            if(score<bestScore){bestScore=score;selected=candidate;onwardPath=onward;}
+            if(score<bestScore){bestScore=score;selected=candidate;outwardPath=path;onwardPath=onward;}
         }
         if(selected!=null)triedDetours.add(BlockPos.containing(selected));
         return selected;
@@ -175,6 +179,17 @@ final class ArchitectWildernessTarget extends Villager {
         if(recoveryEnabled&&!recover())return;
         Vec3 goal=detour==null?destination:detour;
         if (--repath <= 0) {
+            if(outwardPath!=null){
+                // Keep the route checked from the grounded starting position. Replanning
+                // mid-jump can choose a different first step in the same snow obstruction.
+                if(!outwardPath.isDone()&&walkable(outwardPath,position(),outwardPath.getNextNodeIndex())){
+                    lastPathReachable=outwardPath.canReach();
+                    getNavigation().moveTo(outwardPath,travelSpeed);
+                    repath=15;return;
+                }
+                recoveryEvents.accept("TARGET_DETOUR_INVALIDATED","goal="+detour+" done="+outwardPath.isDone());
+                outwardPath=null;
+            }
             if(rejoinPath!=null){
                 if(!rejoinPath.isDone()&&walkable(rejoinPath,position(),rejoinPath.getNextNodeIndex())){
                     getNavigation().moveTo(rejoinPath,travelSpeed);

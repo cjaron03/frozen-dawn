@@ -203,6 +203,58 @@ public final class ArchitectWildernessRouteGameTest {
     }
 
     @GameTest(template = "empty_9x5x9", timeoutTicks = 300)
+    public static void wildernessTargetAbandonsStationaryDetour(GameTestHelper helper) {
+        for(int x=1;x<=7;x++)for(int z=1;z<=7;z++){
+            helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
+            if(z<=3)helper.setBlock(new BlockPos(x,1,z),Blocks.STONE);
+        }
+        for(int z=1;z<=7;z++)for(int y=1;y<=4;y++){
+            helper.setBlock(new BlockPos(3,y,z),Blocks.STONE);
+            helper.setBlock(new BlockPos(5,y,z),Blocks.STONE);
+        }
+        helper.setBlock(new BlockPos(4,2,3),Blocks.SNOW.defaultBlockState()
+                .setValue(SnowLayerBlock.LAYERS,4));
+        var level=helper.getLevel();
+        var target=new ArchitectWildernessTarget(level);
+        target.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,6))));
+        target.setOnGround(true);
+        long[] selectedAt={-1},blockedAt={-1};
+        String[] blockedDetail={""};
+        target.enableRecovery((kind,detail)->{
+            if(kind.equals("TARGET_PATH_INEFFECTIVE")&&selectedAt[0]<0){
+                for(int z:new int[]{1,2,5,6})for(int y=1;y<=3;y++)
+                    if(z>3||y>=2)helper.setBlock(new BlockPos(5,y,z),Blocks.AIR);
+            }
+            if(kind.equals("TARGET_DETOUR_ATTEMPT")&&target.recoveryGoal()!=null&&selectedAt[0]<0){
+                selectedAt[0]=level.getGameTime();
+                // Close the escape after vanilla has found a valid route. Leave the
+                // entity and its supporting floor untouched; real controls keep ticking.
+                BlockPos feet=target.blockPosition();
+                for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
+                    if(dx!=0||dz!=0)for(int dy=0;dy<4;dy++)
+                        level.setBlockAndUpdate(feet.offset(dx,dy,dz),Blocks.STONE.defaultBlockState());
+            }
+            if(kind.equals("TARGET_DETOUR_BLOCKED")){
+                blockedAt[0]=level.getGameTime();blockedDetail[0]=detail;
+            }
+        });
+        level.addFreshEntity(target);
+        target.guideTo(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,2,1))));
+        helper.onEachTick(()->{
+            if(selectedAt[0]>=0){
+                helper.assertTrue(blockedAt[0]>=0||level.getGameTime()-selectedAt[0]<=60,
+                        "A stationary detour must be abandoned before the old 120-tick wait");
+            }
+            if(blockedAt[0]>=0){
+                helper.assertTrue(blockedDetail[0].contains("no_horizontal_progress"),
+                        "The dump must distinguish a physical stall from the total time budget");
+                helper.assertTrue(target.isAlive(),"Recovery must not require the target to die");
+                target.discard();helper.succeed();
+            }
+        });
+    }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 300)
     public static void wildernessTargetStopsAfterExhaustedDetours(GameTestHelper helper) {
         for(int x=1;x<=7;x++)for(int z=1;z<=7;z++)helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
         for(int y=1;y<=4;y++)for(int x=3;x<=5;x++)for(int z=3;z<=5;z++)
