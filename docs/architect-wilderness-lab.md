@@ -272,3 +272,19 @@ tolerance for stepping and jumping. This prevents a villager that has reached a
 snow-covered waypoint from turning back toward its old buried coordinates.
 The debugger's target goal shows the adjusted height. Unresolved obstacles still
 produce an inconclusive target failure; the harness does not remove the snow.
+
+
+Guided targets monitor improvement toward their waypoint rather than trusting
+navigation's reachable flag. After 60 ticks without at least 0.25 blocks of
+improvement, plus stalled movement or repeated collisions, they search from a
+grounded position through up to 24 nearby candidates within six blocks. Candidates
+need clear standing space, support, a reachable path, and collision heights with
+climbable steps and bounded drops. Recovery uses normal navigation, with no
+teleports, healing, or terrain edits. Each detour has 120 ticks to complete;
+three unsuccessful attempts end with a specific TARGET_FAILED diagnosis.
+Construction's deliberate waits at a reached destination do not trigger recovery.
+
+The decision journal records TARGET_PATH_INEFFECTIVE, TARGET_DETOUR_ATTEMPT,
+TARGET_DETOUR_REACHED, TARGET_DETOUR_BLOCKED, and TARGET_RECOVERY_FAILED (with the
+WILDERNESS prefix). Wilderness dumps include those events and the original
+waypoint; the visual debugger shows the active detour goal during recovery.

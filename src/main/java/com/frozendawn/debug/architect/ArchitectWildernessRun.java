@@ -70,6 +70,7 @@ final class ArchitectWildernessRun {
         if(architect==null)throw new IllegalStateException("Could not create wilderness Architect");
         villager=new ArchitectWildernessTarget(level);
         target=villager;
+        if(!scenario.exploratory())villager.enableRecovery(this::event);
         architect.addTag("fd_lab");architect.addTag("fd_wilderness");architect.setPersistenceRequired();
         architect.decisionJournal().stop();
         architect.setCustomName(net.minecraft.network.chat.Component.literal("The Architect — wilderness lab"));
@@ -147,6 +148,7 @@ final class ArchitectWildernessRun {
     void tick(){
         if(!running()||lastTick==level.getGameTime())return;
         lastTick=level.getGameTime();long t=elapsed();
+        if(villager.recoveryFailure()!=null){finish("TARGET_FAILED",villager.recoveryFailure()+"; Architect result is inconclusive");return;}
         if(!architect.isAlive()||architect.isRemoved()){finish("FAILED","ARCHITECT_LOST");return;}
         if(!target.isAlive()||target.isRemoved()||target.level()!=level){finish(scenario.exploratory()?"OBSERVED":"TARGET_FAILED","Target died, disconnected, or left the dimension");return;}
         if(!terrain.contains(architect.position())){finish("FAILED","Architect left the wilderness bounds");return;}
@@ -388,7 +390,7 @@ final class ArchitectWildernessRun {
     }
 
     ArchitectDebugSnapshot.Lab debugContext() {
-        Vec3 goal = scenario.exploratory() ? null : destination();
+        Vec3 goal = scenario.exploratory() ? null : villager.recoveryGoal()!=null?villager.recoveryGoal():destination();
         return new ArchitectDebugSnapshot.Lab("wilderness_" + scenario.id(), status, reason, elapsed(), scenario.duration,
                 goal == null ? null : new ArchitectDebugSnapshot.Point(goal.x, goal.y, goal.z),
                 scenario.exploratory() ? -1 : waypoint, lap, hitCount, actorStill, targetStill);

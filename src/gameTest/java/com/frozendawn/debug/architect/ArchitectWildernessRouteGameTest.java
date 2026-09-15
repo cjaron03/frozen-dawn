@@ -155,4 +155,71 @@ public final class ArchitectWildernessRouteGameTest {
             }
         });
     }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 500)
+    public static void wildernessTargetRecoversThroughPhysicalSideDetour(GameTestHelper helper) {
+        for(int x=1;x<=7;x++)for(int z=1;z<=7;z++){
+            helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
+            if(z<=3)helper.setBlock(new BlockPos(x,1,z),Blocks.STONE);
+        }
+        for(int z=1;z<=7;z++)for(int y=1;y<=4;y++){
+            helper.setBlock(new BlockPos(3,y,z),Blocks.STONE);
+            helper.setBlock(new BlockPos(5,y,z),Blocks.STONE);
+        }
+        BlockPos cap=new BlockPos(4,2,3);
+        helper.setBlock(cap,Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS,4));
+        var target=new ArchitectWildernessTarget(helper.getLevel());
+        target.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,6))));
+        target.setOnGround(true);
+        var events=new java.util.ArrayList<String>();
+        boolean[] opened={false},collided={false};
+        var details=new java.util.ArrayList<String>();
+        target.enableRecovery((kind,detail)->{
+            events.add(kind);details.add(kind+": "+detail);
+            if(kind.equals("TARGET_PATH_INEFFECTIVE")&&!opened[0]){
+                opened[0]=true;
+                // Expose a side route after the direct path has demonstrably failed.
+                // The snow obstacle itself remains intact throughout the test.
+                for(int z:new int[]{1,2,5,6})for(int y=1;y<=3;y++)
+                    if(z>3||y>=2)helper.setBlock(new BlockPos(5,y,z),Blocks.AIR);
+            }
+        });
+        helper.getLevel().addFreshEntity(target);
+        Vec3 goal=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,2,1)));
+        target.guideTo(goal);
+        helper.onEachTick(()->{
+            collided[0]|=target.horizontalCollision;
+            helper.assertTrue(target.recoveryFailure()==null,"Side route should recover: "+details.stream().filter(e->e.startsWith("TARGET_DETOUR")).toList());
+            if(target.distanceToSqr(goal)<1){
+                helper.assertTrue(collided[0],"The direct snow step must physically block the villager");
+                helper.assertTrue(events.contains("TARGET_DETOUR_ATTEMPT"),"Recovery must select a detour");
+                helper.assertTrue(events.contains("TARGET_DETOUR_REACHED"),"The villager must physically complete its detour");
+                helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(cap)).is(Blocks.SNOW),
+                        "Recovery must preserve the obstructing snow");
+                target.discard();helper.succeed();
+            }
+        });
+    }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 300)
+    public static void wildernessTargetStopsAfterExhaustedDetours(GameTestHelper helper) {
+        for(int x=1;x<=7;x++)for(int z=1;z<=7;z++)helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
+        for(int y=1;y<=4;y++)for(int x=3;x<=5;x++)for(int z=3;z<=5;z++)
+            if(x!=4||z!=4)helper.setBlock(new BlockPos(x,y,z),Blocks.STONE);
+        var target=new ArchitectWildernessTarget(helper.getLevel());
+        target.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,4))));
+        target.setOnGround(true);
+        var events=new java.util.ArrayList<String>();
+        target.enableRecovery((kind,detail)->events.add(kind));
+        helper.getLevel().addFreshEntity(target);
+        target.guideTo(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(7,1,7))));
+        helper.onEachTick(()->{
+            if(target.recoveryFailure()!=null){
+                helper.assertTrue(events.stream().filter("TARGET_DETOUR_ATTEMPT"::equals).count()==3,
+                        "Recovery must stop after exactly three bounded attempts");
+                helper.assertTrue(events.contains("TARGET_RECOVERY_FAILED"),"Failure must be diagnosed");
+                target.discard();helper.succeed();
+            }
+        });
+    }
 }
