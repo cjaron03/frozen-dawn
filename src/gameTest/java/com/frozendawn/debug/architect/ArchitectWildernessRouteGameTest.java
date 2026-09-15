@@ -194,6 +194,7 @@ public final class ArchitectWildernessRouteGameTest {
                 helper.assertTrue(collided[0],"The direct snow step must physically block the villager");
                 helper.assertTrue(events.contains("TARGET_DETOUR_ATTEMPT"),"Recovery must select a detour");
                 helper.assertTrue(events.contains("TARGET_DETOUR_REACHED"),"The villager must physically complete its detour");
+                helper.assertTrue(events.contains("TARGET_REJOIN_STARTED"),"The checked onward path must actually be followed");
                 helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(cap)).is(Blocks.SNOW),
                         "Recovery must preserve the obstructing snow");
                 target.discard();helper.succeed();
@@ -221,5 +222,31 @@ public final class ArchitectWildernessRouteGameTest {
                 target.discard();helper.succeed();
             }
         });
+    }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 40)
+    public static void wildernessDetourRequiresOnwardConnection(GameTestHelper helper) {
+        for(int x=1;x<=7;x++)for(int z=0;z<=7;z++)helper.setBlock(new BlockPos(x,0,z),Blocks.STONE);
+        for(int x=3;x<=5;x++)for(int z=0;z<=2;z++)for(int y=1;y<=4;y++)
+            if(x!=4||z!=1)helper.setBlock(new BlockPos(x,y,z),Blocks.STONE);
+        var level=helper.getLevel();
+        var target=new ArchitectWildernessTarget(level);
+        Vec3 start=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,7)));
+        Vec3 candidate=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,4)));
+        Vec3 goal=Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4,1,1)));
+        target.setPos(start);target.setOnGround(true);
+        var outbound=target.getNavigation().createPath(BlockPos.containing(candidate),0);
+        helper.assertTrue(outbound!=null&&outbound.canReach(),"The side point itself must be reachable");
+        var probe=new net.minecraft.world.entity.npc.Villager(net.minecraft.world.entity.EntityType.VILLAGER,level);
+        probe.setOnGround(true);
+        helper.assertTrue(target.onwardRoute(probe,candidate,goal)==null,
+                "A reachable side point must be rejected when its onward destination is sealed");
+        helper.assertTrue(target.position().equals(start),"Planning must not move the real target");
+        helper.assertTrue(level.getEntity(probe.getUUID())==null,"Planning must not spawn a probe entity");
+        helper.setBlock(new BlockPos(4,1,2),Blocks.AIR);
+        helper.setBlock(new BlockPos(4,2,2),Blocks.AIR);
+        helper.assertTrue(target.onwardRoute(probe,candidate,goal)!=null,
+                "Opening a physical connection must make the onward route usable");
+        helper.succeed();
     }
 }

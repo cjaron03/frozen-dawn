@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectWildernessTarget extends Villager {
     private Vec3 destination;
     private Vec3 detour;
+    private net.minecraft.world.level.pathfinder.Path onwardPath, rejoinPath;
     private boolean recoveryEnabled;
     private int ineffectiveTicks, attempts, detourTicks, collisionTicks;
     private final ArchitectWildernessProgress movement = new ArchitectWildernessProgress();
@@ -39,7 +40,7 @@ final class ArchitectWildernessTarget extends Villager {
     void guideTo(Vec3 destination) {
         if (destination.equals(this.destination)) return;
         if(this.destination==null || ArchitectWildernessProgress.horizontalDistance(this.destination,destination)>0.1){
-            detour=null;ineffectiveTicks=attempts=detourTicks=0;
+            detour=null;onwardPath=rejoinPath=null;ineffectiveTicks=attempts=detourTicks=0;
             bestDistance=Double.POSITIVE_INFINITY;triedDetours.clear();recoveryFailure=null;
             movement.reset(position());collisionTicks=0;
         }
@@ -67,9 +68,14 @@ final class ArchitectWildernessTarget extends Villager {
             if(distanceToSqr(detour)<1){
                 recoveryEvents.accept("TARGET_DETOUR_REACHED","position="+position()+" resume="+destination);
                 detour=null;ineffectiveTicks=0;repath=0;
+                rejoinPath=onwardPath;onwardPath=null;
+                if(rejoinPath!=null){
+                    getNavigation().moveTo(rejoinPath,travelSpeed);
+                    recoveryEvents.accept("TARGET_REJOIN_STARTED","goal="+destination+" nodes="+rejoinPath.getNodeCount());
+                }
             }else if(detourTicks>=120){
                 recoveryEvents.accept("TARGET_DETOUR_BLOCKED","goal="+detour+" position="+position());
-                detour=null;ineffectiveTicks=60;
+                detour=null;onwardPath=rejoinPath=null;ineffectiveTicks=60;
             }
         }
         if(detour==null && ineffectiveTicks>=60 && onGround() && (still>=40||collisionTicks>=20)){
@@ -91,6 +97,12 @@ final class ArchitectWildernessTarget extends Villager {
     private Vec3 chooseDetour(){
         var level=(ServerLevel)level();
         Vec3 selected=null;double bestScore=Double.POSITIVE_INFINITY;
+        onwardPath=null;rejoinPath=null;
+        // An unspawned probe asks vanilla for paths starting at each candidate.
+        // The real target never moves during planning, and no entity is added to the world.
+        var probe=new Villager(EntityType.VILLAGER,level);
+        probe.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(64);
+        probe.setOnGround(true);
         // Fixed local search budget, independent of spectator position.
         for(int radius:new int[]{2,4,6})for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++){
             if(dx==0&&dz==0)continue;
@@ -110,16 +122,28 @@ final class ArchitectWildernessTarget extends Villager {
                     ||level.getBlockState(cell).is(net.minecraft.world.level.block.Blocks.POWDER_SNOW))continue;
             var path=getNavigation().createPath(cell,0);
             if(path==null||!path.canReach()||!walkable(path))continue;
-            double score=candidate.distanceTo(destination)+position().distanceTo(candidate)*0.5;
-            if(score<bestScore){bestScore=score;selected=candidate;}
+            var onward=onwardRoute(probe,candidate,destination);
+            if(onward==null)continue;
+            double score=onward.getNodeCount()+path.getNodeCount()*0.5;
+            if(score<bestScore){bestScore=score;selected=candidate;onwardPath=onward;}
         }
         if(selected!=null)triedDetours.add(BlockPos.containing(selected));
         return selected;
     }
 
+    net.minecraft.world.level.pathfinder.Path onwardRoute(Villager probe,Vec3 from,Vec3 goal){
+        probe.getNavigation().stop();
+        probe.setPos(from);
+        var path=probe.getNavigation().createPath(BlockPos.containing(goal),0);
+        return path!=null&&path.canReach()&&walkable(path,from,0)?path:null;
+    }
+
     private boolean walkable(net.minecraft.world.level.pathfinder.Path path){
-        Vec3 previous=position();
-        for(int i=0;i<path.getNodeCount();i++){
+        return walkable(path,position(),0);
+    }
+
+    private boolean walkable(net.minecraft.world.level.pathfinder.Path path,Vec3 previous,int start){
+        for(int i=start;i<path.getNodeCount();i++){
             var node=path.getNode(i);
             Vec3 feet=ArchitectWildernessWaypoint.surface((ServerLevel)level(),this,new Vec3(node.x+0.5,node.y-1,node.z+0.5));
             var box=getBoundingBox().move(feet.subtract(position()));
@@ -144,12 +168,21 @@ final class ArchitectWildernessTarget extends Villager {
         // Mob's normal navigation, move/jump controls, collisions, gravity and damage still tick.
         // No teleports, velocity injection, or invulnerability during a run.
         if (destination == null || distanceToSqr(destination) < 1.0) {
+            rejoinPath=onwardPath=null;
             getNavigation().stop();
             return;
         }
         if(recoveryEnabled&&!recover())return;
         Vec3 goal=detour==null?destination:detour;
         if (--repath <= 0) {
+            if(rejoinPath!=null){
+                if(!rejoinPath.isDone()&&walkable(rejoinPath,position(),rejoinPath.getNextNodeIndex())){
+                    getNavigation().moveTo(rejoinPath,travelSpeed);
+                    repath=15;return;
+                }
+                recoveryEvents.accept("TARGET_REJOIN_INVALIDATED","goal="+destination+" done="+rejoinPath.isDone());
+                rejoinPath=null;
+            }
             var path = getNavigation().createPath(BlockPos.containing(goal), 0);
             lastPathReachable = path != null && path.canReach();
             if (path != null) getNavigation().moveTo(path, travelSpeed);

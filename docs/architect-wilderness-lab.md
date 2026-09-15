@@ -294,3 +294,11 @@ Recipe 4 closes the surface circuit at (22,22), removing the overlapping
 out-and-back spur to x18. Each trail column now receives one centre height,
 and an explicit final waypoint guides the target into the closing corner.
 Reset/setup restores the native snapshot before applying the new recipe.
+
+
+Detours require two checked paths: from the target to the side point, and from
+there to the original waypoint. An unspawned vanilla villager probe evaluates
+the onward path without moving the real target. The selected onward path is
+retained and followed on arrival, and its remaining collision heights are
+rechecked while moving. TARGET_REJOIN_STARTED and TARGET_REJOIN_INVALIDATED
+events distinguish rejoining the route from merely reaching a detour point.
