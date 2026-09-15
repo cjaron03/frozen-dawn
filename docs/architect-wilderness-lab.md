@@ -288,3 +288,9 @@ The decision journal records TARGET_PATH_INEFFECTIVE, TARGET_DETOUR_ATTEMPT,
 TARGET_DETOUR_REACHED, TARGET_DETOUR_BLOCKED, and TARGET_RECOVERY_FAILED (with the
 WILDERNESS prefix). Wilderness dumps include those events and the original
 waypoint; the visual debugger shows the active detour goal during recovery.
+
+
+Recipe 4 closes the surface circuit at (22,22), removing the overlapping
+out-and-back spur to x18. Each trail column now receives one centre height,
+and an explicit final waypoint guides the target into the closing corner.
+Reset/setup restores the native snapshot before applying the new recipe.

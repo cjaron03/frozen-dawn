@@ -28,7 +28,7 @@ import java.util.*;
 /** Chunk-bounded preparation of real Overworld terrain, in the disposable lab dimension only. */
 final class ArchitectWildernessTerrain {
     static final int SIZE = 128;
-    static final int RECIPE = 3;
+    static final int RECIPE = 4;
     final ServerLevel level;
     final long seed;
     private final boolean construction;
@@ -159,19 +159,27 @@ final class ArchitectWildernessTerrain {
         return y;
     }
 
-    private void design() {
-        // Sparse graded trails connect the test stations; most of the 128x128 terrain remains native.
-        int[][] corners = {{18,22},{50,22},{96,22},{108,22},{108,54},{108,90},
-                {96,104},{54,104},{22,104},{22,86},{22,54},{22,22},{18,22}};
+    static List<BlockPos> surfaceLoopColumns() {
+        // Close at the actual corner. A spur to x18 would overlap the opening
+        // segment in reverse and assign two independent heights to the same cells.
+        int[][] corners = {{22,22},{50,22},{96,22},{108,22},{108,54},{108,90},
+                {96,104},{54,104},{22,104},{22,86},{22,54},{22,22}};
         List<BlockPos> line = new ArrayList<>();
         for (int i = 1; i < corners.length; i++) {
             int ax = corners[i-1][0], az = corners[i-1][1], bx = corners[i][0], bz = corners[i][1];
             int steps = Math.max(Math.abs(bx-ax), Math.abs(bz-az));
             for (int n = 0; n < steps; n++) {
                 int x = Math.round(ax + (bx-ax) * n / (float)steps), z = Math.round(az + (bz-az) * n / (float)steps);
-                line.add(new BlockPos(x, groundY(x,z), z));
+                line.add(new BlockPos(x, 0, z));
             }
         }
+        return List.copyOf(line);
+    }
+
+    private void design() {
+        // Sparse graded trails connect the test stations; most terrain stays native.
+        List<BlockPos> line = surfaceLoopColumns().stream()
+                .map(p -> new BlockPos(p.getX(), groundY(p.getX(),p.getZ()), p.getZ())).toList();
         // Limit each trail step to one block. Repeat both directions to close the loop smoothly.
         int[] heights = line.stream().mapToInt(BlockPos::getY).toArray();
         for (int pass = 0; pass < 4; pass++) {
@@ -208,7 +216,7 @@ final class ArchitectWildernessTerrain {
                 BlockPos after = line.get(i + 2);
                 surface.add(Vec3.atBottomCenterOf(new BlockPos(before.getX(), heights[i - 2] + 1, before.getZ())));
                 surface.add(Vec3.atBottomCenterOf(new BlockPos(after.getX(), heights[i + 2] + 1, after.getZ())));
-            } else if (i % 8 == 0 || (p.getX() == 108 && (p.getZ() == 46 || p.getZ() == 54 || p.getZ() == 62))) {
+            } else if (i == line.size()-1 || i % 8 == 0 || (p.getX() == 108 && (p.getZ() == 46 || p.getZ() == 54 || p.getZ() == 62))) {
                 surface.add(Vec3.atBottomCenterOf(p.above()));
             }
         }
