@@ -37,6 +37,7 @@ public final class ArchitectLabRun {
     private long suppressionExpires = -1;
     private long completionTick;
     private String initialTerrainHash = "";
+    private ArchitectLabGate gateReplay;
     private float startingTargetHealth;
     private float startingActorHealth;
     private final java.util.Set<String> appliedEvents = new java.util.LinkedHashSet<>();
@@ -113,6 +114,7 @@ public final class ArchitectLabRun {
         reason = "Running";
         if (encounter != null) encounter.begin();
         if (lifecycle != null) lifecycle.begin();
+        if (scenario == ArchitectLabScenario.GATE_REOPENS) gateReplay = new ArchitectLabGate(this);
         architect.recordDecision("RUN_START", null, "scenario=" + scenario.id + " target=" + (liveTarget ? "LIVE" : "STATIC"));
     }
 
@@ -139,6 +141,10 @@ public final class ArchitectLabRun {
             return;
         }
         ArchitectLabStress.events(this, appliedEvents);
+        if (gateReplay != null) {
+            String failure = gateReplay.tick(appliedEvents);
+            if (failure != null) { finish(Status.FAILED, failure); return; }
+        }
         if (encounter != null) {
             String failure = encounter.tick(appliedEvents);
             if (failure != null) { finish(Status.FAILED, failure); return; }
@@ -278,6 +284,7 @@ public final class ArchitectLabRun {
         context.put("targetFinalPosition", java.util.List.of(target.getX(), target.getY(), target.getZ()));
         if (encounter != null) context.put("encounter", encounter.context());
         if (lifecycle != null) context.put("lifecycle", lifecycle.context());
+        if (gateReplay != null) context.put("gateReplay", gateReplay.context());
         if (scenario.fieldCase()) {
             context.put("obstacleRecipeVersion", 1);
             context.put("reservedRoute", generatedRoute.stream().map(p -> java.util.List.of(p.getX(), p.getY(), p.getZ())).toList());

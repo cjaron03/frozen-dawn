@@ -69,6 +69,11 @@ public final class ArchitectLabGameTest {
                     ArchitectLabScenario.SCAFFOLD_INTERRUPTION.template().toString(), rotation,
                     4210, 0, true, h -> runScenario(h, ArchitectLabScenario.SCAFFOLD_INTERRUPTION, 7, false)));
         }
+        for (long seed : new long[]{7, 1337}) for (Rotation rotation : Rotation.values()) {
+            cases.add(new TestFunction("defaultBatch", "architectlab.gate_reopens_s" + seed + "_r" + rotation.ordinal(),
+                    ArchitectLabScenario.GATE_REOPENS.template().toString(), rotation, 610, 0, true,
+                    h -> runScenario(h, ArchitectLabScenario.GATE_REOPENS, seed, false)));
+        }
         return cases;
     }
 
@@ -96,6 +101,18 @@ public final class ArchitectLabGameTest {
         level.setBlockAndUpdate(support, Blocks.MAGMA_BLOCK.defaultBlockState());
         helper.assertTrue(!actor.canExecutePlannedBreak(step), "A harmful landing must reject reclamation");
         actor.discard();helper.succeed();
+    }
+
+    @GameTest(template = "lab/gate_reopens", timeoutTicks = 40)
+    public static void gateReplayRejectsMissingGate(GameTestHelper helper) {
+        var arena = frame(helper);
+        var run = ArchitectLabRun.prepare(helper.getLevel(), ArchitectLabScenario.GATE_REOPENS, arena, 7, false, false);
+        run.begin();
+        helper.getLevel().setBlockAndUpdate(arena.block(new BlockPos(10, 1, 10)), Blocks.AIR.defaultBlockState());
+        run.tick();
+        helper.assertTrue(run.status() == ArchitectLabRun.Status.FAILED
+                && run.reason().contains("gate was removed"), "Missing gates must fail rather than count as reopened");
+        run.dispose();helper.succeed();
     }
 
     static ArchitectLabFrame frame(GameTestHelper helper) {

@@ -56,17 +56,6 @@ public final class ArchitectLabStress {
                 }
                 if (tick >= 100 && event(run, applied, "passage_reopened")) carve(run.level, run.frame, new BlockPos(4, 1, 8));
             }
-            case GATE_REOPENS -> {
-                var gate = run.frame.block(new BlockPos(10, 1, 10));
-                if (tick >= 45 && event(run, applied, "fence_gate_closed")) {
-                    run.level.setBlockAndUpdate(gate, run.level.getBlockState(gate).setValue(net.minecraft.world.level.block.FenceGateBlock.OPEN, false));
-                }
-                if (tick >= 100 && event(run, applied, "fence_gate_reopened")) {
-                    var state = run.level.getBlockState(gate);
-                    if (state.hasProperty(net.minecraft.world.level.block.FenceGateBlock.OPEN))
-                        run.level.setBlockAndUpdate(gate, state.setValue(net.minecraft.world.level.block.FenceGateBlock.OPEN, true));
-                }
-            }
             case TARGET_JUKE -> {
                 if (tick >= 60 && event(run, applied, "target_north_to_south")) moveTarget(run, new Vec3(4.5, 1, 14.5));
                 if (tick >= 100 && event(run, applied, "target_south_to_east")) moveTarget(run, new Vec3(14.5, 1, 14.5));
@@ -97,7 +86,7 @@ public final class ArchitectLabStress {
     public static boolean eventsComplete(ArchitectLabScenario scenario, Set<String> applied) {
         return switch (scenario) {
             case VANISHING_WALL -> applied.contains("wall_removed");
-            case GATE_REOPENS -> applied.contains("fence_gate_reopened");
+            case GATE_REOPENS -> applied.contains("fence_gate_hit_after_crossing");
             case CLOSING_PASSAGE -> applied.contains("passage_reopened");
             case TARGET_JUKE -> applied.contains("target_south_to_east");
             case CORRIDOR_SHUTTLE -> applied.contains("target_shuttle_4");

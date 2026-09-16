@@ -1,8 +1,8 @@
-# Architect bridge and scaffold replay
+# Architect bridge, scaffold, and gate replay
 
 Use the `feat/architect-visual-debugger` checkout. Restart the client after rebuilding; a running client does not reload Java changes.
 
-Verified: 498 unit tests and all 50 regression GameTests passed. The same 500-case stress matrix passed 498 cases, including all eight slab bridge and all eight scaffold interruption variants. The two remaining failures are the existing gate-reopening target-death cases (`gate_reopens_s7_r1`, `gate_reopens_s1337_r2`); the overall stress command therefore still fails.
+Verified: 498 unit tests, all 59 regression GameTests, and the complete 500-case stress matrix passed. Gate reopening is checked against observed close/reopen/cross/hit events; both formerly failing gate cases now pass on their first verified hit.
 
 ## Automated checks
 
@@ -56,6 +56,36 @@ After the bridge run finishes:
 ```
 
 Allow three minutes of game time (3600 ticks at the normal tick rate). The target first moves to ground level during construction. At tick 1200 it moves back to the platform; at tick 2400 it returns to ground level. The Architect must reach and hit it in every stage, including descending past the ice it built. It may mine its own scaffold where a solid landing exists immediately below; it must take no damage and excavate no original terrain. Expect `PASSED` at tick 3600. Replay with `/fd architect lab rotation 90`, then enable debug and run/unfreeze again. Seeds 7 and 1337 and rotations 180/270 are also covered by the stress matrix.
+
+## Gate reopening replay
+
+After restarting the updated client, use the existing small lab:
+
+```mcfunction
+/fd architect lab scenario gate_reopens
+/fd architect lab target static
+/fd architect lab seed 7
+/fd architect lab rotation 90
+/fd architect lab tp
+/fd architect debug on
+/fd architect lab run
+/tick unfreeze
+```
+
+Expected: the gate closes during approach; the Architect reopens it, crosses through the opening, and hits the villager. The test should immediately report `PASSED` after that verified hit rather than waiting until tick 100. No blocks should be destroyed and the Architect should retain full health.
+
+Replay the second original failure:
+
+```mcfunction
+/fd architect lab seed 1337
+/fd architect lab rotation 180
+/fd architect lab tp
+/fd architect debug on
+/fd architect lab run
+/tick unfreeze
+```
+
+The same run/dump controls apply. The report's `gateReplay` object records `closedTick`, `reopenedTick`, `crossedTick`, `hitTick`, and whether reopening was observed early or performed by the scheduled fallback. A missing gate cannot count as an opening. Passing requires the ordered sequence and a new, verified melee hit after crossing.
 
 ## Evidence
 
