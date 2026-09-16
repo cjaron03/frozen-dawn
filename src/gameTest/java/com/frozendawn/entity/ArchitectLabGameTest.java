@@ -59,7 +59,43 @@ public final class ArchitectLabGameTest {
                     ArchitectLabScenario.SLAB_LOW_ROOF.template().toString(), rotation, 610, 0, true,
                     h -> runScenario(h, ArchitectLabScenario.SLAB_LOW_ROOF, 2026, true)));
         }
+        for (long seed : new long[]{7, 1337}) {
+            cases.add(new TestFunction("defaultBatch", "architectlab.footing_slab_bridge_s" + seed + "_r3",
+                    ArchitectLabScenario.FOOTING_SLAB_BRIDGE.template().toString(), Rotation.COUNTERCLOCKWISE_90,
+                    610, 0, true, h -> runScenario(h, ArchitectLabScenario.FOOTING_SLAB_BRIDGE, seed, false)));
+        }
+        for (Rotation rotation : new Rotation[]{Rotation.NONE, Rotation.CLOCKWISE_90}) {
+            cases.add(new TestFunction("defaultBatch", "architectlab.scaffold_interruption_s7_r" + rotation.ordinal(),
+                    ArchitectLabScenario.SCAFFOLD_INTERRUPTION.template().toString(), rotation,
+                    4210, 0, true, h -> runScenario(h, ArchitectLabScenario.SCAFFOLD_INTERRUPTION, 7, false)));
+        }
         return cases;
+    }
+
+    @GameTest(template = "empty_9x5x9", timeoutTicks = 40)
+    public static void scaffoldReclaimStopsWhenLandingDisappears(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos support = helper.absolutePos(new BlockPos(4, 0, 4));
+        level.setBlockAndUpdate(support, Blocks.STONE.defaultBlockState());
+        var actor = ModEntities.ARCHITECT.get().create(level);
+        actor.setPos(Vec3.atBottomCenterOf(support.above(2)));
+        actor.setOnGround(true);
+        helper.assertTrue(actor.placeScaffoldIce(support.above()), "Place owned scaffold through production code");
+        var step = new DStarLitePathfinder.NextStep(support.above(), DStarLitePathfinder.StepType.DIG_DOWN,
+                new com.frozendawn.entity.architect.BreakChoice(support.above(), com.frozendawn.entity.architect.BreakReason.DIG_DOWN));
+        helper.assertTrue(!actor.isBreakableBlock(support.above()), "Unstick mining must still protect owned scaffolds");
+        helper.assertTrue(actor.canExecutePlannedBreak(step), "A planned one-block descent has a safe landing");
+        var breaker = new com.frozendawn.entity.ai.ArchitectBlockBreaker(actor, pos -> {});
+        breaker.setChoice(step.breakChoice());
+        breaker.tick();
+        level.setBlockAndUpdate(support, Blocks.AIR.defaultBlockState());
+        helper.assertTrue(!actor.canExecutePlannedBreak(step), "A missing landing must reject planned reclamation");
+        breaker.tick();
+        helper.assertTrue(!breaker.hasTarget(), "An active break must cancel when its landing disappears");
+        helper.assertTrue(level.getBlockState(support.above()).is(Blocks.PACKED_ICE), "Cancellation must preserve support");
+        level.setBlockAndUpdate(support, Blocks.MAGMA_BLOCK.defaultBlockState());
+        helper.assertTrue(!actor.canExecutePlannedBreak(step), "A harmful landing must reject reclamation");
+        actor.discard();helper.succeed();
     }
 
     static ArchitectLabFrame frame(GameTestHelper helper) {

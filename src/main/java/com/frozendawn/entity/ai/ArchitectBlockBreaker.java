@@ -107,6 +107,12 @@ public class ArchitectBlockBreaker {
             return true;
         }
 
+        if (mob instanceof ArchitectEntity architect && architect.isOwnedScaffold(targetPos)
+                && !architect.canReclaimScaffold(targetPos)) {
+            finish("SCAFFOLD_LANDING_CHANGED");
+            return false;
+        }
+
         // Check reach and LOS
         double distSq = mob.position().distanceToSqr(
                 targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5);
@@ -187,6 +193,7 @@ public class ArchitectBlockBreaker {
                 grantNearbyBreakAdvancement(serverLevel, targetPos);
             }
 
+            if (mob instanceof ArchitectEntity architect) architect.onScaffoldReclaimed(targetPos);
             finish("DESTROYED");
             return true;
         }

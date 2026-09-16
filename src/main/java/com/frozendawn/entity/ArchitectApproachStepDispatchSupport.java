@@ -118,7 +118,7 @@ final class ArchitectApproachStepDispatchSupport {
         if (breakTarget == null) {
             breakTarget = ArchitectApproachBreakSupport.findBreakableWallBlock(architect, target);
         }
-        if (breakTarget == null || !architect.isBreakableBlock(breakTarget)) {
+        if (breakTarget == null || !(step.breakTarget() != null ? architect.canExecutePlannedBreak(step) : architect.isBreakableBlock(breakTarget))) {
             return;
         }
 
@@ -193,7 +193,7 @@ final class ArchitectApproachStepDispatchSupport {
         architect.resetWalkStuckTracker();
 
         BlockPos digTarget = step.breakTarget();
-        if (digTarget == null || !architect.isBreakableBlock(digTarget)) {
+        if (digTarget == null || !architect.canExecutePlannedBreak(step)) {
             return;
         }
 

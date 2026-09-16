@@ -110,6 +110,9 @@ public class DStarLitePathfinder {
     private int genCounter = 0;
 
     // --- Immune blocks (acheronite that entity discovered at runtime) ---
+    private java.util.function.Predicate<BlockPos> breakPermission = pos -> true;
+    public void setBreakPermission(java.util.function.Predicate<BlockPos> permission) { breakPermission = permission; }
+
     private final Set<Long> immuneBlocks = new HashSet<>();
 
     // --- D* Lite state ---
@@ -1083,7 +1086,7 @@ public class DStarLitePathfinder {
     }
 
     private boolean isUnbreakable(BlockState state, BlockPos pos, Level level) {
-        if (immuneBlocks.contains(pos.asLong())) return true;
+        if (immuneBlocks.contains(pos.asLong()) || !breakPermission.test(pos)) return true;
         if (ArchitectBreakPolicy.isProtectedBlock(state)) return true;
         float hardness = state.getDestroySpeed(level, pos);
         return hardness < 0 || hardness >= MAX_BREAKABLE_HARDNESS;

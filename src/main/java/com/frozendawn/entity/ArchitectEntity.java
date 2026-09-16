@@ -50,6 +50,8 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -286,6 +288,7 @@ public class ArchitectEntity extends Monster {
     public ArchitectEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.moveControl = new ArchitectMoveControl(this, WALK_MAX_ROTATE);
+        approachState.dstar.setBreakPermission(pos -> !isOwnedScaffold(pos) || canReclaimScaffold(pos));
         setCustomName(Component.literal("The Architect"));
         setCustomNameVisible(true);
         if (!level.isClientSide && decisionJournal.enabled()) {
@@ -1044,6 +1047,34 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean isBreakableBlock(BlockPos pos) { return breakRejection(pos) == null; }
+
+    public boolean isOwnedScaffold(BlockPos pos) { return scaffoldIce.contains(pos); }
+
+    /** A planned descent may reclaim a column one block at a time, never open a fall. */
+    public boolean canReclaimScaffold(BlockPos pos) {
+        if (!level().getBlockState(pos).is(Blocks.PACKED_ICE)) return false;
+        BlockPos landing = pos.below();
+        var support = level().getBlockState(landing);
+        return support.isFaceSturdy(level(), landing, Direction.UP)
+                && support.getFluidState().isEmpty()
+                && !support.is(Blocks.MAGMA_BLOCK) && !support.is(Blocks.CAMPFIRE)
+                && !support.is(Blocks.SOUL_CAMPFIRE) && !support.is(Blocks.CACTUS)
+                && ArchitectBlockEnvironment.breakRejection(level(), pos, java.util.List.of()) == null;
+    }
+
+    boolean canExecutePlannedBreak(DStarLitePathfinder.NextStep step) {
+        BlockPos pos = step.breakTarget();
+        if (pos == null) return false;
+        if (isBreakableBlock(pos)) return true;
+        return "OWN_SCAFFOLD".equals(breakRejection(pos)) && canReclaimScaffold(pos);
+    }
+
+    public void onScaffoldReclaimed(BlockPos pos) {
+        if (scaffoldIce.remove(pos)) {
+            recordDecision("SCAFFOLD_RECLAIM", new BreakChoice(pos, BreakReason.SCAFFOLD), "DESTROYED");
+        }
+    }
+
 
     @Nullable String breakRejection(BlockPos pos) {
         if (getBrainAction() == ACTION_APPROACH && !ArchitectApproachRecovery.canAttemptBreak(approachState, pos)) {

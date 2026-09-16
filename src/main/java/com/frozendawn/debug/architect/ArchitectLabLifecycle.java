@@ -178,6 +178,9 @@ final class ArchitectLabLifecycle {
         active.setDeltaMovement(Vec3.ZERO);
         active.resetFallDistance();
         active.setHealth(active.getMaxHealth());
+        // Stages are separate pursuit observations. Healing alone leaves hundreds of
+        // preceding melee hits' freezing damage ticking during the next traversal.
+        active.setTicksFrozen(0);
         previousHealth = active.getHealth();
         stageHit = false;
         bestDistance = Double.POSITIVE_INFINITY;
@@ -222,6 +225,7 @@ final class ArchitectLabLifecycle {
         Vec3 local = run.frame.local(active.position());
         value.put("targetPosition", List.of(local.x, local.y, local.z));
         value.put("targetHealth", active.getHealth());
+        value.put("targetFrozenTicks", active.getTicksFrozen());
         value.put("targetLastAttacker", active.getLastDamageSource() == null || active.getLastDamageSource().getEntity() == null
                 ? "" : active.getLastDamageSource().getEntity().getUUID().toString());
         value.put("targetLastDamage", active.getLastDamageSource() == null ? "" : active.getLastDamageSource().getMsgId()); value.put("actorHealth", run.architect.getHealth());

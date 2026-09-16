@@ -132,8 +132,10 @@ public final class ArchitectLabRun {
                 return;
             }
         }
-        if (architect.successfulBreakCount() > scenario.excavationBudget) {
-            finish(Status.FAILED, "Excavation budget exceeded: " + architect.successfulBreakCount() + " > " + scenario.excavationBudget);
+        long terrainBreaks = architect.successfulBreakCount()
+                - architect.decisionJournal().eventCounts().getOrDefault("SCAFFOLD_RECLAIM", 0L);
+        if (terrainBreaks > scenario.excavationBudget) {
+            finish(Status.FAILED, "Excavation budget exceeded: " + terrainBreaks + " > " + scenario.excavationBudget);
             return;
         }
         ArchitectLabStress.events(this, appliedEvents);
@@ -263,6 +265,9 @@ public final class ArchitectLabRun {
         context.put("targetStartPosition", java.util.List.of(scenario.targetStart.x, scenario.targetStart.y, scenario.targetStart.z));
         context.put("deadlineTicks", scenario.timeout);
         context.put("excavationBudget", scenario.excavationBudget);
+        long reclaimed = architect.decisionJournal().eventCounts().getOrDefault("SCAFFOLD_RECLAIM", 0L);
+        context.put("reclaimedScaffoldBlocks", reclaimed);
+        context.put("terrainDestroyedBlocks", architect.successfulBreakCount() - reclaimed);
         context.put("elapsedTicks", elapsedTicks());
         context.put("scriptedEvents", java.util.List.copyOf(appliedEvents));
         context.put("actorInitialHealth", startingActorHealth);
