@@ -25,6 +25,7 @@ import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
@@ -176,6 +177,7 @@ public class WorldTickHandler {
         HearthSurveySignalManager.reset();
         HearthBoundaryManager.reset();
         HearthCombatRosterManager.reset();
+        HearthAssessmentClaimManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
         com.frozendawn.aggregate.StillpointFieldManager.reset();

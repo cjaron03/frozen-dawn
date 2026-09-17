@@ -8,6 +8,7 @@ import com.frozendawn.bloom.BloomSporeManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
@@ -559,6 +560,8 @@ final class FrozenDawnHearthCommand {
                 HearthBoundaryManager.statusLine());
         FrozenDawnCommandOutput.detail(context.getSource(), "Master encounter roster",
                 HearthCombatRosterManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Assessment claims",
+                HearthAssessmentClaimManager.statusLine());
         return 1;
     }
 

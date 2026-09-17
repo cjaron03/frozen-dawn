@@ -101,8 +101,8 @@ public final class HearthTransmissionManager {
         while (iterator.hasNext()) {
             Map.Entry<UUID, Session> entry = iterator.next();
             Session session = entry.getValue();
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(session.playerId());
-            if (player == null || player.level() != level) {
+            ServerPlayer player = resolvePlayer(level, session.playerId());
+            if (player == null) {
                 iterator.remove();
                 continue;
             }
@@ -198,8 +198,7 @@ public final class HearthTransmissionManager {
 
     public static void cancelAll(ServerLevel level) {
         for (Session session : activeSessions.values()) {
-            ServerPlayer player = level.getServer().getPlayerList()
-                    .getPlayer(session.playerId());
+            ServerPlayer player = resolvePlayer(level, session.playerId());
             if (player != null) {
                 PacketDistributor.sendToPlayer(player,
                         new CancelThaevenTransmissionPayload(session.sessionId()));
@@ -244,6 +243,22 @@ public final class HearthTransmissionManager {
         }
         return source instanceof MimicEntity mimic
                 && mimic.isBoundToHearthPopulation(hearthId);
+    }
+
+    /**
+     * Resolves a session's player against the level rather than the server's {@code PlayerList}.
+     *
+     * <p>The two lists are not the same. {@link ServerLevel#addNewPlayer} puts a player into
+     * {@link ServerLevel#players()} without registering it with the {@code PlayerList}, which is
+     * how game tests stand up a {@code FakePlayer}. A {@code PlayerList} lookup misses those
+     * players and returns null, and the null branch in {@link #tick} drops the session without
+     * arming {@code awaitingContactExit} — the one teardown path that skips the de-duplication
+     * guard. {@code tryStart} then succeeds again on the very next tick, restarting the
+     * transmission forever. Looking the player up in the level it is actually standing in closes
+     * that loop. The lookup is already level-scoped, so no follow-up dimension check is needed.
+     */
+    private static ServerPlayer resolvePlayer(ServerLevel level, UUID playerId) {
+        return level.getPlayerByUUID(playerId) instanceof ServerPlayer player ? player : null;
     }
 
     private static Mob resolveSource(ServerLevel level, UUID entityId) {
@@ -310,8 +325,8 @@ public final class HearthTransmissionManager {
                 awaitingContactExit.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<UUID, RearmContact> entry = iterator.next();
-            ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.getKey());
-            if (player == null || player.level() != level) {
+            ServerPlayer player = resolvePlayer(level, entry.getKey());
+            if (player == null) {
                 iterator.remove();
                 continue;
             }
