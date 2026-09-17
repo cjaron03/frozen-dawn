@@ -3,6 +3,7 @@ package com.frozendawn.entity;
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectApproachRecovery;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,12 +62,28 @@ final class ArchitectApproachController {
             return;
         }
 
+        String giveUpReason = ArchitectApproachRecovery.tick(approachState, target.getUUID(), architect.position());
+        if (giveUpReason != null) {
+            architect.abandonApproach(target, giveUpReason);
+            return;
+        }
+        if (approachState.approachNoProgressTicks % 100 == 0) {
+            LOGGER.info("[Architect] APPROACH_NO_PROGRESS entity={} pos={} ticks={} reinits={} mining={} onGround={} collision={} planComplete={} walkStuckTicks={}",
+                    architect.getId(), architect.blockPosition(), approachState.approachNoProgressTicks,
+                    approachState.unstickReinitAttempts, blockBreaker.isMining(), architect.onGround(),
+                    architect.horizontalCollision, approachState.dstar.isSearchComplete(), approachState.walkStuckTicks);
+        }
+
         logApproachEntryIfNeeded(target);
 
         architect.recordWalkCellHistory();
 
-        // Proactively open nearby wooden doors before movement dispatch.
-        architect.keepNearbyWoodenDoorsOpen();
+        // Proactively open nearby doors and fence gates before movement dispatch.
+        architect.keepNearbyPassagesOpen();
+
+        if (architect.tryApproachProgressRecovery(target)) {
+            return;
+        }
 
         // Avoid committed-walk churn while submerged: switch to direct water egress chase.
         if (architect.isInWaterOrBubble()) {
@@ -77,6 +94,10 @@ final class ArchitectApproachController {
                     LIQUID_ESCAPE_SPEED,
                     LIQUID_ESCAPE_REPATH_TICKS,
                     true);
+            return;
+        }
+
+        if (ArchitectApproachBreakSupport.cancelBreakForOpenRoute(architect, approachState, blockBreaker, target)) {
             return;
         }
 
@@ -92,11 +113,15 @@ final class ArchitectApproachController {
             BlockPos bt = blockBreaker.getTarget();
             if (bt != null && architect.level().getBlockState(bt).isAir()) {
                 blockBreaker.clearTarget();
-                architect.resetUnstickBreakTracker();
                 if (bt.equals(approachState.ceilingBreachPos)) {
                     approachState.ceilingBreachPos = null;
                 }
             }
+        }
+
+        if (!blockBreaker.hasTarget() && approachState.scaffoldTarget == null && approachState.stepOffTarget == null
+                && ArchitectApproachMovementSupport.tryFollowOpenDescent(architect, target)) {
+            return;
         }
 
         // A target pressed against the far side of a wall must produce a doorway,
@@ -121,18 +146,24 @@ final class ArchitectApproachController {
             architect.resetReevalCooldown();
         }
 
-        if (architect.tryContinueCommittedWalk(target)) {
+        BlockPos targetPos = target.blockPosition();
+        if (planningSupport.needsGoalRefresh(targetPos)) {
+            // Retire the old target's corridor before it can turn us around that spot.
+            architect.clearCommittedWalk();
+            architect.clearWalkNavigationState(true);
+            architect.getLookControl().setLookAt(target, 35.0F, 25.0F);
+        } else if (architect.tryContinueCommittedWalk(target)) {
             return;
         }
 
-        BlockPos targetPos = target.blockPosition();
         if (!planningSupport.ensurePlanReadyOrFallback(target, targetPos)) {
             return;
         }
 
         BlockPos avoidImmediateBacktrack = architect.getImmediateBacktrackPos();
         DStarLitePathfinder.NextStep step = planningSupport.getNextStep(avoidImmediateBacktrack);
-        architect.keepDoorOpenNear(step.pos());
+        architect.recordStep(step);
+        architect.keepPassageOpenNear(step.pos());
 
         if (ArchitectApproachMovementSupport.shouldUseDirectChase(architect, target, step)) {
             architect.executeDirectApproachChase(target);

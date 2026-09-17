@@ -25,6 +25,7 @@ import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthMaturationManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
@@ -68,6 +69,7 @@ import com.frozendawn.world.CargoDropPlacement;
 import com.frozendawn.world.ChunkCatchUpManager;
 import com.frozendawn.world.FrozenEvacVehiclePlacement;
 import com.frozendawn.world.FrozenTownRuntime;
+import com.frozendawn.world.LandmarkPlanningCoordinator;
 import com.frozendawn.world.MimicSpawner;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReturnedSpawner;
@@ -175,6 +177,7 @@ public class WorldTickHandler {
         HearthSurveySignalManager.reset();
         HearthBoundaryManager.reset();
         HearthCombatRosterManager.reset();
+        HearthAssessmentClaimManager.reset();
         HearthViolationManager.reset();
         HearthWatcherManager.reset();
         com.frozendawn.aggregate.StillpointFieldManager.reset();
@@ -194,8 +197,7 @@ public class WorldTickHandler {
         // Initialize satellite coordinates once (no-op if already chosen or disabled).
         WinConditionState winState = WinConditionState.get(server);
         winState.initSatellitePosition(server.overworld());
-        BlastPitPlanner.ensurePlanned(server.overworld());
-        TowerPlanner.ensurePlanned(server.overworld());
+        LandmarkPlanningCoordinator.tick(server.overworld());
 
         int currentPhase = state.getPhase();
         int currentDay = state.getCurrentDay();
@@ -453,12 +455,16 @@ public class WorldTickHandler {
         }
     }
 
-    /** Notify Architect entities within 64 blocks of a block change so D* Lite can update costs. */
+    /**
+     * Notify Architect entities within 64 blocks of a block change. Routed through the entity
+     * rather than straight to the pathfinder so observation invalidation still runs; the entity
+     * forwards to D* Lite itself.
+     */
     private static void notifyNearbyArchitects(net.minecraft.world.level.LevelAccessor levelAccessor, net.minecraft.core.BlockPos pos) {
         if (!(levelAccessor instanceof ServerLevel serverLevel)) return;
         net.minecraft.world.phys.AABB searchBox = new net.minecraft.world.phys.AABB(pos).inflate(64);
         for (ArchitectEntity architect : serverLevel.getEntitiesOfClass(ArchitectEntity.class, searchBox)) {
-            architect.getDStarPathfinder().onBlockChanged(pos, serverLevel);
+            architect.onNearbyBlockChange(pos);
         }
     }
 

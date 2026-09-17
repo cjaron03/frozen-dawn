@@ -1,9 +1,13 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectBlockEnvironment;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -31,6 +35,9 @@ final class ArchitectApproachMovementSupport {
     private static final double CLIMB_HORIZONTAL_CAP = 0.12;
     private static final double MAX_DIRECT_CHASE_VERTICAL_DELTA = 1.5;
     private static final double FALLBACK_SPRINT_MIN_SPEED = 1.10;
+    private static final double OPEN_DESCENT_HORIZONTAL_RANGE = 8.0;
+    private static final double OPEN_DESCENT_VERTICAL_RANGE = 6.0;
+    private static final int OPEN_DESCENT_MAX_NODES = 32;
 
     private ArchitectApproachMovementSupport() {
     }
@@ -45,7 +52,6 @@ final class ArchitectApproachMovementSupport {
     ) {
         architect.clearCommittedWalk();
         architect.resetWalkStuckTracker();
-        architect.resetUnstickBreakTracker();
         approachState.unreachableTicks = 0;
         boolean canFallbackSprint = !assistLiquidAscent
                 && architect.hasLineOfSight(target)
@@ -74,6 +80,11 @@ final class ArchitectApproachMovementSupport {
             ArchitectBlockBreaker blockBreaker
     ) {
         if (approachState.scaffoldTarget == null) {
+            return false;
+        }
+
+        if (!canLiftAtScaffold(architect, approachState.scaffoldTarget)) {
+            cancelDisplacedScaffold(architect, approachState, approachState.scaffoldTarget);
             return false;
         }
 
@@ -135,6 +146,52 @@ final class ArchitectApproachMovementSupport {
         BlockState currentState = architect.level().getBlockState(current);
         BlockState nextState = architect.level().getBlockState(next);
         return currentState.is(BlockTags.CLIMBABLE) || nextState.is(BlockTags.CLIMBABLE);
+    }
+
+    /** Prefer a bounded, complete walking route to a lower target before choosing excavation. */
+    static boolean tryFollowOpenDescent(ArchitectEntity architect, LivingEntity target) {
+        double drop = architect.getY() - target.getY();
+        if (drop <= 1.0 || drop > OPEN_DESCENT_VERTICAL_RANGE
+                || architect.horizontalDistanceTo(target) > OPEN_DESCENT_HORIZONTAL_RANGE) {
+            return false;
+        }
+        var navigation = architect.getNavigation();
+        var path = navigation.createPath(target, 1);
+        if (path == null || !path.canReach() || path.getNodeCount() > OPEN_DESCENT_MAX_NODES || path.getEndNode() == null) {
+            return false;
+        }
+        // A path that merely gets horizontally near the target on the rim is incomplete.
+        if (Math.abs(path.getEndNode().y - target.getY()) > 1.0) {
+            return false;
+        }
+        if (!isSafeWalkingPath(architect, path)) {
+            return false;
+        }
+        boolean changed = navigation.getPath() != path;
+        architect.clearCommittedWalk();
+        architect.resetWalkStuckTracker();
+        if (!navigation.moveTo(path, 1.0)) {
+            return false;
+        }
+        if (changed) {
+            architect.recordDecision("OPEN_DESCENT", null, "nodes=" + path.getNodeCount());
+        }
+        architect.getLookControl().setLookAt(target, 30f, 30f);
+        return true;
+    }
+
+    static boolean isSafeWalkingPath(ArchitectEntity architect, net.minecraft.world.level.pathfinder.Path path) {
+        if (path.getNodeCount() > OPEN_DESCENT_MAX_NODES) return false;
+        int previousY = architect.blockPosition().getY();
+        for (int i = path.getNextNodeIndex(); i < path.getNodeCount(); i++) {
+            var node = path.getNode(i);
+            if (node.type == net.minecraft.world.level.pathfinder.PathType.BLOCKED || node.costMalus > 0
+                    || previousY - node.y > architect.getMaxFallDistance()) {
+                return false;
+            }
+            previousY = node.y;
+        }
+        return true;
     }
 
     static boolean shouldUseDirectChase(
@@ -208,6 +265,13 @@ final class ArchitectApproachMovementSupport {
             ArchitectBlockBreaker blockBreaker,
             BlockPos scaffoldTarget
     ) {
+        // Placement and the one-block lift are a local operation. Revalidate before
+        // touching the world, including when a knockback or interrupted action has
+        // moved the actor since this step was queued.
+        if (!canLiftAtScaffold(architect, scaffoldTarget)) {
+            cancelDisplacedScaffold(architect, approachState, scaffoldTarget);
+            return;
+        }
         Level level = architect.level();
         BlockPos supportPos = scaffoldTarget.below();
         BlockState supportState = level.getBlockState(supportPos);
@@ -227,7 +291,7 @@ final class ArchitectApproachMovementSupport {
         if (!isPassableForStand(scaffoldTarget, level) || !isPassableForStand(scaffoldTarget.above(), level)) {
             BlockPos obstruction = selectScaffoldObstruction(scaffoldTarget, level);
             if (obstruction != null && architect.isBreakableBlock(obstruction)) {
-                blockBreaker.setTarget(obstruction);
+                blockBreaker.setChoice(new BreakChoice(obstruction, BreakReason.SCAFFOLD));
                 architect.getNavigation().stop();
                 LOGGER.info("[Architect] Scaffold-up blocked, breaching {} before retrying step {}", obstruction, scaffoldTarget);
             }
@@ -258,9 +322,22 @@ final class ArchitectApproachMovementSupport {
         architect.getNavigation().stop();
     }
 
+    private static boolean canLiftAtScaffold(ArchitectEntity architect, BlockPos destination) {
+        return architect.onGround() && architect.blockPosition().equals(destination.below());
+    }
+
+    private static void cancelDisplacedScaffold(
+            ArchitectEntity architect, ArchitectApproachState approachState, BlockPos destination
+    ) {
+        architect.recordDecision("SCAFFOLD_CANCEL", null, "ACTOR_DISPLACED step=" + destination);
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        architect.setPathRecalcCooldown(0);
+    }
+
     private static boolean isPassableForStand(BlockPos pos, Level level) {
         BlockState state = level.getBlockState(pos);
-        if (state.is(BlockTags.WOODEN_DOORS)) {
+        if (ArchitectBlockEnvironment.isOpenablePassage(state)) {
             return true;
         }
         return !ArchitectBreakPolicy.isObstructiveForArchitect(state, level, pos);
@@ -269,13 +346,13 @@ final class ArchitectApproachMovementSupport {
     @Nullable
     private static BlockPos selectScaffoldObstruction(BlockPos scaffoldTarget, Level level) {
         BlockState feet = level.getBlockState(scaffoldTarget);
-        if (!feet.is(BlockTags.WOODEN_DOORS)
+        if (!ArchitectBlockEnvironment.isOpenablePassage(feet)
                 && ArchitectBreakPolicy.isObstructiveForArchitect(feet, level, scaffoldTarget)) {
             return scaffoldTarget;
         }
         BlockPos headPos = scaffoldTarget.above();
         BlockState head = level.getBlockState(headPos);
-        if (!head.is(BlockTags.WOODEN_DOORS)
+        if (!ArchitectBlockEnvironment.isOpenablePassage(head)
                 && ArchitectBreakPolicy.isObstructiveForArchitect(head, level, headPos)) {
             return headPos;
         }

@@ -24,14 +24,16 @@ public final class BlastPitPlanner {
     private static final int TARGET_DISTANCE = 2000;
     private static final int DISTANCE_STEP = 192;
     private static final int FINAL_CANDIDATE_LIMIT = 32;
-    private static final int COARSE_BUDGET_PER_CALL = 192;
-
     private static final Map<MinecraftServer, BlastPitSearchSession> SEARCH_SESSIONS = new IdentityHashMap<>();
 
     private BlastPitPlanner() {
     }
 
     public static void ensurePlanned(ServerLevel overworld) {
+        ensurePlanned(overworld, LandmarkPlanningBudget.start());
+    }
+
+    static void ensurePlanned(ServerLevel overworld, LandmarkPlanningBudget budget) {
         OrsaStructureState state = OrsaStructureState.get(overworld.getServer());
         if (state.getBlastPitTargetPos() != null) {
             SEARCH_SESSIONS.remove(overworld.getServer());
@@ -40,7 +42,7 @@ public final class BlastPitPlanner {
 
         BlastPitSearchSession search = SEARCH_SESSIONS.computeIfAbsent(
                 overworld.getServer(), server -> new BlastPitSearchSession());
-        stepSearch(overworld, state, search, COARSE_BUDGET_PER_CALL);
+        stepSearch(overworld, state, search, budget);
     }
 
     public static void reroll(ServerLevel overworld) {
@@ -55,8 +57,8 @@ public final class BlastPitPlanner {
     }
 
     private static void stepSearch(ServerLevel overworld, OrsaStructureState state,
-                                   BlastPitSearchSession search, int coarseBudget) {
-        while (!search.coarseComplete && coarseBudget-- > 0) {
+                                   BlastPitSearchSession search, LandmarkPlanningBudget budget) {
+        while (!search.coarseComplete && budget.tryAcquireCandidate()) {
             int distance = search.distance;
             int angleSteps = search.angleSteps;
             double angle = ((double) search.angleStep / (double) angleSteps) * (Math.PI * 2.0D);

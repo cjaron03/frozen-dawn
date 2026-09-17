@@ -27,6 +27,17 @@ import java.util.List;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class StillpointFieldRenderer {
     private static ShaderInstance shader;
+    /**
+     * GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT. Depth has to come across with the colour:
+     * sampling the main target's depth texture while that target is bound for writing is a
+     * feedback loop, which OpenGL leaves undefined rather than rejecting. Drivers returned
+     * usable values on some graphics settings and garbage on others, which showed up as
+     * speckled pixels shaded at reconstructed world positions that were never real.
+     */
+    private static final int COPY_COLOR_ONLY = 16384;
+    private static final int COPY_DEPTH_ONLY = 256;
+    private static final int COPY_COLOR_AND_DEPTH = COPY_COLOR_ONLY | COPY_DEPTH_ONLY;
+
     private static TextureTarget sceneCopy;
 
     private StillpointFieldRenderer() {
@@ -38,10 +49,16 @@ public final class StillpointFieldRenderer {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL
-                || shader == null
+        if (shader == null
                 || !FrozenDawnClientConfig.ENABLE_STILLPOINT_FIELD_EFFECTS.get()
                 || !StillpointClientState.isRenderableHere()) {
+            return;
+        }
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            captureFabulousDepth();
+            return;
+        }
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             return;
         }
         render(event);
@@ -54,7 +71,10 @@ public final class StillpointFieldRenderer {
         ensureSceneCopy(mainTarget.width, mainTarget.height);
         if (sceneCopy == null || mainTarget.getDepthTextureId() < 0) return;
 
-        copySceneColor(mainTarget, sceneCopy);
+        copyScene(
+                mainTarget,
+                sceneCopy,
+                Minecraft.useShaderTransparency() ? COPY_COLOR_ONLY : COPY_COLOR_AND_DEPTH);
         mainTarget.bindWrite(true);
         Vec3 camera = event.getCamera().getPosition();
         Vec3 center = StillpointClientState.renderCenter().getCenter();
@@ -71,7 +91,7 @@ public final class StillpointFieldRenderer {
         cameraWorld.setTranslation((float) camera.x, (float) camera.y, (float) camera.z);
 
         shader.setSampler("uScene", sceneCopy.getColorTextureId());
-        shader.setSampler("uDepth", mainTarget.getDepthTextureId());
+        shader.setSampler("uDepth", sceneCopy.getDepthTextureId());
         shader.safeGetUniform("uInverseProjection").set(inverseProjection);
         shader.safeGetUniform("uCameraWorld").set(cameraWorld);
         shader.safeGetUniform("uCameraPosition").set(
@@ -140,18 +160,29 @@ public final class StillpointFieldRenderer {
     private static void ensureSceneCopy(int width, int height) {
         if (width <= 0 || height <= 0) return;
         if (sceneCopy == null) {
-            sceneCopy = new TextureTarget(width, height, false, Minecraft.ON_OSX);
+            sceneCopy = new TextureTarget(width, height, true, Minecraft.ON_OSX);
             sceneCopy.setClearColor(0.0F, 0.0F, 0.0F, 1.0F);
         } else if (sceneCopy.width != width || sceneCopy.height != height) {
             sceneCopy.resize(width, height, Minecraft.ON_OSX);
         }
     }
 
-    private static void copySceneColor(RenderTarget source, RenderTarget destination) {
+    private static void captureFabulousDepth() {
+        if (!Minecraft.useShaderTransparency()) return;
+        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        ensureSceneCopy(mainTarget.width, mainTarget.height);
+        if (sceneCopy != null && mainTarget.getDepthTextureId() >= 0) {
+            copyScene(mainTarget, sceneCopy, COPY_DEPTH_ONLY);
+        }
+    }
+
+    private static void copyScene(
+            RenderTarget source, RenderTarget destination, int bufferMask) {
+        int previous = GlStateManager.getBoundFramebuffer();
         GlStateManager._glBindFramebuffer(36008, source.frameBufferId);
         GlStateManager._glBindFramebuffer(36009, destination.frameBufferId);
         GlStateManager._glBlitFrameBuffer(0, 0, source.width, source.height,
-                0, 0, destination.width, destination.height, 16384, 9728);
-        GlStateManager._glBindFramebuffer(36160, 0);
+                0, 0, destination.width, destination.height, bufferMask, 9728);
+        GlStateManager._glBindFramebuffer(36160, previous);
     }
 }

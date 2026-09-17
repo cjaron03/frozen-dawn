@@ -105,6 +105,41 @@ class HearthReconciliationManagerTest {
     }
 
     @Test
+    void structuralPiecesAreSeparatedFromCosmeticOnes() {
+        // Only these hold a scene open for another pass. The foundation and lower-ice cells
+        // named in the bug report are the reason this tier exists.
+        assertTrue(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.FOUNDATION_SUPPORT));
+        assertTrue(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.PACKED_ICE_LOWER));
+        assertTrue(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.SACRED_CHEST));
+        assertTrue(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.DOOR_LOWER));
+
+        // A missing snow marker must never keep a hearth queued forever.
+        assertFalse(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.SNOW_MARKER));
+        assertFalse(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.FROZEN_ATMOSPHERE));
+        assertFalse(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.BOUNDARY_MARKER));
+        assertFalse(HearthReconciliationManager.isStructuralPiece(
+                HearthStructurePiece.CLEAR_TRANSIENT));
+    }
+
+    @Test
+    void everyOptionalDecorationIsAlsoNonStructural() {
+        for (HearthStructurePiece piece : HearthStructurePiece.values()) {
+            if (HearthReconciliationManager.isOptionalTerrainDecoration(piece)
+                    || HearthReconciliationManager.isClearancePiece(piece)) {
+                assertFalse(HearthReconciliationManager.isStructuralPiece(piece),
+                        piece + " cannot be both skippable and structural");
+            }
+        }
+    }
+
+    @Test
     void permanentBlockersAreSkippedInsteadOfRetriedForever() {
         assertEquals(1, HearthReconciliationManager.failureAttemptLimit(
                 HearthReconciliationManager.PlacementFailureKind.PERMANENT_BLOCKER));

@@ -148,7 +148,7 @@ final class ArchitectObservationController {
     }
 
     void executeRoamAndRuin() {
-        architect.keepNearbyWoodenDoorsOpen();
+        architect.keepNearbyPassagesOpen();
         blockBreaker.clearTarget();
 
         if (architect.isPathRecalcReady() || !architect.getNavigation().isInProgress()) {
@@ -198,6 +198,14 @@ final class ArchitectObservationController {
     }
 
     void enterRoamModeAfterTargetLoss() {
+        // A queued lift belongs to the interrupted approach, not a future target.
+        // Roaming can carry us far from the column before approach resumes.
+        if (approachState.scaffoldTarget != null) {
+            architect.recordDecision("SCAFFOLD_CANCEL", null,
+                    "TARGET_LOST step=" + approachState.scaffoldTarget);
+            approachState.scaffoldTarget = null;
+            approachState.scaffoldDelay = 0;
+        }
         architect.setRoamingAfterTargetLoss(true);
         resetObserveCycle();
         architect.resetRetreatState();
@@ -219,6 +227,7 @@ final class ArchitectObservationController {
     private void resetObserveCycle() {
         observationMemory.setHasObserved(false);
         observationMemory.setObserveDirty(false);
+        observationMemory.resetNearbyChanges();
         observationMemory.setObserveTicks(0);
         observationMemory.setObserveTargetTicks(0);
         observationMemory.setLastObservedPos(null);
@@ -239,6 +248,7 @@ final class ArchitectObservationController {
     private void markObserveComplete(float dist, String transitionSource) {
         observationMemory.setHasObserved(true);
         observationMemory.setObserveDirty(false);
+        observationMemory.resetNearbyChanges();
         if (!approachState.dstarObserveHandoffLogged) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("[Architect][DStarDiag] event=OBSERVE_HANDOFF cellCount={} searchComplete={} targetDistance={} initialized={} action={} transitionSource={}",

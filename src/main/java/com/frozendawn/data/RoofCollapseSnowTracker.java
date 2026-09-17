@@ -24,8 +24,12 @@ public final class RoofCollapseSnowTracker extends SavedData {
     private long lastPruneTick = 0L;
 
     public static RoofCollapseSnowTracker get(MinecraftServer server) {
-        ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
+        return get(server.overworld());
+    }
+
+    /** Keep isolated environmental simulations out of the Overworld's collapse records. */
+    public static RoofCollapseSnowTracker get(ServerLevel level) {
+        return level.getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(RoofCollapseSnowTracker::new, RoofCollapseSnowTracker::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );

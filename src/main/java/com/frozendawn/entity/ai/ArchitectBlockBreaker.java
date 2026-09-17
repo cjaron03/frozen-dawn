@@ -1,5 +1,8 @@
 package com.frozendawn.entity.ai;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+
 import com.frozendawn.data.PlayerPlacedBlockTracker;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.entity.ArchitectEntity;
@@ -21,6 +24,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 /**
  * Helper for the Architect's BREAK_THROUGH action.
@@ -30,6 +34,7 @@ import javax.annotation.Nullable;
 public class ArchitectBlockBreaker {
 
     private final Monster mob;
+    private final Consumer<BlockPos> onAttemptFinished;
 
     @Nullable
     private BlockPos targetPos;
@@ -37,6 +42,23 @@ public class ArchitectBlockBreaker {
     private int breakTime;     // Total ticks to break
     private int lastDestroyStage = -1;
     private int soundCooldown;
+    @Nullable private BreakChoice choice;
+    private long successfulBreaks;
+    public long successfulBreakCount() { return successfulBreaks; }
+    public int debugProgressTicks() { return breakProgress; }
+    public int debugRequiredTicks() { return breakTime; }
+    @Nullable public BreakChoice getChoice() { return choice; }
+    private void record(String event, String detail) {
+        if (mob instanceof ArchitectEntity architect) architect.recordDecision(event, choice, detail);
+    }
+    public void setChoice(BreakChoice next) {
+        boolean changed = !next.pos().equals(targetPos);
+        if (changed) clearTarget();
+        if (changed || choice == null) choice = next;
+        targetPos = next.pos();
+        breakTime = computeBreakTime(targetPos, mob.level().getBlockState(targetPos));
+        if (changed) record("BREAK_START", "");
+    }
 
     private static final int MAX_BREAK_TICKS = 300; // 15 seconds hard cap
     private static final int MIN_BREAK_TICKS = 4;   // Keep soft/dynamic blocks responsive
@@ -44,24 +66,17 @@ public class ArchitectBlockBreaker {
     private static final double REACH = 4.5;
     private static final float BREAK_TIME_BALANCE_SCALE = 1.30F;
 
-    public ArchitectBlockBreaker(Monster mob) {
+    public ArchitectBlockBreaker(Monster mob, Consumer<BlockPos> onAttemptFinished) {
         this.mob = mob;
+        this.onAttemptFinished = onAttemptFinished;
     }
 
     /**
      * Set the block to mine. Resets progress if target changed.
      */
     public void setTarget(@Nullable BlockPos pos) {
-        if (pos == null || !pos.equals(targetPos)) {
-            clearDestroyOverlay();
-            breakProgress = 0;
-            lastDestroyStage = -1;
-            soundCooldown = 0;
-        }
-        targetPos = pos;
-        if (pos != null) {
-            breakTime = computeBreakTime(pos, mob.level().getBlockState(pos));
-        }
+        if (pos == null) clearTarget();
+        else setChoice(new BreakChoice(pos, BreakReason.UNSPECIFIED));
     }
 
     @Nullable
@@ -84,12 +99,18 @@ public class ArchitectBlockBreaker {
 
         // Target is already gone
         if (state.isAir()) {
-            clearTarget();
+            finish("ALREADY_CLEAR");
             return true;
         }
         if (!ArchitectBreakPolicy.isObstructiveForArchitect(state, level, targetPos)) {
-            clearTarget();
+            finish("ALREADY_CLEAR");
             return true;
+        }
+
+        if (mob instanceof ArchitectEntity architect && architect.isOwnedScaffold(targetPos)
+                && !architect.canReclaimScaffold(targetPos)) {
+            finish("SCAFFOLD_LANDING_CHANGED");
+            return false;
         }
 
         // Check reach and LOS
@@ -129,7 +150,7 @@ public class ArchitectBlockBreaker {
                         -1.0
                 );
             }
-            clearTarget();
+            finish("IMMUNE");
             return false;
         }
 
@@ -156,7 +177,13 @@ public class ArchitectBlockBreaker {
             level.destroyBlockProgress(mob.getId(), targetPos, -1);
             level.playSound(null, targetPos, ModSounds.ARCHITECT_MINE.get(),
                     SoundSource.HOSTILE, 0.8f, 0.75f + mob.getRandom().nextFloat() * 0.15f);
-            level.destroyBlock(targetPos, true);
+            boolean destroyed = level.destroyBlock(targetPos, true);
+            if (!destroyed) {
+                finish("DESTROY_REJECTED");
+                return false;
+            }
+
+            successfulBreaks++;
 
             // Remove from player-placed tracker
             if (level instanceof ServerLevel serverLevel) {
@@ -166,7 +193,8 @@ public class ArchitectBlockBreaker {
                 grantNearbyBreakAdvancement(serverLevel, targetPos);
             }
 
-            clearTarget();
+            if (mob instanceof ArchitectEntity architect) architect.onScaffoldReclaimed(targetPos);
+            finish("DESTROYED");
             return true;
         }
 
@@ -255,9 +283,16 @@ public class ArchitectBlockBreaker {
                 || state.getDestroySpeed(mob.level(), targetPos) < 0;
     }
 
-    public void clearTarget() {
+    public void clearTarget() { finish("RELEASED"); }
+
+    private void finish(String outcome) {
+        if (targetPos != null) {
+            onAttemptFinished.accept(targetPos);
+            record("BREAK_END", outcome);
+        }
         clearDestroyOverlay();
         targetPos = null;
+        choice = null;
         breakProgress = 0;
         lastDestroyStage = -1;
         soundCooldown = 0;
@@ -278,6 +313,12 @@ public class ArchitectBlockBreaker {
 
     public boolean isMining() {
         return targetPos != null && breakProgress > 0;
+    }
+
+    /** Allows the approach controller to revalidate before the destructive tick. */
+    public boolean willFinishNextTick() {
+        return targetPos != null
+                && breakProgress + 1 >= computeBreakTime(targetPos, mob.level().getBlockState(targetPos));
     }
 
     public float getMiningProgress() {

@@ -96,6 +96,8 @@ public final class ChunkEpochState extends SavedData {
         private int targetPhase;
         private int passIndex;
         private int cursor;
+        private int subCursor;
+        private int columnTopY = Integer.MIN_VALUE;
         private boolean complete;
         private long updatedGameTime;
 
@@ -114,6 +116,10 @@ public final class ChunkEpochState extends SavedData {
             record.targetPhase = tag.getInt("phase");
             record.passIndex = tag.getInt("pass");
             record.cursor = tag.getInt("cursor");
+            record.subCursor = tag.getInt("subCursor");
+            record.columnTopY = tag.contains("columnTopY", Tag.TAG_INT)
+                    ? tag.getInt("columnTopY")
+                    : Integer.MIN_VALUE;
             record.complete = tag.getBoolean("complete");
             record.updatedGameTime = tag.getLong("updatedGameTime");
             return record;
@@ -128,6 +134,10 @@ public final class ChunkEpochState extends SavedData {
             tag.putInt("phase", targetPhase);
             tag.putInt("pass", passIndex);
             tag.putInt("cursor", cursor);
+            tag.putInt("subCursor", subCursor);
+            if (columnTopY != Integer.MIN_VALUE) {
+                tag.putInt("columnTopY", columnTopY);
+            }
             tag.putBoolean("complete", complete);
             tag.putLong("updatedGameTime", updatedGameTime);
             return tag;
@@ -165,6 +175,14 @@ public final class ChunkEpochState extends SavedData {
             return cursor;
         }
 
+        public int subCursor() {
+            return subCursor;
+        }
+
+        public int columnTopY() {
+            return columnTopY;
+        }
+
         public boolean complete() {
             return complete;
         }
@@ -176,12 +194,16 @@ public final class ChunkEpochState extends SavedData {
             this.targetProgress = targetProgress;
             this.passIndex = 0;
             this.cursor = 0;
+            this.subCursor = 0;
+            this.columnTopY = Integer.MIN_VALUE;
             this.complete = false;
         }
 
-        public void advance(int passIndex, int cursor, long gameTime) {
+        public void advance(int passIndex, int cursor, int subCursor, int columnTopY, long gameTime) {
             this.passIndex = passIndex;
             this.cursor = cursor;
+            this.subCursor = subCursor;
+            this.columnTopY = columnTopY;
             this.updatedGameTime = gameTime;
         }
 
@@ -192,6 +214,8 @@ public final class ChunkEpochState extends SavedData {
             this.targetProgress = targetProgress;
             this.passIndex = 0;
             this.cursor = 0;
+            this.subCursor = 0;
+            this.columnTopY = Integer.MIN_VALUE;
             this.complete = true;
             this.updatedGameTime = gameTime;
         }

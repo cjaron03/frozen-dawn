@@ -8,6 +8,7 @@ import com.frozendawn.bloom.BloomSporeManager;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.CognitiveLoadManager;
 import com.frozendawn.homo.HearthBoundaryManager;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectWeatherManager;
@@ -22,6 +23,7 @@ import com.frozendawn.homo.HearthMaturationPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationManager;
 import com.frozendawn.homo.HearthReconciliationManager;
+import com.frozendawn.homo.HearthReconciliationPolicy;
 import com.frozendawn.homo.HearthSelectionManager;
 import com.frozendawn.homo.HearthSelectionPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
@@ -558,6 +560,8 @@ final class FrozenDawnHearthCommand {
                 HearthBoundaryManager.statusLine());
         FrozenDawnCommandOutput.detail(context.getSource(), "Master encounter roster",
                 HearthCombatRosterManager.statusLine());
+        FrozenDawnCommandOutput.detail(context.getSource(), "Assessment claims",
+                HearthAssessmentClaimManager.statusLine());
         return 1;
     }
 
@@ -2335,11 +2339,23 @@ final class FrozenDawnHearthCommand {
         long residents = hearth.populationResidents().size() - casualties;
         String master = hearth.masterArchitectDefeated() ? "defeated"
                 : hearth.masterArchitectEntityId().isPresent() ? "present" : "absent";
+        int degraded = hearth.structureDegradedCursors().size();
+        String structure;
+        if (degraded == 0) {
+            structure = "";
+        } else if (hearth.structureDegradedAccepted()) {
+            structure = " - structure " + degraded + " missing (accepted)";
+        } else {
+            structure = " - structure " + degraded + " missing (re-audit "
+                    + hearth.structureReconcileAttempts() + "/"
+                    + HearthReconciliationPolicy.MAX_STRUCTURE_REAUDITS + ")";
+        }
         return hearth.stage().name().toLowerCase(Locale.ROOT)
                 + " - " + hearth.mood().name().toLowerCase(Locale.ROOT)
                 + " - residents " + residents + "/"
                 + hearth.populationResidents().size()
-                + " - master " + master;
+                + " - master " + master
+                + structure;
     }
 
     private static String compactHeartState(

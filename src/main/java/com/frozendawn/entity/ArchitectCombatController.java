@@ -82,8 +82,16 @@ final class ArchitectCombatController {
             combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
         }
 
-        if (hDist > 3.0) {
+        boolean outsideAttackRange = dist3d >= ArchitectEntity.MELEE_ATTACK_RANGE;
+        boolean footingApproach = outsideAttackRange
+                && com.frozendawn.entity.architect.ArchitectCombatFooting.needsNavigatedApproach(architect, target);
+        if (outsideAttackRange) {
+            // Keep path-following until the target is inside the actual attack range. Stopping
+            // at three blocks leaves a moving target in the gap above the 2.8-block hit check,
+            // where the slower lateral pull cannot close the remaining distance.
             architect.getNavigation().moveTo(target, 1.0);
+            if (footingApproach && architect.tickCount % 20 == 0)
+                architect.recordDecision("COMBAT_FOOTING_APPROACH", null, "navigate_to_reach distance=" + dist3d);
         } else {
             architect.getNavigation().stop();
             Vec3 toTarget = target.position().subtract(architect.position()).normalize();
@@ -97,7 +105,7 @@ final class ArchitectCombatController {
                     strafeZ + toTarget.z * pullStrength
             );
 
-            if (dist3d < 2.8 && architect.attackAnim == 0 && architect.hasLineOfSight(target)) {
+            if (architect.attackAnim == 0 && architect.hasLineOfSight(target)) {
                 architect.swing(InteractionHand.MAIN_HAND);
                 architect.doHurtTarget(target);
                 combatState.backoffTicks = 6 + architect.nextRandomInt(4);

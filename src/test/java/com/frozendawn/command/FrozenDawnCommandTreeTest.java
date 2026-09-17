@@ -34,7 +34,7 @@ class FrozenDawnCommandTreeTest {
                 .getChild("frozendawn").getChild("debug");
 
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "suit", "lore"), childNames(debug));
+                        "aggregate", "architect", "suit", "lore"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));
@@ -80,6 +80,23 @@ class FrozenDawnCommandTreeTest {
         assertVerbose(debug.getChild("suit").getChild("hearthrot")
                 .getChild("status"));
         assertVerbose(debug.getChild("lore").getChild("status"));
+    }
+
+    @Test
+    void architectLabHasAFullResetAndOperatorBoundary() {
+        var commands = dispatcher();
+        var architect = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("architect");
+        var lab = architect.getChild("lab");
+        assertNotNull(lab.getChild("reset").getCommand());
+        assertNotNull(lab.getChild("run").getCommand());
+        assertNotNull(lab.getChild("dump").getCommand());
+        for (int permission : new int[]{1, 2}) {
+            var source = new CommandSourceStack(net.minecraft.commands.CommandSource.NULL,
+                    net.minecraft.world.phys.Vec3.ZERO, net.minecraft.world.phys.Vec2.ZERO, null, permission,
+                    "test", net.minecraft.network.chat.Component.literal("test"), null, null);
+            assertEquals(permission == 2, architect.getRequirement().test(source));
+            assertEquals(permission == 2, commands.getRoot().getChild("fd").getRequirement().test(source));
+        }
     }
 
     private static CommandDispatcher<CommandSourceStack> dispatcher() {

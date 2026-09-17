@@ -23,6 +23,14 @@ public final class HearthReconciliationPolicy {
     public static final int FORMED_MAX_SURFACE_VARIANCE = 8;
     public static final int INTACT_MAX_SURFACE_VARIANCE = 16;
 
+    /**
+     * How many passes may end with unresolved structural placements before the scene is allowed
+     * to finish degraded. An obstruction that survives this many re-audits is almost certainly
+     * something a player built on purpose, and retrying it forever would keep the hearth queued
+     * for the rest of the world's life.
+     */
+    public static final int MAX_STRUCTURE_REAUDITS = 3;
+
     private static final long SURFACE_SEARCH_SALT = 0x54524143455F3031L;
 
     private HearthReconciliationPolicy() {

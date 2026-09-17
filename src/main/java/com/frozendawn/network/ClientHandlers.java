@@ -44,6 +44,9 @@ import net.minecraft.sounds.SoundSource;
  * through lambdas in {@link ModNetworking} that execute client-side.
  */
 public final class ClientHandlers {
+    public static void handleArchitectDebug(ArchitectDebugPayload payload) {
+        com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());
+    }
 
     private ClientHandlers() {}
 

@@ -1,6 +1,12 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+import com.frozendawn.entity.architect.ArchitectDecisionJournal;
+import com.frozendawn.entity.architect.ArchitectWalkBreakPlanner;
+
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectApproachRecovery;
 import com.frozendawn.entity.architect.ArchitectBrainState;
 import com.frozendawn.entity.architect.ArchitectCombatState;
 import com.frozendawn.entity.architect.ArchitectDecisionEngine;
@@ -28,6 +34,7 @@ import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthCombatRosterManager;
+import com.frozendawn.homo.HearthTargetPolicy.Candidate;
 import com.frozendawn.homo.HearthMasterArchitectManager;
 import com.frozendawn.homo.HearthMasterArchitectPolicy;
 import com.frozendawn.homo.HearthMemoryManager;
@@ -44,6 +51,8 @@ import com.frozendawn.init.ModSounds;
 import com.frozendawn.world.HeaterRegistry;
 import com.frozendawn.world.TowerEncounterController;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -123,6 +132,11 @@ public class ArchitectEntity extends Monster {
     private static final EntityDataAccessor<Integer> DATA_MASTER_AURA_TIER =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
 
+    private static final EntityDataAccessor<Integer> DATA_PURSUIT_POSE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
+    private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
+
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
     public static final int ACTION_APPROACH = 1;
@@ -186,14 +200,25 @@ public class ArchitectEntity extends Monster {
 
     private static final int HEAL_COOLDOWN_TICKS = 1200;
     private static final int DRINK_DURATION = 32;
-    private static final int MAX_SAFE_FALL_DISTANCE = 10;
 
     // --- Burst Damage Tracking ---
     /** Damage taken in the last BURST_WINDOW ticks. Used to boost retreat scoring. */
     private static final int BURST_WINDOW = 60; // 3 seconds
 
     // --- Block Breaker ---
-    private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this);
+    private final ArchitectDecisionJournal decisionJournal = new ArchitectDecisionJournal();
+    @Nullable private DStarLitePathfinder.NextStep debugStep;
+    private long lastDebugStepTick = Long.MIN_VALUE;
+    private String lastCandidateSignature = "";
+    private long lastCandidateTick = Long.MIN_VALUE;
+    @Nullable private Long debugSeed;
+    /** Lab-only target lock: pins {@link #findTarget()} so a nearby player cannot steal the run. */
+    @Nullable private UUID debugForcedTargetId;
+    @Nullable private UUID lastJournalTargetId;
+    record MeleeDebugObservation(long gameTick, UUID target, boolean allowed) { }
+    @Nullable private MeleeDebugObservation meleeDebugObservation;
+
+    private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -210,6 +235,11 @@ public class ArchitectEntity extends Monster {
             new ArchitectHearthResidentController(this);
     private final ArchitectHearthMasterController hearthMasterController =
             new ArchitectHearthMasterController(this);
+    private final ArchitectAssessmentCommitment roamingCommitment =
+            new ArchitectAssessmentCommitment();
+    /** Debug only: last roaming target logged, so the line fires on change, not per tick. */
+    @Nullable
+    private UUID loggedRoamingTargetId;
     private final ArchitectDecisionEngine decisionEngine = new ArchitectDecisionEngine();
     private final ArchitectFxController fxController = new ArchitectFxController(this, blockBreaker);
 
@@ -233,6 +263,7 @@ public class ArchitectEntity extends Monster {
     private static final float WALK_MAX_ROTATE = 35.0F;
     static final int UNREACHABLE_BREAK_DELAY_TICKS = 8;
     static final int MELEE_COMMIT_TICKS = 12;
+    static final double MELEE_ATTACK_RANGE = 2.8;
     static final float MELEE_COMMIT_LOS_GRACE_RANGE = 1.5f;
     private static final double MELEE_ENGAGE_HORIZONTAL_RANGE = 4.75;
     static final double MELEE_COMMIT_HORIZONTAL_RANGE = 5.25;
@@ -256,13 +287,20 @@ public class ArchitectEntity extends Monster {
     static final int STEP_OFF_DURATION = 4;
 
     // --- Scaffold pacing (player-like delay between place + jump) ---
+    /** Journal heartbeat cadence, so a recording never goes silent outside APPROACH. */
+    private static final int JOURNAL_HEARTBEAT_TICKS = 20;
     static final int SCAFFOLD_PLACE_TICKS = 12; // ~0.6s pause after placing before stepping up
 
     public ArchitectEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.moveControl = new ArchitectMoveControl(this, WALK_MAX_ROTATE);
+        approachState.dstar.setBreakPermission(pos -> !isOwnedScaffold(pos) || canReclaimScaffold(pos));
         setCustomName(Component.literal("The Architect"));
         setCustomNameVisible(true);
+        if (!level.isClientSide && decisionJournal.enabled()) {
+            Long seed = Long.getLong("frozendawn.debug.architectSeed");
+            if (seed != null) { random.setSeed(seed); debugSeed = seed; }
+        }
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -286,9 +324,16 @@ public class ArchitectEntity extends Monster {
         return navigation;
     }
 
+    /**
+     * Kept in lockstep with the planner's fall limit. APPROACH reads this too: vanilla
+     * {@code createPath} uses it to build open-descent routes, and
+     * {@link ArchitectApproachMovementSupport#isSafeWalkingPath} gates each step against it.
+     * Raising it here lets the Architect drop into pits the planner would refuse -- verify
+     * with the {@code pit_side_steps} lab scenario before changing it.
+     */
     @Override
     public int getMaxFallDistance() {
-        return MAX_SAFE_FALL_DISTANCE;
+        return DStarLitePathfinder.MAX_SAFE_FALL_DISTANCE;
     }
 
     @Override
@@ -307,6 +352,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_ARCHITECT, false);
         builder.define(DATA_MASTER_MIND_COPY, false);
         builder.define(DATA_MASTER_AURA_TIER, 0);
+        builder.define(DATA_PURSUIT_POSE, 0);
     }
 
     @Override
@@ -354,6 +400,18 @@ public class ArchitectEntity extends Monster {
         entityData.set(DATA_BUILDING_ICE, isBuildingIceNow());
         entityData.set(DATA_RENDER_FLAGS, getRenderFlagsNow());
         entityData.set(DATA_MINING_PROGRESS, blockBreaker.getMiningProgress());
+    }
+
+    void notePursuitRouteChange(String reason, @Nullable BlockPos focus) {
+        thinkingController.noteRouteChange(reason, focus);
+    }
+
+    public float getThinkingTilt(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, thinkingTiltOld, thinkingTilt);
+    }
+
+    public float getThinkingHand(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, thinkingHandOld, thinkingHand);
     }
 
     void resetReevalCooldown() {
@@ -475,6 +533,22 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
+        if (level().isClientSide()) {
+            thinkingTiltOld = thinkingTilt;
+            thinkingHandOld = thinkingHand;
+            int pose = entityData.get(DATA_PURSUIT_POSE);
+            boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
+                    && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
+                    && isAlive() && !isNoAi() && getDeathTicks() == 0;
+            thinkingTilt = net.minecraft.util.Mth.approach(thinkingTilt,
+                    allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
+            thinkingHand = net.minecraft.util.Mth.approach(thinkingHand,
+                    allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
+        } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
+                || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
+                || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
+            entityData.set(DATA_PURSUIT_POSE, 0);
+        }
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
         }
@@ -509,6 +583,12 @@ public class ArchitectEntity extends Monster {
         if (!level().isClientSide() && AggregateReinforcementManager.isChild(this)) {
             super.aiStep();
             tickAggregateReinforcement((ServerLevel) level());
+            return;
+        }
+        // NoAI also governs the custom utility AI. Lab actors use it while prepared.
+        if (isNoAi()) {
+            getNavigation().stop();
+            super.aiStep();
             return;
         }
         // Warmup: skip all AI for first 2 seconds after spawn/load
@@ -575,8 +655,14 @@ public class ArchitectEntity extends Monster {
         // --- Target acquisition ---
         // Architect senses through blocks — always knows target position
         LivingEntity target = findTarget();
+        UUID selectedTargetId = target == null ? null : target.getUUID();
+        if (decisionJournal.enabled() && !java.util.Objects.equals(lastJournalTargetId, selectedTargetId)) {
+            lastJournalTargetId = selectedTargetId;
+            recordDecision("TARGET_CHANGE", null, "target=" + selectedTargetId);
+        }
 
         if (target == null) {
+            ArchitectApproachRecovery.resetProgress(approachState);
             if (!brainState.isRoamingAfterTargetLoss()) {
                 observationController.enterRoamModeAfterTargetLoss();
             }
@@ -587,6 +673,16 @@ public class ArchitectEntity extends Monster {
             brainState.setRoamingAfterTargetLoss(false);
             observationMemory.setLastKnownPlayerPos(target.blockPosition());
             observationMemory.setLastSeenTick(tickCount);
+        }
+
+        if (decisionJournal.heartbeatDue(gameTick, JOURNAL_HEARTBEAT_TICKS)) {
+            recordDecision("STATE", blockBreaker.getChoice(),
+                    "target=" + (target == null ? "none" : target.getName().getString())
+                            + " targetPos=" + decisionJournal.relative(target == null ? null : target.blockPosition())
+                            + " targetHealth=" + (target == null ? "-" : target.getHealth())
+                            + " mining=" + blockBreaker.isMining()
+                            + " collision=" + horizontalCollision
+                            + " locked=" + (debugForcedTargetId != null));
         }
 
         observationController.maybeTriggerSpawnObserveCue(target);
@@ -612,11 +708,11 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
-        // --- Keep wooden doors open while pushing toward a target ---
+        // --- Keep doors and fence gates open while pushing toward a target ---
         if (getBrainAction() == ACTION_APPROACH
                 || getBrainAction() == ACTION_ATTACK_MELEE
                 || horizontalCollision) {
-            keepNearbyWoodenDoorsOpen();
+            keepNearbyPassagesOpen();
         }
 
         // --- Heater burn ---
@@ -672,6 +768,14 @@ public class ArchitectEntity extends Monster {
         if (actionUs > SLOW_EXEC_ACTION_LOG_US && LOGGER.isDebugEnabled()) {
             LOGGER.debug("[Architect] executeAction({}) took {}us", getBrainAction(), actionUs);
         }
+
+        entityData.set(DATA_PURSUIT_POSE, thinkingController.tick(target,
+                getBrainAction() == ACTION_APPROACH && !blockBreaker.hasTarget()
+                        && !blockBreaker.isMining() && approachState.scaffoldTarget == null
+                        && approachState.stepOffTarget == null && onGround()
+                        && !isInWaterOrBubble() && !combatState.isDrinkingPotion
+                        && !isMasterArchitectVisual(),
+                !approachState.dstar.isSearchComplete()));
 
         emitActionTelegraphParticles(target);
 
@@ -891,6 +995,10 @@ public class ArchitectEntity extends Monster {
         return walkSupport.handleWalkStuck(stepPos, target);
     }
 
+    boolean tryApproachProgressRecovery(LivingEntity target) {
+        return walkSupport.tryProgressRecovery(target);
+    }
+
     void executeVanillaWalkStep(DStarLitePathfinder.NextStep step, @Nullable LivingEntity target) {
         walkSupport.executeVanillaWalkStep(step, target);
     }
@@ -916,7 +1024,7 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean canCommitToMelee(LivingEntity target) {
-        return ArchitectMeleeEngagement.canCommitToMelee(
+        boolean allowed = ArchitectMeleeEngagement.canCommitToMelee(
                 this,
                 target,
                 hasLineOfSight(target),
@@ -926,22 +1034,248 @@ public class ArchitectEntity extends Monster {
                 MELEE_COMMIT_LOS_GRACE_RANGE,
                 2.25,
                 1.25);
+        if (decisionJournal.visual().enabled()) {
+            meleeDebugObservation = new MeleeDebugObservation(level().getGameTime(), target.getUUID(), allowed);
+        }
+        return allowed;
     }
 
     void clearWalkNavigationState(boolean stopNavigation) {
         walkSupport.clearWalkNavigationState(stopNavigation);
     }
 
-    void keepNearbyWoodenDoorsOpen() {
-        ArchitectBlockEnvironment.keepNearbyWoodenDoorsOpen(this);
+    void keepNearbyPassagesOpen() {
+        ArchitectBlockEnvironment.keepNearbyPassagesOpen(this);
     }
 
-    void keepDoorOpenNear(BlockPos center) {
-        ArchitectBlockEnvironment.keepDoorOpenNear(this, center);
+    void keepPassageOpenNear(BlockPos center) {
+        ArchitectBlockEnvironment.keepPassageOpenNear(this, center);
     }
 
-    boolean isBreakableBlock(BlockPos pos) {
-        return ArchitectBlockEnvironment.isBreakableBlock(level(), pos, scaffoldIce);
+    boolean isBreakableBlock(BlockPos pos) { return breakRejection(pos) == null; }
+
+    public boolean isOwnedScaffold(BlockPos pos) { return scaffoldIce.contains(pos); }
+
+    /** A planned descent may reclaim a column one block at a time, never open a fall. */
+    public boolean canReclaimScaffold(BlockPos pos) {
+        if (!level().getBlockState(pos).is(Blocks.PACKED_ICE)) return false;
+        BlockPos landing = pos.below();
+        var support = level().getBlockState(landing);
+        return support.isFaceSturdy(level(), landing, Direction.UP)
+                && support.getFluidState().isEmpty()
+                && !support.is(Blocks.MAGMA_BLOCK) && !support.is(Blocks.CAMPFIRE)
+                && !support.is(Blocks.SOUL_CAMPFIRE) && !support.is(Blocks.CACTUS)
+                && ArchitectBlockEnvironment.breakRejection(level(), pos, java.util.List.of()) == null;
+    }
+
+    boolean canExecutePlannedBreak(DStarLitePathfinder.NextStep step) {
+        BlockPos pos = step.breakTarget();
+        if (pos == null) return false;
+        if (isBreakableBlock(pos)) return true;
+        return "OWN_SCAFFOLD".equals(breakRejection(pos)) && canReclaimScaffold(pos);
+    }
+
+    public void onScaffoldReclaimed(BlockPos pos) {
+        if (scaffoldIce.remove(pos)) {
+            recordDecision("SCAFFOLD_RECLAIM", new BreakChoice(pos, BreakReason.SCAFFOLD), "DESTROYED");
+        }
+    }
+
+
+    @Nullable String breakRejection(BlockPos pos) {
+        if (getBrainAction() == ACTION_APPROACH && !ArchitectApproachRecovery.canAttemptBreak(approachState, pos)) {
+            return approachState.blockedUnstickBreakCandidates.contains(pos) ? "BLACKLISTED" : "RETRY_BUDGET_EXHAUSTED";
+        }
+        return ArchitectBlockEnvironment.breakRejection(level(), pos, scaffoldIce);
+    }
+
+    public ArchitectDecisionJournal decisionJournal() { return decisionJournal; }
+    public com.frozendawn.debug.architect.ArchitectDebugSnapshot debugSnapshot(
+            com.frozendawn.debug.architect.ArchitectDebugSnapshot.Lab lab, boolean frozen) {
+        return ArchitectDebugSnapshotFactory.capture(this, approachState, combatState, blockBreaker, debugStep, meleeDebugObservation, lab, frozen);
+    }
+    public long successfulBreakCount() { return blockBreaker.successfulBreakCount(); }
+    public void startDecisionRecording(@Nullable Long seed) {
+        startDecisionRecording(UUID.randomUUID(), seed, net.minecraft.world.level.block.Rotation.NONE);
+    }
+    public void startDecisionRecording(UUID runId, @Nullable Long seed, net.minecraft.world.level.block.Rotation rotation) {
+        lastJournalTargetId = null;
+        decisionJournal.start(runId, level().getGameTime(), blockPosition(), successfulBreakCount(), rotation);
+        lastDebugStepTick = lastCandidateTick = level().getGameTime();
+        lastCandidateSignature = "";
+        debugStep = null;
+        if (seed != null) { random.setSeed(seed); debugSeed = seed; }
+        recordDecision("RECORD_START", null, "seed=" + debugSeed);
+    }
+    /** Releases the lab target lock so normal targeting resumes. */
+    public void clearDebugTargetLock() {
+        debugForcedTargetId = null;
+    }
+    public void recordDecision(String event, @Nullable BreakChoice choice, String detail) {
+        if (level().isClientSide) return;
+        decisionJournal.visual().event(level().getGameTime(), event, detail,
+                choice == null ? null : ArchitectDebugSnapshotFactory.point(choice.pos()),
+                choice == null ? "" : choice.reason().name());
+        if (!decisionJournal.enabled()) return;
+        decisionJournal.append(new ArchitectDecisionJournal.Entry(level().getGameTime(), event,
+                actionName(getBrainAction()), blockPosition().immutable(), debugStep == null ? null : debugStep.pos(),
+                debugStep == null ? "-" : debugStep.type().name(), approachState.committedWalkWaypoint,
+                choice, approachState.approachNoProgressTicks, approachState.blockedUnstickBreakCandidates.size(),
+                approachState.unstickReinitAttempts, successfulBreakCount(), detail));
+    }
+    void recordStep(DStarLitePathfinder.NextStep step) {
+        boolean changed = !step.equals(debugStep);
+        debugStep = step;
+        if (changed || level().getGameTime() - lastDebugStepTick >= 40) {
+            lastDebugStepTick = level().getGameTime();
+            recordDecision("PLAN_STEP", step.breakChoice(), "searchComplete=" + approachState.dstar.isSearchComplete());
+        }
+    }
+    @Nullable BreakChoice chooseBreak(String source, java.util.List<BreakChoice> choices,
+            java.util.function.Predicate<BlockPos> lastResort) {
+        java.util.List<ArchitectWalkBreakPlanner.CandidateDecision> trace = (decisionJournal.enabled() || decisionJournal.visual().enabled())
+                ? new java.util.ArrayList<>() : null;
+        BreakChoice chosen = ArchitectWalkBreakPlanner.selectChoice(choices,
+                approachState.blockedUnstickBreakCandidates, this::breakRejection, lastResort,
+                d -> { if (trace != null) trace.add(d); });
+        if (trace != null) {
+            String signature = source + trace;
+            if (!signature.equals(lastCandidateSignature) || level().getGameTime() - lastCandidateTick >= 40) {
+                lastCandidateSignature = signature;
+                lastCandidateTick = level().getGameTime();
+                for (var d : trace) recordDecision("CANDIDATE", d.candidate(), source + ":" + d.outcome());
+                recordDecision("BREAK_CHOICE", chosen, source);
+            }
+        }
+        return chosen;
+    }
+    public String inspectDecisions() {
+        return "Architect " + getId() + " " + getUUID() + " action=" + actionName(getBrainAction())
+                + " pos=" + blockPosition() + " lastPlannedStep=" + debugStep
+                + " waypoint=" + approachState.committedWalkWaypoint + " mining=" + blockBreaker.getChoice()
+                + " noProgress=" + approachState.approachNoProgressTicks
+                + " exclusions=" + approachState.blockedUnstickBreakCandidates
+                + " reinits=" + approachState.unstickReinitAttempts + " destroyed=" + successfulBreakCount()
+                + " recording=" + decisionJournal.enabled() + " retained=" + decisionJournal.entries().size()
+                + " dropped=" + decisionJournal.dropped() + " seed=" + debugSeed
+                + " targetLock=" + debugForcedTargetId;
+    }
+
+    // ========================
+    //  Lab harness (operator-only, never called by AI)
+    // ========================
+
+    /** One line per Architect for {@code /fd debug architect list}. */
+    public String labSummary() {
+        LivingEntity target = getTarget();
+        return "#" + getId() + " " + actionName(getBrainAction()) + " at " + blockPosition()
+                + " hp=" + (int) getHealth() + "/" + (int) getMaxHealth()
+                + " target=" + (target == null ? "none" : "#" + target.getId() + " " + target.getName().getString())
+                + " recording=" + decisionJournal.enabled();
+    }
+
+    /**
+     * Forces a live APPROACH at {@code target}, matching what game tests do through an NBT
+     * round trip. Clears retry suppression and every recovery budget so the run starts clean.
+     */
+    public void debugForceApproach(LivingEntity target) {
+        setPersistenceRequired();
+        observationMemory.setHasObserved(true);
+        observationMemory.setObserveDirty(false);
+        debugResetApproach();
+        debugForcedTargetId = target.getUUID();
+        setTarget(target);
+        brainState.setReevalCooldown(0);
+        transitionToAction(ACTION_APPROACH);
+        brainState.setActionHoldTicks(0);
+        setNoAi(false);
+        setNoGravity(false);
+        recordDecision("LAB_APPROACH", null, "target=locked_target");
+    }
+
+    /** Drops planner state, recovery budgets, the break blacklist and any retry suppression. */
+    public void debugResetApproach() {
+        debugForcedTargetId = null;
+        blockBreaker.clearTarget();
+        ArchitectApproachRecovery.resetProgress(approachState);
+        approachState.abandonedApproachTarget = null;
+        approachState.approachRetryAfterTick = 0;
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        approachState.dstar.cleanup();
+        approachState.dstarPrecomputed = false;
+        approachState.sprintRequested = false;
+        approachState.unreachableTicks = 0;
+        approachState.ceilingBreachPos = null;
+        approachState.stepOffStart = null;
+        approachState.stepOffTarget = null;
+        approachState.stepOffProgress = 0;
+        approachState.lastFallbackBreakPos = null;
+        approachState.fallbackBreakCooldown = 0;
+        approachState.dstarApproachEntryLogged = false;
+        approachState.dstarObserveHandoffLogged = false;
+        clearWalkNavigationState(true);
+        clearCommittedWalk();
+        getMoveControl().setWantedPosition(getX(), getY(), getZ(), 0);
+        setDeltaMovement(Vec3.ZERO);
+        setSpeed(0);
+        setJumping(false);
+        setTarget(null);
+        brainState.setMeleeCommitTicks(0);
+        brainState.setReevalCooldown(0);
+        pathRecalcCooldown = 0;
+        com.frozendawn.entity.architect.ArchitectWalkTracking.resetWalkStuckTracker(approachState);
+        com.frozendawn.entity.architect.ArchitectWalkTracking.resetWalkCellHistory(approachState);
+        debugStep = null;
+        lastCandidateSignature = "";
+        recordDecision("LAB_RESET", null, "");
+    }
+
+    private void onApproachBreakAttemptFinished(BlockPos pos) {
+        if (getBrainAction() != ACTION_APPROACH) {
+            return;
+        }
+        boolean obstructing = ArchitectBlockEnvironment.isPathObstructingState(level(), level().getBlockState(pos), pos);
+        if (ArchitectApproachRecovery.finishBreakAttempt(approachState, pos, obstructing)) {
+            LOGGER.info("[Architect] APPROACH_BREAK_FAILED entity={} candidate={} excluded={}",
+                    getId(), pos, approachState.blockedUnstickBreakCandidates.size());
+        }
+    }
+
+    public boolean isApproachTargetSuppressed(LivingEntity target) {
+        return ArchitectApproachRecovery.isTargetSuppressed(approachState, target.getUUID(), tickCount);
+    }
+
+    public int approachRetryTicksRemaining() {
+        return Math.max(0, approachState.approachRetryAfterTick - tickCount);
+    }
+
+    /** Dispose only lab-owned actors before restoring their fixture. */
+    public void discardLabActor() {
+        if (!getTags().contains("fd_lab")) throw new IllegalStateException("Not a lab actor");
+        blockBreaker.clearTarget();
+        cleanupAllIce();
+        approachState.dstar.cleanup();
+        discard();
+    }
+
+    void abandonApproach(LivingEntity target, String reason) {
+        recordDecision("ABANDON", blockBreaker.getChoice(), reason);
+        LOGGER.info("[Architect] APPROACH_ABANDON entity={} reason={} target={} pos={} noProgressTicks={} reinits={} retryAfterTicks={}",
+                getId(), reason, target.getUUID(), blockPosition(), approachState.approachNoProgressTicks,
+                approachState.unstickReinitAttempts, ArchitectApproachRecovery.TARGET_RETRY_COOLDOWN_TICKS);
+        blockBreaker.clearTarget();
+        ArchitectApproachRecovery.abandon(approachState, target.getUUID(), tickCount);
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        approachState.dstar.cleanup();
+        approachState.dstarPrecomputed = false;
+        approachState.sprintRequested = false;
+        brainState.setMeleeCommitTicks(0);
+        setTarget(null);
+        transitionToAction(ACTION_OBSERVE);
+        observationController.enterRoamModeAfterTargetLoss();
+        observationController.executeRoamAndRuin();
     }
 
     void applyCombatHorizontalMotion(double x, double z) {
@@ -953,7 +1287,11 @@ public class ArchitectEntity extends Monster {
                 z,
                 MELEE_AIR_CONTROL_SCALE,
                 MELEE_MAX_HORIZONTAL_SPEED);
-        setDeltaMovement(blended.x, current.y, blended.z);
+        Vec3 supported = com.frozendawn.entity.architect.ArchitectCombatFooting.constrain(this, blended);
+        if (supported.distanceToSqr(blended) > 1.0e-8 && tickCount % 20 == 0) {
+            recordDecision("COMBAT_FOOTING", null, "limited=" + blended + " allowed=" + supported);
+        }
+        setDeltaMovement(supported.x, current.y, supported.z);
     }
 
     // ========================
@@ -961,6 +1299,8 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void onActionChange(int oldAction, int newAction) {
+        recordDecision("ACTION_CHANGE", blockBreaker.getChoice(), actionName(oldAction) + "->" + actionName(newAction));
+        debugStep = null;
         if (oldAction == ACTION_OBSERVE) {
             ArchitectActionTransitionSupport.onLeaveObserve(observationMemory);
         }
@@ -972,7 +1312,6 @@ public class ArchitectEntity extends Monster {
         clearCommittedWalk();
         resetWalkStuckTracker();
         resetWalkCellHistory();
-        resetUnstickBreakTracker();
         if (oldAction != ACTION_APPROACH) blockBreaker.clearTarget();
         if (oldAction == ACTION_RETREAT) {
             if (combatState.isDrinkingPotion) cancelDrinking();
@@ -1045,6 +1384,7 @@ public class ArchitectEntity extends Monster {
         }
         boolean hit = super.doHurtTarget(target);
         if (hit && target instanceof LivingEntity living) {
+            recordDecision("MELEE_HIT", null, "target=" + target.getUUID() + " health=" + living.getHealth());
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
             living.setTicksFrozen(living.getTicksFrozen() + 60);
         }
@@ -1113,6 +1453,8 @@ public class ArchitectEntity extends Monster {
             suppressMasterHurtSound = false;
         }
         if (hurt && !level().isClientSide()) {
+            recordDecision("DAMAGE", blockBreaker.getChoice(),
+                    "type=" + source.getMsgId() + " amount=" + amount + " health=" + getHealth());
             if (isHearthAssessor()
                     && level() instanceof ServerLevel serverLevel
                     && source.getEntity() instanceof ServerPlayer attacker
@@ -1282,6 +1624,7 @@ public class ArchitectEntity extends Monster {
                 scaffoldIce,
                 MAX_SCAFFOLD_ICE,
                 blockPosition())) {
+            recordDecision("SCAFFOLD_PLACE", new BreakChoice(pos, BreakReason.SCAFFOLD), "placed");
             emitIcePlacementFx(pos);
             return true;
         }
@@ -1340,13 +1683,22 @@ public class ArchitectEntity extends Monster {
     }
 
     /**
-     * Called when player places blocks near last observed position.
-     * Threshold: 5+ changes within 16 blocks.
+     * Called when a player changes a block near the Architect.
+     * Threshold: 5+ changes within 16 blocks of the last observed position, each within
+     * NEARBY_CHANGE_WINDOW_TICKS of the previous one. The count is tracked here rather than
+     * passed in so callers cannot forget to maintain it.
      */
-    public void onNearbyBlockChange(BlockPos changedPos, int changeCount) {
+    public void onNearbyBlockChange(BlockPos changedPos) {
         BlockPos lastObservedPos = observationMemory.getLastObservedPos();
-        if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
-            observationMemory.setObserveDirty(true);
+        if (ArchitectObservationSupport.isWithinObserveRadius(lastObservedPos, changedPos)) {
+            int changeCount = ArchitectObservationSupport.accumulateNearbyChange(
+                    observationMemory.getNearbyChangeCount(),
+                    observationMemory.getLastNearbyChangeTick(),
+                    tickCount);
+            observationMemory.recordNearbyChange(changeCount, tickCount);
+            if (ArchitectObservationSupport.shouldMarkObserveDirty(lastObservedPos, changedPos, changeCount)) {
+                observationMemory.setObserveDirty(true);
+            }
         }
         LivingEntity target = getTarget();
         double targetDistance = target != null ? distanceTo(target) : -1.0;
@@ -1371,6 +1723,19 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
+        LivingEntity candidate = findTargetIgnoringApproachCooldown();
+        return candidate != null && isApproachTargetSuppressed(candidate) ? null : candidate;
+    }
+
+    @Nullable
+    private LivingEntity findTargetIgnoringApproachCooldown() {
+        if (debugForcedTargetId != null && level() instanceof ServerLevel lockLevel) {
+            net.minecraft.world.entity.Entity locked = lockLevel.getEntity(debugForcedTargetId);
+            if (locked instanceof LivingEntity lockedLiving && lockedLiving.isAlive()) {
+                return lockedLiving;
+            }
+            debugForcedTargetId = null; // Locked entity is gone — fall back to normal targeting.
+        }
         LivingEntity current = getTarget();
         LivingEntity directAttacker = getLastHurtByMob();
         if ((directAttacker instanceof UndoneEntity
@@ -1398,13 +1763,136 @@ public class ArchitectEntity extends Monster {
         if (isHearthMasterArchitect() && level() instanceof ServerLevel serverLevel) {
             return hearthMasterController.findHostileTarget(serverLevel);
         }
+        if (level() instanceof ServerLevel serverLevel) {
+            return findRoamingTarget(serverLevel);
+        }
+        return villagerFallback();
+    }
+
+    /**
+     * Target selection for the ordinary roaming Architect.
+     *
+     * <p>Distance changes every tick, so picking the nearest player each tick
+     * makes the Architect swap which player it is stalking mid-observe — the
+     * approach destination jitters and the remembered player position
+     * ping-pongs. This commits to one player instead, and picks the weakest
+     * rather than the nearest, so a naturally spawned Architect walks past the
+     * armored player to stalk the unarmored one and then stays on them.
+     */
+    @Nullable
+    private LivingEntity findRoamingTarget(ServerLevel serverLevel) {
+        double range = brainState.isRoamingAfterTargetLoss()
+                ? OBSERVE_REACQUIRE_RANGE
+                : getDetectionRange();
+        double rangeSquared = range * range;
+        UUID previousCommitted = roamingCommitment.committedId();
+        UUID previousSuspended = roamingCommitment.suspendedId();
+
+        // Retaliation outranks scoring: whoever just hit us takes the commitment.
+        if (getLastHurtByMob() instanceof Player attacker
+                && ArchitectTargetingSupport.isTargetablePlayer(attacker)
+                && !isApproachTargetSuppressed(attacker)
+                && distanceToSqr(attacker) <= rangeSquared) {
+            roamingCommitment.commitToTarget(attacker.getUUID());
+            logRoamingCommitment(serverLevel, attacker, "RETALIATION",
+                    previousCommitted, range, -1);
+            return attacker;
+        }
+
+        List<ServerPlayer> inRange = new ArrayList<>();
+        List<Candidate> candidates = new ArrayList<>();
+        for (ServerPlayer player : serverLevel.players()) {
+            if (ArchitectTargetingSupport.isTargetablePlayer(player)
+                    && !isApproachTargetSuppressed(player)
+                    && distanceToSqr(player) <= rangeSquared) {
+                inRange.add(player);
+                candidates.add(new Candidate(player.getUUID(), player.getArmorValue(),
+                        distanceToSqr(player)));
+            }
+        }
+        boolean previousStillInRange = previousCommitted != null
+                && inRange.stream().anyMatch(p -> p.getUUID().equals(previousCommitted));
+        // A recovery cooldown is not a distance departure: forget the old commitment
+        // instead of bookmarking it and starving another eligible player. Apply the
+        // same eligibility rule to scoring, presence, and remembered retaliation.
+        var targetableIds = ArchitectTargetingSupport.targetablePlayerIds(serverLevel);
+        targetableIds.removeIf(id -> ArchitectApproachRecovery.isTargetSuppressed(
+                approachState, id, tickCount));
+        UUID targetId = roamingCommitment.resolve(candidates, targetableIds);
+        if (targetId != null) {
+            for (ServerPlayer player : inRange) {
+                if (player.getUUID().equals(targetId)) {
+                    logRoamingCommitment(serverLevel, player,
+                            roamingSwitchReason(targetId, previousCommitted,
+                                    previousSuspended, previousStillInRange),
+                            previousCommitted, range, candidates.size());
+                    return player;
+                }
+            }
+        }
+        loggedRoamingTargetId = null;
+        return villagerFallback();
+    }
+
+    /**
+     * Debug: why the roaming commitment moved off the previous target.
+     *
+     * <p>{@code PREV_LEFT_RANGE} and {@code OUTSCORED} are the two that matter:
+     * the first means the candidate list dropped the committed player, the
+     * second means {@code warrantsRetarget} genuinely fired on an armor gap.
+     */
+    private static String roamingSwitchReason(UUID targetId, @Nullable UUID previousCommitted,
+            @Nullable UUID previousSuspended, boolean previousStillInRange) {
+        if (previousCommitted == null) {
+            return previousSuspended == null ? "FIRST_PICK" : "REPICK_AFTER_SUSPEND";
+        }
+        if (targetId.equals(previousCommitted)) {
+            return "HELD";
+        }
+        if (targetId.equals(previousSuspended)) {
+            return "BOOKMARK_RECLAIM";
+        }
+        return previousStillInRange ? "OUTSCORED" : "PREV_LEFT_RANGE";
+    }
+
+    /**
+     * Debug: one line each time the roaming commitment moves to a different player,
+     * so a two-player armor test can read the pick out of the log instead of
+     * inferring it from which way the Architect walks.
+     *
+     * <p>Logs the previous target's current distance and the range actually in
+     * force, since those are what decide whether the committed player stayed in
+     * the candidate list.
+     */
+    private void logRoamingCommitment(ServerLevel serverLevel, Player player, String reason,
+            @Nullable UUID previousId, double range, int candidateCount) {
+        if (player.getUUID().equals(loggedRoamingTargetId)) {
+            return;
+        }
+        loggedRoamingTargetId = player.getUUID();
+        Player previous = previousId == null ? null : serverLevel.getPlayerByUUID(previousId);
+        LOGGER.info(
+                "Roaming Architect {} -> {} | armor={} dist={} | reason={} prev={} prevDist={} range={} candidates={}",
+                getUUID().toString().substring(0, 8), player.getName().getString(),
+                player.getArmorValue(), String.format("%.1f", distanceTo(player)),
+                reason,
+                previous == null ? "none" : previous.getName().getString(),
+                previous == null ? "n/a" : String.format("%.1f", distanceTo(previous)),
+                String.format("%.0f", range),
+                candidateCount < 0 ? "n/a" : Integer.toString(candidateCount));
+    }
+
+    /** No player in range: fall back to the nearest villager, as before. */
+    @Nullable
+    private LivingEntity villagerFallback() {
         return ArchitectTargetingSupport.findTarget(
                 level(),
                 this,
                 brainState.isRoamingAfterTargetLoss(),
                 getDetectionRange(),
                 OBSERVE_REACQUIRE_RANGE,
-                this::distanceToSqr);
+                this::distanceToSqr,
+                candidate -> !isApproachTargetSuppressed(candidate));
     }
 
     boolean isPlayerFacing(LivingEntity entity) {

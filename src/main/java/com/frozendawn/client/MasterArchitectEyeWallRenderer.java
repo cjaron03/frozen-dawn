@@ -28,6 +28,17 @@ public final class MasterArchitectEyeWallRenderer {
     private static final float STORM_BLUE = 88.0F / 255.0F;
 
     private static ShaderInstance shader;
+    /**
+     * GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT. Depth has to come across with the colour:
+     * sampling the main target's depth texture while that target is bound for writing is a
+     * feedback loop, which OpenGL leaves undefined rather than rejecting. Drivers returned
+     * usable values on some graphics settings and garbage on others, which showed up as
+     * speckled pixels shaded at reconstructed world positions that were never real.
+     */
+    private static final int COPY_COLOR_ONLY = 16384;
+    private static final int COPY_DEPTH_ONLY = 256;
+    private static final int COPY_COLOR_AND_DEPTH = COPY_COLOR_ONLY | COPY_DEPTH_ONLY;
+
     private static TextureTarget sceneCopy;
 
     private MasterArchitectEyeWallRenderer() {
@@ -35,6 +46,22 @@ public final class MasterArchitectEyeWallRenderer {
 
     public static void setShader(ShaderInstance loadedShader) {
         shader = loadedShader;
+    }
+
+    /**
+     * Fabulous clears the main target's depth during its final transparency blit. Preserve
+     * the opaque scene depth while it is still available so the later full-screen pass can
+     * reconstruct world positions from the final composited colour.
+     */
+    public static void captureFabulousDepth() {
+        if (!Minecraft.useShaderTransparency()) {
+            return;
+        }
+        RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
+        ensureSceneCopy(mainTarget.width, mainTarget.height);
+        if (sceneCopy != null && mainTarget.getDepthTextureId() >= 0) {
+            copyScene(mainTarget, sceneCopy, COPY_DEPTH_ONLY);
+        }
     }
 
     public static void render(
@@ -66,7 +93,10 @@ public final class MasterArchitectEyeWallRenderer {
             return;
         }
 
-        copySceneColor(mainTarget, sceneCopy);
+        copyScene(
+                mainTarget,
+                sceneCopy,
+                Minecraft.useShaderTransparency() ? COPY_COLOR_ONLY : COPY_COLOR_AND_DEPTH);
         mainTarget.bindWrite(true);
 
         Vec3 cameraPosition = event.getCamera().getPosition();
@@ -94,7 +124,7 @@ public final class MasterArchitectEyeWallRenderer {
                 (float) cameraPosition.z);
 
         shader.setSampler("uScene", sceneCopy.getColorTextureId());
-        shader.setSampler("uDepth", mainTarget.getDepthTextureId());
+        shader.setSampler("uDepth", sceneCopy.getDepthTextureId());
         shader.safeGetUniform("uInverseProjection").set(inverseProjection);
         shader.safeGetUniform("uCameraWorld").set(cameraWorld);
         shader.safeGetUniform("uCameraPosition").set(
@@ -134,6 +164,9 @@ public final class MasterArchitectEyeWallRenderer {
         shader.clear();
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
+        // defaultBlendFunc only sets the equation; without enableBlend the disableBlend above
+        // leaks out of this renderer and leaves blending off for the rest of the frame.
+        RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         mainTarget.bindWrite(true);
     }
@@ -150,14 +183,16 @@ public final class MasterArchitectEyeWallRenderer {
             return;
         }
         if (sceneCopy == null) {
-            sceneCopy = new TextureTarget(width, height, false, Minecraft.ON_OSX);
+            sceneCopy = new TextureTarget(width, height, true, Minecraft.ON_OSX);
             sceneCopy.setClearColor(0.0F, 0.0F, 0.0F, 1.0F);
         } else if (sceneCopy.width != width || sceneCopy.height != height) {
             sceneCopy.resize(width, height, Minecraft.ON_OSX);
         }
     }
 
-    private static void copySceneColor(RenderTarget source, RenderTarget destination) {
+    private static void copyScene(
+            RenderTarget source, RenderTarget destination, int bufferMask) {
+        int previous = GlStateManager.getBoundFramebuffer();
         GlStateManager._glBindFramebuffer(36008, source.frameBufferId);
         GlStateManager._glBindFramebuffer(36009, destination.frameBufferId);
         GlStateManager._glBlitFrameBuffer(
@@ -169,8 +204,8 @@ public final class MasterArchitectEyeWallRenderer {
                 0,
                 destination.width,
                 destination.height,
-                16384,
+                bufferMask,
                 9728);
-        GlStateManager._glBindFramebuffer(36160, 0);
+        GlStateManager._glBindFramebuffer(36160, previous);
     }
 }

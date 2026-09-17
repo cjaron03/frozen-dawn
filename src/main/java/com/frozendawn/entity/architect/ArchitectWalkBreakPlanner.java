@@ -28,6 +28,11 @@ public final class ArchitectWalkBreakPlanner {
 
         Set<BlockPos> candidates = new LinkedHashSet<>(10);
         candidates.add(from.above());
+        if (steppingUp) {
+            // Standing fits in two clear cells; jumping onto a ledge also needs
+            // clearance above the current head cell. Never mine the ledge itself.
+            candidates.add(from.above(2));
+        }
         if (toward != null) {
             BlockPos front = from.relative(toward);
             // During a step-up, front is the ledge supporting the destination.
@@ -47,82 +52,81 @@ public final class ArchitectWalkBreakPlanner {
             candidates.add(stepPos.above());
         }
 
-        // Slab/snow transitions can alternate between the same X/Z at Y and Y+1.
-        // Include lower cells for flat/descending moves, but avoid undercutting
-        // support while trying to climb upward.
-        if (!steppingUp) {
-            candidates.add(stepPos.below());
-            if (Math.abs(stepPos.getY() - from.getY()) >= 2) {
-                candidates.add(stepPos.below(2));
-            }
-        }
+        // Nothing below stepPos is ever a candidate: that column is the surface the
+        // destination stands on, so it is solid on any walkable path and would always
+        // win selection once the real obstructions turn out to be air. Mining it drops
+        // the Architect into a pit, which re-triggers the stuck check one block lower
+        // and digs a trench. A slab or snow layer at the destination is stepPos itself,
+        // which is already covered above.
         return candidates;
     }
 
-    @Nullable
-    public static BlockPos selectPreferredBreakCandidate(
-            Iterable<BlockPos> candidates,
-            @Nullable BlockPos blockedCandidate,
-            Predicate<BlockPos> isBreakable,
-            Predicate<BlockPos> isLastResortBreakBlock
-    ) {
-        BlockPos fallback = null;
-        for (BlockPos candidate : candidates) {
-            if (isBlockedUnstickCandidate(candidate, blockedCandidate)) {
-                continue;
-            }
-            if (!isBreakable.test(candidate)) {
-                continue;
-            }
-            if (!isLastResortBreakBlock.test(candidate)) {
-                return candidate.immutable();
-            }
-            if (fallback == null) {
-                fallback = candidate.immutable();
-            }
-        }
-        return fallback;
+    public record CandidateDecision(BreakChoice candidate, String outcome) { }
+
+    public static List<BreakChoice> unstickChoices(BlockPos from, BlockPos step, @Nullable Direction toward) {
+        return collectUnstickBreakCandidates(from, step, toward).stream().map(pos -> new BreakChoice(pos,
+                pos.equals(from.above(2)) && step.getY() > from.getY() ? BreakReason.STEP_UP_CEILING
+                : pos.equals(from.above()) ? BreakReason.HEAD_CLEARANCE
+                : toward != null && step.getY() < from.getY() && pos.equals(from.relative(toward).above(2))
+                    ? BreakReason.STEP_DOWN_CLEARANCE : BreakReason.IMMEDIATE_CANDIDATE)).toList();
+    }
+
+    public static List<BreakChoice> corridorChoices(List<BlockPos> nodes) {
+        return nodes.stream().flatMap(node -> java.util.stream.Stream.of(
+                new BreakChoice(node, BreakReason.CORRIDOR_NODE),
+                new BreakChoice(node.above(), BreakReason.HEAD_CLEARANCE))).toList();
     }
 
     @Nullable
-    public static BlockPos findCorridorBreakTarget(
-            List<BlockPos> corridorNodes,
-            Predicate<BlockPos> isBreakable,
-            Predicate<BlockPos> isLastResortBreakBlock
-    ) {
-        BlockPos fallback = null;
-        for (BlockPos node : corridorNodes) {
-            if (isBreakable.test(node)) {
-                if (!isLastResortBreakBlock.test(node)) {
-                    return node.immutable();
-                }
-                if (fallback == null) {
-                    fallback = node.immutable();
-                }
-            }
-
-            BlockPos headroom = node.above();
-            if (isBreakable.test(headroom)) {
-                if (!isLastResortBreakBlock.test(headroom)) {
-                    return headroom.immutable();
-                }
-                if (fallback == null) {
-                    fallback = headroom.immutable();
+    public static BreakChoice selectChoice(Iterable<BreakChoice> candidates, Set<BlockPos> blocked,
+            java.util.function.Function<BlockPos, String> rejection,
+            Predicate<BlockPos> lastResort, java.util.function.Consumer<CandidateDecision> trace) {
+        BreakChoice fallback = null;
+        BreakChoice selected = null;
+        for (BreakChoice candidate : candidates) {
+            String outcome;
+            if (selected != null) outcome = "NOT_EVALUATED_AFTER_SELECTION";
+            else if (blocked.contains(candidate.pos())) outcome = "BLACKLISTED";
+            else {
+                outcome = rejection.apply(candidate.pos());
+                if (outcome == null) {
+                    if (lastResort.test(candidate.pos())) {
+                        outcome = "LAST_RESORT_DEFERRED";
+                        if (fallback == null) fallback = new BreakChoice(candidate.pos(), BreakReason.LAST_RESORT);
+                    } else {
+                        selected = candidate;
+                        outcome = "SELECTED";
+                    }
                 }
             }
+            trace.accept(new CandidateDecision(candidate, outcome));
         }
-        return fallback;
+        if (selected == null && fallback != null) {
+            trace.accept(new CandidateDecision(fallback, "SELECTED_FALLBACK"));
+        }
+        return selected != null ? selected : fallback;
     }
 
-    public static boolean isBlockedUnstickCandidate(BlockPos candidate, @Nullable BlockPos blockedCandidate) {
-        if (blockedCandidate == null) {
-            return false;
-        }
-        if (candidate.equals(blockedCandidate)) {
-            return true;
-        }
-        return candidate.getX() == blockedCandidate.getX()
-                && candidate.getZ() == blockedCandidate.getZ()
-                && Math.abs(candidate.getY() - blockedCandidate.getY()) <= 1;
+    @Nullable
+    public static BlockPos selectPreferredBreakCandidate(Iterable<BlockPos> candidates, Set<BlockPos> blocked,
+            Predicate<BlockPos> breakable, Predicate<BlockPos> lastResort) {
+        java.util.ArrayList<BreakChoice> choices = new java.util.ArrayList<>();
+        candidates.forEach(p -> choices.add(new BreakChoice(p, BreakReason.IMMEDIATE_CANDIDATE)));
+        BreakChoice choice = selectChoice(choices, blocked, p -> breakable.test(p) ? null : "NOT_BREAKABLE", lastResort, d -> { });
+        return choice == null ? null : choice.pos();
+    }
+
+    @Nullable
+    public static BlockPos findCorridorBreakTarget(List<BlockPos> nodes,
+            Predicate<BlockPos> breakable, Predicate<BlockPos> lastResort) {
+        return findCorridorBreakTarget(nodes, Set.of(), breakable, lastResort);
+    }
+
+    @Nullable
+    public static BlockPos findCorridorBreakTarget(List<BlockPos> nodes, Set<BlockPos> blocked,
+            Predicate<BlockPos> breakable, Predicate<BlockPos> lastResort) {
+        BreakChoice choice = selectChoice(corridorChoices(nodes), blocked,
+                p -> breakable.test(p) ? null : "NOT_BREAKABLE", lastResort, d -> { });
+        return choice == null ? null : choice.pos();
     }
 }

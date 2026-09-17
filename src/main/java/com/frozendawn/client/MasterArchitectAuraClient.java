@@ -231,7 +231,7 @@ public final class MasterArchitectAuraClient {
             return;
         }
         float strength = pressureWaveTicks / 28.0F * collapseStrength;
-        double time = minecraft.level.getGameTime() * 2.7D + pressureWaveTicks;
+        double time = (minecraft.level.getGameTime() + event.getPartialTick()) * 2.7D;
         event.setPitch(event.getPitch()
                 + (float) Math.sin(time * 1.7D) * 1.15F * strength);
         event.setYaw(event.getYaw()
@@ -250,6 +250,9 @@ public final class MasterArchitectAuraClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
             return;
+        }
+        if (collapseTicks > 0 || MasterArchitectWeather.hasAuraAnchor()) {
+            MasterArchitectEyeWallRenderer.captureFabulousDepth();
         }
         if (ThaeIvenMindDimension.isMindLevel(minecraft.level)
                 && MasterArchitectFloodClient.isDeathRitual()) {

@@ -41,6 +41,9 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(ArchitectDebugPayload.TYPE, ArchitectDebugPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleArchitectDebug(payload)));
+
         // Client-bound packets — handlers delegate to ClientHandlers (only loaded on client)
         registrar.playToClient(
                 ApocalypseDataPayload.TYPE,

@@ -3,6 +3,7 @@ package com.frozendawn.entity.ai;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
 import com.frozendawn.entity.ReturnedEntity;
+import com.frozendawn.entity.architect.ArchitectTargetingSupport;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthArchitectPolicy;
 import com.frozendawn.homo.HearthTransmissionManager;
@@ -84,7 +85,7 @@ public final class ReturnedHearthWatchGoal extends Goal {
                 returned.getX(), returned.getY(), returned.getZ(),
                 HearthWatcherPolicy.WATCH_DISTANCE,
                 entity -> entity instanceof Player candidate
-                        && candidate.isAlive() && !candidate.isSpectator());
+                        && ArchitectTargetingSupport.isTargetablePlayer(candidate));
         if (player == null) {
             wasObserving = false;
             ambientDrift(hearth);

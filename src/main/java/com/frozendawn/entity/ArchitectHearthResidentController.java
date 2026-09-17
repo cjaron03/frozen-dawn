@@ -2,11 +2,15 @@ package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.data.ReturnedHearthSavedData;
+import com.frozendawn.entity.architect.ArchitectTargetingSupport;
 import com.frozendawn.homo.HearthArchitectManager;
 import com.frozendawn.homo.HearthArchitectPolicy;
+import com.frozendawn.homo.HearthAssessmentClaimManager;
 import com.frozendawn.homo.HearthCombatRosterManager;
 import com.frozendawn.homo.HearthMemoryManager;
 import com.frozendawn.homo.HearthPopulationPolicy;
+import com.frozendawn.homo.HearthTargetPolicy;
+import com.frozendawn.homo.HearthTargetPolicy.Candidate;
 import com.frozendawn.homo.HearthTransmissionManager;
 import com.frozendawn.homo.HeartScavengerWaveManager;
 import com.frozendawn.homo.OrsaEquipmentDetector;
@@ -14,10 +18,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,8 +37,8 @@ final class ArchitectHearthResidentController {
     private static final int PATROL_DELAY_VARIANCE = 120;
 
     private final ArchitectEntity architect;
-    private UUID assessmentTargetId;
-    private int assessmentTicks;
+    private final ArchitectAssessmentCommitment commitment =
+            new ArchitectAssessmentCommitment();
     private int patrolCooldown;
 
     ArchitectHearthResidentController(ArchitectEntity architect) {
@@ -43,6 +49,13 @@ final class ArchitectHearthResidentController {
      * @return true when neutral resident behavior handled this tick.
      */
     boolean tick(ServerLevel level) {
+        LivingEntity attacker = architect.getLastHurtByMob();
+        if (attacker != null && attacker.isAlive()) {
+            resetAssessmentTarget();
+            patrolCooldown = 0;
+            return false;
+        }
+
         UUID hearthId = architect.getHearthPopulationId().orElse(null);
         if (HeartScavengerWaveManager.isHeartScavenger(
                 architect.getTarget(), hearthId)) {
@@ -69,7 +82,7 @@ final class ArchitectHearthResidentController {
             return true;
         }
 
-        ServerPlayer player = nearestPlayer(level);
+        ServerPlayer player = mostVulnerablePlayer(level);
         if (player != null) {
             architect.getLookControl().setLookAt(player, 30.0F, 30.0F);
             assessPlayer(level, player, home);
@@ -100,27 +113,22 @@ final class ArchitectHearthResidentController {
             return;
         }
 
-        if (!player.getUUID().equals(assessmentTargetId)) {
-            assessmentTargetId = player.getUUID();
-            assessmentTicks = 0;
-        }
-
         double distanceSquared = architect.distanceToSqr(player);
         if (distanceSquared < (double) HearthArchitectPolicy.ASSESSMENT_MIN_DISTANCE
                 * HearthArchitectPolicy.ASSESSMENT_MIN_DISTANCE) {
-            assessmentTicks = 0;
+            commitment.resetTicks();
             retreatFrom(player, home);
             return;
         }
         if (!HearthArchitectPolicy.isAssessmentDistance(distanceSquared)
                 || !architect.hasLineOfSight(player)) {
-            assessmentTicks = 0;
+            commitment.resetTicks();
             architect.getNavigation().moveTo(player, WALK_SPEED);
             return;
         }
 
         architect.getNavigation().stop();
-        assessmentTicks++;
+        int assessmentTicks = commitment.advanceTicks();
         if (assessmentTicks % 20 == 0) {
             level.sendParticles(ParticleTypes.SOUL,
                     architect.getX(), architect.getY() + 1.8D, architect.getZ(),
@@ -159,12 +167,16 @@ final class ArchitectHearthResidentController {
     }
 
     private void resetAssessmentTarget() {
-        assessmentTargetId = null;
-        assessmentTicks = 0;
+        commitment.release();
+        HearthAssessmentClaimManager.release(architect.getUUID());
     }
 
     @Nullable
     ServerPlayer findHostileTarget(ServerLevel level) {
+        if (architect.getLastHurtByMob() instanceof ServerPlayer attacker
+                && attacker.isAlive() && !attacker.isCreative() && !attacker.isSpectator()) {
+            return attacker;
+        }
         java.util.UUID hearthId = architect.getHearthPopulationId().orElse(null);
         if (hearthId != null && !HearthCombatRosterManager.canEngagePlayer(
                 level, hearthId, architect.getUUID())) {
@@ -176,19 +188,51 @@ final class ArchitectHearthResidentController {
                         <= HOSTILE_ACQUISITION_RANGE * HOSTILE_ACQUISITION_RANGE)
                 .filter(player -> HearthPopulationPolicy.isHostileRelationship(
                         HearthMemoryManager.relationship(level, player.getUUID())))
-                .min(Comparator.comparingDouble(architect::distanceToSqr))
+                .min(Comparator.comparing(this::toCandidate,
+                        HearthTargetPolicy.BY_VULNERABILITY))
                 .orElse(null);
     }
 
+    /**
+     * The player this Architect is assessing, or null when nobody qualifies.
+     *
+     * <p>Creative players are excluded for the same reason {@link #findHostileTarget}
+     * excludes them: they are not participants. Creative also means no armor, which
+     * wins {@link HearthTargetPolicy#BY_VULNERABILITY} outright, so an admin or builder
+     * standing near a Hearth would take the commitment and hold it while every survival
+     * player in range went unassessed.
+     */
     @Nullable
-    private ServerPlayer nearestPlayer(ServerLevel level) {
-        return level.players().stream()
-                .filter(player -> player.isAlive() && !player.isSpectator())
+    private ServerPlayer mostVulnerablePlayer(ServerLevel level) {
+        List<ServerPlayer> inRange = level.players().stream()
+                .filter(ArchitectTargetingSupport::isTargetablePlayer)
                 .filter(player -> architect.distanceToSqr(player)
                         <= (double) HearthPopulationPolicy.WATCH_DISTANCE
                         * HearthPopulationPolicy.WATCH_DISTANCE)
-                .min(Comparator.comparingDouble(architect::distanceToSqr))
-                .orElse(null);
+                .toList();
+        UUID hearthId = architect.getHearthPopulationId().orElse(null);
+        UUID architectId = architect.getUUID();
+        List<ServerPlayer> claimable = HearthAssessmentClaimManager.filterClaimed(
+                level.getGameTime(), hearthId, architectId, inRange, ServerPlayer::getUUID);
+        UUID targetId = commitment.resolve(
+                claimable.stream().map(this::toCandidate).toList(),
+                ArchitectTargetingSupport.targetablePlayerIds(level));
+        if (targetId == null) {
+            return null;
+        }
+        for (ServerPlayer player : claimable) {
+            if (player.getUUID().equals(targetId)) {
+                HearthAssessmentClaimManager.claim(
+                        level.getGameTime(), hearthId, architectId, targetId);
+                return player;
+            }
+        }
+        return null;
+    }
+
+    private Candidate toCandidate(ServerPlayer player) {
+        return new Candidate(player.getUUID(), player.getArmorValue(),
+                architect.distanceToSqr(player));
     }
 
     private void retreatFrom(ServerPlayer player, BlockPos home) {
