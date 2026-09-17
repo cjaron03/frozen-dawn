@@ -25,8 +25,7 @@ def prepare(source, destination):
     tags.mkdir(parents=True, exist_ok=True)
     (tags / 'tick.json').write_text(json.dumps({'values': ['maeve_playtest:tick']}))
     scripts = {
-        'setup': '''tick unfreeze
-gamerule doMobSpawning false
+        'setup': '''gamerule doMobSpawning false
 gamerule doDaylightCycle false
 gamerule doWeatherCycle false
 gamerule keepInventory true
@@ -57,14 +56,13 @@ gamemode survival @s
 function maeve_playtest:training''',
         'training': '''tp @s 212.5 101 208.5 90 0
 item replace entity @s hotbar.0 with minecraft:potion[minecraft:potion_contents={potion:"minecraft:healing"}]
-tellraw @s {"text":"Training: stand here and finish the potion in slot 1. There are four rounds; the quiet gaps will fast-forward automatically.","color":"gold"}''',
+tellraw @s {"text":"Training: stand here and finish the potion in slot 1. There are four rounds; each quiet gap offers a fast-forward link.","color":"gold"}''',
         'tick': '''execute as @a[tag=maeve_playtest,scores={maeve_round=0..3,maeve_uses=1..}] run function maeve_playtest:consumed''',
         'consumed': '''scoreboard players set @s maeve_uses 0
 scoreboard players add @s maeve_round 1
 tp @s 280.5 101 208.5 90 0
-tellraw @s {"text":"Potion completed. Preparing the next round...","color":"gray"}
-schedule function maeve_playtest:next 630t replace
-tick sprint 640''',
+tellraw @s {"text":"Potion completed. Next round in 31 seconds; click here to fast-forward.","color":"gray","clickEvent":{"action":"run_command","value":"/tick sprint 640"}}
+schedule function maeve_playtest:next 630t replace''',
         'next': '''execute as @a[tag=maeve_playtest,scores={maeve_round=0..3}] run function maeve_playtest:training
 execute as @a[tag=maeve_playtest,scores={maeve_round=4}] run function maeve_playtest:encounter''',
         'encounter': '''scoreboard players set @s maeve_round 5
@@ -81,7 +79,7 @@ item replace entity @s hotbar.8 with minecraft:arrow 64
 tp @s 214.5 101 213.5 135 0
 fd architect record @e[tag=maeve_playtest_witness,limit=1] 1337
 tellraw @s {"text":"Encounter ready. Spend about half a minute moving and using your equipment as you normally would. Keep the Architect alive so we can inspect the encounter afterward. Then run /function maeve_playtest:finish and describe what you noticed.","color":"green"}''',
-        'finish': '''tick freeze
+        'finish': '''data merge entity @e[tag=maeve_playtest_witness,limit=1] {NoAI:1b}
 fd architect stop @e[tag=maeve_playtest_witness,limit=1]
 fd architect dump @e[tag=maeve_playtest_witness,limit=1]
 tellraw @s {"text":"Paused and recorded. Tell Codex what the Architect did that stood out, before looking at its explanation.","color":"aqua"}''',
