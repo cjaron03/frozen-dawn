@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://cjaron03.github.io/frozen-dawn-journal/">
-    <img src="docs/images/readme-dev-journal.png" alt="Frozen Dawn dev journal: 535 commits, eight chapters, and a thing that learned to think" width="900">
+    <img src="docs/images/readme-dev-journal.png" alt="Frozen Dawn dev journal: how one person built a world that freezes, and a thing that learned to think" width="900">
   </a>
 </p>
 
