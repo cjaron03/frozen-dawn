@@ -16,6 +16,8 @@ public final class ArchitectActionTransitionSupport {
     public static void onLeaveApproach(ArchitectApproachState approachState) {
         approachState.unreachableTicks = 0;
         approachState.ceilingBreachPos = null;
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
         approachState.stepOffTarget = null;
         approachState.stepOffStart = null;
     }

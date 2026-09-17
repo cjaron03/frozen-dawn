@@ -83,6 +83,11 @@ final class ArchitectApproachMovementSupport {
             return false;
         }
 
+        if (!canLiftAtScaffold(architect, approachState.scaffoldTarget)) {
+            cancelDisplacedScaffold(architect, approachState, approachState.scaffoldTarget);
+            return false;
+        }
+
         approachState.scaffoldDelay--;
         BlockPos scaffoldTarget = approachState.scaffoldTarget;
         architect.getLookControl().setLookAt(
@@ -260,6 +265,13 @@ final class ArchitectApproachMovementSupport {
             ArchitectBlockBreaker blockBreaker,
             BlockPos scaffoldTarget
     ) {
+        // Placement and the one-block lift are a local operation. Revalidate before
+        // touching the world, including when a knockback or interrupted action has
+        // moved the actor since this step was queued.
+        if (!canLiftAtScaffold(architect, scaffoldTarget)) {
+            cancelDisplacedScaffold(architect, approachState, scaffoldTarget);
+            return;
+        }
         Level level = architect.level();
         BlockPos supportPos = scaffoldTarget.below();
         BlockState supportState = level.getBlockState(supportPos);
@@ -308,6 +320,19 @@ final class ArchitectApproachMovementSupport {
                 scaffoldTarget.getZ() + 0.5
         );
         architect.getNavigation().stop();
+    }
+
+    private static boolean canLiftAtScaffold(ArchitectEntity architect, BlockPos destination) {
+        return architect.onGround() && architect.blockPosition().equals(destination.below());
+    }
+
+    private static void cancelDisplacedScaffold(
+            ArchitectEntity architect, ArchitectApproachState approachState, BlockPos destination
+    ) {
+        architect.recordDecision("SCAFFOLD_CANCEL", null, "ACTOR_DISPLACED step=" + destination);
+        approachState.scaffoldTarget = null;
+        approachState.scaffoldDelay = 0;
+        architect.setPathRecalcCooldown(0);
     }
 
     private static boolean isPassableForStand(BlockPos pos, Level level) {

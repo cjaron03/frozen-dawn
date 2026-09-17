@@ -198,6 +198,14 @@ final class ArchitectObservationController {
     }
 
     void enterRoamModeAfterTargetLoss() {
+        // A queued lift belongs to the interrupted approach, not a future target.
+        // Roaming can carry us far from the column before approach resumes.
+        if (approachState.scaffoldTarget != null) {
+            architect.recordDecision("SCAFFOLD_CANCEL", null,
+                    "TARGET_LOST step=" + approachState.scaffoldTarget);
+            approachState.scaffoldTarget = null;
+            approachState.scaffoldDelay = 0;
+        }
         architect.setRoamingAfterTargetLoss(true);
         resetObserveCycle();
         architect.resetRetreatState();
