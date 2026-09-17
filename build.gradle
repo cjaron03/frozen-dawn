@@ -80,6 +80,18 @@ neoForge {
             systemProperty 'frozendawn.debug.architectSeed', '1'
         }
 
+        // A second local player for LAN disconnect/reconnect tests. Keep saves,
+        // options, and logs separate from the host in run-lab.
+        clientLabGuest {
+            client()
+            gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
+            programArguments.addAll '--username', 'ArchitectGuest'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
+            systemProperty 'frozendawn.debug.architect', 'true'
+            systemProperty 'frozendawn.debug.architectSeed', '1'
+        }
+
         clientDebug {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
