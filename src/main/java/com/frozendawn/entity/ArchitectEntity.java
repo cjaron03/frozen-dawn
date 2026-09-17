@@ -1791,6 +1791,7 @@ public class ArchitectEntity extends Monster {
         // Retaliation outranks scoring: whoever just hit us takes the commitment.
         if (getLastHurtByMob() instanceof Player attacker
                 && ArchitectTargetingSupport.isTargetablePlayer(attacker)
+                && !isApproachTargetSuppressed(attacker)
                 && distanceToSqr(attacker) <= rangeSquared) {
             roamingCommitment.commitToTarget(attacker.getUUID());
             logRoamingCommitment(serverLevel, attacker, "RETALIATION",
@@ -1801,7 +1802,9 @@ public class ArchitectEntity extends Monster {
         List<ServerPlayer> inRange = new ArrayList<>();
         List<Candidate> candidates = new ArrayList<>();
         for (ServerPlayer player : serverLevel.players()) {
-            if (ArchitectTargetingSupport.isTargetablePlayer(player) && distanceToSqr(player) <= rangeSquared) {
+            if (ArchitectTargetingSupport.isTargetablePlayer(player)
+                    && !isApproachTargetSuppressed(player)
+                    && distanceToSqr(player) <= rangeSquared) {
                 inRange.add(player);
                 candidates.add(new Candidate(player.getUUID(), player.getArmorValue(),
                         distanceToSqr(player)));
@@ -1809,8 +1812,13 @@ public class ArchitectEntity extends Monster {
         }
         boolean previousStillInRange = previousCommitted != null
                 && inRange.stream().anyMatch(p -> p.getUUID().equals(previousCommitted));
-        UUID targetId = roamingCommitment.resolve(
-                candidates, ArchitectTargetingSupport.targetablePlayerIds(serverLevel));
+        // A recovery cooldown is not a distance departure: forget the old commitment
+        // instead of bookmarking it and starving another eligible player. Apply the
+        // same eligibility rule to scoring, presence, and remembered retaliation.
+        var targetableIds = ArchitectTargetingSupport.targetablePlayerIds(serverLevel);
+        targetableIds.removeIf(id -> ArchitectApproachRecovery.isTargetSuppressed(
+                approachState, id, tickCount));
+        UUID targetId = roamingCommitment.resolve(candidates, targetableIds);
         if (targetId != null) {
             for (ServerPlayer player : inRange) {
                 if (player.getUUID().equals(targetId)) {
