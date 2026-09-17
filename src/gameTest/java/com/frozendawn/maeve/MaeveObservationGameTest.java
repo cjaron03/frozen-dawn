@@ -44,9 +44,9 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(FrozenDawn.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class MaeveObservationGameTest {
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 40)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
     public static void maeveDamageRequiresWitnessAndSeparatesPlayers(GameTestHelper helper) {
-        try (Scene scene = new Scene(helper)) {
+        withScene(helper, 0, scene -> {
             var observer = scene.architect(2, 4);
             var player = scene.player("maeve_damage", 8, 4);
             scene.wall(true);
@@ -90,13 +90,12 @@ public final class MaeveObservationGameTest {
             helper.assertTrue(!observer.isAlive(), "The last observed hit must actually be fatal");
             helper.assertTrue(scene.beliefs(second).getFirst().evidence() == 1, "Death cannot prevent fatal-hit upload");
             helper.assertTrue(scene.beliefs(player).getFirst().evidence() == 1, "Second player cannot alter the first profile");
-            helper.succeed();
-        }
+        });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 40)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
     public static void maeveRecoveryRequiresCompletedVisibleAction(GameTestHelper helper) {
-        try (Scene scene = new Scene(helper)) {
+        withScene(helper, 1, scene -> {
             var observer = scene.architect(2, 4);
             scene.architect(3, 5);
             var player = scene.player("maeve_recovery", 8, 4);
@@ -127,13 +126,12 @@ public final class MaeveObservationGameTest {
             player.finish(scene.potion());
             helper.assertTrue(scene.beliefs(player).getFirst().contradictions() == 1, "Open-sky recovery contradicts the hypothesis");
             helper.assertTrue(scene.beliefs(player).getFirst().provenance().size() == 2, "Both polarities have actual provenance");
-            helper.succeed();
-        }
+        });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 40)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
     public static void maeveIncludesRealMastersAndExcludesProjections(GameTestHelper helper) {
-        try (Scene scene = new Scene(helper)) {
+        withScene(helper, 2, scene -> {
             var player = scene.player("maeve_roles", 8, 4);
             var copy = scene.architect(2, 4);
             copy.initializeMasterMindCopy(UUID.randomUUID(), 100, 100, 0);
@@ -151,13 +149,12 @@ public final class MaeveObservationGameTest {
             helper.assertTrue(scene.beliefs(player).size() == 2, "Real Masters can witness completed recovery too");
             helper.assertTrue(scene.beliefs(player).stream().flatMap(b -> b.provenance().stream())
                     .allMatch(e -> e.observer().equals(master.getUUID())), "Every retained event must belong to the real Master");
-            helper.succeed();
-        }
+        });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 40)
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
     public static void maeveLifecycleErasesBeliefsAndPreservesConduct(GameTestHelper helper) {
-        try (Scene scene = new Scene(helper)) {
+        withScene(helper, 3, scene -> {
             var observer = scene.architect(2, 4);
             var player = scene.player("maeve_lifecycle", 8, 4);
             scene.phase.setApocalypseTicks(0, scene.server);
@@ -202,8 +199,43 @@ public final class MaeveObservationGameTest {
             scene.hearths.markMaeveErased(3);
             helper.assertTrue(scene.beliefs(player).isEmpty(), "An authoritative erased world rejects stale on-disk beliefs");
             helper.assertTrue(scene.hearths.relationship(player.getUUID()) == conduct, "Load cleanup preserves permanent conduct");
-            helper.succeed();
+        });
+    }
+
+    private static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
+        ServerLevel level = helper.getLevel();
+        BlockPos origin = helper.absolutePos(new BlockPos(2048 + lane * 512, 100, 2048));
+        var acquired = new ArrayList<net.minecraft.world.level.ChunkPos>();
+        for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+            var chunk = new net.minecraft.world.level.ChunkPos((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z);
+            if (!level.getForcedChunks().contains(chunk.toLong())) {
+                level.setChunkForced(chunk.x, chunk.z, true);
+                acquired.add(chunk);
+            }
+            level.getChunk(chunk.x, chunk.z);
         }
+        helper.testInfo.addListener(new net.minecraft.gametest.framework.GameTestListener() {
+            public void testStructureLoaded(net.minecraft.gametest.framework.GameTestInfo info) { }
+            public void testAddedForRerun(net.minecraft.gametest.framework.GameTestInfo old,
+                                         net.minecraft.gametest.framework.GameTestInfo next,
+                                         net.minecraft.gametest.framework.GameTestRunner runner) { }
+            private void release() { acquired.forEach(c -> level.setChunkForced(c.x, c.z, false)); }
+            public void testPassed(net.minecraft.gametest.framework.GameTestInfo info,
+                                   net.minecraft.gametest.framework.GameTestRunner runner) { release(); }
+            public void testFailed(net.minecraft.gametest.framework.GameTestInfo info,
+                                   net.minecraft.gametest.framework.GameTestRunner runner) { release(); }
+        });
+        // Terrain generation finishes before entity sections become accessible. Allow normal
+        // server ticks to finish loading them, before swapping any shared SavedData.
+        helper.startSequence().thenWaitUntil(() -> {
+            for (var chunk : acquired) {
+                helper.assertTrue(level.isPositionEntityTicking(chunk.getMiddleBlockPosition(origin.getY()))
+                                && level.areEntitiesLoaded(chunk.toLong()),
+                        "Waiting for fixture entity sections: " + chunk);
+            }
+        }).thenExecute(() -> {
+            try (Scene scene = new Scene(helper, origin)) { exercise.accept(scene); }
+        }).thenSucceed();
     }
 
     private static final class Scene implements AutoCloseable {
@@ -220,10 +252,10 @@ public final class MaeveObservationGameTest {
         final List<Entity> entities = new ArrayList<>();
         final Map<BlockPos, BlockState> blocks = new LinkedHashMap<>();
 
-        Scene(GameTestHelper helper) {
+        Scene(GameTestHelper helper, BlockPos origin) {
             level = helper.getLevel();
             server = level.getServer();
-            origin = helper.absolutePos(new BlockPos(2048, 100, 2048));
+            this.origin = origin;
             previousPhase = ApocalypseState.get(server);
             previousHearths = ReturnedHearthSavedData.get(server);
             previousMaeve = MaeveSavedData.get(server);
@@ -234,9 +266,6 @@ public final class MaeveObservationGameTest {
             server.overworld().getDataStorage().set("frozendawn_returned_hearths", hearths);
             storage(new MaeveSavedData());
             phase.setApocalypseTicks(phase.getTotalDays() * 24000L, server);
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) level.getChunk((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z);
-            }
             for (int x = 0; x <= 10; x++) for (int z = 0; z <= 10; z++) block(x, -1, z, Blocks.STONE.defaultBlockState());
         }
 
@@ -252,6 +281,9 @@ public final class MaeveObservationGameTest {
             actor.setPos(position(x, z));
             level.addFreshEntity(actor);
             entities.add(actor);
+            if (level.getEntity(actor.getUUID()) != actor) {
+                throw new IllegalStateException("Fixture witness is not in an accessible entity section: " + actor.blockPosition());
+            }
             return actor;
         }
 
