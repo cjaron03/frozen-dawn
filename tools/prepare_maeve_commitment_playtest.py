@@ -30,7 +30,9 @@ def write_pack(destination):
     tags = pack / 'data' / 'minecraft' / 'tags' / 'function'
     tags.mkdir(parents=True, exist_ok=True)
     (tags / 'tick.json').write_text(json.dumps({'values': ['maeve_playtest:tick']}))
+    (tags / 'load.json').write_text(json.dumps({'values': ['maeve_playtest:load']}))
     scripts = {
+        'load': 'scoreboard objectives add maeve_finished dummy',
         'setup': '''gamerule doMobSpawning false
 gamerule doDaylightCycle false
 gamerule doWeatherCycle false
@@ -48,12 +50,12 @@ schedule clear maeve_playtest:prompt
 schedule clear maeve_playtest:checkpoint
 schedule clear maeve_playtest:end
 scoreboard objectives add maeve_round dummy
-scoreboard objectives add maeve_uses minecraft.used:minecraft.potion
+scoreboard objectives add maeve_finished dummy
 scoreboard objectives add maeve_done dummy
 scoreboard objectives add maeve_goal dummy
 scoreboard objectives add maeve_blind dummy
 scoreboard players set @s maeve_round 0
-scoreboard players set @s maeve_uses 0
+scoreboard players set @s maeve_finished 0
 scoreboard players set @s maeve_done 0
 scoreboard players set @s maeve_goal 4
 scoreboard players set @s maeve_blind 0
@@ -80,14 +82,16 @@ fill 204 101 208 204 102 208 minecraft:air
 setblock 205 102 208 minecraft:air
 summon frozendawn:architect 204.5 101 208.5 {Tags:["maeve_playtest_witness"],PersistenceRequired:1b,Health:200.0f,Attributes:[{Name:"minecraft:generic.movement_speed",Base:0.0},{Name:"minecraft:generic.max_health",Base:200.0},{Name:"minecraft:generic.knockback_resistance",Base:1.0}]}''',
         'training': '''tag @s add maeve_training
-scoreboard players set @s maeve_uses 0
+scoreboard players set @s maeve_finished 0
 tp @s 212.5 101 208.5 90 0
 item replace entity @s hotbar.0 with minecraft:potion[minecraft:potion_contents={potion:"minecraft:healing"}]
 function maeve_playtest:progress''',
         'progress': '''tellraw @s [{"text":"Potion practice: ","color":"gold"},{"score":{"name":"@s","objective":"maeve_done"}},{"text":"/"},{"score":{"name":"@s","objective":"maeve_goal"}},{"text":" completed. Stand here and finish the potion in slot 1."}]''',
-        'tick': '''execute as @a[tag=maeve_playtest,tag=maeve_training,scores={maeve_round=0..3,maeve_uses=1..}] run function maeve_playtest:consumed''',
+        'tick': '''execute as @a[tag=maeve_playtest,tag=maeve_training,scores={maeve_round=0..3,maeve_finished=1..}] run function maeve_playtest:consumed''',
+        'potion_finished': '''advancement revoke @s only maeve_playtest:practice_potion
+execute if entity @s[tag=maeve_playtest,tag=maeve_training,scores={maeve_round=0..3}] run scoreboard players set @s maeve_finished 1''',
         'consumed': '''tag @s remove maeve_training
-scoreboard players set @s maeve_uses 0
+scoreboard players set @s maeve_finished 0
 scoreboard players add @s maeve_round 1
 scoreboard players add @s maeve_done 1
 tp @s 280.5 101 208.5 90 0
@@ -159,7 +163,8 @@ tag @s remove maeve_training
 scoreboard players set @s maeve_round 4
 schedule function maeve_playtest:next 630t replace
 tellraw @s {"text":"Reusing observed history. Wait here for 31 seconds; the start prompt will appear automatically.","color":"gold"}''',
-        'refresh': '''schedule clear maeve_playtest:next
+        'refresh': '''scoreboard objectives add maeve_finished dummy
+schedule clear maeve_playtest:next
 schedule clear maeve_playtest:deploy
 schedule clear maeve_playtest:prompt
 schedule clear maeve_playtest:checkpoint
@@ -173,7 +178,7 @@ scoreboard players set @s maeve_round 2
 scoreboard players set @s maeve_done 0
 scoreboard players set @s maeve_goal 2
 scoreboard players set @s maeve_blind 0
-scoreboard players set @s maeve_uses 0
+scoreboard players set @s maeve_finished 0
 forceload add 198 198 230 222
 forceload add 278 206 282 210
 fill 278 100 206 282 100 210 minecraft:stone
@@ -189,6 +194,16 @@ schedule function maeve_playtest:next 630t replace
 tellraw @s {"text":"Two potion-practice rounds queued. Wait here for 31 seconds, then finish slot 1 when prompted. Your observed history is preserved.","color":"gold"}''',
         'inspect': '''tellraw @s {"text":"Click to run the direct Maeve dump (function feedback would be suppressed).","color":"aqua","clickEvent":{"action":"run_command","value":"/fd maeve dump"}}''',
     }
+    # The consumption trigger runs inside PotionItem.finishUsingItem, before the
+    # NeoForge completion hook. Set a flag here and teleport on the next tick so
+    # Maeve can observe completion at the original covered position first.
+    advancements = pack / 'data' / 'maeve_playtest' / 'advancement'
+    advancements.mkdir(parents=True, exist_ok=True)
+    (advancements / 'practice_potion.json').write_text(json.dumps({
+        'criteria': {'drink': {'trigger': 'minecraft:consume_item',
+                               'conditions': {'item': {'items': ['minecraft:potion']}}}},
+        'rewards': {'function': 'maeve_playtest:potion_finished'},
+    }))
     for name, body in scripts.items():
         (functions / f'{name}.mcfunction').write_text(body + '\n')
 
