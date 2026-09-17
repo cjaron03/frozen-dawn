@@ -7,6 +7,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 logoFile="logo.png"
+displayURL="https://cjaron03.github.io/frozen-dawn-journal/"
 authors="Jaron Cabral"
 description='''
 Earth becomes a rogue planet. The sun recedes, the world freezes, and survival shifts underground.

@@ -10,6 +10,16 @@
 
 **NeoForge 1.21.1** | **Java 21**
 
+<p align="center">
+  <a href="https://cjaron03.github.io/frozen-dawn-journal/">
+    <img src="docs/images/readme-dev-journal.png" alt="Frozen Dawn dev journal: 535 commits, eight chapters, and a thing that learned to think" width="900">
+  </a>
+</p>
+
+<p align="center">
+  <em>How this mod got built, one commit at a time. Start with <a href="https://cjaron03.github.io/frozen-dawn-journal/architect.html">Building a Mind</a>.</em>
+</p>
+
 **Latest update: 2.0.1-alpha.** This stability update improves Architect pursuit and multiplayer recovery, world catch-up, Hearth repair, and rendering. Read the [release notes](docs/releases/2.0.1_ALPHA.md) or [download the latest release](https://github.com/cjaron03/frozen-dawn/releases/latest).
 
 ## Lore
