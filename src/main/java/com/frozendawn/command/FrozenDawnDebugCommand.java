@@ -89,7 +89,7 @@ final class FrozenDawnDebugCommand {
                     "/fd maeve status",
                     "/fd maeve dump [player-or-uuid] (yourself by default; console requires a subject)",
                     "/fd maeve explain <pattern> [player-or-uuid] (belief, evidence, contradictions and uncertainty)",
-                    "Read-only tactical beliefs, observed evidence and explanations; gameplay adaptations are not implemented.");
+                    "Read-only tactical beliefs, observed evidence, commitment decisions and cooldowns.");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",
                     "/fd suit hearthrot status [verbose] | infect | set-stage ...");

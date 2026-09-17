@@ -33,7 +33,7 @@ class DirectorDiagnosticsTest {
         assertTrue(result.contains("encounter=" + store.snapshot(PLAYER, 120).getFirst().provenance().getFirst().encounter()));
         assertTrue(result.contains("at=minecraft:overworld 12, 101, 8"));
         assertTrue(result.contains("CONFIDENCE 0.0000"));
-        assertTrue(result.contains("ARCHITECT PACKET: not implemented"));
+        assertTrue(result.contains("CURRENT UNCERTAINTY:"));
     }
 
     @Test

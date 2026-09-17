@@ -57,9 +57,6 @@ final class DirectorDiagnostics {
                 : "Within the confirmation grace period; the hypothesis remains unproven."));
         lines.add(BeliefDescriptions.limitation(pattern));
         lines.add("Retained events explain observed support and contradictions; bounded history cannot reconstruct every past score change.");
-        lines.add("DIRECTOR OBJECTIVE: not implemented in this slice.");
-        lines.add("SELECTED STRATEGY: not implemented; gameplay does not consume these beliefs.");
-        lines.add("ARCHITECT PACKET: not implemented; no directive was sent from these beliefs.");
         return List.copyOf(lines);
     }
 

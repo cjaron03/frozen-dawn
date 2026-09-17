@@ -15,7 +15,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The hive's coordination facade. Records and explains beliefs; nothing feeds the local AI.
+ * The hive's coordination facade. Records beliefs and issues bounded commitments to local executors.
  * Source of truth §§4, 9.1, 9.16a, 9.18, 9.19.
  */
 public final class MaeveDirector {
@@ -31,7 +31,9 @@ public final class MaeveDirector {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve must run on the server thread");
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
         ApocalypseState apocalypse = ApocalypseState.get(server);
-        director.data.synchronize(PostMaeveWorldState.isErased(server),
+        boolean erased = PostMaeveWorldState.isErased(server);
+        if (erased) CommitmentCoordinator.stopAll(server, director.data.store());
+        director.data.synchronize(erased,
                 PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress()));
         return director;
     }
@@ -67,6 +69,7 @@ public final class MaeveDirector {
     public static void erase(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
+        CommitmentCoordinator.stopAll(server, director.data.store());
         director.data.erase();
         director.lastContactTick = Long.MIN_VALUE;
     }
@@ -75,7 +78,7 @@ public final class MaeveDirector {
         SERVERS.remove(server);
     }
 
-    /** Diagnostic snapshots are immutable and never consulted by gameplay. */
+    /** Immutable diagnostic snapshots; execution receives only bounded historical hints/directives. */
     public static Snapshot snapshot(MinecraftServer server, UUID player) {
         MaeveDirector director = current(server);
         BeliefStore store = director.data.store();
@@ -85,11 +88,11 @@ public final class MaeveDirector {
     }
 
     public static List<String> diagnostics(MinecraftServer server, UUID player) {
-        return DirectorDiagnostics.format(snapshot(server, player), player);
+        return withCommitmentDiagnostics(server, player, DirectorDiagnostics.format(snapshot(server, player), player));
     }
 
     public static List<String> explain(MinecraftServer server, UUID player, String pattern) {
-        return DirectorDiagnostics.explain(snapshot(server, player), player, pattern);
+        return withCommitmentDiagnostics(server, player, DirectorDiagnostics.explain(snapshot(server, player), player, pattern));
     }
 
     public static List<String> diagnosticPatterns(MinecraftServer server, UUID player) {
@@ -97,9 +100,79 @@ public final class MaeveDirector {
                 snapshot(server, player).beliefs().stream().map(BeliefSnapshot::pattern)).distinct().sorted().toList();
     }
 
+    private static List<String> withCommitmentDiagnostics(MinecraftServer server, UUID player, List<String> beliefs) {
+        var store = current(server).data.store();
+        if (store == null || player == null) return beliefs;
+        return java.util.stream.Stream.concat(beliefs.stream(),
+                CommitmentDiagnostics.format(commitmentSnapshot(server, player)).stream()).toList();
+    }
+
+    public static CommitmentSnapshot commitmentSnapshot(MinecraftServer server, UUID player) {
+        var store = current(server).data.store();
+        var state = store == null ? null : store.commitment(player);
+        long now = server.overworld().getGameTime();
+        return state == null ? new CommitmentSnapshot("NONE", null, false, List.of(), List.of(), null, List.of(), List.of())
+                : new CommitmentSnapshot(state.outcome(now), state.encounter(), state.issued(),
+                state.blocked().stream().sorted().toList(), state.blockNext().stream().sorted().toList(),
+                state.selected(), state.hints(now), state.alternatives());
+    }
+
     public static List<UUID> knownPlayers(MinecraftServer server) {
         BeliefStore store = current(server).data.store();
         return store == null ? List.of() : store.players();
+    }
+
+    /** Called at a coarse local decision boundary, and only after an Architect sees a player. */
+    public static List<CommitmentHint> commitmentHints(ArchitectEntity observer, ServerPlayer player) {
+        var director = current(player.serverLevel().getServer());
+        return CommitmentCoordinator.hints(director.data, observer, player);
+    }
+
+    public static boolean chooseCommitment(ArchitectEntity observer, ServerPlayer player, List<PositionCandidate> candidates) {
+        var director = current(player.serverLevel().getServer());
+        return CommitmentCoordinator.choose(director.data, observer, player, candidates);
+    }
+
+    public static PositionDirective positionDirective(ArchitectEntity observer) {
+        if (observer.getServer() == null) return null;
+        return CommitmentCoordinator.directive(current(observer.getServer()).data, observer);
+    }
+
+    public static void commitmentArrived(ArchitectEntity observer) {
+        if (observer.getServer() != null) CommitmentCoordinator.arrived(current(observer.getServer()).data, observer);
+    }
+
+    public static void releaseCommitment(ArchitectEntity observer, String reason) {
+        if (observer.getServer() != null) CommitmentCoordinator.release(current(observer.getServer()).data, observer, reason);
+    }
+
+    public static UtilityBias utilityBias(ArchitectEntity observer, ServerPlayer player) {
+        var data = current(player.serverLevel().getServer()).data;
+        if (data.store() == null || !CommitmentCoordinator.eligible(observer, player)) return UtilityBias.NONE;
+        var state = data.store().commitment(player.getUUID());
+        return state == null ? UtilityBias.NONE : state.utilityBias(player.serverLevel().getServer().overworld().getGameTime());
+    }
+
+    public record UtilityBias(float fortify, float peek) {
+        public static final UtilityBias NONE = new UtilityBias(0, 0);
+    }
+    public record CommitmentHint(String pattern, double confidence, EvidenceSnapshot evidence) { }
+    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost) {
+        public PositionCandidate { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
+    }
+    public record PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence,
+                                    EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost,
+                                    long startedAt, long arrivedAt, long holdUntil, long contradictedAt) {
+        public PositionDirective { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
+    }
+
+    public record CommitmentSnapshot(String outcome, UUID encounter, boolean issued,
+                                     List<String> blocked, List<String> blockNext, PositionDirective selected,
+                                     List<CommitmentHint> hints, List<String> alternatives) {
+        public CommitmentSnapshot {
+            blocked = List.copyOf(blocked); blockNext = List.copyOf(blockNext);
+            hints = List.copyOf(hints); alternatives = List.copyOf(alternatives);
+        }
     }
 
     public record Snapshot(String lifecycle, boolean activated, int profiles, int beliefCount,

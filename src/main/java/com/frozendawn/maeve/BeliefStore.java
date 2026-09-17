@@ -36,7 +36,9 @@ final class BeliefStore {
             belief = new Belief(pattern);
             profile.beliefs.put(pattern, belief);
         }
-        belief.record(new ObservedEvidence(observer, profile.encounter, dimension, position, now, action, supporting));
+        boolean contributed = belief.record(new ObservedEvidence(observer, profile.encounter, dimension, position, now, action, supporting));
+        if (supporting) profile.commitment.confirm(pattern);
+        if (!supporting && contributed) profile.commitment.contradict(pattern, now);
     }
 
     boolean contact(UUID player, long now) {
@@ -45,6 +47,30 @@ final class BeliefStore {
         profile.contact(now);
         return true;
     }
+
+    boolean contact(UUID player, UUID observer, String dimension, long now) {
+        if (!contact(player, now)) return false;
+        var contacts = players.get(player).observers;
+        contacts.remove(observer);
+        contacts.put(observer, dimension);
+        if (contacts.size() > MAX_CONTACTS) contacts.remove(contacts.keySet().iterator().next());
+        return true;
+    }
+
+    CommitmentPolicy commitment(UUID player) {
+        Profile profile = players.get(player);
+        return profile == null ? null : profile.commitment;
+    }
+
+    CommitmentPolicy commitmentFor(UUID observer, long now) {
+        for (Profile profile : players.values()) {
+            var selected = profile.commitment.selected();
+            if (selected != null && selected.observer().equals(observer) && profile.commitment.active(now) != null) return profile.commitment;
+        }
+        return null;
+    }
+
+    List<CommitmentPolicy> commitments() { return players.values().stream().map(p -> p.commitment).toList(); }
 
     List<UUID> players() { return players.keySet().stream().sorted().toList(); }
     int size() { return players.size(); }
@@ -85,6 +111,7 @@ final class BeliefStore {
             if (!entry.hasUUID("player")) continue;
             Profile profile = new Profile(entry.getUUID("player"));
             profile.lastContact = Math.max(0, entry.getLong("lastContact"));
+            profile.commitment = CommitmentPolicy.load(entry.getCompound("commitment"));
             profile.encounter = entry.hasUUID("encounter") ? entry.getUUID("encounter") : UUID.randomUUID();
             for (Tag rawContact : entry.getList("observers", Tag.TAG_COMPOUND)) {
                 CompoundTag contact = (CompoundTag) rawContact;
@@ -112,12 +139,14 @@ final class BeliefStore {
         final Map<UUID, String> observers = new LinkedHashMap<>();
         UUID encounter;
         long lastContact;
+        CommitmentPolicy commitment = new CommitmentPolicy();
 
         Profile(UUID player) { this.player = player; }
 
         void contact(long now) {
             if (encounter == null || now < lastContact || now - lastContact >= BeliefPolicy.ENCOUNTER_GAP) {
                 encounter = UUID.randomUUID();
+                commitment.begin(encounter, List.copyOf(beliefs.values()), now);
             }
             lastContact = now;
         }
@@ -133,6 +162,7 @@ final class BeliefStore {
             tag.putUUID("player", player);
             if (encounter != null) tag.putUUID("encounter", encounter);
             tag.putLong("lastContact", lastContact);
+            tag.put("commitment", commitment.save());
             ListTag entries = new ListTag();
             beliefs.values().forEach(b -> entries.add(b.save()));
             tag.put("beliefs", entries);

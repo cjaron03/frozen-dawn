@@ -219,6 +219,7 @@ public class ArchitectEntity extends Monster {
     @Nullable private MeleeDebugObservation meleeDebugObservation;
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
+    private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -742,6 +743,13 @@ public class ArchitectEntity extends Monster {
         }
         despawnTimer = nextDespawnTimer;
 
+        if (maeveCommitment.tick(target)) {
+            entityData.set(DATA_PURSUIT_POSE, 0);
+            updateHeldItem();
+            syncRenderState();
+            return;
+        }
+
         // --- Utility AI scoring ---
         // Don't re-evaluate while actively mining — commit to the block
         // Only interrupt for critical HP (retreat needed)
@@ -839,6 +847,9 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
+        var beliefBias = target instanceof net.minecraft.server.level.ServerPlayer player
+                ? com.frozendawn.maeve.MaeveDirector.utilityBias(this, player)
+                : com.frozendawn.maeve.MaeveDirector.UtilityBias.NONE;
         ArchitectDecisionEngine.Decision decision = decisionEngine.evaluate(
                 new ArchitectDecisionEngine.Context(
                         getBrainAction(),
@@ -861,7 +872,7 @@ public class ArchitectEntity extends Monster {
                         target != null && isPlayerInsideBase(target),
                         target != null && isNearCorner()
                 ),
-                random
+                random, beliefBias.fortify(), beliefBias.peek()
         );
         int bestAction = decision.bestAction();
         float[] scores = decision.scores();
@@ -883,6 +894,15 @@ public class ArchitectEntity extends Monster {
         if (bestAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
+    }
+
+    void setCommitmentAction(boolean holding) {
+        transitionToAction(holding ? ACTION_OBSERVE : ACTION_APPROACH);
+    }
+
+    /** Erasure releases local execution in the same server-thread transition. */
+    public void clearMaevePositioning() {
+        maeveCommitment.clear();
     }
 
     void triggerReeval() {
@@ -2615,6 +2635,9 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void remove(RemovalReason reason) {
+        if (!level().isClientSide() && getServer() != null) {
+            com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, "OWNER_REMOVED");
+        }
         if (masterBossEvent != null) {
             masterBossEvent.removeAllPlayers();
         }
