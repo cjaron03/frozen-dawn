@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 SCRIPTS = {
-    'load': 'scoreboard objectives add mw_stage dummy\nscoreboard objectives add mw_round dummy\nscoreboard objectives add mw_wait dummy\nscoreboard objectives add mw_mode dummy',
+    'load': 'scoreboard objectives add mw_stage dummy\nscoreboard objectives add mw_round dummy\nscoreboard objectives add mw_wait dummy\nscoreboard objectives add mw_mode dummy\nscoreboard objectives add mw_retry dummy',
     'cleanup': '''execute as @e[tag=maeve_world_actor] run data merge entity @s {NoAI:1b}
 kill @e[tag=maeve_world_actor]''',
     'setup': '''function maeve_world:load
@@ -21,6 +21,7 @@ tag @s add maeve_world
 scoreboard players set @s mw_stage 0
 scoreboard players set @s mw_round 0
 scoreboard players set @s mw_mode 0
+scoreboard players set @s mw_retry 0
 schedule clear maeve_world:ready_all
 schedule clear maeve_world:walk_prompt
 schedule clear maeve_world:finish_all
@@ -55,7 +56,9 @@ effect give @s minecraft:resistance infinite 4 true
 effect give @s minecraft:night_vision infinite 0 true
 gamemode survival @s
 function maeve_world:practice_start''',
-    'practice': 'execute if score @s mw_stage matches 4 if score @s mw_round matches ..4 run function maeve_world:practice_start',
+    'practice': '''execute unless score @s mw_stage matches 4 run function maeve_world:status
+execute if score @s mw_stage matches 4 if score @s mw_round matches 5.. run function maeve_world:status
+execute if score @s mw_stage matches 4 if score @s mw_round matches ..4 run function maeve_world:practice_start''',
     'practice_start': '''function maeve_world:cleanup
 fill 319 101 307 321 104 309 minecraft:bedrock
 fill 320 101 308 320 102 308 minecraft:air
@@ -74,9 +77,11 @@ execute as @a[tag=maeve_world,scores={mw_stage=2,mw_wait=20..}] run function mae
     'crossed': '''scoreboard players add @s mw_round 1
 function maeve_world:cleanup
 fill 319 101 307 321 104 309 minecraft:air
-fd maeve dump
+execute if score @s mw_retry matches 1 run fill 307 101 307 307 103 309 minecraft:stone
 function maeve_world:gap
-tellraw @s [{"text":"Crossing ","color":"aqua"},{"score":{"name":"@s","objective":"mw_round"}},{"text":"/5 completed. The dump records the actual witness; this counter only tracks the exercise."}]''',
+execute if score @s mw_retry matches 0 run tellraw @s [{"text":"Crossing ","color":"aqua"},{"score":{"name":"@s","objective":"mw_round"}},{"text":"/5 completed. This counter tracks the exercise; inspect the direct dump to verify acceptance."}]
+execute if score @s mw_retry matches 1 run tellraw @s {"text":"Extra crossing complete. The observer was dismissed and the east side sealed again. Your earlier observations were preserved.","color":"aqua"}
+execute if score @s mw_round matches 5.. run function maeve_world:dump_prompt''',
     'gap': '''scoreboard players set @s mw_stage 3
 tp @s 360.5 101 308.5 90 0
 schedule function maeve_world:ready_all 630t replace
@@ -85,8 +90,12 @@ tellraw @s {"text":"Click to fast-forward the quiet gap, or type /tick sprint 64
     'ready': '''scoreboard players set @s mw_stage 4
 execute if score @s mw_round matches ..4 run tellraw @s {"text":"Ready. Click for the next crossing, or type /function maeve_world:practice.","color":"green","clickEvent":{"action":"run_command","value":"/function maeve_world:practice"}}
 execute if score @s mw_round matches 5.. if score @s mw_mode matches 0 run tellraw @s {"text":"Practice complete. Click to test the open entrance, or type /function maeve_world:open. Stay inside until the automatic pause.","color":"green","clickEvent":{"action":"run_command","value":"/function maeve_world:open"}}
-execute if score @s mw_mode matches 1 run tellraw @s {"text":"Ready. Click for the sealed entrance encounter, or type /function maeve_world:blocked.","color":"green","clickEvent":{"action":"run_command","value":"/function maeve_world:blocked"}}''',
-    'open': 'execute if score @s mw_stage matches 4 if score @s mw_round matches 5.. if score @s mw_mode matches 0 run function maeve_world:encounter',
+execute if score @s mw_mode matches 1 if score @s mw_retry matches 0 run tellraw @s {"text":"Ready. Click for the sealed entrance encounter, or type /function maeve_world:blocked.","color":"green","clickEvent":{"action":"run_command","value":"/function maeve_world:blocked"}}
+execute if score @s mw_mode matches 1 if score @s mw_retry matches 1 run tellraw @s {"text":"Retry prepared. Run /fd maeve dump and tell Codex done so eligibility can be checked before another encounter.","color":"aqua"}''',
+    'open': '''execute unless score @s mw_stage matches 4 run function maeve_world:status
+execute if score @s mw_stage matches 4 unless score @s mw_round matches 5.. run function maeve_world:status
+execute if score @s mw_stage matches 4 unless score @s mw_mode matches 0 run function maeve_world:status
+execute if score @s mw_stage matches 4 if score @s mw_round matches 5.. if score @s mw_mode matches 0 run function maeve_world:encounter''',
     'encounter': '''function maeve_world:cleanup
 fill 319 101 307 321 104 309 minecraft:air
 scoreboard players set @s mw_stage 5
@@ -94,25 +103,51 @@ tp @s 304.5 101 308.5 -90 0
 summon frozendawn:architect 322.5 101 308.5 {Tags:["maeve_world_actor"],PersistenceRequired:1b}
 fd architect approach @e[tag=maeve_world_actor,limit=1] @s
 fd architect record @e[tag=maeve_world_actor,limit=1] 1337
-execute if score @s mw_mode matches 0 run tellraw @s {"text":"Watch from inside for 30 seconds. Let it pick a position before doing anything. Stay inside and avoid attacks or recovery items during this comparison.","color":"green"}
+execute if score @s mw_mode matches 0 run tellraw @s {"text":"Watch from inside until the pause, about 22 seconds. Let it pick a position before doing anything. Stay inside and avoid attacks or recovery items during this comparison.","color":"green"}
 execute if score @s mw_mode matches 1 run tp @s 314.5 101 316.5 150 0
 execute if score @s mw_mode matches 1 run tellraw @s {"text":"The east doorway was sealed while no Architect was present. Watch its approach and any reaction to the wall. The replay pauses after 30 seconds.","color":"green"}
-schedule function maeve_world:finish_all 600t replace''',
+execute if score @s mw_mode matches 0 run schedule function maeve_world:finish_all 450t replace
+execute if score @s mw_mode matches 1 run schedule function maeve_world:finish_all 600t replace''',
     'finish_all': 'execute as @a[tag=maeve_world,scores={mw_stage=5}] run function maeve_world:finish',
     'finish': '''scoreboard players set @s mw_stage 6
-fd maeve dump
+function maeve_world:dump_prompt
 fd architect stop @e[tag=maeve_world_actor,limit=1]
 fd architect dump @e[tag=maeve_world_actor,limit=1]
 data merge entity @e[tag=maeve_world_actor,limit=1] {NoAI:1b,Motion:[0.0d,0.0d,0.0d]}
 execute if score @s mw_mode matches 0 run tellraw @s {"text":"Open entrance replay exported. Tell Codex what happened. Then click here, or run /function maeve_world:sealed, to seal that side and prepare the comparison.","color":"aqua","clickEvent":{"action":"run_command","value":"/function maeve_world:sealed"}}
-execute if score @s mw_mode matches 1 run tellraw @s {"text":"Sealed entrance replay exported. Tell Codex what you saw. Both dumps and actor traces are saved.","color":"aqua"}''',
-    'sealed': 'execute if score @s mw_stage matches 6 if score @s mw_mode matches 0 run function maeve_world:seal_prepare',
+execute if score @s mw_mode matches 1 run tellraw @s {"text":"Sealed entrance replay exported. Tell Codex what you saw. The actor trace is saved. Click the dump link above to record Maeve's explanation.","color":"aqua"}''',
+    'sealed': '''execute unless score @s mw_stage matches 6 run function maeve_world:status
+execute if score @s mw_stage matches 6 unless score @s mw_mode matches 0 run function maeve_world:status
+execute if score @s mw_stage matches 6 if score @s mw_mode matches 0 run function maeve_world:seal_prepare''',
     'seal_prepare': '''function maeve_world:cleanup
 scoreboard players set @s mw_mode 1
 fill 307 101 307 307 103 309 minecraft:stone
-fd maeve dump
+function maeve_world:dump_prompt
 function maeve_world:gap''',
-    'blocked': 'execute if score @s mw_stage matches 4 if score @s mw_mode matches 1 run function maeve_world:encounter',
+    'blocked': '''execute unless score @s mw_stage matches 4 run function maeve_world:status
+execute if score @s mw_stage matches 4 unless score @s mw_mode matches 1 run function maeve_world:status
+execute if score @s mw_stage matches 4 if score @s mw_mode matches 1 run function maeve_world:encounter''',
+    'dump_prompt': '''tellraw @s {"text":"Click to record Maeve's explanation, or run /fd maeve dump directly. Function feedback cannot save this dump automatically.","color":"yellow","clickEvent":{"action":"run_command","value":"/fd maeve dump"}}''',
+    'status': '''execute unless entity @s[tag=maeve_world] run tellraw @s {"text":"Start with /function maeve_world:setup in the disposable shelter world.","color":"yellow"}
+execute if score @s mw_stage matches 1..2 run tellraw @s {"text":"Practice is active. Follow the blue-to-gold crossing prompt.","color":"yellow"}
+execute if score @s mw_stage matches 3 run tellraw @s {"text":"The quiet gap is still running. Use /tick sprint 640t, then wait for Ready.","color":"yellow"}
+execute if score @s mw_stage matches 4 if score @s mw_round matches ..4 run tellraw @s {"text":"More crossings are needed. Run /function maeve_world:practice.","color":"yellow"}
+execute if score @s mw_stage matches 4 if score @s mw_round matches 5.. if score @s mw_mode matches 0 run tellraw @s {"text":"The open comparison is ready: /function maeve_world:open.","color":"yellow"}
+execute if score @s mw_stage matches 4 if score @s mw_mode matches 1 run tellraw @s {"text":"The sealed comparison is prepared. Check /fd maeve dump, then use /function maeve_world:blocked.","color":"yellow"}
+execute if score @s mw_stage matches 5 run tellraw @s {"text":"An encounter is already running. Wait for its automatic pause.","color":"yellow"}
+execute if score @s mw_stage matches 6 if score @s mw_mode matches 0 run tellraw @s {"text":"Open comparison complete. Use /function maeve_world:sealed for the next stage.","color":"yellow"}
+execute if score @s mw_stage matches 6 if score @s mw_mode matches 1 run tellraw @s {"text":"The sealed round already finished; blocked does not restart it. Preserve /fd maeve dump. Use /function maeve_world:retry_blocked for one extra crossing and a fresh comparison.","color":"yellow"}''',
+    'retry_blocked': '''execute unless score @s mw_stage matches 6 run function maeve_world:status
+execute if score @s mw_stage matches 6 unless score @s mw_mode matches 1 run function maeve_world:status
+execute if score @s mw_stage matches 6 if score @s mw_mode matches 1 run function maeve_world:retry_start''',
+    'retry_start': '''function maeve_world:load
+schedule clear maeve_world:ready_all
+schedule clear maeve_world:walk_prompt
+schedule clear maeve_world:finish_all
+function maeve_world:cleanup
+fill 307 101 307 307 103 309 minecraft:air
+scoreboard players set @s mw_retry 1
+function maeve_world:practice_start''',
 }
 
 
