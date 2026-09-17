@@ -334,6 +334,18 @@ tasks.register('testArchitectGate', Exec) {
 }
 tasks.named('check') { dependsOn tasks.named('testArchitectGate') }
 
+// Source-of-truth §9.16a: keep the sole Maeve entry point a narrow facade.
+tasks.register('verifyMaeveFacade') {
+    group = 'verification'
+    def facade = file('src/main/java/com/frozendawn/maeve/MaeveDirector.java')
+    inputs.file(facade)
+    doLast {
+        int lines = facade.readLines('UTF-8').size()
+        if (lines > 300) throw new GradleException("MaeveDirector exceeds its 300-line facade budget: ${lines}")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyMaeveFacade') }
+
 // Reproducible exploratory cases. Failures remain failures and keep their traces.
 tasks.named('runArchitectMonkeyServer') {
     doFirst {
