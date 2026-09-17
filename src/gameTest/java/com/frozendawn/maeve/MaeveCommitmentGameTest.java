@@ -16,6 +16,44 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class MaeveCommitmentGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void maeveRecoveryCommitmentLeavesAnAlreadyReachedApproachPoint(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 8, scene -> {
+            var observer = scene.architect(2, 4);
+            var player = scene.player("maeve_visible_bet", 8, 4);
+            scene.roof(true);
+            long start = scene.gameTime + 1;
+            for (int i = 0; i < 4; i++) {
+                scene.clock(start + i * 610L);
+                player.finish(scene.potion());
+            }
+            long now = start + 4 * 610L;
+            scene.clock(now);
+            // Live replay: the ordinary approach had already put the actor within
+            // 0.26 blocks of the old recovery point before the coarse planner ran.
+            observer.setPos(scene.position(5, 4).add(-0.25, 0, 0));
+            observer.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            observer.setOnGround(true);
+            observer.tickCount = 80;
+            observer.debugForceApproach(player);
+            var initial = observer.position();
+            for (int i = 0; i < 70; i++) { scene.clock(now + i); observer.tick(); }
+            var directive = MaeveDirector.positionDirective(observer);
+            helper.assertTrue(directive != null && directive.arrivedAt() > directive.startedAt(),
+                    "An already reached approach point must not count as visible positioning");
+            helper.assertTrue(directive.recoveryCost() >= 2 && directive.recoveryCost() <= 6,
+                    "The issued recovery bet requires a bounded physical move");
+            helper.assertTrue(Math.abs(observer.getZ() - initial.z) > 1.3,
+                    "The actual actor must leave the ordinary approach line before holding");
+            player.setPos(scene.position(8, 7));
+            player.finish(scene.potion());
+            scene.clock(now + 71);
+            observer.tick();
+            helper.assertTrue(MaeveDirector.positionDirective(observer).contradictedAt() == now + 69,
+                    "The subsequent real open-sky recovery breaks the held prediction");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void maeveCommitmentMovesHoldsWrongAndCoolsDown(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 5, scene -> {
             var observer = scene.architect(2, 4);

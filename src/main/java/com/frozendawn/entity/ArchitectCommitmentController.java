@@ -108,15 +108,29 @@ final class ArchitectCommitmentController {
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), position, cover, 2));
                 }
             } else if (hint.pattern().equals("PLAYER_USES_RECOVERY_UNDER_COVER")) {
-                BlockPos position = BlockPos.containing(anchor.add(away.scale(3)));
-                Vec3 goal = Vec3.atBottomCenterOf(position);
-                double distance = architect.position().distanceTo(goal);
-                if (distance <= 6 && Math.abs(goal.y - architect.getY()) < 0.1 && safeWalk(goal)) {
-                    candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), position, null, distance));
-                }
+                var recovery = recoveryCandidate(hint.pattern(), anchor, away);
+                if (recovery != null) candidates.add(recovery);
             }
         }
         return List.copyOf(candidates);
+    }
+
+    private MaeveDirector.PositionCandidate recoveryCandidate(String pattern, Vec3 anchor, Vec3 away) {
+        Vec3 standOff = anchor.add(away.scale(3));
+        Vec3 across = new Vec3(-away.z, 0, away.x).scale(2);
+        MaeveDirector.PositionCandidate best = null;
+        // A point on the ordinary approach line can already be under the actor's
+        // feet. Try two lateral watches of the same witnessed event instead.
+        for (int side : new int[]{1, -1}) {
+            BlockPos position = BlockPos.containing(standOff.add(across.scale(side)));
+            Vec3 goal = Vec3.atBottomCenterOf(position);
+            double distance = architect.position().distanceTo(goal);
+            if (distance >= 2 && distance <= 6 && safeWalk(goal)
+                    && (best == null || distance < best.recoveryCost())) {
+                best = new MaeveDirector.PositionCandidate(pattern, position, null, distance);
+            }
+        }
+        return best;
     }
 
     private boolean safeToCommit() {
