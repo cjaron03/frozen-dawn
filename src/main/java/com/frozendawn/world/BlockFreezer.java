@@ -38,6 +38,19 @@ public final class BlockFreezer {
     private static final int RADIUS = 64;
 
     public static void tick(ServerLevel level, int phase, float progress) {
+        tickOrigins(level, phase, progress, level.getRandom(),
+                level.players().stream().map(ServerPlayer::blockPosition).toList(), RADIUS);
+    }
+
+    /** Same production freezing rules, with a bounded sampling footprint independent of observers. */
+    public static void tickRegion(ServerLevel level, int phase, float progress, RandomSource random,
+                                  BlockPos centre, int radius) {
+        if (radius < 1 || radius > RADIUS) throw new IllegalArgumentException("Freezing radius must be 1..64");
+        tickOrigins(level, phase, progress, random, java.util.List.of(centre), radius);
+    }
+
+    private static void tickOrigins(ServerLevel level, int phase, float progress, RandomSource random,
+                                    java.util.List<BlockPos> origins, int radius) {
         if (phase < 2) return;
 
         int surfaceChecks = switch (phase) {
@@ -58,17 +71,15 @@ public final class BlockFreezer {
             default -> phase >= 6 ? BASE_MASONRY_CHECKS * 8 : 0;
         };
 
-        RandomSource random = level.getRandom();
-        for (ServerPlayer player : level.players()) {
-            BlockPos origin = player.blockPosition();
+        for (BlockPos origin : origins) {
 
             BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
             // Surface pass: now scans downward from heightmap to find freezable blocks
             // under tree canopies, not just the top-level surface block
             for (int i = 0; i < surfaceChecks; i++) {
-                int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
+                int x = origin.getX() + random.nextInt(radius * 2 + 1) - radius;
+                int z = origin.getZ() + random.nextInt(radius * 2 + 1) - radius;
                 BlockPos groundPos = SurfaceColumnScanner.findGroundBelowCover(
                         level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
                 if (groundPos == null) continue;
@@ -80,8 +91,8 @@ public final class BlockFreezer {
 
             // Volume pass: water, lava, ice chains
             for (int i = 0; i < volumeChecks; i++) {
-                int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
+                int x = origin.getX() + random.nextInt(radius * 2 + 1) - radius;
+                int z = origin.getZ() + random.nextInt(radius * 2 + 1) - radius;
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
                 mutable.set(x, y, z);
                 if (!level.isLoaded(mutable)) continue;
@@ -93,8 +104,8 @@ public final class BlockFreezer {
             }
 
             for (int i = 0; i < masonryChecks; i++) {
-                int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
+                int x = origin.getX() + random.nextInt(radius * 2 + 1) - radius;
+                int z = origin.getZ() + random.nextInt(radius * 2 + 1) - radius;
                 int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
                 if (top < level.getMinBuildHeight()) continue;
 
@@ -224,7 +235,8 @@ public final class BlockFreezer {
 
     private static void applyStructuralStress(ServerLevel level, BlockPos pos, BlockState state,
                                               int phase, float progress) {
-        if (RemnantLureSavedData.get(level.getServer()).protectsFromEnvironmentalMutation(pos)) {
+        if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD
+                && RemnantLureSavedData.get(level.getServer()).protectsFromEnvironmentalMutation(pos)) {
             StructureStressTracker.clear(level, pos);
             return;
         }
@@ -346,7 +358,7 @@ public final class BlockFreezer {
             return;
         }
 
-        RoofCollapseSnowTracker tracker = RoofCollapseSnowTracker.get(level.getServer());
+        RoofCollapseSnowTracker tracker = RoofCollapseSnowTracker.get(level);
         int snowUnits = collectSnowUnits(level, collapsedPos.above(), tracker);
         if (snowUnits <= 0) {
             return;
@@ -487,7 +499,7 @@ public final class BlockFreezer {
     }
 
     private static void setFrozenBlock(ServerLevel level, BlockPos pos, BlockState newState) {
-        if (level.setBlock(pos, newState, 3)) {
+        if (level.setBlock(pos, newState, 3) && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
             ApocalypseState.get(level.getServer()).recordFrozenBlock();
         }
     }

@@ -59,6 +59,19 @@ class ArchitectWalkBreakPlannerTest {
                 "step-up must not mine the block the destination stands on");
     }
 
+    @Test
+    void stepUpIncludesDepartureCeilingButFlatWalkDoesNotMineIt() {
+        BlockPos from = new BlockPos(-10, 63, 116);
+        BlockPos step = from.south().above();
+        BlockPos ceiling = from.above(2);
+        Set<BlockPos> candidates = ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, step, Direction.SOUTH);
+        assertEquals(ceiling, ArchitectWalkBreakPlanner.selectPreferredBreakCandidate(
+                candidates, Set.of(), pos -> pos.equals(ceiling) || pos.equals(step.below()), NEVER_LAST_RESORT));
+        assertFalse(candidates.contains(step.below()));
+        assertFalse(ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, from.south(), Direction.SOUTH)
+                .contains(ceiling));
+    }
+
     /**
      * Reproduces the observed thrash: the Architect stalls on open flat ground with a clear
      * destination. Nothing is actually obstructing it, so the planner must report no candidate
@@ -72,7 +85,7 @@ class ArchitectWalkBreakPlannerTest {
         Set<BlockPos> candidates =
                 ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, stepPos, Direction.WEST);
         BlockPos selected = ArchitectWalkBreakPlanner.selectPreferredBreakCandidate(
-                candidates, null, FLAT_GROUND, NEVER_LAST_RESORT);
+                candidates, Set.of(), FLAT_GROUND, NEVER_LAST_RESORT);
 
         assertNull(selected, "an unobstructed stall must not produce a break target");
     }
@@ -87,7 +100,7 @@ class ArchitectWalkBreakPlannerTest {
                 ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, stepPos, Direction.WEST);
         BlockPos selected = ArchitectWalkBreakPlanner.selectPreferredBreakCandidate(
                 candidates,
-                null,
+                Set.of(),
                 pos -> FLAT_GROUND.test(pos) || pos.equals(wall),
                 NEVER_LAST_RESORT);
 
@@ -104,7 +117,7 @@ class ArchitectWalkBreakPlannerTest {
                 ArchitectWalkBreakPlanner.collectUnstickBreakCandidates(from, stepPos, Direction.WEST);
         BlockPos selected = ArchitectWalkBreakPlanner.selectPreferredBreakCandidate(
                 candidates,
-                null,
+                Set.of(),
                 pos -> FLAT_GROUND.test(pos) || pos.equals(ceiling),
                 NEVER_LAST_RESORT);
 

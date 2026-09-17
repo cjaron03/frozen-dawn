@@ -1,8 +1,12 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.entity.architect.BreakChoice;
+import com.frozendawn.entity.architect.BreakReason;
+
 import com.frozendawn.entity.ai.ArchitectBlockBreaker;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectApproachState;
+import com.frozendawn.entity.architect.ArchitectApproachRecovery;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -65,6 +69,8 @@ final class ArchitectApproachStepDispatchSupport {
             approachState.dstar.initialize(targetPos, architect.blockPosition(), architect.level());
             approachState.dstar.computePartial(1200, architect.level());
             approachState.unreachableTicks = 0;
+            ArchitectApproachRecovery.recordReinit(approachState);
+            architect.recordDecision("REINIT", null, "UNREACHABLE");
             LOGGER.info("[Architect] D* Lite hard refresh after prolonged UNREACHABLE");
         }
         if (!blockBreaker.hasTarget()) {
@@ -98,7 +104,7 @@ final class ArchitectApproachStepDispatchSupport {
             case WALK -> architect.executeVanillaWalkStep(step, target);
             case BREACH -> executeBreachStep(step, target);
             case SCAFFOLD_UP -> executeScaffoldUpStep(step);
-            case SCAFFOLD_BRIDGE -> executeScaffoldBridgeStep(step, target);
+            case SCAFFOLD_BRIDGE -> executeScaffoldBridgeStep(step);
             case DIG_DOWN -> executeDigDownStep(step);
         }
     }
@@ -112,7 +118,7 @@ final class ArchitectApproachStepDispatchSupport {
         if (breakTarget == null) {
             breakTarget = ArchitectApproachBreakSupport.findBreakableWallBlock(architect, target);
         }
-        if (breakTarget == null) {
+        if (breakTarget == null || !(step.breakTarget() != null ? architect.canExecutePlannedBreak(step) : architect.isBreakableBlock(breakTarget))) {
             return;
         }
 
@@ -122,7 +128,7 @@ final class ArchitectApproachStepDispatchSupport {
                 breakTarget.getZ() + 0.5
         );
         if (blockDist <= 4.5 * 4.5) {
-            blockBreaker.setTarget(breakTarget);
+            blockBreaker.setChoice(step.breakChoice() != null ? step.breakChoice() : new BreakChoice(breakTarget, BreakReason.CONTACT_BREACH));
             architect.getNavigation().stop();
             LOGGER.info("[Architect] D* BREACH at {} ({})",
                     breakTarget,
@@ -158,32 +164,15 @@ final class ArchitectApproachStepDispatchSupport {
         }
     }
 
-    private void executeScaffoldBridgeStep(DStarLitePathfinder.NextStep step, LivingEntity target) {
+    private void executeScaffoldBridgeStep(DStarLitePathfinder.NextStep step) {
         architect.clearWalkNavigationState(true);
         architect.clearCommittedWalk();
         architect.resetWalkStuckTracker();
 
-        double horizontalTargetDelta = Math.sqrt(
-                (target.getX() - architect.getX()) * (target.getX() - architect.getX())
-                        + (target.getZ() - architect.getZ()) * (target.getZ() - architect.getZ()));
-        boolean targetDirectlyBelow = target.getY() < architect.getY() - 1.0
-                && horizontalTargetDelta <= 2.5;
-        if (targetDirectlyBelow) {
-            BlockPos dropInTarget = ArchitectApproachBreakSupport.findDropInBreakTarget(architect, target, step.pos());
-            if (dropInTarget != null) {
-                blockBreaker.setTarget(dropInTarget);
-                approachState.ceilingBreachPos = dropInTarget;
-                architect.getNavigation().stop();
-                LOGGER.info("[Architect] Prefer drop-in over bridge: digging {}", dropInTarget);
-                return;
-            }
-        }
-
+        // Execute the planned bridge. A nearby lower target is not evidence that
+        // any terrain needs clearing; excavation must come from a planned break step.
         BlockPos supportPos = step.pos().below();
-        boolean descendingBridgeStep = step.pos().getY() < architect.blockPosition().getY();
         if (!architect.level().getBlockState(supportPos).isSolid()
-                && !targetDirectlyBelow
-                && !descendingBridgeStep
                 && architect.onGround()
                 && architect.getScaffoldIceCount() < architect.getMaxScaffoldIce()) {
             if (architect.placeScaffoldIce(supportPos)) {
@@ -204,11 +193,11 @@ final class ArchitectApproachStepDispatchSupport {
         architect.resetWalkStuckTracker();
 
         BlockPos digTarget = step.breakTarget();
-        if (digTarget == null || !architect.isBreakableBlock(digTarget)) {
+        if (digTarget == null || !architect.canExecutePlannedBreak(step)) {
             return;
         }
 
-        blockBreaker.setTarget(digTarget);
+        blockBreaker.setChoice(step.breakChoice());
         architect.teleportTo(digTarget.getX() + 0.5, architect.getY(), digTarget.getZ() + 0.5);
         architect.getNavigation().stop();
         approachState.ceilingBreachPos = digTarget;

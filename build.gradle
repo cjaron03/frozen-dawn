@@ -38,6 +38,10 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 def gameTestReport = layout.buildDirectory.file('gametest/report.xml')
 def gameTestRunDirectory = layout.buildDirectory.dir('gametest/run')
+def monkeyReport = layout.buildDirectory.file('architect-monkey/report.xml')
+def monkeyRunDirectory = layout.buildDirectory.dir('architect-monkey/run')
+def monkeyReports = layout.buildDirectory.dir('architect-monkey-reports/' + java.util.UUID.randomUUID().toString())
+def architectReports = layout.buildDirectory.dir('architect-reports/' + java.util.UUID.randomUUID().toString())
 
 // Minecraft GameTests live in their own source set: they stay out of the published jar
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
@@ -67,6 +71,27 @@ neoForge {
             }
         }
 
+        clientLab {
+            client()
+            gameDirectory = layout.projectDirectory.dir('run-lab')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
+            systemProperty 'frozendawn.debug.architect', 'true'
+            systemProperty 'frozendawn.debug.architectSeed', '1'
+        }
+
+        // A second local player for LAN disconnect/reconnect tests. Keep saves,
+        // options, and logs separate from the host in run-lab.
+        clientLabGuest {
+            client()
+            gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
+            programArguments.addAll '--username', 'ArchitectGuest'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
+            systemProperty 'frozendawn.debug.architect', 'true'
+            systemProperty 'frozendawn.debug.architectSeed', '1'
+        }
+
         clientDebug {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -89,10 +114,21 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            systemProperty 'frozendawn.architect.reports', architectReports.get().asFile.absolutePath
             // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
             // saved data from one gate run leak into the next, which makes any test that touches
             // world state depend on what happened last time.
             gameDirectory = gameTestRunDirectory
+        }
+
+        architectMonkeyServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gameTest
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'frozendawn.gametest.report', monkeyReport.get().asFile.absolutePath
+            systemProperty 'frozendawn.architect.reports', monkeyReports.get().asFile.absolutePath
+            systemProperty 'frozendawn.architect.monkey', 'true'
+            gameDirectory = monkeyRunDirectory
         }
 
         data {
@@ -233,38 +269,81 @@ tasks.named('runGameTestServer') {
     }
 }
 
-tasks.register('gameTestGate') {
+tasks.register('gameTestGate', Exec) {
     group = 'verification'
-    description = 'Runs the Frozen Dawn game tests and fails if the run did not actually happen.'
+    description = 'Requires every named Architect GameTest and validates its current-build report.'
     dependsOn tasks.named('runGameTestServer')
+    commandLine 'python3', '-B', 'tools/verify_architect_gate.py',
+            '--report', gameTestReport.get().asFile.absolutePath,
+            '--required', file('config/architect-required-tests.txt').absolutePath,
+            '--artifacts', architectReports.get().asFile.absolutePath,
+            '--build-info', layout.buildDirectory.file('resources/main/architect-build.properties').get().asFile.absolutePath
+}
 
-    def report = gameTestReport
+// Fingerprint the actual source/resources, including uncommitted changes. No git commit needed.
+def architectBuildInfo = layout.buildDirectory.dir('generated/architectBuildInfo')
+tasks.register('generateArchitectBuildInfo') {
+    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'),
+            file('build.gradle'), file('gradle.properties'))
+    outputs.dir(architectBuildInfo)
     doLast {
-        def file = report.get().asFile
-        if (!file.exists()) {
-            throw new GradleException(
-                    "Game test gate failed: no report at ${file}.\n" +
-                    "The game test server exited without completing a test batch. Minecraft logs " +
-                    "this as an ERROR and then exits 0, so scroll up for 'Failed to start the " +
-                    "minecraft server' or a mod loading error — the exit code will not show it.")
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        inputs.files.files.sort { project.relativePath(it) }.each { input ->
+            digest.update(project.relativePath(input).getBytes('UTF-8'))
+            digest.update((byte) 0)
+            digest.update(input.bytes)
         }
-
-        def suite = new groovy.xml.XmlSlurper().parse(file)
-        def cases = suite.'**'.findAll { it.name() == 'testcase' }
-        def failures = suite.'**'.findAll { it.name() == 'failure' }
-
-        if (cases.isEmpty()) {
-            throw new GradleException(
-                    "Game test gate failed: ${file} records no tests. The server started but ran " +
-                    "nothing, so this build verified no gameplay behaviour at all.")
-        }
-        if (!failures.isEmpty()) {
-            def detail = failures.collect { "  - ${it.@message}" }.join('\n')
-            throw new GradleException(
-                    "Game test gate failed: ${failures.size()} of ${cases.size()} game tests " +
-                    "failed.\n${detail}")
-        }
-
-        logger.lifecycle("Game test gate passed: ${cases.size()} game tests ran, 0 failures.")
+        def out = architectBuildInfo.get().file('architect-build.properties').asFile
+        out.parentFile.mkdirs()
+        out.text = "version=${project.version}\nsourceSha256=${java.util.HexFormat.of().formatHex(digest.digest())}\n"
     }
 }
+tasks.named('processResources') {
+    dependsOn tasks.named('generateArchitectBuildInfo')
+    from(architectBuildInfo)
+}
+tasks.register('verifyArchitectFixtures', Exec) {
+    group = 'verification'
+    description = 'Rejects stale shared Architect lab/GameTest structures.'
+    commandLine 'python3', 'tools/architect_fixtures.py', '--check'
+}
+tasks.named('check') { dependsOn tasks.named('verifyArchitectFixtures') }
+tasks.register('architectVerify') {
+    group = 'verification'
+    description = 'Builds the mod and runs the required Architect regression and harness tests.'
+    dependsOn tasks.named('build'), tasks.named('gameTestGate')
+}
+
+tasks.register('testArchitectGate', Exec) {
+    group = 'verification'
+    commandLine 'python3', '-B', '-m', 'unittest', 'discover', '-s', 'tools/tests', '-p', 'test_architect_gate.py'
+}
+tasks.named('check') { dependsOn tasks.named('testArchitectGate') }
+
+// Reproducible exploratory cases. Failures remain failures and keep their traces.
+tasks.named('runArchitectMonkeyServer') {
+    doFirst {
+        delete(monkeyReport)
+        delete(monkeyRunDirectory)
+    }
+}
+tasks.register('architectMonkey', Exec) {
+    group = 'verification'
+    description = 'Runs the Architect terrain/event stress matrix and rejects any failed or missing case.'
+    dependsOn tasks.named('runArchitectMonkeyServer')
+    commandLine 'python3', '-B', 'tools/verify_architect_gate.py',
+            '--report', monkeyReport.get().asFile.absolutePath,
+            '--required', file('config/architect-monkey-tests.txt').absolutePath,
+            '--artifacts', monkeyReports.get().asFile.absolutePath,
+            '--build-info', layout.buildDirectory.file('resources/main/architect-build.properties').get().asFile.absolutePath
+}
+
+tasks.register('architectMonkeySummary', Exec) {
+    group = 'verification'
+    description = 'Preserves the gameplay XML and a per-case stress matrix, including failed runs.'
+    commandLine 'python3', '-B', 'tools/summarize_architect_monkey.py',
+            '--report', monkeyReport.get().asFile.absolutePath,
+            '--required', file('config/architect-monkey-tests.txt').absolutePath,
+            '--artifacts', monkeyReports.get().asFile.absolutePath
+}
+tasks.named('runArchitectMonkeyServer') { finalizedBy tasks.named('architectMonkeySummary') }

@@ -34,10 +34,23 @@ public final class SnowAccumulator {
     private static final int MAX_ACHERONITE_SNOW_SUPPORT_DEPTH = 2;
 
     public static void tick(ServerLevel level, int phase, float progress) {
-        if (phase < 2) return;
+        tickOrigins(level, phase, progress, level.getServer().getTickCount(), level.getRandom(),
+                level.players().stream().map(ServerPlayer::blockPosition).toList(), RADIUS);
+    }
+
+    /** Same production accumulation rules, with an explicit clock and sampling footprint for labs. */
+    public static int tickRegion(ServerLevel level, int phase, float progress, long tick,
+                                  RandomSource random, BlockPos centre, int radius) {
+        if (radius < 1 || radius > RADIUS) throw new IllegalArgumentException("Snow radius must be 1..64");
+        return tickOrigins(level, phase, progress, tick, random, java.util.List.of(centre), radius);
+    }
+
+    private static int tickOrigins(ServerLevel level, int phase, float progress, long tick,
+                                    RandomSource random, java.util.List<BlockPos> origins, int radius) {
+        if (phase < 2) return 0;
 
         // Phase 6 mid+: no more snow — atmosphere too thin for precipitation
-        if (PhaseManager.isPhase6MidOrLater(phase, progress)) return;
+        if (PhaseManager.isPhase6MidOrLater(phase, progress)) return 0;
 
         int baseInterval = switch (phase) {
             case 2 -> 200;
@@ -48,7 +61,7 @@ public final class SnowAccumulator {
         double rate = FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get();
         int interval = rate > 0 ? Math.max(1, (int) (baseInterval / rate)) : baseInterval;
 
-        if (level.getServer().getTickCount() % interval != 0) return;
+        if (tick % interval != 0) return 0;
 
         int checksPerPlayer = switch (phase) {
             case 2 -> BASE_CHECKS_PER_PLAYER;
@@ -57,23 +70,23 @@ public final class SnowAccumulator {
             default -> BASE_CHECKS_PER_PLAYER * 8;    // 256
         };
 
-        RandomSource random = level.getRandom();
+        int mutations = 0;
         ReturnedHearthSavedData hearths = ReturnedHearthSavedData.get(level.getServer());
 
-        for (ServerPlayer player : level.players()) {
-            BlockPos origin = player.blockPosition();
+        for (BlockPos origin : origins) {
             BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
             for (int i = 0; i < checksPerPlayer; i++) {
-                int x = origin.getX() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
-                int z = origin.getZ() + random.nextInt(RADIUS * 2 + 1) - RADIUS;
+                int x = origin.getX() + random.nextInt(radius * 2 + 1) - radius;
+                int z = origin.getZ() + random.nextInt(radius * 2 + 1) - radius;
 
                 BlockPos groundPos = SurfaceColumnScanner.findSnowSupportBelowCover(
                         level, x, z, SurfaceColumnScanner.DEFAULT_MAX_SCAN_DEPTH);
                 if (groundPos == null) continue;
 
                 BlockPos baseSnowPos = groundPos.above();
-                if (HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, baseSnowPos)) {
+                if (level.dimension() == net.minecraft.world.level.Level.OVERWORLD
+                        && HearthProtectionPolicy.isEnvironmentalMutationProtected(hearths, baseSnowPos)) {
                     continue;
                 }
                 if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, baseSnowPos)) {
@@ -119,9 +132,9 @@ public final class SnowAccumulator {
                         default -> 7;
                     };
                     if (layers < maxLayers) {
-                        level.setBlock(snowPos, at.setValue(SnowLayerBlock.LAYERS, layers + 1), 3);
+                        if(level.setBlock(snowPos, at.setValue(SnowLayerBlock.LAYERS, layers + 1), 3))mutations++;
                     } else if (phase >= 5) {
-                        level.setBlock(snowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3);
+                        if(level.setBlock(snowPos, Blocks.SNOW_BLOCK.defaultBlockState(), 3))mutations++;
                     }
                     continue;
                 }
@@ -131,11 +144,12 @@ public final class SnowAccumulator {
                     if (level.getBlockState(belowPos).is(Blocks.DIRT_PATH)) {
                         level.setBlock(belowPos, Blocks.DIRT.defaultBlockState(), 3);
                     }
-                    level.setBlock(snowPos, Blocks.SNOW.defaultBlockState()
-                            .setValue(SnowLayerBlock.LAYERS, 1), 3);
+                    if(level.setBlock(snowPos, Blocks.SNOW.defaultBlockState()
+                            .setValue(SnowLayerBlock.LAYERS, 1), 3))mutations++;
                 }
             }
         }
+        return mutations;
     }
 
     private static boolean isOpenToSnow(ServerLevel level, BlockPos snowPos) {

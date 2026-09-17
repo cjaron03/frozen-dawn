@@ -66,6 +66,16 @@ public class ArchitectMoveControl extends MoveControl {
             float targetYaw = (float) (Mth.atan2(dz, dx) * 180.0F / (float) Math.PI) - 90.0F;
             this.mob.setYRot(this.rotlerp(this.mob.getYRot(), targetYaw, this.maxRotate));
             this.mob.setSpeed((float) (this.speedModifier * this.mob.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+            // Turning while accelerating sweeps sideways off one-block-wide routes.
+            // Brake near an edge until forward motion points along the requested route.
+            if (this.mob.onGround() && Math.abs(Mth.wrapDegrees(targetYaw - this.mob.getYRot())) > 35.0F
+                    && !hasTurningSupport()) {
+                this.mob.setSpeed(0);
+                this.mob.setZza(0);
+                this.mob.setXxa(0);
+                this.mob.setDeltaMovement(0, this.mob.getDeltaMovement().y, 0);
+                return;
+            }
             BlockPos blockPos = this.mob.blockPosition();
             BlockState state = this.mob.level().getBlockState(blockPos);
             VoxelShape shape = state.getCollisionShape(this.mob.level(), blockPos);
@@ -92,6 +102,17 @@ public class ArchitectMoveControl extends MoveControl {
         } else {
             this.mob.setZza(0.0F);
         }
+    }
+
+    private boolean hasTurningSupport() {
+        double yaw = Math.toRadians(this.mob.getYRot());
+        double x = this.mob.getX() - Math.sin(yaw) * 0.6;
+        double z = this.mob.getZ() + Math.cos(yaw) * 0.6;
+        // Probe the turn's forward sweep, including half-height steps. Ordinary
+        // steering on a supported floor must retain its momentum and jump timing.
+        var footing = new net.minecraft.world.phys.AABB(x - 0.02, this.mob.getY() - 0.6, z - 0.02,
+                x + 0.02, this.mob.getY() + 0.6, z + 0.02);
+        return !this.mob.level().noCollision(this.mob, footing);
     }
 
     private boolean isWalkable(float relativeX, float relativeZ) {
