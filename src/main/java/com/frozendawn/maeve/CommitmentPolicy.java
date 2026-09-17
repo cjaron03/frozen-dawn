@@ -18,6 +18,7 @@ final class CommitmentPolicy {
     static final double THRESHOLD = 0.75D;
     static final int HOLD_TICKS = 400;
     static final int APPROACH_TICKS = 100;
+    static final int SPATIAL_APPROACH_TICKS = 240;
     static final int WRONG_BEAT_TICKS = 60;
     private final Map<String, Belief> baseline = new LinkedHashMap<>();
     private final Set<String> blocked = new LinkedHashSet<>();
@@ -82,7 +83,7 @@ final class CommitmentPolicy {
     boolean choose(UUID player, UUID observer, List<MaeveDirector.PositionCandidate> candidates, long now) {
         if (issued) return false;
         var reasons = new ArrayList<String>();
-        var options = candidates.stream().limit(2)
+        var options = candidates.stream().limit(6)
                 .filter(c -> Double.isFinite(c.recoveryCost()) && c.recoveryCost() >= 0)
                 .sorted(Comparator.comparingDouble(MaeveDirector.PositionCandidate::recoveryCost)
                         .thenComparing(MaeveDirector.PositionCandidate::pattern)).toList();
@@ -100,7 +101,7 @@ final class CommitmentPolicy {
         if (hint.isEmpty()) return false;
         selected = new MaeveDirector.PositionDirective(player, observer, encounter, winner.pattern(),
                 hint.get().confidence(), hint.get().evidence(), winner.position(), winner.cover(),
-                winner.recoveryCost(), now, -1, -1, -1);
+                winner.recoveryCost(), now, -1, -1, -1, winner.spatial(), null);
         issued = true;
         active = true;
         outcome = "APPROACHING";
@@ -130,14 +131,27 @@ final class CommitmentPolicy {
     private MaeveDirector.PositionDirective copy(long arrived, long until, long contradiction) {
         return new MaeveDirector.PositionDirective(selected.player(), selected.observer(), selected.encounter(),
                 selected.pattern(), selected.confidence(), selected.evidence(), selected.position(), selected.cover(),
-                selected.recoveryCost(), selected.startedAt(), arrived, until, contradiction);
+                selected.recoveryCost(), selected.startedAt(), arrived, until, contradiction, selected.spatial(), selected.obstruction());
+    }
+
+    void discover(BlockPos obstruction, long now) {
+        if (!active || selected.spatial() == null || selected.obstruction() != null) return;
+        blockNext.add(selected.pattern());
+        selected = new MaeveDirector.PositionDirective(selected.player(), selected.observer(), selected.encounter(), selected.pattern(),
+                selected.confidence(), selected.evidence(), selected.position(), selected.cover(), selected.recoveryCost(),
+                selected.startedAt(), selected.arrivedAt(), selected.holdUntil(), now, selected.spatial(), obstruction.immutable());
+        outcome = "ACCESS_BLOCKED_REPLAN";
+    }
+
+    private long deadline() {
+        if (selected.obstruction() != null) return selected.contradictedAt() + WRONG_BEAT_TICKS;
+        return selected.arrivedAt() < 0 ? selected.startedAt() + (selected.spatial() == null ? APPROACH_TICKS : SPATIAL_APPROACH_TICKS)
+                : Math.max(selected.holdUntil(), selected.contradictedAt() + WRONG_BEAT_TICKS);
     }
 
     MaeveDirector.PositionDirective active(long now) {
         if (active) {
-            long end = selected.arrivedAt() < 0 ? selected.startedAt() + APPROACH_TICKS
-                    : Math.max(selected.holdUntil(), selected.contradictedAt() + WRONG_BEAT_TICKS);
-            if (now < selected.startedAt() || now >= end) finish("TIME_COMPLETE");
+            if (now < selected.startedAt() || now >= deadline()) finish(selected.obstruction() == null ? "TIME_COMPLETE" : "DISCOVERY_REPLAN");
         }
         return active ? selected : null;
     }
@@ -146,9 +160,8 @@ final class CommitmentPolicy {
     MaeveDirector.PositionDirective selected() { return selected; }
     String outcome(long now) {
         if (!active) return outcome;
-        long end = selected.arrivedAt() < 0 ? selected.startedAt() + APPROACH_TICKS
-                : Math.max(selected.holdUntil(), selected.contradictedAt() + WRONG_BEAT_TICKS);
-        return now < selected.startedAt() || now >= end ? "TIME_COMPLETE" : outcome;
+        return now < selected.startedAt() || now >= deadline()
+                ? selected.obstruction() == null ? "TIME_COMPLETE" : "DISCOVERY_REPLAN" : outcome;
     }
     List<String> alternatives() { return alternatives; }
     Set<String> blocked() { return Set.copyOf(blocked); }

@@ -15,16 +15,18 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** Local executor. Receives at most two historical hints; never reads the belief store. */
+/** Local executor. Receives bounded historical hints; never reads the belief store. */
 final class ArchitectCommitmentController {
     private final ArchitectEntity architect;
     private final ArchitectBlockBreaker breaker;
+    private final ArchitectSpatialCommitment spatial;
     private boolean wasActive;
     private long nextPlan;
 
     ArchitectCommitmentController(ArchitectEntity architect, ArchitectBlockBreaker breaker) {
         this.architect = architect;
         this.breaker = breaker;
+        spatial = new ArchitectSpatialCommitment(architect);
     }
 
     boolean tick(LivingEntity localTarget) {
@@ -34,7 +36,8 @@ final class ArchitectCommitmentController {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
             if (!hints.isEmpty() && safeToCommit() && architect.onGround()) {
-                var candidates = candidates(hints);
+                var candidates = new ArrayList<>(candidates(hints));
+                candidates.addAll(MaeveDirector.spatialCandidates(architect, player, hints));
                 if (MaeveDirector.chooseCommitment(architect, player, candidates)) directive = MaeveDirector.positionDirective(architect);
             }
         }
@@ -58,6 +61,10 @@ final class ArchitectCommitmentController {
         }
         stopMotion();
         architect.setSprinting(false);
+        if (directive.spatial() != null) {
+            spatial.tick(directive, localTarget, now);
+            return true;
+        }
         Vec3 goal = Vec3.atBottomCenterOf(directive.position());
         if (architect.position().distanceToSqr(goal) > 0.36D) {
             if (!safeWalk(goal)) { release("LOCAL_ROUTE_UNSAFE"); return false; }
@@ -201,6 +208,7 @@ final class ArchitectCommitmentController {
     }
 
     void clear() {
+        spatial.clear();
         wasActive = false;
         architect.setMaeveHolding(false);
         stopMotion();

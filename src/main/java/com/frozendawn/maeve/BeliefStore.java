@@ -20,12 +20,13 @@ final class BeliefStore {
 
     void record(UUID player, UUID observer, String dimension, BlockPos position,
                 long now, String pattern, boolean supporting, String action) {
-        Profile profile = players.get(player);
-        if (profile == null) {
-            if (players.size() == BeliefPolicy.MAX_PLAYERS) evictPlayer();
-            profile = new Profile(player);
-            players.put(player, profile);
-        }
+        record(player, observer, dimension, position, now, pattern, supporting, action,
+                supporting ? BeliefPolicy.SUPPORT : -BeliefPolicy.CONTRADICTION);
+    }
+
+    void record(UUID player, UUID observer, String dimension, BlockPos position,
+                long now, String pattern, boolean supporting, String action, double adjustment) {
+        Profile profile = profile(player);
         profile.contact(now);
         profile.observers.remove(observer);
         profile.observers.put(observer, dimension);
@@ -36,9 +37,34 @@ final class BeliefStore {
             belief = new Belief(pattern);
             profile.beliefs.put(pattern, belief);
         }
-        boolean contributed = belief.record(new ObservedEvidence(observer, profile.encounter, dimension, position, now, action, supporting));
+        boolean contributed = belief.record(new ObservedEvidence(observer, profile.encounter, dimension, position, now, action, supporting), adjustment);
         if (supporting) profile.commitment.confirm(pattern);
         if (!supporting && contributed) profile.commitment.contradict(pattern, now);
+    }
+
+    boolean disprove(MaeveDirector.PositionDirective directive, UUID observer, BlockPos obstruction, long now) {
+        var profile = players.get(directive.player());
+        if (profile == null || !directive.encounter().equals(profile.encounter)) return false;
+        var belief = profile.beliefs.get(directive.pattern());
+        if (belief == null) return false;
+        boolean contributed = belief.record(new ObservedEvidence(observer, profile.encounter,
+                directive.evidence().dimension(), obstruction, now, "ACCESS_POINT_DIRECTLY_DISPROVED", false), -.65);
+        if (contributed) profile.commitment.contradict(directive.pattern(), now);
+        return true;
+    }
+
+    private Profile profile(UUID player) {
+        Profile profile = players.get(player);
+        if (profile == null) {
+            if (players.size() == BeliefPolicy.MAX_PLAYERS) evictPlayer();
+            profile = new Profile(player); players.put(player, profile);
+        }
+        return profile;
+    }
+
+    WorldModel world(UUID player) { var profile = players.get(player); return profile == null ? null : profile.world; }
+    WorldModel observeContact(UUID player, UUID observer, String dimension, long now) {
+        profile(player); contact(player, observer, dimension, now); return world(player);
     }
 
     boolean contact(UUID player, long now) {
@@ -112,6 +138,7 @@ final class BeliefStore {
             Profile profile = new Profile(entry.getUUID("player"));
             profile.lastContact = Math.max(0, entry.getLong("lastContact"));
             profile.commitment = CommitmentPolicy.load(entry.getCompound("commitment"));
+            profile.world = WorldModel.load(entry.getCompound("world"));
             profile.encounter = entry.hasUUID("encounter") ? entry.getUUID("encounter") : UUID.randomUUID();
             for (Tag rawContact : entry.getList("observers", Tag.TAG_COMPOUND)) {
                 CompoundTag contact = (CompoundTag) rawContact;
@@ -126,7 +153,7 @@ final class BeliefStore {
                 profile.beliefs.put(belief.pattern, belief);
                 if (profile.beliefs.size() > BeliefPolicy.MAX_BELIEFS) profile.evictBelief();
             }
-            if (profile.beliefs.isEmpty()) continue;
+            if (profile.beliefs.isEmpty() && profile.world.empty()) continue;
             store.players.put(profile.player, profile);
             if (store.players.size() > BeliefPolicy.MAX_PLAYERS) store.evictPlayer();
         }
@@ -140,6 +167,7 @@ final class BeliefStore {
         UUID encounter;
         long lastContact;
         CommitmentPolicy commitment = new CommitmentPolicy();
+        WorldModel world = new WorldModel();
 
         Profile(UUID player) { this.player = player; }
 
@@ -163,6 +191,7 @@ final class BeliefStore {
             if (encounter != null) tag.putUUID("encounter", encounter);
             tag.putLong("lastContact", lastContact);
             tag.put("commitment", commitment.save());
+            tag.put("world", world.save());
             ListTag entries = new ListTag();
             beliefs.values().forEach(b -> entries.add(b.save()));
             tag.put("beliefs", entries);

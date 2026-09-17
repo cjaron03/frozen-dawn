@@ -401,6 +401,10 @@ public final class MaeveObservationGameTest {
             for (int x = 7; x <= 9; x++) for (int z = 3; z <= 5; z++) {
                 block(x, 4, z, present ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState());
             }
+            settleLight();
+        }
+
+        void settleLight() {
             // Keep SavedData isolation inside one callback, but let the real lighting worker
             // finish: setBlock does not update canSeeSky synchronously.
             var light = level.getChunkSource().getLightEngine();

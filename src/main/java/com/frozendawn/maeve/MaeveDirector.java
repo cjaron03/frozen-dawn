@@ -53,6 +53,7 @@ public final class MaeveDirector {
         if (director.data.store() == null) return;
         ObservationCollector.damage(director.data.store(), observer, source, actualDamage,
                 server.overworld().getGameTime());
+        SpatialObservations.damage(director.data.store(), observer, source, actualDamage, server.overworld().getGameTime());
         director.data.setDirty();
     }
 
@@ -103,8 +104,8 @@ public final class MaeveDirector {
     private static List<String> withCommitmentDiagnostics(MinecraftServer server, UUID player, List<String> beliefs) {
         var store = current(server).data.store();
         if (store == null || player == null) return beliefs;
-        return java.util.stream.Stream.concat(beliefs.stream(),
-                CommitmentDiagnostics.format(commitmentSnapshot(server, player)).stream()).toList();
+        return java.util.stream.Stream.of(beliefs, CommitmentDiagnostics.format(commitmentSnapshot(server, player)),
+                WorldDiagnostics.format(store.world(player), server.overworld().getGameTime())).flatMap(List::stream).toList();
     }
 
     public static CommitmentSnapshot commitmentSnapshot(MinecraftServer server, UUID player) {
@@ -153,17 +154,61 @@ public final class MaeveDirector {
         return state == null ? UtilityBias.NONE : state.utilityBias(player.serverLevel().getServer().overworld().getGameTime());
     }
 
+    /** Coarse local presence samples: both sides of a crossing require the same observer's sight. */
+    public static void observePresence(ArchitectEntity observer) {
+        if (observer.getServer() == null || observer.level().isClientSide()) return;
+        var director = current(observer.getServer());
+        if (director.data.store() != null && observer.getTarget() instanceof ServerPlayer player) {
+            SpatialObservations.presence(director.data.store(), observer, player, observer.getServer().overworld().getGameTime());
+            director.data.setDirty();
+        }
+    }
+
+    public static List<PositionCandidate> spatialCandidates(ArchitectEntity observer, ServerPlayer player, List<CommitmentHint> hints) {
+        return SpatialCommitments.candidates(current(player.getServer()).data.store(), observer, player, hints);
+    }
+
+    public static boolean discoverAccess(ArchitectEntity observer, PositionDirective directive) {
+        var data = current(observer.getServer()).data;
+        boolean changed = SpatialObservations.discover(data.store(), observer, directive, observer.getServer().overworld().getGameTime());
+        if (changed) data.setDirty();
+        return changed;
+    }
+
+    public static List<BlockPos> knownDangers(ArchitectEntity observer, UUID player) {
+        var store = current(observer.getServer()).data.store();
+        var world = store == null ? null : store.world(player);
+        return world == null ? List.of() : world.dangers(observer.level().dimension().location().toString(),
+                observer.blockPosition(), observer.getServer().overworld().getGameTime());
+    }
+
+    public static List<WorldPointSnapshot> worldSnapshot(MinecraftServer server, UUID player) {
+        var store = current(server).data.store(); var world = store == null ? null : store.world(player);
+        return world == null ? List.of() : world.snapshot(server.overworld().getGameTime());
+    }
+
     public record UtilityBias(float fortify, float peek) {
         public static final UtilityBias NONE = new UtilityBias(0, 0);
     }
     public record CommitmentHint(String pattern, double confidence, EvidenceSnapshot evidence) { }
-    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost) {
+    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial) {
+        public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost) { this(pattern, position, cover, recoveryCost, null); }
         public PositionCandidate { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
     }
     public record PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence,
                                     EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost,
-                                    long startedAt, long arrivedAt, long holdUntil, long contradictedAt) {
+                                    long startedAt, long arrivedAt, long holdUntil, long contradictedAt,
+                                    SpatialTarget spatial, BlockPos obstruction) {
         public PositionDirective { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
+    }
+
+    public record SpatialTarget(BlockPos inside, BlockPos outside) {
+        public SpatialTarget { inside = inside.immutable(); outside = outside.immutable(); }
+    }
+    public record WorldPointSnapshot(String label, String dimension, BlockPos position, BlockPos inside,
+                                     String state, double confidence, double previousConfidence, int evidence,
+                                     int contradictions, long observedAt, List<EvidenceSnapshot> provenance) {
+        public WorldPointSnapshot { provenance = List.copyOf(provenance); }
     }
 
     public record CommitmentSnapshot(String outcome, UUID encounter, boolean issued,

@@ -9,7 +9,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** Separate from the permanent ReturnedHearthSavedData violation ledger (§4). */
 final class MaeveSavedData extends SavedData {
     static final String NAME = "frozendawn_maeve";
-    private static final int VERSION = 2;
+    private static final int VERSION = 3;
     private boolean activated;
     private boolean erased;
     private BeliefStore store;

@@ -25,6 +25,10 @@ final class Belief {
     }
 
     boolean record(ObservedEvidence observation) {
+        return record(observation, observation.supporting() ? BeliefPolicy.SUPPORT : -BeliefPolicy.CONTRADICTION);
+    }
+
+    boolean record(ObservedEvidence observation, double adjustment) {
         lastObserved = Math.max(lastObserved, observation.time());
         if (!observation.encounter().equals(contributionEncounter)) {
             contributionEncounter = observation.encounter();
@@ -42,8 +46,7 @@ final class Belief {
             }
             return false;
         }
-        confidence = BeliefPolicy.clamp(currentConfidence(observation.time())
-                + (observation.supporting() ? BeliefPolicy.SUPPORT : -BeliefPolicy.CONTRADICTION));
+        confidence = BeliefPolicy.clamp(currentConfidence(observation.time()) + adjustment);
         updated = observation.time();
         if (observation.supporting()) {
             supported = true;

@@ -36,12 +36,14 @@ final class CommitmentCoordinator {
         long now = player.serverLevel().getServer().overworld().getGameTime();
         var store = data.store();
         if (store.commitmentFor(observer.getUUID(), now) != null) return false;
-        var local = candidates.stream().limit(2)
+        var local = candidates.stream().limit(6)
                 .filter(c -> hints.stream().anyMatch(h -> h.pattern().equals(c.pattern())))
-                .filter(c -> observer.blockPosition().distSqr(c.position()) <= 36
+                .filter(c -> observer.blockPosition().distSqr(c.position()) <= (c.spatial() == null ? 36 : 24 * 24)
                         && observer.level().hasChunkAt(c.position())
                         && (c.cover() == null || (observer.blockPosition().distSqr(c.cover()) <= 9
-                        && observer.level().hasChunkAt(c.cover())))).toList();
+                        && observer.level().hasChunkAt(c.cover()))))
+                .filter(c -> WorldModel.BEARINGS.contains(c.pattern()) == (c.spatial() != null))
+                .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
         boolean selected = store.commitment(player.getUUID()).choose(player.getUUID(), observer.getUUID(), local, now);
         data.setDirty();
         return selected;
