@@ -87,7 +87,7 @@ class FrozenDawnCommandTreeTest {
         var commands = dispatcher();
         var architect = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("architect");
         var maeve = commands.getRoot().getChild("frozendawn").getChild("debug").getChild("maeve");
-        assertEquals(Set.of("status", "dump"), childNames(maeve));
+        assertEquals(Set.of("status", "dump", "explain"), childNames(maeve));
         var lab = architect.getChild("lab");
         assertNotNull(lab.getChild("reset").getCommand());
         assertNotNull(lab.getChild("run").getCommand());

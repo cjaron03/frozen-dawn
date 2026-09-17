@@ -15,7 +15,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The hive's coordination facade. Slice 1 records only; nothing feeds the local AI.
+ * The hive's coordination facade. Records and explains beliefs; nothing feeds the local AI.
  * Source of truth §§4, 9.1, 9.16a, 9.18, 9.19.
  */
 public final class MaeveDirector {
@@ -88,6 +88,15 @@ public final class MaeveDirector {
         return DirectorDiagnostics.format(snapshot(server, player), player);
     }
 
+    public static List<String> explain(MinecraftServer server, UUID player, String pattern) {
+        return DirectorDiagnostics.explain(snapshot(server, player), player, pattern);
+    }
+
+    public static List<String> diagnosticPatterns(MinecraftServer server, UUID player) {
+        return java.util.stream.Stream.concat(BeliefDescriptions.patterns().stream(),
+                snapshot(server, player).beliefs().stream().map(BeliefSnapshot::pattern)).distinct().sorted().toList();
+    }
+
     public static List<UUID> knownPlayers(MinecraftServer server) {
         BeliefStore store = current(server).data.store();
         return store == null ? List.of() : store.players();
@@ -100,6 +109,7 @@ public final class MaeveDirector {
 
     public record BeliefSnapshot(String pattern, double confidence, int evidence, int contradictions,
                                  long lastConfirmed, long lastObserved, long ageTicks, boolean stale,
+                                 double storedConfidence, long updatedAt, long evaluatedAt,
                                  List<EvidenceSnapshot> provenance) {
         public BeliefSnapshot { provenance = List.copyOf(provenance); }
     }
