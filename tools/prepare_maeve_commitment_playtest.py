@@ -36,11 +36,15 @@ fd postmaeve reset-erased confirm
 fd world set phase 6 late
 fd maeve status
 fd world set phase 0
+schedule clear maeve_playtest:next
+schedule clear maeve_playtest:deploy
 scoreboard objectives add maeve_round dummy
 scoreboard objectives add maeve_uses minecraft.used:minecraft.potion
 scoreboard players set @s maeve_round 0
 scoreboard players set @s maeve_uses 0
 tag @s add maeve_playtest
+forceload add 198 198 230 222
+forceload add 278 206 282 210
 fill 198 100 198 230 100 222 minecraft:stone
 fill 198 101 198 230 108 222 minecraft:air
 fill 278 100 206 282 100 210 minecraft:stone
@@ -54,15 +58,25 @@ summon frozendawn:architect 204.5 101 208.5 {Tags:["maeve_playtest_witness"],Per
 effect give @s minecraft:resistance 999999 4 true
 gamemode survival @s
 function maeve_playtest:training''',
-        'training': '''tp @s 212.5 101 208.5 90 0
+        'training': '''tag @s add maeve_training
+scoreboard players set @s maeve_uses 0
+tp @s 212.5 101 208.5 90 0
 item replace entity @s hotbar.0 with minecraft:potion[minecraft:potion_contents={potion:"minecraft:healing"}]
-tellraw @s {"text":"Training: stand here and finish the potion in slot 1. There are four rounds; each quiet gap offers a fast-forward link.","color":"gold"}''',
-        'tick': '''execute as @a[tag=maeve_playtest,scores={maeve_round=0..3,maeve_uses=1..}] run function maeve_playtest:consumed''',
-        'consumed': '''scoreboard players set @s maeve_uses 0
+function maeve_playtest:progress''',
+        'progress': '''tellraw @s [{"text":"Training progress: ","color":"gold"},{"score":{"name":"@s","objective":"maeve_round"}},{"text":"/4 completed. Stand here and finish the potion in slot 1."}]''',
+        'tick': '''execute as @a[tag=maeve_playtest,tag=maeve_training,scores={maeve_round=0..3,maeve_uses=1..}] run function maeve_playtest:consumed''',
+        'consumed': '''tag @s remove maeve_training
+scoreboard players set @s maeve_uses 0
 scoreboard players add @s maeve_round 1
 tp @s 280.5 101 208.5 90 0
-tellraw @s {"text":"Potion completed. Next round in 31 seconds; click here to fast-forward.","color":"gray","clickEvent":{"action":"run_command","value":"/tick sprint 640"}}
+tellraw @s [{"text":"Completed ","color":"gray"},{"score":{"name":"@s","objective":"maeve_round"}},{"text":"/4. Next stage in 31 seconds; click here to fast-forward.","clickEvent":{"action":"run_command","value":"/tick sprint 640"}}]
 schedule function maeve_playtest:next 630t replace''',
+        'repair': '''forceload add 198 198 230 222
+forceload add 278 206 282 210
+fill 278 100 206 282 100 210 minecraft:stone
+execute as @a[tag=maeve_playtest,scores={maeve_round=0..3},x=198,y=99,z=198,dx=32,dy=10,dz=24] run tag @s add maeve_training
+execute as @a[tag=maeve_playtest,tag=maeve_training,scores={maeve_round=0..3}] run function maeve_playtest:progress
+tellraw @s {"text":"Waiting platform repaired. Completed rounds and observed beliefs are preserved. Continue the current round.","color":"green"}''',
         'next': '''execute as @a[tag=maeve_playtest,scores={maeve_round=0..3}] run function maeve_playtest:training
 execute as @a[tag=maeve_playtest,scores={maeve_round=4}] run function maeve_playtest:encounter''',
         'encounter': '''scoreboard players set @s maeve_round 5
@@ -85,6 +99,8 @@ tellraw @s {"text":"Encounter ready. Spend about half a minute moving and using 
         'finish': '''data merge entity @e[tag=maeve_playtest_witness,limit=1] {NoAI:1b}
 fd architect stop @e[tag=maeve_playtest_witness,limit=1]
 fd architect dump @e[tag=maeve_playtest_witness,limit=1]
+forceload remove 198 198 230 222
+forceload remove 278 206 282 210
 tellraw @s {"text":"Paused and recorded. Tell Codex what the Architect did that stood out, before looking at its explanation.","color":"aqua"}''',
         'inspect': '''fd maeve dump
 fd maeve explain PLAYER_USES_RECOVERY_UNDER_COVER
