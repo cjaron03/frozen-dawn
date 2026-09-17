@@ -1,0 +1,29 @@
+package com.frozendawn.event;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.maeve.MaeveDirector;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+
+@EventBusSubscriber(modid = FrozenDawn.MOD_ID)
+public final class MaeveObservationEvents {
+    private MaeveObservationEvents() { }
+
+    @SubscribeEvent
+    public static void onDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof ArchitectEntity observer) {
+            MaeveDirector.observeDamage(observer, event.getSource(), event.getNewDamage());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRecovery(LivingEntityUseItemEvent.Finish event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            MaeveDirector.observeRecovery(player, event.getItem());
+        }
+    }
+}
