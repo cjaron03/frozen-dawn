@@ -42,9 +42,46 @@ before using the new jar. Other smoke-profile dependencies were left intact.
 
 ## Combined-build LAN replay
 
-Status: pending a fresh live replay on the combined alpha build. Earlier visual
-replays used the pre-commitment Architect branch. Run A and B below; do not infer
-that a passing headless player-removal test proves the network/client behavior.
+Status: both cases passed in the live LAN replay on 2026-09-16, 19:36–19:39
+local time. The actual world was `New World`. All four immutable dumps match the
+verified source fingerprint above and report zero dropped journal entries.
+Host and guest logs confirm real disconnect/rejoin events, with no errors or
+exceptions and normal shutdown. The commands below remain available for repeats.
+
+### Recorded live results
+
+A used actor `d3b247bd-27cc-41cc-8269-1441230470a3` and journal
+`71ae346a-714a-4cf1-9449-6f52c94fc954`. At tick 100 it was partway up the scaffold,
+with two owned ice blocks and a pending lift. Guest loss canceled that lift with
+`SCAFFOLD_CANCEL TARGET_LOST` at tick 101. The actor roamed away, reacquired the
+returning guest at tick 301, walked to a new column, built six new steps, and
+reached melee at tick 403. It killed the guest at tick 445. The largest movement
+between five-tick samples after reconnect was 1.036 blocks; no remote lift back
+to the old scaffold appeared. Health remained 40 throughout the 0–500 tick trace.
+
+B used a fresh actor `686110c3-3631-4986-9950-1f721011777b` and journal
+`6b734244-3c89-4709-9f4a-f73dec12d227`. At tick 100 it also had two ice blocks and
+a pending lift. After guest disconnect, it selected the remaining Survival host
+at tick 101 without a forced target lock. It completed one valid local scaffold
+step at tick 108, then descended from Y=104 to Y=101 and pursued the host. This
+local step occurred at its current column; it was not a displaced scaffold lift.
+By tick 160 it had moved from (1012.5, 103, 1010.5) to approximately
+(1005.083, 101, 1012.852). Health remained 40, with no stuck counter or planner
+reinitialization at the end. This verifies the previously missing fresh
+mid-scaffold switch to another remaining player.
+
+Evidence directories under `run-lab/saves/New World/architect-debug/`:
+
+- A checkpoint: `run-71ae346a-714a-4cf1-9449-6f52c94fc954-12172080028184028077`
+- A after roaming: `run-71ae346a-714a-4cf1-9449-6f52c94fc954-13881331785233401908`
+- A complete: `run-71ae346a-714a-4cf1-9449-6f52c94fc954-4380873556777933621`
+- B complete: `run-6b734244-3c89-4709-9f4a-f73dec12d227-274014921546627413`
+
+These results complete the two combined-build LAN checks. They do not establish
+a full uninterrupted 20–30-minute soak or resolve earlier snowy-shelter encounters
+whose dumps lacked their ending checkpoints.
+
+### Launch for a repeat
 
 Close both old Minecraft development clients normally. Launch these from separate
 Terminal windows (the directory is now the alpha integration worktree):
