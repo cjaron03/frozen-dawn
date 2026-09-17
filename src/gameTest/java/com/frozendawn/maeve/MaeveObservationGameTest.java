@@ -202,6 +202,82 @@ public final class MaeveObservationGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void maeveExplainCommandsTraceEventsAndRespectErasure(GameTestHelper helper) {
+        withScene(helper, 4, scene -> {
+            var observer = scene.architect(2, 4);
+            var player = scene.player("maeve_explain", 8, 4);
+            scene.wall(true);
+            player.finish(scene.potion());
+            scene.wall(false);
+            scene.hit(observer, player, true, 2);
+            scene.hit(observer, player, false, 2);
+            scene.roof(true);
+            player.finish(scene.potion());
+            scene.roof(false);
+            player.finish(scene.potion());
+            var before = MaeveSavedData.get(scene.server).save(new CompoundTag(), scene.level.registryAccess());
+            List<String> output = new ArrayList<>();
+            String ranged = "fd maeve explain " + BeliefStore.RANGED;
+            String recovery = "fd maeve explain " + BeliefStore.RECOVERY;
+            helper.assertTrue(command(scene, player, 2, output, ranged) == 1, "Player can explain their own belief");
+            String report = String.join("\n", output);
+            helper.assertTrue(report.contains("SUPPORT WITNESSED_PROJECTILE_DAMAGE")
+                            && report.contains("CONTRADICTION WITNESSED_MELEE_DAMAGE")
+                            && report.contains("observer=" + observer.getUUID()),
+                    "Explanation must trace both polarities to the actual damage hooks and observer");
+            output.clear();
+            helper.assertTrue(command(scene, player, 2, output, recovery) == 1, "Recovery explanation succeeds");
+            report = String.join("\n", output);
+            helper.assertTrue(report.contains("SUPPORT RECOVERY_ITEM_FINISHED_UNDER_COVER")
+                            && report.contains("CONTRADICTION RECOVERY_ITEM_FINISHED_OPEN_SKY")
+                            && report.contains("EVIDENCE: 1 contributing encounters")
+                            && report.contains("CONTRADICTIONS: 1 contributing encounters"),
+                    "Visible recovery events explain the hypothesis; hidden use contributed nothing");
+            output.clear();
+            helper.assertTrue(command(scene, null, 2, output, ranged) == 0, "Console requires an explicit subject");
+            helper.assertTrue(output.stream().anyMatch(line -> line.contains("Console use requires")), "Console receives actionable syntax");
+            output.clear();
+            helper.assertTrue(command(scene, null, 2, output, ranged + " " + player.getUUID()) == 1,
+                    "Explicit UUID works without an online-name lookup");
+            helper.assertTrue(output.stream().anyMatch(line -> line.contains("SUPPORT WITNESSED_PROJECTILE_DAMAGE")),
+                    "Console explanation selects the requested profile");
+            output.clear();
+            helper.assertTrue(command(scene, player, 1, output, ranged) == -1, "Non-operators cannot parse the diagnostic route");
+            helper.assertTrue(output.isEmpty(), "Denied command must not expose a belief");
+            var other = scene.player("maeve_unseen", 8, 7);
+            command(scene, other, 2, output, ranged);
+            helper.assertTrue(output.stream().anyMatch(line -> line.contains("No retained belief")), "Default subject isolates two players");
+            helper.assertTrue(before.equals(MaeveSavedData.get(scene.server).save(new CompoundTag(), scene.level.registryAccess())),
+                    "Repeated command reads must not mutate persistent tactical state");
+            PostMaeveWorldState.markErased(scene.level);
+            output.clear();
+            command(scene, player, 2, output, ranged);
+            helper.assertTrue(output.equals(List.of("Maeve ERASED | profiles=0 beliefs=0")), "Erasure exposes no former events");
+            PostMaeveWorldState.setForDebug(scene.server, false);
+            output.clear();
+            command(scene, player, 2, output, ranged);
+            helper.assertTrue(output.stream().anyMatch(line -> line.contains("No retained belief")), "Debug reversal cannot restore an explanation");
+        });
+    }
+
+    private static int command(Scene scene, TestPlayer player, int permission, List<String> output, String command) {
+        var sink = new net.minecraft.commands.CommandSource() {
+            public void sendSystemMessage(net.minecraft.network.chat.Component message) { output.add(message.getString()); }
+            public boolean acceptsSuccess() { return true; }
+            public boolean acceptsFailure() { return true; }
+            public boolean shouldInformAdmins() { return false; }
+        };
+        var source = new net.minecraft.commands.CommandSourceStack(sink, scene.position(8, 4),
+                net.minecraft.world.phys.Vec2.ZERO, scene.level, permission, "diagnostic-test",
+                net.minecraft.network.chat.Component.literal("diagnostic-test"), scene.server, player);
+        try {
+            return scene.server.getCommands().getDispatcher().execute(command, source);
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException invalid) {
+            return -1;
+        }
+    }
+
     private static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
         ServerLevel level = helper.getLevel();
         BlockPos origin = helper.absolutePos(new BlockPos(2048 + lane * 512, 100, 2048));

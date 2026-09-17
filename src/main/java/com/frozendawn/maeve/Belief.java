@@ -43,7 +43,7 @@ final class Belief {
             return false;
         }
         confidence = BeliefPolicy.clamp(currentConfidence(observation.time())
-                + (observation.supporting() ? 0.20D : -0.35D));
+                + (observation.supporting() ? BeliefPolicy.SUPPORT : -BeliefPolicy.CONTRADICTION));
         updated = observation.time();
         if (observation.supporting()) {
             supported = true;
@@ -72,6 +72,7 @@ final class Belief {
         long age = lastConfirmed < 0 ? -1 : Math.max(0, now - lastConfirmed);
         return new MaeveDirector.BeliefSnapshot(pattern, currentConfidence(now), evidence, contradictions,
                 lastConfirmed, lastObserved, age, age >= BeliefPolicy.STALE_AFTER,
+                confidence, updated, now,
                 provenance.stream().map(ObservedEvidence::snapshot).toList());
     }
 
