@@ -10,6 +10,8 @@
 
 **NeoForge 1.21.1** | **Java 21**
 
+**Latest update: 2.0.1-alpha.** This stability update improves Architect pursuit and multiplayer recovery, world catch-up, Hearth repair, and rendering. Read the [release notes](docs/releases/2.0.1_ALPHA.md) or [download the latest release](https://github.com/cjaron03/frozen-dawn/releases/latest).
+
 ## Lore
 
 Frozen Dawn begins with the official story: Earth's climate intervention network failed, the sun receded, and the world entered a slow, irreversible freeze. The Orbital Resonance Stabilization Authority (ORSA) left behind evacuation camps, monitoring stations, emergency broadcasts, and secured terminals for anyone stubborn enough to keep digging.
