@@ -138,7 +138,6 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
-    private float maeveGuard, maeveGuardOld;
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -424,10 +423,6 @@ public class ArchitectEntity extends Monster {
                 && getDeathTicks() == 0 && !isMasterArchitectVisual();
     }
 
-    public float getMaeveGuard(float partialTick) {
-        return net.minecraft.util.Mth.lerp(partialTick, maeveGuardOld, maeveGuard);
-    }
-
     void setMaeveHolding(boolean holding) {
         entityData.set(DATA_MAEVE_HOLD, holding);
     }
@@ -552,18 +547,17 @@ public class ArchitectEntity extends Monster {
     @Override
     public void aiStep() {
         if (level().isClientSide()) {
-            maeveGuardOld = maeveGuard;
-            maeveGuard = Mth.approach(maeveGuard, isHoldingMaevePosition() ? 1.0F : 0.0F, 0.16F);
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
+            boolean holding = isHoldingMaevePosition();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
                     && isAlive() && !isNoAi() && getDeathTicks() == 0;
             thinkingTilt = net.minecraft.util.Mth.approach(thinkingTilt,
-                    allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
+                    holding || allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
             thinkingHand = net.minecraft.util.Mth.approach(thinkingHand,
-                    allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
+                    holding || allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
         } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
