@@ -123,7 +123,13 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
-        if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
+        float guard = smooth(entity.getMaeveGuard(ageInTicks - entity.tickCount));
+        if (guard > 0.0F && entity.isAlive() && !entity.isNoAi()) {
+            // Preserve vanilla's attack swing when defending the held point.
+            if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
+                applyGuardPose(entity, guard, ageInTicks);
+            }
+        } else if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
             applyObservePose(ageInTicks, sway, limbSwingAmount);
         } else if (action == ArchitectEntity.ACTION_APPROACH) {
             this.head.xRot += 0.02f;
@@ -183,6 +189,29 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             this.thinkingForearm.xRot = -1.85F * hand;
             this.thinkingForearm.yRot = 0.55F * hand;
         }
+    }
+
+    private void applyGuardPose(ArchitectEntity entity, float weight, float ageInTicks) {
+        float breath = Mth.sin(ageInTicks * 0.075F) * 0.012F;
+        this.body.xRot = Mth.lerp(weight, this.body.xRot, 0.12F + breath);
+        this.body.yRot = Mth.lerp(weight, this.body.yRot, -0.12F);
+        this.head.zRot = Mth.lerp(weight, this.head.zRot, 0.0F);
+        // A raised arm marks the watched direction; the other protects the chest.
+        this.rightArm.xRot = Mth.lerp(weight, this.rightArm.xRot, -1.05F + breath);
+        this.rightArm.yRot = Mth.lerp(weight, this.rightArm.yRot, -0.18F);
+        this.rightArm.zRot = Mth.lerp(weight, this.rightArm.zRot, 0.10F);
+        this.leftArm.xRot = Mth.lerp(weight, this.leftArm.xRot, -0.55F);
+        this.leftArm.yRot = Mth.lerp(weight, this.leftArm.yRot, 0.35F);
+        this.leftArm.zRot = Mth.lerp(weight, this.leftArm.zRot, -0.22F);
+        if (entity.getOffhandItem().isEmpty() && entity.getItemBySlot(EquipmentSlot.CHEST).isEmpty()) {
+            this.leftArm.skipDraw = true;
+            this.thinkingUpperArm.visible = true;
+            this.thinkingForearm.xRot = -1.45F * weight;
+        }
+        this.rightLeg.xRot = Mth.lerp(weight, this.rightLeg.xRot, -0.22F);
+        this.leftLeg.xRot = Mth.lerp(weight, this.leftLeg.xRot, 0.28F);
+        this.rightLeg.zRot = Mth.lerp(weight, this.rightLeg.zRot, -0.14F);
+        this.leftLeg.zRot = Mth.lerp(weight, this.leftLeg.zRot, 0.14F);
     }
 
     private static float smooth(float value) {

@@ -134,8 +134,11 @@ public class ArchitectEntity extends Monster {
 
     private static final EntityDataAccessor<Integer> DATA_PURSUIT_POSE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
+    private float maeveGuard, maeveGuardOld;
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -354,6 +357,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_MIND_COPY, false);
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
+        builder.define(DATA_MAEVE_HOLD, false);
     }
 
     @Override
@@ -413,6 +417,19 @@ public class ArchitectEntity extends Monster {
 
     public float getThinkingHand(float partialTick) {
         return net.minecraft.util.Mth.lerp(partialTick, thinkingHandOld, thinkingHand);
+    }
+
+    public boolean isHoldingMaevePosition() {
+        return entityData.get(DATA_MAEVE_HOLD) && isAlive() && !isNoAi()
+                && getDeathTicks() == 0 && !isMasterArchitectVisual();
+    }
+
+    public float getMaeveGuard(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, maeveGuardOld, maeveGuard);
+    }
+
+    void setMaeveHolding(boolean holding) {
+        entityData.set(DATA_MAEVE_HOLD, holding);
     }
 
     void resetReevalCooldown() {
@@ -535,6 +552,8 @@ public class ArchitectEntity extends Monster {
     @Override
     public void aiStep() {
         if (level().isClientSide()) {
+            maeveGuardOld = maeveGuard;
+            maeveGuard = Mth.approach(maeveGuard, isHoldingMaevePosition() ? 1.0F : 0.0F, 0.16F);
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
             int pose = entityData.get(DATA_PURSUIT_POSE);
@@ -549,6 +568,7 @@ public class ArchitectEntity extends Monster {
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
             entityData.set(DATA_PURSUIT_POSE, 0);
+            entityData.set(DATA_MAEVE_HOLD, false);
         }
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
@@ -2637,6 +2657,7 @@ public class ArchitectEntity extends Monster {
     public void remove(RemovalReason reason) {
         if (!level().isClientSide() && getServer() != null) {
             com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, "OWNER_REMOVED");
+            maeveCommitment.clear();
         }
         if (masterBossEvent != null) {
             masterBossEvent.removeAllPlayers();

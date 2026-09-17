@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
@@ -50,6 +51,7 @@ final class ArchitectCommitmentController {
         // Ordinary melee knockback is a possible contradiction, not a reason to
         // instantly abandon the bet. Let gravity settle it, then return to the point.
         if (!architect.onGround()) {
+            architect.setMaeveHolding(false);
             if (Math.abs(architect.getY() - directive.position().getY()) > 2) { release("LOCAL_FALL_RISK"); return false; }
             architect.getNavigation().stop();
             return true;
@@ -59,6 +61,7 @@ final class ArchitectCommitmentController {
         Vec3 goal = Vec3.atBottomCenterOf(directive.position());
         if (architect.position().distanceToSqr(goal) > 0.36D) {
             if (!safeWalk(goal)) { release("LOCAL_ROUTE_UNSAFE"); return false; }
+            architect.setMaeveHolding(false);
             architect.setCommitmentAction(false);
             Vec3 delta = goal.subtract(architect.position());
             double length = delta.horizontalDistance();
@@ -70,7 +73,16 @@ final class ArchitectCommitmentController {
             MaeveDirector.commitmentArrived(architect);
             stopMotion();
             architect.setCommitmentAction(true);
+            architect.setMaeveHolding(true);
             Vec3 anchor = directive.evidence().position().getCenter();
+            // Face the inherited event with the whole body. A head-only glance
+            // looked identical to ordinary observation in the informed replays.
+            float toward = (float) (Mth.atan2(anchor.z - architect.getZ(), anchor.x - architect.getX())
+                    * (180.0D / Math.PI)) - 90.0F;
+            float yaw = Mth.approachDegrees(architect.getYRot(), toward, 12.0F);
+            architect.setYRot(yaw);
+            architect.setYBodyRot(yaw);
+            architect.setYHeadRot(yaw);
             architect.getLookControl().setLookAt(anchor.x, anchor.y + 0.5D, anchor.z, 12, 12);
             if (arrival && directive.cover() != null) {
                 if (!clearCover(directive.cover()) || !architect.placeTacticalIce(directive.cover())
@@ -190,6 +202,7 @@ final class ArchitectCommitmentController {
 
     void clear() {
         wasActive = false;
+        architect.setMaeveHolding(false);
         stopMotion();
         architect.triggerReeval();
     }

@@ -78,6 +78,7 @@ public final class MaeveCommitmentGameTest {
             helper.assertTrue(observer.position().distanceTo(initial) > 2,
                     "Commitment must produce visible positioning before any recovery in the new encounter");
             helper.assertTrue(observer.blockPosition().distSqr(held.position()) <= 1, "Actor reached its issued position");
+            assertGuardFacesEvidence(helper, observer, held.evidence().position());
             var anchor = held.position();
             UUID encounter = held.encounter();
             player.setPos(scene.position(8, 7));
@@ -90,6 +91,7 @@ public final class MaeveCommitmentGameTest {
             helper.assertTrue(wrong != null && wrong.encounter().equals(encounter)
                             && wrong.contradictedAt() >= 0 && observer.blockPosition().distSqr(anchor) <= 1,
                     "Wrong commitment remains physically held rather than chasing the player's new position");
+            assertGuardFacesEvidence(helper, observer, held.evidence().position());
             helper.assertTrue(MaeveDirector.explain(scene.server, player.getUUID(), BeliefStore.RECOVERY).stream()
                     .anyMatch(line -> line.contains("CONTRADICTED_HOLD")), "Diagnostics explain the held wrong prediction");
             // A supporting observation leaves current confidence above the threshold;
@@ -102,6 +104,8 @@ public final class MaeveCommitmentGameTest {
             helper.assertTrue(observer.blockPosition().distSqr(anchor) <= 1, "The full hold remains visible for roughly twenty seconds");
             scene.clock(end);
             helper.assertTrue(MaeveDirector.positionDirective(observer) == null, "Commitment ends at its bounded deadline");
+            observer.tick();
+            helper.assertTrue(!observer.isHoldingMaevePosition(), "The guard cue clears when normal pursuit resumes");
             var saved = MaeveSavedData.get(scene.server).save(new CompoundTag(), scene.level.registryAccess());
             scene.storage(MaeveSavedData.load(saved, scene.level.registryAccess()));
             scene.clock(end + 610);
@@ -167,11 +171,13 @@ public final class MaeveCommitmentGameTest {
             helper.assertTrue(airborne, "The regression must exercise actual airborne knockback");
             helper.assertTrue(observer.blockPosition().distSqr(held.position()) <= 1,
                     "After landing the Architect returns to its held position, not the player's new location");
+            helper.assertTrue(observer.isHoldingMaevePosition(), "The guard cue resumes after returning from knockback");
             helper.assertTrue(MaeveDirector.positionDirective(observer).contradictedAt() == now + 40,
                     "The real melee event remains the reason this commitment is wrong");
             observer.setHealth(observer.getMaxHealth() * 0.2F);
             observer.tick();
             helper.assertTrue(MaeveDirector.positionDirective(observer) == null, "Critical local danger still releases the bet");
+            helper.assertTrue(!observer.isHoldingMaevePosition(), "Safety release also clears the guard cue");
         });
     }
 
@@ -205,9 +211,27 @@ public final class MaeveCommitmentGameTest {
             first.discard();
             helper.assertTrue(MaeveDirector.positionDirective(first) == null, "Removing an owner releases execution");
             helper.assertTrue(!MaeveDirector.chooseCommitment(master, player, List.of(a)), "An owner death does not buy a new bet or override boss roles");
+            second.tickCount = 80;
+            second.setOnGround(true);
+            second.debugForceApproach(other);
+            second.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            long holdingAt = scene.server.overworld().getGameTime();
+            for (int i = 0; i < 40; i++) { scene.clock(holdingAt + i); second.tick(); }
+            helper.assertTrue(second.isHoldingMaevePosition(), "The other owner's held position has an active guard cue");
             PostMaeveWorldState.markErased(scene.level);
             helper.assertTrue(MaeveDirector.positionDirective(second) == null, "Authoritative erasure terminates the other player's active bet too");
+            helper.assertTrue(!second.isHoldingMaevePosition(), "Erasure clears the guard cue before another entity tick");
             helper.assertTrue(!MaeveSavedData.get(scene.server).save(new CompoundTag(), null).contains("beliefs"), "No frozen basis or cooldown survives erasure");
         });
+    }
+
+    private static void assertGuardFacesEvidence(GameTestHelper helper,
+            com.frozendawn.entity.ArchitectEntity observer, net.minecraft.core.BlockPos evidence) {
+        helper.assertTrue(observer.isHoldingMaevePosition(), "Physical arrival must publish the guard cue to clients");
+        var direction = evidence.getCenter().subtract(observer.position()).multiply(1, 0, 1).normalize();
+        var body = net.minecraft.world.phys.Vec3.directionFromRotation(0, observer.yBodyRot);
+        var head = net.minecraft.world.phys.Vec3.directionFromRotation(0, observer.getYHeadRot());
+        helper.assertTrue(body.dot(direction) > 0.99 && head.dot(direction) > 0.99,
+                "The whole body and head must watch the inherited event, even after the player moves elsewhere");
     }
 }
