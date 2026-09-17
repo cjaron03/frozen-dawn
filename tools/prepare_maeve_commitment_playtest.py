@@ -76,8 +76,11 @@ item replace entity @s hotbar.2 with minecraft:potion[minecraft:potion_contents=
 item replace entity @s hotbar.3 with minecraft:potion[minecraft:potion_contents={potion:"minecraft:healing"}]
 item replace entity @s hotbar.4 with minecraft:golden_apple 4
 item replace entity @s hotbar.8 with minecraft:arrow 64
-tp @s 214.5 101 213.5 135 0
 fd architect record @e[tag=maeve_playtest_witness,limit=1] 1337
+schedule function maeve_playtest:deploy 50t replace
+tellraw @s {"text":"Preparing the encounter...","color":"gray"}''',
+        'deploy': '''execute as @a[tag=maeve_playtest,scores={maeve_round=5}] run function maeve_playtest:ready''',
+        'ready': '''tp @s 214.5 101 213.5 135 0
 tellraw @s {"text":"Encounter ready. Spend about half a minute moving and using your equipment as you normally would. Keep the Architect alive so we can inspect the encounter afterward. Then run /function maeve_playtest:finish and describe what you noticed.","color":"green"}''',
         'finish': '''data merge entity @e[tag=maeve_playtest_witness,limit=1] {NoAI:1b}
 fd architect stop @e[tag=maeve_playtest_witness,limit=1]
