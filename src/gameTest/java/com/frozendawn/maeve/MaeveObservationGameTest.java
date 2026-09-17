@@ -278,7 +278,7 @@ public final class MaeveObservationGameTest {
         }
     }
 
-    private static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
+    static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
         ServerLevel level = helper.getLevel();
         BlockPos origin = helper.absolutePos(new BlockPos(2048 + lane * 512, 100, 2048));
         var acquired = new ArrayList<net.minecraft.world.level.ChunkPos>();
@@ -314,7 +314,7 @@ public final class MaeveObservationGameTest {
         }).thenSucceed();
     }
 
-    private static final class Scene implements AutoCloseable {
+    static final class Scene implements AutoCloseable {
         final ServerLevel level;
         final MinecraftServer server;
         final BlockPos origin;
@@ -325,6 +325,7 @@ public final class MaeveObservationGameTest {
         final ReturnedHearthSavedData hearths = new ReturnedHearthSavedData();
         final boolean forced;
         final long dayTime;
+        final long gameTime;
         final List<Entity> entities = new ArrayList<>();
         final Map<BlockPos, BlockState> blocks = new LinkedHashMap<>();
 
@@ -336,6 +337,7 @@ public final class MaeveObservationGameTest {
             previousHearths = ReturnedHearthSavedData.get(server);
             previousMaeve = MaeveSavedData.get(server);
             dayTime = server.overworld().getDayTime();
+            gameTime = server.overworld().getGameTime();
             forced = FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.get();
             FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.set(false);
             server.overworld().getDataStorage().set("frozendawn_apocalypse", phase);
@@ -343,6 +345,10 @@ public final class MaeveObservationGameTest {
             storage(new MaeveSavedData());
             phase.setApocalypseTicks(phase.getTotalDays() * 24000L, server);
             for (int x = 0; x <= 10; x++) for (int z = 0; z <= 10; z++) block(x, -1, z, Blocks.STONE.defaultBlockState());
+        }
+
+        void clock(long tick) {
+            ((net.minecraft.world.level.storage.ServerLevelData) server.overworld().getLevelData()).setGameTime(tick);
         }
 
         void storage(MaeveSavedData data) {
@@ -423,13 +429,14 @@ public final class MaeveObservationGameTest {
             blocks.forEach((pos, state) -> level.setBlock(pos, state, 3));
             FrozenDawnConfig.DEBUG_FORCE_MAEVE_ERASED.set(forced);
             server.overworld().setDayTime(dayTime);
+            clock(gameTime);
             server.overworld().getDataStorage().set("frozendawn_apocalypse", previousPhase);
             server.overworld().getDataStorage().set("frozendawn_returned_hearths", previousHearths);
             storage(previousMaeve);
         }
     }
 
-    private static final class TestPlayer extends FakePlayer {
+    static final class TestPlayer extends FakePlayer {
         TestPlayer(ServerLevel level, String name) { super(level, new GameProfile(UUID.randomUUID(), name)); }
 
         void finish(ItemStack stack) {

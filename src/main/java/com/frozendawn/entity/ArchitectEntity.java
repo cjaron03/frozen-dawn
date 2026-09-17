@@ -134,6 +134,8 @@ public class ArchitectEntity extends Monster {
 
     private static final EntityDataAccessor<Integer> DATA_PURSUIT_POSE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
 
@@ -219,6 +221,7 @@ public class ArchitectEntity extends Monster {
     @Nullable private MeleeDebugObservation meleeDebugObservation;
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
+    private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -353,6 +356,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_MIND_COPY, false);
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
+        builder.define(DATA_MAEVE_HOLD, false);
     }
 
     @Override
@@ -412,6 +416,15 @@ public class ArchitectEntity extends Monster {
 
     public float getThinkingHand(float partialTick) {
         return net.minecraft.util.Mth.lerp(partialTick, thinkingHandOld, thinkingHand);
+    }
+
+    public boolean isHoldingMaevePosition() {
+        return entityData.get(DATA_MAEVE_HOLD) && isAlive() && !isNoAi()
+                && getDeathTicks() == 0 && !isMasterArchitectVisual();
+    }
+
+    void setMaeveHolding(boolean holding) {
+        entityData.set(DATA_MAEVE_HOLD, holding);
     }
 
     void resetReevalCooldown() {
@@ -536,18 +549,20 @@ public class ArchitectEntity extends Monster {
         if (level().isClientSide()) {
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
+            boolean holding = isHoldingMaevePosition();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
                     && isAlive() && !isNoAi() && getDeathTicks() == 0;
             thinkingTilt = net.minecraft.util.Mth.approach(thinkingTilt,
-                    allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
+                    holding || allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
             thinkingHand = net.minecraft.util.Mth.approach(thinkingHand,
-                    allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
+                    holding || allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
         } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
             entityData.set(DATA_PURSUIT_POSE, 0);
+            entityData.set(DATA_MAEVE_HOLD, false);
         }
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
@@ -742,6 +757,13 @@ public class ArchitectEntity extends Monster {
         }
         despawnTimer = nextDespawnTimer;
 
+        if (maeveCommitment.tick(target)) {
+            entityData.set(DATA_PURSUIT_POSE, 0);
+            updateHeldItem();
+            syncRenderState();
+            return;
+        }
+
         // --- Utility AI scoring ---
         // Don't re-evaluate while actively mining — commit to the block
         // Only interrupt for critical HP (retreat needed)
@@ -839,6 +861,9 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
+        var beliefBias = target instanceof net.minecraft.server.level.ServerPlayer player
+                ? com.frozendawn.maeve.MaeveDirector.utilityBias(this, player)
+                : com.frozendawn.maeve.MaeveDirector.UtilityBias.NONE;
         ArchitectDecisionEngine.Decision decision = decisionEngine.evaluate(
                 new ArchitectDecisionEngine.Context(
                         getBrainAction(),
@@ -861,7 +886,7 @@ public class ArchitectEntity extends Monster {
                         target != null && isPlayerInsideBase(target),
                         target != null && isNearCorner()
                 ),
-                random
+                random, beliefBias.fortify(), beliefBias.peek()
         );
         int bestAction = decision.bestAction();
         float[] scores = decision.scores();
@@ -883,6 +908,15 @@ public class ArchitectEntity extends Monster {
         if (bestAction == ACTION_ATTACK_MELEE) {
             primeMeleeHandoff();
         }
+    }
+
+    void setCommitmentAction(boolean holding) {
+        transitionToAction(holding ? ACTION_OBSERVE : ACTION_APPROACH);
+    }
+
+    /** Erasure releases local execution in the same server-thread transition. */
+    public void clearMaevePositioning() {
+        maeveCommitment.clear();
     }
 
     void triggerReeval() {
@@ -2615,6 +2649,10 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void remove(RemovalReason reason) {
+        if (!level().isClientSide() && getServer() != null) {
+            com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, "OWNER_REMOVED");
+            maeveCommitment.clear();
+        }
         if (masterBossEvent != null) {
             masterBossEvent.removeAllPlayers();
         }

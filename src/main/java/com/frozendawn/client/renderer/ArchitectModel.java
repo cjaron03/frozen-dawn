@@ -123,7 +123,13 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
-        if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
+        if (entity.isHoldingMaevePosition()) {
+            // Preserve vanilla's attack swing when defending the held point.
+            if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
+                applyObservePose(ageInTicks, sway, limbSwingAmount);
+                applyThinkingPose(entity, ageInTicks - entity.tickCount);
+            }
+        } else if (action == ArchitectEntity.ACTION_OBSERVE || action == ArchitectEntity.ACTION_PEEK) {
             applyObservePose(ageInTicks, sway, limbSwingAmount);
         } else if (action == ArchitectEntity.ACTION_APPROACH) {
             this.head.xRot += 0.02f;
