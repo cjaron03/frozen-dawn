@@ -29,7 +29,7 @@ final class CommitmentCoordinator {
                 .toList();
     }
 
-    static boolean choose(MaeveSavedData data, ArchitectEntity observer, ServerPlayer player,
+    static boolean choose(MaeveSavedData data, AttentionCoordinator attention, ArchitectEntity observer, ServerPlayer player,
                           List<MaeveDirector.PositionCandidate> candidates) {
         var hints = hints(data, observer, player);
         if (hints.isEmpty()) return false;
@@ -44,7 +44,11 @@ final class CommitmentCoordinator {
                         && observer.level().hasChunkAt(c.cover()))))
                 .filter(c -> WorldModel.BEARINGS.contains(c.pattern()) == (c.spatial() != null))
                 .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
-        boolean selected = store.commitment(player.getUUID()).choose(player.getUUID(), observer.getUUID(), local, now);
+        var policy = store.commitment(player.getUUID());
+        if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE"))
+                && !attention.commitment(observer, player)) return false;
+        boolean selected = policy.choose(player.getUUID(), observer.getUUID(), local, now);
+        if (!selected) attention.releaseCommitment(observer);
         data.setDirty();
         return selected;
     }
