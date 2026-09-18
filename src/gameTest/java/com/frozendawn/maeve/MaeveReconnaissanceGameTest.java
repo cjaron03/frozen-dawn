@@ -21,11 +21,21 @@ public final class MaeveReconnaissanceGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void maeveReconReplayPracticeAndNativeFunctionsWork(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 31, 2, scene -> {
-            for (String name : java.util.List.of("setup", "initialize", "cleanup", "next_site", "advance", "crossed", "ready",
+            for (String name : java.util.List.of("load", "setup", "initialize", "restart", "retry", "cleanup", "next_site", "advance", "crossed", "ready",
                     "start", "tick", "finish", "sealed", "status", "walk_prompt", "practice_0", "practice_1", "practice_2",
                     "crossing_0", "crossing_1", "crossing_2", "encounter_0", "encounter_1", "encounter_2")) {
                 helper.assertTrue(scene.server.getFunctions().get(net.minecraft.resources.ResourceLocation.parse("macs_recon:" + name)).isPresent(),
                         "Native command parser accepts live function " + name);
+                // GameTestServer compiles at permission 4; the integrated client uses 2.
+                // Reparse the actual pack at the client's level so unsupported commands cannot silently remove a function.
+                var file = net.minecraft.resources.ResourceLocation.parse("macs_recon:function/" + name + ".mcfunction");
+                try (var reader = scene.server.getResourceManager().getResource(file).orElseThrow().openAsReader()) {
+                    net.minecraft.commands.functions.CommandFunction.fromLines(
+                            net.minecraft.resources.ResourceLocation.parse("macs_recon:" + name), scene.server.getCommands().getDispatcher(),
+                            scene.server.createCommandSourceStack().withPermission(2), reader.lines().toList());
+                } catch (java.io.IOException e) {
+                    throw new IllegalStateException("Cannot read live function " + name, e);
+                }
             }
             MaeveWorldModelGameTest.shelter(scene);
             for (int x = 2; x <= 5; x++) for (int y = 0; y < 4; y++) {
@@ -36,19 +46,22 @@ public final class MaeveReconnaissanceGameTest {
                 if (z != 5 || y == 3) scene.block(5, y, z, Blocks.OAK_PLANKS.defaultBlockState());
             }
             for (int x = 11; x <= 13; x++) for (int z = 4; z <= 6; z++) for (int y = 0; y < 4; y++) {
-                boolean air = x == 12 && z == 5 && y < 3 || x == 11 && z == 5 && y >= 1 && y <= 2;
+                boolean air = x == 12 && z == 5 && y < 3 || x == 11 && z == 5 && y == 1;
                 scene.block(x, y, z, (air ? Blocks.AIR : Blocks.BEDROCK).defaultBlockState());
             }
             long now = scene.gameTime + 1;
             for (int offset : new int[]{0, 7, 19}) {
                 var player = scene.player("recon_practice_" + offset, 4, 5); player.setYRot(-90);
                 var witness = scene.architect(12, 5);
-                for (int i = 0; i < 120; i++) {
-                    if (i >= 60 && i < 100) player.setPos(scene.position(4, 5).add((i - 59) / 10.0, 0, 0));
+                for (int i = 0; i < 740; i++) {
+                    if (i >= 600 && i < 640) player.setPos(scene.position(4, 5).add((i - 599) / 10.0, 0, 0));
                     tick(scene, witness, now + offset + i);
+                    helper.assertTrue(witness.getX() >= scene.origin.getX() + 12 && witness.getX() < scene.origin.getX() + 13
+                                    && witness.getZ() >= scene.origin.getZ() + 5 && witness.getZ() < scene.origin.getZ() + 6,
+                            "Practice observer escaped while a player was getting ready at tick " + i + ": " + witness.position());
                 }
                 helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).stream().anyMatch(p -> p.label().equals("ACCESS_POINT")),
-                        "Live booth and three-second warmup must witness the walking crossing at offset " + offset);
+                        "Live booth must witness the walking crossing after a 30-second preparation delay at offset " + offset);
                 helper.assertTrue(player.getHealth() == player.getMaxHealth(), "Practice observer cannot reach and hit the player");
                 witness.setNoAi(true); witness.discard(); player.discard(); now += 1000;
             }

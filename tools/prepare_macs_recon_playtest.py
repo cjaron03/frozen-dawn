@@ -13,6 +13,22 @@ kill @e[tag=macs_recon_actor]''',
     'setup': '''function macs_recon:load
 execute if score #initialized mr matches 1 run function macs_recon:status
 execute unless score #initialized mr matches 1 run function macs_recon:initialize''',
+    'restart': '''function macs_recon:load
+execute if score #initialized mr matches 1 run function macs_recon:retry
+execute unless score #initialized mr matches 1 run function macs_recon:initialize
+tellraw @s {"text":"If the game is frozen, run /tick unfreeze directly in chat to begin the ready prompt.","color":"yellow","clickEvent":{"action":"run_command","value":"/tick unfreeze"}}''',
+    'retry': '''execute as @e[tag=macs_recon_actor] run fd architect dump @s
+function macs_recon:cleanup
+scoreboard players set #stage mr 0
+scoreboard players set #wait mr 0
+scoreboard players set #timer mr 0
+tag @s add macs_recon
+gamemode survival @s
+effect give @s minecraft:resistance infinite 4 true
+effect give @s minecraft:night_vision infinite 0 true
+effect give @s minecraft:instant_health 1 4 true
+tellraw @s {"text":"Restarting at the next unused site. Earlier observations and the failed actor trace are preserved.","color":"aqua"}
+function macs_recon:next_site''',
     'initialize': '''scoreboard players set #initialized mr 1
 scoreboard players set #site mr -1
 scoreboard players set #stage mr 0
@@ -77,7 +93,7 @@ execute if score #stage mr matches 5 run function macs_recon:next_site''',
     'status': '''scoreboard players list #site
 scoreboard players list #stage
 scoreboard players list #wait
-tellraw @s {"text":"Stage 1: walk blue to gold. Stage 2: skip the empty gap and wait. Stage 3: /function macs_recon:start. Stage 4: running. Stage 5: preserve your dump; /function macs_recon:next_site uses a fresh site without erasing earlier evidence.","color":"yellow"}''',
+tellraw @s {"text":"Stage 7: wait for the ready prompt. Stage 1: walk blue to gold. Stage 2: skip the empty gap and wait. Stage 3: /function macs_recon:start. Stage 4: running. Stage 5: preserve your dump; /function macs_recon:next_site uses a fresh site. If interrupted, /function macs_recon:restart preserves evidence and restarts at an unused site.","color":"yellow"}''',
 }
 
 for index in range(3):
@@ -99,7 +115,7 @@ setblock {x+8} 100 705 minecraft:gold_block
 fill {x+14} 100 711 {x+18} 100 715 minecraft:green_concrete
 fill {x+11} 101 704 {x+13} 104 706 minecraft:bedrock
 fill {x+12} 101 705 {x+12} 103 705 minecraft:air
-fill {x+11} 102 705 {x+11} 103 705 minecraft:air
+setblock {x+11} 102 705 minecraft:air
 summon frozendawn:architect {x+12}.5 101 705.5 {{Tags:["macs_recon_actor"],PersistenceRequired:1b}}
 tp @s {x+4}.5 101 705.5 -90 0
 spawnpoint @s {x+16} 101 713
