@@ -62,19 +62,20 @@ public final class MaeveLearningGameTest {
             for (int i = 0; i < 450; i++) {
                 var previous = scout.position(); boolean leaving = scout.isMaeveDisengaging();
                 tick(scene, scout, now + 650 + i);
-                if (leaving) player.setPos(player.position().add(scout.position().subtract(previous)));
+                if (leaving) player.setPos(player.position().add(scout.position().subtract(previous))
+                        .add(0, 0, player.getZ() > scout.getZ() + .1 ? -.07 : 0));
             }
             helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, player.getUUID()).stream().anyMatch(m -> m.report().equals("OPEN")),
                     "An actual mission must inspect the inherited crossing before withdrawing");
             helper.assertTrue(scene.beliefs(player).stream().anyMatch(b -> b.pattern().equals(BeliefStore.PURSUIT) && b.evidence() == 1),
-                    "Scout movement must teach a witnessed response: " + MaeveDirector.diagnostics(scene.server, player.getUUID()));
+                    "Following diagonally onto the scout's route must teach a witnessed response: " + MaeveDirector.diagnostics(scene.server, player.getUUID()));
         });
     }
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void maeveLearningReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_learning") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 29, "The full integrated replay pack must be included");
+        helper.assertTrue(resources.size() == 30, "The full integrated replay pack must be included");
         resources.forEach((file, resource) -> {
             String path = file.getPath().substring("function/".length()).replace(".mcfunction", "");
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_learning", path);
@@ -150,6 +151,13 @@ public final class MaeveLearningGameTest {
             scene.storage(MaeveSavedData.load(saved, scene.level.registryAccess()));
             scene.clock(now + 310); MaeveDirector.tick(scene.server);
             helper.assertTrue(scene.beliefs(player).isEmpty(), "Reload cannot resume a partial movement episode");
+            MaeveDirector.observeWithdrawal(actor, player);
+            actor.debugForceApproach(player);
+            scene.clock(now + 320); MaeveDirector.tick(scene.server);
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream()
+                    .anyMatch(s -> s.contains("UNKNOWN: withdrawal interrupted by pursuit")),
+                    "Resuming a chase must stop the withdrawal episode before it can mislabel the response");
+            helper.assertTrue(scene.beliefs(player).isEmpty(), "An interrupted retreat supplies neither polarity");
             MaeveDirector.observeWithdrawal(actor, player); PostMaeveWorldState.markErased(scene.level);
             PostMaeveWorldState.setForDebug(scene.server, false); scene.clock(now + 500); MaeveDirector.tick(scene.server);
             helper.assertTrue(MaeveDirector.snapshot(scene.server, player.getUUID()).profiles() == 0, "Erasure clears pending episodes and stored profiles");

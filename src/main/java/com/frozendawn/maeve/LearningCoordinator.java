@@ -48,6 +48,13 @@ final class LearningCoordinator {
             if (level == null || !(level.getEntity(entry.getKey()) instanceof ArchitectEntity actor)
                     || !(level.getEntity(episode.player()) instanceof ServerPlayer player)
                     || !CommitmentCoordinator.eligible(actor, player)) { windows.remove(entry.getKey()); event(episode.player(), entry.getKey(), "UNKNOWN: local sight or executor unavailable", now); continue; }
+            var policy = data.store().commitmentFor(actor.getUUID(), now);
+            var held = policy == null ? null : policy.active(now);
+            boolean withdrawingHold = held != null && BeliefStore.PURSUIT.equals(held.pattern());
+            if (!actor.isMaeveDisengaging() && !withdrawingHold && actor.getTarget() != null
+                    && (actor.getBrainAction() == ArchitectEntity.ACTION_APPROACH || actor.getBrainAction() == ArchitectEntity.ACTION_ATTACK_MELEE)) {
+                windows.remove(entry.getKey()); event(episode.player(), entry.getKey(), "UNKNOWN: withdrawal interrupted by pursuit", now); continue;
+            }
             var result = episode.window().sample(actor.position(), player.position(), now, true);
             if (result == WithdrawalWindow.Result.WAITING) continue;
             windows.remove(entry.getKey());

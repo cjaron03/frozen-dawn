@@ -44,7 +44,8 @@ fill 700 100 688 834 100 732 minecraft:stone
 fill 758 100 760 762 100 764 minecraft:stone
 forceload add 758 760 762 764
 function macs_learning:practice''',
-    'practice': 'function macs_learning:cleanup\nscoreboard players set #timer ml 0\nscoreboard players set #stage ml 1',
+    'practice': 'function macs_learning:cleanup\nscoreboard players set #timer ml 0\nscoreboard players set #settled ml 0\nscoreboard players set #stage ml 1',
+    'restart': 'function macs_learning:cleanup\nfunction macs_learning:initialize',
     'crossed': '''function macs_learning:cleanup
 scoreboard players set #stage ml 2
 scoreboard players set #timer ml 0
@@ -109,7 +110,7 @@ execute if score #stage ml matches 6 if score #timer ml matches 610.. run functi
 execute if score #stage ml matches 8 if score #timer ml matches 520.. run function macs_learning:counter_finish''',
 }
 
-SCRIPTS['tick'] += '\nexecute if score #stage ml matches 1 if score #timer ml matches 60 run ' + message('Walk from blue through the doorway to gold now.', color='green')
+SCRIPTS['tick'] += '\nexecute if score #stage ml matches 1 if score #timer ml matches 60 run ' + message('Walk from blue through the doorway to gold now. Wait on gold for the crossing confirmation.', color='green')
 
 for index in range(4):
     x = 704 + index * 32
@@ -117,7 +118,12 @@ for index in range(4):
     start, end = (4, 8) if index % 2 == 0 else (8, 4)
     SCRIPTS['practice'] += f'\nexecute if score #round ml matches {index} run function macs_learning:practice_{index}'
     SCRIPTS['dispatch'] += f'\nexecute if score #round ml matches {index} run function macs_learning:scout_{index}'
-    SCRIPTS['tick'] += f'\nexecute if score #stage ml matches 1 if score #timer ml matches 60.. if score #round ml matches {index} if entity @a[tag=macs_learning,x={x+end},y=101,z=705,dx=1,dy=2,dz=1] run function macs_learning:crossed'
+    at_gold = f'@a[tag=macs_learning,x={x+end}.5,y=101,z=705.5,distance=..0.75]'
+    active = f'execute if score #stage ml matches 1 if score #timer ml matches 60.. if score #round ml matches {index}'
+    # Keep the real observer alive through two perception samples after arrival.
+    SCRIPTS['tick'] += f'\n{active} unless entity {at_gold} run scoreboard players set #settled ml 0'
+    SCRIPTS['tick'] += f'\n{active} if entity {at_gold} run scoreboard players add #settled ml 1'
+    SCRIPTS['tick'] += f'\n{active} if score #settled ml matches 20.. run function macs_learning:crossed'
     SCRIPTS[f'practice_{index}'] = f'''fill {x} 101 697 {x+30} 108 722 minecraft:air
 fill {x+2} 105 703 {x+5} 105 707 minecraft:stone
 fill {x+2} 101 703 {x+5} 104 703 minecraft:oak_planks
@@ -133,7 +139,7 @@ fill {x+12} 101 705 {x+12} 103 705 minecraft:air
 setblock {x+11} 102 705 minecraft:air
 summon frozendawn:architect {x+12}.5 101 705.5 {{Tags:["macs_learning_actor"],PersistenceRequired:1b}}
 tp @a[tag=macs_learning] {x+start}.5 101 705.5
-''' + message(f'Crossing {index+1}/4: pause on blue for three seconds, then walk through the doorway to gold. The witness is contained; do not attack it.')
+''' + message(f'Crossing {index+1}/4: pause on blue for three seconds, then walk through the doorway to gold and wait for confirmation. The witness is contained; do not attack it.')
     SCRIPTS[f'scout_{index}'] = f'''fill {x+11} 101 704 {x+13} 104 706 minecraft:air
 tp @a[tag=macs_learning] {x+16}.5 101 715.5
 summon frozendawn:architect {x+22}.5 101 705.5 {{Tags:["macs_learning_actor"],PersistenceRequired:1b}}

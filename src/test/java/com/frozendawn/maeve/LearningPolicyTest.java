@@ -42,6 +42,24 @@ class LearningPolicyTest {
         for (int t = 10; t < 100; t += 10) still.sample(start, Vec3.ZERO, t, true);
         assertEquals(WithdrawalWindow.Result.UNKNOWN, still.sample(start, Vec3.ZERO, 100, true));
     }
+    @Test void diagonalConvergenceCountsButLateralDepartureAndStandingStillDoNot() {
+        for (int side : new int[]{-1, 1}) {
+            var actor = new Vec3(714.5, 101, 705.5);
+            var player = new Vec3(720.5, 101, 705.5 + side * 10);
+            var window = new WithdrawalWindow(actor, player, 0);
+            for (int t = 10; t <= 100; t += 10) {
+                var result = window.sample(actor.add(t * .15, 0, 0), player.add(t * .026, 0, -side * t * .10), t, true);
+                assertEquals(t < 100 ? WithdrawalWindow.Result.WAITING : WithdrawalWindow.Result.FOLLOWED, result,
+                        "A player can follow by closing onto the scout's path from either side");
+            }
+        }
+        var window = new WithdrawalWindow(new Vec3(6, 0, 0), Vec3.ZERO, 0);
+        for (int t = 10; t <= 100; t += 10) {
+            var result = window.sample(new Vec3(6 + t * .03, 0, 0), new Vec3(t * .03, 0, t * .06), t, true);
+            assertEquals(t < 100 ? WithdrawalWindow.Result.WAITING : WithdrawalWindow.Result.NOT_FOLLOWED, result,
+                    "Forward movement while diverging sideways is not following");
+        }
+    }
     @Test void twoBadTradesReduceLaterUtilityAndDeferTwoEncountersThenPermitRetry() {
         var memory = new StrategyPerformance(); memory.begin(1);
         use(memory, 10, false);

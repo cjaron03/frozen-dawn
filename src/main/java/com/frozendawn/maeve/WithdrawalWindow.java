@@ -27,9 +27,14 @@ final class WithdrawalWindow {
         if (movement.length() < 2) return Result.UNKNOWN;
         Vec3 direction = movement.normalize();
         double followed = player.subtract(playerStart).dot(direction);
-        // Both forward progress and proximity are required; running past on a parallel route is not pursuit.
+        // Closing sideways onto the withdrawal route is a valid approach. Measure drift
+        // away from that route, rather than rejecting all lateral movement toward it.
+        Vec3 initialOffset = playerStart.subtract(actorStart).multiply(1, 0, 1);
+        Vec3 finalOffset = player.subtract(actor).multiply(1, 0, 1);
+        double initialSide = initialOffset.subtract(direction.scale(initialOffset.dot(direction))).length();
+        double finalSide = finalOffset.subtract(direction.scale(finalOffset.dot(direction))).length();
         boolean pursuing = followed >= 2 && player.distanceTo(actor) <= playerStart.distanceTo(actorStart) + 3
-                && player.subtract(playerStart).subtract(direction.scale(followed)).horizontalDistance() <= 3;
+                && finalSide <= initialSide + 3;
         return pursuing ? Result.FOLLOWED : Result.NOT_FOLLOWED;
     }
 }
