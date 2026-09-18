@@ -2,7 +2,7 @@
 
 Branch: `feat/maeve-attention`, targeting `feat/maeve-director`, after Slice 4 merged as `e878c40` (PR #90). Contract: [Maeve Director — Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), §§9.12a, 9.15–9.19 and 12.
 
-**Live gate: pending. Do not merge on automated results alone.** A tester must repeatedly shed a stalking Architect by creating pressure elsewhere and describe the result as a usable tactic.
+**Live gate: passed on 2026-09-17.** A two-client Cinematic comparison produced ordinary pursuit in the control and visible departure in two pressure rounds. The tester identified the resulting chance to escape or warn the other player. Automated gates and replay details are recorded below; this is a controlled encounter, not a general multiplayer soak.
 
 ## Implemented behavior
 
@@ -40,7 +40,7 @@ The former 12-second Master/door fixture is **retired**. The player reported on 
 
 The old `maeve_attention` namespace now supplies cleanup only. In the existing **Maeve Attention Encounter**, run `/reload`, then `/function maeve_attention:cleanup`. Cleanup affects only tagged disposable QA actors: it removes their Master binding before disabling AI and deleting them, preventing the ordinary `/kill` command from entering a boss survival/phase transition. It clears the two fixture cages. Old `setup`, `control`, `tactic` and `start` commands call cleanup and cannot summon more Masters.
 
-**Live gate remains pending.** One tracked player plus that encounter's single active commitment cannot overflow the minimum two-slot budget by itself. Repeating ordinary observers of the same player also shares its tracking slot. Current real concern types permit a multiplayer pressure comparison; a solo distraction comparison needs a later genuine concern source, such as reconnaissance. Do not lower production slot counts, invent extra commitments, or inject concerns to claim this gate passed. The ordinary-pressure GameTest uses separate server-side test players and is automated evidence only.
+One tracked player plus that encounter's single active commitment cannot overflow the minimum two-slot budget by itself. Repeating ordinary observers of the same player also shares its tracking slot. Current real concern types permit the multiplayer pressure comparison below; a solo distraction comparison needs a later genuine concern source, such as reconnaissance. Production slot counts, dwell and encounter limits were unchanged. The ordinary-pressure GameTest uses separate server-side test players and is automated evidence only.
 
 ## Two-client comparison
 
@@ -65,3 +65,17 @@ Required `MaeveAttentionReplayGameTest` cases use two test players, real complet
 The preceding open/sealed shelter regression passed on the guardian-separated build. Its direct dump recorded east-route confidence falling from 1.00 to 0.35 only after visible obstruction discovery, then a 60-tick inspection and resumed combat. Those traces are retained under `build/maeve-slice5-evidence/ordinary-spatial-regression`; they validate spatial behavior and are not attention-eviction evidence.
 
 The first two-client practice exposed a harness fault: its free-moving observer knocked the guest past the roof during one drink. The direct dump correctly retained four supporting uses and one open-sky contradiction, at 0.60 confidence. The revised practice booth preserves the observer's sight while physically separating it from the guest; the real-AI tests verify that boundary. `/function maeve_focus:top_up` prepares one additional observed drink without resetting earlier evidence. This recovery path also keeps completed observations if a future practice round is interrupted. The initial dump is archived under `build/maeve-slice5-evidence/two-client/training-initial`.
+
+## Accepted live evidence
+
+Both local clients joined the same integrated server. The host was `Dev` (`380df991-f603-344c-a090-369bad2a924a`); the guest was `ArchitectGuest` (`347c4be4-4dda-3d32-a649-477c0bff527c`). The extra completed drink at tick 245517 raised the guest's recovery belief to 0.80, retaining all five supports and the earlier contradiction across six encounters. Its latest provenance was the blue tile at `(520,101,504)`; the subsequent quiet gap made it historical evidence for the comparisons.
+
+| Round | Direct attention evidence | Visible result |
+| --- | --- | --- |
+| Control, shutter closed | Tracking admitted at 248780 and 248800; both completed normally; no eviction | Host actor observed, approached at run tick 240, and entered melee at 319. The tester described it rushing them. Guest-side actors retained the guest as their target. |
+| Pressure 1, lever opened | At 252310, the host's 130-tick-old tracking concern was evicted for actor `8344708d-cdba-4214-8419-2b3e6ecc9a3e`'s actual guest commitment | Host actor departed about 16 blocks, from `(490,101,530)` to `(495,101,545)`. Tester reported that it walked away. |
+| Pressure 2, repeated | At 255345, the host's 125-tick-old tracking concern was evicted for actor `090de671-85b2-4c3a-9090-1795e5ee6d35`'s actual guest commitment | Departure repeated. Tester reported the opportunity to run away or warn the guest. |
+
+The host trace IDs are `5876d32d-e49d-4104-a7d6-1fb84f293fa7` (control), `04933728-816d-4f67-8455-da70ef9a1a3b` (pressure 1), and `104ce9a4-f806-456f-af2e-b49c857f340f` (pressure 2). All three actors per round exported complete traces with zero dropped events. `MAEVE_ATTENTION_EVICTED` occurred before the final scripted pause in each pressure run; the host actor's departure did not represent a target switch to the guest. Both pressure dumps identified the replacement as an active commitment, while the other observer still owned guest tracking.
+
+Artifacts, direct dumps, tester descriptions and review records are retained under `build/maeve-slice5-evidence/two-client`. The live source fingerprint is `48a17e71140169ae40a09445f32b501baa7bac18508b876568fd3bc51b488a5b`. Production source/resources have the same Git tree (`73ea26afa8435c629e7f2fb4f17234fa4a90c023`) as guardian-separation commit `3d2ccf8`; this replay work changed QA and documentation only. Required gates pass with 577 unit tests, 93 regression GameTests (88 required), 593 stress-run GameTests (500 required seeded cases), and eight gate-harness tests. Final commit identity, logs and jar hashes are in `two-client/verification/verification.json` and the PR's required-check results.
