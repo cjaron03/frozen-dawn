@@ -81,7 +81,7 @@ final class StrategyPerformance {
         if (pending == null) return;
         boolean interrupted = reason.equals("RELOAD_RELEASED") || reason.equals("ENCOUNTER_ENDED")
                 || reason.contains("EVICT") || reason.contains("UNLOAD") || reason.contains("UNAVAILABLE") || reason.equals("UNOBSERVED_DAMAGE") || reason.equals("ERASED");
-        String outcome = interrupted || latest == null ? "UNKNOWN" : dealt > received ? "SUCCESS" : "FAILURE";
+        String outcome = interrupted || latest == null ? "UNKNOWN" : reason.equals("OWNER_KILLED") ? "FAILURE" : dealt > received ? "SUCCESS" : "FAILURE";
         var value = contexts.get(new Key(pending.pattern(), pending.evidence().dimension()));
         if (outcome.equals("SUCCESS")) { value.successes = increment(value.successes); value.consecutiveFailures = 0; }
         else if (outcome.equals("FAILURE")) {
@@ -98,7 +98,7 @@ final class StrategyPerformance {
     List<String> diagnostics(long time) {
         var lines = new ArrayList<String>();
         lines.add("STRATEGY PERFORMANCE | contexts=" + contexts.size() + " pending=" + (pending == null ? "none" : pending.pattern())
-                + " | success=positive witnessed damage trade while holding; silence/interruption=unknown");
+                + " | success=surviving positive witnessed damage trade while holding; silence/interruption=unknown");
         contexts.forEach((key, c) -> {
             lines.add(String.format(Locale.ROOT, "%s context=%s uses=%d success=%d failure=%d unknown=%d effectiveness=%.4f frozenMultiplier=%.4f deferred=%s lastUsed=%d",
                     key.pattern(), key.dimension(), c.uses, c.successes, c.failures, c.unknown, effectiveness(c, time),

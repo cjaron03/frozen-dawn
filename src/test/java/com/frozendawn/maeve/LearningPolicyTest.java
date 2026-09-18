@@ -86,6 +86,14 @@ class LearningPolicyTest {
         var contexts = memory.save().getList("contexts", Tag.TAG_COMPOUND);
         assertEquals(8, contexts.size()); assertEquals("test:dimension_4", contexts.getCompound(0).getString("dimension"));
     }
+    @Test void observedExecutorDeathCannotBecomeSuccessFromAnEarlierGoodTrade() {
+        var memory = new StrategyPerformance(); memory.begin(1); memory.start(directive(10, DIM)); memory.arrived(20);
+        memory.damage(ACTOR, PLAYER, DIM, BlockPos.ZERO, 21, 12, true);
+        memory.damage(ACTOR, PLAYER, DIM, BlockPos.ZERO, 22, 1, false);
+        memory.finish("OWNER_KILLED");
+        var row = memory.save().getList("contexts", Tag.TAG_COMPOUND).getCompound(0);
+        assertEquals(1, row.getInt("failures")); assertEquals(0, row.getInt("successes"));
+    }
     @Test void failedCounterYieldsToAnotherSafeEligibleCounterWithoutChangingRecoveryOrdering() {
         var policy = new CommitmentPolicy();
         var ranged = new Belief(BeliefStore.RANGED); var pursuit = new Belief(BeliefStore.PURSUIT);

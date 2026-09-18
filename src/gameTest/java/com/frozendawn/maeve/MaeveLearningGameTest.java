@@ -167,9 +167,10 @@ public final class MaeveLearningGameTest {
             helper.assertTrue(MaeveDirector.chooseCommitment(actor, player, List.of(new MaeveDirector.PositionCandidate(BeliefStore.RECOVERY,
                     actor.blockPosition(), null, 0))), "History issues a real counter");
             MaeveDirector.commitmentArrived(actor);
-            scene.hit(actor, other, true, 2); // An unrelated player must not be counted as this subject's response.
-            scene.hit(actor, player, true, 4);
-            MaeveDirector.releaseCommitment(actor, "TIME_COMPLETE");
+            scene.hit(scene.architect(3, 7), other, true, 2); // Another player's separate fight must remain isolated.
+            actor.setHealth(1); scene.hit(actor, player, true, 100);
+            helper.assertTrue(!actor.isAlive(), "The held executor must actually be killed by the subject");
+            scene.clock(start + 2520); MaeveDirector.tick(scene.server);
             var policy = MaeveSavedData.get(scene.server).store().commitment(player.getUUID());
             var row = policy.performance().save().getList("contexts", Tag.TAG_COMPOUND).getCompound(0);
             helper.assertTrue(row.getInt("uses") == 1 && row.getInt("failures") == 1, "Witnessed final damage records one failed hold");

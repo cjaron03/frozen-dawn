@@ -67,22 +67,25 @@ final class LearningCoordinator {
             var selected = state.active(now);
             if (selected == null) continue;
             var level = server.getLevel(ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(selected.evidence().dimension())));
-            if (level == null || !(level.getEntity(selected.observer()) instanceof ArchitectEntity actor) || actor.isNoAi()
-                    || !actor.isAlive() || actor.isRemoved()) state.finish("OBSERVER_UNAVAILABLE");
+            if (level == null || !(level.getEntity(selected.observer()) instanceof ArchitectEntity actor)) state.finish("OBSERVER_UNAVAILABLE");
+            else if (!actor.isAlive()) state.finish("OWNER_KILLED");
+            else if (actor.isNoAi() || actor.isRemoved()) state.finish("OBSERVER_UNAVAILABLE");
         }
         data.setDirty();
     }
 
     void incoming(ArchitectEntity actor, net.minecraft.world.damagesource.DamageSource source, float damage) {
         if (data.store() == null || !(damage > 0) || !Float.isFinite(damage)) return;
-        if (source.getEntity() instanceof ServerPlayer player && ObservationCollector.canObserve(actor, player, true)) {
+        long now = server.overworld().getGameTime();
+        var state = data.store().commitmentFor(actor.getUUID(), now);
+        if (state == null) return;
+        var selected = state.active(now);
+        if (source.getEntity() instanceof ServerPlayer player && selected.player().equals(player.getUUID())
+                && ObservationCollector.canObserve(actor, player, true)) {
             damage(actor, player, damage, false); return;
         }
-        // The executor knows it was hurt, but cannot attribute an unseen attack to a player's counter response.
-        for (var state : data.store().commitments()) {
-            var selected = state.active(server.overworld().getGameTime());
-            if (selected != null && selected.observer().equals(actor.getUUID())) state.performance().finish("UNOBSERVED_DAMAGE");
-        }
+        // Hidden damage, hazards and another player's interference cannot be charged to this subject's counter response.
+        state.performance().finish("UNOBSERVED_DAMAGE");
         data.setDirty();
     }
 
