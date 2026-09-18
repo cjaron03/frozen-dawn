@@ -46,6 +46,36 @@ class AttentionManagerTest {
         assertTrue(manager.request(key(AttentionManager.Kind.SIEGE, 3), 100, k -> assertEquals(commitment, k)).admitted());
     }
 
+    @Test void newcomersCannotDisplaceHigherPriorityWork() {
+        for (var focused : AttentionManager.Kind.values()) for (var incoming : AttentionManager.Kind.values()) {
+            var manager = new AttentionManager(); manager.resize(2, 0, NO_EVICTION);
+            var oldest = key(focused, 1); var other = key(focused, 2); var next = key(incoming, 3);
+            manager.request(oldest, 0, NO_EVICTION); manager.request(other, 1, NO_EVICTION);
+            var dropped = new ArrayList<AttentionManager.Key>();
+            var result = manager.request(next, 200, dropped::add);
+            if (incoming.ordinal() < focused.ordinal()) {
+                assertFalse(result.admitted()); assertEquals("HIGHER_PRIORITY_FOCUSED", result.reason());
+                assertTrue(dropped.isEmpty()); assertEquals(List.of(oldest, other), manager.slots().stream().map(AttentionManager.Slot::key).toList());
+                manager.release(oldest, 201);
+                assertTrue(manager.request(next, 202, NO_EVICTION).admitted(), "Deferred work can use newly freed capacity");
+            } else {
+                assertTrue(result.admitted()); assertEquals(List.of(oldest), dropped);
+            }
+            assertEquals(2, manager.slots().size());
+        }
+    }
+
+    @Test void aFreshLowPrioritySlotDoesNotAllowEvictingMatureHigherPriorityWork() {
+        var manager = new AttentionManager(); manager.resize(2, 0, NO_EVICTION);
+        var held = key(AttentionManager.Kind.ACTIVE_COMMITMENT, 1);
+        var fresh = key(AttentionManager.Kind.RECONNAISSANCE, 2);
+        var watching = key(AttentionManager.Kind.PASSIVE_TRACKING, 3);
+        manager.request(held, 0, NO_EVICTION); manager.request(fresh, 100, NO_EVICTION);
+        assertFalse(manager.request(watching, 150, NO_EVICTION).admitted());
+        assertTrue(manager.request(watching, 200, victim -> assertEquals(fresh, victim)).admitted());
+        assertTrue(manager.contains(held));
+    }
+
     @Test void completedWorkFreesImmediatelyAndHistoryIsBoundedAndClearable() {
         var manager = new AttentionManager();
         for (int i = 0; i < 100; i++) {

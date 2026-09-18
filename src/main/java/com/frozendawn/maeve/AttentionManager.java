@@ -32,6 +32,7 @@ final class AttentionManager {
         if (slots.size() >= capacity) {
             Slot victim = victim(now);
             if (victim == null) return defer(key, now, "MINIMUM_DWELL");
+            if (key.kind().ordinal() < victim.key().kind().ordinal()) return defer(key, now, "HIGHER_PRIORITY_FOCUSED");
             // The executor must be released before its slot can be reused. Failure leaves occupancy intact.
             visibleEviction.accept(victim.key());
             slots.remove(victim.key());

@@ -64,17 +64,28 @@ public final class MaeveAttentionGameTest {
     public static void maeveAttentionReleasesHeldCommitmentAndPreservesBeliefs(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 19, scene -> {
             scene.phase.setPresetName("cinematic"); var actor = scene.architect(2, 4); var player = scene.player("focus_hold", 8, 4);
+            var other = scene.player("hold_other", 7, 4); var newcomer = scene.player("hold_new", 9, 4);
             scene.roof(true); long start = clock(scene);
-            for (int i = 0; i < 5; i++) { scene.clock(start + i * 640); player.finish(scene.potion()); }
+            for (int i = 0; i < 5; i++) {
+                scene.clock(start + i * 640); player.finish(scene.potion()); other.finish(scene.potion()); newcomer.finish(scene.potion());
+            }
+            other.setPos(scene.position(7, 7)); newcomer.setPos(scene.position(9, 7));
             long now = start + 5 * 640;
             actor.tickCount = 80; actor.setOnGround(true); actor.debugForceApproach(player);
             for (int i = 0; i < 120; i++) { scene.clock(now + i); actor.tick(); }
             var held = MaeveDirector.positionDirective(actor);
             helper.assertTrue(held != null && held.arrivedAt() >= 0, "Fixture actually reaches and holds a historical commitment");
             var belief = scene.beliefs(player).stream().filter(b -> b.pattern().equals(BeliefStore.RECOVERY)).findFirst().orElseThrow();
-            var other = scene.player("hold_other", 7, 7); var newcomer = scene.player("hold_new", 9, 7);
             var first = scene.architect(7, 8); see(scene, first, other, now + 120);
             var second = scene.architect(9, 8); see(scene, second, newcomer, now + 120);
+            helper.assertTrue(MaeveDirector.positionDirective(actor) != null && actor.isHoldingMaevePosition()
+                    && !actor.isMaeveDisengaging(), "New passive tracking cannot interrupt a mature commitment");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).events().stream().anyMatch(e -> e.contains("HIGHER_PRIORITY_FOCUSED")),
+                    "Diagnostics explain the lower-priority deferral");
+            helper.assertTrue(MaeveDirector.chooseCommitment(first, other, java.util.List.of(
+                    new MaeveDirector.PositionCandidate(BeliefStore.RECOVERY, first.blockPosition(), null, 0))), "The sole tracker promotes to a real commitment");
+            helper.assertTrue(MaeveDirector.chooseCommitment(second, newcomer, java.util.List.of(
+                    new MaeveDirector.PositionCandidate(BeliefStore.RECOVERY, second.blockPosition(), null, 0))), "Equal-priority commitment can displace the mature hold");
             helper.assertTrue(MaeveDirector.positionDirective(actor) == null && actor.isMaeveDisengaging() && !actor.isHoldingMaevePosition(),
                     "Eviction must interrupt the actual held position immediately");
             helper.assertTrue(MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()).outcome().equals("ATTENTION_EVICTED"), "Release has an explicit cause");

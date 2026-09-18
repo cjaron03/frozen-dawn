@@ -62,8 +62,9 @@ final class AttentionCoordinator {
         if (members != null && members.size() == 1 && members.containsKey(actor.getUUID()) && manager.replace(tracking, commitment, now())) {
             executors.remove(tracking); executors.put(commitment, members); return true;
         }
+        if (!admit(commitment, actor, player)) return false;
         if (members != null) members.remove(actor.getUUID());
-        return admit(commitment, actor, player);
+        return true;
     }
 
     void releaseCommitment(ArchitectEntity actor) {
