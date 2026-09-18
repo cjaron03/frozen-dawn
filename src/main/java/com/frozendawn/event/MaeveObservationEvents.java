@@ -24,6 +24,9 @@ public final class MaeveObservationEvents {
     public static void onDamage(LivingDamageEvent.Post event) {
         if (event.getEntity() instanceof ArchitectEntity observer) {
             MaeveDirector.observeDamage(observer, event.getSource(), event.getNewDamage());
+        } else if (event.getEntity() instanceof ServerPlayer player
+                && event.getSource().getEntity() instanceof ArchitectEntity actor) {
+            MaeveDirector.observeCounterDamage(actor, player, event.getNewDamage(), true);
         }
     }
 

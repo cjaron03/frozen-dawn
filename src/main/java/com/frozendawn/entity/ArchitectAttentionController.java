@@ -19,6 +19,9 @@ final class ArchitectAttentionController {
 
     void begin(UUID player, BlockPos lastObserved, String kind) {
         if (actor.isMasterArchitectVisual()) return;
+        if (actor.level() instanceof net.minecraft.server.level.ServerLevel level
+                && level.getEntity(player) instanceof net.minecraft.server.level.ServerPlayer subject)
+            com.frozendawn.maeve.MaeveDirector.observeWithdrawal(actor, subject);
         releasedPlayer = player;
         away = actor.position().subtract(lastObserved.getCenter()).multiply(1, 0, 1).normalize();
         if (away.lengthSqr() < .01) away = new Vec3(1, 0, 0);

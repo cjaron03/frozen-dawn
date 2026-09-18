@@ -23,10 +23,12 @@ public final class MaeveDirector {
     private final MaeveSavedData data;
     private final AttentionCoordinator attention;
     private final MissionPlanner missions;
+    private final LearningCoordinator learning;
     private long lastContactTick = Long.MIN_VALUE;
 
     private MaeveDirector(MinecraftServer server) {
         data = MaeveSavedData.get(server);
+        learning = new LearningCoordinator(server, data);
         attention = new AttentionCoordinator(server, data);
         missions = new MissionPlanner(server, data, attention); attention.bind(missions);
     }
@@ -36,7 +38,7 @@ public final class MaeveDirector {
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
         ApocalypseState apocalypse = ApocalypseState.get(server);
         boolean erased = PostMaeveWorldState.isErased(server);
-        if (erased) { CommitmentCoordinator.stopAll(server, director.data.store()); director.missions.clear(); director.attention.clear(); }
+        if (erased) { CommitmentCoordinator.stopAll(server, director.data.store()); director.missions.clear(); director.attention.clear(); director.learning.clear(); }
         director.data.synchronize(erased,
                 PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress()));
         return director;
@@ -45,6 +47,7 @@ public final class MaeveDirector {
     public static void tick(MinecraftServer server) {
         MaeveDirector director = current(server);
         long now = server.overworld().getGameTime();
+        director.learning.tick();
         if (now % 20 != 0 || now == director.lastContactTick || director.data.store() == null) return;
         director.lastContactTick = now;
         director.missions.tick();
@@ -57,6 +60,7 @@ public final class MaeveDirector {
         if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         MaeveDirector director = current(server);
         if (director.data.store() == null) return;
+        director.learning.incoming(observer, source, actualDamage);
         ObservationCollector.damage(director.data.store(), observer, source, actualDamage,
                 server.overworld().getGameTime());
         SpatialObservations.damage(director.data.store(), observer, source, actualDamage, server.overworld().getGameTime());
@@ -78,14 +82,14 @@ public final class MaeveDirector {
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
         CommitmentCoordinator.stopAll(server, director.data.store());
         director.missions.clear();
-        director.attention.clear();
+        director.attention.clear(); director.learning.clear();
         director.data.erase();
         director.lastContactTick = Long.MIN_VALUE;
     }
 
     public static void onServerStopped(MinecraftServer server) {
         var director = SERVERS.remove(server);
-        if (director != null) { director.missions.clear(); director.attention.clear(); }
+        if (director != null) { director.missions.clear(); director.attention.clear(); director.learning.clear(); }
     }
 
     /** Immutable diagnostic snapshots; execution receives only bounded historical hints/directives. */
@@ -111,14 +115,14 @@ public final class MaeveDirector {
     }
 
     private static List<String> withCommitmentDiagnostics(MinecraftServer server, UUID player, List<String> beliefs) {
-        var store = current(server).data.store();
-        if (store == null) return beliefs;
-        if (player == null) return java.util.stream.Stream.concat(beliefs.stream(),
-                java.util.stream.Stream.concat(AttentionCoordinator.format(attentionSnapshot(server)).stream(),
-                        MissionPlanner.format(missionSnapshots(server, null)).stream())).toList();
-        return java.util.stream.Stream.of(beliefs, CommitmentDiagnostics.format(commitmentSnapshot(server, player)),
-                WorldDiagnostics.format(store.world(player), server.overworld().getGameTime()),
-                AttentionCoordinator.format(attentionSnapshot(server)), MissionPlanner.format(missionSnapshots(server, player))).flatMap(List::stream).toList();
+        return LearningDiagnostics.append(server, player, beliefs, current(server).data.store(), current(server).learning.diagnostics(player));
+    }
+
+    public static void observeWithdrawal(ArchitectEntity actor, ServerPlayer player) {
+        if (actor.getServer() != null) current(actor.getServer()).learning.withdrawal(actor, player);
+    }
+    public static void observeCounterDamage(ArchitectEntity actor, ServerPlayer player, float damage, boolean outgoing) {
+        if (actor.getServer() != null) current(actor.getServer()).learning.damage(actor, player, damage, outgoing);
     }
 
     public static CommitmentSnapshot commitmentSnapshot(MinecraftServer server, UUID player) {
@@ -144,7 +148,9 @@ public final class MaeveDirector {
 
     public static boolean chooseCommitment(ArchitectEntity observer, ServerPlayer player, List<PositionCandidate> candidates) {
         var director = current(player.serverLevel().getServer());
-        return CommitmentCoordinator.choose(director.data, director.attention, observer, player, candidates);
+        boolean selected = CommitmentCoordinator.choose(director.data, director.attention, observer, player, candidates);
+        if (selected && BeliefStore.PURSUIT.equals(director.data.store().commitment(player.getUUID()).selected().pattern())) director.learning.withdrawal(observer, player);
+        return selected;
     }
 
     public static PositionDirective positionDirective(ArchitectEntity observer) {
@@ -167,7 +173,7 @@ public final class MaeveDirector {
         var data = current(player.serverLevel().getServer()).data;
         if (data.store() == null || !CommitmentCoordinator.eligible(observer, player)) return UtilityBias.NONE;
         var state = data.store().commitment(player.getUUID());
-        return state == null ? UtilityBias.NONE : state.utilityBias(player.serverLevel().getServer().overworld().getGameTime());
+        return LearningUtility.bias(state, observer, player.serverLevel().getServer().overworld().getGameTime());
     }
 
     /** Coarse local presence samples: both sides of a crossing require the same observer's sight. */

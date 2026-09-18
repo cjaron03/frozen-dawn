@@ -24,7 +24,7 @@ final class CommitmentDiagnostics {
             lines.add("POSITION STRATEGY: none; low confidence may still bias local utility actions.");
         } else {
             lines.add("DIRECTOR OBJECTIVE: test a historical " + selected.pattern() + " prediction by holding a recoverable position.");
-            lines.add("SELECTED STRATEGY: " + (selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
+            lines.add("SELECTED STRATEGY: " + (selected.pattern().equals(BeliefStore.PURSUIT) ? "WITHDRAW_AND_HOLD" : selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
                     + " | recoveryCost=" + selected.recoveryCost());
             lines.add("POSITION DIRECTIVE: observer=" + selected.observer() + " subject=" + selected.player()
                     + " position=" + selected.position().toShortString() + " dimension=" + selected.evidence().dimension()

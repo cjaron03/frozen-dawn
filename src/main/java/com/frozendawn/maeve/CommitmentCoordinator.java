@@ -45,7 +45,8 @@ final class CommitmentCoordinator {
                 .filter(c -> WorldModel.BEARINGS.contains(c.pattern()) == (c.spatial() != null))
                 .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
         var policy = store.commitment(player.getUUID());
-        if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE"))
+        if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE")
+                && !policy.performance().deferred(c.pattern(), observer.level().dimension().location().toString()))
                 && !attention.commitment(observer, player)) return false;
         boolean selected = policy.choose(player.getUUID(), observer.getUUID(), local, now);
         if (!selected) attention.releaseCommitment(observer);

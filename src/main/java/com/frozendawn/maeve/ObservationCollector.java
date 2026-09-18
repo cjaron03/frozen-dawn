@@ -28,8 +28,12 @@ final class ObservationCollector {
     private ObservationCollector() { }
 
     static boolean canObserve(ArchitectEntity observer, ServerPlayer player, boolean fatalHit) {
+        return canObserve(observer, player, fatalHit, false);
+    }
+
+    static boolean canObserve(ArchitectEntity observer, ServerPlayer player, boolean fatalHit, boolean fatalPlayer) {
         if (!(observer.level() instanceof ServerLevel level) || player.level() != level
-                || !player.isAlive() || player.isCreative() || player.isSpectator()
+                || (!fatalPlayer && !player.isAlive()) || player.isCreative() || player.isSpectator()
                 || observer.isRemoved() || observer.isNoAi() || (!fatalHit && !observer.isAlive())
                 || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)
                 || observer.distanceToSqr(player) > RANGE * RANGE) return false;
