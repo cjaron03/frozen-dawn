@@ -137,6 +137,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RECON_EYES =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
 
@@ -224,6 +226,7 @@ public class ArchitectEntity extends Monster {
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
+    private final ArchitectReconnaissanceController maeveReconnaissance = new ArchitectReconnaissanceController(this);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -359,6 +362,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
         builder.define(DATA_MAEVE_HOLD, false);
+        builder.define(DATA_RECON_EYES, false);
     }
 
     @Override
@@ -428,6 +432,8 @@ public class ArchitectEntity extends Monster {
     void setMaeveHolding(boolean holding) {
         entityData.set(DATA_MAEVE_HOLD, holding);
     }
+    public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
+    void setReconnaissanceEyes(boolean active) { entityData.set(DATA_RECON_EYES, active); }
 
     void resetReevalCooldown() {
         brainState.setReevalCooldown(0);
@@ -674,10 +680,19 @@ public class ArchitectEntity extends Monster {
 
         long gameTick = level().getGameTime();
 
+        if (maeveReconnaissance.tick(null)) {
+            entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
+        }
+
         // --- Target acquisition ---
         // Architect senses through blocks — always knows target position
         LivingEntity target = findTarget();
-        if (gameTick % 20 == 0 && target instanceof ServerPlayer player) MaeveDirector.observeAttention(this, player);
+        if (target instanceof ServerPlayer player && maeveReconnaissance.tick(player)) {
+            entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
+        }
+        // Roaming selection deliberately does not mutate vanilla's target field.
+        // Supply that local candidate to the same perception validator used by the Post hook.
+        if (gameTick % 10 == 0 && target instanceof ServerPlayer player && getTarget() != target) MaeveDirector.observePresence(this, player);
         UUID selectedTargetId = target == null ? null : target.getUUID();
         if (decisionJournal.enabled() && !java.util.Objects.equals(lastJournalTargetId, selectedTargetId)) {
             lastJournalTargetId = selectedTargetId;
@@ -933,6 +948,7 @@ public class ArchitectEntity extends Monster {
 
     public boolean isMaeveDisengaging() { return maeveAttention.active(); }
     public void clearMaeveAttention() { maeveAttention.clear(); }
+    public void clearMaeveReconnaissance() { maeveReconnaissance.clear(); }
 
     void cancelMaeveAttentionWork() {
         maeveCommitment.clear(); blockBreaker.clearTarget();
@@ -1511,6 +1527,7 @@ public class ArchitectEntity extends Monster {
             suppressMasterHurtSound = false;
         }
         if (hurt && !level().isClientSide()) {
+            MaeveDirector.finishMission(this, "LOCAL_DEFENSE", false);
             // Local self-defense is independent of Maeve's focus allocation.
             if (maeveAttention.active() && source.getEntity() instanceof LivingEntity) maeveAttention.clear();
             recordDecision("DAMAGE", blockBreaker.getChoice(),
@@ -2678,6 +2695,7 @@ public class ArchitectEntity extends Monster {
     public void remove(RemovalReason reason) {
         if (!level().isClientSide() && getServer() != null) {
             com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, "OWNER_REMOVED");
+            MaeveDirector.finishMission(this, "OWNER_REMOVED", false);
             maeveCommitment.clear();
         }
         if (masterBossEvent != null) {

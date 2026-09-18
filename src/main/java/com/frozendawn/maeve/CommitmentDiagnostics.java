@@ -20,8 +20,8 @@ final class CommitmentDiagnostics {
         view.alternatives().forEach(alternative -> lines.add("CANDIDATE: " + alternative));
         var selected = view.selected();
         if (selected == null) {
-            lines.add("DIRECTOR OBJECTIVE: no position directive available; ordinary local behavior applies.");
-            lines.add("SELECTED STRATEGY: none; low confidence only biases available utility actions.");
+            lines.add("POSITION OBJECTIVE: no position directive available; see MACS reconnaissance for survey missions.");
+            lines.add("POSITION STRATEGY: none; low confidence may still bias local utility actions.");
         } else {
             lines.add("DIRECTOR OBJECTIVE: test a historical " + selected.pattern() + " prediction by holding a recoverable position.");
             lines.add("SELECTED STRATEGY: " + (selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
@@ -38,7 +38,7 @@ final class CommitmentDiagnostics {
                     + " holdUntil=" + selected.holdUntil() + " contradicted=" + selected.contradictedAt()
                     + "; hold=" + CommitmentPolicy.HOLD_TICKS + " ticks; wrong-beat minimum=" + CommitmentPolicy.WRONG_BEAT_TICKS);
         }
-        lines.add("ARCHITECT PACKET: full reconnaissance packets are not implemented; only the bounded position directive above is issued.");
+        lines.add("RECONNAISSANCE PACKETS: listed separately under MACS reconnaissance, including completed mission reports.");
         return List.copyOf(lines);
     }
 }

@@ -96,4 +96,15 @@ class AttentionManagerTest {
         assertEquals(List.of(tracker, key(AttentionManager.Kind.SIEGE, 0)), dropped);
         assertEquals(2, manager.slots().size());
     }
+
+    @Test void aTrackerReassignedToSurveyGetsItsOwnMinimumDwell() {
+        var manager = new AttentionManager(); manager.resize(2, 0, NO_EVICTION);
+        var tracking = key(AttentionManager.Kind.PASSIVE_TRACKING, 1);
+        var mission = key(AttentionManager.Kind.RECONNAISSANCE, 1);
+        manager.request(tracking, 0, NO_EVICTION);
+        manager.request(key(AttentionManager.Kind.SIEGE, 2), 0, NO_EVICTION);
+        assertTrue(manager.replace(tracking, mission, 200));
+        assertFalse(manager.request(key(AttentionManager.Kind.PASSIVE_TRACKING, 3), 299, NO_EVICTION).admitted());
+        assertTrue(manager.request(key(AttentionManager.Kind.PASSIVE_TRACKING, 3), 300, victim -> assertEquals(mission, victim)).admitted());
+    }
 }

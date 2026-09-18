@@ -22,8 +22,10 @@ final class AttentionCoordinator {
     private final AttentionManager manager = new AttentionManager();
     private final Map<AttentionManager.Key, Map<UUID, Executor>> executors = new LinkedHashMap<>();
     private final Map<UUID, Executor> departing = new LinkedHashMap<>();
+    private MissionPlanner missions;
 
     AttentionCoordinator(MinecraftServer server, MaeveSavedData data) { this.server = server; this.data = data; }
+    void bind(MissionPlanner missions) { this.missions = missions; }
     private long now() { return server.overworld().getGameTime(); }
     private void resize() { manager.resize(AttentionManager.capacity(ApocalypseState.get(server).getPresetName()), now(), this::evict); }
 
@@ -32,14 +34,19 @@ final class AttentionCoordinator {
         resize();
         if (CommitmentCoordinator.eligible(actor, player)
                 && !actor.isMaeveDisengaging() && actor.getCurrentAction() == ArchitectEntity.ACTION_OBSERVE
+                && (missions == null || missions.packet(actor) == null)
                 && CommitmentCoordinator.directive(data, actor) == null) {
             var key = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
-            for (var previous : new ArrayList<>(executors.keySet())) {
-                if (previous.kind() != AttentionManager.Kind.PASSIVE_TRACKING || previous.equals(key)) continue;
-                var members = executors.get(previous); members.remove(actor.getUUID());
-                if (members.isEmpty()) { executors.remove(previous); manager.release(previous, now()); }
-            }
+            releaseOtherTracking(actor, key);
             admit(key, actor, player);
+        }
+    }
+
+    private void releaseOtherTracking(ArchitectEntity actor, AttentionManager.Key retained) {
+        for (var previous : new ArrayList<>(executors.keySet())) {
+            if (previous.kind() != AttentionManager.Kind.PASSIVE_TRACKING || previous.equals(retained)) continue;
+            var members = executors.get(previous); members.remove(actor.getUUID());
+            if (members.isEmpty()) { executors.remove(previous); manager.release(previous, now()); }
         }
     }
 
@@ -54,8 +61,9 @@ final class AttentionCoordinator {
 
     boolean commitment(ArchitectEntity actor, ServerPlayer player) {
         if (!CommitmentCoordinator.eligible(actor, player)) return false;
-        resize();
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
+        releaseOtherTracking(actor, tracking);
+        resize();
         var commitment = new AttentionManager.Key(AttentionManager.Kind.ACTIVE_COMMITMENT, actor.getUUID());
         var members = executors.get(tracking);
         // A sole tracker taking a position is still one activity. Shared tracking keeps its other executors.
@@ -72,6 +80,27 @@ final class AttentionCoordinator {
         executors.remove(key); manager.release(key, now());
     }
 
+    boolean reconnaissance(ArchitectEntity actor, ServerPlayer player) {
+        if (actor.isMaeveDisengaging()) return false;
+        var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
+        releaseOtherTracking(actor, tracking);
+        resize();
+        var mission = new AttentionManager.Key(AttentionManager.Kind.RECONNAISSANCE, actor.getUUID());
+        var members = executors.get(tracking);
+        if (members != null && members.size() == 1 && members.containsKey(actor.getUUID()) && manager.replace(tracking, mission, now())) {
+            executors.remove(tracking); executors.put(mission, members); return true;
+        }
+        if (!admit(mission, actor, player)) return false;
+        if (members != null) members.remove(actor.getUUID());
+        return true;
+    }
+
+    void releaseReconnaissance(ArchitectEntity actor) { releaseReconnaissance(actor.getUUID()); }
+    void releaseReconnaissance(UUID actor) {
+        var key = new AttentionManager.Key(AttentionManager.Kind.RECONNAISSANCE, actor);
+        executors.remove(key); manager.release(key, now());
+    }
+
     void tick() {
         if (data.store() == null) { clear(); return; }
         departing.values().removeIf(ref -> { var actor = actor(ref); return actor == null || !actor.isMaeveDisengaging(); });
@@ -84,7 +113,8 @@ final class AttentionCoordinator {
                     case ACTIVE_COMMITMENT -> CommitmentCoordinator.directive(data, actor) == null;
                     case PASSIVE_TRACKING -> actor.getCurrentAction() != ArchitectEntity.ACTION_OBSERVE
                             || actor.isMaeveDisengaging() || now() - ref.lastSeen() > 100;
-                    default -> true; // Reconnaissance and siege executors are supplied by later slices.
+                    case RECONNAISSANCE -> missions == null || missions.packet(actor) == null;
+                    default -> true; // Siege execution belongs to a later slice.
                 };
             });
             if (entry.getValue().isEmpty()) { executors.remove(key); manager.release(key, now()); }
@@ -99,15 +129,19 @@ final class AttentionCoordinator {
             ArchitectEntity actor = actor(ref);
             if (actor == null || !actor.isAlive() || actor.isMasterArchitectVisual()) continue;
             if (key.kind() == AttentionManager.Kind.ACTIVE_COMMITMENT) CommitmentCoordinator.release(data, actor, "ATTENTION_EVICTED");
-            actor.beginMaeveDisengagement(ref.player(), ref.observed(), key.kind().name());
-            // At most five concerns x eight executors per 100-tick dwell, each departing for 600 ticks.
-            // The explicit cap also handles a changed/debugged clock without retaining unbounded references.
-            if (departing.size() >= 256 && !departing.containsKey(ref.actor())) {
-                var oldest = departing.remove(departing.keySet().iterator().next());
-                var previous = actor(oldest); if (previous != null) previous.clearMaeveAttention();
-            }
-            departing.put(ref.actor(), ref);
+            if (key.kind() == AttentionManager.Kind.RECONNAISSANCE && missions != null) missions.evicted(actor);
+            depart(actor, ref.player(), ref.observed(), key.kind().name());
         }
+    }
+
+    void depart(ArchitectEntity actor, UUID player, BlockPos observed, String reason) {
+        actor.beginMaeveDisengagement(player, observed, reason);
+        if (departing.size() >= 256 && !departing.containsKey(actor.getUUID())) {
+            var oldest = departing.remove(departing.keySet().iterator().next());
+            var previous = actor(oldest); if (previous != null) previous.clearMaeveAttention();
+        }
+        departing.put(actor.getUUID(), new Executor(actor.getUUID(), player,
+                actor.level().dimension().location().toString(), observed.immutable(), now()));
     }
 
     private ArchitectEntity actor(Executor ref) {

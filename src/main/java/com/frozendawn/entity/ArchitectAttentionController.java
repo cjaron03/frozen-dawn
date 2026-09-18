@@ -24,11 +24,14 @@ final class ArchitectAttentionController {
         if (away.lengthSqr() < .01) away = new Vec3(1, 0, 0);
         walkUntil = now() + 200; ignoreUntil = now() + 600; nextStep = 0; destination = null;
         actor.cancelMaeveAttentionWork();
-        actor.recordDecision("MAEVE_ATTENTION_EVICTED", null, "concern=" + kind + " observed=" + lastObserved + " player=" + player);
+        actor.setReconnaissanceEyes(kind.startsWith("RECON"));
+        actor.recordDecision(kind.startsWith("RECON_") ? "MAEVE_RECON_EXTRACTION" : "MAEVE_ATTENTION_EVICTED", null,
+                "concern=" + kind + " observed=" + lastObserved + " player=" + player);
     }
 
     boolean tick() {
-        if (releasedPlayer == null || now() >= walkUntil) return false;
+        if (releasedPlayer == null) return false;
+        if (now() >= walkUntil) { actor.setReconnaissanceEyes(false); return false; }
         actor.getNavigation().stop(); actor.setTarget(null); actor.setMaeveHolding(false);
         actor.setCommitmentAction(false); actor.setSprinting(false);
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
@@ -74,6 +77,7 @@ final class ArchitectAttentionController {
     boolean active() { return releasedPlayer != null && now() < ignoreUntil; }
     void clear() {
         releasedPlayer = null; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
+        actor.setReconnaissanceEyes(false);
         actor.getNavigation().stop(); actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }
 }

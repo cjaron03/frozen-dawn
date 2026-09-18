@@ -92,6 +92,18 @@ final class WorldModel {
         return true;
     }
 
+    void survey(MaeveDirector.AccessHint hint, String state, ObservedEvidence evidence) {
+        Point point = points.get(key("ACCESS_POINT", evidence.dimension(), hint.outside()));
+        if (point == null || !List.of("OPEN", "BLOCKED").contains(state)) return;
+        if (!point.state.equals(state)) {
+            point.previousConfidence = point.confidence(evidence.time());
+            point.contradictions = BeliefPolicy.increment(point.contradictions);
+        }
+        point.inside = hint.inside();
+        point.observe(state, evidence, .9);
+        seen(evidence.dimension(), hint.outside(), evidence.time());
+    }
+
     MaeveDirector.SpatialTarget resolve(String dimension, String pattern, BlockPos observer, long now) {
         BlockPos centroid = center(dimension);
         if (centroid == null) return null;
