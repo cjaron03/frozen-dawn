@@ -48,7 +48,7 @@ New unit cases cover bearing resolution, blocked replacement and reopening, cont
 
 Automated results on 2026-09-17: 572 unit tests, 82 regression GameTests (77 required), 582 stress-run GameTests (500 required seeded cases), and eight gate-harness tests all passed. The shared geometry fixtures and seeds were retained. Build fingerprint: `67be2b22cf0b756b695fce6a3522d636d6bbd8869b1c288bf87afbd4fe816019`.
 
-Automated evidence is necessary but does not satisfy §9.19's live exit criterion. Keep the PR draft until the open entrance and sealed entrance replays below have actual player observations and dumps.
+Automated evidence is necessary but does not satisfy §9.19's live exit criterion. The live gate was completed on 2026-09-17; the accepted replay and direct dumps are recorded below.
 
 ## Live shelter replay
 
@@ -60,7 +60,7 @@ Automated evidence is necessary but does not satisfy §9.19's live exit criterio
 4. Run `/function maeve_world:sealed`. This dismisses the old actor, seals the east doorway with stone, offers a direct pre-discovery dump link, and starts the quiet gap. Click `/tick sprint 640t`, then run `/function maeve_world:blocked`. Watch from the marked outside position. This replay pauses and exports the actor trace after 30 seconds. Click its direct dump link to record the discovery explanation.
 5. Describe the approach, position held, inspection of the wall, and what it did afterward. Preserve `run-lab/logs/latest.log` and the actor export paths printed by `/fd architect dump`.
 
-The completion counter only measures the exercise; it does not prove acceptance by Maeve. Before declaring the gate passed, inspect five distinct supported encounters, the selected real ACCESS_POINT, its unchanged OPEN state immediately after sealing, an actual `OBSERVED_ACCESS_OBSTRUCTION` with observer and wall position, reduced bearing confidence, the 60-tick inspection and subsequent release. If normal play does not make those events visible, fix that gap before merging. Current live result: **the open hold was visible; the sealed discovery comparison remains pending**.
+The completion counter only measures the exercise; it does not prove acceptance by Maeve. Before declaring the gate passed, inspect five distinct supported encounters, the selected real ACCESS_POINT, its unchanged OPEN state immediately after sealing, an actual `OBSERVED_ACCESS_OBSTRUCTION` with observer and wall position, reduced bearing confidence, the 60-tick inspection and subsequent release. If normal play does not make those events visible, fix that gap before merging. Current live result: **passed on 2026-09-17**. The open hold was visible, and the accepted sealed replay below proves actual discovery, updated knowledge and subsequent recovery.
 
 ### First shelter replay and fixture correction (2026-09-17)
 
@@ -71,3 +71,20 @@ Sealed trace `f8fe6e6b-5e1b-4f96-9e77-5ef3bf8e0aeb` consequently contains ordina
 The fixture now ends future open comparisons earlier, reports invalid command stages instead of silently doing nothing, and prompts for direct dumps. Invoking `blocked` again after the sealed round ended was the reported no-op; it had already run once and reached stage 6. `/function maeve_world:retry_blocked` preserves the current history, reopens the doorway for one genuine extra observed crossing, dismisses the observer, seals it again and starts a fresh quiet gap. For this recorded 0.65-confidence state, one additional encounter can raise east confidence to 0.85. After `/tick sprint 640t`, inspect `/fd maeve dump` before launching `blocked` again. No thresholds, contribution values or cooldowns are changed. If later retries have different history, inspect their actual confidence instead of assuming one crossing is enough.
 
 Local evidence: `build/maeve-slice4-evidence/first-live/` contains the captured log, both traces and their assessment. The test world contains only its normal tactical save and actor trace exports; no permanent belief archive is added inside it.
+
+### Accepted sealed-side discovery (2026-09-17)
+
+The user reported: “so it looked a the wall, thinked for a bit, then instanlty started attacking me”. This was an informed spatial replay; Slice 4 requires visible discovery, while the separate Slice 3 blind gate was completed before this branch began.
+
+One additional ordinary outward crossing, witnessed at game tick 157480 by observer `94ec6a26-be19-44b2-8cae-649c1cf4464b`, raised east confidence from 0.65 to 0.85 without injecting a belief or resetting history. The pre-encounter dump retained six supporting encounters, cleared east cooldown, and still described the sealed east access at `(309,101,308)` as OPEN with confidence 0.80. The quiet gap exceeded the unchanged 600 ticks.
+
+Accepted run: `e4564dff-dfc7-4e5a-bcbc-80379f6625ab`; actor `a8f9b532-f35c-4b4d-a5f4-af19ef438c0e`; start game tick 159480; 600 recorded ticks, 128 retained events, zero dropped. Trace SHA-256: `19c0bbb47fec46466abf485ae62b00218bb8969407ff2f503091404df100bc58`. The live source fingerprint matches the automated build above; the fixture-only correction did not change the production jar.
+
+- At game tick 159520, it chose `WATCH_ACCESS_POINT`, east confidence 0.85, recovery cost 13, goal `(309,101,308)`, based on the earlier witnessed crossing `(307,101,308) -> (309,101,308)`.
+- At tick 159580 (run tick 100), `MAEVE_ACCESS_DISCOVERY` recorded the actual obstruction at `(307,101,308)`, and the trace changed from APPROACH to OBSERVE. The actor looked at the wall; the user noticed the thinking pause.
+- The policy held the inspection for 60 ticks. Ordinary approach resumed at run tick 164, ATTACK_MELEE at 184, and the first melee hit at 194. This supports the user's description of combat resuming after the brief inspection.
+- The direct post-replay dump records `DISCOVERY_REPLAN`, the same selected goal and inherited observation, `ACCESS_POINT_DIRECTLY_DISPROVED`, east confidence **0.85 -> 0.20**, and contradiction count **1 -> 2**. The old OPEN confidence fell from 0.80 to 0.15; fresh replacement state is **BLOCKED at 0.90** with `OBSERVED_ACCESS_OBSTRUCTION` provenance. East is on next-encounter cooldown.
+
+These observations complete §9.19's Slice 4 condition: commitments resolve to real access points, and sealing a side produces the §9.3a discovery event in play. After that sequence, ordinary pursuit continued toward the edge of the finite QA platform and the target left its height; that later behavior is not used to claim spatial-route coverage on arbitrary terrain.
+
+Accepted local evidence: `build/maeve-slice4-evidence/accepted-discovery/` contains both direct dumps, the complete actor trace, build identity and assessment. Automated bounds, save compatibility, event filtering and multiplayer isolation remain covered by the required gates; this single-player replay makes no claim of a new two-client soak.
