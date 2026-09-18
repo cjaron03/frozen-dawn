@@ -1,0 +1,175 @@
+package com.frozendawn.maeve;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.gametest.GameTestTemplates;
+import com.frozendawn.homo.PostMaeveWorldState;
+import java.util.UUID;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder(FrozenDawn.MOD_ID)
+@PrefixGameTestTemplate(false)
+public final class MaeveReconnaissanceGameTest {
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconReplayPracticeAndNativeFunctionsWork(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 31, 2, scene -> {
+            for (String name : java.util.List.of("setup", "initialize", "cleanup", "next_site", "advance", "crossed", "ready",
+                    "start", "tick", "finish", "sealed", "status", "walk_prompt", "practice_0", "practice_1", "practice_2",
+                    "crossing_0", "crossing_1", "crossing_2", "encounter_0", "encounter_1", "encounter_2")) {
+                helper.assertTrue(scene.server.getFunctions().get(net.minecraft.resources.ResourceLocation.parse("macs_recon:" + name)).isPresent(),
+                        "Native command parser accepts live function " + name);
+            }
+            MaeveWorldModelGameTest.shelter(scene);
+            for (int x = 2; x <= 5; x++) for (int y = 0; y < 4; y++) {
+                scene.block(x, y, 3, Blocks.OAK_PLANKS.defaultBlockState()); scene.block(x, y, 7, Blocks.OAK_PLANKS.defaultBlockState());
+            }
+            for (int z = 3; z <= 7; z++) for (int y = 0; y < 4; y++) {
+                scene.block(2, y, z, Blocks.OAK_PLANKS.defaultBlockState());
+                if (z != 5 || y == 3) scene.block(5, y, z, Blocks.OAK_PLANKS.defaultBlockState());
+            }
+            for (int x = 11; x <= 13; x++) for (int z = 4; z <= 6; z++) for (int y = 0; y < 4; y++) {
+                boolean air = x == 12 && z == 5 && y < 3 || x == 11 && z == 5 && y >= 1 && y <= 2;
+                scene.block(x, y, z, (air ? Blocks.AIR : Blocks.BEDROCK).defaultBlockState());
+            }
+            long now = scene.gameTime + 1;
+            for (int offset : new int[]{0, 7, 19}) {
+                var player = scene.player("recon_practice_" + offset, 4, 5); player.setYRot(-90);
+                var witness = scene.architect(12, 5);
+                for (int i = 0; i < 120; i++) {
+                    if (i >= 60 && i < 100) player.setPos(scene.position(4, 5).add((i - 59) / 10.0, 0, 0));
+                    tick(scene, witness, now + offset + i);
+                }
+                helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).stream().anyMatch(p -> p.label().equals("ACCESS_POINT")),
+                        "Live booth and three-second warmup must witness the walking crossing at offset " + offset);
+                helper.assertTrue(player.getHealth() == player.getMaxHealth(), "Practice observer cannot reach and hit the player");
+                witness.setNoAi(true); witness.discard(); player.discard(); now += 1000;
+            }
+        });
+    }
+
+    private static long history(MaeveObservationGameTest.Scene scene, MaeveObservationGameTest.TestPlayer player) {
+        MaeveWorldModelGameTest.shelter(scene);
+        var witness = scene.architect(10, 5);
+        long now = (scene.gameTime / 20 + 1) * 20;
+        MaeveWorldModelGameTest.sample(scene, witness, player, now, 4, 5);
+        MaeveWorldModelGameTest.sample(scene, witness, player, now + 10, 6, 5);
+        witness.discard(); player.setPos(scene.position(12, 12));
+        scene.clock(now + 650); MaeveDirector.tick(scene.server);
+        return now + 650;
+    }
+    private static void tick(MaeveObservationGameTest.Scene scene, ArchitectEntity actor, long now) {
+        scene.clock(now); actor.tickCount++; actor.tick();
+        NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor)); MaeveDirector.tick(scene.server);
+    }
+    private static ArchitectEntity scout(MaeveObservationGameTest.Scene scene) {
+        var actor = scene.architect(18, 5); actor.tickCount = 80; actor.setOnGround(true); actor.setDeltaMovement(Vec3.ZERO); return actor;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconSurveysAndLeavesThroughRealAi(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 27, scene -> {
+            var player = scene.player("recon_witnessed", 4, 5); long now = history(scene, player); var actor = scout(scene);
+            float health = player.getHealth(); boolean thinking = false, purple = false; MaeveDirector.MissionPacket inherited = null;
+            for (int i = 0; i < 400; i++) {
+                tick(scene, actor, now + i);
+                var packet = MaeveDirector.missionPacket(actor);
+                if (packet != null) inherited = packet;
+                thinking |= actor.isHoldingMaevePosition(); purple |= actor.hasReconnaissanceEyes();
+            }
+            var views = MaeveDirector.missionSnapshots(scene.server, player.getUUID());
+            helper.assertTrue(inherited != null && views.stream().anyMatch(s -> s.outcome().equals("SURVEY_COMPLETE") && s.report().equals("OPEN")),
+                    "Actual entity AI must inspect and finish its non-combat mission: " + views);
+            helper.assertTrue(thinking && purple && player.getHealth() == health, "Survey has existing thinking pose and purple eyes, without attacking the player");
+            helper.assertTrue(actor.getX() > scene.position(16, 5).x && actor.getTarget() == null, "Scout visibly extracts after inspecting the entrance");
+            helper.assertTrue(inherited.access().confidence() == .2 && inherited.access().source().action().equals("WITNESSED_SKY_BOUNDARY_CROSSING"),
+                    "Inherited packet remains the original incomplete observation");
+            var point = MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst();
+            helper.assertTrue(point.confidence() >= .9 && point.provenance().getLast().action().equals("RECON_INSPECTED_ACCESS_OPEN"), "Report updates only locally inspected access");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().isEmpty(), "Completed survey releases its concern");
+            var saved = MaeveSavedData.get(scene.server).save(new CompoundTag(), scene.level.registryAccess());
+            scene.storage(MaeveSavedData.load(saved, scene.level.registryAccess()));
+            helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, player.getUUID()).isEmpty() && !actor.hasReconnaissanceEyes(), "Reload drops packets, role cue and transient history");
+            helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst().confidence() >= .9, "The witnessed report survives save/load");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconCannotReportHiddenAccessAndDiscoversVisibleSeal(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 28, scene -> {
+            var player = scene.player("recon_seal", 4, 5); long now = history(scene, player); var actor = scout(scene);
+            helper.assertTrue(MaeveDirector.requestReconnaissance(actor, player), "Valid historical uncertainty produces a packet");
+            for (int z = 3; z <= 7; z++) for (int y = 0; y < 3; y++) scene.block(5, y, z, Blocks.STONE.defaultBlockState());
+            helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst().state().equals("OPEN"), "Unseen construction cannot alter stored knowledge");
+            helper.assertTrue(MaeveDirector.inspectMission(actor).equals("UNSEEN"), "Far observer cannot inspect the crossing remotely");
+            actor.setPos(scene.position(9, 5));
+            for (int y = 0; y < 4; y++) for (int z = 3; z <= 7; z++) scene.block(7, y, z, Blocks.STONE.defaultBlockState());
+            scene.clock(now + 20);
+            helper.assertTrue(MaeveDirector.inspectMission(actor).equals("UNSEEN"), "An unrelated nearer wall does not reveal the remembered entrance");
+            for (int y = 0; y < 4; y++) for (int z = 3; z <= 7; z++) scene.block(7, y, z, Blocks.AIR.defaultBlockState());
+            scene.clock(now + 40);
+            helper.assertTrue(MaeveDirector.inspectMission(actor).equals("BLOCKED"), "Visible seal is reported after actual local inspection");
+            var point = MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst();
+            helper.assertTrue(point.state().equals("BLOCKED") && point.contradictions() == 1 && point.confidence() == .9,
+                    "Local report contradicts old access without inventing a player tendency");
+            helper.assertTrue(scene.beliefs(player).getFirst().confidence() == .2, "Geometry inspection does not assert a player retreat habit");
+            tick(scene, actor, now + 41);
+            helper.assertTrue(actor.hasReconnaissanceEyes(), "Admitted mission synchronizes its eye color");
+            helper.assertTrue(scene.hit(actor, player, false, 1) && MaeveDirector.missionPacket(actor) == null && !actor.hasReconnaissanceEyes(),
+                    "Real damage ends the survey and clears its cue for local self-defense");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconEvictionPreservesUncertaintyAndErasureClearsEverything(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 29, scene -> {
+            scene.phase.setPresetName("cinematic"); var player = scene.player("recon_pressure", 4, 5);
+            long now = history(scene, player); var actor = scout(scene);
+            helper.assertTrue(MaeveDirector.requestReconnaissance(actor, player), "Scout admitted");
+            var other = scene.player("recon_other", 15, 10); var watcher = scene.architect(18, 10);
+            scene.clock(now); MaeveDirector.observeAttention(watcher, other);
+            var third = scene.player("recon_third", 14, 11); var newcomer = scene.architect(18, 11);
+            scene.clock(now + 99); MaeveDirector.observeAttention(newcomer, third);
+            helper.assertTrue(MaeveDirector.missionPacket(actor) != null, "Minimum dwell protects a newly admitted mission");
+            scene.clock(now + 100); MaeveDirector.observeAttention(newcomer, third);
+            helper.assertTrue(MaeveDirector.missionPacket(actor) == null && actor.isMaeveDisengaging(), "Player pressure visibly abandons reconnaissance first");
+            helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst().confidence() == .2, "Unanswered uncertainty is retained after eviction");
+            helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, other.getUUID()).isEmpty(), "Packet diagnostics isolate players");
+            PostMaeveWorldState.setForDebug(scene.server, true);
+            helper.assertTrue(!actor.hasReconnaissanceEyes() && !actor.isMaeveDisengaging()
+                    && MaeveDirector.missionSnapshots(scene.server, null).isEmpty(), "Erasure immediately releases scout, departure and retained packet history");
+            helper.assertTrue(!MaeveSavedData.get(scene.server).save(new CompoundTag(), null).contains("beliefs"), "No packet or observations survive in an erased save");
+            PostMaeveWorldState.setForDebug(scene.server, false);
+            helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, null).isEmpty(), "Debug reset starts empty");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconRequiresHistoryAndOrdinaryVisibleObserver(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 30, scene -> {
+            var player = scene.player("recon_eligible", 4, 5); var actor = scout(scene);
+            helper.assertTrue(!MaeveDirector.requestReconnaissance(actor, player), "Unknown shelter geometry is never invented");
+            long now = history(scene, player);
+            var master = scout(scene); master.bindToHearthMasterArchitect(UUID.randomUUID(), scene.origin, 0);
+            helper.assertTrue(!MaeveDirector.requestReconnaissance(master, player) && !master.hasReconnaissanceEyes(), "Master guardian is unchanged and receives no packet");
+            actor.setNoAi(true); helper.assertTrue(!MaeveDirector.requestReconnaissance(actor, player), "NoAI excluded"); actor.setNoAi(false);
+            for (int y = 0; y < 4; y++) for (int z = 0; z <= 12; z++) scene.block(15, y, z, Blocks.STONE.defaultBlockState());
+            helper.assertTrue(!MaeveDirector.requestReconnaissance(actor, player), "Through-wall target selection cannot supply an admission");
+            for (int y = 0; y < 4; y++) for (int z = 0; z <= 12; z++) scene.block(15, y, z, Blocks.AIR.defaultBlockState());
+            var other = scene.player("recon_no_history", 12, 11);
+            helper.assertTrue(!MaeveDirector.requestReconnaissance(actor, other), "A second player cannot inherit someone else's entrance");
+            helper.assertTrue(MaeveDirector.requestReconnaissance(actor, player), "Visible ordinary observer can receive its subject's packet");
+            scene.clock(now + MissionPlanner.TIMEOUT); MaeveDirector.tick(scene.server);
+            // TIMEOUT need not coincide with the once-per-second lifecycle boundary.
+            scene.clock((now + MissionPlanner.TIMEOUT + 19) / 20 * 20); MaeveDirector.tick(scene.server);
+            helper.assertTrue(MaeveDirector.missionPacket(actor) == null, "Abandoned executor is bounded by a hard deadline");
+        });
+    }
+}

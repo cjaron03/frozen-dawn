@@ -51,6 +51,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 new MasterArchitectAdornmentModel(
                         context.bakeLayer(MasterArchitectAdornmentModel.LAYER_LOCATION)));
         this.addLayer(this.masterAdornmentLayer);
+        this.addLayer(new ArchitectReconnaissanceEyesLayer(this));
     }
 
     /** Shared by the distant sky face so it samples the exact live entity texture. */

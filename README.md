@@ -265,6 +265,7 @@ command index.
 | `/fd aggregate ...` | Aggregate pressure, encounter actions, and Stillpoint field |
 | `/fd suit ...` | Suit integrity and Hearthrot |
 | `/fd lore ...` | Thaeven records, carriers, and semantic state |
+| `/fd maeve status\|dump\|explain` | MACS (Maeve–Architect Cognitive System) observation, attention and mission diagnostics |
 
 Primary `status` commands show a compact operator summary. Add `verbose` for
 schema versions, UUID bindings, exact ticks, seeds, and reconciliation counters;

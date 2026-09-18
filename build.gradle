@@ -391,5 +391,14 @@ tasks.register('generateMaeveAttentionQa', Exec) {
     commandLine 'python3', '-B', 'tools/prepare_maeve_attention_playtest.py', '--pack-only', maeveAttentionQaResources.get().asFile.absolutePath
 }
 sourceSets.gameTest.resources.srcDir(maeveAttentionQaResources)
+
+def macsReconQaResources = layout.buildDirectory.dir('generated/macs-recon-qa')
+tasks.register('generateMacsReconQa', Exec) {
+    inputs.file('tools/prepare_macs_recon_playtest.py')
+    outputs.dir(macsReconQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_recon_playtest.py', '--pack-only', macsReconQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsReconQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsReconQa') }
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveAttentionQa') }
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveWorldQa') }

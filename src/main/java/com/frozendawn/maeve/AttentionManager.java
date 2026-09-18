@@ -69,8 +69,9 @@ final class AttentionManager {
     boolean replace(Key previous, Key next, long now) {
         Slot slot = slots.remove(previous);
         if (slot == null) return false;
-        slots.put(next, new Slot(next, slot.admittedAt()));
-        event(new Event(now, "PROMOTED", previous, next));
+        boolean promotion = next.kind().ordinal() >= previous.kind().ordinal();
+        slots.put(next, new Slot(next, promotion ? slot.admittedAt() : now));
+        event(new Event(now, promotion ? "PROMOTED" : "REASSIGNED", previous, next));
         return true;
     }
 

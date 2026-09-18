@@ -22,11 +22,13 @@ public final class MaeveDirector {
     private static final Map<MinecraftServer, MaeveDirector> SERVERS = new IdentityHashMap<>();
     private final MaeveSavedData data;
     private final AttentionCoordinator attention;
+    private final MissionPlanner missions;
     private long lastContactTick = Long.MIN_VALUE;
 
     private MaeveDirector(MinecraftServer server) {
         data = MaeveSavedData.get(server);
         attention = new AttentionCoordinator(server, data);
+        missions = new MissionPlanner(server, data, attention); attention.bind(missions);
     }
 
     private static MaeveDirector current(MinecraftServer server) {
@@ -34,7 +36,7 @@ public final class MaeveDirector {
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
         ApocalypseState apocalypse = ApocalypseState.get(server);
         boolean erased = PostMaeveWorldState.isErased(server);
-        if (erased) { CommitmentCoordinator.stopAll(server, director.data.store()); director.attention.clear(); }
+        if (erased) { CommitmentCoordinator.stopAll(server, director.data.store()); director.missions.clear(); director.attention.clear(); }
         director.data.synchronize(erased,
                 PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress()));
         return director;
@@ -45,6 +47,7 @@ public final class MaeveDirector {
         long now = server.overworld().getGameTime();
         if (now % 20 != 0 || now == director.lastContactTick || director.data.store() == null) return;
         director.lastContactTick = now;
+        director.missions.tick();
         director.attention.tick();
         if (ObservationCollector.refreshContacts(server, director.data.store(), now)) director.data.setDirty();
     }
@@ -74,6 +77,7 @@ public final class MaeveDirector {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");
         MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
         CommitmentCoordinator.stopAll(server, director.data.store());
+        director.missions.clear();
         director.attention.clear();
         director.data.erase();
         director.lastContactTick = Long.MIN_VALUE;
@@ -81,7 +85,7 @@ public final class MaeveDirector {
 
     public static void onServerStopped(MinecraftServer server) {
         var director = SERVERS.remove(server);
-        if (director != null) director.attention.clear();
+        if (director != null) { director.missions.clear(); director.attention.clear(); }
     }
 
     /** Immutable diagnostic snapshots; execution receives only bounded historical hints/directives. */
@@ -110,10 +114,11 @@ public final class MaeveDirector {
         var store = current(server).data.store();
         if (store == null) return beliefs;
         if (player == null) return java.util.stream.Stream.concat(beliefs.stream(),
-                AttentionCoordinator.format(attentionSnapshot(server)).stream()).toList();
+                java.util.stream.Stream.concat(AttentionCoordinator.format(attentionSnapshot(server)).stream(),
+                        MissionPlanner.format(missionSnapshots(server, null)).stream())).toList();
         return java.util.stream.Stream.of(beliefs, CommitmentDiagnostics.format(commitmentSnapshot(server, player)),
                 WorldDiagnostics.format(store.world(player), server.overworld().getGameTime()),
-                AttentionCoordinator.format(attentionSnapshot(server))).flatMap(List::stream).toList();
+                AttentionCoordinator.format(attentionSnapshot(server)), MissionPlanner.format(missionSnapshots(server, player))).flatMap(List::stream).toList();
     }
 
     public static CommitmentSnapshot commitmentSnapshot(MinecraftServer server, UUID player) {
@@ -167,9 +172,12 @@ public final class MaeveDirector {
 
     /** Coarse local presence samples: both sides of a crossing require the same observer's sight. */
     public static void observePresence(ArchitectEntity observer) {
+        if (observer.getTarget() instanceof ServerPlayer player) observePresence(observer, player);
+    }
+    public static void observePresence(ArchitectEntity observer, ServerPlayer player) {
         if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         var director = current(observer.getServer());
-        if (director.data.store() != null && observer.getTarget() instanceof ServerPlayer player) {
+        if (director.data.store() != null) {
             SpatialObservations.presence(director.data.store(), observer, player, observer.getServer().overworld().getGameTime());
             if (observer.getServer().overworld().getGameTime() % 20 == 0) director.attention.observe(observer, player);
             director.data.setDirty();
@@ -201,6 +209,21 @@ public final class MaeveDirector {
     }
 
     public static AttentionSnapshot attentionSnapshot(MinecraftServer server) { return current(server).attention.snapshot(); }
+    public static boolean requestReconnaissance(ArchitectEntity actor, ServerPlayer player) { return current(player.getServer()).missions.request(actor, player); }
+    public static MissionPacket missionPacket(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).missions.packet(actor); }
+    public static String inspectMission(ArchitectEntity actor) { return current(actor.getServer()).missions.sample(actor); }
+    public static void finishMission(ArchitectEntity actor, String reason, boolean withdraw) {
+        if (actor.getServer() != null) current(actor.getServer()).missions.finish(actor, reason, withdraw);
+    }
+    public static List<MissionSnapshot> missionSnapshots(MinecraftServer server, UUID player) { return current(server).missions.snapshots(player); }
+    public record AccessHint(BlockPos outside, BlockPos inside, String state, double confidence, EvidenceSnapshot source) {
+        public AccessHint { outside = outside.immutable(); inside = inside.immutable(); }
+    }
+    public record MissionPacket(UUID id, UUID player, UUID observer, UUID encounter, String dimension, String objective,
+                                AccessHint access, List<BlockPos> dangers, List<String> orders, List<String> alternatives, long issuedAt, long expiresAt) {
+        public MissionPacket { dangers = dangers.stream().map(BlockPos::immutable).toList(); orders = List.copyOf(orders); alternatives = List.copyOf(alternatives); }
+    }
+    public record MissionSnapshot(MissionPacket packet, String outcome, String report, long time) { }
     public static void observeAttention(ArchitectEntity observer, ServerPlayer player) {
         if (observer.getServer() != null && !observer.isMasterArchitectVisual()) current(observer.getServer()).attention.observe(observer, player);
     }
