@@ -75,7 +75,7 @@ public final class MaeveLearningGameTest {
     public static void maeveLearningReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_learning") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 30, "The full integrated replay pack must be included");
+        helper.assertTrue(resources.size() == 36, "The full integrated replay pack, including the two optional follow-ups, must be included");
         resources.forEach((file, resource) -> {
             String path = file.getPath().substring("function/".length()).replace(".mcfunction", "");
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_learning", path);

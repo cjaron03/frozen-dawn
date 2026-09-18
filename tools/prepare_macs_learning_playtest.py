@@ -12,7 +12,7 @@ def message(text, command=None, color='aqua'):
     return 'tellraw @a[tag=macs_learning] ' + json.dumps(value)
 
 SCRIPTS = {
-    'load': 'scoreboard objectives add ml dummy',
+    'load': 'scoreboard objectives add ml dummy\nexecute unless score #last ml matches 3..5 run scoreboard players set #last ml 3',
     'cleanup': 'execute as @e[tag=macs_learning_actor] run fd architect dump @s\nexecute as @e[tag=macs_learning_actor] run data merge entity @s {NoAI:1b}\nkill @e[tag=macs_learning_actor]',
     'setup': '''function macs_learning:load
 execute unless score #initialized ml matches 1 run function macs_learning:initialize
@@ -21,6 +21,8 @@ execute if score #initialized ml matches 1 run function macs_learning:status''',
 scoreboard players set #round ml 0
 scoreboard players set #stage ml 0
 scoreboard players set #counter ml 0
+scoreboard players set #last ml 3
+scoreboard players set #topupdone ml 0
 execute as @e[tag=maeve_focus_actor] run data merge entity @s {NoAI:1b}
 kill @e[tag=maeve_focus_actor]
 fd postmaeve set-erased
@@ -57,21 +59,33 @@ tp @a[tag=macs_learning] 760.5 101 762.5
     'finish': '''scoreboard players set #stage ml 5
 execute as @e[tag=macs_learning_actor] run fd architect dump @s
 execute as @e[tag=macs_learning_actor] run data merge entity @s {NoAI:1b}
-''' + message('Paused after 23 seconds. Describe what happened, then click for /fd maeve dump. Keep this dump before Next.', '/fd maeve dump') + '\n' + message('Next uses another entrance; after four rounds it prepares the counter test.', '/function macs_learning:next', 'green'),
+''' + message('Paused after 23 seconds. Describe what happened, then click for /fd maeve dump. Keep this dump before Next.', '/fd maeve dump') + '\n' + message('Next continues practice or prepares the counter comparison.', '/function macs_learning:next', 'green'),
     'next': '''execute if score #stage ml matches 5 run function macs_learning:advance''',
     'advance': '''function macs_learning:cleanup
 scoreboard players add #round ml 1
-execute if score #round ml matches ..3 run function macs_learning:practice
-execute if score #round ml matches 4.. run function macs_learning:counter_gap''',
+execute if score #round ml <= #last ml run function macs_learning:practice
+execute if score #round ml > #last ml run function macs_learning:counter_gap''',
+    'top_up': 'execute if score #stage ml matches 9..10 unless score #topupdone ml matches 1 run function macs_learning:top_up_start',
+    'top_up_start': '''function macs_learning:cleanup
+scoreboard players set #topupdone ml 1
+scoreboard players set #last ml 5
+scoreboard players set #round ml 4
+effect give @a[tag=macs_learning] minecraft:resistance infinite 4 true
+effect give @a[tag=macs_learning] minecraft:instant_health 1 4 true
+forceload add 830 688 918 732
+fill 830 100 688 914 100 732 minecraft:stone
+function macs_learning:practice''',
     'counter_gap': '''function macs_learning:cleanup
 scoreboard players set #stage ml 6
 scoreboard players set #timer ml 0
 tp @a[tag=macs_learning] 760.5 101 762.5
 ''' + message('Counter round: sprint only this empty gap and wait for Ready.', '/tick sprint 620t', 'yellow'),
-    'counter_ready': 'scoreboard players set #stage ml 7\n' + message('Ready for the counter. Follow if it steps away, keep about five blocks apart, then land a bow hit while it holds. Keep it alive. Click Start.', '/function macs_learning:counter', 'green'),
+    'counter_ready': 'scoreboard players set #stage ml 7\n' + message('Ready. Stay on green until it backs away, then follow onto gold. Stay there and land one bow hit while it holds. Keep it alive. Click Start.', '/function macs_learning:counter', 'green'),
     'counter': 'execute if score #stage ml matches 7 run function macs_learning:counter_start',
     'counter_start': '''function macs_learning:cleanup
 fill 778 101 692 810 105 720 minecraft:air
+setblock 790 100 705 minecraft:green_concrete
+setblock 795 100 705 minecraft:gold_block
 tp @a[tag=macs_learning] 790.5 101 705.5 -90 0
 spawnpoint @s 790 101 705
 effect clear @s minecraft:resistance
@@ -99,6 +113,7 @@ effect give @s minecraft:resistance infinite 4 true
     'status': '''scoreboard players list #round
 scoreboard players list #stage
 scoreboard players list #counter
+scoreboard players list #last
 ''' + message('Stages: 1 crossing; 2 empty gap; 3 scout ready; 4 scouting; 5 describe/dump/Next; 6 counter gap; 7 counter ready; 8 counter running; 9 describe/dump/Repeat; 10 stopped.'),
     'tick': '''execute if score #stage ml matches 1..2 run scoreboard players add #timer ml 1
 execute if score #stage ml matches 4 run scoreboard players add #timer ml 1
@@ -112,7 +127,7 @@ execute if score #stage ml matches 8 if score #timer ml matches 520.. run functi
 
 SCRIPTS['tick'] += '\nexecute if score #stage ml matches 1 if score #timer ml matches 60 run ' + message('Walk from blue through the doorway to gold now. Wait on gold for the crossing confirmation.', color='green')
 
-for index in range(4):
+for index in range(6):
     x = 704 + index * 32
     # Alternate entering/exiting so practice does not establish an unrelated four-exit bearing.
     start, end = (4, 8) if index % 2 == 0 else (8, 4)
@@ -139,7 +154,7 @@ fill {x+12} 101 705 {x+12} 103 705 minecraft:air
 setblock {x+11} 102 705 minecraft:air
 summon frozendawn:architect {x+12}.5 101 705.5 {{Tags:["macs_learning_actor"],PersistenceRequired:1b}}
 tp @a[tag=macs_learning] {x+start}.5 101 705.5
-''' + message(f'Crossing {index+1}/4: pause on blue for three seconds, then walk through the doorway to gold and wait for confirmation. The witness is contained; do not attack it.')
+''' + message(f'{"Crossing " + str(index+1) + "/4" if index < 4 else "Follow-up " + str(index-3) + "/2"}: pause on blue for three seconds, then walk through the doorway to gold and wait for confirmation. The witness is contained; do not attack it.')
     SCRIPTS[f'scout_{index}'] = f'''fill {x+11} 101 704 {x+13} 104 706 minecraft:air
 tp @a[tag=macs_learning] {x+16}.5 101 715.5
 summon frozendawn:architect {x+22}.5 101 705.5 {{Tags:["macs_learning_actor"],PersistenceRequired:1b}}
