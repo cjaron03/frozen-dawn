@@ -6,7 +6,7 @@ Slice 4 makes the existing positioning commitment resolve to a location an Archi
 
 ## Observation rules
 
-An eligible ordinary or Master Architect samples its currently targeted Survival/Adventure player every 10 ticks. Selection of a target only identifies whom to check: the observer still needs its own current line of sight, the same dimension, a living player, and distance at most 48 blocks. Mind copies, Aggregate children, removed/dead observers, and NoAI actors do not report presence. Rays reject unloaded chunks before checking geometry.
+An eligible ordinary Architect samples its currently targeted Survival/Adventure player every 10 ticks. Selection of a target only identifies whom to check: the observer still needs its own current line of sight, the same dimension, a living player, and distance at most 48 blocks. Masters, mind copies, Aggregate children, removed/dead observers, and NoAI actors do not report presence. Rays reject unloaded chunks before checking geometry.
 
 An ACCESS_POINT requires the same observer to see both ends of a covered/open-sky transition in consecutive samples, separated by at most 10 ticks, four blocks of displacement, and one block vertically. Both endpoints must still be visible, and the old position's cover classification must still agree. Missing sight, a skipped sample, a distant teleport, or a server reload breaks continuity. Standing still while someone changes the roof does not create a crossing. This describes an observed sky boundary; it does not identify doors or rooms.
 

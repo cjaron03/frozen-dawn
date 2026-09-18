@@ -31,7 +31,7 @@ final class ObservationCollector {
         if (!(observer.level() instanceof ServerLevel level) || player.level() != level
                 || !player.isAlive() || player.isCreative() || player.isSpectator()
                 || observer.isRemoved() || observer.isNoAi() || (!fatalHit && !observer.isAlive())
-                || observer.isMasterMindCopy() || AggregateReinforcementManager.isChild(observer)
+                || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)
                 || observer.distanceToSqr(player) > RANGE * RANGE) return false;
         // A ray crossing an unloaded chunk must not turn observation into chunk loading.
         int minX = Math.min(observer.blockPosition().getX(), player.blockPosition().getX()) >> 4;
@@ -73,7 +73,7 @@ final class ObservationCollector {
         if (!restorative(consumed) || player.isCreative() || player.isSpectator() || !player.isAlive()) return;
         ArrayList<ArchitectEntity> candidates = new ArrayList<>();
         player.serverLevel().getEntities(EntityTypeTest.forClass(ArchitectEntity.class),
-                player.getBoundingBox().inflate(RANGE), candidate -> true, candidates, MAX_LOCAL_CANDIDATES);
+                player.getBoundingBox().inflate(RANGE), candidate -> !candidate.isMasterArchitectVisual(), candidates, MAX_LOCAL_CANDIDATES);
         // Bound expensive LOS checks. Shared encounter deduplication gives one contribution,
         // while retaining other witnesses for contact continuity if the first one dies.
         candidates.sort(Comparator.comparing(Entity::getUUID));

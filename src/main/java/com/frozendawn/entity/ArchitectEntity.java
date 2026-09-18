@@ -30,6 +30,7 @@ import com.frozendawn.entity.ai.ArchitectBreakPolicy;
 import com.frozendawn.entity.ai.ArchitectMoveControl;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.data.ApocalypseState;
+import com.frozendawn.maeve.MaeveDirector;
 import com.frozendawn.data.PlayerEndStats;
 import com.frozendawn.event.WorldTickHandler;
 import com.frozendawn.homo.HearthArchitectPolicy;
@@ -222,6 +223,7 @@ public class ArchitectEntity extends Monster {
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
+    private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -625,6 +627,11 @@ public class ArchitectEntity extends Monster {
         }
         if (level().isClientSide()) return;
 
+        if (maeveAttention.tick()) {
+            entityData.set(DATA_PURSUIT_POSE, 0);
+            updateHeldItem(); syncRenderState(); return;
+        }
+
         // Defensive: fix surfaceY if it wasn't set (NBT load before positioning)
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY();
         ensureAmbientHelmet();
@@ -670,6 +677,7 @@ public class ArchitectEntity extends Monster {
         // --- Target acquisition ---
         // Architect senses through blocks — always knows target position
         LivingEntity target = findTarget();
+        if (gameTick % 20 == 0 && target instanceof ServerPlayer player) MaeveDirector.observeAttention(this, player);
         UUID selectedTargetId = target == null ? null : target.getUUID();
         if (decisionJournal.enabled() && !java.util.Objects.equals(lastJournalTargetId, selectedTargetId)) {
             lastJournalTargetId = selectedTargetId;
@@ -917,6 +925,21 @@ public class ArchitectEntity extends Monster {
     /** Erasure releases local execution in the same server-thread transition. */
     public void clearMaevePositioning() {
         maeveCommitment.clear();
+    }
+
+    public void beginMaeveDisengagement(UUID player, BlockPos observed, String concern) {
+        maeveAttention.begin(player, observed, concern);
+    }
+
+    public boolean isMaeveDisengaging() { return maeveAttention.active(); }
+    public void clearMaeveAttention() { maeveAttention.clear(); }
+
+    void cancelMaeveAttentionWork() {
+        maeveCommitment.clear(); blockBreaker.clearTarget();
+        approachState.scaffoldTarget = null; approachState.scaffoldDelay = 0;
+        approachState.dstar.cleanup(); approachState.dstarPrecomputed = false;
+        approachState.sprintRequested = false; brainState.setMeleeCommitTicks(0);
+        getNavigation().stop(); setTarget(null); observationController.enterRoamModeAfterTargetLoss();
     }
 
     void triggerReeval() {
@@ -1277,7 +1300,8 @@ public class ArchitectEntity extends Monster {
     }
 
     public boolean isApproachTargetSuppressed(LivingEntity target) {
-        return ArchitectApproachRecovery.isTargetSuppressed(approachState, target.getUUID(), tickCount);
+        return maeveAttention.suppresses(target.getUUID())
+                || ArchitectApproachRecovery.isTargetSuppressed(approachState, target.getUUID(), tickCount);
     }
 
     public int approachRetryTicksRemaining() {
@@ -1487,6 +1511,8 @@ public class ArchitectEntity extends Monster {
             suppressMasterHurtSound = false;
         }
         if (hurt && !level().isClientSide()) {
+            // Local self-defense is independent of Maeve's focus allocation.
+            if (maeveAttention.active() && source.getEntity() instanceof LivingEntity) maeveAttention.clear();
             recordDecision("DAMAGE", blockBreaker.getChoice(),
                     "type=" + source.getMsgId() + " amount=" + amount + " health=" + getHealth());
             if (isHearthAssessor()
@@ -1766,6 +1792,7 @@ public class ArchitectEntity extends Monster {
         if (debugForcedTargetId != null && level() instanceof ServerLevel lockLevel) {
             net.minecraft.world.entity.Entity locked = lockLevel.getEntity(debugForcedTargetId);
             if (locked instanceof LivingEntity lockedLiving && lockedLiving.isAlive()) {
+                if (maeveAttention.suppresses(lockedLiving.getUUID())) return null;
                 return lockedLiving;
             }
             debugForcedTargetId = null; // Locked entity is gone — fall back to normal targeting.
@@ -1850,7 +1877,7 @@ public class ArchitectEntity extends Monster {
         // instead of bookmarking it and starving another eligible player. Apply the
         // same eligibility rule to scoring, presence, and remembered retaliation.
         var targetableIds = ArchitectTargetingSupport.targetablePlayerIds(serverLevel);
-        targetableIds.removeIf(id -> ArchitectApproachRecovery.isTargetSuppressed(
+        targetableIds.removeIf(id -> maeveAttention.suppresses(id) || ArchitectApproachRecovery.isTargetSuppressed(
                 approachState, id, tickCount));
         UUID targetId = roamingCommitment.resolve(candidates, targetableIds);
         if (targetId != null) {

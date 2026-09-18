@@ -130,7 +130,7 @@ public final class MaeveObservationGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
-    public static void maeveIncludesRealMastersAndExcludesProjections(GameTestHelper helper) {
+    public static void maeveExcludesMastersAndProjections(GameTestHelper helper) {
         withScene(helper, 2, scene -> {
             var player = scene.player("maeve_roles", 8, 4);
             var copy = scene.architect(2, 4);
@@ -144,11 +144,22 @@ public final class MaeveObservationGameTest {
             var master = scene.architect(3, 3);
             master.bindToHearthMasterArchitect(UUID.randomUUID(), scene.origin, 0);
             helper.assertTrue(scene.hit(master, player, true, 2), "A real Master must actually take the projectile hit");
-            helper.assertTrue(scene.beliefs(player).getFirst().evidence() == 1, "Real Master damage is eligible evidence");
             player.finish(scene.potion());
-            helper.assertTrue(scene.beliefs(player).size() == 2, "Real Masters can witness completed recovery too");
-            helper.assertTrue(scene.beliefs(player).stream().flatMap(b -> b.provenance().stream())
-                    .allMatch(e -> e.observer().equals(master.getUUID())), "Every retained event must belong to the real Master");
+            master.setTarget(player);
+            MaeveDirector.observePresence(master);
+            helper.assertTrue(scene.beliefs(player).isEmpty()
+                    && MaeveDirector.worldSnapshot(scene.server, player.getUUID()).isEmpty(),
+                    "Masters neither publish combat/recovery observations nor build the spatial model");
+            var ordinary = scene.architect(2, 3);
+            helper.assertTrue(scene.hit(ordinary, player, true, 2), "Ordinary combat still works");
+            player.finish(scene.potion());
+            helper.assertTrue(scene.beliefs(player).size() == 2, "Ordinary Architects still report both actions");
+            ordinary.setTarget(player); MaeveDirector.observePresence(ordinary);
+            scene.hit(master, player, false, master.getMaxHealth() * .3F);
+            helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).stream().noneMatch(point -> point.label().equals("DANGER_ZONE")),
+                    "A Master taking heavy damage cannot add a danger point to an existing ordinary player's model");
+            helper.assertTrue(scene.beliefs(player).stream().flatMap(belief -> belief.provenance().stream())
+                    .allMatch(e -> e.observer().equals(ordinary.getUUID())), "Only ordinary witnesses contribute provenance");
         });
     }
 
@@ -279,10 +290,14 @@ public final class MaeveObservationGameTest {
     }
 
     static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
+        withScene(helper, lane, 1, exercise);
+    }
+
+    static void withScene(GameTestHelper helper, int lane, int radius, Consumer<Scene> exercise) {
         ServerLevel level = helper.getLevel();
         BlockPos origin = helper.absolutePos(new BlockPos(2048 + lane * 512, 100, 2048));
         var acquired = new ArrayList<net.minecraft.world.level.ChunkPos>();
-        for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+        for (int x = -radius; x <= radius; x++) for (int z = -radius; z <= radius; z++) {
             var chunk = new net.minecraft.world.level.ChunkPos((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z);
             if (!level.getForcedChunks().contains(chunk.toLong())) {
                 level.setChunkForced(chunk.x, chunk.z, true);

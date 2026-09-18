@@ -53,7 +53,7 @@ final class SpatialObservations {
 
     static void damage(BeliefStore store, ArchitectEntity observer, DamageSource source, float damage, long now) {
         if (!(damage > 0) || !Float.isFinite(damage) || observer.isNoAi() || observer.isRemoved()
-                || observer.isMasterMindCopy() || AggregateReinforcementManager.isChild(observer)) return;
+                || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)) return;
         ServerPlayer player = source.getEntity() instanceof ServerPlayer p ? p
                 : observer.getTarget() instanceof ServerPlayer p ? p : null;
         if (player == null || player.isCreative() || player.isSpectator() || player.level() != observer.level()) return;
@@ -74,7 +74,7 @@ final class SpatialObservations {
     }
 
     static boolean discover(BeliefStore store, ArchitectEntity observer, MaeveDirector.PositionDirective directive, long now) {
-        if (store == null || directive == null || directive.spatial() == null || directive.obstruction() != null
+        if (store == null || observer.isMasterArchitectVisual() || directive == null || directive.spatial() == null || directive.obstruction() != null
                 || !directive.observer().equals(observer.getUUID()) || !observer.isAlive() || observer.isNoAi()) return false;
         var policy = store.commitmentFor(observer.getUUID(), now);
         var world = store.world(directive.player());
