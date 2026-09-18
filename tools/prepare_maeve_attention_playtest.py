@@ -5,6 +5,7 @@ import gzip
 import json
 import shutil
 from pathlib import Path
+from prepare_maeve_attention_coop import write_pack as write_coop_pack
 
 
 SCRIPTS = {
@@ -44,6 +45,7 @@ def write_pack(pack, game_test=False):
     else:
         for stale in (pack / 'pack.mcmeta', pack / 'data/minecraft/tags/function/load.json'):
             stale.unlink(missing_ok=True)
+    write_coop_pack(pack, game_test)
 
 
 def prepare(source, destination):

@@ -290,10 +290,14 @@ public final class MaeveObservationGameTest {
     }
 
     static void withScene(GameTestHelper helper, int lane, Consumer<Scene> exercise) {
+        withScene(helper, lane, 1, exercise);
+    }
+
+    static void withScene(GameTestHelper helper, int lane, int radius, Consumer<Scene> exercise) {
         ServerLevel level = helper.getLevel();
         BlockPos origin = helper.absolutePos(new BlockPos(2048 + lane * 512, 100, 2048));
         var acquired = new ArrayList<net.minecraft.world.level.ChunkPos>();
-        for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+        for (int x = -radius; x <= radius; x++) for (int z = -radius; z <= radius; z++) {
             var chunk = new net.minecraft.world.level.ChunkPos((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z);
             if (!level.getForcedChunks().contains(chunk.toLong())) {
                 level.setChunkForced(chunk.x, chunk.z, true);
