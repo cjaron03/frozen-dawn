@@ -165,6 +165,31 @@ public final class MaeveReconnaissanceGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconPlayerSwitchReleasesOnlyPriorMembership(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 32, scene -> {
+            scene.phase.setPresetName("cinematic");
+            var subject = scene.player("recon_switch_new", 4, 5); history(scene, subject);
+            var previous = scene.player("recon_switch_old", 12, 5); var actor = scout(scene);
+            var third = scene.player("recon_switch_third", 12, 10); var watcher = scene.architect(18, 10);
+            MaeveDirector.observeAttention(actor, previous); MaeveDirector.observeAttention(watcher, third);
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().size() == 2, "Old tracking fills the capacity");
+            helper.assertTrue(MaeveDirector.requestReconnaissance(actor, subject), "Switching players releases the executor's old slot before admission");
+            var slots = MaeveDirector.attentionSnapshot(scene.server).slots();
+            helper.assertTrue(slots.size() == 2 && slots.stream().noneMatch(s -> s.subject().equals(previous.getUUID()))
+                    && slots.stream().filter(s -> s.executors().contains(actor.getUUID())).count() == 1,
+                    "One actor occupies only its new mission concern");
+            MaeveDirector.finishMission(actor, "TEST_RELEASE", false);
+            var changing = scene.architect(18, 6); var shared = scene.architect(18, 7);
+            MaeveDirector.observeAttention(changing, previous); MaeveDirector.observeAttention(shared, previous);
+            helper.assertTrue(!MaeveDirector.requestReconnaissance(changing, subject), "A shared old concern and other tracking keep both slots occupied");
+            slots = MaeveDirector.attentionSnapshot(scene.server).slots();
+            helper.assertTrue(slots.stream().filter(s -> s.subject().equals(previous.getUUID())).anyMatch(s ->
+                    s.executors().contains(shared.getUUID()) && !s.executors().contains(changing.getUUID())),
+                    "A denied conversion removes only the changing actor, preserving the other player's observer");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void maeveReconRequiresHistoryAndOrdinaryVisibleObserver(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 30, scene -> {
             var player = scene.player("recon_eligible", 4, 5); var actor = scout(scene);

@@ -37,12 +37,16 @@ final class AttentionCoordinator {
                 && (missions == null || missions.packet(actor) == null)
                 && CommitmentCoordinator.directive(data, actor) == null) {
             var key = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
-            for (var previous : new ArrayList<>(executors.keySet())) {
-                if (previous.kind() != AttentionManager.Kind.PASSIVE_TRACKING || previous.equals(key)) continue;
-                var members = executors.get(previous); members.remove(actor.getUUID());
-                if (members.isEmpty()) { executors.remove(previous); manager.release(previous, now()); }
-            }
+            releaseOtherTracking(actor, key);
             admit(key, actor, player);
+        }
+    }
+
+    private void releaseOtherTracking(ArchitectEntity actor, AttentionManager.Key retained) {
+        for (var previous : new ArrayList<>(executors.keySet())) {
+            if (previous.kind() != AttentionManager.Kind.PASSIVE_TRACKING || previous.equals(retained)) continue;
+            var members = executors.get(previous); members.remove(actor.getUUID());
+            if (members.isEmpty()) { executors.remove(previous); manager.release(previous, now()); }
         }
     }
 
@@ -57,8 +61,9 @@ final class AttentionCoordinator {
 
     boolean commitment(ArchitectEntity actor, ServerPlayer player) {
         if (!CommitmentCoordinator.eligible(actor, player)) return false;
-        resize();
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
+        releaseOtherTracking(actor, tracking);
+        resize();
         var commitment = new AttentionManager.Key(AttentionManager.Kind.ACTIVE_COMMITMENT, actor.getUUID());
         var members = executors.get(tracking);
         // A sole tracker taking a position is still one activity. Shared tracking keeps its other executors.
@@ -76,9 +81,10 @@ final class AttentionCoordinator {
     }
 
     boolean reconnaissance(ArchitectEntity actor, ServerPlayer player) {
-        resize();
         if (actor.isMaeveDisengaging()) return false;
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
+        releaseOtherTracking(actor, tracking);
+        resize();
         var mission = new AttentionManager.Key(AttentionManager.Kind.RECONNAISSANCE, actor.getUUID());
         var members = executors.get(tracking);
         if (members != null && members.size() == 1 && members.containsKey(actor.getUUID()) && manager.replace(tracking, mission, now())) {
