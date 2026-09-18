@@ -8,10 +8,17 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class MaeveObservationEvents {
     private MaeveObservationEvents() { }
+
+    @SubscribeEvent
+    public static void onPresence(EntityTickEvent.Post event) {
+        if (event.getEntity() instanceof ArchitectEntity observer && !observer.level().isClientSide()
+                && observer.level().getGameTime() % 10 == 0) MaeveDirector.observePresence(observer);
+    }
 
     @SubscribeEvent
     public static void onDamage(LivingDamageEvent.Post event) {

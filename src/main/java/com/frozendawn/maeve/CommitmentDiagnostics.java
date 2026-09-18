@@ -24,11 +24,13 @@ final class CommitmentDiagnostics {
             lines.add("SELECTED STRATEGY: none; low confidence only biases available utility actions.");
         } else {
             lines.add("DIRECTOR OBJECTIVE: test a historical " + selected.pattern() + " prediction by holding a recoverable position.");
-            lines.add("SELECTED STRATEGY: " + (selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
+            lines.add("SELECTED STRATEGY: " + (selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
                     + " | recoveryCost=" + selected.recoveryCost());
             lines.add("POSITION DIRECTIVE: observer=" + selected.observer() + " subject=" + selected.player()
                     + " position=" + selected.position().toShortString() + " dimension=" + selected.evidence().dimension()
                     + " cover=" + selected.cover());
+            if (selected.spatial() != null) lines.add("OBSERVED CROSSING: " + selected.spatial().inside().toShortString()
+                    + " -> " + selected.spatial().outside().toShortString() + "; discovered obstruction=" + selected.obstruction());
             lines.add("INHERITED EVIDENCE: " + selected.evidence().action() + " tick=" + selected.evidence().time()
                     + " observer=" + selected.evidence().observer() + " encounter=" + selected.evidence().encounter()
                     + " anchor=" + selected.evidence().position().toShortString());

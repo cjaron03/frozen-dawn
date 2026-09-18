@@ -373,3 +373,13 @@ tasks.register('architectMonkeySummary', Exec) {
             '--artifacts', monkeyReports.get().asFile.absolutePath
 }
 tasks.named('runArchitectMonkeyServer') { finalizedBy tasks.named('architectMonkeySummary') }
+
+// Parse the very same disposable-world functions during the mandatory GameTests.
+def maeveWorldQaResources = layout.buildDirectory.dir('generated/maeve-world-qa')
+tasks.register('generateMaeveWorldQa', Exec) {
+    inputs.file('tools/prepare_maeve_world_playtest.py')
+    outputs.dir(maeveWorldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_maeve_world_playtest.py', '--pack-only', maeveWorldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(maeveWorldQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveWorldQa') }

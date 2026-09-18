@@ -129,6 +129,14 @@ public class DStarLitePathfinder {
     private boolean reinitEventLogged = false;
     private boolean searchAborted = false;
     private boolean searchAbortEventLogged = false;
+    private boolean observedWalkOnly;
+    private List<BlockPos> observedDangers = List.of();
+
+    /** A short recoverable positioning route: loaded, level walking only, with observed danger costs. */
+    public void configureObservedWalk(List<BlockPos> dangers) {
+        observedWalkOnly = true;
+        observedDangers = dangers.stream().limit(8).map(BlockPos::immutable).toList();
+    }
 
     // --- Public accessors ---
     public boolean isInitialized() { return initialized; }
@@ -781,6 +789,22 @@ public class DStarLitePathfinder {
     // ========================================
 
     private float edgeCost(long fromPacked, long toPacked, Level level) {
+        if (observedWalkOnly) {
+            BlockPos from = BlockPos.of(fromPacked), to = BlockPos.of(toPacked);
+            if (from.getY() != to.getY() || to.distSqr(goalPos) > 24 * 24
+                    || !level.hasChunkAt(to) || !level.hasChunkAt(from)
+                    || !level.getBlockState(to.below()).isFaceSturdy(level, to.below(), Direction.UP)) return INF;
+            for (int y = 0; y < 3; y++) {
+                var block = to.above(y); var state = level.getBlockState(block);
+                if (!state.getCollisionShape(level, block).isEmpty() || !state.getFluidState().isEmpty()
+                        || state.is(BlockTags.FIRE)) return INF;
+            }
+            var ground = level.getBlockState(to.below());
+            if (ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.CACTUS)) return INF;
+            float penalty = 0;
+            for (BlockPos danger : observedDangers) if (danger.distSqr(to) <= 9) penalty += 4;
+            return BASE_MOVE_COST + Math.min(16, penalty);
+        }
         int fx = BlockPos.getX(fromPacked), fy = BlockPos.getY(fromPacked), fz = BlockPos.getZ(fromPacked);
         int tx = BlockPos.getX(toPacked), ty = BlockPos.getY(toPacked), tz = BlockPos.getZ(toPacked);
         BlockPos fromPos = new BlockPos(fx, fy, fz);
