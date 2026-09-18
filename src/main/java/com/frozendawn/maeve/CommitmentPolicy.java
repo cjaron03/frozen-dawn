@@ -20,6 +20,8 @@ final class CommitmentPolicy {
     static final int APPROACH_TICKS = 100;
     static final int SPATIAL_APPROACH_TICKS = 240;
     static final int WRONG_BEAT_TICKS = 60;
+    private StrategyPerformance performance = new StrategyPerformance();
+    StrategyPerformance performance() { return performance; }
     private final Map<String, Belief> baseline = new LinkedHashMap<>();
     private final Set<String> blocked = new LinkedHashSet<>();
     private final Set<String> blockNext = new LinkedHashSet<>();
@@ -32,6 +34,7 @@ final class CommitmentPolicy {
     private List<String> alternatives = List.of();
 
     void begin(UUID id, List<Belief> previous, long now) {
+        performance.begin(now);
         encounter = id;
         issued = false;
         active = false;
@@ -90,6 +93,9 @@ final class CommitmentPolicy {
         MaeveDirector.PositionCandidate winner = null;
         for (var option : options) {
             String reason = ineligible(option.pattern(), now);
+            var hint = hints(now).stream().filter(h -> h.pattern().equals(option.pattern())).findFirst();
+            if (reason.equals("ELIGIBLE") && hint.isPresent() && performance.deferred(option.pattern(), hint.get().evidence().dimension()))
+                reason = "RECENT_COUNTER_FAILURES";
             if (reason.equals("ELIGIBLE") && winner == null) winner = option;
             else if (reason.equals("ELIGIBLE")) reason = "MORE_COSTLY_TO_ABANDON";
             reasons.add(option.pattern() + " recoveryCost=" + option.recoveryCost() + " " + reason);
@@ -102,6 +108,7 @@ final class CommitmentPolicy {
         selected = new MaeveDirector.PositionDirective(player, observer, encounter, winner.pattern(),
                 hint.get().confidence(), hint.get().evidence(), winner.position(), winner.cover(),
                 winner.recoveryCost(), now, -1, -1, -1, winner.spatial(), null);
+        performance.start(selected);
         issued = true;
         active = true;
         outcome = "APPROACHING";
@@ -124,6 +131,7 @@ final class CommitmentPolicy {
     void arrived(long now) {
         if (active && selected.arrivedAt() < 0) {
             selected = copy(now, now + HOLD_TICKS, selected.contradictedAt());
+            performance.arrived(now);
             outcome = selected.contradictedAt() < 0 ? "HOLDING" : "CONTRADICTED_HOLD";
         }
     }
@@ -150,13 +158,14 @@ final class CommitmentPolicy {
     }
 
     MaeveDirector.PositionDirective active(long now) {
+        performance.clock(now);
         if (active) {
             if (now < selected.startedAt() || now >= deadline()) finish(selected.obstruction() == null ? "TIME_COMPLETE" : "DISCOVERY_REPLAN");
         }
         return active ? selected : null;
     }
 
-    void finish(String reason) { if (active) { active = false; outcome = reason; } }
+    void finish(String reason) { if (active) { active = false; outcome = reason; performance.finish(reason); } }
     MaeveDirector.PositionDirective selected() { return selected; }
     String outcome(long now) {
         if (!active) return outcome;
@@ -174,6 +183,7 @@ final class CommitmentPolicy {
         if (encounter != null) tag.putUUID("encounter", encounter);
         tag.putBoolean("issued", issued);
         tag.putString("outcome", outcome);
+        tag.put("performance", performance.save());
         ListTag beliefs = new ListTag();
         baseline.values().forEach(b -> beliefs.add(b.save()));
         tag.put("baseline", beliefs);
@@ -193,6 +203,7 @@ final class CommitmentPolicy {
 
     static CommitmentPolicy load(CompoundTag tag) {
         CommitmentPolicy state = new CommitmentPolicy();
+        state.performance = StrategyPerformance.load(tag.getCompound("performance"));
         state.encounter = tag.hasUUID("encounter") ? tag.getUUID("encounter") : null;
         state.issued = tag.getBoolean("issued");
         state.outcome = state.issued ? "RELOAD_RELEASED" : "NOT_EVALUATED";

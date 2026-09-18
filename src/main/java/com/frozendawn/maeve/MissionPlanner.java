@@ -56,7 +56,8 @@ final class MissionPlanner {
                 && actor.tickCount - actor.getLastHurtByMobTimestamp() < 100;
         var options = StrategySelector.options(target.confidence(), Math.sqrt(actor.blockPosition().distSqr(target.position())),
                 actor.getHealth() / actor.getMaxHealth(), threatened,
-                hints.stream().anyMatch(h -> h.confidence() >= .75 && store.commitment(player.getUUID()).ineligible(h.pattern(), now).equals("ELIGIBLE")),
+                hints.stream().anyMatch(h -> h.confidence() >= .75 && store.commitment(player.getUUID()).ineligible(h.pattern(), now).equals("ELIGIBLE")
+                        && !store.commitment(player.getUUID()).performance().deferred(h.pattern(), dimension)),
                 focus.slots().size(), focus.capacity());
         if (!StrategySelector.best(options).action().equals("SURVEY_ACCESS")) return false;
         var packet = new MaeveDirector.MissionPacket(UUID.randomUUID(), player.getUUID(), actor.getUUID(),

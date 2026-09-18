@@ -50,18 +50,19 @@ public final class MaeveReconnaissanceGameTest {
                 scene.block(x, y, z, (air ? Blocks.AIR : Blocks.BEDROCK).defaultBlockState());
             }
             long now = scene.gameTime + 1;
-            for (int offset : new int[]{0, 7, 19}) {
-                var player = scene.player("recon_practice_" + offset, 4, 5); player.setYRot(-90);
+            for (int offset : new int[]{0, 7, 19}) for (boolean entering : new boolean[]{false, true}) {
+                int start = entering ? 8 : 4;
+                var player = scene.player("recon_practice_" + offset + entering, start, 5); player.setYRot(-90);
                 var witness = scene.architect(12, 5);
-                for (int i = 0; i < 740; i++) {
-                    if (i >= 600 && i < 640) player.setPos(scene.position(4, 5).add((i - 599) / 10.0, 0, 0));
+                for (int i = 0; i <= 640; i++) {
+                    if (i >= 600 && i < 620) player.setPos(scene.position(start, 5).add((entering ? -1 : 1) * (i - 599) / 5.0, 0, 0));
                     tick(scene, witness, now + offset + i);
                     helper.assertTrue(witness.getX() >= scene.origin.getX() + 12 && witness.getX() < scene.origin.getX() + 13
                                     && witness.getZ() >= scene.origin.getZ() + 5 && witness.getZ() < scene.origin.getZ() + 6,
                             "Practice observer escaped while a player was getting ready at tick " + i + ": " + witness.position());
                 }
                 helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).stream().anyMatch(p -> p.label().equals("ACCESS_POINT")),
-                        "Live booth must witness the walking crossing after a 30-second preparation delay at offset " + offset);
+                        "Live booth must witness either crossing after the final 20-tick gold-tile dwell at offset " + offset + ", entering=" + entering);
                 helper.assertTrue(player.getHealth() == player.getMaxHealth(), "Practice observer cannot reach and hit the player");
                 witness.setNoAi(true); witness.discard(); player.discard(); now += 1000;
             }

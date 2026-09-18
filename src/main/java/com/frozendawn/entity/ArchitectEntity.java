@@ -2694,7 +2694,7 @@ public class ArchitectEntity extends Monster {
     @Override
     public void remove(RemovalReason reason) {
         if (!level().isClientSide() && getServer() != null) {
-            com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, "OWNER_REMOVED");
+            com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, reason == RemovalReason.KILLED ? "OWNER_KILLED" : "OWNER_UNAVAILABLE");
             MaeveDirector.finishMission(this, "OWNER_REMOVED", false);
             maeveCommitment.clear();
         }
