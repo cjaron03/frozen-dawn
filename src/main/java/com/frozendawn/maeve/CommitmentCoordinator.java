@@ -54,7 +54,7 @@ final class CommitmentCoordinator {
     }
 
     static MaeveDirector.PositionDirective directive(MaeveSavedData data, ArchitectEntity observer) {
-        if (data.store() == null) return null;
+        if (data.store() == null || observer.isMasterArchitectVisual()) return null;
         long now = observer.getServer().overworld().getGameTime();
         var policy = data.store().commitmentFor(observer.getUUID(), now);
         return policy == null ? null : policy.active(now);
@@ -82,7 +82,7 @@ final class CommitmentCoordinator {
             if (directive == null) continue;
             var level = server.getLevel(ResourceKey.create(Registries.DIMENSION,
                     ResourceLocation.parse(directive.evidence().dimension())));
-            if (level != null && level.getEntity(directive.observer()) instanceof ArchitectEntity observer) {
+            if (level != null && level.getEntity(directive.observer()) instanceof ArchitectEntity observer && !observer.isMasterArchitectVisual()) {
                 observer.clearMaevePositioning();
             }
             state.finish("ERASED");

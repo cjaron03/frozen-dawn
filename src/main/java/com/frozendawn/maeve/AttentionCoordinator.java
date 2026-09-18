@@ -30,9 +30,7 @@ final class AttentionCoordinator {
     void observe(ArchitectEntity actor, ServerPlayer player) {
         if (data.store() == null || !ObservationCollector.canObserve(actor, player, false)) return;
         resize();
-        if (actor.isMasterArchitectVisual()) {
-            if (actor.isMasterFightActive()) admit(new AttentionManager.Key(AttentionManager.Kind.MASTER_ENCOUNTER, actor.getUUID()), actor, player);
-        } else if (CommitmentCoordinator.eligible(actor, player)
+        if (CommitmentCoordinator.eligible(actor, player)
                 && !actor.isMaeveDisengaging() && actor.getCurrentAction() == ArchitectEntity.ACTION_OBSERVE
                 && CommitmentCoordinator.directive(data, actor) == null) {
             var key = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
@@ -55,6 +53,7 @@ final class AttentionCoordinator {
     }
 
     boolean commitment(ArchitectEntity actor, ServerPlayer player) {
+        if (!CommitmentCoordinator.eligible(actor, player)) return false;
         resize();
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
         var commitment = new AttentionManager.Key(AttentionManager.Kind.ACTIVE_COMMITMENT, actor.getUUID());
@@ -79,10 +78,9 @@ final class AttentionCoordinator {
             var key = entry.getKey();
             entry.getValue().values().removeIf(ref -> {
                 ArchitectEntity actor = actor(ref);
-                if (actor == null || !actor.isAlive() || actor.isNoAi()) return true;
+                if (actor == null || !actor.isAlive() || actor.isNoAi() || actor.isMasterArchitectVisual()) return true;
                 return switch (key.kind()) {
                     case ACTIVE_COMMITMENT -> CommitmentCoordinator.directive(data, actor) == null;
-                    case MASTER_ENCOUNTER -> !actor.isMasterFightActive();
                     case PASSIVE_TRACKING -> actor.getCurrentAction() != ArchitectEntity.ACTION_OBSERVE
                             || actor.isMaeveDisengaging() || now() - ref.lastSeen() > 100;
                     default -> true; // Reconnaissance and siege executors are supplied by later slices.
@@ -98,7 +96,7 @@ final class AttentionCoordinator {
         if (members == null) return;
         for (var ref : members.values()) {
             ArchitectEntity actor = actor(ref);
-            if (actor == null || !actor.isAlive()) continue;
+            if (actor == null || !actor.isAlive() || actor.isMasterArchitectVisual()) continue;
             if (key.kind() == AttentionManager.Kind.ACTIVE_COMMITMENT) CommitmentCoordinator.release(data, actor, "ATTENTION_EVICTED");
             actor.beginMaeveDisengagement(ref.player(), ref.observed(), key.kind().name());
             // At most five concerns x eight executors per 100-tick dwell, each departing for 600 ticks.

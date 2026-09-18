@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 final class AttentionManager {
     static final long MIN_DWELL = 100;
     static final int MAX_EVENTS = 16;
-    enum Kind { RECONNAISSANCE, PASSIVE_TRACKING, ACTIVE_COMMITMENT, SIEGE, MASTER_ENCOUNTER }
+    enum Kind { RECONNAISSANCE, PASSIVE_TRACKING, ACTIVE_COMMITMENT, SIEGE }
     record Key(Kind kind, UUID subject) { }
     record Slot(Key key, long admittedAt) { }
     record Event(long time, String action, Key concern, Key replacement) { }
@@ -31,7 +31,7 @@ final class AttentionManager {
         if (slots.size() > capacity) return defer(key, now, "TIER_CHANGE_DRAINING");
         if (slots.size() >= capacity) {
             Slot victim = victim(now);
-            if (victim == null) return defer(key, now, "DWELL_OR_PROTECTED_MASTER");
+            if (victim == null) return defer(key, now, "MINIMUM_DWELL");
             // The executor must be released before its slot can be reused. Failure leaves occupancy intact.
             visibleEviction.accept(victim.key());
             slots.remove(victim.key());
@@ -55,7 +55,7 @@ final class AttentionManager {
 
     private Slot victim(long now) {
         return slots.values().stream()
-                .filter(s -> s.key().kind() != Kind.MASTER_ENCOUNTER && now - s.admittedAt() >= MIN_DWELL)
+                .filter(s -> now - s.admittedAt() >= MIN_DWELL)
                 .min(Comparator.comparingInt((Slot s) -> s.key().kind().ordinal())
                         .thenComparingLong(Slot::admittedAt).thenComparing(s -> s.key().subject())).orElse(null);
     }

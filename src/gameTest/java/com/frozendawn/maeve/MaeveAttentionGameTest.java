@@ -4,7 +4,6 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.homo.PostMaeveWorldState;
-import com.frozendawn.data.ReturnedHearthSavedData;
 import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -40,17 +39,18 @@ public final class MaeveAttentionGameTest {
             var view = MaeveDirector.attentionSnapshot(scene.server);
             helper.assertTrue(view.capacity() == 2 && view.slots().size() == 1 && view.slots().getFirst().executors().size() == 2,
                     "Two observers tracking the same player share one real concern");
-            var first = provoke(scene, player, 13, 8); see(scene, first, player, now);
-            var second = provoke(scene, player, 15, 8); see(scene, second, player, now + 80);
+            var other = scene.player("pressure_other", 13, 8); var newcomer = scene.player("pressure_new", 15, 8);
+            var first = scene.architect(12, 8); see(scene, first, other, now + 20);
+            var second = scene.architect(14, 8); see(scene, second, newcomer, now + 80);
             helper.assertTrue(!stalker.isMaeveDisengaging(), "Fresh concerns cannot be dropped before minimum dwell");
-            see(scene, second, player, now + 100);
+            see(scene, second, newcomer, now + 100);
             helper.assertTrue(stalker.isMaeveDisengaging() && witness.isMaeveDisengaging(), "Eviction releases every executor of the concern");
             var start = stalker.position(); stalker.tickCount = 80; stalker.setOnGround(true); stalker.setDeltaMovement(Vec3.ZERO);
             for (int i = 1; i <= 80; i++) { scene.clock(now + 100 + i); stalker.tick(); }
             helper.assertTrue(stalker.getX() < start.x - 3 && stalker.getTarget() == null && !stalker.isHoldingMaevePosition(),
                     "Actual entity physics must turn and move away, not just change a slot counter: " + stalker.position());
-            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().stream().allMatch(s -> s.kind().equals("MASTER_ENCOUNTER")),
-                    "Pressure holds both shared slots, while Master combat stays protected");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().stream().noneMatch(slot -> slot.subject().equals(player.getUUID())),
+                    "Other observed players hold the shared slots after the original tracking concern leaves");
             helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().anyMatch(s -> s.contains("EVICTED") && s.contains("PASSIVE_TRACKING")),
                     "Operator output explains the dropped concern and replacement");
             PostMaeveWorldState.setForDebug(scene.server, true);
@@ -72,8 +72,9 @@ public final class MaeveAttentionGameTest {
             var held = MaeveDirector.positionDirective(actor);
             helper.assertTrue(held != null && held.arrivedAt() >= 0, "Fixture actually reaches and holds a historical commitment");
             var belief = scene.beliefs(player).stream().filter(b -> b.pattern().equals(BeliefStore.RECOVERY)).findFirst().orElseThrow();
-            var first = provoke(scene, player, 7, 7); see(scene, first, player, now + 120);
-            var second = provoke(scene, player, 9, 7); see(scene, second, player, now + 120);
+            var other = scene.player("hold_other", 7, 7); var newcomer = scene.player("hold_new", 9, 7);
+            var first = scene.architect(7, 8); see(scene, first, other, now + 120);
+            var second = scene.architect(9, 8); see(scene, second, newcomer, now + 120);
             helper.assertTrue(MaeveDirector.positionDirective(actor) == null && actor.isMaeveDisengaging() && !actor.isHoldingMaevePosition(),
                     "Eviction must interrupt the actual held position immediately");
             helper.assertTrue(MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()).outcome().equals("ATTENTION_EVICTED"), "Release has an explicit cause");
@@ -84,22 +85,33 @@ public final class MaeveAttentionGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
-    public static void maeveAttentionRejectsHiddenPressureAndProtectsMasters(GameTestHelper helper) {
+    public static void maeveAttentionIgnoresMastersAndRejectsHiddenPressure(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 20, scene -> {
             scene.phase.setPresetName("cinematic"); var player = scene.player("focus_hidden", 8, 4);
             var hidden = scene.architect(2, 4); scene.wall(true); long now = clock(scene);
             see(scene, hidden, player, now);
             helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().isEmpty(), "An omniscient target pointer cannot create attention");
-            scene.wall(false);
-            var first = provoke(scene, player, 7, 7); see(scene, first, player, now);
-            var second = provoke(scene, player, 9, 7); see(scene, second, player, now);
-            var third = provoke(scene, player, 3, 7); see(scene, third, player, now + 200);
-            helper.assertTrue(third.isMasterFightActive(), "A full budget never delays local boss provocation");
-            var view = MaeveDirector.attentionSnapshot(scene.server);
-            helper.assertTrue(view.slots().size() == 2 && view.events().stream().noneMatch(e -> e.contains("EVICTED")), "Protected Masters cannot be displaced or exceed the cap");
-            first.discard(); scene.clock(now + 220); MaeveDirector.tick(scene.server); see(scene, third, player, now + 220);
-            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().stream().anyMatch(s -> s.subject().equals(third.getUUID())),
-                    "Completing a concern frees its slot for a waiting local encounter");
+            scene.wall(false); see(scene, hidden, player, now);
+            var other = scene.player("focus_other", 8, 8); var second = scene.architect(3, 8); see(scene, second, other, now);
+            var before = MaeveDirector.attentionSnapshot(scene.server);
+            var master = provoke(scene, player, 7, 7); see(scene, master, player, now + 200);
+            helper.assertTrue(master.isMasterFightActive(), "The guardian's local provocation must remain active");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).events().equals(before.events())
+                            && MaeveDirector.attentionSnapshot(scene.server).slots().stream().map(MaeveDirector.FocusSnapshot::subject).toList()
+                            .equals(before.slots().stream().map(MaeveDirector.FocusSnapshot::subject).toList()),
+                    "A real Master encounter cannot consume, refresh, defer or evict a focus slot");
+            master.beginMaeveDisengagement(player.getUUID(), player.blockPosition(), "PASSIVE_TRACKING");
+            helper.assertTrue(!master.isMaeveDisengaging() && master.getTarget() == player,
+                    "Even a direct eviction order cannot take over the guardian's local combat");
+            helper.assertTrue(MaeveDirector.commitmentHints(master, player).isEmpty()
+                    && MaeveDirector.positionDirective(master) == null
+                    && MaeveDirector.knownDangers(master, player.getUUID()).isEmpty()
+                    && MaeveDirector.utilityBias(master, player).equals(MaeveDirector.UtilityBias.NONE),
+                    "Masters receive no Maeve beliefs, directives or utility bias");
+            hidden.discard(); scene.clock(now + 220); MaeveDirector.tick(scene.server);
+            var newcomer = scene.player("focus_new", 9, 7); see(scene, scene.architect(9, 8), newcomer, now + 220);
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().stream().anyMatch(slot -> slot.subject().equals(newcomer.getUUID())),
+                    "Completed ordinary work frees capacity for another ordinary concern");
         });
     }
 
@@ -121,48 +133,34 @@ public final class MaeveAttentionGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
-    public static void maeveAttentionDoorReplayExercisesRealMasterAndStalkerAi(GameTestHelper helper) {
+    public static void maeveAttentionOrdinaryPressureExercisesRealStalkerAi(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 22, scene -> {
-            for (String name : java.util.List.of("setup", "control", "tactic", "start", "prompt", "finish")) {
+            for (String name : java.util.List.of("setup", "control", "tactic", "cleanup")) {
                 helper.assertTrue(scene.server.getFunctions().get(net.minecraft.resources.ResourceLocation.parse("maeve_attention:" + name)).isPresent(),
-                        "Native parser must accept the live replay function: " + name);
+                        "Native parser must accept the retired replay's safe cleanup command: " + name);
             }
             scene.phase.setPresetName("cinematic"); long now = clock(scene);
             for (int x = -12; x <= 30; x++) for (int z = 0; z <= 20; z++) scene.block(x, -1, z, Blocks.BEDROCK.defaultBlockState());
-            var player = scene.player("focus_door", -6, 10); player.setInvulnerable(true);
-            scene.hearths.setRelationshipForDebug(player.getUUID(), ReturnedHearthSavedData.HiveRelationship.ORSATHAE, now);
+            var player = scene.player("focus_departure", -6, 10);
             var stalker = scene.architect(20, 10);
-            var first = scene.architect(-6, 18); first.bindToHearthMasterArchitect(UUID.randomUUID(), first.blockPosition(), 0);
-            var second = scene.architect(-6, 6); second.bindToHearthMasterArchitect(UUID.randomUUID(), second.blockPosition(), 0);
-            for (int x = -7; x <= -5; x++) for (int z = 17; z <= 19; z++) for (int y = 0; y < 4; y++) scene.block(x, y, z, Blocks.BEDROCK.defaultBlockState());
-            scene.block(-6, 0, 18, Blocks.AIR.defaultBlockState()); scene.block(-6, 1, 18, Blocks.AIR.defaultBlockState()); scene.block(-6, 1, 17, Blocks.AIR.defaultBlockState());
-            for (int x = -7; x <= -5; x++) for (int z = 5; z <= 8; z++) for (int y = 0; y < 4; y++) scene.block(x, y, z, Blocks.BEDROCK.defaultBlockState());
-            scene.block(-6, 0, 6, Blocks.AIR.defaultBlockState()); scene.block(-6, 1, 6, Blocks.AIR.defaultBlockState()); scene.block(-6, 1, 7, Blocks.AIR.defaultBlockState());
-            var door = Blocks.OAK_DOOR.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, net.minecraft.core.Direction.SOUTH);
-            scene.block(-6, 0, 8, door);
-            scene.block(-6, 1, 8, door.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
             for (int i = 0; i < 150; i++) {
-                scene.clock(now + i);
-                for (var actor : java.util.List.of(first, second, stalker)) { actor.tickCount++; actor.tick(); NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor)); }
-                MaeveDirector.tick(scene.server);
+                scene.clock(now + i); stalker.tickCount++; stalker.tick();
+                NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(stalker)); MaeveDirector.tick(scene.server);
             }
-            var before = MaeveDirector.attentionSnapshot(scene.server);
-            helper.assertTrue(before.slots().size() == 2 && before.slots().stream().anyMatch(s -> s.kind().equals("PASSIVE_TRACKING")),
-                    "Real control round must fill one tracking and one boss slot before opening the door: " + before);
-            helper.assertTrue(!stalker.isMaeveDisengaging(), "Closed door cannot produce an eviction");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().size() == 1 && !stalker.isMaeveDisengaging(),
+                    "A real ordinary observer claims one tracking slot without losing focus on its own");
+            var other = scene.player("pressure_elsewhere", -6, 2); var first = scene.architect(-8, 2);
+            var newcomer = scene.player("pressure_newcomer", -6, 18); var second = scene.architect(-8, 18);
+            see(scene, first, other, now + 160); see(scene, second, newcomer, now + 160);
             var initial = stalker.position();
-            ((net.minecraft.world.level.block.DoorBlock) Blocks.OAK_DOOR).setOpen(player, scene.level, door, scene.origin.offset(-6, 0, 8), true);
-            for (int i = 150; i < 240; i++) {
-                scene.clock(now + i);
-                for (var actor : java.util.List.of(first, second, stalker)) { actor.tickCount++; actor.tick(); NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor)); }
-                MaeveDirector.tick(scene.server);
+            for (int i = 160; i < 240; i++) {
+                scene.clock(now + i); stalker.tickCount++; stalker.tick();
+                NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(stalker)); MaeveDirector.tick(scene.server);
             }
             helper.assertTrue(stalker.isMaeveDisengaging() && stalker.getX() > initial.x + 3,
-                    "Opening the real door must expose new pressure and physically shed the real stalker: " + MaeveDirector.attentionSnapshot(scene.server));
-            helper.assertTrue(first.isMasterFightActive() && second.isMasterFightActive(), "Both local Master controllers remain active");
-            PostMaeveWorldState.setForDebug(scene.server, true);
-            helper.assertTrue(scene.hearths.relationship(player.getUUID()) == ReturnedHearthSavedData.HiveRelationship.ORSATHAE,
-                    "Attention erasure never removes the separate permanent violation memory");
+                    "Ordinary locally observed pressure must visibly move the stalker away through real entity AI");
+            helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().size() == 2,
+                    "The two new ordinary concerns occupy the shared Cinematic budget");
         });
     }
 
@@ -184,4 +182,23 @@ public final class MaeveAttentionGameTest {
             helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().isEmpty(), "NoAI actors and mind copies cannot claim or retain focus");
         });
     }
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void maeveRetiredAttentionReplayRemovesOnlyItsActors(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 24, scene -> {
+            var player = scene.player("retired_replay", 8, 4);
+            var retired = scene.architect(3, 3);
+            retired.bindToHearthMasterArchitect(UUID.randomUUID(), retired.blockPosition(), 0);
+            retired.setHealth(20); retired.addTag("maeve_attention_actor");
+            var guardian = scene.architect(3, 7);
+            guardian.bindToHearthMasterArchitect(UUID.randomUUID(), guardian.blockPosition(), 0);
+            float health = guardian.getHealth();
+            scene.server.getCommands().performPrefixedCommand(scene.server.createCommandSourceStack()
+                    .withEntity(player).withPosition(player.position()).withPermission(4), "function maeve_attention:cleanup");
+            helper.assertTrue(!retired.isAlive() && !retired.isMasterArchitectVisual(),
+                    "Native cleanup removes the QA boss binding before kill, avoiding its survival phase");
+            helper.assertTrue(guardian.isAlive() && guardian.isMasterArchitectVisual() && guardian.getHealth() == health,
+                    "Cleanup never changes an untagged guardian");
+        });
+    }
+
 }

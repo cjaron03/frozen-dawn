@@ -8,7 +8,7 @@ final class SpatialCommitments {
     private SpatialCommitments() { }
     static List<MaeveDirector.PositionCandidate> candidates(BeliefStore store, ArchitectEntity observer, net.minecraft.server.level.ServerPlayer player,
                                                           List<MaeveDirector.CommitmentHint> hints) {
-        if (store == null) return List.of();
+        if (store == null || !CommitmentCoordinator.eligible(observer, player)) return List.of();
         var world = store.world(player.getUUID()); if (world == null) return List.of();
         long now = observer.getServer().overworld().getGameTime();
         var result = new ArrayList<MaeveDirector.PositionCandidate>();

@@ -15,7 +15,7 @@ Two provisional local actions use retained event coordinates:
 - Ranged preference holds the Architect's present position and places two tactical ice blocks toward the last witnessed projectile origin. It requires a clear two-block escape route; its abandonment cost is two blocks.
 - Covered recovery chooses the cheaper safe side of a point three blocks short of the last witnessed covered-use position, offset two blocks sideways. It requires two to six blocks of travel, then watches the event coordinate. Abandonment cost is the travel distance. A point already underfoot cannot consume the bet.
 
-The coordinate is an observed action location, not a classified room, inferred destination, health estimate or inventory scan. Real Masters continue their dedicated boss controller and may still contribute observations. Copies, Aggregate reinforcements and resident roles do not execute these directives. Full mission packets, WorldModel/spatial classification, attention allocation and §10 capabilities remain later work.
+The coordinate is an observed action location, not a classified room, inferred destination, health estimate or inventory scan. Real Masters continue their dedicated boss controller and are completely outside Maeve's tactical observations and directives (guardian decision, 2026-09-17). Copies, Aggregate reinforcements and resident roles do not execute these directives. Full mission packets, WorldModel/spatial classification, attention allocation and §10 capabilities remain later work.
 
 ## Execution and failure
 

@@ -51,7 +51,7 @@ public final class MaeveDirector {
 
     public static void observeDamage(ArchitectEntity observer, DamageSource source, float actualDamage) {
         MinecraftServer server = observer.getServer();
-        if (server == null || observer.level().isClientSide()) return;
+        if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         MaeveDirector director = current(server);
         if (director.data.store() == null) return;
         ObservationCollector.damage(director.data.store(), observer, source, actualDamage,
@@ -167,7 +167,7 @@ public final class MaeveDirector {
 
     /** Coarse local presence samples: both sides of a crossing require the same observer's sight. */
     public static void observePresence(ArchitectEntity observer) {
-        if (observer.getServer() == null || observer.level().isClientSide()) return;
+        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         var director = current(observer.getServer());
         if (director.data.store() != null && observer.getTarget() instanceof ServerPlayer player) {
             SpatialObservations.presence(director.data.store(), observer, player, observer.getServer().overworld().getGameTime());
@@ -188,6 +188,7 @@ public final class MaeveDirector {
     }
 
     public static List<BlockPos> knownDangers(ArchitectEntity observer, UUID player) {
+        if (observer.isMasterArchitectVisual()) return List.of();
         var store = current(observer.getServer()).data.store();
         var world = store == null ? null : store.world(player);
         return world == null ? List.of() : world.dangers(observer.level().dimension().location().toString(),
@@ -201,7 +202,7 @@ public final class MaeveDirector {
 
     public static AttentionSnapshot attentionSnapshot(MinecraftServer server) { return current(server).attention.snapshot(); }
     public static void observeAttention(ArchitectEntity observer, ServerPlayer player) {
-        if (observer.getServer() != null) current(observer.getServer()).attention.observe(observer, player);
+        if (observer.getServer() != null && !observer.isMasterArchitectVisual()) current(observer.getServer()).attention.observe(observer, player);
     }
     public record FocusSnapshot(String kind, UUID subject, long admittedAt, long dwellRemaining, List<UUID> executors, List<String> reports) {
         public FocusSnapshot { executors = List.copyOf(executors); reports = List.copyOf(reports); }

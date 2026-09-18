@@ -18,6 +18,7 @@ final class ArchitectAttentionController {
     private long now() { return actor.getServer().overworld().getGameTime(); }
 
     void begin(UUID player, BlockPos lastObserved, String kind) {
+        if (actor.isMasterArchitectVisual()) return;
         releasedPlayer = player;
         away = actor.position().subtract(lastObserved.getCenter()).multiply(1, 0, 1).normalize();
         if (away.lengthSqr() < .01) away = new Vec3(1, 0, 0);

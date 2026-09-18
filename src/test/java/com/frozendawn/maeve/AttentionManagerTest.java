@@ -25,22 +25,21 @@ class AttentionManagerTest {
         assertEquals(List.of(one), dropped); assertEquals(2, manager.slots().size());
     }
 
-    @Test void priorityAndMasterProtectionAreStrict() {
-        var manager = new AttentionManager(); manager.resize(5, 0, NO_EVICTION);
+    @Test void evictionPriorityIsStrict() {
+        var manager = new AttentionManager(); manager.resize(4, 0, NO_EVICTION);
         for (var kind : AttentionManager.Kind.values()) manager.request(key(kind, kind.ordinal()), 0, NO_EVICTION);
         var dropped = new ArrayList<AttentionManager.Key>();
-        for (int i = 0; i < 4; i++) manager.request(key(AttentionManager.Kind.MASTER_ENCOUNTER, 100 + i), 100, dropped::add);
+        for (int i = 0; i < 4; i++) manager.request(key(AttentionManager.Kind.SIEGE, 100 + i), 100, dropped::add);
         assertEquals(List.of(AttentionManager.Kind.RECONNAISSANCE, AttentionManager.Kind.PASSIVE_TRACKING,
                 AttentionManager.Kind.ACTIVE_COMMITMENT, AttentionManager.Kind.SIEGE), dropped.stream().map(AttentionManager.Key::kind).toList());
-        assertFalse(manager.request(key(AttentionManager.Kind.PASSIVE_TRACKING, 200), 10000, NO_EVICTION).admitted());
-        assertEquals(5, manager.slots().size());
+        assertEquals(4, manager.slots().size());
     }
 
     @Test void noSilentEvictionAndNoDwellResetOnPromotion() {
         var manager = new AttentionManager(); manager.resize(2, 0, NO_EVICTION);
         var tracking = key(AttentionManager.Kind.PASSIVE_TRACKING, 1);
         var commitment = key(AttentionManager.Kind.ACTIVE_COMMITMENT, 1);
-        manager.request(tracking, 0, NO_EVICTION); manager.request(key(AttentionManager.Kind.MASTER_ENCOUNTER, 2), 0, NO_EVICTION);
+        manager.request(tracking, 0, NO_EVICTION); manager.request(key(AttentionManager.Kind.SIEGE, 2), 0, NO_EVICTION);
         assertTrue(manager.replace(tracking, commitment, 50));
         assertThrows(IllegalStateException.class, () -> manager.request(key(AttentionManager.Kind.SIEGE, 3), 100, k -> { throw new IllegalStateException(); }));
         assertTrue(manager.contains(commitment)); assertEquals(2, manager.slots().size());
@@ -57,13 +56,14 @@ class AttentionManagerTest {
         manager.clear(); assertTrue(manager.events().isEmpty());
     }
 
-    @Test void loweringTierDrainsWithoutEvictingMastersOrBypassingDwell() {
+    @Test void loweringTierDrainsWithoutBypassingDwell() {
         var manager = new AttentionManager(); manager.resize(5, 0, NO_EVICTION);
-        for (int i = 0; i < 3; i++) manager.request(key(AttentionManager.Kind.MASTER_ENCOUNTER, i), 0, NO_EVICTION);
+        for (int i = 0; i < 3; i++) manager.request(key(AttentionManager.Kind.SIEGE, i), 0, NO_EVICTION);
         var tracker = key(AttentionManager.Kind.PASSIVE_TRACKING, 4); manager.request(tracker, 0, NO_EVICTION);
         manager.resize(2, 99, NO_EVICTION); assertEquals(4, manager.slots().size());
-        manager.resize(2, 100, k -> assertEquals(tracker, k)); assertEquals(3, manager.slots().size());
-        assertFalse(manager.request(key(AttentionManager.Kind.SIEGE, 5), 200, NO_EVICTION).admitted());
-        manager.release(key(AttentionManager.Kind.MASTER_ENCOUNTER, 0), 200); assertEquals(2, manager.slots().size());
+        var dropped = new ArrayList<AttentionManager.Key>();
+        manager.resize(2, 100, dropped::add);
+        assertEquals(List.of(tracker, key(AttentionManager.Kind.SIEGE, 0)), dropped);
+        assertEquals(2, manager.slots().size());
     }
 }
