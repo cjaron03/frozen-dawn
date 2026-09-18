@@ -56,15 +56,15 @@ function maeve_attention:start''',
 function maeve_attention:start''',
     'start': f'''function maeve_attention:cleanup
 tp @s 400.5 101 400.5 -90 0
-fill 399 101 425 401 104 427 minecraft:bedrock
-fill 400 101 426 400 102 426 minecraft:air
-setblock 400 102 425 minecraft:air
+fill 399 101 407 401 104 409 minecraft:bedrock
+fill 400 101 408 400 102 408 minecraft:air
+setblock 400 102 407 minecraft:air
 fill 399 101 395 401 104 398 minecraft:bedrock
 fill 400 101 396 400 102 397 minecraft:air
 setblock 400 101 397 minecraft:bedrock
 setblock 400 101 398 minecraft:oak_door[facing=south,half=lower,hinge=left,open=false]
 setblock 400 102 398 minecraft:oak_door[facing=south,half=upper,hinge=left,open=false]
-summon frozendawn:architect 400.5 101 426.5 {{Tags:["maeve_attention_actor","maeve_attention_master_a"],PersistenceRequired:1b,HearthMasterArchitectId:[I;10,11,12,13],HearthMasterArchitectHome:{packed(400,101,426)}L}}
+summon frozendawn:architect 400.5 101 408.5 {{Tags:["maeve_attention_actor","maeve_attention_master_a"],PersistenceRequired:1b,HearthMasterArchitectId:[I;10,11,12,13],HearthMasterArchitectHome:{packed(400,101,408)}L}}
 summon frozendawn:architect 400.5 101 396.5 {{Tags:["maeve_attention_actor","maeve_attention_master_b"],PersistenceRequired:1b,HearthMasterArchitectId:[I;20,21,22,23],HearthMasterArchitectHome:{packed(400,101,396)}L}}
 summon frozendawn:architect 426.5 101 400.5 {{Tags:["maeve_attention_actor","maeve_attention_stalker"],PersistenceRequired:1b}}
 fd architect record @e[tag=maeve_attention_stalker,limit=1] 1337
