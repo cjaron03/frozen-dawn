@@ -11,6 +11,20 @@ def message(text, command=None, color='aqua'):
     if command: value['clickEvent'] = {'action': 'run_command', 'value': command}
     return 'tellraw @a[tag=macs_learning] ' + json.dumps(value)
 
+def counter_arena(x, z, condition):
+    # Keep each counter near its preceding scouts: inherited hints are local to 48 blocks.
+    commands = [
+        f'forceload add {x-12} {z-13} {x+20} {z+15}',
+        f'fill {x-12} 100 {z-13} {x+20} 100 {z+15} minecraft:stone',
+        f'fill {x-12} 101 {z-13} {x+20} 105 {z+15} minecraft:air',
+        f'setblock {x} 100 {z} minecraft:green_concrete',
+        f'setblock {x+5} 100 {z} minecraft:gold_block',
+        f'tp @a[tag=macs_learning] {x}.5 101 {z}.5 -90 0',
+        f'spawnpoint @s {x} 101 {z}',
+        f'summon frozendawn:architect {x+6}.5 101 {z}.5 {{Tags:["macs_learning_actor"],PersistenceRequired:1b}}',
+    ]
+    return '\n'.join(f'execute {condition} score #topupdone ml matches 1 run {command}' for command in commands)
+
 SCRIPTS = {
     'load': 'scoreboard objectives add ml dummy\nexecute unless score #last ml matches 3..5 run scoreboard players set #last ml 3',
     'cleanup': 'execute as @e[tag=macs_learning_actor] run fd architect dump @s\nexecute as @e[tag=macs_learning_actor] run data merge entity @s {NoAI:1b}\nkill @e[tag=macs_learning_actor]',
@@ -82,19 +96,15 @@ tp @a[tag=macs_learning] 760.5 101 762.5
 ''' + message('Counter round: sprint only this empty gap and wait for Ready.', '/tick sprint 620t', 'yellow'),
     'counter_ready': 'scoreboard players set #stage ml 7\n' + message('Ready. Stay on green until it backs away, then follow onto gold. Stay there and land one bow hit while it holds. Keep it alive. Click Start.', '/function macs_learning:counter', 'green'),
     'counter': 'execute if score #stage ml matches 7 run function macs_learning:counter_start',
-    'counter_start': '''function macs_learning:cleanup
-fill 778 101 692 810 105 720 minecraft:air
-setblock 790 100 705 minecraft:green_concrete
-setblock 795 100 705 minecraft:gold_block
-tp @a[tag=macs_learning] 790.5 101 705.5 -90 0
-spawnpoint @s 790 101 705
+    'counter_start': 'function macs_learning:cleanup\n'
+    + counter_arena(790, 705, 'unless') + '\n'
+    + counter_arena(878, 719, 'if') + '''
 effect clear @s minecraft:resistance
 effect give @s minecraft:instant_health 1 4 true
 clear @s
 give @s minecraft:bow
 give @s minecraft:arrow 32
 give @s minecraft:golden_apple 4
-summon frozendawn:architect 796.5 101 705.5 {Tags:["macs_learning_actor"],PersistenceRequired:1b}
 fd architect record @e[tag=macs_learning_actor,limit=1] 1337
 scoreboard players add #counter ml 1
 scoreboard players set #stage ml 8
