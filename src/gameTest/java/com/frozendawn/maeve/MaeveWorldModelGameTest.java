@@ -212,4 +212,44 @@ public final class MaeveWorldModelGameTest {
         if (!current.equals(goal)) throw new AssertionError("Walking route never reached its goal");
         return points;
     }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void maeveSealedDestinationGetsReachableInspection(GameTestHelper helper) {
+        inspectUnreachable(helper, 16, true);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void maeveOppositeSideGetsReachableInspection(GameTestHelper helper) {
+        inspectUnreachable(helper, 17, false);
+    }
+
+    private static void inspectUnreachable(GameTestHelper helper, int lane, boolean sealDestination) {
+        MaeveObservationGameTest.withScene(helper, lane, scene -> {
+            shelter(scene); var actor = scene.architect(10, 5); var player = scene.player("inspection_" + lane, 3, 5);
+            long now = train(scene, actor, player);
+            int wall = sealDestination ? 6 : 5;
+            for (int y = 0; y < 3; y++) for (int z = 0; z <= 12; z++) scene.block(wall, y, z, Blocks.STONE.defaultBlockState());
+            actor.setPos(scene.position(sealDestination ? 16 : 0, 5));
+            player.setPos(scene.position(sealDestination ? 14 : 2, 10));
+            helper.assertTrue(actor.blockPosition().distSqr(scene.origin.offset(6, 0, 5)) > 16, "Start beyond discovery range");
+            actor.tickCount = 80; actor.setOnGround(true); actor.debugForceApproach(player); actor.setDeltaMovement(Vec3.ZERO);
+            int chunks = scene.level.getChunkSource().getLoadedChunksCount();
+            MaeveDirector.PositionDirective discovered = null;
+            for (int i = 0; i < 240; i++) {
+                scene.clock(now + i); actor.tick();
+                var current = MaeveDirector.positionDirective(actor);
+                if (current != null && current.obstruction() != null) { discovered = current; break; }
+            }
+            helper.assertTrue(discovered != null, "Unreachable exact goal must get a reachable inspection vantage: "
+                    + MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()));
+            helper.assertTrue(actor.blockPosition().distSqr(discovered.position()) <= 16, "Actual actor reaches discovery range");
+            var point = MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst();
+            helper.assertTrue(point.state().equals("BLOCKED") && point.contradictions() == 1, "Real inspection revises stale knowledge");
+            helper.assertTrue(point.provenance().stream().anyMatch(p -> p.observer().equals(actor.getUUID())
+                    && p.action().equals("OBSERVED_ACCESS_OBSTRUCTION")), "Actual observer reports the wall");
+            helper.assertTrue(MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()).blockNext().contains(EAST), "Discovery schedules cooldown");
+            helper.assertTrue(chunks == scene.level.getChunkSource().getLoadedChunksCount(), "Inspection loads no chunks");
+            helper.assertTrue(scene.level.getBlockState(scene.origin.offset(wall, 0, 5)).is(Blocks.STONE), "Inspection does not breach the seal");
+        });
+    }
 }

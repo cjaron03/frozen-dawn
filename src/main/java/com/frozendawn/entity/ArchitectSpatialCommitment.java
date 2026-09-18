@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectSpatialCommitment {
     private final ArchitectEntity actor;
     private DStarLitePathfinder path;
+    private ArchitectAccessInspection inspection;
     private BlockPos goal;
     private long nextDiscovery, nextReplan;
 
@@ -40,6 +41,16 @@ final class ArchitectSpatialCommitment {
             return;
         }
         actor.setMaeveHolding(false); actor.setCommitmentAction(false);
+        if (inspection != null) {
+            if (!inspection.compute()) return;
+            BlockPos step = inspection.next();
+            if (step != null) { move(Vec3.atBottomCenterOf(step)); return; }
+            if (MaeveDirector.discoverAccess(actor, directive)) {
+                actor.recordDecision("MAEVE_ACCESS_DISCOVERY", null, "inspection vantage");
+                actor.setMaeveHolding(true); actor.setCommitmentAction(true);
+            } else { MaeveDirector.releaseCommitment(actor, "NO_RECOVERABLE_ACCESS_ROUTE"); clear(); }
+            return;
+        }
         if (path == null || !directive.position().equals(goal) || actor.horizontalCollision && now >= nextReplan) {
             goal = directive.position(); path = new DStarLitePathfinder();
             path.configureObservedWalk(MaeveDirector.knownDangers(actor, directive.player()));
@@ -50,7 +61,9 @@ final class ArchitectSpatialCommitment {
         if (!path.computePartial(80, actor.level())) return;
         var step = path.getNextStep(actor.blockPosition(), actor.level());
         if (step == null || step.type() != DStarLitePathfinder.StepType.WALK) {
-            MaeveDirector.releaseCommitment(actor, "NO_RECOVERABLE_ACCESS_ROUTE"); clear(); return;
+            inspection = new ArchitectAccessInspection(actor, directive);
+            actor.recordDecision("MAEVE_ACCESS_INSPECTION_ROUTE", null, "remembered point unreachable");
+            return;
         }
         Vec3 next = step.pos().equals(actor.blockPosition()) ? destination : Vec3.atBottomCenterOf(step.pos());
         move(next);
@@ -71,5 +84,5 @@ final class ArchitectSpatialCommitment {
         actor.getLookControl().setLookAt(point.x, point.y, point.z, 15, 15);
     }
 
-    void clear() { path = null; goal = null; nextDiscovery = 0; nextReplan = 0; actor.setMaeveHolding(false); }
+    void clear() { path = null; inspection = null; goal = null; nextDiscovery = 0; nextReplan = 0; actor.setMaeveHolding(false); }
 }
