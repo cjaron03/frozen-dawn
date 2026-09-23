@@ -29,7 +29,7 @@ record ObservedEvidence(UUID observer, UUID encounter, String dimension, BlockPo
         String dimension = tag.getString("dimension");
         if (!tag.hasUUID("observer") || !tag.hasUUID("encounter")
                 || !tag.contains("position") || !tag.contains("time") || tag.getLong("time") < 0
-                || action.isBlank() || action.length() > 128
+                || action.isBlank() || action.length() > 256
                 || ResourceLocation.tryParse(dimension) == null) return null;
         return new ObservedEvidence(tag.getUUID("observer"), tag.getUUID("encounter"), dimension,
                 BlockPos.of(tag.getLong("position")), tag.getLong("time"), action, tag.getBoolean("supporting"));

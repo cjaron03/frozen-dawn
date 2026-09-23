@@ -402,3 +402,13 @@ sourceSets.gameTest.resources.srcDir(macsReconQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsReconQa') }
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveAttentionQa') }
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveWorldQa') }
+
+// Slice 7 uses the same native functions in the disposable world and the required parser gate.
+def macsLearningQaResources = layout.buildDirectory.dir('generated/macs-learning-qa')
+tasks.register('generateMacsLearningQa', Exec) {
+    inputs.file('tools/prepare_macs_learning_playtest.py')
+    outputs.dir(macsLearningQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_learning_playtest.py', '--pack-only', macsLearningQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsLearningQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsLearningQa') }

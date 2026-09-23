@@ -36,7 +36,7 @@ final class ArchitectCommitmentController {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
             if (!hints.isEmpty() && safeToCommit() && architect.onGround()) {
-                var candidates = new ArrayList<>(candidates(hints));
+                var candidates = new ArrayList<>(candidates(hints, player));
                 candidates.addAll(MaeveDirector.spatialCandidates(architect, player, hints));
                 if (MaeveDirector.chooseCommitment(architect, player, candidates)) directive = MaeveDirector.positionDirective(architect);
             }
@@ -82,6 +82,8 @@ final class ArchitectCommitmentController {
             architect.setCommitmentAction(true);
             architect.setMaeveHolding(true);
             Vec3 anchor = directive.evidence().position().getCenter();
+            if (directive.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT") && localTarget != null
+                    && architect.hasLineOfSight(localTarget)) anchor = localTarget.position();
             // Face the inherited event with the whole body. A head-only glance
             // looked identical to ordinary observation in the informed replays.
             float toward = (float) (Mth.atan2(anchor.z - architect.getZ(), anchor.x - architect.getX())
@@ -108,7 +110,7 @@ final class ArchitectCommitmentController {
         return true;
     }
 
-    private List<MaeveDirector.PositionCandidate> candidates(List<MaeveDirector.CommitmentHint> hints) {
+    private List<MaeveDirector.PositionCandidate> candidates(List<MaeveDirector.CommitmentHint> hints, ServerPlayer player) {
         var candidates = new ArrayList<MaeveDirector.PositionCandidate>();
         for (var hint : hints) {
             if (hint.confidence() < 0.75D) continue;
@@ -126,6 +128,11 @@ final class ArchitectCommitmentController {
                 if (safeWalk(Vec3.atBottomCenterOf(position)) && canAbandon && clearCover(cover)) {
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), position, cover, 2));
                 }
+            } else if (hint.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT")) {
+                Vec3 localAway = architect.position().subtract(player.position()).multiply(1, 0, 1).normalize();
+                BlockPos position = BlockPos.containing(architect.position().add(localAway.scale(5)));
+                if (safeWalk(Vec3.atBottomCenterOf(position))) candidates.add(new MaeveDirector.PositionCandidate(
+                        hint.pattern(), position, null, architect.position().distanceTo(Vec3.atBottomCenterOf(position))));
             } else if (hint.pattern().equals("PLAYER_USES_RECOVERY_UNDER_COVER")) {
                 var recovery = recoveryCandidate(hint.pattern(), anchor, away);
                 if (recovery != null) candidates.add(recovery);

@@ -114,6 +114,8 @@ final class ArchitectCombatController {
     }
 
     void executeRetreat(@Nullable LivingEntity target) {
+        if (combatState.retreatPhase == 0 && target instanceof net.minecraft.server.level.ServerPlayer player)
+            com.frozendawn.maeve.MaeveDirector.observeWithdrawal(architect, player);
         blockBreaker.clearTarget();
 
         if (target == null && !combatState.isDrinkingPotion) {

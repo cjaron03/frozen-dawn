@@ -455,7 +455,7 @@ public final class MaeveObservationGameTest {
         }
     }
 
-    static final class TestPlayer extends FakePlayer {
+    static class TestPlayer extends FakePlayer {
         TestPlayer(ServerLevel level, String name) { super(level, new GameProfile(UUID.randomUUID(), name)); }
 
         void finish(ItemStack stack) {
