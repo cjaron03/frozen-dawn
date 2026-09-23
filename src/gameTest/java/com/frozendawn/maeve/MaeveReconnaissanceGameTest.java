@@ -92,17 +92,27 @@ public final class MaeveReconnaissanceGameTest {
         MaeveObservationGameTest.withScene(helper, 27, scene -> {
             var player = scene.player("recon_witnessed", 4, 5); long now = history(scene, player); var actor = scout(scene);
             float health = player.getHealth(); boolean thinking = false, purple = false; MaeveDirector.MissionPacket inherited = null;
+            double extractionX = Double.NEGATIVE_INFINITY;
+            boolean peacefulExtraction = true;
             for (int i = 0; i < 400; i++) {
                 tick(scene, actor, now + i);
                 var packet = MaeveDirector.missionPacket(actor);
                 if (packet != null) inherited = packet;
                 thinking |= actor.isHoldingMaevePosition(); purple |= actor.hasReconnaissanceEyes();
+                // Extraction lasts 200 ticks; after it ends ordinary roaming may reverse
+                // direction. Measure the actual role window rather than that later position.
+                if (packet == null && actor.hasReconnaissanceEyes() && actor.isMaeveDisengaging()) {
+                    extractionX = Math.max(extractionX, actor.getX());
+                    peacefulExtraction &= actor.getTarget() == null;
+                }
             }
             var views = MaeveDirector.missionSnapshots(scene.server, player.getUUID());
             helper.assertTrue(inherited != null && views.stream().anyMatch(s -> s.outcome().equals("SURVEY_COMPLETE") && s.report().equals("OPEN")),
                     "Actual entity AI must inspect and finish its non-combat mission: " + views);
             helper.assertTrue(thinking && purple && player.getHealth() == health, "Survey has existing thinking pose and purple eyes, without attacking the player");
-            helper.assertTrue(actor.getX() > scene.position(16, 5).x && actor.getTarget() == null, "Scout visibly extracts after inspecting the entrance");
+            helper.assertTrue(extractionX > scene.position(16, 5).x && peacefulExtraction && actor.getTarget() == null,
+                    "Scout visibly extracts without targeting the player during withdrawal: maxX=" + extractionX
+                            + " finalPosition=" + actor.position() + " target=" + actor.getTarget());
             helper.assertTrue(inherited.access().confidence() == .2 && inherited.access().source().action().equals("WITNESSED_SKY_BOUNDARY_CROSSING"),
                     "Inherited packet remains the original incomplete observation");
             var point = MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst();

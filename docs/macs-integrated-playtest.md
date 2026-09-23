@@ -56,3 +56,5 @@ Tune only after a reproducible issue is identified, following §9.20: confidence
 ## Verification
 
 The required native GameTest parses every generated function at integrated-client permission level 2, resolves its function references, and checks camp fills against the vanilla volume limit. Both preset variants must be identical except their preset command. The paired worlds are copied from the same closed source and initialized independently. Required gates remain `./gradlew architectVerify architectMonkey --console=plain` with the existing seeds; live camp construction and ordinary player use must still be observed in the client.
+
+The first integration gate exposed an older reconnaissance assertion that checked the scout's final position after its 200-tick withdrawal could already have ended. The test now measures displacement while the extraction role is active and requires no player targeting throughout that window and afterward. Ordinary roaming can change its later position. The failed report is retained alongside the final verification; production movement and timing are unchanged.
