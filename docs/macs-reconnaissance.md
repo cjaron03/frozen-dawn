@@ -18,11 +18,15 @@ Actual damage interrupts the survey and returns control to local self-defense. C
 
 During inspection, a report describes only the short historical crossing segment that this observer can inspect from within six blocks. A visible collision in the crossing can establish BLOCKED; OPEN requires a clear view of the segment's feet/head clearance. An unrelated intervening wall yields UNSEEN. Inspection uses at most nine points with three height samples and loaded-chunk ray checks. No chunks are loaded. OPEN/BLOCKED reports carry their observer, encounter, position, time and action; they update the access point with a provisional 0.90 observation weight. They do not establish that the player prefers a retreat route or knows about a room. A changed access state records a contradiction; perception can correct either an old OPEN or BLOCKED state.
 
+A witnessed feet cell can contain a partial supporting floor, such as a dirt path, slab or snow layer. Inspection uses the shared walking collision geometry to distinguish that floor from an obstruction, then aims above its surface within the same cell. The original three height samples and sight checks still apply. It retains the historical coordinates in the packet and cannot report an entrance hidden behind another wall.
+
 Visible player movement during inspection uses the same existing spatial-event validator. A roaming Architect's locally selected candidate now reaches that validator even though its utility controller does not set vanilla's target field. The validator still requires the Architect's own sight. The real-AI practice regression caught this missing delivery path; no debug target lock is used in this rehearsal.
 
 ## Purple eyes
 
 The owner requested exactly one visual distinction: purple eyes, with the existing blink. A synchronized transient flag enables a render layer only for the active scout and its withdrawal. It covers only the existing two 2×3-pixel eye regions, preserving the three brightness rows and the thin closed-eye row. The layer calls the renderer's existing 97-tick blink decision; it adds no timer or animation.
+
+The cue now lasts through the full 600-tick departure avoidance interval, including the ordinary roaming after the initial 200-tick directed walk. It clears when that interval expires or actual damage interrupts departure. Natural expiry records `MAEVE_RECON_RETURN_TO_LOCAL` and releases the temporary avoidance state; ordinary targeting and observation can then resume without the player hitting the Architect. The earlier Slice 6 replay below predates this cue correction: its eyes cleared after only the directed walk, which made the remaining avoidance look like passive combat behavior.
 
 Both original textures are unchanged. Model geometry, skin, clothing, equipment, movement animations, sounds and lighting behavior are unchanged by the eye cue. No glow, particles, outline or nameplate was added. Masters and their copies never receive the flag. The cue clears with mission/departure cleanup and is not saved on entities.
 

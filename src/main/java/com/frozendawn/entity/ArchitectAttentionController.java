@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectAttentionController {
     private final ArchitectEntity actor;
     private UUID releasedPlayer;
+    private boolean reconnaissance;
     private Vec3 away, destination;
     private long walkUntil, ignoreUntil, nextStep;
 
@@ -23,18 +24,26 @@ final class ArchitectAttentionController {
                 && level.getEntity(player) instanceof net.minecraft.server.level.ServerPlayer subject)
             com.frozendawn.maeve.MaeveDirector.observeWithdrawal(actor, subject);
         releasedPlayer = player;
+        reconnaissance = kind.startsWith("RECON");
         away = actor.position().subtract(lastObserved.getCenter()).multiply(1, 0, 1).normalize();
         if (away.lengthSqr() < .01) away = new Vec3(1, 0, 0);
         walkUntil = now() + 200; ignoreUntil = now() + 600; nextStep = 0; destination = null;
         actor.cancelMaeveAttentionWork();
-        actor.setReconnaissanceEyes(kind.startsWith("RECON"));
+        actor.setReconnaissanceEyes(reconnaissance);
         actor.recordDecision(kind.startsWith("RECON_") ? "MAEVE_RECON_EXTRACTION" : "MAEVE_ATTENTION_EVICTED", null,
                 "concern=" + kind + " observed=" + lastObserved + " player=" + player);
     }
 
     boolean tick() {
         if (releasedPlayer == null) return false;
-        if (now() >= walkUntil) { actor.setReconnaissanceEyes(false); return false; }
+        if (now() >= ignoreUntil) {
+            if (reconnaissance) actor.recordDecision("MAEVE_RECON_RETURN_TO_LOCAL", null, "avoidance expired");
+            clear(); return false;
+        }
+        // The scout remains non-engaging after its directed walk ends. Keep that role
+        // visible until ordinary targeting resumes, or local damage cancels departure.
+        actor.setReconnaissanceEyes(reconnaissance);
+        if (now() >= walkUntil) return false;
         actor.getNavigation().stop(); actor.setTarget(null); actor.setMaeveHolding(false);
         actor.setCommitmentAction(false); actor.setSprinting(false);
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
@@ -79,7 +88,7 @@ final class ArchitectAttentionController {
     boolean suppresses(UUID player) { return releasedPlayer != null && releasedPlayer.equals(player) && now() < ignoreUntil; }
     boolean active() { return releasedPlayer != null && now() < ignoreUntil; }
     void clear() {
-        releasedPlayer = null; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
+        releasedPlayer = null; reconnaissance = false; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
         actor.setReconnaissanceEyes(false);
         actor.getNavigation().stop(); actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }

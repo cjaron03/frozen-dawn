@@ -31,6 +31,66 @@ public final class MaeveReconTerrainGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconInspectsWitnessedDirtPathCrossing(GameTestHelper helper) {
+        inspectPartialCrossing(helper, 43, Blocks.DIRT_PATH.defaultBlockState());
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconInspectsWitnessedLayeredSnowCrossing(GameTestHelper helper) {
+        inspectPartialCrossing(helper, 46, Blocks.SNOW.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS, 5));
+    }
+
+    private static void inspectPartialCrossing(GameTestHelper helper, int lane,
+                                                net.minecraft.world.level.block.state.BlockState surface) {
+        MaeveObservationGameTest.withScene(helper, lane, 2, scene -> {
+            for (int x = 0; x <= 24; x++) for (int z = 0; z <= 16; z++) {
+                scene.block(x, -2, z, Blocks.STONE.defaultBlockState());
+                scene.block(x, -1, z, Blocks.STONE.defaultBlockState());
+            }
+            for (int x = 3; x <= 14; x++) for (int z = 5; z <= 7; z++)
+                scene.block(x, -1, z, surface);
+            for (int x = 8; x <= 14; x++) for (int z = 3; z <= 10; z++)
+                scene.block(x, 4, z, Blocks.STONE.defaultBlockState());
+            scene.settleLight();
+            var player = scene.player("recon_partial_crossing_" + lane, 8, 6); var witness = scene.architect(3, 5);
+            double footOffset = surface.getCollisionShape(scene.level, scene.origin.offset(6, -1, 5))
+                    .max(net.minecraft.core.Direction.Axis.Y) - 1;
+            long now = (scene.gameTime / 20 + 1) * 20;
+            for (int i = 0; i < 2; i++) {
+                scene.clock(now + i * 10);
+                player.setPos(scene.position(i == 0 ? 8 : 6, i == 0 ? 6 : 5).add(0, footOffset, 0));
+                witness.setTarget(player); NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(witness));
+            }
+            var point = MaeveDirector.worldSnapshot(scene.server, player.getUUID()).stream()
+                    .filter(p -> p.label().equals("ACCESS_POINT")).findFirst().orElseThrow();
+            helper.assertTrue(point.position().getY() == scene.origin.getY() - 1,
+                    "The witnessed feet cell is the partial floor, as in the camp's west crossing");
+            witness.discard(); player.setPos(scene.position(12, 12));
+            scene.clock(now + 650); MaeveDirector.tick(scene.server);
+            var scout = scene.architect(0, 5); scout.tickCount = 80; scout.setOnGround(true);
+            for (int i = 0; i < 300; i++) {
+                scene.clock(now + 650 + i); scout.tickCount++; scout.tick();
+                NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(scout)); MaeveDirector.tick(scene.server);
+                if (MaeveDirector.missionSnapshots(scene.server, player.getUUID()).stream()
+                        .anyMatch(m -> !m.outcome().equals("ACTIVE"))) break;
+            }
+            var mission = MaeveDirector.missionSnapshots(scene.server, player.getUUID()).getFirst();
+            helper.assertTrue(mission.outcome().equals("SURVEY_COMPLETE") && mission.report().equals("OPEN"),
+                    "Visible diagonal partial-floor crossing must report OPEN: " + surface + " " + mission.outcome() + "/" + mission.report());
+            helper.assertTrue(mission.packet().access().outside().equals(point.position()), "Inspection preserves the witnessed foot-cell coordinate");
+            scout.setPos(scene.position(3, 4));
+            for (int z = 3; z <= 10; z++) for (int y = 0; y < 4; y++) scene.block(5, y, z, Blocks.STONE.defaultBlockState());
+            helper.assertTrue(MissionSensing.inspect(scout, mission.packet().access()).equals("UNSEEN"),
+                    "Correcting floor height must not see through a nearer wall");
+            for (int z = 3; z <= 10; z++) for (int y = 0; y < 4; y++) scene.block(5, y, z, Blocks.AIR.defaultBlockState());
+            for (int z = 5; z <= 7; z++) for (int y = 0; y < 3; y++) scene.block(7, y, z, Blocks.STONE.defaultBlockState());
+            helper.assertTrue(MissionSensing.inspect(scout, mission.packet().access()).equals("BLOCKED"),
+                    "A visible seal above the partial floor is still an obstruction");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void maeveObservedWalkKeepsTerrainSafetyBounds(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 41, 2, scene -> {
             // A single supported lane: unsafe terrain cannot be bypassed around its sides.

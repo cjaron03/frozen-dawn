@@ -88,21 +88,90 @@ public final class MaeveReconnaissanceGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconCueLastsUntilNaturalReacquisition(GameTestHelper helper) {
+        departureCue(helper, 44, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconDamageEndsDepartureCueAndAvoidance(GameTestHelper helper) {
+        departureCue(helper, 45, true);
+    }
+
+    private static void departureCue(GameTestHelper helper, int lane, boolean hitDuringDeparture) {
+        MaeveObservationGameTest.withScene(helper, lane, 2, scene -> {
+            var player = damageablePlayer(scene, "recon_departure_" + lane);
+            long now = history(scene, player); var actor = scout(scene); actor.startDecisionRecording(1337L);
+            for (int i = 0; i < 300; i++) {
+                tick(scene, actor, now + i);
+                if (MaeveDirector.missionSnapshots(scene.server, player.getUUID()).stream()
+                        .anyMatch(m -> m.outcome().equals("SURVEY_COMPLETE"))) break;
+            }
+            var mission = MaeveDirector.missionSnapshots(scene.server, player.getUUID()).getFirst();
+            helper.assertTrue(mission.outcome().equals("SURVEY_COMPLETE"), "The departure follows an actual completed survey");
+            long departed = mission.time();
+            // Jump only the quiet interval, then exercise actual entity ticks at its boundaries.
+            for (int elapsed : new int[] {199, 200, hitDuringDeparture ? 300 : 599}) {
+                actor.setPos(scene.position(18, 5)); actor.setDeltaMovement(Vec3.ZERO); actor.setOnGround(true);
+                tick(scene, actor, departed + elapsed);
+                helper.assertTrue(actor.isMaeveDisengaging() && actor.hasReconnaissanceEyes(),
+                        "Purple cue must cover the whole avoidance interval, including tick " + elapsed);
+                helper.assertTrue(actor.getTarget() == null, "Avoidance still suppresses the released subject");
+            }
+            long released = departed + (hitDuringDeparture ? 301 : 600);
+            if (hitDuringDeparture) {
+                helper.assertTrue(scene.hit(actor, player, true, 1), "A real bow hit interrupts withdrawal");
+                helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes(),
+                        "Damage immediately clears both avoidance and its cue");
+            }
+            player.setPos(scene.position(17, 5)); player.setYRot(-90); player.setXRot(0);
+            tick(scene, actor, released);
+            helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes(),
+                    "Local combat has ordinary eyes at natural expiry or after damage");
+            // Allow the normal 200-tick OBSERVE phase plus pursuit/melee after reacquisition.
+            for (int i = 1; i <= 400 && player.getHealth() == player.getMaxHealth(); i++) tick(scene, actor, released + i);
+            helper.assertTrue(actor.decisionJournal().entries().stream().anyMatch(e -> e.tick() >= released
+                            && e.event().equals("TARGET_CHANGE") && e.detail().contains(player.getUUID().toString())),
+                    "The player is reacquired through normal targeting");
+            helper.assertTrue(player.getHealth() < player.getMaxHealth(),
+                    "Ordinary combat resumes without requiring another player hit: " + actor.decisionJournal().entries());
+        });
+    }
+
+    private static MaeveObservationGameTest.TestPlayer damageablePlayer(MaeveObservationGameTest.Scene scene, String name) {
+        // FakePlayer otherwise rejects ordinary damage and never ticks away spawn protection.
+        // Keep the native hurt/event path so this regression requires a real melee hit.
+        var player = new MaeveObservationGameTest.TestPlayer(scene.level, name) {
+            @Override public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) { return false; }
+        };
+        try {
+            var protection = net.minecraft.server.level.ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
+            protection.setAccessible(true); protection.setInt(player, 0);
+        } catch (ReflectiveOperationException error) {
+            throw new AssertionError("Cannot clear the test player's unticked spawn protection", error);
+        }
+        player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL); player.setPos(scene.position(4, 5));
+        scene.level.addNewPlayer(player); scene.entities.add(player);
+        return player;
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void maeveReconSurveysAndLeavesThroughRealAi(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 27, scene -> {
             var player = scene.player("recon_witnessed", 4, 5); long now = history(scene, player); var actor = scout(scene);
             float health = player.getHealth(); boolean thinking = false, purple = false; MaeveDirector.MissionPacket inherited = null;
             double extractionX = Double.NEGATIVE_INFINITY;
+            long extractionStarted = -1;
             boolean peacefulExtraction = true;
             for (int i = 0; i < 400; i++) {
                 tick(scene, actor, now + i);
                 var packet = MaeveDirector.missionPacket(actor);
                 if (packet != null) inherited = packet;
                 thinking |= actor.isHoldingMaevePosition(); purple |= actor.hasReconnaissanceEyes();
-                // Extraction lasts 200 ticks; after it ends ordinary roaming may reverse
-                // direction. Measure the actual role window rather than that later position.
+                // Directed extraction lasts 200 ticks; later roaming can reverse direction
+                // while the cue still shows avoidance. Measure only that directed walk.
                 if (packet == null && actor.hasReconnaissanceEyes() && actor.isMaeveDisengaging()) {
-                    extractionX = Math.max(extractionX, actor.getX());
+                    if (extractionStarted < 0) extractionStarted = now + i;
+                    if (now + i - extractionStarted < 200) extractionX = Math.max(extractionX, actor.getX());
                     peacefulExtraction &= actor.getTarget() == null;
                 }
             }
