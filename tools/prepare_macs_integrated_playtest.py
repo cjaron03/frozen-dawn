@@ -81,6 +81,12 @@ execute if score #stage mt matches 1 run scoreboard players set #resumed mt 1'''
     'setup': '''tag @s add macs_trial
 execute unless score #initialized mt matches 1 run function macs_trial:initialize
 function macs_trial:status''',
+    'reset': '''tag @s add macs_trial
+execute if score #stage mt matches 1 run function macs_trial:snapshot
+execute as @e[tag=macs_trial_actor] run data merge entity @s {NoAI:1b}
+kill @e[tag=macs_trial_actor]
+execute if score #initialized mt matches 1 run tp @s 2048.5 101 2132.5 180 0
+function macs_trial:initialize''',
     'initialize': '''scoreboard players set #initialized mt 1
 scoreboard players set #stage mt 3
 scoreboard players set #round mt 0
@@ -108,6 +114,9 @@ forceload add 1992 1992 2104 2104
 forceload add 2040 2120 2056 2140
 ''' + tell('Preparing the camp. Stay here until the Camp ready message; no visitor can start during construction.'),
     'build_complete': '''function macs_trial:build
+kill @e[type=minecraft:arrow,x=2000,y=99,z=2000,dx=96,dy=40,dz=140]
+kill @e[type=minecraft:item,x=2000,y=99,z=2000,dx=96,dy=40,dz=140]
+kill @e[type=minecraft:experience_orb,x=2000,y=99,z=2000,dx=96,dy=40,dz=140]
 gamemode survival @s
 effect clear @s
 clear @s
@@ -183,7 +192,7 @@ execute unless score #stage mt matches 0 run tellraw @s {"text":"Refill is avail
 scoreboard players list #stage
 fd world status
 fd maeve status
-''' + tell('Stage 0: enter/start; 1: playing; 2: empty gap; 3: preparing the camp. Finish ends an encounter; abort stops it immediately. Setup never resets an initialized trial.'),
+''' + tell('Stage 0: enter/start; 1: playing; 2: empty gap; 3: preparing the camp. Finish ends an encounter; abort stops it immediately. Setup preserves progress. Use /function macs_trial:reset only for a fresh camp and empty tactical memory.'),
     'tick': '''execute if score #stage mt matches 1 run scoreboard players add #timer mt 1
 execute if score #stage mt matches 2 run scoreboard players add #timer mt 1
 execute if score #stage mt matches 3 run scoreboard players add #timer mt 1
