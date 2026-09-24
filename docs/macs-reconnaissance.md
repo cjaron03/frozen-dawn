@@ -24,11 +24,13 @@ Visible player movement during inspection uses the same existing spatial-event v
 
 ## Purple eyes
 
-The owner requested exactly one visual distinction: purple eyes, with the existing blink. A synchronized transient flag enables a render layer only for the active scout and its withdrawal. It covers only the existing two 2×3-pixel eye regions, preserving the three brightness rows and the thin closed-eye row. The layer calls the renderer's existing 97-tick blink decision; it adds no timer or animation.
+The owner initially requested exactly one visual distinction: purple eyes, with the existing blink. A synchronized transient flag enables a render layer only for the active scout and its withdrawal. It covers only the existing two 2×3-pixel eye regions, preserving the three brightness rows and the thin closed-eye row. The layer calls the renderer's existing 97-tick blink decision; it adds no timer or animation.
 
 The cue now lasts through the full 600-tick departure avoidance interval, including the ordinary roaming after the initial 200-tick directed walk. It clears when that interval expires or actual damage interrupts departure. Natural expiry records `MAEVE_RECON_RETURN_TO_LOCAL` and releases the temporary avoidance state; ordinary targeting and observation can then resume without the player hitting the Architect. The earlier Slice 6 replay below predates this cue correction: its eyes cleared after only the directed walk, which made the remaining avoidance look like passive combat behavior.
 
 Both original textures are unchanged. Model geometry, skin, clothing, equipment, movement animations, sounds and lighting behavior are unchanged by the eye cue. No glow, particles, outline or nameplate was added. Masters and their copies never receive the flag. The cue clears with mission/departure cleanup and is not saved on entities.
+
+After the 2026-09-23 camp replay, the owner requested an additional indicator because a purple-eyed scout roaming with ice in its hand still looked like ordinary combat. Noncombat scout travel, inspection, directed departure and subsequent targetless roaming now use the existing hand-to-chin/head-tilt pose with an empty main hand. The pose preserves its walking gait and adds no movement pause. Its separate transient flag follows the actual executor branch, rather than the fallback utility action (`FORTIFY` may mean targetless roaming). Normal combat against another eligible player retains its real equipment and animation while the original subject is avoided. Damage, expiry, reload and erasure clear the scout pose; healing retains the potion. Texture, blink and production timing remain unchanged. Server journal heartbeats expose `maeveHold`, `reconEyes` and `scoutPose` for diagnosis; a live visual check is still needed for this additional cue.
 
 ## Attention, multiplayer and persistence
 

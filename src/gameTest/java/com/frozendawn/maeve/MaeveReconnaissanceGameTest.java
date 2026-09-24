@@ -97,6 +97,38 @@ public final class MaeveReconnaissanceGameTest {
         departureCue(helper, 45, true);
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveReconPoseDoesNotMaskAnotherPlayersCombat(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 47, 2, scene -> {
+            var subject = damageablePlayer(scene, "recon_departure_subject");
+            long now = history(scene, subject); var actor = scout(scene); actor.startDecisionRecording(1337L);
+            for (int i = 0; i < 300; i++) {
+                tick(scene, actor, now + i);
+                if (MaeveDirector.missionSnapshots(scene.server, subject.getUUID()).stream()
+                        .anyMatch(m -> m.outcome().equals("SURVEY_COMPLETE"))) break;
+            }
+            var mission = MaeveDirector.missionSnapshots(scene.server, subject.getUUID()).getFirst();
+            helper.assertTrue(mission.outcome().equals("SURVEY_COMPLETE"), "A completed survey begins departure");
+            long departed = mission.time();
+            actor.setPos(scene.position(18, 5)); actor.setDeltaMovement(Vec3.ZERO); actor.setOnGround(true);
+            tick(scene, actor, departed + 200);
+            helper.assertTrue(actor.isShowingReconnaissancePose() && actor.getMainHandItem().isEmpty(),
+                    "Roaming with no eligible combat target retains the scout presentation");
+            var other = damageablePlayer(scene, "recon_departure_other");
+            other.setPos(scene.position(17, 5)); other.setYRot(-90); other.setXRot(0);
+            for (int i = 1; i <= 300 && other.getHealth() == other.getMaxHealth(); i++) {
+                tick(scene, actor, departed + 200 + i);
+                helper.assertTrue(!actor.isShowingReconnaissancePose(), "A second player's combat cannot be disguised as passive scouting");
+            }
+            helper.assertTrue(actor.isMaeveDisengaging() && actor.hasReconnaissanceEyes(),
+                    "The original subject remains avoided until its existing deadline");
+            helper.assertTrue(other.getHealth() < other.getMaxHealth()
+                            && actor.getMainHandItem().is(net.minecraft.world.item.Items.WOODEN_SWORD),
+                    "The second player's ordinary combat retains real melee and its sword");
+            helper.assertTrue(subject.getHealth() == subject.getMaxHealth(), "The released subject is not attacked");
+        });
+    }
+
     private static void departureCue(GameTestHelper helper, int lane, boolean hitDuringDeparture) {
         MaeveObservationGameTest.withScene(helper, lane, 2, scene -> {
             var player = damageablePlayer(scene, "recon_departure_" + lane);
@@ -115,17 +147,19 @@ public final class MaeveReconnaissanceGameTest {
                 tick(scene, actor, departed + elapsed);
                 helper.assertTrue(actor.isMaeveDisengaging() && actor.hasReconnaissanceEyes(),
                         "Purple cue must cover the whole avoidance interval, including tick " + elapsed);
+                helper.assertTrue(actor.isShowingReconnaissancePose() && actor.getMainHandItem().isEmpty(),
+                        "Both directed departure and later roaming use the scout pose with no misleading ice or weapon");
                 helper.assertTrue(actor.getTarget() == null, "Avoidance still suppresses the released subject");
             }
             long released = departed + (hitDuringDeparture ? 301 : 600);
             if (hitDuringDeparture) {
                 helper.assertTrue(scene.hit(actor, player, true, 1), "A real bow hit interrupts withdrawal");
-                helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes(),
+                helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes() && !actor.isShowingReconnaissancePose(),
                         "Damage immediately clears both avoidance and its cue");
             }
             player.setPos(scene.position(17, 5)); player.setYRot(-90); player.setXRot(0);
             tick(scene, actor, released);
-            helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes(),
+            helper.assertTrue(!actor.isMaeveDisengaging() && !actor.hasReconnaissanceEyes() && !actor.isShowingReconnaissancePose(),
                     "Local combat has ordinary eyes at natural expiry or after damage");
             // Allow the normal 200-tick OBSERVE phase plus pursuit/melee after reacquisition.
             for (int i = 1; i <= 400 && player.getHealth() == player.getMaxHealth(); i++) tick(scene, actor, released + i);
@@ -134,6 +168,8 @@ public final class MaeveReconnaissanceGameTest {
                     "The player is reacquired through normal targeting");
             helper.assertTrue(player.getHealth() < player.getMaxHealth(),
                     "Ordinary combat resumes without requiring another player hit: " + actor.decisionJournal().entries());
+            helper.assertTrue(actor.getMainHandItem().is(net.minecraft.world.item.Items.WOODEN_SWORD),
+                    "Returning to combat restores the actual combat item");
         });
     }
 
@@ -167,6 +203,9 @@ public final class MaeveReconnaissanceGameTest {
                 var packet = MaeveDirector.missionPacket(actor);
                 if (packet != null) inherited = packet;
                 thinking |= actor.isHoldingMaevePosition(); purple |= actor.hasReconnaissanceEyes();
+                if (actor.hasReconnaissanceEyes()) helper.assertTrue(actor.isShowingReconnaissancePose()
+                                && actor.getMainHandItem().isEmpty(),
+                        "Scout travel, inspection and departure retain the noncombat presentation");
                 // Directed extraction lasts 200 ticks; later roaming can reverse direction
                 // while the cue still shows avoidance. Measure only that directed walk.
                 if (packet == null && actor.hasReconnaissanceEyes() && actor.isMaeveDisengaging()) {
@@ -189,7 +228,8 @@ public final class MaeveReconnaissanceGameTest {
             helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().isEmpty(), "Completed survey releases its concern");
             var saved = MaeveSavedData.get(scene.server).save(new CompoundTag(), scene.level.registryAccess());
             scene.storage(MaeveSavedData.load(saved, scene.level.registryAccess()));
-            helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, player.getUUID()).isEmpty() && !actor.hasReconnaissanceEyes(), "Reload drops packets, role cue and transient history");
+            helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, player.getUUID()).isEmpty()
+                    && !actor.hasReconnaissanceEyes() && !actor.isShowingReconnaissancePose(), "Reload drops packets, role cue and transient history");
             helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst().confidence() >= .9, "The witnessed report survives save/load");
         });
     }
@@ -236,7 +276,7 @@ public final class MaeveReconnaissanceGameTest {
             helper.assertTrue(MaeveDirector.worldSnapshot(scene.server, player.getUUID()).getFirst().confidence() == .2, "Unanswered uncertainty is retained after eviction");
             helper.assertTrue(MaeveDirector.missionSnapshots(scene.server, other.getUUID()).isEmpty(), "Packet diagnostics isolate players");
             PostMaeveWorldState.setForDebug(scene.server, true);
-            helper.assertTrue(!actor.hasReconnaissanceEyes() && !actor.isMaeveDisengaging()
+            helper.assertTrue(!actor.hasReconnaissanceEyes() && !actor.isShowingReconnaissancePose() && !actor.isMaeveDisengaging()
                     && MaeveDirector.missionSnapshots(scene.server, null).isEmpty(), "Erasure immediately releases scout, departure and retained packet history");
             helper.assertTrue(!MaeveSavedData.get(scene.server).save(new CompoundTag(), null).contains("beliefs"), "No packet or observations survive in an erased save");
             PostMaeveWorldState.setForDebug(scene.server, false);

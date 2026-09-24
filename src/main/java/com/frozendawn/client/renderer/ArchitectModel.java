@@ -123,7 +123,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
-        if (entity.isHoldingMaevePosition()) {
+        if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
             // Preserve vanilla's attack swing when defending the held point.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
                 applyObservePose(ageInTicks, sway, limbSwingAmount);

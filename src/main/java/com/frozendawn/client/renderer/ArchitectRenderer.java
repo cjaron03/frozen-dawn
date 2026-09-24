@@ -154,6 +154,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                     Mth.sin(time * 6.8F) * 2.8F));
         } else if (!entity.isMasterArchitectVisual()
                 && !entity.isHoldingMaevePosition()
+                && !entity.isShowingReconnaissancePose()
                 && (action == ArchitectEntity.ACTION_OBSERVE
                 || action == ArchitectEntity.ACTION_PEEK)) {
             float sway = Mth.sin((entity.tickCount + partialTick) * 0.035f) * 0.9f;

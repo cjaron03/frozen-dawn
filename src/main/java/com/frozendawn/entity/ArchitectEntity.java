@@ -139,6 +139,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_EYES =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RECON_POSE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
 
@@ -363,6 +365,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_PURSUIT_POSE, 0);
         builder.define(DATA_MAEVE_HOLD, false);
         builder.define(DATA_RECON_EYES, false);
+        builder.define(DATA_RECON_POSE, false);
     }
 
     @Override
@@ -389,6 +392,7 @@ public class ArchitectEntity extends Monster {
     }
 
     private boolean isBuildingIceNow() {
+        if (isShowingReconnaissancePose()) return false;
         return getBrainAction() == ACTION_FORTIFY
                 || getBrainAction() == ACTION_TRAP_SET
                 || (getBrainAction() == ACTION_RETREAT && combatState.retreatPhase == 1)
@@ -433,7 +437,20 @@ public class ArchitectEntity extends Monster {
         entityData.set(DATA_MAEVE_HOLD, holding);
     }
     public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
-    void setReconnaissanceEyes(boolean active) { entityData.set(DATA_RECON_EYES, active); }
+    void setReconnaissanceEyes(boolean active) {
+        entityData.set(DATA_RECON_EYES, active);
+        if (!active) entityData.set(DATA_RECON_POSE, false);
+    }
+
+    /** Presentation of an actual noncombat scout task, independent of its fallback utility action. */
+    public boolean isShowingReconnaissancePose() {
+        return entityData.get(DATA_RECON_POSE) && hasReconnaissanceEyes() && isAlive()
+                && !isNoAi() && getDeathTicks() == 0;
+    }
+
+    private void updateReconnaissancePose(boolean passive) {
+        entityData.set(DATA_RECON_POSE, passive && hasReconnaissanceEyes() && !combatState.isDrinkingPotion);
+    }
 
     void resetReevalCooldown() {
         brainState.setReevalCooldown(0);
@@ -557,20 +574,21 @@ public class ArchitectEntity extends Monster {
         if (level().isClientSide()) {
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
-            boolean holding = isHoldingMaevePosition();
+            boolean thinking = isHoldingMaevePosition() || isShowingReconnaissancePose();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
                     && isAlive() && !isNoAi() && getDeathTicks() == 0;
             thinkingTilt = net.minecraft.util.Mth.approach(thinkingTilt,
-                    holding || allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
+                    thinking || allowed && pose > 0 ? 1.0F : 0.0F, 0.16F);
             thinkingHand = net.minecraft.util.Mth.approach(thinkingHand,
-                    holding || allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
+                    thinking || allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
         } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
             entityData.set(DATA_PURSUIT_POSE, 0);
             entityData.set(DATA_MAEVE_HOLD, false);
+            updateReconnaissancePose(false);
         }
         if (level().isClientSide() && clientMasterTetherHurtSuppressionTicks > 0) {
             clientMasterTetherHurtSuppressionTicks--;
@@ -634,6 +652,7 @@ public class ArchitectEntity extends Monster {
         if (level().isClientSide()) return;
 
         if (maeveAttention.tick()) {
+            updateReconnaissancePose(true);
             entityData.set(DATA_PURSUIT_POSE, 0);
             updateHeldItem(); syncRenderState(); return;
         }
@@ -681,6 +700,7 @@ public class ArchitectEntity extends Monster {
         long gameTick = level().getGameTime();
 
         if (maeveReconnaissance.tick(null)) {
+            updateReconnaissancePose(true);
             entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
         }
 
@@ -688,8 +708,12 @@ public class ArchitectEntity extends Monster {
         // Architect senses through blocks — always knows target position
         LivingEntity target = findTarget();
         if (target instanceof ServerPlayer player && maeveReconnaissance.tick(player)) {
+            updateReconnaissancePose(true);
             entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
         }
+        // Roaming after extraction remains a scout task. A different player's combat
+        // must retain its actual tools and animation even while the old subject is avoided.
+        updateReconnaissancePose(target == null);
         // Roaming selection deliberately does not mutate vanilla's target field.
         // Supply that local candidate to the same perception validator used by the Post hook.
         if (gameTick % 10 == 0 && target instanceof ServerPlayer player && getTarget() != target) MaeveDirector.observePresence(this, player);
@@ -718,6 +742,8 @@ public class ArchitectEntity extends Monster {
                     "target=" + (target == null ? "none" : target.getName().getString())
                             + " targetPos=" + decisionJournal.relative(target == null ? null : target.blockPosition())
                             + " targetHealth=" + (target == null ? "-" : target.getHealth())
+                            + " maeveHold=" + isHoldingMaevePosition()
+                            + " reconEyes=" + hasReconnaissanceEyes() + " scoutPose=" + isShowingReconnaissancePose()
                             + " mining=" + blockBreaker.isMining()
                             + " collision=" + horizontalCollision
                             + " locked=" + (debugForcedTargetId != null));
