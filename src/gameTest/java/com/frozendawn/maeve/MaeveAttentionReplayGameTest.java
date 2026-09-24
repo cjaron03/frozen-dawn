@@ -57,7 +57,8 @@ public final class MaeveAttentionReplayGameTest {
         start += 200;
         for (int i = 0; i < 5; i++) { scene.clock(start + i * 640); guest.finish(scene.potion()); }
         helper.assertTrue(scene.beliefs(guest).stream().anyMatch(b -> b.pattern().equals(BeliefStore.RECOVERY) && b.confidence() >= .99),
-                "Five actual completed restorative uses must supply the historical belief");
+                "Five actual completed restorative uses must supply the historical belief: sky="
+                        + scene.level.canSeeSky(guest.blockPosition()) + " beliefs=" + scene.beliefs(guest));
         trainer.discard();
         for (int x = 13; x <= 15; x++) for (int y = 0; y <= 3; y++) for (int z = 3; z <= 5; z++) scene.block(x, y, z, Blocks.AIR.defaultBlockState());
         long now = start + 5 * 640;

@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 final class SpatialObservations {
     private SpatialObservations() { }
 
-    static void presence(BeliefStore store, ArchitectEntity observer, ServerPlayer player, long now) {
+    static void presence(BeliefStore store, MissionPlanner missions, ArchitectEntity observer, ServerPlayer player, long now) {
         if (!ObservationCollector.canObserve(observer, player, false)) {
             var world = store.world(player.getUUID()); if (world != null) world.forget(observer.getUUID());
             return;
@@ -35,10 +35,10 @@ final class SpatialObservations {
             world.access(dim, outside, inside, evidence);
             String bearing = WorldModel.bearing(world.center(dim), outside);
             if (!covered && bearing != null) {
-                store.record(player.getUUID(), observer.getUUID(), dim, outside, now, bearing, true, "WITNESSED_OUTWARD_CROSSING");
+                ObservationCollector.record(store, missions, observer, player, outside, now, bearing, true, "WITNESSED_OUTWARD_CROSSING");
                 for (var belief : store.snapshot(player.getUUID(), now)) {
                     if (WorldModel.BEARINGS.contains(belief.pattern()) && !bearing.equals(belief.pattern())) {
-                        store.record(player.getUUID(), observer.getUUID(), dim, outside, now, belief.pattern(), false, "WITNESSED_OTHER_RETREAT_BEARING");
+                        ObservationCollector.record(store, missions, observer, player, outside, now, belief.pattern(), false, "WITNESSED_OTHER_RETREAT_BEARING");
                     }
                 }
             }

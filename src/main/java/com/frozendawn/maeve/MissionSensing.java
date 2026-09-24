@@ -13,10 +13,18 @@ final class MissionSensing {
         if (actor.blockPosition().distSqr(hint.outside()) > 36 || hint.inside().distSqr(hint.outside()) > 16) return "UNSEEN";
         Vec3 start = Vec3.atBottomCenterOf(hint.outside()), end = Vec3.atBottomCenterOf(hint.inside());
         int steps = Math.max(1, (int) Math.ceil(start.distanceTo(end) * 2));
+        int upperFeetY = Math.max(hint.outside().getY(), hint.inside().getY());
         boolean clear = true;
         for (int i = 0; i <= steps; i++) {
             BlockPos feet = BlockPos.containing(start.lerp(end, (double) i / steps));
             if (!loadedRay(actor, feet)) return "UNSEEN";
+            // Interpolating integer feet cells can cut into a full floor after a partial
+            // path/slab. Only lift through full supports BELOW the witnessed upper feet
+            // height; a new block at that height is still an obstruction to inspect.
+            while (feet.getY() < upperFeetY
+                    && actor.level().getBlockState(feet).isCollisionShapeFullBlock(actor.level(), feet)) {
+                feet = feet.above();
+            }
             // A witnessed feet cell can contain the supporting path, slab or snow layer.
             // Its collision top is the floor; aim into the clearance above that surface.
             double supportTop = ArchitectWalkGeometry.partialSurfaceOffset(actor.level(), feet);

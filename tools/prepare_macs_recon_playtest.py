@@ -7,6 +7,9 @@ import shutil
 from pathlib import Path
 
 SCRIPTS = {
+    # Bundled QA functions are visible in every lab world. Only the dedicated
+    # world's pack overrides this marker and supplies the progression tick tag.
+    'fixture': 'return 0',
     'load': 'scoreboard objectives add mr dummy',
     'cleanup': '''execute as @e[tag=macs_recon_actor] run data merge entity @s {NoAI:1b}
 kill @e[tag=macs_recon_actor]''',
@@ -70,7 +73,8 @@ tp @a[tag=macs_recon] 760.5 101 750.5 0 0
 tellraw @a[tag=macs_recon] {"text":"Crossing exercise complete. Run /fd maeve dump directly to verify the observation. Click to skip the empty waiting gap, then wait for Sprint completed.","color":"yellow","clickEvent":{"action":"run_command","value":"/tick sprint 620t"}}''',
     'ready': '''scoreboard players set #stage mr 3
 tellraw @a[tag=macs_recon] {"text":"Ready. After Sprint completed, click Start or run /function macs_recon:start. Watch the encounter and describe it before opening another dump.","color":"green","clickEvent":{"action":"run_command","value":"/function macs_recon:start"}}''',
-    'start': '''execute if score #stage mr matches 3 if score #site mr matches 0 run function macs_recon:encounter_0
+    'start': '''execute unless score #stage mr matches 3 run return run function macs_recon:status
+execute if score #stage mr matches 3 if score #site mr matches 0 run function macs_recon:encounter_0
 execute if score #stage mr matches 3 if score #site mr matches 1 run function macs_recon:encounter_1
 execute if score #stage mr matches 3 if score #site mr matches 2 run function macs_recon:encounter_2''',
     'tick': '''execute if score #stage mr matches 1 if score #site mr matches 0 run function macs_recon:crossing_0
@@ -80,7 +84,7 @@ execute if score #stage mr matches 1 if score #wait mr matches 20.. run function
 execute if score #stage mr matches 2 run scoreboard players add #wait mr 1
 execute if score #stage mr matches 2 if score #wait mr matches 630.. run function macs_recon:ready
 execute if score #stage mr matches 4 run scoreboard players add #timer mr 1
-execute if score #stage mr matches 4 if score #timer mr matches 460.. run function macs_recon:finish''',
+execute if score #stage mr matches 4 if score #timer mr matches 1100.. run function macs_recon:finish''',
     'walk_prompt': '''scoreboard players set #wait mr 0
 scoreboard players set #stage mr 1
 tellraw @a[tag=macs_recon] {"text":"Walk normally from blue through the doorway to gold now, then stop briefly.","color":"green"}''',
@@ -129,7 +133,7 @@ summon frozendawn:architect {x+22}.5 101 705.5 {{Tags:["macs_recon_actor"],Persi
 fd architect record @e[tag=macs_recon_actor,limit=1] 1337
 scoreboard players set #timer mr 0
 scoreboard players set #stage mr 4
-tellraw @a[tag=macs_recon] {{"text":"Encounter started. Stay near the green area initially, then move as you like. It pauses after 23 seconds.","color":"aqua"}}'''
+tellraw @a[tag=macs_recon] {{"text":"Encounter started. Stay near the green area initially, then move as you like. It pauses after 55 seconds, allowing the full withdrawal and return to finish.","color":"aqua"}}'''
 
 SCRIPTS['tick'] += '''\nexecute if score #stage mr matches 7 run scoreboard players add #wait mr 1
 execute if score #stage mr matches 7 if score #wait mr matches 60.. run function macs_recon:walk_prompt'''
@@ -138,6 +142,11 @@ def write_pack(pack, game_test=False):
     functions = pack / 'data/macs_recon/function'
     functions.mkdir(parents=True, exist_ok=True)
     for name, text in SCRIPTS.items():
+        if name == 'fixture':
+            text = 'return 0' if game_test else 'return 1'
+        else:
+            message = json.dumps({'text': 'Open MACS Recon Encounter from Singleplayer first. This world does not run the recon exercise; nothing was changed.', 'color': 'yellow'})
+            text = f'execute unless function macs_recon:fixture run return run tellraw @s {message}\n' + text
         (functions / f'{name}.mcfunction').write_text(text + '\n')
     if not game_test:
         (pack / 'pack.mcmeta').write_text(json.dumps({'pack': {'pack_format': 48, 'description': 'MACS Slice 6 isolated encounter'}}))

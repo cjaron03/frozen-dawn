@@ -59,10 +59,12 @@ class DirectorDiagnosticsTest {
         observe(store, 6602, BeliefStore.RANGED, false, "WITNESSED_MELEE_DAMAGE");
         String result = explain(store, 6700, BeliefStore.RANGED);
         assertTrue(result.contains("EVIDENCE: 12 contributing encounters; 7 retained events"));
-        assertTrue(result.contains("HISTORY: 8/8 retained entries; 5 counted contributions no longer retained"));
+        assertTrue(result.contains("HISTORY: 8/8 retained entries; 6 counted contributions no longer retained"));
         assertTrue(result.contains("Repeated support refreshes confirmation"));
         assertTrue(result.contains("tick=6601 observer="));
-        assertFalse(result.contains("tick=6600 observer="));
+        assertTrue(result.contains("tick=6600 observer="));
+        assertTrue(result.contains("VERIFY WITNESSED_PROJECTILE_DAMAGE tick=6601"));
+        assertTrue(result.contains("weight=+0.00"));
         assertEquals(8, result.lines().filter(line -> line.contains(" observer=")).count());
     }
 

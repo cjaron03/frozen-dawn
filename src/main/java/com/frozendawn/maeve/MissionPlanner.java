@@ -35,12 +35,23 @@ final class MissionPlanner {
         return actor.isMasterArchitectVisual() || mission == null ? null : mission.packet();
     }
 
+    MaeveDirector.MissionPacket observing(ArchitectEntity actor, ServerPlayer subject, long time) {
+        var packet = packet(actor);
+        return packet != null && packet.player().equals(subject.getUUID()) && time >= packet.issuedAt()
+                && time < packet.expiresAt() && packet.dimension().equals(actor.level().dimension().location().toString())
+                ? packet : null;
+    }
+
     boolean request(ArchitectEntity actor, ServerPlayer player) {
         var store = data.store(); long now = now();
         if (store == null || !CommitmentCoordinator.eligible(actor, player) || actor.isMaeveDisengaging()
+                || !actor.canBeginMaeveReconnaissance()
                 || active.containsKey(actor.getUUID()) || active.size() >= 5
                 || now < retry.getOrDefault(actor.getUUID(), 0L) || CommitmentCoordinator.directive(data, actor) != null
                 || active.values().stream().anyMatch(m -> m.packet().player().equals(player.getUUID()))) return false;
+        var hints = CommitmentCoordinator.hints(data, actor, player);
+        var encounter = store.commitment(player.getUUID());
+        if (encounter == null || !encounter.canSurvey()) return false;
         var world = store.world(player.getUUID()); if (world == null) return false;
         String dimension = actor.level().dimension().location().toString();
         var target = world.snapshot(now).stream().filter(p -> p.label().equals("ACCESS_POINT") && p.dimension().equals(dimension)
@@ -50,7 +61,6 @@ final class MissionPlanner {
                         .thenComparingLong(MaeveDirector.WorldPointSnapshot::observedAt)
                         .thenComparing(p -> p.position().asLong())).orElse(null);
         if (target == null) return false;
-        var hints = CommitmentCoordinator.hints(data, actor, player);
         var focus = attention.snapshot();
         boolean threatened = actor.distanceToSqr(player) < 7 * 7 || actor.getLastHurtByMob() != null
                 && actor.tickCount - actor.getLastHurtByMobTimestamp() < 100;
@@ -68,10 +78,20 @@ final class MissionPlanner {
                         "COMBAT: release for local self-defense on damage", "EXTRACTION: preferred; no prolonged engagement"),
                 options.stream().map(StrategySelector.Score::describe).toList(), now, now + TIMEOUT);
         if (!attention.reconnaissance(actor, player)) return false;
+        encounter.surveyIssued(); data.setDirty();
         active.put(actor.getUUID(), new Mission(packet, "UNREPORTED", -1));
         actor.recordDecision("MAEVE_RECON_ASSIGNED", null, "mission=" + packet.id() + " access=" + target.position()
                 + " confidence=" + target.confidence() + " source=" + packet.access().source());
         return true;
+    }
+
+    void engage(ArchitectEntity actor, ServerPlayer player) {
+        if (data.store() == null || !CommitmentCoordinator.eligible(actor, player)) return;
+        CommitmentCoordinator.hints(data, actor, player);
+        var state = data.store().commitment(player.getUUID());
+        if (state != null && state.engage()) {
+            data.setDirty(); actor.recordDecision("MAEVE_COMBAT_STARTED", null, "encounter=" + state.encounter());
+        }
     }
 
     String sample(ArchitectEntity actor) {
@@ -80,7 +100,7 @@ final class MissionPlanner {
         var packet = mission.packet(); long now = now();
         if (!packet.dimension().equals(actor.level().dimension().location().toString()) || now < packet.issuedAt() || now >= packet.expiresAt()) return "UNSEEN";
         if (actor.level().getPlayerByUUID(packet.player()) instanceof ServerPlayer player) {
-            SpatialObservations.presence(data.store(), actor, player, now); data.setDirty();
+            SpatialObservations.presence(data.store(), this, actor, player, now); data.setDirty();
         }
         if (!mission.report().equals("UNREPORTED")) return mission.report();
         if (mission.sampledAt() >= 0 && now - mission.sampledAt() < 20) return "UNSEEN";

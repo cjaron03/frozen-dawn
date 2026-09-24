@@ -7,7 +7,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-/** A dropped concern is acted out locally: turn away, leave, then resume roaming. */
+/** A dropped concern leaves locally; a completed scout pauses visibly before returning. */
 final class ArchitectAttentionController {
     private final ArchitectEntity actor;
     private UUID releasedPlayer;
@@ -37,13 +37,31 @@ final class ArchitectAttentionController {
     boolean tick() {
         if (releasedPlayer == null) return false;
         if (now() >= ignoreUntil) {
-            if (reconnaissance) actor.recordDecision("MAEVE_RECON_RETURN_TO_LOCAL", null, "avoidance expired");
+            if (reconnaissance) {
+                actor.recordDecision("MAEVE_RECON_RETURN_TO_LOCAL", null, "avoidance expired");
+                actor.resumeAfterReconnaissance();
+            }
             clear(); return false;
         }
         // The scout remains non-engaging after its directed walk ends. Keep that role
         // visible until ordinary targeting resumes, or local damage cancels departure.
         actor.setReconnaissanceEyes(reconnaissance);
-        if (now() >= walkUntil) return false;
+        if (now() >= walkUntil) {
+            if (!reconnaissance) return false;
+            int remaining = (int) (ignoreUntil - now());
+            int form = remaining <= 20 ? -remaining : (int) Math.min(20, now() - walkUntil + 1);
+            if (actor.getReconnaissanceDissolve() == 0)
+                actor.recordDecision("MAEVE_RECON_DISSOLVE", null, "withdrawalTicks=200; vulnerable same entity");
+            if (form == -20) actor.recordDecision("MAEVE_RECON_REFORM", null, "return to local combat at " + ignoreUntil);
+            actor.setReconnaissanceCloudStart(walkUntil);
+            actor.setReconnaissanceDissolve(form);
+            actor.getNavigation().stop(); actor.setTarget(null); actor.setSprinting(false);
+            actor.setMaeveHolding(false); actor.setCommitmentAction(true);
+            actor.getMoveControl().setWantedPosition(actor.getX(), actor.getY(), actor.getZ(), 0);
+            actor.setSpeed(0); actor.setZza(0); actor.setXxa(0);
+            actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
+            return true;
+        }
         actor.getNavigation().stop(); actor.setTarget(null); actor.setMaeveHolding(false);
         actor.setCommitmentAction(false); actor.setSprinting(false);
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
@@ -90,6 +108,7 @@ final class ArchitectAttentionController {
     void clear() {
         releasedPlayer = null; reconnaissance = false; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
         actor.setReconnaissanceEyes(false);
+        actor.setReconnaissanceDissolve(0);
         actor.getNavigation().stop(); actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }
 }

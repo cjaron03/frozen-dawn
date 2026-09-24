@@ -162,6 +162,13 @@ final class ArchitectApproachController {
 
         BlockPos avoidImmediateBacktrack = architect.getImmediateBacktrackPos();
         DStarLitePathfinder.NextStep step = planningSupport.getNextStep(avoidImmediateBacktrack);
+        // Reusing an approximate goal is cheap while walking. Before changing terrain,
+        // resolve the route to the current locally perceived target instead of building
+        // toward a position the player already left.
+        if (planningSupport.hasOutdatedConstructionGoal(step, targetPos)) {
+            if (!planningSupport.refreshConstructionPlan(target, targetPos)) return;
+            step = planningSupport.getNextStep(avoidImmediateBacktrack);
+        }
         architect.recordStep(step);
         architect.keepPassageOpenNear(step.pos());
 

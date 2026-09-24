@@ -5,6 +5,7 @@ import com.frozendawn.entity.ArchitectEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -50,16 +51,39 @@ final class ObservationCollector {
         return observer.hasLineOfSight(player);
     }
 
-    static void damage(BeliefStore store, ArchitectEntity observer, DamageSource source, float damage, long now) {
+    static void damage(BeliefStore store, MissionPlanner missions, ArchitectEntity observer, DamageSource source, float damage, long now) {
         if (!(damage > 0.0F) || !Float.isFinite(damage)
                 || !(source.getEntity() instanceof ServerPlayer player)
                 || !canObserve(observer, player, true)) return;
         boolean ranged = source.is(DamageTypeTags.IS_PROJECTILE);
         boolean melee = source.getDirectEntity() == player && source.getMsgId().equals("player");
         if (!ranged && !melee) return;
-        store.record(player.getUUID(), observer.getUUID(), player.level().dimension().location().toString(),
-                player.blockPosition(), now, BeliefStore.RANGED, ranged,
+        record(store, missions, observer, player, player.blockPosition(), now, BeliefStore.RANGED, ranged,
                 ranged ? "WITNESSED_PROJECTILE_DAMAGE" : "WITNESSED_MELEE_DAMAGE");
+        sword(store, missions, observer, player, source, now, false);
+    }
+
+    static void sword(BeliefStore store, MissionPlanner missions, ArchitectEntity observer, ServerPlayer player,
+                      DamageSource source, long now, boolean blocked) {
+        boolean projectile = source.is(DamageTypeTags.IS_PROJECTILE);
+        boolean melee = source.getDirectEntity() == player && source.getMsgId().equals("player");
+        if ((!projectile && !melee) || !canObserve(observer, player, true)) return;
+        boolean sword = melee && player.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
+        // Absence of sword evidence stays unknown; do not create a negative-only profile for every arrow.
+        if (!sword && store.snapshot(player.getUUID(), now).stream().noneMatch(b -> b.pattern().equals(BeliefStore.SWORD))) return;
+        String action = blocked ? "WITNESSED_SHIELD_BLOCK_" : "WITNESSED_DAMAGE_";
+        action += sword ? "SWORD" : projectile ? "PROJECTILE" : "NON_SWORD_MELEE";
+        if (melee) action += " weapon=" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
+        record(store, missions, observer, player, player.blockPosition(), now, BeliefStore.SWORD, sword, action);
+    }
+
+    static void record(BeliefStore store, MissionPlanner missions, ArchitectEntity observer, ServerPlayer player,
+                       BlockPos position, long now, String pattern, boolean supporting, String action) {
+        var mission = missions.observing(observer, player, now);
+        double weight = supporting ? mission == null ? BeliefPolicy.SUPPORT : BeliefPolicy.RECON_SUPPORT
+                : -BeliefPolicy.CONTRADICTION;
+        store.record(player.getUUID(), observer.getUUID(), player.level().dimension().location().toString(),
+                position, now, pattern, supporting, action + (mission == null ? "" : " reconMission=" + mission.id()), weight);
     }
 
     static boolean restorative(ItemStack stack) {
@@ -73,19 +97,19 @@ final class ObservationCollector {
         return false;
     }
 
-    static void recovery(BeliefStore store, ServerPlayer player, ItemStack consumed, long now) {
+    static void recovery(BeliefStore store, MissionPlanner missions, ServerPlayer player, ItemStack consumed, long now) {
         if (!restorative(consumed) || player.isCreative() || player.isSpectator() || !player.isAlive()) return;
         ArrayList<ArchitectEntity> candidates = new ArrayList<>();
         player.serverLevel().getEntities(EntityTypeTest.forClass(ArchitectEntity.class),
                 player.getBoundingBox().inflate(RANGE), candidate -> !candidate.isMasterArchitectVisual(), candidates, MAX_LOCAL_CANDIDATES);
         // Bound expensive LOS checks. Shared encounter deduplication gives one contribution,
         // while retaining other witnesses for contact continuity if the first one dies.
-        candidates.sort(Comparator.comparing(Entity::getUUID));
+        candidates.sort(Comparator.comparing((ArchitectEntity actor) -> missions.observing(actor, player, now) == null)
+                .thenComparing(Entity::getUUID));
         for (ArchitectEntity observer : candidates) {
             if (!canObserve(observer, player, false)) continue;
             boolean covered = !player.serverLevel().canSeeSky(player.blockPosition());
-            store.record(player.getUUID(), observer.getUUID(), player.level().dimension().location().toString(),
-                    player.blockPosition(), now, BeliefStore.RECOVERY, covered,
+            record(store, missions, observer, player, player.blockPosition(), now, BeliefStore.RECOVERY, covered,
                     covered ? "RECOVERY_ITEM_FINISHED_UNDER_COVER" : "RECOVERY_ITEM_FINISHED_OPEN_SKY");
         }
     }

@@ -67,6 +67,24 @@ final class ArchitectApproachPlanningSupport {
     }
 
     boolean ensurePlanReadyOrFallback(LivingEntity target, BlockPos targetPos) {
+        return ensurePlanReadyOrFallback(target, targetPos, false);
+    }
+
+    boolean hasOutdatedConstructionGoal(DStarLitePathfinder.NextStep step, BlockPos targetPos) {
+        return (step.type() == DStarLitePathfinder.StepType.SCAFFOLD_UP
+                || step.type() == DStarLitePathfinder.StepType.SCAFFOLD_BRIDGE)
+                && !targetPos.equals(approachState.dstar.debugState().goal());
+    }
+
+    boolean refreshConstructionPlan(LivingEntity target, BlockPos targetPos) {
+        architect.recordDecision("RETARGET_PLAN", null, "cause=CONSTRUCTION_TARGET_MOVED oldGoal="
+                + approachState.dstar.debugState().goal() + " target=" + targetPos);
+        architect.clearCommittedWalk();
+        architect.clearWalkNavigationState(true);
+        return ensurePlanReadyOrFallback(target, targetPos, true);
+    }
+
+    private boolean ensurePlanReadyOrFallback(LivingEntity target, BlockPos targetPos, boolean refreshConstruction) {
         double targetDistance = architect.distanceTo(target);
         if (!shouldRunDStarPlanning(targetDistance)) {
             boolean hadPlannerState = approachState.dstar.isInitialized();
@@ -83,7 +101,7 @@ final class ArchitectApproachPlanningSupport {
 
         boolean reinitializedThisTick = false;
         boolean outdatedGoal = needsGoalRefresh(targetPos);
-        if (outdatedGoal || approachState.dstar.needsReinitialize(targetPos)) {
+        if (refreshConstruction || outdatedGoal || approachState.dstar.needsReinitialize(targetPos)) {
             boolean hadPlan = approachState.dstar.isInitialized();
             if (outdatedGoal) {
                 architect.recordDecision("RETARGET_PLAN", null, "cause=NEAR_OLD_TARGET");

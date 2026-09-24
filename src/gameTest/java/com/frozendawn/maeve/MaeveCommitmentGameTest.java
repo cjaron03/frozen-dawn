@@ -1,6 +1,7 @@
 package com.frozendawn.maeve;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.homo.PostMaeveWorldState;
 import java.util.List;
@@ -131,7 +132,7 @@ public final class MaeveCommitmentGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
-    public static void maeveRangedCommitmentSurvivesOrdinaryKnockback(GameTestHelper helper) {
+    public static void maeveRangedCommitmentDamageInterruptsWithoutRefund(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 7, scene -> {
             var observer = scene.architect(4, 4);
             var player = scene.player("maeve_knockback", 8, 4);
@@ -148,6 +149,8 @@ public final class MaeveCommitmentGameTest {
             observer.setOnGround(true);
             observer.debugForceApproach(player);
             observer.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            observer.startDecisionRecording(1337L);
+            observer.decisionJournal().useExtendedLabBuffer();
             for (int i = 0; i < 40; i++) { scene.clock(now + i); observer.tick(); }
             var held = MaeveDirector.positionDirective(observer);
             helper.assertTrue(held != null && held.cover() != null && held.arrivedAt() >= 0,
@@ -156,28 +159,34 @@ public final class MaeveCommitmentGameTest {
             helper.assertTrue(scene.level.getBlockState(held.cover()).is(net.minecraft.world.level.block.Blocks.PACKED_ICE),
                     "The visible cover is built through the existing tactical ice path");
             player.setPos(scene.position(3, 4));
+            scene.hit(observer, player, false, 0);
+            helper.assertTrue(MaeveDirector.positionDirective(observer) != null && observer.isHoldingMaevePosition(),
+                    "An ineffective hit cannot release the commitment");
             scene.clock(now + 40);
             helper.assertTrue(scene.hit(observer, player, false, 1), "The player actually lands a visible melee contradiction");
-            observer.knockback(0.4D, 1, 0);
+            helper.assertTrue(MaeveDirector.positionDirective(observer) == null && !observer.isHoldingMaevePosition(),
+                    "Effective damage immediately releases the held position and pose");
+            var ended = MaeveDirector.commitmentSnapshot(scene.server, player.getUUID());
+            helper.assertTrue(ended.issued() && ended.outcome().equals("LOCAL_DEFENSE")
+                            && ended.blockNext().contains(BeliefStore.RANGED),
+                    "Damage preserves the spent bet and witnessed melee contradiction");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream()
+                            .anyMatch(line -> line.contains("result=FAILURE") && line.contains("HOLD_RECEIVED_FINAL_DAMAGE")),
+                    "The final hit is charged before the hold is released");
             player.setPos(scene.position(8, 7));
-            boolean airborne = false;
-            for (int i = 41; i < 90; i++) {
-                scene.clock(now + i);
-                observer.tick();
-                airborne |= !observer.onGround();
-                helper.assertTrue(MaeveDirector.positionDirective(observer) != null,
-                        "Normal knockback cannot erase the observable wrong commitment");
+            double displacement = 0;
+            for (int i = 41; i < 110; i++) {
+                scene.clock(now + i); scene.level.tickNonPassenger(observer);
+                displacement = Math.max(displacement, observer.position().distanceToSqr(
+                        net.minecraft.world.phys.Vec3.atBottomCenterOf(held.position())));
+                helper.assertTrue(MaeveDirector.positionDirective(observer) == null && !observer.hasReconnaissanceEyes(),
+                        "Self-defense cannot restart a hold or convert into a scout");
+                if (i == 41) helper.assertTrue(observer.getBrainAction() == ArchitectEntity.ACTION_APPROACH
+                                || observer.getBrainAction() == ArchitectEntity.ACTION_ATTACK_MELEE,
+                        "The first tick after a hit must enter local pursuit or melee");
             }
-            helper.assertTrue(airborne, "The regression must exercise actual airborne knockback");
-            helper.assertTrue(observer.blockPosition().distSqr(held.position()) <= 1,
-                    "After landing the Architect returns to its held position, not the player's new location");
-            helper.assertTrue(observer.isHoldingMaevePosition(), "The guard cue resumes after returning from knockback");
-            helper.assertTrue(MaeveDirector.positionDirective(observer).contradictedAt() == now + 40,
-                    "The real melee event remains the reason this commitment is wrong");
-            observer.setHealth(observer.getMaxHealth() * 0.2F);
-            observer.tick();
-            helper.assertTrue(MaeveDirector.positionDirective(observer) == null, "Critical local danger still releases the bet");
-            helper.assertTrue(!observer.isHoldingMaevePosition(), "Safety release also clears the guard cue");
+            helper.assertTrue(displacement > 1,
+                    "The local executor physically leaves the interrupted hold: " + observer.decisionJournal().entries());
         });
     }
 

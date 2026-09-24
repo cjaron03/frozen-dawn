@@ -125,7 +125,7 @@ public final class MaeveObservationGameTest {
             helper.assertTrue(scene.level.canSeeSky(player.blockPosition()), "Fixture must expose the sky");
             player.finish(scene.potion());
             helper.assertTrue(scene.beliefs(player).getFirst().contradictions() == 1, "Open-sky recovery contradicts the hypothesis");
-            helper.assertTrue(scene.beliefs(player).getFirst().provenance().size() == 2, "Both polarities have actual provenance");
+            helper.assertTrue(scene.beliefs(player).getFirst().provenance().size() == 3, "Both credited polarities and the latest verification retain actual provenance");
         });
     }
 
@@ -424,9 +424,14 @@ public final class MaeveObservationGameTest {
             // finish: setBlock does not update canSeeSky synchronously.
             var light = level.getChunkSource().getLightEngine();
             var pending = new ArrayList<java.util.concurrent.CompletableFuture<?>>();
+            var changedChunks = new java.util.LinkedHashSet<net.minecraft.world.level.ChunkPos>();
+            blocks.keySet().forEach(pos -> changedChunks.add(new net.minecraft.world.level.ChunkPos(pos)));
             for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
-                pending.add(light.waitForPendingTasks((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z));
+                changedChunks.add(new net.minecraft.world.level.ChunkPos((origin.getX() >> 4) + x, (origin.getZ() >> 4) + z));
             }
+            // Wider fixtures can place their roof beyond the central 3x3 chunks.
+            // Await every edited chunk before using sky visibility as evidence.
+            changedChunks.forEach(chunk -> pending.add(light.waitForPendingTasks(chunk.x, chunk.z)));
             var complete = java.util.concurrent.CompletableFuture.allOf(pending.toArray(java.util.concurrent.CompletableFuture[]::new))
                     .orTimeout(5, java.util.concurrent.TimeUnit.SECONDS);
             server.managedBlock(() -> {

@@ -29,7 +29,9 @@ class BeliefStoreTest {
         var first = belief(store, 200);
         assertEquals(1, first.evidence());
         assertEquals(0.20, first.confidence(), 1e-9);
-        assertEquals(1, first.provenance().size());
+        assertEquals(2, first.provenance().size());
+        assertEquals(.2, first.provenance().getFirst().confidenceWeight());
+        assertEquals(0, first.provenance().getLast().confidenceWeight());
         assertEquals(8, store.contacts().size());
         observe(store, 201, false);
         observe(store, 202, false);
@@ -92,8 +94,65 @@ class BeliefStoreTest {
         assertEquals(1, result.evidence());
         assertEquals(0.2, result.confidence(), 1e-9);
         assertEquals(0, result.ageTicks());
-        assertEquals(1, result.provenance().size());
-        assertEquals(result.lastConfirmed(), result.provenance().getFirst().time());
+        assertEquals(2, result.provenance().size());
+        assertEquals(0, result.provenance().getFirst().time());
+        assertEquals(result.lastConfirmed(), result.provenance().getLast().time());
+    }
+
+    @Test
+    void scoutCreditSurvivesReloadAndCannotBeDuplicatedOrUpgraded() {
+        BeliefStore store = new BeliefStore();
+        store.record(PLAYER, OBSERVER, "minecraft:overworld", BlockPos.ZERO, 10,
+                BeliefStore.RANGED, true, "WITNESSED_PROJECTILE_DAMAGE reconMission=test", BeliefPolicy.RECON_SUPPORT);
+        store = BeliefStore.load(store.save());
+        observe(store, 20, true);
+        var result = belief(store, 20);
+        assertEquals(.3, result.confidence(), 1e-9);
+        assertEquals(1, result.evidence());
+        assertEquals(.3, result.provenance().getFirst().confidenceWeight());
+        assertTrue(result.provenance().getFirst().action().contains("reconMission="));
+        assertEquals(0, result.provenance().getLast().confidenceWeight());
+        observe(store, 21, false);
+        assertEquals(0, belief(store, 21).confidence());
+        assertEquals(-.35, belief(store, 21).provenance().getLast().confidenceWeight());
+        observe(store, 700, true);
+        store.record(PLAYER, new UUID(1, 2), "minecraft:overworld", BlockPos.ZERO, 701,
+                BeliefStore.RANGED, true, "LATER_SCOUT", BeliefPolicy.RECON_SUPPORT);
+        assertEquals(.2, belief(store, 701).confidence(), 1e-9);
+        assertEquals(2, belief(store, 701).evidence());
+    }
+
+    @Test
+    void scoutLearningRemainsLaggedAndCanBeContradicted() {
+        BeliefStore store = new BeliefStore();
+        for (int i = 0; i < 3; i++) {
+            store.record(PLAYER, OBSERVER, "minecraft:overworld", BlockPos.ZERO, 1 + i * 600L,
+                    BeliefStore.RANGED, true, "WITNESSED_PROJECTILE_DAMAGE", BeliefPolicy.RECON_SUPPORT);
+        }
+        assertEquals(.9, belief(store, 1201).confidence(), 1e-9);
+        assertEquals(.6, store.commitment(PLAYER).hints(1201).getFirst().confidence(), 1e-9);
+        store.contact(PLAYER, 1801);
+        assertEquals(.9, store.commitment(PLAYER).hints(1801).getFirst().confidence(), 1e-9);
+        observe(store, 1802, false);
+        assertEquals(.55, belief(store, 1802).confidence(), 1e-9);
+        assertEquals("CONTRADICTED_THIS_ENCOUNTER", store.commitment(PLAYER).ineligible(BeliefStore.RANGED, 1802));
+    }
+
+    @Test
+    void legacyEvidenceHasUnknownWeightWithoutInventingAScoutBonus() {
+        var event = new ObservedEvidence(OBSERVER, UUID.randomUUID(), "minecraft:overworld", BlockPos.ZERO,
+                10, "WITNESSED_PROJECTILE_DAMAGE", true);
+        assertFalse(event.save().contains("confidenceWeight"));
+        assertTrue(Double.isNaN(ObservedEvidence.load(event.save()).snapshot().confidenceWeight()));
+        BeliefStore store = new BeliefStore();
+        observe(store, 10, true);
+        var saved = store.save();
+        var evidence = saved.getList("players", 10).getCompound(0).getList("beliefs", 10)
+                .getCompound(0).getList("provenance", 10).getCompound(0);
+        evidence.remove("confidenceWeight");
+        store = BeliefStore.load(saved);
+        assertEquals(.2, belief(store, 10).confidence(), 1e-9);
+        assertTrue(Double.isNaN(belief(store, 10).provenance().getFirst().confidenceWeight()));
     }
 
     @Test

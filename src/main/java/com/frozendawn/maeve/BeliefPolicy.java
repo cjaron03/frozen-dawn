@@ -9,6 +9,7 @@ final class BeliefPolicy {
     static final long STALE_AFTER = 20L * 24000L;
     static final long HALF_LIFE = 20L * 24000L;
     static final double SUPPORT = 0.20D;
+    static final double RECON_SUPPORT = 0.30D;
     static final double CONTRADICTION = 0.35D;
 
     private BeliefPolicy() { }

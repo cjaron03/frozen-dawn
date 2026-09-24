@@ -141,6 +141,10 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_POSE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_RECON_DISSOLVE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Long> DATA_RECON_CLOUD_START =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.LONG);
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
 
@@ -229,6 +233,9 @@ public class ArchitectEntity extends Monster {
     private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
     private final ArchitectReconnaissanceController maeveReconnaissance = new ArchitectReconnaissanceController(this);
+    private long localCombatUntil;
+    private UUID lastCombatSubject;
+    private int thinkingInterruptedUntil;
     private final ArchitectApproachWalkSupport walkSupport =
             new ArchitectApproachWalkSupport(this, approachState, blockBreaker);
     private final ArchitectApproachController approachController =
@@ -263,6 +270,7 @@ public class ArchitectEntity extends Monster {
     private int trapCooldown = 0;
     private int pathRecalcCooldown = 0;
     private boolean suppressMasterHurtSound;
+    private boolean maeveShieldDamageInProgress;
     private int clientMasterTetherHurtSuppressionTicks;
     private boolean mindReturnDeathDetonatesImmediately;
     private boolean foldedDeathPresentationAlreadyPlayed;
@@ -366,6 +374,8 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MAEVE_HOLD, false);
         builder.define(DATA_RECON_EYES, false);
         builder.define(DATA_RECON_POSE, false);
+        builder.define(DATA_RECON_DISSOLVE, 0);
+        builder.define(DATA_RECON_CLOUD_START, -1L);
     }
 
     @Override
@@ -439,7 +449,20 @@ public class ArchitectEntity extends Monster {
     public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
     void setReconnaissanceEyes(boolean active) {
         entityData.set(DATA_RECON_EYES, active);
-        if (!active) entityData.set(DATA_RECON_POSE, false);
+        if (!active) {
+            entityData.set(DATA_RECON_POSE, false); entityData.set(DATA_RECON_DISSOLVE, 0);
+            entityData.set(DATA_RECON_CLOUD_START, -1L);
+        }
+    }
+    public int getReconnaissanceDissolve() {
+        return hasReconnaissanceEyes() && isAlive() && !isNoAi() && getDeathTicks() == 0
+                ? entityData.get(DATA_RECON_DISSOLVE) : 0;
+    }
+    void setReconnaissanceDissolve(int form) { entityData.set(DATA_RECON_DISSOLVE, form); }
+    void setReconnaissanceCloudStart(long time) { entityData.set(DATA_RECON_CLOUD_START, time); }
+    public int getReconnaissanceCloudAge() {
+        long start = entityData.get(DATA_RECON_CLOUD_START), age = level().getGameTime() - start;
+        return getReconnaissanceDissolve() != 0 && start >= 0 && age >= 0 && age < 400 ? (int) age : -1;
     }
 
     /** Presentation of an actual noncombat scout task, independent of its fallback utility action. */
@@ -572,6 +595,7 @@ public class ArchitectEntity extends Monster {
     @Override
     public void aiStep() {
         if (level().isClientSide()) {
+            com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
             boolean thinking = isHoldingMaevePosition() || isShowingReconnaissancePose();
@@ -585,7 +609,12 @@ public class ArchitectEntity extends Monster {
                     thinking || allowed && pose == 2 ? 1.0F : 0.0F, 0.10F);
         } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
-                || combatState.isDrinkingPotion || AggregateReinforcementManager.isChild(this)) {
+                || AggregateReinforcementManager.isChild(this)) {
+            if (maeveCommitment.shield().active()) maeveCommitment.shield().stop("OBSERVER_UNAVAILABLE");
+            entityData.set(DATA_PURSUIT_POSE, 0);
+            entityData.set(DATA_MAEVE_HOLD, false);
+            updateReconnaissancePose(false);
+        } else if (combatState.isDrinkingPotion) {
             entityData.set(DATA_PURSUIT_POSE, 0);
             entityData.set(DATA_MAEVE_HOLD, false);
             updateReconnaissancePose(false);
@@ -763,6 +792,8 @@ public class ArchitectEntity extends Monster {
 
         // --- Potion drinking ---
         if (combatState.isDrinkingPotion) {
+            // Validate the retained stance even while ordinary combat execution pauses.
+            if (maeveCommitment.shield().active()) maeveCommitment.tick(target);
             combatState.drinkTicks++;
             if (combatState.drinkTicks >= DRINK_DURATION) {
                 finishDrinking();
@@ -806,7 +837,8 @@ public class ArchitectEntity extends Monster {
         }
         despawnTimer = nextDespawnTimer;
 
-        if (maeveCommitment.tick(target)) {
+        boolean respondingToHit = tickCount < thinkingInterruptedUntil;
+        if (!respondingToHit && maeveCommitment.tick(target)) {
             entityData.set(DATA_PURSUIT_POSE, 0);
             updateHeldItem();
             syncRenderState();
@@ -821,7 +853,9 @@ public class ArchitectEntity extends Monster {
 
         brainState.setReevalCooldown(brainState.getReevalCooldown() - 1);
         brainState.setActionHoldTicks(brainState.getActionHoldTicks() + 1);
-        if (brainState.getReevalCooldown() <= 0 && !miningLock) {
+        if (respondingToHit && target != null && getHealth() > getMaxHealth() * .3F) {
+            transitionToAction(canStartMelee(target) ? ACTION_ATTACK_MELEE : ACTION_APPROACH);
+        } else if (brainState.getReevalCooldown() <= 0 && !miningLock) {
             // Prevent rapid flip-flopping: hold current action for at least MIN_ACTION_HOLD ticks.
             // Retreat bypasses this — survival is always urgent.
             boolean holdLock = brainState.getActionHoldTicks() < MIN_ACTION_HOLD
@@ -833,6 +867,13 @@ public class ArchitectEntity extends Monster {
         }
 
         approachState.sprintRequested = false;
+        if (target != null && getBrainAction() != ACTION_OBSERVE) {
+            localCombatUntil = level().getGameTime() + 600;
+            if (target instanceof ServerPlayer player
+                    && (!player.getUUID().equals(lastCombatSubject) || gameTick % 20 == 0)) {
+                MaeveDirector.beginLocalCombat(this, player); lastCombatSubject = player.getUUID();
+            }
+        }
         long actionStart = System.nanoTime();
         executeAction(target);
         long actionUs = (System.nanoTime() - actionStart) / 1000;
@@ -935,12 +976,13 @@ public class ArchitectEntity extends Monster {
                         target != null && isPlayerInsideBase(target),
                         target != null && isNearCorner()
                 ),
-                random, beliefBias.fortify(), beliefBias.peek()
+                random, beliefBias.fortify(), beliefBias.peek(), tacticsController.canFortify(), tacticsController.canPeek()
         );
         int bestAction = decision.bestAction();
         float[] scores = decision.scores();
 
         if (bestAction != getBrainAction()) {
+            if (bestAction == ACTION_FORTIFY) recordDecision("FORTIFY_SELECTED", null, "historicalBias=" + beliefBias.fortify());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("[Architect] SCORING: observe={} approach={} melee={} retreat={} HP={}/{} winner={} (was {})",
                         String.format("%.2f", scores[ACTION_OBSERVE]),
@@ -963,6 +1005,37 @@ public class ArchitectEntity extends Monster {
         transitionToAction(holding ? ACTION_OBSERVE : ACTION_APPROACH);
     }
 
+    /** Synced vanilla item use drives the actual shield animation on clients. */
+    public boolean isUsingMaeveShield() {
+        return isUsingItem() && ArchitectShieldController.generated(getUseItem());
+    }
+
+    @Override
+    protected void hurtCurrentlyUsedShield(float amount) {
+        if (maeveCommitment.shield().active() && !damageContainers.isEmpty()) {
+            var damage = damageContainers.peek();
+            maeveCommitment.shield().blocked(damage.getSource(), damage.getBlockedDamage());
+            maeveCommitment.shield().wear(amount);
+        } else super.hurtCurrentlyUsedShield(amount);
+    }
+
+    @Override
+    protected void blockUsingShield(LivingEntity attacker) {
+        super.blockUsingShield(attacker);
+        maeveCommitment.shield().contact(attacker);
+    }
+
+    @Override
+    public void knockback(double strength, double x, double z) {
+        // Brace only a fully blocked MACS hit. Keep the transaction scoped through
+        // shield break/disable, which can remove the item before vanilla knockback.
+        if (maeveShieldDamageInProgress && !damageContainers.isEmpty()) {
+            var damage = damageContainers.peek();
+            if (damage.getBlockedDamage() > 0 && damage.getNewDamage() <= 0) return;
+        }
+        super.knockback(strength, x, z);
+    }
+
     /** Erasure releases local execution in the same server-thread transition. */
     public void clearMaevePositioning() {
         maeveCommitment.clear();
@@ -975,6 +1048,38 @@ public class ArchitectEntity extends Monster {
     public boolean isMaeveDisengaging() { return maeveAttention.active(); }
     public void clearMaeveAttention() { maeveAttention.clear(); }
     public void clearMaeveReconnaissance() { maeveReconnaissance.clear(); }
+    public boolean canBeginMaeveReconnaissance() { return level().getGameTime() >= localCombatUntil; }
+    void resumeAfterReconnaissance() {
+        observationMemory.setHasObserved(true); observationMemory.setObserveDirty(false);
+        transitionToAction(ACTION_APPROACH);
+        brainState.setActionHoldTicks(0); brainState.setReevalCooldown(0);
+    }
+
+    /** Final damage has already been recorded by Maeve before execution is released. */
+    public void onEffectiveCombatDamage(DamageSource source, float damage) {
+        if (level().isClientSide() || !(damage > 0) || !Float.isFinite(damage)
+                || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
+                || AggregateReinforcementManager.isChild(this)) return;
+        localCombatUntil = level().getGameTime() + 600;
+        if (source.getEntity() instanceof ServerPlayer player) MaeveDirector.beginLocalCombat(this, player);
+        boolean interrupted = isHoldingMaevePosition() || hasReconnaissanceEyes()
+                || getBrainAction() == ACTION_OBSERVE || entityData.get(DATA_PURSUIT_POSE) != 0;
+        boolean committed = MaeveDirector.positionDirective(this) != null;
+        boolean shieldStagger = maeveCommitment.shield().staggerAfterDamage(source);
+        if (!shieldStagger) MaeveDirector.releaseCommitment(this, isAlive() ? "LOCAL_DEFENSE" : "OWNER_KILLED");
+        MaeveDirector.finishMission(this, "LOCAL_DEFENSE", false);
+        if (!shieldStagger && (committed || isHoldingMaevePosition())) maeveCommitment.clear();
+        if (maeveAttention.active()) maeveAttention.clear();
+        thinkingController.interrupt(); entityData.set(DATA_PURSUIT_POSE, 0);
+        if (interrupted && !combatState.isDrinkingPotion && isAlive()) {
+            thinkingInterruptedUntil = tickCount + 40;
+            observationMemory.setHasObserved(true); observationMemory.setObserveDirty(false);
+            transitionToAction(ACTION_APPROACH);
+            brainState.setActionHoldTicks(0); brainState.setReevalCooldown(0);
+            recordDecision("THINKING_INTERRUPTED", null, "effectiveDamage=" + damage + " local defense");
+            updateHeldItem(); syncRenderState();
+        }
+    }
 
     void cancelMaeveAttentionWork() {
         maeveCommitment.clear(); blockBreaker.clearTarget();
@@ -1227,7 +1332,8 @@ public class ArchitectEntity extends Monster {
         debugStep = step;
         if (changed || level().getGameTime() - lastDebugStepTick >= 40) {
             lastDebugStepTick = level().getGameTime();
-            recordDecision("PLAN_STEP", step.breakChoice(), "searchComplete=" + approachState.dstar.isSearchComplete());
+            recordDecision("PLAN_STEP", step.breakChoice(), "searchComplete=" + approachState.dstar.isSearchComplete()
+                    + " goal=" + approachState.dstar.debugState().goal());
         }
     }
     @Nullable BreakChoice chooseBreak(String source, java.util.List<BreakChoice> choices,
@@ -1418,6 +1524,7 @@ public class ArchitectEntity extends Monster {
             ArchitectActionTransitionSupport.onLeaveRetreat(combatState);
         }
         if (newAction == ACTION_RETREAT) {
+            maeveCommitment.shield().suspend("RETREAT");
             ArchitectActionTransitionSupport.onEnterRetreat(combatState);
         }
         if (newAction == ACTION_ATTACK_MELEE) {
@@ -1547,15 +1654,15 @@ public class ArchitectEntity extends Monster {
         }
 
         boolean hurt;
+        boolean previousShieldDamage = maeveShieldDamageInProgress;
+        maeveShieldDamageInProgress = isUsingMaeveShield();
         try {
             hurt = super.hurt(source, amount);
         } finally {
+            maeveShieldDamageInProgress = previousShieldDamage;
             suppressMasterHurtSound = false;
         }
         if (hurt && !level().isClientSide()) {
-            MaeveDirector.finishMission(this, "LOCAL_DEFENSE", false);
-            // Local self-defense is independent of Maeve's focus allocation.
-            if (maeveAttention.active() && source.getEntity() instanceof LivingEntity) maeveAttention.clear();
             recordDecision("DAMAGE", blockBreaker.getChoice(),
                     "type=" + source.getMsgId() + " amount=" + amount + " health=" + getHealth());
             if (isHearthAssessor()
@@ -1606,6 +1713,7 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void die(DamageSource source) {
+        if (!level().isClientSide() && maeveCommitment.shield().active()) maeveCommitment.shield().stop("OWNER_KILLED");
         if (isMasterMindCopy()) {
             mindCopyDeathSource = source;
             super.die(source);
@@ -1657,7 +1765,10 @@ public class ArchitectEntity extends Monster {
     //  HEALING POTION
     // ========================
 
+    boolean isDrinkingPotion() { return combatState.isDrinkingPotion; }
+
     void startDrinking() {
+        maeveCommitment.shield().suspend("DRINKING");
         combatState.isDrinkingPotion = true;
         combatState.drinkTicks = 0;
         if (level() instanceof ServerLevel serverLevel) {
@@ -2563,6 +2674,7 @@ public class ArchitectEntity extends Monster {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
+        tag.putLong("LocalCombatUntil", localCombatUntil);
         ArchitectPersistence.writeCoreState(
                 tag,
                 getTextureVariant(),
@@ -2599,10 +2711,15 @@ public class ArchitectEntity extends Monster {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        maeveCommitment.shield().clear();
+        maeveAttention.clear(); maeveReconnaissance.clear();
+        localCombatUntil = Math.min(tag.getLong("LocalCombatUntil"), level().getGameTime() + 600);
         ArchitectPersistence.CoreState coreState = ArchitectPersistence.readCoreState(tag);
         setTextureVariant(coreState.textureVariant());
         despawnTimer = coreState.despawnTimer();
         setBrainAction(coreState.currentAction());
+        if (!tag.contains("LocalCombatUntil") && coreState.currentAction() != ACTION_OBSERVE)
+            localCombatUntil = level().getGameTime() + 600;
         // Delay first pathfinding after world load to prevent freeze
         pathRecalcCooldown = 40;
         brainState.setReevalCooldown(40);

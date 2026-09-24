@@ -37,6 +37,7 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     private static final ResourceLocation WHITE_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/misc/white.png");
     private final MasterArchitectAdornmentLayer masterAdornmentLayer;
+    private final ArchitectReconnaissanceEyesLayer reconnaissanceEyes;
 
     public ArchitectRenderer(EntityRendererProvider.Context context) {
         super(context, new ArchitectModel(context.bakeLayer(ArchitectModel.LAYER_LOCATION)), 0.5f);
@@ -51,7 +52,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
                 new MasterArchitectAdornmentModel(
                         context.bakeLayer(MasterArchitectAdornmentModel.LAYER_LOCATION)));
         this.addLayer(this.masterAdornmentLayer);
-        this.addLayer(new ArchitectReconnaissanceEyesLayer(this));
+        this.reconnaissanceEyes = new ArchitectReconnaissanceEyesLayer(this);
+        this.addLayer(reconnaissanceEyes);
     }
 
     /** Shared by the distant sky face so it samples the exact live entity texture. */
@@ -74,6 +76,10 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     public void render(ArchitectEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
+        if (entity.getReconnaissanceDissolve() != 0) {
+            renderScoutDissolve(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            return;
+        }
         if (deathTicks > 0) {
             if (entity.isMasterArchitectVisual()) {
                 renderMasterDeathCharge(
@@ -166,7 +172,26 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
 
     @Override
     protected float getShadowRadius(ArchitectEntity entity) {
-        return entity.getDeathTicks() > 0 ? 0.0f : super.getShadowRadius(entity);
+        return entity.getDeathTicks() > 0 || entity.getReconnaissanceDissolve() != 0
+                ? 0.0f : super.getShadowRadius(entity);
+    }
+
+    private void renderScoutDissolve(ArchitectEntity entity, float yaw, float partialTick,
+                                     PoseStack poses, MultiBufferSource buffers, int light) {
+        float alpha = 1.0F - Math.abs(entity.getReconnaissanceDissolve()) / 20.0F;
+        if (alpha <= 0) return;
+        poses.pushPose();
+        poses.mulPose(Axis.YP.rotationDegrees(180 - yaw));
+        poses.scale(-1, -1, 1); poses.translate(0, -1.501F, 0);
+        model.attackTime = 0; model.riding = entity.isPassenger(); model.young = entity.isBaby();
+        model.prepareMobModel(entity, 0, 0, partialTick);
+        model.setupAnim(entity, 0, 0, entity.tickCount + partialTick, entity.getYHeadRot() - yaw, entity.getXRot());
+        model.renderToBuffer(poses, buffers.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                light, LivingEntityRenderer.getOverlayCoords(entity, 0),
+                FastColor.ARGB32.color((int) (alpha * 255), 255, 255, 255));
+        if (entity.getReconnaissanceDissolve() > 0)
+            reconnaissanceEyes.render(poses, buffers, light, entity, 0, 0, partialTick, entity.tickCount + partialTick, 0, 0);
+        poses.popPose();
     }
 
     private void renderDeathDissolve(ArchitectEntity entity, float entityYaw, float partialTick,

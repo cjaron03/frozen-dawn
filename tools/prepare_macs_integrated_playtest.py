@@ -151,6 +151,16 @@ effect give @s minecraft:saturation 1 4 true''',
 ''' + tell('No visitor has been summoned yet. The cabin has east/west openings, a roofed porch and a northwest supply shed. Retrieve an emerald and return it to the cabin barrel. Start when you are ready.', '/function macs_trial:start'),
     'start': '''execute if score #initialized mt matches 1 if score #stage mt matches 0 if entity @s[x=2001,y=100,z=2001,dx=94,dy=20,dz=94] run function macs_trial:start_round
 execute unless entity @s[x=2001,y=100,z=2001,dx=94,dy=20,dz=94] run tellraw @s {"text":"Enter the camp before starting: /function macs_trial:enter","color":"yellow"}''',
+    'survey_check': '''execute if score #initialized mt matches 1 if score #stage mt matches 0 if entity @s[tag=macs_trial] run function macs_trial:survey_check_ready
+execute unless score #stage mt matches 0..1 run tellraw @s {"text":"Wait for Ready before starting the west-doorway check. During the empty gap only, use /tick sprint 620t.","color":"yellow"}''',
+    'survey_check_ready': '''function macs_trial:kit
+setblock 2037 100 2048 minecraft:dirt_path
+fill 2038 101 2047 2038 103 2049 minecraft:air
+tp @s 2024.5 100.9375 2048.5 -90 0
+scoreboard players set #lane mt 1
+function macs_trial:start_round
+tp @e[tag=macs_trial_actor,limit=1] 2036.5 100.9375 2048.5 -90 0
+''' + tell('West-doorway inspection check. Stay here without attacking. Once the scout finishes thinking at the doorway and starts withdrawing, use Finish, then /fd maeve dump. Learning and production survey rules are preserved.', '/function macs_trial:finish'),
     'start_round': '''scoreboard players set #stage mt 1
 scoreboard players set #timer mt 0
 scoreboard players set #exports mt 0
