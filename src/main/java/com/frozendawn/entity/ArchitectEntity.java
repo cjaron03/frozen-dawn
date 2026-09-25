@@ -1862,6 +1862,18 @@ public class ArchitectEntity extends Monster {
         return false;
     }
 
+    /** Bow-defense pillar only; retreat keeps its existing construction path. */
+    int placeCoverPillar(BlockPos pos) {
+        if (!com.frozendawn.entity.architect.ArchitectCoverGeometry.canPlacePillar(this, position(), pos)) return 0;
+        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(position(), pos);
+        int placed = 0;
+        for (int y = 0; y < height; y++) {
+            if (!placeTacticalIce(pos.above(y))) break;
+            placed++;
+        }
+        return placed;
+    }
+
     private void emitIcePlacementFx(BlockPos pos) {
         entityData.set(DATA_BUILDING_ICE, true);
         swing(InteractionHand.MAIN_HAND);

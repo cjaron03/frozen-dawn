@@ -73,7 +73,8 @@ final class ArchitectCommitmentController {
             spatial.tick(directive, localTarget, now);
             return true;
         }
-        Vec3 goal = Vec3.atBottomCenterOf(directive.position());
+        Vec3 goal = directive.cover() == null ? Vec3.atBottomCenterOf(directive.position())
+                : coverStandingPoint(directive.position());
         if (architect.position().distanceToSqr(goal) > 0.36D) {
             if (!safeWalk(goal)) { release("LOCAL_ROUTE_UNSAFE"); return false; }
             architect.setMaeveHolding(false);
@@ -102,8 +103,8 @@ final class ArchitectCommitmentController {
             architect.setYHeadRot(yaw);
             architect.getLookControl().setLookAt(anchor.x, anchor.y + 0.5D, anchor.z, 12, 12);
             if (arrival && directive.cover() != null) {
-                if (!clearCover(directive.cover()) || !architect.placeTacticalIce(directive.cover())
-                        || !architect.placeTacticalIce(directive.cover().above())) {
+                int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(architect.position(), directive.cover());
+                if (!clearCover(directive.cover()) || architect.placeCoverPillar(directive.cover()) != height) {
                     release("LOCAL_COVER_UNAVAILABLE");
                     return false;
                 }
@@ -134,13 +135,14 @@ final class ArchitectCommitmentController {
             away = away.normalize();
             if (hint.pattern().equals("PLAYER_PREFERS_RANGED")) {
                 BlockPos position = architect.blockPosition();
+                Vec3 feet = coverStandingPoint(position);
                 BlockPos cover = com.frozendawn.entity.architect.ArchitectCoverGeometry.find(
-                        architect, Vec3.atBottomCenterOf(position), anchor.add(0, 1.62, 0));
+                        architect, feet, anchor.add(0, 1.62, 0));
                 Vec3 sideways = new Vec3(-away.z, 0, away.x);
                 boolean canAbandon = safeWalk(architect.position().add(away.scale(2)))
                         || safeWalk(architect.position().add(sideways.scale(2)))
                         || safeWalk(architect.position().subtract(sideways.scale(2)));
-                if (cover != null && safeWalk(Vec3.atBottomCenterOf(position)) && canAbandon && clearCover(cover)) {
+                if (cover != null && safeWalk(feet) && canAbandon && clearCover(cover)) {
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), position, cover, 2));
                 }
             } else if (hint.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT")) {
@@ -184,14 +186,18 @@ final class ArchitectCommitmentController {
     }
 
     private boolean clearCover(BlockPos pos) {
-        if (architect.getTacticalIceCount() + 2 > architect.getMaxTacticalIce()
-                || !architect.level().hasChunkAt(pos) || !architect.level().hasChunkAt(pos.above())) return false;
-        if (!architect.level().getBlockState(pos).isAir() || !architect.level().getBlockState(pos.above()).isAir()) return false;
-        var occupants = new ArrayList<net.minecraft.world.entity.Entity>();
-        ((net.minecraft.server.level.ServerLevel) architect.level()).getEntities(
-                net.minecraft.world.level.entity.EntityTypeTest.forClass(net.minecraft.world.entity.Entity.class),
-                new AABB(pos).expandTowards(0, 1, 0), entity -> entity != architect, occupants, 1);
-        return occupants.isEmpty();
+        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(architect.position(), pos);
+        return architect.getTacticalIceCount() + height <= architect.getMaxTacticalIce()
+                && com.frozendawn.entity.architect.ArchitectCoverGeometry.canPlacePillar(architect, architect.position(), pos);
+    }
+
+    private Vec3 coverStandingPoint(BlockPos pos) {
+        Vec3 center = Vec3.atBottomCenterOf(pos);
+        if (!architect.level().hasChunkAt(pos)) return center;
+        var state = architect.level().getBlockState(pos);
+        if (!state.is(Blocks.SNOW)) return center;
+        var shape = state.getCollisionShape(architect.level(), pos);
+        return shape.isEmpty() ? center : center.add(0, shape.max(Direction.Axis.Y), 0);
     }
 
     /** Straight, level, short paths only. No breach, scaffold, navigation search, or chunk loads. */

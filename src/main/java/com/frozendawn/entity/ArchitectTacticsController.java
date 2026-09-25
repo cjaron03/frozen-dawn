@@ -44,11 +44,7 @@ final class ArchitectTacticsController {
         BlockPos wallPos = architect.hasLineOfSight(target)
                 ? com.frozendawn.entity.architect.ArchitectCoverGeometry.find(
                         architect, architect.position(), target.getEyePosition()) : null;
-        int placed = 0;
-        if (wallPos != null && architect.placeTacticalIce(wallPos)) {
-            placed++;
-            if (architect.placeTacticalIce(wallPos.above())) placed++;
-        }
+        int placed = wallPos == null ? 0 : architect.placeCoverPillar(wallPos);
         // One short construction attempt, then move before building again. An
         // occupied cell must not turn a stronger cover preference into idle spam.
         nextFortifyTick = architect.tickCount + FORTIFY_INTERVAL;
