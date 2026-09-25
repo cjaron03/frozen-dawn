@@ -791,16 +791,8 @@ public class DStarLitePathfinder {
     private float edgeCost(long fromPacked, long toPacked, Level level) {
         if (observedWalkOnly) {
             BlockPos from = BlockPos.of(fromPacked), to = BlockPos.of(toPacked);
-            if (from.getY() != to.getY() || to.distSqr(goalPos) > 24 * 24
-                    || !level.hasChunkAt(to) || !level.hasChunkAt(from)
-                    || !level.getBlockState(to.below()).isFaceSturdy(level, to.below(), Direction.UP)) return INF;
-            for (int y = 0; y < 3; y++) {
-                var block = to.above(y); var state = level.getBlockState(block);
-                if (!state.getCollisionShape(level, block).isEmpty() || !state.getFluidState().isEmpty()
-                        || state.is(BlockTags.FIRE)) return INF;
-            }
-            var ground = level.getBlockState(to.below());
-            if (ground.is(Blocks.MAGMA_BLOCK) || ground.is(Blocks.CACTUS)) return INF;
+            if (to.distSqr(goalPos) > 24 * 24
+                    || !ArchitectWalkGeometry.canObservedWalkTransition(level, from, to)) return INF;
             float penalty = 0;
             for (BlockPos danger : observedDangers) if (danger.distSqr(to) <= 9) penalty += 4;
             return BASE_MOVE_COST + Math.min(16, penalty);

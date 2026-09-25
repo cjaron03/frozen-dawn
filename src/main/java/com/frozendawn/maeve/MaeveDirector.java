@@ -60,11 +60,13 @@ public final class MaeveDirector {
         if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         MaeveDirector director = current(server);
         if (director.data.store() == null) return;
-        director.learning.incoming(observer, source, actualDamage);
-        ObservationCollector.damage(director.data.store(), observer, source, actualDamage,
-                server.overworld().getGameTime());
-        SpatialObservations.damage(director.data.store(), observer, source, actualDamage, server.overworld().getGameTime());
-        director.data.setDirty();
+        CombatObservation.record(director.data, director.missions, director.learning, observer, source, actualDamage, false);
+    }
+
+    public static void observeShieldBlock(ArchitectEntity observer, DamageSource source, float blocked) {
+        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
+        var director = current(observer.getServer());
+        CombatObservation.record(director.data, director.missions, director.learning, observer, source, blocked, true);
     }
 
     public static void observeRecovery(ServerPlayer player, ItemStack consumed) {
@@ -72,7 +74,7 @@ public final class MaeveDirector {
         if (server == null || !ObservationCollector.restorative(consumed)) return;
         MaeveDirector director = current(server);
         if (director.data.store() == null) return;
-        ObservationCollector.recovery(director.data.store(), player, consumed, server.overworld().getGameTime());
+        ObservationCollector.recovery(director.data.store(), director.missions, player, consumed, server.overworld().getGameTime());
         director.data.setDirty();
     }
 
@@ -184,7 +186,7 @@ public final class MaeveDirector {
         if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         var director = current(observer.getServer());
         if (director.data.store() != null) {
-            SpatialObservations.presence(director.data.store(), observer, player, observer.getServer().overworld().getGameTime());
+            SpatialObservations.presence(director.data.store(), director.missions, observer, player, observer.getServer().overworld().getGameTime());
             if (observer.getServer().overworld().getGameTime() % 20 == 0) director.attention.observe(observer, player);
             director.data.setDirty();
         }
@@ -216,6 +218,7 @@ public final class MaeveDirector {
 
     public static AttentionSnapshot attentionSnapshot(MinecraftServer server) { return current(server).attention.snapshot(); }
     public static boolean requestReconnaissance(ArchitectEntity actor, ServerPlayer player) { return current(player.getServer()).missions.request(actor, player); }
+    public static void beginLocalCombat(ArchitectEntity actor, ServerPlayer player) { current(player.getServer()).missions.engage(actor, player); }
     public static MissionPacket missionPacket(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).missions.packet(actor); }
     public static String inspectMission(ArchitectEntity actor) { return current(actor.getServer()).missions.sample(actor); }
     public static void finishMission(ArchitectEntity actor, String reason, boolean withdraw) {
@@ -286,5 +289,9 @@ public final class MaeveDirector {
     }
 
     public record EvidenceSnapshot(UUID observer, UUID encounter, String dimension, BlockPos position,
-                                   long time, String action, boolean supporting) { }
+                                   long time, String action, boolean supporting, double confidenceWeight) {
+        public EvidenceSnapshot(UUID observer, UUID encounter, String dimension, BlockPos position, long time, String action, boolean supporting) {
+            this(observer, encounter, dimension, position, time, action, supporting, Double.NaN);
+        }
+    }
 }

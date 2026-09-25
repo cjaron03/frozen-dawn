@@ -7,10 +7,11 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-/** A dropped concern is acted out locally: turn away, leave, then resume roaming. */
+/** A dropped concern leaves locally; a completed scout pauses visibly before returning. */
 final class ArchitectAttentionController {
     private final ArchitectEntity actor;
     private UUID releasedPlayer;
+    private boolean reconnaissance;
     private Vec3 away, destination;
     private long walkUntil, ignoreUntil, nextStep;
 
@@ -23,18 +24,44 @@ final class ArchitectAttentionController {
                 && level.getEntity(player) instanceof net.minecraft.server.level.ServerPlayer subject)
             com.frozendawn.maeve.MaeveDirector.observeWithdrawal(actor, subject);
         releasedPlayer = player;
+        reconnaissance = kind.startsWith("RECON");
         away = actor.position().subtract(lastObserved.getCenter()).multiply(1, 0, 1).normalize();
         if (away.lengthSqr() < .01) away = new Vec3(1, 0, 0);
         walkUntil = now() + 200; ignoreUntil = now() + 600; nextStep = 0; destination = null;
         actor.cancelMaeveAttentionWork();
-        actor.setReconnaissanceEyes(kind.startsWith("RECON"));
+        actor.setReconnaissanceEyes(reconnaissance);
         actor.recordDecision(kind.startsWith("RECON_") ? "MAEVE_RECON_EXTRACTION" : "MAEVE_ATTENTION_EVICTED", null,
                 "concern=" + kind + " observed=" + lastObserved + " player=" + player);
     }
 
     boolean tick() {
         if (releasedPlayer == null) return false;
-        if (now() >= walkUntil) { actor.setReconnaissanceEyes(false); return false; }
+        if (now() >= ignoreUntil) {
+            if (reconnaissance) {
+                actor.recordDecision("MAEVE_RECON_RETURN_TO_LOCAL", null, "avoidance expired");
+                actor.resumeAfterReconnaissance();
+            }
+            clear(); return false;
+        }
+        // The scout remains non-engaging after its directed walk ends. Keep that role
+        // visible until ordinary targeting resumes, or local damage cancels departure.
+        actor.setReconnaissanceEyes(reconnaissance);
+        if (now() >= walkUntil) {
+            if (!reconnaissance) return false;
+            int remaining = (int) (ignoreUntil - now());
+            int form = remaining <= 20 ? -remaining : (int) Math.min(20, now() - walkUntil + 1);
+            if (actor.getReconnaissanceDissolve() == 0)
+                actor.recordDecision("MAEVE_RECON_DISSOLVE", null, "withdrawalTicks=200; vulnerable same entity");
+            if (form == -20) actor.recordDecision("MAEVE_RECON_REFORM", null, "return to local combat at " + ignoreUntil);
+            actor.setReconnaissanceCloudStart(walkUntil);
+            actor.setReconnaissanceDissolve(form);
+            actor.getNavigation().stop(); actor.setTarget(null); actor.setSprinting(false);
+            actor.setMaeveHolding(false); actor.setCommitmentAction(true);
+            actor.getMoveControl().setWantedPosition(actor.getX(), actor.getY(), actor.getZ(), 0);
+            actor.setSpeed(0); actor.setZza(0); actor.setXxa(0);
+            actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
+            return true;
+        }
         actor.getNavigation().stop(); actor.setTarget(null); actor.setMaeveHolding(false);
         actor.setCommitmentAction(false); actor.setSprinting(false);
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
@@ -79,8 +106,9 @@ final class ArchitectAttentionController {
     boolean suppresses(UUID player) { return releasedPlayer != null && releasedPlayer.equals(player) && now() < ignoreUntil; }
     boolean active() { return releasedPlayer != null && now() < ignoreUntil; }
     void clear() {
-        releasedPlayer = null; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
+        releasedPlayer = null; reconnaissance = false; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
         actor.setReconnaissanceEyes(false);
+        actor.setReconnaissanceDissolve(0);
         actor.getNavigation().stop(); actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }
 }

@@ -22,14 +22,15 @@ final class ArchitectReconnaissanceEyesLayer extends RenderLayer<ArchitectEntity
         // Reuse the same texture decision, including the 97-tick phase and three blink frames.
         boolean blink = !ArchitectRenderer.textureForBlinkCycle(actor.tickCount, actor.getId()).equals(ArchitectRenderer.baseTexture());
         pose.pushPose(); getParentModel().head.translateAndRotate(pose);
-        var vertices = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+        int opacity = 255 - Math.abs(actor.getReconnaissanceDissolve()) * 255 / 20;
+        var vertices = buffers.getBuffer(opacity < 255 ? RenderType.entityTranslucent(WHITE) : RenderType.entityCutoutNoCull(WHITE));
         int overlay = LivingEntityRenderer.getOverlayCoords(actor, 0);
         for (int x : new int[]{10, 13}) {
-            if (blink) row(pose, vertices, x, 11, 0xFF692696, light, overlay);
+            if (blink) row(pose, vertices, x, 11, opacity << 24 | 0x692696, light, overlay);
             else {
-                row(pose, vertices, x, 10, 0xFF7E2DB4, light, overlay);
-                row(pose, vertices, x, 11, 0xFFB340FF, light, overlay);
-                row(pose, vertices, x, 12, 0xFF461964, light, overlay);
+                row(pose, vertices, x, 10, opacity << 24 | 0x7E2DB4, light, overlay);
+                row(pose, vertices, x, 11, opacity << 24 | 0xB340FF, light, overlay);
+                row(pose, vertices, x, 12, opacity << 24 | 0x461964, light, overlay);
             }
         }
         pose.popPose();

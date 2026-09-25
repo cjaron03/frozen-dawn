@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Bounded tactical hypotheses. This store has no access to world/player objects. */
 final class BeliefStore {
     static final String PURSUIT = "PLAYER_PURSUES_WITHDRAWING_ARCHITECT";
+    static final String SWORD = "PLAYER_PREFERS_SWORD";
     static final String RANGED = "PLAYER_PREFERS_RANGED";
     static final String RECOVERY = "PLAYER_USES_RECOVERY_UNDER_COVER";
     static final int MAX_CONTACTS = 8;
@@ -178,6 +179,7 @@ final class BeliefStore {
                 commitment.begin(encounter, List.copyOf(beliefs.values()), now);
             }
             lastContact = now;
+            commitment.contact(now);
         }
 
         void evictBelief() {

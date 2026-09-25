@@ -412,3 +412,24 @@ tasks.register('generateMacsLearningQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsLearningQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsLearningQa') }
+
+// The combined camp uses native commands, including 1.21 item components.
+def macsIntegratedQaResources = layout.buildDirectory.dir('generated/macs-integrated-qa')
+tasks.register('generateMacsIntegratedQa', Exec) {
+    inputs.file('tools/prepare_macs_integrated_playtest.py')
+    outputs.dir(macsIntegratedQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_integrated_playtest.py', '--pack-only', macsIntegratedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsIntegratedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsIntegratedQa') }
+
+// Sword training and the counterplay handoff share their exact native functions with GameTest.
+def macsShieldQaResources = layout.buildDirectory.dir('generated/macs-shield-qa')
+tasks.register('generateMacsShieldQa', Exec) {
+    inputs.file('tools/prepare_macs_shield_playtest.py')
+    inputs.file('tools/macs_guard_acceptance.py')
+    outputs.dir(macsShieldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_shield_playtest.py', '--pack-only', macsShieldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsShieldQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsShieldQa') }

@@ -1,6 +1,7 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.entity.ai.DStarLitePathfinder;
+import com.frozendawn.entity.architect.ArchitectWalkGeometry;
 import com.frozendawn.maeve.MaeveDirector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,12 +41,21 @@ final class ArchitectReconnaissanceController {
         if (goal == null) {
             Vec3 out = Vec3.atBottomCenterOf(packet.access().outside());
             Vec3 direction = out.subtract(Vec3.atBottomCenterOf(packet.access().inside())).multiply(1, 0, 1).normalize();
-            goal = BlockPos.containing(out.add(direction.scale(3)));
+            goal = inspectionGround(BlockPos.containing(out.add(direction.scale(3))));
+            if (goal == null) {
+                MaeveDirector.finishMission(actor, "LOCAL_ROUTE_UNAVAILABLE", true); return true;
+            }
+            actor.recordDecision("MAEVE_RECON_ROUTE", null,
+                    "mission=" + packet.id() + " observed=" + packet.access().outside() + " stance=" + goal);
             path = new DStarLitePathfinder(); path.configureObservedWalk(packet.dangers());
-            path.initialize(goal, actor.blockPosition(), actor.level());
+            path.initialize(goal, walkingStart(), actor.level());
             progress = actor.position(); lastProgress = now;
         }
-        if (actor.position().distanceToSqr(Vec3.atBottomCenterOf(goal)) <= .36) {
+        Vec3 destination = ArchitectWalkGeometry.observedStandingPosition(actor.level(), goal);
+        if (destination == null) {
+            MaeveDirector.finishMission(actor, "LOCAL_ROUTE_UNAVAILABLE", true); return true;
+        }
+        if (actor.position().distanceToSqr(destination) <= .36) {
             actor.setCommitmentAction(true); actor.setMaeveHolding(true);
             face(packet.access().inside().getCenter().add(0, 1, 0));
             if (inspectingAt < 0) {
@@ -60,18 +70,21 @@ final class ArchitectReconnaissanceController {
         actor.setMaeveHolding(false); actor.setCommitmentAction(false);
         if (!actor.onGround()) return true;
         if (actor.position().distanceToSqr(progress) > .25) { progress = actor.position(); lastProgress = now; }
-        if (now - lastProgress >= 80 || Math.abs(actor.getY() - goal.getY()) > 1) {
+        if (now - lastProgress >= 80 || Math.abs(actor.getY() - destination.y) > 1) {
             MaeveDirector.finishMission(actor, "LOCAL_ROUTE_UNAVAILABLE", true); return true;
         }
-        Vec3 destination = Vec3.atBottomCenterOf(goal);
-        if (!actor.blockPosition().equals(goal)) {
-            path.updateStart(actor.blockPosition());
+        BlockPos start = walkingStart();
+        if (!start.equals(goal)) {
+            path.updateStart(start);
             if (!path.computePartial(80, actor.level())) return true;
-            var step = path.getNextStep(actor.blockPosition(), actor.level());
+            var step = path.getNextStep(start, actor.level());
             if (step == null || step.type() != DStarLitePathfinder.StepType.WALK) {
                 MaeveDirector.finishMission(actor, "LOCAL_ROUTE_UNAVAILABLE", true); return true;
             }
-            destination = Vec3.atBottomCenterOf(step.pos());
+            destination = ArchitectWalkGeometry.observedStandingPosition(actor.level(), step.pos());
+            if (destination == null) {
+                MaeveDirector.finishMission(actor, "LOCAL_ROUTE_UNAVAILABLE", true); return true;
+            }
         }
         Vec3 delta = destination.subtract(actor.position()); double length = delta.horizontalDistance();
         if (length > .01) {
@@ -80,6 +93,24 @@ final class ArchitectReconnaissanceController {
             face(destination.add(0, 1, 0));
         }
         return true;
+    }
+
+    /** Collision can raise the feet before the center leaves the lower partial surface. */
+    private BlockPos walkingStart() {
+        BlockPos feet = actor.blockPosition();
+        if (ArchitectWalkGeometry.observedStandingPosition(actor.level(), feet) != null) return feet;
+        Vec3 lower = ArchitectWalkGeometry.observedStandingPosition(actor.level(), feet.below());
+        return lower != null && Math.abs(actor.getY() - lower.y) <= .6 ? feet.below() : feet;
+    }
+
+    /** A crossing can be witnessed mid-jump. Ground only the local stance, not the saved evidence. */
+    private BlockPos inspectionGround(BlockPos projected) {
+        for (int dy : new int[] {0, -1, 1, -2, 2}) {
+            BlockPos candidate = projected.offset(0, dy, 0);
+            Vec3 standing = ArchitectWalkGeometry.observedStandingPosition(actor.level(), candidate);
+            if (standing != null && Math.abs(actor.getY() - standing.y) <= 1) return candidate;
+        }
+        return null;
     }
 
     private void face(Vec3 point) {

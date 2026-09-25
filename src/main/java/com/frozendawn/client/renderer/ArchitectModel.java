@@ -67,6 +67,10 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.head.zRot = 0.0F;
         this.body.xRot = 0.0F;
         this.body.zRot = 0.0F;
+        boolean shield = entity.isUsingMaeveShield();
+        boolean rightHanded = entity.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT;
+        this.leftArmPose = shield && rightHanded ? ArmPose.BLOCK : ArmPose.EMPTY;
+        this.rightArmPose = shield && !rightHanded ? ArmPose.BLOCK : ArmPose.EMPTY;
         // super.setupAnim handles player-like walk animation (arm + leg swing)
         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.setAllVisible(true);
@@ -74,6 +78,8 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         int action = entity.getCurrentAction();
         float sway = Mth.sin(ageInTicks * 0.08f) * 0.06f;
         this.hat.visible = false;
+
+        if (shield && !entity.isMasterArchitectVisual()) return;
 
         // During active mining, preserve vanilla humanoid swing exactly instead of
         // layering a custom pose over it.
@@ -123,7 +129,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
-        if (entity.isHoldingMaevePosition()) {
+        if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
             // Preserve vanilla's attack swing when defending the held point.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
                 applyObservePose(ageInTicks, sway, limbSwingAmount);

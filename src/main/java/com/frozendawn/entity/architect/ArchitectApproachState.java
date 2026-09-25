@@ -53,6 +53,9 @@ public final class ArchitectApproachState {
     @Nullable public BlockPos lastFallbackBreakPos;
     public int surfaceY = 64;
     @Nullable public BlockPos ceilingBreachPos;
+    /** Walking route accepted instead of a queued breach; valid only while navigation owns it. */
+    @Nullable public net.minecraft.world.level.pathfinder.Path openRouteAfterBreak;
+    @Nullable public UUID openRouteSubject;
     @Nullable public Vec3 stepOffStart;
     @Nullable public BlockPos stepOffTarget;
     public int stepOffProgress;

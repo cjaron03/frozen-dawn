@@ -36,18 +36,23 @@ public final class ArchitectDecisionEngine {
     }
 
     public Decision evaluate(Context context, RandomSource random, float fortifyBias, float peekBias) {
+        return evaluate(context, random, fortifyBias, peekBias, true, true);
+    }
+
+    public Decision evaluate(Context context, RandomSource random, float fortifyBias, float peekBias,
+                             boolean canFortify, boolean canPeek) {
         float[] scores = new float[7];
         scores[ArchitectEntity.ACTION_OBSERVE] = scoreObserve(context);
         scores[ArchitectEntity.ACTION_APPROACH] = scoreApproach(context);
         scores[ArchitectEntity.ACTION_ATTACK_MELEE] = scoreAttackMelee(context);
         scores[ArchitectEntity.ACTION_RETREAT] = scoreRetreat(context);
-        scores[ArchitectEntity.ACTION_FORTIFY] = scoreFortify(context);
+        scores[ArchitectEntity.ACTION_FORTIFY] = canFortify ? scoreFortify(context) : 0;
         scores[ArchitectEntity.ACTION_TRAP_SET] = scoreTrapSet(context);
-        scores[ArchitectEntity.ACTION_PEEK] = scorePeek(context);
+        scores[ArchitectEntity.ACTION_PEEK] = canPeek ? scorePeek(context) : 0;
 
         // Historical beliefs bias only already-available local actions. Random utility
         // selection remains in charge; a bias cannot create standalone positioning.
-        if (scores[ArchitectEntity.ACTION_FORTIFY] > 0) scores[ArchitectEntity.ACTION_FORTIFY] += Math.max(0, Math.min(0.4f, fortifyBias));
+        if (scores[ArchitectEntity.ACTION_FORTIFY] > 0) scores[ArchitectEntity.ACTION_FORTIFY] += Math.max(0, Math.min(0.7f, fortifyBias));
         if (scores[ArchitectEntity.ACTION_PEEK] > 0) scores[ArchitectEntity.ACTION_PEEK] += Math.max(0, Math.min(0.3f, peekBias));
 
         float bestScore = -1.0f;

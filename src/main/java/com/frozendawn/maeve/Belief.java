@@ -41,8 +41,11 @@ final class Belief {
                 confidence = currentConfidence(observation.time());
                 updated = observation.time();
                 lastConfirmed = observation.time();
-                provenance.removeIf(e -> e.supporting() && e.encounter().equals(observation.encounter()));
-                retain(observation);
+                // Keep the scored source, including a scout's weight, when another
+                // observer merely verifies freshness. Only the latest verification is retained.
+                provenance.removeIf(e -> e.supporting() && e.confidenceWeight() == 0
+                        && e.encounter().equals(observation.encounter()));
+                retain(observation.withWeight(0));
             }
             return false;
         }
@@ -56,7 +59,7 @@ final class Belief {
             contradicted = true;
             contradictions = BeliefPolicy.increment(contradictions);
         }
-        retain(observation);
+        retain(observation.withWeight(adjustment));
         return true;
     }
 

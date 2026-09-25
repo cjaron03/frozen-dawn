@@ -28,7 +28,10 @@ final class CommitmentPolicy {
     private final Set<String> confirmedHere = new LinkedHashSet<>();
     private UUID encounter;
     private boolean issued;
+    private boolean reconIssued;
+    private boolean combatStarted;
     private boolean active;
+    private long lastContact;
     private String outcome = "NO_PRIOR_ENCOUNTER";
     private MaeveDirector.PositionDirective selected;
     private List<String> alternatives = List.of();
@@ -36,7 +39,10 @@ final class CommitmentPolicy {
     void begin(UUID id, List<Belief> previous, long now) {
         performance.begin(now);
         encounter = id;
+        lastContact = now;
         issued = false;
+        reconIssued = false;
+        combatStarted = false;
         active = false;
         selected = null;
         outcome = "NOT_EVALUATED";
@@ -130,7 +136,7 @@ final class CommitmentPolicy {
 
     void arrived(long now) {
         if (active && selected.arrivedAt() < 0) {
-            selected = copy(now, now + HOLD_TICKS, selected.contradictedAt());
+            selected = copy(now, swordGuard() ? -1 : now + HOLD_TICKS, selected.contradictedAt());
             performance.arrived(now);
             outcome = selected.contradictedAt() < 0 ? "HOLDING" : "CONTRADICTED_HOLD";
         }
@@ -153,14 +159,22 @@ final class CommitmentPolicy {
 
     private long deadline() {
         if (selected.obstruction() != null) return selected.contradictedAt() + WRONG_BEAT_TICKS;
+        if (swordGuard() && selected.arrivedAt() >= 0) return lastContact + BeliefPolicy.ENCOUNTER_GAP;
         return selected.arrivedAt() < 0 ? selected.startedAt() + (selected.spatial() == null ? APPROACH_TICKS : SPATIAL_APPROACH_TICKS)
                 : Math.max(selected.holdUntil(), selected.contradictedAt() + WRONG_BEAT_TICKS);
+    }
+
+    void contact(long now) { lastContact = now; }
+    private boolean swordGuard() { return selected.pattern().equals(BeliefStore.SWORD); }
+    private String expiryReason() {
+        return selected.obstruction() != null ? "DISCOVERY_REPLAN"
+                : swordGuard() && selected.arrivedAt() >= 0 ? "ENCOUNTER_ENDED" : "TIME_COMPLETE";
     }
 
     MaeveDirector.PositionDirective active(long now) {
         performance.clock(now);
         if (active) {
-            if (now < selected.startedAt() || now >= deadline()) finish(selected.obstruction() == null ? "TIME_COMPLETE" : "DISCOVERY_REPLAN");
+            if (now < selected.startedAt() || now >= deadline()) finish(expiryReason());
         }
         return active ? selected : null;
     }
@@ -169,19 +183,27 @@ final class CommitmentPolicy {
     MaeveDirector.PositionDirective selected() { return selected; }
     String outcome(long now) {
         if (!active) return outcome;
-        return now < selected.startedAt() || now >= deadline()
-                ? selected.obstruction() == null ? "TIME_COMPLETE" : "DISCOVERY_REPLAN" : outcome;
+        return now < selected.startedAt() || now >= deadline() ? expiryReason() : outcome;
     }
     List<String> alternatives() { return alternatives; }
     Set<String> blocked() { return Set.copyOf(blocked); }
     Set<String> blockNext() { return Set.copyOf(blockNext); }
     UUID encounter() { return encounter; }
     boolean issued() { return issued; }
+    boolean canSurvey() { return encounter != null && !reconIssued && !combatStarted && !issued; }
+    String surveyAdmission() {
+        return encounter == null ? "NO_ENCOUNTER" : reconIssued ? "SURVEY_ALREADY_USED"
+                : combatStarted || issued ? "COMBAT_ALREADY_STARTED" : "AWAITING_HISTORICAL_UNCERTAINTY";
+    }
+    void surveyIssued() { reconIssued = true; }
+    boolean engage() { boolean changed = !combatStarted; combatStarted = true; return changed; }
 
     CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         if (encounter != null) tag.putUUID("encounter", encounter);
         tag.putBoolean("issued", issued);
+        tag.putBoolean("reconIssued", reconIssued);
+        tag.putBoolean("combatStarted", combatStarted);
         tag.putString("outcome", outcome);
         tag.put("performance", performance.save());
         ListTag beliefs = new ListTag();
@@ -206,6 +228,8 @@ final class CommitmentPolicy {
         state.performance = StrategyPerformance.load(tag.getCompound("performance"));
         state.encounter = tag.hasUUID("encounter") ? tag.getUUID("encounter") : null;
         state.issued = tag.getBoolean("issued");
+        state.reconIssued = tag.getBoolean("reconIssued");
+        state.combatStarted = tag.getBoolean("combatStarted");
         state.outcome = state.issued ? "RELOAD_RELEASED" : "NOT_EVALUATED";
         for (Tag entry : tag.getList("baseline", Tag.TAG_COMPOUND)) {
             Belief belief = Belief.load((CompoundTag) entry);

@@ -20,6 +20,8 @@ final class ArchitectCommitmentController {
     private final ArchitectEntity architect;
     private final ArchitectBlockBreaker breaker;
     private final ArchitectSpatialCommitment spatial;
+    private final ArchitectShieldController shield;
+    ArchitectShieldController shield() { return shield; }
     private boolean wasActive;
     private long nextPlan;
 
@@ -27,11 +29,14 @@ final class ArchitectCommitmentController {
         this.architect = architect;
         this.breaker = breaker;
         spatial = new ArchitectSpatialCommitment(architect);
+        shield = new ArchitectShieldController(architect);
     }
 
     boolean tick(LivingEntity localTarget) {
         long now = architect.getServer().overworld().getGameTime();
         var directive = MaeveDirector.positionDirective(architect);
+        // A finished shield may not leak into a new encounter's selected counter.
+        if (directive == null && shield.active()) clear();
         if (directive == null && now >= nextPlan && localTarget instanceof ServerPlayer player) {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
@@ -45,14 +50,22 @@ final class ArchitectCommitmentController {
             if (wasActive) clear();
             return false;
         }
-        if (!safeToCommit() || !directive.evidence().dimension().equals(architect.level().dimension().location().toString())) {
+        boolean swordGuard = directive.pattern().equals(ArchitectShieldController.PATTERN);
+        if (!(swordGuard ? safeEnvironment() : safeToCommit())
+                || !directive.evidence().dimension().equals(architect.level().dimension().location().toString())) {
             release("LOCAL_SAFETY_RELEASE");
             return false;
         }
         wasActive = true;
+        if (swordGuard) {
+            boolean guarding = shield.tick(directive, localTarget, now);
+            // A lowered shield yields to ordinary pursuit, including queued mining.
+            if (guarding) breaker.clearTarget();
+            return guarding;
+        }
         breaker.clearTarget();
-        // Ordinary melee knockback is a possible contradiction, not a reason to
-        // instantly abandon the bet. Let gravity settle it, then return to the point.
+        // Environmental displacement may settle back to the point. Effective
+        // damage has its own final-event release, after evidence is recorded.
         if (!architect.onGround()) {
             architect.setMaeveHolding(false);
             if (Math.abs(architect.getY() - directive.position().getY()) > 2) { release("LOCAL_FALL_RISK"); return false; }
@@ -65,7 +78,8 @@ final class ArchitectCommitmentController {
             spatial.tick(directive, localTarget, now);
             return true;
         }
-        Vec3 goal = Vec3.atBottomCenterOf(directive.position());
+        Vec3 goal = directive.cover() == null ? Vec3.atBottomCenterOf(directive.position())
+                : coverStandingPoint(directive.position());
         if (architect.position().distanceToSqr(goal) > 0.36D) {
             if (!safeWalk(goal)) { release("LOCAL_ROUTE_UNSAFE"); return false; }
             architect.setMaeveHolding(false);
@@ -94,8 +108,8 @@ final class ArchitectCommitmentController {
             architect.setYHeadRot(yaw);
             architect.getLookControl().setLookAt(anchor.x, anchor.y + 0.5D, anchor.z, 12, 12);
             if (arrival && directive.cover() != null) {
-                if (!clearCover(directive.cover()) || !architect.placeTacticalIce(directive.cover())
-                        || !architect.placeTacticalIce(directive.cover().above())) {
+                int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.PILLAR_HEIGHT;
+                if (!clearCover(directive.cover()) || architect.placeCoverPillar(directive.cover()) != height) {
                     release("LOCAL_COVER_UNAVAILABLE");
                     return false;
                 }
@@ -114,18 +128,26 @@ final class ArchitectCommitmentController {
         var candidates = new ArrayList<MaeveDirector.PositionCandidate>();
         for (var hint : hints) {
             if (hint.confidence() < 0.75D) continue;
+            if (hint.pattern().equals(ArchitectShieldController.PATTERN)) {
+                if (architect.getBrainAction() != ArchitectEntity.ACTION_RETREAT && !architect.isDrinkingPotion()
+                        && shield.canEquip(architect.getServer().overworld().getGameTime()))
+                    candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), architect.blockPosition(), null, 1.5));
+                continue;
+            }
             Vec3 anchor = Vec3.atBottomCenterOf(hint.evidence().position());
             Vec3 away = architect.position().subtract(anchor).multiply(1, 0, 1);
             if (away.lengthSqr() < 1) continue;
             away = away.normalize();
             if (hint.pattern().equals("PLAYER_PREFERS_RANGED")) {
                 BlockPos position = architect.blockPosition();
-                BlockPos cover = BlockPos.containing(Vec3.atBottomCenterOf(position).subtract(away.scale(2)));
+                Vec3 feet = coverStandingPoint(position);
+                BlockPos cover = com.frozendawn.entity.architect.ArchitectCoverGeometry.find(
+                        architect, feet, anchor.add(0, 1.62, 0));
                 Vec3 sideways = new Vec3(-away.z, 0, away.x);
                 boolean canAbandon = safeWalk(architect.position().add(away.scale(2)))
                         || safeWalk(architect.position().add(sideways.scale(2)))
                         || safeWalk(architect.position().subtract(sideways.scale(2)));
-                if (safeWalk(Vec3.atBottomCenterOf(position)) && canAbandon && clearCover(cover)) {
+                if (cover != null && safeWalk(feet) && canAbandon && clearCover(cover)) {
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), position, cover, 2));
                 }
             } else if (hint.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT")) {
@@ -160,20 +182,27 @@ final class ArchitectCommitmentController {
     }
 
     private boolean safeToCommit() {
+        return safeEnvironment() && architect.getHealth() > architect.getMaxHealth() * 0.3F;
+    }
+
+    private boolean safeEnvironment() {
         return architect.isAlive() && !architect.isNoAi()
-                && !architect.isInWaterOrBubble() && !architect.isOnFire()
-                && architect.getHealth() > architect.getMaxHealth() * 0.3F;
+                && !architect.isInWaterOrBubble() && !architect.isOnFire();
     }
 
     private boolean clearCover(BlockPos pos) {
-        if (architect.getTacticalIceCount() + 2 > architect.getMaxTacticalIce()
-                || !architect.level().hasChunkAt(pos) || !architect.level().hasChunkAt(pos.above())) return false;
-        if (!architect.level().getBlockState(pos).isAir() || !architect.level().getBlockState(pos.above()).isAir()) return false;
-        var occupants = new ArrayList<net.minecraft.world.entity.Entity>();
-        ((net.minecraft.server.level.ServerLevel) architect.level()).getEntities(
-                net.minecraft.world.level.entity.EntityTypeTest.forClass(net.minecraft.world.entity.Entity.class),
-                new AABB(pos).expandTowards(0, 1, 0), entity -> entity != architect, occupants, 1);
-        return occupants.isEmpty();
+        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.PILLAR_HEIGHT;
+        return architect.getTacticalIceCount() + height <= architect.getMaxTacticalIce()
+                && com.frozendawn.entity.architect.ArchitectCoverGeometry.canPlacePillar(architect, architect.position(), pos);
+    }
+
+    private Vec3 coverStandingPoint(BlockPos pos) {
+        Vec3 center = Vec3.atBottomCenterOf(pos);
+        if (!architect.level().hasChunkAt(pos)) return center;
+        var state = architect.level().getBlockState(pos);
+        if (!state.is(Blocks.SNOW)) return center;
+        var shape = state.getCollisionShape(architect.level(), pos);
+        return shape.isEmpty() ? center : center.add(0, shape.max(Direction.Axis.Y), 0);
     }
 
     /** Straight, level, short paths only. No breach, scaffold, navigation search, or chunk loads. */
@@ -216,6 +245,7 @@ final class ArchitectCommitmentController {
 
     void clear() {
         spatial.clear();
+        shield.clear();
         wasActive = false;
         architect.setMaeveHolding(false);
         stopMotion();

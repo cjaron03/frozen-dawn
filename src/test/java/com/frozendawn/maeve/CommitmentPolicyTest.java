@@ -8,6 +8,21 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommitmentPolicyTest {
+    @Test
+    void surveyAdmissionIsSpentAcrossReloadAndResetsOnlyWithTheEncounter() {
+        var state = policy();
+        assertTrue(state.canSurvey());
+        state.surveyIssued();
+        assertFalse(CommitmentPolicy.load(state.save()).canSurvey());
+        state.begin(UUID.randomUUID(), List.of(), 2000);
+        assertTrue(state.canSurvey());
+        state.engage();
+        assertFalse(CommitmentPolicy.load(state.save()).canSurvey());
+        var committed = policy(belief(BeliefStore.RANGED, .8));
+        assertTrue(committed.choose(PLAYER, OBSERVER, List.of(candidate(BeliefStore.RANGED, 2)), 1000));
+        committed.finish("TIME_COMPLETE");
+        assertFalse(committed.canSurvey(), "Finishing a combat bet cannot unlock mid-fight scouting");
+    }
     private static final UUID PLAYER = new UUID(0, 1);
     private static final UUID OBSERVER = new UUID(0, 2);
 
@@ -80,9 +95,51 @@ class CommitmentPolicyTest {
         assertTrue(policy.choose(PLAYER, OBSERVER, options, 1000));
         assertFalse(policy.choose(PLAYER, UUID.randomUUID(), options, 1001));
         policy.arrived(1001);
+        policy.contact(1400);
         assertNotNull(policy.active(1400));
-        assertNull(policy.active(1401));
+        assertNull(policy.active(1401), "Fresh contact cannot extend the ranged-cover hold");
         assertFalse(policy.choose(PLAYER, UUID.randomUUID(), options, 1402));
+    }
+
+    @Test
+    void swordStanceKeepsOneBetUntilContactExpiresAndStillHonorsContradictionCooldown() {
+        var sword = belief(BeliefStore.SWORD, 1);
+        var policy = policy(sword);
+        var options = List.of(candidate(BeliefStore.SWORD, 1.5));
+        assertTrue(policy.choose(PLAYER, OBSERVER, options, 1000));
+        policy.arrived(1001);
+        assertEquals(-1, policy.active(1401).holdUntil());
+        policy.contact(1500);
+        policy.contradict(BeliefStore.SWORD, 1501);
+        assertNotNull(policy.active(2099), "Contradiction cannot buy an immediate equipment swap");
+        assertEquals(1001, policy.active(2099).arrivedAt());
+        assertFalse(policy.choose(PLAYER, UUID.randomUUID(), options, 2099));
+        assertNull(policy.active(2100));
+        assertEquals("ENCOUNTER_ENDED", policy.outcome(2100));
+        assertFalse(policy.choose(PLAYER, OBSERVER, options, 2101));
+        policy.begin(UUID.randomUUID(), List.of(sword), 2200);
+        assertEquals("CONTRADICTION_COOLDOWN", policy.ineligible(BeliefStore.SWORD, 2200));
+    }
+
+    @Test
+    void ordinaryStoreContactsKeepTheSameSwordEncounterAliveWithoutRefreshingTheBet() {
+        var store = new BeliefStore();
+        for (int i = 0; i < 5; i++) store.record(PLAYER, OBSERVER, "minecraft:overworld", BlockPos.ZERO,
+                i * 610L, BeliefStore.SWORD, true, "WITNESSED_DAMAGE_SWORD");
+        store.contact(PLAYER, OBSERVER, "minecraft:overworld", 3050);
+        var policy = store.commitment(PLAYER);
+        assertTrue(policy.choose(PLAYER, OBSERVER, List.of(candidate(BeliefStore.SWORD, 1.5)), 3050));
+        policy.arrived(3050);
+        var encounter = policy.encounter();
+        store.contact(PLAYER, 3600);
+        store.contact(PLAYER, 4150);
+        assertSame(policy, store.commitmentFor(OBSERVER, 4749));
+        assertEquals(encounter, policy.encounter());
+        assertEquals(3050, policy.active(4749).arrivedAt());
+        var loaded = BeliefStore.load(store.save());
+        assertNull(loaded.commitmentFor(OBSERVER, 4749));
+        assertTrue(loaded.commitment(PLAYER).issued(), "Reload retains the spent stance");
+        assertNull(store.commitmentFor(OBSERVER, 4750));
     }
 
     @Test

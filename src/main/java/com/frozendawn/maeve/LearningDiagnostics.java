@@ -16,6 +16,7 @@ final class LearningDiagnostics {
         long now = server.overworld().getGameTime();
         return Stream.of(beliefs, CommitmentDiagnostics.format(MaeveDirector.commitmentSnapshot(server, player)),
                 WorldDiagnostics.format(store.world(player), now), attention, missions, learning,
+                policy == null ? List.<String>of() : List.of("RECON ADMISSION: " + policy.surveyAdmission()),
                 policy == null ? List.<String>of() : policy.performance().diagnostics(now)).flatMap(List::stream).toList();
     }
 }

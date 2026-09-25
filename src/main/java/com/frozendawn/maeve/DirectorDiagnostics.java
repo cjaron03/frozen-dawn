@@ -45,11 +45,12 @@ final class DirectorDiagnostics {
         lines.add("CONTRADICTION RULE: " + BeliefDescriptions.contradiction(pattern));
         appendEvidence(lines, value, true);
         appendEvidence(lines, value, false);
-        long omitted = Math.max(0L, (long) value.evidence() + value.contradictions() - value.provenance().size());
+        long retainedContributions = value.provenance().stream().filter(e -> e.confidenceWeight() != 0).count();
+        long omitted = Math.max(0L, (long) value.evidence() + value.contradictions() - retainedContributions);
         lines.add("HISTORY: " + value.provenance().size() + "/" + BeliefPolicy.MAX_PROVENANCE
                 + " retained entries; " + omitted + " counted contributions no longer retained.");
         lines.add("COUNTS: at most one contribution per polarity/pattern/player encounter, shared across witnesses.");
-        lines.add("Repeated support refreshes confirmation and replaces its encounter's retained support; it adds no count or confidence.");
+        lines.add("Repeated support refreshes confirmation; its latest VERIFY entry adds no count or confidence. The credited source is retained within the history cap.");
         lines.add("Encounter ends after " + BeliefPolicy.ENCOUNTER_GAP + " ticks without qualifying local contact.");
         appendConfidence(lines, value);
         lines.add("CURRENT UNCERTAINTY: " + (value.lastConfirmed() < 0 ? "Never confirmed by supporting evidence."
@@ -74,6 +75,7 @@ final class DirectorDiagnostics {
         long elapsed = Math.max(0L, belief.evaluatedAt() - onset);
         lines.add(String.format(Locale.ROOT, "SCORING: support +%.2f, contradiction -%.2f; clamp to [0,1] after each contribution.",
                 BeliefPolicy.SUPPORT, BeliefPolicy.CONTRADICTION));
+        lines.add(String.format(Locale.ROOT, "ACTIVE SCOUT: subject-matched behavioral support +%.2f; no bonus during departure or later combat.", BeliefPolicy.RECON_SUPPORT));
         lines.add("CLOCK: overworld game tick=" + belief.evaluatedAt() + " | last observed=" + belief.lastObserved());
         lines.add(belief.lastConfirmed() < 0 ? "CONFIRMATION: never; saved confirmation sentinel=-1"
                 : "CONFIRMATION: tick=" + belief.lastConfirmed() + " | ageTicks=" + belief.ageTicks());
@@ -89,9 +91,10 @@ final class DirectorDiagnostics {
     }
 
     private static String event(MaeveDirector.EvidenceSnapshot event) {
-        return (event.supporting() ? "  SUPPORT " : "  CONTRADICTION ") + event.action()
+        return (event.confidenceWeight() == 0 ? "  VERIFY " : event.supporting() ? "  SUPPORT " : "  CONTRADICTION ") + event.action()
                 + " tick=" + event.time() + " observer=" + event.observer()
                 + " encounter=" + event.encounter() + " at=" + event.dimension()
-                + " " + event.position().toShortString();
+                + " " + event.position().toShortString()
+                + (Double.isFinite(event.confidenceWeight()) ? String.format(Locale.ROOT, " weight=%+.2f", event.confidenceWeight()) : "");
     }
 }
