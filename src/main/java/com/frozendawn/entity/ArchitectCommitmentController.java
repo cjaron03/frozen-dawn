@@ -23,6 +23,7 @@ final class ArchitectCommitmentController {
     private final ArchitectShieldController shield;
     private final ArchitectMantletController mantlet;
     ArchitectShieldController shield() { return shield; }
+    void onMantletMiningStarted(BlockPos pos) { mantlet.onMiningStarted(pos); }
     private boolean wasActive;
     private long nextPlan;
 

@@ -1069,6 +1069,21 @@ public class ArchitectEntity extends Monster {
         brainState.setActionHoldTicks(0); brainState.setReevalCooldown(0);
     }
 
+    public void onMantletMiningStarted(BlockPos pos) {
+        if (level().isClientSide() || !isAlive() || isNoAi() || isMasterArchitectVisual()
+                || isHearthAssessor() || isHearthPopulationResident() || AggregateReinforcementManager.isChild(this)) return;
+        maeveCommitment.onMantletMiningStarted(pos);
+    }
+
+    void resumeAfterMantletInterruption() {
+        maeveCommitment.clear();
+        thinkingController.interrupt(); entityData.set(DATA_PURSUIT_POSE, 0);
+        thinkingInterruptedUntil = tickCount + 40;
+        localCombatUntil = level().getGameTime() + 600;
+        resumeAfterReconnaissance();
+        updateHeldItem(); syncRenderState();
+    }
+
     /** Final damage has already been recorded by Maeve before execution is released. */
     public void onEffectiveCombatDamage(DamageSource source, float damage) {
         if (level().isClientSide() || !(damage > 0) || !Float.isFinite(damage)

@@ -24,13 +24,17 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class MaeveMantletGameTest {
     record Fight(ArchitectEntity actor, MaeveObservationGameTest.TestPlayer player, long start) { }
     static Fight prepare(MaeveObservationGameTest.Scene scene, int snow) {
+        return prepare(scene, snow, false);
+    }
+    static Fight prepare(MaeveObservationGameTest.Scene scene, int snow, boolean damageable) {
         for (int x = -3; x <= 22; x++) for (int z = -3; z <= 14; z++) {
             scene.block(x, -1, z, Blocks.STONE.defaultBlockState());
             for (int y = 0; y < 4; y++) scene.block(x, y, z, Blocks.AIR.defaultBlockState());
             if (snow > 0) scene.block(x, 0, z, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, snow));
         }
         double surface = snow == 0 ? 0 : (snow - 1) / 8.0;
-        var player = scene.player("mantlet", 18, 6); player.setPos(player.position().add(0, surface, 0));
+        var player = damageable ? MaeveReconnaissanceGameTest.damageablePlayer(scene, "mantlet") : scene.player("mantlet", 18, 6);
+        player.setPos(scene.position(18, 6).add(0, surface, 0));
         var witness = scene.architect(2, 6); witness.setPos(witness.position().add(0, surface, 0));
         long time = scene.gameTime + 1;
         for (int i = 0; i < 5; i++) { scene.clock(time + i * 610); scene.hit(witness, player, true, 1); }
@@ -240,27 +244,6 @@ public final class MaeveMantletGameTest {
                 helper.assertTrue(screens == 5 && fight.actor().getX() - start.x >= 7.7, "Snow depth " + depth + " must allow actual screened advance; screens=" + screens + " actor=" + fight.actor().position() + " events=" + fight.actor().decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
                 fight.actor().discard(); fight.player().discard();
             }
-        });
-    }
-
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
-    public static void brokenMantletDoesNotRepairAndDamageReleasesSpentBet(GameTestHelper helper) {
-        MaeveObservationGameTest.withScene(helper, 147, scene -> {
-            var fight = prepare(scene, 3); var actor = fight.actor();
-            for (int t = 0; t < 65; t++) tick(scene, fight, t);
-            var directive = MaeveDirector.positionDirective(actor);
-            helper.assertTrue(directive != null && directive.advancingCover(), "Must select a real mantlet: " + MaeveDirector.commitmentSnapshot(scene.server, fight.player().getUUID()) + " journal=" + actor.decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
-            scene.level.destroyBlock(directive.cover().above(), false);
-            Vec3 stopped = actor.position();
-            for (int t = 65; t < 200; t++) tick(scene, fight, t);
-            helper.assertTrue(actor.decisionJournal().entries().stream().filter(e -> e.event().equals("MANTLET_BLOCK")).count() == 4,
-                    "Breaking the first screen cannot trigger repairs or a second screen");
-            helper.assertTrue(actor.position().distanceTo(stopped) < .4, "Broken cover stops the committed advance");
-            fight.player().setPos(actor.position().add(0, 0, 2));
-            scene.hit(actor, fight.player(), false, 1);
-            helper.assertTrue(MaeveDirector.positionDirective(actor) == null, "Actual flanking damage snaps it out of the hold");
-            tick(scene, fight, 201);
-            helper.assertTrue(MaeveDirector.positionDirective(actor) == null, "Spent mantlet cannot instantly switch to pillars");
         });
     }
 

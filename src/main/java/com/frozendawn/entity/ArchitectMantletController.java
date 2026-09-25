@@ -7,7 +7,9 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /** One physical, slow, fixed-front bet. A damaged screen is never replenished. */
@@ -24,7 +26,6 @@ final class ArchitectMantletController {
     private int screen, placed;
     private long nextBlock, nextScreen;
     private Vec3 goal;
-    private boolean breached;
 
     ArchitectMantletController(ArchitectEntity actor) { this.actor = actor; }
 
@@ -58,16 +59,16 @@ final class ArchitectMantletController {
         actor.getMoveControl().setWantedPosition(actor.getX(), actor.getY(), actor.getZ(), 0);
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
         actor.setSpeed(0); actor.setZza(0); actor.setXxa(0); actor.setSprinting(false);
-        if (!breached && java.util.stream.Stream.concat(current.stream(), building.stream())
+        if (java.util.stream.Stream.concat(current.stream(), building.stream())
                 .anyMatch(p -> !actor.level().hasChunkAt(p) || !actor.level().getBlockState(p).is(Blocks.PACKED_ICE))) {
-            breached = true;
-            actor.recordDecision("MANTLET_BREACHED", null, "advance stopped; no repairs or replacement bet");
+            actor.recordDecision("MANTLET_BREACHED", null, "returning to local combat; no repairs or replacement bet");
+            return interrupt("LOCAL_MANTLET_BREACHED");
         }
         if (!actor.onGround()) {
             if (Math.abs(actor.getY() - goal.y) > 1) return release("LOCAL_FALL_RISK");
             actor.setMaeveHolding(false); return true;
         }
-        if (!breached && actor.position().distanceToSqr(goal) > .04) {
+        if (actor.position().distanceToSqr(goal) > .04) {
             if (!ArchitectMantletGeometry.walk(actor, actor.position(), goal)) return release("LOCAL_MANTLET_ROUTE_UNAVAILABLE");
             actor.setMaeveHolding(false); actor.setCommitmentAction(false);
             Vec3 direction = goal.subtract(actor.position());
@@ -77,7 +78,7 @@ final class ArchitectMantletController {
             actor.getLookControl().setLookAt(goal.x, goal.y + 1, goal.z, 15, 15);
             return true;
         }
-        boolean construction = !breached && screen < plan.screens().size() && now >= nextScreen;
+        boolean construction = screen < plan.screens().size() && now >= nextScreen;
         actor.setMaeveHolding(!construction, true); actor.setCommitmentAction(!construction);
         if (construction && now >= nextBlock) {
             var panel = plan.screens().get(screen);
@@ -114,5 +115,29 @@ final class ArchitectMantletController {
         MaeveDirector.releaseCommitment(actor, reason); clear(); actor.setMaeveHolding(false); actor.triggerReeval(); return false;
     }
 
-    void clear() { plan = proposal = null; proposedSubject = encounter = null; proposedAt = -1; current.clear(); building.clear(); displaced.clear(); screen = placed = 0; breached = false; goal = null; }
+    void onMiningStarted(BlockPos pos) {
+        if (encounter == null || (!current.contains(pos) && !building.contains(pos))) return;
+        var directive = MaeveDirector.positionDirective(actor);
+        if (directive == null || !directive.advancingCover() || !encounter.equals(directive.encounter())) return;
+        Vec3 eyes = actor.getEyePosition(), cell = Vec3.atCenterOf(pos);
+        if (eyes.distanceToSqr(cell) > 12 * 12) return;
+        // See the attacked wall itself. This cue supplies no hidden miner position
+        // or identity, and cannot change the executor's existing combat target.
+        BlockPos from = BlockPos.containing(eyes);
+        for (int x = Math.min(from.getX(), pos.getX()) >> 4; x <= Math.max(from.getX(), pos.getX()) >> 4; x++)
+            for (int z = Math.min(from.getZ(), pos.getZ()) >> 4; z <= Math.max(from.getZ(), pos.getZ()) >> 4; z++)
+                if (!actor.level().hasChunk(x, z)) return;
+        var hit = actor.level().clip(new ClipContext(eyes, cell, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, actor));
+        if (hit.getType() != HitResult.Type.BLOCK || !hit.getBlockPos().equals(pos)) return;
+        actor.recordDecision("MANTLET_MINING_OBSERVED", null, "cell=" + pos.toShortString());
+        interrupt("LOCAL_MANTLET_MINED");
+    }
+
+    private boolean interrupt(String reason) {
+        release(reason);
+        actor.resumeAfterMantletInterruption();
+        return false;
+    }
+
+    void clear() { plan = proposal = null; proposedSubject = encounter = null; proposedAt = -1; current.clear(); building.clear(); displaced.clear(); screen = placed = 0; goal = null; }
 }
