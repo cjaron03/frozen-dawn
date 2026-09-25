@@ -482,4 +482,65 @@ public final class MaeveSwordGuardGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardExposedOtherPlayerAxeIsUnknown(GameTestHelper helper) {
+        unrelatedGuardDamage(helper, 122, 0, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardExposedMobAxeIsUnknown(GameTestHelper helper) {
+        unrelatedGuardDamage(helper, 123, 1, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardOtherPlayerDeathIsUnknown(GameTestHelper helper) {
+        unrelatedGuardDamage(helper, 124, 0, true);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardMobDeathIsUnknown(GameTestHelper helper) {
+        unrelatedGuardDamage(helper, 125, 1, true);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardEnvironmentalDeathIsUnknown(GameTestHelper helper) {
+        unrelatedGuardDamage(helper, 126, 2, true);
+    }
+
+    private static void unrelatedGuardDamage(GameTestHelper helper, int lane, int kind, boolean lethal) {
+        MaeveObservationGameTest.withScene(helper, lane, scene -> {
+            var subject = scene.player("guard_subject_" + lane, 8, 4);
+            long now = train(scene, subject); var actor = actor(scene, subject);
+            long start = awaitGuard(helper, scene, actor, now); ticks(scene, actor, start + 1, 12);
+            scene.hit(actor, subject, false, 6);
+            ticks(scene, actor, start + 13, 25);
+            helper.assertTrue(!actor.isUsingItem() && !actor.getOffhandItem().isEmpty(), "Interference must land during a real exposed guard window");
+            net.minecraft.world.damagesource.DamageSource source;
+            if (kind == 0) {
+                var other = scene.player("guard_intruder_" + lane, 8, 4);
+                other.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+                source = scene.level.damageSources().playerAttack(other);
+            } else if (kind == 1) {
+                var mob = net.minecraft.world.entity.EntityType.VINDICATOR.create(scene.level);
+                mob.setPos(scene.position(8, 4)); mob.setNoAi(true);
+                mob.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+                scene.level.addFreshEntity(mob); scene.entities.add(mob);
+                source = scene.level.damageSources().mobAttack(mob);
+            } else source = scene.level.damageSources().inWall();
+            if (lethal) actor.setHealth(1);
+            actor.invulnerableTime = 0;
+            helper.assertTrue(actor.hurt(source, 6), "Native damage must reach the exposed actor");
+            helper.assertTrue(actor.isAlive() != lethal && actor.getOffhandItem().isEmpty() && !actor.isUsingItem(),
+                    "The physical disable or death still clears the shield");
+            var state = MaeveSavedData.get(scene.server).store().commitment(subject.getUUID());
+            var context = state.performance().save().getList("contexts", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            var results = context.getList("results", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            helper.assertTrue(results.size() == 1 && results.getCompound(0).getString("outcome").equals("UNKNOWN")
+                            && results.getCompound(0).getFloat("blocked") == 6 && context.getInt("failures") == 0,
+                    "Unrelated damage cannot penalize the subject: " + context);
+            helper.assertTrue(state.issued() && state.active(scene.server.overworld().getGameTime()) == null,
+                    "An unknown result cannot refund the spent encounter");
+        });
+    }
+
 }

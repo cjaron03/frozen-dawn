@@ -1846,11 +1846,16 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean placeTacticalIce(BlockPos pos) {
+        BlockPos evicted = tacticalIce.size() >= MAX_TACTICAL_ICE ? tacticalIce.getFirst() : null;
         if (ArchitectIcePlacement.placeTacticalIce(
                 level(),
                 pos,
                 tacticalIce,
                 MAX_TACTICAL_ICE)) {
+            // setBlock is not a player placement event. Update the cached route
+            // explicitly so the next approach knows about our own construction.
+            approachState.dstar.onLocalBlockChanged(pos, level());
+            if (evicted != null) approachState.dstar.onLocalBlockChanged(evicted, level());
             emitIcePlacementFx(pos);
             return true;
         }
