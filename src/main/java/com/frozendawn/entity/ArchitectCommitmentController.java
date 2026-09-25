@@ -22,6 +22,8 @@ final class ArchitectCommitmentController {
     private final ArchitectSpatialCommitment spatial;
     private final ArchitectShieldController shield;
     private final ArchitectMantletController mantlet;
+    private final ArchitectArcherController archer;
+    ArchitectArcherController archer() { return archer; }
     ArchitectShieldController shield() { return shield; }
     void onMantletMiningStarted(BlockPos pos) { mantlet.onMiningStarted(pos); }
     private boolean wasActive;
@@ -32,6 +34,7 @@ final class ArchitectCommitmentController {
         this.breaker = breaker;
         spatial = new ArchitectSpatialCommitment(architect);
         shield = new ArchitectShieldController(architect);
+        archer = new ArchitectArcherController(architect);
         mantlet = new ArchitectMantletController(architect);
     }
 
@@ -39,7 +42,7 @@ final class ArchitectCommitmentController {
         long now = architect.getServer().overworld().getGameTime();
         var directive = MaeveDirector.positionDirective(architect);
         // A finished shield may not leak into a new encounter's selected counter.
-        if (directive == null && shield.active()) clear();
+        if (directive == null && (shield.active() || archer.active())) clear();
         if (directive == null && now >= nextPlan && localTarget instanceof ServerPlayer player) {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
@@ -63,6 +66,11 @@ final class ArchitectCommitmentController {
             return false;
         }
         wasActive = true;
+        if (directive.keepAwayArcher()) {
+            boolean shooting = archer.tick(directive, localTarget, now);
+            if (shooting) breaker.clearTarget();
+            return shooting;
+        }
         if (swordGuard) {
             boolean guarding = shield.tick(directive, localTarget, now);
             // A lowered shield yields to ordinary pursuit, including queued mining.
@@ -151,6 +159,8 @@ final class ArchitectCommitmentController {
         for (var hint : hints) {
             if (hint.confidence() < 0.75D) continue;
             if (hint.pattern().equals(ArchitectShieldController.PATTERN)) {
+                if (hint.confidence() >= .90 && archer.candidate(player)) candidates.add(new MaeveDirector.PositionCandidate(
+                        hint.pattern(), architect.blockPosition(), null, 1.5, null, false, true));
                 if (architect.getBrainAction() != ArchitectEntity.ACTION_RETREAT && !architect.isDrinkingPotion()
                         && shield.canEquip(architect.getServer().overworld().getGameTime()))
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), architect.blockPosition(), null, 1.5));
@@ -272,6 +282,7 @@ final class ArchitectCommitmentController {
     void clear() {
         spatial.clear();
         shield.clear();
+        archer.clear();
         mantlet.clear();
         wasActive = false;
         architect.setMaeveHolding(false);

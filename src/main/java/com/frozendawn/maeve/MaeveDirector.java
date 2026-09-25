@@ -246,16 +246,18 @@ public final class MaeveDirector {
         public static final UtilityBias NONE = new UtilityBias(0, 0);
     }
     public record CommitmentHint(String pattern, double confidence, EvidenceSnapshot evidence) { }
-    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial, boolean advancingCover) {
+    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial, boolean advancingCover, boolean keepAwayArcher) {
         public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost) { this(pattern, position, cover, recoveryCost, null); }
         public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial) { this(pattern, position, cover, recoveryCost, spatial, false); }
+        public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial, boolean advancingCover) { this(pattern, position, cover, recoveryCost, spatial, advancingCover, false); }
         public PositionCandidate { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
     }
     public record PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence,
                                     EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost,
                                     long startedAt, long arrivedAt, long holdUntil, long contradictedAt,
-                                    SpatialTarget spatial, BlockPos obstruction, boolean advancingCover) {
+                                    SpatialTarget spatial, BlockPos obstruction, boolean advancingCover, boolean keepAwayArcher) {
         public PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence, EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost, long startedAt, long arrivedAt, long holdUntil, long contradictedAt, SpatialTarget spatial, BlockPos obstruction) { this(player, observer, encounter, pattern, confidence, evidence, position, cover, recoveryCost, startedAt, arrivedAt, holdUntil, contradictedAt, spatial, obstruction, false); }
+        public PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence, EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost, long startedAt, long arrivedAt, long holdUntil, long contradictedAt, SpatialTarget spatial, BlockPos obstruction, boolean advancingCover) { this(player, observer, encounter, pattern, confidence, evidence, position, cover, recoveryCost, startedAt, arrivedAt, holdUntil, contradictedAt, spatial, obstruction, advancingCover, false); }
         public PositionDirective { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
     }
     public record SpatialTarget(BlockPos inside, BlockPos outside) {

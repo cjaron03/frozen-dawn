@@ -76,11 +76,7 @@ final class ArchitectCombatController {
             return;
         }
 
-        combatState.strafeChangeCooldown--;
-        if (combatState.strafeChangeCooldown <= 0) {
-            combatState.strafeDir = -combatState.strafeDir;
-            combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
-        }
+        updateStrafe();
 
         boolean outsideAttackRange = dist3d >= ArchitectEntity.MELEE_ATTACK_RANGE;
         boolean footingApproach = outsideAttackRange
@@ -111,6 +107,37 @@ final class ArchitectCombatController {
                 combatState.backoffTicks = 6 + architect.nextRandomInt(4);
             }
         }
+    }
+
+    private void updateStrafe() {
+        combatState.strafeChangeCooldown--;
+        if (combatState.strafeChangeCooldown <= 0) {
+            combatState.strafeDir = -combatState.strafeDir;
+            combatState.strafeChangeCooldown = 30 + architect.nextRandomInt(30);
+        }
+    }
+
+    /** The existing strafe cadence and supported combat motion, with the archer's range preference. */
+    void executeArcherMotion(Vec3 target, int coverSide) {
+        updateStrafe();
+        double distance = target.subtract(architect.position()).horizontalDistance();
+        if (distance > 18) {
+            if (architect.tickCount % 10 == 0) architect.getNavigation().moveTo(target.x, target.y, target.z, .8);
+            return;
+        }
+        architect.getNavigation().stop();
+        architect.getMoveControl().setWantedPosition(architect.getX(), architect.getY(), architect.getZ(), 0);
+        architect.setSpeed(0); architect.setZza(0); architect.setXxa(0);
+        Vec3 toward = target.subtract(architect.position()).multiply(1, 0, 1).normalize();
+        double radial = distance < 8 ? -ArchitectEntity.MELEE_BACKOFF_SPEED
+                : distance < 14 ? ArchitectEntity.MELEE_PULL_SPEED_NEAR
+                : distance > 16 ? ArchitectEntity.MELEE_PULL_SPEED_FAR : 0;
+        // Do not ask the common footing checker to inspect an unloaded neighboring chunk.
+        Vec3 probe = architect.position().add(toward.scale(radial * 3));
+        if (!architect.level().hasChunksAt(BlockPos.containing(probe).offset(-2, -2, -2), BlockPos.containing(probe).offset(2, 3, 2))) return;
+        int strafe = coverSide == 0 ? combatState.strafeDir : coverSide;
+        architect.applyCombatHorizontalMotion(-toward.z * strafe * ArchitectEntity.MELEE_STRAFE_SPEED + toward.x * radial,
+                toward.x * strafe * ArchitectEntity.MELEE_STRAFE_SPEED + toward.z * radial);
     }
 
     void executeRetreat(@Nullable LivingEntity target) {

@@ -71,6 +71,10 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         boolean rightHanded = entity.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT;
         this.leftArmPose = shield && rightHanded ? ArmPose.BLOCK : ArmPose.EMPTY;
         this.rightArmPose = shield && !rightHanded ? ArmPose.BLOCK : ArmPose.EMPTY;
+        if (entity.getArcherPose() == 1) {
+            if (rightHanded) this.rightArmPose = ArmPose.BOW_AND_ARROW;
+            else this.leftArmPose = ArmPose.BOW_AND_ARROW;
+        }
         // super.setupAnim handles player-like walk animation (arm + leg swing)
         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.setAllVisible(true);
@@ -80,6 +84,14 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         this.hat.visible = false;
 
         if (shield && !entity.isMasterArchitectVisual()) return;
+        if (!entity.isMasterArchitectVisual() && entity.getArcherPose() > 0) {
+            if (entity.getArcherPose() == 2) {
+                // Reach back once for a missing arrow, then lower the spent bow.
+                this.leftArm.xRot = -2.5F; this.leftArm.zRot = -.45F;
+                this.rightArm.xRot = -.4F; this.head.xRot += .3F;
+            }
+            return;
+        }
 
         // During active mining, preserve vanilla humanoid swing exactly instead of
         // layering a custom pose over it.

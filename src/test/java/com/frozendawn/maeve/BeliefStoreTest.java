@@ -257,7 +257,7 @@ class BeliefStoreTest {
     @Test
     void unknownFutureSchemaIsNotSilentlyOverwritten() {
         CompoundTag tag = new CompoundTag();
-        tag.putInt("dataVersion", 6);
+        tag.putInt("dataVersion", 7);
         assertThrows(IllegalStateException.class, () -> MaeveSavedData.load(tag, null));
     }
 
