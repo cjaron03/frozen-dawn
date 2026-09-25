@@ -104,7 +104,10 @@ final class ArchitectApproachPlanningSupport {
         if (refreshConstruction || outdatedGoal || approachState.dstar.needsReinitialize(targetPos)) {
             boolean hadPlan = approachState.dstar.isInitialized();
             if (outdatedGoal) {
-                architect.recordDecision("RETARGET_PLAN", null, "cause=NEAR_OLD_TARGET");
+                architect.recordDecision("RETARGET_PLAN", null,
+                        "cause=" + (approachState.dstar.isNearOutdatedGoal(architect.blockPosition(), targetPos)
+                                ? "NEAR_OLD_TARGET" : "STALLED_OLD_ELEVATION")
+                                + " oldGoal=" + approachState.dstar.debugState().goal() + " target=" + targetPos);
             }
             approachState.dstar.setSurfaceY(approachState.surfaceY);
             approachState.dstar.initialize(targetPos, architect.blockPosition(), architect.level());
@@ -171,7 +174,13 @@ final class ArchitectApproachPlanningSupport {
     }
 
     boolean needsGoalRefresh(BlockPos targetPos) {
-        return approachState.dstar.isNearOutdatedGoal(architect.blockPosition(), targetPos);
+        if (approachState.dstar.isNearOutdatedGoal(architect.blockPosition(), targetPos)) return true;
+        if (!approachState.dstar.isInitialized() || approachState.approachNoProgressTicks
+                < ArchitectApproachRecovery.LOCAL_RECOVERY_INTERVAL_TICKS) return false;
+        // Reusing an elevated goal can keep selecting uphill waypoints after the
+        // player has left it. Refresh only once local travel has actually stalled.
+        BlockPos oldGoal = approachState.dstar.debugState().goal();
+        return oldGoal.getY() > targetPos.getY() && oldGoal.distSqr(targetPos) > 36.0;
     }
 
     private void executePlanningFallbackChase(LivingEntity target) {

@@ -1,5 +1,7 @@
 # MACS sword guard
 
+For the current final solo checks, use [the guard acceptance worlds and commands](macs-guard-acceptance.md). They preserve the completed sword training and distinguish natural outcomes from cleanup. The older training instructions below document the original replay.
+
 Owner-approved fifth authored counter, specified in [Source of Truth §9.13b](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880). Implementation is on `feat/macs-sword-guard`, based on the preserved integrated playtest fixes. Its inherited working changes are hashed separately in `build/macs-shield-evidence/baseline`. The latest encounter-long guard passed its live return-after-healing check. See [the review summary](macs-calibration-findings.md) for the combined scope, verification and remaining integration work. Dated revisions below retain the evidence and limitations of their own builds.
 
 ## Observation and selection

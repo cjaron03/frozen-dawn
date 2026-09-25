@@ -63,6 +63,161 @@ public final class MaeveSwordGuardGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardPursuesAcrossAcceptanceSnow(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 137, 2, scene -> {
+            var player = scene.player("sword_snow_pursuit", 8, 4);
+            long now = train(scene, player);
+            var actor = actor(scene, player);
+            long start = awaitGuard(helper, scene, actor, now);
+            var encounter = MaeveDirector.positionDirective(actor).encounter();
+            actor.setInvulnerable(true);
+            // Exact acceptance terrain around world (2210,101,2216), including
+            // the seven-layer breach at (2221,101,2223) beside retreat cover.
+            acceptanceSnow(scene);
+            for (int x = 11; x <= 13; x++) for (int y = 0; y <= 1; y++)
+                scene.block(x, y, 6, net.minecraft.world.level.block.Blocks.PACKED_ICE.defaultBlockState());
+            player.setPos(scene.position(1, -2));
+            actor.setPos(scene.position(12, 7).add(0, .125, 0));
+            actor.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            actor.debugForceApproach(player);
+            int reached = -1;
+            for (int i = 1; i <= 300; i++) {
+                scene.clock(start + i); scene.level.tickNonPassenger(actor);
+                if (actor.distanceTo(player) < 3 && actor.hasLineOfSight(player)) { reached = i; break; }
+            }
+            var entries = actor.decisionJournal().entries();
+            System.out.println("SHIELD_SNOW_PURSUIT reached=" + reached + " " + actor.inspectDecisions()
+                    + " breaks=" + entries.stream().filter(e -> e.event().equals("BREAK_START") || e.event().equals("BREAK_END")).toList());
+            helper.assertTrue(reached >= 0, "Lowered sword guard must let pursuit escape the acceptance snow: " + actor.inspectDecisions());
+            helper.assertTrue(actor.successfulBreakCount() > 0, "Pursuit must finish a real obstructing terrain break");
+            helper.assertTrue(MaeveDirector.positionDirective(actor) != null
+                            && MaeveDirector.positionDirective(actor).encounter().equals(encounter),
+                    "Terrain recovery must retain the same sword commitment");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardFollowsOpenRouteAfterSnowBreakCancel(GameTestHelper helper) {
+        openRouteAfterSnowBreak(helper, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardRetargetsAfterSnowRouteHandoff(GameTestHelper helper) {
+        openRouteAfterSnowBreak(helper, true);
+    }
+
+    private static void openRouteAfterSnowBreak(GameTestHelper helper, boolean moveTarget) {
+        MaeveObservationGameTest.withScene(helper, moveTarget ? 139 : 138, 2, scene -> {
+            var player = scene.player("sword_open_route", 8, 4);
+            long now = train(scene, player);
+            var actor = actor(scene, player);
+            long start = awaitGuard(helper, scene, actor, now);
+            var encounter = MaeveDirector.positionDirective(actor).encounter();
+            actor.setInvulnerable(true);
+            acceptanceSnow(scene);
+            // The second live stall: a six-layer breach at (2217,101,2210)
+            // is canceled for a walking path to the player at (2212,101,2212).
+            player.setPos(scene.position(2, -4));
+            actor.setPos(scene.position(8, -6));
+            actor.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            actor.debugForceApproach(player);
+            int reached = -1;
+            boolean moved = false;
+            for (int i = 1; i <= 120; i++) {
+                scene.clock(start + i); scene.level.tickNonPassenger(actor);
+                if (moveTarget && !moved && actor.decisionJournal().entries().stream()
+                        .anyMatch(e -> e.event().equals("BREAK_CANCEL") && e.detail().startsWith("OPEN_ROUTE"))) {
+                    player.setPos(scene.position(9, 0));
+                    moved = true;
+                }
+                if (actor.distanceTo(player) < 3 && actor.hasLineOfSight(player)) { reached = i; break; }
+            }
+            var entries = actor.decisionJournal().entries();
+            var cancels = entries.stream().filter(e -> e.event().equals("BREAK_CANCEL")
+                    && e.detail().startsWith("OPEN_ROUTE")).toList();
+            System.out.println("SHIELD_SNOW_OPEN_ROUTE moving=" + moveTarget + " reached=" + reached + " " + actor.inspectDecisions()
+                    + " journal=" + entries.stream().filter(e -> !e.event().equals("CANDIDATE")).toList());
+            helper.assertTrue(!cancels.isEmpty(), "The replay must actually cancel a snow breach for an open route");
+            helper.assertTrue(!moveTarget || moved, "The control must relocate the target during the accepted route");
+            helper.assertTrue(reached >= 0, "Accepted walking route must reach the player before the 160-tick recovery: " + actor.inspectDecisions());
+            helper.assertTrue(entries.stream().noneMatch(e -> e.event().equals("REINIT") && e.detail().equals("WALK_STUCK")),
+                    "A valid walking handoff must not depend on the prolonged-stall rescue");
+            helper.assertTrue(MaeveDirector.positionDirective(actor) != null
+                            && MaeveDirector.positionDirective(actor).encounter().equals(encounter),
+                    "Following the walking route must retain the same sword commitment");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardRefreshesAbandonedSnowRise(GameTestHelper helper) {
+        abandonedRaisedGoal(helper, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveSwordGuardRefreshesAbandonedSnowJump(GameTestHelper helper) {
+        abandonedRaisedGoal(helper, true);
+    }
+
+    private static void abandonedRaisedGoal(GameTestHelper helper, boolean secondLoop) {
+        MaeveObservationGameTest.withScene(helper, secondLoop ? 141 : 140, 2, scene -> {
+            var player = scene.player("sword_stale_rise", 8, 4);
+            long now = train(scene, player);
+            var actor = actor(scene, player);
+            long start = awaitGuard(helper, scene, actor, now);
+            var encounter = MaeveDirector.positionDirective(actor).encounter();
+            actor.setInvulnerable(true);
+            acceptanceSnow(scene);
+            // The two retained elevated goals from the 2026-09-24 live replay.
+            player.setPos(secondLoop ? scene.position(13, -9) : scene.position(-5, 9));
+            actor.setPos(secondLoop ? scene.position(-3, -8) : scene.position(14, 15).add(0, 1, 0));
+            actor.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            actor.debugForceApproach(player);
+            var path = actor.getDStarPathfinder();
+            path.setSurfaceY(scene.origin.getY());
+            path.initialize(secondLoop ? scene.origin.offset(2, 2, -10) : scene.origin.offset(7, 2, 10),
+                    actor.blockPosition(), scene.level);
+            path.computePartial(20_000, scene.level);
+            helper.assertTrue(!path.needsReinitialize(player.blockPosition())
+                            && !path.isNearOutdatedGoal(actor.blockPosition(), player.blockPosition()),
+                    "The recorded goal must fall inside ordinary reuse, outside the near-goal refresh");
+            int reached = -1;
+            // Allow its normal raised-guard pause after reaching combat range.
+            // Bound route stalling separately rather than bypassing shield cadence.
+            for (int i = 1; i <= 240; i++) {
+                if (!secondLoop && i == 80) player.setPos(scene.position(4, 6));
+                scene.clock(start + i); scene.level.tickNonPassenger(actor);
+                if (actor.distanceTo(player) < 3 && actor.hasLineOfSight(player)) { reached = i; break; }
+            }
+            var entries = actor.decisionJournal().entries();
+            System.out.println("SHIELD_STALE_RISE second=" + secondLoop + " reached=" + reached + " "
+                    + actor.inspectDecisions() + " journal=" + entries.stream()
+                    .filter(e -> !e.event().equals("CANDIDATE")).toList());
+            helper.assertTrue(reached >= 0, "Abandoned raised goals must stop redirecting snow pursuit before the long-stall rescue: "
+                    + actor.inspectDecisions());
+            helper.assertTrue(entries.stream().noneMatch(e -> e.event().equals("REINIT") && e.detail().equals("WALK_STUCK")),
+                    "Neither replay may rely on the 160-tick stuck recovery");
+            helper.assertTrue(entries.stream().mapToInt(e -> e.noProgress()).max().orElse(0) < 80,
+                    "The actor must leave the stalled area within four seconds of active pursuit");
+            helper.assertTrue(MaeveDirector.positionDirective(actor) != null
+                            && MaeveDirector.positionDirective(actor).encounter().equals(encounter),
+                    "Refreshing a stale route must preserve the sword commitment");
+        });
+    }
+
+    private static void acceptanceSnow(MaeveObservationGameTest.Scene scene) {
+        for (int x = -9; x <= 21; x++) for (int z = -15; z <= 15; z++) {
+            scene.block(x, -1, z, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+            for (int y = 0; y <= 5; y++) scene.block(x, y, z, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            int wx = 2210 + x, wz = 2216 + z;
+            int full = wz >= 2224 && wx >= 2224 ? 1 : 0;
+            int layers = wz >= 2214 && wz <= 2218 ? 1 : 1 + (wx * 3 + wz) % 8;
+            if (full == 1) scene.block(x, 0, z, net.minecraft.world.level.block.Blocks.SNOW_BLOCK.defaultBlockState());
+            scene.block(x, full, z, net.minecraft.world.level.block.Blocks.SNOW.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS, layers));
+        }
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void maeveSwordEvidenceRequiresRealVisibleAttacks(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 110, scene -> {
             var player = scene.player("sword_witness", 8, 4);

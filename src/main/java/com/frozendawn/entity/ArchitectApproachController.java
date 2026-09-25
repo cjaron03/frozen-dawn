@@ -57,6 +57,8 @@ final class ArchitectApproachController {
     void executeApproach(@Nullable LivingEntity target) {
         approachState.sprintRequested = false;
         if (target == null) {
+            approachState.openRouteAfterBreak = null;
+            approachState.openRouteSubject = null;
             approachState.unreachableTicks = 0;
             architect.approachLastKnownPos();
             return;
@@ -97,7 +99,8 @@ final class ArchitectApproachController {
             return;
         }
 
-        if (ArchitectApproachBreakSupport.cancelBreakForOpenRoute(architect, approachState, blockBreaker, target)) {
+        if (ArchitectApproachBreakSupport.continueOpenRoute(architect, approachState, blockBreaker, target)
+                || ArchitectApproachBreakSupport.cancelBreakForOpenRoute(architect, approachState, blockBreaker, target)) {
             return;
         }
 

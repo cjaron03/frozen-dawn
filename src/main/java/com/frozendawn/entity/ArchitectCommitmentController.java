@@ -57,8 +57,13 @@ final class ArchitectCommitmentController {
             return false;
         }
         wasActive = true;
+        if (swordGuard) {
+            boolean guarding = shield.tick(directive, localTarget, now);
+            // A lowered shield yields to ordinary pursuit, including queued mining.
+            if (guarding) breaker.clearTarget();
+            return guarding;
+        }
         breaker.clearTarget();
-        if (swordGuard) return shield.tick(directive, localTarget, now);
         // Environmental displacement may settle back to the point. Effective
         // damage has its own final-event release, after evidence is recorded.
         if (!architect.onGround()) {

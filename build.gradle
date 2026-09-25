@@ -427,6 +427,7 @@ tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsInt
 def macsShieldQaResources = layout.buildDirectory.dir('generated/macs-shield-qa')
 tasks.register('generateMacsShieldQa', Exec) {
     inputs.file('tools/prepare_macs_shield_playtest.py')
+    inputs.file('tools/macs_guard_acceptance.py')
     outputs.dir(macsShieldQaResources)
     commandLine 'python3', '-B', 'tools/prepare_macs_shield_playtest.py', '--pack-only', macsShieldQaResources.get().asFile.absolutePath
 }

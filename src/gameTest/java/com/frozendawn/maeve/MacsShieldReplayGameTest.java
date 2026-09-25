@@ -44,6 +44,8 @@ public final class MacsShieldReplayGameTest {
         });
         helper.assertTrue(server.getAdvancements().get(ResourceLocation.parse("macs_guard:sword_hit")) != null,
                 "The actual player-hurt advancement must load, including its sword and tagged actor predicates");
+        helper.assertTrue(server.getAdvancements().get(ResourceLocation.parse("macs_guard:accept_kill")) != null,
+                "Acceptance must load its native player-kill trigger");
         helper.succeed();
     }
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
@@ -98,4 +100,57 @@ public final class MacsShieldReplayGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void macsGuardAcceptanceDistinguishesKillAndCleanup(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 136, scene -> {
+            var transport = new MaeveObservationGameTest.TestPlayer(scene.level, "guard_result_io");
+            var player = new net.minecraft.server.level.ServerPlayer(scene.server, scene.level,
+                    new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "guard_result"),
+                    net.minecraft.server.level.ClientInformation.createDefault());
+            player.connection = transport.connection;
+            player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            player.setPos(scene.position(8, 4)); scene.level.addNewPlayer(player); scene.entities.add(player);
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                    new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
+            var source = player.createCommandSourceStack().withPermission(2).withSuppressedOutput();
+            java.util.function.Consumer<String> run = command -> scene.server.getCommands().performPrefixedCommand(source, command);
+            run.accept("function macs_guard:accept/load");
+            var scores = scene.server.getScoreboard(); var objective = scores.getObjective("mga");
+            java.util.function.ToIntFunction<String> value = name -> scores.getOrCreatePlayerScore(
+                    net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).get();
+            try {
+                run.accept("scoreboard players set #stage mga 1");
+                var actor = scene.architect(6, 4); actor.addTag("macs_guard_accept_actor");
+                var position = player.position();
+                run.accept("function macs_guard:accept/finish");
+                helper.assertTrue(actor.isAlive() && !actor.isNoAi() && position.equals(player.position()) && value.applyAsInt("#stage") == 1,
+                        "Finish cannot end a running fight or turn a cleanup into a win");
+                actor.setHealth(.1F);
+                player.attack(actor);
+                var advancement = scene.server.getAdvancements().get(ResourceLocation.parse("macs_guard:accept_kill"));
+                helper.assertTrue(!actor.isAlive() && player.getAdvancements().getOrStartProgress(advancement).isDone()
+                                && value.applyAsInt("#outcome") == 1 && value.applyAsInt("#stage") == 4,
+                        "An actual fatal player attack records victory through the native advancement before cleanup");
+                helper.assertTrue(MaeveDirector.snapshot(scene.server, player.getUUID()).beliefs().stream()
+                                .anyMatch(b -> b.pattern().equals(BeliefStore.SWORD) && b.evidence() == 1),
+                        "The final attack still publishes real witnessed sword evidence");
+                actor.discard();
+
+                run.accept("advancement revoke @s only macs_guard:accept_kill");
+                run.accept("scoreboard players set #stage mga 1");
+                run.accept("scoreboard players set #outcome mga 0");
+                var aborted = scene.architect(6, 4); aborted.addTag("macs_guard_accept_actor");
+                player.attack(aborted); // Give vanilla kill attribution a recent player to credit.
+                helper.assertTrue(aborted.isAlive(), "The cleanup fixture starts alive after a real hit");
+                run.accept("function macs_guard:accept/abort");
+                helper.assertTrue(!aborted.isAlive() && value.applyAsInt("#outcome") == 4 && value.applyAsInt("#stage") == 4,
+                        "Emergency cleanup stays aborted even if vanilla credits the recent attacker for /kill");
+                run.accept("function macs_guard:accept/victory");
+                helper.assertTrue(value.applyAsInt("#outcome") == 4,
+                        "A delayed or repeated advancement cannot rewrite the recorded abort");
+            } finally {
+                scores.removeObjective(objective); scores.removeObjective(scores.getObjective("mga_deaths"));
+            }
+        });
+    }
 }

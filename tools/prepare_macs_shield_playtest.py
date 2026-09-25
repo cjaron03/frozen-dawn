@@ -5,6 +5,7 @@ import gzip
 import json
 import shutil
 from pathlib import Path
+from macs_guard_acceptance import CASES, KILL_ADVANCEMENT, scripts as acceptance_scripts
 
 
 def tell(text, command=None, color='aqua'):
@@ -121,33 +122,44 @@ ADVANCEMENT = {'criteria': {'sword': {'trigger': 'minecraft:player_hurt_entity',
 }}}, 'rewards': {'function': 'macs_guard:hit'}}
 
 
-def write_pack(pack, game_test=False):
+def write_pack(pack, game_test=False, preset='brutal', case='sword'):
     functions = pack / 'data/macs_guard/function'; functions.mkdir(parents=True, exist_ok=True)
-    for name, content in SCRIPTS.items(): (functions / f'{name}.mcfunction').write_text(content + '\n')
+    for name, content in (SCRIPTS | acceptance_scripts(preset, case)).items():
+        target = functions / f'{name}.mcfunction'
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content + '\n')
     advancements = pack / 'data/macs_guard/advancement'; advancements.mkdir(parents=True, exist_ok=True)
     (advancements / 'sword_hit.json').write_text(json.dumps(ADVANCEMENT, indent=2) + '\n')
+    (advancements / 'accept_kill.json').write_text(json.dumps(KILL_ADVANCEMENT, indent=2) + '\n')
     if not game_test:
         (pack / 'pack.mcmeta').write_text(json.dumps({'pack': {'pack_format': 48, 'description': 'MACS sword guard training and live counterplay'}}))
         tags = pack / 'data/minecraft/tags/function'; tags.mkdir(parents=True, exist_ok=True)
-        for name in ('load', 'tick'): (tags / f'{name}.json').write_text(json.dumps({'values': [f'macs_guard:{name}']}))
+        for name in ('load', 'tick'):
+            (tags / f'{name}.json').write_text(json.dumps({'values': [f'macs_guard:{name}', f'macs_guard:accept/{name}']}))
 
 
-def prepare(source, destination):
+def prepare(source, destination, acceptance=False, preset='brutal', case='sword'):
     if destination.exists(): raise SystemExit(f'Refusing to overwrite {destination}')
     raw = gzip.decompress((source / 'level.dat').read_bytes()); marker = b'\x08\x00\x09LevelName'
     if raw.count(marker) != 1: raise SystemExit('Expected one LevelName in the CLOSED source world')
     at = raw.index(marker) + len(marker); length = int.from_bytes(raw[at:at+2], 'big')
-    name = b'MACS Sword Guard Encounter'
+    title = (f'MACS Guard {CASES[case][0]} - {"Brutal" if preset == "brutal" else "Normal"}'
+             if acceptance else 'MACS Sword Guard Encounter')
+    name = title.encode('utf-8')
     shutil.copytree(source, destination)
     (destination / 'level.dat').write_bytes(gzip.compress(raw[:at] + len(name).to_bytes(2, 'big') + name + raw[at+2+length:]))
-    write_pack(destination / 'datapacks/macs-sword-guard')
-    print(f'Prepared {destination}; /function macs_guard:setup starts the separate arena without erasing history.')
+    write_pack(destination / 'datapacks/macs-sword-guard', preset=preset, case=case)
+    command = 'macs_guard:accept/setup' if acceptance else 'macs_guard:setup'
+    print(f'Prepared {destination}; /function {command} starts the separate arena without erasing history.')
 
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--pack-only', type=Path); p.add_argument('--source', type=Path); p.add_argument('--destination', type=Path)
+    p.add_argument('--acceptance', action='store_true')
+    p.add_argument('--preset', choices=('brutal', 'default'), default='brutal')
+    p.add_argument('--case', choices=CASES, default='sword')
     args = p.parse_args()
-    if args.pack_only: write_pack(args.pack_only, True)
-    elif args.source and args.destination: prepare(args.source, args.destination)
+    if args.pack_only: write_pack(args.pack_only, True, args.preset, args.case)
+    elif args.source and args.destination: prepare(args.source, args.destination, args.acceptance, args.preset, args.case)
     else: p.error('Use --pack-only or --source/--destination')
