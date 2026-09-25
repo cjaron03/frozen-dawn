@@ -38,13 +38,13 @@ public final class MaeveSnowCoverGameTest {
                 helper.assertTrue(wall != null, "Visible cover must fit full snow=" + full + " layers=" + layers);
                 invoke(actor, "tacticsController", "executeFortify", player);
                 var ice = actor.saveWithoutId(new CompoundTag()).getList("TacticalIce", Tag.TAG_LONG);
-                helper.assertTrue(ice.size() >= 2 && ice.size() <= 3,
-                        "One supported pillar consumes two or three actual budgeted blocks: " + ice);
+                helper.assertTrue(ice.size() == 2,
+                        "One supported pillar consumes exactly two budgeted blocks: " + ice);
                 for (int y = 0; y < ice.size(); y++) helper.assertTrue(
                         scene.level.getBlockState(wall.above(y)).is(Blocks.PACKED_ICE), "Pillar is continuous at " + wall.above(y));
                 helper.assertTrue(scene.level.getBlockState(wall.below()).isFaceSturdy(scene.level, wall.below(), net.minecraft.core.Direction.UP),
                         "The pillar has actual supporting terrain");
-                for (double torso : new double[]{.9, 1.6}) {
+                for (double torso : (layers <= 3 ? new double[]{.9, 1.6} : new double[]{.9})) {
                     float hp = actor.getHealth();
                     var arrow = new Arrow(scene.level, player, new ItemStack(Items.ARROW), null);
                     arrow.setPos(player.getEyePosition());
@@ -79,19 +79,28 @@ public final class MaeveSnowCoverGameTest {
             }
             scene.block(6, 0, 4, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 7));
             var blocker = scene.player("snow_upper_occupant", 6, 4);
-            blocker.setPos(scene.position(6, 4).add(0, 2, 0));
+            blocker.setPos(scene.position(6, 4).add(0, 1, 0));
             helper.assertTrue(placePillar(actor, base) == 0 && scene.level.getBlockState(base).is(Blocks.SNOW),
-                    "An occupant in the third block must reject the whole pillar before replacing snow");
+                    "An occupant in the second block must reject the whole pillar before replacing snow");
             blocker.discard();
-            for (int x : new int[]{6, 8, 10}) {
+            for (int x = 6; x <= 16; x += 2) {
                 var next = scene.origin.offset(x, 0, 4);
-                helper.assertTrue(placePillar(actor, next) == 3, "Deep snow consumes three real tactical blocks");
-                helper.assertTrue(actor.saveWithoutId(new CompoundTag()).getList("TacticalIce", Tag.TAG_LONG).size() <= 6,
-                        "Additional foundation blocks cannot exceed the existing six-block cap");
+                helper.assertTrue(placePillar(actor, next) == 2, "Deep snow still consumes exactly two blocks");
+                helper.assertTrue(scene.level.getBlockState(base).is(Blocks.PACKED_ICE),
+                        "Six complete pillars fit before any recycling");
             }
-            helper.assertTrue(scene.level.getBlockState(base).isAir(), "The third pillar recycles the old bounded cover");
-            var unsupported = scene.origin.offset(12, 1, 4);
-            scene.block(12, 0, 4, Blocks.AIR.defaultBlockState());
+            var saved = actor.saveWithoutId(new CompoundTag());
+            helper.assertTrue(saved.getList("TacticalIce", Tag.TAG_LONG).size() == 12, "The ordinary pool holds twelve blocks");
+            var restored = scene.architect(2, 8);
+            restored.readAdditionalSaveData(saved);
+            helper.assertTrue(placePillar(restored, scene.origin.offset(18, 0, 4)) == 2,
+                    "A reloaded full pool can recycle into another pillar");
+            helper.assertTrue(restored.saveWithoutId(new CompoundTag()).getList("TacticalIce", Tag.TAG_LONG).size() == 12
+                            && scene.level.getBlockState(base).isAir() && scene.level.getBlockState(base.above()).isAir()
+                            && scene.level.getBlockState(scene.origin.offset(8, 0, 4)).is(Blocks.PACKED_ICE),
+                    "Reload preserves capacity and oldest-first recycling of exactly one two-block pillar");
+            var unsupported = scene.origin.offset(22, 1, 4);
+            scene.block(22, 0, 4, Blocks.AIR.defaultBlockState());
             helper.assertTrue(placePillar(actor, unsupported) == 0, "Cover cannot float above an unsupported gap");
         });
     }
@@ -124,7 +133,8 @@ public final class MaeveSnowCoverGameTest {
                                 + " beliefs=" + scene.beliefs(player) + " journal=" + actor.decisionJournal().entries().stream()
                                 .filter(e -> e.event().contains("MAEVE")).toList());
                 helper.assertTrue(scene.level.getBlockState(held.cover()).is(Blocks.PACKED_ICE)
-                                && scene.level.getBlockState(held.cover().above()).is(Blocks.PACKED_ICE),
+                                && scene.level.getBlockState(held.cover().above()).is(Blocks.PACKED_ICE)
+                                && scene.level.getBlockState(held.cover().above(2)).isAir(),
                         "The real directive constructs cover through the budgeted placement path");
                 helper.assertTrue(actor.getDeltaMovement().lengthSqr() < .01 && Double.isFinite(actor.getX()),
                         "Fractional snow height must not cause repeated vertical arrival corrections");

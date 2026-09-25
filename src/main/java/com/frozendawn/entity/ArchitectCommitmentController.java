@@ -103,7 +103,7 @@ final class ArchitectCommitmentController {
             architect.setYHeadRot(yaw);
             architect.getLookControl().setLookAt(anchor.x, anchor.y + 0.5D, anchor.z, 12, 12);
             if (arrival && directive.cover() != null) {
-                int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(architect.position(), directive.cover());
+                int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.PILLAR_HEIGHT;
                 if (!clearCover(directive.cover()) || architect.placeCoverPillar(directive.cover()) != height) {
                     release("LOCAL_COVER_UNAVAILABLE");
                     return false;
@@ -186,7 +186,7 @@ final class ArchitectCommitmentController {
     }
 
     private boolean clearCover(BlockPos pos) {
-        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(architect.position(), pos);
+        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.PILLAR_HEIGHT;
         return architect.getTacticalIceCount() + height <= architect.getMaxTacticalIce()
                 && com.frozendawn.entity.architect.ArchitectCoverGeometry.canPlacePillar(architect, architect.position(), pos);
     }

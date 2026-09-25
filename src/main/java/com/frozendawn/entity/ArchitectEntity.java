@@ -174,7 +174,8 @@ public class ArchitectEntity extends Monster {
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
     private static final int MAX_SCAFFOLD_ICE = 64;
-    private static final int MAX_TACTICAL_ICE = 6;
+    private static final int MAX_TACTICAL_ICE = 12;
+    private static final int MASTER_MAX_TACTICAL_ICE = 6;
 
     // --- Authoritative Server State ---
     private final ArchitectBrainState brainState = new ArchitectBrainState(ACTION_OBSERVE);
@@ -492,7 +493,7 @@ public class ArchitectEntity extends Monster {
     }
 
     int getMaxTacticalIce() {
-        return MAX_TACTICAL_ICE;
+        return isMasterArchitectVisual() ? MASTER_MAX_TACTICAL_ICE : MAX_TACTICAL_ICE;
     }
 
     boolean isPathRecalcReady() {
@@ -970,7 +971,7 @@ public class ArchitectEntity extends Monster {
                         combatState.healCooldown,
                         combatState.recentDamage,
                         tacticalIce.size(),
-                        MAX_TACTICAL_ICE,
+                        getMaxTacticalIce(),
                         trapCooldown,
                         !observationMemory.entrancePositions().isEmpty(),
                         target != null && isPlayerInsideBase(target),
@@ -1846,12 +1847,12 @@ public class ArchitectEntity extends Monster {
     }
 
     boolean placeTacticalIce(BlockPos pos) {
-        BlockPos evicted = tacticalIce.size() >= MAX_TACTICAL_ICE ? tacticalIce.getFirst() : null;
+        BlockPos evicted = tacticalIce.size() >= getMaxTacticalIce() ? tacticalIce.getFirst() : null;
         if (ArchitectIcePlacement.placeTacticalIce(
                 level(),
                 pos,
                 tacticalIce,
-                MAX_TACTICAL_ICE)) {
+                getMaxTacticalIce())) {
             // setBlock is not a player placement event. Update the cached route
             // explicitly so the next approach knows about our own construction.
             approachState.dstar.onLocalBlockChanged(pos, level());
@@ -1865,7 +1866,7 @@ public class ArchitectEntity extends Monster {
     /** Bow-defense pillar only; retreat keeps its existing construction path. */
     int placeCoverPillar(BlockPos pos) {
         if (!com.frozendawn.entity.architect.ArchitectCoverGeometry.canPlacePillar(this, position(), pos)) return 0;
-        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.pillarHeight(position(), pos);
+        int height = com.frozendawn.entity.architect.ArchitectCoverGeometry.PILLAR_HEIGHT;
         int placed = 0;
         for (int y = 0; y < height; y++) {
             if (!placeTacticalIce(pos.above(y))) break;

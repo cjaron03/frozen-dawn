@@ -126,7 +126,7 @@ public final class MaeveCoverCadenceGameTest {
             }
             var saved = actor.saveWithoutId(new CompoundTag());
             var ice = saved.getList("TacticalIce", Tag.TAG_LONG);
-            helper.assertTrue(ice.size() <= 6, "The existing tactical-ice storage cap is unchanged");
+            helper.assertTrue(ice.size() <= 12, "Repeated cover stays within the twelve-block ordinary tactical pool");
             System.out.println("MACS_COVER_CHECK walls=" + walls + " attempts=" + attempts.size() + " retainedIce=" + ice.size());
             helper.assertTrue(MaeveDirector.positionDirective(actor) == null, "Repeated local walls cannot issue another positional commitment");
             PostMaeveWorldState.markErased(scene.level);
