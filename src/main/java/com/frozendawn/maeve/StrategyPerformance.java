@@ -59,7 +59,7 @@ final class StrategyPerformance {
     void clock(long time) { now = time; }
     void start(MaeveDirector.PositionDirective directive) {
         pending = directive; now = directive.startedAt(); arrived = false; dealt = received = blocked = 0; latest = null;
-        var key = new Key(directive.pattern(), directive.evidence().dimension());
+        var key = new Key(RangedCoverPolicy.key(directive), directive.evidence().dimension());
         if (!contexts.containsKey(key) && contexts.size() >= MAX_CONTEXTS) {
             var oldest = contexts.entrySet().stream().min(Comparator.comparingLong((Map.Entry<Key, Context> e) -> e.getValue().lastUsed)
                     .thenComparing(e -> e.getKey().pattern()).thenComparing(e -> e.getKey().dimension())).orElseThrow().getKey();
@@ -90,7 +90,7 @@ final class StrategyPerformance {
         boolean interrupted = reason.equals("RELOAD_RELEASED") || reason.equals("ENCOUNTER_ENDED")
                 || reason.contains("EVICT") || reason.contains("UNLOAD") || reason.contains("UNAVAILABLE") || reason.equals("UNOBSERVED_DAMAGE") || reason.equals("ERASED");
         String outcome = interrupted || latest == null ? "UNKNOWN" : (reason.equals("OWNER_KILLED") || reason.equals("SHIELD_DISABLED") || reason.equals("SHIELD_BROKEN")) ? "FAILURE" : dealt + blocked > received ? "SUCCESS" : "FAILURE";
-        var value = contexts.get(new Key(pending.pattern(), pending.evidence().dimension()));
+        var value = contexts.get(new Key(RangedCoverPolicy.key(pending), pending.evidence().dimension()));
         if (outcome.equals("SUCCESS")) { value.successes = increment(value.successes); value.consecutiveFailures = 0; }
         else if (outcome.equals("FAILURE")) {
             value.failures = increment(value.failures); value.consecutiveFailures = Math.min(2, value.consecutiveFailures + 1);
@@ -105,7 +105,7 @@ final class StrategyPerformance {
 
     List<String> diagnostics(long time) {
         var lines = new ArrayList<String>();
-        lines.add("STRATEGY PERFORMANCE | contexts=" + contexts.size() + " pending=" + (pending == null ? "none" : pending.pattern())
+        lines.add("STRATEGY PERFORMANCE | contexts=" + contexts.size() + " pending=" + (pending == null ? "none" : RangedCoverPolicy.key(pending))
                 + " | success=surviving positive witnessed damage trade (plus actual prevented shield damage); silence/interruption=unknown");
         contexts.forEach((key, c) -> {
             lines.add(String.format(Locale.ROOT, "%s context=%s uses=%d success=%d failure=%d unknown=%d effectiveness=%.4f frozenMultiplier=%.4f deferred=%s lastUsed=%d",
@@ -136,7 +136,7 @@ final class StrategyPerformance {
         if (pending != null) {
             var unfinished = new ObservedEvidence(pending.observer(), pending.encounter(), pending.evidence().dimension(),
                     pending.position(), Math.max(0, now), "HOLD_ENDED_RELOAD_RELEASED", false).save();
-            unfinished.putString("pattern", pending.pattern()); tag.put("unfinished", unfinished);
+            unfinished.putString("pattern", RangedCoverPolicy.key(pending)); tag.put("unfinished", unfinished);
         }
         return tag;
     }
@@ -146,7 +146,7 @@ final class StrategyPerformance {
         for (Tag raw : tag.getList("contexts", Tag.TAG_COMPOUND)) {
             if (memory.contexts.size() == MAX_CONTEXTS) break;
             var row = (CompoundTag) raw; var key = new Key(row.getString("pattern"), row.getString("dimension"));
-            if (!BeliefDescriptions.patterns().contains(key.pattern())
+            if (!RangedCoverPolicy.validKey(key.pattern())
                     || net.minecraft.resources.ResourceLocation.tryParse(key.dimension()) == null) continue;
             var c = new Context(); c.uses = Math.max(0, row.getInt("uses")); c.successes = Math.max(0, row.getInt("successes"));
             c.failures = Math.max(0, row.getInt("failures")); c.unknown = Math.max(0, row.getInt("unknown"));

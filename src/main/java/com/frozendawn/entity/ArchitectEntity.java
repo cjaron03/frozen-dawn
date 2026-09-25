@@ -137,6 +137,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RANGED_COVER_HOLD =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_EYES =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_POSE =
@@ -173,6 +175,7 @@ public class ArchitectEntity extends Monster {
     // --- Ice Budgets (separate to prevent conflicts) ---
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
+    private final List<BlockPos> mantletIce = new ArrayList<>();
     private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 12;
     private static final int MASTER_MAX_TACTICAL_ICE = 6;
@@ -373,6 +376,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
         builder.define(DATA_MAEVE_HOLD, false);
+        builder.define(DATA_RANGED_COVER_HOLD, false);
         builder.define(DATA_RECON_EYES, false);
         builder.define(DATA_RECON_POSE, false);
         builder.define(DATA_RECON_DISSOLVE, 0);
@@ -445,8 +449,15 @@ public class ArchitectEntity extends Monster {
     }
 
     void setMaeveHolding(boolean holding) {
-        entityData.set(DATA_MAEVE_HOLD, holding);
+        setMaeveHolding(holding, false);
     }
+
+    void setMaeveHolding(boolean holding, boolean rangedCover) {
+        entityData.set(DATA_MAEVE_HOLD, holding);
+        entityData.set(DATA_RANGED_COVER_HOLD, holding && rangedCover);
+    }
+
+    public boolean isHoldingRangedCover() { return isHoldingMaevePosition() && entityData.get(DATA_RANGED_COVER_HOLD); }
     public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
     void setReconnaissanceEyes(boolean active) {
         entityData.set(DATA_RECON_EYES, active);
@@ -491,6 +502,8 @@ public class ArchitectEntity extends Monster {
     int getTacticalIceCount() {
         return tacticalIce.size();
     }
+
+    int getMantletIceCount() { return mantletIce.size(); }
 
     int getMaxTacticalIce() {
         return isMasterArchitectVisual() ? MASTER_MAX_TACTICAL_ICE : MAX_TACTICAL_ICE;
@@ -599,7 +612,7 @@ public class ArchitectEntity extends Monster {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
-            boolean thinking = isHoldingMaevePosition() || isShowingReconnaissancePose();
+            boolean thinking = isHoldingMaevePosition() && !isHoldingRangedCover() || isShowingReconnaissancePose();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
@@ -1054,6 +1067,21 @@ public class ArchitectEntity extends Monster {
         observationMemory.setHasObserved(true); observationMemory.setObserveDirty(false);
         transitionToAction(ACTION_APPROACH);
         brainState.setActionHoldTicks(0); brainState.setReevalCooldown(0);
+    }
+
+    public void onMantletMiningStarted(BlockPos pos) {
+        if (level().isClientSide() || !isAlive() || isNoAi() || isMasterArchitectVisual()
+                || isHearthAssessor() || isHearthPopulationResident() || AggregateReinforcementManager.isChild(this)) return;
+        maeveCommitment.onMantletMiningStarted(pos);
+    }
+
+    void resumeAfterMantletInterruption() {
+        maeveCommitment.clear();
+        thinkingController.interrupt(); entityData.set(DATA_PURSUIT_POSE, 0);
+        thinkingInterruptedUntil = tickCount + 40;
+        localCombatUntil = level().getGameTime() + 600;
+        resumeAfterReconnaissance();
+        updateHeldItem(); syncRenderState();
     }
 
     /** Final damage has already been recorded by Maeve before execution is released. */
@@ -1875,6 +1903,23 @@ public class ArchitectEntity extends Monster {
         return placed;
     }
 
+    /** Mantlets have their own finite allowance; ordinary pillars and retreat keep theirs. */
+    boolean placeMantletIce(BlockPos pos) {
+        if (mantletIce.size() >= ArchitectMantletGeometry.PLACEMENTS
+                || !ArchitectIcePlacement.placeTacticalIce(level(), pos, mantletIce, ArchitectMantletGeometry.PLACEMENTS)) return false;
+        approachState.dstar.onLocalBlockChanged(pos, level());
+        emitIcePlacementFx(pos);
+        return true;
+    }
+
+    /** Retire only this executor's tracked mantlet ice; consumed budget is not refunded. */
+    void retireMantletIce(BlockPos pos, net.minecraft.world.level.block.state.BlockState previous) {
+        if (!mantletIce.contains(pos) || !level().hasChunkAt(pos) || !level().getBlockState(pos).is(Blocks.PACKED_ICE)) return;
+        level().levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(level().getBlockState(pos)));
+        level().setBlock(pos, previous != null && previous.is(Blocks.SNOW) ? previous : Blocks.AIR.defaultBlockState(), 3);
+        approachState.dstar.onLocalBlockChanged(pos, level());
+    }
+
     private void emitIcePlacementFx(BlockPos pos) {
         entityData.set(DATA_BUILDING_ICE, true);
         swing(InteractionHand.MAIN_HAND);
@@ -1891,6 +1936,7 @@ public class ArchitectEntity extends Monster {
 
     private void cleanupAllIce() {
         ArchitectIcePlacement.cleanupAllIce(level(), scaffoldIce, tacticalIce);
+        ArchitectIcePlacement.cleanupAllIce(level(), scaffoldIce, mantletIce);
     }
 
     // ========================
@@ -2704,6 +2750,7 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.writeObservationMemory(tag, observationMemory);
         ArchitectPersistence.writeCombatState(tag, combatState);
         ArchitectPersistence.writeApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        ArchitectPersistence.putBlockPosList(tag, "MantletIce", mantletIce);
         if (hearthAssessorId != null && hearthAssessorCenter != null) {
             tag.putUUID("HearthAssessorId", hearthAssessorId);
             tag.putLong("HearthAssessorCenter", hearthAssessorCenter.asLong());
@@ -2745,6 +2792,10 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.readObservationMemory(tag, observationMemory);
         ArchitectPersistence.readCombatState(tag, combatState);
         ArchitectPersistence.readApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        mantletIce.clear();
+        var savedMantlet = tag.getList("MantletIce", net.minecraft.nbt.Tag.TAG_LONG);
+        for (int i = 0; i < Math.min(savedMantlet.size(), ArchitectMantletGeometry.PLACEMENTS); i++)
+            mantletIce.add(BlockPos.of(((net.minecraft.nbt.LongTag) savedMantlet.get(i)).getAsLong()));
         towerEncounter = coreState.towerEncounter();
         towerEncounterId = coreState.towerEncounterId();
         if (tag.hasUUID("HearthAssessorId") && tag.contains("HearthAssessorCenter")) {

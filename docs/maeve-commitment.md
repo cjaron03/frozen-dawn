@@ -2,6 +2,10 @@
 
 Implements §§9.13a and 9.19 of [Maeve Director — Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880). `feat/maeve-commitment` targets `feat/maeve-director`, following Slice 2's merge at `992c7b7`. The blind-playtest criterion passed on 2026-09-17 in the task-directed encounter recorded below. That assessment combines an uninformed tester's description with the actual observation and execution trace; automated checks or a developer acting as a blind tester alone do not establish the criterion.
 
+## Current ranged-cover revision (owner decision, 2026-09-24)
+
+The original Slice 3 ranged hold described in the historical replay below has been superseded for pillars. Placing the initial two-block pillar immediately returns control to local pursuit and melee. The blocks, spent construction and exposed flanks make the decision visible and exploitable; there is no mandatory stationary pause or thinking gesture. The same commitment remains issued, with a bounded combat-outcome window for learning, and cannot become a different counter when the player closes to melee. Effective damage, contradictions, the next-encounter cooldown, erasure and reload keep their existing rules. Deliberate recovery, entrance and withdrawal watches keep their authored holds. Mantlets execute their own slow construction/advance. See [current mantlet acceptance](macs-mantlet-acceptance.md).
+
 ## Decision rules
 
 A player's encounter captures a frozen copy of the two supported beliefs before its first new observation. Later observations update the live beliefs but cannot strengthen that encounter's decision basis. The frozen score still decays with overworld game time. Existing 600-tick contact expiry and shared observer identity define the encounter; the new planner can refresh contact only through the same eligible player, distance, dimension, loaded-chunk and own-line-of-sight checks as observation recording.

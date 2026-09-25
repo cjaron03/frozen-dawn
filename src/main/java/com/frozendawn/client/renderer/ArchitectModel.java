@@ -129,7 +129,15 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
-        if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
+        if (entity.isHoldingRangedCover()) {
+            // Already executing a cover order: ready behind the wall, not pondering it.
+            if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
+                this.rightArm.xRot -= 0.35f;
+                this.leftArm.xRot -= 0.20f;
+                this.rightArm.yRot = -0.12f;
+                this.leftArm.yRot = 0.12f;
+            }
+        } else if (entity.isHoldingMaevePosition() || entity.isShowingReconnaissancePose()) {
             // Preserve vanilla's attack swing when defending the held point.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
                 applyObservePose(ageInTicks, sway, limbSwingAmount);

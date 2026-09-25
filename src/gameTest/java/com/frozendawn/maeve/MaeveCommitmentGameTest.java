@@ -17,6 +17,78 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class MaeveCommitmentGameTest {
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void maeveRangedPillarImmediatelyPursuesAndAttacksWithinSameBet(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 158, scene -> {
+            for (int x = 0; x <= 20; x++) for (int z = 0; z <= 10; z++)
+                scene.block(x, -1, z, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+            var actor = scene.architect(4, 4);
+            var player = MaeveReconnaissanceGameTest.damageablePlayer(scene, "pillar_combat");
+            player.setPos(scene.position(14, 4));
+            long start = scene.gameTime + 1;
+            for (int i = 0; i < 4; i++) {
+                scene.clock(start + i * 610L); scene.hit(actor, player, true, 1);
+            }
+            long now = start + 4 * 610L;
+            actor.tickCount = 80; actor.setOnGround(true); actor.debugForceApproach(player);
+            actor.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            actor.startDecisionRecording(1337L); actor.decisionJournal().useExtendedLabBuffer();
+            // A spawned actor first settles under real entity physics before placement.
+            for (int i = 0; i < 40; i++) { scene.clock(now + i); scene.level.tickNonPassenger(actor); }
+            var initial = MaeveDirector.positionDirective(actor);
+            helper.assertTrue(initial != null && !initial.advancingCover() && initial.arrivedAt() >= 0,
+                    "Real historical bow damage selects and builds the initial pillar: "
+                            + MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()));
+            helper.assertTrue(scene.level.getBlockState(initial.cover()).is(net.minecraft.world.level.block.Blocks.PACKED_ICE),
+                    "The physical pillar makes this commitment visible");
+            double moved = 0;
+            for (int i = 40; i < 160; i++) {
+                if (i == 100) {
+                    helper.assertTrue(moved > 4, "Ordinary pursuit must physically leave the built pillar before the player closes");
+                    helper.assertTrue(actor.blockPosition().distSqr(initial.position()) > 9,
+                            "The combat trade must occur beyond the former three-block scoring radius");
+                    // The player flanks into melee without hitting the Architect.
+                    // It must attack now rather than waiting for damage or a hold timeout.
+                    player.setPos(actor.position().add(-1.5, 0, 0));
+                }
+                scene.clock(now + i); scene.level.tickNonPassenger(actor);
+                helper.assertTrue(!actor.isHoldingMaevePosition(), "Pillar combat never pins the executor to its old position");
+                moved = Math.max(moved, actor.position().distanceToSqr(
+                        net.minecraft.world.phys.Vec3.atBottomCenterOf(initial.position())));
+            }
+            var current = MaeveDirector.positionDirective(actor);
+            helper.assertTrue(moved > 4 && player.getHealth() < player.getMaxHealth(),
+                    "Before the old 400-tick wait, the real actor must navigate its pillar and land a melee hit: moved="
+                            + Math.sqrt(moved) + " hp=" + player.getHealth() + " journal=" + actor.decisionJournal().entries());
+            helper.assertTrue(current != null && current.encounter().equals(initial.encounter()) && current.cover().equals(initial.cover()),
+                    "Movement and attacks retain the original bet and outcome window");
+            helper.assertTrue(!MaeveDirector.chooseCommitment(actor, player, List.of(new MaeveDirector.PositionCandidate(
+                            BeliefStore.SWORD, actor.blockPosition(), null, 1.5))) && actor.getOffhandItem().isEmpty(),
+                    "Closing to melee cannot buy an immediate replacement shield commitment");
+            helper.assertTrue(MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()).outcome().equals("COVER_COMBAT"),
+                    "Diagnostics describe active cover combat rather than a held position");
+            helper.assertTrue(actor.blockPosition().distSqr(initial.position()) > 9,
+                    "The incoming hit must also occur away from the original pillar position");
+            float dealt = player.getMaxHealth() - player.getHealth();
+            player.setPos(actor.position().add(-1.5, 0, 0));
+            float healthBefore = actor.getHealth();
+            scene.clock(now + 160);
+            helper.assertTrue(scene.hit(actor, player, false, 3), "The player lands a real visible counterattack after pursuit");
+            float received = healthBefore - actor.getHealth();
+            helper.assertTrue(received > 0 && MaeveDirector.positionDirective(actor) == null,
+                    "Final incoming damage ends the original bet after recording the trade");
+            var policy = MaeveSavedData.get(scene.server).store().commitment(player.getUUID());
+            var context = policy.performance().save().getList("contexts", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            var result = context.getList("results", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            helper.assertTrue(Math.abs(result.getFloat("dealt") - dealt) < .0001f
+                            && Math.abs(result.getFloat("received") - received) < .0001f,
+                    "Pillar results must retain the whole witnessed trade after pursuit: expected dealt=" + dealt
+                            + " received=" + received + " actual=" + result);
+            helper.assertTrue(result.getString("outcome").equals(dealt > received ? "SUCCESS" : "FAILURE"),
+                    "The actual mobile combat trade determines the pillar outcome rather than UNKNOWN");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void maeveRecoveryCommitmentLeavesAnAlreadyReachedApproachPoint(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 8, scene -> {
             var observer = scene.architect(2, 4);
@@ -154,13 +226,13 @@ public final class MaeveCommitmentGameTest {
             for (int i = 0; i < 40; i++) { scene.clock(now + i); observer.tick(); }
             var held = MaeveDirector.positionDirective(observer);
             helper.assertTrue(held != null && held.cover() != null && held.arrivedAt() >= 0,
-                    "Ranged history must produce a real held cover position before another shot: "
+                    "Ranged history must produce real cover before another shot: "
                             + MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()));
             helper.assertTrue(scene.level.getBlockState(held.cover()).is(net.minecraft.world.level.block.Blocks.PACKED_ICE),
                     "The visible cover is built through the existing tactical ice path");
-            player.setPos(scene.position(3, 4));
+            player.setPos(observer.position().add(0, 0, 1.5));
             scene.hit(observer, player, false, 0);
-            helper.assertTrue(MaeveDirector.positionDirective(observer) != null && observer.isHoldingMaevePosition(),
+            helper.assertTrue(MaeveDirector.positionDirective(observer) != null && !observer.isHoldingMaevePosition(),
                     "An ineffective hit cannot release the commitment");
             scene.clock(now + 40);
             helper.assertTrue(scene.hit(observer, player, false, 1), "The player actually lands a visible melee contradiction");
@@ -226,7 +298,8 @@ public final class MaeveCommitmentGameTest {
             second.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
             long holdingAt = scene.server.overworld().getGameTime();
             for (int i = 0; i < 40; i++) { scene.clock(holdingAt + i); second.tick(); }
-            helper.assertTrue(second.isHoldingMaevePosition(), "The other owner's held position has an active guard cue");
+            helper.assertTrue(MaeveDirector.positionDirective(second) != null && !second.isHoldingMaevePosition(),
+                    "The other owner continues cover combat within its independent bet");
             PostMaeveWorldState.markErased(scene.level);
             helper.assertTrue(MaeveDirector.positionDirective(second) == null, "Authoritative erasure terminates the other player's active bet too");
             helper.assertTrue(!second.isHoldingMaevePosition(), "Erasure clears the guard cue before another entity tick");

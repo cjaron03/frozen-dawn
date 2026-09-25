@@ -21,7 +21,9 @@ final class ArchitectCommitmentController {
     private final ArchitectBlockBreaker breaker;
     private final ArchitectSpatialCommitment spatial;
     private final ArchitectShieldController shield;
+    private final ArchitectMantletController mantlet;
     ArchitectShieldController shield() { return shield; }
+    void onMantletMiningStarted(BlockPos pos) { mantlet.onMiningStarted(pos); }
     private boolean wasActive;
     private long nextPlan;
 
@@ -30,6 +32,7 @@ final class ArchitectCommitmentController {
         this.breaker = breaker;
         spatial = new ArchitectSpatialCommitment(architect);
         shield = new ArchitectShieldController(architect);
+        mantlet = new ArchitectMantletController(architect);
     }
 
     boolean tick(LivingEntity localTarget) {
@@ -40,6 +43,9 @@ final class ArchitectCommitmentController {
         if (directive == null && now >= nextPlan && localTarget instanceof ServerPlayer player) {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
+            // A freshly spawned actor settles after its first AI tick. Do not let
+            // ordinary fortification obstruct the mantlet corridor during that landing.
+            if (!architect.onGround() && hints.stream().anyMatch(h -> h.pattern().equals("PLAYER_PREFERS_RANGED") && h.confidence() >= .90)) nextPlan = now + 1;
             if (!hints.isEmpty() && safeToCommit() && architect.onGround()) {
                 var candidates = new ArrayList<>(candidates(hints, player));
                 candidates.addAll(MaeveDirector.spatialCandidates(architect, player, hints));
@@ -63,7 +69,16 @@ final class ArchitectCommitmentController {
             if (guarding) breaker.clearTarget();
             return guarding;
         }
+        // The pillar is the visible bet. Once built, retain the spent commitment
+        // and learning window while ordinary pursuit/melee works around it.
+        // Yield before clearing the breaker so movement can finish queued mining.
+        boolean rangedPillar = directive.pattern().equals("PLAYER_PREFERS_RANGED") && !directive.advancingCover();
+        if (rangedPillar && directive.arrivedAt() >= 0) {
+            architect.setMaeveHolding(false);
+            return false;
+        }
         breaker.clearTarget();
+        if (directive.advancingCover()) return mantlet.tick(directive, localTarget, now);
         // Environmental displacement may settle back to the point. Effective
         // damage has its own final-event release, after evidence is recorded.
         if (!architect.onGround()) {
@@ -94,7 +109,7 @@ final class ArchitectCommitmentController {
             MaeveDirector.commitmentArrived(architect);
             stopMotion();
             architect.setCommitmentAction(true);
-            architect.setMaeveHolding(true);
+            architect.setMaeveHolding(true, directive.pattern().equals("PLAYER_PREFERS_RANGED"));
             Vec3 anchor = directive.evidence().position().getCenter();
             if (directive.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT") && localTarget != null
                     && architect.hasLineOfSight(localTarget)) anchor = localTarget.position();
@@ -113,6 +128,13 @@ final class ArchitectCommitmentController {
                     release("LOCAL_COVER_UNAVAILABLE");
                     return false;
                 }
+            }
+            if (rangedPillar) {
+                architect.setMaeveHolding(false);
+                architect.setCommitmentAction(false);
+                architect.triggerReeval();
+                architect.recordDecision("MAEVE_COVER_COMBAT", null, "pillar built; local combat resumes within the same bet");
+                return false;
             }
             // Defend the held position using current local sight; do not chase a broken bet.
             if (localTarget != null && architect.distanceToSqr(localTarget) < 2.8D * 2.8D
@@ -133,6 +155,10 @@ final class ArchitectCommitmentController {
                         && shield.canEquip(architect.getServer().overworld().getGameTime()))
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), architect.blockPosition(), null, 1.5));
                 continue;
+            }
+            if (hint.pattern().equals("PLAYER_PREFERS_RANGED") && hint.confidence() >= .90) {
+                var advancing = mantlet.candidate(hint, player);
+                if (advancing != null) candidates.add(advancing);
             }
             Vec3 anchor = Vec3.atBottomCenterOf(hint.evidence().position());
             Vec3 away = architect.position().subtract(anchor).multiply(1, 0, 1);
@@ -246,6 +272,7 @@ final class ArchitectCommitmentController {
     void clear() {
         spatial.clear();
         shield.clear();
+        mantlet.clear();
         wasActive = false;
         architect.setMaeveHolding(false);
         stopMotion();

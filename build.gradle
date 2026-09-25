@@ -433,3 +433,13 @@ tasks.register('generateMacsShieldQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsShieldQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsShieldQa') }
+
+// The mantlet live trial uses these same parsed native functions and hit trigger.
+def macsMantletQaResources = layout.buildDirectory.dir('generated/macs-mantlet-qa')
+tasks.register('generateMacsMantletQa', Exec) {
+    inputs.file('tools/prepare_macs_mantlet_playtest.py')
+    outputs.dir(macsMantletQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_mantlet_playtest.py', '--pack-only', macsMantletQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsMantletQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsMantletQa') }

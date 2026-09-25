@@ -42,11 +42,13 @@ final class CommitmentCoordinator {
                         && observer.level().hasChunkAt(c.position())
                         && (c.cover() == null || (observer.blockPosition().distSqr(c.cover()) <= 9
                         && observer.level().hasChunkAt(c.cover()))))
+                .filter(c -> !c.advancingCover() || (c.pattern().equals(BeliefStore.RANGED) && c.cover() != null && c.spatial() == null
+                        && hints.stream().anyMatch(h -> h.pattern().equals(BeliefStore.RANGED) && h.confidence() >= RangedCoverPolicy.MANTLET_THRESHOLD)))
                 .filter(c -> WorldModel.BEARINGS.contains(c.pattern()) == (c.spatial() != null))
                 .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
         var policy = store.commitment(player.getUUID());
         if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE")
-                && !policy.performance().deferred(c.pattern(), observer.level().dimension().location().toString()))
+                && !policy.performance().deferred(RangedCoverPolicy.key(c), observer.level().dimension().location().toString()))
                 && !attention.commitment(observer, player)) return false;
         boolean selected = policy.choose(player.getUUID(), observer.getUUID(), local, now);
         if (!selected) attention.releaseCommitment(observer);

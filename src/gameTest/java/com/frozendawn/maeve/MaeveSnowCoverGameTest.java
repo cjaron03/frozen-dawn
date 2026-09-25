@@ -106,7 +106,7 @@ public final class MaeveSnowCoverGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
-    public static void maeveRangedHoldBuildsOnEverySnowLayer(GameTestHelper helper) {
+    public static void maeveRangedCoverBuildsOnEverySnowLayer(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 134, 2, scene -> {
             for (int layers = 1; layers <= 8; layers++) {
                 terrain(scene, 2, layers);
@@ -126,8 +126,8 @@ public final class MaeveSnowCoverGameTest {
                 actor.startDecisionRecording(1337L); actor.decisionJournal().useExtendedLabBuffer();
                 for (int i = 0; i < 30; i++) { scene.clock(now + i); scene.level.tickNonPassenger(actor); }
                 var held = MaeveDirector.positionDirective(actor);
-                helper.assertTrue(held != null && held.cover() != null && held.arrivedAt() >= 0 && actor.isHoldingMaevePosition(),
-                        "Past witnessed bow history must permit an actual hold on snow layers=" + layers
+                helper.assertTrue(held != null && held.cover() != null && held.arrivedAt() >= 0 && !actor.isHoldingMaevePosition(),
+                        "Past witnessed bow history must build cover and release movement on snow layers=" + layers
                                 + " pos=" + actor.position() + " action=" + actor.getBrainAction()
                                 + " state=" + MaeveDirector.commitmentSnapshot(scene.server, player.getUUID())
                                 + " beliefs=" + scene.beliefs(player) + " journal=" + actor.decisionJournal().entries().stream()
@@ -136,8 +136,9 @@ public final class MaeveSnowCoverGameTest {
                                 && scene.level.getBlockState(held.cover().above()).is(Blocks.PACKED_ICE)
                                 && scene.level.getBlockState(held.cover().above(2)).isAir(),
                         "The real directive constructs cover through the budgeted placement path");
-                helper.assertTrue(actor.getDeltaMovement().lengthSqr() < .01 && Double.isFinite(actor.getX()),
-                        "Fractional snow height must not cause repeated vertical arrival corrections");
+                helper.assertTrue(actor.decisionJournal().entries().stream().filter(e -> e.event().equals("MAEVE_COVER_COMBAT")).count() == 1
+                                && Double.isFinite(actor.getX()) && actor.getY() >= scene.origin.getY() + height - .1,
+                        "Snow arrival hands off once; normal combat may jump but cannot repeat the positional correction");
                 actor.discard(); player.discard();
             }
         });
