@@ -130,7 +130,7 @@ final class CommitmentPolicy {
         blockNext.add(pattern);
         if (active && selected.pattern().equals(pattern) && selected.contradictedAt() < 0) {
             selected = copy(selected.arrivedAt(), selected.holdUntil(), now);
-            outcome = "CONTRADICTED_HOLD";
+            outcome = rangedPillar() ? "CONTRADICTED_COVER_COMBAT" : "CONTRADICTED_HOLD";
         }
     }
 
@@ -138,7 +138,8 @@ final class CommitmentPolicy {
         if (active && selected.arrivedAt() < 0) {
             selected = copy(now, swordGuard() ? -1 : now + HOLD_TICKS, selected.contradictedAt());
             performance.arrived(now);
-            outcome = selected.contradictedAt() < 0 ? "HOLDING" : "CONTRADICTED_HOLD";
+            outcome = rangedPillar() ? (selected.contradictedAt() < 0 ? "COVER_COMBAT" : "CONTRADICTED_COVER_COMBAT")
+                    : selected.contradictedAt() < 0 ? "HOLDING" : "CONTRADICTED_HOLD";
         }
     }
 
@@ -166,6 +167,7 @@ final class CommitmentPolicy {
 
     void contact(long now) { lastContact = now; }
     private boolean swordGuard() { return selected.pattern().equals(BeliefStore.SWORD); }
+    private boolean rangedPillar() { return selected.pattern().equals(BeliefStore.RANGED) && !selected.advancingCover(); }
     private String expiryReason() {
         return selected.obstruction() != null ? "DISCOVERY_REPLAN"
                 : swordGuard() && selected.arrivedAt() >= 0 ? "ENCOUNTER_ENDED" : "TIME_COMPLETE";

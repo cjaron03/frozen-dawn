@@ -68,6 +68,14 @@ final class ArchitectCommitmentController {
             if (guarding) breaker.clearTarget();
             return guarding;
         }
+        // The pillar is the visible bet. Once built, retain the spent commitment
+        // and learning window while ordinary pursuit/melee works around it.
+        // Yield before clearing the breaker so movement can finish queued mining.
+        boolean rangedPillar = directive.pattern().equals("PLAYER_PREFERS_RANGED") && !directive.advancingCover();
+        if (rangedPillar && directive.arrivedAt() >= 0) {
+            architect.setMaeveHolding(false);
+            return false;
+        }
         breaker.clearTarget();
         if (directive.advancingCover()) return mantlet.tick(directive, localTarget, now);
         // Environmental displacement may settle back to the point. Effective
@@ -100,7 +108,7 @@ final class ArchitectCommitmentController {
             MaeveDirector.commitmentArrived(architect);
             stopMotion();
             architect.setCommitmentAction(true);
-            architect.setMaeveHolding(true);
+            architect.setMaeveHolding(true, directive.pattern().equals("PLAYER_PREFERS_RANGED"));
             Vec3 anchor = directive.evidence().position().getCenter();
             if (directive.pattern().equals("PLAYER_PURSUES_WITHDRAWING_ARCHITECT") && localTarget != null
                     && architect.hasLineOfSight(localTarget)) anchor = localTarget.position();
@@ -119,6 +127,13 @@ final class ArchitectCommitmentController {
                     release("LOCAL_COVER_UNAVAILABLE");
                     return false;
                 }
+            }
+            if (rangedPillar) {
+                architect.setMaeveHolding(false);
+                architect.setCommitmentAction(false);
+                architect.triggerReeval();
+                architect.recordDecision("MAEVE_COVER_COMBAT", null, "pillar built; local combat resumes within the same bet");
+                return false;
             }
             // Defend the held position using current local sight; do not chase a broken bet.
             if (localTarget != null && architect.distanceToSqr(localTarget) < 2.8D * 2.8D
@@ -140,15 +155,15 @@ final class ArchitectCommitmentController {
                     candidates.add(new MaeveDirector.PositionCandidate(hint.pattern(), architect.blockPosition(), null, 1.5));
                 continue;
             }
+            if (hint.pattern().equals("PLAYER_PREFERS_RANGED") && hint.confidence() >= .90) {
+                var advancing = mantlet.candidate(hint, player);
+                if (advancing != null) candidates.add(advancing);
+            }
             Vec3 anchor = Vec3.atBottomCenterOf(hint.evidence().position());
             Vec3 away = architect.position().subtract(anchor).multiply(1, 0, 1);
             if (away.lengthSqr() < 1) continue;
             away = away.normalize();
             if (hint.pattern().equals("PLAYER_PREFERS_RANGED")) {
-                if (hint.confidence() >= .90) {
-                    var advancing = mantlet.candidate(hint);
-                    if (advancing != null) candidates.add(advancing);
-                }
                 BlockPos position = architect.blockPosition();
                 Vec3 feet = coverStandingPoint(position);
                 BlockPos cover = com.frozendawn.entity.architect.ArchitectCoverGeometry.find(

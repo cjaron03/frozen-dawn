@@ -14,6 +14,9 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectMantletController {
     private final ArchitectEntity actor;
     private ArchitectMantletGeometry.Plan plan;
+    private ArchitectMantletGeometry.Plan proposal;
+    private UUID proposedSubject;
+    private long proposedAt;
     private UUID encounter;
     private final List<BlockPos> current = new ArrayList<>();
     private final List<BlockPos> building = new ArrayList<>();
@@ -25,9 +28,15 @@ final class ArchitectMantletController {
 
     ArchitectMantletController(ArchitectEntity actor) { this.actor = actor; }
 
-    MaeveDirector.PositionCandidate candidate(MaeveDirector.CommitmentHint hint) {
-        var proposal = ArchitectMantletGeometry.plan(actor, Vec3.atBottomCenterOf(hint.evidence().position()));
+    MaeveDirector.PositionCandidate candidate(MaeveDirector.CommitmentHint hint, LivingEntity subject) {
+        proposal = null; proposedSubject = null;
+        if (!subject.isAlive() || subject.level() != actor.level() || actor.distanceToSqr(subject) > 48 * 48
+                || !actor.hasLineOfSight(subject)) return null;
+        // History selects the ranged counter; the local executor chooses its front
+        // from a subject it can actually see now. Freeze this geometry once issued.
+        proposal = ArchitectMantletGeometry.plan(actor, subject.position());
         if (proposal == null) return null;
+        proposedSubject = subject.getUUID(); proposedAt = actor.getServer().overworld().getGameTime();
         return new MaeveDirector.PositionCandidate(hint.pattern(), actor.blockPosition(),
                 proposal.screens().getFirst().cells().getFirst(), 3, null, true);
     }
@@ -36,9 +45,11 @@ final class ArchitectMantletController {
         if (target == null || !target.isAlive() || !target.getUUID().equals(directive.player())
                 || target.level() != actor.level() || actor.distanceToSqr(target) > 48 * 48) return release("SUBJECT_UNAVAILABLE");
         if (!directive.encounter().equals(encounter)) {
+            var selectedPlan = proposal;
+            boolean matches = directive.player().equals(proposedSubject) && proposedAt == now;
             clear();
-            plan = ArchitectMantletGeometry.plan(actor, Vec3.atBottomCenterOf(directive.evidence().position()));
-            if (plan == null || !plan.screens().getFirst().cells().getFirst().equals(directive.cover())) return release("LOCAL_MANTLET_UNAVAILABLE");
+            plan = selectedPlan;
+            if (!matches || plan == null || !plan.screens().getFirst().cells().getFirst().equals(directive.cover())) return release("LOCAL_MANTLET_UNAVAILABLE");
             encounter = directive.encounter(); nextBlock = nextScreen = now; goal = plan.screens().getFirst().stand();
             MaeveDirector.commitmentArrived(actor);
             actor.recordDecision("MANTLET_STARTED", null, "fixedFront=" + directive.cover() + " screens=" + ArchitectMantletGeometry.SCREENS + " budget=" + ArchitectMantletGeometry.PLACEMENTS);
@@ -67,7 +78,7 @@ final class ArchitectMantletController {
             return true;
         }
         boolean construction = !breached && screen < plan.screens().size() && now >= nextScreen;
-        actor.setMaeveHolding(!construction); actor.setCommitmentAction(!construction);
+        actor.setMaeveHolding(!construction, true); actor.setCommitmentAction(!construction);
         if (construction && now >= nextBlock) {
             var panel = plan.screens().get(screen);
             if (building.isEmpty() && panel.cells().stream().anyMatch(p -> !ArchitectMantletGeometry.placeable(actor, p)))
@@ -103,5 +114,5 @@ final class ArchitectMantletController {
         MaeveDirector.releaseCommitment(actor, reason); clear(); actor.setMaeveHolding(false); actor.triggerReeval(); return false;
     }
 
-    void clear() { plan = null; encounter = null; current.clear(); building.clear(); displaced.clear(); screen = placed = 0; breached = false; goal = null; }
+    void clear() { plan = proposal = null; proposedSubject = encounter = null; proposedAt = -1; current.clear(); building.clear(); displaced.clear(); screen = placed = 0; breached = false; goal = null; }
 }

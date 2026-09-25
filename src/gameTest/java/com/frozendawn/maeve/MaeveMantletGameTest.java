@@ -194,6 +194,43 @@ public final class MaeveMantletGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletUsesVisibleFrontAndKeepsItWhenPlayerFlanks(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 156, scene -> {
+            var original = prepare(scene, 2); var actor = original.actor(); var player = original.player();
+            // Last fight ended near this actor's new spawn, while the new fight starts at range.
+            scene.clock(original.start() + 610);
+            player.setPos(scene.position(3, 1));
+            var witness = scene.architect(2, 1); scene.hit(witness, player, true, 1); witness.discard();
+            player.setPos(scene.position(18, 6).add(0, .125, 0));
+            var fight = new Fight(actor, player, original.start() + 1220);
+            Vec3 start = actor.position();
+            for (int t = 0; t < 60; t++) tick(scene, fight, t);
+            var directive = MaeveDirector.positionDirective(actor);
+            helper.assertTrue(directive != null && directive.advancingCover(), "A nearby historical firing point cannot reject the currently visible ranged subject");
+            helper.assertTrue(directive.evidence().position().equals(scene.origin.offset(3, 0, 1)), "Selection must still retain its actual historical evidence");
+            helper.assertTrue(directive.cover().getX() > start.x && actor.isHoldingRangedCover(), "The east-facing front uses the cover-ready hold cue");
+            player.setPos(scene.position(1, 12).add(0, .125, 0));
+            for (int t = 60; t < 395; t++) tick(scene, fight, t);
+            helper.assertTrue(actor.getX() - start.x >= 7.7 && Math.abs(actor.getZ() - start.z) < 1,
+                    "Flanking cannot turn the fixed screen corridor toward the new player position");
+            helper.assertTrue(MaeveDirector.positionDirective(actor).cover().equals(directive.cover()), "The same original bet and front remain fixed");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletCannotOrientTowardAnOccludedSubject(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 157, scene -> {
+            var fight = prepare(scene, 2); var actor = fight.actor();
+            // Outside the entire construction corridor: only the subject's visibility changes.
+            for (int y = 0; y <= 4; y++) for (int z = 0; z <= 14; z++) scene.block(15, y, z, Blocks.BEDROCK.defaultBlockState());
+            helper.assertTrue(!actor.hasLineOfSight(fight.player()), "Subject must actually be hidden behind the wall");
+            for (int t = 0; t < 60; t++) tick(scene, fight, t);
+            helper.assertTrue(actor.decisionJournal().entries().stream().noneMatch(e -> e.event().equals("MANTLET_STARTED")),
+                    "Historical bow confidence cannot provide an unseen subject's current position");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
     public static void mantletWorksOnEverySnowDepth(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 146, scene -> {
             for (int depth = 1; depth <= 8; depth++) {

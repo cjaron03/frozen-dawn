@@ -137,6 +137,8 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_RANGED_COVER_HOLD =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_EYES =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RECON_POSE =
@@ -374,6 +376,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
         builder.define(DATA_MAEVE_HOLD, false);
+        builder.define(DATA_RANGED_COVER_HOLD, false);
         builder.define(DATA_RECON_EYES, false);
         builder.define(DATA_RECON_POSE, false);
         builder.define(DATA_RECON_DISSOLVE, 0);
@@ -446,8 +449,15 @@ public class ArchitectEntity extends Monster {
     }
 
     void setMaeveHolding(boolean holding) {
-        entityData.set(DATA_MAEVE_HOLD, holding);
+        setMaeveHolding(holding, false);
     }
+
+    void setMaeveHolding(boolean holding, boolean rangedCover) {
+        entityData.set(DATA_MAEVE_HOLD, holding);
+        entityData.set(DATA_RANGED_COVER_HOLD, holding && rangedCover);
+    }
+
+    public boolean isHoldingRangedCover() { return isHoldingMaevePosition() && entityData.get(DATA_RANGED_COVER_HOLD); }
     public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
     void setReconnaissanceEyes(boolean active) {
         entityData.set(DATA_RECON_EYES, active);
@@ -602,7 +612,7 @@ public class ArchitectEntity extends Monster {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
-            boolean thinking = isHoldingMaevePosition() || isShowingReconnaissancePose();
+            boolean thinking = isHoldingMaevePosition() && !isHoldingRangedCover() || isShowingReconnaissancePose();
             int pose = entityData.get(DATA_PURSUIT_POSE);
             boolean allowed = getCurrentAction() == ACTION_APPROACH && !isMiningBlock()
                     && !hasQueuedScaffoldStep() && !isMasterArchitectVisual()
