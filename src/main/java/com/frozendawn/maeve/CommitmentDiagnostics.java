@@ -30,7 +30,7 @@ final class CommitmentDiagnostics {
                     + " position=" + selected.position().toShortString() + " dimension=" + selected.evidence().dimension()
                     + " cover=" + selected.cover());
             if (selected.pattern().equals(BeliefStore.SWORD)) lines.add("SWORD GUARD: same shield for this encounter; recovery suspends guarding; 35 guarding / 25 exposed ticks; frontal only; guarding stops attacks and movement; axe disable=100 ticks.");
-            if (selected.advancingCover()) lines.add("MANTLET: threshold=0.90; fixed local front; 2x2 packed ice; at most 3 screens / 12 placements; 10 ticks per block, 80 ticks between screens; slow advance; open flanks; broken cover is not repaired.");
+            if (selected.advancingCover()) lines.add("MANTLET: threshold=0.90; fixed local front; 2x2 packed ice; at most 5 screens / 20 placements in a separate pool; 10 ticks per block, 80 ticks between screens; slow advance; open flanks; broken cover is not repaired.");
             if (selected.spatial() != null) lines.add("OBSERVED CROSSING: " + selected.spatial().inside().toShortString()
                     + " -> " + selected.spatial().outside().toShortString() + "; discovered obstruction=" + selected.obstruction());
             lines.add("INHERITED EVIDENCE: " + selected.evidence().action() + " tick=" + selected.evidence().time()

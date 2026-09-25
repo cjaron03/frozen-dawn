@@ -43,7 +43,7 @@ final class ArchitectCommitmentController {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
             // A freshly spawned actor settles after its first AI tick. Do not let
-            // ordinary fortification spend the mantlet budget during that landing.
+            // ordinary fortification obstruct the mantlet corridor during that landing.
             if (!architect.onGround() && hints.stream().anyMatch(h -> h.pattern().equals("PLAYER_PREFERS_RANGED") && h.confidence() >= .90)) nextPlan = now + 1;
             if (!hints.isEmpty() && safeToCommit() && architect.onGround()) {
                 var candidates = new ArrayList<>(candidates(hints, player));

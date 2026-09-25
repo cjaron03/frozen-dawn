@@ -41,7 +41,7 @@ final class ArchitectMantletController {
             if (plan == null || !plan.screens().getFirst().cells().getFirst().equals(directive.cover())) return release("LOCAL_MANTLET_UNAVAILABLE");
             encounter = directive.encounter(); nextBlock = nextScreen = now; goal = plan.screens().getFirst().stand();
             MaeveDirector.commitmentArrived(actor);
-            actor.recordDecision("MANTLET_STARTED", null, "fixedFront=" + directive.cover() + " screens=3 budget=12");
+            actor.recordDecision("MANTLET_STARTED", null, "fixedFront=" + directive.cover() + " screens=" + ArchitectMantletGeometry.SCREENS + " budget=" + ArchitectMantletGeometry.PLACEMENTS);
         }
         actor.getNavigation().stop();
         actor.getMoveControl().setWantedPosition(actor.getX(), actor.getY(), actor.getZ(), 0);
@@ -73,17 +73,19 @@ final class ArchitectMantletController {
             if (building.isEmpty() && panel.cells().stream().anyMatch(p -> !ArchitectMantletGeometry.placeable(actor, p)))
                 return release("LOCAL_MANTLET_UNAVAILABLE");
             BlockPos cell = panel.cells().get(building.size());
-            if (placed >= 12 || actor.getTacticalIceCount() >= actor.getMaxTacticalIce()
+            if (placed >= ArchitectMantletGeometry.PLACEMENTS || actor.getMantletIceCount() >= ArchitectMantletGeometry.PLACEMENTS
                     || !ArchitectMantletGeometry.placeable(actor, cell))
                 return release("LOCAL_MANTLET_UNAVAILABLE");
             var previous = actor.level().getBlockState(cell);
-            if (!actor.placeTacticalIce(cell)) return release("LOCAL_MANTLET_UNAVAILABLE");
+            if (!actor.placeMantletIce(cell)) return release("LOCAL_MANTLET_UNAVAILABLE");
             displaced.put(cell, previous); building.add(cell); placed++; nextBlock = now + 10;
             actor.getLookControl().setLookAt(cell.getX() + .5, cell.getY() + .5, cell.getZ() + .5, 15, 15);
             actor.recordDecision("MANTLET_BLOCK", null, "screen=" + screen + " total=" + placed + " cell=" + cell.toShortString());
             if (building.size() == 4) {
                 // Keep the new front intact before opening the old lane. Retired cells
-                // remain charged to the ordinary pool and this bet's lifetime cap.
+                // remain charged to the separate mantlet pool and this bet's lifetime cap.
+                if (!ArchitectMantletRetirement.releaseStoppedArrows(actor, current))
+                    return release("LOCAL_MANTLET_ARROW_LIMIT");
                 current.forEach(p -> actor.retireMantletIce(p, displaced.get(p)));
                 current.clear(); current.addAll(building); building.clear();
                 goal = panel.stand(); screen++; nextScreen = now + 50;

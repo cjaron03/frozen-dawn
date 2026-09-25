@@ -10,22 +10,24 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** Fixed six-block corridor. All probes are local, loaded, and capped; no navigation search. */
+/** Fixed ten-block corridor. All probes are local, loaded, and capped; no navigation search. */
 final class ArchitectMantletGeometry {
+    static final int SCREENS = 5;
+    static final int PLACEMENTS = SCREENS * 4;
     record Screen(List<BlockPos> cells, Vec3 stand) { }
     record Plan(List<Screen> screens) { }
     private ArchitectMantletGeometry() { }
 
     static Plan plan(ArchitectEntity actor, Vec3 anchor) {
         Vec3 delta = anchor.subtract(actor.position());
-        if (delta.horizontalDistanceSqr() < 100 || actor.getTacticalIceCount() + 12 > actor.getMaxTacticalIce())
-            return reject(actor, "rangeOrBudget distance=" + delta.horizontalDistance() + " used=" + actor.getTacticalIceCount());
+        if (delta.horizontalDistanceSqr() < 100 || actor.getMantletIceCount() != 0)
+            return reject(actor, "rangeOrBudget distance=" + delta.horizontalDistance() + " used=" + actor.getMantletIceCount());
         Direction forward = Direction.getNearest(delta.x, 0, delta.z);
         Direction right = forward.getClockWise();
         BlockPos origin = actor.blockPosition();
         var screens = new ArrayList<Screen>();
         Vec3 previous = actor.position();
-        for (int step = 0; step < 3; step++) {
+        for (int step = 0; step < SCREENS; step++) {
             Vec3 center = Vec3.atBottomCenterOf(origin.relative(forward, step * 2))
                     .add(right.getStepX() * .5, 0, right.getStepZ() * .5);
             Vec3 stand = surface(actor, center, actor.getY());

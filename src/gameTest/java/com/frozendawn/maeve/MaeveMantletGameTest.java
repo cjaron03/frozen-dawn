@@ -49,8 +49,10 @@ public final class MaeveMantletGameTest {
         MaeveObservationGameTest.withScene(helper, 145, scene -> {
             var fight = prepare(scene, 0); var actor = fight.actor(); Vec3 initial = actor.position();
             boolean shot = false;
-            for (int t = 0; t < 320; t++) {
+            Arrow lodged = null;
+            for (int t = 0; t < 395; t++) {
                 tick(scene, fight, t);
+                if (lodged != null && !lodged.isRemoved()) scene.level.tickNonPassenger(lodged);
                 if (!shot && actor.decisionJournal().entries().stream().anyMatch(e -> e.event().equals("MANTLET_SCREEN"))) {
                     float hp = actor.getHealth(); var arrow = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
                     arrow.setPos(fight.player().getEyePosition());
@@ -59,17 +61,135 @@ public final class MaeveMantletGameTest {
                     for (int i = 0; i < 15; i++) scene.level.tickNonPassenger(arrow);
                     helper.assertTrue(actor.getHealth() == hp && arrow.saveWithoutId(new CompoundTag()).getBoolean("inGround")
                             && arrow.saveWithoutId(new CompoundTag()).getCompound("inBlockState").getString("Name").equals("minecraft:packed_ice"), "An actual arrow must collide with the built front: hp=" + hp + " -> " + actor.getHealth() + " actor=" + actor.position() + " arrow=" + arrow.saveWithoutId(new CompoundTag()) + " blocks=" + actor.decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
-                    arrow.discard(); shot = true;
+                    lodged = arrow; shot = true;
                 }
             }
+            helper.assertTrue(actor.getHealth() == actor.getMaxHealth(),
+                    "Retiring its own screen must not release its stopped arrow into the advancing builder: "
+                            + actor.decisionJournal().entries().stream().filter(e -> e.event().equals("DAMAGE")).toList());
             var blocks = actor.decisionJournal().entries().stream().filter(e -> e.event().equals("MANTLET_BLOCK")).toList();
             var screens = actor.decisionJournal().entries().stream().filter(e -> e.event().equals("MANTLET_SCREEN")).toList();
-            helper.assertTrue(shot && blocks.size() == 12 && screens.size() == 3, "Expected three real four-block screens: " + blocks + " screens=" + screens + " actor=" + actor.position() + " policy=" + MaeveDirector.commitmentSnapshot(scene.server, fight.player().getUUID()) + " journal=" + actor.decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
+            helper.assertTrue(shot && blocks.size() == 20 && screens.size() == 5, "Expected five real four-block screens: " + blocks + " screens=" + screens + " actor=" + actor.position() + " policy=" + MaeveDirector.commitmentSnapshot(scene.server, fight.player().getUUID()) + " journal=" + actor.decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
             for (int i = 1; i < blocks.size(); i++) helper.assertTrue(blocks.get(i).tick() - blocks.get(i - 1).tick() >= 10, "Placement cadence stays bounded");
-            helper.assertTrue(actor.getX() - initial.x >= 3.7, "Builder physically advances behind successive screens");
-            helper.assertTrue(actor.saveWithoutId(new CompoundTag()).getList("TacticalIce", Tag.TAG_LONG).size() == 12, "Retirement does not refund the shared pool");
+            helper.assertTrue(actor.getX() - initial.x >= 7.7, "Builder physically advances behind successive screens");
+            helper.assertTrue(actor.saveWithoutId(new CompoundTag()).getList("MantletIce", Tag.TAG_LONG).size() == 20, "Retirement does not refund the separate mantlet pool");
             helper.assertTrue(MaeveDirector.positionDirective(actor).advancingCover(), "Still the original 20-second bet");
+            helper.assertTrue(lodged.isRemoved(), "A lodged arrow must leave projectile form before its supporting ice retires");
+            var pickups = scene.level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, actor.getBoundingBox().inflate(15));
+            scene.entities.addAll(pickups);
+            helper.assertTrue(pickups.size() == 1 && pickups.getFirst().getItem().is(Items.ARROW), "Retiring ice preserves the recoverable arrow item");
             System.out.println("MACS_MANTLET_CHECK screens=" + screens.size() + " blocks=" + blocks.size() + " advance=" + (actor.getX() - initial.x));
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletRetiresLodgedArrowsWithoutSelfDamage(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 152, scene -> {
+            var fight = prepare(scene, 2); var actor = fight.actor();
+            var arrows = new java.util.ArrayList<Arrow>();
+            for (int t = 0; t < 260; t++) {
+                tick(scene, fight, t);
+                for (var arrow : arrows) if (!arrow.isRemoved()) scene.level.tickNonPassenger(arrow);
+                if (t == 60) {
+                    for (double height : new double[]{.15, .4, .7, 1, 1.3, 1.6}) {
+                        var arrow = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
+                        arrow.getRandom().setSeed(1337L);
+                        arrow.setPos(fight.player().getEyePosition());
+                        arrow.setDeltaMovement(actor.position().add(0, height, 0).subtract(arrow.position()).normalize().scale(3));
+                        scene.level.addFreshEntity(arrow); scene.entities.add(arrow); arrows.add(arrow);
+                        for (int i = 0; i < 10; i++) scene.level.tickNonPassenger(arrow);
+                        helper.assertTrue(arrow.saveWithoutId(new CompoundTag()).getBoolean("inGround"), "Fixture arrow must lodge at height " + height);
+                    }
+                }
+            }
+            scene.entities.addAll(scene.level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, actor.getBoundingBox().inflate(15)));
+            helper.assertTrue(actor.getHealth() == actor.getMaxHealth(), "Stopped arrows must not damage the advancing builder: "
+                    + actor.decisionJournal().entries().stream().filter(e -> e.event().equals("DAMAGE")).toList());
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletBudgetIsSeparatePersistentAndBounded(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 153, scene -> {
+            var fight = prepare(scene, 2); var actor = fight.actor();
+            CompoundTag seeded = actor.saveWithoutId(new CompoundTag());
+            var ordinary = new net.minecraft.nbt.ListTag();
+            for (int i = 0; i < 12; i++) {
+                var p = scene.origin.offset(i, 0, 12);
+                scene.block(i, 0, 12, Blocks.PACKED_ICE.defaultBlockState());
+                ordinary.add(net.minecraft.nbt.LongTag.valueOf(p.asLong()));
+            }
+            seeded.put("TacticalIce", ordinary); actor.readAdditionalSaveData(seeded);
+            for (int t = 0; t < 395; t++) tick(scene, fight, t);
+            var saved = actor.saveWithoutId(new CompoundTag());
+            helper.assertTrue(saved.getList("MantletIce", Tag.TAG_LONG).size() == 20, "A full ordinary pool cannot consume the mantlet allowance");
+            helper.assertTrue(saved.getList("TacticalIce", Tag.TAG_LONG).equals(ordinary), "Mantlet never spends or evicts ordinary cover");
+            for (int i = 0; i < 12; i++) helper.assertTrue(scene.level.getBlockState(scene.origin.offset(i, 0, 12)).is(Blocks.PACKED_ICE), "Ordinary cover stays intact");
+            var reloaded = scene.architect(2, 10); reloaded.readAdditionalSaveData(saved);
+            helper.assertTrue(reloaded.saveWithoutId(new CompoundTag()).getList("MantletIce", Tag.TAG_LONG).size() == 20, "Reload preserves spent allowance and cleanup ownership");
+            reloaded.hurt(scene.level.damageSources().genericKill(), Float.MAX_VALUE);
+            for (int t = 0; t < 31; t++) scene.level.tickNonPassenger(reloaded);
+            for (var value : saved.getList("MantletIce", Tag.TAG_LONG))
+                helper.assertTrue(!scene.level.getBlockState(net.minecraft.core.BlockPos.of(((net.minecraft.nbt.LongTag) value).getAsLong())).is(Blocks.PACKED_ICE), "Death cleans up retained mantlet blocks");
+            var legacy = scene.architect(2, 11); var legacyTag = seeded.copy(); legacyTag.remove("MantletIce");
+            legacy.readAdditionalSaveData(legacyTag);
+            helper.assertTrue(legacy.saveWithoutId(new CompoundTag()).getList("MantletIce", Tag.TAG_LONG).isEmpty(), "Legacy entities start without mantlet allowance spent");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletRetirementPreservesFreshArrowCounterplay(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 154, scene -> {
+            var fight = prepare(scene, 2); var actor = fight.actor();
+            for (int t = 0; t < 60; t++) tick(scene, fight, t);
+            var cover = MaeveDirector.positionDirective(actor).cover();
+            var lodged = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
+            lodged.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.CREATIVE_ONLY;
+            lodged.setPos(fight.player().getEyePosition());
+            lodged.setDeltaMovement(actor.position().add(0, 1.25, 0).subtract(lodged.position()).normalize().scale(2));
+            scene.level.addFreshEntity(lodged); scene.entities.add(lodged);
+            for (int t = 0; t < 15; t++) scene.level.tickNonPassenger(lodged);
+            helper.assertTrue(lodged.saveWithoutId(new CompoundTag()).getBoolean("inGround"), "Control arrow must be lodged");
+            // A projectile crossing the same query box must not be treated as embedded.
+            var flying = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
+            flying.setPos(Vec3.atCenterOf(cover.above()));
+            scene.level.addFreshEntity(flying); scene.entities.add(flying);
+            for (int t = 60; t < 150; t++) {
+                tick(scene, fight, t);
+                if (!lodged.isRemoved()) scene.level.tickNonPassenger(lodged);
+            }
+            helper.assertTrue(lodged.isRemoved() && !flying.isRemoved(), "Retirement processes only the stopped arrow");
+            var drops = scene.level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, actor.getBoundingBox().inflate(15));
+            scene.entities.addAll(drops);
+            helper.assertTrue(drops.isEmpty(), "An Infinity/creative-only arrow must not become a survival pickup");
+            flying.discard();
+            helper.assertTrue(MaeveDirector.positionDirective(actor) != null, "Retirement preserves the original commitment");
+            var flank = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
+            flank.setPos(actor.position().add(0, 1.2, -3));
+            flank.setDeltaMovement(0, 0, 1);
+            scene.level.addFreshEntity(flank); scene.entities.add(flank);
+            for (int t = 0; t < 5 && !flank.isRemoved(); t++) scene.level.tickNonPassenger(flank);
+            helper.assertTrue(actor.getHealth() < actor.getMaxHealth() && MaeveDirector.positionDirective(actor) == null,
+                    "A fresh arrow through the flank still damages and ends the spent mantlet");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void mantletArrowQueryOverflowLeavesOldScreenIntact(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 155, scene -> {
+            var fight = prepare(scene, 2); var actor = fight.actor();
+            for (int t = 0; t < 60; t++) tick(scene, fight, t);
+            var cover = MaeveDirector.positionDirective(actor).cover();
+            var arrows = new java.util.ArrayList<Arrow>();
+            for (int i = 0; i < 33; i++) {
+                var arrow = new Arrow(scene.level, fight.player(), new ItemStack(Items.ARROW), null);
+                arrow.setPos(Vec3.atCenterOf(cover)); scene.level.addFreshEntity(arrow); scene.entities.add(arrow); arrows.add(arrow);
+            }
+            for (int t = 60; t < 180 && MaeveDirector.positionDirective(actor) != null; t++) tick(scene, fight, t);
+            helper.assertTrue(actor.decisionJournal().entries().stream().anyMatch(e -> e.event().equals("MANTLET_RELEASED") && e.detail().contains("ARROW_LIMIT")),
+                    "Overfull query stops safely at the configured bound: " + actor.decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
+            helper.assertTrue(scene.level.getBlockState(cover).is(Blocks.PACKED_ICE) && arrows.stream().noneMatch(Arrow::isRemoved),
+                    "Overflow must not dismantle the old screen or partially process arrows");
         });
     }
 
@@ -78,9 +198,9 @@ public final class MaeveMantletGameTest {
         MaeveObservationGameTest.withScene(helper, 146, scene -> {
             for (int depth = 1; depth <= 8; depth++) {
                 var fight = prepare(scene, depth); Vec3 start = fight.actor().position();
-                for (int t = 0; t < 300; t++) tick(scene, fight, t);
+                for (int t = 0; t < 395; t++) tick(scene, fight, t);
                 long screens = fight.actor().decisionJournal().entries().stream().filter(e -> e.event().equals("MANTLET_SCREEN")).count();
-                helper.assertTrue(screens == 3 && fight.actor().getX() - start.x >= 3.7, "Snow depth " + depth + " must allow actual screened advance; screens=" + screens + " actor=" + fight.actor().position() + " events=" + fight.actor().decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
+                helper.assertTrue(screens == 5 && fight.actor().getX() - start.x >= 7.7, "Snow depth " + depth + " must allow actual screened advance; screens=" + screens + " actor=" + fight.actor().position() + " events=" + fight.actor().decisionJournal().entries().stream().filter(e -> e.event().startsWith("MANTLET")).toList());
                 fight.actor().discard(); fight.player().discard();
             }
         });

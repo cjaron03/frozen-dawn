@@ -6,11 +6,11 @@ Implementation of [§9.13c](https://www.notion.so/39d7cfaa890181c1bad4f6babad808
 
 Only ordinary Architects can select this variant. The same witnessed projectile-damage belief supports both pillars and mantlet; the mantlet requires **0.90 frozen historical confidence**. Confidence from the current encounter cannot upgrade it. Below 0.90, the existing 0.75 pillar gate applies.
 
-The local executor proposes a safe fixed corridor toward the historical firing position, at least ten horizontal blocks away. It preflights three screens and two short forward steps in loaded space. A screen is two columns of packed ice, each two blocks high. The direction stays fixed even if the player flanks or changes weapons.
+The local executor proposes a safe fixed corridor toward the historical firing position, at least ten horizontal blocks away. It preflights five screens and four short forward steps in loaded space. A screen is two columns of packed ice, each two blocks high. The direction stays fixed even if the player flanks or changes weapons.
 
 Each block takes at least 10 ticks; screen starts are at least 80 ticks apart. A new screen sits two blocks beyond the previous one. After completing it, the Architect visibly breaks down only its tracked previous screen, restores displaced snow there, and advances slowly at up to 0.09 blocks per tick. Both flanks remain open.
 
-One bet can place at most twelve blocks. Those placements consume the existing ordinary tactical pool of twelve; retiring blocks does not refund capacity. A full unused pool is required at admission. Breaking any retained screen cell stops the advance without repair. Effective damage ends this commitment under the existing local-defense rule. Otherwise its twenty-second timer still runs, including construction, movement and the final hold.
+One bet can place at most twenty blocks in a separate mantlet pool; retiring blocks does not refund capacity. A full unused mantlet pool is required at admission. Ordinary pillars and retreat keep their existing twelve-block tactical pool. Total retained ordinary tactical plus mantlet positions are therefore bounded at thirty-two per ordinary executor. Breaking any retained screen cell stops the advance without repair. Effective damage ends this commitment under the existing local-defense rule. Otherwise its twenty-second timer still runs, including construction, movement and the final hold.
 
 Geometry failure before selection leaves pillars eligible. Failure after selection spends the bet and returns to local behavior. No re-selection into a different commitment is allowed in that encounter. Existing ordinary utility actions remain possible after the bet ends.
 
@@ -24,15 +24,15 @@ The existing two-failure deferral applies per strategy variant. Belief contradic
 
 Maeve SavedData version 5 accepts previous versions. Old ranged strategy contexts remain pillar contexts; a missing mantlet context starts neutral. Future unsupported schema versions fail explicitly. The eight-context / eight-result bounds still apply.
 
-The local screen plan is transient. Reload cannot resume it or refund the spent commitment. Its ice uses the existing entity-owned tactical list and construction cleanup. Erasure removes variant memory and stops local execution. The permanent violation ledger is separate.
+The entity saves up to twenty charged `MantletIce` positions for cleanup and allowance accounting. Older entities load an empty mantlet list; older trial mantlet blocks retain their original `TacticalIce` cleanup ownership. The local screen plan is transient. Reload cannot resume it or refund the spent commitment. Its ice uses a separate entity-owned list and the existing construction cleanup path. Erasure removes variant memory and stops local execution. The permanent violation ledger is separate.
 
 Beliefs and strategy results remain per player and dimension. An active mantlet stops on subject loss/change, unavailable executor, unsafe environment or attention eviction. One player encounter cannot buy multiple bets through additional observers. Master Architects and excluded roles keep the existing exclusion boundary. Live multiplayer acceptance is not claimed.
 
 ## Performance bounds
 
-No chunk generation, global search, inventory scan, projectile prediction or asynchronous work. The proposal considers exactly three four-cell screens, three standing points, and short straight walks of at most three blocks. Each walk samples four times per block. Collision surface lookup checks four vertical cells. Placement and live collision validation recheck loaded state and occupancy. Entity queries stop at the first blocking occupant. Plan attempts normally use the existing once-per-second cadence; high-confidence spawn landings retry the grounded gate on the next tick.
+No chunk generation, global search, inventory scan, projectile prediction or asynchronous work. The proposal considers exactly five four-cell screens, five standing points, and short straight walks of at most three blocks. Each walk samples four times per block. Collision surface lookup checks four vertical cells. Placement and live collision validation recheck loaded state and occupancy. Entity queries stop at the first blocking occupant. Plan attempts normally use the existing once-per-second cadence; high-confidence spawn landings retry the grounded gate on the next tick.
 
-Retained execution data is one three-screen plan, up to eight active screen cells and at most twelve displaced states. Tactical ice and strategy memory use existing caps. Existing sword, pillar, navigation and retreat controllers retain their existing tuning.
+Retained execution data is one five-screen plan, up to eight active screen cells and at most twenty displaced states. Strategy memory retains its existing caps. At each retirement, a bounded local query inspects at most thirty-three nearby arrows; more than thirty-two ends the advance with the old screen intact. Only arrows lodged in retiring ice are converted to pickup items (or discarded when pickup is disallowed); flying arrows and tridents are untouched. No arrow trajectory informs tactic selection. Existing sword, pillar, navigation and retreat controllers retain their existing tuning.
 
 ## Live handoff
 
@@ -80,3 +80,9 @@ Automated checks cover frozen threshold boundaries, variant outcomes, legacy sta
 
 Live acceptance must still establish readable advancing cover, useful frontal protection and usable counterplay. Broader terrain, multiplayer and performance testing remain distinct from a passing solo demonstration.
 
+
+## First live round and transition revision
+
+The first live round on `4d3c72a` built two screens/eight blocks. Seven ticks after retiring the first screen, the executor took one point of raw arrow damage and released the bet as `LOCAL_DEFENSE`; health became 39.18. The unobserved hit left strategy performance UNKNOWN. Budget exhaustion did not cause this release. Evidence and the closed world are preserved under `build/macs-mantlet-evidence/pre-transition-fix-2026-09-24`.
+
+A freed embedded arrow is the working explanation, not a confirmed projectile identity. The trace did not retain IDs/trajectories, and initial retained-arrow and snow/impact-height reproductions did not reproduce the hit. The revised retirement explicitly handles lodged arrows before removing their support. Tests retain real arrows through the entire transition, verify recovery of the item and continued vulnerability to fresh shots, and check five screens, snow, independent budgets, persistence and cleanup. The twenty-block mantlet allowance was requested after this round; the original three-screen evidence above is historical. Live acceptance remains pending.

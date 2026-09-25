@@ -173,6 +173,7 @@ public class ArchitectEntity extends Monster {
     // --- Ice Budgets (separate to prevent conflicts) ---
     private final List<BlockPos> scaffoldIce = new ArrayList<>();
     private final List<BlockPos> tacticalIce = new ArrayList<>();
+    private final List<BlockPos> mantletIce = new ArrayList<>();
     private static final int MAX_SCAFFOLD_ICE = 64;
     private static final int MAX_TACTICAL_ICE = 12;
     private static final int MASTER_MAX_TACTICAL_ICE = 6;
@@ -491,6 +492,8 @@ public class ArchitectEntity extends Monster {
     int getTacticalIceCount() {
         return tacticalIce.size();
     }
+
+    int getMantletIceCount() { return mantletIce.size(); }
 
     int getMaxTacticalIce() {
         return isMasterArchitectVisual() ? MASTER_MAX_TACTICAL_ICE : MAX_TACTICAL_ICE;
@@ -1875,9 +1878,18 @@ public class ArchitectEntity extends Monster {
         return placed;
     }
 
+    /** Mantlets have their own finite allowance; ordinary pillars and retreat keep theirs. */
+    boolean placeMantletIce(BlockPos pos) {
+        if (mantletIce.size() >= ArchitectMantletGeometry.PLACEMENTS
+                || !ArchitectIcePlacement.placeTacticalIce(level(), pos, mantletIce, ArchitectMantletGeometry.PLACEMENTS)) return false;
+        approachState.dstar.onLocalBlockChanged(pos, level());
+        emitIcePlacementFx(pos);
+        return true;
+    }
+
     /** Retire only this executor's tracked mantlet ice; consumed budget is not refunded. */
     void retireMantletIce(BlockPos pos, net.minecraft.world.level.block.state.BlockState previous) {
-        if (!tacticalIce.contains(pos) || !level().hasChunkAt(pos) || !level().getBlockState(pos).is(Blocks.PACKED_ICE)) return;
+        if (!mantletIce.contains(pos) || !level().hasChunkAt(pos) || !level().getBlockState(pos).is(Blocks.PACKED_ICE)) return;
         level().levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(level().getBlockState(pos)));
         level().setBlock(pos, previous != null && previous.is(Blocks.SNOW) ? previous : Blocks.AIR.defaultBlockState(), 3);
         approachState.dstar.onLocalBlockChanged(pos, level());
@@ -1899,6 +1911,7 @@ public class ArchitectEntity extends Monster {
 
     private void cleanupAllIce() {
         ArchitectIcePlacement.cleanupAllIce(level(), scaffoldIce, tacticalIce);
+        ArchitectIcePlacement.cleanupAllIce(level(), scaffoldIce, mantletIce);
     }
 
     // ========================
@@ -2712,6 +2725,7 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.writeObservationMemory(tag, observationMemory);
         ArchitectPersistence.writeCombatState(tag, combatState);
         ArchitectPersistence.writeApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        ArchitectPersistence.putBlockPosList(tag, "MantletIce", mantletIce);
         if (hearthAssessorId != null && hearthAssessorCenter != null) {
             tag.putUUID("HearthAssessorId", hearthAssessorId);
             tag.putLong("HearthAssessorCenter", hearthAssessorCenter.asLong());
@@ -2753,6 +2767,10 @@ public class ArchitectEntity extends Monster {
         ArchitectPersistence.readObservationMemory(tag, observationMemory);
         ArchitectPersistence.readCombatState(tag, combatState);
         ArchitectPersistence.readApproachState(tag, approachState, scaffoldIce, tacticalIce);
+        mantletIce.clear();
+        var savedMantlet = tag.getList("MantletIce", net.minecraft.nbt.Tag.TAG_LONG);
+        for (int i = 0; i < Math.min(savedMantlet.size(), ArchitectMantletGeometry.PLACEMENTS); i++)
+            mantletIce.add(BlockPos.of(((net.minecraft.nbt.LongTag) savedMantlet.get(i)).getAsLong()));
         towerEncounter = coreState.towerEncounter();
         towerEncounterId = coreState.towerEncounterId();
         if (tag.hasUUID("HearthAssessorId") && tag.contains("HearthAssessorCenter")) {
