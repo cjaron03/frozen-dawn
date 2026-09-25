@@ -3,6 +3,7 @@
 import argparse
 import gzip
 import json
+import math
 import shutil
 from pathlib import Path
 
@@ -71,6 +72,122 @@ def build_camp():
               'setblock 2044 101 2132 minecraft:lantern',
               'setblock 2052 101 2132 minecraft:lantern']
     return '\n'.join(lines)
+
+
+def frozen_camp_batches():
+    """A fixed late-phase terrain sample; no phase, belief, kit or utility edits."""
+    commands = []
+    palette = {'minecraft:grass_block': 'frozendawn:frozen_dirt',
+               'minecraft:dirt_path': 'frozendawn:frozen_dirt',
+               'minecraft:spruce_planks': 'frozendawn:frozen_planks',
+               'minecraft:oak_planks': 'frozendawn:frozen_planks',
+               'minecraft:stone_bricks': 'frozendawn:frozen_stone_bricks',
+               'minecraft:cobblestone': 'frozendawn:frozen_cobblestone',
+               'minecraft:spruce_log': 'frozendawn:frozen_log'}
+    for line in build_camp().splitlines():
+        if 'spruce_leaves' in line:
+            continue
+        for before, after in palette.items():
+            line = line.replace(before, after)
+        commands.append(line)
+
+    trees = {(2008, 2010), (2027, 2011), (2045, 2009), (2067, 2013), (2086, 2010),
+             (2008, 2037), (2087, 2035), (2009, 2067), (2086, 2066),
+             (2013, 2088), (2032, 2083), (2052, 2089), (2076, 2085),
+             (2029, 2065), (2067, 2030)}
+    rocks = [(2027, 2034), (2069, 2063), (2030, 2070), (2077, 2028)]
+    surfaces = {}
+    for x in range(2001, 2096):
+        for z in range(2001, 2096):
+            if (2038 <= x <= 2058 and 2038 <= z <= 2058
+                    or 2059 <= x <= 2063 and 2045 <= z <= 2051
+                    or 2014 <= x <= 2022 and 2020 <= z <= 2028
+                    or (x, z) in trees
+                    or any(rx <= x <= rx + 3 and rz <= z <= rz + 1 for rx, rz in rocks)):
+                continue
+            dx, dz = x - 2048, z - 2048
+            wave = math.sin(dx * .16 + math.sin(dz * .11)) + .65 * math.cos(dz * .19 - dx * .06)
+            depth = max(0, min(23, round(7 + 6 * wave + 3 * math.sin((dx + dz) * .33))))
+            # Wind-scoured entrances keep the old openings accessible, with real
+            # fractional snow transitions rather than perfectly level paths.
+            if 2046 <= z <= 2050 and 2021 <= x <= 2076:
+                depth = 1 + (x + z) % 6
+            edge = min(x - 2000, 2096 - x, z - 2000, 2096 - z)
+            ridge = max(0, 4 - edge + int(wave > .4)) if edge <= 4 else 0
+            ice = math.sin(dx * .14 - dz * .07) + math.cos(dz * .12) > 1.2
+            substrate = 'minecraft:blue_ice' if ice and wave < .2 else (
+                'minecraft:packed_ice' if ice else 'frozendawn:frozen_dirt')
+            if ice and wave < -.2:
+                depth = 0
+            elif ice and depth < 8:
+                # Thin vanilla snow cannot survive directly on packed ice.
+                substrate = 'frozendawn:frozen_dirt'
+            commands.append(f'setblock {x} 100 {z} {substrate}')
+            top = 100
+            if ridge:
+                top += ridge
+                commands.append(f'fill {x} 101 {z} {x} {top} {z} frozendawn:frozen_cobblestone')
+            full, layers = divmod(depth, 8)
+            if full:
+                commands.append(f'fill {x} {top+1} {z} {x} {top+full} {z} minecraft:snow_block')
+                top += full
+            if layers:
+                commands.append(f'setblock {x} {top+1} {z} minecraft:snow[layers={layers}]')
+            surfaces[x, z] = (top, layers)
+
+    # Snow on solid roof and rock surfaces; bottom slabs are not snow supports.
+    for x in range(2037, 2060):
+        for z in range(2037, 2060):
+            layers = 1 + ((x * 3 + z) % 7)
+            commands.append(f'setblock {x} 106 {z} minecraft:snow[layers={layers}]')
+    for x, z in rocks:
+        commands.append(f'fill {x} 103 {z} {x+3} 103 {z+1} minecraft:snow[layers=4]')
+    for x, z in sorted(trees):
+        # Broken crowns and sparse frozen limbs replace leafy decorative trees.
+        height = 5 + (x + z) % 3
+        commands += [f'fill {x} {101+height} {z} {x} 108 {z} minecraft:air',
+                     f'setblock {x-1} {99+height} {z} frozendawn:frozen_log[axis=x]',
+                     f'setblock {x+1} {98+height} {z} frozendawn:frozen_log[axis=x]']
+
+    clusters = [(2010, 2018), (2026, 2021), (2040, 2015), (2058, 2018), (2078, 2019),
+                (2010, 2055), (2028, 2044), (2030, 2055), (2068, 2052), (2083, 2056),
+                (2023, 2077), (2041, 2071), (2060, 2078), (2080, 2076)]
+    for index, (cx, cz) in enumerate(clusters):
+        for ox, oz in [(0, 0), (2, 1), (-1, 2)]:
+            x, z = cx + ox, cz + oz
+            if (x, z) not in surfaces:
+                continue
+            top, layers = surfaces[x, z]
+            age = 2 + (index + ox) % 2
+            buried = 'true' if layers >= 3 else 'false'
+            commands.append(f'setblock {x} {top+1} {z} frozendawn:acheronite_crystal[age={age},buried={buried},dark=false]')
+
+    # Bound both modified volume and command count per construction step. Large
+    # legacy fills are split before batching; no entire arena rebuild in one tick.
+    def split_fill(line):
+        fields = line.split()
+        if fields[0] != 'fill':
+            return [line]
+        lo = [int(v) for v in fields[1:4]]; hi = [int(v) for v in fields[4:7]]
+        lo, hi = [min(a, b) for a, b in zip(lo, hi)], [max(a, b) for a, b in zip(lo, hi)]
+        if math.prod(b - a + 1 for a, b in zip(lo, hi)) <= 4096:
+            return ['fill ' + ' '.join(map(str, lo + hi)) + ' ' + ' '.join(fields[7:])]
+        axis = max(range(3), key=lambda i: hi[i] - lo[i]); mid = (lo[axis] + hi[axis]) // 2
+        left, right = hi.copy(), lo.copy(); left[axis] = mid; right[axis] = mid + 1
+        suffix = ' ' + ' '.join(fields[7:])
+        return split_fill('fill ' + ' '.join(map(str, lo + left)) + suffix) + split_fill('fill ' + ' '.join(map(str, right + hi)) + suffix)
+
+    batches, batch, volume = [], [], 0
+    for original in commands:
+        for line in split_fill(original):
+            fields = line.split()
+            cost = math.prod(1 + abs(int(fields[i]) - int(fields[i+3])) for i in range(1, 4)) if fields[0] == 'fill' else 1
+            if batch and (volume + cost > 4096 or len(batch) >= 256):
+                batches.append(batch); batch, volume = [], 0
+            batch.append(line); volume += cost
+    if batch:
+        batches.append(batch)
+    return batches
 
 
 SCRIPTS = {
@@ -225,6 +342,38 @@ camp_chunks += [(x * 16, z * 16) for x in range(127, 129) for z in range(132, 13
 SCRIPTS['build_if_ready'] = 'scoreboard players set #timer mt 0\nexecute ' + ' '.join(
     f'if loaded {x} 100 {z}' for x, z in camp_chunks) + ' run function macs_trial:build_complete'
 
+FROZEN_BATCHES = frozen_camp_batches()
+SCRIPTS['frozen'] = '''tag @s add macs_trial
+execute if score #initialized mt matches 1 if score #stage mt matches 0 run function macs_trial:frozen_begin
+execute if score #initialized mt matches 1 if score #stage mt matches 2 run function macs_trial:frozen_begin
+execute unless score #initialized mt matches 1 run tellraw @s {"text":"Run /function macs_trial:setup first.","color":"yellow"}
+execute if score #stage mt matches 1 run tellraw @s {"text":"Finish or abort the encounter before rebuilding terrain.","color":"yellow"}'''
+SCRIPTS['frozen_begin'] = '''scoreboard players operation #before_stage mt = #stage mt
+scoreboard players operation #before_timer mt = #timer mt
+scoreboard players set #stage mt 4
+scoreboard players set #terrain mt 0
+scoreboard players set #timer mt 0
+tp @a[tag=macs_trial] 2048.5 101 2132.5 180 0
+forceload add 1992 1992 2104 2104
+forceload add 2040 2120 2056 2140
+''' + tell('Preparing frozen terrain. Wait on the platform; beliefs, round history and your kit are retained.')
+SCRIPTS['frozen_build_if_ready'] = 'scoreboard players set #timer mt 0\nexecute ' + ' '.join(
+    f'if loaded {x} 100 {z}' for x, z in camp_chunks) + ' run function macs_trial:frozen_dispatch'
+SCRIPTS['frozen_dispatch'] = 'scoreboard players operation #build_step mt = #terrain mt\n' + '\n'.join(
+    f'execute if score #build_step mt matches {i} run function macs_trial:frozen/step_{i:03}'
+    for i in range(len(FROZEN_BATCHES)))
+for i, batch in enumerate(FROZEN_BATCHES):
+    SCRIPTS[f'frozen/step_{i:03}'] = '\n'.join(batch) + '\nscoreboard players add #terrain mt 1'
+SCRIPTS[f'frozen/step_{len(FROZEN_BATCHES)-1:03}'] += '\nfunction macs_trial:frozen_finish'
+SCRIPTS['frozen_finish'] = '''scoreboard players set #frozen_revision mt 1
+scoreboard players operation #stage mt = #before_stage mt
+scoreboard players operation #timer mt = #before_timer mt
+weather clear
+''' + tell('Frozen camp ready. Uneven snow, ice and crystals now replace the old terrain. Combat settings and learned history are retained.', '/function macs_trial:enter', 'green')
+SCRIPTS['tick'] += '''\nexecute if score #stage mt matches 4 run scoreboard players add #timer mt 1
+execute if score #stage mt matches 4 if score #timer mt matches 2.. run function macs_trial:frozen_build_if_ready'''
+SCRIPTS['status'] += '\n' + tell('Stage 4: frozen terrain is rebuilding. /function macs_trial:frozen rebuilds terrain between rounds without erasing beliefs.')
+
 
 def write_pack(pack, preset, game_test=False):
     functions = pack / 'data/macs_trial/function'
@@ -232,7 +381,9 @@ def write_pack(pack, preset, game_test=False):
     for name, content in SCRIPTS.items():
         if name == 'preset':
             content = f'fd world preset {preset}'
-        (functions / f'{name}.mcfunction').write_text(content + '\n')
+        destination = functions / f'{name}.mcfunction'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(content + '\n')
     if not game_test:
         (pack / 'pack.mcmeta').write_text(json.dumps({'pack': {'pack_format': 48, 'description': 'MACS integrated camp trial'}}))
         tags = pack / 'data/minecraft/tags/function'; tags.mkdir(parents=True, exist_ok=True)
