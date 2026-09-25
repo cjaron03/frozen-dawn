@@ -44,6 +44,8 @@ public final class MaeveCommitmentGameTest {
             for (int i = 40; i < 160; i++) {
                 if (i == 100) {
                     helper.assertTrue(moved > 4, "Ordinary pursuit must physically leave the built pillar before the player closes");
+                    helper.assertTrue(actor.blockPosition().distSqr(initial.position()) > 9,
+                            "The combat trade must occur beyond the former three-block scoring radius");
                     // The player flanks into melee without hitting the Architect.
                     // It must attack now rather than waiting for damage or a hold timeout.
                     player.setPos(actor.position().add(-1.5, 0, 0));
@@ -64,6 +66,25 @@ public final class MaeveCommitmentGameTest {
                     "Closing to melee cannot buy an immediate replacement shield commitment");
             helper.assertTrue(MaeveDirector.commitmentSnapshot(scene.server, player.getUUID()).outcome().equals("COVER_COMBAT"),
                     "Diagnostics describe active cover combat rather than a held position");
+            helper.assertTrue(actor.blockPosition().distSqr(initial.position()) > 9,
+                    "The incoming hit must also occur away from the original pillar position");
+            float dealt = player.getMaxHealth() - player.getHealth();
+            player.setPos(actor.position().add(-1.5, 0, 0));
+            float healthBefore = actor.getHealth();
+            scene.clock(now + 160);
+            helper.assertTrue(scene.hit(actor, player, false, 3), "The player lands a real visible counterattack after pursuit");
+            float received = healthBefore - actor.getHealth();
+            helper.assertTrue(received > 0 && MaeveDirector.positionDirective(actor) == null,
+                    "Final incoming damage ends the original bet after recording the trade");
+            var policy = MaeveSavedData.get(scene.server).store().commitment(player.getUUID());
+            var context = policy.performance().save().getList("contexts", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            var result = context.getList("results", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+            helper.assertTrue(Math.abs(result.getFloat("dealt") - dealt) < .0001f
+                            && Math.abs(result.getFloat("received") - received) < .0001f,
+                    "Pillar results must retain the whole witnessed trade after pursuit: expected dealt=" + dealt
+                            + " received=" + received + " actual=" + result);
+            helper.assertTrue(result.getString("outcome").equals(dealt > received ? "SUCCESS" : "FAILURE"),
+                    "The actual mobile combat trade determines the pillar outcome rather than UNKNOWN");
         });
     }
 

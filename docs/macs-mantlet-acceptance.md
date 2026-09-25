@@ -1,6 +1,6 @@
 # MACS advancing cover — mantlet acceptance
 
-Implementation of [§9.13c](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), with the [implementation plan](https://www.notion.so/3e67cfaa8901816f8534e1f67fe188ea). Branch `feat/macs-mantlet`, based on integration `ee2a18b` after PR #94. Live acceptance pending; this document does not declare the feature ready to merge.
+Implementation of [§9.13c](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), with the [implementation plan](https://www.notion.so/3e67cfaa8901816f8534e1f67fe188ea). Branch `feat/macs-mantlet`, based on integration `ee2a18b` after PR #94. The applicable solo live checks are complete; see the final acceptance record below. [PR #95](https://github.com/cjaron03/frozen-dawn/pull/95) publishes required-check results for the final commit. Live multiplayer acceptance remains deferred by the owner.
 
 ## Behavior and initial tuning
 
@@ -19,6 +19,8 @@ Geometry failure before selection leaves pillars eligible. Failure after selecti
 Choose the eligible ranged variant with the better frozen strategy effectiveness; an untried tie prefers mantlet. Pillars retain their original strategy key, while mantlet has a separate `PLAYER_PREFERS_RANGED:MANTLET` result context. This is a strategy identifier, not a new player belief or counter family. Variant selection happens before comparing recovery cost with other counter families: cheaper abandonment still takes precedence. Initial recovery costs are pillar 2, mantlet 3, and sword guard 1.5.
 
 The existing two-failure deferral applies per strategy variant. Belief contradiction cooldown applies to the shared ranged belief and blocks both variants. Repeated arrow collisions with ice are not fabricated into damage-prevention scores: existing witnessed damage trades determine strategy results; silence or interruption remains unknown.
+
+After pillar placement, witnessed combat continues to contribute throughout the original active commitment window even when pursuit moves the executor more than three blocks from its initial position. The same executor, subject, dimension and observation rules still apply. Deliberate stationary watches retain their three-block scoring radius. The final incoming hit is recorded before local defense ends the bet.
 
 ## Persistence, erasure and multiplayer
 
@@ -78,7 +80,7 @@ The completed guard world was copied before installation to `build/macs-mantlet-
 
 Automated checks cover frozen threshold boundaries, variant outcomes, legacy state, reload, budget, cadence, actual arrow collision, physical movement on snow, interruption, erasure and the live datapack's actual reward trigger. The required manifest includes the new integration tests. The development run passed 614 unit tests, 169 native GameTests (all 164 named required cases), and all 500 unchanged seeded stress cases; the stress server also repeated the 169 native tests. The native mantlet case built exactly 12 blocks in three screens, advanced about 3.87 blocks, and embedded an actual arrow in packed ice without taking damage. All eight snow depths passed. A final review moved a pre-placement block read behind the loaded-chunk check; the committed candidate receives a fresh full gate run, with exact source/artifact hashes published on its PR.
 
-Live acceptance must still establish readable advancing cover, useful frontal protection and usable counterplay. Broader terrain, multiplayer and performance testing remain distinct from a passing solo demonstration.
+The development checks and early live revisions below are historical. The final acceptance record establishes readable advancing cover, useful frontal protection and usable counterplay. Broader terrain, multiplayer and performance testing remain distinct from a passing solo demonstration.
 
 
 ## First live round and transition revision
@@ -108,4 +110,17 @@ Native regressions require physical pursuit and a real melee hit without first d
 
 The closed replay and complete world were preserved under `build/macs-mantlet-evidence/pre-breach-combat-fix-2026-09-25/`. Its observed melee contradiction lowered ranged confidence to 0.65 and is preserved. **MACS Mantlet Breach - Normal** is a separate complete copy of the earlier `pre-visible-front-fix-2026-09-24` external world backup, with its real 1.0 historical bow confidence and saved strategy history. Only its display name and current datapack differ. Its Maeve and scoreboard data match that backup byte for byte; the preparation record is `build/macs-mantlet-evidence/breach-replay-preparation.json`. This is an external saved-state restore, not an in-world belief reset or confidence injection.
 
-For this copy, run `/function macs_mantlet:again`, then `/tick sprint 620t`. After Ready and Sprint completed, run `/function macs_mantlet:start`. Let the first wall appear, approach and start mining one of its blocks with the pickaxe **without hitting the Architect**. It should abandon construction and pursue/attack; it should not wait for a hit. Then use `/function macs_mantlet:finish` and `/fd maeve dump`. The live check, flank/weapon-switch acceptance and the active-pillar comparison remain pending; multiplayer is not claimed.
+For this copy, run `/function macs_mantlet:again`, then `/tick sprint 620t`. After Ready and Sprint completed, run `/function macs_mantlet:start`. Let the first wall appear, approach and start mining one of its blocks with the pickaxe **without hitting the Architect**. It should abandon construction and pursue/attack; it should not wait for a hit. Then use `/function macs_mantlet:finish` and `/fd maeve dump`. The subsequent acceptance runs below completed the remaining solo checks; multiplayer is not claimed.
+
+## Final solo acceptance and scoring review (2026-09-25)
+
+| Check | Evidence | Result |
+| --- | --- | --- |
+| Advancing front and frontal protection | `6b1c6f6`, run `de1a0128`: five screens/twenty placements, full 400-tick window, three lodged arrows recovered, no damage during execution | Owner accepted the visible advance and protection |
+| Mining handoff before the builder is hit | `d99f7dd`, run `b5c0cdf9`: visible mining, release and APPROACH at tick 121; melee hit at 155; first received damage at 160 | Immediate pursuit and melee, no later screen or replacement bet |
+| Intact-wall flank and damage interruption | `d99f7dd`, run `a8da8ff3`: fixed front through the flank; exposed-side arrow at 171; melee at 285; all eight placements preceded the hit | Owner and trace agree; the wall did not rotate and construction ended on damage |
+| Ordinary pillars resume combat immediately | Explicit owner confirmation from prior live play | Accepted as an owner report, not attributed to the mantlet trace |
+
+The mining and flank evidence bundles are `build/macs-mantlet-evidence/live-d99f7dd-b5c0cdf9/` and `live-d99f7dd-a8da8ff3/`. Their complete actor traces retained 266 and 66 entries respectively with no drops. Manual replay finish is not counted as a player victory. The owner's previously deferred multiplayer check remains outside this solo acceptance claim.
+
+Final review found that active pillar pursuit still inherited the old positional scoring restriction: damage beyond three blocks of the original point was omitted. The narrow correction exempts the ranged-cover family alongside the already-mobile sword guard. The required `maeveRangedPillarImmediatelyPursuesAndAttacksWithinSameBet` native test now requires real pursuit beyond that radius, actual outgoing melee damage, a visible player counterattack there, and an exact persisted damage trade and outcome. Against the old code, it failed with 9 damage dealt and 2.58 received but a saved 0/0 UNKNOWN result. The failing XML, log and source fingerprint are preserved in `build/macs-mantlet-evidence/pillar-scoring-before/`. The same manifest entry, fixture and stress seeds are retained. This scoring correction receives fresh automated gates; it does not relabel the earlier live builds as tests of the final commit.
