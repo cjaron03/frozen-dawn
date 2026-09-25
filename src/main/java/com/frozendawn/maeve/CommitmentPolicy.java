@@ -92,7 +92,7 @@ final class CommitmentPolicy {
     boolean choose(UUID player, UUID observer, List<MaeveDirector.PositionCandidate> candidates, long now) {
         if (issued) return false;
         var reasons = new ArrayList<String>();
-        var options = candidates.stream().limit(6)
+        var options = RangedCoverPolicy.options(this, candidates, now, reasons).stream()
                 .filter(c -> Double.isFinite(c.recoveryCost()) && c.recoveryCost() >= 0)
                 .sorted(Comparator.comparingDouble(MaeveDirector.PositionCandidate::recoveryCost)
                         .thenComparing(MaeveDirector.PositionCandidate::pattern)).toList();
@@ -100,11 +100,11 @@ final class CommitmentPolicy {
         for (var option : options) {
             String reason = ineligible(option.pattern(), now);
             var hint = hints(now).stream().filter(h -> h.pattern().equals(option.pattern())).findFirst();
-            if (reason.equals("ELIGIBLE") && hint.isPresent() && performance.deferred(option.pattern(), hint.get().evidence().dimension()))
+            if (reason.equals("ELIGIBLE") && hint.isPresent() && performance.deferred(RangedCoverPolicy.key(option), hint.get().evidence().dimension()))
                 reason = "RECENT_COUNTER_FAILURES";
             if (reason.equals("ELIGIBLE") && winner == null) winner = option;
             else if (reason.equals("ELIGIBLE")) reason = "MORE_COSTLY_TO_ABANDON";
-            reasons.add(option.pattern() + " recoveryCost=" + option.recoveryCost() + " " + reason);
+            reasons.add(RangedCoverPolicy.key(option) + " recoveryCost=" + option.recoveryCost() + " " + reason);
         }
         alternatives = List.copyOf(reasons);
         if (winner == null) { outcome = "NO_ELIGIBLE_SAFE_POSITION"; return false; }
@@ -113,7 +113,7 @@ final class CommitmentPolicy {
         if (hint.isEmpty()) return false;
         selected = new MaeveDirector.PositionDirective(player, observer, encounter, winner.pattern(),
                 hint.get().confidence(), hint.get().evidence(), winner.position(), winner.cover(),
-                winner.recoveryCost(), now, -1, -1, -1, winner.spatial(), null);
+                winner.recoveryCost(), now, -1, -1, -1, winner.spatial(), null, winner.advancingCover());
         performance.start(selected);
         issued = true;
         active = true;
@@ -145,7 +145,7 @@ final class CommitmentPolicy {
     private MaeveDirector.PositionDirective copy(long arrived, long until, long contradiction) {
         return new MaeveDirector.PositionDirective(selected.player(), selected.observer(), selected.encounter(),
                 selected.pattern(), selected.confidence(), selected.evidence(), selected.position(), selected.cover(),
-                selected.recoveryCost(), selected.startedAt(), arrived, until, contradiction, selected.spatial(), selected.obstruction());
+                selected.recoveryCost(), selected.startedAt(), arrived, until, contradiction, selected.spatial(), selected.obstruction(), selected.advancingCover());
     }
 
     void discover(BlockPos obstruction, long now) {
@@ -153,7 +153,7 @@ final class CommitmentPolicy {
         blockNext.add(selected.pattern());
         selected = new MaeveDirector.PositionDirective(selected.player(), selected.observer(), selected.encounter(), selected.pattern(),
                 selected.confidence(), selected.evidence(), selected.position(), selected.cover(), selected.recoveryCost(),
-                selected.startedAt(), selected.arrivedAt(), selected.holdUntil(), now, selected.spatial(), obstruction.immutable());
+                selected.startedAt(), selected.arrivedAt(), selected.holdUntil(), now, selected.spatial(), obstruction.immutable(), selected.advancingCover());
         outcome = "ACCESS_BLOCKED_REPLAN";
     }
 

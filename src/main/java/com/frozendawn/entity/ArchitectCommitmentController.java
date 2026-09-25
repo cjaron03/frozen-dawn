@@ -21,6 +21,7 @@ final class ArchitectCommitmentController {
     private final ArchitectBlockBreaker breaker;
     private final ArchitectSpatialCommitment spatial;
     private final ArchitectShieldController shield;
+    private final ArchitectMantletController mantlet;
     ArchitectShieldController shield() { return shield; }
     private boolean wasActive;
     private long nextPlan;
@@ -30,6 +31,7 @@ final class ArchitectCommitmentController {
         this.breaker = breaker;
         spatial = new ArchitectSpatialCommitment(architect);
         shield = new ArchitectShieldController(architect);
+        mantlet = new ArchitectMantletController(architect);
     }
 
     boolean tick(LivingEntity localTarget) {
@@ -40,6 +42,9 @@ final class ArchitectCommitmentController {
         if (directive == null && now >= nextPlan && localTarget instanceof ServerPlayer player) {
             nextPlan = now + 20;
             var hints = MaeveDirector.commitmentHints(architect, player);
+            // A freshly spawned actor settles after its first AI tick. Do not let
+            // ordinary fortification spend the mantlet budget during that landing.
+            if (!architect.onGround() && hints.stream().anyMatch(h -> h.pattern().equals("PLAYER_PREFERS_RANGED") && h.confidence() >= .90)) nextPlan = now + 1;
             if (!hints.isEmpty() && safeToCommit() && architect.onGround()) {
                 var candidates = new ArrayList<>(candidates(hints, player));
                 candidates.addAll(MaeveDirector.spatialCandidates(architect, player, hints));
@@ -64,6 +69,7 @@ final class ArchitectCommitmentController {
             return guarding;
         }
         breaker.clearTarget();
+        if (directive.advancingCover()) return mantlet.tick(directive, localTarget, now);
         // Environmental displacement may settle back to the point. Effective
         // damage has its own final-event release, after evidence is recorded.
         if (!architect.onGround()) {
@@ -139,6 +145,10 @@ final class ArchitectCommitmentController {
             if (away.lengthSqr() < 1) continue;
             away = away.normalize();
             if (hint.pattern().equals("PLAYER_PREFERS_RANGED")) {
+                if (hint.confidence() >= .90) {
+                    var advancing = mantlet.candidate(hint);
+                    if (advancing != null) candidates.add(advancing);
+                }
                 BlockPos position = architect.blockPosition();
                 Vec3 feet = coverStandingPoint(position);
                 BlockPos cover = com.frozendawn.entity.architect.ArchitectCoverGeometry.find(
@@ -246,6 +256,7 @@ final class ArchitectCommitmentController {
     void clear() {
         spatial.clear();
         shield.clear();
+        mantlet.clear();
         wasActive = false;
         architect.setMaeveHolding(false);
         stopMotion();

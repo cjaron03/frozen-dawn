@@ -24,12 +24,13 @@ final class CommitmentDiagnostics {
             lines.add("POSITION STRATEGY: none; low confidence may still bias local utility actions.");
         } else {
             lines.add("DIRECTOR OBJECTIVE: test a historical " + selected.pattern() + " prediction through a bounded, recoverable commitment.");
-            lines.add("SELECTED STRATEGY: " + (selected.pattern().equals(BeliefStore.SWORD) ? "GUARD_SWORD" : selected.pattern().equals(BeliefStore.PURSUIT) ? "WITHDRAW_AND_HOLD" : selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
+            lines.add("SELECTED STRATEGY: " + (selected.advancingCover() ? "ADVANCE_RANGED_MANTLET" : selected.pattern().equals(BeliefStore.SWORD) ? "GUARD_SWORD" : selected.pattern().equals(BeliefStore.PURSUIT) ? "WITHDRAW_AND_HOLD" : selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "HOLD_RANGED_COVER")
                     + " | recoveryCost=" + selected.recoveryCost());
             lines.add("POSITION DIRECTIVE: observer=" + selected.observer() + " subject=" + selected.player()
                     + " position=" + selected.position().toShortString() + " dimension=" + selected.evidence().dimension()
                     + " cover=" + selected.cover());
             if (selected.pattern().equals(BeliefStore.SWORD)) lines.add("SWORD GUARD: same shield for this encounter; recovery suspends guarding; 35 guarding / 25 exposed ticks; frontal only; guarding stops attacks and movement; axe disable=100 ticks.");
+            if (selected.advancingCover()) lines.add("MANTLET: threshold=0.90; fixed local front; 2x2 packed ice; at most 3 screens / 12 placements; 10 ticks per block, 80 ticks between screens; slow advance; open flanks; broken cover is not repaired.");
             if (selected.spatial() != null) lines.add("OBSERVED CROSSING: " + selected.spatial().inside().toShortString()
                     + " -> " + selected.spatial().outside().toShortString() + "; discovered obstruction=" + selected.obstruction());
             lines.add("INHERITED EVIDENCE: " + selected.evidence().action() + " tick=" + selected.evidence().time()

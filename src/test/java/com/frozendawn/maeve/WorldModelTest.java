@@ -95,7 +95,7 @@ class WorldModelTest {
         data.store().observeContact(PLAYER, OBSERVER, DIM, 10).sample(OBSERVER, DIM, BlockPos.ZERO, true, 10);
         data.store().world(PLAYER).access(DIM, new BlockPos(3, 0, 0), BlockPos.ZERO, event(1, 20, BlockPos.ZERO));
         var backup = data.save(new CompoundTag(), null);
-        assertEquals(4, backup.getInt("dataVersion"));
+        assertEquals(5, backup.getInt("dataVersion"));
         var loaded = MaeveSavedData.load(backup, null);
         assertEquals(1, loaded.store().world(PLAYER).snapshot(20).size());
         loaded.erase(); loaded.erase();

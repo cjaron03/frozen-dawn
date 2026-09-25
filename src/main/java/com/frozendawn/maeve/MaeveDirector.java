@@ -242,22 +242,22 @@ public final class MaeveDirector {
     public record AttentionSnapshot(int capacity, List<FocusSnapshot> slots, List<String> events) {
         public AttentionSnapshot { slots = List.copyOf(slots); events = List.copyOf(events); }
     }
-
     public record UtilityBias(float fortify, float peek) {
         public static final UtilityBias NONE = new UtilityBias(0, 0);
     }
     public record CommitmentHint(String pattern, double confidence, EvidenceSnapshot evidence) { }
-    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial) {
+    public record PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial, boolean advancingCover) {
         public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost) { this(pattern, position, cover, recoveryCost, null); }
+        public PositionCandidate(String pattern, BlockPos position, BlockPos cover, double recoveryCost, SpatialTarget spatial) { this(pattern, position, cover, recoveryCost, spatial, false); }
         public PositionCandidate { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
     }
     public record PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence,
                                     EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost,
                                     long startedAt, long arrivedAt, long holdUntil, long contradictedAt,
-                                    SpatialTarget spatial, BlockPos obstruction) {
+                                    SpatialTarget spatial, BlockPos obstruction, boolean advancingCover) {
+        public PositionDirective(UUID player, UUID observer, UUID encounter, String pattern, double confidence, EvidenceSnapshot evidence, BlockPos position, BlockPos cover, double recoveryCost, long startedAt, long arrivedAt, long holdUntil, long contradictedAt, SpatialTarget spatial, BlockPos obstruction) { this(player, observer, encounter, pattern, confidence, evidence, position, cover, recoveryCost, startedAt, arrivedAt, holdUntil, contradictedAt, spatial, obstruction, false); }
         public PositionDirective { position = position.immutable(); cover = cover == null ? null : cover.immutable(); }
     }
-
     public record SpatialTarget(BlockPos inside, BlockPos outside) {
         public SpatialTarget { inside = inside.immutable(); outside = outside.immutable(); }
     }
@@ -266,7 +266,6 @@ public final class MaeveDirector {
                                      int contradictions, long observedAt, List<EvidenceSnapshot> provenance) {
         public WorldPointSnapshot { provenance = List.copyOf(provenance); }
     }
-
     public record CommitmentSnapshot(String outcome, UUID encounter, boolean issued,
                                      List<String> blocked, List<String> blockNext, PositionDirective selected,
                                      List<CommitmentHint> hints, List<String> alternatives) {
@@ -275,19 +274,16 @@ public final class MaeveDirector {
             hints = List.copyOf(hints); alternatives = List.copyOf(alternatives);
         }
     }
-
     public record Snapshot(String lifecycle, boolean activated, int profiles, int beliefCount,
                            List<BeliefSnapshot> beliefs) {
         public Snapshot { beliefs = List.copyOf(beliefs); }
     }
-
     public record BeliefSnapshot(String pattern, double confidence, int evidence, int contradictions,
                                  long lastConfirmed, long lastObserved, long ageTicks, boolean stale,
                                  double storedConfidence, long updatedAt, long evaluatedAt,
                                  List<EvidenceSnapshot> provenance) {
         public BeliefSnapshot { provenance = List.copyOf(provenance); }
     }
-
     public record EvidenceSnapshot(UUID observer, UUID encounter, String dimension, BlockPos position,
                                    long time, String action, boolean supporting, double confidenceWeight) {
         public EvidenceSnapshot(UUID observer, UUID encounter, String dimension, BlockPos position, long time, String action, boolean supporting) {

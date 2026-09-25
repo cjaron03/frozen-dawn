@@ -102,7 +102,7 @@ final class LearningCoordinator {
         var policy = data.store().commitment(player.getUUID());
         if (policy == null) return;
         var selected = policy.active(now);
-        if (selected == null || selected.arrivedAt() < 0 || (!selected.pattern().equals(BeliefStore.SWORD) && actor.blockPosition().distSqr(selected.position()) > 9)) return;
+        if (selected == null || selected.arrivedAt() < 0 || (!selected.pattern().equals(BeliefStore.SWORD) && !selected.advancingCover() && actor.blockPosition().distSqr(selected.position()) > 9)) return;
         policy.performance().damage(actor.getUUID(), player.getUUID(), actor.level().dimension().location().toString(),
                 actor.blockPosition(), now, damage, outgoing);
         // Encounter-long guards need a witnessed terminal result, not a timer

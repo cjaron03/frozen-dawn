@@ -1875,6 +1875,14 @@ public class ArchitectEntity extends Monster {
         return placed;
     }
 
+    /** Retire only this executor's tracked mantlet ice; consumed budget is not refunded. */
+    void retireMantletIce(BlockPos pos, net.minecraft.world.level.block.state.BlockState previous) {
+        if (!tacticalIce.contains(pos) || !level().hasChunkAt(pos) || !level().getBlockState(pos).is(Blocks.PACKED_ICE)) return;
+        level().levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(level().getBlockState(pos)));
+        level().setBlock(pos, previous != null && previous.is(Blocks.SNOW) ? previous : Blocks.AIR.defaultBlockState(), 3);
+        approachState.dstar.onLocalBlockChanged(pos, level());
+    }
+
     private void emitIcePlacementFx(BlockPos pos) {
         entityData.set(DATA_BUILDING_ICE, true);
         swing(InteractionHand.MAIN_HAND);
