@@ -39,7 +39,18 @@ Use the separate **MACS Keep-away Archer - Normal** world. The prior mantlet sav
 
 For another encounter use `/function macs_archer:again`, skip the empty gap, then start. Prior outcomes and contradictions can change the next selection. `/function macs_archer:warmup` adds one real sword encounter when training is complete. `/function macs_archer:reset` clears tactical history in this disposable world and restarts its five-hit exercise; do not use it in a valued world.
 
-Required live checks: bow/kiting readability and usable sprint approach; real arrow obstruction by existing cover; shield counterplay; all 16 shots followed by an obvious empty transition; no generated loot; Normal/Brutal pressure comparison; actual EVA puncture/patch experience. Multiplayer subject isolation and terrain/performance soak remain separate checks. Automated success does not satisfy these visual and balance gates.
+Required live checks: bow/kiting readability and usable sprint approach; real arrow obstruction by existing cover; shield counterplay; all 16 shots followed by an obvious empty transition; no generated loot; Normal/Brutal pressure comparison; actual EVA puncture/patch experience. Multiplayer is deferred by the owner (2026-09-26); it is not a completed live check. Terrain/performance soak remains separate. Automated success does not satisfy these visual and balance gates.
+
+### EVA puncture and patch trial
+
+Prepare **MACS Archer EVA - Normal** with `tools/prepare_macs_archer_playtest.py --eva --source <closed-completed-archer-save> --destination <new-save>`. The source is left intact, and its actual learned beliefs, five completed practice rounds and strategy results are copied. This setup does not clear or inject Maeve evidence. Use this separate world for the commands below.
+
+1. Run `/function macs_archer:eva/setup`, then `/tick sprint 620t`. Wait for **Ready** and **Sprint completed**. This empty gap has safe air and no test actor.
+2. Run `/function macs_archer:start`, then `/fd suit status verbose`. Confirm **Sealed suit: true** and **Exposure: vacuum**. The real fight has late-Phase-6 vacuum, fresh unenchanted EVA armor, one full Mk.III tank in slot 9 and eight permanent ORSA patches in slot 8. Each new fight restores the trial kit and starts intact; existing damage, oxygen, puncture, grace and patch timing rules run normally during combat.
+3. Keep bow range and let some arrows hit without the shield. Avoid shooting or rushing the actor until the puncture check is complete, since either can end its ranged commitment. After the first puncture warning, use existing stone cover and hold Use with the patch for two seconds. Observe whether the window is usable and whether a hit interrupts the channel. Run `/fd suit status verbose` after patching; an intact seal is the success signal. A round with no puncture is possible at the real 12% chance and is not a failure.
+4. Run `/function macs_archer:finish`, then `/fd suit status verbose` and `/fd maeve dump` directly in chat. Finish/abort removes the test actor and restores safe air but retains suit damage for inspection. The next setup/start repairs and restocks. Death also ends the trial, but the normal respawn path clears suit integrity. Use `/function macs_archer:again`, skip the empty gap and start for a repeat; do not sprint an active fight.
+
+The puncture default is 12% for Architect-owned arrows, a 300-tick grace period, at most two open punctures, and 40 ticks for an ORSA patch. The trial does not guarantee a puncture, alter those values or stop shooting while the player patches. Existing cover may hide the player long enough for normal sight-loss fallback; record that outcome too. Puncture and actor traces, the owner's patch experience and direct suit diagnostics form the acceptance evidence.
 
 ## Verification
 
