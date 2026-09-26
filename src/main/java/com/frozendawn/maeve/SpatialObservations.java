@@ -35,6 +35,7 @@ final class SpatialObservations {
             world.access(dim, outside, inside, evidence);
             String bearing = WorldModel.bearing(world.center(dim), outside);
             if (!covered && bearing != null) {
+                ExitInterception.witnessed(store, missions, observer, player, outside, now);
                 ObservationCollector.record(store, missions, observer, player, outside, now, bearing, true, "WITNESSED_OUTWARD_CROSSING");
                 for (var belief : store.snapshot(player.getUUID(), now)) {
                     if (WorldModel.BEARINGS.contains(belief.pattern()) && !bearing.equals(belief.pattern())) {
@@ -68,7 +69,7 @@ final class SpatialObservations {
     static boolean validCandidate(BeliefStore store, ArchitectEntity observer, ServerPlayer player,
                                   MaeveDirector.PositionCandidate candidate, long now) {
         var world = store.world(player.getUUID());
-        if (world == null || !WorldModel.BEARINGS.contains(candidate.pattern())) return false;
+        if (world == null || !ExitPrediction.spatial(candidate.pattern())) return false;
         var resolved = world.resolve(observer.level().dimension().location().toString(), candidate.pattern(), observer.blockPosition(), now);
         return resolved != null && resolved.equals(candidate.spatial()) && resolved.outside().equals(candidate.position());
     }

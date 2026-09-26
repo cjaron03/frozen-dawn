@@ -1,57 +1,68 @@
-# MACS second-favorite exit — implementation plan
+# MACS second-favorite exit
 
-Status: **planned; gameplay implementation and acceptance pending**. Branch: `feat/macs-second-favorite-exit`; PR target: `feat/maeve-director`. Base: `317e5eab64bb1f93e2fd6663bb48a1e56b720f4c`, after merged PR #96. This initial change contains the plan only.
+Implemented on `feat/macs-second-favorite-exit`, targeting `feat/maeve-director` in [PR #97](https://github.com/cjaron03/frozen-dawn/pull/97). Base: `317e5eab64bb1f93e2fd6663bb48a1e56b720f4c`, after merged PR #96. **Live acceptance is pending.** Exact automated results belong to the tested commit's PR checks and evidence bundle.
 
-Contract: [MACS Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), §9.13f, with §§9.2, 9.3, 9.13a, 9.16–9.19 and 12. Progress and acceptance: [Notion implementation plan](https://www.notion.so/3e77cfaa89018139839fdd58563e3ee7). The proposals below implement the existing contract; they do not amend its locked rules.
+Contract: [MACS Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), §9.13f, with §§9.2, 9.3, 9.13a, 9.16–9.19 and 12. Progress: [implementation and acceptance](https://www.notion.so/3e77cfaa89018139839fdd58563e3ee7). The locked contract is unchanged.
 
-## Player-facing result
+## Behavior and evidence
 
-Maeve learns the usual exit A. When an Architect actually waits at A and an eligible observer sees the player leave through B instead, that episode can teach a conditional response. At **0.90 historical conditional confidence**, a later Architect can wait at B. Returning to A leaves it guarding the wrong exit.
+At ordinary access confidence 0.75, an Architect can intercept a previously witnessed exit A. If it actually arrives and waits there, a witnessed outward crossing elsewhere can teach the response A → B. At **0.90 historical conditional confidence**, a later Architect can wait at B. Returning to A leaves it committed at the wrong exit. The variant consumes the same single encounter bet and one waiting Architect. Other families still compete on recovery cost, attention and prior outcomes.
 
-A and B are explanatory labels for observed access bearings and coordinates. The system does not identify named doors or rooms. This is the higher-confidence variant of access interception, with the same single commitment and one waiting Architect. Ordinary interception retains its 0.75 gate. Other eligibility, attention and prior-outcome checks still apply.
+A and B are explanatory labels for observed bearings and coordinates. This does not identify doors, rooms or the player's intent. A different second-most-used location, an issued order without arrival, an expired watch, a missing player, a failed damage trade or a geometry survey alone cannot train the conditional belief.
 
-## Existing implementation to reuse
+`SpatialObservations` still validates each crossing: the same eligible observer sees both sides of a continuous covered-to-open transition, within the existing time, movement, sight, loaded-space and 48-block limits. `ExitInterception` joins that accepted event to the player's active, arrived interception. The waiting Architect must remain alive, eligible, assigned to this player and within two blocks of its chosen point. Another eligible witness may supply the whole crossing; partial observations from different actors are never stitched together.
 
-| Existing code | Reuse |
-| --- | --- |
-| `SpatialObservations`, `WorldModel` | Continuous witnessed crossings, observed shelter centroid, access bearings, known open points and local obstruction discovery |
-| `BeliefStore`, `BeliefPolicy` | Confidence, decay, per-encounter contribution limits, bounded provenance and deterministic eviction |
-| `LearningCoordinator` | Conditional-observation lifecycle and inconclusive outcomes; its current episodes concern withdrawal/pursuit only |
-| `CommitmentPolicy`, `CounterVariantPolicy`, `CommitmentCoordinator` | Frozen history, one encounter bet, variant selection, cooldowns, performance and attention admission |
-| `ArchitectSpatialCommitment` | Local approach, arrival, waiting, close defense and discovery of an obstructed remembered exit |
-| `MaeveSavedData`, diagnostics | Persistence, lifecycle erasure, operator dump and explanation |
+Ordinary interception supplies supporting evidence for its observed alternative and contradicts retained alternatives to the same original bearing. A second-favorite watch can be disproved by a different outward crossing, including a return to A; it cannot create another conditional level. Using B while B is guarded does not add support for a failed A interception. Hidden or inward crossings supply no conditional outcome. Effective damage, release, removal and reload cannot resume an unfinished episode, while already published evidence remains retained.
 
-The missing relationship is **failed interception at A followed by a witnessed alternative B**. A second-most-used bearing or an ordinary crossing at B does not establish that relationship. No new animation or general pathfinding rewrite is planned.
+Ordinary and conditional confidence are independent. Alternate crossings can reduce A's ordinary confidence and trigger its existing cooldown. A legitimate later 0.90 conditional prediction does not also require A to remain above 0.75. Current-encounter observations cannot unlock a choice from that same encounter.
 
-## Implementation sequence
+## Storage, selection and diagnostics
 
-1. **Capture the causal episode.** Open a bounded episode only when an ordinary access-interception Architect arrives and begins its watch at A. Retain the player, encounter, actor, dimension, observed shelter context and original access target. A qualifying outward crossing at another bearing B during that active watch supplies both the failed-interception outcome and its alternative. The same eligible observer must see both ends of the crossing. A second eligible observer may report that complete crossing, but observations from different actors cannot be joined to reconstruct hidden movement. Resolve the causal event before ordinary bearing updates discard or contradict its context.
-2. **Store the conditional belief.** Retain the A-to-B relation, confidence, counts and both interception/crossing provenance. Conditional beliefs share the existing 16-belief profile limit, eight-entry provenance limit, deterministic eviction and encounter deduplication. Reuse production scoring and decay. Scope each relation to the observed shelter area and dimension, with explicit invalidation of transient context when that local shelter estimate resets. A centroid shift or a move to another base must not reinterpret old evidence as a different pair of exits.
-3. **Select and execute the variant.** Freeze eligible conditional beliefs at encounter start. At 0.90, offer the alternative within the access family and resolve its bearing through remembered local open points. Preserve candidate bounds, recoverability, attention, cooldowns and performance selection. Below 0.90, only the ordinary 0.75 access interception can qualify. The conditional gate uses its own history; it does not require A's current ordinary confidence to remain at 0.75 after repeated observed escapes. Carry the original A context in the directive so execution and outcome reporting never infer it from the player's current position. Reuse the spatial executor and existing interruption rules.
-4. **Explain, verify and replay.** Extend dump/explain output to show the frozen A-to-B hypothesis, actual watch arrival, crossing observer and times, confidence and rejection reason. Add save migration, automated cases and an isolated live fixture. Keep the facade below its enforced 300-line limit by placing implementation in package-private collaborators.
+`EXIT_AFTER_<original bearing>_<alternative bearing>_<area token>` identifies each hypothesis. The area token belongs to the player's retained observed shelter in one dimension. It retains a fixed reference at that area's first observed centroid, so later centroid drift cannot silently reinterpret an old conditional bearing. Moving covered observations more than 32 blocks from that reference starts a fresh conditional area. The existing ordinary centroid calculation is preserved. Area eviction or reset prevents old conditional keys from resolving at a different base; this remains a lossy local model, not permanent building identity.
 
-## Evidence and counterplay boundaries
+Conditional records share the existing 16 beliefs per player, eight provenance entries per belief and 128-player caps. Support remains +0.20, or +0.30 for an eligible active scout witness; contradiction remains −0.35. Existing per-encounter contribution deduplication, decay and deterministic eviction apply. Conditional threshold comparison tolerates only floating-point rounding at 0.90. Provenance includes the waiting actor, arrival tick, original watch location, actual outward bearing, crossing witness, encounter, dimension, crossing location and time.
 
-Only ordinary first-level interception opens a new A-to-B learning episode. A second-favorite watch can be confirmed or disproved, but cannot create a B-to-C conditional chain or train an equivalent recursive counter through another key. An observed escape through A or another exit contradicts the prediction. Returning to A must leave the Architect at the wrong place under the existing spatial commitment rules; it cannot immediately switch to A or buy another bet.
+`ExitCandidates` retains at most four spatial candidates, with a qualifying alternative replacing its parent slot. Eligible alternatives take precedence within the access family; cooldown or prior-outcome deferral can restore ordinary fallback. Existing total admission limits still apply. The local `ArchitectSpatialCommitment` executor handles approach, waiting, close defense, damage interruption and direct obstruction discovery. This feature does not change shields, pillars, mantlets, archery or general pathfinding.
 
-An order without arrival, an approach failure, expired watch, player disappearance, generic failed damage trade or map survey alone is not evidence that the player switched exits. Release, damage interruption, death, attention loss and reload close an unfinished episode as inconclusive. An already published valid crossing remains evidence. Hidden crossings and inward crossings do not support the alternative-exit prediction. Existing observer eligibility, loaded-space, distance and sight checks remain authoritative; Masters and other excluded roles do not participate.
+SavedData version 7 adds observed area identity. Older saves retain their beliefs and world knowledge and begin without conditional exit history. Spent bets, cooldowns and contribution flags persist. Transient samples and active watches never resume across reload. ERASED clears the new tactical data with the existing store; the permanent violation ledger is separate. Server caches retain no world contents after shutdown.
 
-Keep ordinary bearing confidence, conditional confidence and strategy performance distinct. Outward crossings at B currently contradict the ordinary A bearing and can cause cooldowns. Preserve the episode's original A context through that update. Prove that repeated legitimate episodes can reach the new gate under existing learning rates and cooldowns; do not bypass them to make the fixture progress.
+Observation remains event-driven. There is at most one watch per shared player encounter, with bounded belief and spatial scans and one loaded-entity lookup for the waiting actor. No global player search, item polling, hidden movement inference or chunk loading is added. Masters, mind copies, Aggregate reinforcements and excluded Hearth roles do not execute this counter. The external facade is unchanged.
 
-## Persistence and performance
+`/fd maeve dump` shows conditional meaning, confidence, retained causal provenance and watch context. `/fd maeve explain <EXIT_AFTER_... key>` explains its support and contradiction rules. Selection reports `WATCH_ALTERNATIVE_EXIT` and the original frozen evidence. A fixture counter is an exercise-progress counter; only the dump proves accepted belief evidence.
 
-The current save version is 6. Version any added persistent schema explicitly; earlier saves begin with no conditional exit history while retaining existing beliefs and violation memory. Persist encounter contribution limits and spent commitments. Do not resume transient crossing samples or active learning episodes after reload. ERASED clears all new tactical records and caches alongside the existing store, with no archive inside the world.
+## Automated verification
 
-Keep at most one active exit episode per player's shared encounter, bounded by the existing player/contact limits. Update it on actual watch lifecycle and accepted crossing events. Resolve candidates through the existing bounded spatial model, never global entity scans or chunk loading. Conditional variants must not silently expand the candidate cap or crowd every ordinary candidate out of its bounded list.
+The added unit cases cover five legitimate causal episodes with ordinary confidence recovery and cooldowns, shared witness contributions, independent and frozen thresholds, alternative-versus-parent selection, cooldown fallback, original-exit counterplay, no recursive keys, area/dimension isolation, centroid drift, caps, persistence, expired or absent arrivals and erasure.
 
-## Required verification before readiness
+Required native cases use the real presence event and actual entity movement. They train A, witness five failed A interceptions with B crossings, physically reach B in a later encounter, return through A, and verify damage release. Controls reject hidden, inward, unarrived and reloaded episodes. The real live functions are parsed by Minecraft and their booth/exit sight geometry is tested. Existing ordinary entrance approach and sealed-exit tests remain required.
 
-- Causal learning: arrived A watch plus witnessed outward B crossing; hidden/inward crossings, approach failure and survey-only observations rejected; duplicate observers deduplicated; player, dimension and shelter isolation.
-- Policy: 0.90 boundary and 0.75 fallback, history frozen before contact, no same-encounter unlock, one bet/actor, competing alternatives, cooldown and performance handling, no recursive learning and original-exit counterplay.
-- Lifecycle: old-save compatibility, NBT round trips, persisted contribution limits, reload without a synthetic crossing or renewed bet, deterministic eviction, erasure and unchanged violation memory.
-- Native integration: real presence hooks, actual spatial arrival/wait, wrong-exit observation, damage release, locally discovered blocked alternatives, role exclusions and regression coverage for existing counter families. Add the cases to the required GameTest manifest.
-- Run `./gradlew architectVerify architectMonkey --console=plain` with the existing seeds and fixtures on the implementation commit, and publish fresh required-check results for that commit.
+Run the existing fixtures and seeds:
 
-The live acceptance sequence is: establish A through ordinary crossings; witness an escape through B during an actual A interception; inspect its causal provenance; repeat qualifying encounters until historical conditional confidence permits a later B watch; then return to A and demonstrate the exploitable wrong prediction. Include a hidden-crossing control. Preserve first impressions, direct chat dumps, actor traces and the save.
+```sh
+./gradlew architectVerify architectMonkey --console=plain
+```
 
-Production confidence and cooldown values stay in effect. Only empty encounter gaps may use tick sprint. If a separate seeded fixture is useful to inspect B waiting immediately, label that as execution evidence; it cannot substitute for learning through ordinary actions. Test commands and a new client build will be supplied when the fixture exists. There are no new gameplay test results in this planning commit.
+Automated tests do not establish visual readability or human multiplayer acceptance. A native two-observer case checks contribution isolation; it is not a live multiplayer claim.
+
+## Separate live replay
+
+`tools/prepare_macs_exit_playtest.py` clones a closed QA world to **MACS Second-favorite Exit**. It refuses to overwrite an existing destination. The original archer save and logs are preserved separately. Initialization erases tactical history only in this disposable copy, activates MACS at the real late-phase boundary, then uses the latched activation with safe combat conditions. Resistance protects the walking test; no beliefs are injected.
+
+Start in the new world with:
+
+```mcfunction
+/reload
+/function macs_exit:setup
+```
+
+Follow the prompts:
+
+1. Stand on blue until GO, then walk east to gold and stop. Complete five distinct ordinary crossing encounters.
+2. Between encounters, click **skip the EMPTY encounter gap**, wait for both Sprint completed and Ready, then click **NEXT**. This changes only empty-gap wall-clock time; production rates and active holds remain intact.
+3. During an interception, stay on blue while the Architect approaches the usual gold exit. After the prompt, walk north to green. The next two gold practice crossings refresh the ordinary habit and consume its normal cooldown. Repeat until five witnessed switches have been exercised.
+4. In the final encounter, watch for its approach to north/green. On the prompt, return east to gold. It should remain committed at the wrong exit until the replay pauses.
+5. Describe the behavior, then run `/fd maeve dump` directly in chat. Preserve the world, dump and actor trace before resetting.
+
+For an optional hidden-crossing control, run `/function macs_exit:hidden` at Ready after the fifth initial gold practice, before the first interception. A screen blocks its sight of the green crossing; that exercise does not count toward the five visible switches. Inspect a direct chat dump afterward. `/function macs_exit:status` reports progress, and `/function macs_exit:finish` aborts and preserves the actor trace. An approach timeout is explicitly reported as a failed exercise, not a pass.
+
+The full replay checks both the existing usual-exit behavior and the new conditional counter. It must demonstrate actual causal provenance and exploitable wrong-exit waiting before this PR is ready to merge. No ordinary-action live acceptance has been claimed yet.

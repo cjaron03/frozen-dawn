@@ -24,7 +24,7 @@ final class CommitmentDiagnostics {
             lines.add("POSITION STRATEGY: none; low confidence may still bias local utility actions.");
         } else {
             lines.add("DIRECTOR OBJECTIVE: test a historical " + selected.pattern() + " prediction through a bounded, recoverable commitment.");
-            lines.add("SELECTED STRATEGY: " + (selected.keepAwayArcher() ? "KEEP_AWAY_ARCHER" : selected.advancingCover() ? "ADVANCE_RANGED_MANTLET" : selected.pattern().equals(BeliefStore.SWORD) ? "GUARD_SWORD" : selected.pattern().equals(BeliefStore.PURSUIT) ? "WITHDRAW_AND_HOLD" : selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "FIGHT_WITH_RANGED_COVER")
+            lines.add("SELECTED STRATEGY: " + (selected.keepAwayArcher() ? "KEEP_AWAY_ARCHER" : selected.advancingCover() ? "ADVANCE_RANGED_MANTLET" : selected.pattern().equals(BeliefStore.SWORD) ? "GUARD_SWORD" : selected.pattern().equals(BeliefStore.PURSUIT) ? "WITHDRAW_AND_HOLD" : ExitPrediction.parse(selected.pattern()) != null ? "WATCH_ALTERNATIVE_EXIT" : selected.spatial() != null ? "WATCH_ACCESS_POINT" : selected.cover() == null ? "WATCH_LAST_RECOVERY_POINT" : "FIGHT_WITH_RANGED_COVER")
                     + " | recoveryCost=" + selected.recoveryCost());
             lines.add("POSITION DIRECTIVE: observer=" + selected.observer() + " subject=" + selected.player()
                     + " position=" + selected.position().toShortString() + " dimension=" + selected.evidence().dimension()

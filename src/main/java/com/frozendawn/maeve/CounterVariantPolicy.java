@@ -13,7 +13,7 @@ final class CounterVariantPolicy {
 
     static String key(MaeveDirector.PositionCandidate c) { return c.keepAwayArcher() ? ARCHER : c.advancingCover() ? MANTLET : c.pattern(); }
     static String key(MaeveDirector.PositionDirective d) { return d.keepAwayArcher() ? ARCHER : d.advancingCover() ? MANTLET : d.pattern(); }
-    static boolean validKey(String key) { return ARCHER.equals(key) || MANTLET.equals(key) || BeliefDescriptions.patterns().contains(key); }
+    static boolean validKey(String key) { return ARCHER.equals(key) || MANTLET.equals(key) || BeliefDescriptions.known(key); }
 
     static List<MaeveDirector.PositionCandidate> options(CommitmentPolicy policy,
             List<MaeveDirector.PositionCandidate> candidates, long now, List<String> reasons) {
@@ -50,6 +50,6 @@ final class CounterVariantPolicy {
             for (var c : eligible) if (c != chosen) reasons.add(key(c) + " OTHER_" + (family.equals(BeliefStore.RANGED) ? "RANGED" : "SWORD")
                     + "_VARIANT_PREFERRED frozenMultiplier=" + policy.performance().multiplier(key(c), dimension));
         }
-        return valid;
+        return ExitCandidates.prefer(valid, policy, now, reasons);
     }
 }

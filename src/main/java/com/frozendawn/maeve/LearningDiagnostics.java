@@ -17,6 +17,8 @@ final class LearningDiagnostics {
         return Stream.of(beliefs, CommitmentDiagnostics.format(MaeveDirector.commitmentSnapshot(server, player)),
                 WorldDiagnostics.format(store.world(player), now), attention, missions, learning,
                 policy == null ? List.<String>of() : List.of("RECON ADMISSION: " + policy.surveyAdmission()),
+                policy == null || policy.exitWatch() == null ? List.<String>of() : List.of("EXIT WATCH: " + policy.exitWatch()
+                        + " active=" + (policy.active(now) != null)),
                 policy == null ? List.<String>of() : policy.performance().diagnostics(now)).flatMap(List::stream).toList();
     }
 }
