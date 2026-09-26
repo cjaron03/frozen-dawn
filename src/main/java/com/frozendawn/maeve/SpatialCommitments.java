@@ -13,12 +13,16 @@ final class SpatialCommitments {
         long now = observer.getServer().overworld().getGameTime();
         var result = new ArrayList<MaeveDirector.PositionCandidate>();
         for (var hint : hints) {
-            if (!WorldModel.BEARINGS.contains(hint.pattern()) || hint.confidence() < CommitmentPolicy.THRESHOLD) continue;
+            if (!ExitPrediction.spatial(hint.pattern()) || !ExitPrediction.meets(hint.pattern(), hint.confidence())) continue;
             var target = world.resolve(observer.level().dimension().location().toString(), hint.pattern(), observer.blockPosition(), now);
             if (target == null) continue;
             result.add(new MaeveDirector.PositionCandidate(hint.pattern(), target.outside(), null,
                     Math.sqrt(observer.blockPosition().distSqr(target.outside())), target));
         }
-        return List.copyOf(result);
+        // Reserve the existing four bearing slots: at most one best conditional candidate
+        // replaces its parent bearing, leaving room for the other counter families.
+        var policy = store.commitment(player.getUUID());
+        return ExitCandidates.bound(result, policy, now);
+
     }
 }

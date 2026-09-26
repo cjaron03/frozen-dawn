@@ -11,7 +11,11 @@ final class BeliefDescriptions {
                 WorldModel.BEARINGS.stream()).toList();
     }
 
+    static boolean known(String pattern) { return patterns().contains(pattern) || ExitPrediction.parse(pattern) != null; }
+
     static String meaning(String pattern) {
+        var exit = ExitPrediction.parse(pattern);
+        if (exit != null) return "After interception at " + exit.from() + ", this player visibly escapes toward " + exit.to() + " in observed shelter " + exit.area() + ".";
         if (WorldModel.BEARINGS.contains(pattern)) return "This player emerges toward " + pattern.substring("RETREAT_BEARING_".length())
                 + " relative to the centroid of locally observed covered positions.";
         return switch (pattern) {
@@ -24,6 +28,7 @@ final class BeliefDescriptions {
     }
 
     static String support(String pattern) {
+        if (ExitPrediction.parse(pattern) != null) return "An ordinary interception has arrived; an eligible witness sees a continuous outward crossing at the alternative. No recursive learning.";
         if (WorldModel.BEARINGS.contains(pattern)) return "The same Architect sees a continuous covered-to-open crossing along this bearing.";
         return switch (pattern) {
             case BeliefStore.SWORD -> "A witnessed direct sword attack damages the Architect or is stopped by its raised shield.";
@@ -35,6 +40,7 @@ final class BeliefDescriptions {
     }
 
     static String contradiction(String pattern) {
+        if (ExitPrediction.parse(pattern) != null) return "A different outward response during an arrived primary watch, or a witnessed escape elsewhere while guarding the predicted alternative.";
         if (WorldModel.BEARINGS.contains(pattern)) return "A witnessed crossing along another bearing, or direct sight of an obstructed remembered crossing.";
         return switch (pattern) {
             case BeliefStore.SWORD -> "A witnessed projectile or direct non-sword melee attack damages the Architect or meets its raised shield.";
@@ -46,6 +52,7 @@ final class BeliefDescriptions {
     }
 
     static String limitation(String pattern) {
+        if (ExitPrediction.parse(pattern) != null) return "One conditional level, scoped to one observed shelter. No disappearance inference or immediate retargeting; a return to the original exit beats the prediction.";
         if (WorldModel.BEARINGS.contains(pattern)) return "The shelter centroid is an estimate from observed covered positions; unseen routes and block changes remain unknown.";
         return switch (pattern) {
             case BeliefStore.SWORD -> "Only the weapon used for a witnessed attack is read; low ranged confidence and held items are not sword evidence.";

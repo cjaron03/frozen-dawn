@@ -15,6 +15,7 @@ final class DirectorDiagnostics {
         if (player == null || !snapshot.lifecycle().equals("ACTIVE")) return List.copyOf(lines);
         lines.add("Player " + player + " | retained beliefs=" + snapshot.beliefs().size());
         for (var belief : snapshot.beliefs()) {
+            if (ExitPrediction.parse(belief.pattern()) != null) lines.add("CONDITIONAL EXIT: " + BeliefDescriptions.meaning(belief.pattern()));
             lines.add(String.format(Locale.ROOT,
                     "%s confidence=%.4f evidence=%d contradictions=%d confirmed=%d observed=%d ageTicks=%d stale=%s",
                     belief.pattern(), belief.confidence(), belief.evidence(), belief.contradictions(),

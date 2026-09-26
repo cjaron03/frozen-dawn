@@ -47,7 +47,7 @@ final class CommitmentCoordinator {
                 .filter(c -> !c.keepAwayArcher() || (c.pattern().equals(BeliefStore.SWORD) && !c.advancingCover()
                         && c.cover() == null && c.spatial() == null && observer.distanceToSqr(player) > 64
                         && hints.stream().anyMatch(h -> h.pattern().equals(BeliefStore.SWORD) && h.confidence() >= CounterVariantPolicy.ARCHER_THRESHOLD)))
-                .filter(c -> WorldModel.BEARINGS.contains(c.pattern()) == (c.spatial() != null))
+                .filter(c -> ExitPrediction.spatial(c.pattern()) == (c.spatial() != null))
                 .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
         var policy = store.commitment(player.getUUID());
         if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE")
@@ -70,7 +70,7 @@ final class CommitmentCoordinator {
         if (data.store() == null) return;
         long now = observer.getServer().overworld().getGameTime();
         var policy = data.store().commitmentFor(observer.getUUID(), now);
-        if (policy != null) { policy.arrived(now); data.setDirty(); }
+        if (policy != null) { policy.arrived(now, data.store().world(policy.selected().player())); data.setDirty(); }
     }
 
     static void release(MaeveSavedData data, ArchitectEntity observer, String reason) {

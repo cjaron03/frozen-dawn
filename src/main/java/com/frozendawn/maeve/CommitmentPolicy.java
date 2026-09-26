@@ -34,6 +34,8 @@ final class CommitmentPolicy {
     private long lastContact;
     private String outcome = "NO_PRIOR_ENCOUNTER";
     private MaeveDirector.PositionDirective selected;
+    private ExitInterception.Watch exitWatch;
+    ExitInterception.Watch exitWatch() { return exitWatch; }
     private List<String> alternatives = List.of();
 
     void begin(UUID id, List<Belief> previous, long now) {
@@ -45,6 +47,7 @@ final class CommitmentPolicy {
         combatStarted = false;
         active = false;
         selected = null;
+        exitWatch = null;
         outcome = "NOT_EVALUATED";
         alternatives = List.of();
         blocked.clear();
@@ -55,7 +58,7 @@ final class CommitmentPolicy {
         // Freeze history before this encounter's first observation; new evidence cannot
         // unlock an answer during the encounter that supplied it. Reads still decay.
         for (Belief belief : previous) {
-            if (BeliefDescriptions.patterns().contains(belief.pattern)) {
+            if (BeliefDescriptions.known(belief.pattern)) {
                 baseline.put(belief.pattern, Belief.load(belief.save()));
             }
         }
@@ -86,7 +89,7 @@ final class CommitmentPolicy {
         if (blockNext.contains(pattern)) return "CONTRADICTED_THIS_ENCOUNTER";
         if (confirmedHere.contains(pattern)) return "PREDICTION_ALREADY_CONFIRMED";
         Belief belief = baseline.get(pattern);
-        return belief == null || belief.currentConfidence(now) < THRESHOLD ? "BELOW_THRESHOLD" : "ELIGIBLE";
+        return belief == null || !ExitPrediction.meets(pattern, belief.currentConfidence(now)) ? "BELOW_THRESHOLD" : "ELIGIBLE";
     }
 
     boolean choose(UUID player, UUID observer, List<MaeveDirector.PositionCandidate> candidates, long now) {
@@ -122,11 +125,11 @@ final class CommitmentPolicy {
     }
 
     void confirm(String pattern) {
-        if (BeliefDescriptions.patterns().contains(pattern)) confirmedHere.add(pattern);
+        if (BeliefDescriptions.known(pattern)) confirmedHere.add(pattern);
     }
 
     void contradict(String pattern, long now) {
-        if (!BeliefDescriptions.patterns().contains(pattern)) return;
+        if (!BeliefDescriptions.known(pattern)) return;
         blockNext.add(pattern);
         if (active && selected.pattern().equals(pattern) && selected.contradictedAt() < 0) {
             selected = copy(selected.arrivedAt(), selected.holdUntil(), now);
@@ -141,6 +144,12 @@ final class CommitmentPolicy {
             outcome = rangedPillar() ? (selected.contradictedAt() < 0 ? "COVER_COMBAT" : "CONTRADICTED_COVER_COMBAT")
                     : selected.contradictedAt() < 0 ? "HOLDING" : "CONTRADICTED_HOLD";
         }
+    }
+
+    void arrived(long now, WorldModel world) {
+        boolean first = active && selected.arrivedAt() < 0;
+        arrived(now);
+        if (first) exitWatch = ExitInterception.start(selected, world);
     }
 
     private MaeveDirector.PositionDirective copy(long arrived, long until, long contradiction) {
@@ -233,11 +242,13 @@ final class CommitmentPolicy {
         state.reconIssued = tag.getBoolean("reconIssued");
         state.combatStarted = tag.getBoolean("combatStarted");
         state.outcome = state.issued ? "RELOAD_RELEASED" : "NOT_EVALUATED";
-        for (Tag entry : tag.getList("baseline", Tag.TAG_COMPOUND)) {
+        for (Tag entry : tag.getList("baseline", Tag.TAG_COMPOUND).stream().limit(BeliefPolicy.MAX_BELIEFS).toList()) {
             Belief belief = Belief.load((CompoundTag) entry);
-            if (belief != null && BeliefDescriptions.patterns().contains(belief.pattern)) state.baseline.put(belief.pattern, belief);
+            if (belief != null && BeliefDescriptions.known(belief.pattern)) state.baseline.put(belief.pattern, belief);
         }
-        for (String pattern : BeliefDescriptions.patterns()) {
+        for (String pattern : java.util.stream.Stream.of("confirmedHere", "blocked", "blockNext")
+                .flatMap(key -> tag.getList(key, Tag.TAG_STRING).stream().limit(BeliefPolicy.MAX_BELIEFS).map(Tag::getAsString))
+                .filter(BeliefDescriptions::known).distinct().toList()) {
             if (tag.getList("confirmedHere", Tag.TAG_STRING).contains(net.minecraft.nbt.StringTag.valueOf(pattern))) state.confirmedHere.add(pattern);
             if (tag.getList("blocked", Tag.TAG_STRING).contains(net.minecraft.nbt.StringTag.valueOf(pattern))) state.blocked.add(pattern);
             if (tag.getList("blockNext", Tag.TAG_STRING).contains(net.minecraft.nbt.StringTag.valueOf(pattern))) state.blockNext.add(pattern);
