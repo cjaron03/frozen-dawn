@@ -124,14 +124,15 @@ public final class MaeveArcherGameTest {
                 var arrows = s.level.getEntitiesOfClass(Arrow.class, a.getBoundingBox().inflate(32), x -> x.getOwner() == a);
                 h.assertTrue(!arrows.isEmpty(), "Executor must have spawned a real arrow");
                 var arrow = arrows.getFirst();
-                arrow.setPos(p.getX() - 1, p.getY() + .8, p.getZ()); arrow.setDeltaMovement(1.6, 0, 0);
+                arrow.setPos(p.getX() - 1, p.getY() + .8, p.getZ()); arrow.setDeltaMovement(2.0, 0, 0);
                 float health = p.getHealth(); arrow.tick(); arrow.tick();
                 h.assertTrue(p.getHealth() < health, "Real projectile collision must damage the subject");
                 var suit = p.getData(com.frozendawn.init.ModAttachments.SUIT_INTEGRITY);
                 h.assertTrue(suit.punctures() == 1 && suit.graceTicks() > 0, "Architect arrow must use existing puncture chance and grace");
                 p.invulnerableTime = 0;
                 var second = new Arrow(s.level, a, new ItemStack(Items.ARROW), a.getMainHandItem());
-                s.level.addFreshEntity(second); second.setPos(p.getX() - 1, p.getY() + .8, p.getZ()); second.setDeltaMovement(1.6, 0, 0);
+                second.setBaseDamage(arrow.getBaseDamage());
+                s.level.addFreshEntity(second); second.setPos(p.getX() - 1, p.getY() + .8, p.getZ()); second.setDeltaMovement(2.0, 0, 0);
                 second.tick(); second.tick(); second.discard();
                 h.assertTrue(suit.punctures() == 1, "Ordinary grace must prevent repeated punctures");
                 MaeveDirector.releaseCommitment(a, "ARCHER_QUIVER_EMPTY");

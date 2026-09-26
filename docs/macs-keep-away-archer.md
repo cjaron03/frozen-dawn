@@ -10,7 +10,9 @@ A selected archer does not inspect current weapons, inventory, health, suit punc
 
 ## Execution and provisional tuning
 
-The visible generated bow fires 16 ordinary physical arrows at most. Drawing takes 20 ticks, with 20 ticks between draws; velocity is 1.6 and inaccuracy 6. Preferred range is roughly 16 blocks, with ordinary navigation beyond 18 and shooting limited to 24. These are initial execution defaults, not final balance values.
+The visible generated bow fires 16 ordinary physical arrows at most. Drawing takes 20 ticks, with 20 ticks between draws; velocity is 2.0 and inaccuracy 6. Preferred range is roughly 16 blocks, with ordinary navigation beyond 18 and shooting limited to 24. These are provisional execution defaults, not final balance values.
+
+After the first live replay, the owner requested faster flight while retaining the existing spread and cadence. The 2026-09-26 tuning raises velocity from 1.6 to 2.0, scales the vanilla-style loft coefficient from 0.2 to 0.128, and scales base arrow damage by 0.8 (normally 2.0 to 1.6) to offset the velocity increase. Air drag, gravity and integer damage rounding mean damage is approximately comparable, not identical at every distance. Both combat presets retain Normal-skeleton spread; the bow aims at the subject's visible position at release without movement prediction or confidence-based accuracy boosts. Active bow execution still uses ordinary navigation without digging or bridging; full builder execution returns after ordinary combat resumes.
 
 The existing 30–59-tick strafe cadence and safe-footing movement constrain its close movement to 0.12 blocks per tick. Inside eight blocks it adds the existing backoff motion; a player sprint can close the gap. Once per second it considers at most eight nearby standing points for existing cover and biases the same strafe toward cover between draws, away when drawing. It builds no archer pillars. Normal recovery retains its existing retreat cover.
 

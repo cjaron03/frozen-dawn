@@ -99,7 +99,10 @@ final class ArchitectArcherController {
         double x = target.getX() - actor.getX(), z = target.getZ() - actor.getZ();
         double y = target.getY(.3333333333333333) - arrow.getY();
         // Vanilla physical arrows: cover, shields and normal suit puncture events all apply.
-        arrow.shoot(x, y + Math.sqrt(x * x + z * z) * .2, z, 1.6F, 6F);
+        // Faster flight needs less loft: .2 * (1.6 / 2.0)^2. Keep the existing spread.
+        // Offset velocity-scaled impact damage so this tuning is primarily a flight-speed change.
+        arrow.setBaseDamage(arrow.getBaseDamage() * .8);
+        arrow.shoot(x, y + Math.sqrt(x * x + z * z) * .128, z, 2.0F, 6F);
         if (actor.level().addFreshEntity(arrow)) {
             arrows--;
             actor.playSound(SoundEvents.SKELETON_SHOOT, 1, 1);
