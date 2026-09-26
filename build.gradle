@@ -443,3 +443,14 @@ tasks.register('generateMacsMantletQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsMantletQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsMantletQa') }
+
+// The archer live handoff uses the same parsed functions and real sword-hit reward as native QA.
+def macsArcherQaResources = layout.buildDirectory.dir('generated/macs-archer-qa')
+tasks.register('generateMacsArcherQa', Exec) {
+    inputs.files('tools/prepare_macs_archer_playtest.py', 'tools/prepare_macs_shield_playtest.py',
+            'tools/prepare_macs_integrated_playtest.py', 'tools/macs_guard_acceptance.py')
+    outputs.dir(macsArcherQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_archer_playtest.py', '--pack-only', macsArcherQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsArcherQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsArcherQa') }

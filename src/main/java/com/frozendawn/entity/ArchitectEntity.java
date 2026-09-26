@@ -135,6 +135,7 @@ public class ArchitectEntity extends Monster {
 
     private static final EntityDataAccessor<Integer> DATA_PURSUIT_POSE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_ARCHER_POSE = SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_MAEVE_HOLD =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_RANGED_COVER_HOLD =
@@ -375,6 +376,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_MASTER_MIND_COPY, false);
         builder.define(DATA_MASTER_AURA_TIER, 0);
         builder.define(DATA_PURSUIT_POSE, 0);
+        builder.define(DATA_ARCHER_POSE, 0);
         builder.define(DATA_MAEVE_HOLD, false);
         builder.define(DATA_RANGED_COVER_HOLD, false);
         builder.define(DATA_RECON_EYES, false);
@@ -625,6 +627,7 @@ public class ArchitectEntity extends Monster {
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || AggregateReinforcementManager.isChild(this)) {
             if (maeveCommitment.shield().active()) maeveCommitment.shield().stop("OBSERVER_UNAVAILABLE");
+            if (maeveCommitment.archer().active()) maeveCommitment.archer().stop("OBSERVER_UNAVAILABLE");
             entityData.set(DATA_PURSUIT_POSE, 0);
             entityData.set(DATA_MAEVE_HOLD, false);
             updateReconnaissancePose(false);
@@ -807,7 +810,7 @@ public class ArchitectEntity extends Monster {
         // --- Potion drinking ---
         if (combatState.isDrinkingPotion) {
             // Validate the retained stance even while ordinary combat execution pauses.
-            if (maeveCommitment.shield().active()) maeveCommitment.tick(target);
+            if (maeveCommitment.shield().active() || maeveCommitment.archer().active()) maeveCommitment.tick(target);
             combatState.drinkTicks++;
             if (combatState.drinkTicks >= DRINK_DURATION) {
                 finishDrinking();
@@ -1392,7 +1395,7 @@ public class ArchitectEntity extends Monster {
                 + " reinits=" + approachState.unstickReinitAttempts + " destroyed=" + successfulBreakCount()
                 + " recording=" + decisionJournal.enabled() + " retained=" + decisionJournal.entries().size()
                 + " dropped=" + decisionJournal.dropped() + " seed=" + debugSeed
-                + " targetLock=" + debugForcedTargetId;
+                + " targetLock=" + debugForcedTargetId + " " + maeveCommitment.archer().describe();
     }
 
     // ========================
@@ -1513,6 +1516,10 @@ public class ArchitectEntity extends Monster {
         observationController.executeRoamAndRuin();
     }
 
+    void executeArcherMotion(Vec3 target, int coverSide) { combatController.executeArcherMotion(target, coverSide); }
+    void setArcherPose(int pose) { entityData.set(DATA_ARCHER_POSE, pose); }
+    public int getArcherPose() { return entityData.get(DATA_ARCHER_POSE); }
+
     void applyCombatHorizontalMotion(double x, double z) {
         Vec3 current = getDeltaMovement();
         Vec3 blended = ArchitectMeleeEngagement.blendCombatHorizontalMotion(
@@ -1554,6 +1561,7 @@ public class ArchitectEntity extends Monster {
         }
         if (newAction == ACTION_RETREAT) {
             maeveCommitment.shield().suspend("RETREAT");
+            maeveCommitment.archer().suspend();
             ArchitectActionTransitionSupport.onEnterRetreat(combatState);
         }
         if (newAction == ACTION_ATTACK_MELEE) {
@@ -1743,6 +1751,7 @@ public class ArchitectEntity extends Monster {
     @Override
     public void die(DamageSource source) {
         if (!level().isClientSide() && maeveCommitment.shield().active()) maeveCommitment.shield().stop("OWNER_KILLED");
+        if (!level().isClientSide() && maeveCommitment.archer().active()) maeveCommitment.archer().stop("OWNER_KILLED");
         if (isMasterMindCopy()) {
             mindCopyDeathSource = source;
             super.die(source);
@@ -1798,6 +1807,7 @@ public class ArchitectEntity extends Monster {
 
     void startDrinking() {
         maeveCommitment.shield().suspend("DRINKING");
+        maeveCommitment.archer().suspend();
         combatState.isDrinkingPotion = true;
         combatState.drinkTicks = 0;
         if (level() instanceof ServerLevel serverLevel) {
@@ -1944,6 +1954,7 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void updateHeldItem() {
+        if (maeveCommitment.archer().equip()) return;
         fxController.updateHeldItem(
                 getBrainAction(),
                 combatState.isDrinkingPotion,
@@ -2777,6 +2788,7 @@ public class ArchitectEntity extends Monster {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         maeveCommitment.shield().clear();
+        maeveCommitment.archer().clear();
         maeveAttention.clear(); maeveReconnaissance.clear();
         localCombatUntil = Math.min(tag.getLong("LocalCombatUntil"), level().getGameTime() + 600);
         ArchitectPersistence.CoreState coreState = ArchitectPersistence.readCoreState(tag);

@@ -52,6 +52,7 @@ def classify(path: str) -> tuple[str, str, str]:
         )
 
     prefix_groups = (
+        (("entity/architect/",), "architect_procedural", "tools/audio_sources/architect/SOURCES.md", "Frozen Dawn original"),
         (("entity/rimebound/",), "rimebound_procedural", "tools/audio_sources/rimebound/SOURCES.md", "Frozen Dawn original"),
         (("block/stillpoint_core/",), "stillpoint_procedural", "tools/audio_sources/stillpoint_core/SOURCES.md", "Frozen Dawn original"),
         (("entity/master_architect/", "entity/thae_iven_heart/", "entity/hearth/", "music/master_architect/", "music/heart/", "ui/thaeven_"), "master_thae_iven_owner", "tools/audio_sources/master_architect/SOURCES.md", "Frozen Dawn original"),

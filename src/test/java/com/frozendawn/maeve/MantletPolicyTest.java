@@ -44,10 +44,10 @@ class MantletPolicyTest {
         var saved = p.save(); p = CommitmentPolicy.load(saved);
         assertEquals(saved.getCompound("performance"), p.save().getCompound("performance"));
         p.begin(UUID.randomUUID(), List.of(belief(1)), 2000);
-        assertTrue(p.performance().multiplier(RangedCoverPolicy.MANTLET, DIM) < p.performance().multiplier(BeliefStore.RANGED, DIM));
+        assertTrue(p.performance().multiplier(CounterVariantPolicy.MANTLET, DIM) < p.performance().multiplier(BeliefStore.RANGED, DIM));
         assertTrue(choose(p, 2000)); assertFalse(p.selected().advancingCover(), "A beaten mantlet yields to historically untried pillars");
         var legacy = new StrategyPerformance(); legacy.begin(0);
-        assertEquals(1, StrategyPerformance.load(legacy.save()).multiplier(RangedCoverPolicy.MANTLET, DIM));
+        assertEquals(1, StrategyPerformance.load(legacy.save()).multiplier(CounterVariantPolicy.MANTLET, DIM));
     }
     @Test void cooldownAndCheaperOtherFamilyStillWin() {
         var p = policy(1); p.contradict(BeliefStore.RANGED, 1000);
@@ -64,6 +64,6 @@ class MantletPolicyTest {
         var p = policy(1); assertTrue(choose(p, 1000)); p.arrived(1000);
         p = CommitmentPolicy.load(p.save());
         assertNull(p.active(1001)); assertFalse(choose(p, 1001));
-        assertTrue(p.performance().diagnostics(1001).stream().anyMatch(s -> s.contains(RangedCoverPolicy.MANTLET) && s.contains("unknown=1")));
+        assertTrue(p.performance().diagnostics(1001).stream().anyMatch(s -> s.contains(CounterVariantPolicy.MANTLET) && s.contains("unknown=1")));
     }
 }

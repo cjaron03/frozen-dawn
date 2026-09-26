@@ -54,6 +54,9 @@ assets/frozendawn/sounds/entity/aggregate/roar_3.ogg	6c607c05e75520fd5ed505706aa
 assets/frozendawn/sounds/entity/aggregate/slam_1.ogg	7e0a589fac9abe97c47c4436d916f07b24e0a1f145dbe400f4e41b9a34165d53	aggregate_mixed	tools/audio_sources/aggregate/SOURCES.md	CC0-derived
 assets/frozendawn/sounds/entity/aggregate/slam_2.ogg	b31568c038a0228bbcd6dc97d0222e86f2c502b25a5f756df5cd50b3aae5cbdd	aggregate_mixed	tools/audio_sources/aggregate/SOURCES.md	CC0-derived
 assets/frozendawn/sounds/entity/aggregate/slam_3.ogg	e9c196458c8d5b72bad46af17df07f7805e5c5f7f69a6c159a690c5c00d7ff3d	aggregate_mixed	tools/audio_sources/aggregate/SOURCES.md	CC0-derived
+assets/frozendawn/sounds/entity/architect/shoot_1.ogg	c7ee8ae60ca6613686bd3132981b233e97638e6bc34dfe85144539b24ecb3551	architect_procedural	tools/audio_sources/architect/SOURCES.md	Frozen Dawn original
+assets/frozendawn/sounds/entity/architect/shoot_2.ogg	8a49d5d2707c31ac4beb2fe78f6ee364e9e6ee578754e0f4afb64fd98ef79e1c	architect_procedural	tools/audio_sources/architect/SOURCES.md	Frozen Dawn original
+assets/frozendawn/sounds/entity/architect/shoot_3.ogg	7a0d2055d778aca0eea0261a561d8688dcddd0db13de20f22776f0d0d6146719	architect_procedural	tools/audio_sources/architect/SOURCES.md	Frozen Dawn original
 assets/frozendawn/sounds/entity/archivist/ambient_1.ogg	3bcd99f075a931367764d1bf76b2dcdd29e30d4e2258cd367b128e8cba7e863a	archivist_mixed	tools/audio_sources/archivist/SOURCES.md	CC0, CC BY 4.0, and original
 assets/frozendawn/sounds/entity/archivist/ambient_2.ogg	943be93094450907ce1a1b3fbaedb8de7ae7d6a5cfd2f5bda6eb0073af4e6c0d	archivist_mixed	tools/audio_sources/archivist/SOURCES.md	CC0, CC BY 4.0, and original
 assets/frozendawn/sounds/entity/archivist/ambient_3.ogg	39a095f24125cd2a408cd55ef93350e683eb11efb48b5401c92b04331b81e934	archivist_mixed	tools/audio_sources/archivist/SOURCES.md	CC0, CC BY 4.0, and original
