@@ -1,11 +1,11 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.maeve.MaeveDirector;
+import com.frozendawn.init.ModSounds;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -105,7 +105,7 @@ final class ArchitectArcherController {
         arrow.shoot(x, y + Math.sqrt(x * x + z * z) * .128, z, 2.0F, 6F);
         if (actor.level().addFreshEntity(arrow)) {
             arrows--;
-            actor.playSound(SoundEvents.SKELETON_SHOOT, 1, 1);
+            actor.playSound(ModSounds.ARCHITECT_SHOOT.get(), 1, 1);
             actor.recordDecision("MAEVE_ARCHER_SHOT", null, "remaining=" + arrows + " target=" + target.getUUID() + " projectile=" + arrow.getUUID());
         }
     }

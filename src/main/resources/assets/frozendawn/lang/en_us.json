@@ -621,6 +621,7 @@
   "message.frozendawn.surveyor_lens.hearth.type.minor": "Minor",
 
   "subtitle.frozendawn.entity.architect.mine": "Something is mining",
+  "subtitle.frozendawn.entity.architect.shoot": "Architect shoots arrow",
   "subtitle.frozendawn.entity.architect.ambient": "Something creaks nearby",
   "subtitle.frozendawn.entity.architect.observe": "Something is watching",
   "subtitle.frozendawn.entity.architect.hurt": "Returned Architect hurts",

@@ -571,6 +571,8 @@ public class ModSounds {
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.mimic.stare")));
 
     // --- Architect Mob ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_SHOOT =
+            register("entity.architect.shoot");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_MINE = SOUNDS.register("entity.architect.mine",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.mine")));

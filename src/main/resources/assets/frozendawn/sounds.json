@@ -577,6 +577,15 @@
       { "name": "minecraft:ambient.cave", "type": "event", "volume": 1.0 }
     ]
   },
+  "entity.architect.shoot": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.shoot",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/shoot_1", "attenuation_distance": 24 },
+      { "name": "frozendawn:entity/architect/shoot_2", "attenuation_distance": 24 },
+      { "name": "frozendawn:entity/architect/shoot_3", "attenuation_distance": 24 }
+    ]
+  },
   "entity.architect.mine": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.architect.mine",

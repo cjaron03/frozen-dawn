@@ -20,6 +20,8 @@ At three blocks it releases the bow and resumes ordinary combat. After arrow 16 
 
 The owner chose existing EVA puncture balance for initial testing. Architect-owned arrows follow `SuitIntegrityHandler` exactly: currently a 12% configured Architect chance, the existing protection rules, 300-tick grace after a puncture and existing concurrent cap. No special pause, probability reduction or per-archer puncture cap is added. The archer cannot read suit integrity. Arrows retain normal collision, shield and damage behavior.
 
+Presentation uses the dedicated `entity.architect.shoot` event with the subtitle "Architect shoots arrow" and three short original bow-snap/soul-breath variations. Client-local arrow ticks add one small soul flame along the traveled segment and one soul particle every fourth tick, only for arrows whose locally resolved owner is an ordinary Architect. Stationary/embedded arrows emit nothing, and ordinary player/skeleton arrows are excluded. This adds no damage effects, particle network packets, global entity searches or persistent tracking. Normal particle settings and distance culling apply; if the owner is not tracked locally, the trail is omitted. Sound provenance and regeneration are recorded in `tools/audio_sources/architect/SOURCES.md`.
+
 ## Persistence, multiplayer and bounds
 
 Maeve save schema is 6. Versions through 5 load normally; the new bounded performance key is `PLAYER_PREFERS_SWORD:ARCHER`. Old sword results remain shield results. An unfinished use becomes UNKNOWN on reload, its execution and generated bow are released, and its saved encounter bet remains spent. Loading a version newer than supported is rejected. Erasure does not archive beliefs; the permanent violation ledger is unchanged.
