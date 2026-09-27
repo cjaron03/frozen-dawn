@@ -464,3 +464,13 @@ tasks.register('generateMacsExitQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsExitQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExitQa') }
+
+// Convergence replay functions are parsed at the same permission as the local client.
+def macsPawnQaResources = layout.buildDirectory.dir('generated/macsPawnQa')
+tasks.register('generateMacsPawnQa', Exec) {
+    inputs.file('tools/prepare_macs_pawn_playtest.py')
+    outputs.dir(macsPawnQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_pawn_playtest.py', '--pack-only', macsPawnQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsPawnQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPawnQa') }
