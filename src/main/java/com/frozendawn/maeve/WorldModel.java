@@ -19,10 +19,19 @@ final class WorldModel {
     private final Map<String, Point> points = new LinkedHashMap<>();
     private final Map<String, Long> cells = new LinkedHashMap<>();
     private final Map<String, LinkedHashMap<BlockPos, Long>> shelters = new LinkedHashMap<>();
+    private final Map<String, Area> areas = new LinkedHashMap<>();
+    private long nextArea;
     // A reload must never join positions observed in different sessions into a crossing.
     private final Map<UUID, Presence> presence = new LinkedHashMap<>();
 
     record Presence(String dimension, BlockPos position, boolean covered, long time) { }
+    record Area(UUID id, BlockPos anchor) { }
+    Area area(String dimension) { return areas.get(dimension); }
+
+    private Area newArea(String dimension, BlockPos anchor, long now) {
+        String identity = dimension + "/" + anchor.asLong() + "/" + now + "/" + nextArea++;
+        return new Area(UUID.nameUUIDFromBytes(identity.getBytes(java.nio.charset.StandardCharsets.UTF_8)), anchor.immutable());
+    }
 
     Presence sample(UUID observer, String dimension, BlockPos pos, boolean covered, long now) {
         Presence previous = presence.remove(observer);
@@ -32,9 +41,12 @@ final class WorldModel {
         if (covered) {
             var locations = shelters.computeIfAbsent(dimension, k -> new LinkedHashMap<>());
             if (!locations.isEmpty() && center(dimension).distSqr(pos) > 32 * 32) locations.clear();
+            if (locations.isEmpty() || areas.get(dimension).anchor().distSqr(pos) > 32 * 32)
+                areas.put(dimension, newArea(dimension, pos, now));
             locations.remove(pos); locations.put(pos.immutable(), now);
             trimOldestInsertion(locations, MAX_COVERED);
             trimOldestInsertion(shelters, MAX_SHELTERS);
+            areas.keySet().retainAll(shelters.keySet());
         }
         return previous;
     }
@@ -106,6 +118,17 @@ final class WorldModel {
 
     MaeveDirector.SpatialTarget resolve(String dimension, String pattern, BlockPos observer, long now) {
         BlockPos centroid = center(dimension);
+        var conditional = ExitPrediction.parse(pattern);
+        if (conditional != null) {
+            var area = area(dimension);
+            if (area == null || !conditional.area().equals(ExitPrediction.token(area.id()))) return null;
+            centroid = area.anchor();
+            pattern = conditional.to();
+        }
+        return resolve(dimension, pattern, observer, now, centroid);
+    }
+
+    private MaeveDirector.SpatialTarget resolve(String dimension, String pattern, BlockPos observer, long now, BlockPos centroid) {
         if (centroid == null) return null;
         return points.values().stream().filter(p -> p.label.equals("ACCESS_POINT") && p.dimension.equals(dimension)
                         && p.state.equals("OPEN") && p.inside != null && p.confidence(now) > 0.05
@@ -154,11 +177,13 @@ final class WorldModel {
     private static <K, V> void trimOldestInsertion(Map<K, V> map, int cap) { if (map.size() > cap) map.remove(map.keySet().iterator().next()); }
 
     CompoundTag save() {
-        CompoundTag tag = new CompoundTag(); ListTag entries = new ListTag();
+        CompoundTag tag = new CompoundTag(); tag.putLong("nextArea", nextArea); ListTag entries = new ListTag();
         points.values().forEach(p -> entries.add(p.save())); tag.put("points", entries);
         ListTag areas = new ListTag();
         shelters.forEach((dimension, positions) -> positions.forEach((pos, time) -> {
             CompoundTag value = new CompoundTag(); value.putString("dimension", dimension);
+            var area = this.areas.get(dimension);
+            value.putUUID("area", area.id()); value.putLong("anchor", area.anchor().asLong());
             value.putLong("position", pos.asLong()); value.putLong("time", time); areas.add(value);
         })); tag.put("covered", areas);
         ListTag observed = new ListTag(); cells.forEach((cell, time) -> {
@@ -168,6 +193,7 @@ final class WorldModel {
 
     static WorldModel load(CompoundTag tag) {
         WorldModel model = new WorldModel();
+        model.nextArea = Math.max(0, tag.getLong("nextArea"));
         for (Tag raw : tag.getList("points", Tag.TAG_COMPOUND)) {
             if (model.points.size() == MAX_POINTS) break;
             Point point = Point.load((CompoundTag) raw);
@@ -180,6 +206,9 @@ final class WorldModel {
             if (ResourceLocation.tryParse(dim) == null) continue;
             if (!model.shelters.containsKey(dim) && model.shelters.size() == MAX_SHELTERS) continue;
             var positions = model.shelters.computeIfAbsent(dim, k -> new LinkedHashMap<>());
+            model.areas.computeIfAbsent(dim, k -> p.hasUUID("area") && p.contains("anchor", Tag.TAG_LONG)
+                    ? new Area(p.getUUID("area"), BlockPos.of(p.getLong("anchor")))
+                    : model.newArea(dim, BlockPos.of(p.getLong("position")), Math.max(0, p.getLong("time"))));
             if (positions.size() < MAX_COVERED) positions.put(BlockPos.of(p.getLong("position")), Math.max(0, p.getLong("time")));
         }
         for (Tag raw : tag.getList("observed", Tag.TAG_COMPOUND)) {

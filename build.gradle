@@ -454,3 +454,13 @@ tasks.register('generateMacsArcherQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsArcherQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsArcherQa') }
+
+// The live exit replay uses the same command parser as the required native gate.
+def macsExitQaResources = layout.buildDirectory.dir('generated/macsExitQa')
+tasks.register('generateMacsExitQa', Exec) {
+    inputs.file('tools/prepare_macs_exit_playtest.py')
+    outputs.dir(macsExitQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_exit_playtest.py', '--pack-only', macsExitQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsExitQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExitQa') }
