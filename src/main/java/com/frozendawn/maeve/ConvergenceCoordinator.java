@@ -156,7 +156,10 @@ final class ConvergenceCoordinator {
                 g.firstArrival = now(); pawn.recordDecision("MAEVE_PAWN_FIRST_ARRIVAL", null, "warningTicks=" + (now() - g.cloudAt));
             }
         }
-        if (g.firstArrival < 0) ConvergencePresentation.cloud(level(g.dimension), g, now());
+        if (g.firstArrival < 0) {
+            ConvergencePresentation.refreshMessage(server, memory, g, now());
+            ConvergencePresentation.cloud(level(g.dimension), g, now());
+        }
         long limit = g.firstArrival < 0 ? g.cloudAt + ConvergencePolicy.TRAVEL_LIMIT : g.firstArrival + ConvergencePolicy.ENGAGEMENT_LIMIT;
         if (now() >= limit) finish(g.contactAt >= 0 ? "SUCCESS" : "UNKNOWN", g.firstArrival < 0 ? "TRAVEL_TIMEOUT" : "ENGAGEMENT_ENDED");
         data.setDirty();

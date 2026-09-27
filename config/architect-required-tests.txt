@@ -202,3 +202,7 @@ pawnreloadunloadanderasureretainexclusionwithoutretainingorders xml
 pawnsharedpopulationandattentionevictiondisperseactualactors xml
 pawnreplayfunctionsparseatclientpermission xml
 pawntworealwipesavoidregionandreleaseondecay xml
+
+# Pawn field replay: physical diversion and visible avoidance on layered snow.
+pawndiversionvacatessourcewithoutreplacementorextraactors xml
+pawnavoidancemovesidleactoroutacrosslayeredsnow xml

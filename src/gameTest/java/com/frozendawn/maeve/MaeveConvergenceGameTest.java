@@ -63,7 +63,7 @@ public final class MaeveConvergenceGameTest {
     public static void pawnReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_pawn") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 14, "The complete convergence replay must be registered: " + resources.size());
+        helper.assertTrue(resources.size() == 32, "The complete convergence replay must be registered: " + resources.size());
         resources.forEach((file, resource) -> {
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_pawn", file.getPath().substring("function/".length()).replace(".mcfunction", ""));
             helper.assertTrue(server.getFunctions().get(id).isPresent(), "Native function exists: " + id);
@@ -168,6 +168,9 @@ public final class MaeveConvergenceGameTest {
             var hotspot = history(s); var first = donor(s, -38, 4); var second = donor(s, 42, 4);
             long now = s.level.getGameTime(); MaeveDirector.tick(s.server); var g = memory(s).active;
             h.assertTrue(g != null, "Fixture dispatched the real group"); var before = hotspot.save();
+            var serialized = new CompoundTag(); first.saveWithoutId(serialized);
+            h.assertTrue(serialized.getCompound("NeoForgeData").hasUUID("macsConvergence"),
+                    "Live replay admission reads the actual persistent dispatch UUID from native entity NBT");
             kill(s, first); h.assertTrue(hotspot.save().equals(before), "A first casualty only updates its roster");
             second.setPos(s.position(60, 4)); kill(s, second);
             h.assertTrue(hotspot.deaths == 6 && hotspot.encounters == 3 && memory(s).hotspots.size() == 1 && hotspot.wipes == 1,
@@ -211,6 +214,58 @@ public final class MaeveConvergenceGameTest {
             h.assertTrue(memory.active == null && memory.hotspots.isEmpty() && MaeveDirector.attentionSnapshot(s.server).slots().isEmpty(), "Erasure clears history, rosters and attention synchronously");
             h.assertTrue(MaeveDirector.diagnostics(s.server, null).stream().noneMatch(line -> line.startsWith("HOTSPOT")), "Erased diagnostics expose no old regions");
             PostMaeveWorldState.setForDebug(s.server, false); h.assertTrue(memory(s).hotspots.isEmpty(), "Debug reversal starts empty");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 500)
+    public static void pawnDiversionVacatesSourceWithoutReplacementOrExtraActors(GameTestHelper h) {
+        scene(h, 103, s -> {
+            floor(s, true); var hotspot = history(s);
+            var first = donor(s, -38, 2); var second = donor(s, -38, 6);
+            var firstOrigin = first.blockPosition(); var secondOrigin = second.blockPosition();
+            long now = s.level.getGameTime(); MaeveDirector.tick(s.server); var group = memory(s).active;
+            h.assertTrue(group != null && group.donors.keySet().equals(java.util.Set.of(first.getUUID(), second.getUUID())),
+                    "The two existing source actors become the frozen roster");
+            h.assertTrue(MaeveDirector.allowNaturalPawn(s.level, s.origin.offset(160, 0, 4)),
+                    "Unrelated location has free population capacity, isolating donor suppression from the global cap");
+            h.assertTrue(!MaeveDirector.allowNaturalPawn(s.level, firstOrigin), "The donor area cannot immediately replace diverted pressure");
+            for (int i = 1; i <= 500; i++) tick(s, now + i, first, second);
+            h.assertTrue(memory(s).active == group && first.blockPosition().distSqr(firstOrigin) > 12 * 12
+                            && second.blockPosition().distSqr(secondOrigin) > 12 * 12,
+                    "Both actual pawns vacate the source area by the live replay checkpoint");
+            h.assertTrue(memory(s).population.pawns.keySet().equals(group.donors.keySet()),
+                    "Diversion has neither created a replacement nor fabricated extra actors");
+            h.assertTrue(!MaeveDirector.allowNaturalPawn(s.level, firstOrigin)
+                            && MaeveDirector.allowNaturalPawn(s.level, s.origin.offset(160, 0, 4)),
+                    "Source replacement remains withheld after physical departure while unrelated capacity remains usable");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 500)
+    public static void pawnAvoidanceMovesIdleActorOutAcrossLayeredSnow(GameTestHelper h) {
+        scene(h, 104, s -> {
+            floor(s, true);
+            // Match the live field's broad snow apron; a nine-block test lane would
+            // impose a false cliff on the departure controller's safe side steps.
+            for (int x = 12; x <= 50; x++) for (int z = -26; z <= 22; z++) {
+                s.block(x, -1, z, Blocks.STONE.defaultBlockState());
+                s.block(x, 0, z, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 1 + Math.floorMod(x / 3, 3)));
+            }
+            var hotspot = history(s); long now = s.level.getGameTime();
+            for (int i = 0; i < 2; i++) {
+                s.clock(now + i * 12000); var first = donor(s, -38, 2); var second = donor(s, -38, 6);
+                MaeveDirector.tick(s.server); h.assertTrue(memory(s).active != null, "Real roster precedes each wipe");
+                kill(s, first); kill(s, second);
+            }
+            var idle = donor(s, 18, 4); var origin = idle.position();
+            s.clock(now + 12020); MaeveDirector.tick(s.server);
+            h.assertTrue(hotspot.avoid && idle.isMaeveDisengaging(), "An unprovoked eligible pawn receives regional avoidance");
+            for (int t = 1; t <= 200; t++) { s.clock(now + 12020 + t); idle.tick(); }
+            h.assertTrue(idle.position().distanceToSqr(origin) > 16
+                            && idle.blockPosition().distSqr(hotspot.anchor) > ConvergencePolicy.RADIUS * ConvergencePolicy.RADIUS,
+                    "The real idle pawn visibly exits the avoided region on layered snow: origin=" + origin + " now=" + idle.position());
+            h.assertTrue(hotspot.deaths == 6 && hotspot.wipes == 2 && hotspot.avoid,
+                    "Observing withdrawal creates no death and does not reset avoidance");
         });
     }
 
