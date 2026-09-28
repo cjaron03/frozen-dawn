@@ -1,31 +1,58 @@
 # Pawn Convergence checkpoint — 2026-09-27
 
-Paused at the owner's request after the visible-avoidance replay. No further tuning, testing or merge should run until the owner resumes.
+The owner ended this session after accepting the environmental bait replay. The world saved cleanly at 23:27:12. Work is parked for the next session; this is a local progress checkpoint, not merge approval.
 
-Branch: `feat/macs-pawn-convergence`, targeting `feat/maeve-director`. [PR #98](https://github.com/cjaron03/frozen-dawn/pull/98) remains draft. This checkpoint commit contains the accepted soul-only cloud, longer action-bar warning, outcome/field QA functions, required field regressions and live acceptance notes. It is a progress snapshot, not merge approval. The local checkpoint has not been pushed.
+## Owning checkout and delivery
 
-## Latest finding
+- Worktree: `/Users/jaroncabral/.codex/worktrees/macs-pawn-convergence/minecraft-mod`.
+- Branch: `feat/macs-pawn-convergence`, targeting `feat/maeve-director`.
+- [PR #98](https://github.com/cjaron03/frozen-dawn/pull/98) remains open and draft. Its published head is `4bdb7b5625a7d6be9b26a3a13646b9bdd6e7ee33`; the previous local checkpoint and this checkpoint have not been pushed.
+- This checkpoint includes the accepted avoidance sprint, its collision/handoff regressions, cooldown and environmental QA functions, and live acceptance records. Refresh required results for the eventual published commit before delivery.
 
-The owner reported: “it just appears to be walking around.” Actor `0a400de5-719b-48e4-bac8-b52a3520079f` received `MAEVE_PAWN_AVOID` at replay tick 12. It moved from (4016, 101, 4006) to (4019, 101, 3986), leaving the 24-block region anchored at (4001, 101, 4006). Its checkpoint position is about 26.9 blocks from that anchor. At replay tick 216 it resumed ordinary action selection and selected FORTIFY with no target. Mechanical avoidance is verified, but the owner did not recognize it as purposeful avoidance. Review its presentation and transition back to local behavior before declaring the live criterion fully accepted. No behavior changes were made in response to this report.
+## Completed live checks
 
-The last direct dump at 03:18:48 local time retained fourteen deaths/seven encounters, weight 3.5798, wipes=2, avoid=true, cycle=1 and 8292 cooldown ticks. This is a historical checkpoint, not a claim about the live state after more unpaused time.
+1. Actual convergence, accepted soul cloud/action-bar presentation, minimum warning and actual player contact with a recorded SUCCESS in the earlier replay.
+2. Two confirmed pre-contact group wipes latch avoidance without adding dispatched deaths to hotspot history. Save/reload retains it; below-floor decay clears the old failure cycle; fresh ordinary deaths can earn a new dispatch.
+3. The same two pawns physically left the controlled source area, reducing its count from two to zero. Natural donor frequency and useful ordinary-play base relief are still separate checks.
+4. Idle-pawn avoidance physically exits the region on layered snow. The owner accepted ordinary chase-speed sprinting with “better.” Only PAWN_AVOID gains this pace; blocked routes, damage, cancellation and the ten-second handoff clear it.
+5. Avoidance survived cooldown expiry while weight stayed above 3.0. Two ordinary source pawns remained undispatched at weight 4.5304, cooldown zero, wipes=2 and avoid=true. The owner saw only wandering.
+6. Six genuine bow deaths in one fight formed one completed encounter. With sufficient weight, zero cooldown, no avoidance and two source pawns available, no convergence occurred.
+7. Two full-health actors died through actual falling physics and two through actual lava physics without a player attacker. These formed separate second and third episodes. Lava was sprinted, so only its native death recording is accepted, not normal-speed lava presentation.
+8. The resulting ten deaths/three completed encounters produced an actual three-pawn dispatch at weight 9.42177497750151. Its decision history contains all six bow, two fall and two lava events. First arrival was 360 ticks (18 seconds) after the cloud. All three original UUIDs reached the historical spot during the normal-speed view. The owner recognized the bait.
 
-## Verified so far
+## Current closed world and save state
 
-- Actual convergence, warning presentation, recorded player contact and final SUCCESS outcome.
-- Two actual pre-contact group wipes; dispatch deaths never refreshed hotspot history.
-- Avoidance latch persistence through save/reopen, below-floor decay, and fresh-evidence retry with the old wipe penalty cleared.
-- Controlled physical diversion: the same two actor UUIDs left the marked source area; source count fell from two to zero while both lived.
-- Actual regional avoidance event and physical exit on snow. Human clarity remains unresolved.
+World: **MACS Pawn Environment**. Last fixture stage: **73**; timer: **500**. The player watched in spectator mode and froze the view before the final dump.
 
-The latest `architectVerify` passed 640 unit tests, eight harness tests and 200 native GameTests, including all 195 required entries and all 32 replay functions. Source SHA-256: `f6d8cf2e844d198c923bdcb93bc8a0646563630d27b3d6efd55c0801951fa1d7`. Jar SHA-256: `f08ff27f486347696881b1afa734730572cf1bb6aa1d76e54ce05408eb791503`. These gates preceded the checkpoint commit; subsequent edits were evidence documentation. The unchanged production code previously passed the 500-case stress matrix. That matrix was not repeated for the two additional QA cases. Refresh exact-commit required results before eventual publication/merge.
+Hotspot `b19b3ca2-0859-4523-9d95-9229dc0023f3` is anchored at (4003,101,4006). The final live dump retained ten deaths/three encounters, lastEvidence=1000715, weight 9.2663, wipes=0, avoid=false and cycle=0. Dispatch `165aab4d-eac0-4b29-9ac6-2d8cce7a672a` had all three members alive and no player contact. Regional arrival is not a combat SUCCESS.
 
-## Resume safely
+Shutdown logged UNKNOWN/SERVER_STOPPED. Read-only inspection confirms the saved NBT contains an unfinished group, so the existing loader will release it as UNKNOWN/RELOAD_RELEASED on reopening and apply its ordinary cooldown. This is expected lifecycle handling; do not count shutdown or later cleanup as a WIPE. The saved stage and history are verified, not inferred from an older dump.
 
-Use `/Users/jaroncabral/.codex/worktrees/macs-pawn-convergence/minecraft-mod` and world **MACS Pawn Field Checks**. The player is in spectator observation mode and the last completed fixture stage is 41. Do not blindly rerun `avoidance`: its entry guard expects stage 16. Do not run `setup`, which erases tactical history.
+Complete closed-world backup: `build/macs-pawn-evidence/checkpoint-20260927-232915/closed-environment-world.zip`.
+SHA-256: `e266486638bf1e714761117d867ec10f88785094265964beb9fd56feed2d51e6`.
+The same folder contains the shutdown log, saved-NBT inspection, save hashes and previous detailed checkpoint history. These local evidence files and worlds are intentionally outside Git; keep this worktree available.
 
-First inspect the current log and working tree, then obtain `/fd maeve dump` before any new practice or time sprint. Time may have decayed the weight since this checkpoint. Review the preserved avoidance trace and the owner's legibility concern; make any next change narrow and evidence-backed. Prepare a valid replay state only after inspecting the current latch and history.
+The accepted **MACS Pawn Sprint** avoidance world is preserved separately, including its full backup at `build/macs-pawn-evidence/environment-controls-20260927-230738/closed-avoidance-world.zip`. Earlier Field Checks, Resume, Warning Polish and original Convergence worlds remain separate.
 
-The complete earlier world is preserved in `build/macs-pawn-evidence/20260927-field/closed-before-field.zip`. The original **MACS Pawn Warning Polish** world remains separate. Logs, dumps and actor traces for the latest view are in `build/macs-pawn-evidence/20260927-field/checkpoint-avoidance/`; the field diversion is in `live-diversion/`. No full backup of the current field world was attempted while it might still be open. Save and quit it before another full-world backup or installation.
+## Verification
 
-Remaining checks include visual legibility, avoidance through cooldown while weight stays above the floor, ordinary-play base relief and natural donor supply, cloud distinction without coaching, and the explicitly pending multiplayer acceptance. Preserve these limits in the PR and Notion. Do not infer merge readiness from the passing automated gate.
+The current source passed `architectVerify`: 640 unit tests, eight gate-harness tests, 202 native GameTests, all 197 required entries, and all 51 generated functions parsed at client permission level two. The new trap regression uses full-health native gravity and lava physics. The accepted sprint runtime also passed all 500 unchanged seeded stress cases; subsequent edits added QA functions/tests and documentation, with all 1328 production class entries verified identical. Those 500 cases were not rerun for QA-only changes.
+
+Current tested source fingerprint: `c098171a565590c301260c6e872bd4836bb9ebe0ba541659d736fc2c92a4699c`.
+Built and smoke-installed jar SHA-256: `d83762efd9b40ca7fea438ef7a088b66dafe0b78fa65a43963ca45b2119367be`.
+The checks preceded this local checkpoint commit; the later edits record live evidence and resume instructions. They are not fresh published checks for this commit.
+
+Evidence roots under `build/macs-pawn-evidence/`:
+
+- `avoidance-sprint-20260927-223933/`: automated sprint checks and accepted departure.
+- `cooldown-hold-20260927-225255/`: top-up, cooldown expiry and accepted idle-donor probe.
+- `environment-controls-20260927-230738/`: verification, copied-world provenance, single-fight control, fall/lava evidence and accepted three-pawn convergence.
+- `checkpoint-20260927-232915/`: complete current closed save and shutdown inspection.
+
+## Resume next session
+
+Start in the owning worktree and inspect Git status and the latest checkpoint before launching. If reopening the preserved Environment world, run `/tick freeze` and `/fd maeve dump` before setup, cleanup or time advancement; check the expected reload release. Do not rerun `env_setup` in this accepted world, because it clears tactical history.
+
+Next recommended work is a separate **natural-population/base-diversion test**: confirm ordinary spawning supplies eligible donors at a practical frequency, and that their diversion meaningfully reduces pressure at the base. The completed tests supplied actors for reproducibility and do not establish this. Define the observation window and compare actual source UUIDs/positions before preparing the next world. Do not fabricate history, spawn extra production reinforcements or accelerate the visible approach.
+
+Other remaining live acceptance: short/long warning perception, unprompted distinction between the gathering cloud and reconnaissance, and multiplayer pressure. Keep PR #98 draft until the applicable acceptance criteria and final published checks are complete. No new test world or live commands for the next check have been prepared yet.

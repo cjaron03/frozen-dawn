@@ -63,7 +63,7 @@ public final class MaeveConvergenceGameTest {
     public static void pawnReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_pawn") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 32, "The complete convergence replay must be registered: " + resources.size());
+        helper.assertTrue(resources.size() == 51, "The complete convergence replay must be registered: " + resources.size());
         resources.forEach((file, resource) -> {
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_pawn", file.getPath().substring("function/".length()).replace(".mcfunction", ""));
             helper.assertTrue(server.getFunctions().get(id).isPresent(), "Native function exists: " + id);
@@ -72,6 +72,34 @@ public final class MaeveConvergenceGameTest {
             } catch (java.io.IOException e) { throw new IllegalStateException(e); }
         });
         helper.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 400)
+    public static void pawnEnvironmentalTrapPhysicsRecordsDeaths(GameTestHelper h) {
+        scene(h, 106, s -> {
+            var m = memory(s); long now = start(s);
+            var falling = s.architect(2, 4);
+            falling.setPos(s.position(2, 4).add(0, 60, 0));
+            falling.setOnGround(false);
+            for (int t = 1; t <= 100 && falling.isAlive(); t++) tick(s, now + t, falling);
+            h.assertTrue(!falling.isAlive() && m.hotspots.size() == 1,
+                    "Full-health ordinary pawn dies through actual falling physics without a player attacker");
+            var hotspot = m.hotspots.values().iterator().next();
+            h.assertTrue(hotspot.deaths == 1, "The actual fall contributes exactly one death");
+            for (int x = 4; x <= 6; x++) for (int z = 3; z <= 5; z++) for (int y = -1; y <= 3; y++) {
+                s.block(x, y, z, x == 5 && z == 4 && y >= 0 && y < 3
+                        ? Blocks.AIR.defaultBlockState() : Blocks.BARRIER.defaultBlockState());
+            }
+            s.block(5, 0, 4, Blocks.LAVA.defaultBlockState());
+            var burning = s.architect(5, 4);
+            burning.setPos(s.position(5, 4).add(0, 1, 0));
+            for (int t = 101; t <= 400 && burning.isAlive(); t++) tick(s, now + t, burning);
+            h.assertTrue(!burning.isAlive() && hotspot.deaths == 2 && m.hotspots.size() == 1,
+                    "Full-health pawn dies to the actual bounded lava trap and adds one death to the same region");
+            h.assertTrue(hotspot.encounters == 0 && hotspot.evidence.get(0).encounter().equals(hotspot.evidence.get(1).encounter()),
+                    "Nearby physical trap deaths inside the quiet boundary remain one open encounter");
+            h.assertTrue(memory(s).active == null, "Two environmental deaths alone cannot dispatch a group");
+        });
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 400)
@@ -88,7 +116,11 @@ public final class MaeveConvergenceGameTest {
             var idle = donor(s, 10, 4); s.clock(now + 12020); MaeveDirector.tick(s.server);
             h.assertTrue(idle.isMaeveDisengaging() && MaeveDirector.knownDangers(idle, UUID.randomUUID()).contains(hotspot.anchor), "An idle ordinary pawn leaves and existing danger-aware walking sees the region");
             var origin = idle.position(); for (int t = 1; t <= 60; t++) { s.clock(now + 12020 + t); idle.tick(); }
-            h.assertTrue(idle.position().distanceToSqr(origin) > 4, "Avoidance visibly moves the pawn away");
+            h.assertTrue(idle.position().distanceToSqr(origin) > 4 && idle.isSprinting(), "Avoidance visibly sprints away");
+            var attacker = s.player("pawn_avoid_defense", 8, 4);
+            attacker.setPos(idle.position().add(-2, 0, 0));
+            h.assertTrue(s.hit(idle, attacker, true, 1), "A real hit can interrupt the departing pawn");
+            h.assertTrue(!idle.isMaeveDisengaging() && !idle.isSprinting(), "Local defense clears the avoidance sprint immediately");
             s.clock(now + 36000); MaeveDirector.tick(s.server);
             h.assertTrue(!hotspot.avoid && hotspot.wipes == 0 && hotspot.cycle == 1 && hotspot.deaths == 6 && hotspot.encounters == 3,
                     "Quiet decay clears the failure bias while retaining lifetime history");
@@ -260,12 +292,46 @@ public final class MaeveConvergenceGameTest {
             var idle = donor(s, 18, 4); var origin = idle.position();
             s.clock(now + 12020); MaeveDirector.tick(s.server);
             h.assertTrue(hotspot.avoid && idle.isMaeveDisengaging(), "An unprovoked eligible pawn receives regional avoidance");
-            for (int t = 1; t <= 200; t++) { s.clock(now + 12020 + t); idle.tick(); }
+            boolean sprinted = false; double fastestStep = 0;
+            for (int t = 1; t <= 200; t++) {
+                var previous = idle.position(); s.clock(now + 12020 + t); idle.tick();
+                sprinted |= idle.isSprinting();
+                fastestStep = Math.max(fastestStep, idle.position().subtract(previous).horizontalDistance());
+            }
+            h.assertTrue(sprinted && fastestStep > .2, "Snow departure uses visibly faster physical sprint movement: " + fastestStep);
+            h.assertTrue(!idle.isSprinting(), "The ten-second handoff clears sprint before ordinary behavior resumes");
             h.assertTrue(idle.position().distanceToSqr(origin) > 16
                             && idle.blockPosition().distSqr(hotspot.anchor) > ConvergencePolicy.RADIUS * ConvergencePolicy.RADIUS,
                     "The real idle pawn visibly exits the avoided region on layered snow: origin=" + origin + " now=" + idle.position());
             h.assertTrue(hotspot.deaths == 6 && hotspot.wipes == 2 && hotspot.avoid,
                     "Observing withdrawal creates no death and does not reset avoidance");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void pawnAvoidanceSprintStopsAtBlockedExit(GameTestHelper h) {
+        scene(h, 105, s -> {
+            floor(s, false); var actor = donor(s, 18, 4); long now = start(s);
+            s.clock(now); actor.beginMaeveDisengagement(actor.getUUID(), s.origin.offset(2, 0, 4), "PAWN_AVOID");
+            for (int t = 1; t <= 20; t++) { s.clock(now + t); actor.tick(); }
+            h.assertTrue(actor.isSprinting(), "Open ground admits the avoidance sprint");
+            var center = actor.blockPosition();
+            for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++) {
+                if (Math.abs(x) != 2 && Math.abs(z) != 2) continue;
+                for (int y = 0; y <= 2; y++) {
+                    var pos = center.offset(x, y, z).subtract(s.origin);
+                    s.block(pos.getX(), pos.getY(), pos.getZ(), Blocks.BEDROCK.defaultBlockState());
+                }
+            }
+            s.clock(now + 21); actor.tick(); var stopped = actor.position();
+            h.assertTrue(!actor.isSprinting(), "An obstructed exit releases sprint immediately");
+            for (int t = 22; t <= 45; t++) { s.clock(now + t); actor.tick(); }
+            h.assertTrue(actor.position().distanceToSqr(stopped) < .01 && s.level.noCollision(actor),
+                    "Queued chase movement cannot push a stopped pawn into the obstruction");
+            actor.clearMaeveAttention();
+            actor.beginMaeveDisengagement(actor.getUUID(), s.origin.offset(2, 0, 4), "PASSIVE_TRACKING");
+            s.clock(now + 46); actor.tick();
+            h.assertTrue(!actor.isSprinting(), "Ordinary attention eviction does not inherit the avoidance sprint");
         });
     }
 

@@ -206,3 +206,5 @@ pawntworealwipesavoidregionandreleaseondecay xml
 # Pawn field replay: physical diversion and visible avoidance on layered snow.
 pawndiversionvacatessourcewithoutreplacementorextraactors xml
 pawnavoidancemovesidleactoroutacrosslayeredsnow xml
+pawnavoidancesprintstopsatblockedexit xml
+pawnenvironmentaltrapphysicsrecordsdeaths xml

@@ -255,6 +255,160 @@ execute if score #stage mpc matches 40 if score #timer mpc matches 240.. as @a[t
 """
 
 
+# Continue the accepted two-wipe checkpoint; genuine deaths replenish pressure before cooldown expiry.
+# The 3,600-tick empty gap exceeds this checkpoint's remaining 3,148 ticks. It changes no tuning.
+SCRIPTS.update({
+    "cooldown_prepare": """execute unless score #stage mpc matches 41 run return 0
+""" + SCRIPTS["killzone_wait"].split("scoreboard players set #stage mpc 10")[0] + """tag @s add macs_pawn
+scoreboard players set #stage mpc 17
+function macs_pawn:killzone_practice
+scoreboard players set #stage mpc 50
+""" + tell("Cooldown check: shoot these TWO ordinary practice Architects from BLUE. Do not use setup. After both die, freeze and dump for review."),
+    "cooldown_gap": """scoreboard players set #stage mpc 51
+scoreboard players set #timer mpc 0
+function macs_pawn:cleanup
+""" + tell("Both ordinary deaths recorded. Run /tick freeze, then /fd maeve dump directly in chat, and stop for review. The two-wipe latch must still be present; this prompt does not certify it.", color="green"),
+    "cooldown_ready": """scoreboard players set #stage mpc 52
+""" + tell("Empty gap complete. Run /fd maeve dump and stop: cooldown must be zero, weight at least 3.0, and avoid=true before introducing donors.", color="green"),
+    "cooldown_probe": """execute unless score #stage mpc matches 52 run return 0
+function macs_pawn:cleanup
+fill 4000 101 4001 4004 103 4007 minecraft:air
+gamemode spectator @s
+tp @s 3982.5 111 4032.5 180 20
+summon frozendawn:architect 3962.5 101.3 4001.5 {Tags:["macs_pawn_actor","macs_pawn_cooldown"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 3962.5 101.3 4007.5 {Tags:["macs_pawn_actor","macs_pawn_cooldown"],PersistenceRequired:1b,Glowing:1b}
+execute as @e[tag=macs_pawn_cooldown] run fd architect record @s 1337
+scoreboard players set #stage mpc 53
+scoreboard players set #timer mpc 0
+""" + tell("Two ordinary idle donors are available. Run /tick step 200t directly in chat for a ten-second normal-speed view; do not attack or sprint.", "/tick step 200t", "green"),
+    "cooldown_checkpoint": """scoreboard players set #stage mpc 54
+scoreboard players set #admitted mpc 0
+execute as @e[tag=macs_pawn_cooldown] if data entity @s NeoForgeData.macsConvergence run scoreboard players add #admitted mpc 1
+execute as @e[tag=macs_pawn_cooldown] run fd architect dump @s
+execute as @e[tag=macs_pawn_cooldown] run data get entity @s UUID
+execute as @e[tag=macs_pawn_cooldown] run data get entity @s Pos
+""" + tell("Observation complete. Describe whether a gathering cloud or group formed, then run /fd maeve dump. The dump must show AVOID_TWO_WIPES with zero cooldown and weight above the floor.", color="green"),
+})
+SCRIPTS["tick"] += """
+execute if score #stage mpc matches 50 unless entity @e[tag=macs_pawn_practice,nbt=!{Health:0.0f}] as @a[tag=macs_pawn,limit=1] run function macs_pawn:cooldown_gap
+execute if score #stage mpc matches 51 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 51 if score #timer mpc matches 3600.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:cooldown_ready
+execute if score #stage mpc matches 53 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 53 if score #timer mpc matches 200.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:cooldown_checkpoint
+"""
+
+
+# Separate disposable-world control: one six-kill fight, then real fall and lava physics.
+# All waits advance the existing 600-tick quiet boundary; no death or episode is injected.
+SCRIPTS.update({
+    "env_setup": SCRIPTS["setup"].split("function macs_pawn:practice")[0] + """function macs_pawn:booth
+tp @s 4010.5 101 4004.5 90 0
+item replace entity @s hotbar.0 with minecraft:bow[minecraft:enchantments={levels:{"minecraft:power":5,"minecraft:infinity":1}}]
+""" + "\n".join(f'summon frozendawn:architect {x}.5 101 {z}.5 {{Tags:["macs_pawn_actor","macs_pawn_control"],PersistenceRequired:1b,Health:4.0f}}' for x in (4001, 4003) for z in (4002, 4004, 4006)) + """
+execute as @e[tag=macs_pawn_control] run fd architect record @s 1337
+scoreboard players set #stage mpc 60
+""" + tell("Single-fight control: from BLUE, shoot all SIX reduced-health Architects through the slit in one continuous fight. No time skips between kills. At completion, freeze and dump for review."),
+    "env_control_done": """scoreboard players set #stage mpc 61
+scoreboard players set #timer mpc 0
+function macs_pawn:cleanup
+""" + tell("All six practice actors died. Run /tick freeze, then /fd maeve dump and stop for review. This message does not certify one encounter.", color="green"),
+    "env_control_ready": """scoreboard players set #stage mpc 62
+""" + tell("First quiet gap complete. Run /fd maeve dump and stop. Six deaths should have completed only ONE encounter.", color="green"),
+    "env_control_probe": """execute unless score #stage mpc matches 62 run return 0
+function macs_pawn:cleanup
+fill 4000 101 4001 4004 103 4007 minecraft:air
+gamemode spectator @s
+tp @s 3982.5 111 4032.5 180 20
+summon frozendawn:architect 3962.5 101.3 4001.5 {Tags:["macs_pawn_actor","macs_pawn_control_donor"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 3962.5 101.3 4007.5 {Tags:["macs_pawn_actor","macs_pawn_control_donor"],PersistenceRequired:1b,Glowing:1b}
+execute as @e[tag=macs_pawn_control_donor] run fd architect record @s 1337
+scoreboard players set #stage mpc 63
+scoreboard players set #timer mpc 0
+""" + tell("Two ordinary source pawns are available. Run /tick step 200t directly in chat. Watch for ten seconds at normal speed.", "/tick step 200t", "green"),
+    "env_control_checkpoint": """scoreboard players set #stage mpc 64
+execute as @e[tag=macs_pawn_control_donor] run fd architect dump @s
+""" + tell("Control view complete. Describe what appeared, then run /fd maeve dump. Stop for review before the fall trap.", color="green"),
+    "env_fall": """execute unless score #stage mpc matches 64 run return 0
+function macs_pawn:cleanup
+gamemode spectator @s
+fill 4000 101 4001 4004 163 4007 minecraft:barrier hollow
+fill 4001 101 4002 4003 162 4006 minecraft:air
+fill 4000 100 4001 4004 100 4007 minecraft:stone
+fill 4000 163 4001 4004 163 4007 minecraft:stone
+tp @s 4016.5 120 4018.5 135 -15
+summon frozendawn:architect 4001.5 161 4003.5 {Tags:["macs_pawn_actor","macs_pawn_environment"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 4003.5 161 4005.5 {Tags:["macs_pawn_actor","macs_pawn_environment"],PersistenceRequired:1b,Glowing:1b}
+execute as @e[tag=macs_pawn_environment] run fd architect record @s 1337
+scoreboard players set #stage mpc 65
+scoreboard players set #timer mpc 0
+""" + tell("FALL trap: two full-health Architects are above the landing. Run /tick step 100t to watch five seconds of real gravity. Do not attack.", "/tick step 100t", "green"),
+    "env_fall_done": """scoreboard players set #stage mpc 66
+scoreboard players set #timer mpc 0
+function macs_pawn:cleanup
+""" + tell("Both fall-trap actors died. Wait for the step to finish, then run /fd maeve dump and stop for review. Expected: two additional deaths; the log must confirm fall damage.", color="green"),
+    "env_fall_ready": """scoreboard players set #stage mpc 67
+""" + tell("Second quiet gap complete. Dump for review: expect eight deaths and TWO completed encounters. Lava is next after review.", color="green"),
+    "env_lava": """execute unless score #stage mpc matches 67 run return 0
+function macs_pawn:cleanup
+fill 4000 101 4001 4004 163 4007 minecraft:air
+fill 4000 100 4001 4004 104 4007 minecraft:barrier hollow
+fill 4000 100 4001 4004 100 4007 minecraft:stone
+fill 4001 101 4002 4003 101 4006 minecraft:lava
+gamemode spectator @s
+tp @s 4010.5 107 4015.5 140 30
+summon frozendawn:architect 4001.5 102 4003.5 {Tags:["macs_pawn_actor","macs_pawn_environment"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 4003.5 102 4005.5 {Tags:["macs_pawn_actor","macs_pawn_environment"],PersistenceRequired:1b,Glowing:1b}
+execute as @e[tag=macs_pawn_environment] run fd architect record @s 1337
+scoreboard players set #stage mpc 68
+scoreboard players set #timer mpc 0
+""" + tell("LAVA trap: two full-health Architects enter a contained lava pool. Run /tick step 300t for fifteen normal-speed seconds. Do not attack. If either survives, stop and report it.", "/tick step 300t", "green"),
+    "env_lava_done": """scoreboard players set #stage mpc 69
+scoreboard players set #timer mpc 0
+function macs_pawn:cleanup
+""" + tell("Both lava-trap actors died. Wait for the step to finish, then dump and stop for review. Expected: two additional deaths; the log must confirm environmental damage.", color="green"),
+    "env_lava_ready": """scoreboard players set #stage mpc 70
+""" + tell("Third quiet gap complete. Dump and stop: ten deaths across THREE completed encounters should now qualify through real history.", color="green"),
+    "env_converge": """execute unless score #stage mpc matches 70 run return 0
+function macs_pawn:cleanup
+fill 4000 101 4001 4004 104 4007 minecraft:air
+gamemode spectator @s
+tp @s 3982.5 111 4032.5 180 20
+summon frozendawn:architect 3962.5 101.3 4001.5 {Tags:["macs_pawn_actor","macs_pawn_environment_donor"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 3962.5 101.3 4007.5 {Tags:["macs_pawn_actor","macs_pawn_environment_donor"],PersistenceRequired:1b,Glowing:1b}
+summon frozendawn:architect 4042.5 101.3 4004.5 {Tags:["macs_pawn_actor","macs_pawn_environment_donor"],PersistenceRequired:1b,Glowing:1b}
+execute as @e[tag=macs_pawn_environment_donor] run fd architect record @s 1337
+scoreboard players set #stage mpc 71
+scoreboard players set #timer mpc 0
+""" + tell("Positive comparison: three ordinary source pawns are available. Run /tick unfreeze directly in chat and watch at NORMAL speed. Freeze and dump when the view-complete prompt appears.", "/tick unfreeze", "green"),
+    "env_admitted": """scoreboard players set #stage mpc 72
+scoreboard players set #timer mpc 0
+""" + tell("Actual dispatch confirmed. Watch the cloud and approach at normal speed. No time sprint during this view."),
+    "env_checkpoint": """scoreboard players set #stage mpc 73
+execute as @e[tag=macs_pawn_environment_donor] run fd architect dump @s
+""" + tell("View complete. Run /tick freeze, describe what happened, then /fd maeve dump. This tests environmental learning, not combat balance.", color="green"),
+})
+SCRIPTS["tick"] += """
+execute if score #stage mpc matches 60 unless entity @e[tag=macs_pawn_control,nbt=!{Health:0.0f}] as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_control_done
+execute if score #stage mpc matches 61 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 61 if score #timer mpc matches 620.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_control_ready
+execute if score #stage mpc matches 63 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 63 if score #timer mpc matches 200.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_control_checkpoint
+execute if score #stage mpc matches 65 unless entity @e[tag=macs_pawn_environment,nbt=!{Health:0.0f}] as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_fall_done
+execute if score #stage mpc matches 66 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 66 if score #timer mpc matches 620.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_fall_ready
+execute if score #stage mpc matches 68 unless entity @e[tag=macs_pawn_environment,nbt=!{Health:0.0f}] as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_lava_done
+execute if score #stage mpc matches 69 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 69 if score #timer mpc matches 620.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_lava_ready
+execute if score #stage mpc matches 71 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 71 run scoreboard players set #admitted mpc 0
+execute if score #stage mpc matches 71 as @e[tag=macs_pawn_environment_donor] if data entity @s NeoForgeData.macsConvergence run scoreboard players add #admitted mpc 1
+execute if score #stage mpc matches 71 if score #admitted mpc matches 2.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_admitted
+execute if score #stage mpc matches 71 if score #timer mpc matches 600 as @a[tag=macs_pawn,limit=1] run tellraw @s {"text":"No dispatch confirmed after thirty seconds. Freeze, dump and report; do not count this as a passed positive control.","color":"red"}
+execute if score #stage mpc matches 72 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 72 if score #timer mpc matches 500.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:env_checkpoint
+"""
+
+
 def write_pack(path, game_test=False):
     functions = path / "data/macs_pawn/function"
     functions.mkdir(parents=True, exist_ok=True)
