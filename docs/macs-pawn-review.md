@@ -1,11 +1,11 @@
 # Pawn Convergence: acceptance and delivery review — 2026-09-30
 
-Reviewed [PR #98](https://github.com/cjaron03/frozen-dawn/pull/98) against the current [MACS source of truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), especially §14 and §12. The review found no new actionable code defect. It does **not** yet approve merging: the reliable base-diversion exit remains partially demonstrated, and the published PR predates the tested checkout.
+Reviewed [PR #98](https://github.com/cjaron03/frozen-dawn/pull/98) against the current [MACS source of truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), especially §14 and §12. The review found no new actionable code defect. It does **not** yet approve merging: the reliable base-diversion exit remains partially demonstrated, and PR #98 remains draft pending that qualification.
 
 ## Reviewed revisions
 
 - Target: `origin/feat/maeve-director`, `c94ddd042783c50ee4d8fee5e524600c9032ba9e`; refreshed on 2026-09-30.
-- Published PR head before this delivery: `4bdb7b5625a7d6be9b26a3a13646b9bdd6e7ee33`, open/draft. Its existing GitHub checks cover that earlier commit only.
+- Historical PR head before this delivery: `4bdb7b5625a7d6be9b26a3a13646b9bdd6e7ee33`, open/draft. Its existing GitHub checks cover that earlier commit only.
 - This delivery includes local warning refinement `3c46399`, avoidance sprint `744fec4`, the development command bridge, replay helpers, required cases and acceptance documentation. The delivery commit is recorded in `build/macs-pawn-evidence/publication-20260930/verification.json` after committing.
 - Verified source fingerprint: `f1766cd44613c26e39060d4c754b4107e2183f3446be79362b411b74203b327d`. All 2,910 captured source, fixture, tool and configuration file hashes remained unchanged during the final gate.
 
@@ -40,7 +40,7 @@ Built and installed smoke jar SHA-256: `d004108c2a6fa4de2ac8187646cd07c3c744a790
 
 The focused Survival check has been completed and preserved. Do not repeat it or create another live scenario automatically. It strengthens actual production admission and useful activity in ordinary Survival; it does not resolve the ordinary base-pressure reliability limitation in the matrix above. No actionable code defect was found that justifies changing the idle-donor rule or spawn policy during this handoff.
 
-Publish the reviewed commits and their matching verification results to the existing PR, then retain draft status while the remaining §14.10 base-diversion qualification is resolved. The current PR body and Notion record must distinguish controlled convergence from ambient reliability. Human multiplayer remains deferred. A successful gate or replay is not merge approval; merging still needs the owner's instruction.
+The owner approved publication on 2026-09-30. The implementation and QA delivery at `8d3b204` is published in PR #98 with both required checks successful. This documentation follow-up records that result; its application source is identical to the verified delivery. Retain draft status while the remaining §14.10 base-diversion qualification is resolved. The current PR body and Notion record must distinguish controlled convergence from ambient reliability. Human multiplayer remains deferred. A successful gate or replay is not merge approval; merging still needs the owner's instruction.
 
 ## Preserved live state
 
