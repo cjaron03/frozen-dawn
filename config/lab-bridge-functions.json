@@ -1,0 +1,270 @@
+{
+  "schema": 1,
+  "functions": {
+    "macs_pawn:natural_retry": {
+      "world": "MACS Pawn Natural Supply",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        },
+        {
+          "objective": "mpc",
+          "holder": "#nat_count",
+          "equals": 0
+        }
+      ]
+    },
+    "macs_pawn:natural_second": {
+      "world": "MACS Pawn Natural Supply",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        },
+        {
+          "objective": "mpc",
+          "holder": "#nat_count",
+          "equals": 1
+        },
+        {
+          "objective": "mpc",
+          "holder": "#nat_station",
+          "equals": 1
+        }
+      ]
+    },
+    "macs_pawn:natural_watch": {
+      "world": "MACS Pawn Natural Arrival",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        },
+        {
+          "objective": "mpc",
+          "holder": "#nat_count",
+          "equals": 1
+        },
+        {
+          "objective": "mpc",
+          "holder": "#nat_station",
+          "equals": 2
+        }
+      ]
+    },
+    "macs_pawn:base_prepare": {
+      "world": "MACS Base Diversion",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        }
+      ]
+    },
+    "macs_pawn:base_start": {
+      "world": "MACS Base Diversion",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 100
+        }
+      ]
+    },
+    "macs_pawn:base_status": {
+      "world": "MACS Base Diversion",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 100
+        }
+      ]
+    },
+    "macs_pawn:base_end": {
+      "world": "MACS Base Diversion",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 102
+        }
+      ]
+    },
+    "macs_pawn:base_restage": {
+      "world": "MACS Base Diversion",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 100
+        }
+      ]
+    },
+    "macs_pawn:base_idle_prepare": {
+      "world": "MACS Base Bait",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        }
+      ]
+    },
+    "macs_pawn:base_idle_status": {
+      "world": "MACS Base Bait",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 110
+        }
+      ]
+    },
+    "macs_pawn:base_idle_start": {
+      "world": "MACS Base Bait",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 110
+        }
+      ]
+    },
+    "macs_pawn:base_idle_begin": {
+      "world": "MACS Base Bait",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 112
+        }
+      ]
+    },
+    "macs_pawn:base_idle_end": {
+      "world": "MACS Base Bait",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 102
+        }
+      ]
+    },
+    "macs_signal:prepare": {
+      "world": "MACS Signal Check",
+      "scores": [
+        {
+          "objective": "msignal",
+          "holder": "#stage",
+          "equals": 0
+        }
+      ]
+    },
+    "macs_signal:next": {
+      "world": "MACS Signal Check",
+      "scores": [
+        {
+          "objective": "msignal",
+          "holder": "#stage",
+          "equals": 1
+        }
+      ]
+    },
+    "macs_signal:continue": {
+      "world": "MACS Signal Check",
+      "scores": [
+        {
+          "objective": "msignal",
+          "holder": "#stage",
+          "equals": 3
+        }
+      ]
+    },
+    "macs_pawn:focus_prepare": {
+      "world": "MACS Focused Base Check",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        }
+      ]
+    },
+    "macs_pawn:focus_status": {
+      "world": "MACS Focused Base Check",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 120
+        }
+      ]
+    },
+    "macs_pawn:focus_start": {
+      "world": "MACS Focused Base Check",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 120
+        }
+      ]
+    },
+    "macs_pawn:focus_end": {
+      "world": "MACS Focused Base Check",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 122
+        }
+      ]
+    },
+    "macs_pawn:return_prepare": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        }
+      ]
+    },
+    "macs_pawn:return_start": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 130
+        }
+      ]
+    },
+    "macs_pawn:return_status": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 130
+        }
+      ]
+    },
+    "macs_pawn:return_end": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 132
+        }
+      ]
+    }
+  }
+}

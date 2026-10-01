@@ -1,12 +1,7 @@
 package com.frozendawn.maeve;
 
-import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.entity.ArchitectEntity;
-import com.frozendawn.homo.PostMaeveWorldState;
-import com.frozendawn.phase.PhaseManager;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -19,46 +14,14 @@ import net.minecraft.world.item.ItemStack;
  * Source of truth §§4, 9.1, 9.16a, 9.18, 9.19.
  */
 public final class MaeveDirector {
-    private static final Map<MinecraftServer, MaeveDirector> SERVERS = new IdentityHashMap<>();
-    private final MaeveSavedData data;
-    private final AttentionCoordinator attention;
-    private final MissionPlanner missions;
-    private final LearningCoordinator learning;
-    private long lastContactTick = Long.MIN_VALUE;
-
-    private MaeveDirector(MinecraftServer server) {
-        data = MaeveSavedData.get(server);
-        learning = new LearningCoordinator(server, data);
-        attention = new AttentionCoordinator(server, data);
-        missions = new MissionPlanner(server, data, attention); attention.bind(missions);
-    }
-
-    private static MaeveDirector current(MinecraftServer server) {
-        if (!server.isSameThread()) throw new IllegalStateException("Maeve must run on the server thread");
-        MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
-        ApocalypseState apocalypse = ApocalypseState.get(server);
-        boolean erased = PostMaeveWorldState.isErased(server);
-        if (erased) { CommitmentCoordinator.stopAll(server, director.data.store()); director.missions.clear(); director.attention.clear(); director.learning.clear(); }
-        director.data.synchronize(erased,
-                PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress()));
-        return director;
-    }
-
-    public static void tick(MinecraftServer server) {
-        MaeveDirector director = current(server);
-        long now = server.overworld().getGameTime();
-        director.learning.tick();
-        if (now % 20 != 0 || now == director.lastContactTick || director.data.store() == null) return;
-        director.lastContactTick = now;
-        director.missions.tick();
-        director.attention.tick();
-        if (ObservationCollector.refreshContacts(server, director.data.store(), now)) director.data.setDirty();
-    }
+    private MaeveDirector() { }
+    private static DirectorRuntime current(MinecraftServer server) { return DirectorRuntime.current(server); }
+    public static void tick(MinecraftServer server) { current(server).tick(); }
 
     public static void observeDamage(ArchitectEntity observer, DamageSource source, float actualDamage) {
         MinecraftServer server = observer.getServer();
         if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
-        MaeveDirector director = current(server);
+        var director = current(server);
         if (director.data.store() == null) return;
         CombatObservation.record(director.data, director.missions, director.learning, observer, source, actualDamage, false);
     }
@@ -72,31 +35,19 @@ public final class MaeveDirector {
     public static void observeRecovery(ServerPlayer player, ItemStack consumed) {
         MinecraftServer server = player.getServer();
         if (server == null || !ObservationCollector.restorative(consumed)) return;
-        MaeveDirector director = current(server);
+        var director = current(server);
         if (director.data.store() == null) return;
         ObservationCollector.recovery(director.data.store(), director.missions, player, consumed, server.overworld().getGameTime());
         director.data.setDirty();
     }
 
-    /** Called in the same server-thread operation that sets the authoritative ERASED flag. */
-    public static void erase(MinecraftServer server) {
-        if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");
-        MaeveDirector director = SERVERS.computeIfAbsent(server, MaeveDirector::new);
-        CommitmentCoordinator.stopAll(server, director.data.store());
-        director.missions.clear();
-        director.attention.clear(); director.learning.clear();
-        director.data.erase();
-        director.lastContactTick = Long.MIN_VALUE;
-    }
-
-    public static void onServerStopped(MinecraftServer server) {
-        var director = SERVERS.remove(server);
-        if (director != null) { director.missions.clear(); director.attention.clear(); director.learning.clear(); }
-    }
+    /** Called in the authoritative ERASED transition. */
+    public static void erase(MinecraftServer server) { DirectorRuntime.erase(server); }
+    public static void onServerStopped(MinecraftServer server) { DirectorRuntime.stopped(server); }
 
     /** Immutable diagnostic snapshots; execution receives only bounded historical hints/directives. */
     public static Snapshot snapshot(MinecraftServer server, UUID player) {
-        MaeveDirector director = current(server);
+        var director = current(server);
         BeliefStore store = director.data.store();
         return new Snapshot(director.data.lifecycle(), director.data.activated(),
                 store == null ? 0 : store.size(), store == null ? 0 : store.beliefCount(),
@@ -117,7 +68,9 @@ public final class MaeveDirector {
     }
 
     private static List<String> withCommitmentDiagnostics(MinecraftServer server, UUID player, List<String> beliefs) {
-        return LearningDiagnostics.append(server, player, beliefs, current(server).data.store(), current(server).learning.diagnostics(player));
+        var runtime = current(server);
+        if (runtime.data.store() == null) return beliefs;
+        return java.util.stream.Stream.concat(LearningDiagnostics.append(server, player, beliefs, runtime.data.store(), runtime.learning.diagnostics(player)).stream(), runtime.convergence.diagnostics().stream()).toList();
     }
 
     public static void observeWithdrawal(ArchitectEntity actor, ServerPlayer player) {
@@ -186,6 +139,7 @@ public final class MaeveDirector {
         if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
         var director = current(observer.getServer());
         if (director.data.store() != null) {
+            director.convergence.localContact(observer, player);
             SpatialObservations.presence(director.data.store(), director.missions, observer, player, observer.getServer().overworld().getGameTime());
             if (observer.getServer().overworld().getGameTime() % 20 == 0) director.attention.observe(observer, player);
             director.data.setDirty();
@@ -205,10 +159,11 @@ public final class MaeveDirector {
 
     public static List<BlockPos> knownDangers(ArchitectEntity observer, UUID player) {
         if (observer.isMasterArchitectVisual()) return List.of();
-        var store = current(observer.getServer()).data.store();
+        var runtime = current(observer.getServer()); var store = runtime.data.store();
         var world = store == null ? null : store.world(player);
-        return world == null ? List.of() : world.dangers(observer.level().dimension().location().toString(),
+        List<BlockPos> personal = world == null ? List.of() : world.dangers(observer.level().dimension().location().toString(),
                 observer.blockPosition(), observer.getServer().overworld().getGameTime());
+        return java.util.stream.Stream.concat(personal.stream(), runtime.convergence.avoided(observer).stream()).distinct().limit(64).toList();
     }
 
     public static List<WorldPointSnapshot> worldSnapshot(MinecraftServer server, UUID player) {
@@ -225,6 +180,16 @@ public final class MaeveDirector {
         if (actor.getServer() != null) current(actor.getServer()).missions.finish(actor, reason, withdraw);
     }
     public static List<MissionSnapshot> missionSnapshots(MinecraftServer server, UUID player) { return current(server).missions.snapshots(player); }
+    public static void observePawn(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).convergence.observe(actor); }
+    public static void pawnDestroyed(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).convergence.destroyed(actor); }
+    public static void observePawnDeath(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).convergence.death(actor); }
+    public static void pawnReachedPlayer(ArchitectEntity actor, ServerPlayer player) { if (actor.getServer() != null) current(actor.getServer()).convergence.contact(actor, player); }
+    public static PawnOrder pawnOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).convergence.order(actor); }
+    public static void pawnRouteUnavailable(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).convergence.routeUnavailable(actor); }
+    public static boolean allowNaturalPawn(net.minecraft.server.level.ServerLevel level, BlockPos position) { return current(level.getServer()).convergence.allowNaturalSpawn(level, position); }
+    public record PawnOrder(UUID dispatch, BlockPos destination, long notBefore, long expiresAt) {
+        public PawnOrder { destination = destination.immutable(); }
+    }
     public record AccessHint(BlockPos outside, BlockPos inside, String state, double confidence, EvidenceSnapshot source) {
         public AccessHint { outside = outside.immutable(); inside = inside.immutable(); }
     }

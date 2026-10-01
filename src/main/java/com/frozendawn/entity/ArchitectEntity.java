@@ -236,6 +236,7 @@ public class ArchitectEntity extends Monster {
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
     private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
+    private final ArchitectPawnController maevePawn = new ArchitectPawnController(this);
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
     private final ArchitectReconnaissanceController maeveReconnaissance = new ArchitectReconnaissanceController(this);
     private long localCombatUntil;
@@ -743,6 +744,9 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
+        if (maevePawn.tick()) {
+            entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
+        }
         long gameTick = level().getGameTime();
 
         if (maeveReconnaissance.tick(null)) {
@@ -1061,6 +1065,12 @@ public class ArchitectEntity extends Monster {
     public void beginMaeveDisengagement(UUID player, BlockPos observed, String concern) {
         maeveAttention.begin(player, observed, concern);
     }
+
+    public void startPawnConvergence() {
+        maeveAttention.clear(); maeveReconnaissance.clear(); cancelMaeveAttentionWork(); maevePawn.clear();
+        thinkingController.interrupt(); entityData.set(DATA_PURSUIT_POSE, 0); resumeAfterReconnaissance();
+    }
+    public void clearPawnConvergence() { maevePawn.clear(); getNavigation().stop(); }
 
     public boolean isMaeveDisengaging() { return maeveAttention.active(); }
     public void clearMaeveAttention() { maeveAttention.clear(); }
@@ -1626,6 +1636,7 @@ public class ArchitectEntity extends Monster {
         if (isMasterMindCopy() && mindCopyDefeatReported) {
             return false;
         }
+        if (target instanceof ServerPlayer player) MaeveDirector.pawnReachedPlayer(this, player);
         boolean hit = super.doHurtTarget(target);
         if (hit && target instanceof LivingEntity living) {
             recordDecision("MELEE_HIT", null, "target=" + target.getUUID() + " health=" + living.getHealth());
@@ -1763,6 +1774,7 @@ public class ArchitectEntity extends Monster {
             masterDeathKillerId = killer.getUUID();
         }
         super.die(source);
+        if (dead && !level().isClientSide()) MaeveDirector.observePawnDeath(this);
         if (masterArchitect) {
             updateMasterBossBarProgress();
         }

@@ -9,10 +9,11 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** Separate from the permanent ReturnedHearthSavedData violation ledger (§4). */
 final class MaeveSavedData extends SavedData {
     static final String NAME = "frozendawn_maeve";
-    private static final int VERSION = 7;
+    private static final int VERSION = 8;
     private boolean activated;
     private boolean erased;
     private BeliefStore store;
+    private ConvergenceMemory convergence;
 
     static MaeveSavedData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -33,25 +34,29 @@ final class MaeveSavedData extends SavedData {
             setDirty();
         }
         if (activated && store == null) store = new BeliefStore();
+        if (activated && convergence == null) convergence = new ConvergenceMemory();
     }
 
     void erase() {
         if (store != null) store.clear();
+        if (convergence != null) convergence.clear();
         if (!erased || store != null) setDirty();
-        store = null;
+        store = null; convergence = null;
         erased = true;
     }
 
     String lifecycle() { return erased ? "ERASED" : activated ? "ACTIVE" : "DORMANT"; }
     boolean activated() { return activated; }
     BeliefStore store() { return store; }
+    ConvergenceMemory convergence() { return convergence; }
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putInt("dataVersion", VERSION);
         tag.putBoolean("activated", activated);
         tag.putBoolean("erased", erased);
-        tag.remove("beliefs");
+        tag.remove("beliefs"); tag.remove("convergence");
+        if (!erased && convergence != null) tag.put("convergence", convergence.save());
         if (!erased && store != null) tag.put("beliefs", store.save());
         return tag;
     }
@@ -61,7 +66,7 @@ final class MaeveSavedData extends SavedData {
         MaeveSavedData data = new MaeveSavedData();
         data.activated = tag.getBoolean("activated");
         data.erased = tag.getBoolean("erased");
-        if (data.activated && !data.erased) data.store = BeliefStore.load(tag.getCompound("beliefs"));
+        if (data.activated && !data.erased) { data.store = BeliefStore.load(tag.getCompound("beliefs")); data.convergence = ConvergenceMemory.load(tag.getCompound("convergence")); }
         return data;
     }
 }

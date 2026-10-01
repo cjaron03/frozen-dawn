@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 final class ArchitectAttentionController {
     private final ArchitectEntity actor;
     private UUID releasedPlayer;
-    private boolean reconnaissance;
+    private boolean reconnaissance, sprintingAvoidance;
     private Vec3 away, destination;
     private long walkUntil, ignoreUntil, nextStep;
 
@@ -23,6 +23,8 @@ final class ArchitectAttentionController {
         if (actor.level() instanceof net.minecraft.server.level.ServerLevel level
                 && level.getEntity(player) instanceof net.minecraft.server.level.ServerPlayer subject)
             com.frozendawn.maeve.MaeveDirector.observeWithdrawal(actor, subject);
+        if (sprintingAvoidance) stopAvoidanceSprint();
+        sprintingAvoidance = kind.equals("PAWN_AVOID");
         releasedPlayer = player;
         reconnaissance = kind.startsWith("RECON");
         away = actor.position().subtract(lastObserved.getCenter()).multiply(1, 0, 1).normalize();
@@ -47,7 +49,10 @@ final class ArchitectAttentionController {
         // visible until ordinary targeting resumes, or local damage cancels departure.
         actor.setReconnaissanceEyes(reconnaissance);
         if (now() >= walkUntil) {
-            if (!reconnaissance) return false;
+            if (!reconnaissance) {
+                if (sprintingAvoidance) { stopAvoidanceSprint(); sprintingAvoidance = false; }
+                return false;
+            }
             int remaining = (int) (ignoreUntil - now());
             int form = remaining <= 20 ? -remaining : (int) Math.min(20, now() - walkUntil + 1);
             if (actor.getReconnaissanceDissolve() == 0)
@@ -63,8 +68,10 @@ final class ArchitectAttentionController {
             return true;
         }
         actor.getNavigation().stop(); actor.setTarget(null); actor.setMaeveHolding(false);
-        actor.setCommitmentAction(false); actor.setSprinting(false);
-        actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
+        actor.setCommitmentAction(false);
+        if (!sprintingAvoidance) {
+            actor.setSprinting(false); actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
+        }
         if (now() >= nextStep || destination == null || actor.position().distanceToSqr(destination) < .09) {
             nextStep = now() + 20; destination = null;
             for (int angle : new int[]{0, 30, -30, 60, -60, 90, -90}) {
@@ -76,13 +83,27 @@ final class ArchitectAttentionController {
         float yaw = (float) (Math.atan2(look.z - actor.getZ(), look.x - actor.getX()) * 180 / Math.PI) - 90;
         actor.setYRot(yaw); actor.setYBodyRot(yaw); actor.setYHeadRot(yaw);
         actor.getLookControl().setLookAt(look.x, actor.getEyeY(), look.z, 15, 15);
-        if (destination != null && actor.onGround() && safe(destination)) {
+        if (sprintingAvoidance) {
+            if (destination != null && actor.onGround() && safe(destination)) {
+                // Use the ordinary chase's sprint flag and MoveControl pace on the same safe exit segments.
+                actor.setSprinting(true);
+                actor.getMoveControl().setWantedPosition(destination.x, destination.y, destination.z,
+                        ArchitectApproachWalkSupport.APPROACH_SPRINT_SPEED);
+            } else stopAvoidanceSprint();
+        } else if (destination != null && actor.onGround() && safe(destination)) {
             Vec3 delta = destination.subtract(actor.position()).multiply(1, 0, 1);
             double speed = Math.min(.14, delta.length());
             delta = delta.normalize().scale(speed);
             actor.setDeltaMovement(delta.x, actor.getDeltaMovement().y, delta.z);
         }
         return true;
+    }
+
+    private void stopAvoidanceSprint() {
+        actor.setSprinting(false);
+        actor.getMoveControl().setWantedPosition(actor.getX(), actor.getY(), actor.getZ(), 0);
+        actor.setSpeed(0); actor.setZza(0); actor.setXxa(0);
+        actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }
 
     private boolean safe(Vec3 target) {
@@ -106,6 +127,8 @@ final class ArchitectAttentionController {
     boolean suppresses(UUID player) { return releasedPlayer != null && releasedPlayer.equals(player) && now() < ignoreUntil; }
     boolean active() { return releasedPlayer != null && now() < ignoreUntil; }
     void clear() {
+        if (sprintingAvoidance) stopAvoidanceSprint();
+        sprintingAvoidance = false;
         releasedPlayer = null; reconnaissance = false; away = null; destination = null; walkUntil = 0; ignoreUntil = 0;
         actor.setReconnaissanceEyes(false);
         actor.setReconnaissanceDissolve(0);
