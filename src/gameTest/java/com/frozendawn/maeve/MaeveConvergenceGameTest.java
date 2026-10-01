@@ -27,7 +27,10 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class MaeveConvergenceGameTest {
     private static void scene(GameTestHelper h, int lane, Consumer<MaeveObservationGameTest.Scene> exercise) {
-        MaeveObservationGameTest.withScene(h, lane, 4, s -> {
+        scene(h, lane, 4, exercise);
+    }
+    private static void scene(GameTestHelper h, int lane, int radius, Consumer<MaeveObservationGameTest.Scene> exercise) {
+        MaeveObservationGameTest.withScene(h, lane, radius, s -> {
             boolean enabled = FrozenDawnConfig.ENABLE_ARCHITECT.get(); FrozenDawnConfig.ENABLE_ARCHITECT.set(true);
             try { exercise.accept(s); } finally { FrozenDawnConfig.ENABLE_ARCHITECT.set(enabled); }
         });
@@ -63,7 +66,7 @@ public final class MaeveConvergenceGameTest {
     public static void pawnReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_pawn") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 51, "The complete convergence replay must be registered: " + resources.size());
+        helper.assertTrue(resources.size() == 108, "The complete convergence replay must be registered: " + resources.size());
         resources.forEach((file, resource) -> {
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_pawn", file.getPath().substring("function/".length()).replace(".mcfunction", ""));
             helper.assertTrue(server.getFunctions().get(id).isPresent(), "Native function exists: " + id);
@@ -72,6 +75,367 @@ public final class MaeveConvergenceGameTest {
             } catch (java.io.IOException e) { throw new IllegalStateException(e); }
         });
         helper.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnSurvivalBaseProvidesAirKitAndRealExposure(GameTestHelper h) {
+        scene(h, 111, 2, s -> {
+            // Preserve everything the actual relative build function can change.
+            for (int x = -18; x <= 8; x++) for (int z = -11; z <= 23; z++)
+                for (int y = -1; y <= 5; y++) s.block(x, y, z, Blocks.AIR.defaultBlockState());
+            var player = s.player("base_survival_operator", 0, 0);
+            var source = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(player.position()).withPermission(2);
+            s.server.getCommands().performPrefixedCommand(source, "function macs_pawn:base_safe_mode");
+            h.assertTrue(player.isCreative(), "Staging must protect the player before a heated base is installed");
+            s.server.getCommands().performPrefixedCommand(source, "function macs_pawn:base_structure");
+            s.server.getCommands().performPrefixedCommand(source, "function macs_pawn:base_kit");
+            s.settleLight();
+            var corePos = s.origin.offset(3, 0, 3);
+            var heaterPos = s.origin.offset(-3, 0, 3);
+            h.assertTrue(s.level.getBlockEntity(corePos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity,
+                    "The live base function creates a real oxygen/refill core");
+            h.assertTrue(s.level.getBlockEntity(heaterPos) instanceof com.frozendawn.block.ThermalHeaterBlockEntity heater
+                            && heater.isLit(), "The heater has finite real starting fuel");
+            // The isolated callback has not yielded a normal block-entity load tick yet.
+            // Exercise the real load hook before querying its registered oxygen zone.
+            s.level.getBlockEntity(corePos).onLoad();
+            s.level.getBlockEntity(heaterPos).onLoad();
+            s.phase.setApocalypseTicks(0, s.server);
+            float stagingTemperature = com.frozendawn.world.TemperatureManager.getTemperatureAt(
+                    s.level, s.origin, s.phase.getCurrentDay(), s.phase.getTotalDays());
+            h.assertTrue(stagingTemperature > 90 && player.isCreative(),
+                    "The reproducing hot Phase-0 shelter cannot expose a Survival player during staging");
+            h.assertTrue(com.frozendawn.world.TemperatureManager.hasOxygenSupport(s.level, s.origin),
+                    "The indoor starting position can replenish an intact suit");
+            var outside = s.origin.offset(-12, 0, 14);
+            h.assertTrue(!com.frozendawn.world.TemperatureManager.hasBreathableAir(s.level, outside),
+                    "The outdoor supply path really exposes the player to vacuum");
+            h.assertTrue(com.frozendawn.event.SuitIntegrityHandler.isWearingSealedSuit(player),
+                    "The production EVA kit is fully sealed before hazards activate");
+            h.assertTrue(player.getInventory().getItem(8).is(com.frozendawn.init.ModItems.O2_TANK_MK3.get()),
+                    "The player starts with a normal Mk III tank in slot nine");
+            h.assertTrue(!player.hasEffect(net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE),
+                    "No persistent invulnerability buff hides survival pressure");
+            s.server.getCommands().performPrefixedCommand(source, "function macs_pawn:base_live_mode");
+            h.assertTrue(!player.isCreative() && !player.isSpectator()
+                            && com.frozendawn.phase.PhaseManager.isVacuumActive(s.phase.getPhase(), s.phase.getProgress()),
+                    "Survival is enabled only with actual Phase-6-late vacuum active");
+            h.assertTrue(com.frozendawn.world.TemperatureManager.getTemperatureAt(s.level, s.origin,
+                            s.phase.getCurrentDay(), s.phase.getTotalDays()) <= 60,
+                    "The operating shelter is below the production overheating threshold");
+            for (int z : new int[]{-10, -6, 6, 10}) {
+                h.assertTrue(s.level.getBlockState(s.origin.offset(0, 0, z)).is(Blocks.SPRUCE_DOOR)
+                                && s.level.getBlockState(s.origin.offset(0, 1, z)).is(Blocks.SPRUCE_DOOR),
+                        "Both full-height airlock doors exist at " + z);
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnBaseIdleRetryRequiresAdmissionAndExplicitSurvival(GameTestHelper h) {
+        scene(h, 112, s -> {
+            var board = s.server.getScoreboard();
+            var previous = board.getObjective("mpc");
+            var objective = previous != null ? previous : board.addObjective("mpc",
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,
+                    net.minecraft.network.chat.Component.literal("Base replay"),
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER, false, null);
+            var holders = List.of("#stage", "#idle_timer", "#idle_result", "#idle_cloud_tick",
+                    "#base_roster", "#base_admitted", "#base_at_dispatch", "#base_timer", "#base_dispatch", "#base_min");
+            Map<String, Integer> saved = new java.util.HashMap<>();
+            for (String name : holders) {
+                var value = board.getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective);
+                saved.put(name, value == null ? null : value.value());
+            }
+            java.util.function.BiConsumer<String, Integer> set = (name, value) ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).set(value);
+            java.util.function.ToIntFunction<String> get = name ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).get();
+            var player = s.player("base_idle_operator", 0, 0);
+            player.addTag("macs_base_player");
+            player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            var source = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(player.position()).withPermission(2);
+            java.util.function.Consumer<String> run = name -> s.server.getCommands()
+                    .performPrefixedCommand(source, "function macs_pawn:" + name);
+            boolean frozen = s.server.tickRateManager().isFrozen();
+            var deaths = board.getObjective("mb_deaths");
+            if (deaths == null) s.server.getCommands().performPrefixedCommand(source, "scoreboard objectives add mb_deaths deathCount");
+            var first = s.architect(2, 2); var second = s.architect(3, 2);
+            for (var actor : List.of(first, second)) actor.addTag("macs_pawn_natural");
+            s.block(-3, 0, 3, com.frozendawn.init.ModBlocks.DIAMOND_THERMAL_HEATER.get().defaultBlockState());
+            try {
+                set.accept("#stage", 111); set.accept("#idle_timer", 0);
+                s.server.tickRateManager().setFrozen(false);
+                s.server.getCommands().performPrefixedCommand(source, "fdlab base_pause");
+                h.assertTrue(!s.server.tickRateManager().isFrozen(), "The pause helper refuses unrelated replay stages");
+                run.accept("base_idle_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 111 && player.isCreative()
+                                && !first.getPersistentData().hasUUID("macsConvergence"),
+                        "Waiting never creates a dispatch or exposes the player to Survival");
+                // Inject only assignment fixtures to test the QA handshake, not production admission.
+                var dispatch = UUID.randomUUID();
+                first.getPersistentData().putUUID("macsConvergence", dispatch);
+                run.accept("base_idle_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 111, "One assigned pawn cannot unlock the retry");
+                second.getPersistentData().putUUID("macsConvergence", dispatch);
+                set.accept("#idle_timer", 1799); run.accept("base_idle_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 112 && get.applyAsInt("#idle_result") == 1
+                                && s.server.tickRateManager().isFrozen() && player.isCreative()
+                                && !first.isNoAi() && !second.isNoAi(),
+                        "Admission at the deadline freezes real travel without holding pawns or starting Survival");
+                second.getPersistentData().remove("macsConvergence");
+                run.accept("base_idle_go");
+                h.assertTrue(get.applyAsInt("#stage") == 112 && player.isCreative(),
+                        "A stale or interrupted roster refuses the Survival handoff");
+                second.getPersistentData().putUUID("macsConvergence", dispatch);
+                run.accept("base_idle_go");
+                h.assertTrue(get.applyAsInt("#stage") == 102 && get.applyAsInt("#base_timer") == 0
+                                && !player.isCreative() && !player.isSpectator()
+                                && com.frozendawn.phase.PhaseManager.isVacuumActive(s.phase.getPhase(), s.phase.getProgress())
+                                && first.getPersistentData().getUUID("macsConvergence").equals(dispatch)
+                                && second.getPersistentData().getUUID("macsConvergence").equals(dispatch),
+                        "Explicit start enables real late-phase Survival without replacing the existing group");
+                h.assertTrue(com.frozendawn.event.SuitIntegrityHandler.isWearingSealedSuit(player)
+                                && player.getInventory().getItem(8).is(com.frozendawn.init.ModItems.O2_TANK_MK3.get()),
+                        "Warmup cannot spend the Survival starting kit");
+                player.removeTag("macs_base_player");
+                s.server.getCommands().performPrefixedCommand(source, "fdlab base_resume");
+                h.assertTrue(s.server.tickRateManager().isFrozen(), "Only the tagged replay participant can resume");
+                player.addTag("macs_base_player");
+                s.server.getCommands().performPrefixedCommand(source, "fdlab base_resume");
+                h.assertTrue(!s.server.tickRateManager().isFrozen(), "The explicit live handoff can resume at function permission two");
+                run.accept("base_idle_go");
+                h.assertTrue(get.applyAsInt("#stage") == 102, "An already-started replay is not reset");
+                player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                for (var actor : List.of(first, second)) actor.getPersistentData().remove("macsConvergence");
+                set.accept("#stage", 111); set.accept("#idle_timer", 1799);
+                run.accept("base_idle_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 113 && get.applyAsInt("#idle_result") == -1
+                                && player.isCreative() && first.isNoAi() && second.isNoAi(),
+                        "No admission ends as an explicit inconclusive result without an ordinary ambush");
+            } finally {
+                s.server.tickRateManager().setFrozen(frozen);
+                if (deaths == null) board.removeObjective(board.getObjective("mb_deaths"));
+                else s.server.getCommands().performPrefixedCommand(source, "scoreboard players reset " + player.getScoreboardName() + " mb_deaths");
+                if (previous == null) board.removeObjective(objective);
+                else saved.forEach((name, value) -> {
+                    if (value == null) s.server.getCommands().performPrefixedCommand(source, "scoreboard players reset " + name + " mpc");
+                    else set.accept(name, value);
+                });
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnFocusedBaseStartsSurvivalBeforeAdmissionAndBoundsFailure(GameTestHelper h) {
+        scene(h, 116, s -> {
+            var board = s.server.getScoreboard();
+            var previous = board.getObjective("mpc");
+            var objective = previous != null ? previous : board.addObjective("mpc",
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,
+                    net.minecraft.network.chat.Component.literal("Focused replay"),
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER, false, null);
+            var holders = List.of("#stage", "#base_roster", "#base_timer", "#base_released", "#base_before",
+                    "#base_dispatch", "#base_admitted", "#base_near", "#base_original_near", "#base_alive",
+                    "#base_player_x", "#base_player_z", "#base_player_health", "#base_interval", "#base_mod",
+                    "#base_min", "#focus_result", "#focus_original_128", "#focus_at_dispatch_128");
+            Map<String, Integer> saved = new java.util.HashMap<>();
+            for (String name : holders) {
+                var value = board.getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective);
+                saved.put(name, value == null ? null : value.value());
+            }
+            java.util.function.BiConsumer<String, Integer> set = (name, value) ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).set(value);
+            java.util.function.ToIntFunction<String> get = name ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).get();
+            var player = s.player("focused_base_operator", 0, 0);
+            player.addTag("macs_base_player"); player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            var source = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(player.position()).withPermission(2);
+            java.util.function.Consumer<String> run = name -> s.server.getCommands()
+                    .performPrefixedCommand(source, "function macs_pawn:" + name);
+            var deaths = board.getObjective("mb_deaths");
+            if (deaths == null) s.server.getCommands().performPrefixedCommand(source, "scoreboard objectives add mb_deaths deathCount");
+            var first = s.architect(2, 2); var second = s.architect(3, 2);
+            first.addTag("macs_pawn_natural"); first.setNoAi(true); second.setNoAi(true);
+            try {
+                var memory = memory(s); var before = memory.save();
+                set.accept("#stage", 120); set.accept("#base_dispatch", -1); set.accept("#base_released", 0);
+                run.accept("focus_start");
+                h.assertTrue(player.isCreative() && first.isNoAi() && get.applyAsInt("#stage") == 120,
+                        "A missing original member cannot expose the player or release a partial roster");
+                second.addTag("macs_pawn_natural"); run.accept("focus_start");
+                h.assertTrue(get.applyAsInt("#stage") == 122 && !player.isCreative() && !player.isSpectator()
+                                && com.frozendawn.phase.PhaseManager.isVacuumActive(s.phase.getPhase(), s.phase.getProgress()),
+                        "The live session starts with real vacuum and Survival before any group exists");
+                h.assertTrue(!first.isNoAi() && !second.isNoAi() && memory.active == null
+                                && !first.getPersistentData().hasUUID(ConvergenceCoordinator.DISPATCH)
+                                && memory.save().equals(before),
+                        "Start releases the saved roster without granting orders or modifying tactical history");
+                h.assertTrue(get.applyAsInt("#base_timer") == 0 && get.applyAsInt("#base_dispatch") == -1,
+                        "Protected preparation contributes no live time or admission evidence");
+                set.accept("#base_timer", 1799); run.accept("focus_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 123 && get.applyAsInt("#focus_result") == -1
+                                && player.isSpectator() && first.isNoAi() && second.isNoAi(),
+                        "Ninety seconds without admission ends visibly as inconclusive");
+                h.assertTrue(first.isAlive() && second.isAlive() && memory.save().equals(before),
+                        "Inconclusive cleanup cannot kill actors or manufacture hotspot/outcome evidence");
+                run.accept("focus_start");
+                h.assertTrue(get.applyAsInt("#stage") == 123 && first.isNoAi() && player.isSpectator(),
+                        "A completed check cannot be accidentally restarted");
+            } finally {
+                first.removeTag("macs_pawn_natural"); second.removeTag("macs_pawn_natural");
+                player.removeTag("macs_base_player");
+                if (deaths == null) board.removeObjective(board.getObjective("mb_deaths"));
+                if (previous == null) board.removeObjective(objective);
+                else for (String name : holders) {
+                    var holder = net.minecraft.world.scores.ScoreHolder.forNameOnly(name);
+                    if (saved.get(name) == null) board.resetSinglePlayerScore(holder, objective);
+                    else set.accept(name, saved.get(name));
+                }
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnNaturalSampleLandsOnlyOnReadyPlatform(GameTestHelper h) {
+        scene(h, 109, s -> {
+            var player = s.player("natural_sample_landing", 0, 0);
+            // NeoForge's FakePlayer connection deliberately ignores teleports. Use native
+            // teleport handling here, suppressing only outbound network traffic.
+            player.connection = new net.minecraft.server.network.ServerGamePacketListenerImpl(s.server,
+                    new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND), player,
+                    net.minecraft.server.network.CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
+                @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {}
+                @Override public void send(net.minecraft.network.protocol.Packet<?> packet,
+                        net.minecraft.network.PacketSendListener listener) {}
+            };
+            player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+            var waiting = s.position(0, 0).add(0, -20, 0);
+            var landing = s.position(3, 3);
+            player.setPos(waiting);
+            var command = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(landing).withPermission(2);
+            s.block(3, -1, 3, Blocks.AIR.defaultBlockState());
+            s.server.getCommands().performPrefixedCommand(command, "function macs_pawn:natural_land");
+            h.assertTrue(player.isSpectator() && player.position().equals(waiting),
+                    "Missing platform cannot expose the waiting player to gravity");
+            s.block(3, -1, 3, Blocks.LAPIS_BLOCK.defaultBlockState());
+            s.block(3, 1, 3, Blocks.STONE.defaultBlockState());
+            s.server.getCommands().performPrefixedCommand(command, "function macs_pawn:natural_land");
+            h.assertTrue(player.isSpectator() && player.position().equals(waiting),
+                    "Obstructed headroom must refuse landing");
+            s.block(3, 0, 3, Blocks.AIR.defaultBlockState());
+            s.block(3, 1, 3, Blocks.AIR.defaultBlockState());
+            s.server.getCommands().performPrefixedCommand(command, "function macs_pawn:natural_land");
+            h.assertTrue(player.isCreative() && player.position().distanceToSqr(landing) < .001,
+                    "Ready platform teleports the player from below the field before enabling Creative sampling");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnNaturalWatchWaitsForLateDispatchAndArrival(GameTestHelper h) {
+        scene(h, 110, s -> {
+            var board = s.server.getScoreboard();
+            var previous = board.getObjective("mpc");
+            var objective = previous != null ? previous : board.addObjective("mpc",
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,
+                    net.minecraft.network.chat.Component.literal("Pawn replay"),
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER, false, null);
+            var holders = List.of("#stage", "#timer", "#admitted", "#arrived", "#watch_result", "#cloud_tick", "#arrival_tick", "#elapsed");
+            Map<String, Integer> saved = new java.util.HashMap<>();
+            for (String name : holders) {
+                var value = board.getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective);
+                saved.put(name, value == null ? null : value.value());
+            }
+            java.util.function.BiConsumer<String, Integer> set = (name, value) ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).set(value);
+            java.util.function.ToIntFunction<String> get = name ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).get();
+            var player = s.player("natural_watch_operator", 0, 0);
+            var first = s.architect(2, 2); var second = s.architect(3, 2);
+            for (var actor : List.of(first, second)) actor.addTag("macs_pawn_natural");
+            var source = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(player.position()).withPermission(2);
+            Runnable step = () -> s.server.getCommands().performPrefixedCommand(source, "function macs_pawn:natural_watch_tick");
+            try {
+                set.accept("#stage", 93); set.accept("#timer", 1199); set.accept("#watch_result", 0);
+                var dispatch = UUID.randomUUID();
+                for (var actor : List.of(first, second)) actor.getPersistentData().putUUID("macsConvergence", dispatch);
+                step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 95 && get.applyAsInt("#timer") == 0,
+                        "Late native dispatch begins a fresh approach clock instead of stopping at the old 60-second limit");
+                set.accept("#timer", 1199); step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 95 && !first.isNoAi() && !second.isNoAi(),
+                        "An active group with no arrivals stays observable beyond the former cutoff");
+                first.addTag("macs_natural_arrived"); step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 95, "One recorded arrival cannot complete a two-pawn view");
+                second.addTag("macs_natural_arrived"); step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 96 && get.applyAsInt("#watch_result") == 1,
+                        "Both recorded arrivals start a five-second observation tail");
+                set.accept("#timer", 98); step.run();
+                h.assertTrue(!first.isNoAi() && get.applyAsInt("#stage") == 96, "Do not truncate the observation tail");
+                step.run();
+                h.assertTrue(first.isNoAi() && second.isNoAi() && get.applyAsInt("#stage") == 94,
+                        "Hold the roster only after the arrival observation is complete");
+                for (var actor : List.of(first, second)) { actor.removeTag("macs_natural_arrived"); actor.setNoAi(false); }
+                set.accept("#stage", 95); set.accept("#timer", 300); set.accept("#watch_result", 0);
+                first.getPersistentData().remove("macsConvergence"); step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 94 && get.applyAsInt("#watch_result") == -3,
+                        "A released group is inconclusive rather than a fabricated arrival");
+                second.getPersistentData().remove("macsConvergence");
+                set.accept("#stage", 93); set.accept("#timer", 1799); set.accept("#watch_result", 0); step.run();
+                h.assertTrue(get.applyAsInt("#stage") == 94 && get.applyAsInt("#watch_result") == -1,
+                        "No-admission wait is bounded and explicitly inconclusive");
+            } finally {
+                if (previous == null) board.removeObjective(objective);
+                else saved.forEach((name, value) -> {
+                    if (value == null) s.server.getCommands().performPrefixedCommand(source, "scoreboard players reset " + name + " mpc");
+                    else set.accept(name, value);
+                });
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 500)
+    public static void pawnNaturalSpawnerHonorsLocalDensityWithSharedCapacityFree(GameTestHelper h) {
+        scene(h, 108, 5, s -> {
+            double previousMultiplier = FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.get();
+            FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.set(1.0);
+            try {
+                for (int x = -66; x <= 66; x++) for (int z = -66; z <= 66; z++)
+                    s.block(x, -1, z, Blocks.STONE.defaultBlockState());
+                var observer = s.player("pawn_natural_stationary", 0, 0);
+                observer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                var area = observer.getBoundingBox().inflate(80);
+                long now = (s.level.getGameTime() / 200 + 1) * 200;
+                List<ArchitectEntity> spawned = List.of();
+                // Exercise ordinary 2% production rolls, not a forced spawn or a raised rate.
+                // This bounded headless loop tests admission; it is not a live-frequency estimate.
+                for (int i = 0; i < 4096 && spawned.isEmpty(); i++) {
+                    s.clock(now); now += 200;
+                    com.frozendawn.world.ArchitectSpawner.tick(s.level, 6, .90f);
+                    spawned = s.level.getEntitiesOfClass(ArchitectEntity.class, area);
+                }
+                s.entities.addAll(spawned);
+                h.assertTrue(spawned.size() == 1, "The actual natural spawner produces the first ordinary pawn on valid loaded terrain");
+                var first = spawned.getFirst();
+                h.assertTrue(memory(s).population.pawns.containsKey(first.getUUID()), "Natural admission registers the real UUID in the shared population");
+                h.assertTrue(MaeveDirector.allowNaturalPawn(s.level, s.origin.offset(60, 0, 0)),
+                        "Shared capacity remains available; the global ceiling cannot mask this local-density check");
+                for (int i = 0; i < 1024; i++) {
+                    s.clock(now); now += 200;
+                    com.frozendawn.world.ArchitectSpawner.tick(s.level, 6, .90f);
+                }
+                var after = s.level.getEntitiesOfClass(ArchitectEntity.class, area);
+                after.stream().filter(a -> !s.entities.contains(a)).forEach(s.entities::add);
+                h.assertTrue(after.size() == 1 && after.getFirst() == first,
+                        "Further production rolls cannot add a second pawn beside a stationary player while one remains nearby");
+                h.assertTrue(memory(s).active == null, "A single natural pawn and no history never fabricate a convergence group");
+            } finally { FrozenDawnConfig.MOB_SPAWN_MULTIPLIER.set(previousMultiplier); }
+        });
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 400)
@@ -191,6 +555,28 @@ public final class MaeveConvergenceGameTest {
                     "Real snow walking eventually arrives; travel extends the cloud beyond its minimum: " + first.position() + " result=" + hotspot.results + " firstArrival=" + group.firstArrival);
             h.assertTrue(group.contactAt == -1, "Reaching an empty region never invents a successful player encounter");
             h.assertTrue(first.position().distanceToSqr(initial) > 30, "The actual donor moved toward the historical region");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 500)
+    public static void pawnDistantDonorsExtendWarningThroughActualSnowTravel(GameTestHelper h) {
+        scene(h, 107, 7, s -> {
+            for (int x = -106; x <= 110; x++) for (int z = 0; z <= 8; z++) {
+                s.block(x, -1, z, Blocks.STONE.defaultBlockState());
+                s.block(x, 0, z, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 1 + Math.floorMod(x / 3, 3)));
+            }
+            var hotspot = history(s); var first = donor(s, -98, 4); var second = donor(s, 102, 4);
+            long now = s.level.getGameTime(); MaeveDirector.tick(s.server); var group = memory(s).active;
+            h.assertTrue(group != null, "Distant real donors inside the 128-block bound are admitted");
+            var origin = first.position();
+            for (int i = 1; i <= 360; i++) tick(s, now + i, first, second);
+            h.assertTrue(memory(s).active == group && group.firstArrival < 0,
+                    "The long-route cloud remains pending beyond the accepted 18-second nearby arrival");
+            h.assertTrue(first.position().distanceToSqr(origin) > 4, "The delayed arrival comes from actual walking");
+            for (int i = 361; i <= 1200 && group.firstArrival < 0; i++) tick(s, now + i, first, second);
+            h.assertTrue(memory(s).active == group && group.firstArrival > now + 360,
+                    "Actual snow travel eventually reaches the region without forced arrival: " + first.position() + " result=" + hotspot.results);
+            h.assertTrue(group.contactAt == -1, "Arrival at an empty region does not invent player contact");
         });
     }
 

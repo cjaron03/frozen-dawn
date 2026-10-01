@@ -409,6 +409,295 @@ execute if score #stage mpc matches 72 if score #timer mpc matches 500.. as @a[t
 """
 
 
+# Paired warning view. Reuses genuine saved evidence; only empty cooldown is sprinted.
+def warning_terrain():
+    lines = ["forceload add 3880 3980 4128 4028",
+             "fill 3998 114 4000 4012 170 4008 minecraft:air"]
+    for x in range(3880, 4129, 25):
+        end = min(4128, x + 24)
+        lines += [f"fill {x} 100 3980 {end} 100 4028 frozendawn:frozen_dirt",
+                  f"fill {x} 101 3980 {end} 113 4028 minecraft:air"]
+    for x in range(3880, 4129, 4):
+        layers = 1 + ((x - 3880) // 4) % 3
+        lines.append(f"fill {x} 101 3980 {min(x+3,4128)} 101 4028 minecraft:snow[layers={layers}]")
+    lines += ["setblock 4003 100 4006 minecraft:lapis_block"]
+    return "\n".join(lines)
+
+
+SCRIPTS.update({
+    "warning_near": "scoreboard players set #route mpc 0\nfunction macs_pawn:warning_prepare",
+    "warning_far": "scoreboard players set #route mpc 1\nfunction macs_pawn:warning_prepare",
+    "warning_prepare": """function macs_pawn:load
+function macs_pawn:cleanup
+tag @s add macs_pawn
+fd world set phase 0
+function macs_pawn:warning_build
+gamemode spectator @s
+tp @s 4003.5 124 4006.5 180 90
+scoreboard players set #stage mpc 80
+scoreboard players set #timer mpc 0
+""" + tell("Warning comparison prepared. Your recorded hotspot is retained. Fast-forward only this EMPTY cooldown, then wait for Sprint completed and READY.", "/tick sprint 12620t"),
+    "warning_build": warning_terrain(),
+    "warning_ready": "scoreboard players set #stage mpc 81\n" + tell("READY. Click START, then run /tick unfreeze. Watch from here without moving or accelerating time. Describe the cloud and arrival before reading the dump.", "/function macs_pawn:warning_start", "green"),
+    "warning_start": """execute unless score #stage mpc matches 81 run return 0
+execute if score #route mpc matches 0 run summon frozendawn:architect 3967.5 101.3 4004.5 {Tags:["macs_pawn_actor","macs_pawn_warning"],PersistenceRequired:1b}
+execute if score #route mpc matches 0 run summon frozendawn:architect 4039.5 101.3 4004.5 {Tags:["macs_pawn_actor","macs_pawn_warning"],PersistenceRequired:1b}
+execute if score #route mpc matches 1 run summon frozendawn:architect 3903.5 101.3 4004.5 {Tags:["macs_pawn_actor","macs_pawn_warning"],PersistenceRequired:1b}
+execute if score #route mpc matches 1 run summon frozendawn:architect 4103.5 101.3 4004.5 {Tags:["macs_pawn_actor","macs_pawn_warning"],PersistenceRequired:1b}
+execute as @e[tag=macs_pawn_warning] run fd architect record @s 1337
+execute as @e[tag=macs_pawn_warning] run data get entity @s UUID
+execute as @e[tag=macs_pawn_warning] run data get entity @s Pos
+scoreboard players set #stage mpc 82
+scoreboard players set #timer mpc 0
+""" + tell("Run /tick unfreeze now. Stay at this camera position and watch at NORMAL speed until VIEW COMPLETE.", "/tick unfreeze", "green"),
+    "warning_admitted": """scoreboard players set #stage mpc 83
+scoreboard players set #timer mpc 0
+execute store result score #cloud_tick mpc run time query gametime
+""",
+    "warning_arrival": """scoreboard players set #stage mpc 84
+scoreboard players set #timer mpc 0
+execute store result score #arrival_tick mpc run time query gametime
+scoreboard players operation #elapsed mpc = #arrival_tick mpc
+scoreboard players operation #elapsed mpc -= #cloud_tick mpc
+""",
+    "warning_checkpoint": """scoreboard players set #stage mpc 85
+execute as @e[tag=macs_pawn_warning] run fd architect stop @s
+execute as @e[tag=macs_pawn_warning] run fd architect dump @s
+execute as @e[tag=macs_pawn_warning] run data get entity @s Pos
+""" + tell("VIEW COMPLETE. Run /tick freeze now. Describe the cloud and arrival first, then run /fd maeve dump and stop for review. The direct dump supplies the authoritative timing.", "/tick freeze", "green"),
+    "warning_failed": "scoreboard players set #stage mpc 85\n" + tell("No complete warning view was recorded. Freeze and run /fd maeve dump; report this instead of repeating setup. Existing evidence may be below the weight floor or the route may have ended.", "/tick freeze", "red"),
+})
+SCRIPTS["tick"] += """
+execute if score #stage mpc matches 80 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 80 if score #timer mpc matches 12620.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_ready
+execute if score #stage mpc matches 82 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 82 run scoreboard players set #admitted mpc 0
+execute if score #stage mpc matches 82 as @e[tag=macs_pawn_warning,nbt=!{Health:0.0f}] if data entity @s NeoForgeData.macsConvergence run scoreboard players add #admitted mpc 1
+execute if score #stage mpc matches 82 if score #admitted mpc matches 2 as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_admitted
+execute if score #stage mpc matches 82 if score #timer mpc matches 200.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_failed
+execute if score #stage mpc matches 83 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 83 as @e[tag=macs_pawn_warning] unless data entity @s NeoForgeData.macsConvergence as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_failed
+execute if score #stage mpc matches 83 positioned 4003 101 4006 if entity @e[tag=macs_pawn_warning,distance=..24] as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_arrival
+execute if score #stage mpc matches 83 if score #timer mpc matches 1800.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_failed
+execute if score #stage mpc matches 84 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 84 if score #timer mpc matches 100.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:warning_checkpoint
+"""
+
+
+# Natural-spawner supply sample. No Architect summon, probability override or belief edit.
+# Hold newly spawned actors immediately so time sprint cannot fast-forward their encounter.
+def natural_terrain():
+    lines = []
+    for x in range(3840, 4009, 24):
+        end = min(4008, x + 23)
+        for z in range(3922, 4091, 64):
+            zend = min(4090, z + 63)
+            lines += [f"fill {x} 100 {z} {end} 100 {zend} frozendawn:frozen_dirt",
+                      f"fill {x} 101 {z} {end} 113 {zend} minecraft:air"]
+    for x in range(3840, 4009, 4):
+        layers = 1 + ((x - 3840) // 4) % 3
+        lines.append(f"fill {x} 101 3922 {min(x+3,4008)} 101 4090 minecraft:snow[layers={layers}]")
+    lines += ["fill 3921 101 4004 3925 103 4008 minecraft:air",
+              "setblock 3923 100 4006 minecraft:lapis_block"]
+    return "\n".join(lines)
+
+
+SCRIPTS.update({
+    "natural_setup": """execute if entity @e[tag=macs_pawn_natural] run return 0
+function macs_pawn:load
+scoreboard players set #stage mpc 0
+gamemode spectator @s
+function macs_pawn:cleanup
+tag @s add macs_pawn
+fd world set phase 0
+fd world preset brutal
+gamerule doMobSpawning false
+gamerule doDaylightCycle false
+gamerule doWeatherCycle false
+weather clear
+effect give @s minecraft:night_vision infinite 0 true
+forceload add 3840 3922 4008 4090
+tp @s 3923.5 101 4006.5 90 0
+scoreboard players set #nat_count mpc 0
+scoreboard players set #nat_first mpc -1
+scoreboard players set #nat_window mpc 1
+scoreboard players set #nat_station mpc 1
+scoreboard players set #stage mpc 90
+scoreboard players set #timer mpc 0
+""" + tell("Natural supply sample: existing Brutal spawning, five simulated minutes. New Architects are held in place for sampling. Run the sprint below; this is not a live combat or travel test.", "/tick sprint 6040t"),
+    "natural_build": natural_terrain(),
+    "natural_land": """execute unless block ~ ~-1 ~ minecraft:lapis_block run return 0
+execute unless block ~ ~ ~ minecraft:air run return 0
+execute unless block ~ ~1 ~ minecraft:air run return 0
+tp @s ~ ~ ~ 90 0
+gamemode creative @s
+return 1
+""",
+    "natural_begin": """execute if score #nat_window mpc matches 1 run function macs_pawn:natural_build
+execute unless score #nat_station mpc matches 2 store result score #nat_landed mpc run execute positioned 3923.5 101 4006.5 run function macs_pawn:natural_land
+execute if score #nat_station mpc matches 2 store result score #nat_landed mpc run execute positioned 4000.5 101 4054.5 run function macs_pawn:natural_land
+execute unless score #nat_landed mpc matches 1 run return run function macs_pawn:natural_invalid
+forceload remove 3840 3922 4008 4090
+tag @e[type=frozendawn:architect] add macs_natural_existing
+execute store result score #nat_started mpc run time query gametime
+scoreboard players set #timer mpc 0
+scoreboard players set #stage mpc 91
+fd world set phase 6 late
+""",
+    "natural_invalid": """scoreboard players set #stage mpc 98
+fd world set phase 0
+forceload remove 3840 3922 4008 4090
+gamemode spectator @s
+""" + tell("SAMPLE INVALID: the platform, player position or spawn height was outside the test area. No zero-spawn or supply conclusion is valid. Keep frozen and report this message.", color="red"),
+    "natural_invalid_actor": """tag @s add macs_natural_existing
+tag @s add macs_natural_invalid
+data merge entity @s {NoAI:1b}
+fd architect record @s 1337
+fd architect dump @s
+execute as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_invalid
+""",
+    "natural_restart": """execute unless score #stage mpc matches 92 unless score #stage mpc matches 98 run return 0
+execute if entity @e[tag=macs_pawn_natural] run return 0
+tag @e[type=frozendawn:architect,tag=!macs_natural_existing,x=3840,y=-64,z=3922,dx=226,dy=383,dz=198] add macs_natural_invalid
+execute as @e[tag=macs_natural_invalid] run fd architect stop @s
+execute as @e[tag=macs_natural_invalid] run fd architect dump @s
+execute as @e[tag=macs_natural_invalid] run data merge entity @s {NoAI:1b}
+kill @e[tag=macs_natural_invalid]
+function macs_pawn:natural_setup
+""",
+    "natural_capture": """tag @s add macs_natural_existing
+tag @s add macs_pawn_natural
+data merge entity @s {NoAI:1b}
+scoreboard players add #nat_count mpc 1
+execute if score #nat_count mpc matches 1 run scoreboard players operation #nat_first mpc = #timer mpc
+execute store result score @s mpc run time query gametime
+fd architect record @s 1337
+fd architect dump @s
+""",
+    "natural_checkpoint": """scoreboard players set #stage mpc 92
+fd world set phase 0
+execute as @e[tag=macs_pawn_natural] run fd architect stop @s
+execute as @e[tag=macs_pawn_natural] run fd architect dump @s
+tellraw @s [{"text":"SUPPLY SAMPLE COMPLETE. NEW natural Architects captured this window="},{"score":{"name":"#nat_count","objective":"mpc"}},{"text":"; first appeared after "},{"score":{"name":"#nat_first","objective":"mpc"}},{"text":" ticks (-1 means none). Keep them held for review."}]
+""" + tell("Wait for Sprint completed, then run /fd maeve dump directly in chat. Reply done. Zero spawns is a possible result; do not summon anything or repeat setup."),
+    "natural_second": """execute unless score #stage mpc matches 92 run return 0
+execute unless score #nat_count mpc matches 1 run return 0
+execute if score #nat_station mpc matches 2 run return 0
+execute unless entity @e[tag=macs_pawn_natural,nbt=!{Health:0.0f}] run return 0
+execute if entity @e[type=frozendawn:architect,x=3904,y=5,z=3958,dx=193,dy=194,dz=193] run return run tellraw @s {"text":"Second station blocked by an existing Architect. Keep frozen and report this; do not move the pawn.","color":"red"}
+gamemode spectator @s
+fd world set phase 0
+fill 3998 101 4052 4002 103 4056 minecraft:air
+setblock 4000 100 4054 minecraft:lapis_block
+tp @s 4000.5 101 4054.5 90 0
+scoreboard players set #nat_station mpc 2
+scoreboard players set #nat_count mpc 0
+scoreboard players set #nat_first mpc -1
+scoreboard players add #nat_window mpc 1
+scoreboard players set #stage mpc 90
+scoreboard players set #timer mpc 0
+""" + tell("Second sampling station. The first natural pawn remains at its birthplace, held for review. Stay on this blue marker and run the empty sampling sprint; spawn settings are unchanged.", "/tick sprint 6040t"),
+    "natural_retry": """execute unless score #stage mpc matches 92 run return 0
+execute unless score #nat_count mpc matches 0 run return 0
+gamemode spectator @s
+forceload add 3840 3922 4008 4090
+scoreboard players add #nat_window mpc 1
+scoreboard players set #stage mpc 90
+scoreboard players set #timer mpc 0
+""" + tell("Another unchanged production sampling window is ready. Run /tick sprint 6040t; zero remains a valid result.", "/tick sprint 6040t"),
+})
+SCRIPTS["tick"] += """
+execute if score #stage mpc matches 90 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 90 if score #timer mpc matches 40.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_begin
+execute if score #stage mpc matches 91 run scoreboard players add #timer mpc 1
+execute if score #stage mpc matches 91 unless score #nat_station mpc matches 2 unless entity @a[tag=macs_pawn,x=3921,y=101,z=4004,dx=4,dy=2,dz=4] as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_invalid
+execute if score #stage mpc matches 91 if score #nat_station mpc matches 2 unless entity @a[tag=macs_pawn,x=3998,y=101,z=4052,dx=4,dy=2,dz=4] as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_invalid
+execute if score #stage mpc matches 91 as @e[type=frozendawn:architect,tag=!macs_natural_existing,x=3840,y=-64,z=3922,dx=226,dy=383,dz=198] unless entity @s[x=3840,y=101,z=3922,dx=226,dy=3,dz=198] run function macs_pawn:natural_invalid_actor
+execute if score #stage mpc matches 91 as @e[type=frozendawn:architect,tag=!macs_natural_existing,x=3840,y=101,z=3922,dx=226,dy=3,dz=198] run function macs_pawn:natural_capture
+execute if score #stage mpc matches 91 if score #timer mpc matches 6000.. as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_checkpoint
+"""
+
+
+# Release only the roster captured from real production births. Waiting for admission
+# and observing a dispatched group have separate clocks; neither can claim success.
+SCRIPTS.update({
+    "natural_watch": """execute unless score #stage mpc matches 92 run return 0
+execute unless score #nat_station mpc matches 2 run return 0
+execute unless score #nat_count mpc matches 1 run return 0
+execute store result score #nat_roster mpc if entity @e[tag=macs_pawn_natural,nbt={NoAI:1b},nbt=!{Health:0.0f}]
+execute unless score #nat_roster mpc matches 2 run return 0
+gamemode spectator @s
+tp @s 3976.5 125 3976.5 -50 25
+fd world set phase 6 late
+tag @e[tag=macs_pawn_natural] remove macs_natural_arrived
+execute as @e[tag=macs_pawn_natural] run fd architect record @s 1337
+execute as @e[tag=macs_pawn_natural] run fd architect mark @s NATURAL_WATCH_START
+execute as @e[tag=macs_pawn_natural] run data merge entity @s {NoAI:0b,Glowing:1b}
+scoreboard players set #timer mpc 0
+scoreboard players set #watch_result mpc 0
+scoreboard players set #stage mpc 93
+""" + tell("NATURAL ARRIVAL VIEW: stay at this camera and turn with your mouse. One outlined Architect starts to your east, the other west. Watch at NORMAL speed until the result prompt. No sprint or attacks.", color="aqua") + "\nreturn 1",
+    "natural_watch_admitted": """execute unless score #stage mpc matches 93 run return 0
+scoreboard players set #stage mpc 95
+scoreboard players set #timer mpc 0
+execute store result score #cloud_tick mpc run time query gametime
+""" + tell("The group has been dispatched. Keep watching; this view now waits for BOTH pawns to enter the hotspot, or for an inconclusive stop.", color="aqua"),
+    "natural_watch_arrived": """execute unless score #stage mpc matches 95 run return 0
+scoreboard players set #stage mpc 96
+scoreboard players set #watch_result mpc 1
+scoreboard players set #timer mpc 0
+execute store result score #arrival_tick mpc run time query gametime
+scoreboard players operation #elapsed mpc = #arrival_tick mpc
+scoreboard players operation #elapsed mpc -= #cloud_tick mpc
+""",
+    "natural_watch_end": """execute unless score #stage mpc matches 93 unless score #stage mpc matches 95 unless score #stage mpc matches 96 run return 0
+scoreboard players set #stage mpc 94
+execute as @e[tag=macs_pawn_natural] run fd architect mark @s NATURAL_WATCH_END
+execute as @e[tag=macs_pawn_natural] run fd architect dump @s
+execute as @e[tag=macs_pawn_natural] run data merge entity @s {NoAI:1b}
+fd world set phase 0
+""" + "\n".join([
+        "execute if score #watch_result mpc matches 1 run " + tell("NATURAL VIEW COMPLETE: both original pawns entered the hotspot. They are held for review. Pause and describe what you saw; no dump command needed. Arrival is not combat success.", color="green"),
+        "execute if score #watch_result mpc matches -1 run " + tell("NATURAL VIEW INCONCLUSIVE: no group was admitted during the 90-second observation. Pause and report this; do not repeat setup.", color="yellow"),
+        "execute if score #watch_result mpc matches -2 run " + tell("NATURAL VIEW INCONCLUSIVE: the approach window ended before both arrivals. Pause and report what happened; no dump command needed.", color="yellow"),
+        "execute if score #watch_result mpc matches -3 run " + tell("NATURAL VIEW INCONCLUSIVE: the group ended or a pawn became unavailable before both arrivals. Pause and report what happened; no dump command needed.", color="yellow"),
+    ]) + "\nreturn 1",
+    "natural_watch_tick": """scoreboard players add #timer mpc 1
+scoreboard players set #admitted mpc 0
+execute as @e[tag=macs_pawn_natural,nbt=!{Health:0.0f}] if data entity @s NeoForgeData.macsConvergence run scoreboard players add #admitted mpc 1
+execute if score #stage mpc matches 93 if score #admitted mpc matches 2 run function macs_pawn:natural_watch_admitted
+execute if score #stage mpc matches 93 if score #timer mpc matches 1800.. run scoreboard players set #watch_result mpc -1
+execute if score #stage mpc matches 93 if score #watch_result mpc matches -1 run function macs_pawn:natural_watch_end
+execute if score #stage mpc matches 95 if score #timer mpc matches 240.. positioned 4003 101 4006 as @e[tag=macs_pawn_natural,nbt=!{Health:0.0f},distance=..24] if data entity @s NeoForgeData.macsConvergence run tag @s add macs_natural_arrived
+execute if score #stage mpc matches 95 store result score #arrived mpc if entity @e[tag=macs_pawn_natural,tag=macs_natural_arrived,nbt=!{Health:0.0f}]
+execute if score #stage mpc matches 95 if score #arrived mpc matches 2 run function macs_pawn:natural_watch_arrived
+execute if score #stage mpc matches 95 unless score #admitted mpc matches 2 run scoreboard players set #watch_result mpc -3
+execute if score #stage mpc matches 95 if score #watch_result mpc matches -3 run function macs_pawn:natural_watch_end
+execute if score #stage mpc matches 95 if score #timer mpc matches 2420.. run scoreboard players set #watch_result mpc -2
+execute if score #stage mpc matches 95 if score #watch_result mpc matches -2 run function macs_pawn:natural_watch_end
+execute if score #stage mpc matches 96 if score #timer mpc matches 100.. run function macs_pawn:natural_watch_end
+""",
+})
+SCRIPTS["tick"] += """
+execute if score #stage mpc matches 93..96 unless score #stage mpc matches 94 as @a[tag=macs_pawn,limit=1] run function macs_pawn:natural_watch_tick
+"""
+
+
+# Separate QA module: the survival replay preserves production code and historical evidence.
+from macs_base_diversion import scripts as base_diversion_scripts
+SCRIPTS.update(base_diversion_scripts(tell))
+from macs_base_idle import scripts as base_idle_scripts
+SCRIPTS.update(base_idle_scripts(tell))
+SCRIPTS["tick"] += "execute if score #stage mpc matches 101..102 as @a[tag=macs_base_player,limit=1] run function macs_pawn:base_tick\n"
+
+SCRIPTS["tick"] += "execute if score #stage mpc matches 111 as @a[tag=macs_base_player,limit=1] run function macs_pawn:base_idle_tick\n"
+
+
+from macs_base_focus import scripts as base_focus_scripts
+SCRIPTS.update(base_focus_scripts(tell))
+SCRIPTS["tick"] += "execute if score #stage mpc matches 122 as @a[tag=macs_base_player,limit=1] run function macs_pawn:focus_tick\n"
+
+
 def write_pack(path, game_test=False):
     functions = path / "data/macs_pawn/function"
     functions.mkdir(parents=True, exist_ok=True)

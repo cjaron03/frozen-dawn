@@ -50,7 +50,17 @@ def client2RunDirectory = layout.projectDirectory.dir('run2')
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
 // annotation scan (ModList#getAllScanData) can find the @GameTestHolder classes.
 sourceSets {
+    labBridge {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
+    }
     gameTest {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
@@ -77,6 +87,9 @@ neoForge {
         clientLab {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
+            systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
@@ -160,6 +173,7 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.gameTest)
+            sourceSet(sourceSets.labBridge)
         }
     }
 
@@ -172,12 +186,17 @@ neoForge {
 // Puts Minecraft and NeoForge on the gameTest compile/runtime classpath. Only the main
 // source set gets these implicitly.
 neoForge.addModdingDependenciesTo(sourceSets.gameTest)
+neoForge.addModdingDependenciesTo(sourceSets.labBridge)
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
     testRuntimeClasspath.extendsFrom localRuntime
+    labBridgeCompileOnly.extendsFrom compileOnly
+    labBridgeImplementation.extendsFrom implementation
+    labBridgeRuntimeOnly.extendsFrom runtimeOnly
+    labBridgeRuntimeClasspath.extendsFrom localRuntime
     gameTestCompileOnly.extendsFrom compileOnly
     gameTestImplementation.extendsFrom implementation
     gameTestRuntimeOnly.extendsFrom runtimeOnly
@@ -247,7 +266,7 @@ tasks.withType(Test).configureEach {
 
 spotless {
     java {
-        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java'
+        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java', 'src/labBridge/java/**/*.java'
         trimTrailingWhitespace()
         endWithNewline()
         leadingTabsToSpaces(4)
@@ -297,7 +316,7 @@ tasks.register('gameTestGate', Exec) {
 // Fingerprint the actual source/resources, including uncommitted changes. No git commit needed.
 def architectBuildInfo = layout.buildDirectory.dir('generated/architectBuildInfo')
 tasks.register('generateArchitectBuildInfo') {
-    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'),
+    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'), fileTree('src/labBridge'),
             file('build.gradle'), file('gradle.properties'))
     outputs.dir(architectBuildInfo)
     doLast {
@@ -468,9 +487,34 @@ tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExi
 // Convergence replay functions are parsed at the same permission as the local client.
 def macsPawnQaResources = layout.buildDirectory.dir('generated/macsPawnQa')
 tasks.register('generateMacsPawnQa', Exec) {
-    inputs.file('tools/prepare_macs_pawn_playtest.py')
+    inputs.files('tools/prepare_macs_pawn_playtest.py', 'tools/macs_base_diversion.py', 'tools/macs_base_idle.py', 'tools/macs_base_focus.py')
     outputs.dir(macsPawnQaResources)
     commandLine 'python3', '-B', 'tools/prepare_macs_pawn_playtest.py', '--pack-only', macsPawnQaResources.get().asFile.absolutePath
 }
 sourceSets.gameTest.resources.srcDir(macsPawnQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPawnQa') }
+
+// Local automation must never be part of the distributed mod.
+tasks.register('verifyLabBridgePackaging') {
+    dependsOn tasks.named('jar'), tasks.named('compileLabBridgeJava')
+    doLast {
+        def labClassPaths = sourceSets.labBridge.output.classesDirs.files.collectMany { dir ->
+            fileTree(dir).matching { include '**/*.class' }.files.collect { dir.toPath().relativize(it.toPath()).toString() }
+        }.toSet()
+        def leaked = zipTree(tasks.named('jar').get().archiveFile).matching {
+            include { entry -> labClassPaths.contains(entry.path) }
+        }.files
+        if (!leaked.empty) throw new GradleException("Development command bridge leaked into release jar")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyLabBridgePackaging') }
+
+// Presentation-only masked replay, kept off the release resource path.
+def macsSignalQaResources = layout.buildDirectory.dir('generated/macsSignalQa')
+tasks.register('generateMacsSignalQa', Exec) {
+    inputs.file('tools/prepare_macs_signal_playtest.py')
+    outputs.dir(macsSignalQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_signal_playtest.py', '--pack-only', macsSignalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
