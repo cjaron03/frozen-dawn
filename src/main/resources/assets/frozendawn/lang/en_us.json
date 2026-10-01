@@ -669,6 +669,8 @@
   "death.attack.frozendawn.architect": "%1$s was disassembled by a Returned Architect",
   "death.attack.frozendawn.thermal_sever": "%1$s's thermal loop was severed",
 
+  "advancement.frozendawn.pacifist_launch.title": "A Pacifist in This World",
+  "advancement.frozendawn.pacifist_launch.description": "Do not answer! Do not answer!! Do not answer!!!\nLeave Earth without killing any of the Returned or their descendants.",
   "advancement.frozendawn.disassembled.title": "Disassembled",
   "advancement.frozendawn.disassembled.description": "Kill a Returned Architect. It was taking your base apart with purpose.",
   "advancement.frozendawn.decoherence.title": "Decoherence",
