@@ -47,7 +47,8 @@ public final class MaeveAttentionGameTest {
             helper.assertTrue(stalker.isMaeveDisengaging() && witness.isMaeveDisengaging(), "Eviction releases every executor of the concern");
             var start = stalker.position(); stalker.tickCount = 80; stalker.setOnGround(true); stalker.setDeltaMovement(Vec3.ZERO);
             for (int i = 1; i <= 80; i++) { scene.clock(now + 100 + i); stalker.tick(); }
-            helper.assertTrue(stalker.getX() < start.x - 3 && stalker.getTarget() == null && !stalker.isHoldingMaevePosition(),
+            helper.assertTrue(stalker.getX() < start.x - 3 && stalker.getTarget() == null && !stalker.isHoldingMaevePosition()
+                            && !stalker.isSprinting(),
                     "Actual entity physics must turn and move away, not just change a slot counter: " + stalker.position());
             helper.assertTrue(MaeveDirector.attentionSnapshot(scene.server).slots().stream().noneMatch(slot -> slot.subject().equals(player.getUUID())),
                     "Other observed players hold the shared slots after the original tracking concern leaves");

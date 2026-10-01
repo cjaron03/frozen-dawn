@@ -1,4 +1,4 @@
-# Maeve baseline reconciliation — initial audit
+# Maeve baseline reconciliation — implementation and integration
 
 Status: hidden pacifist advancement implemented and automated verification passed, 2026-09-30. The owner approved Returned descendants and implementation on this isolated branch while Pawn Convergence PR #98 continues separately in parallel. Owner confirmed both manual tests passed on 2026-09-30: the clean launch awarded the advancement, and the Undone-kill control withheld it.
 
@@ -54,3 +54,14 @@ Source SHA-256: `7c61a7fe4b5834d6bb1691d70ce157299d1fc28d7ca214c753f3299056c5d0e
 Client handoff: launch this checkout with Java 21 using `./gradlew runClientLab --console=plain`. Its isolated game directory is `run-lab`; startup log is `/private/tmp/maeve-pacifist-client.log`. Use a fresh disposable test world for native replay. `/gametest run frozendawn:pacifistsuccessfullaunchawardsonlyeligiblepassenger` exercises the actual server-side launch award with fixture players; it does not establish the owner's visual toast acceptance. Owner confirmed the manual clean launch and Undone-kill control both passed on 2026-09-30; visual acceptance is complete.
 
 The description clarification subsequently passed `./gradlew build`; the rebuilt jar and installed smoke jar share SHA-256 `df2f84103757053a5e0b209ec39514617d524f8fd980b066f7c2a9420592c96b`. The Gradle client was restarted with the updated wording. This slice is ready for review against `feat/maeve-director`; final integration remains pending. PR #98 remains separately owned, and its eventual integration result must be incorporated before final combined acceptance.
+
+
+## Combined integration review — 2026-09-30
+
+The owner requested Pawn Convergence PR #98's merge and review of PR #99 for integration. PR #98 merged into `feat/maeve-director` as `8cb9afd6f018907c9274f9da6a0bf42901afe10b`. This branch incorporates that exact base. The only merge conflict was the required-test manifest; all five pacifist entries and all convergence entries were retained. No production code was changed during review. No blocking defect was found in the retained baseline scope, kill attribution, permanent eligibility, successful-launch hook or private advancement presentation. The earlier parallel-work status above is historical.
+
+Java 21 `./gradlew architectVerify architectMonkey --console=plain` passed on the combined source: 646 unit tests, eight gate-harness tests, 219 native GameTests (all 214 required entries), and 500 unchanged seeded stress cases plus 219 repeated native cases. XML reports contain zero failures, errors and skips. The exact source fingerprint is `81e32db16fe78f222a710cadb27f116a2c28f4eebe2f35fa948fb6bed173fd4b`. All 2,985 tracked source files matched their pre-run hashes before this documentation update. Evidence: `build/macs-combined-20260930/verification.json`, both XML reports, unit reports, native/stress artifacts and `console.log` in this checkout.
+
+The combined release jar contains both features and excludes GameTests and the development command bridge. Jar and installed smoke-jar SHA-256: `0295f1fa550a1f58c55d57b542fcc9813aad106b92083bc7eb4306d88ad9e7a7`. Only the Frozen Dawn smoke jar was replaced. Restart the Minecraft client to load it. Gradle and existing dependency deprecation warnings remain.
+
+The owner's two pacifist visual passes remain the human acceptance evidence; this combined run is headless verification. Pawn Convergence retains its separately documented controlled singleplayer acceptance and live itinerary deviation. Ambient encounter calibration and human multiplayer remain broader integration/release work. The updated branch is ready for its protected PR #99 merge once the successful checks are published on this commit.

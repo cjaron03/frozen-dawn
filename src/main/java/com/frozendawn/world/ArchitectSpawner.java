@@ -65,6 +65,8 @@ public class ArchitectSpawner {
             if (spawnPos == null || (postMaeve
                     && LateThreatSpawnHelper.isInsideHearthBoundary(level, spawnPos))) continue;
 
+            if (!com.frozendawn.maeve.MaeveDirector.allowNaturalPawn(level, spawnPos)) continue;
+
             ArchitectEntity architect = ModEntities.ARCHITECT.get().create(level, null, spawnPos,
                     MobSpawnType.NATURAL, true, false);
             if (architect != null) {
@@ -75,6 +77,7 @@ public class ArchitectSpawner {
                 }
 
                 level.addFreshEntity(architect);
+                com.frozendawn.maeve.MaeveDirector.observePawn(architect);
                 FrozenDawn.LOGGER.info("[Architect] Spawned near {} at phase {} ({}){}",
                         player.getName().getString(), currentPhase,
                         String.format("%.0f blocks away", Math.sqrt(

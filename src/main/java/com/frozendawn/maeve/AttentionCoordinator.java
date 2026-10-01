@@ -23,6 +23,7 @@ final class AttentionCoordinator {
     private final Map<AttentionManager.Key, Map<UUID, Executor>> executors = new LinkedHashMap<>();
     private final Map<UUID, Executor> departing = new LinkedHashMap<>();
     private MissionPlanner missions;
+    private final Map<UUID, Runnable> sieges = new LinkedHashMap<>();
 
     AttentionCoordinator(MinecraftServer server, MaeveSavedData data) { this.server = server; this.data = data; }
     void bind(MissionPlanner missions) { this.missions = missions; }
@@ -30,7 +31,7 @@ final class AttentionCoordinator {
     private void resize() { manager.resize(AttentionManager.capacity(ApocalypseState.get(server).getPresetName()), now(), this::evict); }
 
     void observe(ArchitectEntity actor, ServerPlayer player) {
-        if (data.store() == null || !ObservationCollector.canObserve(actor, player, false)) return;
+        if (data.store() == null || ConvergenceCoordinator.assigned(actor) || !ObservationCollector.canObserve(actor, player, false)) return;
         resize();
         if (CommitmentCoordinator.eligible(actor, player)
                 && !actor.isMaeveDisengaging() && actor.getCurrentAction() == ArchitectEntity.ACTION_OBSERVE
@@ -60,7 +61,7 @@ final class AttentionCoordinator {
     }
 
     boolean commitment(ArchitectEntity actor, ServerPlayer player) {
-        if (!CommitmentCoordinator.eligible(actor, player)) return false;
+        if (ConvergenceCoordinator.assigned(actor) || !CommitmentCoordinator.eligible(actor, player)) return false;
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
         releaseOtherTracking(actor, tracking);
         resize();
@@ -81,7 +82,7 @@ final class AttentionCoordinator {
     }
 
     boolean reconnaissance(ArchitectEntity actor, ServerPlayer player) {
-        if (actor.isMaeveDisengaging()) return false;
+        if (actor.isMaeveDisengaging() || ConvergenceCoordinator.assigned(actor)) return false;
         var tracking = new AttentionManager.Key(AttentionManager.Kind.PASSIVE_TRACKING, player.getUUID());
         releaseOtherTracking(actor, tracking);
         resize();
@@ -101,11 +102,26 @@ final class AttentionCoordinator {
         executors.remove(key); manager.release(key, now());
     }
 
+    boolean siege(ConvergenceGroup group, List<ArchitectEntity> actors, Runnable eviction) {
+        resize(); var key = new AttentionManager.Key(AttentionManager.Kind.SIEGE, group.id);
+        if (!manager.request(key, now(), this::evict).admitted()) return false;
+        var members = new LinkedHashMap<UUID, Executor>();
+        for (var actor : actors) {
+            releaseOtherTracking(actor, null);
+            members.put(actor.getUUID(), new Executor(actor.getUUID(), actor.getUUID(), group.dimension, group.destination, now()));
+        }
+        executors.put(key, members); sieges.put(group.id, eviction); return true;
+    }
+    void releaseSiege(UUID id) {
+        var key = new AttentionManager.Key(AttentionManager.Kind.SIEGE, id);
+        sieges.remove(id); executors.remove(key); manager.release(key, now());
+    }
     void tick() {
         if (data.store() == null) { clear(); return; }
         departing.values().removeIf(ref -> { var actor = actor(ref); return actor == null || !actor.isMaeveDisengaging(); });
         for (var entry : new ArrayList<>(executors.entrySet())) {
             var key = entry.getKey();
+            if (key.kind() == AttentionManager.Kind.SIEGE) continue; // Group coordinator owns the whole roster lifetime.
             entry.getValue().values().removeIf(ref -> {
                 ArchitectEntity actor = actor(ref);
                 if (actor == null || !actor.isAlive() || actor.isNoAi() || actor.isMasterArchitectVisual()) return true;
@@ -114,7 +130,7 @@ final class AttentionCoordinator {
                     case PASSIVE_TRACKING -> actor.getCurrentAction() != ArchitectEntity.ACTION_OBSERVE
                             || actor.isMaeveDisengaging() || now() - ref.lastSeen() > 100;
                     case RECONNAISSANCE -> missions == null || missions.packet(actor) == null;
-                    default -> true; // Siege execution belongs to a later slice.
+                    default -> true; // Siege execution is checked before this local-concern switch.
                 };
             });
             if (entry.getValue().isEmpty()) { executors.remove(key); manager.release(key, now()); }
@@ -123,6 +139,7 @@ final class AttentionCoordinator {
     }
 
     private void evict(AttentionManager.Key key) {
+        if (key.kind() == AttentionManager.Kind.SIEGE) { var release = sieges.remove(key.subject()); if (release != null) release.run(); return; }
         var members = executors.remove(key);
         if (members == null) return;
         for (var ref : members.values()) {
@@ -154,7 +171,7 @@ final class AttentionCoordinator {
             var actor = actor(ref); if (actor != null) actor.clearMaeveAttention();
         }
         for (var ref : departing.values()) { var actor = actor(ref); if (actor != null) actor.clearMaeveAttention(); }
-        departing.clear(); executors.clear(); manager.clear();
+        departing.clear(); executors.clear(); sieges.clear(); manager.clear();
     }
 
     MaeveDirector.AttentionSnapshot snapshot() {

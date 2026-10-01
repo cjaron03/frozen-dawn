@@ -9,6 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class MaeveObservationEvents {
@@ -16,8 +17,16 @@ public final class MaeveObservationEvents {
 
     @SubscribeEvent
     public static void onPresence(EntityTickEvent.Post event) {
-        if (event.getEntity() instanceof ArchitectEntity observer && !observer.level().isClientSide()
-                && observer.level().getGameTime() % 10 == 0) MaeveDirector.observePresence(observer);
+        if (event.getEntity() instanceof ArchitectEntity observer && !observer.level().isClientSide()) {
+            if (observer.level().getGameTime() % 20 == 0) MaeveDirector.observePawn(observer);
+            if (observer.level().getGameTime() % 10 == 0) MaeveDirector.observePresence(observer);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRemoved(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof ArchitectEntity actor
+                && actor.getRemovalReason() != null && actor.getRemovalReason().shouldDestroy()) MaeveDirector.pawnDestroyed(actor);
     }
 
     @SubscribeEvent
