@@ -193,6 +193,13 @@ exitlearningrejectshiddeninwardunarrivedandreloadedepisodes xml
 exitreplayfunctionsandbothwitnessedcrossingsarevalid xml
 exitalternativeexpiresintopursuitandreloadpreservesdisproof xml
 
+# MACS hidden pacifist launch: conduct, attribution, lineage, migration and real award.
+pacifistdirectkillsurvivesplayerreplacement xml
+pacifistprojectilesexplosionsandpetsareattributed xml
+pacifistunrelatedunattributedandcancelleddeathsareallowed xml
+pacifisthistoricalstatisticspreventoldsaveamnesty xml
+pacifistsuccessfullaunchawardsonlyeligiblepassenger xml
+
 # Pawn Convergence: final deaths, historical regions, warning, group outcomes and lifecycle.
 pawndeathsusefinaldeathandexcludeindependentroles xml
 pawnencountergateuseslocalsightandcancelsresumedfight xml

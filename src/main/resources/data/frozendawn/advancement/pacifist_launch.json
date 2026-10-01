@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:rocket_nose_cone"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.pacifist_launch.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.pacifist_launch.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
