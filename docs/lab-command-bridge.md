@@ -99,3 +99,8 @@ For **MACS Signal Check**, read [the viewing protocol](macs-signal-playtest.md).
 ## Focused base check
 
 For **MACS Focused Base Check**, follow the latest section of [the base protocol](macs-base-diversion-playtest.md). Approved `macs_pawn` functions are `focus_prepare` at stage92, `focus_status` and `focus_start` at120, and `focus_end` at122. Start enables real late-phase Survival before releasing either saved natural pawn. No protected admission handoff is used. The ninety-second no-admission bound and four-minute total bound run at normal speed. Capture a first description at stage123 before revealing diagnostics. Never run setup, move donors or repeat start after the stage changes.
+
+
+## Controlled base return
+
+For **MACS Base Return**, follow [the controlled return protocol](macs-base-return-playtest.md). Exact-world `macs_pawn:return_prepare` requires stage92 and stages the two original living pawns before the run; `return_status` and `return_start` require130; `return_end` requires132. The owner gathers supplies for thirty seconds, then walks back at normal speed for upkeep. Start enables Survival before AI release. No admission by thirty seconds or death is inconclusive; total duration is ninety seconds. This is a new controlled-position copy with retained earned history. Never use its staging function in a completed world.

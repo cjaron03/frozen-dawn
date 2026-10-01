@@ -487,7 +487,7 @@ tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExi
 // Convergence replay functions are parsed at the same permission as the local client.
 def macsPawnQaResources = layout.buildDirectory.dir('generated/macsPawnQa')
 tasks.register('generateMacsPawnQa', Exec) {
-    inputs.files('tools/prepare_macs_pawn_playtest.py', 'tools/macs_base_diversion.py', 'tools/macs_base_idle.py', 'tools/macs_base_focus.py')
+    inputs.files('tools/prepare_macs_pawn_playtest.py', 'tools/macs_base_diversion.py', 'tools/macs_base_idle.py', 'tools/macs_base_focus.py', 'tools/macs_base_return.py')
     outputs.dir(macsPawnQaResources)
     commandLine 'python3', '-B', 'tools/prepare_macs_pawn_playtest.py', '--pack-only', macsPawnQaResources.get().asFile.absolutePath
 }

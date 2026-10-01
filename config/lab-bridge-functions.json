@@ -225,6 +225,46 @@
           "equals": 122
         }
       ]
+    },
+    "macs_pawn:return_prepare": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 92
+        }
+      ]
+    },
+    "macs_pawn:return_start": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 130
+        }
+      ]
+    },
+    "macs_pawn:return_status": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 130
+        }
+      ]
+    },
+    "macs_pawn:return_end": {
+      "world": "MACS Base Return",
+      "scores": [
+        {
+          "objective": "mpc",
+          "holder": "#stage",
+          "equals": 132
+        }
+      ]
     }
   }
 }

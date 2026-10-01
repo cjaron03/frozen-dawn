@@ -66,7 +66,7 @@ public final class MaeveConvergenceGameTest {
     public static void pawnReplayFunctionsParseAtClientPermission(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         var resources = server.getResourceManager().listResources("function", id -> id.getNamespace().equals("macs_pawn") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(resources.size() == 108, "The complete convergence replay must be registered: " + resources.size());
+        helper.assertTrue(resources.size() == 116, "The complete convergence replay must be registered: " + resources.size());
         resources.forEach((file, resource) -> {
             var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("macs_pawn", file.getPath().substring("function/".length()).replace(".mcfunction", ""));
             helper.assertTrue(server.getFunctions().get(id).isPresent(), "Native function exists: " + id);
@@ -284,6 +284,77 @@ public final class MaeveConvergenceGameTest {
                         "Inconclusive cleanup cannot kill actors or manufacture hotspot/outcome evidence");
                 run.accept("focus_start");
                 h.assertTrue(get.applyAsInt("#stage") == 123 && first.isNoAi() && player.isSpectator(),
+                        "A completed check cannot be accidentally restarted");
+            } finally {
+                first.removeTag("macs_pawn_natural"); second.removeTag("macs_pawn_natural");
+                player.removeTag("macs_base_player");
+                if (deaths == null) board.removeObjective(board.getObjective("mb_deaths"));
+                if (previous == null) board.removeObjective(objective);
+                else for (String name : holders) {
+                    var holder = net.minecraft.world.scores.ScoreHolder.forNameOnly(name);
+                    if (saved.get(name) == null) board.resetSinglePlayerScore(holder, objective);
+                    else set.accept(name, saved.get(name));
+                }
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 200)
+    public static void pawnBaseReturnBoundsAdmissionAndPreventsRestart(GameTestHelper h) {
+        scene(h, 119, s -> {
+            var board = s.server.getScoreboard();
+            var previous = board.getObjective("mpc");
+            var objective = previous != null ? previous : board.addObjective("mpc",
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,
+                    net.minecraft.network.chat.Component.literal("Return replay"),
+                    net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER, false, null);
+            var holders = List.of("#stage", "#base_roster", "#return_timer", "#base_released", "#base_before",
+                    "#return_dispatch", "#base_admitted", "#base_near", "#base_original_near", "#base_alive",
+                    "#base_player_x", "#base_player_z", "#base_player_health", "#base_interval", "#base_mod",
+                    "#return_result", "#return_near", "#return_all_near", "#return_alive", "#return_assigned", "#return_arrival", "#return_clear_ticks", "#return_left_early", "#return_interval", "#return_mod");
+            Map<String, Integer> saved = new java.util.HashMap<>();
+            for (String name : holders) {
+                var value = board.getPlayerScoreInfo(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective);
+                saved.put(name, value == null ? null : value.value());
+            }
+            java.util.function.BiConsumer<String, Integer> set = (name, value) ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).set(value);
+            java.util.function.ToIntFunction<String> get = name ->
+                    board.getOrCreatePlayerScore(net.minecraft.world.scores.ScoreHolder.forNameOnly(name), objective).get();
+            var player = s.player("return_base_operator", 0, 0);
+            player.addTag("macs_base_player"); player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            var source = s.server.createCommandSourceStack().withEntity(player).withLevel(s.level)
+                    .withPosition(player.position()).withPermission(2);
+            java.util.function.Consumer<String> run = name -> s.server.getCommands()
+                    .performPrefixedCommand(source, "function macs_pawn:" + name);
+            var deaths = board.getObjective("mb_deaths");
+            if (deaths == null) s.server.getCommands().performPrefixedCommand(source, "scoreboard objectives add mb_deaths deathCount");
+            var first = s.architect(2, 2); var second = s.architect(3, 2);
+            first.addTag("macs_pawn_natural"); first.setNoAi(true); second.setNoAi(true);
+            try {
+                var memory = memory(s); var before = memory.save();
+                set.accept("#stage", 130); set.accept("#return_dispatch", -1); set.accept("#base_released", 0);
+                run.accept("return_start");
+                h.assertTrue(player.isCreative() && first.isNoAi() && get.applyAsInt("#stage") == 130,
+                        "A missing original member cannot expose the player or release a partial roster");
+                second.addTag("macs_pawn_natural"); run.accept("return_start");
+                h.assertTrue(get.applyAsInt("#stage") == 132 && !player.isCreative() && !player.isSpectator()
+                                && com.frozendawn.phase.PhaseManager.isVacuumActive(s.phase.getPhase(), s.phase.getProgress()),
+                        "The live session starts with real vacuum and Survival before any group exists");
+                h.assertTrue(!first.isNoAi() && !second.isNoAi() && memory.active == null
+                                && !first.getPersistentData().hasUUID(ConvergenceCoordinator.DISPATCH)
+                                && memory.save().equals(before),
+                        "Start releases the saved roster without granting orders or modifying tactical history");
+                h.assertTrue(get.applyAsInt("#return_timer") == 0 && get.applyAsInt("#return_dispatch") == -1,
+                        "Protected preparation contributes no live time or admission evidence");
+                set.accept("#return_timer", 599); run.accept("return_tick");
+                h.assertTrue(get.applyAsInt("#stage") == 133 && get.applyAsInt("#return_result") == -1
+                                && player.isSpectator() && first.isNoAi() && second.isNoAi(),
+                        "Thirty seconds without admission ends visibly as inconclusive");
+                h.assertTrue(first.isAlive() && second.isAlive() && memory.save().equals(before),
+                        "Inconclusive cleanup cannot kill actors or manufacture hotspot/outcome evidence");
+                run.accept("return_start");
+                h.assertTrue(get.applyAsInt("#stage") == 133 && first.isNoAi() && player.isSpectator(),
                         "A completed check cannot be accidentally restarted");
             } finally {
                 first.removeTag("macs_pawn_natural"); second.removeTag("macs_pawn_natural");
@@ -656,6 +727,96 @@ public final class MaeveConvergenceGameTest {
             h.assertTrue(!MaeveDirector.allowNaturalPawn(s.level, firstOrigin)
                             && MaeveDirector.allowNaturalPawn(s.level, s.origin.offset(160, 0, 4)),
                     "Source replacement remains withheld after physical departure while unrelated capacity remains usable");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 600)
+    public static void pawnBaseReturnWithoutDecoyRetainsRealPressure(GameTestHelper h) {
+        baseReturn(h, 117, false);
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 600)
+    public static void pawnBaseReturnWithDecoyDivertsSameNearbyPawns(GameTestHelper h) {
+        baseReturn(h, 118, true);
+    }
+
+    private static void baseReturn(GameTestHelper h, int lane, boolean qualifying) {
+        scene(h, lane, 8, s -> {
+            // Identical starting geometry, terrain, player itinerary and actor RNG in
+            // both arms. The history arm alone differs: two vs three real encounters.
+            for (int x = -127; x <= 18; x++) for (int z = -96; z <= 20; z++) {
+                s.block(x, -1, z, Blocks.STONE.defaultBlockState());
+                s.block(x, 0, z, Blocks.SNOW.defaultBlockState().setValue(SnowLayerBlock.LAYERS, 1));
+            }
+            s.clock(200000);
+            long evidenceAt = start(s);
+            for (int episode = 0; episode < (qualifying ? 3 : 2); episode++) {
+                s.clock(evidenceAt + episode * 640);
+                kill(s, s.architect(2, 4)); kill(s, s.architect(3, 4));
+            }
+            s.clock(evidenceAt + 1880);
+            var m = memory(s); m.hotspots.values().forEach(hotspot -> hotspot.advance(s.level.getGameTime()));
+            var first = donor(s, -60, 0); var second = donor(s, -60, 8);
+            first.startDecisionRecording(1337L); second.startDecisionRecording(7331L);
+            var roster = java.util.Set.of(first.getUUID(), second.getUUID());
+            var firstOrigin = first.position(); var secondOrigin = second.position();
+            var base = s.position(-120, 4);
+            var player = s.player("base_return_" + qualifying, -120, -88);
+            long now = s.level.getGameTime();
+            h.assertTrue(first.getTarget() == null && second.getTarget() == null
+                            && first.distanceToSqr(player) > 96 * 96 && second.distanceToSqr(player) > 96 * 96
+                            && first.position().distanceToSqr(base) < 96 * 96 && second.position().distanceToSqr(base) < 96 * 96,
+                    "Both ordinary idle donors threaten the base while the Survival player is outside detection");
+            tick(s, now, first, second);
+            var group = m.active;
+            h.assertTrue(qualifying ? group != null && group.donors.keySet().equals(roster) : group == null,
+                    "Only the qualifying history admits these two physical pawns through production dispatch");
+            boolean targeted = false;
+            double closest = Double.POSITIVE_INFINITY;
+            int clearBaseTicks = 0;
+            for (int t = 1; t <= 1600; t++) {
+                // A fixed return starts after thirty seconds; no assignment-gated
+                // player teleport, creative interval or runtime safety bubble.
+                double z = -88 + Math.clamp((t - 600) * .2, 0, 92);
+                player.setPos(s.position(-120, 0).add(0, 0, z));
+                tick(s, now + t, first, second);
+                targeted |= java.util.stream.Stream.of(first, second).flatMap(a -> a.decisionJournal().entries().stream())
+                        .anyMatch(entry -> entry.event().equals("TARGET_CHANGE") && entry.detail().contains(player.getUUID().toString()));
+                if (t >= 1060) {
+                    double distance = Math.min(first.position().distanceToSqr(base), second.position().distanceToSqr(base));
+                    closest = Math.min(closest, distance);
+                    if (distance > 96 * 96 && !targeted) clearBaseTicks++;
+                }
+            }
+            try {
+                var directory = java.nio.file.Path.of(System.getProperty("frozendawn.architect.reports"), "base-return");
+                java.nio.file.Files.createDirectories(directory);
+                String arm = qualifying ? "decoy" : "control";
+                java.nio.file.Files.writeString(directory.resolve(arm + "-first.tsv"), first.decisionJournal().tsv());
+                java.nio.file.Files.writeString(directory.resolve(arm + "-second.tsv"), second.decisionJournal().tsv());
+                var result = new com.google.gson.JsonObject();
+                result.addProperty("qualifyingHistory", qualifying); result.addProperty("targetedPlayer", targeted);
+                result.addProperty("nearestBaseDistance", Math.sqrt(closest)); result.addProperty("clearBaseTicks", clearBaseTicks);
+                result.addProperty("firstTravel", first.position().distanceTo(firstOrigin)); result.addProperty("secondTravel", second.position().distanceTo(secondOrigin));
+                result.addProperty("firstArrival", group == null ? -1 : group.firstArrival - now);
+                result.addProperty("firstUuid", first.getUUID().toString()); result.addProperty("secondUuid", second.getUUID().toString());
+                java.nio.file.Files.writeString(directory.resolve(arm + ".json"), new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(result));
+            } catch (java.io.IOException e) { throw new IllegalStateException(e); }
+            if (qualifying) {
+                h.assertTrue(m.active == group && group.firstArrival >= 0 && group.contactAt < 0,
+                        "Production group reaches the decoy and stays away from the returning player");
+                h.assertTrue(!targeted && clearBaseTicks >= 500,
+                        "Both pawns remain beyond ordinary detection for a usable base window: ticks=" + clearBaseTicks + " nearest=" + Math.sqrt(closest));
+                h.assertTrue(first.position().distanceToSqr(firstOrigin) > 32 * 32
+                                && second.position().distanceToSqr(secondOrigin) > 32 * 32,
+                        "The same two pawns physically leave the base vicinity");
+                h.assertTrue(m.population.pawns.keySet().equals(roster)
+                                && !MaeveDirector.allowNaturalPawn(s.level, s.origin.offset(-120, 0, 4)),
+                        "The source cannot immediately replenish either diverted pawn");
+            } else {
+                h.assertTrue(m.active == null && targeted && closest < 32 * 32,
+                        "The matched return without qualifying history causes actual pursuit into the base vicinity: targeted=" + targeted + " nearest=" + Math.sqrt(closest));
+            }
         });
     }
 

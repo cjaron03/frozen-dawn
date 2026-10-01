@@ -223,3 +223,8 @@ pawnbaseidleretryrequiresadmissionandexplicitsurvival xml
 signalreplayusesproductiondeparturewithoutbeliefmutation xml
 
 pawnfocusedbasestartssurvivalbeforeadmissionandboundsfailure xml
+
+# Matched Survival return: ordinary pressure vs eligible decoy diversion.
+pawnbasereturnwithoutdecoyretainsrealpressure xml
+pawnbasereturnwithdecoydivertssamenearbypawns xml
+pawnbasereturnboundsadmissionandpreventsrestart xml

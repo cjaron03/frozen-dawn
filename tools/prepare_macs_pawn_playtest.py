@@ -693,6 +693,10 @@ SCRIPTS["tick"] += "execute if score #stage mpc matches 101..102 as @a[tag=macs_
 SCRIPTS["tick"] += "execute if score #stage mpc matches 111 as @a[tag=macs_base_player,limit=1] run function macs_pawn:base_idle_tick\n"
 
 
+from macs_base_return import scripts as base_return_scripts
+SCRIPTS.update(base_return_scripts(tell))
+SCRIPTS["tick"] += "execute if score #stage mpc matches 132 as @a[tag=macs_base_player,limit=1] run function macs_pawn:return_tick\n"
+
 from macs_base_focus import scripts as base_focus_scripts
 SCRIPTS.update(base_focus_scripts(tell))
 SCRIPTS["tick"] += "execute if score #stage mpc matches 122 as @a[tag=macs_base_player,limit=1] run function macs_pawn:focus_tick\n"
