@@ -1,6 +1,6 @@
-# `/fdbot` dev playtest command
+# `/fdbot` dev command
 
-`/fdbot` is a dev-only survival helper for screenshot-driven playtesters. Aiming, holding attack, and clicking the recipe book take those bots several seconds per action. The command does the physical step through the same server methods a player would, and prints one chat line they can read.
+`/fdbot` is a dev-only survival command. It performs the physical step through the same server methods a player would, and prints one chat line.
 
 It does not change heaters, the EVA suit, doors, recipes, Maeve, MACS, or Architects. It only invokes existing game logic.
 
@@ -8,7 +8,7 @@ It does not change heaters, the EVA suit, doors, recipes, Maeve, MACS, or Archit
 
 The command is registered only when the game is not running in production (`!FMLEnvironment.production`). That is true for `./gradlew runClient`, the dev server, and the GameTest server. A shipped jar still contains the class, but the registration hook returns before the node is added, so a normal player has no `/fdbot`.
 
-There is no config flag. A flag that defaulted to off would also hide the command from `runClient`, which is the run the bots use.
+There is no config flag. A flag that defaulted to off would also hide the command from `runClient`.
 
 The node requires permission level 2. On an integrated server the host already has that. A LAN guest does not, unless they are opped.
 
