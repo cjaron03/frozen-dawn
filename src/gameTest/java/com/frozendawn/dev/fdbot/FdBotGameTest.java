@@ -61,19 +61,21 @@ public final class FdBotGameTest {
     public static void gatherStoneRespectsTheHeldTool(GameTestHelper helper) throws CommandSyntaxException {
         GameTestTemplates.placeFloor(helper);
         ServerPlayer player = player(helper);
-        BlockPos stone = new BlockPos(2, 1, 2);
-        helper.setBlock(stone, Blocks.STONE);
+        // The shared floor is stone, so the target has to be a different block or gather
+        // mines the floor under the player's feet first.
+        BlockPos ore = new BlockPos(2, 1, 2);
+        helper.setBlock(ore, Blocks.COBBLESTONE);
 
-        int bare = exec(player, "fdbot gather minecraft:stone 1 4");
-        helper.assertTrue(bare == 0, "bare hands harvested stone");
-        helper.assertTrue(helper.getBlockState(stone).is(Blocks.STONE), "stone was removed without a pickaxe");
+        int bare = exec(player, "fdbot gather minecraft:cobblestone 1 4");
+        helper.assertTrue(bare == 0, "bare hands harvested cobblestone");
+        helper.assertTrue(helper.getBlockState(ore).is(Blocks.COBBLESTONE), "cobblestone was removed without a pickaxe");
 
         player.getInventory().setItem(0, new ItemStack(Items.WOODEN_PICKAXE));
         player.getInventory().selected = 0;
-        int mined = exec(player, "fdbot gather minecraft:stone 1 4");
+        int mined = exec(player, "fdbot gather minecraft:cobblestone 1 4");
 
         helper.assertTrue(mined == 1, "pickaxe gather result was " + mined);
-        helper.assertTrue(helper.getBlockState(stone).isAir(), "stone was not mined");
+        helper.assertTrue(helper.getBlockState(ore).isAir(), "cobblestone was not mined");
         helper.assertTrue(count(player, Items.COBBLESTONE) == 1, "cobblestone was not collected");
         helper.assertTrue(player.getInventory().getItem(0).getDamageValue() > 0, "pickaxe took no damage");
         helper.succeed();

@@ -2,6 +2,7 @@ package com.frozendawn.dev.fdbot;
 
 import com.frozendawn.command.FrozenDawnCommand;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.tree.CommandNode;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +53,19 @@ class FdBotCommandTreeTest {
     }
 
     @Test
+    void namespacedIdsAndTagsParseAsOneToken() {
+        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+        FdBotCommands.register(dispatcher);
+        CommandSourceStack op = source(2);
+        assertParsed(dispatcher, op, "fdbot gather #minecraft:logs 2 4");
+        assertParsed(dispatcher, op, "fdbot gather oak_log 1");
+        assertParsed(dispatcher, op, "fdbot craft minecraft:oak_planks 4");
+        assertParsed(dispatcher, op, "fdbot place minecraft:oak_door front");
+        assertParsed(dispatcher, op, "fdbot face nearest minecraft:emerald_block");
+        assertParsed(dispatcher, op, "fdbot use 1 2 3");
+    }
+
+    @Test
     void idsDefaultToMinecraftAndTheAuditFlagIsPerPlayer() {
         assertEquals(ResourceLocation.parse("minecraft:oak_log"), FdBotIds.parseId("oak_log"));
         assertEquals(ResourceLocation.parse("frozendawn:thermal_heater"),
@@ -63,6 +77,13 @@ class FdBotCommandTreeTest {
         FdBotAudit.mark(player);
         assertTrue(FdBotAudit.isBotAssisted(player));
         assertFalse(FdBotAudit.isBotAssisted(UUID.randomUUID()));
+    }
+
+    private static void assertParsed(
+            CommandDispatcher<CommandSourceStack> dispatcher, CommandSourceStack source, String command) {
+        ParseResults<CommandSourceStack> parsed = dispatcher.parse(command, source);
+        assertTrue(parsed.getExceptions().isEmpty(), command + " " + parsed.getExceptions());
+        assertFalse(parsed.getReader().canRead(), command + " leftover: " + parsed.getReader().getRemaining());
     }
 
     private static Set<String> childNames(CommandNode<CommandSourceStack> node) {

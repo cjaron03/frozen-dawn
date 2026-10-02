@@ -1,8 +1,9 @@
 package com.frozendawn.dev.fdbot;
 
 import com.frozendawn.FrozenDawn;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -43,7 +44,7 @@ final class FdBotCommand {
 
     private static LiteralArgumentBuilder<CommandSourceStack> gather() {
         return Commands.literal("gather")
-                .then(Commands.argument("target", StringArgumentType.word())
+                .then(Commands.argument("target", FdBotTokenArgument.token())
                         .suggests(blockSuggestions())
                         .then(Commands.argument("count", IntegerArgumentType.integer(1, FdBotActions.MAX_COUNT))
                                 .executes(ctx -> gather(ctx, FdBotActions.DEFAULT_GATHER_RADIUS))
@@ -52,7 +53,7 @@ final class FdBotCommand {
     }
 
     private static int gather(CommandContext<CommandSourceStack> ctx, int radius) {
-        String raw = StringArgumentType.getString(ctx, "target");
+        String raw = FdBotTokenArgument.get(ctx, "target");
         int count = IntegerArgumentType.getInteger(ctx, "count");
         String args = "gather " + raw + " " + count + " " + radius;
         return run(ctx, args, player -> {
@@ -66,7 +67,7 @@ final class FdBotCommand {
 
     private static LiteralArgumentBuilder<CommandSourceStack> craft() {
         return Commands.literal("craft")
-                .then(Commands.argument("item", StringArgumentType.word())
+                .then(Commands.argument("item", FdBotTokenArgument.token())
                         .suggests(itemSuggestions())
                         .executes(ctx -> craft(ctx, 1))
                         .then(Commands.argument("count", IntegerArgumentType.integer(1, FdBotActions.MAX_COUNT))
@@ -74,7 +75,7 @@ final class FdBotCommand {
     }
 
     private static int craft(CommandContext<CommandSourceStack> ctx, int count) {
-        String raw = StringArgumentType.getString(ctx, "item");
+        String raw = FdBotTokenArgument.get(ctx, "item");
         return run(ctx, "craft " + raw + " " + count, player -> {
             FdBotIds.Result<Item> parsed = FdBotIds.item(player.registryAccess(), raw);
             if (!parsed.ok()) {
@@ -86,7 +87,7 @@ final class FdBotCommand {
 
     private static LiteralArgumentBuilder<CommandSourceStack> place() {
         return Commands.literal("place")
-                .then(Commands.argument("item", StringArgumentType.word())
+                .then(Commands.argument("item", FdBotTokenArgument.token())
                         .suggests(itemSuggestions())
                         .executes(ctx -> place(ctx, "front", null))
                         .then(Commands.literal("here").executes(ctx -> place(ctx, "here", null)))
@@ -97,7 +98,7 @@ final class FdBotCommand {
 
     private static int place(CommandContext<CommandSourceStack> ctx, String where, BlockPos pos)
             throws CommandSyntaxException {
-        String raw = StringArgumentType.getString(ctx, "item");
+        String raw = FdBotTokenArgument.get(ctx, "item");
         String args = pos == null ? "place " + raw + " " + where : "place " + raw + " " + pos.toShortString();
         return run(ctx, args, player -> {
             FdBotIds.Result<Item> parsed = FdBotIds.item(player.registryAccess(), raw);
@@ -132,7 +133,7 @@ final class FdBotCommand {
                             return run(ctx, "goto " + pos.toShortString(), player -> FdBotActions.goTo(player, pos));
                         }))
                 .then(Commands.literal("nearest")
-                        .then(Commands.argument("target", StringArgumentType.word())
+                        .then(Commands.argument("target", FdBotTokenArgument.token())
                                 .suggests(blockSuggestions())
                                 .executes(ctx -> nearest(ctx, true))));
     }
@@ -145,13 +146,13 @@ final class FdBotCommand {
                             return run(ctx, "face " + pos.toShortString(), player -> FdBotActions.face(player, pos));
                         }))
                 .then(Commands.literal("nearest")
-                        .then(Commands.argument("target", StringArgumentType.word())
+                        .then(Commands.argument("target", FdBotTokenArgument.token())
                                 .suggests(blockSuggestions())
                                 .executes(ctx -> nearest(ctx, false))));
     }
 
     private static int nearest(CommandContext<CommandSourceStack> ctx, boolean teleport) {
-        String raw = StringArgumentType.getString(ctx, "target");
+        String raw = FdBotTokenArgument.get(ctx, "target");
         String args = (teleport ? "goto nearest " : "face nearest ") + raw;
         return run(ctx, args, player -> {
             FdBotIds.Result<FdBotIds.BlockMatch> parsed = FdBotIds.block(player.registryAccess(), raw);
@@ -222,5 +223,34 @@ final class FdBotCommand {
             }
             return SharedSuggestionProvider.suggest(options, builder);
         };
+    }
+
+    /**
+     * One id token, including {@code minecraft:oak_log} and {@code #minecraft:logs}.
+     * Brigadier's word reader stops at {@code :} and {@code #}.
+     */
+    static final class FdBotTokenArgument implements ArgumentType<String> {
+        private static final FdBotTokenArgument INSTANCE = new FdBotTokenArgument();
+
+        private FdBotTokenArgument() {
+        }
+
+        static FdBotTokenArgument token() {
+            return INSTANCE;
+        }
+
+        static String get(CommandContext<?> context, String name) {
+            return context.getArgument(name, String.class);
+        }
+
+        @Override
+        public String parse(StringReader reader) throws CommandSyntaxException {
+            int start = reader.getCursor();
+            if (reader.canRead() && reader.peek() == '#') {
+                reader.skip();
+            }
+            ResourceLocation.read(reader);
+            return reader.getString().substring(start, reader.getCursor());
+        }
     }
 }
