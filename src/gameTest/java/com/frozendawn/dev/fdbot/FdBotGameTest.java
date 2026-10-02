@@ -9,6 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.ServerOpList;
+import net.minecraft.server.players.ServerOpListEntry;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -37,6 +39,27 @@ public final class FdBotGameTest {
     public static void fdbotIsRegisteredForDevGameTests(GameTestHelper helper) {
         helper.assertTrue(helper.getLevel().getServer().getCommands().getDispatcher()
                 .getRoot().getChild("fdbot") != null, "/fdbot was not registered");
+        helper.succeed();
+    }
+
+    /**
+     * Open to LAN with cheats calls {@code Commands#sendCommands} for every player. A custom
+     * argument type crashes there, in {@code ArgumentTypeInfos.byClass}, before any command runs.
+     * The GameTest server's op level is 0, so the fake player is added to the op list at level 2,
+     * which is the permission that includes {@code /fdbot}.
+     */
+    @GameTest(template = GameTestTemplates.EMPTY)
+    public static void sendCommandsForAnOpDoesNotCrash(GameTestHelper helper) {
+        ServerPlayer player = player(helper);
+        ServerOpList ops = helper.getLevel().getServer().getPlayerList().getOps();
+        ops.add(new ServerOpListEntry(player.getGameProfile(), 2, false));
+        try {
+            helper.assertTrue(player.createCommandSourceStack().hasPermission(2),
+                    "op level 2 was not visible to the command source");
+            helper.getLevel().getServer().getCommands().sendCommands(player);
+        } finally {
+            ops.remove(player.getGameProfile());
+        }
         helper.succeed();
     }
 

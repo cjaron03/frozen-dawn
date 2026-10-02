@@ -3,13 +3,25 @@ package com.frozendawn.dev.fdbot;
 import com.frozendawn.command.FrozenDawnCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.RootCommandNode;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
+import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundCommandsPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -53,6 +65,18 @@ class FdBotCommandTreeTest {
     }
 
     @Test
+    void commandTreeSerializesForAnOp() {
+        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+        FdBotCommands.register(dispatcher);
+        RootCommandNode<SharedSuggestionProvider> clientRoot = copyForClient(dispatcher.getRoot());
+        // The same call Open to LAN makes inside ClientboundCommandsPacket. Unregistered
+        // argument types throw IllegalArgumentException from ArgumentTypeInfos.byClass.
+        ClientboundCommandsPacket packet = new ClientboundCommandsPacket(clientRoot);
+        assertNotNull(packet);
+        assertNotNull(clientRoot.getChild("fdbot"));
+    }
+
+    @Test
     void namespacedIdsAndTagsParseAsOneToken() {
         CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
         FdBotCommands.register(dispatcher);
@@ -84,6 +108,50 @@ class FdBotCommandTreeTest {
         ParseResults<CommandSourceStack> parsed = dispatcher.parse(command, source);
         assertTrue(parsed.getExceptions().isEmpty(), command + " " + parsed.getExceptions());
         assertFalse(parsed.getReader().canRead(), command + " leftover: " + parsed.getReader().getRemaining());
+    }
+
+    /**
+     * Same shape as {@code Commands#fillUsableCommands} for a source that can use every node.
+     * Suggestion providers that are not in the vanilla registry are swapped to ask-server,
+     * which is what the packet writer does.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static RootCommandNode<SharedSuggestionProvider> copyForClient(RootCommandNode<CommandSourceStack> root) {
+        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = new HashMap<>();
+        RootCommandNode<SharedSuggestionProvider> copy = new RootCommandNode<>();
+        map.put(root, copy);
+        copyChildren(root, copy, map);
+        return copy;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void copyChildren(
+            CommandNode<CommandSourceStack> source,
+            CommandNode<SharedSuggestionProvider> dest,
+            Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map) {
+        for (CommandNode<CommandSourceStack> child : source.getChildren()) {
+            if (child instanceof ArgumentCommandNode<?, ?> argument) {
+                ArgumentTypeInfos.byClass((ArgumentType<?>) argument.getType());
+            }
+            ArgumentBuilder<SharedSuggestionProvider, ?> builder =
+                    (ArgumentBuilder<SharedSuggestionProvider, ?>) (ArgumentBuilder) child.createBuilder();
+            builder.requires(ignored -> true);
+            if (builder.getCommand() != null) {
+                builder.executes(ctx -> 0);
+            }
+            if (builder instanceof RequiredArgumentBuilder<?, ?> required && required.getSuggestionsProvider() != null) {
+                SuggestionProvider<SharedSuggestionProvider> provider =
+                        (SuggestionProvider<SharedSuggestionProvider>) required.getSuggestionsProvider();
+                ((RequiredArgumentBuilder<SharedSuggestionProvider, ?>) required)
+                        .suggests(SuggestionProviders.safelySwap(provider));
+            }
+            CommandNode<SharedSuggestionProvider> built = builder.build();
+            map.put(child, built);
+            dest.addChild(built);
+            if (!child.getChildren().isEmpty()) {
+                copyChildren(child, built, map);
+            }
+        }
     }
 
     private static Set<String> childNames(CommandNode<CommandSourceStack> node) {

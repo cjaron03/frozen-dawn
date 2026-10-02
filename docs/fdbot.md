@@ -12,6 +12,8 @@ There is no config flag. A flag that defaulted to off would also hide the comman
 
 The node requires permission level 2. On an integrated server the host already has that. A LAN guest does not, unless they are opped.
 
+Ids and tags use the vanilla `resource_or_tag_key` argument (`minecraft:oak_log`, `#minecraft:logs`). That type is already in the command-argument registry, so the server can send the tree when a player is opped. Open to LAN with cheats does that for the host. A custom Brigadier argument type is not in the registry, and building that packet throws before any `/fdbot` command runs. `StringArgumentType.word()` is not a substitute: it stops at `:` and `#`, and a greedy string would consume the count or coordinates that follow the id.
+
 Smelting is not implemented. Fuel a furnace with `use`, or skip that step.
 
 ## Do not use it for measurements
