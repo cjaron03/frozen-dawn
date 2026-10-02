@@ -159,6 +159,44 @@ public final class FdBotGameTest {
     }
 
     @GameTest(template = GameTestTemplates.EMPTY)
+    public static void gotoRefusesASolidTarget(GameTestHelper helper) throws CommandSyntaxException {
+        GameTestTemplates.placeFloor(helper);
+        ServerPlayer player = player(helper);
+        BlockPos start = player.blockPosition();
+        helper.setBlock(new BlockPos(2, 1, 2), Blocks.DIRT);
+        helper.setBlock(new BlockPos(2, 2, 2), Blocks.GRASS_BLOCK);
+        BlockPos solid = helper.absolutePos(new BlockPos(2, 1, 2));
+        BlockPos safe = helper.absolutePos(new BlockPos(1, 1, 2));
+
+        int result = exec(player, "fdbot goto " + solid.getX() + " " + solid.getY() + " " + solid.getZ());
+
+        helper.assertTrue(result == 0, "solid goto returned " + result);
+        helper.assertTrue(start.equals(player.blockPosition()),
+                "solid goto moved the player to " + player.blockPosition().toShortString());
+        FdBotActions.Outcome outcome = FdBotActions.goTo(player, solid);
+        helper.assertFalse(outcome.success(), outcome.message());
+        helper.assertTrue(outcome.message().contains("feet=minecraft:dirt"), outcome.message());
+        helper.assertTrue(outcome.message().contains("head=minecraft:grass_block"), outcome.message());
+        helper.assertTrue(outcome.message().contains(safe.toShortString()), outcome.message());
+        helper.assertTrue(start.equals(player.blockPosition()), "the suggestion teleported the player");
+        helper.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY)
+    public static void gotoAcceptsAnOpenTarget(GameTestHelper helper) throws CommandSyntaxException {
+        GameTestTemplates.placeFloor(helper);
+        ServerPlayer player = player(helper);
+        BlockPos dest = helper.absolutePos(new BlockPos(6, 1, 2));
+
+        int result = exec(player, "fdbot goto " + dest.getX() + " " + dest.getY() + " " + dest.getZ());
+
+        helper.assertTrue(result > 0, "open goto returned " + result);
+        helper.assertTrue(dest.equals(player.blockPosition()),
+                "expected " + dest.toShortString() + " but was " + player.blockPosition().toShortString());
+        helper.succeed();
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY)
     public static void gotoFaceAndStatus(GameTestHelper helper) throws CommandSyntaxException {
         GameTestTemplates.placeFloor(helper);
         ServerPlayer player = player(helper);

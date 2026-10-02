@@ -42,6 +42,8 @@ public final class FdBotActions {
     public static final int MAX_COUNT = 64;
     public static final int CRAFTING_TABLE_RADIUS = 6;
     public static final int NEAREST_RADIUS = 48;
+    private static final int GOTO_UP_SEARCH = 4;
+    private static final int GOTO_NEAR_RADIUS = 2;
 
     private FdBotActions() {
     }
@@ -235,9 +237,16 @@ public final class FdBotActions {
         return Outcome.ok(message.toString());
     }
 
-    /** Teleports. This does not pathfind. Feet land on the given block, centered on x/z. */
+    /**
+     * Teleports. This does not pathfind. Feet land at the block coordinates, centered on x/z, only
+     * when that cell and the head cell are non-solid and a solid or supporting block is below.
+     * An unsafe target is refused and the nearest open spot is named instead.
+     */
     public static Outcome goTo(ServerPlayer player, BlockPos feet) {
         ServerLevel level = player.serverLevel();
+        if (!canStand(level, feet)) {
+            return Outcome.fail(unsafeGoto(level, feet));
+        }
         double x = feet.getX() + 0.5;
         double y = feet.getY();
         double z = feet.getZ() + 0.5;
@@ -269,6 +278,9 @@ public final class FdBotActions {
                     + " but no safe place to stand beside it");
         }
         Outcome moved = goTo(player, stand);
+        if (!moved.success()) {
+            return moved;
+        }
         return Outcome.ok(moved.message() + " beside " + match.label() + " at " + found.toShortString());
     }
 
@@ -366,12 +378,75 @@ public final class FdBotActions {
         return options.isEmpty() ? null : options.getFirst();
     }
 
+    private static String unsafeGoto(ServerLevel level, BlockPos feet) {
+        String where = "refused teleport to " + feet.toShortString();
+        if (!columnLoaded(level, feet)) {
+            return where + ": destination is not loaded";
+        }
+        String occupied = where + ": feet=" + FdBotIds.blockId(level.getBlockState(feet))
+                + " head=" + FdBotIds.blockId(level.getBlockState(feet.above()));
+        BlockPos safe = nearestSafe(level, feet);
+        if (safe == null) {
+            return occupied + "; no safe spot nearby";
+        }
+        return occupied + "; nearest safe spot is " + safe.toShortString();
+    }
+
+    /** Feet and head are non-solid, and the block below is solid or has a collision to stand on. */
     private static boolean canStand(ServerLevel level, BlockPos feet) {
-        return level.hasChunkAt(feet)
-                && level.getBlockState(feet).isAir()
-                && level.getBlockState(feet.above()).isAir()
-                && level.getBlockState(feet.below()).isFaceSturdy(
-                        level, feet.below(), net.minecraft.core.Direction.UP);
+        if (!columnLoaded(level, feet)) {
+            return false;
+        }
+        return !level.getBlockState(feet).isSolid()
+                && !level.getBlockState(feet.above()).isSolid()
+                && supportsStanding(level, feet.below());
+    }
+
+    private static boolean columnLoaded(ServerLevel level, BlockPos feet) {
+        BlockPos head = feet.above();
+        BlockPos below = feet.below();
+        return !level.isOutsideBuildHeight(feet)
+                && !level.isOutsideBuildHeight(head)
+                && !level.isOutsideBuildHeight(below)
+                && level.hasChunkAt(feet)
+                && level.hasChunkAt(head)
+                && level.hasChunkAt(below);
+    }
+
+    private static boolean supportsStanding(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.isSolid() || !state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static BlockPos nearestSafe(ServerLevel level, BlockPos feet) {
+        List<BlockPos> options = new ArrayList<>();
+        for (int dy = -1; dy <= GOTO_UP_SEARCH; dy++) {
+            if (dy != 0) {
+                consider(level, feet.above(dy), options);
+            }
+        }
+        for (int dy = -1; dy <= GOTO_UP_SEARCH; dy++) {
+            for (int dx = -GOTO_NEAR_RADIUS; dx <= GOTO_NEAR_RADIUS; dx++) {
+                for (int dz = -GOTO_NEAR_RADIUS; dz <= GOTO_NEAR_RADIUS; dz++) {
+                    if (dx == 0 && dz == 0) {
+                        continue;
+                    }
+                    consider(level, feet.offset(dx, dy, dz), options);
+                }
+            }
+        }
+        options.sort(Comparator
+                .comparingDouble((BlockPos pos) -> pos.distSqr(feet))
+                .thenComparingInt(BlockPos::getY)
+                .thenComparingInt(BlockPos::getX)
+                .thenComparingInt(BlockPos::getZ));
+        return options.isEmpty() ? null : options.getFirst();
+    }
+
+    private static void consider(ServerLevel level, BlockPos candidate, List<BlockPos> options) {
+        if (canStand(level, candidate)) {
+            options.add(candidate);
+        }
     }
 
     private static boolean inReach(ServerPlayer player, BlockPos pos) {

@@ -34,7 +34,7 @@ Maeve's beliefs, commitments, and pawn logic are unchanged, and they do not read
 
 Breaks are instant. `gather` calls `ServerPlayerGameMode.destroyBlock`, which applies tool durability once per block, respects harvest checks, and drops loot through the normal player path. It does not wait out the block's break time. Drops are collected with `ItemEntity.playerTouch` after the vanilla pickup delay is cleared, because a command cannot wait those ten ticks. If that refuses the item, it is added to the inventory directly.
 
-`goto` teleports. It does not walk or pathfind. Feet are placed at the block coordinates, centered on x/z.
+`goto` teleports. It does not walk or pathfind. Feet are placed at the block coordinates, centered on x/z, only when the feet and head cells are non-solid and the block below is solid or has a collision to stand on. Otherwise the command refuses, leaves the player where they are, and names the nearest safe spot a few blocks upward or nearby. `goto nearest` uses that same check.
 
 `front` and `here` are feet-level cells from the player's horizontal facing, not the crosshair. `front` is one block ahead. `here` is the cell the player is standing in, so placement there usually fails. `place` and `use` have to be inside vanilla block reach (about five blocks). Teleport first if the target is farther.
 
