@@ -59,6 +59,7 @@ class FdBotCommandTreeTest {
         assertNotNull(root.getChild("gather").getChild("target").getChild("count").getChild("radius"));
         assertNotNull(root.getChild("craft").getChild("item").getChild("count"));
         assertNotNull(root.getChild("place").getChild("item").getChild("front"));
+        assertNotNull(root.getChild("place").getChild("item").getChild("pos").getChild("against").getChild("dir"));
         assertNotNull(root.getChild("use").getChild("here"));
         assertNotNull(root.getChild("goto").getChild("nearest").getChild("target"));
         assertNotNull(root.getChild("face").getChild("pos"));
@@ -85,6 +86,9 @@ class FdBotCommandTreeTest {
         assertParsed(dispatcher, op, "fdbot gather oak_log 1");
         assertParsed(dispatcher, op, "fdbot craft minecraft:oak_planks 4");
         assertParsed(dispatcher, op, "fdbot place minecraft:oak_door front");
+        assertParsed(dispatcher, op, "fdbot place minecraft:stone 1 2 3");
+        assertParsed(dispatcher, op, "fdbot place minecraft:stone 1 2 3 against north");
+        assertParsed(dispatcher, op, "fdbot place minecraft:stone front against down");
         assertParsed(dispatcher, op, "fdbot face nearest minecraft:emerald_block");
         assertParsed(dispatcher, op, "fdbot use 1 2 3");
     }

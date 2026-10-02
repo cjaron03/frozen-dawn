@@ -2,6 +2,7 @@ package com.frozendawn.dev.fdbot;
 
 import com.frozendawn.FrozenDawn;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -9,12 +10,14 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceOrTagKeyArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -87,24 +90,51 @@ final class FdBotCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> place() {
         return Commands.literal("place")
                 .then(idArgument("item", Registries.ITEM, itemSuggestions())
-                        .executes(ctx -> place(ctx, "front", null))
-                        .then(Commands.literal("here").executes(ctx -> place(ctx, "here", null)))
-                        .then(Commands.literal("front").executes(ctx -> place(ctx, "front", null)))
+                        .executes(ctx -> place(ctx, "front", null, null))
+                        .then(againstArgument("front", false))
+                        .then(Commands.literal("here")
+                                .executes(ctx -> place(ctx, "here", null, null))
+                                .then(againstArgument("here", false)))
+                        .then(Commands.literal("front")
+                                .executes(ctx -> place(ctx, "front", null, null))
+                                .then(againstArgument("front", false)))
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                .executes(ctx -> place(ctx, "pos", BlockPosArgument.getBlockPos(ctx, "pos")))));
+                                .executes(ctx -> place(ctx, "pos", BlockPosArgument.getBlockPos(ctx, "pos"), null))
+                                .then(againstArgument("pos", true))));
     }
 
-    private static int place(CommandContext<CommandSourceStack> ctx, String where, BlockPos pos)
+    private static LiteralArgumentBuilder<CommandSourceStack> againstArgument(String where, boolean hasPos) {
+        return Commands.literal("against")
+                .then(Commands.argument("dir", StringArgumentType.word())
+                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                List.of("down", "up", "north", "south", "east", "west"), builder))
+                        .executes(ctx -> place(
+                                ctx,
+                                where,
+                                hasPos ? BlockPosArgument.getBlockPos(ctx, "pos") : null,
+                                StringArgumentType.getString(ctx, "dir"))));
+    }
+
+    private static int place(CommandContext<CommandSourceStack> ctx, String where, BlockPos pos, String against)
             throws CommandSyntaxException {
         String raw = idToken(ctx, "item");
-        String args = pos == null ? "place " + raw + " " + where : "place " + raw + " " + pos.toShortString();
+        String args = (pos == null ? "place " + raw + " " + where : "place " + raw + " " + pos.toShortString())
+                + (against == null ? "" : " against " + against);
         return run(ctx, args, player -> {
             FdBotIds.Result<Item> parsed = FdBotIds.item(player.registryAccess(), raw);
             if (!parsed.ok()) {
                 return FdBotActions.Outcome.fail(parsed.error());
             }
+            Direction direction = null;
+            if (against != null) {
+                direction = Direction.byName(against.toLowerCase(Locale.ROOT));
+                if (direction == null) {
+                    return FdBotActions.Outcome.fail("unknown direction '" + against
+                            + "'; use down, up, north, south, east, or west");
+                }
+            }
             BlockPos target = pos == null ? FdBotActions.feetOrFront(player, where) : pos;
-            return FdBotActions.place(player, parsed.value(), target);
+            return FdBotActions.place(player, parsed.value(), target, direction);
         });
     }
 

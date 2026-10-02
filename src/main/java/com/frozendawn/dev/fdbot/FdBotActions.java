@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,7 +29,9 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Survival actions for {@code /fdbot}. Mining, placement, and use go through
@@ -44,6 +47,10 @@ public final class FdBotActions {
     public static final int NEAREST_RADIUS = 48;
     private static final int GOTO_UP_SEARCH = 4;
     private static final int GOTO_NEAR_RADIUS = 2;
+    /** Below, then the sides, then above. The first usable neighbor is the one that gets clicked. */
+    private static final Direction[] PLACE_SUPPORTS = {
+        Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP
+    };
 
     private FdBotActions() {
     }
@@ -64,7 +71,7 @@ public final class FdBotActions {
 
     static Outcome help() {
         return Outcome.ok("dev-only: gather <block|#tag> <count> [radius] | craft <item> [count]"
-                + " | place <item> [here|front|x y z] | use <here|front|x y z>"
+                + " | place <item> [here|front|x y z] [against <dir>] | use <here|front|x y z>"
                 + " | goto <x y z|nearest <block>> | face <x y z|nearest <block>> | status."
                 + " Smelt is not implemented. See docs/fdbot.md.");
     }
@@ -139,12 +146,16 @@ public final class FdBotActions {
     }
 
     /**
-     * Places {@code item} into {@code target} by right-clicking the supporting face while
-     * sneaking, which is how a player places against a block that would otherwise open.
-     * {@code front} and {@code here} are feet-level cells from {@link #feetOrFront}, not the
-     * crosshair. The target has to be inside vanilla block reach.
+     * Places {@code item} into {@code target} by sneaking and right-clicking a neighboring solid
+     * face, which is how a player places against a block that would otherwise open. With no
+     * {@code against} direction the face below is preferred, then the sides, then the face above,
+     * so a roof or overhang can hang from a wall. {@code front} and {@code here} are feet-level
+     * cells from {@link #feetOrFront}, not the crosshair. The target has to be inside vanilla
+     * block reach.
+     *
+     * @param against direction from the target toward the support to click, or null to pick one
      */
-    public static Outcome place(ServerPlayer player, Item item, BlockPos target) {
+    public static Outcome place(ServerPlayer player, Item item, BlockPos target, @Nullable Direction against) {
         if (!(item instanceof BlockItem)) {
             return Outcome.fail(BuiltInRegistries.ITEM.getKey(item) + " is not a placeable block");
         }
@@ -159,35 +170,46 @@ public final class FdBotActions {
         if (!inReach(player, target)) {
             return Outcome.fail("out of reach of " + target.toShortString());
         }
+        Direction toward = against == null
+                ? nearestSupport(level, player, target)
+                : forcedSupport(level, player, target, against);
+        if (toward == null) {
+            if (supportOutOfReach(level, player, target, against)) {
+                return Outcome.fail("out of reach of " + target.toShortString());
+            }
+            if (against != null) {
+                return Outcome.fail("no adjacent face against " + against.getName()
+                        + " at " + target.toShortString());
+            }
+            return Outcome.fail("no adjacent face at " + target.toShortString());
+        }
         if (!moveToSelectedHotbar(player, item)) {
             return Outcome.fail("no " + BuiltInRegistries.ITEM.getKey(item) + " in the inventory");
         }
-        BlockPos support = target.below();
-        net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(
-                Vec3.atCenterOf(support).relative(net.minecraft.core.Direction.UP, 0.5),
-                net.minecraft.core.Direction.UP,
-                support,
-                false);
+        BlockPos support = target.relative(toward);
+        Direction clickedFace = toward.getOpposite();
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(support).relative(clickedFace, 0.5), clickedFace, support, false);
         boolean wasSneaking = player.isShiftKeyDown();
         player.setShiftKeyDown(true);
-        InteractionResult result;
         try {
-            result = player.gameMode.useItemOn(
-                    player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
+            player.gameMode.useItemOn(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
         } finally {
             player.setShiftKeyDown(wasSneaking);
         }
         BlockState placed = level.getBlockState(target);
-        if (!placed.is(item instanceof BlockItem blockItem ? blockItem.getBlock() : null)
-                && (result == null || !result.consumesAction())) {
-            return Outcome.fail("could not place " + BuiltInRegistries.ITEM.getKey(item)
-                    + " at " + target.toShortString());
-        }
         if (!placed.is(((BlockItem) item).getBlock())) {
+            // The cell was already empty, or the click never filled it. Naming that air is
+            // misleading: the placement did not happen, and the cell was not the obstacle.
+            if (placed.equals(occupying) || placed.isAir()) {
+                return Outcome.fail("could not place " + BuiltInRegistries.ITEM.getKey(item)
+                        + " at " + target.toShortString());
+            }
             return Outcome.fail("could not place " + BuiltInRegistries.ITEM.getKey(item)
                     + " at " + target.toShortString() + " (cell is " + FdBotIds.blockId(placed) + ")");
         }
-        return Outcome.ok("placed " + FdBotIds.blockId(placed) + " at " + target.toShortString());
+        return Outcome.ok("placed " + FdBotIds.blockId(placed) + " at " + target.toShortString()
+                + " against " + toward.getName());
     }
 
     /**
@@ -453,6 +475,59 @@ public final class FdBotActions {
         double reach = player.blockInteractionRange();
         double limit = reach + 1.0;
         return player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) <= limit * limit;
+    }
+
+    /** First neighbor in {@link #PLACE_SUPPORTS} that is a solid face inside reach. */
+    @Nullable
+    private static Direction nearestSupport(ServerLevel level, ServerPlayer player, BlockPos target) {
+        for (Direction toward : PLACE_SUPPORTS) {
+            if (usableSupport(level, player, target, toward)) {
+                return toward;
+            }
+        }
+        return null;
+    }
+
+    /** The requested neighbor, or null when that face is missing or out of reach. */
+    @Nullable
+    private static Direction forcedSupport(
+            ServerLevel level, ServerPlayer player, BlockPos target, Direction against) {
+        return usableSupport(level, player, target, against) ? against : null;
+    }
+
+    /**
+     * A solid neighbor exists, but the click would be farther than block reach. Callers use this
+     * to say {@code out of reach} instead of {@code no adjacent face}.
+     */
+    private static boolean supportOutOfReach(
+            ServerLevel level, ServerPlayer player, BlockPos target, @Nullable Direction against) {
+        if (against != null) {
+            return solidNeighbor(level, target, against) && !inReach(player, target.relative(against));
+        }
+        for (Direction toward : PLACE_SUPPORTS) {
+            if (solidNeighbor(level, target, toward) && !inReach(player, target.relative(toward))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean usableSupport(
+            ServerLevel level, ServerPlayer player, BlockPos target, Direction toward) {
+        return solidNeighbor(level, target, toward) && inReach(player, target.relative(toward));
+    }
+
+    /** Neighbor cannot be replaced, and the face looking back at the target is solid or sturdy. */
+    private static boolean solidNeighbor(ServerLevel level, BlockPos target, Direction toward) {
+        BlockPos support = target.relative(toward);
+        if (level.isOutsideBuildHeight(support) || !level.hasChunkAt(support)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(support);
+        if (state.canBeReplaced()) {
+            return false;
+        }
+        return state.isSolid() || state.isFaceSturdy(level, support, toward.getOpposite());
     }
 
     private static boolean moveToSelectedHotbar(ServerPlayer player, Item item) {

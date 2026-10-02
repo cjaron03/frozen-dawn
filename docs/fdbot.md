@@ -38,7 +38,7 @@ Breaks are instant. `gather` calls `ServerPlayerGameMode.destroyBlock`, which ap
 
 `front` and `here` are feet-level cells from the player's horizontal facing, not the crosshair. `front` is one block ahead. `here` is the cell the player is standing in, so placement there usually fails. `place` and `use` have to be inside vanilla block reach (about five blocks). Teleport first if the target is farther.
 
-`place` sneaks and right-clicks the top of the block under the target, through `useItemOn`. If the item is in the hotbar, that slot is selected. Otherwise the stack is swapped into the selected hotbar slot.
+`place` sneaks and right-clicks a solid face next to the target cell, through `useItemOn`, so the block lands in that cell. It prefers the face below, then the sides, then the face above. That is what places a roof, an overhang, or the last block of a closed room, where the cell underneath is air. `against <dir>` uses only the neighbor in that direction (`down` is the block under the cell, `north` the block to the north) and does not try another face. A cell with no solid neighbor fails with `no adjacent face`. The other failures name the cause: the item is not a placeable block, the cell is occupied, or the click is out of reach. A click that does not fill the cell does not report the empty cell as the reason. If the item is in the hotbar, that slot is selected. Otherwise the stack is swapped into the selected hotbar slot.
 
 `use` right-clicks that block with whatever is in the main hand. An empty hand toggles a door or opens a container. A held item may be inserted or placed instead.
 
@@ -58,6 +58,8 @@ Searches only see loaded chunks. `gather` defaults to a radius of 24 and will no
 /fdbot place minecraft:crafting_table front
 /fdbot craft minecraft:chest 1
 /fdbot place minecraft:oak_door front
+/fdbot place minecraft:cobblestone 10 70 10
+/fdbot place minecraft:cobblestone 10 71 10 against north
 /fdbot use front
 /fdbot goto 100 64 -20
 /fdbot goto nearest minecraft:crafting_table
