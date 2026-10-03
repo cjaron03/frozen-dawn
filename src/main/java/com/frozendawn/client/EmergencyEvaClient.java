@@ -55,6 +55,7 @@ public final class EmergencyEvaClient {
         }
         if (pendingVoiceIssue != null && --activationVoiceDelay <= 0) {
             if (pendingVoiceIssue.equals(state.issue()) && EmergencyEvaHandler.hasLifeSupport(mc.player)) {
+                MasterArchitectFloodClient.showSuitDialogue("ui.frozendawn.suit.emergency_eva_active");
                 mc.getSoundManager().play(SimpleSoundInstance.forUI(
                         ModSounds.SUIT_EMERGENCY_EVA_ACTIVE.get(), 1.0F, 1.0F));
             }

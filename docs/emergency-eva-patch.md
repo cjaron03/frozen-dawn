@@ -41,10 +41,11 @@ Live repair checkpoint: exact-world bridge repair succeeded once, then `#stage=1
 
 Emergency activation voice: a fresh issue plays the existing activation beep,
 then after one second the Piper/ORSA voice says “Emergency EVA active. Ten
-minutes of reserve life support.” It plays once for the issue in the current
-session; re-equipping does not repeat it. Reopening a partly spent reserve does
+minutes of reserve life support.” The same typed suit dialogue HUD used by the other suit announcements appears alongside the voice, using the existing ORSA speaker panel, reveal speed and ten-second display duration. It does not depend on Minecraft sound subtitles being enabled. The announcement plays once per issue per client session; re-equipping does not repeat it. Reopening a partly spent reserve does
 not announce a new ten minutes. Removing the kit or dying cancels pending speech; playback requires an active
 sealed rig when the announcement is due. Later urgency remains the existing beeps and
 cracks. Ordinary tank telemetry keeps its normal percentage display.
 
 Timer/voice verification: full build and `architectVerify` passed (646 unit tests, 227 native cases, all 222 required cases). New OGG decodes as stereo Vorbis at 44.1 kHz, duration 4.714 seconds; the jar includes the asset, subtitle and updated Piper attribution. Existing voice OGGs were preserved. The smoke jar matches the verified build. The client is relaunched at the title screen; open the preserved recovery save and cause a fresh death/respawn to hear the activation line. Perceived HUD/audio acceptance remains pending. Pre-existing EventBusSubscriber and Gradle deprecation warnings remain.
+
+Typed HUD follow-up: full `./gradlew build --console=plain` passed after connecting the activation line to `showSuitDialogue`. The shipped language entry matches the voice subtitle and the jar contains the shared dialogue call. The smoke jar matches SHA-256 `3fc5d2eb4159aad6e882ef4faa2c548adec8c20840f956290f5d1f72f2ab5a1b`. The closed recovery save and previous client log are backed up in `build/emergency-eva-evidence/typed-dialogue/`; human typewriter/audio acceptance remains pending. Existing Gradle deprecation warnings remain.

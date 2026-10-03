@@ -130,6 +130,7 @@
   "ui.frozendawn.suit.patch_complete": "Suit seal restored.",
   "ui.frozendawn.suit.patch_degraded": "Warning: temporary suit seal failure.",
   "ui.frozendawn.suit.emergency_reserve": "Emergency reserve engaged. Please seek pressurized shelter.",
+  "ui.frozendawn.suit.emergency_eva_active": "Emergency EVA active. Ten minutes of reserve life support.",
   "ui.frozendawn.suit.biological_activity_warning": "Anomalous biological activity detected across all survey bands. Recommend elevated caution.",
   "message.frozendawn.emergency_o2.requires_eva": "A sealed EVA rig is required.",
   "message.frozendawn.emergency_o2.requires_canister": "No O2 canister is connected.",
