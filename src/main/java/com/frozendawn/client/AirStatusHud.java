@@ -1,6 +1,9 @@
 package com.frozendawn.client;
 
 import com.frozendawn.init.ModItems;
+import com.frozendawn.event.EmergencyEvaHandler;
+import com.frozendawn.data.EmergencyEvaState;
+import net.minecraft.network.chat.Component;
 import com.frozendawn.item.O2EfficiencyModuleItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -55,8 +58,12 @@ public final class AirStatusHud {
             return;
         }
 
-        if (com.frozendawn.event.EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
-            EmergencyEvaClient.renderReadout(graphics);
+        if (EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
+            if (mc.player.isCreative() || mc.player.isSpectator()) return;
+            int reserve = EmergencyEvaHandler.remainingTicks(mc.player);
+            renderReading(graphics, mc, new AirStatusTelemetry.Reading(
+                    reserve > 0 ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.State.VACUUM,
+                    new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.SERVICE_TICKS, 1)), null);
             return;
         }
 
@@ -110,18 +117,21 @@ public final class AirStatusHud {
             pulseTicks--;
         }
 
-        String prefix = "AIR:";
-        String label = state.label();
-        String tankPrefix = "TANK:";
-        boolean showModule = tankValueOverride == null
+        boolean emergency = tankValueOverride == null && EmergencyEvaHandler.isWearingIssuedPiece(mc.player);
+        String prefix = emergency ? "" : "AIR:";
+        String label = emergency ? Component.translatable(tankTelemetry.hasUsableO2()
+                ? "hud.frozendawn.emergency_eva.active" : "hud.frozendawn.emergency_eva.depleted").getString()
+                : state.label();
+        String tankPrefix = emergency ? Component.translatable("hud.frozendawn.emergency_eva.reserve_label").getString() : "TANK:";
+        boolean showModule = !emergency && tankValueOverride == null
                 && tankTelemetry.hasAnyTank()
                 && O2EfficiencyModuleItem.isInstalled(mc.player);
         String tankValue;
         if (tankValueOverride != null) {
             tankValue = tankValueOverride;
         } else if (tankTelemetry.hasAnyTank()) {
-            int eta = smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(
-                    mc.player, reading));
+            int eta = emergency ? (tankTelemetry.totalO2() + 19) / 20
+                    : smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(mc.player, reading));
             tankValue = tankTelemetry.fillPercent() + "%  "
                     + AirStatusEtaPolicy.format(eta);
         } else {

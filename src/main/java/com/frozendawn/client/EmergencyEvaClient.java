@@ -5,9 +5,7 @@ import com.frozendawn.event.EmergencyEvaHandler;
 import com.frozendawn.init.ModSounds;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -15,7 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-/** Only two HUD lines; deterioration and local beeps communicate the recovery limit. */
+/** Local emergency reserve alarms; the shared EVA HUD renders its telemetry. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class EmergencyEvaClient {
     private static UUID announcedIssue;
@@ -53,24 +51,6 @@ public final class EmergencyEvaClient {
             mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.GLASS_BREAK, 0.07F, 0.55F));
             creakCooldown = seconds <= 120 ? 600 : 1200;
         }
-    }
-
-    public static void renderReadout(GuiGraphics graphics) {
-        var mc = Minecraft.getInstance();
-        int seconds = (EmergencyEvaHandler.remainingTicks(mc.player) + 19) / 20;
-        var header = Component.translatable(seconds > 0
-                ? "hud.frozendawn.emergency_eva.active" : "hud.frozendawn.emergency_eva.depleted");
-        var reserve = Component.translatable("hud.frozendawn.emergency_eva.reserve", AirStatusEtaPolicy.format(seconds));
-        int x = TemperatureHud.HUD_X;
-        int y = TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + 2;
-        int width = Math.max(mc.font.width(header), mc.font.width(reserve)) + 8;
-        int color = seconds <= 60 ? 0xFFFF7770 : 0xFFFFCC70;
-        graphics.fill(x, y, x + width, y + 24, 0xAA0B1217);
-        int alpha = seconds <= 15 && seconds > 0
-                ? 130 + (int) (50 * (1 + Math.sin(mc.player.tickCount * 0.15))) : 210;
-        graphics.fill(x, y, x + 2, y + 24, (alpha << 24) | (color & 0xFFFFFF));
-        graphics.drawString(mc.font, header, x + 4, y + 3, color);
-        graphics.drawString(mc.font, reserve, x + 4, y + 13, color);
     }
 
     private static void beep(float volume, float pitch) {

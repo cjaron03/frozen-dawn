@@ -265,6 +265,26 @@
           "equals": 132
         }
       ]
+    },
+    "emergency_eva:start": {
+      "world": "Emergency EVA Recovery - Phase 6",
+      "scores": [
+        {
+          "objective": "eeva",
+          "holder": "#stage",
+          "equals": 1
+        }
+      ]
+    },
+    "emergency_eva:controls": {
+      "world": "Emergency EVA Recovery - Phase 6",
+      "scores": [
+        {
+          "objective": "eeva",
+          "holder": "#stage",
+          "equals": 2
+        }
+      ]
     }
   }
 }
