@@ -24,7 +24,6 @@ gamerule doMobSpawning true
 gamerule doDaylightCycle true
 gamerule doWeatherCycle true
 difficulty normal
-fd world set total-days 100
 fd world set day 104
 execute store result score #prepared eeva run fdlab emergency_eva prepare_recovery
 execute unless score #prepared eeva matches 1 run tellraw @s {"text":"Preparation failed. Stay in Creative; do not start. Check the client log.","color":"red"}
@@ -34,23 +33,16 @@ tellraw @s {"text":"READY: ordinary EVA equipped at the base. Death will drop it
 tellraw @s {"text":"[DIE AND WALK BACK]","color":"green","clickEvent":{"action":"run_command","value":"/function emergency_eva:start"}}
 return 1
 """,
-    "base": """execute store result score #access eeva run fdlab emergency_eva access
+    "repair": """execute store result score #access eeva run fdlab emergency_eva access
 execute unless score #access eeva matches 1 run return 0
+execute unless entity @s[tag=emergency_eva_lab] run return 0
 execute unless score #stage eeva matches -1 run return 0
-fill ~-6 ~-3 ~-6 ~6 ~-1 ~6 minecraft:stone
-fill ~-5 ~ ~-5 ~5 ~5 ~5 minecraft:stone
-fill ~-4 ~ ~-4 ~4 ~4 ~4 minecraft:air
-setblock ~ ~ ~-5 minecraft:iron_door[facing=south,half=lower]
-setblock ~ ~1 ~-5 minecraft:iron_door[facing=south,half=upper]
-setblock ~1 ~1 ~-4 minecraft:stone_button[face=wall,facing=south]
-setblock ~1 ~1 ~-6 minecraft:stone_button[face=wall,facing=north]
-setblock ~-3 ~ ~ frozendawn:thermal_heater[lit=true]
-data merge block ~-3 ~ ~ {BurnTime:240000}
-setblock ~3 ~ ~ minecraft:chest[facing=west]
-item replace block ~3 ~ ~ container.0 with minecraft:bread 64
-item replace block ~3 ~ ~ container.1 with minecraft:coal 64
-setblock ~-3 ~3 ~-3 minecraft:glowstone
-setblock ~3 ~3 ~3 minecraft:glowstone
+execute unless entity @s[gamemode=creative] run return 0
+execute store result score #prepared eeva run fdlab emergency_eva prepare_recovery
+execute unless score #prepared eeva matches 1 run return 0
+scoreboard players set #stage eeva 1
+tellraw @s {"text":"READY: base and outdoor respawn verified. Ordinary EVA is equipped. Your death drops will remain at the base.","color":"yellow"}
+tellraw @s {"text":"[DIE AND WALK BACK]","color":"green","clickEvent":{"action":"run_command","value":"/function emergency_eva:start"}}
 return 1
 """,
     "start": """execute store result score #access eeva run fdlab emergency_eva access

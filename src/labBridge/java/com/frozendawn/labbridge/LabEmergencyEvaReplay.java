@@ -67,25 +67,27 @@ public final class LabEmergencyEvaReplay {
         var level = source.getServer().overworld();
         BlockPos origin = level.getSharedSpawnPos();
         BlockPos respawn = findGround(level, origin.getX(), origin.getZ());
-        if (respawn == null) return 0;
-        respawn = new BlockPos(respawn.getX(), level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                respawn.getX(), respawn.getZ()), respawn.getZ());
+        if (respawn == null) return failed(source, "No dry respawn site within 64 blocks of world spawn");
+        respawn = groundFeet(level, respawn.getX(), respawn.getZ());
+        if (respawn == null) return failed(source, "Respawn column has no solid dry support");
         BlockPos base = findGround(level, respawn.getX() + 320, respawn.getZ());
-        if (base == null) return 0;
+        if (base == null) return failed(source, "No dry base site with at most four blocks of slope within 64 blocks of the target");
         // Load every room chunk before commands. The former distant-room preview
         // attempted fill on unloaded chunks and then teleported above a missing floor.
         for (int x = (base.getX() - 8) >> 4; x <= (base.getX() + 8) >> 4; x++) {
             for (int z = (base.getZ() - 8) >> 4; z <= (base.getZ() + 8) >> 4; z++) level.getChunk(x, z);
         }
-        source.getServer().getCommands().performPrefixedCommand(
-                source.withPosition(Vec3.atBottomCenterOf(base)), "function emergency_eva:base");
+        placeBase(level, base);
         if (!level.getBlockState(base.below()).is(Blocks.STONE)
                 || !level.getBlockState(base.offset(0, 5, 0)).is(Blocks.STONE)
                 || !level.getBlockState(base.offset(3, 0, 0)).is(Blocks.CHEST)
                 || !level.getBlockState(base.offset(-3, 0, 0)).is(com.frozendawn.init.ModBlocks.THERMAL_HEATER.get())) {
-            source.sendFailure(Component.literal("Recovery base failed validation; no teleport or survival start occurred."));
-            return 0;
+            return failed(source, "Recovery base failed floor/roof/heater/chest validation at " + base);
         }
+        if (!buildEntrance(level, base)) return failed(source, "Base entrance could not meet terrain within twelve steps at " + base);
+        // Clear only the spawn's two standing blocks after locating solid ground.
+        level.setBlockAndUpdate(respawn, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(respawn.above(), Blocks.AIR.defaultBlockState());
         level.setDefaultSpawnPos(respawn, 0);
         player.setRespawnPosition(Level.OVERWORLD, respawn, 0, true, false);
         player.teleportTo(level, base.getX() + 0.5, base.getY(), base.getZ() + 0.5, 90, 0);
@@ -105,7 +107,7 @@ public final class LabEmergencyEvaReplay {
         source.sendSuccess(() -> Component.literal("Verified solid terrain and loaded base floor, roof, heater and chest."), false);
         return 1;
     }
-    private static BlockPos findGround(ServerLevel level, int x, int z) {
+    static BlockPos findGround(ServerLevel level, int x, int z) {
         // A small dry, fairly level clearing keeps both spawn and the doorstep on terrain.
         for (int ring = 0; ring <= 4; ring++) {
             for (int side = 0; side < (ring == 0 ? 1 : 4); side++) {
@@ -117,18 +119,82 @@ public final class LabEmergencyEvaReplay {
                 for (int ox = -6; ox <= 6; ox += 3) {
                     for (int oz = -6; oz <= 6; oz += 3) {
                         level.getChunk((cx + ox) >> 4, (cz + oz) >> 4);
-                        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx + ox, cz + oz);
-                        BlockPos floor = new BlockPos(cx + ox, y - 1, cz + oz);
-                        dry &= level.getFluidState(floor).isEmpty()
-                                && level.getBlockState(floor).isSolidRender(level, floor)
-                                && !level.getBlockState(floor).is(Blocks.POWDER_SNOW);
-                        min = Math.min(min, y); max = Math.max(max, y);
+                        BlockPos feet = groundFeet(level, cx + ox, cz + oz);
+                        if (feet == null) { dry = false; continue; }
+                        min = Math.min(min, feet.getY()); max = Math.max(max, feet.getY());
                     }
                 }
-                if (dry && max - min <= 2) return new BlockPos(cx, max, cz);
+                if (dry && max - min <= 4) return new BlockPos(cx, max, cz);
             }
         }
         return null;
+    }
+    static void placeBase(ServerLevel level, BlockPos base) {
+        // Synchronous placement: nested /function calls inside a command are queued,
+        // so validating immediately after dispatch could observe unbuilt geometry.
+        for (int x = -6; x <= 6; x++) for (int z = -6; z <= 6; z++) {
+            for (int y = -8; y <= -1; y++) level.setBlockAndUpdate(base.offset(x, y, z), Blocks.STONE.defaultBlockState());
+        }
+        for (int x = -5; x <= 5; x++) for (int z = -5; z <= 5; z++) for (int y = 0; y <= 5; y++) {
+            boolean wall = Math.abs(x) == 5 || Math.abs(z) == 5 || y == 5;
+            level.setBlockAndUpdate(base.offset(x, y, z), (wall ? Blocks.STONE : Blocks.AIR).defaultBlockState());
+        }
+        var lowerDoor = Blocks.IRON_DOOR.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.DoorBlock.FACING, net.minecraft.core.Direction.SOUTH);
+        level.setBlockAndUpdate(base.offset(0, 0, -5), lowerDoor);
+        level.setBlockAndUpdate(base.offset(0, 1, -5), lowerDoor
+                .setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+        var button = Blocks.STONE_BUTTON.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.ButtonBlock.FACE, net.minecraft.world.level.block.state.properties.AttachFace.WALL);
+        level.setBlockAndUpdate(base.offset(1, 1, -4), button
+                .setValue(net.minecraft.world.level.block.ButtonBlock.FACING, net.minecraft.core.Direction.SOUTH));
+        level.setBlockAndUpdate(base.offset(1, 1, -6), button
+                .setValue(net.minecraft.world.level.block.ButtonBlock.FACING, net.minecraft.core.Direction.NORTH));
+        var heater = base.offset(-3, 0, 0);
+        level.setBlockAndUpdate(heater, com.frozendawn.init.ModBlocks.THERMAL_HEATER.get().defaultBlockState());
+        ((com.frozendawn.block.ThermalHeaterBlockEntity) level.getBlockEntity(heater)).addFuel(240000);
+        var chest = base.offset(3, 0, 0);
+        level.setBlockAndUpdate(chest, Blocks.CHEST.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.ChestBlock.FACING, net.minecraft.core.Direction.WEST));
+        var inventory = (net.minecraft.world.level.block.entity.ChestBlockEntity) level.getBlockEntity(chest);
+        inventory.setItem(0, new ItemStack(Items.BREAD, 64));
+        inventory.setItem(1, new ItemStack(Items.COAL, 64));
+        level.setBlockAndUpdate(base.offset(-3, 3, -3), Blocks.GLOWSTONE.defaultBlockState());
+        level.setBlockAndUpdate(base.offset(3, 3, 3), Blocks.GLOWSTONE.defaultBlockState());
+    }
+    static BlockPos groundFeet(ServerLevel level, int x, int z) {
+        level.getChunk(x >> 4, z >> 4);
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+        for (int y = top; y >= Math.max(level.getMinBuildHeight(), top - 32); y--) {
+            var pos = new BlockPos(x, y, z);
+            var state = level.getBlockState(pos);
+            if (!level.getFluidState(pos).isEmpty() || state.is(Blocks.POWDER_SNOW)) return null;
+            if (com.frozendawn.world.SurfaceColumnScanner.shouldSkipForGroundScan(state)) continue;
+            if (state.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)
+                    && state.isSolidRender(level, pos)) return pos.above();
+        }
+        return null;
+    }
+    private static boolean buildEntrance(ServerLevel level, BlockPos base) {
+        for (int i = 0; i < 12; i++) {
+            BlockPos step = base.offset(0, -1 - i, -7 - i);
+            BlockPos feet = groundFeet(level, step.getX(), step.getZ());
+            if (feet == null) return false;
+            if (feet.getY() - 1 >= step.getY()) return true;
+            for (int y = feet.getY(); y < step.getY(); y++) {
+                level.setBlockAndUpdate(new BlockPos(step.getX(), y, step.getZ()), Blocks.STONE.defaultBlockState());
+            }
+            level.setBlockAndUpdate(step, Blocks.STONE_BRICK_STAIRS.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.StairBlock.FACING, net.minecraft.core.Direction.SOUTH));
+            level.setBlockAndUpdate(step.above(), Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(step.above(2), Blocks.AIR.defaultBlockState());
+        }
+        return false;
+    }
+    private static int failed(CommandSourceStack source, String message) {
+        com.frozendawn.FrozenDawn.LOGGER.warn("[EmergencyEvaLab] Preparation failed: {}", message);
+        source.sendFailure(Component.literal(message));
+        return 0;
     }
     private static int shorten(CommandSourceStack source, int seconds) {
         if (!allowed(source) || !(source.getEntity() instanceof ServerPlayer player)

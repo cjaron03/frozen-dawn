@@ -285,6 +285,16 @@
           "equals": 2
         }
       ]
+    },
+    "emergency_eva:repair": {
+      "world": "Emergency EVA Recovery - Phase 6",
+      "scores": [
+        {
+          "objective": "eeva",
+          "holder": "#stage",
+          "equals": -1
+        }
+      ]
     }
   }
 }
