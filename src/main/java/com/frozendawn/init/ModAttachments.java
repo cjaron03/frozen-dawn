@@ -30,6 +30,10 @@ public final class ModAttachments {
                     "hearthrot",
                     () -> AttachmentType.serializable(HearthrotState::new).build());
 
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<com.frozendawn.data.EmergencyEvaState>>
+            EMERGENCY_EVA = ATTACHMENTS.register("emergency_eva",
+                    () -> AttachmentType.serializable(com.frozendawn.data.EmergencyEvaState::new).build());
+
     private ModAttachments() {
     }
 }

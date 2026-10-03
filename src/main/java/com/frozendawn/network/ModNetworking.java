@@ -41,6 +41,9 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(EmergencyEvaPayload.TYPE, EmergencyEvaPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleEmergencyEva(payload)));
+
         registrar.playToClient(ArchitectDebugPayload.TYPE, ArchitectDebugPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleArchitectDebug(payload)));
 

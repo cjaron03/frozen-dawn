@@ -62,6 +62,14 @@ public final class ClientHandlers {
         ApocalypseClientData.setBreathable(payload.breathable());
     }
 
+    public static void handleEmergencyEva(EmergencyEvaPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            player.setData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA,
+                    new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks()));
+        }
+    }
+
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
         SuitIntegrityClient.update(payload);
     }

@@ -1031,5 +1031,14 @@
   "screen.frozendawn.thaeven_archive.previous_page": "Previous page",
   "screen.frozendawn.thaeven_archive.next_page": "Next page",
   "screen.frozendawn.thaeven_archive.previous_record": "Previous record",
-  "screen.frozendawn.thaeven_archive.next_record": "Next record"
+  "screen.frozendawn.thaeven_archive.next_record": "Next record",
+  "item.frozendawn.emergency_eva_helmet": "Emergency EVA Helmet",
+  "item.frozendawn.emergency_eva_chestplate": "Emergency EVA Chestplate",
+  "item.frozendawn.emergency_eva_leggings": "Emergency EVA Leggings",
+  "item.frozendawn.emergency_eva_boots": "Emergency EVA Boots",
+  "hud.frozendawn.emergency_eva.active": "EMERGENCY EVA ACTIVE",
+  "hud.frozendawn.emergency_eva.depleted": "EMERGENCY EVA DEPLETED",
+  "hud.frozendawn.emergency_eva.reserve": "Reserve oxygen: %s",
+  "tooltip.frozendawn.emergency_eva.service": "Disposable life support: 10 minutes while worn.",
+  "tooltip.frozendawn.emergency_eva.disposable": "Cannot be refilled. Becomes unusable after your next death."
 }

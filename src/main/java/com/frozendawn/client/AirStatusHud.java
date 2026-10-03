@@ -55,6 +55,11 @@ public final class AirStatusHud {
             return;
         }
 
+        if (com.frozendawn.event.EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
+            EmergencyEvaClient.renderReadout(graphics);
+            return;
+        }
+
         if (MasterArchitectFloodClient.shouldCorruptSuitTelemetry()) {
             renderMindOverride(
                     graphics, MasterArchitectFloodClient.corruptedOxygenText());

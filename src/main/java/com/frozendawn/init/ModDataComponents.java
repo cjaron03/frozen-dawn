@@ -12,6 +12,13 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<java.util.UUID>> EMERGENCY_EVA_ISSUE =
+            DATA_COMPONENTS.register("emergency_eva_issue", () ->
+                    DataComponentType.<java.util.UUID>builder()
+                            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+                            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
+                            .build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> FROST_TICKS =
             DATA_COMPONENTS.register("frost_ticks", () ->
                     DataComponentType.<Integer>builder()
