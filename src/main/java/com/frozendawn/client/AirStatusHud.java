@@ -132,7 +132,7 @@ public final class AirStatusHud {
         } else if (tankTelemetry.hasAnyTank()) {
             int eta = emergency ? (tankTelemetry.totalO2() + 19) / 20
                     : smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(mc.player, reading));
-            tankValue = tankTelemetry.fillPercent() + "%  "
+            tankValue = (emergency ? "" : tankTelemetry.fillPercent() + "%  ")
                     + AirStatusEtaPolicy.format(eta);
         } else {
             tankValue = "NONE";

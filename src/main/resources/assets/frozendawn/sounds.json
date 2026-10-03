@@ -121,6 +121,12 @@
       "frozendawn:ui/suit/leak_hiss"
     ]
   },
+  "ui.suit.emergency_eva_active": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_active",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_eva_active", "stream": true }
+    ]
+  },
   "ui.suit.emergency_reserve": {
     "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
     "sounds": [

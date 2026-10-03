@@ -79,6 +79,8 @@ public class ModSounds {
             register("ui.suit.oxygen_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
             register("ui.suit.leak_hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_ACTIVE =
+            register("ui.suit.emergency_eva_active");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =
             register("ui.suit.emergency_reserve");
     public static final DeferredHolder<SoundEvent, SoundEvent>

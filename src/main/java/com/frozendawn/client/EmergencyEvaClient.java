@@ -17,6 +17,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class EmergencyEvaClient {
     private static UUID announcedIssue;
+    private static UUID pendingVoiceIssue;
+    private static int activationVoiceDelay;
     private static int beepCooldown;
     private static int creakCooldown;
     private EmergencyEvaClient() {}
@@ -24,6 +26,8 @@ public final class EmergencyEvaClient {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         announcedIssue = null;
+        pendingVoiceIssue = null;
+        activationVoiceDelay = 0;
         beepCooldown = 0;
         creakCooldown = 0;
     }
@@ -31,14 +35,30 @@ public final class EmergencyEvaClient {
     @SubscribeEvent
     public static void onTick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
-        if (mc.player == null || mc.isPaused() || mc.player.isCreative() || mc.player.isSpectator()
-                || !mc.player.isAlive() || !EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) return;
+        if (mc.isPaused()) return;
+        if (mc.player == null || mc.player.isCreative() || mc.player.isSpectator()
+                || !mc.player.isAlive() || !EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
+            pendingVoiceIssue = null;
+            return;
+        }
         var state = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
         if (!state.issue().equals(announcedIssue)) {
             announcedIssue = state.issue();
             beepCooldown = 0;
             creakCooldown = 0;
+            // Only a fresh reserve can truthfully announce ten minutes. Returning
+            // to a partly spent issue after login must not replay that promise.
+            pendingVoiceIssue = state.remainingTicks() >= com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS - 40
+                    ? state.issue() : null;
+            activationVoiceDelay = 20;
             beep(0.65F, 0.85F);
+        }
+        if (pendingVoiceIssue != null && --activationVoiceDelay <= 0) {
+            if (pendingVoiceIssue.equals(state.issue()) && EmergencyEvaHandler.hasLifeSupport(mc.player)) {
+                mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                        ModSounds.SUIT_EMERGENCY_EVA_ACTIVE.get(), 1.0F, 1.0F));
+            }
+            pendingVoiceIssue = null;
         }
         if (beepCooldown > 0) beepCooldown--;
         if (creakCooldown > 0) creakCooldown--;

@@ -107,3 +107,13 @@ files are distributed under CC BY-SA 4.0 with the attribution and modification
 notice in `NOTICE.md`. Piper's GPL engine and model weights are generator-only
 and are not bundled. Do not describe these exports as Samantha; they preserve
 the authorized text and Frozen Dawn processing profiles, not the old voice.
+
+## Emergency EVA activation
+
+`ui/suit/emergency_eva_active.ogg` uses the existing Piper `en_US-amy-medium`
+model and `orsa` processing profile. The manifest writes EVA as E V A so the
+voice speaks the letters. The displayed subtitle is “Emergency EVA active.
+Ten minutes of reserve life support.” Generate just this asset by selecting its
+manifest row into a temporary TSV and setting `LOCAL_TTS_MANIFEST` to that TSV
+when running `tools/generate_local_voice_assets.sh`. Existing voice assets remain
+byte-identical. Attribution and CC BY-SA 4.0 terms are in `NOTICE.md`.

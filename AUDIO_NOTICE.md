@@ -58,7 +58,7 @@ CC0 recordings do not legally require attribution, but Frozen Dawn preserves att
 The shipped synthesized speech assets use Piper's `en_US-amy-medium` model through the
 checked-in local generation pipeline. The model card links to the Mycroft Mimic
 3 voices dataset under CC BY-SA 4.0. Frozen Dawn preserves attribution,
-identifies its modifications, and distributes the 52 processed performances
+identifies its modifications, and distributes the 53 processed performances
 under CC BY-SA 4.0 in the [generated-voice notice](tools/audio_sources/generated_voice/NOTICE.md).
 Neither the GPL-licensed Piper engine nor model weights are bundled in the jar.
 

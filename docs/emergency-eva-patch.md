@@ -8,7 +8,7 @@ The kit uses EVA textures and leather-level armor protection. One persistent, pl
 
 A complete active EVA rig with emergency pieces provides climate control and an internal air reserve. This reserve uses no refillable tank, efficiency module, patch or cartridge. Visual deterioration is separate from ordinary suit punctures, so cracks do not trigger puncture venting. Physical armor can break in combat. At reserve zero, emergency pieces cease to qualify as sealed EVA, normal cold/vacuum hazards resume, and the header reads EMERGENCY EVA DEPLETED. Equipping a complete ordinary rig restores its normal behavior. Emergency equipment grants no armor crafting advancements, recipes, repair ingredient or salvage route.
 
-The existing EVA oxygen HUD renders emergency telemetry through the same panel, ORSA badge, borders, spacing, fonts, reserve percentage, time and warning colors. Its header is EMERGENCY EVA ACTIVE and its second label is Reserve oxygen. At zero the header changes to EMERGENCY EVA DEPLETED and the panel uses the normal vacuum color. Cracks remain at the screen edges and strengthen as the reserve drains. An activation beep plays once per issue per client session. Quiet seal creaks begin below five minutes. Beeps repeat every ten seconds below two minutes, every three seconds below one minute and every second below fifteen seconds. Existing overlay settings and hidden-HUD controls apply.
+The existing EVA oxygen HUD renders emergency telemetry through the same panel, ORSA badge, borders, spacing, fonts, time and warning colors. Its header is EMERGENCY EVA ACTIVE and its second line is Reserve oxygen: M:SS, with no percentage. At zero the header changes to EMERGENCY EVA DEPLETED and the panel uses the normal vacuum color. Cracks remain at the screen edges and strengthen as the reserve drains. An activation beep plays once per issue per client session. Quiet seal creaks begin below five minutes. Beeps repeat every ten seconds below two minutes, every three seconds below one minute and every second below fifteen seconds. Existing overlay settings and hidden-HUD controls apply.
 
 ## Human recovery preview
 
@@ -29,7 +29,7 @@ Evidence: `build/emergency-eva-evidence/`, `build/gametest/report.xml`, `build/r
 
 ## Verification checkpoint
 
-`./gradlew architectVerify --console=plain` passed: 646 unit tests, 224 native GameTests, and all 219 required native cases/reports. All five emergency EVA tests passed, including a lit heater in a genuinely sealed, lethally cold room, real atmospheric damage before/after reserve expiry, persistence, retained equipment, old-issue rejection and death drops. The smoke-test mod jar was replaced with the verified build; SHA-256: `5ff36bf6089f365f52ebbdcda05a62fcf7e5c7acf4b43abe0b2e905487a8ee8b`. The human HUD/audio pass remains pending.
+`./gradlew architectVerify --console=plain` passed: 646 unit tests, 224 native GameTests, and all 219 required native cases/reports. All five emergency EVA tests passed, including a lit heater in a genuinely sealed, lethally cold room, real atmospheric damage before/after reserve expiry, persistence, retained equipment, old-issue rejection and death drops. The smoke-test mod jar was replaced with the verified build; SHA-256: `1a0ddc321617497e9d7afcb9a1463a9b03d94e6c743b9a0606a4031956cf6256`. The human HUD/audio pass remains pending.
 
 Recovery follow-up: `./gradlew build compileLabBridgeJava architectVerify --console=plain` passed again after the shared HUD and terrain setup changes. The client was restarted with the new save selected through Quick Play. Initial bridge status reports no loaded world; the first live READY/floor confirmation and the owner recovery run remain pending. The branch stays local while the owner tests.
 
@@ -38,3 +38,13 @@ Terrain preparation failure: the first default-world attempt stayed at stage -1 
 Terrain-fix verification: full build and `architectVerify` passed with 646 unit tests and 227 native tests, including all 222 required cases and the three new terrain/placement regressions.
 
 Live repair checkpoint: exact-world bridge repair succeeded once, then `#stage=1` and `#prepared=1` were confirmed. Player is at the verified base `(320.5,95,-15.5)`; forced outdoor respawn is `(0,80,0)`. The room floor, roof, heater, chest and supported entrance completed before teleport. The original natural Architect and world history were preserved. READY and the death-test button appeared in chat. Client is running in the owning checkout; survival recovery/HUD/audio acceptance remains for the owner. This Default world uses the 120-day timeline and day 104 is in the existing vacuum stage; the new-world helper retains that default timeline.
+
+Emergency activation voice: a fresh issue plays the existing activation beep,
+then after one second the Piper/ORSA voice says “Emergency EVA active. Ten
+minutes of reserve life support.” It plays once for the issue in the current
+session; re-equipping does not repeat it. Reopening a partly spent reserve does
+not announce a new ten minutes. Removing the kit or dying cancels pending speech; playback requires an active
+sealed rig when the announcement is due. Later urgency remains the existing beeps and
+cracks. Ordinary tank telemetry keeps its normal percentage display.
+
+Timer/voice verification: full build and `architectVerify` passed (646 unit tests, 227 native cases, all 222 required cases). New OGG decodes as stereo Vorbis at 44.1 kHz, duration 4.714 seconds; the jar includes the asset, subtitle and updated Piper attribution. Existing voice OGGs were preserved. The smoke jar matches the verified build. The client is relaunched at the title screen; open the preserved recovery save and cause a fresh death/respawn to hear the activation line. Perceived HUD/audio acceptance remains pending. Pre-existing EventBusSubscriber and Gradle deprecation warnings remain.

@@ -1038,6 +1038,7 @@
   "item.frozendawn.emergency_eva_boots": "Emergency EVA Boots",
   "hud.frozendawn.emergency_eva.active": "EMERGENCY EVA ACTIVE",
   "hud.frozendawn.emergency_eva.depleted": "EMERGENCY EVA DEPLETED",
+  "subtitle.frozendawn.ui.suit.emergency_eva_active": "Emergency EVA active. Ten minutes of reserve life support.",
   "hud.frozendawn.emergency_eva.reserve_label": "Reserve oxygen:",
   "hud.frozendawn.emergency_eva.reserve": "Reserve oxygen: %s",
   "tooltip.frozendawn.emergency_eva.service": "Disposable life support: 10 minutes while worn.",
