@@ -496,6 +496,12 @@ public final class MasterArchitectFloodClient {
         return AirStatusTelemetry.getTankTelemetry(minecraft.player).fillRatio();
     }
 
+    public static boolean showSuitDialogueIfIdle(String translationKey) {
+        if (suitDialogueTicks > 0) return false;
+        showSuitDialogue(translationKey);
+        return true;
+    }
+
     public static void showSuitDialogue(String translationKey) {
         suitDialogueKey = translationKey;
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
@@ -563,7 +569,8 @@ public final class MasterArchitectFloodClient {
         }
 
         int x = TemperatureHud.HUD_X;
-        int y = TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + 28;
+        int y = TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + 28
+                + ContinuityRecoveryHud.dialogueOffset();
         int panelWidth = Math.min(258, graphics.guiWidth() - x * 2);
         int textWidth = Math.max(80, panelWidth - 12);
         List<FormattedCharSequence> lines = minecraft.font.split(

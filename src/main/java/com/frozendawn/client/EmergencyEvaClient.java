@@ -19,6 +19,8 @@ public final class EmergencyEvaClient {
     private static UUID announcedIssue;
     private static UUID pendingVoiceIssue;
     private static int activationVoiceDelay;
+    private static UUID pendingShelterNotice;
+    private static int shelterNoticeDelay;
     private static int beepCooldown;
     private static int creakCooldown;
     private EmergencyEvaClient() {}
@@ -28,6 +30,7 @@ public final class EmergencyEvaClient {
         announcedIssue = null;
         pendingVoiceIssue = null;
         activationVoiceDelay = 0;
+        pendingShelterNotice = null;
         beepCooldown = 0;
         creakCooldown = 0;
     }
@@ -36,9 +39,11 @@ public final class EmergencyEvaClient {
     public static void onTick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
         if (mc.isPaused()) return;
+        ContinuityRecoveryHud.tick();
         if (mc.player == null || mc.player.isCreative() || mc.player.isSpectator()
                 || !mc.player.isAlive() || !EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
             pendingVoiceIssue = null;
+            pendingShelterNotice = null;
             return;
         }
         var state = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
@@ -58,8 +63,19 @@ public final class EmergencyEvaClient {
                 MasterArchitectFloodClient.showSuitDialogue("ui.frozendawn.suit.emergency_eva_active");
                 mc.getSoundManager().play(SimpleSoundInstance.forUI(
                         ModSounds.SUIT_EMERGENCY_EVA_ACTIVE.get(), 1.0F, 1.0F));
+                pendingShelterNotice = state.issue();
+                shelterNoticeDelay = 210;
             }
             pendingVoiceIssue = null;
+        }
+        if (pendingShelterNotice != null && --shelterNoticeDelay <= 0) {
+            if (!pendingShelterNotice.equals(state.issue()) || state.remainingTicks() == 0) {
+                pendingShelterNotice = null;
+            } else if (MasterArchitectFloodClient.showSuitDialogueIfIdle(
+                    mc.player.getData(com.frozendawn.init.ModAttachments.CONTINUITY_RECOVERY).shelterEstimate() == null
+                            ? "ui.frozendawn.suit.continuity_no_shelter" : "ui.frozendawn.suit.continuity_shelter_degraded")) {
+                pendingShelterNotice = null;
+            }
         }
         if (beepCooldown > 0) beepCooldown--;
         if (creakCooldown > 0) creakCooldown--;

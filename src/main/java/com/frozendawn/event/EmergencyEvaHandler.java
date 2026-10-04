@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -53,6 +54,7 @@ public final class EmergencyEvaHandler {
     public static void issueKit(ServerPlayer player) {
         var state = new EmergencyEvaState(UUID.randomUUID(), EmergencyEvaState.SERVICE_TICKS);
         player.setData(ModAttachments.EMERGENCY_EVA, state);
+        player.getData(ModAttachments.CONTINUITY_RECOVERY).selectShelter(false);
         for (var slot : SLOTS) {
             ItemStack retained = player.getItemBySlot(slot);
             if (isOrdinaryEva(retained) || (slot == EquipmentSlot.HEAD
@@ -63,6 +65,7 @@ public final class EmergencyEvaHandler {
         if (!isWearingIssuedPiece(player)) equip(player, EquipmentSlot.CHEST, state);
         sync(player);
         FrozenDawn.LOGGER.info("[EmergencyEVA] Issued ten-minute recovery kit to {}", player.getGameProfile().getName());
+        ContinuityRecoveryHandler.sync(player);
     }
 
     private static void equip(ServerPlayer player, EquipmentSlot slot, EmergencyEvaState state) {
@@ -79,6 +82,7 @@ public final class EmergencyEvaHandler {
         };
         var piece = new ItemStack(item);
         piece.set(ModDataComponents.EMERGENCY_EVA_ISSUE, state.issue());
+        piece.set(ModDataComponents.EMERGENCY_EVA_SERVICE, state.remainingTicks());
         player.setItemSlot(slot, piece);
     }
 
@@ -124,6 +128,32 @@ public final class EmergencyEvaHandler {
         }
         if (state.equipmentChanged(mask) || (mask != 0
                 && (player.tickCount % 20 == 0 || previousTicks > 0 && state.remainingTicks() == 0))) sync(player);
+        // Update both worn and carried pieces; attributes expire on the same tick as life support.
+        updateServiceBars(player);
+    }
+
+    private static void updateServiceBars(ServerPlayer player) {
+        var state = player.getData(ModAttachments.EMERGENCY_EVA);
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            var piece = player.getInventory().getItem(i);
+            if (!(piece.getItem() instanceof EmergencyEvaArmorItem)) continue;
+            int service = matchesIssue(player, piece) ? state.remainingTicks() : 0;
+            // Inventory sync once per second, with immediate issue/expiry/invalid-owner changes.
+            int displayed = service == 0 ? 0 : Math.min(EmergencyEvaState.SERVICE_TICKS, ((service + 19) / 20) * 20);
+            if (piece.getOrDefault(ModDataComponents.EMERGENCY_EVA_SERVICE, -1) != displayed) {
+                piece.set(ModDataComponents.EMERGENCY_EVA_SERVICE, displayed);
+                piece.set(net.minecraft.core.component.DataComponents.UNBREAKABLE,
+                        new net.minecraft.world.item.component.Unbreakable(false));
+                piece.setDamageValue(piece.getMaxDamage() - (int) Math.ceil(
+                        piece.getMaxDamage() * (double) displayed / EmergencyEvaState.SERVICE_TICKS));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onAttributes(ItemAttributeModifierEvent event) {
+        if (event.getItemStack().getItem() instanceof EmergencyEvaArmorItem
+                && EmergencyEvaArmorItem.serviceTicks(event.getItemStack()) == 0) event.clearModifiers();
     }
 
     public static boolean matchesIssue(Player player, ItemStack piece) {

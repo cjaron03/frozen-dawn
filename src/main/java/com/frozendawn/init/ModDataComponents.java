@@ -12,6 +12,11 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> EMERGENCY_EVA_SERVICE =
+            DATA_COMPONENTS.register("emergency_eva_service", () ->
+                    DataComponentType.<Integer>builder().persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<java.util.UUID>> EMERGENCY_EVA_ISSUE =
             DATA_COMPONENTS.register("emergency_eva_issue", () ->
                     DataComponentType.<java.util.UUID>builder()

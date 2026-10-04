@@ -70,6 +70,15 @@ public final class ClientHandlers {
         }
     }
 
+    public static void handleContinuityRecovery(ContinuityRecoveryPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            var record = new com.frozendawn.data.ContinuityRecoveryState();
+            record.deserializeNBT(player.registryAccess(), payload.record());
+            player.setData(com.frozendawn.init.ModAttachments.CONTINUITY_RECOVERY, record);
+        }
+    }
+
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
         SuitIntegrityClient.update(payload);
     }

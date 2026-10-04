@@ -266,6 +266,18 @@
         }
       ]
     },
+    "continuity_eva:start": {
+      "world": "ORSA Continuity - Phase 6",
+      "scores": [{"objective": "eeva", "holder": "#stage", "equals": 1}]
+    },
+    "continuity_eva:controls": {
+      "world": "ORSA Continuity - Phase 6",
+      "scores": [{"objective": "eeva", "holder": "#stage", "equals": 2}]
+    },
+    "continuity_eva:repair": {
+      "world": "ORSA Continuity - Phase 6",
+      "scores": [{"objective": "eeva", "holder": "#stage", "equals": -1}]
+    },
     "emergency_eva:start": {
       "world": "Emergency EVA Recovery - Phase 6",
       "scores": [

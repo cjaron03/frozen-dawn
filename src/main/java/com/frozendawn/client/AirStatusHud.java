@@ -29,9 +29,8 @@ public final class AirStatusHud {
     private static final int MODULE_ICON_SIZE = 8;
     private static final int MODULE_ICON_GAP = 3;
     private static final float ETA_SMOOTHING = 0.22F;
-    private static final int BG_COLOR = 0xAA0B1217;
-    private static final int PREFIX_COLOR = 0xFF8A9AA4;
-    private static final int TANK_PREFIX_COLOR = 0xFF6F7F89;
+    private static final int PREFIX_COLOR = OrsaHudPanel.LABEL_COLOR;
+    private static final int TANK_PREFIX_COLOR = OrsaHudPanel.MUTED_COLOR;
 
     private static AirStatusTelemetry.State lastState = null;
     private static int pulseTicks = 0;
@@ -64,6 +63,7 @@ public final class AirStatusHud {
             renderReading(graphics, mc, new AirStatusTelemetry.Reading(
                     reserve > 0 ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.State.VACUUM,
                     new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.SERVICE_TICKS, 1)), null);
+            ContinuityRecoveryHud.render(graphics);
             return;
         }
 
@@ -163,23 +163,8 @@ public final class AirStatusHud {
         int badgeColor = mixTowardWhite(state.badgeColor(), 0.12F * pulse);
         int tankValueColor = getTankValueColor(tankTelemetry, pulse);
 
-        graphics.fill(x + 1, y, x + totalWidth - 1, y + PANEL_HEIGHT, BG_COLOR);
-        graphics.fill(x, y + 1, x + totalWidth, y + PANEL_HEIGHT - 1, BG_COLOR);
-
-        graphics.fill(x, y + 1, x + ACCENT_WIDTH, y + PANEL_HEIGHT - 1, accentColor);
-        graphics.fill(x + 1, y, x + totalWidth - 1, y + 1, withAlpha(borderColor, 210));
-        graphics.fill(x + 1, y + PANEL_HEIGHT - 1, x + totalWidth - 1, y + PANEL_HEIGHT, withAlpha(borderColor, 160));
-        graphics.fill(x + totalWidth - 1, y + 1, x + totalWidth, y + PANEL_HEIGHT - 1, withAlpha(borderColor, 185));
-
-        int badgeX = x + PADDING_X + ACCENT_WIDTH + BADGE_GAP - 1;
-        int badgeY = y + (PANEL_HEIGHT - BADGE_SIZE) / 2;
-        float r = FastColor.ARGB32.red(badgeColor) / 255.0F;
-        float g = FastColor.ARGB32.green(badgeColor) / 255.0F;
-        float b = FastColor.ARGB32.blue(badgeColor) / 255.0F;
-        float a = FastColor.ARGB32.alpha(badgeColor) / 255.0F;
-        OrsaLogoRenderer.drawTinted(graphics, badgeX, badgeY, BADGE_SIZE, r, g, b, a);
-
-        int textX = badgeX + BADGE_SIZE + LABEL_GAP;
+        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, PANEL_HEIGHT,
+                accentColor, borderColor, badgeColor);
         int airTextY = y + PADDING_Y + 1;
         int tankTextY = airTextY + 9;
         graphics.drawString(mc.font, prefix, textX, airTextY, mixTowardWhite(PREFIX_COLOR, 0.10F * pulse), false);
@@ -247,11 +232,11 @@ public final class AirStatusHud {
         if (!tankTelemetry.hasAnyTank()) {
             baseColor = 0xFF8B939A;
         } else if (tankTelemetry.fillRatio() <= 0.20F) {
-            baseColor = 0xFFFFB1B1;
+            baseColor = OrsaHudPanel.CRITICAL_COLOR;
         } else if (tankTelemetry.fillRatio() <= 0.50F) {
-            baseColor = 0xFFFFE0A8;
+            baseColor = OrsaHudPanel.WARNING_COLOR;
         } else {
-            baseColor = 0xFFCDEFFF;
+            baseColor = OrsaHudPanel.VALUE_COLOR;
         }
         return mixTowardWhite(baseColor, 0.14F * pulse);
     }

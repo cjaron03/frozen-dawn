@@ -189,11 +189,11 @@ public final class EmergencyEvaGameTest {
     private static void suffocate(ServerPlayer player) {
         PlayerTickHandler.tickPlayerSuffocation(player, ApocalypseState.get(player.getServer()), true);
     }
-    private static void setProgress(ServerPlayer player, float progress) {
+    static void setProgress(ServerPlayer player, float progress) {
         var state = ApocalypseState.get(player.getServer());
         state.setApocalypseTicks((long) Math.ceil(state.getTotalDays() * progress) * 24000, player.getServer());
     }
-    private static void scene(GameTestHelper helper, Consumer<ServerPlayer> test) {
+    static void scene(GameTestHelper helper, Consumer<ServerPlayer> test) {
         var server = helper.getLevel().getServer();
         var apocalypse = ApocalypseState.get(server);
         long originalTicks = apocalypse.getApocalypseTicks();

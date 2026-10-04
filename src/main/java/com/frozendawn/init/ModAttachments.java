@@ -34,6 +34,11 @@ public final class ModAttachments {
             EMERGENCY_EVA = ATTACHMENTS.register("emergency_eva",
                     () -> AttachmentType.serializable(com.frozendawn.data.EmergencyEvaState::new).build());
 
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<com.frozendawn.data.ContinuityRecoveryState>>
+            CONTINUITY_RECOVERY = ATTACHMENTS.register("continuity_recovery",
+                    () -> AttachmentType.serializable(com.frozendawn.data.ContinuityRecoveryState::new)
+                            .copyOnDeath().build());
+
     private ModAttachments() {
     }
 }

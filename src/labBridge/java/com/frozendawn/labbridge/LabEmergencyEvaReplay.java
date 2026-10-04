@@ -28,6 +28,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 @EventBusSubscriber(modid = "frozendawn")
 public final class LabEmergencyEvaReplay {
     public static final String RECOVERY_WORLD = "Emergency EVA Recovery - Phase 6";
+    public static final String CONTINUITY_WORLD = "ORSA Continuity - Phase 6";
     private LabEmergencyEvaReplay() {}
     @SubscribeEvent
     public static void register(RegisterCommandsEvent event) {
@@ -44,7 +45,7 @@ public final class LabEmergencyEvaReplay {
     private static boolean allowed(CommandSourceStack source) {
         String name = source.getServer().getWorldData().getLevelName();
         return !FMLEnvironment.production && Boolean.getBoolean("frozendawn.labBridge")
-                && (name.equals("Emergency EVA Respawn Lab") || name.equals(RECOVERY_WORLD))
+                && (name.equals("Emergency EVA Respawn Lab") || name.equals(RECOVERY_WORLD) || name.equals(CONTINUITY_WORLD))
                 && source.getEntity() instanceof ServerPlayer;
     }
     private static int loadLegacyArea(CommandSourceStack source) {
@@ -56,7 +57,8 @@ public final class LabEmergencyEvaReplay {
         return 1;
     }
     private static int prepareRecovery(CommandSourceStack source) {
-        if (!allowed(source) || !source.getServer().getWorldData().getLevelName().equals(RECOVERY_WORLD)
+        String worldName = source.getServer().getWorldData().getLevelName();
+        if (!allowed(source) || !(worldName.equals(RECOVERY_WORLD) || worldName.equals(CONTINUITY_WORLD))
                 || !(source.getEntity() instanceof ServerPlayer player) || !player.isCreative()
                 || !player.getTags().contains("emergency_eva_lab")) return 0;
         var scoreboard = source.getServer().getScoreboard();
@@ -89,7 +91,25 @@ public final class LabEmergencyEvaReplay {
         level.setBlockAndUpdate(respawn, Blocks.AIR.defaultBlockState());
         level.setBlockAndUpdate(respawn.above(), Blocks.AIR.defaultBlockState());
         level.setDefaultSpawnPos(respawn, 0);
-        player.setRespawnPosition(Level.OVERWORLD, respawn, 0, true, false);
+        if (worldName.equals(CONTINUITY_WORLD)) {
+            // Exercise a real lost-bed return: record a valid bed, then remove it.
+            // Vanilla falls back to world spawn on death while ORSA retains the old fix.
+            var bed = base.offset(2, 0, 2);
+            var facing = net.minecraft.core.Direction.NORTH;
+            var bedState = Blocks.WHITE_BED.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.BedBlock.FACING, facing);
+            level.setBlockAndUpdate(bed, bedState);
+            level.setBlockAndUpdate(bed.relative(facing), bedState
+                    .setValue(net.minecraft.world.level.block.BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.HEAD));
+            player.setRespawnPosition(Level.OVERWORLD, bed, 0, false, false);
+            if (player.getData(ModAttachments.CONTINUITY_RECOVERY).shelterEstimate() == null) {
+                return failed(source, "Continuity preview could not register the real bed");
+            }
+            level.setBlockAndUpdate(bed, Blocks.AIR.defaultBlockState());
+            level.setBlockAndUpdate(bed.relative(facing), Blocks.AIR.defaultBlockState());
+            player.sendSystemMessage(Component.literal("ORSA Continuity preview: a real bed was registered, then removed. "
+                    + "Death will use ordinary world-spawn fallback. The damaged shelter record remains."));
+        } else player.setRespawnPosition(Level.OVERWORLD, respawn, 0, true, false);
         player.teleportTo(level, base.getX() + 0.5, base.getY(), base.getZ() + 0.5, 90, 0);
         player.setDeltaMovement(Vec3.ZERO);
         player.fallDistance = 0;
