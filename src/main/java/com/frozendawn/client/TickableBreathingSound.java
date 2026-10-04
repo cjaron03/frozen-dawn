@@ -15,7 +15,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class TickableBreathingSound extends AbstractTickableSoundInstance {
 
     private float targetVolume;
-    private static final float FADE_RATE = 0.02f; // ~1s for 0→0.5 transition
+    private float targetPitch = 1.0f;
+    private float fadeRate = 0.02f; // ~1s for 0→0.5 transition
 
     public TickableBreathingSound(SoundEvent sound, float initialVolume) {
         super(sound, SoundSource.AMBIENT, SoundInstance.createUnseededRandom());
@@ -32,12 +33,26 @@ public class TickableBreathingSound extends AbstractTickableSoundInstance {
         this.targetVolume = target;
     }
 
+    public void setTargetVolume(float target, float transitionRate) {
+        this.targetVolume = target;
+        this.fadeRate = Math.max(0.001f, transitionRate);
+    }
+
+    public void setTargetPitch(float target) {
+        this.targetPitch = target;
+    }
+
     @Override
     public void tick() {
+        if (pitch < targetPitch) {
+            pitch = Math.min(targetPitch, pitch + 0.01f);
+        } else if (pitch > targetPitch) {
+            pitch = Math.max(targetPitch, pitch - 0.01f);
+        }
         if (volume < targetVolume) {
-            volume = Math.min(targetVolume, volume + FADE_RATE);
+            volume = Math.min(targetVolume, volume + fadeRate);
         } else if (volume > targetVolume) {
-            volume = Math.max(targetVolume, volume - FADE_RATE);
+            volume = Math.max(targetVolume, volume - fadeRate);
         }
 
         if (volume <= 0.001f && targetVolume <= 0f) {

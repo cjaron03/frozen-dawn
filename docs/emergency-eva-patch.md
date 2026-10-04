@@ -101,7 +101,7 @@ The previous client was already closed. Its saved Continuity world and client
 log were backed up before relaunching at the title screen for this sound pass.
 The branch remains local.
 
-## Combined emergency breathing — current sound
+## Combined emergency breathing — first mix
 
 The owner selected a combination of the two researched CC0 recordings. The
 emergency loop now uses Nuclearoid's GP-5 gas-mask recording with three short
@@ -132,3 +132,37 @@ confirmed the title screen before the closed Continuity world and client log
 were backed up and the owning client restarted. Open **ORSA Continuity - Phase
 6** to hear the emergency mix; its saved test progress is preserved. The branch
 remains local while the owner tests.
+
+## Single-performance emergency breathing — current sound
+
+Owner feedback on the first mix: “it sounds like two or more breaths overlapped”.
+That mix did retain mask audio beneath the strained passages, and the existing
+runtime scheduler overlapped successive clips for two seconds. Both sources of
+emergency overlap are removed.
+
+The new fifteen-second asset alternates two mask passages with two strained
+passages. One recording contributes at each output sample; separate 100 ms
+fades soften each cut and the loop seam. Exact source windows are recorded in
+the updated source ledger and generation script. The previous rejected mix is
+preserved as `single-breathing/previous-overlapping-mix.ogg`.
+
+Emergency EVA now uses one `TickableBreathingSound` instance with native looping.
+Normal-EVA clips are stopped before it starts, including the previous overlap
+clip; the emergency loop is stopped before handing back to normal EVA. Pausing,
+leaving the world or losing life support stops the tracked instances. Hearthrot
+volume attenuation/recovery rates and the sever pitch cue remain connected.
+Normal EVA keeps its existing clip cadence and original recording.
+
+Full build passed with 650 unit tests and existing Gradle deprecation warnings.
+Decoded asset duration is 15.000 seconds, RMS -24.955 dBFS and peak 0.7109.
+Measured sample jumps at the edits and loop seam are below 0.00004. Packaged
+audio, client loop class, original-recording preservation and credits passed
+verification. Listening and actual in-game playback remain owner acceptance;
+native survival checks were not rerun for this client/audio-only fix.
+
+Build and smoke jar SHA-256:
+`1dab1b541d9b94e10256249954063a754213f459dfd7a8564b4fde0231fb197e`.
+Evidence, preview, preserved feedback and client launch log are in
+`build/emergency-eva-evidence/single-breathing/`. The fresh title-screen heartbeat
+was checked before backing up the closed Continuity save and restarting only
+the owning client. The branch remains local.

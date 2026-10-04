@@ -25,11 +25,12 @@ public class EvaSuitAmbience {
     private static final float TARGET_VOLUME = 0.5f;
 
     private static TickableWindSound currentSound = null;
+    private static TickableWindSound previousSound = null;
+    private static TickableBreathingSound emergencySound = null;
     private static SimpleSoundInstance suffocateSound = null;
     private static int ticksUntilNext = 0;
     private static boolean wasSuffocating = false;
     private static float currentBasePitch = 1.0F;
-    private static boolean emergencyBreathing = false;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -75,13 +76,20 @@ public class EvaSuitAmbience {
             return;
         }
 
-        boolean emergency = EmergencyEvaHandler.hasLifeSupport(mc.player);
-        if (emergency != emergencyBreathing) {
-            // Hand over immediately when changing rigs, rather than keeping
-            // the previous filter sound until the next fifteen-second clip.
-            stopAll(mc);
-            emergencyBreathing = emergency;
+        if (EmergencyEvaHandler.hasLifeSupport(mc.player)) {
+            stopNormal(mc);
+            if (emergencySound == null || emergencySound.isStopped()) {
+                emergencySound = new TickableBreathingSound(ModSounds.EVA_EMERGENCY_BREATHING.get(),
+                        TARGET_VOLUME * HearthrotClientState.breathingVolumeMultiplier());
+                mc.getSoundManager().play(emergencySound);
+            }
+            float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
+            emergencySound.setTargetVolume(TARGET_VOLUME * breathingMultiplier,
+                    breathingMultiplier < 1.0F ? 0.10F : 0.035F);
+            emergencySound.setTargetPitch(MasterArchitectSeverTelegraph.evaPitchMultiplier());
+            return;
         }
+        stopEmergency(mc);
 
         // Update volume on current sound
         if (currentSound != null && !currentSound.isStopped()) {
@@ -99,9 +107,11 @@ public class EvaSuitAmbience {
         }
 
         // Start next clip — old one may still be playing for overlap
+        if (previousSound != null) mc.getSoundManager().stop(previousSound);
+        previousSound = currentSound;
         currentBasePitch = 0.98f + mc.level.random.nextFloat() * 0.04f;
         currentSound = new TickableWindSound(
-                emergencyBreathing ? ModSounds.EVA_EMERGENCY_BREATHING.get() : ModSounds.EVA_BREATHING.get(),
+                ModSounds.EVA_BREATHING.get(),
                 TARGET_VOLUME,
                 currentBasePitch * MasterArchitectSeverTelegraph.evaPitchMultiplier(),
                 CLIP_DURATION);
@@ -111,13 +121,28 @@ public class EvaSuitAmbience {
     }
 
     private static void stopAll(Minecraft mc) {
+        stopNormal(mc);
+        stopEmergency(mc);
+    }
+
+    private static void stopNormal(Minecraft mc) {
         if (currentSound != null) {
-            currentSound.fadeOut();
+            mc.getSoundManager().stop(currentSound);
             currentSound = null;
+        }
+        if (previousSound != null) {
+            mc.getSoundManager().stop(previousSound);
+            previousSound = null;
         }
         ticksUntilNext = 0;
         currentBasePitch = 1.0F;
-        emergencyBreathing = false;
+    }
+
+    private static void stopEmergency(Minecraft mc) {
+        if (emergencySound != null) {
+            mc.getSoundManager().stop(emergencySound);
+            emergencySound = null;
+        }
     }
 
     private static void resetSuffocationState(Minecraft mc) {

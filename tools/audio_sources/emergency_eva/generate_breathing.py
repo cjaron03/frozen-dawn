@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mix the verified CC0 mask and strained performances for emergency EVA."""
+"""Sequence verified CC0 mask and strained breaths, with no overlapping takes."""
 from array import array
 import hashlib
 import math
@@ -17,9 +17,10 @@ SOURCE_HASHES = {
 }
 NORMAL_SHA256 = "d3f1dfe47be702ad567bb197adac85fad695bd587553349bba64a6a15ade0adb"
 RATE = 48000
-DURATION = 15  # Matches EvaSuitAmbience's 300-tick clips and two-second overlap.
-# Output start, source start, duration: align effort with the mask's breath cycles.
-STRAINED_BREATHS = ((1.5, 10.4, 2.0), (6.0, 17.4, 2.3), (10.1, 23.8, 2.4))
+DURATION = 15
+# Source, start, duration. Takes alternate; only one contributes to each sample.
+SEGMENTS = (("mask", 5.0, 4.1), ("strain", 17.4, 3.3),
+            ("mask", 9.1, 4.2), ("strain", 23.3, 3.4))
 
 
 def decode(source: Path, filters: str) -> array:
@@ -43,27 +44,27 @@ def main() -> None:
     if hashlib.sha256(NORMAL.read_bytes()).hexdigest() != NORMAL_SHA256:
         raise SystemExit("Normal EVA source changed; review the loudness reference.")
     mask = decode(SOURCES / "gas_mask_breath_cc0.mp3",
-                  "atrim=start=4.6:end=19.6,asetpts=PTS-STARTPTS,highpass=f=140,lowpass=f=3400")
+                  "highpass=f=180,lowpass=f=3000")
     strain = decode(SOURCES / "scared_heavy_breathing_cc0.mp3",
                     "highpass=f=180,lowpass=f=3000,equalizer=f=1100:t=q:w=1.1:g=2")
-    if len(mask) != DURATION * RATE:
-        raise SystemExit("Mask window length does not match the runtime clip.")
     strain_gain = rms(mask) / rms(strain)
     processed = array("f")
-    for i, sample in enumerate(mask):
-        t = i / RATE
-        value = sample
-        for output_start, source_start, duration in STRAINED_BREATHS:
-            local = t - output_start
-            if 0 <= local < duration:
-                weight = math.sin(math.pi * local / duration) ** 2
-                strained = strain[int((source_start + local) * RATE)] * strain_gain
-                # Duck the mask within each inhalation to blend one performance.
-                value = sample * (1 - 0.65 * weight) + strained * 0.90 * weight
-        value = 0.85 * value + 0.15 * math.tanh(value * 2) / 2
-        # Complementary two-second ramps match the client's overlapping clips.
-        fade = min(1.0, t / 2, (DURATION - t) / 2)
-        processed.append(value * fade)
+    for source, start, duration in SEGMENTS:
+        recording = mask if source == "mask" else strain
+        source_gain = 1.0 if source == "mask" else strain_gain
+        first = round(start * RATE)
+        count = round(duration * RATE)
+        segment = recording[first:first + count]
+        if len(segment) != count:
+            raise SystemExit("A selected breathing segment exceeds its recording.")
+        for i, sample in enumerate(segment):
+            value = sample * source_gain
+            value = 0.85 * value + 0.15 * math.tanh(value * 2) / 2
+            # Separate short fades, not a crossfade: adjacent takes never overlap.
+            fade = min(1.0, i / (0.1 * RATE), (count - 1 - i) / (0.1 * RATE))
+            processed.append(value * fade)
+    if len(processed) != DURATION * RATE:
+        raise SystemExit("Selected segments do not total the intended loop length.")
 
     target_rms = rms(decode(NORMAL, "anull"))
     gain = min(target_rms / rms(processed), 0.70 / max(abs(x) for x in processed))

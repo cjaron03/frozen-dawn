@@ -27,13 +27,22 @@ Retained inputs:
 - `scared_heavy_breathing_cc0.mp3`, SHA-256
   `3a6ddf5c6a97f63e633c53f4c7dfeef1348682879c2e3071fdf076a614a15151`.
 
-Processing uses the mask recording's 4.6–19.6 second window. Three smoothly
-weighted strained passages begin at output seconds 1.5, 6.0 and 10.1, using
-source seconds 10.4, 17.4 and 23.8 for 2.0, 2.3 and 2.4 seconds respectively.
-The mask is ducked by up to 65 percent during these passages. Narrow-band EQ,
-restrained saturation and two-second entrance/exit fades create the final
-15-second loop, matching the runtime's two-second overlap. Loudness targets
-the original normal-EVA recording, with a pre-encoding peak ceiling of 0.70.
+Processing alternates complete source passages in this sequence:
+
+| Output seconds | Recording | Source seconds |
+| --- | --- | --- |
+| 0–4.1 | Gas Mask breath | 5.0–9.1 |
+| 4.1–7.4 | Scared Male Heavy Breathing | 17.4–20.7 |
+| 7.4–11.6 | Gas Mask breath | 9.1–13.3 |
+| 11.6–15.0 | Scared Male Heavy Breathing | 23.3–26.7 |
+
+Each passage has separate 100 ms entrance/exit fades. No source takes are
+summed or crossfaded; one recording contributes to each output sample.
+Narrow-band EQ and restrained saturation shape the final fifteen-second clip.
+The client plays one continuously looping emergency sound instance, with no
+overlapping clip scheduler. Loudness targets the original normal-EVA recording,
+with a pre-encoding peak ceiling of 0.70. This replaces the earlier additive
+mix after the owner's report that multiple breaths were audible together.
 
 Regenerate with `python3 tools/audio_sources/emergency_eva/generate_breathing.py`
 (Python standard library and FFmpeg's native Vorbis encoder). Input hashes are

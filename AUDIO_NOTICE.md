@@ -35,7 +35,7 @@ The following groups contain CC0 recordings, source-site royalty-free material, 
   Breathing" by casiba842 (https://freesound.org/people/casiba842/sounds/554307/).
   Both recordings are CC0 1.0 Universal
   (https://creativecommons.org/publicdomain/zero/1.0/). The emergency loop trims,
-  filters, mixes and fades these recordings; voluntary credits and source hashes
+  filters, sequences and fades these recordings; voluntary credits and source hashes
   are retained in [its ledger](tools/audio_sources/emergency_eva/SOURCES.md).
 - Remnant
 - Resonant
