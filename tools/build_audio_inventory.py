@@ -34,9 +34,9 @@ OWNER_INTERFACE_PATHS = {
 def classify(path: str) -> tuple[str, str, str]:
     if path == "ambient/eva_emergency_breathing.ogg":
         return (
-            "emergency_eva_owner_derivative",
+            "emergency_eva_cc0_mix",
             "tools/audio_sources/emergency_eva/SOURCES.md",
-            "Frozen Dawn original",
+            "CC0-derived",
         )
     if path in VOICE_PATHS:
         return (

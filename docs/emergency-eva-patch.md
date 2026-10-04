@@ -76,7 +76,7 @@ Final build and smoke jar SHA-256: `3ae293d11af0fef1e9f65184624b6800dcda67cd5e33
 
 Live Continuity handoff: Quick Play opened the exact new world. One-time preparation succeeded (`#stage=1`, `#prepared=1`), and the log confirmed the real bed registration/removal before READY. Player Dev is Creative at `(320.5,95,-15.5)`; outdoor world spawn is `(0,80,0)`. The client is paused in the prepared world and no death/start was dispatched. Session `65218`, launch log `build/emergency-eva-evidence/continuity/client-launch.log`, read-only snapshot `live-ready.json`, and ready-score response are preserved. Startup/world-generation heartbeat timeouts appeared in the log; subsequent fresh status, snapshot and score reads succeeded. Owner HUD/audio/recovery acceptance is still pending.
 
-## Emergency filter breathing
+## Emergency filter breathing — initial version
 
 Emergency life support now plays a processed derivative of the owner's existing
 EVA breathing recording: narrower filter bandwidth, dry papery rasp and slight
@@ -100,3 +100,35 @@ Build and smoke jar SHA-256:
 The previous client was already closed. Its saved Continuity world and client
 log were backed up before relaunching at the title screen for this sound pass.
 The branch remains local.
+
+## Combined emergency breathing — current sound
+
+The owner selected a combination of the two researched CC0 recordings. The
+emergency loop now uses Nuclearoid's GP-5 gas-mask recording with three short
+passages from casiba842's scared, uneven breathing performance. The mask layer
+ducks during those passages to blend them into one performance. Band-limited
+EQ, restrained saturation and two-second fades make a fifteen-second clip for
+the existing thirteen-second start interval. The original normal EVA recording
+remains the loudness reference and is unchanged.
+
+The retained inputs, exact preview URLs, source hashes, retrieval dates,
+individual CC0 evidence and deterministic processing are in
+`tools/audio_sources/emergency_eva/`. The runtime asset is now classified as
+CC0-derived in the inventory; both creators and license are credited in the
+packaged `AUDIO_NOTICE.md`.
+
+Full build passed with 650 unit tests and existing Gradle deprecation warnings.
+Decoded duration is 15.000 seconds, RMS -23.959 dBFS and peak 0.7074. Simulated
+thirteen-second overlapping playback also peaks at 0.7074. Packaged OGG bytes,
+normal-recording preservation, inventory hash and both creators' credits were
+verified. Human listening acceptance remains pending; native survival checks
+were not rerun for this asset/notice change.
+
+Build and smoke jar SHA-256:
+`e5519285ea7771e9fc3f056f67dc07b8438c88e28369e62ccfa614c3ab442ce2`.
+Evidence, build log and MP3 preview are in
+`build/emergency-eva-evidence/combined-breathing/`. A fresh bridge heartbeat
+confirmed the title screen before the closed Continuity world and client log
+were backed up and the owning client restarted. Open **ORSA Continuity - Phase
+6** to hear the emergency mix; its saved test progress is preserved. The branch
+remains local while the owner tests.

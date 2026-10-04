@@ -1,0 +1,66 @@
+[
+  {
+    "creator": "Nuclearoid",
+    "asset_id": "435825",
+    "source_page": "https://freesound.org/people/Nuclearoid/sounds/435825/",
+    "download_url": "https://cdn.freesound.org/previews/435/435825_8915763-hq.mp3",
+    "download_filename": "435825_8915763-hq.mp3",
+    "local_source": "tools/audio_sources/emergency_eva/gas_mask_breath_cc0.mp3",
+    "sha256": "f8c6ca18865381e58ff613d23a6e1f87028628ec757b388922a289aea6a8dbb8",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_evidence": "build/emergency-eva-evidence/strained-breathing-candidates/435825-source-page.html",
+    "retrieved_utc": "2026-10-04T08:41:05.441802+00:00",
+    "role": "Emergency EVA breathing loop; mask base or intermittent strained inhalations",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 1,
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "41.156984"
+      }
+    },
+    "license_evidence_excerpt": "Creative Commons 0; source page links to the CC0 1.0 public-domain dedication."
+  },
+  {
+    "creator": "casiba842",
+    "asset_id": "554307",
+    "source_page": "https://freesound.org/people/casiba842/sounds/554307/",
+    "download_url": "https://cdn.freesound.org/previews/554/554307_10081166-hq.mp3",
+    "download_filename": "554307_10081166-hq.mp3",
+    "local_source": "tools/audio_sources/emergency_eva/scared_heavy_breathing_cc0.mp3",
+    "sha256": "3a6ddf5c6a97f63e633c53f4c7dfeef1348682879c2e3071fdf076a614a15151",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_evidence": "build/emergency-eva-evidence/strained-breathing-candidates/554307-source-page.html",
+    "retrieved_utc": "2026-10-04T08:41:13.405448+00:00",
+    "role": "Emergency EVA breathing loop; mask base or intermittent strained inhalations",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 2,
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "36.249660"
+      }
+    },
+    "license_evidence_excerpt": "Creative Commons 0; source page links to the CC0 1.0 public-domain dedication."
+  }
+]
