@@ -143,7 +143,7 @@ public final class SuitIntegrityClient {
                 && minecraft.player.getItemBySlot(EquipmentSlot.HEAD).is(ModItems.EMERGENCY_EVA_HELMET.get())
                 && EmergencyEvaHandler.matchesIssue(minecraft.player,
                         minecraft.player.getItemBySlot(EquipmentSlot.HEAD))) {
-            renderEmergencyTape(graphics);
+            EmergencyEvaVisor.render(graphics);
         }
         if (patchTicks >= 0 && patchDurationTicks > 0) {
             renderPatchProgress(graphics, minecraft);
@@ -152,25 +152,6 @@ public final class SuitIntegrityClient {
 
     public static int punctures() {
         return punctures;
-    }
-
-    /** Pixel-drawn silver repair tape, with torn ends and folded cloth backing. */
-    private static void renderEmergencyTape(GuiGraphics graphics) {
-        int pixel = Math.max(1, Math.min(2, graphics.guiWidth() / 240));
-        int x = graphics.guiWidth() - 36 * pixel - 12;
-        int y = Math.max(18, graphics.guiHeight() / 10);
-        for (int column = 0; column < 36; column++) {
-            int top = 3 - column / 12;
-            int endTear = column == 0 || column == 35 ? 2 : column == 1 || column == 34 ? 1 : 0;
-            for (int row = top + endTear; row < top + 8 - endTear; row++) {
-                int color = row == top ? 0xF0C7CFCA : row == top + 7 ? 0xF04B5351 : 0xF09BA49F;
-                if ((column * 5 + row * 7) % 13 == 0) color = 0xF0B2BAB5;
-                if (row == top + 4 && column > 7 && column < 29) color = 0xF0727D77;
-                if (column == 28 && row > top + 1 && row < top + 6) color = 0xF0C0C8C3;
-                graphics.fill(x + column * pixel, y + row * pixel,
-                        x + (column + 1) * pixel, y + (row + 1) * pixel, color);
-            }
-        }
     }
 
     public static float oxygenRatio() {

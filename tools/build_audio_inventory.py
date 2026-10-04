@@ -38,6 +38,8 @@ def classify(path: str) -> tuple[str, str, str]:
             "tools/audio_sources/emergency_eva/SOURCES.md",
             "CC0-derived",
         )
+    if path in {"ambient/eva_emergency_fan.ogg", "ui/suit/emergency_regulator.ogg", "ui/suit/emergency_shutdown.ogg"}:
+        return ("emergency_eva_hardware_procedural", "tools/audio_sources/emergency_eva/HARDWARE.md", "Frozen Dawn original")
     if path in VOICE_PATHS:
         return (
             "generated_voice",

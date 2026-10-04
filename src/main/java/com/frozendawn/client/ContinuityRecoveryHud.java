@@ -95,7 +95,7 @@ public final class ContinuityRecoveryHud {
         }
         Component hint = text("switch", TARGET_KEY.getTranslatedKeyMessage());
         int x = TemperatureHud.HUD_X;
-        int y = TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + 26;
+        int y = AirStatusHud.bottomY() + 2;
         int maxWidth = Math.max(60, graphics.guiWidth() - x * 2);
         int textWidth = Math.max(Math.max(mc.font.width(header), mc.font.width(status)),
                 Math.max(mc.font.width(reading), mc.font.width(hint)));

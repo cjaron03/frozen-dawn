@@ -27,6 +27,7 @@ public class EvaSuitAmbience {
     private static TickableWindSound currentSound = null;
     private static TickableWindSound previousSound = null;
     private static TickableBreathingSound emergencySound = null;
+    private static TickableBreathingSound emergencyFan = null;
     private static SimpleSoundInstance suffocateSound = null;
     private static int ticksUntilNext = 0;
     private static boolean wasSuffocating = false;
@@ -35,7 +36,7 @@ public class EvaSuitAmbience {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.isPaused()) {
+        if (mc.level == null || mc.player == null || !mc.player.isAlive() || mc.isPaused()) {
             stopAll(mc);
             resetSuffocationState(mc);
             return;
@@ -87,6 +88,15 @@ public class EvaSuitAmbience {
             emergencySound.setTargetVolume(TARGET_VOLUME * breathingMultiplier,
                     breathingMultiplier < 1.0F ? 0.10F : 0.035F);
             emergencySound.setTargetPitch(MasterArchitectSeverTelegraph.evaPitchMultiplier());
+            if (emergencyFan == null || emergencyFan.isStopped()) {
+                emergencyFan = new TickableBreathingSound(ModSounds.EVA_EMERGENCY_FAN.get(), 0.10F);
+                mc.getSoundManager().play(emergencyFan);
+            }
+            float remaining = EmergencyEvaHandler.remainingTicks(mc.player)
+                    / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
+            emergencyFan.setTargetVolume((0.08F + (1.0F - remaining) * 0.04F) * breathingMultiplier,
+                    breathingMultiplier < 1.0F ? 0.10F : 0.025F);
+            emergencyFan.setTargetPitch(0.96F + remaining * 0.04F);
             return;
         }
         stopEmergency(mc);
@@ -139,6 +149,10 @@ public class EvaSuitAmbience {
     }
 
     private static void stopEmergency(Minecraft mc) {
+        if (emergencyFan != null) {
+            mc.getSoundManager().stop(emergencyFan);
+            emergencyFan = null;
+        }
         if (emergencySound != null) {
             mc.getSoundManager().stop(emergencySound);
             emergencySound = null;

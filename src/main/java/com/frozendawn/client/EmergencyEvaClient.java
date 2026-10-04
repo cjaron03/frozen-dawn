@@ -23,6 +23,7 @@ public final class EmergencyEvaClient {
     private static int shelterNoticeDelay;
     private static int beepCooldown;
     private static int creakCooldown;
+    private static int previousReserve = -1;
     private EmergencyEvaClient() {}
 
     @SubscribeEvent
@@ -33,6 +34,7 @@ public final class EmergencyEvaClient {
         pendingShelterNotice = null;
         beepCooldown = 0;
         creakCooldown = 0;
+        previousReserve = -1;
     }
 
     @SubscribeEvent
@@ -51,11 +53,16 @@ public final class EmergencyEvaClient {
             announcedIssue = state.issue();
             beepCooldown = 0;
             creakCooldown = 0;
+            previousReserve = state.remainingTicks();
             // Only a fresh reserve can truthfully announce ten minutes. Returning
             // to a partly spent issue after login must not replay that promise.
             pendingVoiceIssue = state.remainingTicks() >= com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS - 40
                     ? state.issue() : null;
             activationVoiceDelay = 20;
+            if (EmergencyEvaHandler.hasLifeSupport(mc.player)) {
+                mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                        ModSounds.EVA_EMERGENCY_REGULATOR.get(), 1.0F, 0.25F));
+            }
             beep(0.65F, 0.85F);
         }
         if (pendingVoiceIssue != null && --activationVoiceDelay <= 0) {
@@ -79,6 +86,14 @@ public final class EmergencyEvaClient {
         }
         if (beepCooldown > 0) beepCooldown--;
         if (creakCooldown > 0) creakCooldown--;
+        if (previousReserve > 0 && state.remainingTicks() == 0) {
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                    ModSounds.EVA_EMERGENCY_SHUTDOWN.get(), 1.0F, 0.35F));
+            MasterArchitectFloodClient.showWarningSuitDialogue("ui.frozendawn.suit.emergency_eva_shutdown");
+            pendingVoiceIssue = null;
+            pendingShelterNotice = null;
+        }
+        previousReserve = state.remainingTicks();
         int seconds = (state.remainingTicks() + 19) / 20;
         if (seconds > 0 && seconds <= 120 && beepCooldown == 0) {
             beep(seconds <= 15 ? 0.85F : 0.65F, seconds <= 60 ? 1.16F : 1.0F);

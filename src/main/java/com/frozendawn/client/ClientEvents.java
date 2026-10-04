@@ -33,6 +33,7 @@ import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
 import com.frozendawn.client.renderer.ArchivistRenderer;
 import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
+import com.frozendawn.client.renderer.EmergencyEvaSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.particle.AggregateConvergenceParticle;
@@ -279,6 +280,7 @@ public class ClientEvents {
             PlayerRenderer renderer = event.getSkin(skin);
             if (renderer != null) {
                 renderer.addLayer(new HearthrotSuitLayer(renderer));
+                renderer.addLayer(new EmergencyEvaSuitLayer(renderer));
             }
         }
     }

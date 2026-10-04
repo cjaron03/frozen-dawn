@@ -167,7 +167,7 @@ Evidence, preview, preserved feedback and client launch log are in
 was checked before backing up the closed Continuity save and restarting only
 the owning client. The branch remains local.
 
-## Cough/gasp breathing and taped visor — current presentation
+## Cough/gasp breathing and taped visor — first presentation
 
 The owner requested coughing, stronger inhales and a piece of pixelated duct
 tape on the first-person visor. The sound sequence is now 42 seconds: mask and
@@ -202,3 +202,80 @@ Evidence, source-page snapshots, audio preview and tape close-up are in
 `build/emergency-eva-evidence/cough-gasp/`. The owner closed the client; its
 latest Continuity save and log were preserved before relaunch at the title
 screen. No test stage or reserve reset was dispatched. Branch remains local.
+
+
+## RETURN ONLY suit presentation — current local patch
+
+Owner feedback preserved before redesign: “eh it doesnt look realistic. looks
+too small.” The owner requested the full presentation upgrade, reinforced
+Minecraft pixel art, then asked to leave the client closed overnight.
+
+The first-person tape now occupies 33 percent of GUI width across the
+upper-right outer visor. It has torn edges, blocky folds, dirty adhesive and a
+lifted end. The texture was generated with OpenAI image generation and then
+revised into coarse Minecraft-style pixel art; it is retained unchanged, with
+nearest-neighbor sampling explicitly enabled. This is AI-assisted art rather
+than the earlier hand-coded pattern. Its source/prompt summary and hash are
+in `tools/visual_sources/emergency_eva/SOURCES.md`; `ASSETS.md` distinguishes it
+from owner-authored interface art. Existing matching-helmet, first-person,
+overlay-option and intro/HUD visibility guards apply. Tape remains visible on
+spent gear. It represents repair to the protective outer visor.
+
+Original model geometry adds a compact stepped reserve bottle, cap, exposed
+regulator, hose, straps, amber pull-tab, ORSA-blue pack-label stripe, patched
+chest/arm/leg panels, boot seams, helmet collar and a small exterior visor
+repair. Equipped-item identity drives third-person rendering, including remote
+players, without depending on owner-only attachment sync. Both player skin
+renderers get the layer. Visual fit and remote multiplayer appearance still
+need owner acceptance; compilation does not validate those.
+
+Subtle cosmetic condensation develops with sustained sprinting and rises a
+little as reserve falls. It dissipates gradually. Fog is confined to the
+outer 6 percent of the sides below the upper third and 9 percent of the bottom;
+center view and upper-left ORSA telemetry remain clear. It is rendered only
+with active life support. It imposes no new health, air or movement penalty.
+
+The shared ORSA air panel gains a third row: RETURN ONLY // PACK ONLINE,
+SEAL OPEN or PACK SPENT, based on actual reserve and full-seal state. The
+existing colors, frame, badge and timer remain. Navigation and typed suit
+dialogue offsets follow the panel's height, so the extra row has its own space.
+
+A quiet eight-second procedural fan loop adds bearing chatter and occasional
+regulator ticks under the existing single vocal loop. Its slight pitch change
+and volume track actual reserve, with Hearthrot attenuation preserved. It
+stops on loss of support, ordinary-EVA handoff, pause, death or world exit.
+The 42-second CC0 cough/gasp breathing asset and original normal breathing are
+byte-for-byte unchanged. Added regulator and shutdown click/purge cues are
+original synthesis with no recordings or speech. Reserve exhaustion triggers
+one shutdown cue and an existing-style typed warning: “Continuity reserve
+exhausted. Life support offline.” An expired login does not replay exhaustion.
+The existing low-reserve alarm sequence still precedes shutdown. The dependable
+10-minute service window and Continuity recovery mechanics are retained.
+
+Full Java 21 build passed: 650 unit tests, zero failures/errors/skips, plus
+8 existing architect gate tests. Pre-existing EventBusSubscriber and Gradle
+deprecation warnings remain. Packaged class/texture/audio bytes, subtitle
+registrations, all four CC0 creator credits and normal/emergency breathing
+preservation passed verification. New decoded fan peak is 0.1113, with a loop
+seam jump of 0.000159; regulator peak 0.1027 and shutdown peak 0.1877.
+No new unit tests were added for this cosmetic implementation. Native survival
+GameTests were not rerun; the prior mechanics checkpoint remains separate.
+Actual visual, listening and multiplayer acceptance remain pending.
+
+Build and installed smoke jar SHA-256:
+`3350e51f20189fd90641c26cf971d0cbff0623091db87c82ca740b2bd4c4b360`.
+Only the Frozen Dawn smoke jar was replaced. Evidence and closed-world backup
+are in `build/emergency-eva-evidence/return-only/`, including `verification.json`,
+`build.log`, `world-before-update`, `client-before-update.log` and the previous
+breathing asset. A process audit confirmed no owning lab client before backup.
+The latest saved ORSA Continuity world was preserved without a reset, reserve
+refresh, death command or test-stage advance. No client was launched, per the
+owner's latest instruction. Branch remains local, with no push.
+
+Next owner test: launch this checkout's Java 21 `./gradlew runClientLab
+--console=plain`, open the preserved ORSA Continuity - Phase 6 world, and use
+the normal agreed death/return scenario. Inspect tape in first person and the
+reserve pack in third person; sprint long enough to see peripheral moisture;
+check seal-open status by removing a suit piece and listen through a normal
+reserve expiry. Do not reset the existing scenario automatically. This is a
+future handoff, not evidence that the client has been launched or inspected.

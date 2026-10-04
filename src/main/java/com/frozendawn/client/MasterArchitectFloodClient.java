@@ -569,7 +569,7 @@ public final class MasterArchitectFloodClient {
         }
 
         int x = TemperatureHud.HUD_X;
-        int y = TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + 28
+        int y = AirStatusHud.bottomY() + 4
                 + ContinuityRecoveryHud.dialogueOffset();
         int panelWidth = Math.min(258, graphics.guiWidth() - x * 2);
         int textWidth = Math.max(80, panelWidth - 12);

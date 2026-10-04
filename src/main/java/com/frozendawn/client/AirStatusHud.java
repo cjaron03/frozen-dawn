@@ -25,6 +25,7 @@ public final class AirStatusHud {
     private static final int PADDING_X = 4;
     private static final int PADDING_Y = 2;
     private static final int PANEL_HEIGHT = 22;
+    private static final int EMERGENCY_PANEL_HEIGHT = 31;
     private static final int PULSE_DURATION = 12;
     private static final int MODULE_ICON_SIZE = 8;
     private static final int MODULE_ICON_GAP = 3;
@@ -38,6 +39,15 @@ public final class AirStatusHud {
     private static float displayedEtaSeconds = AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
 
     private AirStatusHud() {
+    }
+
+    /** Bottom of the shared air panel, including emergency pack diagnostics. */
+    static int bottomY() {
+        var player = Minecraft.getInstance().player;
+        boolean emergency = player != null && !player.isCreative() && !player.isSpectator()
+                && EmergencyEvaHandler.isWearingIssuedPiece(player);
+        return TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + PANEL_GAP
+                + (emergency ? EMERGENCY_PANEL_HEIGHT : PANEL_HEIGHT);
     }
 
     public static void reset() {
@@ -137,6 +147,12 @@ public final class AirStatusHud {
         } else {
             tankValue = "NONE";
         }
+        String packStatus = emergency ? Component.translatable(tankTelemetry.hasUsableO2()
+                ? EmergencyEvaHandler.hasLifeSupport(mc.player)
+                        ? "hud.frozendawn.emergency_eva.pack_online"
+                        : "hud.frozendawn.emergency_eva.seal_open"
+                : "hud.frozendawn.emergency_eva.pack_spent").getString() : "";
+        String returnOnly = Component.translatable("hud.frozendawn.emergency_eva.return_only").getString();
         int prefixWidth = mc.font.width(prefix);
         int labelWidth = mc.font.width(label);
         int tankPrefixWidth = mc.font.width(tankPrefix);
@@ -146,6 +162,7 @@ public final class AirStatusHud {
                 tankPrefixWidth + 3 + tankValueWidth
                         + (showModule ? MODULE_ICON_GAP + MODULE_ICON_SIZE : 0)
         );
+        if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(returnOnly + " // " + packStatus));
         int totalWidth = PADDING_X * 2
                 + ACCENT_WIDTH
                 + BADGE_GAP
@@ -163,7 +180,7 @@ public final class AirStatusHud {
         int badgeColor = mixTowardWhite(state.badgeColor(), 0.12F * pulse);
         int tankValueColor = getTankValueColor(tankTelemetry, pulse);
 
-        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, PANEL_HEIGHT,
+        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, emergency ? EMERGENCY_PANEL_HEIGHT : PANEL_HEIGHT,
                 accentColor, borderColor, badgeColor);
         int airTextY = y + PADDING_Y + 1;
         int tankTextY = airTextY + 9;
@@ -172,6 +189,15 @@ public final class AirStatusHud {
         graphics.drawString(mc.font, tankPrefix, textX, tankTextY, mixTowardWhite(TANK_PREFIX_COLOR, 0.08F * pulse), false);
         int tankValueX = textX + tankPrefixWidth + 3;
         graphics.drawString(mc.font, tankValue, tankValueX, tankTextY, tankValueColor, false);
+        if (emergency) {
+            int statusY = tankTextY + 9;
+            String purpose = returnOnly + " // ";
+            graphics.drawString(mc.font, purpose, textX, statusY, OrsaHudPanel.MUTED_COLOR, false);
+            int statusColor = !tankTelemetry.hasUsableO2() ? OrsaHudPanel.CRITICAL_COLOR
+                    : EmergencyEvaHandler.hasLifeSupport(mc.player) ? OrsaHudPanel.VALUE_COLOR
+                    : OrsaHudPanel.WARNING_COLOR;
+            graphics.drawString(mc.font, packStatus, textX + mc.font.width(purpose), statusY, statusColor, false);
+        }
         if (showModule) {
             renderModuleIcon(
                     graphics,

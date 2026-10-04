@@ -1,4 +1,31 @@
 {
+  "ambient.eva_emergency_fan": {
+      "subtitle": "subtitle.frozendawn.ambient.eva_emergency_fan",
+      "sounds": [
+          {
+              "name": "frozendawn:ambient/eva_emergency_fan",
+              "stream": true
+          }
+      ]
+  },
+  "ui.suit.emergency_regulator": {
+      "subtitle": "subtitle.frozendawn.ui.suit.emergency_regulator",
+      "sounds": [
+          {
+              "name": "frozendawn:ui/suit/emergency_regulator",
+              "stream": false
+          }
+      ]
+  },
+  "ui.suit.emergency_shutdown": {
+      "subtitle": "subtitle.frozendawn.ui.suit.emergency_shutdown",
+      "sounds": [
+          {
+              "name": "frozendawn:ui/suit/emergency_shutdown",
+              "stream": false
+          }
+      ]
+  },
   "ambient.wind_light": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.wind_light",
