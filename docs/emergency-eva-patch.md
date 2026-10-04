@@ -133,7 +133,7 @@ were backed up and the owning client restarted. Open **ORSA Continuity - Phase
 6** to hear the emergency mix; its saved test progress is preserved. The branch
 remains local while the owner tests.
 
-## Single-performance emergency breathing — current sound
+## Single-performance emergency breathing — first sequential version
 
 Owner feedback on the first mix: “it sounds like two or more breaths overlapped”.
 That mix did retain mask audio beneath the strained passages, and the existing
@@ -166,3 +166,39 @@ Evidence, preview, preserved feedback and client launch log are in
 `build/emergency-eva-evidence/single-breathing/`. The fresh title-screen heartbeat
 was checked before backing up the closed Continuity save and restarting only
 the owning client. The branch remains local.
+
+## Cough/gasp breathing and taped visor — current presentation
+
+The owner requested coughing, stronger inhales and a piece of pixelated duct
+tape on the first-person visor. The sound sequence is now 42 seconds: mask and
+strained breathing, a restrained double cough at 11.6 seconds, a 140 ms recovery
+pause, a sharper gasp at 12.74 seconds, more breathing and another gasp at 29.34
+seconds. Vocals stay sequential inside the existing single looping instance.
+Shared EQ and gentle compression keep the four performances close in tone and
+level. Added inputs are qubodup's **Strong Double Cough** and jawbutch's **Male
+Gasp 1.wav**, each verified as CC0 on its individual Freesound page. Their exact
+preview URLs, copies, source hashes, retrieval times and voluntary credits are
+retained with the source manifest and packaged audio notice.
+
+The emergency helmet now shows a dull silver-gray pixel-drawn tape strip across
+the upper-right visor edge, with torn ends, fibers, a dark crease and a lifted
+edge. It follows the helmet's matching issue, including after reserve expiry.
+It appears only in first person, follows the existing suit-overlay option and
+HUD visibility/intro suppression, and does not cover the center or left-side
+ORSA telemetry. Wearing emergency body pieces with a normal helmet does not
+show the tape. The patch is original code-drawn art; `visor-tape-closeup.png` is
+a magnified rendering of that exact pattern, not a live screenshot.
+
+Full build passed after both changes with 650 unit tests and existing Gradle
+deprecation warnings. The final audio is 42.000 seconds, RMS -23.909 dBFS and
+peak 0.4984, with loop-seam sample jump below 0.00003. Packaged audio, original
+normal-EVA preservation, all four creator credits and visor rendering class
+were verified. Human visual/listening acceptance and live multiplayer remain
+pending. Native survival checks were not rerun for this presentation change.
+
+Build and smoke jar SHA-256:
+`3578bb36195cced3a6e4a14d070cce936246e13bb843855b6f9137d8ec31bf4d`.
+Evidence, source-page snapshots, audio preview and tape close-up are in
+`build/emergency-eva-evidence/cough-gasp/`. The owner closed the client; its
+latest Continuity save and log were preserved before relaunch at the title
+screen. No test stage or reserve reset was dispatched. Branch remains local.

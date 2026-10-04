@@ -62,5 +62,69 @@
       }
     },
     "license_evidence_excerpt": "Creative Commons 0; source page links to the CC0 1.0 public-domain dedication."
+  },
+  {
+    "creator": "jawbutch",
+    "asset_id": "344407",
+    "source_page": "https://freesound.org/people/jawbutch/sounds/344407/",
+    "download_url": "https://cdn.freesound.org/previews/344/344407_4986214-hq.mp3",
+    "download_filename": "344407_4986214-hq.mp3",
+    "local_source": "tools/audio_sources/emergency_eva/male_gasp_cc0.mp3",
+    "sha256": "5d6b4cf6c9eafebd4ec7d33159629e4895ff0b7ba6ee27f2df9a8fb75223ed87",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_evidence": "build/emergency-eva-evidence/cough-gasp/344407-source-page.html",
+    "license_evidence_excerpt": "Creative Commons 0; individual source page links to CC0 1.0.",
+    "retrieved_utc": "2026-10-04T11:40:56.101423+00:00",
+    "role": "Emergency EVA recovery gasp",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "48000",
+          "channels": 2,
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "0.666667"
+      }
+    }
+  },
+  {
+    "creator": "qubodup",
+    "asset_id": "743360",
+    "source_page": "https://freesound.org/people/qubodup/sounds/743360/",
+    "download_url": "https://cdn.freesound.org/previews/743/743360_71257-hq.mp3",
+    "download_filename": "743360_71257-hq.mp3",
+    "local_source": "tools/audio_sources/emergency_eva/strong_double_cough_cc0.mp3",
+    "sha256": "1dba44a22290fd52c52b19b99619a0a72372fbc71ffeaf244157926c46870c88",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_evidence": "build/emergency-eva-evidence/cough-gasp/743360-source-page.html",
+    "license_evidence_excerpt": "Creative Commons 0; individual source page links to CC0 1.0.",
+    "retrieved_utc": "2026-10-04T11:40:58.134127+00:00",
+    "role": "Emergency EVA restrained double cough",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "22050",
+          "channels": 1,
+          "side_data_list": [
+            {}
+          ]
+        }
+      ],
+      "format": {
+        "duration": "1.084762"
+      }
+    }
   }
 ]

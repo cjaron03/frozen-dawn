@@ -9,6 +9,7 @@ Homo Reliquus adds processed field recordings, source-site material, and generat
 - ORSA logo, O-mark, masthead, motto treatment, boot logo, and Patchouli masthead art
 - ORSA First Awakening intro art, including the masthead base and animated yellow stripe overlays
 - Terminal, thermal visor, HUD, diagnostic, and ORSA boot interface presentation assets
+- Emergency EVA visor repair-tape pixel pattern drawn by `SuitIntegrityClient`
 - All GUI textures in `src/main/resources/assets/frozendawn/textures/gui/`
 - All final replacement UI textures shipped under `src/main/resources/assets/minecraft/`, including HUD, container, widget, advancement, and splash presentation assets
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sequence verified CC0 mask and strained breaths, with no overlapping takes."""
+"""Sequence CC0 mask breathing, strained inhales, a cough and recovery gasps."""
 from array import array
 import hashlib
 import math
@@ -14,13 +14,20 @@ OUTPUT = NORMAL.with_name("eva_emergency_breathing.ogg")
 SOURCE_HASHES = {
     "gas_mask_breath_cc0.mp3": "f8c6ca18865381e58ff613d23a6e1f87028628ec757b388922a289aea6a8dbb8",
     "scared_heavy_breathing_cc0.mp3": "3a6ddf5c6a97f63e633c53f4c7dfeef1348682879c2e3071fdf076a614a15151",
+    "male_gasp_cc0.mp3": "5d6b4cf6c9eafebd4ec7d33159629e4895ff0b7ba6ee27f2df9a8fb75223ed87",
+    "strong_double_cough_cc0.mp3": "1dba44a22290fd52c52b19b99619a0a72372fbc71ffeaf244157926c46870c88",
 }
 NORMAL_SHA256 = "d3f1dfe47be702ad567bb197adac85fad695bd587553349bba64a6a15ade0adb"
 RATE = 48000
-DURATION = 15
+DURATION = 42
 # Source, start, duration. Takes alternate; only one contributes to each sample.
-SEGMENTS = (("mask", 5.0, 4.1), ("strain", 17.4, 3.3),
-            ("mask", 9.1, 4.2), ("strain", 23.3, 3.4))
+SEGMENTS = (
+    ("mask", 5.0, 4.1), ("strain", 17.4, 3.3), ("mask", 9.1, 4.2),
+    ("cough", 0.02, 1.0), ("pause", 0, 0.14), ("gasp", 0.03, 0.6),
+    ("strain", 23.3, 3.4), ("mask", 14.0, 4.5), ("strain", 8.0, 3.5),
+    ("mask", 18.8, 4.6), ("gasp", 0.03, 0.6), ("strain", 27.0, 3.3),
+    ("mask", 23.3, 4.8), ("strain", 30.0, 3.96),
+)
 
 
 def decode(source: Path, filters: str) -> array:
@@ -47,21 +54,40 @@ def main() -> None:
                   "highpass=f=180,lowpass=f=3000")
     strain = decode(SOURCES / "scared_heavy_breathing_cc0.mp3",
                     "highpass=f=180,lowpass=f=3000,equalizer=f=1100:t=q:w=1.1:g=2")
-    strain_gain = rms(mask) / rms(strain)
+    recordings = {
+        "mask": mask,
+        "strain": strain,
+        "cough": decode(SOURCES / "strong_double_cough_cc0.mp3",
+                        "highpass=f=180,lowpass=f=3000"),
+        "gasp": decode(SOURCES / "male_gasp_cc0.mp3",
+                       "highpass=f=180,lowpass=f=3000,equalizer=f=1100:t=q:w=1.1:g=2"),
+    }
+    # Match the mask's tone/level; keep the cough restrained and the inhale clear.
+    gains = {name: rms(mask) / rms(samples) for name, samples in recordings.items()}
+    gains["cough"] *= 0.80
+    gains["gasp"] *= 1.10
     processed = array("f")
     for source, start, duration in SEGMENTS:
-        recording = mask if source == "mask" else strain
-        source_gain = 1.0 if source == "mask" else strain_gain
-        first = round(start * RATE)
         count = round(duration * RATE)
+        if source == "pause":
+            processed.extend(array("f", [0.0]) * count)
+            continue
+        recording = recordings[source]
+        source_gain = gains[source]
+        first = round(start * RATE)
         segment = recording[first:first + count]
         if len(segment) != count:
             raise SystemExit("A selected breathing segment exceeds its recording.")
+        fade_seconds = 0.015 if source == "cough" else 0.025 if source == "gasp" else 0.08
         for i, sample in enumerate(segment):
             value = sample * source_gain
+            # Common gentle compression keeps sharper inhales audible without
+            # forcing every other breath quieter to accommodate their peaks.
+            if abs(value) > 0.08:
+                value = math.copysign(0.08 + (abs(value) - 0.08) / 3, value)
             value = 0.85 * value + 0.15 * math.tanh(value * 2) / 2
             # Separate short fades, not a crossfade: adjacent takes never overlap.
-            fade = min(1.0, i / (0.1 * RATE), (count - 1 - i) / (0.1 * RATE))
+            fade = min(1.0, i / (fade_seconds * RATE), (count - 1 - i) / (fade_seconds * RATE))
             processed.append(value * fade)
     if len(processed) != DURATION * RATE:
         raise SystemExit("Selected segments do not total the intended loop length.")

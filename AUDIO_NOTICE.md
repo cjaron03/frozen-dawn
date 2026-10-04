@@ -33,7 +33,10 @@ The following groups contain CC0 recordings, source-site royalty-free material, 
 - Emergency EVA mask/strained breathing: "Gas Mask breath" by Nuclearoid
   (https://freesound.org/people/Nuclearoid/sounds/435825/) and "Scared Male Heavy
   Breathing" by casiba842 (https://freesound.org/people/casiba842/sounds/554307/).
-  Both recordings are CC0 1.0 Universal
+  The cough and recovery inhales use "Strong Double Cough" by qubodup
+  (https://freesound.org/people/qubodup/sounds/743360/) and "Male Gasp 1.wav" by
+  jawbutch (https://freesound.org/people/jawbutch/sounds/344407/).
+  All four recordings are CC0 1.0 Universal
   (https://creativecommons.org/publicdomain/zero/1.0/). The emergency loop trims,
   filters, sequences and fades these recordings; voluntary credits and source hashes
   are retained in [its ledger](tools/audio_sources/emergency_eva/SOURCES.md).
