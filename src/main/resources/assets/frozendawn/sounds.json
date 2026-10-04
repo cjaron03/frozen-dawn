@@ -97,6 +97,16 @@
       }
     ]
   },
+  "ambient.eva_emergency_breathing": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/eva_emergency_breathing",
+        "stream": true
+      }
+    ]
+  },
   "ui.suit.puncture_warning": {
     "subtitle": "subtitle.frozendawn.ui.suit.puncture_warning",
     "sounds": [

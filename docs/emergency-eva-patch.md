@@ -75,3 +75,28 @@ Final verification: full build and `architectVerify` passed with 650 unit tests,
 Final build and smoke jar SHA-256: `3ae293d11af0fef1e9f65184624b6800dcda67cd5e3320716b5683a2458dd8ee`. Evidence is in `build/emergency-eva-evidence/continuity/verification.json`, `gametest-report.xml`, `verify.log`, `preparation-tests.log` and `client-launch.log`. The distributed jar includes the new manual entry and existing voice, with no lab classes. Human visual/audio acceptance and live multiplayer remain pending. Existing Gradle deprecation warnings remain. Branch remains local while the owner tests.
 
 Live Continuity handoff: Quick Play opened the exact new world. One-time preparation succeeded (`#stage=1`, `#prepared=1`), and the log confirmed the real bed registration/removal before READY. Player Dev is Creative at `(320.5,95,-15.5)`; outdoor world spawn is `(0,80,0)`. The client is paused in the prepared world and no death/start was dispatched. Session `65218`, launch log `build/emergency-eva-evidence/continuity/client-launch.log`, read-only snapshot `live-ready.json`, and ready-score response are preserved. Startup/world-generation heartbeat timeouts appeared in the log; subsequent fresh status, snapshot and score reads succeeded. Owner HUD/audio/recovery acceptance is still pending.
+
+## Emergency filter breathing
+
+Emergency life support now plays a processed derivative of the owner's existing
+EVA breathing recording: narrower filter bandwidth, dry papery rasp and slight
+valve flutter. The original normal-EVA recording is unchanged. Breath pacing
+and the 15.808-second clip length are retained; decoded RMS is matched within
+0.001 dB of the original. Rasp follows the breath rather than running as a
+constant hiss. Existing Hearthrot attenuation and sever pitch cues still apply.
+Changing between emergency and ordinary life support immediately fades the
+current clip and starts the corresponding filter sound. Existing vacuum,
+breathability and usable-air gates still determine whether breathing plays.
+
+The source hash, deterministic processing script and original-asset terms are
+recorded in `tools/audio_sources/emergency_eva/SOURCES.md`; the shipped inventory
+now contains 302 records. Full build passed with 650 unit tests and existing
+Gradle deprecation warnings. Packaged sound registration, original preservation,
+duration, peak and loudness checks passed. Native survival tests were not rerun
+for this client/audio-only change. Listening acceptance remains with the owner.
+Evidence and an MP3 preview are in `build/emergency-eva-evidence/filter-breathing/`.
+Build and smoke jar SHA-256:
+`11b528d03c5022e38ad13af5f500dcf21f47ab3b16981aff04bb41409f5bcfb9`.
+The previous client was already closed. Its saved Continuity world and client
+log were backed up before relaunching at the title screen for this sound pass.
+The branch remains local.

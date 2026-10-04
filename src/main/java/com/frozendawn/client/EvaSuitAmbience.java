@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.event.EmergencyEvaHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
@@ -28,6 +29,7 @@ public class EvaSuitAmbience {
     private static int ticksUntilNext = 0;
     private static boolean wasSuffocating = false;
     private static float currentBasePitch = 1.0F;
+    private static boolean emergencyBreathing = false;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -73,6 +75,14 @@ public class EvaSuitAmbience {
             return;
         }
 
+        boolean emergency = EmergencyEvaHandler.hasLifeSupport(mc.player);
+        if (emergency != emergencyBreathing) {
+            // Hand over immediately when changing rigs, rather than keeping
+            // the previous filter sound until the next fifteen-second clip.
+            stopAll(mc);
+            emergencyBreathing = emergency;
+        }
+
         // Update volume on current sound
         if (currentSound != null && !currentSound.isStopped()) {
             float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
@@ -91,7 +101,7 @@ public class EvaSuitAmbience {
         // Start next clip — old one may still be playing for overlap
         currentBasePitch = 0.98f + mc.level.random.nextFloat() * 0.04f;
         currentSound = new TickableWindSound(
-                ModSounds.EVA_BREATHING.get(),
+                emergencyBreathing ? ModSounds.EVA_EMERGENCY_BREATHING.get() : ModSounds.EVA_BREATHING.get(),
                 TARGET_VOLUME,
                 currentBasePitch * MasterArchitectSeverTelegraph.evaPitchMultiplier(),
                 CLIP_DURATION);
@@ -107,6 +117,7 @@ public class EvaSuitAmbience {
         }
         ticksUntilNext = 0;
         currentBasePitch = 1.0F;
+        emergencyBreathing = false;
     }
 
     private static void resetSuffocationState(Minecraft mc) {
