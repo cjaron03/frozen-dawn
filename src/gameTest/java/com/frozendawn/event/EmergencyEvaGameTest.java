@@ -217,7 +217,7 @@ public final class EmergencyEvaGameTest {
             helper.assertTrue(restored.remainingTicks() == expected.remainingTicks(),
                     "Reload never discards accrued fractional debit");
             var packet = new com.frozendawn.network.EmergencyEvaPayload(restored.issue(),
-                    restored.remainingTicks(), restored.exertionLoad());
+                    restored.remainingTicks(), restored.exertionLoad(), restored.wornTicks(), restored.thermalLoad());
             var bytes = io.netty.buffer.Unpooled.buffer();
             try {
                 com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
@@ -262,6 +262,72 @@ public final class EmergencyEvaGameTest {
                 helper.assertTrue(EmergencyEvaArmorItem.serviceTicks(piece) == 0,
                         "Equipment service bars agree with sprint exhaustion on the expiry tick");
             }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void emergencyEvaCoolingAgeHeatPersistenceAndRecovery(GameTestHelper helper) {
+        scene(helper, player -> {
+            setProgress(player, 1.0F);
+            EmergencyEvaHandler.issueKit(player);
+            var issue = player.getData(ModAttachments.EMERGENCY_EVA).issue();
+            player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 8000, 200, 5999, 0));
+            player.setSprinting(true);
+            player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.2, 0, 0));
+            EmergencyEvaHandler.tick(player);
+            var state = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertTrue(state.coolingDegraded() && state.thermalLoad() == 0,
+                    "Five-minute worn clock crosses without an instant heat penalty or reserve threshold dependency");
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(state.thermalLoad() > 0 && !state.highThermalLoad(), "Short escape remains below high heat");
+            player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 5000, 200, 7200, 0));
+            for (int i = 0; i < 200; i++) EmergencyEvaHandler.tick(player);
+            state = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertTrue(state.highThermalLoad(), "Sustained real server sprint accumulates internal heat");
+            var saved = state.serializeNBT(player.registryAccess());
+            var restored = new EmergencyEvaState();
+            restored.deserializeNBT(player.registryAccess(), saved);
+            helper.assertTrue(saved.equals(restored.serializeNBT(player.registryAccess()))
+                    && saved.equals(state.copy().serializeNBT(player.registryAccess())), "Reload and dimension copy retain clock, heat and debt");
+            var packet = new com.frozendawn.network.EmergencyEvaPayload(restored.issue(), restored.remainingTicks(),
+                    restored.exertionLoad(), restored.wornTicks(), restored.thermalLoad());
+            var bytes = io.netty.buffer.Unpooled.buffer();
+            try {
+                com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
+                helper.assertTrue(packet.equals(com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.decode(bytes)),
+                        "Real wire codec carries hot thermal state and actual worn age");
+            } finally { bytes.release(); }
+            player.setData(ModAttachments.EMERGENCY_EVA, restored);
+            helper.assertTrue(EmergencyEvaHandler.hasLifeSupport(player), "Heat does not disable thermal or air protection");
+            float health = player.getHealth();
+            player.tickCount = 40;
+            MobFreezeHandler.onEntityTick(new EntityTickEvent.Post(player));
+            for (int i = 0; i < 80; i++) suffocate(player);
+            helper.assertTrue(player.getHealth() == health, "Hot suit still prevents real cold and vacuum damage");
+            player.setSprinting(false);
+            for (int i = 0; i < 300; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.thermalLoad() == 0 && restored.exertionLoad() == 0,
+                    "Walking restores cool heat and normal metabolic draw");
+            player.setSprinting(true);
+            player.setKnownMovement(net.minecraft.world.phys.Vec3.ZERO);
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.thermalLoad() == 0, "Stationary sprint flag cannot produce heat");
+            for (var slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET})
+                player.setItemSlot(slot, ItemStack.EMPTY);
+            int age = restored.wornTicks();
+            int reserve = restored.remainingTicks();
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.wornTicks() == age && restored.remainingTicks() == reserve,
+                    "Removing all issued pieces pauses both clocks");
+            var legacy = saved.copy();
+            legacy.remove("wornTicks"); legacy.remove("thermalLoad");
+            restored.deserializeNBT(player.registryAccess(), legacy);
+            helper.assertTrue(restored.wornTicks() == EmergencyEvaState.SERVICE_TICKS - restored.remainingTicks()
+                    && restored.thermalLoad() == 0, "Legacy saves preserve reserve and migrate age without invented heat");
+            EmergencyEvaHandler.issueKit(player);
+            var fresh = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertTrue(fresh.wornTicks() == 0 && fresh.thermalLoad() == 0 && !fresh.coolingDegraded(),
+                    "A new death recovery kit begins with its own fresh coolant clock");
         });
     }
 

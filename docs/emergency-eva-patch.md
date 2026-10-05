@@ -477,3 +477,92 @@ the owning Java 21 `runClientLab` (terminal session 76241); the owner opens the
 existing world and tests sustained running, whole-screen fog, crisp instruments
 and FPS. No reset, reserve refill or replay advancement was dispatched. Commit
 stays local on `fix/emergency-eva-respawn`.
+
+
+## Aging cooling and condition advisory — 2026-10-05
+
+The owner approved recoverable internal heat after coolant degradation and the
+exact suit-condition voice/HUD warning. A fresh issue now announces activation,
+then waits for the ORSA channel to clear before delivering: “Warning. Reserve
+suit exceeds rated service life. Multiple field repairs detected. Cooling and
+filtration are degraded. Further failures are possible. Minimize exertion and
+proceed directly to shelter.” The new Piper en_US-amy-medium recording uses the
+existing ORSA profile. It is 14.733 seconds, decoded mono peak 0.5993, and its
+text matches both subtitle and typed warning exactly. The amber dialogue lasts
+20 seconds and shelter guidance follows afterward. New issue, death, logout,
+unequipping every issued piece or reserve exhaustion cancels the queued notice;
+a partly used kit does not replay the fresh-ten-minute activation promise.
+All 306 prior audio exports remain byte-for-byte unchanged; the new recording
+is the only added audio. License/manifest and shipped inventory include it.
+
+An independent saved worn-time clock reaches coolant depletion at 6,000 ticks,
+exactly five minutes of equipped use at normal tick rate. Extra oxygen debit
+cannot prematurely advance this clock. Reduced cooling becomes progressively
+less capable over the next minute (heat gain 1, then 2, then 3 units per moving
+sprint tick at thirty-second intervals). Heat is bounded at 1,200; high load is
+600. Once fully degraded, five seconds of sprinting from cool stays below high
+heat, ten seconds reaches the warning, and twenty seconds reaches maximum.
+Walking or resting removes two units per tick: maximum heat clears in thirty
+seconds. Removing all issued pieces pauses both reserve and worn age while
+heat recovers. A stationary sprint flag, riding or unsealed rig cannot generate
+internal sprint heat. Recovery restores heat headroom, not consumed coolant.
+
+The same cyan ORSA air panel gains one nine-pixel thermal row. It reports
+COOLING NOMINAL, COOLING DEGRADED, THERMAL LOAD HIGH // EASE PACE, SEAL OPEN or
+OFFLINE, using the existing muted/amber/critical palette. Navigation/dialogue
+stacking follows the panel's updated bottom. CP-025 warns about reduced cooling;
+CP-026 advises walking or resting when current heat is high, with a brief
+existing regulator beep. Current high heat can bypass routine diagnostic gaps,
+but reserve warnings retain priority. It can warn again only after genuine
+recovery below half the high threshold, avoiding threshold chatter. Historical
+coolant messages are skipped on login while the persistent row reports actual
+condition. Environmental temperature remains environmental temperature.
+
+Heat increases the existing full-screen condensation target and holds heavier,
+faster breathing through recovery. It reuses the single-voice fade/hysteresis
+path and the same cached one-quad mist, preserving the quiet fan and preventing
+new vocal overlap. Heat does not inject damage, remove cold/vacuum protection,
+change movement speed or add another oxygen debit. The existing exertion draw
+still settles to normal. Thermal cold protection lasts until the original
+reserve expires, so cooling weakness cannot recreate the respawn death trap.
+
+Worn age and heat are stored in issue NBT, copied during non-death cloning, and
+sent in the owner state packet. The changed codec requires matching updated
+client/server builds. Older saves lacking age infer it once from consumed
+reserve, keep the exact reserve/debt, and begin without invented heat. Fresh
+recovery issues begin at zero worn age and heat. New pure checks cover actual
+clock versus extra draw, short sprint tolerance, sustained accumulation/full
+recovery, unequipped age pause, unsealed movement and current warning priority.
+The required native case exercises server movement, save/copy, real packet
+roundtrip, hot-suit cold/vacuum protection, standing versus moving, removing
+gear, legacy migration and fresh issue. Existing walking-expiry and cold/vacuum
+gates remain required.
+
+Full Java 21 build passed 662 unit tests (zero failures/errors/skips) plus 8
+existing gate tests. Pre-existing EventBusSubscriber/Gradle deprecation warnings
+remain. Native gate result is recorded below when complete. Build and installed
+smoke jar SHA-256:
+`b415d39209bbdab798ea3c41c495874d79d6000556084fd4f0e2c4fae64296e1`.
+
+The owner confirmed the title screen; fresh bridge state confirmed the owning
+checkout with no loaded world. ORSA Continuity - Phase 6 and its log were backed
+up before stopping only its verified lab Java process. Evidence is in
+`build/emergency-eva-evidence/thermal-aging/`, including save/log, voice manifest
+and validation, build/native logs and verification JSON. Preserve this world;
+no reserve refill, death command, replay advance or accelerated time is
+authorized as part of installation. The owner tests visuals/audio and live FPS;
+native tests and packet roundtrips do not establish live multiplayer acceptance.
+The branch remains local on `fix/emergency-eva-respawn`.
+
+Native gate passed 236 GameTests and all 231 required cases/reports against
+the final source fingerprint. Artifacts are in
+`build/architect-reports/bf0b17e3-8caa-4e0c-9c57-c6b52ce037f8/`. The new hot-suit
+case passed its real server/NBT/codec/cold/vacuum checks. Before relaunch the
+saved world matched its backup byte-for-byte.
+
+The updated Java 21 lab client is running at the title screen (terminal session
+42714, fresh owning-checkout bridge heartbeat). Open ORSA Continuity - Phase 6
+to continue the saved test. A fresh death-respawn issue plays activation, then
+the new condition advisory and shelter guidance; the existing saved kit retains
+its consumed reserve and migrated age. Owner visual/audio acceptance remains
+pending. No push.

@@ -45,10 +45,12 @@ public final class EmergencyEvaVisor {
         if (sealed) {
             float reserve = EmergencyEvaHandler.remainingTicks(mc.player)
                     / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
-            float exertion = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity();
+            var state = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
+            float exertion = state.exertionIntensity();
             float age = Mth.clamp((1.0F - reserve - 0.10F) / 0.90F, 0.0F, 1.0F);
             float ageCurve = age * age * (3.0F - 2.0F * age);
-            target = Math.min(1.0F, 0.04F + 0.66F * ageCurve + 0.78F * exertion);
+            target = Math.min(1.0F, 0.04F + 0.66F * ageCurve + 0.78F * exertion
+                    + 0.45F * state.thermalIntensity());
         }
         condensation = Mth.lerp(target > condensation ? 0.010F : 0.002F, condensation, target);
     }

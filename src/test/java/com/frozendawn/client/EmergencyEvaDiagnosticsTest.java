@@ -77,6 +77,39 @@ class EmergencyEvaDiagnosticsTest {
         assertEquals(EmergencyEvaDiagnostics.Message.CRITICAL, diagnostics.pending(1000, true, true, true));
     }
 
+    @Test
+    void newHeatBypassesMaintenanceGapAndCanRewarnOnlyAfterRealRecovery() {
+        var diagnostics = new EmergencyEvaDiagnostics();
+        diagnostics.reset(12000, 0);
+        advance(diagnostics, true, 300);
+        assertEquals(EmergencyEvaDiagnostics.Message.COOLING,
+                diagnostics.pending(7000, true, false, false, true, false));
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.COOLING);
+        assertEquals(EmergencyEvaDiagnostics.Message.THERMAL,
+                diagnostics.pending(6900, true, true, true, true, true));
+        // Recover before a busy display accepts the warning: stale heat is dropped.
+        assertNull(diagnostics.pending(6800, true, false, false, true, false));
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.THERMAL);
+        for (int i = 0; i < 700; i++) diagnostics.tick(true, 600);
+        assertNull(diagnostics.pending(6700, true, false, false, true, true));
+        diagnostics.tick(true, 250);
+        assertEquals(EmergencyEvaDiagnostics.Message.THERMAL,
+                diagnostics.pending(6600, true, false, false, true, true));
+    }
+
+    @Test
+    void resumedCoolingWarningIsSkippedButCurrentHeatAndReserveRemainLegible() {
+        var diagnostics = new EmergencyEvaDiagnostics();
+        diagnostics.reset(5000, 7200);
+        advance(diagnostics, true, 300);
+        assertNull(diagnostics.pending(4900, true, false, false, true, false));
+        assertEquals(EmergencyEvaDiagnostics.Message.THERMAL,
+                diagnostics.pending(4800, true, false, false, true, true));
+        assertEquals(EmergencyEvaDiagnostics.Message.CRITICAL,
+                diagnostics.pending(1000, true, false, false, true, true));
+        assertNull(diagnostics.pending(0, true, true, true, true, true));
+    }
+
     private static EmergencyEvaDiagnostics fresh() {
         var diagnostics = new EmergencyEvaDiagnostics();
         diagnostics.reset(12000);

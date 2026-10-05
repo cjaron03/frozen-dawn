@@ -126,7 +126,7 @@ public final class EmergencyEvaHandler {
         if (mask != 0 && player.isAlive() && !player.isCreative() && !player.isSpectator()) {
             boolean running = player.isSprinting() && !player.isPassenger()
                     && player.getKnownMovement().horizontalDistanceSqr() > 0.001;
-            state.tickWorn(running);
+            state.tickWorn(running, hasLifeSupport(player));
         } else {
             state.recoverUnworn();
         }
@@ -204,6 +204,7 @@ public final class EmergencyEvaHandler {
     }
     private static void sync(ServerPlayer player) {
         var state = player.getData(ModAttachments.EMERGENCY_EVA);
-        PacketDistributor.sendToPlayer(player, new EmergencyEvaPayload(state.issue(), state.remainingTicks(), state.exertionLoad()));
+        PacketDistributor.sendToPlayer(player, new EmergencyEvaPayload(state.issue(), state.remainingTicks(),
+                state.exertionLoad(), state.wornTicks(), state.thermalLoad()));
     }
 }

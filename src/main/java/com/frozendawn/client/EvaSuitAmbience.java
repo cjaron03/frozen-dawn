@@ -81,7 +81,8 @@ public class EvaSuitAmbience {
 
         if (EmergencyEvaHandler.hasLifeSupport(mc.player)) {
             stopNormal(mc);
-            float effortTarget = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity();
+            var emergencyState = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
+            float effortTarget = Math.max(emergencyState.exertionIntensity(), emergencyState.thermalIntensity());
             emergencyEffort = net.minecraft.util.Mth.lerp(0.15F, emergencyEffort, effortTarget);
             float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
             updateEmergencyBreathing(mc, breathingMultiplier);

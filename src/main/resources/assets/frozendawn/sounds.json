@@ -168,6 +168,12 @@
       { "name": "frozendawn:ui/suit/emergency_eva_active", "stream": true }
     ]
   },
+  "ui.suit.emergency_eva_condition": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_condition",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_eva_condition", "stream": true }
+    ]
+  },
   "ui.suit.emergency_reserve": {
     "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
     "sounds": [

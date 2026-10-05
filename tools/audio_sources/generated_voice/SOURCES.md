@@ -123,3 +123,17 @@ through the same Piper `en_US-amy-medium` model and `orsa` profile. The owner's
 correction requires a gradual draw/recovery curve, so the announcement now
 states capacity as “up to” ten minutes and explicitly explains the extra draw.
 The source pipeline, attribution and CC BY-SA 4.0 notice are retained.
+
+
+## Emergency EVA condition notice
+
+`ui/suit/emergency_eva_condition.ogg` follows the activation announcement with
+the owner's approved warning about service age, field repairs and degraded
+cooling/filtration. The exact manifest text matches the typed HUD and subtitle.
+Generated locally with the existing Piper `en_US-amy-medium` model and `orsa`
+profile; only this new row was selected for generation. No macOS voice or
+external recording is used. The 20-second amber ORSA dialogue window exceeds
+the recording duration and permits reading after the typing animation. Existing
+audio files remain byte-for-byte unchanged. The shelter advisory waits until
+this window finishes. Attribution, modifications and CC BY-SA 4.0 distribution
+terms remain in `NOTICE.md`; the engine/model are not shipped.
