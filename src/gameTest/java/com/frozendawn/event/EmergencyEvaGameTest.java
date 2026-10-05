@@ -201,7 +201,7 @@ public final class EmergencyEvaGameTest {
             player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.2, 0, 0));
             for (int i = 0; i < 63; i++) EmergencyEvaHandler.tick(player);
             var state = player.getData(ModAttachments.EMERGENCY_EVA);
-            helper.assertTrue(state.exertionLoad() == 200 && state.remainingTicks() < 11837,
+            helper.assertTrue(state.exertionLoad() == 200 && state.oxygenTicks() < 11837 && state.remainingTicks() == 11837,
                     "Real server tick ramps exertion and charges more reserve");
             var saved = state.serializeNBT(player.registryAccess());
             var restored = new EmergencyEvaState();
@@ -214,10 +214,11 @@ public final class EmergencyEvaGameTest {
                 expected.tickWorn(true);
                 EmergencyEvaHandler.tick(player);
             }
-            helper.assertTrue(restored.remainingTicks() == expected.remainingTicks(),
+            helper.assertTrue(restored.oxygenTicks() == expected.oxygenTicks() && restored.remainingTicks() == expected.remainingTicks(),
                     "Reload never discards accrued fractional debit");
             var packet = new com.frozendawn.network.EmergencyEvaPayload(restored.issue(),
-                    restored.remainingTicks(), restored.exertionLoad(), restored.wornTicks(), restored.thermalLoad());
+                    restored.remainingTicks(), restored.oxygenTicks(), restored.exertionLoad(), restored.wornTicks(),
+                    restored.thermalLoad(), restored.ambientIntake(), restored.retirement(), 0);
             var bytes = io.netty.buffer.Unpooled.buffer();
             try {
                 com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
@@ -226,13 +227,13 @@ public final class EmergencyEvaGameTest {
             } finally { bytes.release(); }
             player.setSprinting(false);
             player.setKnownMovement(net.minecraft.world.phys.Vec3.ZERO);
-            int beforeRecovery = restored.remainingTicks();
+            int beforeRecovery = restored.oxygenTicks();
             for (int i = 0; i < 200; i++) EmergencyEvaHandler.tick(player);
-            helper.assertTrue(restored.exertionLoad() == 0 && restored.remainingTicks() < beforeRecovery - 200,
+            helper.assertTrue(restored.exertionLoad() == 0 && restored.oxygenTicks() < beforeRecovery - 200,
                     "Draw tapers during recovery rather than snapping to normal");
-            int settled = restored.remainingTicks();
+            int settled = restored.oxygenTicks();
             for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
-            helper.assertTrue(restored.remainingTicks() == settled - 100, "Settled draw is normal again");
+            helper.assertTrue(restored.oxygenTicks() == settled - 100, "Settled draw is normal again");
             EmergencyEvaHandler.issueKit(player);
             helper.assertTrue(player.getData(ModAttachments.EMERGENCY_EVA).exertionLoad() == 0,
                     "Fresh death recovery issue does not inherit old load");
@@ -290,7 +291,8 @@ public final class EmergencyEvaGameTest {
             helper.assertTrue(saved.equals(restored.serializeNBT(player.registryAccess()))
                     && saved.equals(state.copy().serializeNBT(player.registryAccess())), "Reload and dimension copy retain clock, heat and debt");
             var packet = new com.frozendawn.network.EmergencyEvaPayload(restored.issue(), restored.remainingTicks(),
-                    restored.exertionLoad(), restored.wornTicks(), restored.thermalLoad());
+                    restored.oxygenTicks(), restored.exertionLoad(), restored.wornTicks(), restored.thermalLoad(),
+                    restored.ambientIntake(), restored.retirement(), 0);
             var bytes = io.netty.buffer.Unpooled.buffer();
             try {
                 com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
@@ -328,6 +330,126 @@ public final class EmergencyEvaGameTest {
             var fresh = player.getData(ModAttachments.EMERGENCY_EVA);
             helper.assertTrue(fresh.wornTicks() == 0 && fresh.thermalLoad() == 0 && !fresh.coolingDegraded(),
                     "A new death recovery kit begins with its own fresh coolant clock");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void emergencyEvaAmbientIsolatesOxygenWithoutExtendingThermalService(GameTestHelper helper) {
+        var center = helper.absolutePos(new BlockPos(3, 2, 3));
+        for (int x = -2; x <= 2; x++) for (int y = -1; y <= 3; y++) for (int z = -2; z <= 2; z++) {
+            boolean wall = Math.abs(x) == 2 || Math.abs(z) == 2 || y == -1 || y == 3;
+            helper.getLevel().setBlockAndUpdate(center.offset(x, y, z), (wall ? Blocks.STONE : Blocks.AIR).defaultBlockState());
+        }
+        helper.runAfterDelay(20, () -> scene(helper, player -> {
+            setProgress(player, 1.0F);
+            EmergencyEvaHandler.issueKit(player);
+            PlayerTickHandler.syncBreathableState(player);
+            helper.assertTrue(PlayerTickHandler.isPlayerBreathable(player), "Actual sealed chamber must contain breathable air");
+            helper.assertTrue(PlayerTickHandler.getFreezeResolvedTemperature(player, ApocalypseState.get(player.getServer())) < -70,
+                    "Breathable chamber must still be lethally cold without EVA");
+            for (int i = 0; i < 39; i++) EmergencyEvaHandler.tick(player);
+            var state = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertFalse(state.ambientIntake(), "Forty stable ticks required before bypass");
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(state.ambientIntake(), "Stable breathable authority opens intake");
+            int oxygen = state.oxygenTicks(), service = state.remainingTicks();
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(state.oxygenTicks() == oxygen && state.remainingTicks() == service - 100,
+                    "Ambient air saves oxygen while thermal service counts down");
+            float health = player.getHealth();
+            player.tickCount = 40;
+            MobFreezeHandler.onEntityTick(new EntityTickEvent.Post(player));
+            helper.assertTrue(player.getHealth() == health && EmergencyEvaHandler.hasThermalSupport(player),
+                    "Air bypass must preserve protection from real lethal indoor cold");
+            var tag = state.serializeNBT(player.registryAccess());
+            var restored = new EmergencyEvaState();
+            restored.deserializeNBT(player.registryAccess(), tag);
+            helper.assertTrue(tag.equals(restored.serializeNBT(player.registryAccess())), "Both clocks and intake survive save/load");
+            player.setData(ModAttachments.EMERGENCY_EVA, restored);
+            player.setPos(center.east(4).getCenter());
+            PlayerTickHandler.syncBreathableState(player);
+            helper.assertFalse(PlayerTickHandler.isPlayerBreathable(player), "Actual exterior must be unsafe");
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(!restored.ambientIntake() && restored.oxygenTicks() == oxygen - 1,
+                    "First unsafe observation closes the restored intake and resumes reserve draw");
+            var legacy = tag.copy();
+            legacy.remove("oxygenTicks"); legacy.remove("ambientTicks"); legacy.remove("retirement");
+            restored.deserializeNBT(player.registryAccess(), legacy);
+            helper.assertTrue(restored.oxygenTicks() == restored.remainingTicks() && !restored.ambientIntake(),
+                    "Legacy shared budget becomes two equally spent clocks without a refill");
+            player.setPos(center.getCenter());
+            PlayerTickHandler.syncBreathableState(player);
+            player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(state.issue(), 1, oxygen, 0, 11999, 0, true, 0));
+            EmergencyEvaHandler.tick(player);
+            var expired = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertTrue(expired.retirement() == EmergencyEvaState.EXPIRED && !EmergencyEvaHandler.hasThermalSupport(player),
+                    "Conserved oxygen cannot outlive thermal service");
+            for (var piece : player.getArmorSlots()) helper.assertTrue(piece.isEmpty(), "Service expiry removes issued gear");
+        }));
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void emergencyEvaPrimaryRigHandoffRequiresCompleteSealedOxygenSupply(GameTestHelper helper) {
+        scene(helper, player -> {
+            setProgress(player, 1.0F);
+            EmergencyEvaHandler.issueKit(player);
+            var state = player.getData(ModAttachments.EMERGENCY_EVA);
+            var oldIssue = state.issue();
+            var savedChest = player.getItemBySlot(EquipmentSlot.CHEST).copy();
+            var slots = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            var items = new net.minecraft.world.item.Item[]{ModItems.EVA_HELMET.get(), ModItems.EVA_CHESTPLATE.get(),
+                    ModItems.EVA_LEGGINGS.get(), ModItems.EVA_BOOTS.get()};
+            player.getInventory().add(player.getItemBySlot(slots[0]).copy());
+            player.setItemSlot(slots[0], new ItemStack(items[0]));
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(!state.retired() && EmergencyEvaHandler.hasThermalSupport(player),
+                    "One ordinary piece must not retire the needed mixed rig");
+            for (int i = 1; i < 4; i++) {
+                player.getInventory().add(player.getItemBySlot(slots[i]).copy());
+                player.setItemSlot(slots[i], new ItemStack(items[i]));
+            }
+            int service = state.remainingTicks();
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(!state.retired() && state.remainingTicks() == service,
+                    "Complete armor without oxygen leaves the unworn emergency kit available and paused");
+            var tank = new ItemStack(ModItems.O2_TANK.get());
+            tank.set(ModDataComponents.O2_LEVEL, 1000);
+            player.getInventory().add(tank);
+            int tankSlot = -1;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++)
+                if (player.getInventory().getItem(i).is(ModItems.O2_TANK.get())) { tankSlot = i; break; }
+            helper.assertTrue(tankSlot >= 0, "Fixture must own the inserted primary tank");
+            var beforePrimaryTank = player.getInventory().getItem(tankSlot).copy();
+            player.getData(ModAttachments.SUIT_INTEGRITY).setPunctures(1);
+            EmergencyEvaHandler.tick(player);
+            helper.assertFalse(state.retired(), "Leaking primary rig cannot pass verification");
+            player.getData(ModAttachments.SUIT_INTEGRITY).setPunctures(0);
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(state.retirement() == EmergencyEvaState.HANDOFF && state.remainingTicks() == 0,
+                    "Complete sealed ordinary EVA plus usable air permanently retires the issue");
+            for (int i = 0; i < 4; i++) helper.assertTrue(player.getItemBySlot(slots[i]).is(items[i])
+                    && player.getItemBySlot(slots[i]).getDamageValue() == 0, "Primary armor stays intact");
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) helper.assertFalse(
+                    player.getInventory().getItem(i).getItem() instanceof EmergencyEvaArmorItem, "Old carried pieces removed");
+            helper.assertFalse(EmergencyEvaHandler.isActivePiece(player, savedChest), "Stored copy is permanently invalid");
+            helper.assertTrue(ItemStack.matches(beforePrimaryTank, player.getInventory().getItem(tankSlot)),
+                    "Handoff preserves the actual stored primary tank's count and components");
+            var restored = new EmergencyEvaState();
+            restored.deserializeNBT(player.registryAccess(), state.serializeNBT(player.registryAccess()));
+            player.setData(ModAttachments.EMERGENCY_EVA, restored);
+            player.getInventory().add(savedChest.copy());
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.retired() && !EmergencyEvaHandler.isActivePiece(player, savedChest),
+                    "Reload cannot revive the retired reserve");
+            var packet = new com.frozendawn.network.EmergencyEvaPayload(oldIssue, 0, 0, restored.exertionLoad(),
+                    restored.wornTicks(), restored.thermalLoad(), false, restored.retirement(),
+                    com.frozendawn.network.EmergencyEvaPayload.HANDOFF_NOTICE);
+            var bytes = io.netty.buffer.Unpooled.buffer();
+            try {
+                com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
+                helper.assertTrue(packet.equals(com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.decode(bytes)),
+                        "Real wire codec preserves the one-shot handoff event and retired issue");
+            } finally { bytes.release(); }
         });
     }
 

@@ -79,7 +79,7 @@ public class EvaSuitAmbience {
             return;
         }
 
-        if (EmergencyEvaHandler.hasLifeSupport(mc.player)) {
+        if (EmergencyEvaHandler.hasThermalSupport(mc.player)) {
             stopNormal(mc);
             var emergencyState = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
             float effortTarget = Math.max(emergencyState.exertionIntensity(), emergencyState.thermalIntensity());

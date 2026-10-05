@@ -123,14 +123,39 @@ public final class EmergencyEvaHandler {
         var state = player.getData(ModAttachments.EMERGENCY_EVA);
         int mask = wornMask(player);
         int previousTicks = state.remainingTicks();
+        int previousOxygen = state.oxygenTicks();
+        boolean previousAmbient = state.ambientIntake();
+        if (!state.issue().equals(EmergencyEvaState.NO_ISSUE) && !state.retired()
+                && previousTicks > 0 && player.isAlive() && !player.isCreative() && !player.isSpectator()
+                && hasOrdinaryRigWithAir(player)) {
+            state.retire(EmergencyEvaState.HANDOFF);
+            updateServiceBars(player);
+            removeCarriedEmergencyGear(player);
+            sync(player, EmergencyEvaPayload.HANDOFF_NOTICE);
+            return;
+        }
         if (mask != 0 && player.isAlive() && !player.isCreative() && !player.isSpectator()) {
             boolean running = player.isSprinting() && !player.isPassenger()
                     && player.getKnownMovement().horizontalDistanceSqr() > 0.001;
-            state.tickWorn(running, hasLifeSupport(player));
+            var apocalypse = ApocalypseState.get(player.getServer());
+            boolean breathable = !PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress())
+                    || player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD
+                            && !com.frozendawn.world.ThaeIvenMindDimension.isMindLevel(player.level())
+                    || PlayerTickHandler.isPlayerBreathable(player);
+            state.tickWorn(running, hasThermalSupport(player), breathable);
         } else {
             state.recoverUnworn();
         }
-        if (state.equipmentChanged(mask) || (mask != 0
+        if (previousTicks > 0 && state.remainingTicks() == 0 && !state.retired()) {
+            state.retire(EmergencyEvaState.EXPIRED);
+            updateServiceBars(player);
+            removeCarriedEmergencyGear(player);
+            sync(player, EmergencyEvaPayload.EXPIRED_NOTICE);
+            return;
+        }
+        if (!previousAmbient && state.ambientIntake()) sync(player, EmergencyEvaPayload.AMBIENT_NOTICE);
+        else if (previousAmbient != state.ambientIntake() || previousOxygen > 0 && state.oxygenTicks() == 0
+                || state.equipmentChanged(mask) || (mask != 0
                 && (player.tickCount % 20 == 0 || previousTicks > 0 && state.remainingTicks() == 0))) sync(player);
         // Update both worn and carried pieces; attributes expire on the same tick as life support.
         updateServiceBars(player);
@@ -151,6 +176,9 @@ public final class EmergencyEvaHandler {
                 piece.setDamageValue(piece.getMaxDamage() - (int) Math.ceil(
                         piece.getMaxDamage() * (double) displayed / EmergencyEvaState.SERVICE_TICKS));
             }
+            // Old, transferred and retired issues are inert. Clear them when
+            // carried, without scanning or loading storage/world chunks.
+            if (!matchesIssue(player, piece) || service == 0) player.getInventory().setItem(i, ItemStack.EMPTY);
         }
     }
 
@@ -164,6 +192,7 @@ public final class EmergencyEvaHandler {
         var state = player.getData(ModAttachments.EMERGENCY_EVA);
         return piece.getItem() instanceof EmergencyEvaArmorItem
                 && !state.issue().equals(EmergencyEvaState.NO_ISSUE)
+                && !state.retired()
                 && state.issue().equals(piece.get(ModDataComponents.EMERGENCY_EVA_ISSUE));
     }
 
@@ -182,8 +211,19 @@ public final class EmergencyEvaHandler {
     public static boolean isWearingIssuedPiece(Player player) { return wornMask(player) != 0; }
     public static int remainingTicks(Player player) { return player.getData(ModAttachments.EMERGENCY_EVA).remainingTicks(); }
     public static boolean hasLifeSupport(Player player) {
+        return hasThermalSupport(player) && player.getData(ModAttachments.EMERGENCY_EVA).oxygenTicks() > 0;
+    }
+    public static boolean hasThermalSupport(Player player) {
         return isWearingIssuedPiece(player) && remainingTicks(player) > 0
                 && MobFreezeHandler.getFullSetTier(player) == 3;
+    }
+    public static boolean hasOrdinaryRigWithAir(Player player) {
+        for (var slot : SLOTS) {
+            var piece = player.getItemBySlot(slot);
+            if (!(isOrdinaryEva(piece) || slot == EquipmentSlot.HEAD && piece.is(ModItems.ORSA_THERMAL_VISOR.get()))) return false;
+        }
+        return MobFreezeHandler.getFullSetTier(player) == 3 && !SuitIntegrityHandler.hasPuncture(player)
+                && hasOrdinaryOxygen(player);
     }
     public static boolean isOrdinaryEva(ItemStack piece) {
         return piece.getItem() instanceof ArmorItem armor && armor.getMaterial() == ModArmorMaterials.EVA;
@@ -203,8 +243,12 @@ public final class EmergencyEvaHandler {
         }
     }
     private static void sync(ServerPlayer player) {
+        sync(player, EmergencyEvaPayload.NO_NOTICE);
+    }
+    private static void sync(ServerPlayer player, int notice) {
         var state = player.getData(ModAttachments.EMERGENCY_EVA);
         PacketDistributor.sendToPlayer(player, new EmergencyEvaPayload(state.issue(), state.remainingTicks(),
-                state.exertionLoad(), state.wornTicks(), state.thermalLoad()));
+                state.oxygenTicks(), state.exertionLoad(), state.wornTicks(), state.thermalLoad(),
+                state.ambientIntake(), state.retirement(), notice));
     }
 }

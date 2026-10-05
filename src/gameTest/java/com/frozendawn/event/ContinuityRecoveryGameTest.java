@@ -215,7 +215,7 @@ public final class ContinuityRecoveryGameTest {
             helper.assertTrue(!EmergencyEvaHandler.hasLifeSupport(player) && item.getBarWidth(helmet) == 0,
                     "Life support and item bar expire together");
             helper.assertTrue(helmet.getAttributeModifiers().modifiers().isEmpty(), "Spent kit grants no armor attributes");
-            helper.assertTrue(!helmet.isEmpty(), "Spent equipment remains visible for replacement");
+            helper.assertTrue(player.getItemBySlot(EquipmentSlot.HEAD).isEmpty(), "Expired issued gear is removed");
             ContinuityRecoveryHandler.selectTarget(player, issue, false);
             helper.assertTrue(player.getData(ModAttachments.CONTINUITY_RECOVERY).shelterSelected(),
                     "Expired issue cannot operate navigation");

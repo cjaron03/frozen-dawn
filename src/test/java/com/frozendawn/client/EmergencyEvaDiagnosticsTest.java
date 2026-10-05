@@ -110,6 +110,19 @@ class EmergencyEvaDiagnosticsTest {
         assertNull(diagnostics.pending(0, true, true, true, true, true));
     }
 
+    @Test
+    void ambientAirSuppressesOxygenBandsWhilePowerKeepsItsOwnWarnings() {
+        var diagnostics = new EmergencyEvaDiagnostics();
+        diagnostics.reset(12000, 0, 12000);
+        advance(diagnostics, true, 300);
+        assertNull(diagnostics.pending(1000, true, false, false, false, false, 11000, true));
+        assertEquals(EmergencyEvaDiagnostics.Message.CRITICAL,
+                diagnostics.pending(1000, true, false, false, false, false, 11000, false));
+        assertEquals(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL,
+                diagnostics.pending(11000, true, false, false, false, false, 1000, true));
+        assertNull(diagnostics.pending(11000, true, true, true, true, true, 0, true));
+    }
+
     private static EmergencyEvaDiagnostics fresh() {
         var diagnostics = new EmergencyEvaDiagnostics();
         diagnostics.reset(12000);

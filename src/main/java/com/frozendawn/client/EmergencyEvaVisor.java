@@ -40,7 +40,7 @@ public final class EmergencyEvaVisor {
         }
         if (mc.isPaused()) return;
         boolean sealed = mc.player.isAlive() && !mc.player.isCreative() && !mc.player.isSpectator()
-                && matchingHelmet() && EmergencyEvaHandler.hasLifeSupport(mc.player);
+                && matchingHelmet() && EmergencyEvaHandler.hasThermalSupport(mc.player);
         float target = 0.0F;
         if (sealed) {
             float reserve = EmergencyEvaHandler.remainingTicks(mc.player)
@@ -60,7 +60,7 @@ public final class EmergencyEvaVisor {
         return condensation >= 0.18F && matchingHelmet()
                 && mc.options.getCameraType().isFirstPerson()
                 && com.frozendawn.config.FrozenDawnConfig.ENABLE_SUIT_PUNCTURE_OVERLAY.get()
-                && EmergencyEvaHandler.hasLifeSupport(mc.player);
+                && EmergencyEvaHandler.hasThermalSupport(mc.player);
     }
 
     private static boolean matchingHelmet() {
@@ -85,7 +85,7 @@ public final class EmergencyEvaVisor {
     }
 
     private static void renderCondensation(GuiGraphics graphics) {
-        if (condensation < 0.01F || !EmergencyEvaHandler.hasLifeSupport(Minecraft.getInstance().player)) return;
+        if (condensation < 0.01F || !EmergencyEvaHandler.hasThermalSupport(Minecraft.getInstance().player)) return;
         // One cached texture/quad at every GUI scale. No per-frame pixel loops,
         // framebuffer blur, random noise or rectangular holes around the HUD.
         RenderSystem.enableBlend();

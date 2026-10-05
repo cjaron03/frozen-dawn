@@ -15,11 +15,14 @@ final class EmergencyEvaDiagnostics {
     private boolean exertionReported;
     private boolean coolingReported;
     private boolean thermalReported;
+    private boolean serviceLowReported;
+    private boolean serviceCriticalReported;
 
     enum Message {
         SEAL_OPEN("seal_open"), CRITICAL("reserve_critical"), LOW("reserve_low"),
         SERVICE("service_low"), EXERTION("exertion"), MOISTURE("visor_moisture"),
-        COOLING("cooling_degraded"), THERMAL("thermal_high");
+        COOLING("cooling_degraded"), THERMAL("thermal_high"),
+        SERVICE_LOW("service_reserve_low"), SERVICE_CRITICAL("service_reserve_critical");
         private final String key;
         Message(String suffix) { key = "ui.frozendawn.suit.emergency_eva_" + suffix; }
         String key() { return key; }
@@ -30,8 +33,12 @@ final class EmergencyEvaDiagnostics {
     }
 
     void reset(int reserveTicks, int wornTicks) {
+        reset(reserveTicks, wornTicks, reserveTicks);
+    }
+
+    void reset(int reserveTicks, int wornTicks, int serviceTicks) {
         // Do not dump historical threshold messages when rejoining a spent issue.
-        halfReported = reserveTicks <= HALF_SERVICE;
+        halfReported = serviceTicks <= HALF_SERVICE;
         lowReported = reserveTicks <= LOW_RESERVE;
         criticalReported = reserveTicks <= CRITICAL_RESERVE;
         moistureReported = false;
@@ -39,6 +46,8 @@ final class EmergencyEvaDiagnostics {
         exertionReported = false;
         coolingReported = wornTicks >= com.frozendawn.data.EmergencyEvaThermal.COOLANT_LIFE_TICKS;
         thermalReported = false;
+        serviceLowReported = serviceTicks <= LOW_RESERVE;
+        serviceCriticalReported = serviceTicks <= CRITICAL_RESERVE;
         cooldown = 15 * 20;
     }
 
@@ -64,16 +73,24 @@ final class EmergencyEvaDiagnostics {
 
     Message pending(int reserveTicks, boolean sealed, boolean visibleMoisture, boolean highDraw,
                     boolean coolingDegraded, boolean highHeat) {
+        return pending(reserveTicks, sealed, visibleMoisture, highDraw, coolingDegraded, highHeat, reserveTicks, false);
+    }
+
+    Message pending(int reserveTicks, boolean sealed, boolean visibleMoisture, boolean highDraw,
+                    boolean coolingDegraded, boolean highHeat, int serviceTicks, boolean ambient) {
         // Heat can rise faster than routine maintenance messages. A newly high
         // load may bypass their gap, but never displaces a reserve emergency.
-        if (reserveTicks <= 0 || cooldown > 0 && !(sealed && highHeat && !thermalReported)) return null;
+        if (serviceTicks <= 0 || cooldown > 0 && !(sealed && highHeat && !thermalReported)) return null;
         if (!sealed && !sealReported) return Message.SEAL_OPEN;
         if (!sealed) return null;
-        if (reserveTicks <= CRITICAL_RESERVE && !criticalReported) return Message.CRITICAL;
-        if (reserveTicks <= LOW_RESERVE && !lowReported) return Message.LOW;
+        boolean serviceFirst = ambient || serviceTicks < reserveTicks || reserveTicks <= 0;
+        if (serviceFirst && serviceTicks <= CRITICAL_RESERVE && !serviceCriticalReported) return Message.SERVICE_CRITICAL;
+        if (!ambient && reserveTicks > 0 && reserveTicks <= CRITICAL_RESERVE && !criticalReported) return Message.CRITICAL;
+        if (serviceFirst && serviceTicks <= LOW_RESERVE && !serviceLowReported) return Message.SERVICE_LOW;
+        if (!ambient && reserveTicks > 0 && reserveTicks <= LOW_RESERVE && !lowReported) return Message.LOW;
         if (highHeat && !thermalReported) return Message.THERMAL;
         if (coolingDegraded && !coolingReported) return Message.COOLING;
-        if (reserveTicks <= HALF_SERVICE && !halfReported) return Message.SERVICE;
+        if (serviceTicks <= HALF_SERVICE && !halfReported) return Message.SERVICE;
         if (highDraw && !exertionReported) return Message.EXERTION;
         if (visibleMoisture && !moistureReported) return Message.MOISTURE;
         return null;
@@ -89,6 +106,8 @@ final class EmergencyEvaDiagnostics {
             case MOISTURE -> moistureReported = true;
             case COOLING -> coolingReported = true;
             case THERMAL -> thermalReported = true;
+            case SERVICE_LOW -> { serviceLowReported = true; halfReported = true; }
+            case SERVICE_CRITICAL -> { serviceCriticalReported = true; serviceLowReported = true; halfReported = true; }
         }
         cooldown = MESSAGE_GAP;
     }

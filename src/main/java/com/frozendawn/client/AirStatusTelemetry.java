@@ -116,7 +116,7 @@ public final class AirStatusTelemetry {
 
     public static TankTelemetry getTankTelemetry(Player player) {
         if (com.frozendawn.event.EmergencyEvaHandler.hasLifeSupport(player)) {
-            return new TankTelemetry(com.frozendawn.event.EmergencyEvaHandler.remainingTicks(player),
+            return new TankTelemetry(player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).oxygenTicks(),
                     com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS, 1);
         }
         int totalO2 = 0;
@@ -140,7 +140,7 @@ public final class AirStatusTelemetry {
 
     public static int estimateRemainingSeconds(Player player, Reading reading) {
         if (com.frozendawn.event.EmergencyEvaHandler.isWearingIssuedPiece(player)) {
-            return (com.frozendawn.event.EmergencyEvaHandler.remainingTicks(player) + 19) / 20;
+            return (player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).oxygenTicks() + 19) / 20;
         }
         TankTelemetry tank = reading.tankTelemetry();
         boolean activeDrain = reading.state() != State.BREATHABLE;

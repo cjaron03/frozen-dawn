@@ -137,3 +137,18 @@ the recording duration and permits reading after the typing animation. Existing
 audio files remain byte-for-byte unchanged. The shelter advisory waits until
 this window finishes. Attribution, modifications and CC BY-SA 4.0 distribution
 terms remain in `NOTICE.md`; the engine/model are not shipped.
+
+
+## Ambient bypass and primary EVA handoff
+
+`ui/suit/emergency_eva_ambient.ogg` and `ui/suit/emergency_eva_handoff.ogg`
+use the existing local Piper en_US-amy-medium model and ORSA processing profile.
+Only these two new manifest rows were generated; all 307 prior OGG exports are
+unchanged. The ambient clip is 9.114 seconds (decoded mono peak 0.6128), and
+handoff is 5.457 seconds (peak 0.4548). Their typed HUD/subtitle text matches the
+manifest, with E V A written as separate letters only for speech pronunciation.
+The shared ORSA dialogue holds ambient for 16 seconds and handoff for 10 seconds.
+The handoff displays over the regular EVA HUD after server verification and
+emergency retirement. These are CC BY-SA 4.0 processed performances with the
+attribution/modifications in NOTICE.md. No macOS speech, new model or external
+recording is used; generator model/engine stay outside the distributed jar.

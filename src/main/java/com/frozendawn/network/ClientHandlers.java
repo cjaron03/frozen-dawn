@@ -67,7 +67,10 @@ public final class ClientHandlers {
         if (player != null) {
             player.setData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA,
                     new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks(),
-                            payload.exertionLoad(), payload.wornTicks(), payload.thermalLoad()));
+                            payload.oxygenTicks(), payload.exertionLoad(), payload.wornTicks(), payload.thermalLoad(),
+                            payload.ambient(), payload.retirement()));
+            if (payload.notice() != EmergencyEvaPayload.NO_NOTICE)
+                com.frozendawn.client.EmergencyEvaClient.onNotice(payload.issue(), payload.notice());
         }
     }
 

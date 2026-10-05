@@ -566,3 +566,109 @@ to continue the saved test. A fresh death-respawn issue plays activation, then
 the new condition advisory and shelter guidance; the existing saved kit retains
 its consumed reserve and migrated age. Owner visual/audio acceptance remains
 pending. No push.
+
+
+## Ambient bypass and verified primary EVA retirement — 2026-10-05
+
+The owner approved ambient-air oxygen conservation and permanent retirement
+when a complete working normal EVA rig replaces the emergency kit. Split the
+saved shared budget into oxygen reserve and equipped service power. A fresh
+issue has 12,000 ticks of each. Worn service decreases exactly once per tick;
+oxygen alone receives the existing gradual exertion/fractional debit. After
+forty consecutive safe, sealed ticks, ambient intake opens and stops all
+reserve oxygen draw. Any unsafe atmosphere observation or unsealed/unworn rig
+closes intake. Removing all emergency pieces pauses service and oxygen, resets
+intake stability, and lets exertion/heat recover. Coolant still ages with actual
+worn use and degrades after five minutes. Conserved air cannot extend thermal
+service, which removes issued pieces and ends protection at service zero.
+
+Atmosphere uses the existing server breathability cache/authority, including
+normal non-vacuum conditions, supported/sealed rooms and ordinary dimensions.
+No new per-tick room flood fill is added. Closure occurs on the first unsafe
+observation from that shared authority; its existing sampling cadence remains.
+A cold breathable room retains emergency thermal protection. Oxygen exhaustion
+and service exhaustion now have distinct warning text and behavior; an empty
+reserve can still leave thermal support active, while primary tanks continue
+through the normal air path if present. Oxygen alarms are suppressed under
+ambient intake, while low/critical service power remains legible and audible.
+
+The ORSA panel gains one timer row: reserve oxygen time freezes under ambient
+intake, service time continues counting. It reports AMBIENT AIR // RESERVE
+ISOLATED and keeps the cyan/muted/amber palette, thermal row and automatic
+navigation/dialogue stacking. No emergency percentages are added. Item bars
+and tooltips report service power. Normal EVA HUD layout and oxygen/module
+behavior take over after retirement.
+
+Safe handoff requires every armor slot to be ordinary EVA (including the
+existing valid thermal-visor rig), usable ordinary oxygen, full tier-three
+protection and no puncture. A partial armor change, empty tank or leaking rig
+keeps the emergency issue available. Once verified, the server records HANDOFF
+permanently, clears only carried emergency pieces and sends one live notice:
+“Primary EVA life support verified. Continuity reserve decommissioned.” Normal
+armor/tanks are preserved. Old stored/transferred copies are invalid and cleared
+when carried; storage/world chunks are never scanned or loaded for cleanup.
+Expiry is also a retirement event. Existing death-drop/carried cleanup remains.
+
+The client queues handoff independently of emergency-equipped presentation,
+so its typed ORSA dialogue and existing Piper voice play above the normal suit
+HUD. It waits for matching issue, full replacement rig/equipment packets and
+an idle visible dialogue channel. Ambient notice waits behind activation,
+condition and shelter advisories, only plays while intake is currently open,
+and has a 45-second cooldown. Stale issue, death, logout, retirement and unsafe
+mode transitions cancel stale notices/audio. Live notices are not replayed by
+login or periodic sync. Ambient speech is “Breathable atmosphere detected.
+Ambient intake enabled. Reserve oxygen isolated. Emergency thermal support
+remains active.” Both new lines use local Piper en_US-amy-medium/ORSA profile;
+all 307 prior audio files remain unchanged. Typed/subtitle text matches spoken
+text, with EVA spelled E V A in the speech manifest for letter pronunciation.
+
+Oxygen, service, age, heat, intake stability and retirement survive NBT/copy.
+Old saves lacking oxygen inherit the exact old spent service balance without
+refill or extension. The owner-state packet carries both budgets and retirement
+plus a one-shot notice field; periodic/login packets carry no notice. Matching
+updated client/server builds are required. The existing authorized shorten
+helper now preserves age/heat/debt and can only shorten both clocks; no helper
+was dispatched during installation and no test world was reset or advanced.
+
+Full Java 21 build passed 664 unit tests with zero failures/errors/skips, plus
+8 existing gate tests. Pre-existing EventBusSubscriber/Gradle deprecation
+warnings remain. New pure checks cover unstable air boundaries/immediate closure
+and oxygen-versus-power diagnostic priority. Existing native exertion assertions
+now check oxygen cost separately from service wear; expiry checks require gear
+cleanup. Required native cases cover a real sealed but cold chamber, both clocks,
+NBT/legacy migration, exterior closure, conserved oxygen at service expiry, partial
+changeover, empty tanks, punctures, valid handoff, regular-gear preservation,
+stored-copy invalidation and a real handoff packet codec roundtrip. Native gate
+result and runtime handoff are recorded below once complete.
+
+Build and installed smoke jar SHA-256:
+`20126becb1693e90ca44c437dfa420f204cef19b344c9458b539069a091bb372`.
+The owner confirmed title screen; fresh bridge status confirmed the owning
+checkout with no loaded world. Backed up ORSA Continuity - Phase 6 and its log,
+then stopped only the verified owning lab Java process. Evidence is in
+`build/emergency-eva-evidence/ambient-handoff/`, including backup, build/native
+logs and voice manifest/validation. Human visual/audio/FPS and live multiplayer
+acceptance remain distinct from headless verification. Branch stays local on
+`fix/emergency-eva-respawn`; no push.
+
+The first native attempt failed only the new primary-tank preservation assertion.
+Minecraft inventory insertion empties the supplied ItemStack; the fixture had
+inspected that consumed input rather than the stored tank. Corrected the fixture
+to snapshot the inserted inventory slot and compare its actual count/components
+after handoff. No gameplay implementation changed for this failure. Preserved
+`native-gate.log` and `native-report-first-attempt.xml`; the final build and
+native rerun use separate evidence files.
+
+Final Java 21 build passed 664 unit tests and 8 gate tests. Final native gate
+passed 238 GameTests with all 233 required cases/reports verified against
+the final source. Artifacts are in
+`build/architect-reports/e997ff62-f121-4b11-8737-90e7a0e5e9fb/`. The packaged
+new voices match source bytes; no lab bridge or Piper models are bundled.
+The final smoke jar hash matches the build hash above. Before relaunch all
+71 save files matched the preserved backup byte-for-byte.
+
+The updated owning lab client is running without a loaded world, with a fresh
+bridge heartbeat for this checkout (terminal session 74221). Open the preserved
+ORSA Continuity - Phase 6 save to continue testing. Visual/audio/FPS and live
+multiplayer acceptance remain for the owner. No world command, reset or time
+change was issued. The patch is kept local; no push.

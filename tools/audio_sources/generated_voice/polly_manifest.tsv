@@ -7,6 +7,8 @@ ui/suit/puncture_warning.ogg	orsa	Warning: suit puncture detected.
 ui/suit/oxygen_critical.ogg	orsa	Oxygen reserves critical.
 ui/suit/emergency_eva_active.ogg	orsa	Emergency E V A active. Up to ten minutes of reserve life support. Exertion increases oxygen use.
 ui/suit/emergency_eva_condition.ogg	orsa	Warning. Reserve suit exceeds rated service life. Multiple field repairs detected. Cooling and filtration are degraded. Further failures are possible. Minimize exertion and proceed directly to shelter.
+ui/suit/emergency_eva_ambient.ogg	orsa	Breathable atmosphere detected. Ambient intake enabled. Reserve oxygen isolated. Emergency thermal support remains active.
+ui/suit/emergency_eva_handoff.ogg	orsa	Primary E V A life support verified. Continuity reserve decommissioned.
 ui/suit/emergency_reserve.ogg	orsa	Emergency reserve engaged. Please seek pressurized shelter.
 ui/suit/biological_activity_warning.ogg	orsa	Anomalous biological activity detected across all survey bands. Recommend elevated caution.
 ui/suit/bloom_contact.ogg	orsa	Unclassified crystalline growth. No entry in materials database.

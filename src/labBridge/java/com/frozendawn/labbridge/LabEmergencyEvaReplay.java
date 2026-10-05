@@ -221,8 +221,12 @@ public final class LabEmergencyEvaReplay {
                 || !player.getTags().contains("emergency_eva_lab")
                 || !EmergencyEvaHandler.isWearingIssuedPiece(player)) return 0;
         var current = player.getData(ModAttachments.EMERGENCY_EVA);
-        player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(
-                current.issue(), Math.min(current.remainingTicks(), seconds * 20)));
+        var shortened = current.copy();
+        var tag = shortened.serializeNBT(player.registryAccess());
+        tag.putInt("remainingTicks", Math.min(current.remainingTicks(), seconds * 20));
+        tag.putInt("oxygenTicks", Math.min(current.oxygenTicks(), seconds * 20));
+        shortened.deserializeNBT(player.registryAccess(), tag);
+        player.setData(ModAttachments.EMERGENCY_EVA, shortened);
         return 1;
     }
 }
