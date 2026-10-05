@@ -133,6 +133,12 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        // Visor material covers the world; every instrument is projected above it.
+        event.registerAbove(
+                net.neoforged.neoforge.client.gui.VanillaGuiLayers.CAMERA_OVERLAYS,
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva_visor"),
+                SuitIntegrityClient::renderVisor
+        );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render

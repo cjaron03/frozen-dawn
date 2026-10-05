@@ -122,7 +122,7 @@ public final class SuitIntegrityClient {
         reset();
     }
 
-    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+    public static void renderVisor(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
                 || minecraft.options.hideGui
@@ -144,6 +144,15 @@ public final class SuitIntegrityClient {
                 && EmergencyEvaHandler.matchesIssue(minecraft.player,
                         minecraft.player.getItemBySlot(EquipmentSlot.HEAD))) {
             EmergencyEvaVisor.render(graphics);
+        }
+    }
+
+    public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null
+                || minecraft.options.hideGui
+                || OrsaAwakeningIntro.shouldSuppressSurvivalHud()) {
+            return;
         }
         if (patchTicks >= 0 && patchDurationTicks > 0) {
             renderPatchProgress(graphics, minecraft);

@@ -430,3 +430,50 @@ cause continuous zero-volume clip restarts or small fan bursts. Partially
 attenuated fan starts inherit the attenuation level. The native gate is rerun
 against this final source fingerprint, with the earlier passing report retained
 as `native-report-before-mute-fix.xml` in the evidence folder.
+
+
+## Full-screen visor mist correction — 2026-10-05
+
+The owner's screenshot showed checkerboard moisture, a sharp horizontal film
+boundary and a large rectangular clear region around ORSA telemetry, alongside
+a perceived FPS drop. Replaced the per-frame grid loops with a single cached
+512x256 full-screen translucent texture. Original seeded multiscale clouding,
+continuous edge falloff and softened sparse wet trails cover every pixel; the
+center stays lighter and the seal edges gather denser moisture. Linear texture
+sampling removes the hard cell pattern. Fog still follows the existing synced
+exertion/service-age target and slow recovery, without changing reserve debit.
+
+The visor layer now renders immediately after vanilla camera overlays, before
+crosshair, health, hotbar and all ORSA instruments. Tape and crack overlays share
+that material layer; the sealing progress indicator stays in the HUD layer.
+Telemetry stays sharp through layer ordering, without a rectangular exclusion
+mask. The pixelated tape asset and sound assets remain byte-for-byte unchanged.
+Shader tint resets after mist rendering. No framebuffer blur, runtime texture
+generation or per-frame random noise is added.
+
+At an illustrative 640x345 GUI size (approximately the supplied screenshot at
+GUI scale four), the former renderer visited 13,920 cells and submitted 6,426
+rectangle fills at 70 percent condensation or 7,727 at maximum. The new fog
+submits one textured quad regardless of GUI size. This establishes reduced
+render submission work; actual before/after FPS remains unmeasured and needs
+the owner's live playtest. Texture alpha is 34–158/255 at full intensity,
+44/255 at center, multiplied by current condensation. Deterministic regeneration,
+positive alpha everywhere, packaged resource identity and GUI layer ordering
+were checked. Original generation and hash are in the visual source ledger.
+
+Full Java 21 build passed 657 unit tests (zero failures, errors or skips) and
+8 existing gate checks. Pre-existing EventBusSubscriber/Gradle deprecation
+warnings remain. This client presentation change does not require repeating
+the server survival gate; the prior native result is historical evidence.
+Build and installed smoke jar SHA-256:
+`9ab46e7f3b95e80ba0a73e6ca9063dfd9756a5a3dd8618945af3f72ff3589c48`.
+
+The owner confirmed the title screen. Fresh bridge status confirmed the owning
+checkout with no loaded world before backing up ORSA Continuity - Phase 6 and
+its log. Only the verified owning lab Java process was stopped. The save matched
+the backup byte-for-byte before relaunch. Evidence, backup, build/asset checks
+and launch log are in `build/emergency-eva-evidence/fullscreen-fog/`. Launch uses
+the owning Java 21 `runClientLab` (terminal session 76241); the owner opens the
+existing world and tests sustained running, whole-screen fog, crisp instruments
+and FPS. No reset, reserve refill or replay advancement was dispatched. Commit
+stays local on `fix/emergency-eva-respawn`.
