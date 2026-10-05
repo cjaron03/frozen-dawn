@@ -89,12 +89,12 @@ public class EvaSuitAmbience {
                     breathingMultiplier < 1.0F ? 0.10F : 0.035F);
             emergencySound.setTargetPitch(MasterArchitectSeverTelegraph.evaPitchMultiplier());
             if (emergencyFan == null || emergencyFan.isStopped()) {
-                emergencyFan = new TickableBreathingSound(ModSounds.EVA_EMERGENCY_FAN.get(), 0.10F);
+                emergencyFan = new TickableBreathingSound(ModSounds.EVA_EMERGENCY_FAN.get(), 0.035F);
                 mc.getSoundManager().play(emergencyFan);
             }
             float remaining = EmergencyEvaHandler.remainingTicks(mc.player)
                     / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
-            emergencyFan.setTargetVolume((0.08F + (1.0F - remaining) * 0.04F) * breathingMultiplier,
+            emergencyFan.setTargetVolume((0.035F + (1.0F - remaining) * 0.005F) * breathingMultiplier,
                     breathingMultiplier < 1.0F ? 0.10F : 0.025F);
             emergencyFan.setTargetPitch(0.96F + remaining * 0.04F);
             return;

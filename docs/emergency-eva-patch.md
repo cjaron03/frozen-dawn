@@ -279,3 +279,66 @@ reserve pack in third person; sprint long enough to see peripheral moisture;
 check seal-open status by removing a suit piece and listen through a normal
 reserve expiry. Do not reset the existing scenario automatically. This is a
 future handoff, not evidence that the client has been launched or inspected.
+
+
+## Quieter ventilation, aging moisture and sparse diagnostics
+
+Owner feedback: “make the fan less annoying, and maybe overtime add
+condenstaion in the helmet, and various error messages that show up?” The owner
+confirmed the title screen. Fresh bridge status verified the owning checkout
+and closed world before its save/log/fan were backed up, then only that client
+was stopped for the Java update.
+
+The fan now uses soft filtered ventilation and a faint motor undertone. The
+23 Hz bearing buzz, modulation and repeating regulator clicks have been
+removed from the loop. Runtime volume falls from 0.08–0.12 to 0.035–0.040;
+combined source/runtime RMS is 15.59 dB lower at full reserve. The decoded
+8-second loop peaks at 0.04526, with a 0.00000975 seam jump. Regulator/shutdown
+waveforms are unchanged; regenerated OGG container identifiers changed their
+byte hashes. Both vocal recordings remain byte-for-byte unchanged.
+
+Condensation now grows with actual reserve service age, even while walking,
+using a gradual smooth curve after the first minute. Sprinting adds a smaller
+extra moisture contribution. Fog depth and opacity increase along the sides
+below the upper third and bottom, with sparse fixed droplets once moisture
+is established. Its maximum target is 0.88; perimeter opacity stays restrained
+and the central navigation view and upper-left telemetry stay clear. Active
+life support, matching helmet, first-person camera, overlay option and HUD
+visibility still gate the visual. No gameplay penalties were added.
+
+New typed ORSA warning diagnostics use the current warning panel and speaker:
+
+- CP-003: Seal open. Complete EVA rig required.
+- CP-014: Visor moisture detected. Demisting capacity limited.
+- CP-021: Service life below half. Replacement required.
+- CP-022: Reserve low. Two minutes or less remaining.
+- CP-023: Reserve critical. One minute or less remaining.
+
+Messages report actual seal, displayed moisture or remaining-service state.
+They wait for the shared suit dialogue channel, obey HUD/intro suppression,
+and are acknowledged only once actually displayed. A 35-second gap limits
+repetition. Reserve warnings take priority over moisture; higher reserve
+severity supersedes obsolete lower-severity warnings. Seal warnings may
+return after a real close/reopen, subject to the same cooldown. Rejoining a
+partly spent issue does not replay past reserve thresholds; new issues reset
+this policy. The existing shutdown warning remains authoritative at zero.
+No extra voice recordings or alarm sounds were added for the diagnostics.
+
+Full Java 21 build passed: 654 unit tests (including four focused diagnostic
+lifecycle scenarios), zero failures/errors/skips, and 8 existing gate tests.
+The new tests cover delayed acknowledgement, severity replacement, rejoin,
+new issue, seal reopening, cooldown and moisture conditions. Packaged audio,
+message keys and diagnostics class were verified. Pre-existing deprecation
+warnings remain. Native survival tests were not rerun for this client-only
+presentation update; actual visual/listening acceptance remains the owner's
+playtest.
+
+Build and installed smoke jar SHA-256:
+`e12fbd552bda8e2f784568d58508e9461cfc04ed11f41c01dea095b333c58962`.
+Evidence is in `build/emergency-eva-evidence/quiet-fan-diagnostics/`, including
+`world-before-update`, `client-before-update.log`, `fan-before-update.ogg`,
+`runtime-before.json`, `build.log` and `verification.json`. Only the Frozen
+Dawn smoke jar was replaced. Restart into this owning lab checkout after
+verification; open the preserved ORSA Continuity - Phase 6 world for testing.
+Do not reset the reserve or advance the scenario automatically. The patch
+branch remains local; no push.

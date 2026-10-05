@@ -37,18 +37,16 @@ def tick(t: float, onset: float, length: float, noise: float) -> float:
 def main() -> None:
     rng = random.Random(610104)
     fan = array('f')
+    filtered = 0.0
     for i in range(RATE * 8):
         t = i / RATE
         noise = rng.uniform(-1, 1)
-        # Whole-cycle harmonics and tapered noise keep the native-loop seam quiet.
-        edge = min(1, t / 0.04, (8 - t - 1 / RATE) / 0.04)
-        rotor = (math.sin(2 * math.pi * 94 * t)
-                 + 0.25 * math.sin(2 * math.pi * 188 * t)
-                 + 0.12 * math.sin(2 * math.pi * 376 * t))
-        bearing = math.sin(2 * math.pi * 23 * t) ** 12
-        fan.append(edge * (0.06 * rotor * (0.9 + 0.1 * math.cos(2 * math.pi * 2 * t))
-                          + 0.017 * bearing * noise
-                          + 0.022 * (tick(t, 1.2, 0.09, noise) + tick(t, 4.8, 0.09, noise))))
+        filtered = 0.94 * filtered + 0.06 * noise
+        # Soft filtered ventilation, with a faint motor undertone. No rhythmic
+        # bearing buzz or repeating clicks; those dominated quiet breath gaps.
+        edge = max(0, min(1, t / 0.08, (8 - t - 1 / RATE) / 0.08))
+        rotor = math.sin(2 * math.pi * 94 * t) + 0.10 * math.sin(2 * math.pi * 188 * t)
+        fan.append(edge * (0.021 * rotor + 0.028 * filtered))
     encode('ambient/eva_emergency_fan.ogg', fan)
     for relative, duration, shutdown in [('ui/suit/emergency_regulator.ogg', 0.65, False),
                                          ('ui/suit/emergency_shutdown.ogg', 1.25, True)]:

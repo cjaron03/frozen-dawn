@@ -24,6 +24,7 @@ public final class EmergencyEvaClient {
     private static int beepCooldown;
     private static int creakCooldown;
     private static int previousReserve = -1;
+    private static final EmergencyEvaDiagnostics diagnostics = new EmergencyEvaDiagnostics();
     private EmergencyEvaClient() {}
 
     @SubscribeEvent
@@ -35,6 +36,7 @@ public final class EmergencyEvaClient {
         beepCooldown = 0;
         creakCooldown = 0;
         previousReserve = -1;
+        diagnostics.reset(0);
     }
 
     @SubscribeEvent
@@ -54,6 +56,7 @@ public final class EmergencyEvaClient {
             beepCooldown = 0;
             creakCooldown = 0;
             previousReserve = state.remainingTicks();
+            diagnostics.reset(state.remainingTicks());
             // Only a fresh reserve can truthfully announce ten minutes. Returning
             // to a partly spent issue after login must not replay that promise.
             pendingVoiceIssue = state.remainingTicks() >= com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS - 40
@@ -83,6 +86,15 @@ public final class EmergencyEvaClient {
                             ? "ui.frozendawn.suit.continuity_no_shelter" : "ui.frozendawn.suit.continuity_shelter_degraded")) {
                 pendingShelterNotice = null;
             }
+        }
+        boolean sealed = EmergencyEvaHandler.hasLifeSupport(mc.player);
+        diagnostics.tick(sealed);
+        var diagnostic = diagnostics.pending(state.remainingTicks(), sealed,
+                EmergencyEvaVisor.hasVisibleCondensation());
+        if (diagnostic != null && pendingVoiceIssue == null && pendingShelterNotice == null
+                && !mc.options.hideGui && !OrsaAwakeningIntro.shouldSuppressSurvivalHud()
+                && MasterArchitectFloodClient.showWarningSuitDialogueIfIdle(diagnostic.key())) {
+            diagnostics.acknowledge(diagnostic);
         }
         if (beepCooldown > 0) beepCooldown--;
         if (creakCooldown > 0) creakCooldown--;

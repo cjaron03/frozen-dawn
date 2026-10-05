@@ -45,9 +45,19 @@ public final class EmergencyEvaVisor {
                     / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
             boolean exertion = mc.player.isSprinting()
                     && mc.player.getDeltaMovement().horizontalDistanceSqr() > 0.001;
-            target = (exertion ? 0.7F : 0.0F) + 0.2F * (1.0F - reserve);
+            float age = Mth.clamp((1.0F - reserve - 0.10F) / 0.90F, 0.0F, 1.0F);
+            float ageCurve = age * age * (3.0F - 2.0F * age);
+            target = 0.04F + 0.66F * ageCurve + (exertion ? 0.18F : 0.0F);
         }
         condensation = Mth.lerp(target > condensation ? 0.006F : 0.004F, condensation, target);
+    }
+
+    static boolean hasVisibleCondensation() {
+        var mc = Minecraft.getInstance();
+        return condensation >= 0.18F && matchingHelmet()
+                && mc.options.getCameraType().isFirstPerson()
+                && com.frozendawn.config.FrozenDawnConfig.ENABLE_SUIT_PUNCTURE_OVERLAY.get()
+                && EmergencyEvaHandler.hasLifeSupport(mc.player);
     }
 
     private static boolean matchingHelmet() {
@@ -75,17 +85,25 @@ public final class EmergencyEvaVisor {
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
         int pixel = Math.max(2, Math.min(width, height) / 90);
-        // Only the outer 6% of the sides and 9% of the bottom. No upper-left telemetry fog.
+        float sideDepth = width * (0.05F + 0.09F * condensation);
+        float bottomDepth = height * (0.08F + 0.10F * condensation);
+        // Age gradually spreads moisture inward at the perimeter; the center and telemetry stay clear.
         for (int y = height / 3; y < height; y += pixel) {
             for (int x = 0; x < width; x += pixel) {
-                float side = 1.0F - Math.min(x, width - 1 - x) / (width * 0.06F);
-                float bottom = 1.0F - (height - 1 - y) / (height * 0.09F);
+                float side = 1.0F - Math.min(x, width - 1 - x) / sideDepth;
+                float bottom = 1.0F - (height - 1 - y) / bottomDepth;
                 float edge = Mth.clamp(Math.max(side, bottom), 0.0F, 1.0F);
                 if (edge <= 0.0F) continue;
                 int pattern = Math.floorMod(x / pixel * 17 + y / pixel * 31, 11);
-                int alpha = Math.round(30.0F * condensation * edge * (0.55F + pattern / 22.0F));
+                int alpha = Math.round(54.0F * condensation * edge * (0.55F + pattern / 22.0F));
                 if (alpha > 0) graphics.fill(x, y, Math.min(width, x + pixel), Math.min(height, y + pixel),
                         alpha << 24 | 0xA9C2C9);
+                // Sparse fixed droplets, rather than animated noise or a screen-wide blur.
+                if (condensation >= 0.25F && edge > 0.30F && pattern == 0) {
+                    int dropletAlpha = Math.round(42.0F * condensation * edge);
+                    graphics.fill(x, y, Math.min(width, x + pixel), Math.min(height, y + pixel / 2 + 1),
+                            dropletAlpha << 24 | 0xC8DADE);
+                }
             }
         }
     }

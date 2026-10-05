@@ -502,6 +502,12 @@ public final class MasterArchitectFloodClient {
         return true;
     }
 
+    public static boolean showWarningSuitDialogueIfIdle(String translationKey) {
+        if (suitDialogueTicks > 0) return false;
+        showWarningSuitDialogue(translationKey);
+        return true;
+    }
+
     public static void showSuitDialogue(String translationKey) {
         suitDialogueKey = translationKey;
         suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
