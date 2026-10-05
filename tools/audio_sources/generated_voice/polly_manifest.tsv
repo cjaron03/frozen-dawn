@@ -5,8 +5,8 @@ ui/suit/aggregate_gestation.ogg	orsa	Cohesion: increasing.
 ui/suit/aggregate_resolved.ogg	orsa	Cohesion: zero point zero zero. Origin: multiple. Genetic consensus: none. Primary driver: repeated mortality.
 ui/suit/puncture_warning.ogg	orsa	Warning: suit puncture detected.
 ui/suit/oxygen_critical.ogg	orsa	Oxygen reserves critical.
-ui/suit/emergency_eva_active.ogg	orsa	Emergency E V A active. Up to ten minutes of reserve life support. Exertion increases oxygen use.
-ui/suit/emergency_eva_condition.ogg	orsa	Warning. Reserve suit exceeds rated service life. Multiple field repairs detected. Cooling and filtration are degraded. Further failures are possible. Minimize exertion and proceed directly to shelter.
+ui/suit/emergency_eva_active.ogg	orsa	Emergency E V A active. Ten-minute oxygen reserve. Fifteen-minute service limit.
+ui/suit/emergency_eva_condition.ogg	orsa	Warning. Suit beyond service life. Field repairs detected. Cooling and filters degraded. Further failures possible.
 ui/suit/emergency_eva_ambient.ogg	orsa	Breathable atmosphere detected. Ambient intake enabled. Reserve oxygen isolated. Emergency thermal support remains active.
 ui/suit/emergency_eva_handoff.ogg	orsa	Primary E V A life support verified. Continuity reserve decommissioned.
 ui/suit/emergency_reserve.ogg	orsa	Emergency reserve engaged. Please seek pressurized shelter.
@@ -55,3 +55,4 @@ radio/voice_repeat.ogg	radio	repeat
 radio/voice_unable.ogg	radio	unable
 radio/voice_no_lock.ogg	radio	no lock
 radio/martian_command_message.ogg	radio	Whoa, wait. I'm getting something here. Hello? Um... crap. Stick to the script. Martian Command to unidentified surface respondent. Never mind. That sounds too stupid. Whoever is still out there, we never expected anyone to even still be alive. If you are, I am sending over blueprints for a rocket. You'll need to use the ORSA blast pit. Good luck, and godspeed.
+ui/suit/emergency_eva_service_critical.ogg	orsa	Emergency service power critical. Thermal support expires in one minute or less.

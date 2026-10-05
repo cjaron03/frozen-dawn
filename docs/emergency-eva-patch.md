@@ -672,3 +672,76 @@ bridge heartbeat for this checkout (terminal session 74221). Open the preserved
 ORSA Continuity - Phase 6 save to continue testing. Visual/audio/FPS and live
 multiplayer acceptance remain for the owner. No world command, reset or time
 change was issued. The patch is kept local; no push.
+
+
+## Fifteen-minute service and readable warnings — 2026-10-05
+
+The owner approved fifteen minutes of equipped service power, retaining ten
+minutes of reserve oxygen. Activation states both limits: “Emergency EVA active.
+Ten-minute oxygen reserve. Fifteen-minute service limit.” The service timer is
+hidden until five minutes remain; its row then appears in the existing ORSA
+panel. Navigation/dialogue offsets follow the panel height. At one minute the
+service timer turns amber and the existing typed warning gains a Piper voice:
+“Emergency service power critical. Thermal support expires in one minute or
+less.” This urgent service warning can bypass routine diagnostic cooldown;
+critical oxygen remains first when both need reporting.
+
+The long initial condition advisory was cut to: “Warning. Suit beyond service
+life. Field repairs detected. Cooling and filters degraded. Further failures
+possible.” Its measured voice duration is 9.207 seconds, with twelve seconds
+reserved for its HUD dialogue before shelter guidance. Activation lasts 6.258
+seconds, within its ten-second display. The shared suit dialogue previously
+drew only its first three wrapped lines, permanently omitting remaining text.
+It now fits up to five lines within available screen height and continues longer
+text onto further pages as it types. Display duration allows the full text to
+type and remain readable for at least six seconds. Existing ORSA colors, font,
+branding and panel width are retained. Human visual acceptance remains pending.
+
+Oxygen capacity is now an explicit 12,000-tick constant, independent of the
+18,000-tick service maximum. Ambient bypass, progressive exertion, five-minute
+coolant aging, gear retirement and normal EVA handoff remain connected to their
+respective clocks. Existing save balances and accumulated age are preserved,
+without refilling a partly spent kit. Pre-clock legacy age is inferred from its
+original ten-minute shared budget; fresh respawn issues receive fifteen-minute
+service and ten-minute oxygen. Guide text and tooltips describe these limits.
+
+Regenerated only the activation and condition voices and added one critical
+service voice with local Piper en_US-amy-medium and the existing ORSA profile.
+Provenance, manifest, subtitles and shipped inventory are updated; all other
+307 prior audio files remain byte-for-byte unchanged. The model stays outside
+the jar. Voice peak/duration/hash evidence is in
+`build/emergency-eva-evidence/service-15/voice-verification.json`.
+
+The full Java 21 build passed 665 unit tests with zero failures/errors/skips
+and 8 existing gate tests. Native cases now distinguish the real ten-minute
+oxygen boundary from fifteen-minute thermal/armor expiry and verify exact
+legacy balances/age. Pre-existing EventBusSubscriber/Gradle deprecation warnings
+remain. The installed smoke jar matches build SHA-256:
+`b109d13b01834be18d33cfab9b90d25cf2f7f7b0b1bd82a5b41a60ec62a5f171`.
+
+The owning client was already stopped. Preserved the closed ORSA Continuity -
+Phase 6 save and prior log in `build/emergency-eva-evidence/service-15/` before
+runtime relaunch. No test-world command, refill, death, reset or time change is
+part of installation. Native verification and runtime handoff are recorded
+below once complete. The branch stays local; no push.
+
+The first native attempt found two stale ten-minute service expectations: the
+stationary sprint fixture still expected 11,900 service ticks rather than
+17,900, and the five-minute item bar expected 7/13 rather than 4/13. Updated
+both assertions while retaining independent ten-minute oxygen checks. The
+actual oxygen/thermal expiry cases passed that attempt. No gameplay code was
+changed for these failures. Preserved `native-gate.log` and
+`native-report-first-attempt.xml`; final build/native logs are separate.
+
+Final native gate passed all 238 GameTests and all 233 required cases/reports
+against the final source fingerprint. Artifacts are in
+`build/architect-reports/daded0ab-a0c4-4b4f-9f14-1eb9df7ec328/`. Packaged
+voice/subtitle/HUD text matches the source, and all 71 player-save files match
+the preserved closed-world backup before launch.
+
+The updated Java 21 lab client is running at the title screen (terminal session
+63228, fresh owning-checkout bridge heartbeat, no loaded world). Open the
+preserved ORSA Continuity - Phase 6 save to continue testing. The new startup
+limits and advisory play on a fresh issue; a saved partly spent kit keeps its
+existing balance and does not replay a full-budget promise. Owner visual/audio
+and live multiplayer acceptance remain pending. No push.

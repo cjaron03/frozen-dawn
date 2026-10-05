@@ -15,7 +15,10 @@ class EmergencyEvaDiagnosticsTest {
         assertEquals(EmergencyEvaDiagnostics.Message.CRITICAL, diagnostics.pending(1000, true, false));
         diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.CRITICAL);
         advance(diagnostics, true, 700);
-        assertNull(diagnostics.pending(800, true, false));
+        assertEquals(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL, diagnostics.pending(800, true, false));
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL);
+        advance(diagnostics, true, 700);
+        assertNull(diagnostics.pending(700, true, false));
         assertNull(diagnostics.pending(0, true, true));
     }
 
@@ -121,6 +124,19 @@ class EmergencyEvaDiagnosticsTest {
         assertEquals(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL,
                 diagnostics.pending(11000, true, false, false, false, false, 1000, true));
         assertNull(diagnostics.pending(11000, true, true, true, true, true, 0, true));
+    }
+
+    @Test
+    void thermalShutdownWarningBypassesRoutineGapEvenWhenOxygenIsLower() {
+        var diagnostics = new EmergencyEvaDiagnostics();
+        diagnostics.reset(5000, 8000, 7000);
+        advance(diagnostics, true, 300);
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.MOISTURE);
+        assertEquals(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL,
+                diagnostics.pending(0, true, false, false, true, false, 1200, false));
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL);
+        advance(diagnostics, true, 700);
+        assertNull(diagnostics.pending(0, true, false, false, false, false, 1000, false));
     }
 
     private static EmergencyEvaDiagnostics fresh() {

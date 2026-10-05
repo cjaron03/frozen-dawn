@@ -64,7 +64,7 @@ public final class EmergencyEvaHandler {
         // A complete regular rig without air needs the emergency chest's internal reserve.
         if (!isWearingIssuedPiece(player)) equip(player, EquipmentSlot.CHEST, state);
         sync(player);
-        FrozenDawn.LOGGER.info("[EmergencyEVA] Issued ten-minute recovery kit to {}", player.getGameProfile().getName());
+        FrozenDawn.LOGGER.info("[EmergencyEVA] Issued fifteen-minute recovery kit to {}", player.getGameProfile().getName());
         ContinuityRecoveryHandler.sync(player);
     }
 

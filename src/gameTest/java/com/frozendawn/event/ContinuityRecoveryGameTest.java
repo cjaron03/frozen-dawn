@@ -208,7 +208,7 @@ public final class ContinuityRecoveryGameTest {
             player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 6001));
             EmergencyEvaHandler.tick(player);
             var item = (EmergencyEvaArmorItem) helmet.getItem();
-            helper.assertTrue(item.getBarWidth(helmet) == 7, "Item bar follows the shared reserve");
+            helper.assertTrue(item.getBarWidth(helmet) == 4, "Five-minute bar follows fifteen-minute service power");
             helper.assertTrue(!helmet.getAttributeModifiers().modifiers().isEmpty(), "Active issue retains weak armor");
             player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 1));
             EmergencyEvaHandler.tick(player);

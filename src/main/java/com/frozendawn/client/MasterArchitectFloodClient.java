@@ -504,7 +504,7 @@ public final class MasterArchitectFloodClient {
 
     public static boolean showSuitDialogueIfIdle(String translationKey, int durationTicks) {
         if (!showSuitDialogueIfIdle(translationKey)) return false;
-        suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS, durationTicks);
+        suitDialogueTicks = Math.max(suitDialogueTicks, durationTicks);
         return true;
     }
 
@@ -516,13 +516,15 @@ public final class MasterArchitectFloodClient {
 
     public static boolean showWarningSuitDialogueIfIdle(String translationKey, int durationTicks) {
         if (!showWarningSuitDialogueIfIdle(translationKey)) return false;
-        suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS, durationTicks);
+        suitDialogueTicks = Math.max(suitDialogueTicks, durationTicks);
         return true;
     }
 
     public static void showSuitDialogue(String translationKey) {
         suitDialogueKey = translationKey;
-        suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
+        suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
+                (Component.translatable(translationKey).getString().length() + SUIT_DIALOGUE_CHARS_PER_TICK - 1)
+                        / SUIT_DIALOGUE_CHARS_PER_TICK + 6 * 20);
         suitDialogueAge = 0;
         suitDialogueWarning = false;
         suitDialogueSpeakerKey = "ui.frozendawn.master_architect.suit_speaker";
@@ -531,7 +533,9 @@ public final class MasterArchitectFloodClient {
 
     public static void showWarningSuitDialogue(String translationKey) {
         suitDialogueKey = translationKey;
-        suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
+        suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
+                (Component.translatable(translationKey).getString().length() + SUIT_DIALOGUE_CHARS_PER_TICK - 1)
+                        / SUIT_DIALOGUE_CHARS_PER_TICK + 6 * 20);
         suitDialogueAge = 0;
         suitDialogueWarning = true;
         suitDialogueSpeakerKey = "ui.frozendawn.master_architect.suit_speaker_warning";
@@ -540,7 +544,9 @@ public final class MasterArchitectFloodClient {
 
     public static void showRadioDialogue(String translationKey) {
         suitDialogueKey = translationKey;
-        suitDialogueTicks = SUIT_DIALOGUE_DURATION_TICKS;
+        suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
+                (Component.translatable(translationKey).getString().length() + SUIT_DIALOGUE_CHARS_PER_TICK - 1)
+                        / SUIT_DIALOGUE_CHARS_PER_TICK + 6 * 20);
         suitDialogueAge = 0;
         suitDialogueWarning = false;
         suitDialogueSpeakerKey = "ui.frozendawn.remnant.radio_speaker";
@@ -593,7 +599,9 @@ public final class MasterArchitectFloodClient {
         int textWidth = Math.max(80, panelWidth - 12);
         List<FormattedCharSequence> lines = minecraft.font.split(
                 Component.literal(visibleText), textWidth);
-        int visibleLines = Math.min(3, lines.size());
+        int pageLines = Math.max(1, Math.min(5, (graphics.guiHeight() - y - 48 - 17) / 10));
+        int firstLine = (Math.max(0, lines.size() - 1) / pageLines) * pageLines;
+        int visibleLines = Math.min(pageLines, lines.size() - firstLine);
         int panelHeight = 17 + visibleLines * 10;
         float fade = Mth.clamp(suitDialogueTicks / 16.0F, 0.0F, 1.0F);
 
@@ -627,7 +635,7 @@ public final class MasterArchitectFloodClient {
         for (int line = 0; line < visibleLines; line++) {
             graphics.drawString(
                     minecraft.font,
-                    lines.get(line),
+                    lines.get(firstLine + line),
                     x + 7,
                     y + 15 + line * 10,
                     argb(Math.round(255.0F * fade), textColor),

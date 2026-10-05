@@ -98,6 +98,8 @@ public class ModSounds {
             register("ui.suit.emergency_eva_condition");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_AMBIENT =
             register("ui.suit.emergency_eva_ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_SERVICE_CRITICAL =
+            register("ui.suit.emergency_eva_service_critical");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_HANDOFF =
             register("ui.suit.emergency_eva_handoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =

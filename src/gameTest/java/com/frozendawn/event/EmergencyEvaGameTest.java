@@ -45,7 +45,9 @@ public final class EmergencyEvaGameTest {
             helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).isEmpty(), "End return is not death");
             NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerRespawnEvent(player, false));
             helper.assertTrue(MobFreezeHandler.getFullSetTier(player) == 3, "Real respawn subscriber equips sealed full rig");
-            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 12000, "Ten minutes issued");
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 18000
+                    && player.getData(ModAttachments.EMERGENCY_EVA).oxygenTicks() == 12000
+                    && player.getData(ModAttachments.EMERGENCY_EVA).wornTicks() == 0, "Fifteen-minute service and ten-minute oxygen issued without prior age");
             for (var piece : player.getArmorSlots()) {
                 helper.assertTrue(piece.getItem() instanceof EmergencyEvaArmorItem, "All four slots auto-equipped");
             }
@@ -78,7 +80,7 @@ public final class EmergencyEvaGameTest {
                     "Fixture must have lethal indoor cold");
             NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerRespawnEvent(player, false));
             float health = player.getHealth();
-            for (int t = 0; t < 11999; t++) {
+            for (int t = 0; t < EmergencyEvaState.SERVICE_TICKS - 1; t++) {
                 player.tickCount = t;
                 EmergencyEvaHandler.tick(player);
                 if (t % 40 == 0) MobFreezeHandler.onEntityTick(new EntityTickEvent.Post(player));
@@ -88,7 +90,7 @@ public final class EmergencyEvaGameTest {
             EmergencyEvaHandler.tick(player);
             helper.assertFalse(EmergencyEvaHandler.hasLifeSupport(player), "Reserve zero disables life support");
             helper.assertTrue(MobFreezeHandler.getFullSetTier(player) != 3, "Expired set loses climate control");
-            player.tickCount = 12000;
+            player.tickCount = EmergencyEvaState.SERVICE_TICKS;
             player.invulnerableTime = 0;
             MobFreezeHandler.onEntityTick(new EntityTickEvent.Post(player));
             helper.assertTrue(player.getHealth() < health, "Real indoor cold damage returns at expiry: temp=" + PlayerTickHandler.getFreezeResolvedTemperature(player, ApocalypseState.get(player.getServer())) + " breathable=" + PlayerTickHandler.isPlayerBreathable(player) + " enabled=" + com.frozendawn.config.FrozenDawnConfig.ENABLE_MOB_FREEZING.get());
@@ -141,7 +143,7 @@ public final class EmergencyEvaGameTest {
             helper.assertFalse(EmergencyEvaHandler.isActivePiece(player, pieces.get(1)), "Death invalidates stored pieces");
             NeoForge.EVENT_BUS.post(new PlayerEvent.PlayerRespawnEvent(player, false));
             helper.assertFalse(EmergencyEvaHandler.isActivePiece(player, pieces.get(1)), "New issue never revives old chest-stored gear");
-            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 12000, "New death grants fresh recovery attempt");
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 18000, "New death grants fresh fifteen-minute recovery attempt");
         });
     }
 
@@ -194,14 +196,15 @@ public final class EmergencyEvaGameTest {
             player.setSprinting(true);
             player.setKnownMovement(net.minecraft.world.phys.Vec3.ZERO);
             for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
-            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 11900,
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 17900
+                    && player.getData(ModAttachments.EMERGENCY_EVA).oxygenTicks() == 11900,
                     "Standing with sprint flag does not increase reserve draw");
             helper.assertTrue(player.getData(ModAttachments.EMERGENCY_EVA).exertionLoad() == 0,
                     "Actual movement required for exertion");
             player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.2, 0, 0));
             for (int i = 0; i < 63; i++) EmergencyEvaHandler.tick(player);
             var state = player.getData(ModAttachments.EMERGENCY_EVA);
-            helper.assertTrue(state.exertionLoad() == 200 && state.oxygenTicks() < 11837 && state.remainingTicks() == 11837,
+            helper.assertTrue(state.exertionLoad() == 200 && state.oxygenTicks() < 11837 && state.remainingTicks() == 17837,
                     "Real server tick ramps exertion and charges more reserve");
             var saved = state.serializeNBT(player.registryAccess());
             var restored = new EmergencyEvaState();
@@ -247,10 +250,17 @@ public final class EmergencyEvaGameTest {
             EmergencyEvaHandler.issueKit(player);
             player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.12, 0, 0));
             for (int i = 0; i < 11999; i++) EmergencyEvaHandler.tick(player);
-            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 1 && EmergencyEvaHandler.hasLifeSupport(player),
-                    "Walking still receives the full original ten-minute budget");
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 6001 && EmergencyEvaHandler.hasLifeSupport(player)
+                    && player.getData(ModAttachments.EMERGENCY_EVA).oxygenTicks() == 1,
+                    "Walking retains the full ten-minute oxygen reserve with five extra service minutes");
             EmergencyEvaHandler.tick(player);
-            helper.assertFalse(EmergencyEvaHandler.hasLifeSupport(player), "Walking expires at original boundary");
+            helper.assertFalse(EmergencyEvaHandler.hasLifeSupport(player), "Oxygen expires at ten minutes");
+            helper.assertTrue(EmergencyEvaHandler.hasThermalSupport(player) && EmergencyEvaHandler.remainingTicks(player) == 6000,
+                    "Thermal service still has five minutes after reserve oxygen expires");
+            for (int i = 0; i < 5999; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(EmergencyEvaHandler.hasThermalSupport(player), "Thermal service protects through its final tick");
+            EmergencyEvaHandler.tick(player);
+            helper.assertFalse(EmergencyEvaHandler.hasThermalSupport(player), "Thermal service expires at fifteen minutes");
             EmergencyEvaHandler.issueKit(player);
             var issue = player.getData(ModAttachments.EMERGENCY_EVA).issue();
             player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 1, 200));
@@ -324,7 +334,7 @@ public final class EmergencyEvaGameTest {
             var legacy = saved.copy();
             legacy.remove("wornTicks"); legacy.remove("thermalLoad");
             restored.deserializeNBT(player.registryAccess(), legacy);
-            helper.assertTrue(restored.wornTicks() == EmergencyEvaState.SERVICE_TICKS - restored.remainingTicks()
+            helper.assertTrue(restored.wornTicks() == Math.max(0, EmergencyEvaState.OXYGEN_TICKS - restored.remainingTicks())
                     && restored.thermalLoad() == 0, "Legacy saves preserve reserve and migrate age without invented heat");
             EmergencyEvaHandler.issueKit(player);
             var fresh = player.getData(ModAttachments.EMERGENCY_EVA);
@@ -374,8 +384,11 @@ public final class EmergencyEvaGameTest {
                     "First unsafe observation closes the restored intake and resumes reserve draw");
             var legacy = tag.copy();
             legacy.remove("oxygenTicks"); legacy.remove("ambientTicks"); legacy.remove("retirement");
+            legacy.remove("wornTicks"); legacy.remove("thermalLoad");
+            legacy.putInt("remainingTicks", 8000);
             restored.deserializeNBT(player.registryAccess(), legacy);
-            helper.assertTrue(restored.oxygenTicks() == restored.remainingTicks() && !restored.ambientIntake(),
+            helper.assertTrue(restored.oxygenTicks() == 8000 && restored.remainingTicks() == 8000
+                    && restored.wornTicks() == 4000 && !restored.ambientIntake(),
                     "Legacy shared budget becomes two equally spent clocks without a refill");
             player.setPos(center.getCenter());
             PlayerTickHandler.syncBreathableState(player);

@@ -178,6 +178,10 @@
     "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_ambient",
     "sounds": [{ "name": "frozendawn:ui/suit/emergency_eva_ambient", "stream": true }]
   },
+  "ui.suit.emergency_eva_service_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_service_critical",
+    "sounds": [{"name": "frozendawn:ui/suit/emergency_eva_service_critical", "stream": false}]
+  },
   "ui.suit.emergency_eva_handoff": {
     "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_handoff",
     "sounds": [{ "name": "frozendawn:ui/suit/emergency_eva_handoff", "stream": true }]

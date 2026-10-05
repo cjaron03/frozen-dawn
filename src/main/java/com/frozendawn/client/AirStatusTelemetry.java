@@ -117,7 +117,7 @@ public final class AirStatusTelemetry {
     public static TankTelemetry getTankTelemetry(Player player) {
         if (com.frozendawn.event.EmergencyEvaHandler.hasLifeSupport(player)) {
             return new TankTelemetry(player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).oxygenTicks(),
-                    com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS, 1);
+                    com.frozendawn.data.EmergencyEvaState.OXYGEN_TICKS, 1);
         }
         int totalO2 = 0;
         int totalMaxO2 = 0;

@@ -3,7 +3,7 @@ package com.frozendawn.client;
 /** Sparse, state-driven diagnostics; callers acknowledge only messages actually displayed. */
 final class EmergencyEvaDiagnostics {
     private static final int MESSAGE_GAP = 35 * 20;
-    private static final int HALF_SERVICE = 5 * 60 * 20;
+    private static final int SERVICE_REVEAL = 5 * 60 * 20;
     private static final int LOW_RESERVE = 2 * 60 * 20;
     private static final int CRITICAL_RESERVE = 60 * 20;
     private int cooldown;
@@ -38,7 +38,7 @@ final class EmergencyEvaDiagnostics {
 
     void reset(int reserveTicks, int wornTicks, int serviceTicks) {
         // Do not dump historical threshold messages when rejoining a spent issue.
-        halfReported = serviceTicks <= HALF_SERVICE;
+        halfReported = serviceTicks <= SERVICE_REVEAL;
         lowReported = reserveTicks <= LOW_RESERVE;
         criticalReported = reserveTicks <= CRITICAL_RESERVE;
         moistureReported = false;
@@ -80,17 +80,19 @@ final class EmergencyEvaDiagnostics {
                     boolean coolingDegraded, boolean highHeat, int serviceTicks, boolean ambient) {
         // Heat can rise faster than routine maintenance messages. A newly high
         // load may bypass their gap, but never displaces a reserve emergency.
-        if (serviceTicks <= 0 || cooldown > 0 && !(sealed && highHeat && !thermalReported)) return null;
+        boolean powerCritical = sealed && serviceTicks <= CRITICAL_RESERVE && !serviceCriticalReported;
+        if (serviceTicks <= 0 || cooldown > 0 && !powerCritical && !(sealed && highHeat && !thermalReported)) return null;
         if (!sealed && !sealReported) return Message.SEAL_OPEN;
         if (!sealed) return null;
         boolean serviceFirst = ambient || serviceTicks < reserveTicks || reserveTicks <= 0;
         if (serviceFirst && serviceTicks <= CRITICAL_RESERVE && !serviceCriticalReported) return Message.SERVICE_CRITICAL;
         if (!ambient && reserveTicks > 0 && reserveTicks <= CRITICAL_RESERVE && !criticalReported) return Message.CRITICAL;
+        if (powerCritical) return Message.SERVICE_CRITICAL;
         if (serviceFirst && serviceTicks <= LOW_RESERVE && !serviceLowReported) return Message.SERVICE_LOW;
         if (!ambient && reserveTicks > 0 && reserveTicks <= LOW_RESERVE && !lowReported) return Message.LOW;
         if (highHeat && !thermalReported) return Message.THERMAL;
         if (coolingDegraded && !coolingReported) return Message.COOLING;
-        if (serviceTicks <= HALF_SERVICE && !halfReported) return Message.SERVICE;
+        if (serviceTicks <= SERVICE_REVEAL && !halfReported) return Message.SERVICE;
         if (highDraw && !exertionReported) return Message.EXERTION;
         if (visibleMoisture && !moistureReported) return Message.MOISTURE;
         return null;

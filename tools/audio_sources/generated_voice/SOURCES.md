@@ -152,3 +152,20 @@ The handoff displays over the regular EVA HUD after server verification and
 emergency retirement. These are CC BY-SA 4.0 processed performances with the
 attribution/modifications in NOTICE.md. No macOS speech, new model or external
 recording is used; generator model/engine stay outside the distributed jar.
+
+## 2026-10-05 emergency service and warning revision
+
+Regenerated only activation and condition advisories with the same local Piper
+`en_US-amy-medium` voice and ORSA processing profile. Added the one-minute
+service-critical line. Activation distinguishes ten-minute oxygen from
+fifteen-minute service; condition wording is shorter and remains in the typed
+ORSA HUD. Existing licensing and model provenance above apply.
+
+- `ui/suit/emergency_eva_active.ogg`: 6.257778 seconds; SHA-256 `0c1bbbabdd6a71eec39dfb9acfee6fe828f72c2da6121c0b8c9258ea0d867cea`.
+
+- `ui/suit/emergency_eva_condition.ogg`: 9.206712 seconds; SHA-256 `f2adc10b43e3517e4cedd80cabfe5ff6c32230ff440c9acc5f61b3e0ce3dfc12`.
+
+- `ui/suit/emergency_eva_service_critical.ogg`: 5.642449 seconds; SHA-256 `00d1d947aae7ec67c835f551394d1bb6926769901b37ae331e27675fb9d4c4e5`.
+
+All other 307 prior audio assets are unchanged. No macOS voices or model weights
+are included in the mod jar.

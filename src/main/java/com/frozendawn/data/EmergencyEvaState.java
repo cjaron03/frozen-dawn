@@ -7,7 +7,8 @@ import net.neoforged.neoforge.common.util.INBTSerializable;
 
 /** One issued recovery kit. Its lease survives saves but never another death. */
 public final class EmergencyEvaState implements INBTSerializable<CompoundTag> {
-    public static final int SERVICE_TICKS = 10 * 60 * 20;
+    public static final int SERVICE_TICKS = 15 * 60 * 20;
+    public static final int OXYGEN_TICKS = 10 * 60 * 20;
     public static final UUID NO_ISSUE = new UUID(0, 0);
     public static final int ACTIVE = 0, HANDOFF = 1, EXPIRED = 2;
     private UUID issue = NO_ISSUE;
@@ -23,7 +24,7 @@ public final class EmergencyEvaState implements INBTSerializable<CompoundTag> {
     public EmergencyEvaState(UUID issue, int remainingTicks) {
         this.issue = issue;
         this.remainingTicks = Math.clamp(remainingTicks, 0, SERVICE_TICKS);
-        oxygenTicks = this.remainingTicks;
+        oxygenTicks = Math.min(this.remainingTicks, OXYGEN_TICKS);
         thermal = new EmergencyEvaThermal(SERVICE_TICKS - this.remainingTicks, 0);
     }
     public EmergencyEvaState(UUID issue, int remainingTicks, int load) {
@@ -37,7 +38,7 @@ public final class EmergencyEvaState implements INBTSerializable<CompoundTag> {
     public EmergencyEvaState(UUID issue, int remainingTicks, int oxygenTicks, int load,
                              int wornTicks, int heat, boolean ambient, int retirement) {
         this(issue, remainingTicks, load, wornTicks, heat);
-        this.oxygenTicks = Math.clamp(oxygenTicks, 0, SERVICE_TICKS);
+        this.oxygenTicks = Math.clamp(oxygenTicks, 0, OXYGEN_TICKS);
         this.retirement = Math.clamp(retirement, ACTIVE, EXPIRED);
         intake = new EmergencyEvaAirIntake(ambient ? EmergencyEvaAirIntake.STABLE_TICKS : 0);
     }
@@ -108,14 +109,14 @@ public final class EmergencyEvaState implements INBTSerializable<CompoundTag> {
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
         issue = tag.hasUUID("issue") ? tag.getUUID("issue") : NO_ISSUE;
         remainingTicks = Math.clamp(tag.getInt("remainingTicks"), 0, SERVICE_TICKS);
-        oxygenTicks = Math.clamp(tag.contains("oxygenTicks") ? tag.getInt("oxygenTicks") : remainingTicks, 0, SERVICE_TICKS);
+        oxygenTicks = Math.clamp(tag.contains("oxygenTicks") ? tag.getInt("oxygenTicks") : remainingTicks, 0, OXYGEN_TICKS);
         retirement = Math.clamp(tag.getInt("retirement"), ACTIVE, EXPIRED);
         intake = new EmergencyEvaAirIntake(tag.getInt("ambientTicks"));
         exertion = new EmergencyEvaExertion(tag.getInt("exertionLoad"), tag.getInt("fractionalDebit"));
-        // Older saves have no worn clock: migrate from the already consumed
-        // reserve once, without refilling reserve or inventing accumulated heat.
+        // Pre-clock saves used a ten-minute shared budget. Keep that historical
+        // age and balance; the longer limit applies only to newly issued kits.
         thermal = new EmergencyEvaThermal(tag.contains("wornTicks") ? tag.getInt("wornTicks")
-                : SERVICE_TICKS - remainingTicks, tag.getInt("thermalLoad"));
+                : Math.max(0, OXYGEN_TICKS - remainingTicks), tag.getInt("thermalLoad"));
         lastSyncedMask = -1;
     }
 }

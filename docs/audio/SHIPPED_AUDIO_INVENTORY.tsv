@@ -290,10 +290,11 @@ assets/frozendawn/sounds/ui/suit/aggregate_ossuary.ogg	1b350997fe704e5942dfa6742
 assets/frozendawn/sounds/ui/suit/aggregate_resolved.ogg	2ac1f25b12348630b506a7b0fea1e7fef6ee89808ace39de67cfecbae6d4d94a	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/biological_activity_warning.ogg	fdeb390efb00aa8150f4e665991c18e1146da7c69c95ad576fd6cbc0259a545a	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/bloom_contact.ogg	3556e19bb58c074d7cdd1fc0ed1649c8126eb7b7be8c2c48d7c48a54a9e44046	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
-assets/frozendawn/sounds/ui/suit/emergency_eva_active.ogg	619f6722c9f4dcb836cb9a06d7a5f9397aabdec1ae45f3690feb54742a62c5b5	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
+assets/frozendawn/sounds/ui/suit/emergency_eva_active.ogg	0c1bbbabdd6a71eec39dfb9acfee6fe828f72c2da6121c0b8c9258ea0d867cea	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/emergency_eva_ambient.ogg	00596e690a2bb4aa3f462124ae92e42d227beb2f700a8ee454646a97cb512bc0	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
-assets/frozendawn/sounds/ui/suit/emergency_eva_condition.ogg	f39073e1f3da7930efb7eb835c9dee7429dc9aeaf1f56159d989df3d89f1f908	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
+assets/frozendawn/sounds/ui/suit/emergency_eva_condition.ogg	f2adc10b43e3517e4cedd80cabfe5ff6c32230ff440c9acc5f61b3e0ce3dfc12	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/emergency_eva_handoff.ogg	761d2b07305cc9192412cfe6f06b639176a617de75b13b65fcb3fcb3dd38cd89	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
+assets/frozendawn/sounds/ui/suit/emergency_eva_service_critical.ogg	00d1d947aae7ec67c835f551394d1bb6926769901b37ae331e27675fb9d4c4e5	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/emergency_regulator.ogg	9641d00385e3dbb9f5787238a267edd4a439925080f52aa711f00e347701b174	emergency_eva_hardware_procedural	tools/audio_sources/emergency_eva/HARDWARE.md	Frozen Dawn original
 assets/frozendawn/sounds/ui/suit/emergency_reserve.ogg	b6364d371ccf39cef0f80003bc389e7135d34dfb3e431214029c192882a8acbc	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/emergency_shutdown.ogg	ac84cc0b29da5720cb6f91f531267ef370da7588965833553f47b9b44b7c9a6a	emergency_eva_hardware_procedural	tools/audio_sources/emergency_eva/HARDWARE.md	Frozen Dawn original

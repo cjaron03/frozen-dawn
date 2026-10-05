@@ -25,7 +25,8 @@ public final class AirStatusHud {
     private static final int PADDING_X = 4;
     private static final int PADDING_Y = 2;
     private static final int PANEL_HEIGHT = 22;
-    private static final int EMERGENCY_PANEL_HEIGHT = 49;
+    private static final int EMERGENCY_PANEL_HEIGHT = 40;
+    private static final int SERVICE_TIMER_TICKS = 5 * 60 * 20;
     private static final int PULSE_DURATION = 12;
     private static final int MODULE_ICON_SIZE = 8;
     private static final int MODULE_ICON_GAP = 3;
@@ -47,7 +48,11 @@ public final class AirStatusHud {
         boolean emergency = player != null && !player.isCreative() && !player.isSpectator()
                 && EmergencyEvaHandler.isWearingIssuedPiece(player);
         return TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + PANEL_GAP
-                + (emergency ? EMERGENCY_PANEL_HEIGHT : PANEL_HEIGHT);
+                + (emergency ? emergencyPanelHeight(player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA)) : PANEL_HEIGHT);
+    }
+
+    private static int emergencyPanelHeight(EmergencyEvaState state) {
+        return EMERGENCY_PANEL_HEIGHT + (state.remainingTicks() <= SERVICE_TIMER_TICKS ? 9 : 0);
     }
 
     public static void reset() {
@@ -77,7 +82,7 @@ public final class AirStatusHud {
                     breathable ? AirStatusTelemetry.State.BREATHABLE
                             : EmergencyEvaHandler.hasThermalSupport(mc.player) && AirStatusTelemetry.hasUsableO2Tank(mc.player)
                                     ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.State.VACUUM,
-                    new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.SERVICE_TICKS, 1)), null);
+                    new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.OXYGEN_TICKS, 1)), null);
             ContinuityRecoveryHud.render(graphics);
             return;
         }
@@ -161,7 +166,8 @@ public final class AirStatusHud {
                         : "hud.frozendawn.emergency_eva.seal_open"
                 : "hud.frozendawn.emergency_eva.reserve_empty").getString() : "";
         String returnOnly = Component.translatable("hud.frozendawn.emergency_eva.return_only").getString();
-        String serviceText = emergency ? Component.translatable("hud.frozendawn.emergency_eva.service_remaining",
+        boolean showService = emergency && emergencyState.remainingTicks() <= SERVICE_TIMER_TICKS;
+        String serviceText = showService ? Component.translatable("hud.frozendawn.emergency_eva.service_remaining",
                 AirStatusEtaPolicy.format((emergencyState.remainingTicks() + 19) / 20)).getString() : "";
         String thermalStatus = emergency ? Component.translatable(emergencyState.remainingTicks() == 0
                 ? "hud.frozendawn.emergency_eva.thermal_offline"
@@ -181,7 +187,7 @@ public final class AirStatusHud {
         String purpose = emergencyState.ambientIntake() ? "" : returnOnly + " // ";
         if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(purpose + packStatus));
         if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(thermalStatus));
-        if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(serviceText));
+        if (showService) contentWidth = Math.max(contentWidth, mc.font.width(serviceText));
         int totalWidth = PADDING_X * 2
                 + ACCENT_WIDTH
                 + BADGE_GAP
@@ -199,7 +205,7 @@ public final class AirStatusHud {
         int badgeColor = mixTowardWhite(state.badgeColor(), 0.12F * pulse);
         int tankValueColor = getTankValueColor(tankTelemetry, pulse);
 
-        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, emergency ? EMERGENCY_PANEL_HEIGHT : PANEL_HEIGHT,
+        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, emergency ? emergencyPanelHeight(emergencyState) : PANEL_HEIGHT,
                 accentColor, borderColor, badgeColor);
         int airTextY = y + PADDING_Y + 1;
         int tankTextY = airTextY + 9;
@@ -209,9 +215,9 @@ public final class AirStatusHud {
         int tankValueX = textX + tankPrefixWidth + 3;
         graphics.drawString(mc.font, tankValue, tankValueX, tankTextY, tankValueColor, false);
         if (emergency) {
-            int statusY = tankTextY + 18;
-            graphics.drawString(mc.font, serviceText, textX, tankTextY + 9,
-                    emergencyState.remainingTicks() <= 2400 ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.MUTED_COLOR, false);
+            int statusY = tankTextY + (showService ? 18 : 9);
+            if (showService) graphics.drawString(mc.font, serviceText, textX, tankTextY + 9,
+                    emergencyState.remainingTicks() <= 1200 ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.MUTED_COLOR, false);
             graphics.drawString(mc.font, purpose, textX, statusY, OrsaHudPanel.MUTED_COLOR, false);
             int statusColor = emergencyState.ambientIntake() ? OrsaHudPanel.VALUE_COLOR
                     : !tankTelemetry.hasUsableO2() ? OrsaHudPanel.CRITICAL_COLOR

@@ -22,7 +22,7 @@ public final class EmergencyEvaClient {
     private static UUID pendingConditionNotice;
     private static int conditionNoticeDelay;
     private static SimpleSoundInstance conditionVoice;
-    private static final int CONDITION_NOTICE_TICKS = 20 * 20;
+    private static final int CONDITION_NOTICE_TICKS = 12 * 20;
     private static UUID pendingShelterNotice;
     private static int shelterNoticeDelay;
     private static int beepCooldown;
@@ -89,9 +89,10 @@ public final class EmergencyEvaClient {
             previousReserve = state.oxygenTicks();
             ambientNoticeCooldown = 0;
             diagnostics.reset(state.oxygenTicks(), state.wornTicks(), state.remainingTicks());
-            // Only a fresh reserve can truthfully announce ten minutes. Returning
+            // Only a fresh issue can truthfully announce both full budgets. Returning
             // to a partly spent issue after login must not replay that promise.
             pendingVoiceIssue = state.remainingTicks() >= com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS - 40
+                    && state.oxygenTicks() >= com.frozendawn.data.EmergencyEvaState.OXYGEN_TICKS - 50
                     ? state.issue() : null;
             activationVoiceDelay = 20;
             if (EmergencyEvaHandler.hasThermalSupport(mc.player)) {
@@ -143,6 +144,11 @@ public final class EmergencyEvaClient {
                 && !mc.options.hideGui && !OrsaAwakeningIntro.shouldSuppressSurvivalHud()
                 && MasterArchitectFloodClient.showWarningSuitDialogueIfIdle(diagnostic.key())) {
             diagnostics.acknowledge(diagnostic);
+            if (diagnostic == EmergencyEvaDiagnostics.Message.SERVICE_CRITICAL) {
+                stopConditionVoice();
+                conditionVoice = SimpleSoundInstance.forUI(ModSounds.SUIT_EMERGENCY_EVA_SERVICE_CRITICAL.get(), 1.0F, 1.0F);
+                mc.getSoundManager().play(conditionVoice);
+            }
             if (diagnostic == EmergencyEvaDiagnostics.Message.THERMAL
                     || diagnostic == EmergencyEvaDiagnostics.Message.COOLING) beep(0.65F, 0.85F);
         }
@@ -162,7 +168,7 @@ public final class EmergencyEvaClient {
             beep(seconds <= 15 ? 0.85F : 0.65F, seconds <= 60 ? 1.16F : 1.0F);
             beepCooldown = seconds <= 15 ? 20 : seconds <= 60 ? 60 : 200;
         }
-        if (state.remainingTicks() > 0 && state.remainingTicks() <= 6000 && creakCooldown == 0) {
+        if (state.remainingTicks() > 0 && state.coolingDegraded() && creakCooldown == 0) {
             mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.GLASS_BREAK, 0.07F, 0.55F));
             creakCooldown = seconds <= 120 ? 600 : 1200;
         }
