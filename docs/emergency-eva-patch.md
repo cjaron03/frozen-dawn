@@ -745,3 +745,22 @@ preserved ORSA Continuity - Phase 6 save to continue testing. The new startup
 limits and advisory play on a fresh issue; a saved partly spent kit keeps its
 existing balance and does not replay a full-budget promise. Owner visual/audio
 and live multiplayer acceptance remain pending. No push.
+
+
+## PR publication — 2026-10-05
+
+The owner described the latest iteration as “perfect” and authorized pushing
+the patch and opening its PR. Published `fix/emergency-eva-respawn` and opened
+[PR #102](https://github.com/cjaron03/frozen-dawn/pull/102) into
+`feat/maeve-director`. The final gameplay commit remains
+`6809233d4de86e7581d62aec0eebe7dd9d283241`; the verified gameplay sources,
+assets and jar hash above are unchanged. Live multiplayer remains unverified.
+
+GitHub reported no conflicts (MERGEABLE) but blocked merging at publication.
+The target branch requires strict `architectVerify` and `architectMonkey`
+commit status checks; neither had been reported on the PR. Its required
+approving-review count is zero and conversation resolution is enabled. Local
+headless evidence above is recorded in the PR description; missing GitHub
+statuses are not represented as passing remote checks. The PR is open for
+review, with its verification results, owner feedback and multiplayer gap
+documented. No merge was performed as part of the request to open the PR.
