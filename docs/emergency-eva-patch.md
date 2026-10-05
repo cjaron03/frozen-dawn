@@ -764,3 +764,28 @@ headless evidence above is recorded in the PR description; missing GitHub
 statuses are not represented as passing remote checks. The PR is open for
 review, with its verification results, owner feedback and multiplayer gap
 documented. No merge was performed as part of the request to open the PR.
+
+
+## Required merge gates — 2026-10-05
+
+The owner authorized resolving or bypassing the P0 merge blockers. The missing
+checks were absent commit statuses: this repository has no configured GitHub
+Actions workflows. Retained branch protection and ran both named gates locally
+on published revision `4080b72bf5d06a30c28def427228991675228ac9` with Java 21:
+`./gradlew test --rerun architectVerify architectMonkey --console=plain`.
+
+Both gates passed: 665 unit tests, 8 gate-harness tests, 238 regression GameTests
+with all 233 required cases/reports, and 738 stress-server GameTests containing
+the unchanged 500-seed stress matrix plus 238 repeated regressions. XML reports
+contain no failures/errors/skips. Regression artifacts:
+`build/architect-reports/5ac2c4ab-8e63-41b3-9ef5-315be9a94e07/`. Stress artifacts:
+`build/architect-monkey-reports/c70f1a74-e9b1-468f-8750-12dd50e6167d/`.
+
+This checkpoint is a documentation-only follow-up; gameplay source, test
+fixtures, seeds, build inputs and the verified jar hash are unchanged. The
+required statuses are reported from actual local gate evidence on the final
+published revision, after checking that only this document differs from the
+tested commit. Final head, status read-back and merge outcome are kept in
+`build/emergency-eva-evidence/pr-102-merge/verification.json`. The intended
+merge target remains `feat/maeve-director`. The current client/save are untouched
+by these separate headless test worlds. Live multiplayer remains unverified.
