@@ -62,6 +62,27 @@ public final class ClientHandlers {
         ApocalypseClientData.setBreathable(payload.breathable());
     }
 
+    public static void handleEmergencyEva(EmergencyEvaPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            player.setData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA,
+                    new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks(),
+                            payload.oxygenTicks(), payload.exertionLoad(), payload.wornTicks(), payload.thermalLoad(),
+                            payload.ambient(), payload.retirement()));
+            if (payload.notice() != EmergencyEvaPayload.NO_NOTICE)
+                com.frozendawn.client.EmergencyEvaClient.onNotice(payload.issue(), payload.notice());
+        }
+    }
+
+    public static void handleContinuityRecovery(ContinuityRecoveryPayload payload) {
+        var player = Minecraft.getInstance().player;
+        if (player != null) {
+            var record = new com.frozendawn.data.ContinuityRecoveryState();
+            record.deserializeNBT(player.registryAccess(), payload.record());
+            player.setData(com.frozendawn.init.ModAttachments.CONTINUITY_RECOVERY, record);
+        }
+    }
+
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
         SuitIntegrityClient.update(payload);
     }

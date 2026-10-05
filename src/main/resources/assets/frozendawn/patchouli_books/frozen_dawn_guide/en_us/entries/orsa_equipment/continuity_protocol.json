@@ -1,0 +1,28 @@
+{
+  "name": "Continuity Protocol",
+  "category": "frozendawn:orsa_equipment",
+  "icon": "frozendawn:emergency_eva_chestplate",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Continuity Protocol",
+      "text": "$(bold)Continuity protocol: active.$()$(br2)Emergency EVA supplies ten minutes of reserve oxygen and fifteen minutes of equipped thermal service following equipment loss in late Phase 6. Missing suit components are issued automatically upon return.$(br2)Recover a serviceable rig or return to recorded shelter. This equipment is disposable. Its service clock is shared across all issued pieces."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recorded Shelter",
+      "text": "Setting your respawn point at a bed or charged anchor records a shelter automatically.$(br2)The position record is degraded. Follow the approximate bearing, then search within 32 blocks of the estimated fix. The estimate remains consistent across replacement issues.$(br2)$(italic)Recorded locations do not constitute confirmation of habitable conditions.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Last Telemetry",
+      "text": "The suit archives the location of equipment loss. Use $(k:key.frozendawn.continuity_target) to switch between LAST TELEMETRY and LAST SHELTER.$(br2)Telemetry records a position, not the continued presence of your equipment. Subsequent empty-handed emergency losses preserve the original destination.$(br2)Equipment from the qualifying loss has fifteen minutes of lifetime while its area is ticking. Fire, lava and other hazards still apply."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Service Limits",
+      "text": "Inventory service bars track equipped service power. The HUD service timer appears with five minutes remaining. Breathable air conserves oxygen; service power continues counting down. Impacts still injure the wearer, but do not shorten emergency service. Progressive seal deterioration appears at the visor edges.$(br2)At service zero, thermal control, navigation and emergency armor protection end, and issued pieces are removed. A complete sealed normal EVA rig with usable oxygen retires the emergency issue immediately.$(br2)Removing every issued piece pauses service and removes its life support. Repair, cartridges and replacement issues cannot refresh old equipment."
+    }
+  ]
+}

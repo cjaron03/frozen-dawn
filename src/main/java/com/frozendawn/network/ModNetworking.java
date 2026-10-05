@@ -41,6 +41,19 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(EmergencyEvaPayload.TYPE, EmergencyEvaPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleEmergencyEva(payload)));
+
+        registrar.playToClient(ContinuityRecoveryPayload.TYPE, ContinuityRecoveryPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleContinuityRecovery(payload)));
+
+        registrar.playToServer(ContinuityTargetPayload.TYPE, ContinuityTargetPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        com.frozendawn.event.ContinuityRecoveryHandler.selectTarget(player, payload.issue(), payload.shelter());
+                    }
+                }));
+
         registrar.playToClient(ArchitectDebugPayload.TYPE, ArchitectDebugPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleArchitectDebug(payload)));
 

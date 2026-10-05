@@ -234,6 +234,16 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.BOOTS,
                     new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(25))));
 
+    // Emergency equipment is issued by the death-respawn handler; no recipes or creative entries.
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_HELMET =
+            ITEMS.register("emergency_eva_helmet", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_CHESTPLATE =
+            ITEMS.register("emergency_eva_chestplate", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_LEGGINGS =
+            ITEMS.register("emergency_eva_leggings", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_BOOTS =
+            ITEMS.register("emergency_eva_boots", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.BOOTS));
+
     // --- Win Condition ---
     public static final DeferredItem<AcheroniteCompassItem> ACHERONITE_COMPASS = ITEMS.register("acheronite_compass",
             () -> new AcheroniteCompassItem(new Item.Properties().stacksTo(1)));

@@ -9,7 +9,9 @@
     "ChunkMapAccessor",
     "DisplayAccessor",
     "IceBlockMixin",
-    "LivingEntityMixin"
+    "LivingEntityMixin",
+    "ServerPlayerContinuityMixin",
+    "ItemEntityContinuityMixin"
   ],
   "client": [
     "DisplayWindowMixin",

@@ -68,6 +68,19 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_breathing")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING =
+            register("ambient.eva_emergency_breathing");
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING_FAST =
+            register("ambient.eva_emergency_breathing_fast");
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_FAN =
+            register("ambient.eva_emergency_fan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_REGULATOR =
+            register("ui.suit.emergency_regulator");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_SHUTDOWN =
+            register("ui.suit.emergency_shutdown");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_SUFFOCATE = SOUNDS.register("ambient.eva_suffocate",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_suffocate")));
@@ -79,6 +92,16 @@ public class ModSounds {
             register("ui.suit.oxygen_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
             register("ui.suit.leak_hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_ACTIVE =
+            register("ui.suit.emergency_eva_active");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_CONDITION =
+            register("ui.suit.emergency_eva_condition");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_AMBIENT =
+            register("ui.suit.emergency_eva_ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_SERVICE_CRITICAL =
+            register("ui.suit.emergency_eva_service_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_HANDOFF =
+            register("ui.suit.emergency_eva_handoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =
             register("ui.suit.emergency_reserve");
     public static final DeferredHolder<SoundEvent, SoundEvent>
