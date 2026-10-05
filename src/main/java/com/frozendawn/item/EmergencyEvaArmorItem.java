@@ -47,6 +47,7 @@ public final class EmergencyEvaArmorItem extends ArmorItem {
         tooltip.add(Component.translatable("tooltip.frozendawn.emergency_eva.remaining",
                 String.format(java.util.Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60))
                 .withStyle(seconds > 0 ? ChatFormatting.AQUA : ChatFormatting.RED));
+        tooltip.add(Component.translatable("tooltip.frozendawn.emergency_eva.exertion").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.frozendawn.emergency_eva.disposable").withStyle(ChatFormatting.GRAY));
     }
 }

@@ -1,4 +1,8 @@
 {
+  "ambient.eva_emergency_breathing_fast": {
+    "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
+    "sounds": [{ "name": "frozendawn:ambient/eva_emergency_breathing_fast", "stream": true }]
+  },
   "ambient.eva_emergency_fan": {
       "subtitle": "subtitle.frozendawn.ambient.eva_emergency_fan",
       "sounds": [

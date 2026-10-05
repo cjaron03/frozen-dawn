@@ -5,7 +5,7 @@ ui/suit/aggregate_gestation.ogg	orsa	Cohesion: increasing.
 ui/suit/aggregate_resolved.ogg	orsa	Cohesion: zero point zero zero. Origin: multiple. Genetic consensus: none. Primary driver: repeated mortality.
 ui/suit/puncture_warning.ogg	orsa	Warning: suit puncture detected.
 ui/suit/oxygen_critical.ogg	orsa	Oxygen reserves critical.
-ui/suit/emergency_eva_active.ogg	orsa	Emergency E V A active. Ten minutes of reserve life support.
+ui/suit/emergency_eva_active.ogg	orsa	Emergency E V A active. Up to ten minutes of reserve life support. Exertion increases oxygen use.
 ui/suit/emergency_reserve.ogg	orsa	Emergency reserve engaged. Please seek pressurized shelter.
 ui/suit/biological_activity_warning.ogg	orsa	Anomalous biological activity detected across all survey bands. Recommend elevated caution.
 ui/suit/bloom_contact.ogg	orsa	Unclassified crystalline growth. No entry in materials database.

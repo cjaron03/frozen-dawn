@@ -65,6 +65,18 @@ class EmergencyEvaDiagnosticsTest {
         assertNull(diagnostics.pending(1900, true, true));
     }
 
+    @Test
+    void exertionMessageFollowsCurrentLoadAndDoesNotRepeatAfterRecovery() {
+        var diagnostics = fresh();
+        assertEquals(EmergencyEvaDiagnostics.Message.EXERTION, diagnostics.pending(9000, true, false, true));
+        // Recover before a busy dialogue clears: the stale exertion message disappears.
+        assertNull(diagnostics.pending(8900, true, false, false));
+        diagnostics.acknowledge(EmergencyEvaDiagnostics.Message.EXERTION);
+        advance(diagnostics, true, 700);
+        assertNull(diagnostics.pending(8000, true, false, true));
+        assertEquals(EmergencyEvaDiagnostics.Message.CRITICAL, diagnostics.pending(1000, true, true, true));
+    }
+
     private static EmergencyEvaDiagnostics fresh() {
         var diagnostics = new EmergencyEvaDiagnostics();
         diagnostics.reset(12000);

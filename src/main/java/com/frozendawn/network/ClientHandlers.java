@@ -66,7 +66,7 @@ public final class ClientHandlers {
         var player = Minecraft.getInstance().player;
         if (player != null) {
             player.setData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA,
-                    new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks()));
+                    new com.frozendawn.data.EmergencyEvaState(payload.issue(), payload.remainingTicks(), payload.exertionLoad()));
         }
     }
 

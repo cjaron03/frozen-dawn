@@ -93,7 +93,7 @@ public final class EmergencyEvaHandler {
         } else if (event.getEntity() instanceof ServerPlayer player) {
             var previous = event.getOriginal().getData(ModAttachments.EMERGENCY_EVA);
             player.setData(ModAttachments.EMERGENCY_EVA,
-                    new EmergencyEvaState(previous.issue(), previous.remainingTicks()));
+                    previous.copy());
         }
     }
 
@@ -124,7 +124,11 @@ public final class EmergencyEvaHandler {
         int mask = wornMask(player);
         int previousTicks = state.remainingTicks();
         if (mask != 0 && player.isAlive() && !player.isCreative() && !player.isSpectator()) {
-            state.tickWorn();
+            boolean running = player.isSprinting() && !player.isPassenger()
+                    && player.getKnownMovement().horizontalDistanceSqr() > 0.001;
+            state.tickWorn(running);
+        } else {
+            state.recoverUnworn();
         }
         if (state.equipmentChanged(mask) || (mask != 0
                 && (player.tickCount % 20 == 0 || previousTicks > 0 && state.remainingTicks() == 0))) sync(player);
@@ -200,6 +204,6 @@ public final class EmergencyEvaHandler {
     }
     private static void sync(ServerPlayer player) {
         var state = player.getData(ModAttachments.EMERGENCY_EVA);
-        PacketDistributor.sendToPlayer(player, new EmergencyEvaPayload(state.issue(), state.remainingTicks()));
+        PacketDistributor.sendToPlayer(player, new EmergencyEvaPayload(state.issue(), state.remainingTicks(), state.exertionLoad()));
     }
 }

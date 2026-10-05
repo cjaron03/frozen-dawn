@@ -90,7 +90,7 @@ public final class EmergencyEvaClient {
         boolean sealed = EmergencyEvaHandler.hasLifeSupport(mc.player);
         diagnostics.tick(sealed);
         var diagnostic = diagnostics.pending(state.remainingTicks(), sealed,
-                EmergencyEvaVisor.hasVisibleCondensation());
+                EmergencyEvaVisor.hasVisibleCondensation(), state.exertionIntensity() >= 0.25F);
         if (diagnostic != null && pendingVoiceIssue == null && pendingShelterNotice == null
                 && !mc.options.hideGui && !OrsaAwakeningIntro.shouldSuppressSurvivalHud()
                 && MasterArchitectFloodClient.showWarningSuitDialogueIfIdle(diagnostic.key())) {

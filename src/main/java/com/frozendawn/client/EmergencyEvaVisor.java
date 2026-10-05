@@ -15,7 +15,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-/** Cosmetic outer-visor repair and slow peripheral moisture; never obscures the center. */
+/** Cosmetic outer-visor repair, heavy peripheral moisture and a restrained central haze. */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class EmergencyEvaVisor {
     private static final ResourceLocation TAPE = ResourceLocation.fromNamespaceAndPath(
@@ -43,13 +43,12 @@ public final class EmergencyEvaVisor {
         if (sealed) {
             float reserve = EmergencyEvaHandler.remainingTicks(mc.player)
                     / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
-            boolean exertion = mc.player.isSprinting()
-                    && mc.player.getDeltaMovement().horizontalDistanceSqr() > 0.001;
+            float exertion = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity();
             float age = Mth.clamp((1.0F - reserve - 0.10F) / 0.90F, 0.0F, 1.0F);
             float ageCurve = age * age * (3.0F - 2.0F * age);
-            target = 0.04F + 0.66F * ageCurve + (exertion ? 0.18F : 0.0F);
+            target = Math.min(1.0F, 0.04F + 0.66F * ageCurve + 0.78F * exertion);
         }
-        condensation = Mth.lerp(target > condensation ? 0.006F : 0.004F, condensation, target);
+        condensation = Mth.lerp(target > condensation ? 0.010F : 0.002F, condensation, target);
     }
 
     static boolean hasVisibleCondensation() {
@@ -84,23 +83,30 @@ public final class EmergencyEvaVisor {
         if (condensation < 0.01F || !EmergencyEvaHandler.hasLifeSupport(Minecraft.getInstance().player)) return;
         int width = graphics.guiWidth();
         int height = graphics.guiHeight();
-        int pixel = Math.max(2, Math.min(width, height) / 90);
-        float sideDepth = width * (0.05F + 0.09F * condensation);
-        float bottomDepth = height * (0.08F + 0.10F * condensation);
-        // Age gradually spreads moisture inward at the perimeter; the center and telemetry stay clear.
-        for (int y = height / 3; y < height; y += pixel) {
+        int pixel = Math.max(3, Math.min(width, height) / 72);
+        float sideDepth = width * (0.05F + 0.17F * condensation);
+        float bottomDepth = height * (0.08F + 0.16F * condensation);
+        float topDepth = height * 0.10F;
+        int hazeAlpha = Math.round(12.0F * Math.max(0.0F, condensation - 0.32F));
+        // A light film reaches the central view, capped at 3.2% opacity. Keep the HUD corner clear.
+        if (hazeAlpha > 0) {
+            graphics.fill(0, height / 3, width, height, hazeAlpha << 24 | 0xB9CED1);
+            graphics.fill(width * 3 / 5, 0, width, height / 3, hazeAlpha << 24 | 0xB9CED1);
+        }
+        for (int y = 0; y < height; y += pixel) {
             for (int x = 0; x < width; x += pixel) {
+                if (y < height / 3 && x < width * 3 / 5) continue;
                 float side = 1.0F - Math.min(x, width - 1 - x) / sideDepth;
                 float bottom = 1.0F - (height - 1 - y) / bottomDepth;
-                float edge = Mth.clamp(Math.max(side, bottom), 0.0F, 1.0F);
+                float edge = Mth.clamp(Math.max(Math.max(side, bottom), 1.0F - y / topDepth), 0.0F, 1.0F);
                 if (edge <= 0.0F) continue;
                 int pattern = Math.floorMod(x / pixel * 17 + y / pixel * 31, 11);
-                int alpha = Math.round(54.0F * condensation * edge * (0.55F + pattern / 22.0F));
+                int alpha = Math.round(78.0F * condensation * edge * (0.55F + pattern / 22.0F));
                 if (alpha > 0) graphics.fill(x, y, Math.min(width, x + pixel), Math.min(height, y + pixel),
                         alpha << 24 | 0xA9C2C9);
                 // Sparse fixed droplets, rather than animated noise or a screen-wide blur.
                 if (condensation >= 0.25F && edge > 0.30F && pattern == 0) {
-                    int dropletAlpha = Math.round(42.0F * condensation * edge);
+                    int dropletAlpha = Math.round(65.0F * condensation * edge);
                     graphics.fill(x, y, Math.min(width, x + pixel), Math.min(height, y + pixel / 2 + 1),
                             dropletAlpha << 24 | 0xC8DADE);
                 }

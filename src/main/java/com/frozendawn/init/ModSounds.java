@@ -71,6 +71,9 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING =
             register("ambient.eva_emergency_breathing");
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING_FAST =
+            register("ambient.eva_emergency_breathing_fast");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_FAN =
             register("ambient.eva_emergency_fan");
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_REGULATOR =

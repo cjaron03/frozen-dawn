@@ -149,7 +149,8 @@ public final class AirStatusHud {
         }
         String packStatus = emergency ? Component.translatable(tankTelemetry.hasUsableO2()
                 ? EmergencyEvaHandler.hasLifeSupport(mc.player)
-                        ? "hud.frozendawn.emergency_eva.pack_online"
+                        ? mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity() >= 0.25F
+                                ? "hud.frozendawn.emergency_eva.pack_high_draw" : "hud.frozendawn.emergency_eva.pack_online"
                         : "hud.frozendawn.emergency_eva.seal_open"
                 : "hud.frozendawn.emergency_eva.pack_spent").getString() : "";
         String returnOnly = Component.translatable("hud.frozendawn.emergency_eva.return_only").getString();
@@ -194,7 +195,9 @@ public final class AirStatusHud {
             String purpose = returnOnly + " // ";
             graphics.drawString(mc.font, purpose, textX, statusY, OrsaHudPanel.MUTED_COLOR, false);
             int statusColor = !tankTelemetry.hasUsableO2() ? OrsaHudPanel.CRITICAL_COLOR
-                    : EmergencyEvaHandler.hasLifeSupport(mc.player) ? OrsaHudPanel.VALUE_COLOR
+                    : EmergencyEvaHandler.hasLifeSupport(mc.player)
+                            ? mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity() >= 0.25F
+                                    ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.VALUE_COLOR
                     : OrsaHudPanel.WARNING_COLOR;
             graphics.drawString(mc.font, packStatus, textX + mc.font.width(purpose), statusY, statusColor, false);
         }

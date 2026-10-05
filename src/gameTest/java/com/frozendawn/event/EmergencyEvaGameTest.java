@@ -186,6 +186,85 @@ public final class EmergencyEvaGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void emergencyEvaExertionRecoversPersistsAndSyncs(GameTestHelper helper) {
+        scene(helper, player -> {
+            setProgress(player, 0.90F);
+            EmergencyEvaHandler.issueKit(player);
+            player.setSprinting(true);
+            player.setKnownMovement(net.minecraft.world.phys.Vec3.ZERO);
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 11900,
+                    "Standing with sprint flag does not increase reserve draw");
+            helper.assertTrue(player.getData(ModAttachments.EMERGENCY_EVA).exertionLoad() == 0,
+                    "Actual movement required for exertion");
+            player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.2, 0, 0));
+            for (int i = 0; i < 63; i++) EmergencyEvaHandler.tick(player);
+            var state = player.getData(ModAttachments.EMERGENCY_EVA);
+            helper.assertTrue(state.exertionLoad() == 200 && state.remainingTicks() < 11837,
+                    "Real server tick ramps exertion and charges more reserve");
+            var saved = state.serializeNBT(player.registryAccess());
+            var restored = new EmergencyEvaState();
+            restored.deserializeNBT(player.registryAccess(), saved);
+            helper.assertTrue(restored.serializeNBT(player.registryAccess()).equals(saved),
+                    "Load and fractional debit survive NBT serialization");
+            var expected = state.copy();
+            player.setData(ModAttachments.EMERGENCY_EVA, restored);
+            for (int i = 0; i < 9; i++) {
+                expected.tickWorn(true);
+                EmergencyEvaHandler.tick(player);
+            }
+            helper.assertTrue(restored.remainingTicks() == expected.remainingTicks(),
+                    "Reload never discards accrued fractional debit");
+            var packet = new com.frozendawn.network.EmergencyEvaPayload(restored.issue(),
+                    restored.remainingTicks(), restored.exertionLoad());
+            var bytes = io.netty.buffer.Unpooled.buffer();
+            try {
+                com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.encode(bytes, packet);
+                helper.assertTrue(packet.equals(com.frozendawn.network.EmergencyEvaPayload.STREAM_CODEC.decode(bytes)),
+                        "Actual wire codec carries authoritative reserve and metabolic load");
+            } finally { bytes.release(); }
+            player.setSprinting(false);
+            player.setKnownMovement(net.minecraft.world.phys.Vec3.ZERO);
+            int beforeRecovery = restored.remainingTicks();
+            for (int i = 0; i < 200; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.exertionLoad() == 0 && restored.remainingTicks() < beforeRecovery - 200,
+                    "Draw tapers during recovery rather than snapping to normal");
+            int settled = restored.remainingTicks();
+            for (int i = 0; i < 100; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(restored.remainingTicks() == settled - 100, "Settled draw is normal again");
+            EmergencyEvaHandler.issueKit(player);
+            helper.assertTrue(player.getData(ModAttachments.EMERGENCY_EVA).exertionLoad() == 0,
+                    "Fresh death recovery issue does not inherit old load");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void emergencyEvaSprintDrawCannotBypassExpiryAndWalkingRemainsTenMinutes(GameTestHelper helper) {
+        scene(helper, player -> {
+            setProgress(player, 0.90F);
+            EmergencyEvaHandler.issueKit(player);
+            player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.12, 0, 0));
+            for (int i = 0; i < 11999; i++) EmergencyEvaHandler.tick(player);
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 1 && EmergencyEvaHandler.hasLifeSupport(player),
+                    "Walking still receives the full original ten-minute budget");
+            EmergencyEvaHandler.tick(player);
+            helper.assertFalse(EmergencyEvaHandler.hasLifeSupport(player), "Walking expires at original boundary");
+            EmergencyEvaHandler.issueKit(player);
+            var issue = player.getData(ModAttachments.EMERGENCY_EVA).issue();
+            player.setData(ModAttachments.EMERGENCY_EVA, new EmergencyEvaState(issue, 1, 200));
+            player.setSprinting(true);
+            player.setKnownMovement(new net.minecraft.world.phys.Vec3(0.2, 0, 0));
+            EmergencyEvaHandler.tick(player);
+            helper.assertTrue(EmergencyEvaHandler.remainingTicks(player) == 0, "Extra debit clamps at zero");
+            helper.assertFalse(EmergencyEvaHandler.hasLifeSupport(player), "Sprinting expiry immediately ends support");
+            for (var piece : player.getArmorSlots()) {
+                helper.assertTrue(EmergencyEvaArmorItem.serviceTicks(piece) == 0,
+                        "Equipment service bars agree with sprint exhaustion on the expiry tick");
+            }
+        });
+    }
+
     private static void suffocate(ServerPlayer player) {
         PlayerTickHandler.tickPlayerSuffocation(player, ApocalypseState.get(player.getServer()), true);
     }

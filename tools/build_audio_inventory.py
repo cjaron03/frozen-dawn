@@ -32,7 +32,7 @@ OWNER_INTERFACE_PATHS = {
 
 
 def classify(path: str) -> tuple[str, str, str]:
-    if path == "ambient/eva_emergency_breathing.ogg":
+    if path in {"ambient/eva_emergency_breathing.ogg", "ambient/eva_emergency_breathing_fast.ogg"}:
         return (
             "emergency_eva_cc0_mix",
             "tools/audio_sources/emergency_eva/SOURCES.md",

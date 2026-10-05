@@ -76,3 +76,20 @@ The arranged emergency performance is classified as CC0-derived, rather than
 as an original owner recording. Frozen Dawn's arrangement and processing are
 original project work. The individual license evidence is verified; perceived
 sound quality remains an owner listening check.
+
+
+## Exertion tempo variant
+
+`ambient/eva_emergency_breathing_fast.ogg` derives only from the verified shipped
+42-second sequential emergency arrangement. `generate_exertion.py` guards that
+base asset hash, applies FFmpeg's pitch-preserving `atempo=1.25`, and adds separate
+40 ms seam fades before native Vorbis encoding. It introduces no additional
+recordings or licensing inputs. The same four CC0 creator credits apply. The
+base emergency arrangement and original normal EVA recording remain unchanged.
+
+The client chooses the faster version after sustained load, keeps it through
+part of recovery using hysteresis, and fades the current vocal instance fully
+out before starting the other. No vocal crossfade or additive performance is
+used. Volume follows the smoothed server metabolic-load mirror. Normal EVA's
+existing breathing remains separate and is not accelerated by this feature.
+Perceived transitions remain an owner listening check.

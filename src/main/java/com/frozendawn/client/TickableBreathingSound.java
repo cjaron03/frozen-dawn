@@ -29,6 +29,9 @@ public class TickableBreathingSound extends AbstractTickableSoundInstance {
         this.attenuation = Attenuation.NONE;
     }
 
+    @Override
+    public boolean canStartSilent() { return true; }
+
     public void setTargetVolume(float target) {
         this.targetVolume = target;
     }

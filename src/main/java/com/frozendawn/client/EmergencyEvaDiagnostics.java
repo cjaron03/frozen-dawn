@@ -12,10 +12,11 @@ final class EmergencyEvaDiagnostics {
     private boolean criticalReported;
     private boolean moistureReported;
     private boolean sealReported;
+    private boolean exertionReported;
 
     enum Message {
         SEAL_OPEN("seal_open"), CRITICAL("reserve_critical"), LOW("reserve_low"),
-        SERVICE("service_low"), MOISTURE("visor_moisture");
+        SERVICE("service_low"), EXERTION("exertion"), MOISTURE("visor_moisture");
         private final String key;
         Message(String suffix) { key = "ui.frozendawn.suit.emergency_eva_" + suffix; }
         String key() { return key; }
@@ -28,6 +29,7 @@ final class EmergencyEvaDiagnostics {
         criticalReported = reserveTicks <= CRITICAL_RESERVE;
         moistureReported = false;
         sealReported = false;
+        exertionReported = false;
         cooldown = 15 * 20;
     }
 
@@ -37,12 +39,17 @@ final class EmergencyEvaDiagnostics {
     }
 
     Message pending(int reserveTicks, boolean sealed, boolean visibleMoisture) {
+        return pending(reserveTicks, sealed, visibleMoisture, false);
+    }
+
+    Message pending(int reserveTicks, boolean sealed, boolean visibleMoisture, boolean highDraw) {
         if (reserveTicks <= 0 || cooldown > 0) return null;
         if (!sealed && !sealReported) return Message.SEAL_OPEN;
         if (!sealed) return null;
         if (reserveTicks <= CRITICAL_RESERVE && !criticalReported) return Message.CRITICAL;
         if (reserveTicks <= LOW_RESERVE && !lowReported) return Message.LOW;
         if (reserveTicks <= HALF_SERVICE && !halfReported) return Message.SERVICE;
+        if (highDraw && !exertionReported) return Message.EXERTION;
         if (visibleMoisture && !moistureReported) return Message.MOISTURE;
         return null;
     }
@@ -53,6 +60,7 @@ final class EmergencyEvaDiagnostics {
             case CRITICAL -> { criticalReported = true; lowReported = true; halfReported = true; }
             case LOW -> { lowReported = true; halfReported = true; }
             case SERVICE -> halfReported = true;
+            case EXERTION -> exertionReported = true;
             case MOISTURE -> moistureReported = true;
         }
         cooldown = MESSAGE_GAP;

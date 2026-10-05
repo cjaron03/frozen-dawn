@@ -113,7 +113,13 @@ the authorized text and Frozen Dawn processing profiles, not the old voice.
 `ui/suit/emergency_eva_active.ogg` uses the existing Piper `en_US-amy-medium`
 model and `orsa` processing profile. The manifest writes EVA as E V A so the
 voice speaks the letters. The displayed subtitle is “Emergency EVA active.
-Ten minutes of reserve life support.” Generate just this asset by selecting its
+Up to ten minutes of reserve life support. Exertion increases oxygen use.” Generate just this asset by selecting its
 manifest row into a temporary TSV and setting `LOCAL_TTS_MANIFEST` to that TSV
 when running `tools/generate_local_voice_assets.sh`. Existing voice assets remain
 byte-identical. Attribution and CC BY-SA 4.0 terms are in `NOTICE.md`.
+
+The exertion update regenerates only this existing activation manifest row
+through the same Piper `en_US-amy-medium` model and `orsa` profile. The owner's
+correction requires a gradual draw/recovery curve, so the announcement now
+states capacity as “up to” ten minutes and explicitly explains the extra draw.
+The source pipeline, attribution and CC BY-SA 4.0 notice are retained.

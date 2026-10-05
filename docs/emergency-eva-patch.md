@@ -342,3 +342,91 @@ Dawn smoke jar was replaced. Restart into this owning lab checkout after
 verification; open the preserved ORSA Continuity - Phase 6 world for testing.
 Do not reset the reserve or advance the scenario automatically. The patch
 branch remains local; no push.
+
+
+## Emergency EVA exertion and recovery — current gameplay
+
+Owner requested greater breath rate, oxygen use and visor moisture while
+running, then corrected the proposed static comparison: “not 8. it will consume
+more o2 at a steady rate. and slow down and then be normal.” The implementation
+retains one ten-minute normal-draw reserve. There is no separate eight-minute
+countdown or shortened issue lease. Its actual debit follows gradual exertion.
+
+Server-owned metabolic load rises over 50 moving-sprint ticks (2.5 seconds) to
+a steady higher draw, capped at 25 percent above normal. After running stops,
+load falls over up to 200 ticks (10 seconds), then draw is exactly normal again.
+Standing with a sprint flag and riding do not raise the load. The server uses
+ServerPlayer's known client movement vector, not a render-frame timer. Reserve
+debit uses integer fractional accounting; load and fractional debt persist in
+NBT and non-death clones. Removing all issued gear still pauses reserve debit
+while load recovers. Old saves lacking the new fields start at normal load,
+without changing their remaining reserve. Fresh death issues reset load/debt.
+Life support and item bars still terminate exactly at zero, including during
+higher draw. Normal EVA oxygen mechanics are unchanged.
+
+The emergency packet now mirrors metabolic load with the remaining reserve.
+The existing timer continues to show remaining normal-draw capacity; it counts
+down faster during elevated consumption and settles with the body. The shared
+ORSA panel shows HIGH DRAW in its normal warning color while load is elevated,
+then returns to PACK ONLINE. CP-024 adds a one-per-issue typed warning:
+“Exertion elevated. Oxygen draw increased. Ease your pace to recover.” It uses
+the existing idle-dialogue/cooldown policy and actual current load. Tooltips
+explain the draw/recovery behavior without adding a percentage. The existing
+Piper activation row alone was regenerated with en_US-amy-medium and the
+orsa profile: “Emergency EVA active. Up to ten minutes of reserve life support.
+Exertion increases oxygen use.” Existing Piper credits and licensing remain;
+no macOS voice was used.
+
+Breathing volume follows smoothed authoritative load. At sustained exertion,
+the client switches to a pitch-preserving 1.25-tempo derivative of the existing
+CC0 sequential loop; the old vocal instance fades completely out before the
+new instance begins. Recovery hysteresis holds the faster performance briefly
+and returns to normal as load settles. The sound instance permits silent
+starts so these fade-ins can actually play. There is never an additive second
+vocal performance. The normal recording, base emergency recording and quiet
+fan are byte-for-byte preserved. The new exertion loop is 33.612 seconds, with
+a decoded mono peak of 0.6923 and seam jump below 0.00001. The single updated
+Piper line is 7.744 seconds and peaks at 0.6075. Listening transitions still
+need owner acceptance.
+
+Exertion has a much larger moisture contribution, combined with reserve age,
+with the target capped at 1.0. Fog rises faster and dissipates more slowly than
+oxygen draw, producing visible sweat/dampness after a run. Dense pixelated
+moisture and droplets spread along the sides, bottom and upper-right visor;
+a faint central film is capped at 8/255 alpha (about three percent). The
+upper-left telemetry region is excluded from both film and droplet passes.
+The existing camera, matching helmet, overlay, active-support and visibility
+guards remain. There is no additional damage, random leak or movement penalty.
+The generated tape sprite is unchanged.
+
+Full Java 21 build passed: 657 unit tests, zero failures/errors/skips, plus
+8 existing gate tests. The native Minecraft gate passed 235 GameTests and all
+230 required cases/reports, including the two new server lifecycle cases.
+Verified scenarios include stationary sprint flag, gradual load/extra debit,
+recovery, exact normal draw after settling, persisted fractional debt, real
+packet-codec roundtrip, unchanged walking budget, zero clamping, support/bar
+expiry and a fresh issue. New pure tests cover interrupted runs and current
+exertion warning priority. Native artifacts are in
+`build/architect-reports/f39cd717-4585-4f67-858b-7d1d4095d363/`.
+Pre-existing Gradle and EventBusSubscriber deprecation warnings remain. These
+checks do not prove visual, auditory or live multiplayer acceptance.
+
+Build and installed smoke jar SHA-256:
+`5dfa5122db8dd793946297a3e1c57dcc6c59cdbcb13258baaaa5b6b9e8995a73`.
+The client had already been closed when the owner confirmed the title screen;
+a process audit found no owning client before preserving the closed world/log.
+Evidence is in `build/emergency-eva-evidence/sprint-exertion/`, with the backup,
+build/native logs, voice manifest, verification and subsequent client launch
+log. The saved world matches its backup byte-for-byte; no reserve reset, death
+command or scenario advancement was dispatched. Restart the owning Java 21 lab
+client and open ORSA Continuity - Phase 6 for the owner's sprint/recovery test.
+Watch HIGH DRAW, breath pace and fog during a sustained run, then stop and allow
+normal draw to return while moisture dissipates more slowly. The branch remains
+local; no push.
+
+The final sound handoff also explicitly stops breathing and fan instances when
+Hearthrot attenuation fully mutes suit audio. Silent fade-in support must not
+cause continuous zero-volume clip restarts or small fan bursts. Partially
+attenuated fan starts inherit the attenuation level. The native gate is rerun
+against this final source fingerprint, with the earlier passing report retained
+as `native-report-before-mute-fix.xml` in the evidence folder.

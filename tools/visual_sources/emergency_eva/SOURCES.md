@@ -23,5 +23,12 @@ not copied from vanilla armor. Remote rendering uses the synced equipped
 item identity, so it does not depend on owner-only emergency state sync.
 
 The first-person tape repairs the outer visor only. Moisture is a cosmetic effect that builds with actual reserve service age
-and sustained sprinting at the side and bottom edges; center view and upper-left
-ORSA telemetry remain clear. No repair, seal or health mechanic is implied.
+and sustained sprinting at the side and bottom edges; the center retains only a light, capped haze and upper-left ORSA telemetry
+remains clear. No repair, seal or health mechanic is implied.
+
+The exertion update increases peripheral moisture using the synced metabolic
+load, spreads fog deeper along the sides/bottom, adds upper-right edge moisture
+and a central film capped at 8/255 alpha. Fog recovers more slowly than breath
+and oxygen draw. The upper-left telemetry region is excluded from both the
+film and pixel/droplet passes. These effects are native code-drawn shapes;
+the original generated tape bitmap remains unchanged.
