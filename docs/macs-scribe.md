@@ -70,7 +70,7 @@ Compounds of existing roots: *Maeve-sorr* north (the cold quarter), *Vel-sorr* e
 
 - Unit: `ScribeRecordTest` (ordering, five-line cap, floor, phrasing tiers, verb-last spatial lines, unknown patterns omitted, wrong beliefs as held, gate/cooldown/lifecycle, claim expiry and reload, map mark selection and bounds).
 - Required native GameTests (`MaeveScribeGameTest`): gate and single claim with Master/Creative/ERASED refusals and no post-erasure drops; real death drops with exact record lines, locked centered map with three marks and legend, unchanged after new evidence and ERASED; real AI watch, flee on approach, keeps fleeing when struck from range, defends when cornered; leaves after ERASED without drops.
-- `./gradlew build gameTestGate --console=plain` passed on 2026-10-06: 672 unit tests (665 before this slice), every `check` task including the facade budget, and 242 GameTests with all 237 required cases verified (baseline 238/233). SavedData version tests now pin version 9.
+- `./gradlew build gameTestGate --console=plain` passed on 2026-10-06: 672 unit tests (665 before this slice), every `check` task including the facade budget, and 242 GameTests with all 237 required cases verified (baseline 238/233). SavedData version tests now pin version 9. `./gradlew architectMonkey` passed: 500 unchanged seeded stress cases plus the 242 native cases repeated (742 GameTests).
 
 ## Pending
 
