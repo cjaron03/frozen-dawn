@@ -17,6 +17,8 @@ def enableEnhancedClassRedefinition = providers
         .gradleProperty('fdEnableEnhancedClassRedefinition')
         .map { it.toBoolean() }
         .getOrElse(false)
+// Optional: ./gradlew runClientLab -PfdLabWorld='World Name' opens that existing save directly.
+def labQuickPlayWorld = providers.gradleProperty('fdLabWorld').getOrNull()
 
 repositories {
     maven { url = "https://maven.blamejared.com" }
@@ -94,6 +96,9 @@ neoForge {
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
             systemProperty 'frozendawn.debug.architectSeed', '1'
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,

@@ -10,7 +10,7 @@ Run from the checkout that owns the save and current implementation:
 JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew runClientLab --console=plain
 ```
 
-Use the agent's terminal inside Codex. Keep its session and log path for later inspection. Only `runClientLab` enables the bridge. The ordinary launcher, guest client and dedicated server do not enable it. A Java change requires a client restart; a datapack edit can use `reload`. Back up a closed world before installing a build that changes its replay.
+Add `-PfdLabWorld='World Name'` to open an existing save in `run-lab/saves` directly (Minecraft quick play; it does not create worlds). Use the agent's terminal inside Codex. Keep its session and log path for later inspection. Only `runClientLab` enables the bridge. The ordinary launcher, guest client and dedicated server do not enable it. A Java change requires a client restart; a datapack edit can use `reload`. Back up a closed world before installing a build that changes its replay.
 
 ```sh
 python3 tools/lab_client.py status
