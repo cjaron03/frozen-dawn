@@ -1,0 +1,226 @@
+package com.frozendawn.maeve;
+
+import com.frozendawn.FrozenDawn;
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.gametest.GameTestTemplates;
+import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.init.ModItems;
+import com.frozendawn.item.ScribeRecordContents;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+/** §9.4b Scribe: gate, single claim, lifecycle, frozen drops and local watch/flee/defense behavior. */
+@GameTestHolder(FrozenDawn.MOD_ID)
+@PrefixGameTestTemplate(false)
+public final class MaeveScribeGameTest {
+    private static final UUID WITNESS = new UUID(0x5C81BEL, 1);
+
+    /** Encounter-separated witnessed evidence through the real store, as ordinary observers would record it. */
+    static long train(MaeveObservationGameTest.Scene scene, UUID player, long from, String pattern, int supports, int contradictions) {
+        var store = MaeveSavedData.get(scene.server).store();
+        String dimension = scene.level.dimension().location().toString();
+        long tick = from;
+        for (int i = 0; i < supports + contradictions; i++) {
+            tick += BeliefPolicy.ENCOUNTER_GAP + 1;
+            store.record(player, WITNESS, dimension, scene.origin, tick, pattern, i < supports, "QA_WITNESSED");
+        }
+        return tick;
+    }
+
+    static long gate(MaeveObservationGameTest.Scene scene, UUID player) {
+        MaeveDirector.snapshot(scene.server, player);
+        long t = train(scene, player, scene.gameTime, BeliefStore.SWORD, 4, 0);
+        t = train(scene, player, t, BeliefStore.RANGED, 4, 0);
+        t = train(scene, player, t, BeliefStore.RECOVERY, 4, 0);
+        scene.clock(t);
+        return t;
+    }
+
+    static void floor(MaeveObservationGameTest.Scene scene, int size) {
+        for (int x = 0; x <= size; x++) for (int z = 0; z <= size; z++) scene.block(x, -1, z, Blocks.STONE.defaultBlockState());
+    }
+
+    static List<ItemStack> drops(MaeveObservationGameTest.Scene scene, ArchitectEntity actor) {
+        var items = scene.level.getEntitiesOfClass(ItemEntity.class, actor.getBoundingBox().inflate(4));
+        scene.entities.addAll(items);
+        return items.stream().map(ItemEntity::getItem).toList();
+    }
+
+    static void tick(MaeveObservationGameTest.Scene scene, ArchitectEntity actor, long from, int ticks) {
+        for (int i = 0; i < ticks && !actor.isRemoved(); i++) { scene.clock(from + i); actor.tick(); }
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeGateAllowsOneClaimAndStopsAfterErased(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 200, scene -> {
+            var player = scene.player("scribe_gate", 3, 3);
+            MaeveDirector.snapshot(scene.server, player.getUUID());
+            long t = train(scene, player.getUUID(), scene.gameTime, BeliefStore.SWORD, 4, 0);
+            t = train(scene, player.getUUID(), t, BeliefStore.RANGED, 4, 0);
+            scene.clock(t);
+            var first = scene.architect(8, 3);
+            helper.assertFalse(MaeveDirector.designateScribe(first, player), "Two confident beliefs are not enough to write a record");
+            t = train(scene, player.getUUID(), t, BeliefStore.RECOVERY, 4, 0); scene.clock(t);
+            helper.assertTrue(MaeveDirector.designateScribe(first, player), "Three confident beliefs open the gate");
+            first.becomeScribe();
+            helper.assertTrue(first.isScribe() && first.getMainHandItem().is(ModItems.SCRIBE_RECORD.get()), "The Scribe holds its slate");
+            var order = MaeveDirector.scribeOrder(first);
+            helper.assertTrue(order != null && order.subject().equals(player.getUUID()) && order.watchLabel().equals("ROUTE") && order.watch() == null,
+                    "Without an observed shelter it watches routes; no hidden position enters the order: " + order);
+            var second = scene.architect(8, 5);
+            helper.assertFalse(MaeveDirector.designateScribe(second, player), "One Scribe at a time");
+            helper.assertTrue(MaeveDirector.scribeOrder(second) == null && !second.isScribe(), "Only the claimed Architect carries notes");
+            helper.assertTrue(MaeveDirector.commitmentHints(first, player).isEmpty(), "A Scribe never takes a counter commitment");
+            MaeveDirector.scribeEnded(first, "QA_ENDED");
+            helper.assertTrue(MaeveDirector.scribeOrder(first) == null, "An ended claim releases its notes");
+            helper.assertFalse(MaeveDirector.designateScribe(second, player), "The next Scribe waits for the cooldown");
+            scene.clock(t + ScribePolicy.COOLDOWN);
+            var master = scene.architect(8, 7); master.bindToHearthMasterArchitect(UUID.randomUUID(), scene.origin, 0);
+            helper.assertFalse(MaeveDirector.designateScribe(master, player), "Masters never participate");
+            player.setGameMode(GameType.CREATIVE);
+            helper.assertFalse(MaeveDirector.designateScribe(second, player), "Creative players are never a subject");
+            player.setGameMode(GameType.SURVIVAL);
+            helper.assertTrue(MaeveDirector.designateScribe(second, player), "After the cooldown another natural spawn may be designated");
+            second.becomeScribe();
+            PostMaeveWorldState.setForDebug(scene.server, true);
+            helper.assertTrue(MaeveDirector.scribeOrder(second) == null, "ERASED ends the claim immediately");
+            second.kill();
+            helper.assertTrue(drops(scene, second).stream().noneMatch(s -> s.is(ModItems.SCRIBE_RECORD.get()) || s.is(Items.FILLED_MAP)),
+                    "No record can be written from an erased store");
+            var third = scene.architect(8, 9);
+            helper.assertFalse(MaeveDirector.designateScribe(third, player), "Scribes stop appearing after ERASED");
+            PostMaeveWorldState.setForDebug(scene.server, false);
+            helper.assertFalse(MaeveDirector.designateScribe(third, player), "Debug reversal starts empty and cannot reopen the gate");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeDeathDropsFrozenRecordAndMarkedMap(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 201, scene -> {
+            var player = scene.player("scribe_subject", 3, 3); UUID id = player.getUUID();
+            MaeveDirector.snapshot(scene.server, id);
+            long t = train(scene, id, scene.gameTime, BeliefStore.SWORD, 5, 0);
+            t = train(scene, id, t, "RETREAT_BEARING_E", 4, 0);
+            t = train(scene, id, t, BeliefStore.PURSUIT, 4, 0);
+            t = train(scene, id, t, BeliefStore.RANGED, 3, 0);
+            t = train(scene, id, t, BeliefStore.RECOVERY, 4, 1);
+            t = train(scene, id, t, "RETREAT_BEARING_W", 1, 0);
+            var world = MaeveSavedData.get(scene.server).store().world(id);
+            String dim = scene.level.dimension().location().toString();
+            world.sample(WITNESS, dim, scene.origin.offset(2, 0, 2), true, t);
+            world.sample(WITNESS, dim, scene.origin.offset(4, 0, 2), true, t + 1);
+            var evidence = new ObservedEvidence(WITNESS, UUID.randomUUID(), dim, scene.origin, t, "QA_WITNESSED", true);
+            world.access(dim, scene.origin.offset(6, 0, 2), scene.origin.offset(5, 0, 2), evidence);
+            world.event("DANGER_ZONE", dim, scene.origin.offset(9, 0, 9), evidence);
+            world.event("HEAT_SOURCE", dim, scene.origin.offset(3, 0, 3), evidence);
+            scene.clock(t + 2);
+            BlockPos centroid = world.center(dim);
+            var actor = scene.architect(8, 8);
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Gate: several confident beliefs");
+            actor.becomeScribe();
+            helper.assertTrue("OPENING".equals(MaeveDirector.scribeOrder(actor).watchLabel())
+                    && scene.origin.offset(6, 0, 2).equals(MaeveDirector.scribeOrder(actor).watch()), "Watches the remembered opening");
+            actor.kill();
+            var drops = drops(scene, actor);
+            var record = drops.stream().filter(s -> s.is(ModItems.SCRIBE_RECORD.get())).findFirst().orElse(null);
+            helper.assertTrue(record != null, "Death drops the record: " + drops);
+            var contents = record.get(ModDataComponents.SCRIBE_RECORD.get());
+            helper.assertTrue(contents != null && contents.lines().stream().map(ScribeRecordContents.Line::pattern).toList().equals(List.of(
+                    BeliefStore.SWORD, BeliefStore.PURSUIT, "RETREAT_BEARING_E", BeliefStore.RANGED, BeliefStore.RECOVERY)),
+                    "At most five beliefs, highest confidence first: " + contents);
+            helper.assertTrue(contents.lines().stream().map(ScribeRecordContents.Line::certainty).toList()
+                    .equals(List.of("ALWAYS", "FLAT", "FLAT", "HEDGED", "HEDGED")), "Confidence is phrasing");
+            helper.assertTrue(contents.lines().get(4).thaeven().equals("Mor vel-thaeven…"), "The contradicted belief is written exactly as held");
+            helper.assertTrue(contents.lines().get(2).thaeven().equals("Vel-sorr aren thaeven."), "Verb last, no tense");
+            helper.assertFalse(contents.toString().contains(player.getGameProfile().getName()), "Vel-thae, never the username");
+            var map = drops.stream().filter(s -> s.is(Items.FILLED_MAP)).findFirst().orElse(null);
+            helper.assertTrue(map != null, "Death drops the marked map");
+            var data = MapItem.getSavedData(map, scene.level);
+            helper.assertTrue(data != null && data.locked && data.centerX == centroid.getX() && data.centerZ == centroid.getZ(),
+                    "Locked map centered on her shelter estimate " + centroid);
+            var marks = map.get(DataComponents.MAP_DECORATIONS).decorations().values();
+            helper.assertTrue(marks.size() == 3 && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.BLUE_MARKER))
+                    && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.RED_X))
+                    && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.TARGET_POINT)), "Openings, losses and heat: " + marks);
+            helper.assertTrue(map.get(DataComponents.LORE).lines().size() == 3, "Legend in the same register");
+            // Snapshot rule: new evidence and ERASED never reach a dropped record or map.
+            byte[] colors = data.colors.clone();
+            train(scene, id, t + 2, BeliefStore.RANGED, 2, 0);
+            PostMaeveWorldState.setForDebug(scene.server, true);
+            helper.assertTrue(contents.equals(record.get(ModDataComponents.SCRIBE_RECORD.get())), "Records never update after they drop");
+            helper.assertTrue(MapItem.getSavedData(map, scene.level) == data && Arrays.equals(colors, data.colors)
+                    && map.get(DataComponents.MAP_DECORATIONS).decorations().size() == 3, "Existing maps stay exactly as they are after ERASED");
+            PostMaeveWorldState.setForDebug(scene.server, false);
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeWatchesFleesAndFightsOnlyWhenCornered(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 202, 2, scene -> {
+            floor(scene, 30);
+            var player = scene.player("scribe_watched", 28, 15); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var actor = scene.architect(15, 15);
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setOnGround(true); actor.setDeltaMovement(Vec3.ZERO);
+            float health = player.getHealth();
+            tick(scene, actor, t, 60);
+            helper.assertTrue(actor.getTarget() == null && actor.position().distanceTo(scene.position(15, 15)) < 1.5,
+                    "Watches from a distance without engaging: " + actor.position());
+            player.setPos(scene.position(21, 15));
+            double before = actor.distanceTo(player);
+            tick(scene, actor, t + 60, 80);
+            helper.assertTrue(actor.distanceTo(player) > before + 3 && actor.getTarget() == null && player.getHealth() == health,
+                    "Flees when approached and never initiates: " + before + " -> " + actor.distanceTo(player));
+            player.setPos(actor.position().add(8, 0, 0));
+            scene.hit(actor, player, true, 1);
+            helper.assertTrue(actor.getTarget() == null, "Struck from range, it keeps fleeing");
+            BlockPos at = actor.blockPosition();
+            for (int y = 0; y <= 2; y++) for (var side : net.minecraft.core.Direction.Plane.HORIZONTAL)
+                scene.level.setBlock(at.relative(side).above(y), Blocks.STONE.defaultBlockState(), 3);
+            actor.setPos(Vec3.atBottomCenterOf(at)); player.setPos(Vec3.atBottomCenterOf(at.east(2)));
+            scene.hit(actor, player, false, 1);
+            helper.assertTrue(actor.getTarget() == player, "Cornered and struck, it defends itself (§9.13a local defense)");
+            helper.assertTrue(actor.getMainHandItem().is(ModItems.SCRIBE_RECORD.get()), "Still holding the slate, not a weapon");
+            for (int y = 0; y <= 2; y++) for (var side : net.minecraft.core.Direction.Plane.HORIZONTAL)
+                scene.level.setBlock(at.relative(side).above(y), Blocks.AIR.defaultBlockState(), 3);
+            tick(scene, actor, t + 400, 5);
+            helper.assertTrue(actor.getTarget() == null && actor.isScribe(), "Without fresh damage, defense ends and it resumes fleeing");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeLeavesWhenErasedWithoutDroppingNotes(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 203, 2, scene -> {
+            floor(scene, 30);
+            var player = scene.player("scribe_distant", 0, 0); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var actor = scene.architect(26, 26);
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setOnGround(true);
+            tick(scene, actor, t, 20);
+            helper.assertTrue(!actor.isRemoved() && actor.isScribe(), "A watching Scribe remains while its claim holds");
+            PostMaeveWorldState.setForDebug(scene.server, true);
+            tick(scene, actor, t + 20, 20);
+            helper.assertTrue(actor.isRemoved(), "After ERASED the Scribe leaves rather than lingering");
+            helper.assertTrue(drops(scene, actor).isEmpty(), "Leaving is not death; nothing drops");
+            PostMaeveWorldState.setForDebug(scene.server, false);
+        });
+    }
+}

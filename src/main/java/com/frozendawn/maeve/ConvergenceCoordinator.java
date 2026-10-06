@@ -127,7 +127,7 @@ final class ConvergenceCoordinator {
         for (var entry : data.convergence().population.pawns.entrySet()) {
             if (!entry.getValue().dimension().equals(h.dimension)) continue;
             var actor = actor(h.dimension, entry.getKey());
-            if (actor == null || !ordinary(actor) || !actor.isAlive() || actor.isNoAi() || assigned(actor) || actor.isMaeveDisengaging()
+            if (actor == null || !ordinary(actor) || !actor.isAlive() || actor.isNoAi() || assigned(actor) || ScribeCoordinator.scribe(actor) || actor.isMaeveDisengaging()
                     || !actor.canBeginMaeveReconnaissance() || actor.getHealth() < actor.getMaxHealth() * .6
                     || actor.isInWaterOrBubble() || actor.isOnFire() || actor.isTowerEncounter()
                     || missions.packet(actor) != null || CommitmentCoordinator.directive(data, actor) != null) continue;
@@ -167,7 +167,7 @@ final class ConvergenceCoordinator {
     private void avoidRegions() {
         for (var entry : data.convergence().population.pawns.entrySet()) {
             var a = actor(entry.getValue().dimension(), entry.getKey());
-            if (a == null || !a.isAlive() || !ordinary(a) || a.isNoAi() || a.isMaeveDisengaging() || !a.canBeginMaeveReconnaissance()
+            if (a == null || !a.isAlive() || !ordinary(a) || a.isNoAi() || ScribeCoordinator.scribe(a) || a.isMaeveDisengaging() || !a.canBeginMaeveReconnaissance()
                     || missions.packet(a) != null || CommitmentCoordinator.directive(data, a) != null) continue;
             var h = data.convergence().at(dimension(a), a.blockPosition());
             if (h != null && h.avoid) {

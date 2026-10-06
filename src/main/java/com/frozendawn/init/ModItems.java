@@ -139,6 +139,9 @@ public class ModItems {
     public static final DeferredItem<ThaevenTranslatorItem> THAEVEN_TRANSLATOR = ITEMS.register(
             "thaeven_translator", () -> new ThaevenTranslatorItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.frozendawn.item.ScribeRecordItem> SCRIBE_RECORD = ITEMS.register(
+            "scribe_record", () -> new com.frozendawn.item.ScribeRecordItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<ThaevenCarrierItem> HUMAN_CARRIER = ITEMS.register(
             "human_carrier", () -> new ThaevenCarrierItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE),

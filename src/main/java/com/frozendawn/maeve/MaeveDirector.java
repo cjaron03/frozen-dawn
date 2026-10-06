@@ -70,7 +70,8 @@ public final class MaeveDirector {
     private static List<String> withCommitmentDiagnostics(MinecraftServer server, UUID player, List<String> beliefs) {
         var runtime = current(server);
         if (runtime.data.store() == null) return beliefs;
-        return java.util.stream.Stream.concat(LearningDiagnostics.append(server, player, beliefs, runtime.data.store(), runtime.learning.diagnostics(player)).stream(), runtime.convergence.diagnostics().stream()).toList();
+        return java.util.stream.Stream.of(LearningDiagnostics.append(server, player, beliefs, runtime.data.store(), runtime.learning.diagnostics(player)),
+                runtime.convergence.diagnostics(), runtime.scribe.diagnostics()).flatMap(List::stream).toList();
     }
 
     public static void observeWithdrawal(ArchitectEntity actor, ServerPlayer player) {
@@ -187,6 +188,22 @@ public final class MaeveDirector {
     public static PawnOrder pawnOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).convergence.order(actor); }
     public static void pawnRouteUnavailable(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).convergence.routeUnavailable(actor); }
     public static boolean allowNaturalPawn(net.minecraft.server.level.ServerLevel level, BlockPos position) { return current(level.getServer()).convergence.allowNaturalSpawn(level, position); }
+    /** §9.4b: the gate, cooldown and single claim decide whether this natural spawn carries Maeve's notes. */
+    public static boolean designateScribe(ArchitectEntity actor, ServerPlayer subject) { return current(subject.getServer()).scribe.designate(actor, subject); }
+    public static ScribeOrder scribeOrder(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.order(actor); }
+    /** Read once at death. The result is a frozen copy; nothing it holds is consulted again. */
+    public static ScribeNotes scribeNotes(ArchitectEntity actor) { return actor.getServer() == null ? null : current(actor.getServer()).scribe.notes(actor); }
+    public static void scribeEnded(ArchitectEntity actor, String reason) { if (actor.getServer() != null) current(actor.getServer()).scribe.ended(actor, reason); }
+    public record ScribeOrder(UUID subject, String dimension, BlockPos watch, String watchLabel, long expiresAt) {
+        public ScribeOrder { watch = watch == null ? null : watch.immutable(); }
+    }
+    public record ScribeNote(String pattern, String thaeven, String translation, List<String> arguments, String certainty) {
+        public ScribeNote { arguments = List.copyOf(arguments); }
+    }
+    public record ScribeMark(String label, BlockPos position, float rotation) { public ScribeMark { position = position.immutable(); } }
+    public record ScribeNotes(UUID subject, String dimension, BlockPos center, List<ScribeNote> notes, List<ScribeMark> marks) {
+        public ScribeNotes { center = center.immutable(); notes = List.copyOf(notes); marks = List.copyOf(marks); }
+    }
     public record PawnOrder(UUID dispatch, BlockPos destination, long notBefore, long expiresAt) {
         public PawnOrder { destination = destination.immutable(); }
     }

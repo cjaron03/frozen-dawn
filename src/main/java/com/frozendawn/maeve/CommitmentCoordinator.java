@@ -13,7 +13,7 @@ final class CommitmentCoordinator {
     private CommitmentCoordinator() { }
 
     static boolean eligible(ArchitectEntity observer, ServerPlayer player) {
-        return !ConvergenceCoordinator.assigned(observer) && !observer.isMasterArchitectVisual() && !observer.isHearthAssessor()
+        return !ConvergenceCoordinator.assigned(observer) && !ScribeCoordinator.scribe(observer) && !observer.isMasterArchitectVisual() && !observer.isHearthAssessor()
                 && !observer.isHearthPopulationResident() && ObservationCollector.canObserve(observer, player, false);
     }
 

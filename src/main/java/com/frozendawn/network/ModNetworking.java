@@ -250,6 +250,12 @@ public class ModNetworking {
                         () -> ClientHandlers.handleOpenThaevenArchive(payload))
         );
         registrar.playToClient(
+                OpenScribeRecordPayload.TYPE,
+                OpenScribeRecordPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(
+                        () -> ClientHandlers.handleOpenScribeRecord(payload))
+        );
+        registrar.playToClient(
                 StillpointFieldPayload.TYPE,
                 StillpointFieldPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(

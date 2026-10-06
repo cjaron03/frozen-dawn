@@ -148,6 +148,9 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Long> DATA_RECON_CLOUD_START =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Boolean> DATA_SCRIBE =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    static final String SCRIBE_TAG = "macsScribe";
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
 
@@ -239,6 +242,7 @@ public class ArchitectEntity extends Monster {
     private final ArchitectPawnController maevePawn = new ArchitectPawnController(this);
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
     private final ArchitectReconnaissanceController maeveReconnaissance = new ArchitectReconnaissanceController(this);
+    private final ArchitectScribeController maeveScribe = new ArchitectScribeController(this);
     private long localCombatUntil;
     private UUID lastCombatSubject;
     private int thinkingInterruptedUntil;
@@ -384,6 +388,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_RECON_POSE, false);
         builder.define(DATA_RECON_DISSOLVE, 0);
         builder.define(DATA_RECON_CLOUD_START, -1L);
+        builder.define(DATA_SCRIBE, false);
     }
 
     @Override
@@ -478,6 +483,16 @@ public class ArchitectEntity extends Monster {
     public int getReconnaissanceCloudAge() {
         long start = entityData.get(DATA_RECON_CLOUD_START), age = level().getGameTime() - start;
         return getReconnaissanceDissolve() != 0 && start >= 0 && age >= 0 && age < 400 ? (int) age : -1;
+    }
+
+    /** §9.4b: white eyes and a held slate. The server reads the persistent designation; clients the synced flag. */
+    public boolean isScribe() {
+        return !isMasterArchitectVisual() && (level().isClientSide() ? entityData.get(DATA_SCRIBE) : getPersistentData().getBoolean(SCRIBE_TAG));
+    }
+
+    /** Called once, before a designated natural spawn enters the world. */
+    public void becomeScribe() {
+        entityData.set(DATA_SCRIBE, isScribe()); updateHeldItem();
     }
 
     /** Presentation of an actual noncombat scout task, independent of its fallback utility action. */
@@ -611,6 +626,7 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
+        if (!level().isClientSide()) entityData.set(DATA_SCRIBE, isScribe());
         if (level().isClientSide()) {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
             thinkingTiltOld = thinkingTilt;
@@ -744,6 +760,9 @@ public class ArchitectEntity extends Monster {
             return;
         }
 
+        if (maeveScribe.tick()) {
+            entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
+        }
         if (maevePawn.tick()) {
             entityData.set(DATA_PURSUIT_POSE, 0); updateHeldItem(); syncRenderState(); return;
         }
@@ -794,6 +813,7 @@ public class ArchitectEntity extends Monster {
                             + " targetHealth=" + (target == null ? "-" : target.getHealth())
                             + " maeveHold=" + isHoldingMaevePosition()
                             + " reconEyes=" + hasReconnaissanceEyes() + " scoutPose=" + isShowingReconnaissancePose()
+                            + " scribe=" + isScribe()
                             + " mining=" + blockBreaker.isMining()
                             + " collision=" + horizontalCollision
                             + " locked=" + (debugForcedTargetId != null));
@@ -1103,6 +1123,7 @@ public class ArchitectEntity extends Monster {
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || AggregateReinforcementManager.isChild(this)) return;
         localCombatUntil = level().getGameTime() + 600;
+        maeveScribe.damaged(source);
         if (source.getEntity() instanceof ServerPlayer player) MaeveDirector.beginLocalCombat(this, player);
         boolean interrupted = isHoldingMaevePosition() || hasReconnaissanceEyes()
                 || getBrainAction() == ACTION_OBSERVE || entityData.get(DATA_PURSUIT_POSE) != 0;
@@ -1811,6 +1832,12 @@ public class ArchitectEntity extends Monster {
         }
     }
 
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+        if (isScribe()) com.frozendawn.item.ScribeDrops.drop(level, this);
+    }
+
     // ========================
     //  HEALING POTION
     // ========================
@@ -1966,6 +1993,13 @@ public class ArchitectEntity extends Monster {
     // ========================
 
     private void updateHeldItem() {
+        if (isScribe()) {
+            // The only Architect holding something that is not a weapon, including while defending itself.
+            if (!combatState.isDrinkingPotion && !getMainHandItem().is(ModItems.SCRIBE_RECORD.get()))
+                setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.SCRIBE_RECORD.get()));
+            setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            return;
+        }
         if (maeveCommitment.archer().equip()) return;
         fxController.updateHeldItem(
                 getBrainAction(),
@@ -2933,6 +2967,7 @@ public class ArchitectEntity extends Monster {
             com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, reason == RemovalReason.KILLED ? "OWNER_KILLED" : "OWNER_UNAVAILABLE");
             MaeveDirector.finishMission(this, "OWNER_REMOVED", false);
             maeveCommitment.clear();
+            if (isScribe() && reason.shouldDestroy()) MaeveDirector.scribeEnded(this, reason.name());
         }
         if (masterBossEvent != null) {
             masterBossEvent.removeAllPlayers();
