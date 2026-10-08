@@ -72,6 +72,13 @@ public class FrozenDawnRegistrySmokeTest {
                 .count();
         helper.assertTrue(lootTables > 0, "no " + FrozenDawn.MOD_ID + " loot tables were loaded");
 
+        for (var sword : java.util.List.of(ModItems.ACHERONITE_SWORD.get(), ModItems.SOUL_HARVEST_BLADE.get())) {
+            helper.assertTrue(new net.minecraft.world.item.ItemStack(sword).is(net.minecraft.tags.ItemTags.SWORDS),
+                    "Custom swords must load into the vanilla swords tag: " + sword);
+        }
+        helper.assertTrue(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_SWORD)
+                        .is(net.minecraft.tags.ItemTags.SWORDS),
+                "Custom sword tags must retain vanilla swords");
         helper.succeed();
     }
 

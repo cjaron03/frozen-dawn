@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
 import com.frozendawn.gametest.GameTestTemplates;
 import com.frozendawn.homo.PostMaeveWorldState;
+import com.frozendawn.init.ModItems;
 import java.util.function.Consumer;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -252,6 +253,71 @@ public final class MaeveSwordGuardGameTest {
             scene.storage(MaeveSavedData.load(saved, scene.level.registryAccess()));
             helper.assertTrue(sword(scene, player).evidence() == 1 && sword(scene, player).contradictions() == 1,
                     "Sword identity and deduplication survive the existing versioned save");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveCustomSwordDamageSupportsBeliefs(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 170, scene -> {
+            var weapons = java.util.List.of(Items.WOODEN_SWORD, Items.STONE_SWORD, Items.IRON_SWORD,
+                    Items.GOLDEN_SWORD, Items.DIAMOND_SWORD, Items.NETHERITE_SWORD,
+                    ModItems.ACHERONITE_SWORD.get(), ModItems.SOUL_HARVEST_BLADE.get());
+            var observer = scene.architect(2, 4);
+            long now = scene.gameTime;
+            for (int i = 0; i < weapons.size(); i++) {
+                var weapon = weapons.get(i);
+                String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(weapon).toString();
+                var player = scene.player("sword_damage_" + i, 8, 4);
+                // Seed a genuine sword observation before switching weapons: the playtest bug
+                // contradicted established history instead of merely failing to create a belief.
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+                helper.assertTrue(scene.hit(observer, player, false, 1), "Training damage must land");
+                scene.clock(now += 610);
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(weapon));
+                helper.assertTrue(scene.hit(observer, player, false, 1), "Sword damage must land: " + id);
+                var belief = sword(scene, player);
+                helper.assertTrue(belief.evidence() == 2 && belief.contradictions() == 0 && belief.confidence() == .4,
+                        "Every sword must support existing sword history: " + id + " belief=" + belief);
+                helper.assertTrue(belief.provenance().stream().anyMatch(e ->
+                                e.action().equals("WITNESSED_DAMAGE_SWORD weapon=" + id)),
+                        "Damage provenance must name the actual sword: " + id);
+                scene.clock(++now);
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_AXE));
+                scene.hit(observer, player, false, 1);
+                helper.assertTrue(sword(scene, player).contradictions() == 1,
+                        "Axe damage must still contradict sword preference");
+                scene.clock(now += 610);
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(weapon));
+                scene.hit(observer, player, true, 1);
+                helper.assertTrue(sword(scene, player).contradictions() == 2,
+                        "Projectile damage remains contradictory even while a sword is held");
+            }
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 300)
+    public static void maeveCustomSwordShieldBlocksSupportBeliefs(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 171, scene -> {
+            var player = scene.player("custom_block", 8, 4);
+            long now = train(scene, player);
+            var actor = actor(scene, player);
+            now = awaitGuard(helper, scene, actor, now);
+            ticks(scene, actor, now + 1, 12);
+            helper.assertTrue(actor.isBlocking(), "Fixture must use the actual raised Architect shield");
+            float health = actor.getHealth();
+            for (var weapon : java.util.List.of(ModItems.ACHERONITE_SWORD.get(), ModItems.SOUL_HARVEST_BLADE.get())) {
+                String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(weapon).toString();
+                player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(weapon));
+                scene.hit(actor, player, false, 6);
+                var belief = sword(scene, player);
+                helper.assertTrue(actor.getHealth() == health && actor.isBlocking(),
+                        "The custom sword must make real blocked contact: " + id);
+                helper.assertTrue(belief.evidence() == 5 && belief.contradictions() == 0 && belief.confidence() == 1,
+                        "Blocked custom swords support history with existing encounter deduplication: " + id);
+                helper.assertTrue(belief.provenance().stream().anyMatch(e ->
+                                e.action().equals("WITNESSED_SHIELD_BLOCK_SWORD weapon=" + id)),
+                        "Blocked-contact provenance must identify the custom sword: " + id);
+            }
         });
     }
 

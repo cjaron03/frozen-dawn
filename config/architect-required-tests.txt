@@ -132,6 +132,8 @@ campwestdoorwaysurveydetectsseal xml
 
 # Sword guard: native evidence, combat and lifecycle
 maeveswordevidencerequiresrealvisibleattacks xml
+maevecustomsworddamagesupportsbeliefs xml
+maevecustomswordshieldblockssupportbeliefs xml
 maeveswordguarduseslaggedhistoryandrealfrontalblocking xml
 maeveswordguardbracesblockedattacksbutnotexternalforces xml
 maeveswordguarduseslocalsightandaxeendsexposedguard xml
