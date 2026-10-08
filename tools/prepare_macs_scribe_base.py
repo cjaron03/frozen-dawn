@@ -71,8 +71,8 @@ CALL = tell('CALL AN ARCHITECT', f'/function {NS}:call', 'green')
 # One line per step. A rejoin, /reload or stale click prints the current one again without changing state.
 PROMPTS = {
     10: tell('Your cabin is at spawn. Take the EVA suit and kit from the chest and put the suit on. When ready:') + '\n' + CALL,
-    20: tell('An Architect is coming from the west. Show Maeve your habits while it can see you: fight with the sword, '
-             'drink a healing potion inside the cabin, and step out through the east door. Then kill it.'),
+    20: tell('An Architect is coming from the east. While it can see you: fight with the sword, drink a healing potion '
+             'inside the cabin, and step out through the east door. Stay on the east side; any other way out from under cover counts against it.'),
     21: f'title @s actionbar {{"text":"Quiet before the next encounter...","color":"gray"}}',
     22: habits() + '\n'
         + f'execute if score #short {OBJ} matches 1.. run ' + tell('Not all three at 75% yet. When ready:', None, 'yellow') + '\n'
@@ -113,7 +113,7 @@ fill ~-4 ~ ~-4 ~-4 ~2 ~-4 minecraft:spruce_log
 fill ~4 ~ ~-4 ~4 ~2 ~-4 minecraft:spruce_log
 fill ~-4 ~ ~4 ~-4 ~2 ~4 minecraft:spruce_log
 fill ~4 ~ ~4 ~4 ~2 ~4 minecraft:spruce_log
-fill ~-5 ~3 ~-5 ~5 ~3 ~5 minecraft:spruce_planks
+function macs_scribe_base:trim
 fill ~4 ~ ~-1 ~4 ~1 ~1 minecraft:air
 fill ~-4 ~1 ~-2 ~-4 ~1 ~2 minecraft:air
 fill ~-2 ~1 ~-4 ~2 ~1 ~-4 minecraft:air
@@ -123,6 +123,13 @@ setblock ~-3 ~ ~-3 minecraft:chest[facing=south]{Items:[''' + KIT + ''']}
 setblock ~2 ~ ~-3 minecraft:red_bed[facing=north,part=head]
 setblock ~2 ~ ~-2 minecraft:red_bed[facing=north,part=foot]
 setblock ~0 ~2 ~0 minecraft:lantern[hanging=true]''',
+    # The roof ends flush with the walls and no leaves shade the yard, so the east door is the only
+    # covered-to-open crossing at the cabin: stepping out from an eave or a tree reads as a retreat that way.
+    # Worlds built before this run it once, the first tick the cabin's marker is loaded.
+    'trim': f'''fill ~-5 ~3 ~-5 ~5 ~3 ~5 minecraft:air
+fill ~-4 ~3 ~-4 ~4 ~3 ~4 minecraft:spruce_planks
+fill ~-16 ~-2 ~-16 ~16 ~18 ~16 minecraft:air replace #minecraft:leaves
+scoreboard players set #trimmed {OBJ} 1''',
     'setup': f'''function {NS}:load
 tag @s add msb
 fd postmaeve set-erased
@@ -140,10 +147,11 @@ scoreboard players set #rounds {OBJ} 0
 scoreboard players set @s {OBJ}_seen 41
 scoreboard players set #stage {OBJ} 10
 ''' + tell('MACS Scribe Base: Maeve is awake with an empty memory.', None, 'aqua') + '\n' + prompt(10),
-    # An ordinary Architect, never a Scribe: designation exists only on the natural spawn path.
+    # An ordinary Architect, never a Scribe: designation exists only on the natural spawn path. It comes from the
+    # east so the fight stays on the door side, away from whatever shade the terrain leaves elsewhere.
     'call': guard(10, 22) + f'''
 scoreboard players set #stage {OBJ} 20
-execute at @e[type=marker,tag=msb_base,limit=1] positioned ~-50 ~ ~ positioned over motion_blocking_no_leaves run summon frozendawn:architect ~ ~ ~ {{Tags:["msb_called"],PersistenceRequired:1b}}
+execute at @e[type=marker,tag=msb_base,limit=1] positioned ~50 ~ ~ positioned over motion_blocking_no_leaves run summon frozendawn:architect ~ ~ ~ {{Tags:["msb_called"],PersistenceRequired:1b}}
 fd architect approach @e[tag=msb_called,limit=1] @s
 ''' + prompt(20),
     'round_done': f'''scoreboard players add #rounds {OBJ} 1
@@ -182,7 +190,8 @@ execute if entity @s[tag=msb] run function {NS}:prompt
 execute unless entity @s[tag=msb] run ''' + tell('MACS Scribe Base: click to begin (wakes an empty Maeve, builds a cabin at spawn).', f'/function {NS}:setup', 'aqua'),
 }
 SCRIPTS.update({f'prompt_{stage}': text for stage, text in PROMPTS.items()})
-SCRIPTS['tick'] = f'''execute as @a unless score @s {OBJ}_seen matches 40.. run scoreboard players add @s {OBJ}_seen 1
+SCRIPTS['tick'] = f'''execute if score #stage {OBJ} matches 10.. unless score #trimmed {OBJ} matches 1 at @e[type=marker,tag=msb_base,limit=1] run function {NS}:trim
+execute as @a unless score @s {OBJ}_seen matches 40.. run scoreboard players add @s {OBJ}_seen 1
 execute as @a if score @s {OBJ}_seen matches 40 run function {NS}:rejoin
 execute if score #stage {OBJ} matches 20 unless entity @e[tag=msb_called] run function {NS}:round_done
 execute if score #stage {OBJ} matches 21 run scoreboard players add #timer {OBJ} 1

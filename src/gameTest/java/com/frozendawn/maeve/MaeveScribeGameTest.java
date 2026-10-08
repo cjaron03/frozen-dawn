@@ -75,7 +75,7 @@ public final class MaeveScribeGameTest {
     /** The natural MACS Scribe Base world: same rule. */
     @GameTest(template = GameTestTemplates.EMPTY, timeoutTicks = 40)
     public static void scribeBaseFunctionsParseAtPermissionTwo(GameTestHelper helper) {
-        assertPlaytestFunctionsParse(helper, "macs_scribe_base", 29);
+        assertPlaytestFunctionsParse(helper, "macs_scribe_base", 30);
     }
 
     private static void assertPlaytestFunctionsParse(GameTestHelper helper, String namespace, int count) {
