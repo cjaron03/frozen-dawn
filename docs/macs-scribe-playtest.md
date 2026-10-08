@@ -57,3 +57,20 @@ Xvfb client with real keyboard and mouse input; the server ran at about 9 TPS.
 Owner's unprompted report, recorded before any diagnosis: "yea it keeps saying that "one is missing etc" and also when we wait for the scribe, i need a EVA suit". Earlier, after a relaunch: "im just in the world. theres no clicking or anything. i think we gotta restart".
 
 Cause and fix: the checkpoint always printed the "one is lower" line, so an unneeded fifth round was played (all three were already 0.80 after four); it now shows the real percentages and offers only the matching link. The await left the player unprotected in phase 6 cold; it now equips a full EVA suit. Links printed only when a step began; a world load or `/reload` now reprints them.
+
+## Owner pass 2 (2026-10-07, local lab client, build b18a41a)
+
+Owner's report: "yea im still freezing to death, and no scribes that i see." Then, before any diagnosis was shared: "nevermind it worked! but the test enviromet seems janky you know? i want it more natural, and still have the clicking though, but we should test another situation". Asked what felt janky, the owner selected all four offered options: the superflat arena, teleports and effects, sprinting time, and too much chat. The owner chose a natural survival base as the next situation.
+
+State at the report (snapshot, game time 52536): stage 30 after five rounds, one Architect tagged `msc_scribe` loaded at (409.5, -60, 351.5). SWORD and RECOVERY_UNDER_COVER at 1.00. The cold is explained by the world having entered stage 30 before the EVA fix, so the new await never ran; the rejoin prompt told the player to keep a suit they did not have. Not fixed in this world: the next check replaces it.
+
+## MACS Scribe Base (natural variant)
+
+Requested after owner pass 2. `tools/prepare_macs_scribe_base.py --source <closed normal world> --destination "run-lab/saves/MACS Scribe Base"` copies a normally generated world, enables commands and installs the `macs_scribe_base` pack (scoreboard `msb`). The first copy is from the owner's new world "scribe test" (spawn 0, 71, 0), which stays untouched.
+
+- **Begin** (link on join): empties and wakes Maeve, sets phase 6 mid (cold, natural Architect spawns, no snowfall), keeps inventory, and builds a 9x9 cabin where spawn meets the surface. The cabin has one door (east), window strips on the other walls, a lit heater, a bed and a chest with the EVA suit, a Sharpness V netherite sword, a shield, nine healing potions, food and torches. No teleports, effects, held mobs or time skips. Day, weather and mob spawning stay natural.
+- **CALL AN ARCHITECT**: summons one ordinary Architect 50 blocks west on the surface and sends it at the player. The player shows the habits while it can see them: sword hits, drinking inside the cabin, leaving through the east door. The round ends when it dies; after a 32 s quiet gap the real confidences print with another CALL link, until all three reach 75%. Golden apples and regeneration potions also count as recovery, so eating one outside works against "under cover".
+- **Await**: nothing is called. The Scribe is only ever a natural spawn (2% per 10 s at the default preset, about 8 minutes on average). It is not held, so its two-minute watch runs on its own clock. An ordinary natural Architect after the gate prints one red line with the dump link.
+- **Checks**: kill it, read the record without and then with the translator, check the map, erase Maeve, re-read, restore. One chat line per step, and the current step reprints on rejoin or `/reload`.
+
+The native gate parses all 29 functions at permission level 2 (`scribeBaseFunctionsParseAtPermissionTwo`).

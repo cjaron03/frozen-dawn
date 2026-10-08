@@ -69,16 +69,26 @@ public final class MaeveScribeGameTest {
     /** The MACS Scribe Check world ships exactly these functions; each must parse at the integrated server's level 2. */
     @GameTest(template = GameTestTemplates.EMPTY, timeoutTicks = 40)
     public static void scribePlaytestFunctionsParseAtPermissionTwo(GameTestHelper helper) {
+        assertPlaytestFunctionsParse(helper, "macs_scribe", 41);
+    }
+
+    /** The natural MACS Scribe Base world: same rule. */
+    @GameTest(template = GameTestTemplates.EMPTY, timeoutTicks = 40)
+    public static void scribeBaseFunctionsParseAtPermissionTwo(GameTestHelper helper) {
+        assertPlaytestFunctionsParse(helper, "macs_scribe_base", 29);
+    }
+
+    private static void assertPlaytestFunctionsParse(GameTestHelper helper, String namespace, int count) {
         var server = helper.getLevel().getServer();
         var functions = server.getResourceManager().listResources("function", id ->
-                id.getNamespace().equals("macs_scribe") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(functions.size() == 41, "All Scribe Check functions must be present: " + functions.size());
+                id.getNamespace().equals(namespace) && id.getPath().endsWith(".mcfunction"));
+        helper.assertTrue(functions.size() == count, "All " + namespace + " functions must be present: " + functions.size());
         functions.forEach((id, resource) -> {
             try (var reader = resource.openAsReader()) {
                 net.minecraft.commands.functions.CommandFunction.fromLines(id, server.getCommands().getDispatcher(),
                         server.createCommandSourceStack().withPermission(2), reader.lines().toList());
             } catch (java.io.IOException | IllegalArgumentException error) {
-                helper.fail("Scribe Check function must parse at permission level 2: " + id + ": " + error.getMessage());
+                helper.fail(namespace + " function must parse at permission level 2: " + id + ": " + error.getMessage());
             }
         });
         helper.succeed();

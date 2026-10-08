@@ -533,3 +533,13 @@ tasks.register('generateMacsScribeQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsScribeQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeQa') }
+
+// The natural Scribe Base world is parsed by the same native gate.
+def macsScribeBaseQaResources = layout.buildDirectory.dir('generated/macsScribeBaseQa')
+tasks.register('generateMacsScribeBaseQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_base.py')
+    outputs.dir(macsScribeBaseQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_base.py', '--pack-only', macsScribeBaseQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }
