@@ -43,7 +43,7 @@ final class DirectorRuntime {
     }
     private void clear(String reason) {
         convergence.clear(reason); CommitmentCoordinator.stopAll(server, data.store());
-        missions.clear(); attention.clear(); learning.clear();
+        missions.clear(); attention.clear(); learning.clear(); scribe.clear(reason);
     }
     static void erase(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");

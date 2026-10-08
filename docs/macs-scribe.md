@@ -15,7 +15,7 @@ Implemented on `claude/confident-euler-s2rm17`, branched from `feat/maeve-direct
 **Watch target (Causal).** Chosen from the world model only: the strongest OPEN access point within 32 blocks of the observed shelter centroid (`OPENING`), else the centroid (`SHELTER`), else no point (`ROUTE`: it watches from where it stands). No player position enters the order.
 
 **Local executor** (`ArchitectScribeController`):
-- Walks out to a post on a 20-block ring around the target: open sky, standable, loaded, no known heater within 8 blocks, preferring line of sight. Seven-heading two-block safe segments; it never places or breaks blocks. Stalling 100 ticks means it watches from where it is.
+- Walks out to a post on a 20-block ring around the target: open sky, standable, loaded, no known heater within 8 blocks, preferring line of sight. Walking (travel, flight, departure) uses the scouts' and pawns' observed-walk planner in 12-block segments, so snow layers and one-block steps are walkable; it never places or breaks blocks. Stalling 100 ticks means it watches from where it is. The watch decision logs the post and why ring columns were rejected.
 - Watches for 2400 ticks (2 min), facing the subject when it can see them within 48 blocks, otherwise the remembered point. Then it departs and is discarded once no player is within 32 blocks (or 16 after 600 ticks).
 - Flees any visible Survival/Adventure player within 12 blocks, and anyone who strikes it from range. It never initiates combat.
 - **Cornered** (struck within 3.5 blocks with no safe heading away, or while flight has stalled for 30 ticks) it defends itself under the §9.13a local-defense exception: ordinary combat against that attacker until 200 ticks pass without damage, then it resumes fleeing. It still holds the slate.
@@ -74,7 +74,8 @@ Compounds of existing roots: *Maeve-sorr* north (the cold quarter), *Vel-sorr* e
 
 ## Pending
 
-- Human visual pass: white eyes and slate in hand, watch/flee readability, record screen with and without the translator, map legibility.
+- Design question: full-block drifts (early phase 6 snow, up to three blocks) have no observed-walk route, so a Scribe boxed in by them cannot travel or flee and watches or defends where it stands. Scouts and pawns share this limit. Climbing or digging would be new behavior; not added without an owner decision.
+- Human visual pass ([MACS Scribe Check](macs-scribe-playtest.md)): white eyes and slate in hand, watch/flee readability, record screen with and without the translator, map legibility.
 - Calibration (§9.20): gate count 3, cooldown 3 days, lifetime 1 day, watch 2 minutes, ring 20, flee 12.
 - §17.7 `Remembered.` lines wait for Maeve 4 long-term memory, which is not built.
 - Owner review of the proposed roots, and of the §9.18 wording now that §9.4b records persist.

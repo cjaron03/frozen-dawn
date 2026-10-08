@@ -39,7 +39,7 @@ scoreboard objectives add msc_hit minecraft.used:minecraft.netherite_sword''',
     'cleanup': '''execute as @e[tag=msc_witness] run data merge entity @s {NoAI:1b}
 kill @e[tag=msc_witness]''',
     # Flat ground: grass at y=-61, standing height y=-60. Shelter roof 394..406, east opening at x=407.
-    'build': '''forceload add 352 352 448 448
+    'build': '''forceload add 336 336 463 463
 fill 386 -61 386 414 -61 414 minecraft:smooth_stone
 fill 386 -60 386 414 -50 414 minecraft:air
 fill 394 -56 394 406 -56 406 minecraft:stone
@@ -51,7 +51,11 @@ setblock 400 -61 400 minecraft:lapis_block
 fill 407 -61 399 410 -61 401 minecraft:gold_block
 setblock 390 -60 400 frozendawn:thermal_heater[lit=true]{BurnTime:1000000}
 setblock 360 -61 400 minecraft:emerald_block
+function macs_scribe:clear_snow
 function macs_scribe:booth''',
+    # Drifts left by an earlier wait: snow falls within 64 blocks of the player. Quarters stay below the fill limit.
+    'clear_snow': '\n'.join(f'fill {x} -60 {z} {x + 63} -55 {z + 63} minecraft:air replace minecraft:{block}'
+                             for x in (336, 400) for z in (336, 400) for block in ('snow', 'snow_block')),
     # Bedrock cage with a head-height slit: the witness sees the shelter, heater and east crossing.
     # Bedrock floor too: an attacked witness otherwise digs down and tunnels out of the cage.
     'booth': '''fill 403 -61 402 405 -61 404 minecraft:bedrock
@@ -110,10 +114,15 @@ tp @s 360.5 -60 400.5 90 0
 execute if score #rounds msc matches ..{ROUNDS - 1} run function {NS}:practice
 execute if score #stage msc matches 21 if score #rounds msc matches {ROUNDS}.. run function {NS}:checkpoint''',
     'checkpoint': '''scoreboard players set #stage msc 22
-''' + tell('Practice complete. Optional: check the dump shows three beliefs at 0.80 (sword, recovery under cover, east retreat).', '/fd maeve dump', 'aqua') + '\n'
+''' + tell('Practice complete. Check the dump: the gate needs three beliefs at 0.75 or more (sword, recovery under cover, east retreat).', '/fd maeve dump', 'aqua') + '\n'
+        + tell('One is lower (the witness missed a step)? Click ONE MORE ROUND.', f'/function {NS}:extra', 'yellow') + '\n'
         + tell('Click AWAIT THE SCRIBE.', f'/function {NS}:await', 'green'),
-    # Natural spawning needs phase 6. The player stays in Survival under the roof; the first natural
-    # Architect after the gate is the Scribe. It is held (NoAI) on its first tick so a sprint cannot skip it.
+    'extra': guard(22) + f'''
+function {NS}:practice''',
+    # Natural spawning needs phase 6. Mid phase 6 has no snowfall, so sprinting cannot bury the arena in
+    # full-block drifts the Scribe's no-dig walk cannot cross. The player stays in Survival under the roof;
+    # the first natural Architect after the gate is the Scribe. It is held (NoAI) on its first tick so a
+    # sprint cannot skip it.
     'await': guard(22) + '''
 scoreboard players set #stage msc 30
 scoreboard players set #timer msc 0
@@ -121,7 +130,7 @@ tp @s 400.5 -60 400.5 -90 0
 clear @s
 item replace entity @s hotbar.0 with ''' + SWORD + '''
 effect give @s minecraft:regeneration infinite 1 true
-fd world set phase 6
+fd world set phase 6 mid
 ''' + tell('Stay under the roof. Natural Architect spawns roll every 10 seconds near you. Click to sprint; repeat until a Scribe arrives.', '/tick sprint 6000t'),
     'found': '''tag @s add msc_scribe
 data merge entity @s {NoAI:1b,Motion:[0.0d,0.0d,0.0d]}
@@ -141,7 +150,7 @@ data merge entity @e[tag=msc_scribe,limit=1] {NoAI:0b}
         + tell('Click NEXT for the approach check.', f'/function {NS}:approach', 'green'),
     'approach': guard(40) + '''
 scoreboard players set #stage msc 50
-''' + tell('CHECK 3 - Flee: walk toward it. Within about 12 blocks it should turn and run. It must never attack you. Do not hit it yet.') + '\n'
+''' + tell('CHECK 3 - Flee: walk toward it. Within about 12 blocks it should turn and run. It must never attack you. Do not hit it yet. If its two minutes ran out it is already walking away and will not run; stay within 16 blocks or it is gone.') + '\n'
         + tell('Click NEXT for the chase.', f'/function {NS}:hunt', 'green'),
     'hunt': guard(50) + '''
 scoreboard players set #stage msc 60
@@ -149,7 +158,7 @@ effect give @s minecraft:speed 300 1 true
 ''' + tell('CHECK 4 - Chase it down and kill it with the sword. Struck from range it keeps running; cornered and hit up close, it fights back while still holding the slate.'),
     'gone': '''scoreboard players set #stage msc 70
 execute if entity @e[type=item,nbt={Item:{id:"frozendawn:scribe_record"}}] run ''' + tell('It died. Pick up the Scribe Record and the Marked Map.', None, 'green').replace('@s', '@a[tag=msc]') + '''
-execute unless entity @e[type=item,nbt={Item:{id:"frozendawn:scribe_record"}}] run ''' + tell('It left without dying, so nothing dropped. Report this; leaving is expected only after its watch or after ERASED.', '/fd maeve dump', 'red').replace('@s', '@a[tag=msc]') + '''
+execute unless entity @e[type=item,nbt={Item:{id:"frozendawn:scribe_record"}}] run ''' + tell('It left without dying, so nothing dropped. Expected only after its watch ended or after ERASED; otherwise report the dump. Click to start over.', f'/function {NS}:setup', 'red').replace('@s', '@a[tag=msc]') + '''
 ''' + tell('CHECK 5 - Use the record (right-click) WITHOUT a translator: raw Thaeven headed Vel-thae. Then click NEXT.', f'/function {NS}:translate', 'green').replace('@s', '@a[tag=msc]'),
     'translate': guard(70) + '''
 scoreboard players set #stage msc 75

@@ -77,6 +77,9 @@ final class ScribeCoordinator {
         FrozenDawn.LOGGER.info("[MACS Scribe] {}", decision); data.setDirty();
     }
 
+    /** Runtime diagnostics only; the claim itself lives in the erasable store. */
+    void clear(String reason) { decision = reason; }
+
     List<String> diagnostics() {
         var memory = data.scribe();
         if (memory == null) return List.of("SCRIBE: unavailable (" + data.lifecycle() + ")");

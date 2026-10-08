@@ -76,7 +76,7 @@ final class ArchitectAttentionController {
             nextStep = now() + 20; destination = null;
             for (int angle : new int[]{0, 30, -30, 60, -60, 90, -90}) {
                 Vec3 candidate = actor.position().add(away.yRot((float) Math.toRadians(angle)).scale(2));
-                if (safe(actor, candidate)) { destination = candidate; break; }
+                if (safe(candidate)) { destination = candidate; break; }
             }
         }
         Vec3 look = destination == null ? actor.position().add(away) : destination;
@@ -84,13 +84,13 @@ final class ArchitectAttentionController {
         actor.setYRot(yaw); actor.setYBodyRot(yaw); actor.setYHeadRot(yaw);
         actor.getLookControl().setLookAt(look.x, actor.getEyeY(), look.z, 15, 15);
         if (sprintingAvoidance) {
-            if (destination != null && actor.onGround() && safe(actor, destination)) {
+            if (destination != null && actor.onGround() && safe(destination)) {
                 // Use the ordinary chase's sprint flag and MoveControl pace on the same safe exit segments.
                 actor.setSprinting(true);
                 actor.getMoveControl().setWantedPosition(destination.x, destination.y, destination.z,
                         ArchitectApproachWalkSupport.APPROACH_SPRINT_SPEED);
             } else stopAvoidanceSprint();
-        } else if (destination != null && actor.onGround() && safe(actor, destination)) {
+        } else if (destination != null && actor.onGround() && safe(destination)) {
             Vec3 delta = destination.subtract(actor.position()).multiply(1, 0, 1);
             double speed = Math.min(.14, delta.length());
             delta = delta.normalize().scale(speed);
@@ -106,8 +106,7 @@ final class ArchitectAttentionController {
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
     }
 
-    /** Loaded, supported, hazard-free and collision-free along a short walking segment. */
-    static boolean safe(ArchitectEntity actor, Vec3 target) {
+    private boolean safe(Vec3 target) {
         for (int i = 0; i <= 4; i++) {
             Vec3 point = actor.position().lerp(target, i / 4.0);
             BlockPos pos = BlockPos.containing(point);

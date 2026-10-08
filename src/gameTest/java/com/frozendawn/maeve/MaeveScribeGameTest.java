@@ -72,7 +72,7 @@ public final class MaeveScribeGameTest {
         var server = helper.getLevel().getServer();
         var functions = server.getResourceManager().listResources("function", id ->
                 id.getNamespace().equals("macs_scribe") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(functions.size() == 22, "All Scribe Check functions must be present: " + functions.size());
+        helper.assertTrue(functions.size() == 24, "All Scribe Check functions must be present: " + functions.size());
         functions.forEach((id, resource) -> {
             try (var reader = resource.openAsReader()) {
                 net.minecraft.commands.functions.CommandFunction.fromLines(id, server.getCommands().getDispatcher(),
@@ -125,6 +125,8 @@ public final class MaeveScribeGameTest {
             helper.assertFalse(MaeveDirector.designateScribe(third, player), "Scribes stop appearing after ERASED");
             PostMaeveWorldState.setForDebug(scene.server, false);
             helper.assertFalse(MaeveDirector.designateScribe(third, player), "Debug reversal starts empty and cannot reopen the gate");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().noneMatch(line -> line.contains(second.getUUID().toString())),
+                    "ERASED leaves no trace of the former Scribe in diagnostics");
         });
     }
 
@@ -245,6 +247,39 @@ public final class MaeveScribeGameTest {
             double end = Math.sqrt(actor.blockPosition().distSqr(opening));
             helper.assertTrue(start - end >= 12 && end >= 15 && end <= 26 && actor.getTarget() == null,
                     "Walks from " + start + " to a ring post about 20 blocks out, without engaging; ended at " + end + " " + actor.position());
+        });
+    }
+
+    /** Live Scribe Check terrain: uneven late-phase snow layers with full-block drifts the route must avoid. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeWalksToItsPostAcrossUnevenLateSnow(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 205, 3, scene -> {
+            floor(scene, 44);
+            for (int x = 0; x <= 44; x++) for (int z = 0; z <= 44; z++) {
+                boolean drift = x % 6 == 3 && z % 5 == 2;
+                int layers = 1 + Math.floorMod(x * 7 + z * 3, 5);
+                scene.block(x, 0, z, drift ? Blocks.SNOW_BLOCK.defaultBlockState()
+                        : Blocks.SNOW.defaultBlockState().setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS, layers));
+                if (drift) scene.block(x, 1, z, Blocks.SNOW.defaultBlockState().setValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS, 3));
+            }
+            var player = scene.player("scribe_snow", 2, 2); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var world = MaeveSavedData.get(scene.server).store().world(id);
+            String dim = scene.level.dimension().location().toString();
+            world.sample(WITNESS, dim, scene.origin.offset(8, 0, 10), true, t);
+            BlockPos opening = scene.origin.offset(10, 0, 10);
+            world.access(dim, opening, scene.origin.offset(9, 0, 10),
+                    new ObservedEvidence(WITNESS, UUID.randomUUID(), dim, scene.origin, t, "QA_WITNESSED", true));
+            var actor = scene.architect(40, 40);
+            actor.setPos(actor.getX(), actor.getY() + 1, actor.getZ());
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setDeltaMovement(Vec3.ZERO);
+            for (int i = 0; i < 20; i++) { scene.clock(t + i); actor.tick(); }
+            double start = Math.sqrt(actor.blockPosition().distSqr(opening));
+            tick(scene, actor, t + 20, 500);
+            double end = Math.sqrt(actor.blockPosition().distSqr(opening));
+            helper.assertTrue(start - end >= 12 && end >= 15 && end <= 27 && actor.getTarget() == null,
+                    "Snow must not strand the Scribe: walked " + start + " -> " + end + " at " + actor.position());
         });
     }
 
