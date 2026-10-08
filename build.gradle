@@ -523,3 +523,13 @@ tasks.register('generateMacsSignalQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
+
+// The Scribe Check world uses the same parsed functions as its required native gate.
+def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
+tasks.register('generateMacsScribeQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_playtest.py')
+    outputs.dir(macsScribeQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_playtest.py', '--pack-only', macsScribeQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeQa') }

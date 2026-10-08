@@ -66,6 +66,24 @@ public final class MaeveScribeGameTest {
         for (int i = 0; i < ticks && !actor.isRemoved(); i++) { scene.clock(from + i); actor.tick(); }
     }
 
+    /** The MACS Scribe Check world ships exactly these functions; each must parse at the integrated server's level 2. */
+    @GameTest(template = GameTestTemplates.EMPTY, timeoutTicks = 40)
+    public static void scribePlaytestFunctionsParseAtPermissionTwo(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var functions = server.getResourceManager().listResources("function", id ->
+                id.getNamespace().equals("macs_scribe") && id.getPath().endsWith(".mcfunction"));
+        helper.assertTrue(functions.size() == 22, "All Scribe Check functions must be present: " + functions.size());
+        functions.forEach((id, resource) -> {
+            try (var reader = resource.openAsReader()) {
+                net.minecraft.commands.functions.CommandFunction.fromLines(id, server.getCommands().getDispatcher(),
+                        server.createCommandSourceStack().withPermission(2), reader.lines().toList());
+            } catch (java.io.IOException | IllegalArgumentException error) {
+                helper.fail("Scribe Check function must parse at permission level 2: " + id + ": " + error.getMessage());
+            }
+        });
+        helper.succeed();
+    }
+
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void scribeGateAllowsOneClaimAndStopsAfterErased(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 200, scene -> {
@@ -202,6 +220,31 @@ public final class MaeveScribeGameTest {
                 scene.level.setBlock(at.relative(side).above(y), Blocks.AIR.defaultBlockState(), 3);
             tick(scene, actor, t + 400, 5);
             helper.assertTrue(actor.getTarget() == null && actor.isScribe(), "Without fresh damage, defense ends and it resumes fleeing");
+        });
+    }
+
+    /** Found in the live Scribe Check: a fresh controller must not treat its spawn as a stalled route. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeWalksOutToARingPostAroundTheRememberedOpening(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 204, 3, scene -> {
+            floor(scene, 44);
+            var player = scene.player("scribe_travel", 2, 2); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var world = MaeveSavedData.get(scene.server).store().world(id);
+            String dim = scene.level.dimension().location().toString();
+            world.sample(WITNESS, dim, scene.origin.offset(8, 0, 10), true, t);
+            var evidence = new ObservedEvidence(WITNESS, UUID.randomUUID(), dim, scene.origin, t, "QA_WITNESSED", true);
+            BlockPos opening = scene.origin.offset(10, 0, 10);
+            world.access(dim, opening, scene.origin.offset(9, 0, 10), evidence);
+            var actor = scene.architect(40, 40);
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            helper.assertTrue("OPENING".equals(MaeveDirector.scribeOrder(actor).watchLabel()), "Watches the remembered opening");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setOnGround(true); actor.setDeltaMovement(Vec3.ZERO);
+            double start = Math.sqrt(actor.blockPosition().distSqr(opening));
+            tick(scene, actor, t + 1, 420);
+            double end = Math.sqrt(actor.blockPosition().distSqr(opening));
+            helper.assertTrue(start - end >= 12 && end >= 15 && end <= 26 && actor.getTarget() == null,
+                    "Walks from " + start + " to a ring post about 20 blocks out, without engaging; ended at " + end + " " + actor.position());
         });
     }
 

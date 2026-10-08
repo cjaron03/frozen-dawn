@@ -63,7 +63,8 @@ final class ArchitectScribeController {
                 walk(threat == null ? actor.getLookAngle().reverse() : actor.position().subtract(threat), FLEE_SPEED, now);
             }
             case TRAVEL -> {
-                if (post == null) post = choosePost(order);
+                // A new post starts its own stall clock; a fresh controller has no progress history yet.
+                if (post == null) { post = choosePost(order); progress = actor.position(); progressAt = now; }
                 Vec3 goal = Vec3.atBottomCenterOf(post);
                 if (actor.position().subtract(goal).horizontalDistanceSqr() <= 2.25 || now - progressAt >= STALL) {
                     setPhase(Phase.WATCH, now);
