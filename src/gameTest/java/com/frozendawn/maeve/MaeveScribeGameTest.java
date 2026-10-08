@@ -72,7 +72,7 @@ public final class MaeveScribeGameTest {
         var server = helper.getLevel().getServer();
         var functions = server.getResourceManager().listResources("function", id ->
                 id.getNamespace().equals("macs_scribe") && id.getPath().endsWith(".mcfunction"));
-        helper.assertTrue(functions.size() == 24, "All Scribe Check functions must be present: " + functions.size());
+        helper.assertTrue(functions.size() == 41, "All Scribe Check functions must be present: " + functions.size());
         functions.forEach((id, resource) -> {
             try (var reader = resource.openAsReader()) {
                 net.minecraft.commands.functions.CommandFunction.fromLines(id, server.getCommands().getDispatcher(),
@@ -82,6 +82,35 @@ public final class MaeveScribeGameTest {
             }
         });
         helper.succeed();
+    }
+
+    /** The checkpoint branches on /fd maeve confidence: whole percent rounded down, read-only, 0 when unknown. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
+    public static void maeveConfidenceCommandReportsWholePercentWithoutWriting(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 206, scene -> {
+            var player = scene.player("scribe_confidence", 3, 3);
+            MaeveDirector.snapshot(scene.server, player.getUUID());
+            scene.clock(train(scene, player.getUUID(), scene.gameTime, BeliefStore.SWORD, 2, 1));
+            var source = player.createCommandSourceStack().withPermission(2).withSuppressedOutput();
+            var dispatcher = scene.server.getCommands().getDispatcher();
+            var before = MaeveDirector.snapshot(scene.server, player.getUUID()).beliefs();
+            double sword = before.stream().filter(b -> b.pattern().equals(BeliefStore.SWORD))
+                    .mapToDouble(MaeveDirector.BeliefSnapshot::confidence).findFirst().orElse(-1);
+            try {
+                int percent = dispatcher.execute("fd maeve confidence " + BeliefStore.SWORD.toLowerCase(java.util.Locale.ROOT), source);
+                helper.assertTrue(sword > 0 && percent == (int) Math.floor(sword * 100 + 1e-9),
+                        "Result is the confidence as a whole percent, rounded down: " + sword + " -> " + percent);
+                helper.assertTrue(dispatcher.execute("fd maeve confidence " + BeliefStore.RECOVERY, source) == 0,
+                        "An unknown belief reads as 0");
+            } catch (com.mojang.brigadier.exceptions.CommandSyntaxException error) {
+                helper.fail("fd maeve confidence must parse: " + error.getMessage());
+            }
+            var after = MaeveDirector.snapshot(scene.server, player.getUUID()).beliefs();
+            helper.assertTrue(after.size() == before.size() && after.stream().allMatch(b -> before.stream().anyMatch(o ->
+                            o.pattern().equals(b.pattern()) && o.evidence() == b.evidence() && o.storedConfidence() == b.storedConfidence())),
+                    "Reading a confidence never writes a belief");
+            helper.succeed();
+        });
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)

@@ -63,14 +63,14 @@ Compounds of existing roots: *Maeve-sorr* north (the cold quarter), *Vel-sorr* e
 
 - ERASED ends the claim immediately: a living Scribe walks away and is discarded without drops; killing it after ERASED drops nothing. Existing records and maps are untouched. Gone after E11 through the shared `ConvergenceLifecycle.isArchitectExistencePermanentlyEnded` hook (E11 itself is not built).
 - `MaeveSavedData` version 9 adds the erasable `scribe` tag (active claim, last end time). Older saves load with no history. The entity carries `macsScribe` in persistent data. Reload restarts the local watch; the claim's one-day lifetime (24000 ticks) bounds the whole appearance, and an expired claim starts the cooldown from its lifetime end.
-- `/fd maeve dump` adds `SCRIBE` lines: last decision (designation, gate refusal reason, end), cooldown remaining, active claim with watch label/point and expiry. Actor journals record `MAEVE_SCRIBE_WATCH`, `_CORNERED`, `_DEFENSE_ENDED`, `_DEPART`, `_GONE`.
+- `/fd maeve dump` adds `SCRIBE` lines: last decision (designation, gate refusal reason, end), cooldown remaining, active claim with watch label/point and expiry. `/fd maeve confidence <pattern>` (player only, read-only) prints one belief's current confidence and returns its whole percent, 0 when unknown, for `execute store`. Actor journals record `MAEVE_SCRIBE_WATCH`, `_CORNERED`, `_DEFENSE_ENDED`, `_DEPART`, `_GONE`.
 - `MaeveDirector` remains the only external entry point (277 lines, below the 300-line check).
 
 ## Verification
 
 - Unit: `ScribeRecordTest` (ordering, five-line cap, floor, phrasing tiers, verb-last spatial lines, unknown patterns omitted, wrong beliefs as held, gate/cooldown/lifecycle, claim expiry and reload, map mark selection and bounds).
 - Required native GameTests (`MaeveScribeGameTest`): gate and single claim with Master/Creative/ERASED refusals and no post-erasure drops; real death drops with exact record lines, locked centered map with three marks and legend, unchanged after new evidence and ERASED; real AI watch, flee on approach, keeps fleeing when struck from range, defends when cornered; leaves after ERASED without drops.
-- `./gradlew build gameTestGate --console=plain` passed on 2026-10-06: 672 unit tests (665 before this slice), every `check` task including the facade budget, and 242 GameTests with all 237 required cases verified (baseline 238/233). SavedData version tests now pin version 9. `./gradlew architectMonkey` passed: 500 unchanged seeded stress cases plus the 242 native cases repeated (742 GameTests).
+- `./gradlew build gameTestGate --console=plain` passed again on 2026-10-07 after the Scribe Check fixes and the `/fd maeve confidence` command: 672 unit tests (665 before this slice), every `check` task including the facade budget, and 246 GameTests with all 240 required cases verified (baseline 238/233). SavedData version tests now pin version 9. `./gradlew architectMonkey` passed on 2026-10-06 (not rerun for the fixes): 500 unchanged seeded stress cases plus the 242 native cases repeated (742 GameTests).
 
 ## Pending
 

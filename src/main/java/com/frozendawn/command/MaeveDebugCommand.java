@@ -27,6 +27,12 @@ final class MaeveDebugCommand {
                         .then(Commands.argument("subject", StringArgumentType.word())
                                 .suggests(MaeveDebugCommand::subjects)
                                 .executes(c -> inspect(c.getSource(), StringArgumentType.getString(c, "subject"), null))))
+                .then(Commands.literal("confidence")
+                        .then(Commands.argument("pattern", StringArgumentType.word())
+                                .suggests((c, builder) -> SharedSuggestionProvider.suggest(
+                                        MaeveDirector.diagnosticPatterns(c.getSource().getServer(),
+                                                c.getSource().getEntity() instanceof ServerPlayer p ? p.getUUID() : null), builder))
+                                .executes(c -> confidence(c.getSource(), StringArgumentType.getString(c, "pattern")))))
                 .then(Commands.literal("explain")
                         .then(Commands.argument("pattern", StringArgumentType.word())
                                 .suggests((c, builder) -> SharedSuggestionProvider.suggest(
@@ -64,6 +70,20 @@ final class MaeveDebugCommand {
             }
         }
         return display(source, id, pattern == null ? null : pattern.toUpperCase(Locale.ROOT));
+    }
+
+    /** Read-only: the result is the current confidence as a whole percent (rounded down), so functions can branch on it. */
+    private static int confidence(CommandSourceStack source, String pattern) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Run /fd maeve confidence as a player."));
+            return 0;
+        }
+        String key = pattern.toUpperCase(Locale.ROOT);
+        double value = MaeveDirector.snapshot(source.getServer(), player.getUUID()).beliefs().stream()
+                .filter(b -> b.pattern().equals(key)).mapToDouble(MaeveDirector.BeliefSnapshot::confidence).findFirst().orElse(0);
+        int percent = (int) Math.floor(value * 100 + 1e-9);
+        source.sendSuccess(() -> Component.literal(String.format(Locale.ROOT, "%s confidence=%.4f (%d%%)", key, value, percent)), false);
+        return percent;
     }
 
     private static int display(CommandSourceStack source, UUID player, String pattern) {
