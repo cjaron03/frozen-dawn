@@ -1,6 +1,6 @@
 # MACS Scribe Architect
 
-Implemented on `claude/confident-euler-s2rm17`, branched from `feat/maeve-director` at `98165da` (after PR #102). Contract: [MACS Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), §9.4b, with §§4, 9.1, 9.3, 9.13a, 9.15, 9.16a and 9.18. **Automated gates only; no human visual pass yet.**
+Implemented on `feat/scribe-architect`, branched from `feat/maeve-director` at `98165da` (after PR #102). Contract: [MACS Source of Truth](https://www.notion.so/39d7cfaa890181c1bad4f6babad80880), §9.4b, with §§4, 9.1, 9.3, 9.13a, 9.15, 9.16a and 9.18. **Automated gates only; no human visual pass yet.**
 
 ## Owner decisions (2026-10-06)
 
