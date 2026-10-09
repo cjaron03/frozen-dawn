@@ -110,7 +110,8 @@ PROMPTS = {
     70: tell('It died. Pick up the record and the map. Read the record without a translator, then:', None, 'green') + '\n'
         + tell('NEXT', f'/function {NS}:translate', 'green'),
     75: tell('Read the record again with the translator (English over each line, no numbers). Hold the map: '
-             'locked, centered on the cabin, marks at your east door and the heater. Then:') + '\n'
+             'locked, marking only places Maeve remembers: blue banners for openings, red crosses for losses, red points for heat. '
+             'If she remembers no place (no called fights), it shows terrain and no marks. Then:') + '\n'
         + tell('ERASE MAEVE', f'/function {NS}:erase', 'green'),
     80: tell('Maeve is erased. The record and the map must read exactly as before. Then:', None, 'aqua') + '\n'
         + tell('RESTORE AN EMPTY MAEVE', f'/function {NS}:restore', 'green'),
