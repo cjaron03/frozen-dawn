@@ -16,6 +16,7 @@ final class ArchitectThinkingController {
     private int stillTicks;
     private int lastTick = Integer.MIN_VALUE;
     private int nextChinTick;
+    private int interruptedUntil;
     private boolean chin;
     private String reason = "ROUTE_EXECUTION";
     private int reasonUntil;
@@ -51,7 +52,7 @@ final class ArchitectThinkingController {
         boolean stationary = lastPosition != null
                 && lastPosition.distanceToSqr(architect.position()) < 0.000625;
         lastPosition = architect.position();
-        if (!eligible || target == null || !stationary) {
+        if (!eligible || target == null || !stationary || now < interruptedUntil) {
             endPause();
             return 0;
         }
@@ -85,4 +86,6 @@ final class ArchitectThinkingController {
         stillTicks = 0;
         chin = false;
     }
+
+    void interrupt() { endPause(); interruptedUntil = architect.tickCount + 40; }
 }

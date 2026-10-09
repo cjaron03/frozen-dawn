@@ -1,4 +1,35 @@
 {
+  "ambient.eva_emergency_breathing_fast": {
+    "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
+    "sounds": [{ "name": "frozendawn:ambient/eva_emergency_breathing_fast", "stream": true }]
+  },
+  "ambient.eva_emergency_fan": {
+      "subtitle": "subtitle.frozendawn.ambient.eva_emergency_fan",
+      "sounds": [
+          {
+              "name": "frozendawn:ambient/eva_emergency_fan",
+              "stream": true
+          }
+      ]
+  },
+  "ui.suit.emergency_regulator": {
+      "subtitle": "subtitle.frozendawn.ui.suit.emergency_regulator",
+      "sounds": [
+          {
+              "name": "frozendawn:ui/suit/emergency_regulator",
+              "stream": false
+          }
+      ]
+  },
+  "ui.suit.emergency_shutdown": {
+      "subtitle": "subtitle.frozendawn.ui.suit.emergency_shutdown",
+      "sounds": [
+          {
+              "name": "frozendawn:ui/suit/emergency_shutdown",
+              "stream": false
+          }
+      ]
+  },
   "ambient.wind_light": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.wind_light",
@@ -97,6 +128,16 @@
       }
     ]
   },
+  "ambient.eva_emergency_breathing": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/eva_emergency_breathing",
+        "stream": true
+      }
+    ]
+  },
   "ui.suit.puncture_warning": {
     "subtitle": "subtitle.frozendawn.ui.suit.puncture_warning",
     "sounds": [
@@ -120,6 +161,30 @@
     "sounds": [
       "frozendawn:ui/suit/leak_hiss"
     ]
+  },
+  "ui.suit.emergency_eva_active": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_active",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_eva_active", "stream": true }
+    ]
+  },
+  "ui.suit.emergency_eva_condition": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_condition",
+    "sounds": [
+      { "name": "frozendawn:ui/suit/emergency_eva_condition", "stream": true }
+    ]
+  },
+  "ui.suit.emergency_eva_ambient": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_ambient",
+    "sounds": [{ "name": "frozendawn:ui/suit/emergency_eva_ambient", "stream": true }]
+  },
+  "ui.suit.emergency_eva_service_critical": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_service_critical",
+    "sounds": [{"name": "frozendawn:ui/suit/emergency_eva_service_critical", "stream": false}]
+  },
+  "ui.suit.emergency_eva_handoff": {
+    "subtitle": "subtitle.frozendawn.ui.suit.emergency_eva_handoff",
+    "sounds": [{ "name": "frozendawn:ui/suit/emergency_eva_handoff", "stream": true }]
   },
   "ui.suit.emergency_reserve": {
     "subtitle": "subtitle.frozendawn.ui.suit.emergency_reserve",
@@ -500,6 +565,13 @@
     "subtitle": "subtitle.frozendawn.entity.bloombound_undone.death",
     "sounds": [ "frozendawn:entity/bloombound_undone/death" ]
   },
+  "entity.architect.scribe_write": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_write",
+    "sounds": [
+      { "name": "minecraft:ui.cartography_table.take_result", "type": "event", "volume": 0.35, "pitch": 0.85 }
+    ]
+  },
   "entity.undone_architect.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",
@@ -575,6 +647,15 @@
     "subtitle": "subtitle.frozendawn.entity.mimic.stare",
     "sounds": [
       { "name": "minecraft:ambient.cave", "type": "event", "volume": 1.0 }
+    ]
+  },
+  "entity.architect.shoot": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.shoot",
+    "sounds": [
+      { "name": "frozendawn:entity/architect/shoot_1", "attenuation_distance": 24 },
+      { "name": "frozendawn:entity/architect/shoot_2", "attenuation_distance": 24 },
+      { "name": "frozendawn:entity/architect/shoot_3", "attenuation_distance": 24 }
     ]
   },
   "entity.architect.mine": {

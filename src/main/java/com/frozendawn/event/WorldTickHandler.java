@@ -139,6 +139,7 @@ public class WorldTickHandler {
 
     @SubscribeEvent
     public static void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        com.frozendawn.maeve.MaeveDirector.onServerStopped(event.getServer());
         lastLoggedPhase = -1;
         lastLoggedDay = -1;
         pendingArchitectBreakUpdates.clear();
@@ -243,6 +244,7 @@ public class WorldTickHandler {
         // Drive world systems in the overworld
         long tick = overworld.getGameTime();
         PostMaeveWorldState.tick(overworld);
+        com.frozendawn.maeve.MaeveDirector.tick(server);
         ThaevenLoreWorldManager.tick(overworld);
         com.frozendawn.aggregate.StillpointFieldManager.tick(server);
         AggregateGrowthManager.tick(overworld);

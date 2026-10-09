@@ -65,6 +65,8 @@ public final class SuitIntegrityHandler {
         DamageSource source = event.getSource();
         interruptPatchOnExternalDamage(player, source);
 
+        if (EmergencyEvaHandler.isWearingIssuedPiece(player)) return;
+
         if (!isVacuumExposure(player)
                 || !isWearingSealedSuit(player)
                 || !isPunctureEligible(source)) {
@@ -129,7 +131,7 @@ public final class SuitIntegrityHandler {
 
         int beforeO2 = getTotalO2(player);
         int maxO2 = getTotalMaxO2(player);
-        boolean sealed = isWearingSealedSuit(player);
+        boolean sealed = isWearingSealedSuit(player) && !EmergencyEvaHandler.isWearingIssuedPiece(player);
         boolean vacuum = isVacuumExposure(player);
         if (sealed && vacuum && state.punctures() > 0 && beforeO2 > 0) {
             state.setVentAccumulator(
@@ -186,7 +188,8 @@ public final class SuitIntegrityHandler {
 
     public static boolean completePatch(ServerPlayer player, boolean permanent) {
         SuitIntegrity state = player.getData(ModAttachments.SUIT_INTEGRITY);
-        if (state.punctures() <= 0 || !isWearingSealedSuit(player)) {
+        if (EmergencyEvaHandler.isWearingIssuedPiece(player)
+                || state.punctures() <= 0 || !isWearingSealedSuit(player)) {
             state.setPatchTicks(-1);
             sync(player, state, SuitIntegrityPayload.NONE);
             return false;

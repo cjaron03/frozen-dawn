@@ -41,10 +41,7 @@ public final class ThaevenLoreManager {
             ServerPlayer player, ThaevenRecordId record, Vec3 carrierPosition) {
         ThaevenLoreSavedData data = ThaevenLoreSavedData.get(player.getServer());
         if (!hasTranslator(player)) {
-            if (data.discoverRecipe(player.getUUID())) {
-                player.awardRecipesByKey(List.of(TRANSLATOR_RECIPE));
-                sync(player);
-            }
+            discoverTranslatorRecipe(player);
             PacketDistributor.sendToPlayer(player,
                     new OpenThaevenArchivePayload(record.ordinal(), true));
             return;
@@ -57,6 +54,14 @@ public final class ThaevenLoreManager {
         sync(player);
         PacketDistributor.sendToPlayer(player,
                 new OpenThaevenArchivePayload(record.ordinal(), false));
+    }
+
+    /** Examining untranslated Thaeven without a translator teaches the translator recipe once. */
+    public static void discoverTranslatorRecipe(ServerPlayer player) {
+        if (ThaevenLoreSavedData.get(player.getServer()).discoverRecipe(player.getUUID())) {
+            player.awardRecipesByKey(List.of(TRANSLATOR_RECIPE));
+            sync(player);
+        }
     }
 
     private static void showTranslationComplete(

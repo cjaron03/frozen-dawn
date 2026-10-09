@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.event.EmergencyEvaHandler;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
@@ -24,6 +25,11 @@ public class EvaSuitAmbience {
     private static final float TARGET_VOLUME = 0.5f;
 
     private static TickableWindSound currentSound = null;
+    private static TickableWindSound previousSound = null;
+    private static TickableBreathingSound emergencySound = null;
+    private static TickableBreathingSound emergencyFan = null;
+    private static boolean emergencyFast;
+    private static float emergencyEffort;
     private static SimpleSoundInstance suffocateSound = null;
     private static int ticksUntilNext = 0;
     private static boolean wasSuffocating = false;
@@ -32,7 +38,7 @@ public class EvaSuitAmbience {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.isPaused()) {
+        if (mc.level == null || mc.player == null || !mc.player.isAlive() || mc.isPaused()) {
             stopAll(mc);
             resetSuffocationState(mc);
             return;
@@ -73,6 +79,31 @@ public class EvaSuitAmbience {
             return;
         }
 
+        if (EmergencyEvaHandler.hasThermalSupport(mc.player)) {
+            stopNormal(mc);
+            var emergencyState = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
+            float effortTarget = Math.max(emergencyState.exertionIntensity(), emergencyState.thermalIntensity());
+            emergencyEffort = net.minecraft.util.Mth.lerp(0.15F, emergencyEffort, effortTarget);
+            float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
+            updateEmergencyBreathing(mc, breathingMultiplier);
+            if (breathingMultiplier <= 0.001F) {
+                if (emergencyFan != null) mc.getSoundManager().stop(emergencyFan);
+                emergencyFan = null;
+                return;
+            }
+            if (emergencyFan == null || emergencyFan.isStopped()) {
+                emergencyFan = new TickableBreathingSound(ModSounds.EVA_EMERGENCY_FAN.get(), 0.035F * breathingMultiplier);
+                mc.getSoundManager().play(emergencyFan);
+            }
+            float remaining = EmergencyEvaHandler.remainingTicks(mc.player)
+                    / (float) com.frozendawn.data.EmergencyEvaState.SERVICE_TICKS;
+            emergencyFan.setTargetVolume((0.035F + (1.0F - remaining) * 0.005F) * breathingMultiplier,
+                    breathingMultiplier < 1.0F ? 0.10F : 0.025F);
+            emergencyFan.setTargetPitch(0.96F + remaining * 0.04F);
+            return;
+        }
+        stopEmergency(mc);
+
         // Update volume on current sound
         if (currentSound != null && !currentSound.isStopped()) {
             float breathingMultiplier = HearthrotClientState.breathingVolumeMultiplier();
@@ -89,6 +120,8 @@ public class EvaSuitAmbience {
         }
 
         // Start next clip — old one may still be playing for overlap
+        if (previousSound != null) mc.getSoundManager().stop(previousSound);
+        previousSound = currentSound;
         currentBasePitch = 0.98f + mc.level.random.nextFloat() * 0.04f;
         currentSound = new TickableWindSound(
                 ModSounds.EVA_BREATHING.get(),
@@ -100,13 +133,60 @@ public class EvaSuitAmbience {
         ticksUntilNext = CLIP_DURATION - OVERLAP;
     }
 
+    private static void updateEmergencyBreathing(Minecraft mc, float breathingMultiplier) {
+        if (breathingMultiplier <= 0.001F) {
+            if (emergencySound != null) mc.getSoundManager().stop(emergencySound);
+            emergencySound = null;
+            return;
+        }
+        // Hysteresis holds the faster performance through recovery. Fade the old
+        // instance fully out before starting another; vocals never overlap.
+        boolean fast = emergencyFast ? emergencyEffort > 0.25F : emergencyEffort >= 0.60F;
+        if (emergencySound != null && !emergencySound.isStopped() && fast != emergencyFast) {
+            emergencySound.setTargetVolume(0.0F, 0.08F);
+            return;
+        }
+        if (emergencySound == null || emergencySound.isStopped()) {
+            if (emergencySound != null) mc.getSoundManager().stop(emergencySound);
+            emergencyFast = fast;
+            emergencySound = new TickableBreathingSound(fast
+                    ? ModSounds.EVA_EMERGENCY_BREATHING_FAST.get() : ModSounds.EVA_EMERGENCY_BREATHING.get(), 0.0F);
+            mc.getSoundManager().play(emergencySound);
+        }
+        emergencySound.setTargetVolume(TARGET_VOLUME * (1.0F + 0.25F * emergencyEffort) * breathingMultiplier,
+                breathingMultiplier < 1.0F ? 0.10F : 0.035F);
+        emergencySound.setTargetPitch(MasterArchitectSeverTelegraph.evaPitchMultiplier());
+    }
+
     private static void stopAll(Minecraft mc) {
+        stopNormal(mc);
+        stopEmergency(mc);
+    }
+
+    private static void stopNormal(Minecraft mc) {
         if (currentSound != null) {
-            currentSound.fadeOut();
+            mc.getSoundManager().stop(currentSound);
             currentSound = null;
+        }
+        if (previousSound != null) {
+            mc.getSoundManager().stop(previousSound);
+            previousSound = null;
         }
         ticksUntilNext = 0;
         currentBasePitch = 1.0F;
+    }
+
+    private static void stopEmergency(Minecraft mc) {
+        emergencyFast = false;
+        emergencyEffort = 0.0F;
+        if (emergencyFan != null) {
+            mc.getSoundManager().stop(emergencyFan);
+            emergencyFan = null;
+        }
+        if (emergencySound != null) {
+            mc.getSoundManager().stop(emergencySound);
+            emergencySound = null;
+        }
     }
 
     private static void resetSuffocationState(Minecraft mc) {

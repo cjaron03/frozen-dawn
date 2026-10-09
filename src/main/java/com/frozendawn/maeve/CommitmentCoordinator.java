@@ -1,0 +1,100 @@
+package com.frozendawn.maeve;
+
+import com.frozendawn.entity.ArchitectEntity;
+import java.util.List;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+
+/** Server boundary only. Position construction and movement belong to the local Architect. */
+final class CommitmentCoordinator {
+    private CommitmentCoordinator() { }
+
+    static boolean eligible(ArchitectEntity observer, ServerPlayer player) {
+        return !ConvergenceCoordinator.assigned(observer) && !ScribeCoordinator.scribe(observer) && !observer.isMasterArchitectVisual() && !observer.isHearthAssessor()
+                && !observer.isHearthPopulationResident() && ObservationCollector.canObserve(observer, player, false);
+    }
+
+    static List<MaeveDirector.CommitmentHint> hints(MaeveSavedData data, ArchitectEntity observer, ServerPlayer player) {
+        var store = data.store();
+        if (store == null || !eligible(observer, player)) return List.of();
+        long now = player.serverLevel().getServer().overworld().getGameTime();
+        if (!store.contact(player.getUUID(), observer.getUUID(), player.level().dimension().location().toString(), now)) return List.of();
+        data.setDirty();
+        return store.commitment(player.getUUID()).hints(now).stream()
+                .filter(h -> h.evidence().dimension().equals(observer.level().dimension().location().toString()))
+                // Weapon preferences describe this subject, not the old attack site.
+                // Current local perception is still required above; place hints stay local.
+                .filter(h -> h.pattern().equals(BeliefStore.SWORD) || h.pattern().equals(BeliefStore.RANGED)
+                        || observer.blockPosition().distSqr(h.evidence().position()) <= ObservationCollector.RANGE * ObservationCollector.RANGE)
+                .toList();
+    }
+
+    static boolean choose(MaeveSavedData data, AttentionCoordinator attention, ArchitectEntity observer, ServerPlayer player,
+                          List<MaeveDirector.PositionCandidate> candidates) {
+        var hints = hints(data, observer, player);
+        if (hints.isEmpty()) return false;
+        long now = player.serverLevel().getServer().overworld().getGameTime();
+        var store = data.store();
+        if (store.commitmentFor(observer.getUUID(), now) != null) return false;
+        var local = candidates.stream().limit(6)
+                .filter(c -> hints.stream().anyMatch(h -> h.pattern().equals(c.pattern())))
+                .filter(c -> observer.blockPosition().distSqr(c.position()) <= (c.spatial() == null ? 36 : 24 * 24)
+                        && observer.level().hasChunkAt(c.position())
+                        && (c.cover() == null || (observer.blockPosition().distSqr(c.cover()) <= 9
+                        && observer.level().hasChunkAt(c.cover()))))
+                .filter(c -> !c.advancingCover() || (c.pattern().equals(BeliefStore.RANGED) && c.cover() != null && c.spatial() == null
+                        && hints.stream().anyMatch(h -> h.pattern().equals(BeliefStore.RANGED) && h.confidence() >= CounterVariantPolicy.MANTLET_THRESHOLD)))
+                .filter(c -> !c.keepAwayArcher() || (c.pattern().equals(BeliefStore.SWORD) && !c.advancingCover()
+                        && c.cover() == null && c.spatial() == null && observer.distanceToSqr(player) > 64
+                        && hints.stream().anyMatch(h -> h.pattern().equals(BeliefStore.SWORD) && h.confidence() >= CounterVariantPolicy.ARCHER_THRESHOLD)))
+                .filter(c -> ExitPrediction.spatial(c.pattern()) == (c.spatial() != null))
+                .filter(c -> c.spatial() == null || SpatialObservations.validCandidate(store, observer, player, c, now)).toList();
+        var policy = store.commitment(player.getUUID());
+        if (local.stream().anyMatch(c -> policy.ineligible(c.pattern(), now).equals("ELIGIBLE")
+                && !policy.performance().deferred(CounterVariantPolicy.key(c), observer.level().dimension().location().toString()))
+                && !attention.commitment(observer, player)) return false;
+        boolean selected = policy.choose(player.getUUID(), observer.getUUID(), local, now);
+        if (!selected) attention.releaseCommitment(observer);
+        data.setDirty();
+        return selected;
+    }
+
+    static MaeveDirector.PositionDirective directive(MaeveSavedData data, ArchitectEntity observer) {
+        if (data.store() == null || observer.isMasterArchitectVisual()) return null;
+        long now = observer.getServer().overworld().getGameTime();
+        var policy = data.store().commitmentFor(observer.getUUID(), now);
+        return policy == null ? null : policy.active(now);
+    }
+
+    static void arrived(MaeveSavedData data, ArchitectEntity observer) {
+        if (data.store() == null) return;
+        long now = observer.getServer().overworld().getGameTime();
+        var policy = data.store().commitmentFor(observer.getUUID(), now);
+        if (policy != null) { policy.arrived(now, data.store().world(policy.selected().player())); data.setDirty(); }
+    }
+
+    static void release(MaeveSavedData data, ArchitectEntity observer, String reason) {
+        if (data.store() == null) return;
+        var policy = data.store().commitmentFor(observer.getUUID(), observer.getServer().overworld().getGameTime());
+        if (policy != null) { policy.finish(reason); data.setDirty(); }
+    }
+
+    static void stopAll(MinecraftServer server, BeliefStore store) {
+        if (store == null) return;
+        for (var state : store.commitments()) {
+            // Also stop an executor whose policy just expired but whose entity has
+            // not ticked yet; erasure must clear pending movement immediately.
+            var directive = state.selected();
+            if (directive == null) continue;
+            var level = server.getLevel(ResourceKey.create(Registries.DIMENSION,
+                    ResourceLocation.parse(directive.evidence().dimension())));
+            if (level != null && level.getEntity(directive.observer()) instanceof ArchitectEntity observer && !observer.isMasterArchitectVisual()) {
+                observer.clearMaevePositioning();
+            }
+            state.finish("ERASED");
+        }
+    }
+}

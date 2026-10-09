@@ -12,6 +12,18 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> EMERGENCY_EVA_SERVICE =
+            DATA_COMPONENTS.register("emergency_eva_service", () ->
+                    DataComponentType.<Integer>builder().persistent(Codec.INT)
+                            .networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<java.util.UUID>> EMERGENCY_EVA_ISSUE =
+            DATA_COMPONENTS.register("emergency_eva_issue", () ->
+                    DataComponentType.<java.util.UUID>builder()
+                            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+                            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
+                            .build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> FROST_TICKS =
             DATA_COMPONENTS.register("frost_ticks", () ->
                     DataComponentType.<Integer>builder()
@@ -59,6 +71,14 @@ public class ModDataComponents {
                     DataComponentType.<Long>builder()
                             .persistent(Codec.LONG)
                             .networkSynchronized(ByteBufCodecs.VAR_LONG)
+                            .build());
+
+    /** §9.4b frozen Scribe notes; written once at the Scribe's death. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.item.ScribeRecordContents>> SCRIBE_RECORD =
+            DATA_COMPONENTS.register("scribe_record", () ->
+                    DataComponentType.<com.frozendawn.item.ScribeRecordContents>builder()
+                            .persistent(com.frozendawn.item.ScribeRecordContents.CODEC)
+                            .networkSynchronized(com.frozendawn.item.ScribeRecordContents.STREAM_CODEC)
                             .build());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HEARTHROT_COLONIZATION =

@@ -53,9 +53,12 @@ final class ArchitectApproachUnstickSupport {
         if (!ArchitectApproachRecovery.shouldTryLocalRecovery(approachState, blockBreaker.hasTarget())) {
             return false;
         }
-        // Do not interrupt real travel just because it has not crossed the two-block
-        // progress anchor yet. Collision still counts even when the move controller pushes.
-        if (!architect.horizontalCollision && architect.getDeltaMovement().horizontalDistanceSqr() >= 0.0025) {
+        boolean forceReplan = approachState.approachNoProgressTicks
+                % ArchitectApproachRecovery.LOCAL_REPLAN_INTERVAL_TICKS == 0;
+        // Allow short travel below the two-block progress anchor. After the
+        // replan deadline, velocity can be a circle rather than actual escape.
+        if (!forceReplan && !architect.horizontalCollision
+                && architect.getDeltaMovement().horizontalDistanceSqr() >= 0.0025) {
             return false;
         }
         BlockPos stepPos = architect.getCommittedWalkSteeringTarget();
@@ -69,8 +72,6 @@ final class ArchitectApproachUnstickSupport {
         if (stepPos == null) {
             stepPos = target.blockPosition();
         }
-        boolean forceReplan = approachState.approachNoProgressTicks
-                % ArchitectApproachRecovery.LOCAL_REPLAN_INTERVAL_TICKS == 0;
         approachState.walkStuckTicks = Math.max(approachState.walkStuckTicks,
                 forceReplan ? WALK_STUCK_REINIT_TICKS : WALK_STUCK_BREAK_TICKS);
         LOGGER.info("[Architect] APPROACH_LOCAL_RECOVERY entity={} pos={} step={} noProgressTicks={} replan={}",

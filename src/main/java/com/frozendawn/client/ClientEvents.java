@@ -33,6 +33,7 @@ import com.frozendawn.client.renderer.BloomSporeCorpseRenderer;
 import com.frozendawn.client.renderer.ArchivistRenderer;
 import com.frozendawn.client.renderer.ArchivistRelicRenderer;
 import com.frozendawn.client.renderer.HearthrotSuitLayer;
+import com.frozendawn.client.renderer.EmergencyEvaSuitLayer;
 import com.frozendawn.client.particle.BloomSporeRootParticle;
 import com.frozendawn.client.particle.BloomDriftParticle;
 import com.frozendawn.client.particle.AggregateConvergenceParticle;
@@ -132,6 +133,12 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        // Visor material covers the world; every instrument is projected above it.
+        event.registerAbove(
+                net.neoforged.neoforge.client.gui.VanillaGuiLayers.CAMERA_OVERLAYS,
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "eva_visor"),
+                SuitIntegrityClient::renderVisor
+        );
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
@@ -212,6 +219,7 @@ public class ClientEvents {
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(SurveyorLensVision.thermalModeKey());
         event.register(SurveyorLensVision.blizzardModeKey());
+        event.register(ContinuityRecoveryHud.targetKey());
     }
 
     @SubscribeEvent
@@ -278,6 +286,7 @@ public class ClientEvents {
             PlayerRenderer renderer = event.getSkin(skin);
             if (renderer != null) {
                 renderer.addLayer(new HearthrotSuitLayer(renderer));
+                renderer.addLayer(new EmergencyEvaSuitLayer(renderer));
             }
         }
     }

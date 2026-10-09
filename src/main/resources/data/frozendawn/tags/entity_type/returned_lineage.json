@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "frozendawn:returned",
+    "frozendawn:mimic",
+    "frozendawn:architect",
+    "frozendawn:undone",
+    "frozendawn:bloombound_undone",
+    "frozendawn:undone_architect",
+    "frozendawn:remnant",
+    "frozendawn:aggregate",
+    "frozendawn:aggregate_fragment",
+    "frozendawn:heart_successor"
+  ]
+}

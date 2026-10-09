@@ -1,6 +1,9 @@
 package com.frozendawn.client;
 
 import com.frozendawn.init.ModItems;
+import com.frozendawn.event.EmergencyEvaHandler;
+import com.frozendawn.data.EmergencyEvaState;
+import net.minecraft.network.chat.Component;
 import com.frozendawn.item.O2EfficiencyModuleItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -22,13 +25,14 @@ public final class AirStatusHud {
     private static final int PADDING_X = 4;
     private static final int PADDING_Y = 2;
     private static final int PANEL_HEIGHT = 22;
+    private static final int EMERGENCY_PANEL_HEIGHT = 40;
+    private static final int SERVICE_TIMER_TICKS = 5 * 60 * 20;
     private static final int PULSE_DURATION = 12;
     private static final int MODULE_ICON_SIZE = 8;
     private static final int MODULE_ICON_GAP = 3;
     private static final float ETA_SMOOTHING = 0.22F;
-    private static final int BG_COLOR = 0xAA0B1217;
-    private static final int PREFIX_COLOR = 0xFF8A9AA4;
-    private static final int TANK_PREFIX_COLOR = 0xFF6F7F89;
+    private static final int PREFIX_COLOR = OrsaHudPanel.LABEL_COLOR;
+    private static final int TANK_PREFIX_COLOR = OrsaHudPanel.MUTED_COLOR;
 
     private static AirStatusTelemetry.State lastState = null;
     private static int pulseTicks = 0;
@@ -36,6 +40,19 @@ public final class AirStatusHud {
     private static float displayedEtaSeconds = AirStatusEtaPolicy.NO_ACTIVE_DRAIN;
 
     private AirStatusHud() {
+    }
+
+    /** Bottom of the shared air panel, including emergency pack diagnostics. */
+    static int bottomY() {
+        var player = Minecraft.getInstance().player;
+        boolean emergency = player != null && !player.isCreative() && !player.isSpectator()
+                && EmergencyEvaHandler.isWearingIssuedPiece(player);
+        return TemperatureHud.HUD_Y + TemperatureHud.TOTAL_HEIGHT + PANEL_GAP
+                + (emergency ? emergencyPanelHeight(player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA)) : PANEL_HEIGHT);
+    }
+
+    private static int emergencyPanelHeight(EmergencyEvaState state) {
+        return EMERGENCY_PANEL_HEIGHT + (state.remainingTicks() <= SERVICE_TIMER_TICKS ? 9 : 0);
     }
 
     public static void reset() {
@@ -52,6 +69,21 @@ public final class AirStatusHud {
         }
         if (mc.player == null || mc.options.hideGui) {
             reset();
+            return;
+        }
+
+        if (EmergencyEvaHandler.isWearingIssuedPiece(mc.player)) {
+            if (mc.player.isCreative() || mc.player.isSpectator()) return;
+            var issue = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
+            int reserve = issue.oxygenTicks();
+            boolean breathable = ApocalypseClientData.isBreathable()
+                    || !com.frozendawn.phase.PhaseManager.isVacuumActive(ApocalypseClientData.getPhase(), ApocalypseClientData.getProgress());
+            renderReading(graphics, mc, new AirStatusTelemetry.Reading(
+                    breathable ? AirStatusTelemetry.State.BREATHABLE
+                            : EmergencyEvaHandler.hasThermalSupport(mc.player) && AirStatusTelemetry.hasUsableO2Tank(mc.player)
+                                    ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.State.VACUUM,
+                    new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.OXYGEN_TICKS, 1)), null);
+            ContinuityRecoveryHud.render(graphics);
             return;
         }
 
@@ -105,23 +137,44 @@ public final class AirStatusHud {
             pulseTicks--;
         }
 
-        String prefix = "AIR:";
-        String label = state.label();
-        String tankPrefix = "TANK:";
-        boolean showModule = tankValueOverride == null
+        boolean emergency = tankValueOverride == null && EmergencyEvaHandler.isWearingIssuedPiece(mc.player);
+        String prefix = emergency ? "" : "AIR:";
+        String label = emergency ? Component.translatable(EmergencyEvaHandler.remainingTicks(mc.player) > 0
+                ? "hud.frozendawn.emergency_eva.active" : "hud.frozendawn.emergency_eva.depleted").getString()
+                : state.label();
+        String tankPrefix = emergency ? Component.translatable("hud.frozendawn.emergency_eva.reserve_label").getString() : "TANK:";
+        boolean showModule = !emergency && tankValueOverride == null
                 && tankTelemetry.hasAnyTank()
                 && O2EfficiencyModuleItem.isInstalled(mc.player);
         String tankValue;
         if (tankValueOverride != null) {
             tankValue = tankValueOverride;
         } else if (tankTelemetry.hasAnyTank()) {
-            int eta = smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(
-                    mc.player, reading));
-            tankValue = tankTelemetry.fillPercent() + "%  "
+            int eta = emergency ? (tankTelemetry.totalO2() + 19) / 20
+                    : smoothEta(mc, AirStatusTelemetry.estimateRemainingSeconds(mc.player, reading));
+            tankValue = (emergency ? "" : tankTelemetry.fillPercent() + "%  ")
                     + AirStatusEtaPolicy.format(eta);
         } else {
             tankValue = "NONE";
         }
+        var emergencyState = mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA);
+        String packStatus = emergency ? Component.translatable(emergencyState.ambientIntake()
+                ? "hud.frozendawn.emergency_eva.ambient"
+                : tankTelemetry.hasUsableO2() ? EmergencyEvaHandler.hasThermalSupport(mc.player)
+                        ? mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity() >= 0.25F
+                                ? "hud.frozendawn.emergency_eva.pack_high_draw" : "hud.frozendawn.emergency_eva.pack_online"
+                        : "hud.frozendawn.emergency_eva.seal_open"
+                : "hud.frozendawn.emergency_eva.reserve_empty").getString() : "";
+        String returnOnly = Component.translatable("hud.frozendawn.emergency_eva.return_only").getString();
+        boolean showService = emergency && emergencyState.remainingTicks() <= SERVICE_TIMER_TICKS;
+        String serviceText = showService ? Component.translatable("hud.frozendawn.emergency_eva.service_remaining",
+                AirStatusEtaPolicy.format((emergencyState.remainingTicks() + 19) / 20)).getString() : "";
+        String thermalStatus = emergency ? Component.translatable(emergencyState.remainingTicks() == 0
+                ? "hud.frozendawn.emergency_eva.thermal_offline"
+                : !EmergencyEvaHandler.hasThermalSupport(mc.player) ? "hud.frozendawn.emergency_eva.thermal_unsealed"
+                : emergencyState.highThermalLoad() ? "hud.frozendawn.emergency_eva.thermal_high"
+                : emergencyState.coolingDegraded() ? "hud.frozendawn.emergency_eva.cooling_degraded"
+                : "hud.frozendawn.emergency_eva.cooling_nominal").getString() : "";
         int prefixWidth = mc.font.width(prefix);
         int labelWidth = mc.font.width(label);
         int tankPrefixWidth = mc.font.width(tankPrefix);
@@ -131,6 +184,10 @@ public final class AirStatusHud {
                 tankPrefixWidth + 3 + tankValueWidth
                         + (showModule ? MODULE_ICON_GAP + MODULE_ICON_SIZE : 0)
         );
+        String purpose = emergencyState.ambientIntake() ? "" : returnOnly + " // ";
+        if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(purpose + packStatus));
+        if (emergency) contentWidth = Math.max(contentWidth, mc.font.width(thermalStatus));
+        if (showService) contentWidth = Math.max(contentWidth, mc.font.width(serviceText));
         int totalWidth = PADDING_X * 2
                 + ACCENT_WIDTH
                 + BADGE_GAP
@@ -148,23 +205,8 @@ public final class AirStatusHud {
         int badgeColor = mixTowardWhite(state.badgeColor(), 0.12F * pulse);
         int tankValueColor = getTankValueColor(tankTelemetry, pulse);
 
-        graphics.fill(x + 1, y, x + totalWidth - 1, y + PANEL_HEIGHT, BG_COLOR);
-        graphics.fill(x, y + 1, x + totalWidth, y + PANEL_HEIGHT - 1, BG_COLOR);
-
-        graphics.fill(x, y + 1, x + ACCENT_WIDTH, y + PANEL_HEIGHT - 1, accentColor);
-        graphics.fill(x + 1, y, x + totalWidth - 1, y + 1, withAlpha(borderColor, 210));
-        graphics.fill(x + 1, y + PANEL_HEIGHT - 1, x + totalWidth - 1, y + PANEL_HEIGHT, withAlpha(borderColor, 160));
-        graphics.fill(x + totalWidth - 1, y + 1, x + totalWidth, y + PANEL_HEIGHT - 1, withAlpha(borderColor, 185));
-
-        int badgeX = x + PADDING_X + ACCENT_WIDTH + BADGE_GAP - 1;
-        int badgeY = y + (PANEL_HEIGHT - BADGE_SIZE) / 2;
-        float r = FastColor.ARGB32.red(badgeColor) / 255.0F;
-        float g = FastColor.ARGB32.green(badgeColor) / 255.0F;
-        float b = FastColor.ARGB32.blue(badgeColor) / 255.0F;
-        float a = FastColor.ARGB32.alpha(badgeColor) / 255.0F;
-        OrsaLogoRenderer.drawTinted(graphics, badgeX, badgeY, BADGE_SIZE, r, g, b, a);
-
-        int textX = badgeX + BADGE_SIZE + LABEL_GAP;
+        int textX = OrsaHudPanel.draw(graphics, x, y, totalWidth, emergency ? emergencyPanelHeight(emergencyState) : PANEL_HEIGHT,
+                accentColor, borderColor, badgeColor);
         int airTextY = y + PADDING_Y + 1;
         int tankTextY = airTextY + 9;
         graphics.drawString(mc.font, prefix, textX, airTextY, mixTowardWhite(PREFIX_COLOR, 0.10F * pulse), false);
@@ -172,6 +214,23 @@ public final class AirStatusHud {
         graphics.drawString(mc.font, tankPrefix, textX, tankTextY, mixTowardWhite(TANK_PREFIX_COLOR, 0.08F * pulse), false);
         int tankValueX = textX + tankPrefixWidth + 3;
         graphics.drawString(mc.font, tankValue, tankValueX, tankTextY, tankValueColor, false);
+        if (emergency) {
+            int statusY = tankTextY + (showService ? 18 : 9);
+            if (showService) graphics.drawString(mc.font, serviceText, textX, tankTextY + 9,
+                    emergencyState.remainingTicks() <= 1200 ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.MUTED_COLOR, false);
+            graphics.drawString(mc.font, purpose, textX, statusY, OrsaHudPanel.MUTED_COLOR, false);
+            int statusColor = emergencyState.ambientIntake() ? OrsaHudPanel.VALUE_COLOR
+                    : !tankTelemetry.hasUsableO2() ? OrsaHudPanel.CRITICAL_COLOR
+                    : EmergencyEvaHandler.hasThermalSupport(mc.player)
+                            ? mc.player.getData(com.frozendawn.init.ModAttachments.EMERGENCY_EVA).exertionIntensity() >= 0.25F
+                                    ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.VALUE_COLOR
+                    : OrsaHudPanel.WARNING_COLOR;
+            graphics.drawString(mc.font, packStatus, textX + mc.font.width(purpose), statusY, statusColor, false);
+            int thermalColor = emergencyState.remainingTicks() == 0 ? OrsaHudPanel.CRITICAL_COLOR
+                    : emergencyState.coolingDegraded() || !EmergencyEvaHandler.hasThermalSupport(mc.player)
+                            ? OrsaHudPanel.WARNING_COLOR : OrsaHudPanel.MUTED_COLOR;
+            graphics.drawString(mc.font, thermalStatus, textX, statusY + 9, thermalColor, false);
+        }
         if (showModule) {
             renderModuleIcon(
                     graphics,
@@ -232,11 +291,11 @@ public final class AirStatusHud {
         if (!tankTelemetry.hasAnyTank()) {
             baseColor = 0xFF8B939A;
         } else if (tankTelemetry.fillRatio() <= 0.20F) {
-            baseColor = 0xFFFFB1B1;
+            baseColor = OrsaHudPanel.CRITICAL_COLOR;
         } else if (tankTelemetry.fillRatio() <= 0.50F) {
-            baseColor = 0xFFFFE0A8;
+            baseColor = OrsaHudPanel.WARNING_COLOR;
         } else {
-            baseColor = 0xFFCDEFFF;
+            baseColor = OrsaHudPanel.VALUE_COLOR;
         }
         return mixTowardWhite(baseColor, 0.14F * pulse);
     }

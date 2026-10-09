@@ -65,16 +65,22 @@ public class ArchitectSpawner {
             if (spawnPos == null || (postMaeve
                     && LateThreatSpawnHelper.isInsideHearthBoundary(level, spawnPos))) continue;
 
+            if (!com.frozendawn.maeve.MaeveDirector.allowNaturalPawn(level, spawnPos)) continue;
+
             ArchitectEntity architect = ModEntities.ARCHITECT.get().create(level, null, spawnPos,
                     MobSpawnType.NATURAL, true, false);
             if (architect != null) {
                 // Pre-seed observation data before adding to world
                 architect.preSeedObservation(level, player);
+                // §9.4b: at most one rare natural spawn carries Maeve's notes on this player.
+                if (com.frozendawn.maeve.MaeveDirector.designateScribe(architect, player)) architect.becomeScribe();
                 if (!player.isCreative()) {
                     architect.armSpawnObserveCue(player);
                 }
 
-                level.addFreshEntity(architect);
+                if (!level.addFreshEntity(architect) && architect.isScribe())
+                    com.frozendawn.maeve.MaeveDirector.scribeEnded(architect, "SPAWN_REJECTED");
+                com.frozendawn.maeve.MaeveDirector.observePawn(architect);
                 FrozenDawn.LOGGER.info("[Architect] Spawned near {} at phase {} ({}){}",
                         player.getName().getString(), currentPhase,
                         String.format("%.0f blocks away", Math.sqrt(

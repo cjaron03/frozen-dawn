@@ -57,6 +57,8 @@ final class ArchitectApproachController {
     void executeApproach(@Nullable LivingEntity target) {
         approachState.sprintRequested = false;
         if (target == null) {
+            approachState.openRouteAfterBreak = null;
+            approachState.openRouteSubject = null;
             approachState.unreachableTicks = 0;
             architect.approachLastKnownPos();
             return;
@@ -97,7 +99,8 @@ final class ArchitectApproachController {
             return;
         }
 
-        if (ArchitectApproachBreakSupport.cancelBreakForOpenRoute(architect, approachState, blockBreaker, target)) {
+        if (ArchitectApproachBreakSupport.continueOpenRoute(architect, approachState, blockBreaker, target)
+                || ArchitectApproachBreakSupport.cancelBreakForOpenRoute(architect, approachState, blockBreaker, target)) {
             return;
         }
 
@@ -162,6 +165,13 @@ final class ArchitectApproachController {
 
         BlockPos avoidImmediateBacktrack = architect.getImmediateBacktrackPos();
         DStarLitePathfinder.NextStep step = planningSupport.getNextStep(avoidImmediateBacktrack);
+        // Reusing an approximate goal is cheap while walking. Before changing terrain,
+        // resolve the route to the current locally perceived target instead of building
+        // toward a position the player already left.
+        if (planningSupport.hasOutdatedConstructionGoal(step, targetPos)) {
+            if (!planningSupport.refreshConstructionPlan(target, targetPos)) return;
+            step = planningSupport.getNextStep(avoidImmediateBacktrack);
+        }
         architect.recordStep(step);
         architect.keepPassageOpenNear(step.pos());
 

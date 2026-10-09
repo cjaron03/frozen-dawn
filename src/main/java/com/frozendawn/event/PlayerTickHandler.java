@@ -171,7 +171,7 @@ final class PlayerTickHandler {
                 }
                 // Grant armor tier advancements (acheronite doesn't count for EVA)
                 int armorTier = MobFreezeHandler.getFullSetTier(player);
-                int advCap = armorTier == 4 ? 2 : armorTier; // acheronite caps at tier 2 advancements
+                int advCap = EmergencyEvaHandler.isWearingIssuedPiece(player) ? 0 : armorTier == 4 ? 2 : armorTier; // acheronite caps at tier 2 advancements
                 for (int i = 1; i <= advCap && i < ARMOR_ADVANCEMENTS.length; i++) {
                     if (ARMOR_ADVANCEMENTS[i] != null) {
                         WorldTickHandler.grantAdvancement(player, ARMOR_ADVANCEMENTS[i]);
@@ -348,87 +348,96 @@ final class PlayerTickHandler {
 
     private static void tickSuffocation(MinecraftServer server, ApocalypseState state, float progress) {
         boolean refreshCache = state.getApocalypseTicks() % 20 == 0;
-
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD
-                    && !ThaeIvenMindDimension.isMindLevel(player.level())) {
-                continue;
-            }
+            tickPlayerSuffocation(player, state, refreshCache);
+        }
+    }
 
-            UUID id = player.getUUID();
-            if (refreshCache || !breathableCache.containsKey(id)) {
-                refreshBreathableState(player);
-            }
-            if (Boolean.TRUE.equals(breathableCache.get(id))) {
-                suffocationTimer.put(id, 0);
-                continue;
-            }
+    /** The same per-player atmospheric path used by the server loop and native hazard fixtures. */
+    static void tickPlayerSuffocation(ServerPlayer player, ApocalypseState state, boolean refreshCache) {
+        if (player.isCreative() || player.isSpectator()) return;
+        if (player.level().dimension() != Level.OVERWORLD
+                && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+            return;
+        }
 
-            boolean thermalVisor = MobFreezeHandler.hasThermalVisor(player);
-            boolean visorRig = MobFreezeHandler.hasThermalVisorRig(player);
+        UUID id = player.getUUID();
+        if (refreshCache || !breathableCache.containsKey(id)) {
+            refreshBreathableState(player);
+        }
+        if (Boolean.TRUE.equals(breathableCache.get(id))) {
+            suffocationTimer.put(id, 0);
+            return;
+        }
 
-            // Full EVA suit or visor-mated EVA rig — check for O2 tank
-            if (MobFreezeHandler.getFullSetTier(player) == 3) {
-                ItemStack tank = findO2Tank(player);
-                if (!tank.isEmpty()) {
-                    int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-                    if (o2 > 0) {
-                        if (!SuitIntegrityHandler.hasPuncture(player)
-                                && SuitIntegrityPolicy.shouldConsumeBaselineO2(
-                                        state.getApocalypseTicks(),
-                                        visorRig,
-                                        O2EfficiencyModuleItem.isInstalled(player))) {
-                            int consumed = Math.min(
-                                    o2, HearthrotManager.baselineO2Units(player));
-                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
-                        }
-                        suffocationTimer.put(id, 0);
-                        continue;
+        if (EmergencyEvaHandler.hasLifeSupport(player)) {
+            suffocationTimer.put(id, 0);
+            return;
+        }
+
+        boolean thermalVisor = MobFreezeHandler.hasThermalVisor(player);
+        boolean visorRig = MobFreezeHandler.hasThermalVisorRig(player);
+
+        // Full EVA suit or visor-mated EVA rig — check for O2 tank
+        if (MobFreezeHandler.getFullSetTier(player) == 3) {
+            ItemStack tank = findO2Tank(player);
+            if (!tank.isEmpty()) {
+                int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+                if (o2 > 0) {
+                    if (!SuitIntegrityHandler.hasPuncture(player)
+                            && SuitIntegrityPolicy.shouldConsumeBaselineO2(
+                                    state.getApocalypseTicks(),
+                                    visorRig,
+                                    O2EfficiencyModuleItem.isInstalled(player))) {
+                        int consumed = Math.min(
+                                o2, HearthrotManager.baselineO2Units(player));
+                        tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
                     }
+                    suffocationTimer.put(id, 0);
+                    return;
                 }
             }
+        }
 
-            int ticks = suffocationTimer.getOrDefault(id, 0);
-            if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
-                ticks = Math.max(ticks, SUFFOCATION_DURATION);
-            }
-            if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
-                ticks++;
-            }
-            suffocationTimer.put(id, ticks);
-            float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
+        int ticks = suffocationTimer.getOrDefault(id, 0);
+        if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
+            ticks = Math.max(ticks, SUFFOCATION_DURATION);
+        }
+        if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
+            ticks++;
+        }
+        suffocationTimer.put(id, ticks);
+        float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
 
-            if (suffProgress >= 0.15f) {
-                player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.lightheaded"), true);
-            }
-            if (suffProgress >= 0.40f) {
-                player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, false));
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.nausea"), true);
-            }
-            if (suffProgress >= 0.70f) {
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.fading"), true);
-            }
+        if (suffProgress >= 0.15f) {
+            player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, false, false, false));
+            player.displayClientMessage(
+                    Component.translatable("message.frozendawn.suffocate.lightheaded"), true);
+        }
+        if (suffProgress >= 0.40f) {
+            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, false));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
+            player.displayClientMessage(
+                    Component.translatable("message.frozendawn.suffocate.nausea"), true);
+        }
+        if (suffProgress >= 0.70f) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
+            player.displayClientMessage(
+                    Component.translatable("message.frozendawn.suffocate.fading"), true);
+        }
 
-            if (suffProgress >= 1.0f && ticks % 20 == 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.dying"), true);
-                DamageSource source = new DamageSource(
-                        player.serverLevel().registryAccess()
-                                .lookupOrThrow(Registries.DAMAGE_TYPE)
-                                .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
-                Vec3 motion = player.getDeltaMovement();
-                player.hurt(source, SUFFOCATION_DAMAGE);
-                player.setDeltaMovement(motion);
-            }
+        if (suffProgress >= 1.0f && ticks % 20 == 0) {
+            player.displayClientMessage(
+                    Component.translatable("message.frozendawn.suffocate.dying"), true);
+            DamageSource source = new DamageSource(
+                    player.serverLevel().registryAccess()
+                            .lookupOrThrow(Registries.DAMAGE_TYPE)
+                            .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
+            Vec3 motion = player.getDeltaMovement();
+            player.hurt(source, SUFFOCATION_DAMAGE);
+            player.setDeltaMovement(motion);
         }
     }
 

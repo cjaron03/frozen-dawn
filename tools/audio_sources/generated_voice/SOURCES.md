@@ -107,3 +107,65 @@ files are distributed under CC BY-SA 4.0 with the attribution and modification
 notice in `NOTICE.md`. Piper's GPL engine and model weights are generator-only
 and are not bundled. Do not describe these exports as Samantha; they preserve
 the authorized text and Frozen Dawn processing profiles, not the old voice.
+
+## Emergency EVA activation
+
+`ui/suit/emergency_eva_active.ogg` uses the existing Piper `en_US-amy-medium`
+model and `orsa` processing profile. The manifest writes EVA as E V A so the
+voice speaks the letters. The displayed subtitle is “Emergency EVA active.
+Up to ten minutes of reserve life support. Exertion increases oxygen use.” Generate just this asset by selecting its
+manifest row into a temporary TSV and setting `LOCAL_TTS_MANIFEST` to that TSV
+when running `tools/generate_local_voice_assets.sh`. Existing voice assets remain
+byte-identical. Attribution and CC BY-SA 4.0 terms are in `NOTICE.md`.
+
+The exertion update regenerates only this existing activation manifest row
+through the same Piper `en_US-amy-medium` model and `orsa` profile. The owner's
+correction requires a gradual draw/recovery curve, so the announcement now
+states capacity as “up to” ten minutes and explicitly explains the extra draw.
+The source pipeline, attribution and CC BY-SA 4.0 notice are retained.
+
+
+## Emergency EVA condition notice
+
+`ui/suit/emergency_eva_condition.ogg` follows the activation announcement with
+the owner's approved warning about service age, field repairs and degraded
+cooling/filtration. The exact manifest text matches the typed HUD and subtitle.
+Generated locally with the existing Piper `en_US-amy-medium` model and `orsa`
+profile; only this new row was selected for generation. No macOS voice or
+external recording is used. The 20-second amber ORSA dialogue window exceeds
+the recording duration and permits reading after the typing animation. Existing
+audio files remain byte-for-byte unchanged. The shelter advisory waits until
+this window finishes. Attribution, modifications and CC BY-SA 4.0 distribution
+terms remain in `NOTICE.md`; the engine/model are not shipped.
+
+
+## Ambient bypass and primary EVA handoff
+
+`ui/suit/emergency_eva_ambient.ogg` and `ui/suit/emergency_eva_handoff.ogg`
+use the existing local Piper en_US-amy-medium model and ORSA processing profile.
+Only these two new manifest rows were generated; all 307 prior OGG exports are
+unchanged. The ambient clip is 9.114 seconds (decoded mono peak 0.6128), and
+handoff is 5.457 seconds (peak 0.4548). Their typed HUD/subtitle text matches the
+manifest, with E V A written as separate letters only for speech pronunciation.
+The shared ORSA dialogue holds ambient for 16 seconds and handoff for 10 seconds.
+The handoff displays over the regular EVA HUD after server verification and
+emergency retirement. These are CC BY-SA 4.0 processed performances with the
+attribution/modifications in NOTICE.md. No macOS speech, new model or external
+recording is used; generator model/engine stay outside the distributed jar.
+
+## 2026-10-05 emergency service and warning revision
+
+Regenerated only activation and condition advisories with the same local Piper
+`en_US-amy-medium` voice and ORSA processing profile. Added the one-minute
+service-critical line. Activation distinguishes ten-minute oxygen from
+fifteen-minute service; condition wording is shorter and remains in the typed
+ORSA HUD. Existing licensing and model provenance above apply.
+
+- `ui/suit/emergency_eva_active.ogg`: 6.257778 seconds; SHA-256 `0c1bbbabdd6a71eec39dfb9acfee6fe828f72c2da6121c0b8c9258ea0d867cea`.
+
+- `ui/suit/emergency_eva_condition.ogg`: 9.206712 seconds; SHA-256 `f2adc10b43e3517e4cedd80cabfe5ff6c32230ff440c9acc5f61b3e0ce3dfc12`.
+
+- `ui/suit/emergency_eva_service_critical.ogg`: 5.642449 seconds; SHA-256 `00d1d947aae7ec67c835f551394d1bb6926769901b37ae331e27675fb9d4c4e5`.
+
+All other 307 prior audio assets are unchanged. No macOS voices or model weights
+are included in the mod jar.

@@ -139,6 +139,9 @@ public class ModItems {
     public static final DeferredItem<ThaevenTranslatorItem> THAEVEN_TRANSLATOR = ITEMS.register(
             "thaeven_translator", () -> new ThaevenTranslatorItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.frozendawn.item.ScribeRecordItem> SCRIBE_RECORD = ITEMS.register(
+            "scribe_record", () -> new com.frozendawn.item.ScribeRecordItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<ThaevenCarrierItem> HUMAN_CARRIER = ITEMS.register(
             "human_carrier", () -> new ThaevenCarrierItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
@@ -233,6 +236,16 @@ public class ModItems {
     public static final DeferredItem<ArmorItem> EVA_BOOTS = ITEMS.register("eva_boots",
             () -> new ArmorItem(ModArmorMaterials.EVA, ArmorItem.Type.BOOTS,
                     new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(25))));
+
+    // Emergency equipment is issued by the death-respawn handler; no recipes or creative entries.
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_HELMET =
+            ITEMS.register("emergency_eva_helmet", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.HELMET));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_CHESTPLATE =
+            ITEMS.register("emergency_eva_chestplate", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.CHESTPLATE));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_LEGGINGS =
+            ITEMS.register("emergency_eva_leggings", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.LEGGINGS));
+    public static final DeferredItem<com.frozendawn.item.EmergencyEvaArmorItem> EMERGENCY_EVA_BOOTS =
+            ITEMS.register("emergency_eva_boots", () -> new com.frozendawn.item.EmergencyEvaArmorItem(ArmorItem.Type.BOOTS));
 
     // --- Win Condition ---
     public static final DeferredItem<AcheroniteCompassItem> ACHERONITE_COMPASS = ITEMS.register("acheronite_compass",
