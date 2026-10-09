@@ -28,21 +28,42 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 /**
  * §9.4b marked map: a locked vanilla map centered on her estimate of the shelter, painted once from loaded
  * chunks only (no chunk is loaded for it), marked with openings, heat and losses from the world model.
- * Locked, so neither the terrain nor the marks update after the drop.
+ * Locked, so neither the terrain nor the marks update after the drop. It zooms to fit its marks: 4, 2 or 1 pixels
+ * per block, or vanilla's half when even that would cut one off. Past vanilla's closest scale each block is painted
+ * as a square and the marks are placed at their zoomed positions.
  */
 final class ScribeMap {
-    static final byte SCALE = 1;
-    private static final int COLOR = 0x8C9BA5;
+    private static final int COLOR = 0x8C9BA5, FIT = 56;
 
     private ScribeMap() { }
 
+    /** Pixels per block as a shift: 2, 1 or 0 zoom in past vanilla's closest scale; -1 is vanilla's scale 1. */
+    static int zoom(BlockPos center, List<MaeveDirector.ScribeMark> marks) {
+        int reach = 0;
+        for (var mark : marks)
+            reach = Math.max(reach, Math.max(Math.abs(mark.position().getX() - center.getX()), Math.abs(mark.position().getZ() - center.getZ())) + 1);
+        for (int zoom = 2; zoom >= 0; zoom--) if (reach << zoom <= FIT) return zoom;
+        return -1;
+    }
+
+    /** The block a pixel shows, along one axis. */
+    private static int block(int center, int pixel, int zoom) {
+        return center + (zoom >= 0 ? (pixel - 64) >> zoom : (pixel - 64) << 1);
+    }
+
+    /** A mark's coordinate as vanilla must read it to draw it at the zoomed pixel. */
+    private static double markAt(int center, int block, int zoom) {
+        return zoom >= 0 ? center + (block + .5 - center) * (1 << zoom) : block + .5;
+    }
+
     static ItemStack create(ServerLevel level, MaeveDirector.ScribeNotes notes) {
         BlockPos center = notes.center();
+        int zoom = zoom(center, notes.marks());
         CompoundTag tag = new CompoundTag();
         tag.putString("dimension", level.dimension().location().toString());
-        tag.putInt("xCenter", center.getX()); tag.putInt("zCenter", center.getZ()); tag.putByte("scale", SCALE);
+        tag.putInt("xCenter", center.getX()); tag.putInt("zCenter", center.getZ()); tag.putByte("scale", (byte) (zoom >= 0 ? 0 : 1));
         tag.putBoolean("trackingPosition", false); tag.putBoolean("unlimitedTracking", false); tag.putBoolean("locked", true);
-        tag.putByteArray("colors", paint(level, center));
+        tag.putByteArray("colors", paint(level, center, zoom));
         tag.put("banners", new ListTag()); // vanilla load parses this unconditionally and warns when it is absent
         var id = level.getFreeMapId();
         level.setMapData(id, MapItemSavedData.load(tag, level.registryAccess()));
@@ -51,7 +72,8 @@ final class ScribeMap {
         var marks = new LinkedHashMap<String, MapDecorations.Entry>();
         for (var mark : notes.marks())
             marks.put("frozendawn_scribe_" + marks.size(), new MapDecorations.Entry(type(mark.label()),
-                    mark.position().getX() + .5, mark.position().getZ() + .5, mark.rotation()));
+                    markAt(center.getX(), mark.position().getX(), zoom), markAt(center.getZ(), mark.position().getZ(), zoom),
+                    mark.rotation()));
         stack.set(DataComponents.MAP_DECORATIONS, new MapDecorations(marks));
         stack.set(DataComponents.MAP_COLOR, new MapItemColor(COLOR));
         stack.set(DataComponents.ITEM_NAME, Component.translatable("item.frozendawn.scribe_map"));
@@ -71,16 +93,19 @@ final class ScribeMap {
         return Component.translatable("item.frozendawn.scribe_map.legend." + key).withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false));
     }
 
-    /** Vanilla's surface shading, one sample per pixel. Unloaded chunks stay blank. */
-    static byte[] paint(ServerLevel level, BlockPos center) {
+    /** Vanilla's surface shading, one sample per pixel; zoomed in, a block repeats across its square. Unloaded chunks stay blank. */
+    static byte[] paint(ServerLevel level, BlockPos center, int zoom) {
         byte[] colors = new byte[128 * 128];
         if (level.dimensionType().hasCeiling()) return colors;
-        int step = 1 << SCALE;
+        int step = zoom >= 0 ? 1 : 2;
         var pos = new BlockPos.MutableBlockPos();
         for (int px = 0; px < 128; px++) {
-            double previous = 0;
+            // Shade against the block to the north, so every pixel of a zoomed block shades alike.
+            double previous = 0, last = 0;
+            int lastZ = Integer.MIN_VALUE;
             for (int pz = -1; pz < 128; pz++) {
-                int x = center.getX() + (px - 64) * step, z = center.getZ() + (pz - 64) * step;
+                int x = block(center.getX(), px, zoom), z = block(center.getZ(), pz, zoom);
+                if (z != lastZ) { previous = last; lastZ = z; }
                 var chunk = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
                 if (chunk == null) continue;
                 int y = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, depth = 0;
@@ -100,7 +125,7 @@ final class ScribeMap {
                 }
                 MapColor color = state.getMapColor(level, pos);
                 MapColor.Brightness brightness;
-                int parity = (px + pz) & 1;
+                int parity = zoom >= 0 ? (x + z) & 1 : (px + pz) & 1;
                 if (color == MapColor.WATER) {
                     double shade = depth * .1 + parity * .2;
                     brightness = shade < .5 ? MapColor.Brightness.HIGH : shade > .9 ? MapColor.Brightness.LOW : MapColor.Brightness.NORMAL;
@@ -108,7 +133,7 @@ final class ScribeMap {
                     double shade = (y - previous) * 4.0 / (step + 4) + (parity - .5) * .4;
                     brightness = shade > .6 ? MapColor.Brightness.HIGH : shade < -.6 ? MapColor.Brightness.LOW : MapColor.Brightness.NORMAL;
                 }
-                previous = y;
+                last = y;
                 if (pz >= 0) colors[px + pz * 128] = color.getPackedId(brightness);
             }
         }

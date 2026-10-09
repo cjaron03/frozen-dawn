@@ -262,6 +262,9 @@ public final class MaeveScribeGameTest {
                     && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.RED_X))
                     && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.TARGET_POINT)), "Openings, losses and heat: " + marks);
             helper.assertTrue(map.get(DataComponents.LORE).lines().size() == 3, "Legend in the same register");
+            helper.assertTrue(data.scale == 0 && marks.stream().allMatch(m -> Math.abs(m.x() - data.centerX) <= 56 && Math.abs(m.z() - data.centerZ) <= 56)
+                    && marks.stream().anyMatch(m -> Math.abs(m.x() - data.centerX) > 8 || Math.abs(m.z() - data.centerZ) > 8)
+                    && data.colors[64 + 64 * 128] != 0, "Zooms in to fit its marks: " + marks);
             // Snapshot rule: new evidence and ERASED never reach a dropped record or map.
             byte[] colors = data.colors.clone();
             train(scene, id, t + 2, BeliefStore.RANGED, 2, 0);
