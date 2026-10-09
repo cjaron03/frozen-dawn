@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.event.SuffocationStage;
 import com.frozendawn.init.ModItems;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.network.RoomRecoveryPayload;
@@ -25,6 +26,9 @@ public final class AtmosphericBreachClient {
     private static ChatFormatting noticeColor = ChatFormatting.RED;
     private static boolean atmosphericLoss;
     private static Boolean lastSuitHud;
+    private static SuffocationStage suffocationStage = SuffocationStage.NONE;
+    private static Component lastActionBar;
+    private static boolean writingActionBar;
 
     public static boolean usesSuitHud(Player player) {
         var helmet = player.getItemBySlot(EquipmentSlot.HEAD);
@@ -58,7 +62,7 @@ public final class AtmosphericBreachClient {
         };
         noticeColor = stage == RoomRecoveryPayload.Stage.AIR_RESTORED ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
         atmosphericLoss = false;
-        warningTicks = 80;
+        warningTicks = stage == RoomRecoveryPayload.Stage.RESTORING_AIR ? 120 : 80;
         lastSuitHud = null;
         routeNotice();
         if (stage == RoomRecoveryPayload.Stage.AIR_RESTORED)
@@ -70,20 +74,53 @@ public final class AtmosphericBreachClient {
         var mc = Minecraft.getInstance(); if (mc.player == null) return;
         boolean suitHud = usesSuitHud(mc.player);
         if (lastSuitHud == null || lastSuitHud != suitHud) {
-            if (suitHud) {
-                mc.player.displayClientMessage(Component.empty(), true);
+            if (suitHud && warningTicks > 0) {
                 MasterArchitectFloodClient.showAtmosphericSuitDialogue(noticeKey, atmosphericLoss);
             } else MasterArchitectFloodClient.clearAtmosphericSuitDialogue();
             lastSuitHud = suitHud;
         }
-        if (!suitHud) mc.player.displayClientMessage(Component.translatable(noticeKey).withStyle(noticeColor), true);
+        var notice = AtmosphericActionBarPolicy.select(warningTicks > 0 ? noticeKey : null, suitHud, suffocationStage);
+        Component message = null;
+        if (notice != null) {
+            message = Component.translatable(notice.primaryKey());
+            if (notice.secondaryKey() != null) message = Component.translatable(
+                    "ui.frozendawn.room.combined_warning", message, Component.translatable(notice.secondaryKey()));
+            message = message.copy().withStyle(notice.danger() ? ChatFormatting.RED : noticeColor);
+        }
+        if (message != null) {
+            writeActionBar(message);
+            lastActionBar = message;
+        } else if (lastActionBar != null) {
+            // Clear only our own previous text, preserving a newer unrelated notice.
+            if (lastActionBar.equals(((com.frozendawn.mixin.GuiAccessor) mc.gui).frozendawn$getOverlayMessage())) writeActionBar(Component.empty());
+            lastActionBar = null;
+        }
+    }
+
+    /** Used by Gui's action-bar setter to enforce oxygen priority across other writers. */
+    public static boolean suppressCompetingActionBar() {
+        var player = Minecraft.getInstance().player;
+        return !writingActionBar && player != null && AtmosphericActionBarPolicy.select(
+                warningTicks > 0 ? noticeKey : null, usesSuitHud(player), suffocationStage) != null;
+    }
+
+    private static void writeActionBar(Component message) {
+        writingActionBar = true;
+        try { Minecraft.getInstance().player.displayClientMessage(message, true); }
+        finally { writingActionBar = false; }
+    }
+
+    public static void receiveSuffocation(SuffocationStage stage) {
+        suffocationStage = stage;
+        routeNotice();
     }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance(); if (mc.player == null || mc.isPaused()) return;
-        if (warningTicks > 0) {
-            routeNotice();
-            warningTicks--;
+        routeNotice();
+        if (warningTicks > 0 && --warningTicks == 0) {
+            lastSuitHud = null;
+            MasterArchitectFloodClient.clearAtmosphericSuitDialogue();
         }
         if (speechDelay >= 0 && speechDelay-- == 0) {
             speech = SimpleSoundInstance.forUI(ModSounds.SUIT_ATMOSPHERIC_BREACH.get(), 1, 1);
@@ -95,5 +132,6 @@ public final class AtmosphericBreachClient {
         if (speech != null) Minecraft.getInstance().getSoundManager().stop(speech);
         MasterArchitectFloodClient.clearAtmosphericSuitDialogue();
         speech = null; speechDelay = -1; warningTicks = 0; lastSuitHud = null;
+        suffocationStage = SuffocationStage.NONE; lastActionBar = null; writingActionBar = false;
     }
 }

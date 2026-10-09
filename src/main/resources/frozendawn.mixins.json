@@ -18,6 +18,8 @@
     "VacuumFireMixin"
   ],
   "client": [
+    "GuiAccessor",
+    "AtmosphericActionBarMixin",
     "DisplayWindowMixin",
     "GenericMessageScreenMixin",
     "LevelRendererMixin",

@@ -10,6 +10,7 @@ import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.hearthrot.HearthrotManager;
 import com.frozendawn.network.BreathableStatePayload;
+import com.frozendawn.network.SuffocationStatePayload;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
@@ -47,6 +48,7 @@ final class PlayerTickHandler {
 
     private static final Map<UUID, Boolean> breathableCache = new HashMap<>();
     private static final Map<UUID, Integer> suffocationTimer = new HashMap<>();
+    private static final Map<UUID, SuffocationStage> suffocationStages = new HashMap<>();
     private static final Map<UUID, Float> playerTemperatures = new HashMap<>();
     private static final Map<UUID, Float> frostmiteTemperatureDrain = new HashMap<>();
 
@@ -64,6 +66,7 @@ final class PlayerTickHandler {
     static void reset() {
         breathableCache.clear();
         suffocationTimer.clear();
+        suffocationStages.clear();
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
         MasterArchitectThermalSever.reset();
@@ -76,6 +79,7 @@ final class PlayerTickHandler {
         UUID playerId = player.getUUID();
         breathableCache.remove(playerId);
         suffocationTimer.remove(playerId);
+        suffocationStages.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
         MasterArchitectThermalSever.onPlayerLogout(player);
@@ -88,11 +92,14 @@ final class PlayerTickHandler {
     }
 
     static void onPlayerLogin(ServerPlayer player) {
+        suffocationStages.remove(player.getUUID());
+        syncSuffocationStage(player, SuffocationStage.NONE);
         RimeboundEncasement.clear(player);
         FrostbiteHandler.onPlayerLogin(player);
     }
 
     static void stabilizeAfterRescue(ServerPlayer player) {
+        syncSuffocationStage(player, SuffocationStage.NONE);
         UUID playerId = player.getUUID();
         breathableCache.remove(playerId);
         suffocationTimer.remove(playerId);
@@ -201,6 +208,10 @@ final class PlayerTickHandler {
         // Atmospheric suffocation (every tick, phase 6 late)
         if (PhaseManager.isVacuumActive(currentPhase, progress)) {
             tickSuffocation(server, state, progress);
+        } else if (!suffocationStages.isEmpty()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                syncSuffocationStage(player, SuffocationStage.NONE);
+            }
         }
 
         // Sanity/isolation tracking (every tick, phase 3+)
@@ -355,9 +366,13 @@ final class PlayerTickHandler {
 
     /** The same per-player atmospheric path used by the server loop and native hazard fixtures. */
     static void tickPlayerSuffocation(ServerPlayer player, ApocalypseState state, boolean refreshCache) {
-        if (player.isCreative() || player.isSpectator()) return;
+        if (player.isCreative() || player.isSpectator()) {
+            syncSuffocationStage(player, SuffocationStage.NONE);
+            return;
+        }
         if (player.level().dimension() != Level.OVERWORLD
                 && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+            syncSuffocationStage(player, SuffocationStage.NONE);
             return;
         }
 
@@ -367,11 +382,13 @@ final class PlayerTickHandler {
         }
         if (Boolean.TRUE.equals(breathableCache.get(id))) {
             suffocationTimer.put(id, 0);
+            syncSuffocationStage(player, SuffocationStage.NONE);
             return;
         }
 
         if (EmergencyEvaHandler.hasLifeSupport(player)) {
             suffocationTimer.put(id, 0);
+            syncSuffocationStage(player, SuffocationStage.NONE);
             return;
         }
 
@@ -394,6 +411,7 @@ final class PlayerTickHandler {
                         tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
                     }
                     suffocationTimer.put(id, 0);
+                    syncSuffocationStage(player, SuffocationStage.NONE);
                     return;
                 }
             }
@@ -408,29 +426,22 @@ final class PlayerTickHandler {
         }
         suffocationTimer.put(id, ticks);
         float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
+        syncSuffocationStage(player, SuffocationStage.fromTicks(ticks));
 
         if (suffProgress >= 0.15f) {
             player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, false, false, false));
-            player.displayClientMessage(
-                    Component.translatable("message.frozendawn.suffocate.lightheaded"), true);
         }
         if (suffProgress >= 0.40f) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, false));
             player.addEffect(new MobEffectInstance(
                     MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
-            player.displayClientMessage(
-                    Component.translatable("message.frozendawn.suffocate.nausea"), true);
         }
         if (suffProgress >= 0.70f) {
             player.addEffect(new MobEffectInstance(
                     MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
-            player.displayClientMessage(
-                    Component.translatable("message.frozendawn.suffocate.fading"), true);
         }
 
         if (suffProgress >= 1.0f && ticks % 20 == 0) {
-            player.displayClientMessage(
-                    Component.translatable("message.frozendawn.suffocate.dying"), true);
             DamageSource source = new DamageSource(
                     player.serverLevel().registryAccess()
                             .lookupOrThrow(Registries.DAMAGE_TYPE)
@@ -439,6 +450,13 @@ final class PlayerTickHandler {
             player.hurt(source, SUFFOCATION_DAMAGE);
             player.setDeltaMovement(motion);
         }
+    }
+
+    private static void syncSuffocationStage(ServerPlayer player, SuffocationStage stage) {
+        SuffocationStage previous = suffocationStages.put(player.getUUID(), stage);
+        // Periodic refresh also covers a replaced client player after respawn.
+        if (previous != stage || (stage != SuffocationStage.NONE && player.server.getTickCount() % 20 == 0))
+            PacketDistributor.sendToPlayer(player, new SuffocationStatePayload(stage));
     }
 
     private static ItemStack findO2Tank(ServerPlayer player) {

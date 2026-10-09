@@ -1124,5 +1124,7 @@
   "ui.frozendawn.room.sealed_no_supply": "BREACH SEALED — OXYGEN SUPPLY REQUIRED",
   "ui.frozendawn.room.sealed_restoring": "BREACH SEALED — RESTORING AIR",
   "ui.frozendawn.room.air_restored": "ATMOSPHERE RESTORED",
+  "ui.frozendawn.room.still_suffocating": "STILL SUFFOCATING",
+  "ui.frozendawn.room.combined_warning": "%1$s — %2$s",
   "subtitles.frozendawn.atmospheric_breach_alarm": "Atmospheric breach alarm beeps"
 }

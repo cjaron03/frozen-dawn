@@ -83,6 +83,10 @@ public final class ClientHandlers {
         }
     }
 
+    public static void handleSuffocationState(SuffocationStatePayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveSuffocation(payload.stage());
+    }
+
     public static void handleRoomRecovery(RoomRecoveryPayload payload) {
         com.frozendawn.client.AtmosphericBreachClient.receiveRecovery(payload.stage());
     }
