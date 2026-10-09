@@ -475,6 +475,7 @@ public class ModBlocks {
                     .strength(0.3F)
                     .sound(SoundType.GLASS)
                     .noOcclusion()
+                    .replaceable()
                     .isViewBlocking((state, level, pos) -> false)
                     .isSuffocating((state, level, pos) -> false)
                     .lightLevel(state -> state.getValue(FrozenAtmosphereBlock.DARK) ? 0 : 2)

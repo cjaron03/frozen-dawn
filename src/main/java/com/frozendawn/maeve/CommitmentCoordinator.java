@@ -25,7 +25,10 @@ final class CommitmentCoordinator {
         data.setDirty();
         return store.commitment(player.getUUID()).hints(now).stream()
                 .filter(h -> h.evidence().dimension().equals(observer.level().dimension().location().toString()))
-                .filter(h -> observer.blockPosition().distSqr(h.evidence().position()) <= ObservationCollector.RANGE * ObservationCollector.RANGE)
+                // Weapon preferences describe this subject, not the old attack site.
+                // Current local perception is still required above; place hints stay local.
+                .filter(h -> h.pattern().equals(BeliefStore.SWORD) || h.pattern().equals(BeliefStore.RANGED)
+                        || observer.blockPosition().distSqr(h.evidence().position()) <= ObservationCollector.RANGE * ObservationCollector.RANGE)
                 .toList();
     }
 

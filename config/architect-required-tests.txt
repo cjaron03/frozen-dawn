@@ -132,6 +132,8 @@ campwestdoorwaysurveydetectsseal xml
 
 # Sword guard: native evidence, combat and lifecycle
 maeveswordevidencerequiresrealvisibleattacks xml
+maevecustomsworddamagesupportsbeliefs xml
+maevecustomswordshieldblockssupportbeliefs xml
 maeveswordguarduseslaggedhistoryandrealfrontalblocking xml
 maeveswordguardbracesblockedattacksbutnotexternalforces xml
 maeveswordguarduseslocalsightandaxeendsexposedguard xml
@@ -265,3 +267,17 @@ scribeplaytestfunctionsparseatpermissiontwo xml
 scribewalksouttoaringpostaroundtherememberedopening xml
 scribewalkstoitspostacrossunevenlatesnow xml
 scribebadluckprotectiondesignatesbytheeighthmiss xml
+
+# Weapon habit portability: witnessed history and real local counter execution
+maeveswordguardcarriesacrosstravel xml
+maevearchercarriesacrosstravel xml
+maevepillarcarriesacrosstravel xml
+maevemantletcarriesacrosstravel xml
+maevecombattravelpreservesperceptionandthresholds xml
+maeveweaponhintscrosshistoricaldistanceboundary xml
+maeverecoverylocationdoesnottravelwithweaponhabits xml
+
+# Frozen atmosphere: actual held-block replacement and normal mining loot.
+replacesbrightanddarkdepositinsurvival xml
+replacesbrightanddarkdepositincreative xml
+depositstilldropsshardwhenmined xml

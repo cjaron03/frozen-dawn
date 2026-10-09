@@ -13,12 +13,14 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.alchemy.PotionContents;
 
 /** Local sensing only. No inventory, player-health, target-memory, or geometry inference. */
@@ -70,7 +72,10 @@ final class ObservationCollector {
         boolean projectile = source.is(DamageTypeTags.IS_PROJECTILE);
         boolean melee = source.getDirectEntity() == player && source.getMsgId().equals("player");
         if ((!projectile && !melee) || !canObserve(observer, player, true)) return;
-        boolean sword = melee && player.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
+        ItemStack weapon = player.getMainHandItem();
+        // Match the Remnant classifier: tagged swords and SwordItem subclasses are
+        // visible sword attacks even when a mod omitted its vanilla sword tag.
+        boolean sword = melee && (weapon.is(ItemTags.SWORDS) || weapon.getItem() instanceof SwordItem);
         // Absence of sword evidence stays unknown; do not create a negative-only profile for every arrow.
         if (!sword && store.snapshot(player.getUUID(), now).stream().noneMatch(b -> b.pattern().equals(BeliefStore.SWORD))) return;
         String action = blocked ? "WITNESSED_SHIELD_BLOCK_" : "WITNESSED_DAMAGE_";
