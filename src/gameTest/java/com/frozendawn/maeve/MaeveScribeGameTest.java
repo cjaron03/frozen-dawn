@@ -286,7 +286,7 @@ public final class MaeveScribeGameTest {
     /** Name kept for the gate list: it now fights back whenever struck up close, cornered or not. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void scribeWatchesFleesAndFightsOnlyWhenCornered(GameTestHelper helper) {
-        MaeveObservationGameTest.withScene(helper, 202, 2, scene -> {
+        MaeveObservationGameTest.withScene(helper, 209, 2, scene -> {
             floor(scene, 30);
             var player = scene.player("scribe_watched", 28, 15); UUID id = player.getUUID();
             long t = gate(scene, id);
