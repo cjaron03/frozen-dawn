@@ -268,3 +268,8 @@ maevemantletcarriesacrosstravel xml
 maevecombattravelpreservesperceptionandthresholds xml
 maeveweaponhintscrosshistoricaldistanceboundary xml
 maeverecoverylocationdoesnottravelwithweaponhabits xml
+
+# Frozen atmosphere: actual held-block replacement and normal mining loot.
+replacesbrightanddarkdepositinsurvival xml
+replacesbrightanddarkdepositincreative xml
+depositstilldropsshardwhenmined xml
