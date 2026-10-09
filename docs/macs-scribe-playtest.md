@@ -133,6 +133,10 @@ One sword kill, two bow fights (read: bow 40%), designated `by=PITY_4/8` at 23:3
 
 Diagnosis: the record lists up to five beliefs at 20% or more, so ranged at 40% belonged on it. The dump showed the Scribe itself (observer `5653e2f5`) reporting the sword hits of its death fight, which contradicted ranged down to 5% before the record was read at death. Change (owner approved touching the shared observation): `ObservationCollector.canObserve` refuses a Scribe, so it reports no evidence.
 
+## Owner quick pass 7 (2026-10-09, MACS Scribe Quick 8, build 4379ac4)
+
+Two bow fights (read: bow 40%), designated `by=PITY_4/8` at 00:15:54, `FLEE` at 12.0 blocks, `DEFEND` at 3.2 blocks, slain with the sword at 00:16:32. Owner: "bow showed up this time!" Screenshot `2026-10-09_00.16.44.png`: the map with six red crosses and two blue pointers. Owner, unprompted: "what are the X's meaning (like architect deaths?) but what about the blue arrow things that uusally repsresent players". Answer: crosses are losses (DANGER_ZONE), pointers are openings Maeve saw you cross, facing outward; the pointer reads as a player marker.
+
 ## Handoff (2026-10-08)
 
 Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 8`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight. Owner decided (2026-10-08): "flee, but fight back if hit"; a hit within 3.5 blocks now starts defense even with a way out; hits from range still only make it flee (owner: "flee is fine").
