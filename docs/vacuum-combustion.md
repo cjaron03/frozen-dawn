@@ -1,6 +1,6 @@
 # Vacuum combustion checkpoint
 
-Owning checkout: `/Users/jaroncabral/.codex/worktrees/rimewood/minecraft-mod`, branch `feat/rimewood`. Baseline: `b5a04337c18fee7668c677c9d8ce12f3ac0a2803` (ORSA Ration Warmer). Vacuum combustion is committed separately before Rimewood implementation.
+Owning checkout: `/Users/jaroncabral/.codex/worktrees/rimewood/minecraft-mod`, branch `feat/atmospheric-breach`. Baseline: `b5a04337c18fee7668c677c9d8ce12f3ac0a2803` (ORSA Ration Warmer). Vacuum combustion is committed separately before Rimewood implementation.
 
 ## Behavior
 
@@ -33,10 +33,21 @@ Launch with Java 21: `./gradlew runClientLab --console=plain '-PfdLabWorld=Vacuu
 
 The client was launched through the owning Gradle checkout. Log: `/private/tmp/rimewood-vacuum-client.log`; live session `cc6f26d6-5f0d-44bb-92b5-99e0eedd2c5a` reported **Vacuum Flame Check**, player Dev at (0.5, 65, 8.5), paused at game tick 14. Setup reported READY and the diagnostic bridge confirmed `vfcheck #built=1`; no datapack/model loading errors appeared. Gradle terminal session: 77858.
 
-Visual acceptance is pending the owner's report. Do not replay setup, erase this scene, or claim headless tests prove the visual result. Diagnostic bridge snapshot/status is permitted; the owner uses the visible controls for scene changes.
+The owner reported the change worked on October 9, 2026. Screenshots `2026-10-09_01.12.59.png` and `2026-10-09_01.13.47.png` show the normal wooden shaft with its black tip and extinguished campfire, followed by a burning torch/campfire beside an owner-added Geothermal Core. They are copied with verified hashes under `build/vacuum-combustion-evidence/owner-visual-2026-10-09/`. This accepts the torch appearance and core-supported relighting; it does not establish glass-only enclosure or breach acceptance. Do not replay setup, erase this scene, or claim headless tests prove the visual result. Diagnostic bridge snapshot/status is permitted; the owner uses the visible controls for scene changes.
 
 ## Research sources
 
 - NASA, vacuum lacks oxygen needed for ordinary combustion: https://technology.nasa.gov/nasa-technology-fights-wildfires
 - NeoForge fire extension contract: https://github.com/neoforged/NeoForge/blob/1.21.1/src/main/java/net/neoforged/neoforge/common/extensions/IBlockExtension.java
 - Installed Minecraft 1.21.1 / NeoForge 21.1.219 source and resource jars provide the exact native fire/furnace hooks and torch model layout. Native texture references are used rather than redistributed vanilla bitmaps.
+
+
+## Historical air-rule caveat before the breach patch
+
+The visual fixture exposed an existing room-authority limitation: `TemperatureManager.isInsideSealedRoom` rejects `level.canSeeSky(current)`, so an intact transparent glass roof fails despite being geometrically closed. Opaque sealed rooms can be accepted without a core; the current code does not store a finite oxygen or pressure balance. Geothermal oxygen is a distance-based support zone and remains available through a breach. The owner supplied a core to relight the glass-room sources, and described oxygen production as intended. Do not treat the current result as a complete pressure simulation or claim that breaching a core-supported room removes oxygen.
+
+The owner proposed a breach whoosh and movement toward the opening. This is a separate feature proposal, not implemented or approved for implementation yet. Recommended prerequisite: explicit geometric room sealing that handles transparent blocks and doors, separate from oxygen supply. Track a room's previous pressurized state and emit a bounded, brief outward-flow event only when it opens to exterior vacuum; avoid repeated effects from additional blocks in an already vented room. Keep forces local to connected room air, never through solid walls, and require actual repressurization before a new burst. Existing outdoor oxygen support behavior needs an explicit design decision before tying it to enclosed-room pressure.
+
+## Atmospheric breach follow-up
+
+The owner subsequently authorized and implemented geometric sealing, bounded breach airflow, connected-volume extinction, persisted depletion, oxygen recovery and Spent Torch compatibility. This supersedes the historical caveat above. See [the atmospheric breach checkpoint](atmospheric-breach.md) for current behavior, verification and the active Gradle world. The earlier vacuum owner pass is preserved; breach visual acceptance is pending.
