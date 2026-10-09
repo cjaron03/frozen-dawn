@@ -129,4 +129,4 @@ Diagnosis: on ground of full-block steps the observed-walk planner kept refusing
 
 ## Handoff (2026-10-08)
 
-Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 6`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight; whether a cornered Scribe should defend itself or only flee.
+Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 6`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight. Owner decided (2026-10-08): "flee, but fight back if hit"; a hit within 3.5 blocks now starts defense even with a way out.

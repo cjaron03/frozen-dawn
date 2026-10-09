@@ -283,6 +283,7 @@ public final class MaeveScribeGameTest {
         });
     }
 
+    /** Name kept for the gate list: it now fights back whenever struck up close, cornered or not. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void scribeWatchesFleesAndFightsOnlyWhenCornered(GameTestHelper helper) {
         MaeveObservationGameTest.withScene(helper, 202, 2, scene -> {
@@ -306,15 +307,11 @@ public final class MaeveScribeGameTest {
             player.setPos(actor.position().add(8, 0, 0));
             scene.hit(actor, player, true, 1);
             helper.assertTrue(actor.getTarget() == null, "Struck from range, it keeps fleeing");
-            BlockPos at = actor.blockPosition();
-            for (int y = 0; y <= 2; y++) for (var side : net.minecraft.core.Direction.Plane.HORIZONTAL)
-                scene.level.setBlock(at.relative(side).above(y), Blocks.STONE.defaultBlockState(), 3);
-            actor.setPos(Vec3.atBottomCenterOf(at)); player.setPos(Vec3.atBottomCenterOf(at.east(2)));
+            // Owner, 2026-10-08: "flee, but fight back if hit". Open ground, a clear way out, struck up close.
+            player.setPos(actor.position().add(2, 0, 0));
             scene.hit(actor, player, false, 1);
-            helper.assertTrue(actor.getTarget() == player, "Cornered and struck, it defends itself (§9.13a local defense)");
+            helper.assertTrue(actor.getTarget() == player, "Struck up close, it fights back even with a way out (§9.13a local defense)");
             helper.assertTrue(actor.getMainHandItem().is(ModItems.SCRIBE_RECORD.get()), "Still holding the slate, not a weapon");
-            for (int y = 0; y <= 2; y++) for (var side : net.minecraft.core.Direction.Plane.HORIZONTAL)
-                scene.level.setBlock(at.relative(side).above(y), Blocks.AIR.defaultBlockState(), 3);
             tick(scene, actor, t + 400, 5);
             helper.assertTrue(actor.getTarget() == null && actor.isScribe(), "Without fresh damage, defense ends and it resumes fleeing");
         });

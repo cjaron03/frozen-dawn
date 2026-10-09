@@ -17,7 +17,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * §9.4b local executor. Walks out into the cold, stands at a distance and watches, flees when approached,
- * and fights only when cornered (§9.13a local-defense exception). It never initiates combat.
+ * and fights back when struck up close (§9.13a local-defense exception; owner, 2026-10-08: "flee, but fight back if hit").
+ * It never initiates combat; struck from range, it keeps fleeing.
  * With a remembered opening or shelter it watches that; without one it keeps a stand-off from the subject
  * itself, just outside flee range, and closes in again when the subject draws away (owner, 2026-10-08).
  * It walks with ordinary mob navigation (one-block rises, drops, woods), never placing or breaking blocks.
@@ -25,12 +26,11 @@ import net.minecraft.world.phys.Vec3;
  */
 final class ArchitectScribeController {
     private enum Phase { TRAVEL, WATCH, FLEE, DEPART }
-    private static final int[] HEADINGS = {0, 45, -45, 90, -90};
-    /** A stalled flight tries each of these turns off straight-away before it counts as cornered. */
+    /** A stalled flight tries each of these turns off straight-away. */
     private static final int[] FLEE_TURNS = {0, 45, -45, 90, -90, 135, -135};
     private static final double WATCH_RADIUS = 20, WATCH_RANGE = 48, FLEE_RADIUS = 12, CALM_RADIUS = 20, GONE_RADIUS = 32;
     /** Navigation speed modifiers on the Architect's movement speed: about 2.8 and 4.3 blocks a second. */
-    private static final double CORNERED_RANGE = 3.5, WALK_SPEED = .9, FLEE_SPEED = 1.15;
+    private static final double DEFEND_RANGE = 3.5, WALK_SPEED = .9, FLEE_SPEED = 1.15;
     /** Stand-off from the subject when there is no remembered place: posts at STANDOFF, closes in beyond DRIFT. */
     private static final double STANDOFF = 16, SETTLED = 20, DRIFT = 28, NOTICE = 4;
     private static final long WATCH = 2400, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, CALM = 40, FLEE_STALL = 30, REPLAN = 40;
@@ -117,15 +117,13 @@ final class ArchitectScribeController {
         return phase == Phase.WATCH && actor.isScribe() && actor.isAlive() && !actor.isNoAi() && attacker == null;
     }
 
-    /** Effective damage. Cornered means struck at close range with no safe way out, or flight that has stalled. */
+    /** Effective damage. Struck at close range it defends itself against that attacker; struck from range it flees. */
     void damaged(DamageSource source) {
         if (!actor.isScribe() || !(source.getEntity() instanceof LivingEntity hitter) || !hitter.isAlive()) return;
         long now = now();
         if (defending() && hitter.getUUID().equals(attacker)) { defendUntil = now + DEFEND; return; }
-        boolean close = actor.distanceToSqr(hitter) <= CORNERED_RANGE * CORNERED_RANGE;
-        boolean stalled = phase == Phase.FLEE && now - progressAt >= FLEE_STALL;
-        if (close && (stalled || !escapes(actor.position().subtract(hitter.position())))) {
-            if (attacker == null) note("CORNERED", "attacker=" + hitter.getUUID() + " dist=" + dist(hitter) + " stalled=" + stalled);
+        if (actor.distanceToSqr(hitter) <= DEFEND_RANGE * DEFEND_RANGE) {
+            if (attacker == null) note("DEFEND", "attacker=" + hitter.getUUID() + " dist=" + dist(hitter));
             attacker = hitter.getUUID(); threat = hitter.position(); defendUntil = now + DEFEND;
             actor.setTarget(hitter); actor.resumeAfterReconnaissance();
             return;
@@ -250,38 +248,6 @@ final class ArchitectScribeController {
 
     private void track(long now) {
         if (progress == null || actor.position().distanceToSqr(progress) > .25) { progress = actor.position(); progressAt = now; }
-    }
-
-    /** The footing in one neighbouring column, from two blocks down to one up, if the body clears the way there. */
-    private Vec3 neighbour(BlockPos start, int dx, int dz) {
-        for (int dy : new int[]{0, -1, 1, -2}) {
-            Vec3 stand = ArchitectWalkGeometry.observedStandingPosition(actor.level(), start.offset(dx, dy, dz));
-            if (stand == null || stand.y - actor.getY() > 1.01) continue;
-            var box = actor.getBoundingBox().move(0, Math.max(stand.y, actor.getY()) - actor.getY() + .01, 0);
-            if (actor.level().noCollision(actor, box.minmax(box.move(stand.x - actor.getX(), 0, stand.z - actor.getZ())))) return stand;
-        }
-        return null;
-    }
-
-    /** Collision can raise the feet before the center leaves a lower partial surface. */
-    private BlockPos walkingStart() {
-        BlockPos feet = actor.blockPosition();
-        if (ArchitectWalkGeometry.observedStandingPosition(actor.level(), feet) != null) return feet;
-        Vec3 lower = ArchitectWalkGeometry.observedStandingPosition(actor.level(), feet.below());
-        return lower != null && Math.abs(actor.getY() - lower.y) <= .6 ? feet.below() : feet;
-    }
-
-    /** Any neighbouring step away from the attacker that the Scribe can take: a drop of up to two or a one-block rise. */
-    private boolean escapes(Vec3 direction) {
-        Vec3 away = direction.multiply(1, 0, 1);
-        if (away.lengthSqr() < 1e-4) return false;
-        BlockPos start = walkingStart();
-        for (int angle : HEADINGS) {
-            Vec3 heading = away.normalize().yRot((float) Math.toRadians(angle));
-            int dx = (int) Math.round(heading.x), dz = (int) Math.round(heading.z);
-            if ((dx != 0 || dz != 0) && neighbour(start, dx, dz) != null) return true;
-        }
-        return false;
     }
 
     /** Local senses only: a visible, eligible player inside the radius. */
