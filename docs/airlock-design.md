@@ -1,6 +1,6 @@
 # Player-built airlocks
 
-Design agreed October 9, 2026; custom airlock blocks are not implemented. Owning pressure branch: `feat/atmospheric-breach`, checkout `/Users/jaroncabral/.codex/worktrees/rimewood/minecraft-mod`. This follows the breach and room-recovery notice patch. Rimewood remains separate.
+Design agreed October 9, 2026; custom airlock implementation is now in progress. Owning pressure branch: `feat/atmospheric-breach`, checkout `/Users/jaroncabral/.codex/worktrees/rimewood/minecraft-mod`. This follows the breach and room-recovery notice patch. Rimewood remains separate.
 
 ## Parts and discovery
 
@@ -22,7 +22,7 @@ Proposed first-pass duration: four seconds (80 ticks), within the owner's 3–4 
 
 The current Core is an unlimited oxygen producer. With a Core, losses therefore cost replenishment time and buffer capacity; with backup canisters, they cost finite canister oxygen. Do not claim a new electrical grid or fuel drain. Pump power/failure behavior needs an explicit implementation contract; the existing mod has no shared electricity system. A manual valve remains independent of controller operation and reserve.
 
-Numerical reserve capacity, per-cell O2 conversion, fill rate and crafting recipes remain tuning/implementation choices. Do not silently equate oxygen inventory units with physical liters or pressure. Add measured chamber air and cycle accounting alongside the existing sealed/depleted state; do not simulate pressure throughout the whole world for this slice.
+First-playtest tuning: 100 O2 units per passable cell, 6,400 reserve capacity, 40 O2 units per loaded second from a connected Core, and 80 ticks per cycle. Recipes are now native shaped crafting recipes. Do not silently equate oxygen inventory units with physical liters or pressure. Add measured chamber air and cycle accounting alongside the existing sealed/depleted state; do not simulate pressure throughout the whole world for this slice.
 
 Persist reserve, accounted chamber air, phase, elapsed time and chamber identity. No free oxygen from placing, replacing, breaking, copying, unloading or reconnecting controllers. Account initial trapped air once; a new controller cannot credit the same room's air repeatedly. Optional panels share the same authority. On interruption, retain actual transferred quantities, never refund both chamber air and reserve.
 
@@ -41,3 +41,14 @@ Manual vent instantly dumps chamber air with zero recovery. If the inner door is
 5. Native and owner checks: arbitrary glass/stone chambers <=32 cells; oversize/incomplete/ambiguous rejection; outer opening preserves base; simultaneous-door and redstone refusal; correct 90% recovery/loss and size scaling; no-Core canister operation; interruptions, block replacement, reload and unload; manual vent with inner closed/open; ordinary extinction and soul exceptions; optional panels cannot duplicate gas or cycles.
 
 The existing two-door isolation GameTest is prerequisite geometry evidence, not proof of custom airlock doors, controller cycling, reserve accounting or power failure. Keep those claims separate until implemented and tested.
+
+## Concept-art review — October 9, 2026
+
+The owner asked to see concept art before adding airlock assets in-game. Three enlarged pixel-art drafts are preserved under `output/airlock-concepts/v1/`: the two-block steel door, controller with red/amber/green states, and red-wheel emergency vent. `prompts-and-provenance.json` records the built-in generation prompts, original paths and file hashes. These are review concepts; native-resolution textures, block models and gameplay are not implemented by this pass. Optional side panels reuse the controller appearance.
+
+
+## Approved art implementation — October 9, 2026
+
+The owner approved all three concepts and requested implementation. The native asset set uses seven 16x16 textures exported from the built-in image editor's derivative atlas, preserved in `tools/texture_sources/airlock/`. The door uses vanilla two-half geometry, while the controller and valve use orientable cubes. All three have shaped recipes, normal JEI transfer support and native crafting pages in ORSA Field Manual -> Heating -> Player-Built Airlocks. Visual acceptance of these in-game assets is pending.
+
+Implementation uses one dimension SavedData authority per chamber. Optional panels do not duplicate reserve or ticks. Complete pressure doors guard direct state changes as well as hand and redstone use. Initial trapped air is credited once per chamber-cell history; replacing panels and repairing shell breaches cannot repeat the credit. Breaking the last panel discards reserve; changing chamber geometry discards obsolete gas and reserve. Pumping uses stored gas without requiring a new electricity system. A missing Core stops replenishment only.

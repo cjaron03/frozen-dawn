@@ -54,6 +54,12 @@ public final class RoomAtmosphere {
     }
 
     public static Geometry inspect(ServerLevel level, BlockPos origin) {
+        return inspect(level,origin,false,MAX_CELLS);
+    }
+    public static Geometry inspectAirlockPartition(ServerLevel level, BlockPos origin, int limit) {
+        return inspect(level,origin,true,limit);
+    }
+    private static Geometry inspect(ServerLevel level, BlockPos origin, boolean partitionDoors, int limit) {
         if (!level.isLoaded(origin) || !isPassage(level, origin, level.getBlockState(origin)))
             return new Geometry(Seal.UNKNOWN, Set.of(), Set.of());
         var queue = new ArrayDeque<BlockPos>(); var cells = new HashSet<BlockPos>(); var walls = new HashSet<BlockPos>();
@@ -68,9 +74,10 @@ public final class RoomAtmosphere {
                 if (cells.contains(next) || walls.contains(next)) continue;
                 if (!level.isLoaded(next)) return new Geometry(Seal.UNKNOWN, Set.copyOf(cells), Set.copyOf(walls));
                 var state = level.getBlockState(next);
-                if (!isPassage(level, next, state)) { walls.add(next.immutable()); continue; }
+                if (partitionDoors && state.getBlock() instanceof com.frozendawn.block.AirlockDoorBlock
+                        || !isPassage(level, next, state)) { walls.add(next.immutable()); continue; }
                 if (Math.abs(next.getX() - origin.getX()) > 48 || Math.abs(next.getZ() - origin.getZ()) > 48
-                        || Math.abs(next.getY() - origin.getY()) > 24 || cells.size() >= MAX_CELLS)
+                        || Math.abs(next.getY() - origin.getY()) > 24 || cells.size() >= limit)
                     return new Geometry(Seal.UNKNOWN, Set.copyOf(cells), Set.copyOf(walls));
                 cells.add(next.immutable()); queue.addLast(next.immutable());
             }
@@ -113,6 +120,8 @@ public final class RoomAtmosphere {
     }
 
     private static boolean recover(ServerLevel level, Room room) {
+        // Controlled chambers cannot borrow the Core's automatic room refill.
+        if (com.frozendawn.airlock.AirlockManager.blocksAutomaticAir(level,room.geometry.cells)) return false;
         var saved = RoomAirState.get(level);
         // Existing sealed saves retain their trapped air; exposed/breached cells do not.
         if (!saved.isDepleted(room.geometry.cells)) {

@@ -69,6 +69,11 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FROZEN_LEAVES = ITEMS.registerSimpleBlockItem("frozen_leaves", ModBlocks.FROZEN_LEAVES);
     public static final DeferredItem<BlockItem> ICICLE = ITEMS.registerSimpleBlockItem("icicle", ModBlocks.ICICLE);
     public static final DeferredItem<BlockItem> FROZEN_OBSIDIAN = ITEMS.registerSimpleBlockItem("frozen_obsidian", ModBlocks.FROZEN_OBSIDIAN);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> AIRLOCK_DOOR = ITEMS.register("airlock_door",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.AIRLOCK_DOOR.get(),new Item.Properties()));
+    public static final DeferredItem<BlockItem> AIRLOCK_CONTROLLER = ITEMS.registerSimpleBlockItem("airlock_controller",ModBlocks.AIRLOCK_CONTROLLER);
+    public static final DeferredItem<BlockItem> MANUAL_VENT_VALVE = ITEMS.registerSimpleBlockItem("manual_vent_valve",ModBlocks.MANUAL_VENT_VALVE);
+
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> GOLD_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("gold_thermal_heater", ModBlocks.GOLD_THERMAL_HEATER);
@@ -466,6 +471,9 @@ public class ModItems {
                         output.accept(INERT_ACHERONITE.get());
                         output.accept(SEALED_LATTICE.get());
                         // Player agency
+                        output.accept(AIRLOCK_DOOR.get());
+                        output.accept(AIRLOCK_CONTROLLER.get());
+                        output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());

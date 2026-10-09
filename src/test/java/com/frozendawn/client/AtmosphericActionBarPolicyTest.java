@@ -45,4 +45,15 @@ class AtmosphericActionBarPolicyTest {
         assertEquals(SuffocationStage.FADING, SuffocationStage.fromTicks(199));
         assertEquals(SuffocationStage.DYING, SuffocationStage.fromTicks(200));
     }
+    @Test void routineAirlockStatusCannotDisplaceAnyActiveOxygenWarning() {
+        for (var stage:SuffocationStage.values()) {
+            assertFalse(AtmosphericActionBarPolicy.allowsDeviceNotice(true,stage));
+            assertEquals(stage==SuffocationStage.NONE,AtmosphericActionBarPolicy.allowsDeviceNotice(false,stage));
+        }
+    }
+    @Test void airlockStatusRoutesToHelmetAndFallbackActionBar() {
+        String key="message.frozendawn.airlock.pressurizing";
+        assertNull(AtmosphericActionBarPolicy.select(key,true,SuffocationStage.NONE));
+        assertEquals(key,AtmosphericActionBarPolicy.select(key,false,SuffocationStage.NONE).primaryKey());
+    }
 }

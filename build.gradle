@@ -534,3 +534,13 @@ tasks.register('generateRationWarmerQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(rationWarmerQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateRationWarmerQa') }
+
+// Validate the actual airlock playtest functions with Minecraft's native parser.
+def airlockQaResources = layout.buildDirectory.dir('generated/airlock-qa')
+tasks.register('generateAirlockQa', Exec) {
+    inputs.files('tools/prepare_airlock_playtest.py', 'tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(airlockQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_airlock_playtest.py', '--pack-only', airlockQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(airlockQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateAirlockQa') }

@@ -6,6 +6,10 @@ import com.frozendawn.event.SuffocationStage;
 public final class AtmosphericActionBarPolicy {
     private AtmosphericActionBarPolicy() {}
 
+    public static boolean allowsDeviceNotice(boolean activeRoomNotice,SuffocationStage stage) {
+        return !activeRoomNotice && stage == SuffocationStage.NONE;
+    }
+
     public record Notice(String primaryKey, String secondaryKey, boolean danger) {}
 
     public static Notice select(String roomKey, boolean suitHud, SuffocationStage stage) {

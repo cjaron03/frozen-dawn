@@ -41,6 +41,9 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(AirlockStatusPayload.TYPE, AirlockStatusPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAirlockStatus(payload)));
+
         registrar.playToClient(SuffocationStatePayload.TYPE, SuffocationStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleSuffocationState(payload)));
 

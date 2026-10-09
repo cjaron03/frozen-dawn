@@ -1,4 +1,22 @@
 {
+  "ui.frozendawn.airlock.speaker": "ORSA // AIRLOCK",
+  "message.frozendawn.airlock.ready": "Airlock ready",
+  "message.frozendawn.airlock.interrupted": "Cycle stopped",
+  "block.frozendawn.airlock_door": "Airlock Door",
+  "block.frozendawn.airlock_controller": "Airlock Controller",
+  "block.frozendawn.manual_vent_valve": "Manual Vent Valve",
+  "message.frozendawn.airlock.differential": "Pressure differential",
+  "message.frozendawn.airlock.invalid": "Airlock invalid",
+  "message.frozendawn.airlock.close_doors": "Close doors",
+  "message.frozendawn.airlock.insufficient": "Low O2",
+  "message.frozendawn.airlock.pressurizing": "Pressurizing %5$s%%",
+  "message.frozendawn.airlock.depressurizing": "Venting %5$s%%",
+  "message.frozendawn.airlock.cycling": "Cycling %5$s%%",
+  "message.frozendawn.airlock.status": "O2 %1$s/%2$s | Air %3$s/%4$s",
+  "message.frozendawn.airlock.charged": "O2 +%6$s | Reserve %1$s/%2$s",
+  "message.frozendawn.airlock.vented": "Emergency vent",
+  "message.frozendawn.airlock.evacuated": "Airlock vented | Lost %6$s O2",
+
   "message.frozendawn.pawn_presentiment": "A sudden feeling of presentiment hits you...",
   "itemGroup.frozendawn": "Frozen Dawn",
 

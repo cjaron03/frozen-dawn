@@ -89,7 +89,9 @@ public final class MasterArchitectFloodClient {
     private static boolean suitDialogueWarning;
     private static String suitDialogueSpeakerKey;
     private static boolean suitDialogueCorrupted;
-    private static boolean suitDialogueAtmospheric, suitDialogueAtmosphericLoss;
+    private static boolean suitDialogueAtmospheric, suitDialogueAtmosphericLoss, suitDialogueOperational;
+    private static Component suitDialogueMessage;
+    private static int suitDialogueOperationalColor;
     private static int ivenStacks;
     private static int exposureCycle;
     private static boolean coreExposed;
@@ -522,6 +524,7 @@ public final class MasterArchitectFloodClient {
     }
 
     public static void showSuitDialogue(String translationKey) {
+        suitDialogueOperational = false; suitDialogueMessage = null;
         suitDialogueAtmospheric = suitDialogueAtmosphericLoss = false;
         suitDialogueKey = translationKey;
         suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
@@ -534,6 +537,7 @@ public final class MasterArchitectFloodClient {
     }
 
     public static void showWarningSuitDialogue(String translationKey) {
+        suitDialogueOperational = false; suitDialogueMessage = null;
         suitDialogueAtmospheric = suitDialogueAtmosphericLoss = false;
         suitDialogueKey = translationKey;
         suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
@@ -546,6 +550,7 @@ public final class MasterArchitectFloodClient {
     }
 
     public static void showRadioDialogue(String translationKey) {
+        suitDialogueOperational = false; suitDialogueMessage = null;
         suitDialogueAtmospheric = suitDialogueAtmosphericLoss = false;
         suitDialogueKey = translationKey;
         suitDialogueTicks = Math.max(SUIT_DIALOGUE_DURATION_TICKS,
@@ -576,11 +581,19 @@ public final class MasterArchitectFloodClient {
         suitDialogueAtmosphericLoss = loss;
     }
 
+    public static void showAirlockSuitStatus(Component message, int color) {
+        showSuitDialogue("ui.frozendawn.airlock.speaker");
+        suitDialogueAtmospheric = suitDialogueOperational = true;
+        suitDialogueMessage = message; suitDialogueOperationalColor = color;
+        suitDialogueSpeakerKey = "ui.frozendawn.airlock.speaker";
+    }
+
     public static void clearAtmosphericSuitDialogue() {
         if (suitDialogueAtmospheric) clearSuitDialogue();
     }
 
     private static void clearSuitDialogue() {
+        suitDialogueOperational = false; suitDialogueMessage = null;
         suitDialogueAtmospheric = suitDialogueAtmosphericLoss = false;
         suitDialogueKey = null;
         suitDialogueTicks = 0;
@@ -598,9 +611,9 @@ public final class MasterArchitectFloodClient {
             return;
         }
 
-        String fullText = Component.translatable(suitDialogueKey).getString();
+        String fullText = (suitDialogueMessage == null ? Component.translatable(suitDialogueKey) : suitDialogueMessage).getString();
         int revealedCharacters = Math.min(
-                fullText.length(), suitDialogueAge * SUIT_DIALOGUE_CHARS_PER_TICK);
+                fullText.length(), suitDialogueOperational ? fullText.length() : suitDialogueAge * SUIT_DIALOGUE_CHARS_PER_TICK);
         String visibleText = fullText.substring(0, revealedCharacters);
         if (suitDialogueCorrupted && !visibleText.isEmpty()) {
             visibleText = corruptRadioText(visibleText, suitDialogueAge);
@@ -631,6 +644,7 @@ public final class MasterArchitectFloodClient {
                 : suitDialogueCorrupted ? 0xB9D8CF : 0x54EAF1;
         int textColor = suitDialogueAtmosphericLoss ? 0xFF5555 : suitDialogueWarning ? 0xFFF3C4
                 : suitDialogueCorrupted ? 0xD8E4DE : 0xD5EEF2;
+        if (suitDialogueOperational) accentColor = speakerColor = textColor = suitDialogueOperationalColor;
         graphics.fill(x + 1, y, x + panelWidth - 1, y + panelHeight,
                 argb(Math.round(224.0F * fade), panelColor));
         graphics.fill(x, y + 1, x + panelWidth, y + panelHeight - 1,
