@@ -9,6 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -42,6 +43,7 @@ final class ScribeMap {
         tag.putInt("xCenter", center.getX()); tag.putInt("zCenter", center.getZ()); tag.putByte("scale", SCALE);
         tag.putBoolean("trackingPosition", false); tag.putBoolean("unlimitedTracking", false); tag.putBoolean("locked", true);
         tag.putByteArray("colors", paint(level, center));
+        tag.put("banners", new ListTag()); // vanilla load parses this unconditionally and warns when it is absent
         var id = level.getFreeMapId();
         level.setMapData(id, MapItemSavedData.load(tag, level.registryAccess()));
         ItemStack stack = new ItemStack(Items.FILLED_MAP);
