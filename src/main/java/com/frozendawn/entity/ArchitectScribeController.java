@@ -93,6 +93,11 @@ final class ArchitectScribeController {
         return true;
     }
 
+    /** Presentation only: it writes on its slate while watching from its post, never while moving or defending. */
+    boolean writing() {
+        return phase == Phase.WATCH && actor.isScribe() && actor.isAlive() && !actor.isNoAi() && attacker == null;
+    }
+
     /** Effective damage. Cornered means struck at close range with no safe way out, or flight that has stalled. */
     void damaged(DamageSource source) {
         if (!actor.isScribe() || !(source.getEntity() instanceof LivingEntity hitter) || !hitter.isAlive()) return;

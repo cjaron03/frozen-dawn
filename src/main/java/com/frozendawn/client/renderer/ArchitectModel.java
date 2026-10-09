@@ -2,6 +2,7 @@ package com.frozendawn.client.renderer;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.entity.ScribeWriting;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -141,6 +142,12 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             return;
         }
 
+        float writing = entity.getScribeWriting(ageInTicks - entity.tickCount);
+        if (writing > 0.001F && rightHanded && entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
+            applyScribeWritingPose(entity, ageInTicks, smooth(writing));
+            return;
+        }
+
         if (entity.isHoldingRangedCover()) {
             // Already executing a cover order: ready behind the wall, not pondering it.
             if (entity.getAttackAnim(ageInTicks - entity.tickCount) <= 0.001F) {
@@ -215,6 +222,25 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             this.thinkingForearm.xRot = -1.85F * hand;
             this.thinkingForearm.yRot = 0.55F * hand;
         }
+    }
+
+    /** §9.4b: slate up in the right hand, the jointed left hand scratching across it, glancing up between lines. */
+    private void applyScribeWritingPose(ArchitectEntity entity, float ageInTicks, float writing) {
+        float glance = ScribeWriting.glance(ageInTicks, entity.getId());
+        float stroke = ScribeWriting.stroke(ageInTicks, entity.getId()) * writing;
+        float down = writing * (1.0F - glance);
+        this.head.xRot = Mth.lerp(down, this.head.xRot, 0.65F);
+        this.head.yRot = Mth.lerp(down, this.head.yRot, 0.0F);
+        this.body.xRot = 0.08F * writing;
+        this.rightArm.xRot = Mth.lerp(writing, this.rightArm.xRot, -0.95F);
+        this.rightArm.yRot = Mth.lerp(writing, this.rightArm.yRot, -0.40F);
+        this.leftArm.skipDraw = true;
+        this.thinkingUpperArm.visible = true;
+        this.leftArm.xRot = Mth.lerp(writing, this.leftArm.xRot, -0.55F - 0.12F * glance);
+        this.leftArm.yRot = Mth.lerp(writing, this.leftArm.yRot, 0.45F);
+        this.leftArm.zRot = Mth.lerp(writing, this.leftArm.zRot, 0.05F);
+        this.thinkingForearm.xRot = -1.05F * writing + Mth.sin(ageInTicks * 2.1F) * 0.06F * stroke;
+        this.thinkingForearm.yRot = 0.55F * writing + Mth.sin(ageInTicks * 1.3F) * 0.18F * stroke;
     }
 
     private static float smooth(float value) {

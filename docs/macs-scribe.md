@@ -20,6 +20,7 @@ Implemented on `feat/scribe-architect`, branched from `feat/maeve-director` at `
 - Flees any visible Survival/Adventure player within 12 blocks, and anyone who strikes it from range. It never initiates combat.
 - **Cornered** (struck within 3.5 blocks with no safe heading away, or while flight has stalled for 30 ticks) it defends itself under the §9.13a local-defense exception: ordinary combat against that attacker until 200 ticks pass without damage, then it resumes fleeing. It still holds the slate.
 - White eyes (same 2x3-pixel recolor as the scout's purple) and a held slate: the only Architect holding something that is not a weapon.
+- While watching from its post it writes: slate raised in the right hand and tilted face-up, the jointed left hand scratching across it in three bursts per 6-second cycle, head bowed, glancing up at the subject for about a second at the start of each cycle. Each burst plays a quiet scratch (`frozendawn:entity.architect.scribe_write`, the vanilla cartography scribble at 0.35 volume and 0.85 pitch, subtitle "Architect scratches on a slate"). Walking, fleeing and defending drop the pose. Presentation only: a synced flag from the watch phase, client-side timing, no evidence.
 
 **No new evidence.** Watching adds no observations and takes no focus slot, counter-family slot, commitment, reconnaissance mission or convergence assignment. Once struck it is an ordinary Architect being hit: existing combat/danger observation applies to it like any other.
 

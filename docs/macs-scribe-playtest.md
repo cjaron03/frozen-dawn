@@ -25,7 +25,7 @@ Flat ground with a stone roof (394..406, center lapis) and an open east side. A 
 | 20-21 | Click the sprint link (640 ticks: encounters need a quiet gap), then NEXT. | Four rounds total. |
 | 22 | Read the three percentages, then click the one link offered. | "Maeve's habits: sword 80%, recovery under cover 80%, east retreat 80%" (`/fd maeve confidence`, rounded down). All three at 75% or more offers AWAIT only; otherwise ONE MORE ROUND only. |
 | 30 | In the EVA suit, stay under the roof and click the 6000-tick sprint until an Architect appears (2% per 10 s). Phase 6 mid: spawns on, no snowfall. | "A Scribe was designated and is held." A red "ordinary Architect" message means the gate failed: report the dump. |
-| 31-40 | Wait for any sprint to end, click SHOW. CHECK 1: white eyes, slate in hand. CHECK 2: it walks about 20 blocks out from the east opening and stares at you. | The watch lasts 2 minutes of game time, then it walks away. |
+| 31-40 | Wait for any sprint to end, click SHOW. CHECK 1: white eyes, slate in hand. CHECK 2: it walks about 20 blocks out from the east opening, then writes on its slate (head bowed, quiet scratching) and glances up at you every few seconds. | The watch lasts 2 minutes of game time, then it walks away. |
 | 50 | CHECK 3: walk toward it. | Within about 12 blocks it turns and runs, never attacks. It returns to a post once you back off. |
 | 60 | CHECK 4: chase and kill it (Speed II given). | Struck from range it keeps running; hit up close with no way out, it fights back holding the slate. |
 | 70 | CHECK 5: pick up the drops and use the record. | Raw Thaeven headed `Vel-thae.`; the translator recipe is discovered. If it left instead, the red message offers a start-over link. |

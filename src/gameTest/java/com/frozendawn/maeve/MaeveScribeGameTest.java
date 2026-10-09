@@ -242,11 +242,13 @@ public final class MaeveScribeGameTest {
             tick(scene, actor, t, 60);
             helper.assertTrue(actor.getTarget() == null && actor.position().distanceTo(scene.position(15, 15)) < 1.5,
                     "Watches from a distance without engaging: " + actor.position());
+            helper.assertTrue(actor.isScribeWriting(), "Writes on its slate while it watches (presentation only)");
             player.setPos(scene.position(21, 15));
             double before = actor.distanceTo(player);
             tick(scene, actor, t + 60, 80);
             helper.assertTrue(actor.distanceTo(player) > before + 3 && actor.getTarget() == null && player.getHealth() == health,
                     "Flees when approached and never initiates: " + before + " -> " + actor.distanceTo(player));
+            helper.assertFalse(actor.isScribeWriting(), "Stops writing to flee");
             player.setPos(actor.position().add(8, 0, 0));
             scene.hit(actor, player, true, 1);
             helper.assertTrue(actor.getTarget() == null, "Struck from range, it keeps fleeing");

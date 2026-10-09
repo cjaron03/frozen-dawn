@@ -55,6 +55,7 @@
   "block.frozendawn.sealed_lattice": "Sealed Lattice",
   "entity.frozendawn.bloom_spore": "The Spore",
   "entity.frozendawn.bloom_spore_corpse": "Rooted Spore",
+  "subtitle.frozendawn.entity.architect.scribe_write": "Architect scratches on a slate",
   "subtitle.frozendawn.entity.bloom_spore.ambient": "Crystalline growth shifts nearby",
   "subtitle.frozendawn.entity.bloom_spore.step": "Crystal settles",
   "subtitle.frozendawn.entity.bloom_spore.contact": "Crystalline residue scrapes",

@@ -150,9 +150,12 @@ public class ArchitectEntity extends Monster {
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Boolean> DATA_SCRIBE =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_SCRIBE_WRITING =
+            SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
     static final String SCRIBE_TAG = "macsScribe";
     private final ArchitectThinkingController thinkingController = new ArchitectThinkingController(this);
     private float thinkingTilt, thinkingTiltOld, thinkingHand, thinkingHandOld;
+    private float scribeWriting, scribeWritingOld;
 
     // --- Action Constants ---
     public static final int ACTION_OBSERVE = 0;
@@ -389,6 +392,7 @@ public class ArchitectEntity extends Monster {
         builder.define(DATA_RECON_DISSOLVE, 0);
         builder.define(DATA_RECON_CLOUD_START, -1L);
         builder.define(DATA_SCRIBE, false);
+        builder.define(DATA_SCRIBE_WRITING, false);
     }
 
     @Override
@@ -451,6 +455,16 @@ public class ArchitectEntity extends Monster {
         return net.minecraft.util.Mth.lerp(partialTick, thinkingHandOld, thinkingHand);
     }
 
+    /** Client blend toward the Scribe's writing pose; 0 for every other Architect. */
+    public float getScribeWriting(float partialTick) {
+        return net.minecraft.util.Mth.lerp(partialTick, scribeWritingOld, scribeWriting);
+    }
+
+    /** Presentation only: a Scribe writes on its slate while it watches from its post. */
+    public boolean isScribeWriting() {
+        return entityData.get(DATA_SCRIBE_WRITING) && isScribe() && isAlive() && !isNoAi() && getDeathTicks() == 0;
+    }
+
     public boolean isHoldingMaevePosition() {
         return entityData.get(DATA_MAEVE_HOLD) && isAlive() && !isNoAi()
                 && getDeathTicks() == 0 && !isMasterArchitectVisual();
@@ -492,6 +506,8 @@ public class ArchitectEntity extends Monster {
 
     /** Called once, before a designated natural spawn enters the world. */
     public void becomeScribe() {
+        // Slate in the right hand, stylus hand on the jointed left arm.
+        setLeftHanded(false);
         entityData.set(DATA_SCRIBE, isScribe()); updateHeldItem();
     }
 
@@ -626,9 +642,18 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void aiStep() {
-        if (!level().isClientSide()) entityData.set(DATA_SCRIBE, isScribe());
+        if (!level().isClientSide()) {
+            entityData.set(DATA_SCRIBE, isScribe());
+            entityData.set(DATA_SCRIBE_WRITING, maeveScribe.writing());
+        }
         if (level().isClientSide()) {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
+            scribeWritingOld = scribeWriting;
+            scribeWriting = net.minecraft.util.Mth.approach(scribeWriting, isScribeWriting() ? 1.0F : 0.0F, 0.08F);
+            if (scribeWriting > 0.9F && ScribeWriting.strokeStarts(tickCount, getId())) {
+                level().playLocalSound(getX(), getY(), getZ(), com.frozendawn.init.ModSounds.SCRIBE_WRITE.get(),
+                        net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 0.9F + getRandom().nextFloat() * 0.15F, false);
+            }
             thinkingTiltOld = thinkingTilt;
             thinkingHandOld = thinkingHand;
             boolean thinking = isHoldingMaevePosition() && !isHoldingRangedCover() || isShowingReconnaissancePose();
