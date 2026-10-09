@@ -54,8 +54,8 @@ public final class VacuumFlames {
     public static BlockState normalize(ServerLevel level, BlockPos pos, BlockState requested) {
         if (!isOrdinaryFlame(requested) || CombustionAtmosphere.canBurnAt(level, pos)) return requested;
         if (requested.is(Blocks.FIRE)) return Blocks.AIR.defaultBlockState();
-        if (requested.is(Blocks.TORCH)) return ModBlocks.EXTINGUISHED_TORCH.get().defaultBlockState();
-        if (requested.is(Blocks.WALL_TORCH)) return ModBlocks.EXTINGUISHED_WALL_TORCH.get().defaultBlockState()
+        if (requested.is(Blocks.TORCH)) return ModBlocks.SPENT_TORCH.get().defaultBlockState();
+        if (requested.is(Blocks.WALL_TORCH)) return ModBlocks.SPENT_WALL_TORCH.get().defaultBlockState()
                 .setValue(WallTorchBlock.FACING, requested.getValue(WallTorchBlock.FACING));
         if (requested.is(Blocks.LANTERN)) return ModBlocks.EXTINGUISHED_LANTERN.get().defaultBlockState()
                 .setValue(BlockStateProperties.HANGING, requested.getValue(BlockStateProperties.HANGING))
@@ -141,7 +141,7 @@ public final class VacuumFlames {
     public static void relight(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         BlockState state = level.getBlockState(event.getPos());
-        boolean relight = state.is(ModBlocks.EXTINGUISHED_TORCH.get()) || state.is(ModBlocks.EXTINGUISHED_WALL_TORCH.get())
+        boolean relight = state.is(ModBlocks.SPENT_TORCH.get()) || state.is(ModBlocks.SPENT_WALL_TORCH.get())
                 || state.is(ModBlocks.EXTINGUISHED_LANTERN.get());
         if (!relight || !event.getItemStack().is(Items.FLINT_AND_STEEL)) return;
         event.setCanceled(true);
@@ -149,7 +149,7 @@ public final class VacuumFlames {
         BlockState lit = state.is(ModBlocks.EXTINGUISHED_LANTERN.get())
                 ? Blocks.LANTERN.defaultBlockState().setValue(BlockStateProperties.HANGING, state.getValue(BlockStateProperties.HANGING))
                     .setValue(BlockStateProperties.WATERLOGGED, state.getValue(BlockStateProperties.WATERLOGGED))
-                : state.is(ModBlocks.EXTINGUISHED_WALL_TORCH.get())
+                : state.is(ModBlocks.SPENT_WALL_TORCH.get())
                     ? Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, state.getValue(WallTorchBlock.FACING))
                     : Blocks.TORCH.defaultBlockState();
         if (lit.hasProperty(BlockStateProperties.WATERLOGGED) && lit.getValue(BlockStateProperties.WATERLOGGED)) {

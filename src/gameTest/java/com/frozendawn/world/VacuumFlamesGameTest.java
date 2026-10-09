@@ -36,7 +36,7 @@ public final class VacuumFlamesGameTest {
                 level.setBlock(pos,state,2);
                 var actual=level.getBlockState(pos);
                 helper.assertFalse(VacuumFlames.isOrdinaryFlame(actual),"Real chunk write must extinguish "+block);
-                if(block==Blocks.WALL_TORCH)helper.assertTrue(actual.is(ModBlocks.EXTINGUISHED_WALL_TORCH.get())
+                if(block==Blocks.WALL_TORCH)helper.assertTrue(actual.is(ModBlocks.SPENT_WALL_TORCH.get())
                         && actual.getValue(WallTorchBlock.FACING)==Direction.WEST,"Wall facing retained");
                 if(block==Blocks.LANTERN)helper.assertTrue(actual.is(ModBlocks.EXTINGUISHED_LANTERN.get())
                         && actual.getValue(BlockStateProperties.HANGING),"Hanging state retained");
@@ -104,7 +104,7 @@ public final class VacuumFlamesGameTest {
             CombustionAtmosphere.reset();
             helper.assertFalse(CombustionAtmosphere.canBurnAt(level,center),"Breach connects room to real vacuum");
             level.setBlock(center,VacuumFlames.normalize(level,center,level.getBlockState(center)),2);
-            helper.assertTrue(level.getBlockState(center).is(ModBlocks.EXTINGUISHED_TORCH.get()),"Breached room loses ordinary light");
+            helper.assertTrue(level.getBlockState(center).is(ModBlocks.SPENT_TORCH.get()),"Breached room loses ordinary light");
         }));
     }
 
@@ -122,7 +122,7 @@ public final class VacuumFlamesGameTest {
             CombustionAtmosphere.reset();
             // Use the actual production index/update loop, not normalize() directly.
             for(int i=0;i<256;i++)VacuumFlames.tick(new net.neoforged.neoforge.event.tick.ServerTickEvent.Post(() -> true, level.getServer()));
-            helper.assertTrue(level.getBlockState(torch).is(ModBlocks.EXTINGUISHED_TORCH.get()),"Existing torch goes out at real transition");
+            helper.assertTrue(level.getBlockState(torch).is(ModBlocks.SPENT_TORCH.get()),"Existing torch goes out at real transition");
             helper.assertTrue(level.getBlockState(lantern).is(ModBlocks.EXTINGUISHED_LANTERN.get()),"Existing lantern goes out at real transition");
             helper.assertFalse(level.getBlockState(campfire).getValue(BlockStateProperties.LIT),"Existing campfire goes out at real transition");
         });
