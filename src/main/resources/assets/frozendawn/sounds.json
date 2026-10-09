@@ -2194,5 +2194,8 @@
   "ui.suit.stillpoint_field": {
     "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.stillpoint_field",
     "sounds": [{"name":"frozendawn:ui/suit/stillpoint_field","stream":true}]
-  }
+  },
+  "ui.suit.atmospheric_breach": {"subtitle": "subtitles.frozendawn.atmospheric_breach", "sounds": [{"name": "frozendawn:ui/suit/atmospheric_breach", "stream": true}]},
+  "ui.suit.atmospheric_breach_whoosh": {"subtitle": "subtitles.frozendawn.atmospheric_breach_whoosh", "sounds": ["frozendawn:ui/suit/atmospheric_breach_whoosh"]},
+  "ui.suit.atmospheric_breach_alarm": {"subtitle": "subtitles.frozendawn.atmospheric_breach_alarm", "sounds": ["frozendawn:ui/suit/atmospheric_breach_alarm"]}
 }

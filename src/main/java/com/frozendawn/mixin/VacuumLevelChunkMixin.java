@@ -21,7 +21,9 @@ public abstract class VacuumLevelChunkMixin {
         var chunk = (LevelChunk)(Object)this;
         if (ci.getReturnValue() != null && chunk.getLevel() instanceof ServerLevel level
                 && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
-            VacuumFlames.blockChanged(level, pos, chunk.getBlockState(pos));
+            var current = chunk.getBlockState(pos);
+            com.frozendawn.world.RoomAtmosphere.blockChanged(level, pos, ci.getReturnValue(), current);
+            VacuumFlames.blockChanged(level, pos, current);
         }
     }
 }

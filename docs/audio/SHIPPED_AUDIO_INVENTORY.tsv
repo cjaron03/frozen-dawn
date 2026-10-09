@@ -288,6 +288,9 @@ assets/frozendawn/sounds/ui/suit/aggregate_deposit.ogg	0a80c4f49a1ff2c0e9fd458c0
 assets/frozendawn/sounds/ui/suit/aggregate_gestation.ogg	373dcc0033e8ad1cb1a8361410bf89c9d2cee1a0591ad5de8d85eda2b7ffa187	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/aggregate_ossuary.ogg	1b350997fe704e5942dfa6742afeef9c3430e3f356cc18b910c0af5307a3bb85	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/aggregate_resolved.ogg	2ac1f25b12348630b506a7b0fea1e7fef6ee89808ace39de67cfecbae6d4d94a	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
+assets/frozendawn/sounds/ui/suit/atmospheric_breach.ogg	f13148699e14bbbe8883201115b36d9efd45010d86693153e8431f7474a1a5f4	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
+assets/frozendawn/sounds/ui/suit/atmospheric_breach_alarm.ogg	84c361c5c08dbc55d5a11ecbb8109e50ef9dff91ece2211d5637fded1a3d9ce6	atmospheric_breach_procedural	tools/audio_sources/atmospheric_breach/SOURCES.md	Frozen Dawn original
+assets/frozendawn/sounds/ui/suit/atmospheric_breach_whoosh.ogg	30f3b337989ceefcfa6019921cae5eeb46bbb2e5840f2387ed6d564bb833b2d8	atmospheric_breach_procedural	tools/audio_sources/atmospheric_breach/SOURCES.md	Frozen Dawn original
 assets/frozendawn/sounds/ui/suit/biological_activity_warning.ogg	fdeb390efb00aa8150f4e665991c18e1146da7c69c95ad576fd6cbc0259a545a	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/bloom_contact.ogg	3556e19bb58c074d7cdd1fc0ed1649c8126eb7b7be8c2c48d7c48a54a9e44046	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0
 assets/frozendawn/sounds/ui/suit/emergency_eva_active.ogg	0c1bbbabdd6a71eec39dfb9acfee6fe828f72c2da6121c0b8c9258ea0d867cea	generated_voice	tools/audio_sources/generated_voice/NOTICE.md	CC BY-SA 4.0

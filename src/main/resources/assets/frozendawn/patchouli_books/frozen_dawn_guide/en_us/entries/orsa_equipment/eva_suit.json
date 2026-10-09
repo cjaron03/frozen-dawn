@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "Specifications",
-      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface cold$(br)$(bold)Bonus:$() Negates wind chill.$(br)$(bold)Limitation:$() In late Phase 6, a full EVA suit still needs breathable air: stay inside a sealed room or habitable oxygen zone, or carry $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) to survive outside.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
+      "text": "$(bold)Protection:$() Each piece adds +30°C. Full set provides $(bold)+120°C total$().$(br2)$(bold)Rated for:$() Phase 1-6 surface cold$(br)$(bold)Bonus:$() Negates wind chill.$(br)$(bold)Limitation:$() In late Phase 6, a full EVA suit still needs breathable air: stay inside a sealed, breathable room, or carry $(l:orsa_equipment/o2_canisters)O2 Canisters$(/l) to survive outside.$(br2)$(italic)ORSA Legal: This suit is on loan. Returning it in pieces counts as \"damaged.\"$()"
     },
     {
       "type": "patchouli:text",

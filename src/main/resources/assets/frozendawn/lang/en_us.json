@@ -1115,7 +1115,14 @@
   "message.frozendawn.ration_warmer.damaged_done": "Recovered to damaged Frozen food. Permanent damage remains.",
   "food.frozendawn.warm_window": "Warm window: %ss",
   "food.frozendawn.permanent_damage": "Permanently damaged. Thawing cannot restore full nutrition.",
+  "block.frozendawn.extinguished_lantern": "Extinguished Lantern",
   "block.frozendawn.spent_torch": "Spent Torch",
   "block.frozendawn.spent_wall_torch": "Spent Wall Torch",
-  "block.frozendawn.extinguished_lantern": "Extinguished Lantern"
+  "ui.frozendawn.suit.atmospheric_breach": "WARNING: ATMOSPHERIC BREACH DETECTED",
+  "subtitles.frozendawn.atmospheric_breach": "Atmospheric breach warning",
+  "subtitles.frozendawn.atmospheric_breach_whoosh": "Air rushes through breach",
+  "ui.frozendawn.room.sealed_no_supply": "BREACH SEALED — OXYGEN SUPPLY REQUIRED",
+  "ui.frozendawn.room.sealed_restoring": "BREACH SEALED — RESTORING AIR",
+  "ui.frozendawn.room.air_restored": "ATMOSPHERE RESTORED",
+  "subtitles.frozendawn.atmospheric_breach_alarm": "Atmospheric breach alarm beeps"
 }

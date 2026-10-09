@@ -83,6 +83,14 @@ public final class ClientHandlers {
         }
     }
 
+    public static void handleRoomRecovery(RoomRecoveryPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveRecovery(payload.stage());
+    }
+
+    public static void handleAtmosphericBreach(AtmosphericBreachPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receive();
+    }
+
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {
         SuitIntegrityClient.update(payload);
     }

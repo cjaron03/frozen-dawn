@@ -347,7 +347,7 @@ final class PlayerTickHandler {
     }
 
     private static void tickSuffocation(MinecraftServer server, ApocalypseState state, float progress) {
-        boolean refreshCache = state.getApocalypseTicks() % 20 == 0;
+        boolean refreshCache = server.getTickCount() % 20 == 0;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             tickPlayerSuffocation(player, state, refreshCache);
         }

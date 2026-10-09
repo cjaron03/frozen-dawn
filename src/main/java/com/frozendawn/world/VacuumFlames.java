@@ -53,6 +53,10 @@ public final class VacuumFlames {
 
     public static BlockState normalize(ServerLevel level, BlockPos pos, BlockState requested) {
         if (!isOrdinaryFlame(requested) || CombustionAtmosphere.canBurnAt(level, pos)) return requested;
+        return extinguishedState(requested);
+    }
+
+    private static BlockState extinguishedState(BlockState requested) {
         if (requested.is(Blocks.FIRE)) return Blocks.AIR.defaultBlockState();
         if (requested.is(Blocks.TORCH)) return ModBlocks.SPENT_TORCH.get().defaultBlockState();
         if (requested.is(Blocks.WALL_TORCH)) return ModBlocks.SPENT_WALL_TORCH.get().defaultBlockState()
@@ -61,6 +65,17 @@ public final class VacuumFlames {
                 .setValue(BlockStateProperties.HANGING, requested.getValue(BlockStateProperties.HANGING))
                 .setValue(BlockStateProperties.WATERLOGGED, requested.getValue(BlockStateProperties.WATERLOGGED));
         return requested.setValue(BlockStateProperties.LIT, false);
+    }
+
+    public static void extinguishRoom(ServerLevel level, Set<BlockPos> cells, Set<BlockPos> walls) {
+        var positions = new HashSet<BlockPos>(cells); positions.addAll(walls);
+        for (var pos : positions) {
+            if (!level.isLoaded(pos)) continue;
+            var state = level.getBlockState(pos);
+            if (!isOrdinaryFlame(state)) continue;
+            var out = cells.contains(pos) ? extinguishedState(state) : normalize(level, pos, state);
+            if (out != state) level.setBlock(pos, out, 3);
+        }
     }
 
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState current) {

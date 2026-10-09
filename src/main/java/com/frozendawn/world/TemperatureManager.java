@@ -35,9 +35,6 @@ public final class TemperatureManager {
     /** Max radius for non-heater heat sources (soul campfire = 6). */
     private static final int AMBIENT_HEAT_RADIUS = 6;
     private static final int MOB_HEAT_RADIUS = 3;
-    private static final int BREATHABLE_MAX_VISITED = 12_000;
-    private static final int BREATHABLE_MAX_HORIZONTAL = 48;
-    private static final int BREATHABLE_MAX_VERTICAL = 24;
 
     /**
      * Full-precision temperature check (used for players).
@@ -146,13 +143,13 @@ public final class TemperatureManager {
      */
     public static boolean hasBreathableAir(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        if (hasOxygenSupport(level, pos)) return true;
-        return isInsideSealedRoom(level, pos);
+        return RoomAtmosphere.hasAir(level, pos);
     }
 
     /** Active infrastructure that can repressurize an intact EVA suit. */
     public static boolean hasOxygenSupport(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
+        if (CombustionAtmosphere.isVacuum(level)) return RoomAtmosphere.hasOxygenSupport(level, pos);
         return BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 || isInsideGeothermalO2Range(level, pos);
     }
@@ -173,74 +170,6 @@ public final class TemperatureManager {
             }
         }
         return false;
-    }
-
-    private static boolean isInsideSealedRoom(Level level, BlockPos origin) {
-        if (!level.isLoaded(origin) || !isBreathablePassage(level, origin)) {
-            return false;
-        }
-
-        Queue<BlockPos> open = new ArrayDeque<>();
-        Set<BlockPos> visited = new HashSet<>();
-        BlockPos start = origin.immutable();
-        open.add(start);
-        visited.add(start);
-
-        while (!open.isEmpty()) {
-            BlockPos current = open.remove();
-
-            if (!level.isLoaded(current)) {
-                return false;
-            }
-            if (!isWithinBreathableBounds(origin, current)) {
-                return false;
-            }
-            if (level.canSeeSky(current)) {
-                return false;
-            }
-
-            for (Direction direction : Direction.values()) {
-                BlockPos next = current.relative(direction);
-                if (visited.contains(next)) {
-                    continue;
-                }
-                if (!level.isLoaded(next)) {
-                    return false;
-                }
-                if (!isWithinBreathableBounds(origin, next)) {
-                    return false;
-                }
-                if (!isBreathablePassage(level, next)) {
-                    continue;
-                }
-                if (visited.size() >= BREATHABLE_MAX_VISITED) {
-                    return false;
-                }
-
-                BlockPos immutable = next.immutable();
-                visited.add(immutable);
-                open.add(immutable);
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean isWithinBreathableBounds(BlockPos origin, BlockPos pos) {
-        int dx = Math.abs(pos.getX() - origin.getX());
-        int dy = Math.abs(pos.getY() - origin.getY());
-        int dz = Math.abs(pos.getZ() - origin.getZ());
-        return dx <= BREATHABLE_MAX_HORIZONTAL
-                && dz <= BREATHABLE_MAX_HORIZONTAL
-                && dy <= BREATHABLE_MAX_VERTICAL;
-    }
-
-    private static boolean isBreathablePassage(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (!state.getFluidState().isEmpty()) {
-            return false;
-        }
-        return state.isAir() || !state.blocksMotion() || state.getCollisionShape(level, pos).isEmpty();
     }
 
     /**

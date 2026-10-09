@@ -169,3 +169,7 @@ ORSA HUD. Existing licensing and model provenance above apply.
 
 All other 307 prior audio assets are unchanged. No macOS voices or model weights
 are included in the mod jar.
+
+## Atmospheric breach warning — October 9, 2026
+
+Added only `ui/suit/atmospheric_breach.ogg`, spoken text “Warning. Atmospheric breach detected.”, through the existing local Piper `en_US-amy-medium` model and `orsa` processing profile. Amy model card and Mycroft Mimic 3 CC BY-SA 4.0 license were checked at their official sources on October 9. The manifestation, notice, packaged attribution and inventory include the new performance; existing speech files are unchanged. The raw generated WAV and current model/config hashes are retained in the local breach evidence directory. No weights or engine are shipped.
