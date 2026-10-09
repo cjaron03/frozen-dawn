@@ -37,6 +37,8 @@ final class ObservationCollector {
                 || (!fatalPlayer && !player.isAlive()) || player.isCreative() || player.isSpectator()
                 || observer.isRemoved() || observer.isNoAi() || (!fatalHit && !observer.isAlive())
                 || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)
+                // §9.4b: the Scribe carries notes and reports no evidence, even struck in its own death fight.
+                || ScribeCoordinator.scribe(observer)
                 || observer.distanceToSqr(player) > RANGE * RANGE) return false;
         // A ray crossing an unloaded chunk must not turn observation into chunk loading.
         int minX = Math.min(observer.blockPosition().getX(), player.blockPosition().getX()) >> 4;

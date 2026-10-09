@@ -127,6 +127,12 @@ Designated with `watch=SHELTER@(28,62,0)` after four called fights (sword, bow, 
 
 Diagnosis: on ground of full-block steps the observed-walk planner kept refusing, so the Scribe alternated one neighbouring step with a replan. Change: the Scribe now walks with ordinary mob navigation (walking about 2.8 blocks a second, fleeing about 4.3). Bows: the record does track ranged preference, but the quick seed starts it at 0/3 contradictions and each sword fight adds one, so after alternating fights it stays settled against and the record omits it.
 
+## Owner quick pass 6 (2026-10-08, MACS Scribe Quick 7, build b922c76)
+
+One sword kill, two bow fights (read: bow 40%), designated `by=PITY_4/8` at 23:34:50, `FLEE` at 12.0 blocks, `DEFEND` at 2.2 blocks once struck, slain with the sword at 23:35:38. Owner, unprompted: "i shouldve gotten a bow too right? or does the slate only choose one or the other?"
+
+Diagnosis: the record lists up to five beliefs at 20% or more, so ranged at 40% belonged on it. The dump showed the Scribe itself (observer `5653e2f5`) reporting the sword hits of its death fight, which contradicted ranged down to 5% before the record was read at death. Change (owner approved touching the shared observation): `ObservationCollector.canObserve` refuses a Scribe, so it reports no evidence.
+
 ## Handoff (2026-10-08)
 
-Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 7`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight. Owner decided (2026-10-08): "flee, but fight back if hit"; a hit within 3.5 blocks now starts defense even with a way out; hits from range still only make it flee (owner: "flee is fine").
+Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 8`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight. Owner decided (2026-10-08): "flee, but fight back if hit"; a hit within 3.5 blocks now starts defense even with a way out; hits from range still only make it flee (owner: "flee is fine").

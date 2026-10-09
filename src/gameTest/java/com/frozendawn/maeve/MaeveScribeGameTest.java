@@ -304,6 +304,8 @@ public final class MaeveScribeGameTest {
             helper.assertTrue(actor.distanceTo(player) > before + 3 && actor.getTarget() == null && player.getHealth() == health,
                     "Flees when approached and never initiates: " + before + " -> " + actor.distanceTo(player));
             helper.assertFalse(actor.isScribeWriting(), "Stops writing to flee");
+            var held = MaeveDirector.snapshot(scene.server, id).beliefs().stream()
+                    .map(b -> b.pattern() + " " + b.evidence() + "/" + b.contradictions()).toList();
             player.setPos(actor.position().add(8, 0, 0));
             scene.hit(actor, player, true, 1);
             helper.assertTrue(actor.getTarget() == null, "Struck from range, it keeps fleeing");
@@ -312,6 +314,10 @@ public final class MaeveScribeGameTest {
             scene.hit(actor, player, false, 1);
             helper.assertTrue(actor.getTarget() == player, "Struck up close, it fights back even with a way out (§9.13a local defense)");
             helper.assertTrue(actor.getMainHandItem().is(ModItems.SCRIBE_RECORD.get()), "Still holding the slate, not a weapon");
+            var after = MaeveDirector.snapshot(scene.server, id).beliefs().stream()
+                    .map(b -> b.pattern() + " " + b.evidence() + "/" + b.contradictions()).toList();
+            // Owner, 2026-10-08: sword hits on the Scribe itself knocked a held bow belief off the record.
+            helper.assertTrue(after.equals(held), "Hits on the Scribe report no evidence: " + held + " -> " + after);
             tick(scene, actor, t + 400, 5);
             helper.assertTrue(actor.getTarget() == null && actor.isScribe(), "Without fresh damage, defense ends and it resumes fleeing");
         });
