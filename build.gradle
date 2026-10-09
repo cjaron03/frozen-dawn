@@ -17,6 +17,8 @@ def enableEnhancedClassRedefinition = providers
         .gradleProperty('fdEnableEnhancedClassRedefinition')
         .map { it.toBoolean() }
         .getOrElse(false)
+// Optional: ./gradlew runClientLab -PfdLabWorld='World Name' opens that existing save directly.
+def labQuickPlayWorld = providers.gradleProperty('fdLabWorld').getOrNull()
 
 repositories {
     maven { url = "https://maven.blamejared.com" }
@@ -94,6 +96,10 @@ neoForge {
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
             systemProperty 'frozendawn.debug.architectSeed', '1'
+            systemProperty 'frozendawn.labCommands', 'true'
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,
@@ -141,6 +147,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Lab-only commands must parse where the lab packs are checked.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', architectReports.get().asFile.absolutePath
             // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
             // saved data from one gate run leak into the next, which makes any test that touches
@@ -153,6 +161,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', monkeyReport.get().asFile.absolutePath
+            // It repeats the regressions, lab-pack parse checks included.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', monkeyReports.get().asFile.absolutePath
             systemProperty 'frozendawn.architect.monkey', 'true'
             gameDirectory = monkeyRunDirectory
@@ -518,3 +528,23 @@ tasks.register('generateMacsSignalQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
+
+// The Scribe Check world uses the same parsed functions as its required native gate.
+def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
+tasks.register('generateMacsScribeQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_playtest.py')
+    outputs.dir(macsScribeQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_playtest.py', '--pack-only', macsScribeQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeQa') }
+
+// The natural Scribe Base world is parsed by the same native gate.
+def macsScribeBaseQaResources = layout.buildDirectory.dir('generated/macsScribeBaseQa')
+tasks.register('generateMacsScribeBaseQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_base.py')
+    outputs.dir(macsScribeBaseQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_base.py', '--pack-only', macsScribeBaseQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }

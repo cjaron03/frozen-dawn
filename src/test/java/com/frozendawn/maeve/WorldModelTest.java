@@ -95,11 +95,12 @@ class WorldModelTest {
         data.store().observeContact(PLAYER, OBSERVER, DIM, 10).sample(OBSERVER, DIM, BlockPos.ZERO, true, 10);
         data.store().world(PLAYER).access(DIM, new BlockPos(3, 0, 0), BlockPos.ZERO, event(1, 20, BlockPos.ZERO));
         var backup = data.save(new CompoundTag(), null);
-        assertEquals(8, backup.getInt("dataVersion"));
+        assertEquals(9, backup.getInt("dataVersion"));
         var loaded = MaeveSavedData.load(backup, null);
         assertEquals(1, loaded.store().world(PLAYER).snapshot(20).size());
         loaded.erase(); loaded.erase();
         assertFalse(loaded.save(new CompoundTag(), null).contains("beliefs"));
+        assertFalse(loaded.save(new CompoundTag(), null).contains("scribe"), "The Scribe claim and cooldown are tactical state");
         loaded.synchronize(false, true);
         assertNull(loaded.store().world(PLAYER));
         var legacy = new CompoundTag(); legacy.putInt("dataVersion", 2); legacy.putBoolean("activated", true);

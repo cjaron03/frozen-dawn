@@ -255,6 +255,11 @@ public final class ClientHandlers {
                 payload.focusRecord(), payload.rawOnly()));
     }
 
+    public static void handleOpenScribeRecord(OpenScribeRecordPayload payload) {
+        Minecraft.getInstance().setScreen(new com.frozendawn.client.ScribeRecordScreen(
+                payload.contents(), payload.translated()));
+    }
+
     public static void handleStillpointField(StillpointFieldPayload payload) {
         StillpointClientState.update(payload);
     }

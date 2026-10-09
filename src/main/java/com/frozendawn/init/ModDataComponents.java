@@ -73,6 +73,14 @@ public class ModDataComponents {
                             .networkSynchronized(ByteBufCodecs.VAR_LONG)
                             .build());
 
+    /** §9.4b frozen Scribe notes; written once at the Scribe's death. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.item.ScribeRecordContents>> SCRIBE_RECORD =
+            DATA_COMPONENTS.register("scribe_record", () ->
+                    DataComponentType.<com.frozendawn.item.ScribeRecordContents>builder()
+                            .persistent(com.frozendawn.item.ScribeRecordContents.CODEC)
+                            .networkSynchronized(com.frozendawn.item.ScribeRecordContents.STREAM_CODEC)
+                            .build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HEARTHROT_COLONIZATION =
             DATA_COMPONENTS.register("hearthrot_colonization", () ->
                     DataComponentType.<Integer>builder()

@@ -565,6 +565,13 @@
     "subtitle": "subtitle.frozendawn.entity.bloombound_undone.death",
     "sounds": [ "frozendawn:entity/bloombound_undone/death" ]
   },
+  "entity.architect.scribe_write": {
+    "category": "hostile",
+    "subtitle": "subtitle.frozendawn.entity.architect.scribe_write",
+    "sounds": [
+      { "name": "minecraft:ui.cartography_table.take_result", "type": "event", "volume": 0.35, "pitch": 0.85 }
+    ]
+  },
   "entity.undone_architect.ambient": {
     "category": "hostile",
     "subtitle": "subtitle.frozendawn.entity.undone_architect.ambient",

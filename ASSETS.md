@@ -23,6 +23,13 @@ with OpenAI image generation. It is excluded from the wholly owner-authored
 GUI art designation above. Source, prompt summary and final hash are recorded
 in [the visual source ledger](tools/visual_sources/emergency_eva/SOURCES.md).
 
+## AI-assisted Scribe Record Texture
+
+The Scribe Record item texture (`textures/item/scribe_record.png`) is drawn
+deterministically by `tools/generate_scribe_record_texture.py`, a script
+written with Claude Code assistance. It is excluded from the owner-authored
+item texture designation below until the owner replaces or approves it.
+
 ## Original Game Textures
 
 - All block textures in `src/main/resources/assets/frozendawn/textures/block/`

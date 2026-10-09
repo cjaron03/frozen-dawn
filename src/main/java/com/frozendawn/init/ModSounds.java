@@ -813,4 +813,6 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_REPEAT = register("radio.voice.repeat");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_UNABLE = register("radio.voice.unable");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NO_LOCK = register("radio.voice.no_lock");
+    /** The Scribe scratching on its slate; reuses the vanilla cartography scribble. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_WRITE = register("entity.architect.scribe_write");
 }

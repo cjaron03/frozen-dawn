@@ -10,7 +10,7 @@ Run from the checkout that owns the save and current implementation:
 JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew runClientLab --console=plain
 ```
 
-Use the agent's terminal inside Codex. Keep its session and log path for later inspection. Only `runClientLab` enables the bridge. The ordinary launcher, guest client and dedicated server do not enable it. A Java change requires a client restart; a datapack edit can use `reload`. Back up a closed world before installing a build that changes its replay.
+Add `-PfdLabWorld='World Name'` to open an existing save in `run-lab/saves` directly (Minecraft quick play; it does not create worlds). Use the agent's terminal inside Codex. Keep its session and log path for later inspection. Only `runClientLab` enables the bridge. The ordinary launcher, guest client and dedicated server do not enable it. A Java change requires a client restart; a datapack edit can use `reload`. Back up a closed world before installing a build that changes its replay.
 
 ```sh
 python3 tools/lab_client.py status
@@ -104,3 +104,8 @@ For **MACS Focused Base Check**, follow the latest section of [the base protocol
 ## Controlled base return
 
 For **MACS Base Return**, follow [the controlled return protocol](macs-base-return-playtest.md). Exact-world `macs_pawn:return_prepare` requires stage92 and stages the two original living pawns before the run; `return_status` and `return_start` require130; `return_end` requires132. The owner gathers supplies for thirty seconds, then walks back at normal speed for upkeep. Start enables Survival before AI release. No admission by thirty seconds or death is inconclusive; total duration is ninety seconds. This is a new controlled-position copy with retained earned history. Never use its staging function in a completed world.
+
+
+## Scribe check
+
+For **MACS Scribe Check**, follow [the Scribe protocol](macs-scribe-playtest.md). No `macs_scribe` functions are bridge-approved: the owner advances by clicking chat links, and each function only acts at its own `msc #stage`. Agents may read `scores msc`, `maeve-dump` and `architect-dump`. `setup` erases and restores Maeve in this world only; never run it in another save.

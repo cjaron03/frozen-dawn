@@ -54,6 +54,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         this.addLayer(this.masterAdornmentLayer);
         this.reconnaissanceEyes = new ArchitectReconnaissanceEyesLayer(this);
         this.addLayer(reconnaissanceEyes);
+        this.layers.replaceAll(layer -> layer.getClass() == net.minecraft.client.renderer.entity.layers.ItemInHandLayer.class
+                ? new ScribeSlateItemLayer(this, context.getItemInHandRenderer()) : layer);
     }
 
     /** Shared by the distant sky face so it samples the exact live entity texture. */

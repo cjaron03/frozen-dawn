@@ -16,12 +16,14 @@ final class DirectorRuntime {
     final MissionPlanner missions;
     final LearningCoordinator learning;
     final ConvergenceCoordinator convergence;
+    final ScribeCoordinator scribe;
     private long lastContactTick = Long.MIN_VALUE;
     private DirectorRuntime(MinecraftServer server) {
         this.server = server; data = MaeveSavedData.get(server);
         learning = new LearningCoordinator(server, data); attention = new AttentionCoordinator(server, data);
         missions = new MissionPlanner(server, data, attention); attention.bind(missions);
         convergence = new ConvergenceCoordinator(server, data, attention, missions);
+        scribe = new ScribeCoordinator(server, data);
     }
     static DirectorRuntime current(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve must run on the server thread");
@@ -41,7 +43,7 @@ final class DirectorRuntime {
     }
     private void clear(String reason) {
         convergence.clear(reason); CommitmentCoordinator.stopAll(server, data.store());
-        missions.clear(); attention.clear(); learning.clear();
+        missions.clear(); attention.clear(); learning.clear(); scribe.clear(reason);
     }
     static void erase(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Maeve erasure must run on the server thread");
