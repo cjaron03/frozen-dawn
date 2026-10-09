@@ -11,7 +11,8 @@
     "IceBlockMixin",
     "LivingEntityMixin",
     "ServerPlayerContinuityMixin",
-    "ItemEntityContinuityMixin"
+    "ItemEntityContinuityMixin",
+    "RationWarmerCraftingMixin"
   ],
   "client": [
     "DisplayWindowMixin",
@@ -29,7 +30,8 @@
     "ChannelAccessor",
     "SoundEngineAccessor",
     "SoundManagerAccessor",
-    "NeoForgeLoadingOverlayMixin"
+    "NeoForgeLoadingOverlayMixin",
+    "FoodFrostReequipMixin"
   ],
   "injectors": {
     "defaultRequire": 1

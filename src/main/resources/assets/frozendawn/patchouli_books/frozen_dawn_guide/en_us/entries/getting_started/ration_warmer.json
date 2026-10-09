@@ -1,0 +1,38 @@
+{
+  "name": "ORSA Ration Warmer",
+  "category": "frozendawn:getting_started",
+  "icon": "frozendawn:ration_warmer",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "A Meal on the Move",
+      "text": "Food in your $(bold)offhand.$() Warmer in your $(bold)main hand.$() Right-click once and wait.$(br2)One charge thaws the $(bold)entire stack in 10 seconds$(), regardless of ambient temperature. You can keep moving and put the warmer away. Keep the original food stack in your offhand. Progress appears above the hotbar.$(br2)ORSA advises against using the device as a pillow."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:ration_warmer",
+      "text": "Four iron corners, four copper edges and redstone in the center. One reusable warmer, crafted $(bold)empty.$() No Nether ingredients required."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:ration_warmer_charging",
+      "text": "Craft the existing warmer with $(bold)1–4 redstone dust$() to add up to four charges. Dust can be stacked in one slot or spread across slots. One dust per charge, maximum $(bold)four.$() Only the missing charges are filled; excess dust stays in the grid. Device data is preserved."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recovery Limits",
+      "text": "$(bold)Chilled and Frozen$() food returns to fresh. $(bold)Frost-Ruined$() food only recovers to damaged Frozen: permanent damage, slower eating and reduced nutrition remain.$(br2)Fresh and frost-resistant food use $(bold)no charge.$() Keep the same complete food stack in your offhand until completion; the warmer can be put away."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "The Warm Window",
+      "text": "Completed food gets $(bold)30 seconds$() before frost accumulation resumes. Its tooltip shows the remaining warm window.$(br2)The warmer heats $(bold)food only.$() It provides no body warmth or frostbite protection. Four charges, 10-second thawing and the 30-second window are first-pass field values."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Interrupted Service",
+      "text": "The charge is spent $(bold)when you activate.$() You can switch hotbar slots or put the warmer away; thawing continues.$(br2)Removing, replacing, eating or splitting the offhand food, dying, changing dimension or leaving the world cancels service. $(bold)No refund.$() Nothing is thawed until completion; a cancelled job cannot transfer to another stack."
+    }
+  ]
+}

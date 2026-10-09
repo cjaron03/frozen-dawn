@@ -307,6 +307,41 @@
           "equals": -1
         }
       ]
+    },
+    "ration_warmer_check:handbook": {
+      "world": "ORSA Ration Warmer Check",
+      "scores": [
+        {
+          "objective": "rwcheck",
+          "holder": "#built",
+          "equals": 1
+        },
+        {
+          "objective": "rwcheck",
+          "holder": "#handbook",
+          "equals": 0
+        }
+      ]
+    },
+    "ration_warmer_check:load": {
+      "world": "ORSA Ration Warmer Check",
+      "scores": [
+        {
+          "objective": "rwcheck",
+          "holder": "#built",
+          "equals": 1
+        }
+      ]
+    },
+    "ration_warmer_check:controls": {
+      "world": "ORSA Ration Warmer Check",
+      "scores": [
+        {
+          "objective": "rwcheck",
+          "holder": "#built",
+          "equals": 1
+        }
+      ]
     }
   }
 }

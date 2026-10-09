@@ -18,6 +18,9 @@ def enableEnhancedClassRedefinition = providers
         .map { it.toBoolean() }
         .getOrElse(false)
 
+// Optional direct opening of an existing, explicitly named lab save.
+def labQuickPlayWorld = providers.gradleProperty('fdLabWorld').getOrNull()
+
 repositories {
     maven { url = "https://maven.blamejared.com" }
     maven { url = "https://maven.theillusivec4.top/" }
@@ -87,6 +90,9 @@ neoForge {
         clientLab {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
             systemProperty 'frozendawn.labBridge', 'true'
             systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
             systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
@@ -518,3 +524,13 @@ tasks.register('generateMacsSignalQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
+
+// Ration Warmer's disposable-world commands use the same native parser as GameTest.
+def rationWarmerQaResources = layout.buildDirectory.dir('generated/ration-warmer-qa')
+tasks.register('generateRationWarmerQa', Exec) {
+    inputs.files('tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(rationWarmerQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_ration_warmer_playtest.py', '--pack-only', rationWarmerQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rationWarmerQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRationWarmerQa') }

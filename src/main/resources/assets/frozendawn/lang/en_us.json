@@ -1100,5 +1100,19 @@
   "hud.frozendawn.emergency_eva.reserve": "Reserve oxygen: %s",
   "tooltip.frozendawn.emergency_eva.service": "ORSA Continuity Protocol // Fifteen-minute equipped service life.",
   "tooltip.frozendawn.emergency_eva.remaining": "Emergency service remaining: %s",
-  "tooltip.frozendawn.emergency_eva.disposable": "Retires on primary EVA verification, service expiry or death."
+  "tooltip.frozendawn.emergency_eva.disposable": "Retires on primary EVA verification, service expiry or death.",
+
+  "item.frozendawn.ration_warmer": "ORSA Ration Warmer",
+  "item.frozendawn.ration_warmer.charges": "Charges: %s / %s",
+  "item.frozendawn.ration_warmer.controls": "Food in offhand. Warmer in main hand. Right-click.",
+  "item.frozendawn.ration_warmer.timing": "10s thaw • 30s warm window • whole stack",
+  "item.frozendawn.ration_warmer.cancel": "Warmer can be put away. Keep the same food in offhand. No refund.",
+  "ration_warmer.progress": "Thawing [%s] %s%%",
+  "message.frozendawn.ration_warmer.no_thaw": "Offhand food must be chilled or frozen. No charge used.",
+  "message.frozendawn.ration_warmer.empty": "Warmer empty. Craft with 1–4 redstone dust to recharge.",
+  "message.frozendawn.ration_warmer.cancelled": "Thaw cancelled. Charge spent.",
+  "message.frozendawn.ration_warmer.done": "Stack thawed. Frost resumes in 30 seconds.",
+  "message.frozendawn.ration_warmer.damaged_done": "Recovered to damaged Frozen food. Permanent damage remains.",
+  "food.frozendawn.warm_window": "Warm window: %ss",
+  "food.frozendawn.permanent_damage": "Permanently damaged. Thawing cannot restore full nutrition."
 }

@@ -12,22 +12,42 @@
     {
       "type": "patchouli:text",
       "title": "Stage 1: \"Chilled\"",
-      "text": "After $(bold)30 seconds$() below -30°C, your food becomes Chilled.$(br2)$(li)Tooltip shows frost status$(li)Still perfectly edible$(li)You're in denial. It's fine.$(br2)This is nature's way of telling you to eat now. You will not listen.$(br2)$(italic)ORSA Tip: If you're saving that steak \"for later,\" later is going to be very disappointing.$()"
+      "text": "At $(bold)600 frost ticks$() below -30°C (about 12 seconds at -90°C), your food becomes Chilled.$(br2)$(li)Tooltip shows frost status$(li)Still perfectly edible$(li)You're in denial. It's fine.$(br2)This is nature's way of telling you to eat now. You will not listen.$(br2)$(italic)ORSA Tip: If you're saving that steak \"for later,\" later is going to be very disappointing.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 2: \"Frozen\"",
-      "text": "After $(bold)2 minutes$(), your food hits Frozen.$(br2)$(li)$(bold)Eating takes 2x longer$(li)$(bold)Restores half hunger$() — ice crystals are not nutrition$(br2)You can still eat it. You'll just hate every second. Like reheated pizza, except it's -60°C and you're crying.$(br2)$(italic)Fun fact: At this temperature, bread has the structural integrity of concrete.$()"
+      "text": "At $(bold)2,400 frost ticks$() (about 48 seconds at -90°C), your food hits Frozen.$(br2)$(li)$(bold)Eating takes 2x longer$(li)$(bold)Restores half hunger$() — ice crystals are not nutrition$(br2)You can still eat it. You'll just hate every second. Like reheated pizza, except it's -60°C and you're crying.$(br2)$(italic)Fun fact: At this temperature, bread has the structural integrity of concrete.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stage 3: \"Frost-Ruined\"",
-      "text": "After $(bold)5 minutes$(), your food is Frost-Ruined.$(br2)$(li)$(bold)Completely inedible$(li)$(bold)Permanently damaged$() — thawing only recovers to Frozen$(br2)This isn't food anymore. It's a cold, crystallized monument to your failure to plan ahead.$(br2)$(italic)Staring at frost-ruined steak for more than 10 seconds may cause existential dread. This is normal.$()"
+      "text": "At $(bold)6,000 frost ticks$() (about 2 minutes at -90°C), your food is Frost-Ruined.$(br2)$(li)$(bold)Completely inedible$(li)$(bold)Permanently damaged$() — thawing only recovers to Frozen$(br2)This isn't food anymore. It's a cold, crystallized monument to your failure to plan ahead.$(br2)$(italic)Staring at frost-ruined steak for more than 10 seconds may cause existential dread. This is normal.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Thawing & Recovery",
-      "text": "Near heat sources (above $(bold)10°C$()), food gradually thaws:$(br2)$(li)$(bold)Mild heat$() (10-30°C): Slow recovery$(li)$(bold)Strong heat$() (30°C+): Fast recovery$(br2)Chilled and Frozen food can fully recover if thawed before Frost-Ruined. $(bold)Once Frost-Ruined, it only ever thaws back to Frozen.$(br2)$(italic)Science! It's like frostbite, but for steak.$()"
+      "text": "Near heat sources (above $(bold)10°C$()), food gradually thaws:$(br2)$(li)$(bold)Mild heat$() (10-30°C): Slow recovery$(li)$(bold)Strong heat$() (30°C+): Fast recovery$(br2)Chilled and Frozen food can fully recover if thawed before Frost-Ruined. $(bold)Once Frost-Ruined, it only ever thaws back to Frozen.$(br2)$(italic)Science! It's like frostbite, but for steak.$()$(br2)Traveling? Use the $(l:getting_started/ration_warmer)ORSA Ration Warmer$(/l) for a ten-second whole-stack thaw and a thirty-second warm window."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Ration Warmer",
+      "text": "Food in your $(bold)offhand.$() Warmer in your $(bold)main hand.$() Right-click once and wait.$(br2)One charge thaws the $(bold)entire stack in 10 seconds$(), regardless of ambient temperature. You can keep moving and put the warmer away. Keep the original food stack in your offhand. Progress appears above the hotbar.$(br2)ORSA advises against using the device as a pillow."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:ration_warmer",
+      "text": "Four iron corners, four copper edges and redstone in the center. One reusable warmer, crafted $(bold)empty.$() No Nether ingredients required."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:ration_warmer_charging",
+      "text": "Craft the existing warmer with $(bold)1–4 redstone dust$() to add up to four charges. Dust can be stacked in one slot or spread across slots. One dust per charge, maximum $(bold)four.$() Only the missing charges are filled; excess dust stays in the grid. Device data is preserved."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Field Service Limits",
+      "text": "Chilled and Frozen food returns to fresh. Frost-Ruined food only recovers to damaged Frozen; permanent damage remains.$(br2)Fresh and frost-resistant food cost no charge. Completed food gets $(bold)30 seconds$() before frost resumes. This device heats food only.$(br2)You can put the warmer away or switch hotbar slots. Keep the original full food stack in your offhand. Removing, replacing or splitting the food, dying, changing dimension or leaving cancels with $(bold)no refund.$()"
     },
     {
       "type": "patchouli:text",

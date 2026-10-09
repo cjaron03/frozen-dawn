@@ -1,0 +1,53 @@
+{
+  "type": "frozendawn:ration_warmer_charging",
+  "category": "equipment",
+  "ingredients": [
+    [
+      {
+        "type": "neoforge:components",
+        "items": "frozendawn:ration_warmer",
+        "components": {
+          "frozendawn:ration_warmer_charges": 0
+        },
+        "strict": false
+      },
+      {
+        "type": "neoforge:components",
+        "items": "frozendawn:ration_warmer",
+        "components": {
+          "frozendawn:ration_warmer_charges": 1
+        },
+        "strict": false
+      },
+      {
+        "type": "neoforge:components",
+        "items": "frozendawn:ration_warmer",
+        "components": {
+          "frozendawn:ration_warmer_charges": 2
+        },
+        "strict": false
+      },
+      {
+        "type": "neoforge:components",
+        "items": "frozendawn:ration_warmer",
+        "components": {
+          "frozendawn:ration_warmer_charges": 3
+        },
+        "strict": false
+      }
+    ],
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:ration_warmer",
+    "count": 1,
+    "components": {
+      "frozendawn:ration_warmer_charges": 2
+    }
+  }
+}
