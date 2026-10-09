@@ -132,8 +132,8 @@ public final class MaeveScribeGameTest {
             t = train(scene, player.getUUID(), t, BeliefStore.RANGED, 4, 0);
             scene.clock(t);
             var first = scene.architect(8, 3);
-            // Seed 0 rolls 0.73, above the first miss's one-in-eight chance.
-            first.getRandom().setSeed(0);
+            // The roll comes from the subject; seed 0 rolls 0.73, above the first miss's one-in-eight chance.
+            player.getRandom().setSeed(0);
             helper.assertFalse(MaeveDirector.designateScribe(first, player), "Two confident beliefs are not enough to write a record");
             helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().anyMatch(line -> line.contains("misses=1/8")),
                     "A refused spawn while Maeve knows something is a miss");

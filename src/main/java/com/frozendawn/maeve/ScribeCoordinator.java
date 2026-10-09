@@ -37,7 +37,8 @@ final class ScribeCoordinator {
         String route = "GATE";
         if (gate.equals("TOO_FEW_CONFIDENT_BELIEFS") && ScribePolicy.known(beliefs)) {
             memory.misses = Math.min(ScribePolicy.PITY_MISSES, memory.misses + 1); data.setDirty();
-            if (!ScribePolicy.pity(memory.misses, actor.getRandom().nextDouble())) {
+            // The subject's random, not the actor's: lab runs seed every new Architect alike, which fixed the roll.
+            if (!ScribePolicy.pity(memory.misses, subject.getRandom().nextDouble())) {
                 decision = "MISS " + memory.misses + "/" + ScribePolicy.PITY_MISSES + " player=" + subject.getUUID();
                 return false;
             }
