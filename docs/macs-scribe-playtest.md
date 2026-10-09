@@ -137,6 +137,10 @@ Diagnosis: the record lists up to five beliefs at 20% or more, so ranged at 40% 
 
 Two bow fights (read: bow 40%), designated `by=PITY_4/8` at 00:15:54, `FLEE` at 12.0 blocks, `DEFEND` at 3.2 blocks, slain with the sword at 00:16:32. Owner: "bow showed up this time!" Screenshot `2026-10-09_00.16.44.png`: the map with six red crosses and two blue pointers. Owner, unprompted: "what are the X's meaning (like architect deaths?) but what about the blue arrow things that uusally repsresent players". Answer: crosses are losses (DANGER_ZONE), pointers are openings Maeve saw you cross, facing outward; the pointer reads as a player marker, so openings are now blue banners.
 
+## Owner quick pass 8 (2026-10-09, MACS Scribe Quick 11, build 4e768c6, merged with feat/maeve-director)
+
+Rolled without calling, designated `by=PITY_1/8 watch=ROUTE@null` at 00:40:22. Owner, unprompted: "i got too close so it ran away". Log: no `WATCH` line, `FLEE` at 8.9 blocks at 00:40:37 while still walking in, `DEFEND` at 3.5 blocks, slain 00:40:52. Screenshots `2026-10-09_00.40.58.png` (map with terrain and no marks: no remembered places) and `2026-10-09_00.41.13.png` (record: blade always, east opening, mends beneath cover perhaps, west opening unsettled). The stand-off itself was not reached, so it remains headless-only. The translate step's chat text still promises marks at the east door and heater, which a ROUTE Scribe has none of.
+
 ## Handoff (2026-10-08)
 
 Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 11` (Quick 10 had a called fight by accident; merged with feat/maeve-director at d497c12); source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of navigation-based walking and flight, the stand-off and the ledge flight. Owner decided (2026-10-08): "flee, but fight back if hit"; a hit within 3.5 blocks now starts defense even with a way out; hits from range still only make it flee (owner: "flee is fine").
