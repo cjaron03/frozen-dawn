@@ -31,7 +31,8 @@ KIT = ','.join([item(0, 'frozendawn:eva_helmet'), item(1, 'frozendawn:eva_chestp
                 item(2, 'frozendawn:eva_leggings'), item(3, 'frozendawn:eva_boots'),
                 item(4, 'minecraft:netherite_sword', 1, '"minecraft:enchantments":{levels:{"minecraft:sharpness":5}}'),
                 item(5, 'minecraft:shield'), item(6, 'minecraft:cooked_beef', 32), item(7, 'minecraft:torch', 32)]
-               + [item(slot, 'minecraft:potion', 1, HEALING) for slot in range(9, 18)])
+               + [item(slot, 'minecraft:potion', 1, HEALING) for slot in range(9, 18)]
+               + [item(18, 'minecraft:bow'), item(19, 'minecraft:arrow', 64)])
 
 
 def tell(text, command=None, color='gold'):
