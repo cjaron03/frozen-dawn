@@ -11,7 +11,11 @@ class ScribeRecordTest {
     private static final String DIM = "minecraft:overworld";
 
     private static MaeveDirector.BeliefSnapshot belief(String pattern, double confidence) {
-        return new MaeveDirector.BeliefSnapshot(pattern, confidence, 3, 1, 10, 10, 0, false, confidence, 10, 10, List.of());
+        return belief(pattern, confidence, 3, 0);
+    }
+
+    private static MaeveDirector.BeliefSnapshot belief(String pattern, double confidence, int evidence, int contradictions) {
+        return new MaeveDirector.BeliefSnapshot(pattern, confidence, evidence, contradictions, 10, 10, 0, false, confidence, 10, 10, List.of());
     }
 
     private static MaeveDirector.WorldPointSnapshot point(String label, BlockPos at, BlockPos inside, String state, double confidence, String dimension) {
@@ -67,13 +71,48 @@ class ScribeRecordTest {
 
     @Test
     void wrongBeliefsAreWrittenExactlyAsHeld() {
-        // Four witnessed supports and one contradiction: 0.80 - 0.35 = 0.45, written hedged rather than dropped.
+        // Two witnessed supports, never contradicted: 0.40, written hedged rather than dropped.
+        var store = trained(BeliefStore.RECOVERY, 2, 0);
+        var note = ScribeRecordWriter.notes(store.snapshot(PLAYER, 10_000)).getFirst();
+        assertEquals("HEDGED", note.certainty());
+        assertEquals("Mor vel-thaeven…", note.thaeven());
+    }
+
+    @Test
+    void splitBeliefsAreInconclusiveAndUnseenOnesAreNeverWritten() {
+        // Four witnessed supports and one contradiction: 0.80 - 0.35 = 0.45, seen both ways.
         var store = trained(BeliefStore.RECOVERY, 4, 1);
         var held = store.snapshot(PLAYER, 10_000).getFirst();
         assertEquals(.45, held.confidence(), 1e-9);
         var note = ScribeRecordWriter.notes(store.snapshot(PLAYER, 10_000)).getFirst();
-        assertEquals("HEDGED", note.certainty());
-        assertEquals("Mor vel-thaeven…", note.thaeven());
+        assertEquals("INCONCLUSIVE", note.certainty());
+        assertEquals("Mor vel-thaeven. Liss.", note.thaeven());
+        // An even split falls below the floor but is still something she saw.
+        var even = ScribeRecordWriter.notes(trained("RETREAT_BEARING_E", 1, 1).snapshot(PLAYER, 10_000));
+        assertEquals(List.of("INCONCLUSIVE"), even.stream().map(MaeveDirector.ScribeNote::certainty).toList());
+        assertEquals("Vel-sorr aren thaeven. Liss.", even.getFirst().thaeven());
+        // Contradictions outnumbering supports are settled against, not split; nothing unseen is ever written.
+        assertTrue(ScribeRecordWriter.notes(trained("RETREAT_BEARING_W", 1, 3).snapshot(PLAYER, 10_000)).isEmpty());
+        assertTrue(ScribeRecordWriter.notes(List.of(belief("RETREAT_BEARING_N", 0, 0, 0))).isEmpty());
+        // A confident belief that was once contradicted is not split.
+        assertEquals("FLAT", ScribeRecordWriter.note(belief(BeliefStore.SWORD, .80, 6, 1)).certainty());
+    }
+
+    @Test
+    void badLuckProtectionRisesEachMissAndIsCertainByTheEighth() {
+        assertEquals(5 * 24000L, ScribePolicy.COOLDOWN, "Owner decision 2026-10-08: five in-game days");
+        assertFalse(ScribePolicy.known(List.of()), "A miss needs Maeve to know something");
+        assertFalse(ScribePolicy.known(List.of(belief(BeliefStore.SWORD, .19))));
+        assertTrue(ScribePolicy.known(List.of(belief(BeliefStore.SWORD, .20))));
+        assertTrue(ScribePolicy.pity(1, .124) && !ScribePolicy.pity(1, .125), "The first miss is one in eight");
+        assertTrue(ScribePolicy.pity(4, .499) && !ScribePolicy.pity(4, .5));
+        assertTrue(ScribePolicy.pity(ScribePolicy.PITY_MISSES, .9999), "The eighth is guaranteed");
+        assertFalse(ScribePolicy.pity(0, 0));
+        var memory = new ScribeMemory(); memory.misses = 6;
+        assertEquals(6, ScribeMemory.load(memory.save()).misses, "Misses survive a reload");
+        var tag = memory.save(); tag.putInt("misses", 99);
+        assertEquals(ScribePolicy.PITY_MISSES, ScribeMemory.load(tag).misses);
+        assertEquals(0, ScribeMemory.load(new net.minecraft.nbt.CompoundTag()).misses, "Older saves start with no misses");
     }
 
     @Test

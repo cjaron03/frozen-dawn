@@ -37,7 +37,7 @@ Flat ground with a stone roof (394..406, center lapis) and an open east side. A 
 
 - Wrong-stage clicks print status and the current step's links; nothing advances or rebuilds.
 - `/fd maeve confidence <pattern>` is read-only: it prints one belief and returns its confidence as a whole percent for functions.
-- After a Scribe ends, the next needs 3 in-game days; `setup` is the quick way to try again.
+- After a Scribe ends, the next needs 5 in-game days; `setup` is the quick way to try again.
 - The await uses mid phase 6 on purpose: early phase 6 snowfall during long sprints buries the arena in full-block drifts, and the Scribe's no-dig walk cannot cross them (an open design question, below).
 
 ## Headless runs (2026-10-07/08, agent, not a visual pass)

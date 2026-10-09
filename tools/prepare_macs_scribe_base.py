@@ -83,7 +83,7 @@ PROMPTS = {
     39: tell('An ordinary Architect spawned after the gate was met. Deal with it as usual, then send the dump.', '/fd maeve dump', 'red'),
     40: tell('A Scribe has arrived. Look for white eyes and a slate in its hand. It keeps its distance and stares. '
              'Walk toward it: it should run and never attack. Then chase it down and kill it with the sword.', None, 'green'),
-    69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 3 in-game days.', '/fd maeve dump', 'red'),
+    69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red'),
     70: tell('It died. Pick up the record and the map. Read the record without a translator, then:', None, 'green') + '\n'
         + tell('NEXT', f'/function {NS}:translate', 'green'),
     75: tell('Read the record again with the translator (English over each line, no numbers). Hold the map: '

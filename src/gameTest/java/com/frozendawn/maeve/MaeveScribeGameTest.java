@@ -132,9 +132,15 @@ public final class MaeveScribeGameTest {
             t = train(scene, player.getUUID(), t, BeliefStore.RANGED, 4, 0);
             scene.clock(t);
             var first = scene.architect(8, 3);
+            // Seed 0 rolls 0.73, above the first miss's one-in-eight chance.
+            first.getRandom().setSeed(0);
             helper.assertFalse(MaeveDirector.designateScribe(first, player), "Two confident beliefs are not enough to write a record");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().anyMatch(line -> line.contains("misses=1/8")),
+                    "A refused spawn while Maeve knows something is a miss");
             t = train(scene, player.getUUID(), t, BeliefStore.RECOVERY, 4, 0); scene.clock(t);
             helper.assertTrue(MaeveDirector.designateScribe(first, player), "Three confident beliefs open the gate");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().anyMatch(line -> line.contains("by=GATE") && line.contains("misses=0/8")),
+                    "Any designation clears the misses");
             first.becomeScribe();
             helper.assertTrue(first.isScribe() && first.getMainHandItem().is(ModItems.SCRIBE_RECORD.get()), "The Scribe holds its slate");
             var order = MaeveDirector.scribeOrder(first);
@@ -166,6 +172,43 @@ public final class MaeveScribeGameTest {
             helper.assertFalse(MaeveDirector.designateScribe(third, player), "Debug reversal starts empty and cannot reopen the gate");
             helper.assertTrue(MaeveDirector.diagnostics(scene.server, player.getUUID()).stream().noneMatch(line -> line.contains(second.getUUID().toString())),
                     "ERASED leaves no trace of the former Scribe in diagnostics");
+        });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeBadLuckProtectionDesignatesByTheEighthMiss(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 202, scene -> {
+            var player = scene.player("scribe_unlucky", 3, 3); UUID id = player.getUUID();
+            var stranger = scene.player("scribe_stranger", 3, 5);
+            MaeveDirector.snapshot(scene.server, id);
+            helper.assertFalse(MaeveDirector.designateScribe(scene.architect(8, 3), stranger), "Nothing known, no Scribe");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("TOO_FEW_CONFIDENT_BELIEFS")
+                    && line.contains("misses=0/8")), "A refusal while Maeve knows nothing is not a miss");
+            // One confident belief, as for a player whose other habits keep changing.
+            long t = train(scene, id, scene.gameTime, BeliefStore.SWORD, 4, 0);
+            t = train(scene, id, t, "RETREAT_BEARING_E", 2, 2);
+            scene.clock(t);
+            ArchitectEntity scribe = null; int spawns = 0;
+            while (scribe == null && spawns < ScribePolicy.PITY_MISSES) {
+                var actor = scene.architect(8, 3); spawns++;
+                if (MaeveDirector.designateScribe(actor, player)) scribe = actor;
+                else helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("MISS ")),
+                        "Each refused natural spawn is counted");
+            }
+            helper.assertTrue(scribe != null, "The eighth miss is guaranteed");
+            final int at = spawns;
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("by=PITY_" + at + "/8")
+                    && line.contains("misses=0/8")), "Designated by bad luck protection, and the count resets");
+            scribe.becomeScribe(); scribe.kill();
+            var record = drops(scene, scribe).stream().filter(s -> s.is(ModItems.SCRIBE_RECORD.get())).findFirst().orElse(null);
+            var contents = record == null ? null : record.get(ModDataComponents.SCRIBE_RECORD.get());
+            helper.assertTrue(contents != null && contents.lines().stream().map(ScribeRecordContents.Line::certainty).toList()
+                    .equals(List.of("FLAT", "INCONCLUSIVE")), "The unsettled exit is marked inconclusive: " + contents);
+            MaeveDirector.scribeEnded(scribe, "QA_ENDED");
+            var next = scene.architect(8, 5);
+            helper.assertFalse(MaeveDirector.designateScribe(next, player), "Misses wait for the cooldown");
+            helper.assertTrue(MaeveDirector.diagnostics(scene.server, id).stream().anyMatch(line -> line.contains("COOLDOWN") && line.contains("misses=0/8")),
+                    "The cooldown counts no misses");
         });
     }
 
@@ -204,8 +247,9 @@ public final class MaeveScribeGameTest {
                     BeliefStore.SWORD, BeliefStore.PURSUIT, "RETREAT_BEARING_E", BeliefStore.RANGED, BeliefStore.RECOVERY)),
                     "At most five beliefs, highest confidence first: " + contents);
             helper.assertTrue(contents.lines().stream().map(ScribeRecordContents.Line::certainty).toList()
-                    .equals(List.of("ALWAYS", "FLAT", "FLAT", "HEDGED", "HEDGED")), "Confidence is phrasing");
-            helper.assertTrue(contents.lines().get(4).thaeven().equals("Mor vel-thaeven…"), "The contradicted belief is written exactly as held");
+                    .equals(List.of("ALWAYS", "FLAT", "FLAT", "HEDGED", "INCONCLUSIVE")), "Confidence is phrasing");
+            helper.assertTrue(contents.lines().get(3).thaeven().equals("Eth orren…"), "The weak belief is written exactly as held");
+            helper.assertTrue(contents.lines().get(4).thaeven().equals("Mor vel-thaeven. Liss."), "The belief seen both ways is unsettled");
             helper.assertTrue(contents.lines().get(2).thaeven().equals("Vel-sorr aren thaeven."), "Verb last, no tense");
             helper.assertFalse(contents.toString().contains(player.getGameProfile().getName()), "Vel-thae, never the username");
             var map = drops.stream().filter(s -> s.is(Items.FILLED_MAP)).findFirst().orElse(null);

@@ -20,14 +20,15 @@ final class ScribeRecordWriter {
     private ScribeRecordWriter() { }
 
     static List<MaeveDirector.ScribeNote> notes(List<MaeveDirector.BeliefSnapshot> beliefs) {
-        return beliefs.stream().filter(b -> b.confidence() >= ScribePolicy.FLOOR)
+        // Split beliefs are written even below the floor: seen both ways is something she knows. Unseen ones never are.
+        return beliefs.stream().filter(b -> b.confidence() >= ScribePolicy.FLOOR || ScribePolicy.split(b))
                 .sorted(Comparator.comparingDouble(MaeveDirector.BeliefSnapshot::confidence).reversed()
                         .thenComparing(MaeveDirector.BeliefSnapshot::pattern))
                 .map(ScribeRecordWriter::note).filter(Objects::nonNull).limit(ScribePolicy.MAX_NOTES).toList();
     }
 
     static MaeveDirector.ScribeNote note(MaeveDirector.BeliefSnapshot belief) {
-        String pattern = belief.pattern(), certainty = ScribePolicy.certainty(belief.confidence());
+        String pattern = belief.pattern(), certainty = ScribePolicy.certainty(belief);
         var exit = ExitPrediction.parse(pattern);
         if (exit != null) {
             String from = quarter(exit.from()), to = quarter(exit.to());
@@ -78,12 +79,13 @@ final class ScribeRecordWriter {
         return new MaeveDirector.ScribeNote(pattern, thaeven(head, verb, certainty), KEY + kind, arguments, certainty);
     }
 
-    /** Verb last. Certainty repeats the verb; uncertainty leaves the transmission open. */
+    /** Verb last. Certainty repeats the verb; uncertainty leaves the transmission open; a split belief is marked liss (proposed). */
     static String thaeven(String head, String verb, String certainty) {
         String line = head + " " + verb;
         return switch (certainty) {
             case "ALWAYS" -> line + ". " + Character.toUpperCase(verb.charAt(0)) + verb.substring(1) + ".";
             case "HEDGED" -> line + "…";
+            case "INCONCLUSIVE" -> line + ". Liss.";
             default -> line + ".";
         };
     }

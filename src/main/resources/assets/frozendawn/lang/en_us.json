@@ -1062,6 +1062,7 @@
   "record.frozendawn.scribe.direction.west": "west",
   "record.frozendawn.scribe.certainty.always": "Always.",
   "record.frozendawn.scribe.certainty.hedged": "Perhaps.",
+  "record.frozendawn.scribe.certainty.inconclusive": "Unsettled.",
   "item.frozendawn.emergency_eva_helmet": "ORSA Emergency EVA Helmet",
   "item.frozendawn.emergency_eva_chestplate": "ORSA Emergency EVA Chestplate",
   "item.frozendawn.emergency_eva_leggings": "ORSA Emergency EVA Leggings",

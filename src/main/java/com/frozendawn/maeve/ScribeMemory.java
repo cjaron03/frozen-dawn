@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
-/** The single §9.4b claim and its cooldown. Tactical state: lives in the erasable save and is wiped on ERASED. */
+/** The single §9.4b claim, its cooldown and the miss count. Tactical state: lives in the erasable save and is wiped on ERASED. */
 final class ScribeMemory {
     record Claim(UUID scribe, UUID subject, String dimension, BlockPos watch, String watchLabel, long designatedAt) {
         Claim { watch = watch == null ? null : watch.immutable(); }
@@ -13,6 +13,8 @@ final class ScribeMemory {
     }
     Claim active;
     long lastEnded = -1;
+    /** Natural spawns refused since the last Scribe while Maeve knew something; reset by every designation. */
+    int misses;
 
     /** A lost or unloaded Scribe still ends at its lifetime, and the cooldown counts from then. */
     boolean expire(long now) {
@@ -24,7 +26,7 @@ final class ScribeMemory {
     void end(long now) { active = null; lastEnded = now; }
 
     CompoundTag save() {
-        var tag = new CompoundTag(); tag.putLong("lastEnded", lastEnded);
+        var tag = new CompoundTag(); tag.putLong("lastEnded", lastEnded); tag.putInt("misses", misses);
         if (active != null) {
             var claim = new CompoundTag(); claim.putUUID("scribe", active.scribe()); claim.putUUID("subject", active.subject());
             claim.putString("dimension", active.dimension()); claim.putString("watchLabel", active.watchLabel());
@@ -37,6 +39,7 @@ final class ScribeMemory {
     static ScribeMemory load(CompoundTag tag) {
         var memory = new ScribeMemory();
         memory.lastEnded = tag.contains("lastEnded") ? Math.max(-1, tag.getLong("lastEnded")) : -1;
+        memory.misses = Math.clamp(tag.getInt("misses"), 0, ScribePolicy.PITY_MISSES);
         var claim = tag.getCompound("active");
         if (claim.hasUUID("scribe") && claim.hasUUID("subject") && ResourceLocation.tryParse(claim.getString("dimension")) != null)
             memory.active = new Claim(claim.getUUID("scribe"), claim.getUUID("subject"), claim.getString("dimension"),

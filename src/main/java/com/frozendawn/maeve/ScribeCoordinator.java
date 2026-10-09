@@ -32,8 +32,19 @@ final class ScribeCoordinator {
                 || subject.isCreative() || subject.isSpectator() || subject.level() != actor.level()) return false;
         var memory = data.scribe(); long now = now();
         if (memory.expire(now)) data.setDirty();
-        String gate = ScribePolicy.gate(data.lifecycle(), data.store().snapshot(subject.getUUID(), now), memory.active != null, memory.lastEnded, now);
+        var beliefs = data.store().snapshot(subject.getUUID(), now);
+        String gate = ScribePolicy.gate(data.lifecycle(), beliefs, memory.active != null, memory.lastEnded, now);
+        String route = "GATE";
+        if (gate.equals("TOO_FEW_CONFIDENT_BELIEFS") && ScribePolicy.known(beliefs)) {
+            memory.misses = Math.min(ScribePolicy.PITY_MISSES, memory.misses + 1); data.setDirty();
+            if (!ScribePolicy.pity(memory.misses, actor.getRandom().nextDouble())) {
+                decision = "MISS " + memory.misses + "/" + ScribePolicy.PITY_MISSES + " player=" + subject.getUUID();
+                return false;
+            }
+            gate = "ELIGIBLE"; route = "PITY_" + memory.misses + "/" + ScribePolicy.PITY_MISSES;
+        }
         if (!gate.equals("ELIGIBLE")) { decision = gate + " player=" + subject.getUUID(); return false; }
+        memory.misses = 0;
         String dimension = actor.level().dimension().location().toString();
         var world = data.store().world(subject.getUUID());
         BlockPos shelter = world == null ? null : world.center(dimension);
@@ -45,7 +56,7 @@ final class ScribeCoordinator {
         String label = opening != null ? "OPENING" : shelter != null ? "SHELTER" : "ROUTE";
         memory.active = new ScribeMemory.Claim(actor.getUUID(), subject.getUUID(), dimension, watch, label, now);
         actor.getPersistentData().putBoolean(TAG, true);
-        decision = "DESIGNATED scribe=" + actor.getUUID() + " player=" + subject.getUUID() + " watch=" + label + "@" + watch;
+        decision = "DESIGNATED scribe=" + actor.getUUID() + " player=" + subject.getUUID() + " by=" + route + " watch=" + label + "@" + watch;
         FrozenDawn.LOGGER.info("[MACS Scribe] {}", decision); data.setDirty();
         return true;
     }
@@ -85,7 +96,8 @@ final class ScribeCoordinator {
         if (memory == null) return List.of("SCRIBE: unavailable (" + data.lifecycle() + ")");
         long now = now(); var claim = memory.active;
         long cooldown = memory.lastEnded < 0 ? 0 : Math.max(0, memory.lastEnded + ScribePolicy.COOLDOWN - now);
-        return List.of("SCRIBE: decision=" + decision + " cooldownRemaining=" + cooldown + " gate=" + ScribePolicy.GATE_BELIEFS + "x>=" + ScribePolicy.CONFIDENT,
+        return List.of("SCRIBE: decision=" + decision + " cooldownRemaining=" + cooldown + " gate=" + ScribePolicy.GATE_BELIEFS + "x>=" + ScribePolicy.CONFIDENT
+                        + " misses=" + memory.misses + "/" + ScribePolicy.PITY_MISSES,
                 claim == null ? "SCRIBE active: none" : "SCRIBE active: " + claim.scribe() + " player=" + claim.subject() + " watch=" + claim.watchLabel()
                         + "@" + claim.watch() + " " + claim.dimension() + " expiresIn=" + Math.max(0, claim.expiresAt() - now));
     }

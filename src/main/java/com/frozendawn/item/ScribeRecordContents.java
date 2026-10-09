@@ -41,6 +41,7 @@ public record ScribeRecordContents(List<Line> lines) {
             return switch (certainty) {
                 case "ALWAYS" -> line.append(" ").append(Component.translatable("record.frozendawn.scribe.certainty.always"));
                 case "HEDGED" -> line.append(" ").append(Component.translatable("record.frozendawn.scribe.certainty.hedged"));
+                case "INCONCLUSIVE" -> line.append(" ").append(Component.translatable("record.frozendawn.scribe.certainty.inconclusive"));
                 default -> line;
             };
         }
