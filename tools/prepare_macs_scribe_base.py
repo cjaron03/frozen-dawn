@@ -88,8 +88,13 @@ PROMPTS = {
              '/fd maeve dump', 'red'),
     40: tell('A Scribe has arrived. Look for white eyes and a slate in its hand. It keeps its distance and stares. '
              'Walk toward it: it should run and never attack. Then chase it down and kill it with the sword.', None, 'green'),
+    31: tell('Quick mode. Maeve holds a fixed read on you: sword (always), east exit, recovery (perhaps), west exit (unsettled), '
+             'ranged never seen. Only two are confident, so each roll is bad luck protection: miss n of 8 gives n/8, the 8th is '
+             'always a Scribe. A miss never enters the world. Her map has no marks here; she has not seen this cabin.', None, 'aqua')
+        + '\n' + tell('ROLL A NATURAL ARCHITECT', f'/function {NS}:roll', 'green'),
     69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red') + '\n'
-        + tell('Wait for the next Scribe (stop any /tick sprint when it arrives, or its watch passes in seconds).', f'/function {NS}:wait', 'aqua'),
+        + tell('Wait for the next Scribe (stop any /tick sprint when it arrives, or its watch passes in seconds).', f'/function {NS}:wait', 'aqua')
+        + f'\nexecute if score #quick {OBJ} matches 1 run ' + tell('AGAIN: clear the 5-day cooldown and roll again.', f'/function {NS}:again', 'green'),
     70: tell('It died. Pick up the record and the map. Read the record without a translator, then:', None, 'green') + '\n'
         + tell('NEXT', f'/function {NS}:translate', 'green'),
     75: tell('Read the record again with the translator (English over each line, no numbers). Hold the map: '
@@ -97,7 +102,8 @@ PROMPTS = {
         + tell('ERASE MAEVE', f'/function {NS}:erase', 'green'),
     80: tell('Maeve is erased. The record and the map must read exactly as before. Then:', None, 'aqua') + '\n'
         + tell('RESTORE AN EMPTY MAEVE', f'/function {NS}:restore', 'green'),
-    90: tell('Scribe Base check complete.', None, 'aqua'),
+    90: tell('Scribe Base check complete.', None, 'aqua')
+        + f'\nexecute if score #quick {OBJ} matches 1 run ' + tell('AGAIN: clear the 5-day cooldown and roll again.', f'/function {NS}:again', 'green'),
 }
 
 SCRIPTS = {
@@ -137,7 +143,28 @@ fill ~-4 ~3 ~-4 ~4 ~3 ~4 minecraft:spruce_planks
 fill ~-16 ~-2 ~-16 ~16 ~18 ~16 minecraft:air replace #minecraft:leaves
 scoreboard players set #trimmed {OBJ} 1''',
     'setup': f'''function {NS}:load
-tag @s add msb
+scoreboard players set #quick {OBJ} 0
+function {NS}:prepare
+''' + prompt(10),
+    # Skips the practice rounds: a fixed belief set and a roll link, for checking the Scribe by eye (lab client only).
+    'quick': f'''function {NS}:load
+scoreboard players set #quick {OBJ} 1
+function {NS}:prepare
+effect give @s minecraft:resistance infinite 4 true
+fd maeve scribe seed
+scoreboard players set #stage {OBJ} 30
+tag @e[type=frozendawn:architect] add msb_noted
+''' + prompt(31),
+    'roll': guard(30, 39) + f'''
+execute at @e[type=marker,tag=msb_base,limit=1] positioned ~50 ~ ~ positioned over motion_blocking_no_leaves run fd maeve scribe roll''',
+    # After a Scribe leaves the beliefs stand; after RESTORE Maeve is empty and is seeded again.
+    'again': guard(69, 90) + f'''
+execute if score #stage {OBJ} matches 90 run fd maeve scribe seed
+fd maeve scribe clear-cooldown
+scoreboard players set #stage {OBJ} 30
+tag @e[type=frozendawn:architect] add msb_noted
+''' + prompt(31),
+    'prepare': f'''tag @s add msb
 fd postmaeve set-erased
 fd postmaeve reset-erased confirm
 fd world preset default
@@ -152,7 +179,7 @@ clear @s
 scoreboard players set #rounds {OBJ} 0
 scoreboard players set @s {OBJ}_seen 41
 scoreboard players set #stage {OBJ} 10
-''' + tell('MACS Scribe Base: Maeve is awake with an empty memory.', None, 'aqua') + '\n' + prompt(10),
+''' + tell('MACS Scribe Base: Maeve is awake with an empty memory.', None, 'aqua'),
     # An ordinary Architect, never a Scribe: designation exists only on the natural spawn path. It comes from the
     # east so the fight stays on the door side, away from whatever shade the terrain leaves elsewhere.
     'call': guard(10, 22) + f'''
@@ -195,7 +222,8 @@ fd postmaeve reset-erased confirm
     'prompt': '\n'.join(f'execute if score #stage {OBJ} matches {stage} run {prompt(stage)}' for stage in PROMPTS),
     'rejoin': f'''scoreboard players set @s {OBJ}_seen 41
 execute if entity @s[tag=msb] run function {NS}:prompt
-execute unless entity @s[tag=msb] run ''' + tell('MACS Scribe Base: click to begin (wakes an empty Maeve, builds a cabin at spawn).', f'/function {NS}:setup', 'aqua'),
+execute unless entity @s[tag=msb] run ''' + tell('MACS Scribe Base: click to begin (wakes an empty Maeve, builds a cabin at spawn).', f'/function {NS}:setup', 'aqua') + '''
+execute unless entity @s[tag=msb] run ''' + tell('Or QUICK: fixed beliefs and a roll link, no practice rounds (lab client only).', f'/function {NS}:quick', 'green'),
 }
 SCRIPTS.update({f'prompt_{stage}': text for stage, text in PROMPTS.items()})
 SCRIPTS['tick'] = f'''execute if score #stage {OBJ} matches 10.. unless score #trimmed {OBJ} matches 1 at @e[type=marker,tag=msb_base,limit=1] run function {NS}:trim
@@ -232,6 +260,16 @@ def splice_string(raw, key, value):
     return raw[:at] + len(value).to_bytes(2, 'big') + value + raw[at + 2 + length:]
 
 
+def at_least_a_day(raw):
+    """Quick mode seeds about half a day of past evidence, which a brand-new world cannot hold."""
+    marker = b'\x04\x00\x04Time'
+    if raw.count(marker) != 1:
+        raise SystemExit('Expected one Time in the closed source world')
+    at = raw.index(marker) + len(marker)
+    time = max(int.from_bytes(raw[at:at + 8], 'big', signed=True), 24000)
+    return raw[:at] + time.to_bytes(8, 'big', signed=True) + raw[at + 8:]
+
+
 def enable_commands(raw):
     marker = b'\x01\x00\x0dallowCommands'
     if raw.count(marker) != 1:
@@ -248,7 +286,7 @@ def prepare(source, destination):
     raw = gzip.decompress((source / 'level.dat').read_bytes())
     if b'minecraft:noise' not in raw:
         raise SystemExit('Source must be a normally generated world')
-    raw = enable_commands(splice_string(raw, b'LevelName', TITLE))
+    raw = at_least_a_day(enable_commands(splice_string(raw, b'LevelName', TITLE)))
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns('session.lock'))
     (destination / 'level.dat').write_bytes(gzip.compress(raw))
     if (destination / 'datapacks').exists():

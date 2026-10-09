@@ -1,6 +1,9 @@
 package com.frozendawn.command;
 
+import com.frozendawn.entity.ArchitectEntity;
+import com.frozendawn.init.ModEntities;
 import com.frozendawn.maeve.MaeveDirector;
+import com.frozendawn.maeve.ScribeLab;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -13,15 +16,22 @@ import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MobSpawnType;
 
-/** An operator can inspect evidence, but cannot inject beliefs or restore erased state. */
+/** An operator can inspect evidence, but cannot inject beliefs or restore erased state. Only the lab client adds {@code scribe}. */
 final class MaeveDebugCommand {
     private MaeveDebugCommand() { }
 
     static LiteralArgumentBuilder<CommandSourceStack> commands() {
-        return Commands.literal("maeve").requires(source -> source.hasPermission(2))
+        var root = Commands.literal("maeve").requires(source -> source.hasPermission(2));
+        if (ScribeLab.ENABLED) root.then(Commands.literal("scribe")
+                .then(Commands.literal("seed").executes(c -> lab(c.getSource(), ScribeLab.seed(c.getSource().getPlayerOrException()))))
+                .then(Commands.literal("clear-cooldown").executes(c -> lab(c.getSource(), ScribeLab.clearCooldown(c.getSource().getServer()))))
+                .then(Commands.literal("roll").executes(c -> roll(c.getSource().getPlayerOrException(), BlockPos.containing(c.getSource().getPosition())))));
+        return root
                 .then(Commands.literal("status").executes(c -> display(c.getSource(), null, null)))
                 .then(Commands.literal("dump").executes(c -> inspect(c.getSource(), null, null))
                         .then(Commands.argument("subject", StringArgumentType.word())
@@ -43,6 +53,31 @@ final class MaeveDebugCommand {
                                         .suggests(MaeveDebugCommand::subjects)
                                         .executes(c -> inspect(c.getSource(), StringArgumentType.getString(c, "subject"),
                                                 StringArgumentType.getString(c, "pattern"))))));
+    }
+
+    /** Function output is silent, so lab results go straight to the player. */
+    private static int lab(CommandSourceStack source, String result) {
+        if (source.getEntity() instanceof ServerPlayer player) player.sendSystemMessage(Component.literal(result));
+        else source.sendSuccess(() -> Component.literal(result), false);
+        return 1;
+    }
+
+    /** One natural Architect spawn decided here and now, as ArchitectSpawner would; a refused one never enters the world. */
+    private static int roll(ServerPlayer player, BlockPos at) {
+        var level = player.serverLevel();
+        ArchitectEntity architect = ModEntities.ARCHITECT.get().create(level, null, at, MobSpawnType.NATURAL, true, false);
+        if (architect == null) return lab(player.createCommandSourceStack(), "No Architect could be made there.");
+        architect.preSeedObservation(level, player);
+        boolean scribe = MaeveDirector.designateScribe(architect, player);
+        if (scribe) {
+            architect.becomeScribe();
+            architect.armSpawnObserveCue(player);
+            if (level.addFreshEntity(architect)) MaeveDirector.observePawn(architect);
+            else MaeveDirector.scribeEnded(architect, "SPAWN_REJECTED");
+        } else architect.discard();
+        String decision = MaeveDirector.diagnostics(player.server, player.getUUID()).stream()
+                .filter(line -> line.startsWith("SCRIBE: ")).findFirst().orElse("SCRIBE: no decision");
+        return lab(player.createCommandSourceStack(), (scribe ? "Roll: Scribe. " : "Roll: ordinary, not spawned. ") + decision);
     }
 
     private static CompletableFuture<Suggestions> subjects(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {

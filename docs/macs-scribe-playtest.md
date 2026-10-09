@@ -88,3 +88,14 @@ Gate reached (2026-10-08 lab log, client clock): habits readout at 00:03:10; nat
 ## Scribe Base luck pass (2026-10-08)
 
 For bad luck protection and inconclusive lines (owner decision 2026-10-08). A fresh `MACS Scribe Luck` save from the same pack, played from a separate default-config play checkout so the SSD clone's Film config is not rewritten by `setup`. At the readout below three, a new link (`wait`, stage 22 only) skips to await. Ordinary natural Architects there are misses; `/fd maeve dump` shows `misses=n/8` and the Scribe's `by=PITY_n/8`. Leaving by the east door one round and another way the next splits the exit belief, which the record writes as "Unsettled."
+
+Owner observation, 2026-10-08: a natural Architect became a Scribe on the first miss (`by=PITY_1/8`) while a `/tick sprint` was running, so its two-minute watch passed in about 12 real seconds and it left. Waiting out the cooldown by sprint was slow and drew constant late-phase mobs. Two findings: designation skips creative players entirely (no miss is counted), and a living ordinary Architect within 96 blocks blocks every natural spawn. The pack now offers the wait link again after a Scribe leaves, and marks every ordinary Architect with glowing and a chat line while it waits.
+
+## Scribe Base quick mode (lab client only)
+
+For checking the Scribe by eye without days of play. The lab client and the GameTest server set `-Dfrozendawn.labCommands=true`, which adds `/fd maeve scribe seed | roll | clear-cooldown`; production never registers them.
+
+- **QUICK** (offered beside the begin link) wakes an empty Maeve, builds the cabin, gives Resistance, and seeds a fixed belief set through the real store: sword 5/0 (Always), east exit 4/0 (plain), recovery 2/0 (Perhaps), west exit 2/2 (Unsettled), ranged 0/3 (never written). Two are confident, so every roll goes to bad luck protection.
+- **ROLL** decides one natural Architect spawn 50 blocks east of the cabin through the same designation call as `ArchitectSpawner`. A miss prints `misses=n/8` and never enters the world; a Scribe spawns and the pack announces it. The real cooldown applies.
+- **AGAIN** (after it leaves, or after RESTORE) clears the cooldown only; after RESTORE it seeds again.
+- Limits: this proves the watch, flee, writing pose and sound, record lines and the erase invariants. It does not prove natural timing (GameTests and the luck pass do), and the map has no marks because Maeve has not observed this cabin.

@@ -96,6 +96,7 @@ neoForge {
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
             systemProperty 'frozendawn.debug.architectSeed', '1'
+            systemProperty 'frozendawn.labCommands', 'true'
             if (labQuickPlayWorld) {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
             }
@@ -146,6 +147,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Lab-only commands must parse where the lab packs are checked.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', architectReports.get().asFile.absolutePath
             // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
             // saved data from one gate run leak into the next, which makes any test that touches
