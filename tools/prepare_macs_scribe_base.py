@@ -19,6 +19,12 @@ GAP = 640  # quiet ticks between encounters, so each round is its own encounter
 HABITS = (('#sword', 'PLAYER_PREFERS_SWORD', 'sword'),
           ('#cover', 'PLAYER_USES_RECOVERY_UNDER_COVER', 'drinks under cover'),
           ('#east', 'RETREAT_BEARING_E', 'leaves east'))
+# Quick mode reads everything a fight can move, so trained beliefs show next to the seeded ones.
+QUICK_READ = (('#sword', 'PLAYER_PREFERS_SWORD', 'sword'), ('#bow', 'PLAYER_PREFERS_RANGED', 'bow'),
+              ('#cover', 'PLAYER_USES_RECOVERY_UNDER_COVER', 'drinks under cover'),
+              ('#chase', 'PLAYER_PURSUES_WITHDRAWING_ARCHITECT', 'chases'),
+              ('#north', 'RETREAT_BEARING_N', 'leaves north'), ('#east', 'RETREAT_BEARING_E', 'east'),
+              ('#south', 'RETREAT_BEARING_S', 'south'), ('#west', 'RETREAT_BEARING_W', 'west'))
 
 
 def item(slot, name, count=1, components=None):
@@ -54,14 +60,14 @@ def prompt(stage):
     return f'function {NS}:prompt_{stage}'
 
 
-def habits():
+def habits(read=HABITS):
     """Function output is silent, so each confidence comes back as a command result (whole percent, rounded down)."""
     parts = [{'text': "Maeve's read on you: ", 'color': 'aqua'}]
-    for i, (var, _, label) in enumerate(HABITS):
+    for i, (var, _, label) in enumerate(read):
         parts += [{'text': ('' if i == 0 else ', ') + label + ' '},
                   {'score': {'name': var, 'objective': OBJ}, 'color': 'yellow'}, {'text': '%'}]
     return '\n'.join(
-        [f'execute store result score {var} {OBJ} run fd maeve confidence {pattern}' for var, pattern, _ in HABITS]
+        [f'execute store result score {var} {OBJ} run fd maeve confidence {pattern}' for var, pattern, _ in read]
         + [f'scoreboard players set #short {OBJ} 0']
         + [f'execute unless score {var} {OBJ} matches 75.. run scoreboard players add #short {OBJ} 1' for var, _, _ in HABITS]
         + ['tellraw @s ' + json.dumps(parts)])
@@ -92,7 +98,11 @@ PROMPTS = {
     31: tell('Quick mode. Maeve holds a fixed read on you: sword (always), east exit, recovery (perhaps), west exit (unsettled), '
              'ranged never seen. Only two are confident, so each roll is bad luck protection: miss n of 8 gives n/8, the 8th is '
              'always a Scribe. A miss never enters the world. Her map has no marks here; she has not seen this cabin.', None, 'aqua')
-        + '\n' + tell('ROLL A NATURAL ARCHITECT', f'/function {NS}:roll', 'green'),
+        + '\n' + tell('ROLL A NATURAL ARCHITECT', f'/function {NS}:roll', 'green')
+        + '\n' + tell('Or CALL an ordinary Architect and fight it the way you want her to remember.', f'/function {NS}:qcall', 'aqua'),
+    32: tell('An ordinary Architect is coming from the east; it is never a Scribe. While it can see you, fight it the way you want '
+             'Maeve to remember: sword or bow, drink inside or out, leave by any side. Kill it to end the encounter.'),
+    33: f'title @s actionbar {{"text":"Quiet before Maeve settles her read...","color":"gray"}}',
     69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red') + '\n'
         + tell('Wait for the next Scribe (stop any /tick sprint when it arrives, or its watch passes in seconds).', f'/function {NS}:wait', 'aqua')
         + f'\nexecute if score #quick {OBJ} matches 1 run ' + tell('AGAIN: clear the 5-day cooldown and roll again.', f'/function {NS}:again', 'green'),
@@ -156,6 +166,13 @@ fd maeve scribe seed
 scoreboard players set #stage {OBJ} 30
 tag @e[type=frozendawn:architect] add msb_noted
 ''' + prompt(31),
+    # Trains on top of the seed: one ordinary Architect, then the full read once the encounter has closed.
+    'qcall': guard(30, 39) + f'''
+scoreboard players set #stage {OBJ} 32
+execute at @e[type=marker,tag=msb_base,limit=1] positioned ~50 ~ ~ positioned over motion_blocking_no_leaves run summon frozendawn:architect ~ ~ ~ {{Tags:["msb_called","msb_noted"],PersistenceRequired:1b}}
+fd architect approach @e[tag=msb_called,limit=1] @s
+''' + prompt(32),
+    'quick_read': f'scoreboard players set #stage {OBJ} 30\n' + habits(QUICK_READ) + '\n' + prompt(31),
     'roll': guard(30, 39) + f'''
 execute at @e[type=marker,tag=msb_base,limit=1] positioned ~50 ~ ~ positioned over motion_blocking_no_leaves run fd maeve scribe roll''',
     # After a Scribe leaves the beliefs stand; after RESTORE Maeve is empty and is seeded again.
@@ -220,7 +237,10 @@ fd postmaeve set-erased
 scoreboard players set #stage {OBJ} 90
 fd postmaeve reset-erased confirm
 ''' + prompt(90),
-    'prompt': '\n'.join(f'execute if score #stage {OBJ} matches {stage} run {prompt(stage)}' for stage in PROMPTS),
+    # Quick mode idles at stage 30 but its step is 31.
+    'prompt': '\n'.join(f'execute if score #stage {OBJ} matches {stage} run {prompt(stage)}' for stage in PROMPTS if stage not in (30, 31))
+              + f'\nexecute if score #stage {OBJ} matches 30 unless score #quick {OBJ} matches 1 run {prompt(30)}'
+              + f'\nexecute if score #stage {OBJ} matches 30 if score #quick {OBJ} matches 1 run {prompt(31)}',
     'rejoin': f'''scoreboard players set @s {OBJ}_seen 41
 execute if entity @s[tag=msb] run function {NS}:prompt
 execute unless entity @s[tag=msb] run ''' + tell('MACS Scribe Base: click to begin (wakes an empty Maeve, builds a cabin at spawn).', f'/function {NS}:setup', 'aqua') + '''
@@ -234,8 +254,13 @@ execute if score #stage {OBJ} matches 20 unless entity @e[tag=msb_called] run fu
 execute if score #stage {OBJ} matches 21 run scoreboard players add #timer {OBJ} 1
 execute if score #stage {OBJ} matches 21 as @a[tag=msb] run {prompt(21)}
 execute if score #stage {OBJ} matches 21 if score #timer {OBJ} matches {GAP}.. as @a[tag=msb,limit=1] run function {NS}:ready
+execute if score #stage {OBJ} matches 32 unless entity @e[tag=msb_called] run scoreboard players set #timer {OBJ} 0
+execute if score #stage {OBJ} matches 32 unless entity @e[tag=msb_called] run scoreboard players set #stage {OBJ} 33
+execute if score #stage {OBJ} matches 33 run scoreboard players add #timer {OBJ} 1
+execute if score #stage {OBJ} matches 33 as @a[tag=msb] run {prompt(33)}
+execute if score #stage {OBJ} matches 33 if score #timer {OBJ} matches {GAP}.. as @a[tag=msb,limit=1] run function {NS}:quick_read
 execute if score #stage {OBJ} matches 10..39 as @e[{SCRIBE},tag=!msb_scribe,limit=1] run function {NS}:found
-execute if score #stage {OBJ} matches 30..39 as @e[type=frozendawn:architect,tag=!msb_called,tag=!msb_scribe,tag=!msb_noted,limit=1] run function {NS}:ordinary
+execute if score #stage {OBJ} matches 30..39 unless score #stage {OBJ} matches 32..33 as @e[type=frozendawn:architect,tag=!msb_called,tag=!msb_scribe,tag=!msb_noted,limit=1] run function {NS}:ordinary
 execute if score #stage {OBJ} matches 40 unless entity @e[tag=msb_scribe] as @a[tag=msb,limit=1] run function {NS}:gone'''
 
 

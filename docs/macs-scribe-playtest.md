@@ -97,6 +97,7 @@ For checking the Scribe by eye without days of play. The lab client and the Game
 
 - **QUICK** (offered beside the begin link) wakes an empty Maeve, builds the cabin, gives Resistance, and seeds a fixed belief set through the real store: sword 5/0 (Always), east exit 4/0 (plain), recovery 2/0 (Perhaps), west exit 2/2 (Unsettled), ranged 0/3 (never written). Two are confident, so every roll goes to bad luck protection.
 - **ROLL** decides one natural Architect spawn 50 blocks east of the cabin through the same designation call as `ArchitectSpawner`. A miss prints `misses=n/8` and never enters the world; a Scribe spawns and the pack announces it. The real cooldown applies.
+- **CALL** (quick mode) summons one ordinary Architect from the east to train on top of the seed: sword or bow, drinking, any exit. After it dies and a 32 s quiet gap closes the encounter, the full read prints (sword, bow, cover, chase, each exit) with ROLL and CALL again. A natural Architect during the call is not announced.
 - **AGAIN** (after it leaves, or after RESTORE) clears the cooldown only; after RESTORE it seeds again.
 - Limits: this proves the watch, flee, writing pose and sound, record lines and the erase invariants. It does not prove natural timing (GameTests and the luck pass do), and the record lines can differ from the seed because Maeve keeps observing during the encounter.
 
