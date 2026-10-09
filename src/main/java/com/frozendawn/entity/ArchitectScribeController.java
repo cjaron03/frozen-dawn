@@ -1,17 +1,16 @@
 package com.frozendawn.entity;
 
 import com.frozendawn.FrozenDawn;
-import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectWalkGeometry;
 import com.frozendawn.maeve.MaeveDirector;
 import com.frozendawn.world.HeaterRegistry;
-import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -21,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
  * and fights only when cornered (§9.13a local-defense exception). It never initiates combat.
  * With a remembered opening or shelter it watches that; without one it keeps a stand-off from the subject
  * itself, just outside flee range, and closes in again when the subject draws away (owner, 2026-10-08).
+ * It walks with ordinary mob navigation (one-block rises, drops, woods), never placing or breaking blocks.
  * Reload restarts the local watch; the claim's lifetime still bounds the whole appearance.
  */
 final class ArchitectScribeController {
@@ -29,17 +29,16 @@ final class ArchitectScribeController {
     /** A stalled flight tries each of these turns off straight-away before it counts as cornered. */
     private static final int[] FLEE_TURNS = {0, 45, -45, 90, -90, 135, -135};
     private static final double WATCH_RADIUS = 20, WATCH_RANGE = 48, FLEE_RADIUS = 12, CALM_RADIUS = 20, GONE_RADIUS = 32;
-    private static final double CORNERED_RANGE = 3.5, WALK_SPEED = .14, FLEE_SPEED = .2;
+    /** Navigation speed modifiers on the Architect's movement speed: about 2.8 and 4.3 blocks a second. */
+    private static final double CORNERED_RANGE = 3.5, WALK_SPEED = .9, FLEE_SPEED = 1.15;
     /** Stand-off from the subject when there is no remembered place: posts at STANDOFF, closes in beyond DRIFT. */
     private static final double STANDOFF = 16, SETTLED = 20, DRIFT = 28, NOTICE = 4;
-    private static final long WATCH = 2400, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, CALM = 40, FLEE_STALL = 30, STEP_STALL = 10;
-    private static final int[][] NEIGHBOURS = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+    private static final long WATCH = 2400, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, CALM = 40, FLEE_STALL = 30, REPLAN = 40;
     private final ArchitectEntity actor;
     private Phase phase = Phase.TRAVEL;
     private BlockPos post;
-    private Vec3 threat, waypoint, progress;
-    private BlockPos goal;
-    private DStarLitePathfinder path;
+    private Vec3 threat, progress;
+    private BlockPos navTarget;
     private long progressAt, replanAt, watchedFrom = -1, departedAt = -1, calmSince = -1, defendUntil, turnAt;
     private int turn;
     private boolean repost;
@@ -61,7 +60,7 @@ final class ArchitectScribeController {
         var order = MaeveDirector.scribeOrder(actor);
         if (phase != Phase.DEPART && (order == null || !order.dimension().equals(actor.level().dimension().location().toString())))
             depart(order == null ? "ORDER_ENDED" : "DIMENSION_CHANGED", now);
-        actor.getNavigation().stop(); actor.setTarget(null); actor.setSprinting(false);
+        actor.setTarget(null); actor.setSprinting(false);
         actor.setMaeveHolding(false); actor.setCommitmentAction(false);
         var near = nearestPlayer(FLEE_RADIUS, true);
         if (near == null) near = nearestPlayer(NOTICE, false);
@@ -164,8 +163,8 @@ final class ArchitectScribeController {
     }
 
     private void resetPath() {
-        if (path != null) path.cleanup();
-        path = null; goal = null; waypoint = null; replanAt = 0;
+        navTarget = null; replanAt = 0;
+        actor.getNavigation().stop();
     }
 
     /**
@@ -220,64 +219,37 @@ final class ArchitectScribeController {
     }
 
     private void hold(Vec3 look) {
+        if (navTarget != null || !actor.getNavigation().isDone()) resetPath();
         actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
         if (look != null) face(look);
     }
 
-    /** Away from (or toward) a direction: a destination 12 blocks out, walked with the observed-walk planner. */
+    /** Away from (or toward) a direction: a reachable spot about 16 blocks that way, re-chosen every two seconds. */
     private void walk(Vec3 direction, double speed, long now) {
+        track(now);
+        if (navTarget != null && now < replanAt && !actor.getNavigation().isDone()) return;
         Vec3 away = direction.multiply(1, 0, 1);
         if (away.lengthSqr() < 1e-4) away = new Vec3(1, 0, 0);
-        BlockPos destination = BlockPos.containing(actor.position().add(away.normalize().scale(12)));
-        if (goal == null || now >= replanAt) resetPath();
-        walkTo(destination, speed, now);
+        Vec3 toward = actor.position().add(away.normalize().scale(16));
+        Vec3 spot = LandRandomPos.getPosTowards(actor, 16, 7, toward);
+        BlockPos destination = spot != null ? BlockPos.containing(spot) : BlockPos.containing(actor.position().add(away.normalize().scale(12)));
+        navigate(destination, speed, now);
     }
 
-    /**
-     * The same loaded, observed-walk route the pawn and scout executors use: partial surfaces such as snow layers
-     * are standable, it never places or breaks blocks, and an unreachable route simply stalls in place.
-     */
+    /** Ordinary navigation to a fixed destination, re-issued when it ends short. */
     private void walkTo(BlockPos destination, double speed, long now) {
-        if (progress == null || actor.position().distanceToSqr(progress) > .25) { progress = actor.position(); progressAt = now; }
-        actor.setDeltaMovement(0, actor.getDeltaMovement().y, 0);
-        if (waypoint != null && actor.position().subtract(waypoint).horizontalDistanceSqr() > .04) { move(waypoint, speed); return; }
-        waypoint = null;
-        BlockPos start = walkingStart();
-        // The observed-walk planner refuses full-block steps; a ledge or a one-block rise must not strand the Scribe.
-        if (now - progressAt >= STEP_STALL) {
-            Vec3 step = localStep(start, destination);
-            if (step != null) { resetPath(); waypoint = step; move(step, speed); return; }
-        }
-        if (path == null || start.equals(goal)) {
-            goal = segment(destination);
-            if (goal == null) return;
-            path = new DStarLitePathfinder(); path.configureObservedWalk(List.of());
-            path.initialize(goal, start, actor.level()); replanAt = now + 40;
-        }
-        path.updateStart(start);
-        if (!path.computePartial(80, actor.level())) return;
-        var step = path.getNextStep(start, actor.level());
-        if (step == null || step.type() != DStarLitePathfinder.StepType.WALK) { resetPath(); return; }
-        waypoint = ArchitectWalkGeometry.observedStandingPosition(actor.level(), step.pos());
-        if (waypoint != null) move(waypoint, speed);
+        track(now);
+        if (destination.equals(navTarget) && (now < replanAt || !actor.getNavigation().isDone())) return;
+        navigate(destination, speed, now);
     }
 
-    /**
-     * One neighbouring cell toward the destination that the planner would not take: a drop of up to two blocks or a
-     * one-block rise (the Architect's step height), with the body clear over both cells at the higher footing.
-     */
-    private Vec3 localStep(BlockPos start, BlockPos destination) {
-        Vec3 want = Vec3.atBottomCenterOf(destination).subtract(actor.position()).multiply(1, 0, 1);
-        if (want.lengthSqr() < 1e-4) return null;
-        want = want.normalize();
-        Vec3 best = null; double bestScore = .3;
-        for (int[] n : NEIGHBOURS) {
-            double score = (n[0] * want.x + n[1] * want.z) / Math.sqrt(n[0] * n[0] + n[1] * n[1]);
-            if (score <= bestScore) continue;
-            Vec3 stand = neighbour(start, n[0], n[1]);
-            if (stand != null) { best = stand; bestScore = score; }
-        }
-        return best;
+    private void navigate(BlockPos destination, double speed, long now) {
+        navTarget = destination; replanAt = now + REPLAN;
+        actor.getNavigation().moveTo(destination.getX() + .5, destination.getY(), destination.getZ() + .5, speed);
+    }
+
+    private void track(long now) {
+        if (progress == null || actor.position().distanceToSqr(progress) > .25) { progress = actor.position(); progressAt = now; }
     }
 
     /** The footing in one neighbouring column, from two blocks down to one up, if the body clears the way there. */
@@ -291,21 +263,6 @@ final class ArchitectScribeController {
         return null;
     }
 
-    /** Nearest standable cell up to 12 blocks toward the destination. */
-    private BlockPos segment(BlockPos destination) {
-        Vec3 delta = Vec3.atBottomCenterOf(destination).subtract(actor.position());
-        double scale = Math.min(1, 12 / Math.max(1, delta.horizontalDistance()));
-        BlockPos center = BlockPos.containing(actor.getX() + delta.x * scale, actor.getY(), actor.getZ() + delta.z * scale);
-        for (int radius = 0; radius <= 2; radius++) for (int x = -radius; x <= radius; x++) for (int z = -radius; z <= radius; z++) {
-            if (Math.max(Math.abs(x), Math.abs(z)) != radius) continue;
-            for (int dy : new int[]{0, 1, -1, 2, -2}) {
-                BlockPos candidate = center.offset(x, dy, z);
-                if (ArchitectWalkGeometry.observedStandingPosition(actor.level(), candidate) != null) return candidate;
-            }
-        }
-        return null;
-    }
-
     /** Collision can raise the feet before the center leaves a lower partial surface. */
     private BlockPos walkingStart() {
         BlockPos feet = actor.blockPosition();
@@ -314,15 +271,7 @@ final class ArchitectScribeController {
         return lower != null && Math.abs(actor.getY() - lower.y) <= .6 ? feet.below() : feet;
     }
 
-    private void move(Vec3 next, double speed) {
-        Vec3 delta = next.subtract(actor.position()); double length = delta.horizontalDistance();
-        face(next.add(0, actor.getEyeHeight(), 0));
-        if (length < .01 || !actor.onGround()) return;
-        double pace = Math.min(speed, length);
-        actor.setDeltaMovement(delta.x / length * pace, actor.getDeltaMovement().y, delta.z / length * pace);
-    }
-
-    /** Any neighbouring step away from the attacker that the Scribe can take, judged like {@link #localStep}. */
+    /** Any neighbouring step away from the attacker that the Scribe can take: a drop of up to two or a one-block rise. */
     private boolean escapes(Vec3 direction) {
         Vec3 away = direction.multiply(1, 0, 1);
         if (away.lengthSqr() < 1e-4) return false;
