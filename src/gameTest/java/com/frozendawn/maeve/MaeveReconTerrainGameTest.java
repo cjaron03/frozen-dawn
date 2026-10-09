@@ -108,8 +108,12 @@ public final class MaeveReconTerrainGameTest {
             helper.assertTrue(!crossLane(scene), "A full-block barrier cannot become a jump or excavation route");
             scene.block(22, 0, 20, Blocks.WATER.defaultBlockState());
             helper.assertTrue(!crossLane(scene), "Walking does not enter water");
-            scene.block(22, 0, 20, Blocks.FIRE.defaultBlockState());
-            helper.assertTrue(!crossLane(scene), "Walking does not enter fire");
+            // This scene is late-phase vacuum: a real supported soul flame remains a hazard.
+            scene.block(22, -1, 20, Blocks.SOUL_SOIL.defaultBlockState());
+            scene.block(22, 0, 20, Blocks.SOUL_FIRE.defaultBlockState());
+            helper.assertTrue(scene.level.getBlockState(scene.origin.offset(22, 0, 20)).is(Blocks.SOUL_FIRE),
+                    "The vacuum fixture must retain an actual fire hazard");
+            helper.assertTrue(!crossLane(scene), "Walking does not enter soul fire");
             scene.block(22, 0, 20, Blocks.AIR.defaultBlockState());
             scene.block(22, 1, 20, Blocks.STONE.defaultBlockState());
             helper.assertTrue(!crossLane(scene), "A low ceiling still blocks the body");

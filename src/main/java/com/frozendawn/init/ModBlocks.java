@@ -68,6 +68,16 @@ public class ModBlocks {
         return Math.max(1, Math.round(maxLight * ((glowStage + 1) / 5.0f)));
     }
 
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedTorchBlock> EXTINGUISHED_TORCH = BLOCKS.register("extinguished_torch",
+            () -> new com.frozendawn.block.ExtinguishedTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedWallTorchBlock> EXTINGUISHED_WALL_TORCH = BLOCKS.register("extinguished_wall_torch",
+            () -> new com.frozendawn.block.ExtinguishedWallTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WALL_TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LanternBlock> EXTINGUISHED_LANTERN = BLOCKS.register("extinguished_lantern",
+            () -> new net.minecraft.world.level.block.LanternBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.LANTERN)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.LANTERN)));
+
     // Grass Block -> Dead Grass Block (phase 2+). Drops dirt.
     public static final DeferredBlock<Block> DEAD_GRASS_BLOCK = BLOCKS.register("dead_grass_block",
             () -> new Block(BlockBehaviour.Properties.of()

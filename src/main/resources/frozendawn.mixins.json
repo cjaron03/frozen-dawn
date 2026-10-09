@@ -12,7 +12,10 @@
     "LivingEntityMixin",
     "ServerPlayerContinuityMixin",
     "ItemEntityContinuityMixin",
-    "RationWarmerCraftingMixin"
+    "RationWarmerCraftingMixin",
+    "VacuumLevelChunkMixin",
+    "VacuumFurnaceMixin",
+    "VacuumFireMixin"
   ],
   "client": [
     "DisplayWindowMixin",

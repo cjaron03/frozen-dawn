@@ -1114,5 +1114,8 @@
   "message.frozendawn.ration_warmer.done": "Stack thawed. Frost resumes in 30 seconds.",
   "message.frozendawn.ration_warmer.damaged_done": "Recovered to damaged Frozen food. Permanent damage remains.",
   "food.frozendawn.warm_window": "Warm window: %ss",
-  "food.frozendawn.permanent_damage": "Permanently damaged. Thawing cannot restore full nutrition."
+  "food.frozendawn.permanent_damage": "Permanently damaged. Thawing cannot restore full nutrition.",
+  "block.frozendawn.extinguished_torch": "Extinguished Torch",
+  "block.frozendawn.extinguished_wall_torch": "Extinguished Wall Torch",
+  "block.frozendawn.extinguished_lantern": "Extinguished Lantern"
 }

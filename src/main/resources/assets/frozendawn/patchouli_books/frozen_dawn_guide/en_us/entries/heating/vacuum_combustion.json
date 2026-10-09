@@ -1,0 +1,18 @@
+{
+  "name": "Flames in a Vacuum",
+  "icon": "minecraft:soul_torch",
+  "category": "frozendawn:heating",
+  "sortnum": 16,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "No air, no flame",
+      "text": "Late Phase 6 brings vacuum. Ordinary fire, torches, lanterns, candles, campfires, MiteAway burners and fuel-burning furnaces need breathable air. Exposed flames go out. Sealed rooms and oxygen support use the same air rules as your suit diagnostics. Warmth alone does not supply oxygen."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recovery and exceptions",
+      "text": "Extinguished torches and lanterns stay in place and drop their normal items. Use flint and steel to relight them where breathable air is available. Campfires and candles use their normal relighting controls. Furnaces preserve unspent fuel and resume when air is restored. Soul fire, soul torches, soul lanterns and soul campfires are supernatural exceptions: they keep working, but supply no oxygen. Lava and powered or geothermal heat are not ordinary flames."
+    }
+  ]
+}

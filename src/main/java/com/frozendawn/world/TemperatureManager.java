@@ -159,6 +159,8 @@ public final class TemperatureManager {
 
     private static boolean isInsideGeothermalO2Range(Level level, BlockPos pos) {
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
+            // Air checks must not promote unloaded infrastructure chunks.
+            if (!level.isLoaded(corePos)) continue;
             int o2Range;
             BlockEntity be = level.getBlockEntity(corePos);
             if (be instanceof GeothermalCoreBlockEntity core) {
