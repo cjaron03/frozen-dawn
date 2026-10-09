@@ -153,8 +153,6 @@ class ScribeRecordTest {
         var elsewhere = point("HEAT_SOURCE", new BlockPos(2, 70, 2), null, "OBSERVED", .9, "minecraft:the_nether");
         var marks = ScribeRecordWriter.marks(List.of(opening, sealed, loss, faint, heat, elsewhere), DIM);
         assertEquals(List.of("ACCESS_POINT", "DANGER_ZONE", "HEAT_SOURCE"), marks.stream().map(MaeveDirector.ScribeMark::label).toList());
-        // Outward east crossing: Minecraft yaw -90 faces +X.
-        assertEquals(-90, marks.getFirst().rotation(), 1e-4);
         var many = java.util.stream.IntStream.range(0, 12).mapToObj(i -> point("DANGER_ZONE", new BlockPos(i, 70, 0), null, "OBSERVED", .2 + i * .01, DIM)).toList();
         assertEquals(ScribePolicy.MAX_MARKS_PER_LABEL, ScribeRecordWriter.marks(many, DIM).size(), "Bounded per label");
     }

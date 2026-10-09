@@ -1046,7 +1046,7 @@
   "item.frozendawn.scribe_record.hint": "Salvaged ORSA slate, scored with short Thaeven lines.",
   "item.frozendawn.scribe_record.blank": "Salvaged ORSA slate. Nothing is written yet.",
   "item.frozendawn.scribe_map": "Marked Map",
-  "item.frozendawn.scribe_map.legend.openings": "Blue pointer: openings",
+  "item.frozendawn.scribe_map.legend.openings": "Blue banner: openings",
   "item.frozendawn.scribe_map.legend.heat": "Red point: heat",
   "item.frozendawn.scribe_map.legend.losses": "Red cross: losses",
   "screen.frozendawn.scribe_record": "Scribe Record",

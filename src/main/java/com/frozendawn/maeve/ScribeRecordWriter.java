@@ -56,7 +56,7 @@ final class ScribeRecordWriter {
                     .sorted(Comparator.comparingDouble(MaeveDirector.WorldPointSnapshot::confidence).reversed()
                             .thenComparing(p -> p.position().asLong()))
                     .limit(ScribePolicy.MAX_MARKS_PER_LABEL)
-                    .forEach(p -> result.add(new MaeveDirector.ScribeMark(label, p.position(), facing(p))));
+                    .forEach(p -> result.add(new MaeveDirector.ScribeMark(label, p.position())));
         }
         return List.copyOf(result);
     }
@@ -65,13 +65,6 @@ final class ScribeRecordWriter {
         // Same floors her own executors use: open crossings resolve above 0.05, dangers count from 0.2.
         return point.label().equals("ACCESS_POINT") ? point.state().equals("OPEN") && point.inside() != null && point.confidence() > .05
                 : point.confidence() >= .2;
-    }
-
-    /** Openings point outward along the witnessed crossing; other marks stand upright. */
-    private static float facing(MaeveDirector.WorldPointSnapshot point) {
-        if (point.inside() == null) return 180;
-        double x = point.position().getX() - point.inside().getX(), z = point.position().getZ() - point.inside().getZ();
-        return x == 0 && z == 0 ? 180 : (float) (Math.atan2(z, x) * 180 / Math.PI) - 90;
     }
 
     private static MaeveDirector.ScribeNote note(String pattern, String head, String verb, String kind,

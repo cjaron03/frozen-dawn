@@ -34,6 +34,8 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
  */
 final class ScribeMap {
     private static final int COLOR = 0x8C9BA5, FIT = 56;
+    /** Vanilla's rotation for a standing banner mark; every Scribe mark stands upright. */
+    private static final float UPRIGHT = 180;
 
     private ScribeMap() { }
 
@@ -73,7 +75,7 @@ final class ScribeMap {
         for (var mark : notes.marks())
             marks.put("frozendawn_scribe_" + marks.size(), new MapDecorations.Entry(type(mark.label()),
                     markAt(center.getX(), mark.position().getX(), zoom), markAt(center.getZ(), mark.position().getZ(), zoom),
-                    mark.rotation()));
+                    UPRIGHT));
         stack.set(DataComponents.MAP_DECORATIONS, new MapDecorations(marks));
         stack.set(DataComponents.MAP_COLOR, new MapItemColor(COLOR));
         stack.set(DataComponents.ITEM_NAME, Component.translatable("item.frozendawn.scribe_map"));
@@ -83,7 +85,8 @@ final class ScribeMap {
 
     static Holder<MapDecorationType> type(String label) {
         return switch (label) {
-            case "ACCESS_POINT" -> MapDecorationTypes.BLUE_MARKER;
+            // A banner, not the blue pointer, which reads as a player (owner, 2026-10-09).
+            case "ACCESS_POINT" -> MapDecorationTypes.BLUE_BANNER;
             case "HEAT_SOURCE" -> MapDecorationTypes.TARGET_POINT;
             default -> MapDecorationTypes.RED_X;
         };

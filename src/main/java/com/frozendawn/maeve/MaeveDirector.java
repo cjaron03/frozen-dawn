@@ -200,7 +200,7 @@ public final class MaeveDirector {
     public record ScribeNote(String pattern, String thaeven, String translation, List<String> arguments, String certainty) {
         public ScribeNote { arguments = List.copyOf(arguments); }
     }
-    public record ScribeMark(String label, BlockPos position, float rotation) { public ScribeMark { position = position.immutable(); } }
+    public record ScribeMark(String label, BlockPos position) { public ScribeMark { position = position.immutable(); } }
     public record ScribeNotes(UUID subject, String dimension, BlockPos center, List<ScribeNote> notes, List<ScribeMark> marks) {
         public ScribeNotes { center = center.immutable(); notes = List.copyOf(notes); marks = List.copyOf(marks); }
     }

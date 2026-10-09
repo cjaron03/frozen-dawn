@@ -54,7 +54,7 @@ Implemented on `feat/scribe-architect`, branched from `feat/maeve-director` at `
 | `RETREAT_BEARING_E` | Vel-sorr aren thaeven. | Leaves by the east opening. |
 | `EXIT_AFTER_W_E_*` | Eth-sorr aren vaen. Vel-sorr aren thaeven. | Watched at the west opening, leaves by the east. |
 
-**Marked map** ("Marked Map", a locked vanilla `filled_map`): zoomed to fit its marks (4, 2 or 1 pixels per block, past vanilla's closest scale each block painted as a square; vanilla scale 1 when even 1 would cut a mark off), centered on the observed shelter centroid (else the death position), painted once from already-loaded chunks with vanilla surface shading; no chunk is loaded for it and unloaded areas stay blank. Up to 8 marks per label from the world model: OPEN access points as blue pointers facing outward along the witnessed crossing, DANGER_ZONE as red crosses, HEAT_SOURCE as red points. Legend lore: openings, heat, losses. Locked, so neither terrain nor marks update.
+**Marked map** ("Marked Map", a locked vanilla `filled_map`): zoomed to fit its marks (4, 2 or 1 pixels per block, past vanilla's closest scale each block painted as a square; vanilla scale 1 when even 1 would cut a mark off), centered on the observed shelter centroid (else the death position), painted once from already-loaded chunks with vanilla surface shading; no chunk is loaded for it and unloaded areas stay blank. Up to 8 marks per label from the world model: OPEN access points as blue banners (not the blue pointer, which reads as a player; owner, 2026-10-09), DANGER_ZONE as red crosses, HEAT_SOURCE as red points. Every mark stands upright. Legend lore: openings, heat, losses. Locked, so neither terrain nor marks update.
 
 ## Proposed Thaeven roots
 

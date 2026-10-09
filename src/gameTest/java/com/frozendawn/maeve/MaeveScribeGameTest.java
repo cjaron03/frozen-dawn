@@ -265,7 +265,7 @@ public final class MaeveScribeGameTest {
             helper.assertTrue(data != null && data.locked && data.centerX == centroid.getX() && data.centerZ == centroid.getZ(),
                     "Locked map centered on her shelter estimate " + centroid);
             var marks = map.get(DataComponents.MAP_DECORATIONS).decorations().values();
-            helper.assertTrue(marks.size() == 3 && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.BLUE_MARKER))
+            helper.assertTrue(marks.size() == 3 && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.BLUE_BANNER))
                     && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.RED_X))
                     && marks.stream().anyMatch(m -> m.type().equals(MapDecorationTypes.TARGET_POINT)), "Openings, losses and heat: " + marks);
             helper.assertTrue(map.get(DataComponents.LORE).lines().size() == 3, "Legend in the same register");
