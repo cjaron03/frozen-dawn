@@ -161,6 +161,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', monkeyReport.get().asFile.absolutePath
+            // It repeats the regressions, lab-pack parse checks included.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', monkeyReports.get().asFile.absolutePath
             systemProperty 'frozendawn.architect.monkey', 'true'
             gameDirectory = monkeyRunDirectory
