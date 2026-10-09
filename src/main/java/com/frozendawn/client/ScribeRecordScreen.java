@@ -6,6 +6,8 @@ import com.frozendawn.item.ScribeRecordContents;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,13 +22,17 @@ import net.minecraft.util.Mth;
  * Each note is scratched in with the Scribe's own writing sound, then (translated) its Thaeven fractures into the
  * reconstruction through the archive's ink. Certainty sets the pace: "Always" lands fast, "Perhaps" keeps its
  * ghosts, and "Unsettled" never stops wavering. A click finishes it; reduced ink animation shows it settled.
+ * The subject's face is sketched in the corner either way; without a translator a chalk pictogram marks what each
+ * line is about, never what was concluded.
  */
 public final class ScribeRecordScreen extends Screen {
     private static final float SCRATCH_RATE = 2.0F;
     private static final int SCRATCH_GAP = 4, INK_DELAY = 2, STROKE = 7;
     private static final int WOOD = 0xFF6B4F35, SLATE = 0xFF3B4147, HEADING = 0xFFAEB4B8, CHALK = 0xE6E4DC,
             SOURCE_CHALK = 0x8F979D, RAW_CHALK = 0xD3D7D9, COLD_GHOST = 0x8FB6C9, WARM_GHOST = 0xC9A27E;
+    private static final int PICTOGRAM = 14;
     private final boolean translated;
+    private final Optional<UUID> subject;
     private final List<Note> notes = new ArrayList<>();
     private final int end;
     private int age;
@@ -34,11 +40,12 @@ public final class ScribeRecordScreen extends Screen {
     public ScribeRecordScreen(ScribeRecordContents contents, boolean translated) {
         super(Component.translatable("screen.frozendawn.scribe_record"));
         this.translated = translated;
+        this.subject = contents.subject();
         int start = 0, last = 0;
         for (var line : contents.lines()) {
             int scratch = Mth.ceil(line.thaeven().length() / SCRATCH_RATE);
             int ink = start + scratch + INK_DELAY;
-            notes.add(new Note(line.thaeven(), line.translated().getString(), line.certainty(), start, scratch, ink,
+            notes.add(new Note(line.pattern(), line.thaeven(), line.translated().getString(), line.certainty(), start, scratch, ink,
                     inkTicks(line.certainty())));
             last = Math.max(last, translated ? ink + inkTicks(line.certainty()) : start + scratch);
             start += scratch + SCRATCH_GAP;
@@ -85,7 +92,7 @@ public final class ScribeRecordScreen extends Screen {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         renderBackground(graphics, mouseX, mouseY, partialTick);
-        int w = Math.min(320, width - 24), textWidth = w - 24;
+        int w = Math.min(320, width - 24), textWidth = w - 24 - (translated ? 0 : PICTOGRAM);
         int lineCount = 0;
         for (var note : notes) lineCount += slots(note, textWidth);
         int h = Math.min(height - 24, 52 + lineCount * 10 + notes.size() * 4);
@@ -96,12 +103,14 @@ public final class ScribeRecordScreen extends Screen {
                 ? "screen.frozendawn.thaeven_archive.reconstruction" : "screen.frozendawn.thaeven_archive.raw"),
                 x + 12, y + 10, HEADING, false);
         graphics.drawString(font, Component.literal(ScribeRecordContents.SUBJECT), x + 12, y + 26, 0xFF000000 | CHALK, false);
+        ScribeChalk.portrait(graphics, subject, x + w - 36, y + 10, 3);
         float t = Math.min(age + partialTick, end);
         int lineY = y + 42, bottom = y + h - 6;
         for (int i = 0; i < notes.size(); i++) {
             var note = notes.get(i);
             if (translated) lineY = drawInk(graphics, note, i, t, x + 12, lineY, textWidth, bottom, partialTick);
-            lineY = drawScratch(graphics, note, t, x + 12, lineY, textWidth, bottom) + 4;
+            if (!translated && t >= note.scratchStart() && lineY + 10 <= bottom) ScribeChalk.pictogram(graphics, note.pattern(), x + 12, lineY);
+            lineY = drawScratch(graphics, note, t, x + 12 + (translated ? 0 : PICTOGRAM), lineY, textWidth, bottom) + 4;
         }
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -168,6 +177,6 @@ public final class ScribeRecordScreen extends Screen {
         return false;
     }
 
-    private record Note(String thaeven, String english, String certainty, int scratchStart, int scratchTicks,
+    private record Note(String pattern, String thaeven, String english, String certainty, int scratchStart, int scratchTicks,
                         int inkStart, int inkTicks) { }
 }

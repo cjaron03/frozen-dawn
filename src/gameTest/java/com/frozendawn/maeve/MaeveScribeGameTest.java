@@ -252,6 +252,13 @@ public final class MaeveScribeGameTest {
             helper.assertTrue(contents.lines().get(4).thaeven().equals("Mor vel-thaeven. Liss."), "The belief seen both ways is unsettled");
             helper.assertTrue(contents.lines().get(2).thaeven().equals("Vel-sorr aren thaeven."), "Verb last, no tense");
             helper.assertFalse(contents.toString().contains(player.getGameProfile().getName()), "Vel-thae, never the username");
+            helper.assertTrue(contents.subject().equals(java.util.Optional.of(player.getUUID())), "Kept by UUID for the chalk portrait");
+            var legacy = ScribeRecordContents.Line.CODEC.listOf().encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, contents.lines()).getOrThrow();
+            var reread = ScribeRecordContents.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, legacy).getOrThrow();
+            var saved = ScribeRecordContents.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, contents).getOrThrow();
+            helper.assertTrue(reread.lines().equals(contents.lines()) && reread.subject().isEmpty()
+                    && ScribeRecordContents.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, saved).getOrThrow().equals(contents),
+                    "Records dropped before the subject still read; new ones round-trip");
             var map = drops.stream().filter(s -> s.is(Items.FILLED_MAP)).findFirst().orElse(null);
             helper.assertTrue(map != null, "Death drops the marked map");
             var data = MapItem.getSavedData(map, scene.level);
