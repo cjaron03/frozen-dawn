@@ -314,3 +314,8 @@ airlockbrokenshellandoversizerejectfreeair xml
 airlockloadedpanelspumponcepertickandrestoreair xml
 airlockplaytestfunctionsload xml
 airlocksilentstatususestypedpacketsandroundtrips xml
+
+# Thermal 2.0 ground baseline
+thermalgroundqueriespreserveshelterandloadedonlypath xml
+thermalsurfacealtitudeandphasecurveremainunchanged xml
+thermalpresetdiffusivityisappliedandpersisted xml

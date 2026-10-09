@@ -107,6 +107,14 @@ final class FrozenDawnWorldCommand {
                 String.format(Locale.ROOT, "%.2f", state.getSunScale()));
         FrozenDawnCommandOutput.detail(context.getSource(), "Sky light",
                 String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100));
+        FrozenDawnCommandOutput.detail(context.getSource(), "Ground cold front",
+                String.format(Locale.ROOT, "diffusivity %.0f", FrozenDawnConfig.GROUND_DIFFUSIVITY.get()));
+        for (int y : new int[]{64, 32, 0, -32, -64}) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Background Y=" + y,
+                    String.format(Locale.ROOT, "%.1fC (before shelter and heat sources)",
+                            com.frozendawn.world.TemperatureManager.getBackgroundTemperature(y,
+                                    state.getCurrentDay(), state.getTotalDays())));
+        }
         if (winEnabled) {
             WinConditionState winState = WinConditionState.get(server);
             FrozenDawnCommandOutput.detail(context.getSource(), "Win state",

@@ -4,29 +4,31 @@ package com.frozendawn.config;
  * Predefined configuration presets that stomp all preset-managed fields.
  *
  * Preset-managed fields (overwritten unconditionally):
- *   TOTAL_DAYS, BASE_PHASE5_TEMP, GEOTHERMAL_STRENGTH, HEAT_SOURCE_MULTIPLIER,
+ *   TOTAL_DAYS, BASE_PHASE5_TEMP, GEOTHERMAL_STRENGTH, GROUND_DIFFUSIVITY, HEAT_SOURCE_MULTIPLIER,
  *   SNOW_ACCUMULATION_RATE, BROADCAST_TICKS, SANITY_SPEED_MULTIPLIER, MOB_SPAWN_MULTIPLIER
  */
 public enum ConfigPresets {
-    DEFAULT(120, -120, 1.0, 1.0, 1.0, 120000, 1.0, 1.0),
-    CINEMATIC(200, -80, 1.5, 1.5, 0.5, 72000, 0.5, 0.5),
-    BRUTAL(50, -160, 0.5, 0.5, 2.0, 192000, 2.0, 2.0);
+    DEFAULT(120, -120, 1.0, 8000.0, 1.0, 1.0, 120000, 1.0, 1.0),
+    CINEMATIC(200, -80, 1.5, 8000.0, 1.5, 0.5, 72000, 0.5, 0.5),
+    BRUTAL(50, -160, 0.5, 12000.0, 0.5, 2.0, 192000, 2.0, 2.0);
 
     public final int totalDays;
     public final int basePhase5Temp;
     public final double geothermalStrength;
+    public final double groundDiffusivity;
     public final double heatSourceMultiplier;
     public final double snowAccumulationRate;
     public final int broadcastTicks;
     public final double sanitySpeedMultiplier;
     public final double mobSpawnMultiplier;
 
-    ConfigPresets(int totalDays, int basePhase5Temp, double geothermalStrength,
+    ConfigPresets(int totalDays, int basePhase5Temp, double geothermalStrength, double groundDiffusivity,
                   double heatSourceMultiplier, double snowAccumulationRate, int broadcastTicks,
                   double sanitySpeedMultiplier, double mobSpawnMultiplier) {
         this.totalDays = totalDays;
         this.basePhase5Temp = basePhase5Temp;
         this.geothermalStrength = geothermalStrength;
+        this.groundDiffusivity = groundDiffusivity;
         this.heatSourceMultiplier = heatSourceMultiplier;
         this.snowAccumulationRate = snowAccumulationRate;
         this.broadcastTicks = broadcastTicks;
@@ -41,6 +43,7 @@ public enum ConfigPresets {
         FrozenDawnConfig.TOTAL_DAYS.set(totalDays);
         FrozenDawnConfig.BASE_PHASE5_TEMP.set(basePhase5Temp);
         FrozenDawnConfig.GEOTHERMAL_STRENGTH.set(geothermalStrength);
+        FrozenDawnConfig.GROUND_DIFFUSIVITY.set(groundDiffusivity);
         FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.set(heatSourceMultiplier);
         FrozenDawnConfig.SNOW_ACCUMULATION_RATE.set(snowAccumulationRate);
         FrozenDawnConfig.BROADCAST_TICKS.set(broadcastTicks);
@@ -61,6 +64,7 @@ public enum ConfigPresets {
         return FrozenDawnConfig.TOTAL_DAYS.get() == preset.totalDays
                 && FrozenDawnConfig.BASE_PHASE5_TEMP.get() == preset.basePhase5Temp
                 && Double.compare(FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), preset.geothermalStrength) == 0
+                && Double.compare(FrozenDawnConfig.GROUND_DIFFUSIVITY.get(), preset.groundDiffusivity) == 0
                 && Double.compare(FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get(), preset.heatSourceMultiplier) == 0
                 && Double.compare(FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get(), preset.snowAccumulationRate) == 0
                 && FrozenDawnConfig.BROADCAST_TICKS.get() == preset.broadcastTicks

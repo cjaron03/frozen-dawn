@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * Calculates temperature at any world position.
  *
- * finalTemp = phaseModifier + depthModifier + shelterModifier + heatSourceModifier
+ * finalTemp = backgroundTemperature + shelterModifier + heatSourceModifier
  *
  * Used by PlayerTickHandler for exposure damage.
  */
@@ -67,13 +67,11 @@ public final class TemperatureManager {
         // Clamp inputs to prevent bad interpolation from corrupted world data
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
-        float phaseTemp = PhaseManager.getTemperatureOffset(currentDay, totalDays);
-        float depthTemp = PhaseManager.getDepthModifier(pos.getY())
-                * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
+        float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
         float shelterTemp = getShelterModifier(level, pos);
         float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly)
                 * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
-        float finalTemp = phaseTemp + depthTemp + shelterTemp + heatTemp;
+        float finalTemp = backgroundTemp + shelterTemp + heatTemp;
 
         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
             return Math.max(finalTemp, 24.0f);
@@ -86,6 +84,19 @@ public final class TemperatureManager {
         finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
                 .temperatureOffset(level, pos);
         return finalTemp;
+    }
+
+    /** Shared background for players, food, mobs, catch-up and future room boundary faces. */
+    public static float getBackgroundTemperature(int y, int currentDay, int totalDays) {
+        currentDay = Math.max(0, currentDay);
+        totalDays = Math.max(1, totalDays);
+        if (y >= GroundTemperatureModel.SURFACE_Y) {
+            return PhaseManager.getTemperatureOffset(currentDay, totalDays)
+                    + PhaseManager.getDepthModifier(y) * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
+        }
+        return (float) GroundTemperatureModel.temperature(y, PhaseManager.getProgress(currentDay, totalDays),
+                FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f,
+                FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
     }
 
     /**

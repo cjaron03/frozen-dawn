@@ -56,6 +56,7 @@ public final class DifficultyPresetManager {
             config.set("general.pauseProgression", FrozenDawnConfig.PAUSE_PROGRESSION.get());
             config.set("temperature.basePhase5Temp", FrozenDawnConfig.BASE_PHASE5_TEMP.get());
             config.set("temperature.geothermalStrength", FrozenDawnConfig.GEOTHERMAL_STRENGTH.get());
+            config.set("temperature.groundDiffusivity", FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
             config.set("temperature.heatSourceMultiplier", FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get());
             config.set("gameplay.snowAccumulationRate", FrozenDawnConfig.SNOW_ACCUMULATION_RATE.get());
             config.set("gameplay.broadcastTicks", FrozenDawnConfig.BROADCAST_TICKS.get());
