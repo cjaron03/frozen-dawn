@@ -38,3 +38,11 @@ Java 21 Gradle `runClientLab` is running in agent terminal session88257. Fresh b
 Owner first report: **“perfect. it works.”** They then requested **“commit and push to that branch.”** Placement is accepted visually; no additional test or reset was performed. The owner did not separately describe each mode or loot pickup, so the detailed mode/loot coverage remains the recorded native evidence. All played worlds and both the failing baseline and corrected fixed attempts remain preserved locally.
 
 Delivery includes the single production property, three required integration cases, separate visual-world generator and this handoff. Source and test files are unchanged since the passing 665-unit/250-native architectVerify run. Only acceptance documentation and ignored verification metadata changed afterward. Delivery branch remains `fix/frozen-atmosphere-placement`; it has not been merged into the integration branch by this task.
+
+## Integration authorized — 2026-10-08 Pacific
+
+Owner requested integration of all three completed fixes and preservation of work. PR [#103](https://github.com/cjaron03/frozen-dawn/pull/103) targets `feat/maeve-director` and includes custom-sword recognition (`e5d268d`), weapon habits across travel (`acc268e`) and atmosphere placement (`4e406ed`). The prior delivery paragraph records the state before this authorization.
+
+Run both protected-branch gates, `architectVerify` and `architectMonkey`, on the final PR head before merging. Exact-head logs and delivery/merge metadata are retained under `build/playtest-fixes-integration-evidence/`. Owner visual acceptance remains the separate evidence recorded in each fix handoff; dedicated multiplayer is unverified.
+
+The root checkout remains on the owner's Scribe branch with its intentional changes. All existing worktree HEADs/statuses were recorded before integration. No branch deletion, worktree archival, reset, stash, save migration or encounter mutation is part of this integration. Preserve all existing checkouts, saved worlds, baseline failures and replay artifacts. Future fixes should branch from the verified remote integration head after PR #103 is merged.
