@@ -111,7 +111,7 @@ Slate record screen, fit-to-marks map, chalk portrait and pictograms, bow in the
 
 ## Owner quick pass 3 (2026-10-08, MACS Scribe Quick 3, build 35b69a9)
 
-QUICK, one CALL (the called Architect died at 21:38:41), then the natural `wait` link. A natural spawn became a Scribe `by=PITY_1/8` at 21:39:58, was slain at 21:40:34 (`ENDED reason=KILLED`), and the owner ran `translate`. Owner: "i think its good".
+QUICK, one CALL (the called Architect died at 21:38:41), then the natural `wait` link. A natural spawn became a Scribe `by=PITY_1/8` at 21:39:58, was slain at 21:40:34 (`ENDED reason=KILLED`), and the owner ran `translate`. Owner: "i think its good". Asked about the cornered defense, the owner said: "someitmes it will fight back, but it ran that one time".
 
 Finding: every Scribe in the lab so far (17:59, 19:15, 21:24, 21:39) was designated on the first miss at one-in-eight odds. The lab client and GameTest server set `-Dfrozendawn.debug.architectSeed=1`, which seeds every new Architect's random alike, and the pity roll drew from the actor's random, so the outcome was fixed. The roll now draws from the subject's random. Lab passes before this fix do not show bad luck protection's odds.
 
