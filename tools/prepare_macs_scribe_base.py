@@ -83,11 +83,12 @@ PROMPTS = {
         + f'execute if score #short {OBJ} matches 0 run function {NS}:await',
     30: tell('Live at the cabin as usual; nothing is called. Natural Architects roll every 10 seconds. With three confident '
              'beliefs the next one is a Scribe; with fewer, each ordinary one is a miss until one is.', None, 'aqua'),
-    39: tell('An ordinary Architect spawned. Below three confident beliefs that is a miss: the dump shows misses=n/8. '
-             'Deal with it and keep living normally.', '/fd maeve dump', 'red'),
+    39: tell('An ordinary Architect spawned. Below three confident beliefs that is a miss (the dump shows misses=n/8), '
+             'unless the 5-day cooldown is still running. Deal with it and keep living normally.', '/fd maeve dump', 'red'),
     40: tell('A Scribe has arrived. Look for white eyes and a slate in its hand. It keeps its distance and stares. '
              'Walk toward it: it should run and never attack. Then chase it down and kill it with the sword.', None, 'green'),
-    69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red'),
+    69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red') + '\n'
+        + tell('Wait for the next Scribe (stop any /tick sprint when it arrives, or its watch passes in seconds).', f'/function {NS}:wait', 'aqua'),
     70: tell('It died. Pick up the record and the map. Read the record without a translator, then:', None, 'green') + '\n'
         + tell('NEXT', f'/function {NS}:translate', 'green'),
     75: tell('Read the record again with the translator (English over each line, no numbers). Hold the map: '
@@ -163,7 +164,7 @@ scoreboard players set #stage {OBJ} 21
 scoreboard players set #timer {OBJ} 0''',
     'ready': f'scoreboard players set #stage {OBJ} 22\n' + prompt(22),
     # Architects already about when the gate is met were judged before it: only later spawns count.
-    'wait': guard(22) + f'\nfunction {NS}:await',
+    'wait': guard(22, 69) + f'\nfunction {NS}:await',
     'await': f'''scoreboard players set #stage {OBJ} 30
 tag @e[type=frozendawn:architect] add msb_noted
 ''' + prompt(30),
