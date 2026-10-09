@@ -77,10 +77,14 @@ PROMPTS = {
     22: habits() + '\n'
         + f'execute if score #short {OBJ} matches 1.. run ' + tell('Not all three at 75% yet. When ready:', None, 'yellow') + '\n'
         + f'execute if score #short {OBJ} matches 1.. run ' + CALL + '\n'
+        + f'execute if score #short {OBJ} matches 1.. run ' + tell('Or stop here and live normally: while Maeve knows anything, each natural '
+                                                                  'Architect that is not a Scribe is a miss, and the 8th miss is always a Scribe.',
+                                                                  f'/function {NS}:wait', 'aqua') + '\n'
         + f'execute if score #short {OBJ} matches 0 run function {NS}:await',
-    30: tell('Maeve knows enough. Live at the cabin as usual; any natural Architect may now be a Scribe '
-             '(spawns roll every 10 seconds, about 8 minutes on average). Nothing is called.', None, 'aqua'),
-    39: tell('An ordinary Architect spawned after the gate was met. Deal with it as usual, then send the dump.', '/fd maeve dump', 'red'),
+    30: tell('Live at the cabin as usual; nothing is called. Natural Architects roll every 10 seconds. With three confident '
+             'beliefs the next one is a Scribe; with fewer, each ordinary one is a miss until one is.', None, 'aqua'),
+    39: tell('An ordinary Architect spawned. Below three confident beliefs that is a miss: the dump shows misses=n/8. '
+             'Deal with it and keep living normally.', '/fd maeve dump', 'red'),
     40: tell('A Scribe has arrived. Look for white eyes and a slate in its hand. It keeps its distance and stares. '
              'Walk toward it: it should run and never attack. Then chase it down and kill it with the sword.', None, 'green'),
     69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red'),
@@ -159,6 +163,7 @@ scoreboard players set #stage {OBJ} 21
 scoreboard players set #timer {OBJ} 0''',
     'ready': f'scoreboard players set #stage {OBJ} 22\n' + prompt(22),
     # Architects already about when the gate is met were judged before it: only later spawns count.
+    'wait': guard(22) + f'\nfunction {NS}:await',
     'await': f'''scoreboard players set #stage {OBJ} 30
 tag @e[type=frozendawn:architect] add msb_noted
 ''' + prompt(30),
