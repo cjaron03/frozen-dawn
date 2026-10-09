@@ -1,5 +1,6 @@
 package com.frozendawn.entity;
 
+import com.frozendawn.FrozenDawn;
 import com.frozendawn.entity.ai.DStarLitePathfinder;
 import com.frozendawn.entity.architect.ArchitectWalkGeometry;
 import com.frozendawn.maeve.MaeveDirector;
@@ -18,21 +19,30 @@ import net.minecraft.world.phys.Vec3;
 /**
  * §9.4b local executor. Walks out into the cold, stands at a distance and watches, flees when approached,
  * and fights only when cornered (§9.13a local-defense exception). It never initiates combat.
+ * With a remembered opening or shelter it watches that; without one it keeps a stand-off from the subject
+ * itself, just outside flee range, and closes in again when the subject draws away (owner, 2026-10-08).
  * Reload restarts the local watch; the claim's lifetime still bounds the whole appearance.
  */
 final class ArchitectScribeController {
     private enum Phase { TRAVEL, WATCH, FLEE, DEPART }
     private static final int[] HEADINGS = {0, 45, -45, 90, -90};
+    /** A stalled flight tries each of these turns off straight-away before it counts as cornered. */
+    private static final int[] FLEE_TURNS = {0, 45, -45, 90, -90, 135, -135};
     private static final double WATCH_RADIUS = 20, WATCH_RANGE = 48, FLEE_RADIUS = 12, CALM_RADIUS = 20, GONE_RADIUS = 32;
     private static final double CORNERED_RANGE = 3.5, WALK_SPEED = .14, FLEE_SPEED = .2;
-    private static final long WATCH = 2400, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, CALM = 40, FLEE_STALL = 30;
+    /** Stand-off from the subject when there is no remembered place: posts at STANDOFF, closes in beyond DRIFT. */
+    private static final double STANDOFF = 16, SETTLED = 20, DRIFT = 28, NOTICE = 4;
+    private static final long WATCH = 2400, DEFEND = 200, DEPART_LIMIT = 600, STALL = 100, CALM = 40, FLEE_STALL = 30, STEP_STALL = 10;
+    private static final int[][] NEIGHBOURS = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
     private final ArchitectEntity actor;
     private Phase phase = Phase.TRAVEL;
     private BlockPos post;
     private Vec3 threat, waypoint, progress;
     private BlockPos goal;
     private DStarLitePathfinder path;
-    private long progressAt, replanAt, watchedFrom = -1, departedAt = -1, calmSince = -1, defendUntil;
+    private long progressAt, replanAt, watchedFrom = -1, departedAt = -1, calmSince = -1, defendUntil, turnAt;
+    private int turn;
+    private boolean repost;
     private UUID attacker;
     private String departure, postReport = "none";
 
@@ -45,8 +55,8 @@ final class ArchitectScribeController {
         if (now < defendUntil) return false;
         if (attacker != null) {
             attacker = null; actor.setTarget(null);
-            actor.recordDecision("MAEVE_SCRIBE_DEFENSE_ENDED", null, "no recent damage; resumes fleeing");
-            setPhase(Phase.FLEE, now);
+            note("DEFENSE_ENDED", "no recent damage; resumes fleeing");
+            flee(now);
         }
         var order = MaeveDirector.scribeOrder(actor);
         if (phase != Phase.DEPART && (order == null || !order.dimension().equals(actor.level().dimension().location().toString())))
@@ -54,9 +64,10 @@ final class ArchitectScribeController {
         actor.getNavigation().stop(); actor.setTarget(null); actor.setSprinting(false);
         actor.setMaeveHolding(false); actor.setCommitmentAction(false);
         var near = nearestPlayer(FLEE_RADIUS, true);
+        if (near == null) near = nearestPlayer(NOTICE, false);
         if (near != null && phase != Phase.DEPART) {
             threat = near.position(); calmSince = -1;
-            if (phase != Phase.FLEE) setPhase(Phase.FLEE, now);
+            if (phase != Phase.FLEE) { note("FLEE", "from=" + near.getName().getString() + " dist=" + dist(near)); flee(now); }
         }
         switch (phase) {
             case FLEE -> {
@@ -64,7 +75,12 @@ final class ArchitectScribeController {
                     if (calmSince < 0) calmSince = now;
                     if (now - calmSince >= CALM) { post = null; setPhase(Phase.TRAVEL, now); }
                 } else calmSince = -1;
-                walk(threat == null ? actor.getLookAngle().reverse() : actor.position().subtract(threat), FLEE_SPEED, now);
+                if (now - progressAt >= FLEE_STALL && now >= turnAt) {
+                    turn++; turnAt = now + FLEE_STALL; resetPath();
+                    note("FLEE_TURN", "at=" + actor.blockPosition() + " turn=" + FLEE_TURNS[turn % FLEE_TURNS.length] + " tried=" + turn);
+                }
+                Vec3 away = threat == null ? actor.getLookAngle().reverse() : actor.position().subtract(threat);
+                walk(away.yRot((float) Math.toRadians(FLEE_TURNS[turn % FLEE_TURNS.length])), FLEE_SPEED, now);
             }
             case TRAVEL -> {
                 // A new post starts its own stall clock; a fresh controller has no progress history yet.
@@ -73,17 +89,21 @@ final class ArchitectScribeController {
                 boolean stalled = now - progressAt >= STALL;
                 if (actor.position().subtract(goal).horizontalDistanceSqr() <= 2.25 || stalled) {
                     setPhase(Phase.WATCH, now);
-                    actor.recordDecision("MAEVE_SCRIBE_WATCH", null, "at=" + actor.blockPosition() + " post=" + post + " watch="
+                    note("WATCH", "at=" + actor.blockPosition() + " post=" + post + " watch="
                             + order.watchLabel() + "@" + order.watch() + " stalled=" + stalled + " " + postReport);
                 } else walkTo(post, WALK_SPEED, now);
             }
             case WATCH -> {
                 hold(watchPoint(order));
                 if (now - watchedFrom >= WATCH) depart("WATCH_COMPLETE", now);
+                else if (order.watch() == null && subject(order) instanceof ServerPlayer subject && dist(subject) > DRIFT) {
+                    note("CLOSE_IN", "subject dist=" + dist(subject));
+                    post = null; repost = true; setPhase(Phase.TRAVEL, now);
+                }
             }
             case DEPART -> {
                 if (nearestPlayer(GONE_RADIUS, false) == null || now - departedAt >= DEPART_LIMIT && nearestPlayer(16, false) == null) {
-                    actor.recordDecision("MAEVE_SCRIBE_GONE", null, "reason=" + departure);
+                    note("GONE", "reason=" + departure);
                     MaeveDirector.scribeEnded(actor, departure); actor.discard(); return true;
                 }
                 Vec3 from = threat != null ? threat : post != null ? Vec3.atCenterOf(post) : actor.position().add(1, 0, 0);
@@ -106,24 +126,40 @@ final class ArchitectScribeController {
         boolean close = actor.distanceToSqr(hitter) <= CORNERED_RANGE * CORNERED_RANGE;
         boolean stalled = phase == Phase.FLEE && now - progressAt >= FLEE_STALL;
         if (close && (stalled || !escapes(actor.position().subtract(hitter.position())))) {
-            if (attacker == null) actor.recordDecision("MAEVE_SCRIBE_CORNERED", null, "attacker=" + hitter.getUUID() + " stalled=" + stalled);
+            if (attacker == null) note("CORNERED", "attacker=" + hitter.getUUID() + " dist=" + dist(hitter) + " stalled=" + stalled);
             attacker = hitter.getUUID(); threat = hitter.position(); defendUntil = now + DEFEND;
             actor.setTarget(hitter); actor.resumeAfterReconnaissance();
             return;
         }
         threat = hitter.position(); calmSince = -1;
-        if (phase != Phase.DEPART && phase != Phase.FLEE) setPhase(Phase.FLEE, now);
+        if (phase != Phase.DEPART && phase != Phase.FLEE) { note("FLEE", "struck dist=" + dist(hitter)); flee(now); }
     }
 
     boolean defending() { return attacker != null && now() < defendUntil; }
 
     private void depart(String reason, long now) {
         departure = reason; departedAt = now; setPhase(Phase.DEPART, now);
-        actor.recordDecision("MAEVE_SCRIBE_DEPART", null, "reason=" + reason);
+        note("DEPART", "reason=" + reason);
+    }
+
+    private void flee(long now) { turn = 0; turnAt = 0; repost = false; setPhase(Phase.FLEE, now); }
+
+    /** Journal and server log alike, so a lab pass shows what the Scribe did without a decision recording. */
+    private void note(String event, String detail) {
+        actor.recordDecision("MAEVE_SCRIBE_" + event, null, detail);
+        FrozenDawn.LOGGER.info("[MACS Scribe] {} scribe={} {}", event, actor.getUUID(), detail);
+    }
+
+    private double dist(LivingEntity other) { return Math.round(actor.distanceTo(other) * 10) / 10.0; }
+
+    private ServerPlayer subject(MaeveDirector.ScribeOrder order) {
+        return order != null && actor.level().getPlayerByUUID(order.subject()) instanceof ServerPlayer subject && subject.isAlive()
+                && !subject.isSpectator() && subject.level() == actor.level() ? subject : null;
     }
 
     private void setPhase(Phase next, long now) {
-        if (next == Phase.WATCH) watchedFrom = now;
+        // Closing in on a drifting subject keeps the same watch clock; settling after flight starts a new one.
+        if (next == Phase.WATCH) { if (!repost || watchedFrom < 0) watchedFrom = now; repost = false; }
         phase = next; resetPath(); progress = actor.position(); progressAt = now;
     }
 
@@ -132,20 +168,34 @@ final class ArchitectScribeController {
         path = null; goal = null; waypoint = null; replanAt = 0;
     }
 
-    /** A post on a ring around the remembered watch point: open sky, standable, loaded, away from known heat. */
+    /**
+     * A post on a ring around the remembered watch point: open sky, standable, loaded, away from known heat.
+     * Without one, a ring at the stand-off around the subject (cover allowed, so woods do not strand it), unless it
+     * already stands close enough.
+     */
     private BlockPos choosePost(MaeveDirector.ScribeOrder order) {
-        if (order == null || order.watch() == null) { postReport = "route"; return actor.blockPosition(); }
-        BlockPos target = order.watch(), best = null; boolean bestVisible = false; double bestDistance = Double.MAX_VALUE;
+        if (order == null) { postReport = "none"; return actor.blockPosition(); }
+        if (order.watch() != null) return ring(order.watch(), WATCH_RADIUS, true);
+        var subject = subject(order);
+        if (subject == null) { postReport = "route"; return actor.blockPosition(); }
+        if (dist(subject) <= SETTLED) { postReport = "standoff dist=" + dist(subject); return actor.blockPosition(); }
+        var post = ring(subject.blockPosition(), STANDOFF, false);
+        postReport = "standoff " + postReport;
+        return post;
+    }
+
+    private BlockPos ring(BlockPos target, double radius, boolean sky) {
+        BlockPos best = null; boolean bestVisible = false; double bestDistance = Double.MAX_VALUE;
         int unloaded = 0, noFooting = 0, covered = 0, heat = 0;
         for (int i = 0; i < 16; i++) {
             double angle = Math.PI * 2 * i / 16;
-            BlockPos column = target.offset((int) Math.round(Math.cos(angle) * WATCH_RADIUS), 0, (int) Math.round(Math.sin(angle) * WATCH_RADIUS));
+            BlockPos column = target.offset((int) Math.round(Math.cos(angle) * radius), 0, (int) Math.round(Math.sin(angle) * radius));
             String reject = "noFooting";
             for (int dy = 6; dy >= -6; dy--) {
                 BlockPos feet = column.above(dy);
                 if (!actor.level().hasChunkAt(feet)) { reject = "unloaded"; continue; }
                 if (ArchitectWalkGeometry.observedStandingPosition(actor.level(), feet) == null) continue;
-                if (!actor.level().canSeeSky(feet)) { reject = "covered"; continue; }
+                if (sky && !actor.level().canSeeSky(feet)) { reject = "covered"; continue; }
                 if (!HeaterRegistry.nearby(actor.level(), feet, 8, 1).isEmpty()) { reject = "heat"; continue; }
                 reject = null;
                 boolean visible = sees(Vec3.atBottomCenterOf(feet).add(0, actor.getEyeHeight(), 0), Vec3.atCenterOf(target));
@@ -193,6 +243,11 @@ final class ArchitectScribeController {
         if (waypoint != null && actor.position().subtract(waypoint).horizontalDistanceSqr() > .04) { move(waypoint, speed); return; }
         waypoint = null;
         BlockPos start = walkingStart();
+        // The observed-walk planner refuses full-block steps; a ledge or a one-block rise must not strand the Scribe.
+        if (now - progressAt >= STEP_STALL) {
+            Vec3 step = localStep(start, destination);
+            if (step != null) { resetPath(); waypoint = step; move(step, speed); return; }
+        }
         if (path == null || start.equals(goal)) {
             goal = segment(destination);
             if (goal == null) return;
@@ -205,6 +260,35 @@ final class ArchitectScribeController {
         if (step == null || step.type() != DStarLitePathfinder.StepType.WALK) { resetPath(); return; }
         waypoint = ArchitectWalkGeometry.observedStandingPosition(actor.level(), step.pos());
         if (waypoint != null) move(waypoint, speed);
+    }
+
+    /**
+     * One neighbouring cell toward the destination that the planner would not take: a drop of up to two blocks or a
+     * one-block rise (the Architect's step height), with the body clear over both cells at the higher footing.
+     */
+    private Vec3 localStep(BlockPos start, BlockPos destination) {
+        Vec3 want = Vec3.atBottomCenterOf(destination).subtract(actor.position()).multiply(1, 0, 1);
+        if (want.lengthSqr() < 1e-4) return null;
+        want = want.normalize();
+        Vec3 best = null; double bestScore = .3;
+        for (int[] n : NEIGHBOURS) {
+            double score = (n[0] * want.x + n[1] * want.z) / Math.sqrt(n[0] * n[0] + n[1] * n[1]);
+            if (score <= bestScore) continue;
+            Vec3 stand = neighbour(start, n[0], n[1]);
+            if (stand != null) { best = stand; bestScore = score; }
+        }
+        return best;
+    }
+
+    /** The footing in one neighbouring column, from two blocks down to one up, if the body clears the way there. */
+    private Vec3 neighbour(BlockPos start, int dx, int dz) {
+        for (int dy : new int[]{0, -1, 1, -2}) {
+            Vec3 stand = ArchitectWalkGeometry.observedStandingPosition(actor.level(), start.offset(dx, dy, dz));
+            if (stand == null || stand.y - actor.getY() > 1.01) continue;
+            var box = actor.getBoundingBox().move(0, Math.max(stand.y, actor.getY()) - actor.getY() + .01, 0);
+            if (actor.level().noCollision(actor, box.minmax(box.move(stand.x - actor.getX(), 0, stand.z - actor.getZ())))) return stand;
+        }
+        return null;
     }
 
     /** Nearest standable cell up to 12 blocks toward the destination. */
@@ -238,21 +322,15 @@ final class ArchitectScribeController {
         actor.setDeltaMovement(delta.x / length * pace, actor.getDeltaMovement().y, delta.z / length * pace);
     }
 
-    /** Any standable neighbouring step away from the attacker, judged like an observed walk transition. */
+    /** Any neighbouring step away from the attacker that the Scribe can take, judged like {@link #localStep}. */
     private boolean escapes(Vec3 direction) {
         Vec3 away = direction.multiply(1, 0, 1);
         if (away.lengthSqr() < 1e-4) return false;
         BlockPos start = walkingStart();
         for (int angle : HEADINGS) {
             Vec3 heading = away.normalize().yRot((float) Math.toRadians(angle));
-            BlockPos cell = start.offset((int) Math.round(heading.x), 0, (int) Math.round(heading.z));
-            if (cell.equals(start)) continue;
-            for (int dy = -1; dy <= 1; dy++) {
-                BlockPos next = cell.above(dy);
-                if (ArchitectWalkGeometry.observedStandingPosition(actor.level(), next) != null
-                        && (Math.abs(next.getX() - start.getX()) + Math.abs(next.getZ() - start.getZ()) != 1
-                        || ArchitectWalkGeometry.canObservedWalkTransition(actor.level(), start, next))) return true;
-            }
+            int dx = (int) Math.round(heading.x), dz = (int) Math.round(heading.z);
+            if ((dx != 0 || dz != 0) && neighbour(start, dx, dz) != null) return true;
         }
         return false;
     }
@@ -281,6 +359,6 @@ final class ArchitectScribeController {
     void clear() {
         resetPath();
         phase = Phase.TRAVEL; post = null; threat = null; progress = null; attacker = null;
-        watchedFrom = -1; departedAt = -1; calmSince = -1; defendUntil = 0; departure = null;
+        watchedFrom = -1; departedAt = -1; calmSince = -1; defendUntil = 0; departure = null; turn = 0; turnAt = 0; repost = false;
     }
 }

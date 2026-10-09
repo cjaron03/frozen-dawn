@@ -320,6 +320,51 @@ public final class MaeveScribeGameTest {
         });
     }
 
+    /** Owner, 2026-10-08: with no remembered place it watched from its spawn, too far away; it now keeps a stand-off. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeWithoutAPlaceClosesToAStandOffFromTheSubject(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 207, 3, scene -> {
+            floor(scene, 44);
+            var player = scene.player("scribe_standoff", 2, 22); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var actor = scene.architect(42, 22);
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            helper.assertTrue(MaeveDirector.scribeOrder(actor).watch() == null, "No remembered opening or shelter");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setOnGround(true); actor.setDeltaMovement(Vec3.ZERO);
+            tick(scene, actor, t + 1, 400);
+            double distance = actor.distanceTo(player);
+            helper.assertTrue(distance >= 12 && distance <= 20 && actor.getTarget() == null && actor.isScribeWriting(),
+                    "Closes from 40 to a stand-off outside flee range and writes there: " + distance + " " + actor.position());
+        });
+    }
+
+    /** Owner pass, 2026-10-08: walked up to in a birch wood, it stopped writing but never left its ledge. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
+    public static void scribeFleesOffALedgeThroughWoods(GameTestHelper helper) {
+        MaeveObservationGameTest.withScene(helper, 208, 2, scene -> {
+            floor(scene, 30);
+            for (int x = 1; x < 30; x += 3) for (int z = 1 + x % 2; z < 30; z += 3) {
+                for (int y = 0; y < 5; y++) scene.block(x, y, z, Blocks.BIRCH_LOG.defaultBlockState());
+                for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+                    scene.block(x + dx, 5, z + dz, Blocks.BIRCH_LEAVES.defaultBlockState());
+            }
+            scene.block(15, 0, 15, Blocks.STONE.defaultBlockState());
+            var player = scene.player("scribe_woods", 15, 28); UUID id = player.getUUID();
+            long t = gate(scene, id);
+            var actor = scene.architect(15, 15);
+            actor.setPos(actor.getX(), actor.getY() + 1, actor.getZ());
+            helper.assertTrue(MaeveDirector.designateScribe(actor, player), "Designated");
+            actor.becomeScribe(); actor.tickCount = 80; actor.setDeltaMovement(Vec3.ZERO);
+            tick(scene, actor, t + 1, 40);
+            helper.assertTrue(actor.isScribeWriting(), "Settles on its ledge and writes: " + actor.position());
+            player.setPos(scene.position(15, 10));
+            double before = actor.distanceTo(player);
+            tick(scene, actor, t + 41, 160);
+            helper.assertTrue(actor.distanceTo(player) > before + 4 && actor.getTarget() == null,
+                    "Leaves the ledge and gains ground through the trees: " + before + " -> " + actor.distanceTo(player) + " " + actor.position());
+        });
+    }
+
     /** Found in the live Scribe Check: a fresh controller must not treat its spawn as a stalled route. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 250)
     public static void scribeWalksOutToARingPostAroundTheRememberedOpening(GameTestHelper helper) {

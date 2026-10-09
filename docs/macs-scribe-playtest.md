@@ -115,6 +115,12 @@ QUICK, one CALL (the called Architect died at 21:38:41), then the natural `wait`
 
 Finding: every Scribe in the lab so far (17:59, 19:15, 21:24, 21:39) was designated on the first miss at one-in-eight odds. The lab client and GameTest server set `-Dfrozendawn.debug.architectSeed=1`, which seeds every new Architect's random alike, and the pity roll drew from the actor's random, so the outcome was fixed. The roll now draws from the subject's random. Lab passes before this fix do not show bad luck protection's odds.
 
+## Owner quick pass 4 (2026-10-08, MACS Scribe Quick 4, build d971a85)
+
+First pass with a random roll: ROLL missed (`MISS 1/8`), the second designated `by=PITY_2/8` at 22:23:17. Owner, unprompted: "i was able ot walk right up to it, and it just stopped writing, but didnt flee" and "maybe it should get closer to the player, instead of being far away". Screenshot `2026-10-08_22.23.44.png`: the Scribe on a one-block rise in a birch wood, slate in hand, the owner about three blocks away. Log: `RETALIATION` at 2.9 blocks at 22:23:46 once struck, slain at 22:23:51.
+
+Diagnosis: it noticed the owner (writing stops in flight) but the observed-walk planner refuses full-block steps, so every flight off the rise stalled; struck while stalled, it counted as cornered and fought. In quick mode it had no remembered place (`watch=ROUTE`), so it watched from its spawn 50 blocks out. A headless woods-and-ledge GameTest reproduced the freeze. Changes: a Scribe-only neighbouring step (drop up to two, rise one) when the planner stalls, flight turns on a stall, a 4-block notice regardless of sight, a 16-block stand-off from the subject without a remembered place, and `[MACS Scribe]` log lines.
+
 ## Handoff (2026-10-08)
 
-Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 3`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: whether a cornered Scribe should defend itself or only flee; a lab pass that shows real misses before a Scribe now that the roll is no longer fixed.
+Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 3`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: a visual pass of the stand-off and the ledge flight; whether a cornered Scribe should defend itself or only flee.
