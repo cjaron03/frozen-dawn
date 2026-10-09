@@ -40,7 +40,7 @@ Implemented on `feat/scribe-architect`, branched from `feat/maeve-director` at `
 - Headed `Vel-thae.`; never the username. Field-note register, no address.
 - Confidence is phrasing: ≥ 0.90 repeats the verb (`Ka vel-an. Vel-an.` → "Carries a blade. Always."), 0.75–0.90 is flat, below 0.75 leaves the transmission open (`Mor vel-thaeven…` → "Mends beneath cover. Perhaps."). A split belief (seen both ways, below 0.75) is marked with the proposed root *liss* (`Vel-sorr aren thaeven. Liss.` → "Leaves by the east opening. Unsettled."), and is written even below the 0.20 floor.
 - Only authored patterns are written; an unknown future pattern is omitted rather than guessed.
-- Use: with a Thaeven Translator in the inventory, each reconstruction is shown above its raw line; without one, raw Thaeven only, and the translator recipe is discovered (same as carriers). Lines fade in unless reduced ink animation is enabled.
+- Use: with a Thaeven Translator in the inventory, each reconstruction is shown above its raw line; without one, raw Thaeven only, and the translator recipe is discovered (same as carriers). The page is a wood-framed slate in chalk. Each note is scratched in left to right with the Scribe's writing sound; with the translator its Thaeven then fractures into the reconstruction through the archive's ink (shared `ThaevenInk`). Certainty sets the pace: Always settles fast, plain lines at the normal pace, Perhaps slowly and keeps faint ghosts, Unsettled never stops wavering. A click finishes it; reduced ink animation shows it settled and silent.
 
 | Pattern | Thaeven | Translation |
 | --- | --- | --- |
