@@ -83,8 +83,9 @@ PROMPTS = {
         + f'execute if score #short {OBJ} matches 0 run function {NS}:await',
     30: tell('Live at the cabin as usual; nothing is called. Natural Architects roll every 10 seconds. With three confident '
              'beliefs the next one is a Scribe; with fewer, each ordinary one is a miss until one is.', None, 'aqua'),
-    39: tell('An ordinary Architect spawned. Below three confident beliefs that is a miss (the dump shows misses=n/8), '
-             'unless the 5-day cooldown is still running. Deal with it and keep living normally.', '/fd maeve dump', 'red'),
+    39: tell('An ordinary Architect spawned; it glows so you can find it. Below three confident beliefs that is a miss (the dump '
+             'shows misses=n/8), unless the 5-day cooldown is still running. Kill it: no new Architect spawns within 96 blocks while it lives.',
+             '/fd maeve dump', 'red'),
     40: tell('A Scribe has arrived. Look for white eyes and a slate in its hand. It keeps its distance and stares. '
              'Walk toward it: it should run and never attack. Then chase it down and kill it with the sword.', None, 'green'),
     69: tell('It left without dying, so nothing dropped. Tell me what you saw; the next one needs 5 in-game days.', '/fd maeve dump', 'red') + '\n'
@@ -173,6 +174,7 @@ tag @e[type=frozendawn:architect] add msb_noted
 scoreboard players set #stage {OBJ} 40
 execute as @a[tag=msb] run {prompt(40)}''',
     'ordinary': f'''tag @s add msb_noted
+effect give @s minecraft:glowing infinite 0 true
 scoreboard players set #stage {OBJ} 39
 execute as @a[tag=msb] run {prompt(39)}''',
     'gone': f'''execute if entity @e[type=item,nbt={{Item:{{id:"frozendawn:scribe_record"}}}}] run scoreboard players set #stage {OBJ} 70
@@ -204,7 +206,7 @@ execute if score #stage {OBJ} matches 21 run scoreboard players add #timer {OBJ}
 execute if score #stage {OBJ} matches 21 as @a[tag=msb] run {prompt(21)}
 execute if score #stage {OBJ} matches 21 if score #timer {OBJ} matches {GAP}.. as @a[tag=msb,limit=1] run function {NS}:ready
 execute if score #stage {OBJ} matches 10..39 as @e[{SCRIBE},tag=!msb_scribe,limit=1] run function {NS}:found
-execute if score #stage {OBJ} matches 30 as @e[type=frozendawn:architect,tag=!msb_called,tag=!msb_scribe,tag=!msb_noted,limit=1] run function {NS}:ordinary
+execute if score #stage {OBJ} matches 30..39 as @e[type=frozendawn:architect,tag=!msb_called,tag=!msb_scribe,tag=!msb_noted,limit=1] run function {NS}:ordinary
 execute if score #stage {OBJ} matches 40 unless entity @e[tag=msb_scribe] as @a[tag=msb,limit=1] run function {NS}:gone'''
 
 
