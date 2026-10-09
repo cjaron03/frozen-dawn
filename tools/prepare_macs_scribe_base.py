@@ -9,6 +9,7 @@ import argparse
 import gzip
 import json
 import shutil
+import sys
 from pathlib import Path
 
 NS = 'macs_scribe_base'
@@ -331,9 +332,15 @@ if __name__ == '__main__':
     if args.pack_only:
         write_pack(args.pack_only, True)
     elif args.update_pack:
-        if args.update_pack.exists():
-            shutil.rmtree(args.update_pack)
-        write_pack(args.update_pack)
+        # Accept the world folder and resolve the pack inside it; never remove anything that is not that pack.
+        pack = args.update_pack
+        if (pack / 'level.dat').exists():
+            pack = pack / 'datapacks/macs-scribe-base'
+        if pack.parent.name != 'datapacks' or (pack / 'level.dat').exists() or (pack / 'region').exists():
+            sys.exit(f'refusing to rewrite {pack}: expected <world>/datapacks/macs-scribe-base')
+        if pack.exists():
+            shutil.rmtree(pack)
+        write_pack(pack)
     elif args.source and args.destination:
         prepare(args.source, args.destination)
     else:
