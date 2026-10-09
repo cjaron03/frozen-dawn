@@ -104,3 +104,17 @@ For checking the Scribe by eye without days of play. The lab client and the Game
 ## Owner quick pass 1 (2026-10-08, MACS Scribe Quick, build 16f2364)
 
 Owner, unprompted: "i saw it looking at me, writing on the slate, and when i attacked it fought back". Log (client clock): QUICK seeded at 19:15:12; the first ROLL designated a Scribe `by=PITY_1/8` at 19:15:40; at 19:16:26 it logged `RETALIATION` at distance 2.6 against the owner, then the ordinary RETREAT routine (three ice walls, healing potion); slain by the owner at 19:16:34; `ENDED reason=KILLED`. Record lines: sword (Always), east exit (Unsettled), recovery and north exit (Perhaps). The fight moved the seed: east took a contradiction (4/1, split), west a third (2/3, dropped), north a first support. The map carried 8 marks (openings, heat, losses) learned during the watch. The `Failed to parse map banner: 'Not a list: null'` warning recurred at the drop. Open: whether a Scribe should fight back once struck rather than only flee.
+
+## Owner quick pass 2 (2026-10-08, MACS Scribe Quick 2, build 9ee74bb)
+
+Slate record screen, fit-to-marks map, chalk portrait and pictograms, bow in the kit. Owner, unprompted: "looks good!" and "i goit it first try again for the roll". Log: designated `by=PITY_1/8` at 21:24:09, died near (62.9, -10.7) at 21:24:44, `ENDED reason=KILLED`; the owner reached `translate`. That save was then lost: the agent ran `--update-pack` with the world folder instead of its pack folder, and the tool removed the whole folder before writing the pack. Playerdata and region files were gone, so the slate and map from this run are not recoverable; the damaged folder is kept. Fixed in `35b69a9`: `--update-pack` resolves a world folder to its pack and refuses any other target.
+
+## Owner quick pass 3 (2026-10-08, MACS Scribe Quick 3, build 35b69a9)
+
+QUICK, one CALL (the called Architect died at 21:38:41), then the natural `wait` link. A natural spawn became a Scribe `by=PITY_1/8` at 21:39:58, was slain at 21:40:34 (`ENDED reason=KILLED`), and the owner ran `translate`. Owner: "i think its good".
+
+Finding: every Scribe in the lab so far (17:59, 19:15, 21:24, 21:39) was designated on the first miss at one-in-eight odds. The lab client and GameTest server set `-Dfrozendawn.debug.architectSeed=1`, which seeds every new Architect's random alike, and the pity roll drew from the actor's random, so the outcome was fixed. The roll now draws from the subject's random. Lab passes before this fix do not show bad luck protection's odds.
+
+## Handoff (2026-10-08)
+
+Branch `feat/scribe-architect` (main checkout `/Volumes/SSD/Work/frozen-dawn`), no PR. Play checkout `/Volumes/SSD/Work/frozen-dawn-play` (detached at the branch tip), active save `run-lab/saves/MACS Scribe Quick 3`; source world `~/Projects/minecraft-mod/run-lab/saves/scribe test` stays untouched. Open: whether a cornered Scribe should defend itself or only flee; a lab pass that shows real misses before a Scribe now that the roll is no longer fixed.
