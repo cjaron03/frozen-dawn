@@ -70,6 +70,7 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         boolean redstoneOff = data.get(5) != 0;
         int mode = data.get(6);
         int temperature = data.get(7);
+        int target = data.get(8);
 
         // --- Burn time bar ---
         int barX = x + 8;
@@ -113,10 +114,10 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         graphics.drawString(font, shelterText, x + 22, indicatorY, sheltered ? 0xFFAABBAA : 0xFFCC6644, false);
 
         String status = redstoneOff ? "Paused by redstone" : !isLit ? "Off" :
-                (mode != 0 && temperature >= 195 ? "Holding " : "Heating ") + burnPercent + "%";
+                (mode != 0 && temperature >= target*10-5 ? "Holding " : "Heating ") + burnPercent + "%";
         graphics.drawString(font, status, x + 10, y + 58, 0xFFE0C090, false);
-        String reading = mode == 0 || temperature == -32768 ? "Open camp | Target 20C" :
-                String.format(java.util.Locale.ROOT,"%s %.1fC | Target 20C",mode == 2 ? "Walls" : "Air",temperature/10.0);
+        String reading = mode == 0 || temperature == -32768 ? "Open camp | Target "+target+"C" :
+                String.format(java.util.Locale.ROOT,"%s %.1fC | Target %dC",mode >= 3 ? "Sensor" : mode == 2 ? "Walls" : "Air",temperature/10.0,target);
         graphics.drawString(font, reading, x + 10, y + 70, 0xFFAABBAA, false);
         if (industrialDrain) {
             int warningY = y + 84;

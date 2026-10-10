@@ -376,6 +376,84 @@ public final class RoomThermalGameTest {
             });
         }catch(RuntimeException|Error e){s.l.setBlock(s.c.east(2),Blocks.AIR.defaultBlockState(),2);s.close();throw e;}
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void thermostatCoreAwareMixedHeatersReachSensedTargetWithoutDoubleHeat(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();var panelPos=s.c;var corePos=s.c.east(5);
+            s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+            var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();panel.setTarget(30);
+            s.l.setBlock(corePos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+            com.frozendawn.world.GeothermalCoreRegistry.register(s.l,corePos);
+            var heaters=new ArrayList<ThermalHeaterBlockEntity>();
+            for(var pos:List.of(s.c.west(2),s.c.east(2))) {
+                s.l.setBlock(pos,(pos.equals(s.c.west(2))?ModBlocks.THERMAL_HEATER.get():ModBlocks.DIAMOND_THERMAL_HEATER.get()).defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);heater.installCapacitor();heaters.add(heater);
+            }
+            RoomAtmosphere.view(s.l,panelPos);ThermostatManager.refresh(s.l);
+            var terms=TemperatureManager.thermostatTerms(s.l,panelPos);h.assertTrue(terms.warmth()>0,"Real registered Core contributes local warmth");
+            // Finish dirty wall profiles before importing controlled thermal fixture energy.
+            RoomThermalManager.tickLevel(s.l);
+            double base=terms.baseTarget(30);
+            var apocalypse=ApocalypseState.get(s.l.getServer());
+            h.assertTrue(TemperatureManager.getBackgroundTemperature(panelPos.getY(),apocalypse.getCurrentDay(),apocalypse.getTotalDays())<base,"Heating fixture starts colder than the Core-adjusted gas target; passive heat cannot require cooling");
+            hot(s,base-.1,base-.1);double before=s.heat().ledger.heater;
+            var time=s.l.getGameTime();((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time+20);
+            try {RoomThermalManager.tickLevel(s.l);}finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time);}
+            var value=RoomThermalManager.snapshots(s.l).getFirst();
+            near(h,panel.reading().sensed(),30,"Core-aware sensor reaches its selected target rather than air target plus Core");
+            near(h,value.airTemperature(),base,"Core remains an additive local term, not duplicated in gas energy");
+            near(h,TemperatureManager.getTemperatureAt(s.l,panelPos,ApocalypseState.get(s.l.getServer()).getCurrentDay(),ApocalypseState.get(s.l.getServer()).getTotalDays()),30,"Player environmental reading agrees at sensor");
+            h.assertTrue(panel.reading().heaters()==2&&heaters.stream().allMatch(heater->heater.getBurnFraction()>0&&heater.getBurnFraction()<1),"Mixed upgraded tiers link and throttle");
+            h.assertTrue(s.heat().ledger.heater>before,"Actual grant is accounted");budget(h,s);
+            var player=h.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);player.setPos(panelPos.getX()+.5,panelPos.getY(),panelPos.getZ()+.5);
+            var menu=new com.frozendawn.block.ThermostatMenu(1,player.getInventory(),panel);
+            h.assertTrue(!menu.clickMenuButton(player,9),"Invalid network button cannot change target");
+            h.assertTrue(menu.clickMenuButton(player,0)&&panel.target()==25,"Validated menu lowers target by five");
+            player.setPos(panelPos.getX()+100,panelPos.getY(),panelPos.getZ());h.assertTrue(!menu.clickMenuButton(player,1)&&panel.target()==25,"Distant player cannot change controller");
+            h.assertTrue(panel.comparator()==15,"30C sensed temperature maps to full comparator strength");
+            for(var heater:heaters)s.l.setBlock(heater.getBlockPos(),Blocks.AIR.defaultBlockState(),2);
+            s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(corePos,Blocks.GLASS.defaultBlockState(),2);ThermostatManager.reset();
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void thermostatPrioritySplitMergeRemovalBreachAndReloadKeepSettings(GameTestHelper h) {
+        scene(h,s->{
+            ThermostatManager.reset();var a=s.c.west(2);var b=s.c.east(2);
+            s.l.setBlock(a,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);var left=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(a);left.onLoad();left.setTarget(10);
+            s.l.setBlock(b,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);var right=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(b);right.onLoad();right.setTarget(30);
+            ThermostatManager.refresh(s.l);h.assertTrue(right.order()>left.order()&&left.reading().mode()==ThermostatManager.OVERRIDDEN,"Same-tick latest placement wins shared volume");
+            var saved=right.saveWithFullMetadata(s.l.registryAccess());var restored=new com.frozendawn.block.ThermostatBlockEntity(b,right.getBlockState());restored.loadWithComponents(saved,s.l.registryAccess());
+            h.assertTrue(restored.target()==30&&restored.order()==right.order()&&restored.wasSealed(),"Target, priority and indoor binding survive reload");
+            var order=com.frozendawn.data.ThermostatOrderState.get(s.l);var sequence=com.frozendawn.data.ThermostatOrderState.load(order.save(new CompoundTag(),s.l.registryAccess()),s.l.registryAccess());
+            h.assertTrue(sequence.allocate()>right.order(),"Next placement remains newer after saved sequence reload");
+            partition(s,true);ThermostatManager.refresh(s.l);
+            h.assertTrue(left.reading().mode()==ThermostatManager.SEALED&&right.reading().mode()==ThermostatManager.SEALED,"Split volumes recover independent controllers");
+            partition(s,false);ThermostatManager.refresh(s.l);h.assertTrue(left.reading().mode()==ThermostatManager.OVERRIDDEN,"Merge reselects newest controller");
+            s.l.setBlock(b,Blocks.AIR.defaultBlockState(),3);ThermostatManager.refresh(s.l);h.assertTrue(left.reading().mode()==ThermostatManager.SEALED,"Removing winner restores earlier thermostat");
+            long priorId=RoomAtmosphere.view(s.l,a).id();s.l.setBlock(s.c.west(5),Blocks.AIR.defaultBlockState(),3);ThermostatManager.refresh(s.l);h.assertTrue(left.reading().mode()==ThermostatManager.NO_SEAL,"Breached indoor thermostat reports No seal rather than controlling outdoors");
+            h.assertTrue(ThermostatManager.roomControl(s.l,priorId)==null,"Breached room falls back to heater defaults");
+            s.l.setBlock(s.c.west(5),Blocks.GLASS.defaultBlockState(),3);ThermostatManager.refresh(s.l);h.assertTrue(left.reading().mode()==ThermostatManager.SEALED&&left.target()==10,"Reseal restores preserved target");
+            s.l.setBlock(a,Blocks.AIR.defaultBlockState(),2);ThermostatManager.reset();budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void thermostatOpenCampSharesDemandAndLateBreachDoesNotExtendControl(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();
+            // Elevate this camp above the deep geothermal background, which already exceeds25C.
+            ApocalypseState.get(s.l.getServer()).setApocalypseTicks(0,s.l.getServer());s.l.setBlock(s.c.east(5),Blocks.AIR.defaultBlockState(),3);
+            s.l.setBlock(s.c,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(s.c);panel.onLoad();panel.setTarget(25);
+            var pos=s.c.west(2);s.l.setBlock(pos,ModBlocks.IRON_THERMAL_HEATER.get().defaultBlockState(),3);var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);
+            ThermostatManager.refresh(s.l);heater.serverTick();ThermostatManager.publish(s.l);
+            h.assertTrue(panel.reading().mode()==ThermostatManager.OPEN&&heater.getBurnFraction()>0&&heater.getBurnFraction()<1,"Early open camp controls a loaded heater in eight blocks");
+            near(h,panel.reading().sensed(),25,"Open sensor target includes background and heater warmth once");
+            var saved=heater.saveWithFullMetadata(s.l.registryAccess());h.assertTrue(saved.getInt("BurnTime")<10000||saved.getDouble("FuelFraction")>0,"Open demand consumes real fuel");
+            heater.extinguish();ThermostatManager.refresh(s.l);h.assertTrue(panel.reading().heaters()==1,"Installed open-camp heater stays linked after fuel runs out");
+            ApocalypseState.get(s.l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(s.l.getServer()).getTotalDays()*24000L*.90),s.l.getServer());ThermostatManager.refresh(s.l);
+            h.assertTrue(panel.reading().mode()==ThermostatManager.NO_SEAL&&ThermostatManager.openDuty(s.l,pos).isEmpty(),"Late phase vacuum does not control through an unsealed camp");
+            s.l.setBlock(s.c,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(pos,Blocks.AIR.defaultBlockState(),2);ThermostatManager.reset();
+        });
+    }
     private static void hot(Scene s,double air,double walls) {
         for(var r:s.heat().rooms.values())r.airEnergy=RoomHeatMath.energy(r.airCapacity(),air);
         for(var m:s.heat().materials.values())m.energy=RoomHeatMath.energy(m.capacity,walls);
@@ -389,11 +467,13 @@ public final class RoomThermalGameTest {
     private static void partition(Scene s,boolean closed) {
         for(int y=0;y<3;y++)for(int z=-1;z<=1;z++)s.l.setBlock(s.c.offset(0,y,z),(closed?Blocks.GLASS:Blocks.AIR).defaultBlockState(),3);
     }
-    private static void scene(GameTestHelper h,Consumer<Scene> test){var s=new Scene(h);try{test.accept(s);h.succeed();}finally{s.close();}}
+    private static void scene(GameTestHelper h,Consumer<Scene> test){scene(h,3,test);}
+    private static void scene(GameTestHelper h,int height,Consumer<Scene> test){var s=new Scene(h,height);try{test.accept(s);h.succeed();}finally{s.close();}}
     private static final class Scene {
         final ServerLevel l;final BlockPos c;final long phase;final CompoundTag identities,air,heat;
-        Scene(GameTestHelper h) {
-            l=h.getLevel();c=h.absolutePos(new BlockPos(10,3,10));var a=ApocalypseState.get(l.getServer());phase=a.getApocalypseTicks();
+        Scene(GameTestHelper h) {this(h,3);}
+        Scene(GameTestHelper h,int height) {
+            l=h.getLevel();c=h.absolutePos(new BlockPos(10,height,10));var a=ApocalypseState.get(l.getServer());phase=a.getApocalypseTicks();
             identities=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());heat=RoomThermalState.get(l).save(new CompoundTag(),l.registryAccess());
             a.setApocalypseTicks((long)(a.getTotalDays()*24000L*.90),l.getServer());RoomAtmosphere.reset();RoomThermalManager.reset();CombustionAtmosphere.reset();AtmosphericBreach.reset();
             l.getDataStorage().set(RoomIdentityState.NAME,new RoomIdentityState());l.getDataStorage().set(RoomAirState.NAME,new RoomAirState());l.getDataStorage().set(RoomThermalState.NAME,new RoomThermalState());

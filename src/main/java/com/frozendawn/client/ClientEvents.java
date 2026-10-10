@@ -358,6 +358,7 @@ public class ClientEvents {
         event.register(ModMenuTypes.TRANSPONDER.get(), TransponderScreen::new);
         event.register(ModMenuTypes.PHASE_BAROMETER.get(), PhaseBarometerScreen::new);
         event.register(ModMenuTypes.THERMAL_HEATER.get(), ThermalHeaterScreen::new);
+        event.register(ModMenuTypes.THERMOSTAT.get(), ThermostatScreen::new);
     }
 
     /**

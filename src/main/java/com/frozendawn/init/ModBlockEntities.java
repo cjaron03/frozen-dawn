@@ -33,6 +33,9 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("airlock_controller", () -> BlockEntityType.Builder.of(
                     com.frozendawn.block.AirlockControllerBlockEntity::new, ModBlocks.AIRLOCK_CONTROLLER.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ThermostatBlockEntity>> THERMOSTAT=
+            BLOCK_ENTITIES.register("thermostat",()->BlockEntityType.Builder.of(com.frozendawn.block.ThermostatBlockEntity::new,ModBlocks.THERMOSTAT.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ThermalHeaterBlockEntity>> THERMAL_HEATER =
             BLOCK_ENTITIES.register("thermal_heater",
                     () -> BlockEntityType.Builder.of(ThermalHeaterBlockEntity::new,

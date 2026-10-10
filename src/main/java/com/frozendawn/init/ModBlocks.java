@@ -346,6 +346,9 @@ public class ModBlocks {
 
     // --- Player Agency blocks ---
 
+    public static final DeferredBlock<com.frozendawn.block.ThermostatBlock> THERMOSTAT=BLOCKS.register("thermostat",
+            ()->new com.frozendawn.block.ThermostatBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
+
     // Thermal Heater: right-click fuel, radius 7, +35C when lit
     public static final DeferredBlock<ThermalHeaterBlock> THERMAL_HEATER = BLOCKS.register("thermal_heater",
             () -> new ThermalHeaterBlock(BlockBehaviour.Properties.of()

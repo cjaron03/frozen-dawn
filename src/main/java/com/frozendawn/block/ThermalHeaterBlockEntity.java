@@ -40,6 +40,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     private double fuelFraction = 0;
     private double burnFraction = 1;
     private double controlledTemperature = Double.NaN;
+    private int controlTarget = 20;
     private int controlMode = 0; // 0 open camp, 1 room air, 2 depleted room structure
 
     private boolean cachedSheltered = false;
@@ -87,7 +88,9 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
                         worldPosition.getY(), phase.getCurrentDay(), phase.getTotalDays())
                         + (getCachedSheltered() ? 5 : 0);
                 controlledTemperature = Double.NaN;
-                burnFraction = com.frozendawn.thermal.HeaterControl.openCampFraction(background,
+                controlTarget=com.frozendawn.world.ThermostatManager.openTarget((ServerLevel)level,worldPosition);
+                var thermostatDuty=com.frozendawn.world.ThermostatManager.openDuty((ServerLevel)level,worldPosition);
+                burnFraction = thermostatDuty.isPresent()?thermostatDuty.getAsDouble():com.frozendawn.thermal.HeaterControl.openCampFraction(background,
                         Math.max(0, getPublicHeatOutput() - frostmiteHeatPenalty)
                                 * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get());
                 debitFuel(getPhaseConsumption() * burnFraction);
@@ -166,9 +169,11 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         burnFraction = isLit() ? Math.clamp(fraction, 0, 1) : 0;
         controlledTemperature = temperature;
         controlMode = airPresent ? 1 : 2;
+        controlTarget = 20;
         debitFuel(20.0 * getPhaseConsumption() * burnFraction);
         updateLitState();
     }
+    public void thermostatStatus(double sensed,int target,boolean airPresent){controlledTemperature=sensed;controlTarget=target;controlMode=airPresent?3:4;}
     private void debitFuel(double units) {
         if (units <= 0 || burnTimeRemaining <= 0) return;
         double accumulated = fuelFraction + units;
@@ -334,6 +339,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
                     case 5 -> isRedstoneDisabled() ? 1 : 0;
                     case 6 -> controlMode;
                     case 7 -> Double.isFinite(controlledTemperature) ? (int)Math.clamp(Math.round(controlledTemperature * 10), -32767, 32767) : -32768;
+                    case 8 -> controlTarget;
                     default -> 0;
                 };
             }
@@ -342,7 +348,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             public void set(int index, int value) {}
 
             @Override
-            public int getCount() { return 8; }
+            public int getCount() { return 9; }
         };
     }
 

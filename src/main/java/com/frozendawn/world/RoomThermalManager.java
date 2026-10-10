@@ -329,6 +329,7 @@ public final class RoomThermalManager {
             }
         }
         if(changed){releaseUnused(rt);index(rt);}
+        ThermostatManager.refresh(level);
         var loaded=rt.rooms.values().stream().filter(binding->!binding.suspended&&loaded(level,binding)).toList();
         var owners=rt.owners;double dt=1.0/SUBSTEPS;
         var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();
@@ -347,8 +348,8 @@ public final class RoomThermalManager {
             double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
             double supplied = room.airPresent
                     ? HeaterControl.airGrant(powers.get(room.id)*dt,room.airCapacity(),capacity,
-                            RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),wallsBefore,room.faces.size()*4.0,dt,HeaterControl.DEFAULT_TARGET)
-                    : HeaterControl.wallGrant(powers.get(room.id)*dt,capacity,wallsBefore,HeaterControl.DEFAULT_TARGET);
+                            RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),wallsBefore,room.faces.size()*4.0,dt,room.sealed?ThermostatManager.roomTarget(level,room.id):HeaterControl.DEFAULT_TARGET)
+                    : HeaterControl.wallGrant(powers.get(room.id)*dt,capacity,wallsBefore,wallTarget(level,room,binding.profile));
             suppliedByRoom.merge(room.id,supplied,Double::sum);
             if(room.airPresent)room.airEnergy+=supplied;
             else supplied=addStructure(rt.state,room,owners,supplied*RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
@@ -384,8 +385,19 @@ public final class RoomThermalManager {
             double temperature = room.airPresent ? RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
                     : RoomHeatMath.temperature(capacity(rt.state,room,owners),structureEnergy(rt.state,room,owners));
             entry.getKey().consumeRoomHeating(entry.getValue(),temperature,room.airPresent);
+            var control=room.sealed?ThermostatManager.roomControl(level,room.id):null;
+            if(control!=null){double base=room.airPresent?temperature:outsideAverage(level,binding.profile)+(temperature-outsideAverage(level,binding.profile))*RoomHeatMath.RADIANT_FEEL_WEIGHT;
+                entry.getKey().thermostatStatus(control.terms().apply(base),control.panel().target(),room.airPresent);}
+
         }
+        ThermostatManager.publish(level);
         if(!loaded.isEmpty())rt.state.setDirty();
+    }
+    private static double wallTarget(ServerLevel level,RoomThermalState.Room room,Profile profile) {
+        var control=room.sealed?ThermostatManager.roomControl(level,room.id):null;
+        if(control==null)return HeaterControl.DEFAULT_TARGET;
+        double outside=outsideAverage(level,profile);
+        return outside+(ThermostatManager.roomTarget(level,room.id)-outside)/RoomHeatMath.RADIANT_FEEL_WEIGHT;
     }
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         var level=event.getServer().overworld();if(level.getGameTime()%20==0)tickLevel(level);
@@ -445,6 +457,6 @@ public final class RoomThermalManager {
         }
         return OptionalDouble.empty();
     }
-    @SubscribeEvent public static void stop(ServerStoppedEvent event){reset();}
+    @SubscribeEvent public static void stop(ServerStoppedEvent event){reset();ThermostatManager.reset();}
     public static void reset(){LEVELS.clear();}
 }

@@ -21,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
  *   4 = averaged ordinary burn percentage (display only)
  *   5 = redstone disabled (0/1)
  *   6 = control mode (open camp / air / walls)
+ *   8 = selected target in Celsius (thermostat or default)
  *   7 = controlled temperature in tenths Celsius (-32768 = unavailable)
  */
 public class ThermalHeaterMenu extends AbstractContainerMenu {
@@ -29,7 +30,7 @@ public class ThermalHeaterMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public ThermalHeaterMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, new SimpleContainerData(8));
+        this(containerId, new SimpleContainerData(9));
     }
 
     /** Server constructor. */

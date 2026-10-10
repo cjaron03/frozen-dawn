@@ -42,6 +42,9 @@ public class ModMenuTypes {
             MENU_TYPES.register("phase_barometer",
                     () -> IMenuTypeExtension.create(PhaseBarometerMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ThermostatMenu>> THERMOSTAT=
+            MENU_TYPES.register("thermostat",()->IMenuTypeExtension.create(com.frozendawn.block.ThermostatMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<ThermalHeaterMenu>> THERMAL_HEATER =
             MENU_TYPES.register("thermal_heater",
                     () -> IMenuTypeExtension.create(ThermalHeaterMenu::new));
