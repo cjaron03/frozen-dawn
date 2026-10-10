@@ -7,12 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Thermal Capacitor",
-      "text": "An advanced heater upgrade component. Right-click on any $(l:heating/thermal_heater)Thermal Heater$(/l) to install. One per heater. Consumed on use.$(br2)$(bold)Effects:$()$(br)$(li)Doubles warmth radius$(li)Increases heat output by 50%$(li)Persists through save/load$(li)Cannot be removed once installed$(br2)A single capacitor turns a basic heater (7-block radius, +35°C) into a 14-block radius, +52°C monster. On a Diamond Heater, you're looking at a 28-block radius at +120°C.$(br2)$(italic)ORSA Engineering wanted to call it the \"Thermal Amplitude Redistribution Device.\" Marketing called it a capacitor. Marketing won.$()"
+      "text": "Right-click any $(l:heating/thermal_heater)Thermal Heater$(/l) to install. One per heater; consumed on use. The upgrade persists through reloads and cannot be removed.$(br2)Output increases by 50%, with whole-number room output. Open-camp warmth radius doubles. Inside sealed rooms, coverage follows room geometry; a capacitor adds power, not an instant room-temperature bonus."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_capacitor",
       "text": "Refined Acheronite (top/bottom), Thermal Cores (sides), and a Frostbitten Core (center). It costs an arm and a leg. But your arms won't have frostbite anymore, so there's that."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power and Control",
+      "text": "More power speeds warm-up. It does not raise the shared target. Automatic control and an $(l:heating/thermostat)ORSA Thermostat$(/l) regulate upgraded heaters normally.$(br2)In open camps, a basic heater reaches 14 blocks and a Diamond Heater 28 before exposure or frostmite penalties.$(br2)$(italic)Engineering proposed “Thermal Amplitude Redistribution Device.” Marketing won.$()"
     }
   ]
 }

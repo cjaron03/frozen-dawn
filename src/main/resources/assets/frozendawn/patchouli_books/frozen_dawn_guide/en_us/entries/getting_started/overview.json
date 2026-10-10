@@ -13,6 +13,11 @@
       "type": "patchouli:text",
       "title": "Key Survival Rules",
       "text": "$(li)$(bold)Go underground.$() Deeper = warmer. Below Y=0 is safest.$(li)$(bold)Secure heat early.$() Build Thermal Heaters before Phase 3.$(li)$(bold)Late Phase 6 needs real shelter.$() A single roof is not enough. You need a sealed room with trapped air; a Geothermal Core or Blast Pit supplies replacement oxygen only within a connected sealed room.$(li)$(bold)Stockpile fuel.$() Surface coal ore freezes in Phase 4.$(br2)$(italic)ORSA Wellness Division has rated your current survival odds at \"non-zero.\" That's the nicest thing they've said about anyone on this planet.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Build for the New Climate",
+      "text": "Deep ground cools more slowly than the surface. A sealed, insulated base saves heating fuel; even a warm deep refuge still needs oxygen in late Phase 6.$(br2)Start with $(l:heating/thermal_heater)Thermal Heaters$(/l), then read $(l:heating/room_climate)Room Heating & Insulation$(/l). An optional $(l:heating/thermostat)ORSA Thermostat$(/l) sets the target and accounts for Core warmth."
     }
   ]
 }

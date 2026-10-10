@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Insulated Glass",
-      "text": "Transparent glass that retains heat. Use for windows in your sealed shelter — lets you watch the world freeze without freezing yourself.$(br2)Craft 4 at a time. Build sealed rooms using insulated glass and solid blocks to trap warmth from heaters.$(br2)$(italic)ORSA Wellness Note: Staring out insulated glass at the frozen wasteland for extended periods may cause existential dread, philosophical breakthroughs, or both. This is normal. Look away occasionally.$()"
+      "text": "An insulating window for sealed rooms. Ordinary glass seals air but loses heat readily; Insulated Glass uses the same insulation tier as wool.$(br2)Craft four at a time. Insulate the rest of the floor, walls and roof too; one good window cannot compensate for a bare stone base.$(br2)$(italic)ORSA Wellness Note: Watching the frozen wasteland may cause existential dread. Look away occasionally.$()"
     },
     {
       "type": "patchouli:crafting",

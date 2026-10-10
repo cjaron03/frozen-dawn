@@ -1,0 +1,43 @@
+{
+  "name": "Room Heating & Insulation",
+  "category": "frozendawn:heating",
+  "icon": "minecraft:white_wool",
+  "sortnum": 20,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Build for Warmth",
+      "text": "Seal the room, then insulate its floor, walls and roof. Airtightness and insulation are separate: a full glass wall can seal air while losing heat readily.$(br2)Wool, snow blocks and moss insulate well. Wood loses less heat than stone. Ordinary glass, metal and ice are poor insulators. $(l:heating/insulated_glass)Insulated Glass$(/l) is an insulating window."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Layers and Size",
+      "text": "Up to three layers outward from each room boundary combine their insulation. Layer the floor and roof as well as walls. Thin windows can dominate losses in an otherwise warm base.$(br2)Small rooms heat quickly; large rooms and heavy structures take longer. Better insulation saves fuel at the same target. It does not produce heat.$(br2)$(italic)ORSA recommends fewer windows than an aquarium.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Air and Structure",
+      "text": "Room air and the physical walls store heat separately. Heaters warm air; air warms the structure. Walls then lose heat to their surroundings.$(br2)After burnout or redstone shutdown, stored heat cools gradually. Warm-up can need much more power than Holding. More heaters or stronger tiers speed warm-up while sharing the same room target."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Ground and Depth",
+      "text": "The surface chills before deep ground. Below the fixed Y 64 reference, the cold front takes time to penetrate; greater depth delays cooling. Above it, the surface and altitude rules apply.$(br2)Deep ground is an intended thermal refuge. Its warmth depends on progression and preset. It does not replace oxygen: late Phase 6 still needs EVA or a sealed room with an oxygen supply."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Reading Fuel Estimates",
+      "text": "Holding 8% means roughly 8% of that heater’s full ordinary burn rate is currently needed. The display averages a few seconds. Remaining time is an estimate at that rate, not a promise.$(br2)Warm-up, target changes, insulation, weather and breaches change demand. Machinery and frostmites can add costs. Judge survival fuel use with the fuel actually inserted; there is no fixed wool/glass runtime ratio."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Core-aware Sensing",
+      "text": "Without a thermostat, 20°C is the heater’s room-air target; Core and other local environmental warmth add on top.$(br2)A $(l:heating/thermostat)thermostat$(/l) targets Sensed at its panel. With a +25°C Core bonus, Sensed 20°C can mean Room base -5°C. Both readings are valid. Place the sensor where you live; local warmth can vary within a room. Personal equipment effects are excluded."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Breach and Recovery",
+      "text": "A $(l:heating/atmospheric_breach)vacuum breach$(/l) removes room air, while surviving walls keep their heat. Seal every opening and restore oxygen; incoming cold air warms from those walls.$(br2)Without air, sealed burners heat the structure less efficiently. Radiant warmth is only partial protection. Atmosphere restored confirms air, not a warm room. A thermostat can reduce heat input, but cannot actively cool."
+    }
+  ]
+}
