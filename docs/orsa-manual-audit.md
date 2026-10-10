@@ -332,3 +332,38 @@ Owner visual pass: `./gradlew runClient --console=plain`, open the manual, page 
 O2 Canisters, What is ORSA?, The Returned and MiteAway. The first visual pass confirmed
 the (T) entries still cut text off at the bottom (Food Spoilage, Hyperthermia), on the
 lines the linter predicts; they wait for the post-merge rewrite.
+
+## Organization and wording pass
+
+Scope: the guide entries. Not touched: the found documents (ORSA Intelligence, UN
+notice), What is ORSA?, the 12 (T) entries that `thermal-2.0` changes, and any
+Architect or Hearth text (Returned Variant C, Soul Harvesting, the Surveyor Lens
+origin and low-band carrier pages, the Architect Soul line on the Acheronite Blade).
+
+- **Category order.** Getting Started, Heating & Tools, ORSA Equipment, Threat
+  Assessment, Acheronite, Endgame, then ORSA Intelligence and the UN Emergency Notice
+  as the archive. Endgame and Threats no longer share a sortnum.
+- **Moves.** Frost Ward Torch and MiteAway now sit in Threat Assessment after the
+  creatures they counter (category field only; entry ids and links are unchanged).
+  "Geological Note" is now "Geothermal Vents".
+- **Entry order.** Unique sortnums in progression order in every category touched:
+  heaters, then fuel, storage and tools; armor tiers, O2, continuity, then accessories;
+  ice shards, Frozen Heart, Geothermal Core, Atmosphere Shard, Transponder, Fuel Silo,
+  Rocket Assembly. The `thermal-2.0` entries keep their own sortnums (thermostat 4,
+  vacuum and room entries 16-22) and slot in after the merge.
+- **Field Documents.** New first entry in ORSA Intelligence: where ORSA Documents are
+  found, that right-clicking archives one and unlocks its entry, and what (Locked) means.
+- **Wording.** 37 guide entries rewritten to lead with the facts: what it does, the
+  numbers, where it comes from, then one line of ORSA voice. Every fact, number,
+  recipe and link is kept; repeated jokes and filler are cut. About 6,700 words down
+  to about 4,100. Pages split at paragraph breaks so none shrink.
+- **Fixes found on the way.** Frostbitten linked to a missing `threats/frozen_meat`
+  entry and sent "Frostbitten Core" to Cryo Fuel; it now links the Thermal Capacitor,
+  which uses the core. Frostmite now points to MiteAway. Thermal Core lists every
+  recipe that uses it. Hunters are no longer also called "the most dangerous variant".
+- **Linter.** No errors outside the 12 (T) entries; 106 errors remain there. Warnings
+  are the known `$(li)` continuation starts. Trial merge with `thermal-2.0`: book files
+  clean, only the existing `build.gradle` conflict.
+
+Not visually checked yet. Owner pass: Getting Started through Endgame, especially
+Continuity Protocol, O2 Canisters, The Returned and the Fuel Silo.

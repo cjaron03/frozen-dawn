@@ -6,27 +6,17 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Scan #0074",
-      "text": "$(bold)Subject: Acheronite Refinement$()$(br2)Acheronite shards are raw and unstable. You can't make armor out of frozen screaming crystal. Well, you $(italic)can$(), but the results are unpleasant."
+      "text": "$(bold)Orbital Scan #0074$()$(br2)Refines raw Acheronite Shards into $(bold)Refined Acheronite$(), the workable form.$(li)Place below $(bold)Y=0$()$(li)Needs a $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)Put a shard in the input slot. It refines in a few seconds."
     },
     {
       "type": "patchouli:text",
-      "text": "The $(bold)Acheron Forge$() solves this. Geothermal heat can refine raw shards into $(bold)Refined Acheronite$() — a stable, workable material.$(br2)$(italic)This is theoretical. You're the field test. ORSA thanks you. From orbit.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Requirements",
-      "text": "The Acheron Forge needs two things:$(br2)$(li)$(bold)Depth:$() Must be placed below $(bold)Y=0$(). It draws power from geothermal heat.$(li)$(bold)Heat Source:$() A Geothermal Core within $(bold)8 blocks$(). No core, no refinement."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Place a shard in the input slot. If conditions are met, it processes into Refined Acheronite in a few seconds.$(br2)$(italic)ORSA Health Advisory: Do not lick the forge.$()"
+      "text": "$(italic)Theoretical. You are the field test.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheron_forge",
       "title": "Acheron Forge",
-      "text": "Obsidian frame, raw Acheronite Shards for the reaction matrix, Thermal Core for heating. Fire and frozen screaming crystal in one box."
+      "text": "Obsidian frame, raw shards for the reaction matrix, a Thermal Core for heat. Do not lick the forge."
     }
   ]
 }

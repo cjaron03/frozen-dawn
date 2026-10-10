@@ -6,42 +6,33 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "THREAT REPORT: THE RETURNED",
-      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Reanimated Cryogenic Humanoid$(br)$(bold)Threat Level:$() Severe$(br2)They were us. Former ORSA personnel, civilians, anyone who froze and didn't stay dead."
+      "text": "$(bold)Threat level:$() severe$(br2)Former ORSA staff, civilians, anyone who froze and did not stay dead. Three variants.$(br2)$(italic)HR asked us to stop calling them colleagues. Denied: the paperwork is still valid.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "The cold brought them back wrong. Three distinct behavioral variants have been observed in the field.$(br2)$(italic)HR has formally requested we stop calling them 'colleagues.' Request denied — the paperwork is still technically valid.$()"
+      "title": "Variant A: Hunter",
+      "text": "Intelligent stalkers. Rare, but they invade bases.$(li)Opens and breaks wooden doors$(li)Puts out lit Thermal Heaters$(li)Breaks torches and lights$(li)Sees through invisibility"
     },
     {
       "type": "patchouli:text",
-      "title": "Variant A: The Hunter",
-      "text": "$(bold)Behavior:$() The most dangerous variant. Hunters are intelligent stalkers that remember how the living world works.$(br)$(li)Opens and breaks wooden doors$(li)Extinguishes lit Thermal Heaters$(li)Destroys torches and light sources$(li)Sees through invisibility"
+      "text": "$(bold)Drops:$() Remnant Ember, Tattered Clothing Scrap, ORSA ID Badge (rare)"
     },
     {
       "type": "patchouli:text",
-      "text": "$(li)Spawns rarely but invades player bases$(br2)$(bold)Counter Strategies:$()$(br)$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons are effective$(li)Seal entrances with blocks, not doors$(li)Keep backup heaters hidden"
+      "text": "$(bold)Counters:$()$(li)Seal entrances with blocks, not doors$(li)Hide backup heaters$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons work$(br2)$(italic)Do not read the ID badges. You might know the name.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Drops:$() $(item)Remnant Ember$(), $(item)Tattered Clothing Scrap$(), $(item)ORSA ID Badge$() (rare)$(br2)$(italic)Do not read the ID badges. You might recognize the name.$()"
+      "title": "Variant B: Mimic",
+      "text": "Looks like a still, watching shadow figure. Within 16 blocks it copies your movement, then attacks.$(li)First sprint hit deals bonus damage$(li)Strafes instead of trading blows$(li)Retreats to darkness when hurt$(li)Resets after 15s out of sight"
     },
     {
       "type": "patchouli:text",
-      "title": "Variant B: The Mimic",
-      "text": "$(bold)Behavior:$() Exploits trained complacency. At distance, the Mimic is indistinguishable from a harmless shadow figure. It stands motionless, watching. If you approach within 16 blocks, it briefly copies your movement — then attacks."
+      "text": "$(bold)Counters:$()$(li)Fire: +50% damage$(li)A shadow figure still there after 10s is not one$(li)Shadows have no health bar$(br2)$(bold)Drops:$() Tattered Clothing Scrap, Mirrored Fragment (rare)"
     },
     {
       "type": "patchouli:text",
-      "text": "$(li)Identical appearance to shadow figures at range$(li)Sprint attacks deal bonus damage on first hit$(li)Strafes during combat — does not stand and trade$(li)Retreats to darkness when wounded, then re-enters observation$(li)Resets if you break line of sight for 15 seconds"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Counter Strategies:$()$(br)$(li)Fire is effective (+50% damage)$(li)If a 'shadow figure' doesn't vanish after 10 seconds, be suspicious$(li)Watch for health bars — shadows don't have them"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Drops:$() $(item)Tattered Clothing Scrap$(), $(item)Mirrored Fragment$() (rare)$(br2)$(italic)ORSA field report: Agent Torres reported a shadow figure that followed her for three minutes before attacking. Torres survived. Her partner, who she assumed was the figure, did not.$()"
+      "text": "$(italic)Agent Torres reported a shadow figure that followed her for three minutes before attacking. Torres survived. Her partner, who she assumed was the figure, did not.$()"
     },
     {
       "type": "patchouli:text",

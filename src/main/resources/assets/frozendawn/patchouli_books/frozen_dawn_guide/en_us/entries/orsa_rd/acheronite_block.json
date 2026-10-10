@@ -6,12 +6,11 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Scan #0084",
-      "text": "$(bold)Subject: Concentrated Acheronite Storage$()$(br2)9 Refined Acheronite ingots compressed into a single block. It radiates a $(bold)+10°C warmth aura$() in a 3-block radius. The coldest material on Earth somehow keeps things warm in bulk."
+      "text": "$(bold)Orbital Scan #0084$()$(br2)Nine Refined Acheronite in one block.$(li)$(bold)+10°C warmth$() within 3 blocks$(li)Compact storage$(br2)It will not replace a heater, but it keeps your toes attached."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)\"That doesn't make sense.\"$(br)\"Neither does the sun abandoning you.\" — ORSA$(br2)Use as compact storage or supplementary heat. It won't replace a heater, but it'll keep your toes attached."
+      "text": "$(italic)\"That doesn't make sense.\" \"Neither does the sun abandoning you.\"$()"
     },
     {
       "type": "patchouli:crafting",

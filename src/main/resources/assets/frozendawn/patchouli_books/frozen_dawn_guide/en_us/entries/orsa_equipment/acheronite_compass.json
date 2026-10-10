@@ -2,32 +2,18 @@
   "name": "Acheronite Compass",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:acheronite_compass",
-  "sortnum": 5,
+  "sortnum": 9,
   "advancement": "frozendawn:found_acheronite_compass",
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Direction Finder",
-      "text": "$(bold)Recovered designation:$() Acheronite Compass.$(br2)Tower uplink staff used this instrument to reacquire the crashed ORSA relay satellite without wandering the continent like confused interns."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Once the tower hands you one, the needle binds itself to the relay wreck in the Overworld.$(br2)$(italic)If it spins in circles, congratulations: either the satellite is unresolved or ORSA has lost another orbiting asset.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Field Notes",
-      "text": "$(bold)Use:$() Keep it in hand like a normal compass. The lodestone tracking core points at the crashed relay satellite that carries the transponder lead.$(br2)$(bold)Recovery protocol:$() Tower quartermasters finally admitted people lose things under blizzards, in ravines, and inside exploding backpacks."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "If you misplace the original unit, the recovery recipe unlocks after first issue."
+      "text": "Points to the crashed ORSA relay satellite in the Overworld, which carries the transponder lead.$(br2)The tower issues the first one. Hold it like a normal compass.$(br2)$(italic)If it spins, the satellite is unresolved, or ORSA has lost another orbiting asset.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_compass",
       "title": "Recovery Assembly",
-      "text": "$(bold)Recipe:$() A vanilla compass, two $(item)Acheronite Shards$(), one $(item)Thermal Core$(), and an $(item)Ice Shard$().$(br2)ORSA insists this is a recovery build. Finance insists it is a training fee."
+      "text": "Unlocks after your first issue, for when the original is lost to a blizzard, a ravine or an exploding backpack.$(br2)$(italic)ORSA calls it a recovery build. Finance calls it a training fee.$()"
     }
   ]
 }

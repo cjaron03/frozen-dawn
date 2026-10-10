@@ -2,35 +2,30 @@
   "name": "Phase Barometer",
   "category": "frozendawn:heating",
   "icon": "frozendawn:phase_barometer",
-  "sortnum": 7,
+  "sortnum": 8,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Instrument",
-      "text": "$(italic)ORSA stopped promising exact dates when the models started disagreeing with reality by the hour.$()"
+      "text": "A block that reads the current collapse phase and estimates how close the next escalation is. It gives no day count.$(br2)Place it in a shelter or workroom."
     },
     {
       "type": "patchouli:text",
-      "text": "The $(item)Phase Barometer$() reads the current collapse state and estimates how close the next escalation is without turning the end of the world into a day counter.$(br2)Place one in a shelter, workroom, or command corner and treat it like damaged weather instrumentation doing its best."
+      "text": "$(italic)ORSA stopped promising dates when the models started missing reality by the hour.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Forecast Bands",
-      "text": "$(bold)Stable$() means the current state is holding.$(br)$(bold)Deteriorating$() means conditions are sliding.$(br)$(bold)Transition Likely Soon$() means plan for the next escalation.$(br)$(bold)Imminent$() means stop pretending you have time.$(br)$(bold)Collapse Underway$() is reserved for the final atmospheric failure window."
+      "text": "$(bold)Stable:$() holding.$(br)$(bold)Deteriorating:$() sliding.$(br)$(bold)Transition Likely Soon:$() plan for the next phase.$(br)$(bold)Imminent:$() stop pretending you have time.$(br)$(bold)Collapse Underway:$() the final atmospheric failure."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Phase 6",
+      "text": "The barometer tracks each Phase 6 sub-stage:$(li)$(bold)Early:$() extreme blizzard$(li)$(bold)Mid:$() air thins, wind drops, fog lifts$(li)$(bold)Late:$() vacuum$(br2)It warns of whiteout intensification, atmospheric thinning and vacuum onset."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:phase_barometer",
-      "text": "A copper-and-glass diagnostic block that shows the current phase, the next expected escalation, and major late-game warnings like whiteout intensification, atmospheric thinning, and vacuum onset."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Phase 6 Note",
-      "text": "Phase 6 is not one flat disaster.$(br2)$(bold)Early:$() extreme blizzard.$(br)$(bold)Mid:$() atmosphere thinning, wind drop-off, fog lift.$(br)$(bold)Late:$() vacuum onset."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "The barometer keeps tracking those sub-stages so it stays useful after atmospheric collapse begins."
+      "text": "Copper and glass. Damaged weather instrumentation doing its best."
     }
   ]
 }

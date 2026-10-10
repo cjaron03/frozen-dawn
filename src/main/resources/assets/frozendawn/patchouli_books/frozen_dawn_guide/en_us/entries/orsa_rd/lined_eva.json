@@ -6,21 +6,11 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Scan #0082",
-      "text": "$(bold)Subject: Best of Both Worlds$()$(br2)Orbital engineering had a thought: \"What if the thing that stops frostbite goes $(italic)inside$() the thing that stops suffocation?\"$(br2)They ran simulations for three days. The answer was yes."
+      "text": "$(bold)Orbital Scan #0082$()$(br2)An EVA chestplate lined with Refined Acheronite.$(li)Keeps EVA breathable-air and O2 use$(li)Adds frostbite immunity$(li)Maximum cold resistance"
     },
     {
       "type": "patchouli:text",
-      "text": "The $(bold)Acheronite-Lined EVA Suit$() preserves EVA breathable-air and O2 compatibility while adding Acheronite frostbite immunity. The best thing ORSA has ever designed. From orbit. Without testing it.$(br2)$(italic)\"Better than the orbital stabilizer?\" \"The one that caused the apocalypse? Yes.\"$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Properties",
-      "text": "$(bold)Combines:$()$(br)$(li)EVA suit breathable-air and O2 compatibility$(li)Acheronite frostbite immunity$(li)Maximum cold resistance$(br2)Endgame gear. You've told the apocalypse to go away. It won't, but at least you'll be comfortable."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Note:$() Only the chestplate can be lined. You still need the rest of the EVA rig, plus breathable air or O2 in late Phase 6. ORSA ran out of simulation time. And funding."
+      "text": "Only the chestplate is lined. You still need the rest of the EVA rig, and air or O2 in late Phase 6.$(br2)$(italic)\"Better than the orbital stabilizer?\" \"The one that caused the apocalypse? Yes.\"$()"
     },
     {
       "type": "patchouli:crafting",

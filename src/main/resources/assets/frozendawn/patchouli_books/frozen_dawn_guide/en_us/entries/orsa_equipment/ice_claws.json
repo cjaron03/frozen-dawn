@@ -2,30 +2,20 @@
   "name": "Ice Claws",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:ice_claws",
-  "sortnum": 5,
+  "sortnum": 7,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Field Notes",
-      "text": "$(bold)Dr. Vasik's field notes describe early Acheronite handling teams improvising climbing gear from crystal fragments.$()$(br2)Three teams lost fingers before someone thought to add leather grips."
+      "text": "Wear in a Curios $(thing)hands$() slot to climb frozen surfaces: snow blocks, ice, packed ice, blue ice, frozen obsidian, frozen dirt and frozen sand.$(li)Hold $(thing)Jump$() at a wall to climb$(li)Hold $(thing)Sneak$() to stay put$(li)Let go to drop"
     },
     {
       "type": "patchouli:text",
-      "text": "ORSA classified the design, then lost the file.$(br2)The surviving version bites into frozen surfaces hard enough to drag you up a wall if your arms can still listen."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Use Notes",
-      "text": "Wear them in a Curios $(thing)hands$() slot to climb tagged frozen surfaces: snow blocks, ice, packed ice, blue ice, frozen obsidian, frozen dirt, and frozen sand."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Hold $(thing)Jump$() against the wall to climb, hold $(thing)Sneak$() to stay put, and let go to drop. Hollows still win any argument about movement priority."
+      "text": "Hollows still win any argument about movement."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:ice_claws",
-      "text": "Acheronite shards, iron, leather, and the confidence to use crystal knives as handholds."
+      "text": "Acheronite shards, iron and leather. Dr. Vasik's notes: three teams lost fingers before someone added grips. ORSA classified the design, then lost the file."
     }
   ]
 }

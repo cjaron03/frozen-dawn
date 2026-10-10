@@ -6,12 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Scan #0076",
-      "text": "$(bold)Subject: Acheronite Tool Applications$()$(br2)Refined Acheronite is harder than diamond and colder than ORSA command's decision to leave you down there. Naturally, orbital engineering recommends making weapons."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Acheronite tools match $(bold)netherite-tier durability$() and use standard patterns with Refined Acheronite and sticks.$(br2)$(italic)\"Does the blade cauterize on contact?\"$(br)\"Send someone down to check.\"$(br)\"...noted.\"$()"
+      "text": "$(bold)Orbital Scan #0076$()$(br2)Refined Acheronite tools have $(bold)netherite-tier durability$(). Standard patterns, with Refined Acheronite and sticks.$(br2)$(italic)\"Does the blade cauterize on contact?\"$(br)\"Send someone down to check.\"$()"
     },
     {
       "type": "patchouli:crafting",

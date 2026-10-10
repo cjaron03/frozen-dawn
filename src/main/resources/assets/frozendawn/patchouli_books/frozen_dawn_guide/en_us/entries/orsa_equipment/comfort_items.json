@@ -2,16 +2,15 @@
   "name": "Comfort Items",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:stuffed_penguin",
-  "sortnum": 5,
+  "sortnum": 10,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Wellness Protocol",
-      "text": "ORSA recognizes that extended solo operations in hostile environments may result in psychological strain. This is normal. You are not going crazy. Probably."
+      "text": "Long solo operations cause psychological strain. This is normal. You are not going crazy. Probably.$(br2)Approved coping: talking to yourself, naming your tools, and small plush companions."
     },
     {
       "type": "patchouli:text",
-      "text": "Field-tested coping mechanisms include: talking to yourself, naming your tools, and crafting small plush companions from available materials. ORSA does NOT endorse emotional attachment to inanimate objects. ORSA DOES note a 23% reduction in incident reports among personnel who carry one."
+      "text": "ORSA does not endorse attachment to inanimate objects. ORSA does note $(bold)23% fewer$() incident reports among personnel who carry one."
     },
     {
       "type": "patchouli:crafting",

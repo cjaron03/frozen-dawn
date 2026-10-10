@@ -6,30 +6,16 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Scan #0071",
-      "text": "$(bold)Subject: Unidentified Crystalline Growth$()$(br2)Starting in Phase 5, orbital imaging detected strange formations on frozen substrates — frozen dirt, sand, even obsidian."
+      "text": "$(bold)Orbital Scan #0071$()$(br2)Crystals that grow on frozen dirt, sand and obsidian below $(bold)-60°C$().$(li)$(bold)Phase 5:$() rare$(li)$(bold)Phase 6:$() common, faster growing"
     },
     {
       "type": "patchouli:text",
-      "text": "ORSA has designated them $(bold)Acheronite Crystals$(). Named after the river Acheron. River of the dead. Because naming things after doom is how orbital command copes.$(br2)$(italic)You are the only one close enough to study these. Try not to touch them.$()"
+      "text": "$(italic)Named after the Acheron, river of the dead. Naming things after doom is how orbital command copes.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Formation & Growth",
-      "text": "Crystals form on frozen substrates below $(bold)-60°C$(). They grow through $(bold)4 stages$() over time.$(br2)$(li)$(bold)Stage 0:$() Tiny bud. A frozen pimple.$(li)$(bold)Stage 1:$() Medium growth.$(li)$(bold)Stage 2:$() Large cluster."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(li)$(bold)Stage 3:$() Full crystal — this is the one you want.$(br2)$(bold)Only Stage 3 drops Acheronite Shards.$() Everything else shatters. Patience is a cold, miserable virtue."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Phase Behavior",
-      "text": "$(bold)Phase 5:$() Crystals are rare. Finding one feels special. Like finding a twenty dollar bill, except it's -189°C and will give you frostbite.$(br2)$(bold)Phase 6:$() Much more common and faster growing. Beautiful, in a \"the world is dead\" kind of way."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Harvesting:$() Mine with any pickaxe. Fortune increases shard yield. Don't hold shards bare-handed. See: $(l:orsa_rd/frostbite_warning)Frostbite Warning$(/l)."
+      "title": "Growth",
+      "text": "Four stages: bud, medium, large cluster, full crystal.$(br2)$(bold)Only the full crystal drops shards.$() Earlier stages shatter.$(br2)Mine with any pickaxe. Fortune adds shards.$(br2)Do not hold shards bare-handed. See $(l:orsa_rd/frostbite_warning)Frostbite Warning$(/l)."
     }
   ]
 }

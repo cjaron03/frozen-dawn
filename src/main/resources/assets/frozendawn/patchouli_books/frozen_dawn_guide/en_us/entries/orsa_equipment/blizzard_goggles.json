@@ -2,30 +2,16 @@
   "name": "Blizzard Goggles",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:blizzard_goggles",
-  "sortnum": 4,
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Field Fix",
-      "text": "$(bold)Standard-issue goggles shattered at -80C, so field teams started wrapping salvaged fabric around glass panes.$()$(br2)Ugly, but functional."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "The resulting lenses cut a little farther into phase-5 whiteout and stop your face from eating blown ice all day."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Use Notes",
-      "text": "Wear them in a Curios $(thing)head$() slot for better visibility during phase 5 and early phase 6 blizzards. They extend whiteout visibility to about 32 blocks, then stop helping once the atmosphere starts thinning."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "If you're also wearing an $(item)ORSA Thermal Visor$(), press $(thing)V$() for thermal and $(thing)B$() for blizzard optics."
+      "text": "Wear in a Curios $(thing)head$() slot.$(li)See about 32 blocks through Phase 5 and early Phase 6 whiteout$(li)Keeps blown ice off your face$(li)No help once the air starts thinning$(br2)With an ORSA Thermal Visor also worn: $(thing)V$() for thermal, $(thing)B$() for blizzard optics."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:blizzard_goggles",
-      "text": "Leather, salvage cloth, and enough glass to admit ORSA should have planned better."
+      "text": "Standard goggles shattered at -80°C. Field teams wrapped salvage cloth and leather around glass. Ugly, functional."
     }
   ]
 }

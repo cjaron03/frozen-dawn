@@ -1,26 +1,21 @@
 {
   "name": "Frost Ward Torch",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:threats",
   "icon": "frozendawn:frost_ward_torch",
   "sortnum": 5,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Frost Ward Torch",
-      "text": "A torch infused with the frozen breath of a $(l:threats/hollow)Hollow$(/l). Emits a piercing cold light (level 15) and snowflake particles.$(br2)$(bold)Primary function:$() Hollows flee at a 16-block radius — fast. Like \"creeper-saw-a-cat\" fast."
+      "text": "A torch burning $(l:threats/hollow)Hollow$(/l) Frozen Breath.$(li)Light level 15, snowflake particles$(li)$(bold)Hollows within 16 blocks flee$(), fast$(li)Returned Hunters cannot break it$(br2)Normal torches only keep Hollows off at close range. Ring your base with these."
     },
     {
       "type": "patchouli:text",
-      "text": "Normal torches only deter them at close range via light; the Frost Ward Torch specifically repels them.$(br2)Place these around your base perimeter. Sleep easier knowing the whispering smoke things can't get in."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)ORSA Engineering Note: We cannot explain why burning a ghost's own breath on a stick repels it. The working theory is \"spite.\"$()"
+      "text": "$(italic)Why a ghost's own breath repels it is unknown. Working theory: spite.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:frost_ward_torch",
-      "text": "Frozen Breath over a Stick. Yields 4. The recipe is simple. Acquiring the Frozen Breath is the hard part, on account of the ghost."
+      "text": "Frozen Breath over a Stick. Yields 4. Getting the Frozen Breath is the hard part, on account of the ghost."
     }
   ]
 }

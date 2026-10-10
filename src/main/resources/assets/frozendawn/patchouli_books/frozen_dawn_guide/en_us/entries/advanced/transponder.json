@@ -2,39 +2,30 @@
   "name": "ORSA Transponder",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:transponder",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Transponder",
-      "text": "The transponder is ORSA's last-resort emergency beacon. Once activated, it broadcasts a deep-space signal to surviving relay satellites."
+      "text": "ORSA's last-resort beacon. It broadcasts to surviving relay satellites.$(br2)Building one needs the $(bold)ORSA Transponder Schematic$(), a classified document in ORSA wreckage."
     },
     {
       "type": "patchouli:text",
-      "text": "Building one requires the $(bold)ORSA Transponder Schematic$() — a classified document found in ORSA wreckage.$(br2)$(italic)\"We hid the escape plan in a random structure on a dying planet.\" — ORSA Security$(br)\"We also hid the cafeteria key. We're not great at this.\"$()"
+      "text": "$(italic)\"We hid the escape plan in a random structure. Also the cafeteria key.\" -- ORSA Security$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:transponder",
-      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, Frozen Heart, and a Frozen Atmosphere Shard. You're building a phone call to space. Long distance rates apply."
+      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, a Frozen Heart and a Frozen Atmosphere Shard. A phone call to space. Long distance rates apply."
     },
     {
       "type": "patchouli:text",
       "title": "Activation",
-      "text": "$(li)$(bold)Depth:$() Below Y=0 for the deep relay network$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky Access:$() Clear vertical shaft to the sky — no solid blocks. Start digging.$(li)$(bold)Schematic:$() Must be archived first"
+      "text": "$(li)$(bold)Depth:$() below Y=0$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky:$() an open shaft straight up, no solid blocks$(li)$(bold)Schematic:$() archived first$(br2)Right-click to start. The broadcast takes about $(bold)100 minutes$()."
     },
     {
       "type": "patchouli:text",
-      "text": "Right-click to activate. Broadcast takes ~100 minutes. We recommend a book and warm beverage. You have neither. Sorry."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "During Broadcast",
-      "text": "A visible beam shoots upward through the shaft. The signal can be paused and resumed from the transponder's interface.$(br2)If conditions are lost during broadcast, it automatically pauses with a warning. It resumes when conditions are restored."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Snow is automatically cleared from the shaft by the signal energy. ORSA's most practical feature — designed entirely by accident."
+      "title": "Broadcast",
+      "text": "A beam rises through the shaft. Pause and resume it from the interface.$(br2)If a condition fails, it pauses with a warning and resumes once fixed.$(br2)The signal clears snow from the shaft. ORSA's most practical feature, designed by accident."
     }
   ]
 }

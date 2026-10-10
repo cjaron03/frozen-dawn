@@ -6,29 +6,21 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "THREAT REPORT: FROSTMITE",
-      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Cryogenic Parasite$(br)$(bold)Threat Level:$() Variable$(br2)Individually, Frostmites are an irritation with legs. In groups, they are a thermal failure event."
+      "text": "$(bold)Threat level:$() variable$(br2)One is an irritation with legs. Ten is a thermal failure event. They do not stop once they find a warm body or a working heater.$(br2)$(italic)Do not call them ice silverfish. That phrase has preceded several deaths.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "They do not fight fair, and more importantly, they do not appear to understand the concept of stopping once they have located a warm body or a functioning heater.$(br2)$(italic)ORSA recommends refraining from describing them as 'just ice silverfish.' That statement has preceded several regrettable deaths.$()"
+      "title": "Field Notes",
+      "text": "$(li)Latch on and drag your temperature down; drain stacks to a severe cap$(li)Swarm lit Thermal Heaters: less warmth, dimmer glow, faster fuel burn$(li)Spawn in later phases and burst from infested cold blocks when mined$(li)Fast, erratic movement"
     },
     {
       "type": "patchouli:text",
-      "title": "Swarm Assessment",
-      "text": "$(bold)Behavior:$()$(br)$(li)Latches onto players and steadily drags ambient temperature downward$(li)Multiple Frostmites stack their drain effect up to a severe cap"
+      "title": "Counters",
+      "text": "$(li)Do not let them stack$(li)A lit heater draws them off you, but then you must guard it$(li)A full EVA suit blocks the heat drain on you$(li)Expect them in packed or blue ice you mine late$(li)$(l:heating/miteaway)MiteAway$(/l) smoke keeps them out of a room"
     },
     {
       "type": "patchouli:text",
-      "text": "$(li)Will also swarm active Thermal Heaters, reducing warmth, dimming glow, and chewing through fuel$(li)Spawns naturally in later phases and bursts from infested cold blocks when mined$(li)Fast, erratic movement makes individual targets annoying to swat"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Counter Strategies:$()$(br)$(li)Do not let them stack. One is manageable. Ten is an obituary.$(li)Active heaters can bait them away from you, but then you must protect the heater$(li)Full EVA suits block player heat drain entirely"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(li)If mining packed or blue ice in late phases, assume something small and hostile lives inside it$(br2)$(bold)Drops:$() $(item)Snowball$()$(br2)$(italic)ORSA engineering note: If your heater suddenly seems weaker and covered in tiny moving frost, congratulations. You are now operating a communal buffet.$()"
+      "text": "$(bold)Drops:$() Snowball$(br2)$(italic)If your heater seems weaker and is covered in tiny moving frost, you are now operating a communal buffet.$()"
     }
   ]
 }

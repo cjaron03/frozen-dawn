@@ -2,29 +2,20 @@
   "name": "Thermal Container",
   "category": "frozendawn:heating",
   "icon": "frozendawn:thermal_container",
-  "sortnum": 3,
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Thermal Container",
-      "text": "An insulated container that keeps hot food warm for extended periods. Any food placed inside will have its spoilage timer paused as long as the container remains intact."
+      "text": "An insulated box. Food inside stops spoiling for as long as the container stays intact.$(br2)It also stops $(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l) from sublimating.$(br2)Craft one early and stock it before farming fails."
     },
     {
       "type": "patchouli:text",
-      "text": "Essential for stockpiling cooked food before temperatures make farming impossible. Craft one early and keep it stocked."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)Think of it as a lunchbox. A very important lunchbox. The most important lunchbox in the history of lunchboxes, because every other lunchbox is frozen solid on a dead planet.$()"
+      "text": "$(italic)The most important lunchbox in history. Every other lunchbox is frozen solid.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_container",
-      "text": "Iron corners, leather sides, and a glass bottle center. The glass bottle acts as a vacuum seal."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "ORSA Engineering wanted to use a proprietary locking mechanism, but the budget went to Kevin's search-and-rescue fund."
+      "text": "Iron corners, leather sides, a glass bottle center for the vacuum seal. The locking mechanism budget went to Kevin's search-and-rescue fund."
     }
   ]
 }

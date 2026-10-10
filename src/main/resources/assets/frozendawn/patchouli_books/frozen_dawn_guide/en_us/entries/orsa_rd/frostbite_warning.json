@@ -2,34 +2,29 @@
   "name": "Frostbite Warning",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:powder_snow_bucket",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "SAFETY BULLETIN #41",
-      "text": "$(bold)ORSA ORBITAL SAFETY DIVISION$()$(br)$(bold)RE: STOP TOUCHING THE CRYSTALS$()$(br2)Orbital thermal imaging has detected you handling raw Acheronite Shards without proper protection. The shards are $(bold)-189°C$(). This is not a suggestion."
+      "text": "$(bold)SAFETY BULLETIN #41$()$(br)$(bold)RE: STOP TOUCHING THE CRYSTALS$()$(br2)Raw $(l:orsa_rd/acheronite_crystals)Acheronite Shards$(/l) are $(bold)-189°C$(). Carrying them gives you frostbite. This is not a suggestion. This is thermodynamics."
     },
     {
       "type": "patchouli:text",
-      "text": "This is thermodynamics.$(br2)$(italic)We can see your temperature dropping from orbit. Please stop.$()"
+      "text": "$(italic)We can see your temperature dropping from orbit. Please stop.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Frostbite Stages",
-      "text": "$(bold)Holding in hand:$()$(br)$(li)$(bold)Stage 1:$() Numbness, Slowness I$(li)$(bold)Stage 2:$() Spreading cold, Slowness II$(li)$(bold)Stage 3:$() Tissue damage, Slowness II + damage$(li)After 30s: Mining Fatigue II"
+      "title": "Stages",
+      "text": "$(bold)Holding a shard:$()$(li)$(bold)Numb:$() Slowness I$(li)$(bold)Spreading:$() Slowness II$(li)$(bold)Tissue damage:$() Slowness II and damage$(li)$(bold)After 30s:$() Mining Fatigue II$(br2)$(bold)In your pack:$() the same stages, three times slower."
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)In inventory:$() Same stages, but 3x slower. The cold seeps through your pack."
+      "title": "Grace Period",
+      "text": "Time before stages begin, by armor:$(li)None: 10s$(li)Tier 1 Insulated: 25s$(li)Tier 2 Heated: 45s$(li)Tier 3 EVA: 90s$(li)Acheronite or Lined EVA: $(bold)immune$()$(br2)$(bold)Recovery:$() put the shard down. The cold fades slowly."
     },
     {
       "type": "patchouli:text",
-      "title": "Protection",
-      "text": "$(bold)Grace periods by armor:$()$(br)$(li)No armor: 10 seconds$(li)Tier 1 (Insulated): 25 seconds$(li)Tier 2 (Heated): 45 seconds$(li)Tier 3 (EVA): 90 seconds$(li)Acheronite or Lined EVA: $(bold)Immune"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)$(bold)Recovery:$() Put the shard down. The cold fades slowly.$(br2)$(italic)You are the only person on the planet. There is no one to help if you lose your fingers.$()"
+      "text": "$(italic)You are the only person on the planet. No one can help if you lose your fingers.$()"
     }
   ]
 }

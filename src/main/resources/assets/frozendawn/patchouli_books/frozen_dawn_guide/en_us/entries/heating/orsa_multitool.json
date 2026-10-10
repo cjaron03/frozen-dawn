@@ -2,25 +2,20 @@
   "name": "ORSA MultiTool",
   "category": "frozendawn:heating",
   "icon": "frozendawn:orsa_multitool",
-  "sortnum": 4,
+  "sortnum": 7,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA MultiTool",
-      "text": "A handheld diagnostic tool for inspecting ORSA equipment. Right-click any supported device to get a readout of its current status.$(br2)$(bold)Supported devices:$()$(br)$(li)Thermal Heater — heat output, effective radius, fuel ETA, shelter status"
+      "text": "Right-click a supported device for a status readout.$(li)$(bold)Thermal Heater:$() heat output, radius, fuel ETA, shelter status$(li)$(bold)Transponder:$() broadcast state, progress, signal depth$(li)$(bold)Geothermal Core:$() status, coordinates"
     },
     {
       "type": "patchouli:text",
-      "text": "$(li)Transponder — broadcast state, progress, signal depth$(li)Geothermal Core — operational status, coordinates$(br2)Indispensable for troubleshooting your survival infrastructure."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)Orbital command used to monitor all this remotely. Now you have a stick with a redstone sensor. Progress.$()"
+      "text": "$(italic)Orbital command used to monitor this remotely. Now you have a stick. Progress.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:orsa_multitool",
-      "text": "Iron tip, redstone sensor, and a stick handle. The original ORSA MultiTool cost $14,000 and had Bluetooth. This one costs a stick and works better."
+      "text": "Iron tip, redstone sensor, stick handle. The original cost $14,000 and had Bluetooth. This one works better."
     }
   ]
 }

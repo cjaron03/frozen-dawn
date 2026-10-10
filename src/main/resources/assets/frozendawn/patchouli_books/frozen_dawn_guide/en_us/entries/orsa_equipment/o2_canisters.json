@@ -6,63 +6,38 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "ORSA Portable O2 System",
-      "text": "$(bold)ORSA Mk.I-III Compressed Oxygen Canisters$()$(br2)When the atmosphere freezes (Phase 6 late), your $(l:orsa_equipment/eva_suit)EVA suit$(/l) alone can't save you — it needs breathable air."
+      "text": "When the atmosphere freezes in late Phase 6, your $(l:orsa_equipment/eva_suit)EVA suit$(/l) needs a canister.$(br2)Carry one in your inventory while wearing the full suit. It draws automatically: one tick of O2 per tick of breathing."
     },
     {
       "type": "patchouli:text",
-      "text": "Carry an O2 Canister in your inventory while wearing a full EVA suit. One tick of breathing, one tick of O2 consumed.$(br2)$(italic)ORSA Safety Tip: Hyperventilating does not conserve oxygen. We checked.$()"
+      "text": "$(italic)Hyperventilating does not conserve oxygen. We checked.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "How It Works",
-      "text": "$(bold)Automatic:$() The EVA suit detects the canister and draws from it. No button-pressing required.$(br2)$(bold)Multiple tanks:$() Consumed sequentially. Your O2 HUD shows $(bold)combined$() remaining air across all tanks."
+      "title": "Tanks",
+      "text": "$(li)Multiple tanks drain one at a time$(li)The O2 HUD shows combined air across all tanks$(li)Refill in a $(l:advanced/geothermal_core)Geothermal Core$(/l) O2 slot at +10 O2 per tick; bigger tanks take longer"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Refilling:$() Place any canister in a $(l:advanced/geothermal_core)Geothermal Core's$(/l) O2 slot. Refills at +10 O2/tick. Higher-tier tanks take longer."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "O2 Canister Mk.I",
-      "text": "$(bold)Capacity:$() 120 seconds$(br)$(bold)Bar Color:$() Cyan$(br2)The standard-issue canister. Two minutes of breathable air. That's how long ORSA thought you'd need between airlocks. ORSA assumed you'd have airlocks."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)\"We allocated portable airlock budget. Kevin spent it on a breakroom espresso machine. It's frozen now too.\"$()"
+      "text": "$(bold)Mk.I:$() 120s, cyan bar$(br)$(bold)Mk.II:$() 240s, blue bar$(br)$(bold)Mk.III:$() 360s, purple bar"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank",
-      "text": "Iron, glass, and a Thermal Core. The core regulates gas pressure."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "O2 Canister Mk.II",
-      "text": "$(bold)Capacity:$() 240 seconds$(br)$(bold)Bar Color:$() Blue$(br2)Diamond-reinforced casing, double compression. Four minutes of air. Enough to leave shelter, finish a real field task, and make it back without packing half an inventory of pressure vessels."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)ORSA Procurement notes this is the most expensive air you will ever breathe. Until the Mk.III.$()"
+      "title": "O2 Canister Mk.I",
+      "text": "Iron, glass and a Thermal Core to regulate pressure. Two minutes: ORSA assumed you would have airlocks. Kevin spent the airlock budget on an espresso machine."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank_mk2",
-      "text": "Surround a Mk.I with diamonds. Yes, diamonds. For a metal tube full of air."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "O2 Canister Mk.III",
-      "text": "$(bold)Capacity:$() 360 seconds$(br)$(bold)Bar Color:$() Purple$(br2)$(l:advanced/frozen_atmosphere_shard)Frozen Atmosphere Shards$(/l) and blue ice create a cryogenic chamber holding six minutes of air at absurd density. The canister is cold to the touch. Uncomfortably cold."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)\"Six minutes doesn't sound like much. But when there's no air outside your helmet, it's everything.\"$()"
+      "title": "O2 Canister Mk.II",
+      "text": "Diamonds around a Mk.I canister. Enough air to leave shelter, finish a real task and get back. The most expensive air you will ever breathe, until the Mk.III."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank_mk3",
-      "text": "Frozen Atmosphere Shards, blue ice, and a Mk.II. You're bottling the sky."
+      "title": "O2 Canister Mk.III",
+      "text": "$(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l), blue ice and a Mk.II. Cold to the touch. You are bottling the sky."
     }
   ]
 }

@@ -1,0 +1,20 @@
+{
+  "name": "Field Documents",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": -2,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "ORSA paperwork survived the evacuation better than ORSA did.$(br2)$(bold)ORSA Documents$() turn up in chests in villages, mineshafts, dungeons, strongholds, outposts, temples, igloos, ancient cities and end cities."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "ORSA camps, stations, vehicles and cargo drops carry their own."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Right-click a document to archive it. The document is consumed and its entry in this chapter unlocks.$(br2)Entries marked (Locked) are documents you have not found yet.$(br2)$(italic)Archived material remains ORSA property. So do you.$()"
+    }
+  ]
+}

@@ -2,47 +2,25 @@
   "name": "Atmosphere Shard",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:frozen_atmosphere_shard",
-  "sortnum": 1,
+  "sortnum": 3,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Frozen Atmosphere Shard",
-      "text": "In Phase 6, the atmosphere itself begins to freeze and deposit on the surface as thin, crystalline sheets of $(bold)Frozen Atmosphere$()."
+      "text": "In Phase 6 the air freezes onto the surface as thin crystalline sheets. Mine them for $(bold)Frozen Atmosphere Shards$().$(br2)$(bold)Used in:$() the $(l:advanced/transponder)Transponder$(/l) and the $(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l). You will need several."
     },
     {
       "type": "patchouli:text",
-      "text": "Mining these deposits yields $(bold)Frozen Atmosphere Shards$() — shimmering fragments of solidified air. Yes, you are holding the sky in your hands. No, ORSA does not recommend thinking about that."
+      "text": "$(italic)You are holding the sky. ORSA recommends not thinking about it.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Sublimation Warning",
-      "text": "These shards are $(bold)extremely temperature-sensitive$(). If your body temperature rises above $(bold)-150°C$(), the shard begins to sublimate — reverting from solid back to gas."
+      "title": "Sublimation",
+      "text": "If your body temperature is above $(bold)-150°C$(), a carried shard sublimates. It shimmers and sheds snowflakes, then vanishes after about $(bold)7.5 seconds$().$(br2)A $(l:heating/thermal_container)Thermal Container$(/l) stops the timer. Stored shards keep indefinitely."
     },
     {
       "type": "patchouli:text",
-      "text": "You have approximately $(bold)7.5 seconds$() before it vanishes entirely. The shard will shimmer and emit snowflake particles as a warning. Then it's gone. Just like that. You are now holding slightly more air than before.$(br2)$(italic)ORSA Wellness reminds you: don't cry over sublimated atmosphere.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Preservation",
-      "text": "To safely transport shards, store them in a $(l:heating/thermal_container)Thermal Container$(/l). The insulated interior halts the sublimation timer entirely."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Recommended procedure:$()$(br)$(li)Mine the shard$(li)Immediately open your Thermal Container$(li)Place the shard inside$(li)Do not panic$(li)If you panicked, see step 4"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Shards stored in a container will remain stable indefinitely. Shards in your regular inventory will not."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Usage",
-      "text": "A critical component in crafting the $(l:advanced/transponder)ORSA Transponder$(/l) and the $(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l).$(br2)You'll need several. ORSA recommends a dedicated mining expedition. With a Thermal Container. And a plan."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)\"We designed a rescue beacon that requires frozen sky. In hindsight, copper wire would have worked. But here we are.\"$(br)$(italic)— Dr. Vasquez$()"
+      "title": "Procedure",
+      "text": "$(li)Mine the shard$(li)Open your Thermal Container$(li)Put the shard inside$(li)Do not panic$(li)If you panicked, see step 4$(br2)$(italic)\"A rescue beacon that needs frozen sky. In hindsight, copper wire would have worked.\" -- Dr. Vasquez$()"
     }
   ]
 }
