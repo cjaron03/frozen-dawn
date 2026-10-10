@@ -62,6 +62,9 @@ public final class ManualLint {
     static final int GLYPH_HEIGHT = 8;
     static final int TOP_PADDING = 18;
     static final int LEFT_PAGE_X = 15;
+    // GuiButtonEntry: 116 wide, name drawn at x + 12, read marker drawn at x + 111.
+    // The last advance includes a 1 px gap, so a name of this width ends its ink at x + 110.
+    static final int LIST_NAME_WIDTH = 111 - 12 + 1;
 
     // Ornaments in the bottom-right corner of each page of orsa_book.png,
     // page-local {x0, y0, x1, y1} inclusive.
@@ -275,6 +278,11 @@ public final class ManualLint {
 
         void lintEntry(Report r, Map<String, Object> entry) {
             lintTitle(r, "name", r.name);
+            int listWidth = r.name == null ? 0 : font.width(r.name, false);
+            if (listWidth > LIST_NAME_WIDTH) {
+                r.add("name", Severity.ERROR, "list name wide", "\"" + r.name + "\" is " + listWidth
+                        + " px; the chapter list fits " + LIST_NAME_WIDTH + " before the read marker");
+            }
             List<?> pages = (List<?>) entry.get("pages");
             r.pages = pages.size();
             for (int i = 0; i < pages.size(); i++) {
