@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:base_stone_overworld",
+    "minecraft:stone_bricks",
+    "minecraft:deepslate_bricks",
+    "minecraft:deepslate_tiles"
+  ]
+}

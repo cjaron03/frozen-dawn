@@ -169,6 +169,12 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
                 rooms.add(row);
             }
             out.add("roomCache", rooms);
+            JsonArray heat=new JsonArray();
+            for(var level:server.getAllLevels())for(var room:com.frozendawn.world.RoomThermalManager.snapshots(level)) {
+                JsonObject row=new com.google.gson.Gson().toJsonTree(room).getAsJsonObject();
+                row.addProperty("dimension",level.dimension().location().toString());heat.add(row);
+            }
+            out.add("roomThermal",heat);
         }
         return out;
     }

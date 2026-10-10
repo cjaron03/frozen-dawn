@@ -4,7 +4,7 @@ Owning checkout: `/Users/jaroncabral/.codex/worktrees/thermal-2-0/minecraft-mod`
 Branch: `thermal-2.0`. Base: `8303073fef1b8f8bd82ccb4f6f8c434cc3275d69` from the pushed atmospheric-breach branch.
 Notion source: [Thermal Model and Heater Control](https://app.notion.com/p/3f47cfaa890181b9a213c52a3d2c9966), including Additions (2026-10-09).
 
-Current acceptance: owner visually accepted the ground-depth replay on October 9, 2026. Automated verification passed; see the owner-depth section below. The ground-depth slice is committed locally on this branch.
+Current acceptance: depth and room-support replays are accepted and committed through pushed checkpoint 3bb1538. The two-node thermal slice is local, uncommitted and headless verified; its fresh owner visual/balance replay is pending. See the latest section below.
 
 ## Agreed order
 
@@ -280,3 +280,79 @@ Owner clicked off at 01:05:48, READY logged 01:06:27, read at 01:06:35. Function
 ## Owner relight autonomous discovery acceptance
 
 Owner first report: “i think it worked”. Logs show relight 01:07:21 and read 01:07:30. Fresh exact-world non-renewing snapshot confirms ID1 restored, 35 cells/72 faces, bounds (-4,65,-1)..(-1,67,1), infrastructure-active with sole source (-3,66,0), last query INFRASTRUCTURE_DISCOVERY; no unheated-right fixture record. Player remains outside at (.5,65,8.5). Heated room autonomously rediscovered without player entry or operator geometry query. Combined fueled retention, heater-off expiry and relight recovery now accepted in owner replay, with fixture scope and earlier mixed global-count attempts preserved. Snapshot-owner-relight.json and final log in activity-room-trace. No world mutation issued during inspection. Thermostat block/control UI, two-node thermal model, actual chunk unload and multiplayer visual acceptance remain separate pending work. All room-support changes local/uncommitted on thermal-2.0.
+
+## Keep-alive checkpoint committed and pushed — October 10, 2026
+
+At the owner's request, canonical identities, boundary contacts, typed room changes, heater keep-alive and the accepted diagnostic replay are committed together as 3bb1538 (`feat(thermal): keep canonical heater rooms active`). Keep-alive relies on the earlier room integration. The owner approved pushing the checkpoint; HEAD and origin/thermal-2.0 match. Saved worlds and ignored replay evidence remain in this owning checkout. The root Scribe checkout is untouched.
+
+## Two-node room heat implementation — October 10, 2026
+
+The next local, uncommitted slice implements separate gas and physical-material energy. RoomThermalState persists complete prior cells, oriented faces, structure membership, gas presence/energy and a single reservoir per physical material block. The energy ledger accounts for heater input, signed environmental loss, incoming/vented gas and imported/removed material. Live merges and splits claim gas through full overlap; shared walls contribute capacity and energy once. New cells/material import only their ambient initial energy. Reload can discover all children of a thermal parent even when the pressure save already contains separate children; nested notifications are serialized before consuming parents.
+
+Each loaded room integrates once per 20 ticks, with stable finite-reservoir air/wall exchange and explicit environmental debit. Heaters heat gas while present; a depleted room drops gas capacity and receives 25% heater power into walls. Vacuum felt temperature blends 20% toward wall warmth from area-weighted background. Incoming refill gas uses area-weighted outside temperature; retained wall energy pays for warming it. These coefficients are first-pass game units. Exposed vacuum contacts use a reduced, linearized radiation term; solid exterior contacts use depth/time temperature at the boundary face Y. This is a game model, not a measured physical simulation.
+
+Tags override SoundType insulation (.1/.3/.5/.8/1). Each contact walks at most three solid layers and sums their resistance. A separate outer-layer/exterior index invalidates conductance without changing pressure geometry. UNKNOWN or any unloaded cell/material/exterior layer suspends simulation and preserves energy; no chunks are forced and no offline elapsed time is integrated. At most two saved records are considered each second for loaded-only rehydration. Geometry revalidation locates surviving air membership when construction fills the cached first cell. Mob and loaded-only catch-up temperature probes use the existing thermal cache and never discover rooms or renew pressure activity.
+
+TemperatureManager uses room gas/radiant temperature without stacking the old flat heater bonus or +5C shelter bonus onto that model. Open camps retain the existing nearby-heater behavior. Core, vent and Blast Pit local warmth remain additive as agreed. This means the player HUD can differ from the raw air reservoir near a Core. `/fd world thermal` and bridge `roomThermal` snapshots inspect existing records without discovering rooms or advancing simulation. The ORSA Field Manual describes room warm-up, gradual cooling, insulation, retained wall heat and depleted-room operation.
+
+Heater 20C throttling, fuel-rate UI/redstone, thermostat, thermometer and pressure-preserving heat exchanger remain the next separate slice. Existing fuel drain continues with fixed heater power in this physics test build; final fuel/warm-up balance is not accepted yet. No thermostat or throttle is claimed as implemented.
+
+### Regression evidence and fixture corrections
+
+The first gate passed all eight new thermal native cases but rejected two earlier instantaneous-temperature assumptions. Evidence is preserved at build/thermal-evidence/two-node-first. The EVA cold/expiry test previously fueled its room during the lighting wait at Phase 0, then jumped progression to endgame; retaining that room heat is now correct. It now selects endgame before fueling/discovering the cold room. Its actual cold damage, service expiry and vacuum protection assertions remain intact. The Pawn base staging check no longer requires an instantaneous >90C heater bonus; it requires a finite reading and Creative staging, with oxygen/kit/outdoor-vacuum/Survival/overheating checks retained.
+
+Successful intermediate gates are preserved under two-node-before-rebind (320 native, 315 required) and two-node-before-filled-cell (321 native, 316 required). Final verification and delivery hashes follow when complete. Twelve native cases now cover live heater warm-up/burnout, gas/material ledger conservation, merge/split, older-parent reload sibling recovery, breach/refill, outer insulation, UNKNOWN/unloaded suspension, cache-only probes and persistence, depleted heater/airlock cycles, unqueried loaded-save rehydration and filled-origin automatic revalidation, and neighboring-room discovery/breach exposure. Five pure numerical tests independently cover stable exchange and budgets.
+
+### Fresh owner replay
+
+`tools/prepare_room_heat_playtest.py` prepared `run-lab/saves/Room Heat Check` from the closed Room Activity Check's seed metadata only. Source metadata SHA-256: 48f4ddf4c11a56d3d4c9c013b0879d391fddc604de25515c453cb9fddcebcd3f. No chunks, player inventories or mod SavedData were copied. Earlier worlds remain preserved. Generator refuses overwrite; generated functions match the helper. Room Heat Check starts Creative at late Phase 6 with two matching rooms: wool at X -8, glass at X 8. Each has one initially unlit heater and a Core for oxygen. First visit both rooms; Fuel both; compare air/wall temperature after 30, 60 and 120 seconds of normal unpaused play. Then Heaters off verifies gradual cooling. Breach/patch left verifies immediate gas loss, retained wall warmth and five-second Core recovery. Save/quit/reopen can verify persistence. No bridge mutation functions are authorized; the owner chooses the clickable steps. Read air/walls invokes `/fd world thermal` directly so function output suppression cannot hide its results. Return controls with `/function room_heat_check:controls`.
+
+The final client launch is pending verification. Shared partition faces refresh when a neighboring room is discovered or breached; dormant open memberships do not hide a vacuum exterior. The successful filled-cell gate is preserved in two-node-before-neighbor (322 native, 317 required). Owner visual/balance, actual client reload/chunk unload and multiplayer acceptance remain pending. Headless native tests do not substitute for these passes.
+
+
+### Two-node final verification
+
+`./gradlew spotlessApply architectVerify --console=plain` passed on the current inputs: 689 unit tests, all 323 native GameTests and all 318 required cases/reports. All twelve room-heat native cases passed. Current source fingerprint matches the build: ad322233fcc2e76171d97878e372c317beba94c69667bd94bb8d2ed3b468844f. Jar and installed smoke SHA-256: b6112080976cb5d6269ca0ea6f52acea85c329b5c05b1ec6a531a7680fd32081. Evidence: build/thermal-evidence/two-node-final/verification.json, report.xml, unit XML and Gradle log. The previous smoke jar is retained byte-for-byte as smoke-previous.jar; all dependency jar hashes are unchanged. Existing NeoForge removal, Gradle deprecation and invalid historical Java-installation warnings remain. Native first-boot server.properties fallback is expected. Owner visual, actual client reload/chunk-unload and multiplayer acceptance are still pending.
+
+
+### Two-node client launch
+
+Client is running through owning Java 21 `./gradlew runClientLab --console=plain -PfdLabWorld='Room Heat Check'`. Terminal session 87923; live log /private/tmp/thermal-room-heat-client-windowed.log; bridge session 0fc99e09-2fbd-489c-830a-8dd6e12cc1ef. Exact-world read-only snapshot confirms Dev at (.5,65,7.5), menu/focus paused, not tick-frozen. Setup completed at gameTime 9 with rheat #built=1; fixture/control messages parsed and the ORSA Field Manual was supplied. Heaters start off, and no owner Fuel/Breach/Patch step has been issued by the agent. Fresh world baseline and logs are preserved in two-node-final. Resume the game for the owner replay.
+
+Two pre-world launch attempts failed at NeoForge early display with glfwGetPrimaryMonitor=0. The display was connected but initially asleep. Waking it alone did not resolve the optional early loading window failure. Disabling only run-lab/config/fml.toml earlyWindowControl allowed the normal Gradle client to load and render the world. The original lab config and both failed startup logs are preserved in the evidence folder. This ignored local startup workaround is not a production-mod change. Prior test worlds and other worktrees were preserved.
+
+Model code remains uncommitted on thermal-2.0, whose pushed checkpoint is 3bb1538. Owner warmth/cooling/insulation/breach/refill and reload visual acceptance, balance tuning and multiplayer remain pending. Next implementation after this pass is heater default target/throttling and controls.
+
+
+### Owner first two-node warm-up comparison
+
+Owner's unprompted observation: “yup, fueled both and waited 30 seconds. check the logs real quick. the whool heated up a lot faster”. Fuel both was invoked at 02:09:45. Before fuel both fixture air/wall temperatures were -215.8C. First logged comparison at 02:10:13 (about 28 wall-clock seconds later) reports wool air -154.9C/walls -160.6C and glass air -158.1C/walls -163.8C, both sealed with heater power 1800. Later read at 02:11:37 reports wool air +4.5C/walls -1.2C and glass air -39.6C/walls -45.4C. These later readings are not labeled as the 30-second sample; pauses and continued play affect elapsed simulation time.
+
+Exact-world read-only snapshot at gameTime 3076, paused, confirms Room 1 is left wool (-9,65,-1)..(-7,67,1), heater (-8,66,0), and Room 3 is right glass (7,65,-1)..(9,67,1), heater (8,66,0). Both have 26 air cells, 60 contacts, air capacity 26, material capacity 876, sealed/present air and power 1800. Wool conductance .6525 versus glass 4.580357: lower environmental heat loss for the same temperature difference. Latest snapshot wool air +13.65C/walls +7.94C; glass air -34.05C/walls -39.86C. The global energy total and ledger net agree within 3.64e-7 game energy units. Snapshot and untouched log preserved under build/thermal-evidence/two-node-owner-warmup.
+
+Owner warm-up/insulation comparison passes: equal input and capacities, progressively warmer wool room, air leading wall temperature. Only diagnostics were issued by the agent. Heater-off cooling, breach/patch/refill and owner reload acceptance remain pending. Default 20C throttle/control is still a separate unimplemented slice; this fixed-power run does not establish final balance. Model remains uncommitted on thermal-2.0 at checkpoint 3bb1538.
+
+
+### Owner heater-off cooling acceptance
+
+Owner reports: “yup turned both heaters off and waited 30 seconds. check the logs real quick, looks good? whool is much warmer and losing slower”. Heaters off logged at 02:15:56. At 02:16:29 (33 wall seconds later), wool air/walls +10.0C; glass air -63.1C/walls -63.2C, both sealed with zero heater power. At 02:16:36, wool air/walls +8.7C; glass air -69.1C/walls -69.2C. Across these seven wall seconds, wool air lost 1.3C versus glass 6.0C. These are rounded logged readings; an exact switch-off temperature was not logged, so a full initial-to-30s temperature drop is not inferred.
+
+Read-only snapshot at gameTime 4322, unpaused, confirms same bridge session and Room Heat Check: wool air +5.790C/walls +5.768C, glass air -81.957C/walls -82.050C. Both sealed, air-present, unsuspended, power 0; unchanged fixture capacities and conductance. Global energy/ledger mismatch remains only 3.62e-7 game units. Evidence preserved in build/thermal-evidence/two-node-owner-cooling. No thermal exception appeared in the inspected log. Owner attempted an obsolete room_activity_check:controls at 02:16:13; current control command is /function room_heat_check:controls. This did not mutate the fixture.
+
+Heater-off gradual cooling and insulation comparison pass in owner replay: warmth survives turning off, air and walls equilibrate, wool cools slower. Breach/patch/refill and reload visual acceptance remain pending. Agent issued diagnostics only. Source model remains local/uncommitted at 3bb1538 on thermal-2.0.
+
+
+### Owner wool-room breach and patch recovery
+
+Owner reports breaching and patching the wool room and waiting five seconds. Logged pre-breach read at 02:18:09 shows wool air/walls -5.9C and zero heater power. Breach left ran at 02:18:14; Patch left at 02:18:23. Next logged read at 02:18:40 (17 wall seconds after patch) shows wool sealed, zero power, air/walls -20.2C. Exact-world snapshot at gameTime8068 confirms Room1 original wool bounds/capacities, sealed, unsuspended, airPresent=true, air -31.462C/walls -31.480C after further normal cooling; ledger matches total within 4.47e-7 game units. Preserved snapshot/log in two-node-owner-breach.
+
+Post-patch room air recovery is confirmed; much of the stored heat survived and both reservoirs continued cooling without heater input. No diagnostic reading was taken during the nine-second open interval, so the owner's live run does not independently prove immediate gas loss or quantify retained wall temperature during vacuum. Exact five-second recovery latency was not measured by the 17-second post-patch read. Those mechanics pass native tests; keep this live acceptance scope explicit. Agent issued read-only diagnostics only and did not repeat the breach or advance the replay. Actual owner save/reload acceptance remains pending.
+
+
+### Owner save/quit/reopen persistence acceptance
+
+Owner saved, quit and reopened Room Heat Check. Log confirms all dimensions saved and integrated server stopped at 02:21:51; reopening/login occurred at 02:21:57. New bridge session 27ac9419-6f30-439d-a410-8de287ad3822 confirms a fresh integrated server instance. Read-only inspection of the 02:21 saved frozendawn_room_heat.dat shows wool air -45.312C/walls -45.329C and glass air -185.865C/walls -185.885C, both sealed/air-present with capacities26/876. Shared material capacities/energies are divided by actual saved ownership when reconstructing wall temperature.
+
+First owner read at 02:22:03, six wall seconds after login, reports wool air/walls -46.2C and glass air/walls -186.8C, both power0/sealed. Continued read at 02:22:06 wool -46.5C/-46.6C, glass -187.2C/-187.2C. Fresh snapshot gameTime10631 confirms wool air -47.760C/walls -47.777C, glass air -188.617C/walls -188.635C, both sealed, air-present, unsuspended, power0 and original capacities/conductance. Global energy ledger agrees within4.74e-7 units. Saved file, parsed values, provenance/hash, client log and snapshot preserved under two-node-owner-reload.
+
+Owner reload persistence passes: both air and physical wall reservoirs carry through loading and resume gradual cooling, rather than resetting to the -215.8C outdoor fixture baseline. Exact offline invariance is covered by native tests; this short owner reload has elapsed loaded simulation and does not isolate an exact zero-time energy comparison. No agent mutations or replay resets issued. Owner visual warm-up, insulation, cooling, post-patch recovery and world reload are now verified with scoped evidence; open-interval air/wall readings, actual chunk-unload visual behavior, final balance and multiplayer remain separate gaps. Two-node source remains local/uncommitted on thermal-2.0 at3bb1538. Next implementation slice is default heater target/throttling and control design.

@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Upgrading Your Heaters",
-      "text": "As the cold intensifies, basic heaters won't cut it. Surround a $(l:heating/thermal_heater)Thermal Heater$(/l) with materials to create upgraded versions:$(br2)$(li)$(bold)Iron:$() +50°C, 9-block radius, 1.5x fuel$(li)$(bold)Gold:$() +65°C, 11-block radius, 2x fuel$(li)$(bold)Diamond:$() +80°C, 14-block radius, 3x fuel$(br2)$(bold)Warning:$() In Phase 4+, fuel burns faster (2x/4x/8x by phase). Budget accordingly."
+      "text": "As the cold intensifies, basic heaters won't cut it. Surround a $(l:heating/thermal_heater)Thermal Heater$(/l) with materials to create upgraded versions:$(br2)$(li)$(bold)Iron:$() 50-output, 9-block open-camp radius, 1.5x fuel$(li)$(bold)Gold:$() 65-output, 11-block open-camp radius, 2x fuel$(li)$(bold)Diamond:$() 80-output, 14-block open-camp radius, 3x fuel$(br2)$(bold)Warning:$() In Phase 4+, fuel burns faster (2x/4x/8x by phase). Budget accordingly.$(br2)Sealed rooms use these outputs as heating power, rather than an instant temperature bonus. Better output warms the room faster; insulation controls heat loss."
     },
     {
       "type": "patchouli:text",
       "title": "Shelter & Strategy",
-      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters keep only $(bold)0.6x radius$() — a 40% range loss, not half. Put a real roof over them to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
+      "text": "$(bold)Shelter matters:$() In Phase 5+, exposed heaters keep only $(bold)0.6x radius$() \u2014 a 40% range loss, not half. Put a real roof over them to maintain full range.$(br2)$(italic)\"Can I just build 30 basic heaters?\" You can. You'll also need 30 coal per minute. ORSA calls this the \"bonfire strategy.\" It works until it doesn't.$()"
     },
     {
       "type": "patchouli:crafting",

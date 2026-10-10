@@ -67,11 +67,13 @@ public final class EmergencyEvaGameTest {
         var heaterPos = preparedCenter.west();
         helper.getLevel().setBlockAndUpdate(heaterPos,
                 com.frozendawn.init.ModBlocks.THERMAL_HEATER.get().defaultBlockState());
-        ((com.frozendawn.block.ThermalHeaterBlockEntity) helper.getLevel().getBlockEntity(heaterPos)).addFuel(24000);
         // The sealed-air authority uses actual sky light; wait for roof lighting to propagate.
         helper.runAfterDelay(20, () -> scene(helper, player -> {
             player.setPos(preparedCenter.getCenter());
             setProgress(player, 1.0F);
+            // Discover this cold room only after selecting endgame. Pre-fueling during the lighting
+            // wait would legitimately retain Phase-0 room warmth across the artificial phase jump.
+            ((com.frozendawn.block.ThermalHeaterBlockEntity) helper.getLevel().getBlockEntity(heaterPos)).addFuel(24000);
             var center = player.blockPosition();
             PlayerTickHandler.syncBreathableState(player);
             helper.assertTrue(PlayerTickHandler.isPlayerBreathable(player),

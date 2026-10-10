@@ -7,12 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Thermal Heater",
-      "text": "A fuel-burning heater that radiates warmth in its vicinity. Right-click with coal, charcoal, blaze powder, coal blocks, or cryo fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters stack their warmth.$(br2)Can be $(l:heating/heater_upgrades)upgraded$(/l) with iron, gold, or diamond for greater output.$(br2)$(italic)ORSA FAQ: \"Can I hug the heater?\" No. \"Can I sleep next to the heater?\" Also no. \"Can I name the heater?\" ...we can't stop you, but please seek companionship elsewhere.$()"
+      "text": "A fuel-burning heater. Inside a sealed room it heats the air, which warms the walls and floor. Larger rooms warm more slowly; insulation reduces heat loss. Open camps retain nearby warmth. Right-click with coal, charcoal, blaze powder, coal blocks, or cryo fuel to activate.$(br2)Essential for early survival. Place these in your base to keep temperatures livable through Phases 2-4. Multiple heaters add power. After burnout, stored room warmth cools gradually.$(br2)Can be $(l:heating/heater_upgrades)upgraded$(/l) with iron, gold, or diamond for greater output.$(br2)$(italic)ORSA FAQ: \"Can I hug the heater?\" No. \"Can I sleep next to the heater?\" Also no. \"Can I name the heater?\" ...we can't stop you, but please seek companionship elsewhere.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_heater",
       "text": "Surround a Thermal Core with 8 iron ingots. It's essentially an iron box with a hot thing inside. ORSA charged the UN four billion credits for this design."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Air and Structure",
+      "text": "Air holds little heat; walls hold much more. A vacuum breach vents the air while surviving walls retain warmth. Repair the seal and restore oxygen: incoming cold air warms from those walls.$(br2)Without room air, heaters keep burning but heat the structure at reduced efficiency. Radiation supplies only part of that warmth to you; EVA and oxygen still matter.$(br2)Wool and snow insulate well. Wood is better than stone; glass, metal and ice lose heat readily. Layers up to three blocks thick combine their insulation.$(br2)Heater control is still being revised. This version supplies fixed power while fueled; it does not yet throttle to a 20\u00b0C target."
     }
   ]
 }

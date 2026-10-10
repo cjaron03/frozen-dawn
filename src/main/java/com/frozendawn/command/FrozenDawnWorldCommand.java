@@ -45,6 +45,7 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.literal("verbose")
                                 .executes(context -> status(context, true))))
                 .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
+                .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))
                 .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
                 .then(Commands.literal("set")
                         .then(Commands.literal("day")
@@ -67,6 +68,16 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnWorldCommand::applyPreset)));
+    }
+
+    private static int thermalDiagnostics(CommandContext<CommandSourceStack> context) {
+        var rooms=com.frozendawn.world.RoomThermalManager.snapshots(context.getSource().getLevel());
+        FrozenDawnCommandOutput.line(context.getSource(),"Room heat",rooms.size()+" loaded thermal records; air / structure model");
+        for(var room:rooms.stream().limit(16).toList()) FrozenDawnCommandOutput.detail(context.getSource(),"Room "+room.id(),
+                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | power %.0f | %s",
+                        room.airPresent()?String.format(Locale.ROOT,"%.1fC",room.airTemperature()):"depleted",room.structureTemperature(),
+                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
+        return 1;
     }
 
     private static int roomDiagnostics(CommandContext<CommandSourceStack> context) {

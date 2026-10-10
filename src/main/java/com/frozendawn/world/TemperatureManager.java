@@ -68,10 +68,12 @@ public final class TemperatureManager {
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
         float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
-        float shelterTemp = getShelterModifier(level, pos);
-        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly)
+        var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
+        float shelterTemp = roomTemperature.isPresent() ? 0 : getShelterModifier(level, pos);
+        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly, roomTemperature.isEmpty())
                 * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
-        float finalTemp = backgroundTemp + shelterTemp + heatTemp;
+        float finalTemp = (roomTemperature.isPresent() ? (float)roomTemperature.getAsDouble() : backgroundTemp) + shelterTemp + heatTemp;
 
         if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
             return Math.max(finalTemp, 24.0f);
@@ -196,11 +198,16 @@ public final class TemperatureManager {
 
     private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
                                                boolean quickScan, boolean loadedOnly) {
+        return getHeatSourceModifier(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
+    }
+
+    private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
+            boolean quickScan, boolean loadedOnly, boolean includeHeaters) {
         float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
 
         // --- Registered thermal heaters (no block scan needed) ---
-        for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
+        if(includeHeaters) for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
             if (loadedOnly && !level.isLoaded(heaterPos)) {
                 continue;
             }
