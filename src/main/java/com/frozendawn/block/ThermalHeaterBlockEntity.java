@@ -84,6 +84,8 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             }
         }
         updateLitState();
+        if (isLit() && level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 20L == 0L)
+            com.frozendawn.world.RoomAtmosphere.keepAlive(this);
     }
 
     private void tickFrostmiteHeatPenalty() {

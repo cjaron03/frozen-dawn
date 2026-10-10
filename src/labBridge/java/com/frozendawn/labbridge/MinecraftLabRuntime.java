@@ -144,8 +144,36 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
                 }
             }
             out.add("architects", list);
+            JsonArray rooms = new JsonArray();
+            for (var level : server.getAllLevels()) for (var room : com.frozendawn.world.RoomAtmosphere.cachedRoomDiagnostics(level)) {
+                JsonObject row = new JsonObject();
+                row.addProperty("dimension", level.dimension().location().toString());
+                row.addProperty("id", room.id()); row.addProperty("cells", room.geometry().cells().size());
+                row.addProperty("faces", room.geometry().boundaryFaces().size());
+                row.addProperty("uncertain", room.uncertain()); row.addProperty("active", room.active());
+                row.addProperty("idleTicks", room.idleTicks()); row.addProperty("lastQueryAge", room.lastQueryAge());
+                row.addProperty("lastQueryReason", room.lastQueryReason());
+                if (room.lastQueryPos() != null) {
+                    row.add("lastQueryPos", blockPos(room.lastQueryPos()));
+                    row.addProperty("lastQueryBlock", level.isLoaded(room.lastQueryPos())
+                            ? level.getBlockState(room.lastQueryPos()).toString() : "unloaded");
+                }
+                var cells = room.geometry().cells();
+                row.add("min", blockPos(new net.minecraft.core.BlockPos(cells.stream().mapToInt(net.minecraft.core.BlockPos::getX).min().orElseThrow(),
+                        cells.stream().mapToInt(net.minecraft.core.BlockPos::getY).min().orElseThrow(),
+                        cells.stream().mapToInt(net.minecraft.core.BlockPos::getZ).min().orElseThrow())));
+                row.add("max", blockPos(new net.minecraft.core.BlockPos(cells.stream().mapToInt(net.minecraft.core.BlockPos::getX).max().orElseThrow(),
+                        cells.stream().mapToInt(net.minecraft.core.BlockPos::getY).max().orElseThrow(),
+                        cells.stream().mapToInt(net.minecraft.core.BlockPos::getZ).max().orElseThrow())));
+                JsonArray sources = new JsonArray(); room.sources().forEach(pos -> sources.add(blockPos(pos))); row.add("sources", sources);
+                rooms.add(row);
+            }
+            out.add("roomCache", rooms);
         }
         return out;
+    }
+    private static JsonArray blockPos(net.minecraft.core.BlockPos pos) {
+        JsonArray result = new JsonArray(); result.add(pos.getX()); result.add(pos.getY()); result.add(pos.getZ()); return result;
     }
     private static JsonObject describe(Entity entity) {
         JsonObject row = new JsonObject(); row.addProperty("uuid", entity.getUUID().toString());
