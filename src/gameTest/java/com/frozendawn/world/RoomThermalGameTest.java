@@ -142,7 +142,7 @@ public final class RoomThermalGameTest {
                 budget(h,s);RoomAirState.get(s.l).refill(view.geometry().cells());budget(h,s);
                 near(h,s.heat().materials.values().stream().mapToDouble(m->m.energy).sum(),wall,"No unticked vent/refill cycle fabricates wall heat");
             }
-            RoomAirState.get(s.l).evacuate(view.geometry().cells());double heat=s.heat().ledger.heater;
+            hot(s,0,0);RoomAirState.get(s.l).evacuate(view.geometry().cells());double heat=s.heat().ledger.heater;
             double power=RoomThermalManager.snapshots(s.l).getFirst().heaterPower();RoomThermalManager.tickLevel(s.l);
             near(h,s.heat().ledger.heater-heat,power*RoomHeatMath.VACUUM_HEATER_EFFICIENCY,"Depleted room heater delivers only reduced wall power");
             h.assertTrue(heater.isLit(),"Vacuum does not silently extinguish the sealed thermal heater");budget(h,s);
@@ -234,6 +234,147 @@ public final class RoomThermalGameTest {
                 } catch(RuntimeException|Error e){s.close();throw e;}
             });
         } catch(RuntimeException|Error e){s.close();throw e;}
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heaterControlSharedTargetCapsCombinedPowerAndDebitsExactFuel(GameTestHelper h) {
+        scene(h,s->{
+            var heaters=new ArrayList<ThermalHeaterBlockEntity>();
+            for(var pos:List.of(s.c.west(2),s.c.east(2))) {
+                s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);heaters.add(heater);
+            }
+            RoomAtmosphere.view(s.l,s.c);hot(s,19.9,19.9);
+            double before=s.heat().ledger.heater;RoomThermalManager.tickLevel(s.l);
+            var room=RoomThermalManager.snapshots(s.l).getFirst();
+            h.assertTrue(room.airTemperature()<=20.000001,"Combined heating cannot overshoot the common20C target");
+            double first=heaters.getFirst().getBurnFraction();
+            h.assertTrue(first>0&&first<1,"Heaters reduce power near target");
+            near(h,first,heaters.getLast().getBurnFraction(),"Matching heaters share exactly the same room demand");
+            near(h,s.heat().ledger.heater-before,3600*first,"Only the actual heat grant enters the ledger");
+            for(var heater:heaters) {
+                var saved=heater.saveWithFullMetadata(s.l.registryAccess());
+                double used=10000-saved.getInt("BurnTime")+saved.getDouble("FuelFraction");
+                near(h,used,20*heater.getPublicPhaseConsumption()*first,"Actual fuel including the fractional remainder follows delivered power");
+            }
+            budget(h,s);s.l.setBlock(s.c.east(2),Blocks.AIR.defaultBlockState(),2);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heaterControlMixedTiersAndCapacitorsShareTargetAndPreserveFuelLedger(GameTestHelper h) {
+        scene(h,s->{
+            var blocks=List.of(ModBlocks.THERMAL_HEATER.get(),ModBlocks.IRON_THERMAL_HEATER.get(),
+                    ModBlocks.GOLD_THERMAL_HEATER.get(),ModBlocks.DIAMOND_THERMAL_HEATER.get());
+            int[] outputs={35,50,65,80};
+            var heaters=new ArrayList<ThermalHeaterBlockEntity>();
+            for(int i=0;i<8;i++) {
+                var pos=s.c.offset(i-4,0,0);s.l.setBlock(pos,blocks.get(i%4).defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();
+                if(i>=4)heater.installCapacitor();
+                heater.addFuel(10000);heaters.add(heater);
+                int expected=i>=4?(int)(outputs[i%4]*1.5f):outputs[i%4];
+                near(h,heater.getPublicHeatOutput(),expected,"Each tier and installed capacitor has its own available output");
+                var saved=heater.saveWithFullMetadata(s.l.registryAccess());
+                var restored=new ThermalHeaterBlockEntity(pos,heater.getBlockState());
+                restored.loadWithComponents(saved,s.l.registryAccess());
+                near(h,restored.getPublicHeatOutput(),expected,"Capacitor-adjusted output survives reload");
+            }
+            RoomAtmosphere.view(s.l,s.c.offset(0,0,1));hot(s,20,19.5);
+            double before=s.heat().ledger.heater;RoomThermalManager.tickLevel(s.l);
+            var room=RoomThermalManager.snapshots(s.l).getFirst();
+            h.assertTrue(room.airTemperature()<=20.000001,"Mixed tiers and upgrades cannot raise the shared target");
+            double duty=heaters.getFirst().getBurnFraction(),delivered=0;
+            h.assertTrue(duty>0&&duty<1,"Mixed heaters throttle at the common target");
+            for(var heater:heaters) {
+                near(h,heater.getBurnFraction(),duty,"Different power ratings share demand proportionally to available power");
+                delivered+=RoomThermalManager.BASE_HEATER_POWER*heater.getPublicHeatOutput()/35.0*duty
+                        *com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+                var saved=heater.saveWithFullMetadata(s.l.registryAccess());
+                near(h,10000-saved.getInt("BurnTime")+saved.getDouble("FuelFraction"),
+                        20*heater.getPublicPhaseConsumption()*duty,"Each tier pays its actual fractional burn");
+                var menu=heater.getMenuData();for(int index=0;index<8;index++)menu.get(index);
+                h.assertTrue(saved.equals(heater.saveWithFullMetadata(s.l.registryAccess())),"Status averaging cannot change stored fuel or capacitor state");
+            }
+            near(h,s.heat().ledger.heater-before,delivered,"Ledger counts every upgraded heater's actual heat once");budget(h,s);
+            for(var heater:heaters)s.l.setBlock(heater.getBlockPos(),Blocks.AIR.defaultBlockState(),2);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heaterControlInsulationSavesFuelAtSameTemperature(GameTestHelper h) {
+        final double[] demands=new double[2];
+        for(int variant=0;variant<2;variant++) {
+            var s=new Scene(h);try {
+                if(variant==0)for(int x=-5;x<=5;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)
+                    if(Math.abs(x)==5||Math.abs(z)==2||y==-1||y==3)s.l.setBlock(s.c.offset(x,y,z),Blocks.WHITE_WOOL.defaultBlockState(),2);
+                var pos=s.c.west(2);s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);
+                RoomAtmosphere.view(s.l,s.c);hot(s,20,20);RoomThermalManager.tickLevel(s.l);
+                demands[variant]=heater.getBurnFraction();
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().airTemperature()<=20.000001,"Holding target does not overheat");budget(h,s);
+            }finally{s.close();}
+        }
+        h.assertTrue(demands[0]>0&&demands[0]<demands[1],"Wool consumes less fuel than glass at the same20C target");h.succeed();
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heaterControlRedstoneStopsHeatAndIndustrialDrawWithoutDiscardingFuel(GameTestHelper h) {
+        scene(h,s->{
+            var pos=s.c.west(2);s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+            var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);
+            RoomAtmosphere.view(s.l,s.c);hot(s,0,0);
+            s.l.setBlock(pos.above(),Blocks.REDSTONE_BLOCK.defaultBlockState(),3);heater.serverTick();
+            double before=s.heat().ledger.heater;RoomThermalManager.tickLevel(s.l);
+            h.assertTrue(!heater.isLit()&&heater.hasFuel()&&heater.getBurnFraction()==0,"Redstone disables the burner while retaining fuel");
+            h.assertTrue(!heater.consumeIndustrialFuel(10),"Disabled heater cannot secretly power industry");
+            near(h,heater.saveWithFullMetadata(s.l.registryAccess()).getInt("BurnTime"),10000,"Disabled fuel remains unchanged");
+            near(h,s.heat().ledger.heater,before,"Redstone injects no heat");
+            s.l.setBlock(pos.above(),Blocks.AIR.defaultBlockState(),3);heater.serverTick();
+            var time=s.l.getGameTime();((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time+20);
+            try {RoomThermalManager.tickLevel(s.l);h.assertTrue(heater.isLit()&&heater.getBurnFraction()>0,"Removing redstone resumes room heating");}
+            finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time);}
+            budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heaterControlFractionalFuelSurvivesReloadAndTinyFuelCapsHeat(GameTestHelper h) {
+        scene(h,s->{
+            var pos=s.c.west(2);s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+            var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);
+            RoomAtmosphere.view(s.l,s.c);hot(s,20,20);RoomThermalManager.tickLevel(s.l);
+            var saved=heater.saveWithFullMetadata(s.l.registryAccess());double fraction=saved.getDouble("FuelFraction");
+            h.assertTrue(fraction>0&&fraction<1,"Throttled fuel retains a meaningful sub-tick remainder");
+            var restored=new ThermalHeaterBlockEntity(pos,heater.getBlockState());restored.loadWithComponents(saved,s.l.registryAccess());
+            near(h,restored.saveWithFullMetadata(s.l.registryAccess()).getDouble("FuelFraction"),fraction,"Reload preserves fractional fuel rather than granting free heat");
+            heater.extinguish();heater.addFuel(1);hot(s,-200,-200);
+            double before=s.heat().ledger.heater;var time=s.l.getGameTime();
+            ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time+20);
+            try {RoomThermalManager.tickLevel(s.l);}finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time);}
+            h.assertTrue(!heater.hasFuel(),"Tiny remaining fuel is exhausted exactly");
+            near(h,s.heat().ledger.heater-before,1800.0/(20*heater.getPublicPhaseConsumption()),"One fuel unit cannot fund a whole second of heating");budget(h,s);
+        });
+    }
+    @BeforeBatch(batch="heater_control_live")
+    public static void reportControl(ServerLevel level){GameTestReporting.installReporter(level);}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="heater_control_live",timeoutTicks=200)
+    public static void heaterControlRealTicksHoldTargetAndSaveFuelWithMultipleHeaters(GameTestHelper h) {
+        var s=new Scene(h);var heaters=new ArrayList<ThermalHeaterBlockEntity>();
+        try {
+            for(var pos:List.of(s.c.west(2),s.c.east(2))) {
+                s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);heaters.add(heater);
+            }
+            RoomAtmosphere.view(s.l,s.c);hot(s,19,19);
+            h.runAfterDelay(100,()->{
+                try {
+                    var room=RoomThermalManager.snapshots(s.l).getFirst();
+                    h.assertTrue(room.airTemperature()>19&&room.airTemperature()<=20.000001,"Real loaded ticking reaches and holds the common target");
+                    for(var heater:heaters) {
+                        var saved=heater.saveWithFullMetadata(s.l.registryAccess());
+                        h.assertTrue(saved.getInt("BurnTime")>10000-100*heater.getPublicPhaseConsumption(),"Real tickers save fuel rather than applying full drain on top of room control");
+                        h.assertTrue(heater.getBurnFraction()<.9,"Loaded heater visibly throttles after warm-up");
+                    }
+                    budget(h,s);h.succeed();
+                }finally{s.l.setBlock(s.c.east(2),Blocks.AIR.defaultBlockState(),2);s.close();}
+            });
+        }catch(RuntimeException|Error e){s.l.setBlock(s.c.east(2),Blocks.AIR.defaultBlockState(),2);s.close();throw e;}
     }
     private static void hot(Scene s,double air,double walls) {
         for(var r:s.heat().rooms.values())r.airEnergy=RoomHeatMath.energy(r.airCapacity(),air);

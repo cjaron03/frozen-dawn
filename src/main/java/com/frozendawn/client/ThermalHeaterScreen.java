@@ -14,7 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMenu> {
 
     private static final int GUI_W = 176;
-    private static final int GUI_H = 80;
+    private static final int GUI_H = 116;
 
     public ThermalHeaterScreen(ThermalHeaterMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -66,6 +66,10 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         boolean isLit = data.get(1) != 0;
         boolean sheltered = data.get(2) != 0;
         boolean industrialDrain = data.get(3) != 0;
+        int burnPercent = data.get(4);
+        boolean redstoneOff = data.get(5) != 0;
+        int mode = data.get(6);
+        int temperature = data.get(7);
 
         // --- Burn time bar ---
         int barX = x + 8;
@@ -85,15 +89,17 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
             graphics.fill(barX, barY, barX + fillW, barY + barH, barColor);
 
             String etaText;
-            if (etaMinutes >= 60) {
-                etaText = (etaMinutes / 60) + "h " + (etaMinutes % 60) + "m remaining";
+            if (burnPercent == 0) {
+                etaText = "Fuel held";
+            } else if (etaMinutes >= 60) {
+                etaText = (etaMinutes / 60) + "h " + (etaMinutes % 60) + "m est.";
             } else {
-                etaText = etaMinutes + " min remaining";
+                etaText = etaMinutes + " min est.";
             }
             int textW = font.width(etaText);
             graphics.drawString(font, etaText, barX + (barW - textW) / 2, barY + 4, 0xFFE0E0E0, true);
         } else {
-            String offText = "NO FUEL";
+            String offText = redstoneOff ? "REDSTONE OFF" : "NO FUEL";
             int textW = font.width(offText);
             graphics.drawString(font, offText, barX + (barW - textW) / 2, barY + 4, 0xFF888888, true);
         }
@@ -106,8 +112,14 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         graphics.drawString(font, icon, x + 10, indicatorY, iconColor, false);
         graphics.drawString(font, shelterText, x + 22, indicatorY, sheltered ? 0xFFAABBAA : 0xFFCC6644, false);
 
+        String status = redstoneOff ? "Paused by redstone" : !isLit ? "Off" :
+                (mode != 0 && temperature >= 195 ? "Holding " : "Heating ") + burnPercent + "%";
+        graphics.drawString(font, status, x + 10, y + 58, 0xFFE0C090, false);
+        String reading = mode == 0 || temperature == -32768 ? "Open camp | Target 20C" :
+                String.format(java.util.Locale.ROOT,"%s %.1fC | Target 20C",mode == 2 ? "Walls" : "Air",temperature/10.0);
+        graphics.drawString(font, reading, x + 10, y + 70, 0xFFAABBAA, false);
         if (industrialDrain) {
-            int warningY = y + 56;
+            int warningY = y + 84;
             String warning = "! Silo draw: increased drain";
             graphics.fill(x + 7, warningY - 2, x + GUI_W - 7, warningY + 10, 0x552A1C08);
             graphics.drawString(font, warning, x + 12, warningY, 0xFFFFB84A, false);

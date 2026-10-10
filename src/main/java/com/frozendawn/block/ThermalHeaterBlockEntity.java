@@ -37,6 +37,11 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     private static final float FROSTMITE_HEAT_PENALTY_PER_MITE_PER_STEP = 1.5f;
     private static final float FROSTMITE_HEAT_RECOVERY_PER_STEP = 2.0f;
     private int burnTimeRemaining = 0;
+    private double fuelFraction = 0;
+    private double burnFraction = 1;
+    private double controlledTemperature = Double.NaN;
+    private int controlMode = 0; // 0 open camp, 1 room air, 2 depleted room structure
+
     private boolean cachedSheltered = false;
     private boolean shelterValid = false;
     private boolean hasCapacitor = false;
@@ -57,6 +62,8 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     /** Extinguish the heater by setting burn time to 0. Used by Returned AI. */
     public void extinguish() {
         burnTimeRemaining = 0;
+        fuelFraction = 0;
+        burnFraction = 0;
         updateLitState();
         setChanged();
     }
@@ -66,25 +73,31 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         if (industrialDrainWarningTicks > 0) {
             industrialDrainWarningTicks--;
         }
-        if (burnTimeRemaining > 0) {
-            if (level instanceof ServerLevel serverLevel
-                    && serverLevel.getGameTime() % 20L == 0L) {
+        boolean managed = level instanceof ServerLevel serverLevel
+                && com.frozendawn.world.RoomThermalManager.managesHeater(serverLevel, worldPosition);
+        if (hasFuel() && !isRedstoneDisabled()) {
+            if (level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 20L == 0L && burnFraction > 0)
                 ResonanceEventHooks.emitMachinery(serverLevel, worldPosition);
+            // Modeled rooms debit their actual shared heat grant once per second in the thermal solver.
+            // Unknown/unloaded room geometry suspends that debit together with heat integration.
+            if (!managed) {
+                controlMode = 0;
+                var phase = ApocalypseState.get(level.getServer());
+                double background = com.frozendawn.world.TemperatureManager.getBackgroundTemperature(
+                        worldPosition.getY(), phase.getCurrentDay(), phase.getTotalDays())
+                        + (getCachedSheltered() ? 5 : 0);
+                controlledTemperature = Double.NaN;
+                burnFraction = com.frozendawn.thermal.HeaterControl.openCampFraction(background,
+                        Math.max(0, getPublicHeatOutput() - frostmiteHeatPenalty)
+                                * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get());
+                debitFuel(getPhaseConsumption() * burnFraction);
             }
-            int totalDrain = getPhaseConsumption() + getFrostmiteFuelDrain();
-            if (level instanceof ServerLevel serverLevel) {
-                PlayerEndStats.addFuelBurnedNearby(serverLevel, worldPosition, Math.min(burnTimeRemaining, totalDrain));
-            }
-            burnTimeRemaining = Math.max(0, burnTimeRemaining - totalDrain);
-            if (burnTimeRemaining == 0) {
-                setChanged();
-            } else if (level != null && level.getServer() != null
-                    && level.getServer().getTickCount() % 200 == 0) {
-                setChanged(); // periodic save, not every tick
-            }
-        }
+            // Parasites retain their separate fuel cost even when ordinary room demand is low.
+            debitFuel(getFrostmiteFuelDrain());
+        } else burnFraction = 0;
+
         updateLitState();
-        if (isLit() && level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 20L == 0L)
+        if (hasFuel() && level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 20L == 0L)
             com.frozendawn.world.RoomAtmosphere.keepAlive(this);
     }
 
@@ -142,8 +155,30 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         };
     }
 
-    public boolean isLit() {
-        return burnTimeRemaining > 0;
+    public boolean hasFuel() { return burnTimeRemaining > 0; }
+    public boolean isRedstoneDisabled() { return level != null && level.hasNeighborSignal(worldPosition); }
+    public boolean isLit() { return hasFuel() && !isRedstoneDisabled(); }
+    public double getBurnFraction() { return isLit() ? burnFraction : 0; }
+    public double availableRoomFraction() {
+        return isLit() ? Math.clamp((burnTimeRemaining - fuelFraction) / (20.0 * getPhaseConsumption()), 0, 1) : 0;
+    }
+    public void consumeRoomHeating(double fraction, double temperature, boolean airPresent) {
+        burnFraction = isLit() ? Math.clamp(fraction, 0, 1) : 0;
+        controlledTemperature = temperature;
+        controlMode = airPresent ? 1 : 2;
+        debitFuel(20.0 * getPhaseConsumption() * burnFraction);
+        updateLitState();
+    }
+    private void debitFuel(double units) {
+        if (units <= 0 || burnTimeRemaining <= 0) return;
+        double accumulated = fuelFraction + units;
+        int drain = Math.min(burnTimeRemaining, (int)Math.floor(accumulated + 1e-9));
+        fuelFraction = accumulated - drain;
+        burnTimeRemaining -= drain;
+        if (burnTimeRemaining == 0) fuelFraction = 0;
+        if (level instanceof ServerLevel serverLevel)
+            PlayerEndStats.addFuelBurnedNearby(serverLevel, worldPosition, drain);
+        setChanged(); // Fractional consumption is part of persistent fuel, including save/reload.
     }
 
     /** Returns cached shelter status, computing lazily on first access. */
@@ -165,7 +200,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         if (level == null || level.isClientSide()) return;
 
         BlockState current = getBlockState();
-        boolean shouldBeLit = burnTimeRemaining > 0;
+        boolean shouldBeLit = isLit();
         int desiredGlowStage = getDesiredGlowStage(shouldBeLit);
         boolean litChanged = current.getValue(ThermalHeaterBlock.LIT) != shouldBeLit;
         boolean glowChanged = current.getValue(ThermalHeaterBlock.GLOW_STAGE) != desiredGlowStage;
@@ -234,7 +269,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
         if (ticks <= 0) {
             return isLit();
         }
-        if (burnTimeRemaining <= 0) {
+        if (!isLit()) {
             updateLitState();
             return false;
         }
@@ -283,13 +318,22 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     /** ContainerData for syncing heater status to the client UI (simplified). */
     public ContainerData getMenuData() {
         return new ContainerData() {
+            private final com.frozendawn.thermal.HeaterDemandDisplay display = new com.frozendawn.thermal.HeaterDemandDisplay();
+
+            private double displayedFraction() {
+                return display.sample(level == null ? 0 : level.getGameTime(), getBurnFraction(), isLit(), controlMode);
+            }
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> Math.min(9999, burnTimeRemaining / (getPhaseConsumption() * 1200));
+                    case 0 -> estimateMinutes(displayedFraction());
                     case 1 -> isLit() ? 1 : 0;
                     case 2 -> getCachedSheltered() ? 1 : 0;
                     case 3 -> industrialDrainWarningTicks > 0 ? 1 : 0;
+                    case 4 -> displayedFraction() > 1e-6 ? Math.max(1, (int)Math.round(displayedFraction() * 100)) : 0;
+                    case 5 -> isRedstoneDisabled() ? 1 : 0;
+                    case 6 -> controlMode;
+                    case 7 -> Double.isFinite(controlledTemperature) ? (int)Math.clamp(Math.round(controlledTemperature * 10), -32767, 32767) : -32768;
                     default -> 0;
                 };
             }
@@ -298,7 +342,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
             public void set(int index, int value) {}
 
             @Override
-            public int getCount() { return 4; }
+            public int getCount() { return 8; }
         };
     }
 
@@ -329,8 +373,12 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     }
 
     public int getBurnEtaMinutes() {
-        int consumption = getPhaseConsumption();
-        return burnTimeRemaining / (consumption * 1200);
+        return estimateMinutes(getBurnFraction());
+    }
+
+    private int estimateMinutes(double fraction) {
+        double consumption = getPhaseConsumption() * fraction;
+        return consumption > 1e-6 ? (int)Math.min(9999, Math.max(0, burnTimeRemaining - fuelFraction) / (consumption * 1200)) : 9999;
     }
 
     @Override
@@ -348,6 +396,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("BurnTime", burnTimeRemaining);
+        tag.putDouble("FuelFraction", fuelFraction);
         tag.putBoolean("HasCapacitor", hasCapacitor);
         tag.putFloat("FrostmiteHeatPenalty", frostmiteHeatPenalty);
     }
@@ -355,7 +404,10 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        burnTimeRemaining = tag.getInt("BurnTime");
+        burnTimeRemaining = Math.max(0, tag.getInt("BurnTime"));
+        double fraction = tag.getDouble("FuelFraction");
+        fuelFraction = Double.isFinite(fraction) ? Math.clamp(fraction, 0, Math.nextDown(1.0)) : 0;
+        burnFraction = 1;
         hasCapacitor = tag.getBoolean("HasCapacitor");
         frostmiteHeatPenalty = tag.getFloat("FrostmiteHeatPenalty");
     }

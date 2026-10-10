@@ -63,7 +63,11 @@ public final class RoomActivityGameTest {
             h.runAfterDelay(650,()->{
                 try {
                     var rooms=fixtureRooms(l,center);
-                    h.assertTrue(heater.saveWithFullMetadata(l.registryAccess()).getInt("BurnTime")<100000,"Actual loaded heater ticker consumes fuel");
+                    // At Phase0 this deep fixture may already exceed20C: the new default correctly idles.
+                    var temperature=RoomThermalManager.cachedTemperatureAt(l,center.west(3));
+                    h.assertTrue(heater.saveWithFullMetadata(l.registryAccess()).getInt("BurnTime")<100000
+                                    || temperature.isPresent()&&temperature.getAsDouble()>=20&&heater.getBurnFraction()==0,
+                            "Actual ticker consumes demanded fuel, or correctly idles an already-warm room");
                     h.assertTrue(rooms.size()==1&&rooms.getFirst().geometry().walls().contains(heaterPos),"Lit heater discovers and retains its room beyond 600 idle ticks");
                     h.assertTrue(discoveries.get()==1,"Lit room stays continuously cached without eviction/re-discovery notifications");
                     var diagnostic=RoomAtmosphere.cachedRoomDiagnostics(l).stream().filter(r->r.geometry().walls().contains(heaterPos)).findFirst().orElseThrow();

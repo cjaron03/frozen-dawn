@@ -14,10 +14,14 @@ import net.minecraft.world.item.ItemStack;
  * Syncs heater state via ContainerData.
  *
  * Data indices:
- *   0 = burn ETA minutes (at current consumption rate)
+ *   0 = estimated burn ETA minutes (at averaged ordinary consumption rate)
  *   1 = is lit (0/1)
  *   2 = sheltered (0/1)
  *   3 = industrial drain active (0/1)
+ *   4 = averaged ordinary burn percentage (display only)
+ *   5 = redstone disabled (0/1)
+ *   6 = control mode (open camp / air / walls)
+ *   7 = controlled temperature in tenths Celsius (-32768 = unavailable)
  */
 public class ThermalHeaterMenu extends AbstractContainerMenu {
 
@@ -25,7 +29,7 @@ public class ThermalHeaterMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public ThermalHeaterMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, new SimpleContainerData(4));
+        this(containerId, new SimpleContainerData(8));
     }
 
     /** Server constructor. */

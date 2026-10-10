@@ -225,6 +225,7 @@ public final class TemperatureManager {
                 heatPenalty = thbe.getFrostmiteHeatPenalty();
             }
             float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty);
+            if (heaterBE instanceof ThermalHeaterBlockEntity heater) warmth *= (float)heater.getBurnFraction();
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;

@@ -19,7 +19,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 /** Air and physical structure reservoirs, integrating loaded rooms once per second with explicit energy budgets. */
 @EventBusSubscriber(modid=FrozenDawn.MOD_ID)
 public final class RoomThermalManager {
-    // First-pass game units. Heater control/throttling is a subsequent slice, not hidden in this solver.
+    // First-pass game units. Shared target control budgets actual heater energy and fractional fuel.
     public static final double BASE_HEATER_POWER=1800, FACE_LOSS_SCALE=.25, VACUUM_RADIATION_SCALE=.35;
     private static final int LAYERS=3,SUBSTEPS=20;
     private record Face(BlockPos outside,int boundaryY,double conductance,boolean ground,boolean interior) {}
@@ -256,14 +256,24 @@ public final class RoomThermalManager {
     private static boolean connects(RoomThermalState.Room room,BlockPos source) {
         return room.cells.contains(source)||room.faces.stream().anyMatch(face->face.wallCell().equals(source));
     }
-    private static double power(ServerLevel level,Runtime rt,Binding binding,List<Binding> loaded) {
-        double power=0;
-        for(var pos:HeaterRegistry.getHeaters(level))if(level.isLoaded(pos)&&connects(binding.room,pos)
-                &&level.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater&&heater.isLit()) {
-            long shared=loaded.stream().filter(other->connects(other.room,pos)).count();
-            power+=BASE_HEATER_POWER*Math.max(0,heater.getPublicHeatOutput()-heater.getFrostmiteHeatPenalty())/35.0/Math.max(1,shared);
+    public static boolean managesHeater(ServerLevel level, BlockPos pos) {
+        var rt = LEVELS.get(level);
+        return rt != null && rt.rooms.values().stream().anyMatch(binding -> connects(binding.room, pos));
+    }
+    private static Map<ThermalHeaterBlockEntity, Double> heaterShares(ServerLevel level, Binding binding, List<Binding> loaded) {
+        var shares = new LinkedHashMap<ThermalHeaterBlockEntity, Double>();
+        for (var pos : HeaterRegistry.getHeaters(level)) if (level.isLoaded(pos) && connects(binding.room, pos)
+                && level.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater && heater.isLit()) {
+            long count = loaded.stream().filter(other -> connects(other.room, pos)).count();
+            double full = BASE_HEATER_POWER * Math.max(0, heater.getPublicHeatOutput() - heater.getFrostmiteHeatPenalty()) / 35.0
+                    * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get() / Math.max(1, count);
+            shares.put(heater, full);
         }
-        return power*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        return shares;
+    }
+    private static double power(ServerLevel level, Binding binding, List<Binding> loaded) {
+        return heaterShares(level,binding,loaded).entrySet().stream()
+                .mapToDouble(entry -> entry.getValue() * entry.getKey().getBurnFraction()).sum();
     }
     /** Rehydrate at most two saved records per second, without a player query or forced chunks. */
     private static void rebindSaved(ServerLevel level,Runtime rt) {
@@ -322,14 +332,24 @@ public final class RoomThermalManager {
         var loaded=rt.rooms.values().stream().filter(binding->!binding.suspended&&loaded(level,binding)).toList();
         var owners=rt.owners;double dt=1.0/SUBSTEPS;
         var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();
+        var sourceShares = new HashMap<Long, Map<ThermalHeaterBlockEntity,Double>>();
+        var suppliedByRoom = new HashMap<Long,Double>();
         for(var binding:loaded) {
-            powers.put(binding.room.id,power(level,rt,binding,loaded));double k=0,weighted=0;
+            var shares = heaterShares(level,binding,loaded);
+            sourceShares.put(binding.room.id,shares);
+            powers.put(binding.room.id,shares.entrySet().stream().mapToDouble(entry -> entry.getValue() * entry.getKey().availableRoomFraction()).sum());
+            double k=0,weighted=0;
             for(var face:binding.profile.faces){double coefficient=faceK(level,face);k+=coefficient;weighted+=coefficient*outside(level,face);}
             losses.put(binding.room.id,new double[]{k,k>0?weighted/k:0});
         }
         for(int step=0;step<SUBSTEPS;step++)for(var binding:loaded) {
             var room=binding.room;double capacity=capacity(rt.state,room,owners);if(capacity<=0)continue;
-            double supplied=powers.get(room.id)*dt;
+            double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
+            double supplied = room.airPresent
+                    ? HeaterControl.airGrant(powers.get(room.id)*dt,room.airCapacity(),capacity,
+                            RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),wallsBefore,room.faces.size()*4.0,dt,HeaterControl.DEFAULT_TARGET)
+                    : HeaterControl.wallGrant(powers.get(room.id)*dt,capacity,wallsBefore,HeaterControl.DEFAULT_TARGET);
+            suppliedByRoom.merge(room.id,supplied,Double::sum);
             if(room.airPresent)room.airEnergy+=supplied;
             else supplied=addStructure(rt.state,room,owners,supplied*RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
             rt.state.ledger.heater+=supplied;
@@ -343,6 +363,27 @@ public final class RoomThermalManager {
             var loss=losses.get(room.id);
             if(loss[0]>0){double q=RoomHeatMath.reservoirLoss(capacity,structure,loss[1],loss[0],dt);
                 rt.state.ledger.environmentLoss-=addStructure(rt.state,room,owners,-q);}
+        }
+        // Shared boundary heaters are debited once, with their allocated fraction from every room.
+        var fractions = new LinkedHashMap<ThermalHeaterBlockEntity,Double>();
+        var readings = new HashMap<ThermalHeaterBlockEntity,Binding>();
+        for (var binding : loaded) {
+            double available = powers.get(binding.room.id);
+            double demand = available > 0 ? suppliedByRoom.getOrDefault(binding.room.id,0.0)/available : 0;
+            for (var entry : sourceShares.get(binding.room.id).entrySet()) {
+                var heater = entry.getKey();
+                double full = BASE_HEATER_POWER * Math.max(0,heater.getPublicHeatOutput()-heater.getFrostmiteHeatPenalty()) / 35.0
+                        * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+                double share = full > 0 ? entry.getValue()/full : 0;
+                fractions.merge(heater,demand*heater.availableRoomFraction()*share,Double::sum);
+                readings.putIfAbsent(heater,binding);
+            }
+        }
+        for (var entry : fractions.entrySet()) {
+            var binding = readings.get(entry.getKey());var room=binding.room;
+            double temperature = room.airPresent ? RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
+                    : RoomHeatMath.temperature(capacity(rt.state,room,owners),structureEnergy(rt.state,room,owners));
+            entry.getKey().consumeRoomHeating(entry.getValue(),temperature,room.airPresent);
         }
         if(!loaded.isEmpty())rt.state.setDirty();
     }
@@ -360,7 +401,7 @@ public final class RoomThermalManager {
         double felt=room.airPresent?air:outside+(structure-outside)*RoomHeatMath.RADIANT_FEEL_WEIGHT;
         return new Snapshot(room.id,room.cells.size(),room.sealed,binding.suspended,room.airPresent,air,structure,felt,
                 room.airCapacity(),capacity,binding.profile.faces.stream().mapToDouble(face->faceK(level,face)).sum(),
-                power(level,rt,binding,rt.rooms.values().stream().filter(other->!other.suspended&&loaded(level,other)).toList()),
+                power(level,binding,rt.rooms.values().stream().filter(other->!other.suspended&&loaded(level,other)).toList()),
                 rt.profileBuilds,rt.state.totalEnergy(),rt.state.ledger.net());
     }
     /** Non-querying diagnostics; never initialize a saved room, simulate time, or extend pressure activity. */
