@@ -7,12 +7,20 @@
     {
       "type": "patchouli:text",
       "title": "Orbital Scan #0079",
-      "text": "$(bold)Subject: Acheronite Personal Protection$()$(br2)The material that's killing you can also protect you. The ORSA tradition of irony continues.$(br2)Acheronite armor provides $(bold)netherite-level protection$() and $(bold)complete frostbite immunity$(). The material that gives you frostbite when raw $(italic)prevents$() it when refined.$(br2)$(italic)\"So the cure for the cold... is more cold?\"$(br)\"Refined cold. There's a difference.\"$(br)\"Is there?\"$()"
+      "text": "$(bold)Subject: Acheronite Personal Protection$()$(br2)The material that's killing you can also protect you. The ORSA tradition of irony continues."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Acheronite armor provides $(bold)netherite-level protection$() and $(bold)complete frostbite immunity$(). The material that gives you frostbite when raw $(italic)prevents$() it when refined.$(br2)$(italic)\"So the cure for the cold... is more cold?\"$(br)\"Refined cold. There's a difference.\"$(br)\"Is there?\"$()"
     },
     {
       "type": "patchouli:text",
       "title": "Properties",
-      "text": "$(bold)Full set bonus:$()$(br)$(li)Frostbite immunity — carry shards freely$(li)Netherite-tier defense and toughness$(br2)$(bold)WARNING:$() Acheronite armor does $(bold)NOT$() provide atmospheric protection. Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) does that. This armor is for combat and frostbite — not breathing.$(br2)$(italic)Looking cool does not prevent suffocation. Wear your EVA suit.$()"
+      "text": "$(bold)Full set bonus:$()$(br)$(li)Frostbite immunity — carry shards freely$(li)Netherite-tier defense and toughness$(br2)$(bold)WARNING:$() Acheronite armor does $(bold)NOT$() provide atmospheric protection. Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) does that."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "This armor is for combat and frostbite — not breathing.$(br2)$(italic)Looking cool does not prevent suffocation. Wear your EVA suit.$()"
     },
     {
       "type": "patchouli:crafting",

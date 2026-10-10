@@ -7,7 +7,11 @@
     {
       "type": "patchouli:text",
       "title": "Field Requisition",
-      "text": "$(bold)ORSA Supply Requisition Form: 200 pairs snowshoes, URGENT.$()$(br2)Addendum: whoever requisitioned 200 pairs of snow skis instead has been reassigned to Xenobiology.$(br2)Snowshoes keep you moving over shallow drifts and let you cross powder snow without sinking like a rookie."
+      "text": "$(bold)ORSA Supply Requisition Form: 200 pairs snowshoes, URGENT.$()$(br2)Addendum: whoever requisitioned 200 pairs of snow skis instead has been reassigned to Xenobiology."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Snowshoes keep you moving over shallow drifts and let you cross powder snow without sinking like a rookie."
     },
     {
       "type": "patchouli:text",

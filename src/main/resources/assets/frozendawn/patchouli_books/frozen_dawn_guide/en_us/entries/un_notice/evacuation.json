@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "Current Status",
-      "text": "Current Earth status:$(br)  $(italic)Drifting toward deep space$()$(br2)Current Earth population:$(br)  $(italic)1$()$(br2)Current Earth vibes:$(br)  $(italic)Not great$()$(br2)Your ticket has been refunded. (There was no ticket.)"
+      "text": "Current Earth status:$(br)$(italic)Drifting toward deep space$()$(br2)Current Earth population:$(br)$(italic)1$()$(br2)Current Earth vibes:$(br)$(italic)Not great$()$(br2)Your ticket has been refunded. (There was no ticket.)"
     },
     {
       "type": "patchouli:text",
@@ -32,7 +32,11 @@
     {
       "type": "patchouli:text",
       "title": "Sincerely,",
-      "text": "On behalf of the United Nations, the Security Council, and Kevin,$(br2)We wish you the absolute best of luck.$(br2)You will need it.$(br2)This letter will not self-destruct because we could not afford that feature.$(br2)$(italic)— The UN$(br)(writing this from Mars)$(br)(Mars is fine)$(br)(please don't think about that too hard)$()"
+      "text": "On behalf of the United Nations, the Security Council, and Kevin,$(br2)We wish you the absolute best of luck.$(br2)You will need it.$(br2)This letter will not self-destruct because we could not afford that feature."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)— The UN$(br)(writing this from Mars)$(br)(Mars is fine)$(br)(please don't think about that too hard)$()"
     }
   ]
 }

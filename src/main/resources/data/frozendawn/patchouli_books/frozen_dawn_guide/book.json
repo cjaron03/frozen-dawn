@@ -1,6 +1,6 @@
 {
   "name": "ORSA Field Manual",
-  "landing_text": "$(br2)$(br2)$(br2)$(br2)$(l)Issued field survival manual.$()$(br2)Continuity protocol: active.$(br)Civilian edition.",
+  "landing_text": "$(br2)$(br2)$(br2)$(l)Issued field survival manual.$()$(br2)Continuity protocol: active.$(br)Civilian edition.",
   "version": 1,
   "creative_tab": "frozendawn.frozen_dawn_tab",
   "model": "frozendawn:orsa_field_manual",

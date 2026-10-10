@@ -7,7 +7,11 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Wellness Protocol",
-      "text": "ORSA recognizes that extended solo operations in hostile environments may result in psychological strain. This is normal. You are not going crazy. Probably.$(br2)Field-tested coping mechanisms include: talking to yourself, naming your tools, and crafting small plush companions from available materials. ORSA does NOT endorse emotional attachment to inanimate objects. ORSA DOES note a 23% reduction in incident reports among personnel who carry one."
+      "text": "ORSA recognizes that extended solo operations in hostile environments may result in psychological strain. This is normal. You are not going crazy. Probably."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Field-tested coping mechanisms include: talking to yourself, naming your tools, and crafting small plush companions from available materials. ORSA does NOT endorse emotional attachment to inanimate objects. ORSA DOES note a 23% reduction in incident reports among personnel who carry one."
     },
     {
       "type": "patchouli:crafting",

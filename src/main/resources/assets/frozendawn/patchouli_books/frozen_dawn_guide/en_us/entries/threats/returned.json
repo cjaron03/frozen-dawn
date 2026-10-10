@@ -7,22 +7,62 @@
     {
       "type": "patchouli:text",
       "title": "THREAT REPORT: THE RETURNED",
-      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Reanimated Cryogenic Humanoid$(br)$(bold)Threat Level:$() Severe$(br2)They were us. Former ORSA personnel, civilians, anyone who froze and didn't stay dead. The cold brought them back wrong. Three distinct behavioral variants have been observed in the field.$(br2)$(italic)HR has formally requested we stop calling them 'colleagues.' Request denied — the paperwork is still technically valid.$()"
+      "text": "$(bold)ORSA THREAT ANALYSIS DIVISION$()$(br)$(bold)Classification:$() Reanimated Cryogenic Humanoid$(br)$(bold)Threat Level:$() Severe$(br2)They were us. Former ORSA personnel, civilians, anyone who froze and didn't stay dead."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The cold brought them back wrong. Three distinct behavioral variants have been observed in the field.$(br2)$(italic)HR has formally requested we stop calling them 'colleagues.' Request denied — the paperwork is still technically valid.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Variant A: The Hunter",
-      "text": "$(bold)Behavior:$() The most dangerous variant. Hunters are intelligent stalkers that remember how the living world works.$(br)$(li)Opens and breaks wooden doors$(li)Extinguishes lit Thermal Heaters$(li)Destroys torches and light sources$(li)Sees through invisibility$(li)Spawns rarely but invades player bases$(br2)$(bold)Counter Strategies:$()$(br)$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons are effective$(li)Seal entrances with blocks, not doors$(li)Keep backup heaters hidden$(br2)$(bold)Drops:$() $(item)Remnant Ember$(), $(item)Tattered Clothing Scrap$(), $(item)ORSA ID Badge$() (rare)$(br2)$(italic)Do not read the ID badges. You might recognize the name.$()"
+      "text": "$(bold)Behavior:$() The most dangerous variant. Hunters are intelligent stalkers that remember how the living world works.$(br)$(li)Opens and breaks wooden doors$(li)Extinguishes lit Thermal Heaters$(li)Destroys torches and light sources$(li)Sees through invisibility"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)Spawns rarely but invades player bases$(br2)$(bold)Counter Strategies:$()$(br)$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons are effective$(li)Seal entrances with blocks, not doors$(li)Keep backup heaters hidden"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Drops:$() $(item)Remnant Ember$(), $(item)Tattered Clothing Scrap$(), $(item)ORSA ID Badge$() (rare)$(br2)$(italic)Do not read the ID badges. You might recognize the name.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Variant B: The Mimic",
-      "text": "$(bold)Behavior:$() Exploits trained complacency. At distance, the Mimic is indistinguishable from a harmless shadow figure. It stands motionless, watching. If you approach within 16 blocks, it briefly copies your movement — then attacks.$(br2)$(li)Identical appearance to shadow figures at range$(li)Sprint attacks deal bonus damage on first hit$(li)Strafes during combat — does not stand and trade$(li)Retreats to darkness when wounded, then re-enters observation$(li)Resets if you break line of sight for 15 seconds$(br2)$(bold)Counter Strategies:$()$(br)$(li)Fire is effective (1.5x damage)$(li)If a 'shadow figure' doesn't vanish after 10 seconds, be suspicious$(li)Watch for health bars — shadows don't have them$(br2)$(bold)Drops:$() $(item)Tattered Clothing Scrap$(), $(item)Mirrored Fragment$() (rare)$(br2)$(italic)ORSA field report: Agent Torres reported a shadow figure that followed her for three minutes before attacking. Torres survived. Her partner, who she assumed was the figure, did not.$()"
+      "text": "$(bold)Behavior:$() Exploits trained complacency. At distance, the Mimic is indistinguishable from a harmless shadow figure. It stands motionless, watching. If you approach within 16 blocks, it briefly copies your movement — then attacks."
     },
     {
       "type": "patchouli:text",
-      "title": "Variant C: The Architect",
-      "text": "$(bold)Behavior:$() The rarest and most dangerous variant. The Architect doesn't just attack — it dismantles. It observes your base from a distance, identifies weak points, then systematically mines through walls with the correct tool.$(br2)$(li)Watches from 30-40 blocks before approaching$(li)Breaks through player-built walls with visible cracks$(li)Scaffolds over Acheronite walls using packed ice$(li)Switches tools: pickaxe for stone, axe for wood, shovel for dirt$(li)Drinks healing potions when wounded$(li)Blocks doorways with ice to cut off escape$(li)Retreats behind ice walls when low on health$(br2)$(bold)Counter Strategies:$()$(br)$(li)Acheronite Block walls cannot be broken — force it to scaffold$(li)Fire deals 1.5x damage$(li)Interrupt its healing by pressing the attack$(li)Build layered defenses — it must choose between breaking and climbing$(br2)$(bold)Drops:$() $(l:orsa_rd/soul_harvesting)Architect Soul$(/l) (50%), $(item)Surveyor Lens$() (18%), $(item)Architect Mask$() (2.5%), $(item)Tattered Clothing Scrap$()$(br2)$(italic)ORSA structural assessment: Subject dismantled a reinforced shelter in 4 minutes. Used appropriate tools for each material. Paused to build cover when fired upon. This was not instinct. This was engineering.$()"
+      "text": "$(li)Identical appearance to shadow figures at range$(li)Sprint attacks deal bonus damage on first hit$(li)Strafes during combat — does not stand and trade$(li)Retreats to darkness when wounded, then re-enters observation$(li)Resets if you break line of sight for 15 seconds"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Counter Strategies:$()$(br)$(li)Fire is effective (+50% damage)$(li)If a 'shadow figure' doesn't vanish after 10 seconds, be suspicious$(li)Watch for health bars — shadows don't have them"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Drops:$() $(item)Tattered Clothing Scrap$(), $(item)Mirrored Fragment$() (rare)$(br2)$(italic)ORSA field report: Agent Torres reported a shadow figure that followed her for three minutes before attacking. Torres survived. Her partner, who she assumed was the figure, did not.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Variant C: Architect",
+      "text": "$(bold)Behavior:$() The rarest and most dangerous variant. The Architect doesn't just attack — it dismantles. It observes your base from a distance, identifies weak points, then systematically mines through walls with the correct tool."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)Watches from 30-40 blocks before approaching$(li)Breaks through player-built walls with visible cracks$(li)Scaffolds over Acheronite walls using packed ice$(li)Switches tools: pickaxe for stone, axe for wood, shovel for dirt$(li)Drinks healing potions when wounded"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)Blocks doorways with ice to cut off escape$(li)Retreats behind ice walls when low on health$(br2)$(bold)Counter Strategies:$()$(br)$(li)Acheronite Block walls cannot be broken — force it to scaffold$(li)Fire deals 1.5x damage"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)Interrupt its healing by pressing the attack$(li)Build layered defenses — it must choose between breaking and climbing$(br2)$(bold)Drops:$() $(l:orsa_rd/soul_harvesting)Architect Soul$(/l) (50%), $(item)Surveyor Lens$() (18%), $(item)Architect Mask$() (2.5%), $(item)Tattered Clothing Scrap$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)ORSA structural assessment: Subject dismantled a reinforced shelter in 4 minutes. Used appropriate tools for each material. Paused to build cover when fired upon. This was not instinct. This was engineering.$()"
     }
   ]
 }

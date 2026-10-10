@@ -7,7 +7,15 @@
     {
       "type": "patchouli:text",
       "title": "Frost Ward Torch",
-      "text": "A torch infused with the frozen breath of a $(l:threats/hollow)Hollow$(/l). Emits a piercing cold light (level 15) and snowflake particles.$(br2)$(bold)Primary function:$() Hollows flee at a 16-block radius — fast. Like \"creeper-saw-a-cat\" fast. Normal torches only deter them at close range via light; the Frost Ward Torch specifically repels them.$(br2)Place these around your base perimeter. Sleep easier knowing the whispering smoke things can't get in.$(br2)$(italic)ORSA Engineering Note: We cannot explain why burning a ghost's own breath on a stick repels it. The working theory is \"spite.\"$()"
+      "text": "A torch infused with the frozen breath of a $(l:threats/hollow)Hollow$(/l). Emits a piercing cold light (level 15) and snowflake particles.$(br2)$(bold)Primary function:$() Hollows flee at a 16-block radius — fast. Like \"creeper-saw-a-cat\" fast."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Normal torches only deter them at close range via light; the Frost Ward Torch specifically repels them.$(br2)Place these around your base perimeter. Sleep easier knowing the whispering smoke things can't get in."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)ORSA Engineering Note: We cannot explain why burning a ghost's own breath on a stick repels it. The working theory is \"spite.\"$()"
     },
     {
       "type": "patchouli:crafting",

@@ -8,7 +8,11 @@
     {
       "type": "patchouli:text",
       "title": "FAILED DELIVERY",
-      "text": "$(bold)ORSA CARGO MANIFEST$()$(br)Recovered from a failed field airdrop.$(br2)Not every crate carried what was promised. Some still held thermal cores and food. Some held routine supplies. Some appear to have carried nothing but administrative paperwork in bulk."
+      "text": "$(bold)ORSA CARGO MANIFEST$()$(br)Recovered from a failed field airdrop.$(br2)Not every crate carried what was promised. Some still held thermal cores and food. Some held routine supplies."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Some appear to have carried nothing but administrative paperwork in bulk."
     },
     {
       "type": "patchouli:text",

@@ -7,7 +7,11 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Instrument",
-      "text": "$(italic)ORSA stopped promising exact dates when the models started disagreeing with reality by the hour.$()$(br2)The $(item)Phase Barometer$() reads the current collapse state and estimates how close the next escalation is without turning the end of the world into a day counter.$(br2)Place one in a shelter, workroom, or command corner and treat it like damaged weather instrumentation doing its best."
+      "text": "$(italic)ORSA stopped promising exact dates when the models started disagreeing with reality by the hour.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The $(item)Phase Barometer$() reads the current collapse state and estimates how close the next escalation is without turning the end of the world into a day counter.$(br2)Place one in a shelter, workroom, or command corner and treat it like damaged weather instrumentation doing its best."
     },
     {
       "type": "patchouli:text",
@@ -22,7 +26,11 @@
     {
       "type": "patchouli:text",
       "title": "Phase 6 Note",
-      "text": "Phase 6 is not one flat disaster.$(br2)$(bold)Early:$() extreme blizzard.$(br)$(bold)Mid:$() atmosphere thinning, wind drop-off, fog lift.$(br)$(bold)Late:$() vacuum onset.$(br2)The barometer keeps tracking those sub-stages so it stays useful after atmospheric collapse begins."
+      "text": "Phase 6 is not one flat disaster.$(br2)$(bold)Early:$() extreme blizzard.$(br)$(bold)Mid:$() atmosphere thinning, wind drop-off, fog lift.$(br)$(bold)Late:$() vacuum onset."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The barometer keeps tracking those sub-stages so it stays useful after atmospheric collapse begins."
     }
   ]
 }

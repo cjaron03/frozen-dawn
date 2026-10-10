@@ -8,7 +8,11 @@
     {
       "type": "patchouli:text",
       "title": "Ground Truth Feed",
-      "text": "$(bold)ORSA WEATHER INGEST NODE$()$(br)Monitoring Station Upload Log$(br2)Handshake accepted. Surface observations queued for orbital correction models.$(br2)Priority fields: temperature, wind shear, snowfall rate, atmospheric opacity.$(br2)Civilian operators instructed to maintain hourly submissions until relieved."
+      "text": "$(bold)ORSA WEATHER INGEST NODE$()$(br)Monitoring Station Upload Log$(br2)Handshake accepted. Surface observations queued for orbital correction models.$(br2)Priority fields: temperature, wind shear, snowfall rate, atmospheric opacity."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Civilian operators instructed to maintain hourly submissions until relieved."
     },
     {
       "type": "patchouli:text",

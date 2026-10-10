@@ -7,42 +7,94 @@
     {
       "type": "patchouli:text",
       "title": "Identity",
-      "text": "Full name: Orbital Resonance Stabilization Authority$(br)Founded: 2041, Geneva, Switzerland$(br)Mandate: Monitor and correct orbital and atmospheric anomalies introduced by human activity. Preserve the continuity of human civilization under Geneva Continuity Accords emergency provisions.$(br)Public motto: Stability Above. Continuity Beyond.$(br)Classification: Intergovernmental body, UN-adjacent. Treaty-backed authority under the Geneva Continuity Accords."
+      "text": "Full name: Orbital Resonance Stabilization Authority$(br)Founded: 2041, Geneva, Switzerland$(br)Mandate: Monitor and correct orbital and atmospheric anomalies introduced by human activity."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Preserve the continuity of human civilization under Geneva Continuity Accords emergency provisions.$(br)Public motto: Stability Above. Continuity Beyond.$(br)Classification: Intergovernmental body, UN-adjacent. Treaty-backed authority under the Geneva Continuity Accords."
     },
     {
       "type": "patchouli:text",
       "title": "2041 — Founding",
-      "text": "Established under the Geneva Continuity Accords, a quiet amendment to existing space governance frameworks that passed during the third consecutive year of global climate emergency declarations. Little public attention. Unglamorous mandate. The founding motto was sincere.$(br2)Headquarters: Geneva. Glass building. Lots of windows. A visitor center with a gift shop. School groups came on field trips. You could buy a mug.$(br2)Nobody protested ORSA. Nobody thought about ORSA. That was the point."
+      "text": "Established under the Geneva Continuity Accords, a quiet amendment to existing space governance frameworks that passed during the third consecutive year of global climate emergency declarations. Little public attention. Unglamorous mandate. The founding motto was sincere."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Headquarters: Geneva. Glass building. Lots of windows. A visitor center with a gift shop. School groups came on field trips. You could buy a mug.$(br2)Nobody protested ORSA. Nobody thought about ORSA. That was the point."
     },
     {
       "type": "patchouli:text",
       "title": "2041–2068",
-      "text": "Two decades of dense technical reports nobody read. Orbital debris monitoring. Atmospheric mass redistribution assessments. Experimental propulsion incident reviews. Staff wore polos. There was a cafeteria. A newsletter called The Horizon ran birthday announcements and retirement farewells.$(br2)Most employees genuinely believed in the work. They had mortgages. They complained about their commute. The seventh floor had separate badge access. Nobody asked why.$(br2)The seventh floor was not Long Horizon division.$(br2)Long Horizon division was on the fourth floor.$(br2)Nobody who worked on the fourth floor knew what happened on the seventh."
+      "text": "Two decades of dense technical reports nobody read. Orbital debris monitoring. Atmospheric mass redistribution assessments. Experimental propulsion incident reviews. Staff wore polos. There was a cafeteria."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A newsletter called The Horizon ran birthday announcements and retirement farewells.$(br2)Most employees genuinely believed in the work. They had mortgages. They complained about their commute. The seventh floor had separate badge access. Nobody asked why."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The seventh floor was not Long Horizon division.$(br2)Long Horizon division was on the fourth floor.$(br2)Nobody who worked on the fourth floor knew what happened on the seventh."
     },
     {
       "type": "patchouli:text",
       "title": "2068 — The Models",
-      "text": "Long Horizon division produces its seventeenth classified projection model. Civilizational collapse: 50 to 80 years, high confidence. The directorate presents findings to a closed UN Security Council session.$(br2)The session produces no action.$(br2)The directorate does not wait for a second session.$(br2)What the directorate does next is not recorded in any Long Horizon file.$(br2)The relevant documentation is held under ██████████ authorization. Access requires ██████████ clearance. No such clearance has been issued outside the original ██████████ signatories, two of whom are deceased."
+      "text": "Long Horizon division produces its seventeenth classified projection model. Civilizational collapse: 50 to 80 years, high confidence. The directorate presents findings to a closed UN Security Council session.$(br2)The session produces no action."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The directorate does not wait for a second session.$(br2)What the directorate does next is not recorded in any Long Horizon file.$(br2)The relevant documentation is held under ██████████ authorization. Access requires ██████████ clearance."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "No such clearance has been issued outside the original ██████████ signatories, two of whom are deceased."
     },
     {
       "type": "patchouli:text",
       "title": "2071 — The Vote",
-      "text": "The Heliostatic Correction Initiative 4 is approved by the ORSA board of directors: 7 votes to 2.$(br2)Internal risk assessment: 94% probability of permanent orbital destabilization.$(br)Public-facing documentation: 15%.$(br2)The two dissenting directors resign within the year. Both are dead before 2080. Cause of death in both personnel files: redacted.$(br2)A third file exists. It does not belong to a director. The name is ██████████. The role listed is ██████████. The file has no termination date."
+      "text": "The Heliostatic Correction Initiative 4 is approved by the ORSA board of directors: 7 votes to 2.$(br2)Internal risk assessment: 94% probability of permanent orbital destabilization.$(br)Public-facing documentation: 15%."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The two dissenting directors resign within the year. Both are dead before 2080. Cause of death in both personnel files: redacted.$(br2)A third file exists. It does not belong to a director. The name is ██████████. The role listed is ██████████. The file has no termination date."
     },
     {
       "type": "patchouli:text",
       "title": "2074 — Denial",
-      "text": "A Reuters article runs under the headline \"ORSA Mars Installation: Agency Addresses Cydonia Conspiracy Claims.\" Spokesperson Dr. Yael Morrow calls speculation \"flattering but unfounded,\" confirming only that preliminary survey equipment had been deployed to the Cydonia region for standard geological assessment.$(br2)Three years before launch.$(br2)Dr. Morrow's personnel file after 2074 is ██████████. Her listed department changes from Public Communications to ██████████. Her badge access tier changes from Level 3 to ██████████.$(br2)She was not reassigned."
+      "text": "A Reuters article runs under the headline \"ORSA Mars Installation: Agency Addresses Cydonia Conspiracy Claims.\""
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Spokesperson Dr. Yael Morrow calls speculation \"flattering but unfounded,\" confirming only that preliminary survey equipment had been deployed to the Cydonia region for standard geological assessment.$(br2)Three years before launch."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Dr. Morrow's personnel file after 2074 is ██████████. Her listed department changes from Public Communications to ██████████. Her badge access tier changes from Level 3 to ██████████.$(br2)She was not reassigned."
     },
     {
       "type": "patchouli:text",
       "title": "2075 — The Mask Slips",
-      "text": "The public face gets more polished. A major PR campaign launches — \"50 Years of Stability\" anniversary materials. Nobody checks the math; ORSA was founded in 2041.$(br2)The visitor center is renovated. The website is redesigned.$(br2)Behind badge access: Long Horizon division doubles in size. New hires sign NDAs referencing statutes nobody has heard of. Mars Infrastructure Division is formally established in internal org charts under the name \"Continuity Operations.\"$(br2)A separate division is established simultaneously. It does not appear in the internal org chart. Its budget does not appear in any auditable ledger. Its personnel do not have ORSA employee IDs.$(br2)They have ██████████ IDs."
+      "text": "The public face gets more polished. A major PR campaign launches — \"50 Years of Stability\" anniversary materials. Nobody checks the math; ORSA was founded in 2041.$(br2)The visitor center is renovated. The website is redesigned."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Behind badge access: Long Horizon division doubles in size. New hires sign NDAs referencing statutes nobody has heard of. Mars Infrastructure Division is formally established in internal org charts under the name \"Continuity Operations.\""
+    },
+    {
+      "type": "patchouli:text",
+      "text": "A separate division is established simultaneously. It does not appear in the internal org chart. Its budget does not appear in any auditable ledger. Its personnel do not have ORSA employee IDs.$(br2)They have ██████████ IDs."
     },
     {
       "type": "patchouli:text",
       "title": "2077 — Solstice",
-      "text": "The summer solstice. The longest day.$(br2)The Heliostatic Correction Initiative 4 activates. Earth leaves the solar habitable zone.$(br2)The press release is dated June 22nd. It was pre-written.$(br2)What activates alongside HCI-4 is not in the press release. It is not in any Long Horizon file. It is not in the board minutes recovered from the hidden tower directory.$(br2)There is one reference in the recovered archive. A single line in an undated internal memo, author unknown:$(br2)\"██████████ is not a contingency. ██████████ was always the objective.\""
+      "text": "The summer solstice. The longest day.$(br2)The Heliostatic Correction Initiative 4 activates. Earth leaves the solar habitable zone.$(br2)The press release is dated June 22nd. It was pre-written."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "What activates alongside HCI-4 is not in the press release. It is not in any Long Horizon file. It is not in the board minutes recovered from the hidden tower directory."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "There is one reference in the recovered archive. A single line in an undated internal memo, author unknown:$(br2)\"██████████ is not a contingency. ██████████ was always the objective.\""
     }
   ]
 }

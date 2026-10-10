@@ -7,34 +7,58 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Thermal Survey Optic",
-      "text": "$(bold)Recovered designation:$() Surveyor Lens.$(br2)The Returned Architect carried optics tuned to infrastructure instead of faces. ORSA engineers have repurposed one into a field scanner for detecting $(bold)active thermal anchors$() underground.$(br2)$(italic)Translation: the monster's eye now helps you find the one heater you forgot to refuel.$()"
+      "text": "$(bold)Recovered designation:$() Surveyor Lens.$(br2)The Returned Architect carried optics tuned to infrastructure instead of faces."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "ORSA engineers have repurposed one into a field scanner for detecting $(bold)active thermal anchors$() underground.$(br2)$(italic)Translation: the monster's eye now helps you find the one heater you forgot to refuel.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Field Use",
-      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically.$(br2)$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, surfaced $(l:heating/geothermal_vents)geothermal vents$(/l), $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
+      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop a $(item)Surveyor Lens$().$(br2)$(bold)Passive mode:$() Hold it in hand or offhand to bring up a thermal wash over your visor. Nearby heat infrastructure is marked automatically."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Ping:$() Right-click to pulse for nearby $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, surfaced $(l:heating/geothermal_vents)geothermal vents$(/l), $(l:advanced/acheron_forge)Acheron Forges$(/l), and ORSA Transponders.$(br2)$(italic)Base model still ignores lava, candles, and Kevin from Logistics.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Low-Band Carriers",
-      "text": "Late in the event, the optic may catch a carrier that is $(bold)not thermal$(). Right-click again while moving through the search area.$(br2)Distant interference has no usable bearing. A stronger pulse resolves into a directional bias, then broken language. Close-range lock stores the signature as a Hearth contact.$(br2)The calibrated lens reaches much farther and can isolate weaker secondary carriers.$(br2)$(italic)No map point is generated. ORSA cannot map something that appears to be listening back.$()"
+      "text": "Late in the event, the optic may catch a carrier that is $(bold)not thermal$(). Right-click again while moving through the search area.$(br2)Distant interference has no usable bearing. A stronger pulse resolves into a directional bias, then broken language."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Close-range lock stores the signature as a Hearth contact.$(br2)The calibrated lens reaches much farther and can isolate weaker secondary carriers.$(br2)$(italic)No map point is generated. ORSA cannot map something that appears to be listening back.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:calibrated_surveyor_lens",
       "title": "Calibrated Array",
-      "text": "$(bold)Upgrade:$() Lens + $(l:orsa_rd/soul_harvesting)Architect Soul$(/l) + 4 $(item)Refined Acheronite$() + diamond. ORSA insists this is calibration, not occult possession.$(br2)$(bold)Result:$() Longer range, more markers, and enough filtering to separate real infrastructure from torch-and-lava clutter."
+      "text": "$(bold)Upgrade:$() Lens + $(l:orsa_rd/soul_harvesting)Architect Soul$(/l) + 4 $(item)Refined Acheronite$() + diamond. ORSA insists this is calibration, not occult possession."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Result:$() Longer range, more markers, and enough filtering to separate real infrastructure from torch-and-lava clutter."
     },
     {
       "type": "patchouli:text",
       "title": "ORSA Thermal Visor",
-      "text": "$(bold)Wearable optics:$() Two calibrated lenses, one scrap of insulated cloth, and an iron housing turned into a proper visor.$(br2)Worn on the head, it keeps the thermal overlay running hands-free and adds meaningful cold protection.$(br2)$(italic)ORSA called the rebreather 'field sufficient.' Legal made them remove 'probably.'$()"
+      "text": "$(bold)Wearable optics:$() Two calibrated lenses, one scrap of insulated cloth, and an iron housing turned into a proper visor.$(br2)Worn on the head, it keeps the thermal overlay running hands-free and adds meaningful cold protection."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)ORSA called the rebreather 'field sufficient.' Legal made them remove 'probably.'$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:orsa_thermal_visor",
       "title": "Visor Assembly",
-      "text": "$(bold)Result:$() Passive thermal vision while worn, +20C cold resistance, and a brief emergency air buffer in vacuum.$(br2)Pair it with an EVA body rig and oxygen to stretch tank life noticeably longer."
+      "text": "$(bold)Result:$() Passive thermal vision while worn, +20C cold resistance, and a brief emergency air buffer in vacuum."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Pair it with an EVA body rig and oxygen to stretch tank life noticeably longer."
     }
   ]
 }

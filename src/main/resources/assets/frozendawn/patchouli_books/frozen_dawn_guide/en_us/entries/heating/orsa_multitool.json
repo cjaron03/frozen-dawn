@@ -7,7 +7,15 @@
     {
       "type": "patchouli:text",
       "title": "ORSA MultiTool",
-      "text": "A handheld diagnostic tool for inspecting ORSA equipment. Right-click any supported device to get a readout of its current status.$(br2)$(bold)Supported devices:$()$(br)$(li)Thermal Heater — heat output, effective radius, fuel ETA, shelter status$(li)Transponder — broadcast state, progress, signal depth$(li)Geothermal Core — operational status, coordinates$(br2)Indispensable for troubleshooting your survival infrastructure.$(br2)$(italic)Orbital command used to monitor all this remotely. Now you have a stick with a redstone sensor. Progress.$()"
+      "text": "A handheld diagnostic tool for inspecting ORSA equipment. Right-click any supported device to get a readout of its current status.$(br2)$(bold)Supported devices:$()$(br)$(li)Thermal Heater — heat output, effective radius, fuel ETA, shelter status"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)Transponder — broadcast state, progress, signal depth$(li)Geothermal Core — operational status, coordinates$(br2)Indispensable for troubleshooting your survival infrastructure."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)Orbital command used to monitor all this remotely. Now you have a stick with a redstone sensor. Progress.$()"
     },
     {
       "type": "patchouli:crafting",
