@@ -2197,5 +2197,86 @@
   },
   "ui.suit.atmospheric_breach": {"subtitle": "subtitles.frozendawn.atmospheric_breach", "sounds": [{"name": "frozendawn:ui/suit/atmospheric_breach", "stream": true}]},
   "ui.suit.atmospheric_breach_whoosh": {"subtitle": "subtitles.frozendawn.atmospheric_breach_whoosh", "sounds": ["frozendawn:ui/suit/atmospheric_breach_whoosh"]},
-  "ui.suit.atmospheric_breach_alarm": {"subtitle": "subtitles.frozendawn.atmospheric_breach_alarm", "sounds": ["frozendawn:ui/suit/atmospheric_breach_alarm"]}
+  "ui.suit.atmospheric_breach_alarm": {"subtitle": "subtitles.frozendawn.atmospheric_breach_alarm", "sounds": ["frozendawn:ui/suit/atmospheric_breach_alarm"]},
+  "block.airlock.door_open": {
+    "subtitle": "subtitles.frozendawn.airlock.door_open",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/door_open",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.door_close": {
+    "subtitle": "subtitles.frozendawn.airlock.door_close",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/door_close",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.pump_fill": {
+    "subtitle": "subtitles.frozendawn.airlock.pump_fill",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/pump_fill",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.pump_recover": {
+    "subtitle": "subtitles.frozendawn.airlock.pump_recover",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/pump_recover",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.ready": {
+    "subtitle": "subtitles.frozendawn.airlock.ready",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/ready",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.evacuated": {
+    "subtitle": "subtitles.frozendawn.airlock.evacuated",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/evacuated",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.refuse": {
+    "subtitle": "subtitles.frozendawn.airlock.refuse",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/refuse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.interrupted": {
+    "subtitle": "subtitles.frozendawn.airlock.interrupted",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/interrupted",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "block.airlock.valve": {
+    "subtitle": "subtitles.frozendawn.airlock.valve",
+    "sounds": [
+      {
+        "name": "frozendawn:block/airlock/valve",
+        "attenuation_distance": 16
+      }
+    ]
+  }
 }

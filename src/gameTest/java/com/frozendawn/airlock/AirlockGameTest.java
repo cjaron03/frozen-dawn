@@ -87,6 +87,75 @@ public final class AirlockGameTest {
         h.assertTrue(chat.isEmpty(),"Routine status emits no server chat/actionbar/sound packet");
         h.succeed();
     }
+    private static net.minecraft.server.level.ServerPlayer soundListener(ServerLevel level,BlockPos pos,String name,List<net.minecraft.sounds.SoundEvent> sounds) {
+        var player=new net.neoforged.neoforge.common.util.FakePlayer(level,new com.mojang.authlib.GameProfile(UUID.randomUUID(),name));
+        player.connection=new net.minecraft.server.network.ServerGamePacketListenerImpl(level.getServer(),
+                new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND),player,
+                net.minecraft.server.network.CommonListenerCookie.createInitial(player.getGameProfile(),false)) {
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet) {
+                if(packet instanceof net.minecraft.network.protocol.game.ClientboundSoundPacket sound)sounds.add(sound.getSound().value());
+            }
+            @Override public void send(net.minecraft.network.protocol.Packet<?> packet,net.minecraft.network.PacketSendListener listener) {send(packet);}
+        };
+        player.setPos(pos.getCenter());level.addNewPlayer(player);
+        broadcastPlayers(level).add(player);
+        return player;
+    }
+    @SuppressWarnings("unchecked")
+    private static List<net.minecraft.server.level.ServerPlayer> broadcastPlayers(ServerLevel level) {
+        // Native getPlayers() exposes an immutable view. Instrument the underlying broadcast
+        // recipients only in this synchronous fixture, removing both listeners in finally.
+        try {
+            var field=net.minecraft.server.players.PlayerList.class.getDeclaredField("players");field.setAccessible(true);
+            return (List<net.minecraft.server.level.ServerPlayer>)field.get(level.getServer().getPlayerList());
+        } catch(ReflectiveOperationException error){throw new AssertionError("Cannot install native sound recipients",error);}
+    }
+    private static void removeListener(ServerLevel level,net.minecraft.server.level.ServerPlayer player) {
+        broadcastPlayers(level).remove(player);
+        level.removePlayerImmediately(player,net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockDoorSoundIncludesClickerOnceAndBlocksFalseOpening(GameTestHelper h) {check(h,()->{
+        var l=h.getLevel();var s=scene(h);var actorSounds=new ArrayList<net.minecraft.sounds.SoundEvent>();var observerSounds=new ArrayList<net.minecraft.sounds.SoundEvent>();
+        var actor=soundListener(l,s.center,"hatch_actor",actorSounds);var observer=soundListener(l,s.center,"hatch_observer",observerSounds);
+        try {
+            var hit=new net.minecraft.world.phys.BlockHitResult(s.inner.getCenter(),Direction.EAST,s.inner,false);
+            l.getBlockState(s.inner).useWithoutItem(l,actor,hit);
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&l.getBlockState(s.inner.above()).getValue(DoorBlock.OPEN),"Real click opens both halves");
+            h.assertTrue(actorSounds.equals(List.of(ModSounds.AIRLOCK_DOOR_OPEN.get()))&&observerSounds.equals(actorSounds),"Clicker and observer each receive exactly one custom open packet");
+            ModBlocks.AIRLOCK_DOOR.get().setOpen(actor,l,l.getBlockState(s.inner.above()),s.inner.above(),false);
+            h.assertTrue(actorSounds.equals(List.of(ModSounds.AIRLOCK_DOOR_OPEN.get(),ModSounds.AIRLOCK_DOOR_CLOSE.get()))&&observerSounds.equals(actorSounds),"Upper-half closure broadcasts once to both listeners");
+            actorSounds.clear();observerSounds.clear();
+            l.getBlockState(s.outer).useWithoutItem(l,actor,new net.minecraft.world.phys.BlockHitResult(s.outer.getCenter(),Direction.WEST,s.outer,false));
+            h.assertTrue(!l.getBlockState(s.outer).getValue(DoorBlock.OPEN)&&actorSounds.equals(List.of(ModSounds.AIRLOCK_REFUSE.get()))&&observerSounds.equals(actorSounds),"Pressure denial has only a lock cue, never an opening cue");
+            actorSounds.clear();observerSounds.clear();
+            l.setBlock(s.outer.east(),Blocks.REDSTONE_BLOCK.defaultBlockState(),3);
+            h.assertTrue(actorSounds.isEmpty()&&observerSounds.isEmpty(),"Blocked redstone opening makes no false hatch sound");
+            l.setBlock(s.outer.east(),Blocks.AIR.defaultBlockState(),3);
+            l.setBlock(s.inner.north(),Blocks.REDSTONE_BLOCK.defaultBlockState(),3);
+            h.assertTrue(actorSounds.equals(List.of(ModSounds.AIRLOCK_DOOR_OPEN.get()))&&observerSounds.equals(actorSounds),"Allowed redstone opens with one custom sound: actor="+actorSounds+", observer="+observerSounds+", state="+l.getBlockState(s.inner));
+            l.setBlock(s.inner.north(),Blocks.GLASS.defaultBlockState(),3);
+            h.assertTrue(actorSounds.equals(List.of(ModSounds.AIRLOCK_DOOR_OPEN.get(),ModSounds.AIRLOCK_DOOR_CLOSE.get()))&&observerSounds.equals(actorSounds),"Removing power closes with one custom sound: actor="+actorSounds+", observer="+observerSounds+", state="+l.getBlockState(s.inner));
+        } finally {removeListener(l,actor);removeListener(l,observer);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockMachineryIsPerChamberAndOnlyRunsDuringRealCycle(GameTestHelper h) {check(h,()->{
+        var l=h.getLevel();var s=scene(h);var c=s.chamber;var sounds=new ArrayList<net.minecraft.sounds.SoundEvent>();var listener=soundListener(l,s.center,"pump_observer",sounds);
+        var second=s.center.south(2);l.setBlock(second,ModBlocks.AIRLOCK_CONTROLLER.get().defaultBlockState().setValue(AirlockControllerBlock.FACING,Direction.NORTH),2);
+        h.assertTrue(AirlockManager.resolve(l,(AirlockControllerBlockEntity)l.getBlockEntity(second))==c,"Optional panel shares the same chamber");
+        try {
+            h.assertTrue(AirlockManager.start(l,c).equals("depressurizing"),"Actual recovery starts");
+            for(int i=0;i<80;i++){c.lastTick=Long.MIN_VALUE;AirlockManager.tick(l,c);AirlockManager.tick(l,c);}
+            h.assertTrue(sounds.stream().filter(v->v==ModSounds.AIRLOCK_PUMP_RECOVER.get()).count()==4&&sounds.stream().filter(v->v==ModSounds.AIRLOCK_EVACUATED.get()).count()==1&&sounds.size()==5,"80-tick recovery emits four segments and one finish despite two panel ticks");
+            sounds.clear();c.lastTick=Long.MIN_VALUE;AirlockManager.tick(l,c);h.assertTrue(sounds.isEmpty(),"Idle chamber is silent");
+            c.gas.fill(c.gas.capacity());h.assertTrue(AirlockManager.start(l,c).equals("pressurizing"),"Finite reserve starts refill");
+            for(int i=0;i<80;i++){c.lastTick=Long.MIN_VALUE;AirlockManager.tick(l,c);AirlockManager.tick(l,c);}
+            h.assertTrue(sounds.stream().filter(v->v==ModSounds.AIRLOCK_PUMP_FILL.get()).count()==4&&sounds.stream().filter(v->v==ModSounds.AIRLOCK_READY.get()).count()==1&&sounds.size()==5,"Refill has its own pump and one ready cue");
+            sounds.clear();AirlockManager.start(l,c);l.setBlock(s.center.south(2).above(),Blocks.AIR.defaultBlockState(),3);
+            h.assertTrue(sounds.contains(ModSounds.AIRLOCK_INTERRUPTED.get())&&!c.gas.cycling(),"Broken shell stops machinery with an interruption cue");
+            sounds.clear();c.lastTick=Long.MIN_VALUE;AirlockManager.tick(l,c);h.assertTrue(sounds.isEmpty(),"Invalid chamber cannot keep pumping");
+        } finally {removeListener(l,listener);}
+    });}
     record Scene(BlockPos base,BlockPos center,BlockPos inner,BlockPos outer,BlockPos panel,AirlockSavedState.Chamber chamber) {}
     static Scene scene(GameTestHelper h) {
         var l=h.getLevel();var base=h.absolutePos(new BlockPos(9,3,10));var center=base.east(5);

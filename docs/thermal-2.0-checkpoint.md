@@ -4,7 +4,7 @@ Owning checkout: `/Users/jaroncabral/.codex/worktrees/thermal-2-0/minecraft-mod`
 Branch: `thermal-2.0`. Base: `8303073fef1b8f8bd82ccb4f6f8c434cc3275d69` from the pushed atmospheric-breach branch.
 Notion source: [Thermal Model and Heater Control](https://app.notion.com/p/3f47cfaa890181b9a213c52a3d2c9966), including Additions (2026-10-09).
 
-Current acceptance: depth, room support, two-node thermal, heater controls and thermostat sensed-target screenshots are accepted and committed through local thermostat checkpoint 526fbe3. Origin remains heater checkpoint 74e607e until explicit push approval. Manual overhaul follows locally; remaining thermal blocks and scoped live checks are listed below.
+Current acceptance: depth, room support, two-node thermal, heater controls, thermostat, heat vent, service grille and grounded airlock sounds have owner acceptance. Heat vent checkpoint 0cec1fa is committed; the accompanying airlock audio commit records the remaining approved slice. Origin is the previously pushed manual checkpoint 7d4648d. These two new checkpoints are local until push approval. Actual guest-client audio playback remains unverified; historical sections below retain the original test sequence.
 
 ## Agreed order
 
@@ -484,3 +484,138 @@ Thermostat committed locally as 526fbe3 (`feat(thermal): add Core-aware room the
 Documentation-only ./gradlew build passes with 695 unit tests and existing Gradle deprecation warnings. Modified entry/category/recipe/link JSON resolves; diff whitespace check passes. Native thermostat result remains the previous 332 GameTests/327 required cases; a prose-only build is not claimed as a new native run. Jar and installed smoke SHA-256: caaa6da2c375d763776ebc9b1dcec269fec196b6fbf72f6d5c89429aef5237fe. Current smoke bytes were backed up; dependencies are hash-identical. Evidence: build/thermal-evidence/manual-thermal-overhaul/verification.json and unit/build reports. Manual copy loads on a client resource reload or next restart; the owner’s active Thermostat Check was not stopped or mutated.
 
 Re-fetched Notion source including Additions 2026-10-09. Next supporting device is a wall thermometer with temperature/comparator readout; then a pressure-preserving heat vent/exchanger. Their blocks are not currently registered. Agree the vent’s heat-loss/power contract before implementation. Warm-up/fuel balance and overheating behavior still need their own acceptance; new supporting blocks are not described as already implemented in the manual. Rimewood resumes in its separate worktree after this thermal sequence. Both new commits remain local until push permission.
+
+
+## Pressure-preserving heat vent — October 10, 2026
+
+Owner moved the heat vent ahead of the thermometer. Owning checkout remains /Users/jaroncabral/.codex/worktrees/thermal-2-0/minecraft-mod, branch thermal-2.0, HEAD 7d4648d. Thermostat 526fbe3 and manual 7d4648d are already pushed. No Rimewood or unrelated Scribe work is changed. Existing tools/__pycache__ remains excluded from delivery.
+
+Re-fetched Thermal Model and Heater Control including Additions 2026-10-09. Original passive radiator contract and asset provenance are in docs/heat-vent-design.md. Added native full-collision HeatVent block/BE, manual/redstone shutters, shaped recipe, pickaxe loot/tags, creative registration, distinct closed/open cuboid models referencing existing ORSA and vanilla materials, and ORSA Field Manual Heating entry. Fins must face a loaded, passable outdoor cell with an uncovered motion-height column, with the opposite cell in the sealed room. Blocked/buried/roofed outlets cannot dump heat into another room. The added 8 conductance (2.8 in vacuum) removes real air energy, or structural energy when depleted, through the existing environment-loss ledger. Shutter movement keeps insulation, capacity, gas and seal unchanged. Heating-only controls still oppose open vents; no Core warmth, oxygen, fuel or hyperthermia rules are rewritten. /fd world thermal adds qualifying fin count/conductance.
+
+First full gate: build/unit stage succeeds;335 native cases run, with two new vent cases passing and one failing. Preserved complete first-gate source fingerprint, artifact reports, XML, Gradle log and unit results under build/thermal-evidence/heat-vent/first-gate. The warm-exterior case artificially sets a room near absolute zero; the generic hot fixture previously recorded negative heater imports, which SavedData correctly clamps on reconstruction. Corrected artificial cooling to an explicit environment loss. Added a real production guard preventing vent removal below zero stored energy, plus a high-altitude end-phase native regression exercising the legacy sub-absolute-zero background. Also corrected the manual airlock link and shutter-model coplanar faces. Final gate is pending below; no visual acceptance is implied by compilation or native results.
+
+Owner explicitly saved/quit Thermostat Check for restart. Fresh bridge status confirmed worldLoaded=false. All 69 closed-world files were copied and SHA-256 verified identical under build/thermal-evidence/heat-vent/thermostat-pre-vent-backup, with manifest previous-world-backup.json. Stopped only verified owning title-screen Java PID 2296. Unrelated blind-architect client remains untouched. Generated new Heat Vent Check from seed metadata only; no regions, inventories or mod history copied. Two matching wool rooms, Core oxygen, heaters and 30C thermostats, both vent shutters closed. Earlier wool/glass insulation differences cannot confound this replay. Ordinary torches are supplied for placement after air is ready. Generator refuses an existing destination; only the unlaunched, region-free fixture functions were corrected before launch. No bridge mutation whitelist or replay command was added or issued.
+
+Owner first replay: Fuel both, wait 120 unpaused seconds; place torches inside after air is ready; Heaters off; visit left, right-click its east-wall vent once. Keep right closed. Compare air/walls and qualifying fins after 30/60 seconds. O2/lights/seal should remain with no breach alarm. Only afterward check blockage and redstone (sneak-place a lever on the indoor face). Restore buttons using /function room_heat_check:controls. Visible model/recipe/book, balance, actual world save/reopen, vent-only activity/chunk unload and multiplayer remain owner acceptance gaps. Feature remains uncommitted.
+
+
+### Heat vent verification and live handoff
+
+Owning Java21 spotlessApply architectVerify passes 695 unit tests, all 336 native GameTests and all 331 required cases/reports. All four vent cases pass: faster cooling with unchanged gas/seal; blocked/roofed/reversed/warm-side rejection; actual redstone and depleted-structure cooling; no negative gas energy at the legacy high-altitude end-phase extreme. Artificial hot-fixture cooling is now represented as environmentLoss so reconstruction preserves valid nonnegative import ledgers. Current source exactly matches verified fingerprint 75dc4a889aca26d92160d8b3bcde658698db1d7b573212e571a48de677c01afb. Final jar and smoke SHA-256 61ba7af9b3cb81adb21b7dd0be710f37ac7ca3c21d5854c66fc699d3819b7dd1. Prior smoke bytes were preserved, dependency hashes unchanged. Existing NeoForge removal/Gradle deprecations remain; native fresh-server.properties fallback is expected. Final verification.json, XML, unit results, Architect artifacts and full logs are under build/thermal-evidence/heat-vent/final.
+
+Launched owning Gradle runClientLab --console=plain -PfdLabWorld='Heat Vent Check', terminal 62310, log /private/tmp/thermal-heat-vent-client.log. Bridge session c6e59cc8-d3d6-4d0b-82ae-830951e21612 confirms the correct world loaded at gameTime 12 with Dev at (.5,65,7.5), paused by the normal unfocused/menu state, not frozen. Read-only snapshot, setup score and status are preserved. One-time fixture setup and resources load without heat-vent/model/function exceptions. Initial chunk work caused one startup can't-keep-up warning before normal pause. The agent issued no Fuel, vent opening, movement or other replay action. Resume Minecraft and restore buttons with /function room_heat_check:controls, then follow the first comparison above. Human visual/balance, actual save/reopen, device-only activity/unload and multiplayer remain pending. Feature is local/uncommitted on thermal-2.0 at pushed 7d4648d.
+
+
+### Owner heat-vent cooling comparison
+
+Owner reports turning both heaters off, opening the left vent and waiting 60 seconds. Preserved full client log and read-only snapshot/status under build/thermal-evidence/heat-vent/owner-cooling. At the logged 04:00:42 readout, left Room 1 has air -16.3C/walls -13.4C, one qualifying vent with conductance 2.80; right Room 2 has air/walls approximately 0C and zero vents. Both rooms are sealed, identical ordinary conductance 0.6525, and heater power 0. This supports the selective heat-rejection mechanic. Exact pre-shutdown matched temperatures and 60 unpaused seconds are not independently established; menu pauses appear in the log, so this is not a calibrated cooling-rate/balance result.
+
+Fresh snapshot gameTime4454 confirms both 26-cell test volumes sealed, unsuspended and retaining gas with zero heater power. Left air -19.682C/walls -19.702C; right air -4.035C/walls -4.056C. Global energy minus ledger is-0.000000400 game energy units, consistent with floating-point roundoff. No breach/vent error appears during the recorded comparison. The latest snapshot shows no qualifying left vent (coolingVents 0), though the earlier log definitively shows it active. Snapshot cannot distinguish a now-closed shutter from an obstructed/reoriented outlet; do not infer a regression or change the replay. Torch persistence remains owner visual acceptance. No agent fuel/shutter/block/movement/time mutation was issued. Feature remains uncommitted at 7d4648d on thermal-2.0.
+
+
+### Owner vent closure and next presentation concepts
+
+Owner confirms closing the left vent after the cooling comparison, resolving the fresh snapshot's zero qualifying vent count. Owner requests an identifiable vent detail on the room-facing gray surface, and concepts for missing airlock door/cycle sounds. No presentation or sound patch is implemented in this turn; owner is reviewing concepts.
+
+Current vent models put fins/indicator on the exterior north model face; the indoor south face is plain airlock_casing. Proposed indoor treatment: recessed grille, visible shutter handle and a small closed/open indicator, retaining the full pressure collision regardless of visual gaps. Actual cooling versus merely open should remain distinct if a status indicator is added.
+
+Verified the current local NeoForge21.1.219 Minecraft1.21.1 DoorBlock/Level sources in build/moddev/artifacts/neoforge-21.1.219-sources.jar. AirlockDoorBlock.useWithoutItem runs the toggle only on ServerLevel, and passes the initiating player into inherited setOpen. DoorBlock passes that entity into playSound; Level's documented server behavior excludes that player, expecting client-side local playback. Our override supplies no such client playback. This explains missing self-click door sound; do not merely layer a louder sound over the inherited path and duplicate it for other players. Preserve game-event attribution and server-authoritative pressure interlock when correcting sound routing.
+
+AirlockManager currently emits a short FIRE_EXTINGUISH on depressurization, PISTON_EXTEND every20 cycle ticks at volume0.22, and an IRON_DOOR_CLOSE completion sound at volume0.3. These are already server broadcasts with null excluded player, so the same door exclusion diagnosis does not establish why cycling was inaudible. They originate at an arbitrary chamber cell, not a stable nearby device anchor. Owning run-lab options show master/block volumes1.0. Proposed audio identity: grounded ORSA hatch latch/hinge, seal compression puff, localized pump during the actual four-second cycle, short final vent tail and a restrained completion chime; distinguish routine cycle, refusal, interruption, emergency vent and atmospheric breach. Routine status stays silent in the helmet HUD/action bar, without TTS. Any eventual new sound assets require original authorship or explicit source/license provenance; no external audio is sourced here. Feature remains uncommitted on thermal-2.0 at7d4648d.
+
+## ORSA service grille and machinery implementation — October 10, 2026
+
+Owner approved the recessed service grille and grounded machinery palette, then
+approved the three playable concepts. Implementation stays in the owning
+/Users/jaroncabral/.codex/worktrees/thermal-2-0/minecraft-mod checkout on thermal-2.0,
+HEAD 7d4648d, alongside the uncommitted heat vent. No new commit or push is requested.
+
+Room-facing grille has slats, four corner bolts, shutter slider and a sampled status
+light: dim closed; green a qualifying outlet with room heat above outdoor background;
+amber open but waiting/obstructed. All 72 facing/shutter/power/light states resolve to
+original native cuboid models, retaining identical solid collision and pressure.
+The Field Manual has a dedicated short grille page. The indicator uses cached loaded
+thermal bindings; it introduces no new transfer or neighboring-room sink.
+
+Airlock clicks now send one custom server sound to the actor and other nearby players
+after a real guarded state change, while retaining the actor on BLOCK_OPEN/CLOSE.
+Both halves normalize to the lower door; redstone uses the same transition. Pressure
+refusal cannot emit a false hatch opening. Pump fill/recovery segments are localized
+to one deterministic loaded panel per chamber, one at elapsed 0/20/40/60; completion,
+interruption and valve mechanism have distinct cues. Existing breach payload owns
+emergency whoosh/alarm. Routine HUD notices retain their silent speech behavior.
+Nine original procedural mono Vorbis assets and three assembled MP3 concepts have
+source script, ledger, inventory and encoded hashes. All decode without clipping.
+
+Owner saved and quit Heat Vent Check. Before stopping only the owning client PID9426,
+all 65 closed-world files were copied and hash-verified unchanged at build/thermal-
+evidence/airlock-service/heat-vent-pre-service-backup. The complete manifest and prior
+client log are beside it. Fresh Airlock Service Check copies seed metadata only;
+airlock is 24 blocks south of the two grille rooms. See airlock-service-playtest.md.
+No bridge mutation/reset is added. Source and prior saved history remain preserved.
+
+First gate: two new packet-fixture failures because PlayerList.getPlayers() exposes
+an immutable view. Corrected test-only instrumentation of actual broadcast recipients,
+with both listeners removed in finally. Second gate: one fixture placed redstone in
+the pressure sampling cell; moved it to the wall beside the door. Native clicker/
+observer and pump tests otherwise passed. Failed logs/XML/jars are retained in
+first-gate and second-gate evidence folders; no false-green claim is made.
+
+Current source SHA-256: 7ae4160f0345053d839443e3a34b2e0c7ecbbcea03e9dfc9ea41279d6bb354e3.
+Built jar and smoke mod SHA-256: 2b8b5b108075f00265e5bc525f96d1ad4b317f8bac188ecffce7c60784995921.
+Five smoke dependency jars retain exact hashes; prior mod jar bytes are preserved.
+The final native gate and human client replay are pending at this checkpoint paragraph.
+
+
+### Final service build verified
+
+Atomic redstone power/movement fixed the closure edge exposed by the third native
+attempt; its failed log/XML/jar are preserved in third-gate. Fourth full gate passes
+695 unit tests, 339 native GameTests and all334 required cases on the final source
+fingerprint. Clicker and nearby observer each receive one open/close cue for manual
+and allowed redstone changes; denied redstone stays silent. Pump and grille cases
+pass. Full XML, unit reports, trace reports, log and jar are in final evidence.
+
+Source SHA-256: 6a01cb89ff0771a3a984815e7a6c3b9452cd51f6dc6562fd09d66ea72a8506a1.
+Jar and smoke SHA-256: f72600b406eb3d03d2635b49bbb15142f5a22e100da8f2354ba8f00699f25c5b.
+Five dependency jars still match their saved hashes. Pre-existing deprecation
+warnings remain. Human grille appearance, local loudness and guest-client playback
+remain distinct from headless packet verification. Launching the fresh Airlock
+Service Check through Java21 runClientLab; previous replay remains untouched.
+
+
+### Service client handoff
+
+Fresh Airlock Service Check is loaded through runClientLab, Gradle terminal63111,
+log /private/tmp/thermal-airlock-service-client.log. Bridge session ebfd114e-29db-4c01-bc42-61fb030edf36;
+Dev at(-0.5,65,24.5), gameTime777, paused=false.
+Both guarded fixtures report #built=1 (rheat and alcheck). Read-only ready snapshot
+and heartbeat plus full startup log are preserved in final evidence. Return to the
+Minecraft window and resume to run visible/audio acceptance. First inner hatch,
+then empty-hand controller cycle (canister charging uses its own held-item action),
+then clickable Service grille. Restore controls via /function airlock_check:controls
+or /function room_heat_check:controls. Normal phase spawns appeared despite the
+vanilla doMobSpawning=false fixture setting; no encounter mutation/cleanup was issued.
+Owner remains Creative by default. Source changes remain uncommitted.
+
+
+### Owner acceptance and local commits — October 10, 2026
+
+Owner approved the three machinery previews and then reported “ok it works” for
+the local Airlock Service Check replay. This records local presentation acceptance,
+without claiming actual guest-client playback. Existing 20°C built-in heater
+regulation remains intentional; owner explicitly selected keeping it.
+
+Heat vent, grille, recipe, Field Manual entry, diagnostics and five native cases
+are saved as 0cec1fa (feat(thermal): add airtight heat vent and service grille).
+The following feat(airlock) commit saves nine original cues, door clicker/redstone
+corrections, per-chamber cycle audio, source provenance and two native cases.
+Owner requested committing both; no push is requested in this turn.
+
+Before staging, the unchanged combined source fingerprint and jar were verified
+against final/verification.json: 695 unit tests, 339 native GameTests, all334
+required cases passed. Source6a01cb89ff0771a3a984815e7a6c3b9452cd51f6dc6562fd09d66ea72a8506a1;
+jar f72600b406eb3d03d2635b49bbb15142f5a22e100da8f2354ba8f00699f25c5b.
+Only documentation/acceptance records changed after verification. Generated
+tools/__pycache__ remains outside the commits. Saved worlds and the running
+Gradle client remain intact.

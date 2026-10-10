@@ -1149,5 +1149,14 @@
   "block.frozendawn.heat_vent": "ORSA Heat Vent",
   "message.frozendawn.heat_vent.open": "Heat vent open | Airtight",
   "message.frozendawn.heat_vent.closed": "Heat vent closed",
-  "message.frozendawn.heat_vent.powered": "Heat vent held open by redstone"
+  "message.frozendawn.heat_vent.powered": "Heat vent held open by redstone",
+  "subtitles.frozendawn.airlock.door_open": "Airlock unlatches",
+  "subtitles.frozendawn.airlock.door_close": "Airlock seals",
+  "subtitles.frozendawn.airlock.pump_fill": "Airlock pump fills",
+  "subtitles.frozendawn.airlock.pump_recover": "Airlock pump recovers air",
+  "subtitles.frozendawn.airlock.ready": "Airlock ready",
+  "subtitles.frozendawn.airlock.evacuated": "Airlock vents remainder",
+  "subtitles.frozendawn.airlock.refuse": "Airlock lock holds",
+  "subtitles.frozendawn.airlock.interrupted": "Airlock pump stops",
+  "subtitles.frozendawn.airlock.valve": "Vent valve opens"
 }

@@ -18,6 +18,16 @@ public class ModSounds {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
     }
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_OPEN = register("block.airlock.door_open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_CLOSE = register("block.airlock.door_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_FILL = register("block.airlock.pump_fill");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_RECOVER = register("block.airlock.pump_recover");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_READY = register("block.airlock.ready");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_EVACUATED = register("block.airlock.evacuated");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_REFUSE = register("block.airlock.refuse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));

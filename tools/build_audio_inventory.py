@@ -81,6 +81,8 @@ def classify(path: str) -> tuple[str, str, str]:
         if path.startswith(prefixes):
             return group, evidence, license_name
 
+    if path.startswith("block/airlock/"):
+        return "airlock_machinery_procedural", "tools/audio_sources/airlock/SOURCES.md", "Frozen Dawn original"
     original_prefixes = (
         "ambient/",
         "blocks/",
