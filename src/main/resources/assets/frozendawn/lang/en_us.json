@@ -1145,5 +1145,9 @@
   "ui.frozendawn.room.air_restored": "ATMOSPHERE RESTORED",
   "ui.frozendawn.room.still_suffocating": "STILL SUFFOCATING",
   "ui.frozendawn.room.combined_warning": "%1$s — %2$s",
-  "subtitles.frozendawn.atmospheric_breach_alarm": "Atmospheric breach alarm beeps"
+  "subtitles.frozendawn.atmospheric_breach_alarm": "Atmospheric breach alarm beeps",
+  "block.frozendawn.heat_vent": "ORSA Heat Vent",
+  "message.frozendawn.heat_vent.open": "Heat vent open | Airtight",
+  "message.frozendawn.heat_vent.closed": "Heat vent closed",
+  "message.frozendawn.heat_vent.powered": "Heat vent held open by redstone"
 }

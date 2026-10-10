@@ -74,9 +74,9 @@ final class FrozenDawnWorldCommand {
         var rooms=com.frozendawn.world.RoomThermalManager.snapshots(context.getSource().getLevel());
         FrozenDawnCommandOutput.line(context.getSource(),"Room heat",rooms.size()+" loaded thermal records; air / structure model");
         for(var room:rooms.stream().limit(16).toList()) FrozenDawnCommandOutput.detail(context.getSource(),"Room "+room.id(),
-                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | power %.0f | %s",
+                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | power %.0f | fins %d/%.2f | %s",
                         room.airPresent()?String.format(Locale.ROOT,"%.1fC",room.airTemperature()):"depleted",room.structureTemperature(),
-                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
+                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.coolingVents(),room.coolingConductance(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
         return 1;
     }
 

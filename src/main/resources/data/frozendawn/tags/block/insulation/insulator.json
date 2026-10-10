@@ -4,6 +4,7 @@
     "#minecraft:wool",
     "minecraft:snow_block",
     "minecraft:moss_block",
-    "frozendawn:insulated_glass"
+    "frozendawn:insulated_glass",
+    "frozendawn:heat_vent"
   ]
 }

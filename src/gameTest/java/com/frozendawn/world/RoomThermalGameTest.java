@@ -454,11 +454,107 @@ public final class RoomThermalGameTest {
             s.l.setBlock(s.c,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(pos,Blocks.AIR.defaultBlockState(),2);ThermostatManager.reset();
         });
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentRejectsHeatWithoutChangingSealGasOrLedger(GameTestHelper h) {
+        scene(h,104,s->{
+            var vent=s.c.east(5);var closed=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            s.l.setBlock(vent,closed,3);var view=RoomAtmosphere.view(s.l,s.c);hot(s,40,40);
+            var baseline=s.heat().save(new CompoundTag(),s.l.registryAccess());double airOut=s.heat().ledger.airOut;
+            RoomThermalManager.tickLevel(s.l);var passive=RoomThermalManager.snapshots(s.l).getFirst();budget(h,s);
+            RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(baseline,s.l.registryAccess()));
+            s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
+            h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry(),"Shutter movement reuses the exact sealed pressure geometry");
+            RoomThermalManager.temperatureAt(s.l,s.c);RoomThermalManager.tickLevel(s.l);var active=RoomThermalManager.snapshots(s.l).getFirst();
+            h.assertTrue(active.airTemperature()<passive.airTemperature()-1,"Exposed fins cool faster than the identical closed room");
+            h.assertTrue(active.totalEnergy()<passive.totalEnergy()&&active.airPresent()&&active.sealed(),"Heat leaves while the room keeps its trapped gas");
+            near(h,s.heat().ledger.airOut,airOut,"Opening fins exports no air energy");h.assertTrue(!RoomAirState.get(s.l).isDepleted(view.geometry().cells()),"Cooling never evacuates oxygen");budget(h,s);
+            var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());double energy=s.heat().totalEnergy();RoomThermalManager.reset();
+            s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));RoomThermalManager.temperatureAt(s.l,s.c);
+            near(h,s.heat().totalEnergy(),energy,"Open exchanger rebind preserves cooled reservoirs across saved-data reconstruction");budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentBlockedRoofWrongFacingAndWarmExteriorCannotCool(GameTestHelper h) {
+        scene(h,104,s->{
+            var vent=s.c.east(5);var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            s.l.setBlock(vent,state,3);RoomAtmosphere.view(s.l,s.c);hot(s,40,40);
+            var seed=s.heat().save(new CompoundTag(),s.l.registryAccess());
+            double closed=ventStep(s,seed,state);double open=ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true));
+            h.assertTrue(open<closed,"Guard: exterior in this fixture is colder and exposed");
+            near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true).setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.WEST)),closed,"Reversed radiator cannot cool through its indoor face");
+            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
+            double roofClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),roofClosed,"Even a transparent roof obstructs the exposed radiator");
+            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
+            double blockedClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),blockedClosed,"A blocked exterior face disables heat rejection");
+            s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent,state,3);
+            RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(seed,s.l.registryAccess()));RoomThermalManager.temperatureAt(s.l,s.c);
+            hot(s,-273.14,-273.14);var cold=s.heat().save(new CompoundTag(),s.l.registryAccess());
+            near(h,ventStep(s,cold,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),ventStep(s,cold,state),"A passive vent adds no cooling against a warmer exterior");
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentRedstoneAndVacuumStructureCoolingKeepAirDepleted(GameTestHelper h) {
+        scene(h,104,s->{
+            var vent=s.c.east(5);var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            s.l.setBlock(vent,state,3);var view=RoomAtmosphere.view(s.l,s.c);hot(s,40,40);RoomAirState.get(s.l).evacuate(view.geometry().cells());
+            var seed=s.heat().save(new CompoundTag(),s.l.registryAccess());double closed=ventStep(s,seed,state);
+            s.l.setBlock(vent.above(),Blocks.REDSTONE_BLOCK.defaultBlockState(),3);
+            h.assertTrue(s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.POWERED),"Real neighboring redstone holds the shutter open");
+            var poweredSeed=s.heat().save(new CompoundTag(),s.l.registryAccess());
+            // Identical physical boundary, with only the shutter power changed.
+            var powered=s.l.getBlockState(vent);double unpowered=ventStep(s,poweredSeed,powered.setValue(com.frozendawn.block.HeatVentBlock.POWERED,false));
+            double active=ventStep(s,poweredSeed,powered);
+            h.assertTrue(active<unpowered,"Without gas, the exposed exchanger removes real stored structural energy");
+            var snap=RoomThermalManager.snapshots(s.l).getFirst();h.assertTrue(!snap.airPresent()&&RoomAirState.get(s.l).isDepleted(view.geometry().cells()),"Radiation never creates or refills gas");budget(h,s);
+            s.l.setBlock(vent.above(),Blocks.GLASS.defaultBlockState(),3);
+            h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.POWERED),"Removing redstone restores the manual closed state");
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentExtremeBackgroundNeverCreatesNegativeGasEnergy(GameTestHelper h) {
+        scene(h,310,s->{
+            ApocalypseState.get(s.l.getServer()).setApocalypseTicks(ApocalypseState.get(s.l.getServer()).getTotalDays()*24000L,s.l.getServer());
+            var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST).setValue(com.frozendawn.block.HeatVentBlock.OPEN,true);
+            s.l.setBlock(s.c.east(5),state,3);RoomAtmosphere.view(s.l,s.c);hot(s,RoomHeatMath.ABSOLUTE_ZERO,RoomHeatMath.ABSOLUTE_ZERO);
+            h.assertTrue(TemperatureManager.getBackgroundTemperature(s.c.getY(),ApocalypseState.get(s.l.getServer()).getCurrentDay(),ApocalypseState.get(s.l.getServer()).getTotalDays())<RoomHeatMath.ABSOLUTE_ZERO,"Guard: legacy high-altitude background is below absolute zero");
+            RoomThermalManager.tickLevel(s.l);h.assertTrue(s.heat().rooms.values().stream().allMatch(r->r.airEnergy>=0),"Radiator removal cannot make a negative gas reservoir");
+            near(h,s.heat().totalEnergy(),0,"Zero-energy reservoirs cannot lose additional heat");budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentIndicatorTracksRealOutletAndKeepsPressureGeometry(GameTestHelper h) {
+        scene(h,104,s->{
+            var vent=s.c.east(5);var closed=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            s.l.setBlock(vent,closed,3);var view=RoomAtmosphere.view(s.l,s.c);hot(s,40,40);
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==0,"Closed service light is dim");
+            s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==2,"Open exposed radiator shows actual heat rejection");
+            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Open but roof-blocked radiator is amber");
+            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Solid obstruction is amber");
+            s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);
+            var energy=s.heat().totalEnergy();var profile=RoomThermalManager.snapshots(s.l).getFirst().profileBuilds();
+            s.l.setBlock(vent,s.l.getBlockState(vent).setValue(com.frozendawn.block.HeatVentBlock.INDICATOR,2),3);
+            h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry(),"Light changes preserve exact airtight geometry");
+            near(h,s.heat().totalEnergy(),energy,"Cosmetic light cannot add thermal energy");
+            h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().profileBuilds()==profile,"Cosmetic light reuses material profile");budget(h,s);
+        });
+    }
+    private static double ventStep(Scene s,CompoundTag saved,net.minecraft.world.level.block.state.BlockState state) {
+        RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));
+        s.l.setBlock(s.c.east(5),state,3);RoomThermalManager.temperatureAt(s.l,s.c);RoomThermalManager.tickLevel(s.l);budgetForStep(s);
+        return s.heat().totalEnergy();
+    }
+    private static void budgetForStep(Scene s) {
+        if(Math.abs(s.heat().totalEnergy()-s.heat().ledger.net())>1e-5)throw new AssertionError("Vent step must balance energy ledger");
+    }
     private static void hot(Scene s,double air,double walls) {
         for(var r:s.heat().rooms.values())r.airEnergy=RoomHeatMath.energy(r.airCapacity(),air);
         for(var m:s.heat().materials.values())m.energy=RoomHeatMath.energy(m.capacity,walls);
         // Deliberate test heat imports are explicit ledger entries, distinct from production heaters.
-        s.heat().ledger.heater+=s.heat().totalEnergy()-s.heat().ledger.net();
+        double delta=s.heat().totalEnergy()-s.heat().ledger.net();
+        if(delta>=0)s.heat().ledger.heater+=delta;else s.heat().ledger.environmentLoss-=delta;
     }
     private static void near(GameTestHelper h,double actual,double expected,String message) {
         h.assertTrue(Math.abs(actual-expected)<=1e-6*Math.max(1,Math.abs(expected)),message+": "+actual+" vs "+expected);

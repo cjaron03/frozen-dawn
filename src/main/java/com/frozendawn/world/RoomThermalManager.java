@@ -2,6 +2,8 @@ package com.frozendawn.world;
 
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
+import com.frozendawn.block.HeatVentBlock;
+import net.minecraft.world.level.levelgen.Heightmap;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.*;
 import com.frozendawn.thermal.*;
@@ -23,7 +25,7 @@ public final class RoomThermalManager {
     public static final double BASE_HEATER_POWER=1800, FACE_LOSS_SCALE=.25, VACUUM_RADIATION_SCALE=.35;
     private static final int LAYERS=3,SUBSTEPS=20;
     private record Face(BlockPos outside,int boundaryY,double conductance,boolean ground,boolean interior) {}
-    private record Profile(Set<BlockPos> structure,Set<BlockPos> watched,List<Face> faces) {}
+    private record Profile(Set<BlockPos> structure,Set<BlockPos> watched,List<Face> faces,Set<BlockPos> vents) {}
     private static final class Binding {
         RoomThermalState.Room room; Profile profile; boolean dirty,geometryDirty,suspended;
         Binding(RoomThermalState.Room room,Profile profile){this.room=room;this.profile=profile;}
@@ -59,9 +61,10 @@ public final class RoomThermalManager {
         return !CombustionAtmosphere.isVacuum(level)||!RoomAirState.get(level).isDepleted(cells);
     }
     private static Profile profile(ServerLevel level,Set<RoomAtmosphere.BoundaryFace> faces,Set<BlockPos> knownCells) {
-        var structure=new HashSet<BlockPos>();var watched=new HashSet<BlockPos>();var result=new ArrayList<Face>();
+        var structure=new HashSet<BlockPos>();var watched=new HashSet<BlockPos>();var result=new ArrayList<Face>();var vents=new HashSet<BlockPos>();
         for(var face:faces) {
             var pos=face.wallCell();double resistance=0;
+            if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof HeatVentBlock)vents.add(pos.immutable());
             for(int depth=0;depth<LAYERS;depth++) {
                 if(!level.isLoaded(pos))return null;
                 watched.add(pos.immutable());var state=level.getBlockState(pos);
@@ -74,7 +77,7 @@ public final class RoomThermalManager {
             boolean ground=!RoomAtmosphere.isPassage(level,pos,level.getBlockState(pos));
             result.add(new Face(pos.immutable(),face.wallCell().getY(),resistance>0?FACE_LOSS_SCALE/resistance:0,ground,interior));
         }
-        return new Profile(Set.copyOf(structure),Set.copyOf(watched),List.copyOf(result));
+        return new Profile(Set.copyOf(structure),Set.copyOf(watched),List.copyOf(result),Set.copyOf(vents));
     }
     private static Set<BlockPos> knownCells(Runtime rt,Collection<RoomAtmosphere.RoomView> current) {
         var cells=new HashSet<BlockPos>();for(var room:rt.state.rooms.values())if(room.sealed)cells.addAll(room.cells);
@@ -90,6 +93,54 @@ public final class RoomThermalManager {
     }
     private static double faceK(ServerLevel level,Face face) {
         return face.interior?0:face.conductance*(CombustionAtmosphere.isVacuum(level)&&!face.ground?VACUUM_RADIATION_SCALE:1);
+    }
+    // First-pass game conductance, not a real-world watt rating. Vacuum uses the existing radiator scale.
+    public static final double HEAT_VENT_CONDUCTANCE=8.0;
+    private record Cooling(BlockPos pos,double conductance,double outside) {}
+    private static List<Cooling> cooling(ServerLevel level,Binding binding) {
+        if(!binding.room.sealed)return List.of();
+        var result=new ArrayList<Cooling>();
+        for(var pos:binding.profile.vents) {
+            var state=level.getBlockState(pos);
+            if(!(state.getBlock() instanceof HeatVentBlock)||!HeatVentBlock.active(state))continue;
+            var facing=state.getValue(HeatVentBlock.FACING);var inside=pos.relative(facing.getOpposite());var outlet=pos.relative(facing);
+            if(!binding.room.cells.contains(inside)||!level.isLoaded(outlet)
+                    ||!RoomAtmosphere.isPassage(level,outlet,level.getBlockState(outlet)))continue;
+            // An uncovered outdoor face is required. Glass roofs also obstruct radiation.
+            // This loaded-only heightmap check cannot dump heat into an undiscovered neighboring room.
+            if(outlet.getY()<level.getHeight(Heightmap.Types.MOTION_BLOCKING,outlet.getX(),outlet.getZ()))continue;
+            var a=ApocalypseState.get(level.getServer());
+            double outside=TemperatureManager.getBackgroundTemperature(outlet.getY(),a.getCurrentDay(),a.getTotalDays());
+            double k=HEAT_VENT_CONDUCTANCE*(CombustionAtmosphere.isVacuum(level)?VACUUM_RADIATION_SCALE:1);
+            result.add(new Cooling(pos,k,outside));
+        }
+        return result;
+    }
+    /** 0 closed, 1 waiting/blocked, 2 rejecting heat. Loaded cached geometry only. */
+    public static int ventIndicator(ServerLevel level,BlockPos pos) {
+        var state=level.getBlockState(pos);
+        if(!(state.getBlock() instanceof HeatVentBlock)||!HeatVentBlock.active(state))return 0;
+        var rt=LEVELS.get(level);if(rt==null)return 1;
+        for(var binding:rt.rooms.values()) {
+            if(binding.profile==null||binding.suspended||!loaded(level,binding)||!binding.profile.vents.contains(pos))continue;
+            var room=binding.room;
+            double temperature=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy)
+                    :RoomHeatMath.temperature(capacity(rt.state,room,rt.owners),structureEnergy(rt.state,room,rt.owners));
+            for(var outlet:cooling(level,binding))if(outlet.pos.equals(pos)&&temperature>outlet.outside+.1)return 2;
+        }
+        return 1;
+    }
+    private static void cool(RoomThermalState state,RoomThermalState.Room room,Map<BlockPos,Integer> owners,
+            double capacity,List<Cooling> outlets,double dt) {
+        for(var outlet:outlets) {
+            double c=room.airPresent?room.airCapacity():capacity;
+            double energy=room.airPresent?room.airEnergy:structureEnergy(state,room,owners);
+            double temperature=RoomHeatMath.temperature(c,energy);
+            // Passive rejection stops at the cold-side temperature; a warmer exterior cannot become a refrigerator.
+            double q=Math.min(Math.max(0,energy),Math.max(0,RoomHeatMath.reservoirLoss(c,temperature,outlet.outside,outlet.conductance,dt)));
+            if(room.airPresent){room.airEnergy-=q;state.ledger.environmentLoss+=q;}
+            else state.ledger.environmentLoss-=addStructure(state,room,owners,-q);
+        }
     }
     private static void index(Runtime rt) {
         rt.layers.clear();rt.cells.clear();rt.owners=owners(rt.state);
@@ -332,10 +383,11 @@ public final class RoomThermalManager {
         ThermostatManager.refresh(level);
         var loaded=rt.rooms.values().stream().filter(binding->!binding.suspended&&loaded(level,binding)).toList();
         var owners=rt.owners;double dt=1.0/SUBSTEPS;
-        var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();
+        var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();var coolers=new HashMap<Long,List<Cooling>>();
         var sourceShares = new HashMap<Long, Map<ThermalHeaterBlockEntity,Double>>();
         var suppliedByRoom = new HashMap<Long,Double>();
         for(var binding:loaded) {
+            coolers.put(binding.room.id,cooling(level,binding));
             var shares = heaterShares(level,binding,loaded);
             sourceShares.put(binding.room.id,shares);
             powers.put(binding.room.id,shares.entrySet().stream().mapToDouble(entry -> entry.getValue() * entry.getKey().availableRoomFraction()).sum());
@@ -364,6 +416,7 @@ public final class RoomThermalManager {
             var loss=losses.get(room.id);
             if(loss[0]>0){double q=RoomHeatMath.reservoirLoss(capacity,structure,loss[1],loss[0],dt);
                 rt.state.ledger.environmentLoss-=addStructure(rt.state,room,owners,-q);}
+            cool(rt.state,room,owners,capacity,coolers.get(room.id),dt);
         }
         // Shared boundary heaters are debited once, with their allocated fraction from every room.
         var fractions = new LinkedHashMap<ThermalHeaterBlockEntity,Double>();
@@ -404,17 +457,18 @@ public final class RoomThermalManager {
     }
     public record Snapshot(long id,int cells,boolean sealed,boolean suspended,boolean airPresent,double airTemperature,
             double structureTemperature,double feltTemperature,double airCapacity,double structureCapacity,double conductance,
-            double heaterPower,long profileBuilds,double totalEnergy,double ledgerNet) {}
+            double heaterPower,long profileBuilds,double totalEnergy,double ledgerNet,int coolingVents,double coolingConductance) {}
     private static Snapshot snapshot(ServerLevel level,Runtime rt,Binding binding,Map<BlockPos,Integer> owners) {
         var room=binding.room;double capacity=capacity(rt.state,room,owners);
         double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
         double air=RoomHeatMath.temperature(room.airCapacity(),room.airEnergy);
         double outside=outsideAverage(level,binding.profile);
         double felt=room.airPresent?air:outside+(structure-outside)*RoomHeatMath.RADIANT_FEEL_WEIGHT;
+        var outlets=binding.suspended||!loaded(level,binding)?List.<Cooling>of():cooling(level,binding);
         return new Snapshot(room.id,room.cells.size(),room.sealed,binding.suspended,room.airPresent,air,structure,felt,
                 room.airCapacity(),capacity,binding.profile.faces.stream().mapToDouble(face->faceK(level,face)).sum(),
                 power(level,binding,rt.rooms.values().stream().filter(other->!other.suspended&&loaded(level,other)).toList()),
-                rt.profileBuilds,rt.state.totalEnergy(),rt.state.ledger.net());
+                rt.profileBuilds,rt.state.totalEnergy(),rt.state.ledger.net(),outlets.size(),outlets.stream().mapToDouble(Cooling::conductance).sum());
     }
     /** Non-querying diagnostics; never initialize a saved room, simulate time, or extend pressure activity. */
     public static List<Snapshot> snapshots(ServerLevel level) {

@@ -74,6 +74,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> AIRLOCK_CONTROLLER = ITEMS.registerSimpleBlockItem("airlock_controller",ModBlocks.AIRLOCK_CONTROLLER);
     public static final DeferredItem<BlockItem> MANUAL_VENT_VALVE = ITEMS.registerSimpleBlockItem("manual_vent_valve",ModBlocks.MANUAL_VENT_VALVE);
 
+    public static final DeferredItem<BlockItem> HEAT_VENT=ITEMS.registerSimpleBlockItem("heat_vent",ModBlocks.HEAT_VENT);
     public static final DeferredItem<BlockItem> THERMOSTAT=ITEMS.registerSimpleBlockItem("thermostat",ModBlocks.THERMOSTAT);
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
@@ -476,6 +477,7 @@ public class ModItems {
                         output.accept(AIRLOCK_CONTROLLER.get());
                         output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMOSTAT.get());
+                        output.accept(HEAT_VENT.get());
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());
