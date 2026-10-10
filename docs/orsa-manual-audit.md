@@ -31,7 +31,9 @@ What it models, ported from Patchouli 1.21.1-92 (`BookTextParser`, `TextLayouter
 
 Checks: overflow (needs RESIZE shrink), past paper, page-mark collision, title wider
 than the page, mid-word split, leading space, two or more blank lines, leading or
-trailing break, unknown commands, raw `\n`, emoji, glyphs only Unifont can draw.
+trailing break, unknown commands, raw `\n`, emoji, glyphs only Unifont can draw, and
+entry names wider than the chapter list (`GuiButtonEntry` draws the name at x + 12 and
+the read marker at x + 111, so a name fits 100 px including the last glyph's gap).
 
 Required cases, all flagged: O2 Canisters p1, p2, p3, p5, p7 overflow, the p2
 "th|e" and "button-pre|ssing" splits and leading space; EVA p1-p5; Thermal Heater p1
@@ -216,8 +218,9 @@ Values from the code on this base:
 ## Behavior issues (report only)
 
 - **Locked entries.** 27 entries are advancement-locked (24 of 26 in ORSA Intelligence,
-  plus Acheronite Compass, Fuel Processing Silo, Rocket Assembly). Nothing in the book
-  says documents unlock entries or where to find them.
+  plus Acheronite Compass, Fuel Processing Silo, Rocket Assembly). The chapter list shows
+  them as "(Locked)" with a lock icon, but nothing says documents unlock them or where
+  to find them.
 - **Manual not re-issued.** `WorldTickHandler.onPlayerJoin` gives the manual once, gated
   by the `frozendawn:received_books` persistent flag. No respawn or clone handler gives
   it back, so it is lost with the inventory on death.
@@ -312,12 +315,20 @@ The 12 (T) entries keep their text for the post-merge rewrite, except the three
   "1.5x damage" to "+50% damage"; Evacuation Notice indent spaces removed; landing
   text padding reduced from eight blank lines to six (the masthead is 47 px, six lines
   are 54 px).
-- **Linter.** No errors in the 63 entries or the landing text. Remaining: 107 errors,
-  all in the 12 (T) entries. About 20 warnings: continuation pages that begin inside a
+- **Chapter list.** A follow-up pass added the list-width check and shortened 18 entry
+  names that ran under the read marker: Fuel Silo, Geological Note, Heavy Gear (T2),
+  Cargo Manifest, Recalled PSB-07, Incident TIR-1171, Launch Manifest, Mars Command,
+  Grandview Gazette, Missing Persons, Safety Bulletin, Projected Timeline (name only,
+  a (T) entry), Parts Requisition, Audio: Cabin Mic / Breakdown / Whiteout, Acheronite
+  Crystal, Lined EVA Suit. These replace the names listed above where they differ.
+- **Linter.** No errors in the 63 entries or the landing text. Remaining: 106 errors,
+  all in the 12 (T) entries, including five page titles wider than the page. About 20 warnings: continuation pages that begin inside a
   bullet list start one line down, because Patchouli always breaks before `$(li)`.
 
 Not done here: the organization pass (category order, quick reference, item lookup
 pages), the missing content, and the behavior issues above.
 
 Owner visual pass: `./gradlew runClient --console=plain`, open the manual, page through
-O2 Canisters, What is ORSA?, The Returned and MiteAway.
+O2 Canisters, What is ORSA?, The Returned and MiteAway. The first visual pass confirmed
+the (T) entries still cut text off at the bottom (Food Spoilage, Hyperthermia), on the
+lines the linter predicts; they wait for the post-merge rewrite.
