@@ -13,6 +13,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
 
 public class ArchitectSpawner {
+    static final int MIN_SPAWN_Y = 1;
     private static final float POST_MAEVE_CHANCE = 0.02F;
     private static final float POST_MAEVE_BRUTAL_CHANCE = 0.05F;
     private static final float POST_MAEVE_MAX_LOCAL_CHANCE = 0.075F;
@@ -20,6 +21,7 @@ public class ArchitectSpawner {
     private ArchitectSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
+        BlindArchitectSpawner.tick(level);
         boolean maeveErased = PostMaeveWorldState.isErased(level);
         boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
                 level.getServer());
@@ -60,7 +62,7 @@ public class ArchitectSpawner {
             BlockPos spawnPos = postMaeve
                     ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                             level, player, random, 48, 72, 28,
-                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT, MIN_SPAWN_Y)
                     : findSpawnPos(level, player, random);
             if (spawnPos == null || (postMaeve
                     && LateThreatSpawnHelper.isInsideHearthBoundary(level, spawnPos))) continue;
@@ -96,7 +98,7 @@ public class ArchitectSpawner {
      */
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
         return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
-                48, 64, 20, LateThreatSpawnHelper.NO_LIGHT_LIMIT);
+                48, 64, 20, LateThreatSpawnHelper.NO_LIGHT_LIMIT, MIN_SPAWN_Y);
     }
 
     public static void reset() {}

@@ -105,6 +105,7 @@ public class AcheronForgeBlockEntity extends BlockEntity implements MenuProvider
                 && output.getCount() < output.getMaxStackSize()));
 
         if (canProcess) {
+            if (level instanceof net.minecraft.server.level.ServerLevel server) com.frozendawn.event.BlindArchitectEvents.machine(server, worldPosition);
             if (level instanceof net.minecraft.server.level.ServerLevel serverLevel
                     && serverLevel.getGameTime() % 20L == 0L) {
                 ResonanceEventHooks.emitMachinery(serverLevel, worldPosition);

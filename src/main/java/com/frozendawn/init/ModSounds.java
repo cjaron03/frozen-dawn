@@ -18,6 +18,11 @@ public class ModSounds {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
     }
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_CLICK = register("entity.blind_architect.click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_IDLE = register("entity.blind_architect.idle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_SEARCH = register("entity.blind_architect.search");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_LOCK = register("entity.blind_architect.lock");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));
@@ -611,6 +616,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_DRINK = SOUNDS.register("entity.architect.drink",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.drink")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_HURT = register("entity.blind_architect.hurt");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_HURT = SOUNDS.register("entity.architect.hurt",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.hurt")));

@@ -1,0 +1,659 @@
+{
+  "status": "Prepared throat-performance bank; see selection.json for owner acceptance; no runtime registration",
+  "license": "CC0-1.0 source layers; original processing",
+  "reference": "https://www.naughtydog.com/blog/the_last_of_us_part_i_hbo_tv_show_clickers",
+  "reference_role": "Sound-design research only; no reference audio used",
+  "tools": {
+    "ffmpeg": "ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers",
+    "oggenc": "oggenc from vorbis-tools 1.4.3"
+  },
+  "inputs": [
+    {
+      "creator": "Xemptful",
+      "page": "https://freesound.org/people/Xemptful/sounds/370869/",
+      "download": "https://cdn.freesound.org/previews/370/370869_3531538-hq.mp3",
+      "original_filename": "370869__xemptful__mouth-clicks.wav",
+      "path": "tools/audio_sources/blind_architect/raw/370869_3531538-hq.mp3",
+      "sha256": "2ea60081dcb07c2912c0972b2baa7d60a7e41ee223f5075f5622d2ab01d486fc",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved_utc": "2026-10-01T02:43:27.815351+00:00",
+      "encoding": "Official shared high-quality MP3 preview, not original download",
+      "metadata": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 324870,
+            "start_time": "0.023021",
+            "duration_ts": 19333146,
+            "duration": "1.369979",
+            "bit_rate": "176136",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "encoder": "LAME3.99r"
+            },
+            "side_data_list": [
+              {
+                "side_data_type": "Replay Gain"
+              }
+            ]
+          }
+        ],
+        "format": {
+          "filename": "/Users/jaroncabral/Projects/minecraft-mod/.worktrees/blind-architect/tools/audio_sources/blind_architect/raw/370869_3531538-hq.mp3",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.023021",
+          "duration": "1.369979",
+          "size": "31176",
+          "bit_rate": "182052",
+          "probe_score": 51
+        }
+      }
+    },
+    {
+      "creator": "fleurescence",
+      "page": "https://freesound.org/people/fleurescence/sounds/573148/",
+      "download": "https://cdn.freesound.org/previews/573/573148_12947664-hq.mp3",
+      "original_filename": "573148__fleurescence__tongue-click.wav",
+      "path": "tools/audio_sources/blind_architect/raw/573148_12947664-hq.mp3",
+      "sha256": "72f146721697a48c3000d0425749cd9f8885f3a77a32c46a4dbcbdb88d923f2c",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved_utc": "2026-10-01T02:43:27.683264+00:00",
+      "encoding": "Official shared high-quality MP3 preview, not original download",
+      "metadata": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 1,
+            "channel_layout": "mono",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 324870,
+            "start_time": "0.023021",
+            "duration_ts": 4762800,
+            "duration": "0.337500",
+            "bit_rate": "196000",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "encoder": "LAME3.99r"
+            },
+            "side_data_list": [
+              {
+                "side_data_type": "Replay Gain"
+              }
+            ]
+          }
+        ],
+        "format": {
+          "filename": "/Users/jaroncabral/Projects/minecraft-mod/.worktrees/blind-architect/tools/audio_sources/blind_architect/raw/573148_12947664-hq.mp3",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.023021",
+          "duration": "0.337500",
+          "size": "9408",
+          "bit_rate": "223004",
+          "probe_score": 51
+        }
+      }
+    },
+    {
+      "creator": "Fupicat",
+      "page": "https://freesound.org/people/Fupicat/sounds/688417/",
+      "download": "https://cdn.freesound.org/previews/688/688417_7724198-hq.mp3",
+      "original_filename": "688417__fupicat__weird-throat-clicking.ogg",
+      "path": "tools/audio_sources/blind_architect/raw/688417_7724198-hq.mp3",
+      "sha256": "d271d12a210eff760555aee008ac78a5b42fb8ccfb3c2951ac41d2eef77635ef",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved_utc": "2026-10-01T02:51:48.633140+00:00",
+      "encoding": "Official shared high-quality MP3 preview, not original download",
+      "metadata": {
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "mp3",
+            "codec_long_name": "MP3 (MPEG audio layer 3)",
+            "codec_type": "audio",
+            "codec_tag_string": "[0][0][0][0]",
+            "codec_tag": "0x0000",
+            "sample_fmt": "fltp",
+            "sample_rate": "48000",
+            "channels": 1,
+            "channel_layout": "mono",
+            "bits_per_sample": 0,
+            "initial_padding": 0,
+            "r_frame_rate": "0/0",
+            "avg_frame_rate": "0/0",
+            "time_base": "1/14112000",
+            "start_pts": 324870,
+            "start_time": "0.023021",
+            "duration_ts": 330503040,
+            "duration": "23.420000",
+            "bit_rate": "204823",
+            "disposition": {
+              "default": 0,
+              "dub": 0,
+              "original": 0,
+              "comment": 0,
+              "lyrics": 0,
+              "karaoke": 0,
+              "forced": 0,
+              "hearing_impaired": 0,
+              "visual_impaired": 0,
+              "clean_effects": 0,
+              "attached_pic": 0,
+              "timed_thumbnails": 0,
+              "non_diegetic": 0,
+              "captions": 0,
+              "descriptions": 0,
+              "metadata": 0,
+              "dependent": 0,
+              "still_image": 0,
+              "multilayer": 0
+            },
+            "tags": {
+              "encoder": "LAME3.100"
+            },
+            "side_data_list": [
+              {
+                "side_data_type": "Replay Gain"
+              }
+            ]
+          }
+        ],
+        "format": {
+          "filename": "/Users/jaroncabral/Projects/minecraft-mod/.worktrees/blind-architect/tools/audio_sources/blind_architect/raw/688417_7724198-hq.mp3",
+          "nb_streams": 1,
+          "nb_programs": 0,
+          "nb_stream_groups": 0,
+          "format_name": "mp3",
+          "format_long_name": "MP2/3 (MPEG audio layer 2/3)",
+          "start_time": "0.023021",
+          "duration": "23.420000",
+          "size": "600336",
+          "bit_rate": "205067",
+          "probe_score": 51
+        }
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "throat_click_1",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_1.ogg",
+      "sha256": "e930c50cbea3cb5617c35c3e2f7747fd1c68cf2e7f763f1b67281f8528eb09e8",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        2.1,
+        2.46
+      ],
+      "speed_ratio": 1.1,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.115,
+            0.285
+          ],
+          "offset_seconds": 0.015,
+          "gain": 0.95,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.142,
+          "gain": 0.35,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.39225,
+      "decoded_peak": 0.6355106234550476,
+      "decoded_rms": 0.07319389268470039,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_click_2",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_2.ogg",
+      "sha256": "2d5ccbbef36fb0ed0347043106b01e657fd3520cd014e35bb2622512fa0ca31d",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        3.7,
+        4.07
+      ],
+      "speed_ratio": 1.14,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.605,
+            0.78
+          ],
+          "offset_seconds": 0.008,
+          "gain": 1.0,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.985,
+            1.17
+          ],
+          "offset_seconds": 0.172,
+          "gain": 0.4,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.3895416666666667,
+      "decoded_peak": 0.648080050945282,
+      "decoded_rms": 0.09430194556869713,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_click_3",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_3.ogg",
+      "sha256": "6965b9dbc9b5d674510bc3c23a57896aa9ddd3aa93298c9cb07da21f190d5b02",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        5.58,
+        5.94
+      ],
+      "speed_ratio": 1.04,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.012,
+          "gain": 0.92,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.115,
+            0.285
+          ],
+          "offset_seconds": 0.115,
+          "gain": 0.34,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.411125,
+      "decoded_peak": 0.6387301087379456,
+      "decoded_rms": 0.07615720908065263,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_click_4",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_4.ogg",
+      "sha256": "8b154189da2d8136887795cd7dab9827d188fc282f8aa3c2d6fd2baa4db5f14b",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        8.02,
+        8.41
+      ],
+      "speed_ratio": 1.16,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.985,
+            1.17
+          ],
+          "offset_seconds": 0.015,
+          "gain": 1.0,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.19,
+          "gain": 0.3,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.4011875,
+      "decoded_peak": 0.6100518107414246,
+      "decoded_rms": 0.05945258216021111,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_click_5",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_5.ogg",
+      "sha256": "caf0a22af2a8f918d2920597f1496028fb49158329990044ef24cb6a6e04499a",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        14.02,
+        14.39
+      ],
+      "speed_ratio": 1.09,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.115,
+            0.285
+          ],
+          "offset_seconds": 0.009,
+          "gain": 0.95,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.605,
+            0.78
+          ],
+          "offset_seconds": 0.12,
+          "gain": 0.32,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.40441666666666665,
+      "decoded_peak": 0.637649655342102,
+      "decoded_rms": 0.08848710032854645,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_click_6",
+      "role": "echo_pulse",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_6.ogg",
+      "sha256": "62f1d0d2d1327f502acf1727a32e429c1b34671ac47d5bf8ab402216a908c10b",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        17.56,
+        17.93
+      ],
+      "speed_ratio": 1.12,
+      "throat_peak_before_mix": 0.46,
+      "mouth_accents": [
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.01,
+          "gain": 1.0,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.985,
+            1.17
+          ],
+          "offset_seconds": 0.157,
+          "gain": 0.38,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.065,
+      "duration_seconds": 0.3953333333333333,
+      "decoded_peak": 0.6986921429634094,
+      "decoded_rms": 0.083859144943816,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_idle_1",
+      "role": "vocal_accent",
+      "path": "tools/audio_sources/blind_architect/processed/throat_idle_1.ogg",
+      "sha256": "51c2c95d19452c71b69961078b68e5ffe0ebdead49098b035ed82b15904f86ca",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        9.46,
+        10.29
+      ],
+      "speed_ratio": 1.06,
+      "throat_peak_before_mix": 0.36,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.115,
+            0.285
+          ],
+          "offset_seconds": 0.08,
+          "gain": 0.68,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.315,
+          "gain": 0.26,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.055,
+      "duration_seconds": 0.8379791666666667,
+      "decoded_peak": 0.6672016978263855,
+      "decoded_rms": 0.06512856538823389,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_search_1",
+      "role": "vocal_accent",
+      "path": "tools/audio_sources/blind_architect/processed/throat_search_1.ogg",
+      "sha256": "360885b3ff627f2e777d3e959028e9da54fce860d4b641b96dc5a336af52f2f3",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        13.76,
+        14.68
+      ],
+      "speed_ratio": 1.16,
+      "throat_peak_before_mix": 0.55,
+      "mouth_accents": [
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.605,
+            0.78
+          ],
+          "offset_seconds": 0.03,
+          "gain": 0.83,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.172,
+          "gain": 0.42,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.115,
+            0.285
+          ],
+          "offset_seconds": 0.442,
+          "gain": 0.3,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.085,
+      "duration_seconds": 0.8780833333333333,
+      "decoded_peak": 0.6383748054504395,
+      "decoded_rms": 0.08680071345114206,
+      "sample_rate": 48000,
+      "channels": 1
+    },
+    {
+      "name": "throat_lock_1",
+      "role": "vocal_accent",
+      "path": "tools/audio_sources/blind_architect/processed/throat_lock_1.ogg",
+      "sha256": "5bf6bd608a0df7ff564587e3d1cea368ad5865b5b5d14d60cc579d86d82d489a",
+      "throat_source": "688417_7724198-hq.mp3",
+      "throat_crop_seconds": [
+        17.35,
+        18.48
+      ],
+      "speed_ratio": 1.23,
+      "throat_peak_before_mix": 0.66,
+      "mouth_accents": [
+        {
+          "source": "573148_12947664-hq.mp3",
+          "crop_seconds": [
+            0.0,
+            0.155
+          ],
+          "offset_seconds": 0.02,
+          "gain": 1.0,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.985,
+            1.17
+          ],
+          "offset_seconds": 0.137,
+          "gain": 0.51,
+          "speed_ratio": 1.08
+        },
+        {
+          "source": "370869_3531538-hq.mp3",
+          "crop_seconds": [
+            0.605,
+            0.78
+          ],
+          "offset_seconds": 0.335,
+          "gain": 0.38,
+          "speed_ratio": 1.08
+        }
+      ],
+      "tail_seconds": 0.085,
+      "duration_seconds": 1.0036666666666667,
+      "decoded_peak": 0.6833715438842773,
+      "decoded_rms": 0.09814656471734107,
+      "sample_rate": 48000,
+      "channels": 1
+    }
+  ],
+  "processing": "Natural throat performance, resampling, first-order high/low pass, quiet lower throat layer, irregular mouth accents, 21/38 ms reflections, tanh saturation, fades and peak normalization. No generated voice.",
+  "audition": {
+    "path": "build/blind-architect-audio/throat-comparison.wav",
+    "sha256": "26fbc6f15ac199e97142cca9fa298b7e397d2a42d4e3893a856829f373669e32",
+    "order": [
+      "click_1",
+      "click_1",
+      "throat_click_1",
+      "throat_click_2",
+      "throat_click_3",
+      "throat_click_4",
+      "throat_click_5",
+      "throat_click_6",
+      "throat_idle_1",
+      "throat_search_1",
+      "throat_lock_1"
+    ],
+    "note": "Earlier dry click twice, six revised pulses, idle/search/lock vocal accents"
+  }
+}

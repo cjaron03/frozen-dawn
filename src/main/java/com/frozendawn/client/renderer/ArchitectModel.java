@@ -30,6 +30,8 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
             ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "architect"), "main");
     private final ModelPart thinkingUpperArm;
     private final ModelPart thinkingForearm;
+    private final ModelPart noiseUpperArm;
+    private final ModelPart noiseForearm;
 
     private static final float MASTER_WAND_HOLD_X = -0.42F;
     private static final float MASTER_WAND_HOLD_Y = -0.08F;
@@ -39,6 +41,8 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
         super(root);
         thinkingUpperArm = this.leftArm.getChild("thinking_upper_arm");
         thinkingForearm = thinkingUpperArm.getChild("thinking_forearm");
+        noiseUpperArm = this.rightArm.getChild("noise_upper_arm");
+        noiseForearm = noiseUpperArm.getChild("noise_forearm");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -52,6 +56,14 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 CubeListBuilder.create().texOffs(40, 22).mirror()
                         .addBox(-1.0F, 0.0F, -2.0F, 4.0F, 6.0F, 4.0F),
                 PartPose.offset(0.0F, 4.0F, 0.0F));
+        PartDefinition right = mesh.getRoot().getChild("right_arm");
+        PartDefinition noise = right.addOrReplaceChild("noise_upper_arm",
+                CubeListBuilder.create().texOffs(40, 16)
+                        .addBox(-3.0F, -2.0F, -2.0F, 4.0F, 6.0F, 4.0F), PartPose.ZERO);
+        noise.addOrReplaceChild("noise_forearm",
+                CubeListBuilder.create().texOffs(40, 22)
+                        .addBox(-3.0F, 0.0F, -2.0F, 4.0F, 6.0F, 4.0F),
+                PartPose.offset(0.0F, 4.0F, 0.0F));
         return LayerDefinition.create(mesh, 64, 64);
     }
 
@@ -60,11 +72,7 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                            float ageInTicks, float netHeadYaw, float headPitch) {
         // Model instances are shared by all rendered Architects. Clear the optional rig
         // before every entity, including mining and all Master early returns.
-        this.leftArm.skipDraw = false;
-        this.thinkingUpperArm.visible = false;
-        this.thinkingForearm.xRot = 0.0F;
-        this.thinkingForearm.yRot = 0.0F;
-        this.thinkingForearm.zRot = 0.0F;
+        resetOptionalArmRigs();
         this.head.zRot = 0.0F;
         this.body.xRot = 0.0F;
         this.body.zRot = 0.0F;
@@ -201,6 +209,34 @@ public class ArchitectModel extends HumanoidModel<ArchitectEntity> {
                 this.leftArm.yRot = 0.20f;
             }
         }
+        float noisePose = entity.getBlindNoisePose(ageInTicks - entity.tickCount);
+        if (noisePose > 0.0F) applyBlindNoisePose(noisePose);
+    }
+
+    void resetOptionalArmRigs() {
+        this.rightArm.skipDraw = false;
+        this.leftArm.skipDraw = false;
+        this.noiseUpperArm.visible = false;
+        this.thinkingUpperArm.visible = false;
+        this.noiseForearm.xRot = this.noiseForearm.yRot = this.noiseForearm.zRot = 0.0F;
+        this.thinkingForearm.xRot = this.thinkingForearm.yRot = this.thinkingForearm.zRot = 0.0F;
+    }
+
+    /** Split arms keep elbows outside the head while both hands meet the covered ears. */
+    void applyBlindNoisePose(float amount) {
+        float weight = smooth(amount);
+        this.rightArm.skipDraw = this.leftArm.skipDraw = true;
+        this.noiseUpperArm.visible = this.thinkingUpperArm.visible = true;
+        this.rightArm.xRot = Mth.lerp(weight, this.rightArm.xRot, 0.0F);
+        this.leftArm.xRot = Mth.lerp(weight, this.leftArm.xRot, 0.0F);
+        this.rightArm.yRot = Mth.lerp(weight, this.rightArm.yRot, 0.0F);
+        this.leftArm.yRot = Mth.lerp(weight, this.leftArm.yRot, 0.0F);
+        this.rightArm.zRot = Mth.lerp(weight, this.rightArm.zRot, 2.0F);
+        this.leftArm.zRot = Mth.lerp(weight, this.leftArm.zRot, -2.0F);
+        this.noiseForearm.zRot = 1.65F * weight;
+        this.thinkingForearm.zRot = -1.65F * weight;
+        this.head.yRot = Mth.lerp(weight, this.head.yRot, 0.0F);
+        this.head.xRot = Mth.lerp(weight, this.head.xRot, 0.12F);
     }
 
     private void applyThinkingPose(ArchitectEntity entity, float partialTick) {

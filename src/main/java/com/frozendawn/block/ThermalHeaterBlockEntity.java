@@ -62,6 +62,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
     }
 
     public void serverTick() {
+        if (isLit() && level instanceof net.minecraft.server.level.ServerLevel server) com.frozendawn.event.BlindArchitectEvents.machine(server, worldPosition);
         tickFrostmiteHeatPenalty();
         if (industrialDrainWarningTicks > 0) {
             industrialDrainWarningTicks--;

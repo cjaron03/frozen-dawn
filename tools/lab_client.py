@@ -57,7 +57,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--world", help="Required active world name or exact save path for every operation except status")
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("status", "snapshot", "maeve-status", "reload", "freeze", "unfreeze"):
+    for name in ("status", "snapshot", "input-start", "input-dump", "maeve-status", "reload", "freeze", "unfreeze"):
         sub.add_parser(name)
     dump = sub.add_parser("maeve-dump"); dump.add_argument("--player")
     actor = sub.add_parser("architect-dump"); actor.add_argument("entity", help="Loaded Architect UUID from snapshot")

@@ -90,12 +90,15 @@ neoForge {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
             systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
             systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
-            systemProperty 'frozendawn.debug.architectSeed', '1'
+            if (!project.hasProperty('labNatural')) {
+                systemProperty 'frozendawn.debug.architectSeed', '1'
+            }
             systemProperty 'frozendawn.labCommands', 'true'
             if (labQuickPlayWorld) {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
@@ -107,7 +110,10 @@ neoForge {
         clientLabGuest {
             client()
             gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
-            programArguments.addAll '--username', 'ArchitectGuest'
+            programArguments.addAll '--username', 'ArchitectGuest', '--uuid', '347c4be4-4dda-3d32-a649-477c0bff527c'
+            systemProperty 'frozendawn.labLanGuest', 'true'
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
@@ -529,6 +535,37 @@ tasks.register('generateMacsSignalQa', Exec) {
 sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
 
+// Parse the disposable Blind first-view functions using the native command dispatcher.
+def blindQaResources = layout.buildDirectory.dir('generated/blind-architect-qa')
+tasks.register('generateBlindArchitectQa', Exec) {
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_playtest.py', '--pack-only', blindQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindArchitectQa') }
+
+def blindNaturalQaResources = layout.buildDirectory.dir('generated/blind-natural-qa')
+tasks.register('generateBlindNaturalQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_natural.py', 'tools/prepare_blind_architect_playtest.py')
+    inputs.files(fileTree('src/test/resources/blind-natural-stopped-wait'))
+    inputs.files(fileTree('src/test/resources/blind-natural-same-tick-arrivals'))
+    outputs.dir(blindNaturalQaResources)
+    doFirst { delete blindNaturalQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_natural.py', '--pack-only', blindNaturalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindNaturalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindNaturalQa') }
+
+def blindErasedQaResources = layout.buildDirectory.dir('generated/blind-erased-qa')
+tasks.register('generateBlindErasedQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_erased.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindErasedQaResources)
+    doFirst { delete blindErasedQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_erased.py', '--pack-only', blindErasedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindErasedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindErasedQa') }
 // The Scribe Check world uses the same parsed functions as its required native gate.
 def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
 tasks.register('generateMacsScribeQa', Exec) {

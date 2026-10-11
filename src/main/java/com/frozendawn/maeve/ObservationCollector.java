@@ -38,8 +38,8 @@ final class ObservationCollector {
         if (!(observer.level() instanceof ServerLevel level) || player.level() != level
                 || (!fatalPlayer && !player.isAlive()) || player.isCreative() || player.isSpectator()
                 || observer.isRemoved() || observer.isNoAi() || (!fatalHit && !observer.isAlive())
-                || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)
-                // §9.4b: the Scribe carries notes and reports no evidence, even struck in its own death fight.
+                || observer.isBlindArchitect() || observer.isMasterArchitectVisual() || AggregateReinforcementManager.isChild(observer)
+                // The Scribe carries notes and reports no evidence, even struck in its own death fight.
                 || ScribeCoordinator.scribe(observer)
                 || observer.distanceToSqr(player) > RANGE * RANGE) return false;
         // A ray crossing an unloaded chunk must not turn observation into chunk loading.

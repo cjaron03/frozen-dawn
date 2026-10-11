@@ -8,7 +8,7 @@ import java.util.UUID;
 public record LabRequest(String id, String session, String world, long issuedAt, long expiresAt,
                          String operation, JsonObject args) {
     private static final Set<String> OPERATIONS = Set.of("snapshot", "maeve_status", "maeve_dump",
-            "architect_dump", "scores", "reload", "function", "freeze", "unfreeze", "step", "sprint");
+            "architect_dump", "input_start", "input_dump", "scores", "reload", "function", "freeze", "unfreeze", "step", "sprint");
 
     public static LabRequest parse(JsonObject json) {
         if (json.get("schema").getAsInt() != 1) throw new IllegalArgumentException("Unsupported schema");

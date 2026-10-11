@@ -87,3 +87,17 @@ public artifact is published.
 GitHub source archives include raw recordings and intermediate source files under `tools/audio_sources/` so the build and provenance history remain reproducible. Those raw files are development and provenance materials; they are not packed into the Frozen Dawn mod jar unless separately copied into `src/main/resources`.
 
 The release jar contains processed runtime assets only. Inclusion in a public Git repository or source archive does not override the source recording's license or grant downstream users rights beyond its documented terms.
+
+## Blind Architect
+
+The six throat-click pulses and three vocal accents under `entity/blind_architect/`
+are derived from CC0 1.0 Universal recordings: [Mouth Clicks by Xemptful](https://freesound.org/people/Xemptful/sounds/370869/),
+[tongue click by fleurescence](https://freesound.org/people/fleurescence/sounds/573148/),
+and [Weird Throat Clicking by Fupicat](https://freesound.org/people/Fupicat/sounds/688417/).
+Their original recordings are dedicated under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+Frozen Dawn applies cropping, layering, filtering, resampling and saturation.
+The [source ledger](tools/audio_sources/blind_architect/SOURCES.md) retains license
+checks, source encodings, processing instructions and hashes. Creator credit is
+voluntary under CC0. No The Last of Us recording is included.
+
+Blind Architect hurt voice C processes the installed game's referenced Warden/Phantom audio at playback. No extracted vanilla hurt recordings are bundled. The original processing implementation and approved selection are documented in [HURT_C.md](tools/audio_sources/blind_architect/HURT_C.md).

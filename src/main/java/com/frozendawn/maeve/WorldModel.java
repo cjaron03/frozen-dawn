@@ -90,7 +90,7 @@ final class WorldModel {
     }
 
     void event(String label, String dimension, BlockPos pos, ObservedEvidence evidence) {
-        if (!List.of("DANGER_ZONE", "HEAT_SOURCE").contains(label)) throw new IllegalArgumentException(label);
+        if (!List.of("DANGER_ZONE", "HEAT_SOURCE", "ACOUSTIC_CONTACT").contains(label)) throw new IllegalArgumentException(label);
         seen(dimension, pos, evidence.time());
         point(label, dimension, pos).observe("OBSERVED", evidence, .2);
     }
@@ -258,7 +258,7 @@ final class WorldModel {
         }
         static Point load(CompoundTag tag) {
             String label = tag.getString("label"), dim = tag.getString("dimension");
-            if (!List.of("ACCESS_POINT", "DANGER_ZONE", "HEAT_SOURCE").contains(label) || ResourceLocation.tryParse(dim) == null) return null;
+            if (!List.of("ACCESS_POINT", "DANGER_ZONE", "HEAT_SOURCE", "ACOUSTIC_CONTACT").contains(label) || ResourceLocation.tryParse(dim) == null) return null;
             Point p = new Point(label, dim, BlockPos.of(tag.getLong("position")));
             if (tag.contains("inside", Tag.TAG_LONG)) p.inside = BlockPos.of(tag.getLong("inside"));
             p.state = tag.getString("state"); p.confidence = BeliefPolicy.clamp(tag.getDouble("confidence"));

@@ -30,7 +30,7 @@ final class DirectorRuntime {
         var runtime = SERVERS.computeIfAbsent(server, DirectorRuntime::new);
         var apocalypse = ApocalypseState.get(server);
         boolean erased = PostMaeveWorldState.isErased(server);
-        if (erased) runtime.clear("ERASED");
+        if (erased && !runtime.data.lifecycle().equals("ERASED")) runtime.clear("ERASED");
         runtime.data.synchronize(erased, PhaseManager.isVacuumActive(apocalypse.getPhase(), apocalypse.getProgress()));
         return runtime;
     }
@@ -42,6 +42,7 @@ final class DirectorRuntime {
         convergence.tick();
     }
     private void clear(String reason) {
+        if (reason.equals("ERASED")) com.frozendawn.entity.blind.BlindArchitectRegistry.erase(server);
         convergence.clear(reason); CommitmentCoordinator.stopAll(server, data.store());
         missions.clear(); attention.clear(); learning.clear(); scribe.clear(reason);
     }
@@ -52,5 +53,6 @@ final class DirectorRuntime {
     }
     static void stopped(MinecraftServer server) {
         var runtime = SERVERS.remove(server); if (runtime != null) runtime.clear("SERVER_STOPPED");
+        com.frozendawn.entity.blind.BlindArchitectRegistry.stopped(server);
     }
 }
