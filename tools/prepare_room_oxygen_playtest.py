@@ -73,12 +73,13 @@ def scripts():
             tell('Wait 3s. Furnaces restart. Relight other flames by hand.'),
             row([('[Low O2]', 'flame_low'), ('[Furnaces]', 'read_furnaces'), ('[More]', 'more')])]),
         'controls': '\n'.join([GUARD,
-            tell('BREATHING CHECK'),
-            row([('[1 Low O2]', 'flame_low'), ('[2 Read]', '/fd world oxygen here')]),
-            tell('Wait 15s in Creative. Sealed room: red NO O2.'),
-            row([('[3 Restore O2]', 'flame_support'), ('[Creative]', 'safe')]),
-            tell('Remove EVA armor, then Survival to test warnings. Restore or Creative before dying.'),
-            row([('[Survival]', 'survival'), ('[EVA]', 'eva'), ('[Flame test]', 'flame_controls'), ('[More]', 'more')])]),
+            tell('O2 WARNING CHECK'),
+            row([('[Creative]', 'safe'), ('[Restore O2]', 'flame_support')]),
+            tell('Wait 3s for green. Keep Creative for this check.'),
+            row([('[Low O2]', 'flame_low'), ('[Read]', '/fd world oxygen here')]),
+            tell('Watch O2 SHORTAGE + beeps BEFORE red NO O2.'),
+            row([('[Survival]', 'survival'), ('[EVA]', 'eva'), ('[Flame test]', 'flame_controls'), ('[More]', 'more')]),
+            'return 1']),
         'repair_cows': '''execute unless score #built roxygen matches 1 run return 0
 execute unless block -5 64 0 minecraft:stone run return 0
 execute unless block 5 64 0 minecraft:stone run return 0

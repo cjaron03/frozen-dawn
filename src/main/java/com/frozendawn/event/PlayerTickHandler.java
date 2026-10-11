@@ -380,6 +380,7 @@ public final class PlayerTickHandler {
     /** The same per-player atmospheric path used by the server loop and native hazard fixtures. */
     static void tickPlayerSuffocation(ServerPlayer player, ApocalypseState state, boolean refreshCache) {
         if (player.isCreative() || player.isSpectator()) {
+            suffocationTimer.remove(player.getUUID());
             syncSuffocationStage(player, SuffocationStage.NONE);
             return;
         }

@@ -58,6 +58,10 @@ public final class ClientHandlers {
         TemperatureHud.setTemperature(payload.temperature());
     }
 
+    public static void handleRoomOxygenWarning(RoomOxygenWarningPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveOxygenWarning(payload.shortage());
+    }
+
     public static void handleRoomPressureState(RoomPressureStatePayload payload) {
         ApocalypseClientData.setPressurized(payload.pressurized());
     }

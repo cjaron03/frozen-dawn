@@ -20,8 +20,18 @@ final class OxygenAlarmPolicyTest {
         var p=new OxygenAlarmPolicy();assertEquals(STRAINED,p.update(OxygenStatus.Mode.STRAINED,false,0));
         assertEquals(CRITICAL,p.update(NO_AIR,true,20));
         assertEquals(NONE,p.update(NO_SEAL,false,40));
-        assertEquals(NONE,p.update(SUPPLIED,true,200));
-        assertEquals(CRITICAL,p.update(SUPPLIED,true,220));
+        assertEquals(NONE,p.update(SUPPLIED,true,59));
+        assertEquals(CRITICAL,p.update(SUPPLIED,true,60));
+        assertEquals(NONE,p.update(SUPPLIED,false,100));
+        assertEquals(NONE,p.update(OxygenStatus.Mode.NO_OXYGEN,false,140));
+    }
+    @Test void breathingShortageWarnsBeforePersonalDangerAndClearsOnSupply(){
+        var p=new OxygenAlarmPolicy();
+        assertEquals(CRITICAL,p.update(OxygenStatus.Mode.BREATHING_SHORTAGE,false,0));
+        assertEquals(NONE,p.update(OxygenStatus.Mode.BREATHING_SHORTAGE,false,39));
+        assertEquals(CRITICAL,p.update(OxygenStatus.Mode.BREATHING_SHORTAGE,false,40));
+        assertEquals(NONE,p.update(SUPPLIED,false,80));
+        assertEquals(NONE,p.update(OxygenStatus.Mode.NO_OXYGEN,false,120));
     }
     @Test void stableRecoveryRearmsButBriefFlickerDoesNot(){
         var p=new OxygenAlarmPolicy();assertEquals(STRAINED,p.update(OxygenStatus.Mode.STRAINED,false,0));
@@ -29,8 +39,8 @@ final class OxygenAlarmPolicyTest {
         p.update(SUPPLIED,false,700);p.update(SUPPLIED,false,740);
         assertEquals(STRAINED,p.update(OxygenStatus.Mode.STRAINED,false,760));
     }
-    @Test void roomDangerWithoutPersonalSuffocationNeverSoundsKlaxon(){
-        var p=new OxygenAlarmPolicy();for(var mode:new OxygenStatus.Mode[]{LOW,TRAPPED_AIR,OPEN_AIR,WAITING,NO_AIR,NO_SEAL})assertEquals(NONE,p.update(mode,false,0));
+    @Test void roomDangerWithoutPersonalSuffocationNeverSoundsCriticalBeep(){
+        var p=new OxygenAlarmPolicy();for(var mode:new OxygenStatus.Mode[]{LOW,TRAPPED_AIR,OPEN_AIR,WAITING,NO_AIR,NO_SEAL,OxygenStatus.Mode.NO_OXYGEN})assertEquals(NONE,p.update(mode,false,0));
         assertEquals(CRITICAL,p.update(WAITING,true,20));
     }
 }

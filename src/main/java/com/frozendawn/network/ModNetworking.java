@@ -41,6 +41,9 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(RoomOxygenWarningPayload.TYPE, RoomOxygenWarningPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomOxygenWarning(payload)));
+
         registrar.playToClient(RoomPressureStatePayload.TYPE, RoomPressureStatePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomPressureState(payload)));
 

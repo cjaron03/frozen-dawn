@@ -47,7 +47,7 @@
     {
       "type": "patchouli:text",
       "title": "Warning Cues",
-      "text": "A short chime warns when a nearby gauge enters STRAINED. The klaxon sounds only when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL and NO AIR remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat at most every ten seconds; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; room tanks and charging allocation are planned."
+      "text": "A short chime warns when a nearby gauge enters STRAINED. O2 SHORTAGE flashes yellow and sounds a double beep while known breathing demand exceeds supply, before the ten-second shortage grace expires. Restore supply or prepare EVA now. The same beep warns when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL, NO AIR and NO O2 alone remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat every two seconds while suffocation is imminent and stop when breathing protection returns; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; room tanks and charging allocation are planned."
     }
   ]
 }

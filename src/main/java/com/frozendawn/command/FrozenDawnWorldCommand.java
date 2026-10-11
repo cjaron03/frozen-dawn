@@ -96,7 +96,7 @@ final class FrozenDawnWorldCommand {
         var r=com.frozendawn.world.RoomOxygenManager.readingAt(source.getLevel(),BlockPos.containing(source.getPosition()));
         String state=switch(r.mode()) {
             case SUPPLIED -> "SUPPORTED"; case LOW -> "NEAR CAPACITY";
-            case NO_OXYGEN -> "NO O2"; case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
+            case BREATHING_SHORTAGE -> "O2 SHORTAGE"; case NO_OXYGEN -> "NO O2"; case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
             case NO_SEAL -> "NO SEAL"; case OPEN_AIR -> "OPEN AIR";
             default -> r.mode().name();
         };

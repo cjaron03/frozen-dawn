@@ -17,7 +17,7 @@ public final class OxygenGaugeBlockEntity extends BlockEntity {
     public void serverTick(){if(level instanceof ServerLevel s&&s.getGameTime()%20==0)RoomAtmosphere.keepAlive(this);}
     public void publish(RoomOxygenManager.Reading next){if(reading.equals(next))return;int old=comparator();reading=next;
         if(level!=null){level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);if(old!=comparator())level.updateNeighbourForOutputSignal(worldPosition,getBlockState().getBlock());}}
-    public int comparator(){return switch(reading.mode()){case NO_AIR,NO_SEAL,NO_OXYGEN->15;case LOW,STRAINED->8;case TRAPPED_AIR->4;default->0;};}
+    public int comparator(){return switch(reading.mode()){case NO_AIR,NO_SEAL,NO_OXYGEN->15;case LOW,STRAINED,BREATHING_SHORTAGE->8;case TRAPPED_AIR->4;default->0;};}
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket(){return ClientboundBlockEntityDataPacket.create(this);}
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider lookup){var tag=super.getUpdateTag(lookup);tag.putInt("Mode",reading.mode().ordinal());tag.putLong("Room",reading.room());tag.putLong("Pool",reading.pool());
         tag.putDouble("Supply",reading.supply());tag.putDouble("Demand",reading.demand());tag.putDouble("Local",reading.localDemand());tag.putInt("Sources",reading.sources());tag.putInt("Rooms",reading.rooms());return tag;}

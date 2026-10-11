@@ -8,7 +8,7 @@ public final class OxygenAlarmPolicy {
     private long safeSince = Long.MIN_VALUE;
 
     public Cue update(OxygenStatus.Mode mode, boolean imminent, long tick) {
-        Cue cue = imminent ? Cue.CRITICAL : mode == OxygenStatus.Mode.STRAINED ? Cue.STRAINED : Cue.NONE;
+        Cue cue = imminent || mode == OxygenStatus.Mode.BREATHING_SHORTAGE ? Cue.CRITICAL : mode == OxygenStatus.Mode.STRAINED ? Cue.STRAINED : Cue.NONE;
         if (mode == OxygenStatus.Mode.WAITING && !imminent) { safeSince = Long.MIN_VALUE; return Cue.NONE; }
         if (cue == Cue.NONE) {
             if (safeSince == Long.MIN_VALUE) safeSince = tick;
@@ -20,7 +20,7 @@ public final class OxygenAlarmPolicy {
                 : previous != Cue.STRAINED && tick >= strainedAt;
         previous = cue;
         if (!play) return Cue.NONE;
-        if (cue == Cue.CRITICAL) criticalAt = tick + 200;
+        if (cue == Cue.CRITICAL) criticalAt = tick + 40;
         else strainedAt = tick + 600;
         return cue;
     }

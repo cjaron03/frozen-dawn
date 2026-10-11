@@ -95,6 +95,10 @@ public final class AtmosphericBreathingGameTest {
                 h.assertTrue(player.getHealth()==health&&PlayerTickHandler.isSuffocationImminent(player.getUUID()),"Existing warnings and imminent danger precede damage");
                 PlayerTickHandler.tickPlayerSuffocation(player,a,true);
                 h.assertTrue(player.getHealth()==health-4&&bars[0]==0,"Real suffocation damages after 200 ticks without competing action bars");
+                player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);float retryHealth=player.getHealth();
+                PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                h.assertTrue(player.getHealth()==retryHealth&&!PlayerTickHandler.isSuffocationImminent(player.getUUID()),"Creative safety resets previous suffocation grace instead of causing immediate damage on retry");
                 h.assertTrue(pressures.equals(java.util.List.of(true)),"Client receives pressure-present state while breathing oxygen is absent");
                 var bytes=io.netty.buffer.Unpooled.buffer();
                 try {var packet=new com.frozendawn.network.RoomPressureStatePayload(true);com.frozendawn.network.RoomPressureStatePayload.STREAM_CODEC.encode(bytes,packet);

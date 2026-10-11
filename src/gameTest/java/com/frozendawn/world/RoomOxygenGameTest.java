@@ -373,6 +373,8 @@ public final class RoomOxygenGameTest {
             var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());
             for(int t=0;t<200;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
             h.assertTrue(TemperatureManager.hasBreathableAir(l,left),"Room stays breathable through warning grace");
+            h.assertTrue(RoomOxygenManager.readingAt(l,left).mode()==com.frozendawn.oxygen.OxygenStatus.Mode.BREATHING_SHORTAGE&&RoomOxygenManager.readingAt(l,right).mode()==com.frozendawn.oxygen.OxygenStatus.Mode.BREATHING_SHORTAGE,"Both panels warn about shared breathing shortage BEFORE ambient O2 is lost");
+            h.assertTrue(new com.frozendawn.oxygen.OxygenAlarmPolicy().update(RoomOxygenManager.readingAt(l,left).mode(),false,clock+180)==com.frozendawn.oxygen.OxygenAlarmPolicy.Cue.CRITICAL,"Real pre-loss panel state sounds the double beep before personal suffocation");
             ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+200);RoomAtmosphere.tickLevel(l);RoomThermalManager.tickLevel(l);
             var heat=RoomThermalManager.snapshots(l);RoomOxygenManager.tickLevel(l);
             h.assertTrue(heat.equals(RoomThermalManager.snapshots(l)),"O2 loss cannot remove the air reservoir or alter thermal energy");

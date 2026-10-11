@@ -34,7 +34,8 @@ public final class RoomOxygenManager {
         final Set<BlockPos> starvedFurnaces=new HashSet<>();
         final FurnaceOxygenPolicy furnacePolicy=new FurnaceOxygenPolicy();
         final BreathingOxygenPolicy breathingPolicy=new BreathingOxygenPolicy();
-        final Set<Long> oxygenDirtyPools=new HashSet<>(), unavailablePools=new HashSet<>();
+        final Set<Long> oxygenDirtyPools=new HashSet<>(), unavailablePools=new HashSet<>(), shortagePools=new HashSet<>();
+        final Map<UUID,Boolean> warningStates=new HashMap<>();
         final Map<Long,PoolProfile> furnacePools=new HashMap<>(), furnaceRecoveryProfiles=new HashMap<>();
         final Map<Long,Topology> topology=new HashMap<>();
         final Map<UUID,OxygenAlarmPolicy> alarms=new HashMap<>();
@@ -54,7 +55,7 @@ public final class RoomOxygenManager {
     }
     public static void reset(){LEVELS.clear();}
     /** A cleared geometry cache invalidates telemetry, while loaded gauges retain registration. */
-    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;s.furnacePolicy.reset();s.furnacePools.clear();s.furnaceRecoveryProfiles.clear();s.breathingPolicy.reset();s.oxygenDirtyPools.clear();s.unavailablePools.clear();}}
+    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;s.furnacePolicy.reset();s.furnacePools.clear();s.furnaceRecoveryProfiles.clear();s.breathingPolicy.reset();s.oxygenDirtyPools.clear();s.unavailablePools.clear();s.shortagePools.clear();}}
     @SubscribeEvent public static void changed(RoomChangeEvent e){var s=LEVELS.get(e.level());if(s!=null){s.dirty=true;s.readings=Map.of();
         if(e.change() instanceof RoomChangeEvent.GeometryChange g&&g.complete())for(var p:s.gauges){
             if(g.currentRooms().stream().anyMatch(r->r.geometry().cells().contains(p)))s.exposed.remove(p);
@@ -148,7 +149,8 @@ public final class RoomOxygenManager {
         var readings=new TreeMap<Long,Reading>();
         for(var e:budget.entrySet()){var b=e.getValue();boolean air=!CombustionAtmosphere.isVacuum(l)||!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells());
             var mode=OxygenStatus.room(poolComplete.get(b.pool()),air,b.supply(),b.demand());
-            if(air&&poolComplete.get(b.pool())&&CombustionAtmosphere.isVacuum(l)&&s.unavailablePools.contains(b.pool()))mode=OxygenStatus.Mode.NO_OXYGEN;readings.put(e.getKey(),new Reading(mode,e.getKey(),b.pool(),b.supply(),b.demand(),b.localDemand(),b.sources(),b.rooms()));}
+            if(air&&poolComplete.get(b.pool())&&CombustionAtmosphere.isVacuum(l)&&s.unavailablePools.contains(b.pool()))mode=OxygenStatus.Mode.NO_OXYGEN;
+            else if(air&&poolComplete.get(b.pool())&&s.shortagePools.contains(b.pool()))mode=OxygenStatus.Mode.BREATHING_SHORTAGE;readings.put(e.getKey(),new Reading(mode,e.getKey(),b.pool(),b.supply(),b.demand(),b.localDemand(),b.sources(),b.rooms()));}
         s.readings=Map.copyOf(readings);
         for(var p:List.copyOf(s.gauges))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof OxygenGaugeBlockEntity gauge)gauge.publish(readingAt(l,p));
         warnListeners(l,s);
@@ -229,7 +231,7 @@ public final class RoomOxygenManager {
     /** Separate binary O2 latch. No pressure transitions, gas refills or thermal mutations. */
     private static void controlBreathing(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,
             Map<Long,Boolean> complete,Map<Long,Double> breathing) {
-        var saved=RoomOxygenState.get(l);var pools=new TreeSet<Long>();
+        var saved=RoomOxygenState.get(l);var pools=new TreeSet<Long>();s.shortagePools.clear();
         for(var b:budget.values())pools.add(b.pool());
         var rates=new HashMap<Long,Double>();
         for(var e:breathing.entrySet())if(budget.containsKey(e.getKey()))rates.merge(budget.get(e.getKey()).pool(),e.getValue(),Double::sum);
@@ -252,6 +254,7 @@ public final class RoomOxygenManager {
             boolean unavailable=s.breathingPolicy.update(pool,l.getGameTime(),ready,
                     rates.getOrDefault(pool,0.0)>b.supply()+1e-8,flames,b.demand()<=b.supply()+1e-8,old);
             if(unavailable)s.unavailablePools.add(pool);else s.unavailablePools.remove(pool);
+            if(ready&&!unavailable&&rates.getOrDefault(pool,0.0)>b.supply()+1e-8)s.shortagePools.add(pool);
             if(ready&&(unavailable!=old||changed&&unavailable)){
                 for(var g:profile.rooms.values())saved.setUnavailable(g.cells(),unavailable);
                 CombustionAtmosphere.reset();
@@ -274,20 +277,24 @@ public final class RoomOxygenManager {
     private static void warnListeners(ServerLevel l,State s) {
         var online=new HashSet<UUID>();
         for(var player:l.players()){
-            var id=player.getUUID();online.add(id);if(player.isSpectator())continue;
+            var id=player.getUUID();online.add(id);
             var mode=OxygenStatus.Mode.OPEN_AIR;int severity=0;
             for(var p:s.gauges)if(l.isLoaded(p)&&p.distSqr(player.blockPosition())<=256){
                 var candidate=readingAt(l,p).mode();
-                int rank=switch(candidate){case NO_AIR,NO_SEAL,NO_OXYGEN->3;case STRAINED->2;case WAITING->1;default->0;};
+                int rank=switch(candidate){case NO_AIR,NO_SEAL,NO_OXYGEN->4;case BREATHING_SHORTAGE->3;case STRAINED->2;case WAITING->1;default->0;};
                 if(rank>severity){severity=rank;mode=candidate;}
             }
+            boolean shortage=!player.isSpectator()&&(mode==OxygenStatus.Mode.BREATHING_SHORTAGE||mode==OxygenStatus.Mode.NO_OXYGEN);
+            if(!Objects.equals(s.warningStates.put(id,shortage),shortage))net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,new com.frozendawn.network.RoomOxygenWarningPayload(shortage));
+            if(player.isSpectator())continue;
             var cue=s.alarms.computeIfAbsent(id,k->new OxygenAlarmPolicy()).update(mode,
                     com.frozendawn.event.PlayerTickHandler.isSuffocationImminent(id),l.getGameTime());
             if(cue!=OxygenAlarmPolicy.Cue.NONE)player.playNotifySound(
                     cue==OxygenAlarmPolicy.Cue.CRITICAL?com.frozendawn.init.ModSounds.OXYGEN_GAUGE_CRITICAL.get():com.frozendawn.init.ModSounds.OXYGEN_GAUGE_STRAINED.get(),
-                    net.minecraft.sounds.SoundSource.BLOCKS,cue==OxygenAlarmPolicy.Cue.CRITICAL?.85f:.6f,1);
+                    cue==OxygenAlarmPolicy.Cue.CRITICAL?net.minecraft.sounds.SoundSource.MASTER:net.minecraft.sounds.SoundSource.BLOCKS,cue==OxygenAlarmPolicy.Cue.CRITICAL?.85f:.6f,1);
+            if(cue!=OxygenAlarmPolicy.Cue.NONE)FrozenDawn.LOGGER.info("[RoomO2] Alarm {} | player {} panel {} personalImminent {}",cue,player.getScoreboardName(),mode,com.frozendawn.event.PlayerTickHandler.isSuffocationImminent(id));
         }
-        s.alarms.keySet().retainAll(online);
+        s.alarms.keySet().retainAll(online);s.warningStates.keySet().retainAll(online);
     }
     /** Cached diagnostic access only: does not inspect geometry or refill any room. */
     public static Reading readingAt(ServerLevel l,BlockPos p) {
