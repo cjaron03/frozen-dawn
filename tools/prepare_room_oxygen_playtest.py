@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fresh observational O2 pool/gauge replay; seed metadata only and guarded one-time setup."""
+"""O2 pool/gauge and ordinary-flame starvation replay; seed metadata only and guarded one-time setup."""
 import argparse
 import json
 from pathlib import Path
@@ -38,32 +38,76 @@ def scripts():
                'setblock 0 66 -1 minecraft:furnace[facing=east,lit=true]'+furnace_nbt,
                'setblock 2 65 0 minecraft:candle[candles=4,lit=true]']
     burners += [f'setblock {x} 65 {z} minecraft:torch' for x,z in [(-3,-1),(-3,1),(-2,-1),(-2,1)]]
+    flame_fixtures = [
+        ('Torch', '-3 65 1', 'minecraft:torch'),
+        ('Wall torch', '-4 66 1', 'minecraft:wall_torch[facing=east]'),
+        ('Lantern', '-3 65 -1', 'minecraft:lantern'),
+        ('Candles', '-2 65 1', 'minecraft:white_candle[candles=4,lit=true]'),
+        ('Candle cake', '2 65 0', 'minecraft:candle_cake[lit=true]'),
+        ('Campfire', '-2 65 -1', 'minecraft:campfire[lit=true]'),
+        ('Fire', '-4 65 -1', 'minecraft:fire'),
+        ('MiteAway', '2 65 -1', 'frozendawn:miteaway[lit=true,charged=true]')]
+    flame_load = [f'function {NS}:safe', f'function {NS}:flame_low', f'function {NS}:cow',
+        'execute unless score #flame_cow roxygen matches 1 run summon minecraft:cow 3.5 65 1.5 {Tags:["room_oxygen_qa_flames"],Invulnerable:1b,NoAI:1b,PersistenceRequired:1b}',
+        'scoreboard players set #flame_cow roxygen 1',
+        *burners[:2], 'setblock -4 64 -1 minecraft:netherrack',
+        *['setblock '+pos+' '+block for _,pos,block in flame_fixtures],
+        'setblock 3 65 1 minecraft:soul_torch', 'setblock 3 65 -1 minecraft:soul_campfire',
+        'setblock 2 65 1 minecraft:soul_lantern', 'setblock 4 64 -1 minecraft:soul_soil',
+        'setblock 4 65 -1 minecraft:soul_fire', 'give @s minecraft:flint_and_steel']
+    flame_read = [GUARD]
+    for label,pos,block in flame_fixtures:
+        predicate=block.split('[')[0]+('[lit=true]' if 'lit=true' in block else '')
+        flame_read += ['execute if block '+pos+' '+predicate+' run '+tell(label+': ON'),
+                       'execute unless block '+pos+' '+predicate+' run '+tell(label+': OFF')]
+    flame_read += [row([('[Back]', 'controls')])]
     return {
         'load': 'scoreboard objectives add roxygen dummy\nexecute unless score #built roxygen matches 1 run scoreboard players set #built roxygen 0\n'+f'execute if score #built roxygen matches 1 as @a run function {NS}:controls',
         'tick': f'execute if score #built roxygen matches 0 as @a[limit=1] at @s run function {NS}:setup',
         'setup': '\n'.join(setup),
         'controls': '\n'.join([GUARD,
-            tell('Room O2 Check: accounting only. Overload will NOT automatically extinguish flames or suffocate you in this slice.'),
-            tell('1. Both panels should show SUPPLY 8 and DEMAND 0 in Creative. The room counter is 2; supply is not 16.'),
-            row([('[Left panel]', 'left'), ('[Right panel]', 'right'), ('[Read budgets]', '/fd world oxygen')]),
-            row([('[Add burners: +8]', 'burners'), ('[EVA Survival: +1]', 'eva'), ('[Creative safety]', 'safe')]),
-            tell('2. Add burners after air is ready: 2 furnaces (6), 4 torches (1), four candles (1) = 8. Yellow NEAR CAPACITY. Survival adds 1: STRAINED at 9.'),
-            row([('[One cow: +5]', 'cow'), ('[Second Core: +8]', 'second'), ('[Remove second Core]', 'second_off')]),
-            row([('[Burners off]', 'off'), ('[Breach left]', 'breach'), ('[Patch left]', 'patch')]),
-            tell('3. Cow is an invulnerable stationary QA animal, spawned only once. Shared supply with second Core is 16. Breach is a REAL pressure event; use Creative or EVA.'),
-            tell('4. Patch and wait five sealed seconds for Core recovery. Surviving burners remain; spent torches need relighting. No old world resets or forced chunks.'),
-            tell('Save/reopen after taking readings: cached telemetry starts WAITING, then reconstructs. Restore these links: /function room_oxygen_check:controls')]),
-        'left': action(['tp @s -2.5 65 .5 180 0'], 'Left panel: LOCAL is one room; SUPPLY/DEMAND are the entire shared pool.'),
-        'right': action(['tp @s 3.5 65 .5 180 0'], 'Right panel: the same shared supply appears here, not a second output.'),
-        'burners': action(burners, 'Fresh QA burner fixtures fueled. Total combustion is 8 units; first slice does not enforce starvation.'),
-        'eva': action(['item replace entity @s armor.head with frozendawn:eva_helmet', 'item replace entity @s armor.chest with frozendawn:eva_chestplate', 'item replace entity @s armor.legs with frozendawn:eva_leggings', 'item replace entity @s armor.feet with frozendawn:eva_boots', 'item replace entity @s hotbar.8 with frozendawn:o2_tank_mk3', 'gamemode survival @s'], 'Survival breathing adds 1. Full EVA provided for this cold diagnostic fixture.'),
-        'safe': action(['gamemode creative @s'], 'Creative removes your breathing demand; the animal and flames still count.'),
-        'cow': '\n'.join([GUARD,'execute if score #cow roxygen matches 1 run return 0','summon minecraft:cow -1.5 65 1.5 {Tags:["room_oxygen_qa"],Invulnerable:1b,NoAI:1b,PersistenceRequired:1b}','scoreboard players set #cow roxygen 1',tell('One adult cow adds 5 units; this button cannot repeatedly spawn cows.')]),
-        'second': action(['setblock 0 67 0 frozendawn:geothermal_core'], 'Second shared Core adds 8 once: total supply 16.'),
-        'second_off': action(['setblock 0 67 0 minecraft:stone'], 'Second Core removed; partition remains sealed. Supply returns to 8.'),
-        'off': action(['setblock 0 65 -1 minecraft:furnace[facing=west]','setblock 0 66 -1 minecraft:furnace[facing=east]','setblock 2 65 0 minecraft:candle[candles=4,lit=false]',*['setblock '+str(x)+' 65 '+str(z)+' minecraft:air' for x,z in [(-3,-1),(-3,1),(-2,-1),(-2,1)]]], 'Only the QA burner fixtures are removed/emptied. Cow and player demand stay observable.'),
-        'breach': action(['setblock -5 66 0 minecraft:air'], 'Left exterior opened: real breach, red NO SEAL; the sealed right room remains independent.'),
-        'patch': action(['setblock -5 66 0 minecraft:glass'], 'Wall restored. Wait for normal Core air recovery; this function does not refill air directly.')}
+            tell('FLAME CHECK'),
+            row([('[1 Load]', 'flames'), ('[2 Read]', '/fd world oxygen here')]),
+            tell('Wait 25s. Ordinary flames go out; soul flames stay lit.'),
+            row([('[3 Restore O2]', 'flame_support'), ('[Lights]', 'flame_read')]),
+            tell('Wait 3s. Furnaces restart. Relight other flames by hand.'),
+            row([('[Low O2]', 'flame_low'), ('[Furnaces]', 'read_furnaces'), ('[More]', 'more')])]),
+        'more': '\n'.join([GUARD,
+            tell('EXTRA CONTROLS'),
+            row([('[Left room]', 'left'), ('[Right room]', 'right')]),
+            row([('[Creative]', 'safe'), ('[EVA Survival]', 'eva')]),
+            row([('[Full budgets]', '/fd world oxygen'), ('[Furnaces]', 'read_furnaces')]),
+            row([('[Reset burners]', 'burners'), ('[Burners off]', 'off')]),
+            row([('[Breach]', 'breach'), ('[Seal]', 'patch'), ('[Back]', 'controls')])]),
+        'flames': action(flame_load, 'Loaded. Wait 25 seconds, then Read.'),
+        'flame_read': '\n'.join(flame_read),
+        'flame_support': action(['setblock 0 67 0 frozendawn:geothermal_core', 'setblock 0 65 0 frozendawn:geothermal_core'], 'Supply: 24. Furnaces restart; other flames stay out.'),
+        'flame_low': action(['setblock 0 67 0 minecraft:stone', 'setblock 0 65 0 minecraft:stone'], 'Supply: 8.'),
+        'read_furnaces': '\n'.join([GUARD,
+            tell('FURNACES'),
+            *['\n'.join([
+                'execute if data block '+pos+' FrozenDawnOxygenStarved run tellraw @s '+json.dumps([
+                    {'text':label+' | PAUSED | fuel='}, {'nbt':'FrozenDawnPausedBurnTime','block':pos},
+                    {'text':' | cook='}, {'nbt':'CookTime','block':pos},
+                    {'text':' | queued='}, {'nbt':'Items[{Slot:1b}].count','block':pos}
+                ]),
+                'execute unless data block '+pos+' FrozenDawnOxygenStarved run tellraw @s '+json.dumps([
+                    {'text':label+' | ACTIVE | fuel='}, {'nbt':'BurnTime','block':pos},
+                    {'text':' | cook='}, {'nbt':'CookTime','block':pos},
+                    {'text':' | queued='}, {'nbt':'Items[{Slot:1b}].count','block':pos}
+                ])
+            ]) for label,pos in [('Lower','0 65 -1'),('Upper','0 66 -1')]]]),
+        'left': action(['tp @s -2.5 65 .5 180 0'], 'Left room.'),
+        'right': action(['tp @s 3.5 65 .5 180 0'], 'Right room.'),
+        'burners': action(burners, 'Burner fixtures replaced and fueled.'),
+        'eva': action(['item replace entity @s armor.head with frozendawn:eva_helmet', 'item replace entity @s armor.chest with frozendawn:eva_chestplate', 'item replace entity @s armor.legs with frozendawn:eva_leggings', 'item replace entity @s armor.feet with frozendawn:eva_boots', 'item replace entity @s hotbar.8 with frozendawn:o2_tank_mk3', 'gamemode survival @s'], 'EVA Survival.'),
+        'safe': action(['gamemode creative @s'], 'Creative.'),
+        'cow': '\n'.join([GUARD,'execute if score #cow roxygen matches 1 run return 0','summon minecraft:cow -1.5 65 1.5 {Tags:["room_oxygen_qa"],Invulnerable:1b,NoAI:1b,PersistenceRequired:1b}','scoreboard players set #cow roxygen 1',tell('Cow ready (+5 demand).')]),
+        'second': action(['setblock 0 67 0 frozendawn:geothermal_core'], 'Second Core added (+8 supply).'),
+        'second_off': action(['setblock 0 67 0 minecraft:stone'], 'Second Core removed (-8 supply).'),
+        'off': action(['setblock 0 65 -1 minecraft:furnace[facing=west]','setblock 0 66 -1 minecraft:furnace[facing=east]','setblock 2 65 0 minecraft:candle[candles=4,lit=false]',*['setblock '+str(x)+' 65 '+str(z)+' minecraft:air' for x,z in [(-3,-1),(-3,1),(-2,-1),(-2,1)]]], 'Old burner fixtures cleared.'),
+        'breach': action(['setblock -5 66 0 minecraft:air'], 'Left room breached.'),
+        'patch': action(['setblock -5 66 0 minecraft:glass'], 'Sealed. Wait 5 seconds.')}
 def pack_only(destination, hooks=False):
     for name, body in scripts().items():
         p=destination/f'data/{NS}/function/{name}.mcfunction';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(body+'\n')
@@ -72,6 +116,11 @@ def pack_only(destination, hooks=False):
         for name in ('load','tick'):
             p=destination/f'data/minecraft/tags/function/{name}.json';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps({'values':[f'{NS}:{name}']})+'\n')
 if __name__ == '__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source',type=Path,required=True);parser.add_argument('--destination',type=Path,required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source',type=Path);parser.add_argument('--destination',type=Path)
+    parser.add_argument('--pack-only',type=Path);args=parser.parse_args()
+    if args.pack_only:
+        pack_only(args.pack_only);raise SystemExit(0)
+    if not args.source or not args.destination:parser.error('--source and --destination are required for a new save')
     seed.TITLE='Room O2 Check';seed.PACK='room-oxygen-check';seed.NS=NS;seed.scripts=scripts
     seed.prepare(args.source,args.destination)

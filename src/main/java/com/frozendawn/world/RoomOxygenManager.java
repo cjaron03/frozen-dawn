@@ -17,7 +17,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-/** Observational first slice: loaded known rooms only; never starves, vents, refills or grants oxygen. */
+/** Loaded shared budgets and combustion shedding. Oxygen scarcity never vents or refills room gas. */
 @EventBusSubscriber(modid=FrozenDawn.MOD_ID)
 public final class RoomOxygenManager {
     public static final double CORE_CAPACITY=8, BLAST_PIT_CAPACITY=8;
@@ -26,8 +26,13 @@ public final class RoomOxygenManager {
     }
     private record Topology(RoomAtmosphere.Geometry geometry,BlockPos anchor,Set<Long> chunks) {}
     private record Supply(String id,double capacity,Set<Long> rooms,boolean ready) {}
+    /** Value geometry and physical source membership, never transient cache object identity. */
+    private record PoolProfile(Map<Long,RoomAtmosphere.Geometry> rooms,List<OxygenPools.Source> sources) {}
     private static final class State {
         final Set<BlockPos> gauges=new HashSet<>();final Set<BlockPos> exposed=new HashSet<>();
+        final Set<BlockPos> starvedFurnaces=new HashSet<>();
+        final FurnaceOxygenPolicy furnacePolicy=new FurnaceOxygenPolicy();
+        final Map<Long,PoolProfile> furnacePools=new HashMap<>(), furnaceRecoveryProfiles=new HashMap<>();
         final Map<Long,Topology> topology=new HashMap<>();
         final Map<UUID,OxygenAlarmPolicy> alarms=new HashMap<>();
         final Map<BlockPos,Long> cells=new HashMap<>();final Map<BlockPos,Set<Long>> intakes=new HashMap<>();
@@ -38,9 +43,15 @@ public final class RoomOxygenManager {
     private RoomOxygenManager() {}
     public static void register(ServerLevel l,BlockPos p){LEVELS.computeIfAbsent(l,k->new State()).gauges.add(p.immutable());}
     public static void remove(ServerLevel l,BlockPos p){var s=LEVELS.get(l);if(s!=null){s.gauges.remove(p);s.exposed.remove(p);}}
+    public static void registerStarvedFurnace(ServerLevel l,BlockPos p){
+        LEVELS.computeIfAbsent(l,k->new State()).starvedFurnaces.add(p.immutable());
+        // Saved sleepers renew loaded geometry even without a nearby player or gauge.
+        if(l.getGameTime()%20==0&&l.getBlockEntity(p) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity furnace)
+            RoomAtmosphere.keepAlive(furnace);
+    }
     public static void reset(){LEVELS.clear();}
     /** A cleared geometry cache invalidates telemetry, while loaded gauges retain registration. */
-    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;}}
+    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;s.furnacePolicy.reset();s.furnacePools.clear();s.furnaceRecoveryProfiles.clear();}}
     @SubscribeEvent public static void changed(RoomChangeEvent e){var s=LEVELS.get(e.level());if(s!=null){s.dirty=true;s.readings=Map.of();
         if(e.change() instanceof RoomChangeEvent.GeometryChange g&&g.complete())for(var p:s.gauges){
             if(g.currentRooms().stream().anyMatch(r->r.geometry().cells().contains(p)))s.exposed.remove(p);
@@ -71,7 +82,7 @@ public final class RoomOxygenManager {
     private static boolean loaded(ServerLevel l,Topology t){return t.chunks.stream().allMatch(c->l.getChunkSource().getChunkNow(ChunkPos.getX(c),ChunkPos.getZ(c))!=null);}
     private static void topology(ServerLevel l,State s) {
         var rooms=RoomAtmosphere.cachedRoomViews(l);boolean changed=s.topology.size()!=rooms.size()||s.dirty;
-        for(var r:rooms){var old=s.topology.get(r.id());if(old==null||old.geometry!=r.geometry())changed=true;}
+        for(var r:rooms){var old=s.topology.get(r.id());if(old==null||!old.geometry.equals(r.geometry()))changed=true;}
         if(!changed)return;s.topology.clear();s.cells.clear();s.intakes.clear();
         for(var r:rooms){var g=r.geometry();var anchor=g.cells().stream().min(Comparator.comparingLong(BlockPos::asLong)).orElseThrow();
             s.topology.put(r.id(),new Topology(g,anchor,chunks(g)));
@@ -111,7 +122,9 @@ public final class RoomOxygenManager {
         if(l.dimension()!=Level.OVERWORLD)return;var s=LEVELS.computeIfAbsent(l,k->new State());topology(l,s);
         var valid=new HashSet<Long>();for(var e:s.topology.entrySet())if(loaded(l,e.getValue())&&RoomAtmosphere.cachedSealAt(l,e.getValue().anchor)==RoomAtmosphere.Seal.SEALED)valid.add(e.getKey());
         var known=Set.copyOf(s.topology.keySet());
-        var next=supplies(l,s,known);if(!next.equals(s.supplies)){s.supplies=next;s.flameRevision=-1;}
+        var next=supplies(l,s,known);if(!next.equals(s.supplies)){
+            s.supplies=next;s.flameRevision=-1;
+        }
         var flames=VacuumFlames.snapshot(l);
         if(flames.revision()!=s.flameRevision){var burners=new ArrayList<OxygenPools.Burner>();
             for(var p:flames.positions())if(l.isLoaded(p)){double rate=combustionDemand(l.getBlockState(p));var rooms=served(s,p,known);
@@ -127,12 +140,89 @@ public final class RoomOxygenManager {
         // Every room of a shared pool must be ready before any panel calls the pool safe.
         var poolComplete=new HashMap<Long,Boolean>();for(var e:budget.entrySet())poolComplete.merge(e.getValue().pool(),complete.get(e.getKey()),(a,b)->a&&b);
         for(var source:s.supplies)if(!source.ready)for(long room:source.rooms){var b=budget.get(room);if(b!=null)poolComplete.put(b.pool(),false);}
+        budget=controlCombustion(l,s,budget,poolComplete);
         var readings=new TreeMap<Long,Reading>();
         for(var e:budget.entrySet()){var b=e.getValue();boolean air=!CombustionAtmosphere.isVacuum(l)||!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells());
             var mode=OxygenStatus.room(poolComplete.get(b.pool()),air,b.supply(),b.demand());readings.put(e.getKey(),new Reading(mode,e.getKey(),b.pool(),b.supply(),b.demand(),b.localDemand(),b.sources(),b.rooms()));}
         s.readings=Map.copyOf(readings);
         for(var p:List.copyOf(s.gauges))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof OxygenGaugeBlockEntity gauge)gauge.publish(readingAt(l,p));
         warnListeners(l,s);
+    }
+    private static boolean vanillaFurnace(BlockState state) {
+        return state.is(Blocks.FURNACE)||state.is(Blocks.BLAST_FURNACE)||state.is(Blocks.SMOKER);
+    }
+    private static Map<Long,OxygenPools.Budget> controlCombustion(ServerLevel l,State s,
+            Map<Long,OxygenPools.Budget> initial,Map<Long,Boolean> complete) {
+        var budget=new TreeMap<>(initial);
+        var pools=new TreeSet<Long>();for(var b:budget.values())pools.add(b.pool());
+        var profiles=new HashMap<Long,PoolProfile>();
+        for(long pool:pools){
+            var rooms=new TreeMap<Long,RoomAtmosphere.Geometry>();
+            for(var e:budget.entrySet())if(e.getValue().pool()==pool)rooms.put(e.getKey(),s.topology.get(e.getKey()).geometry);
+            var sources=s.supplies.stream().filter(v->!Collections.disjoint(v.rooms,rooms.keySet()))
+                    .map(v->new OxygenPools.Source(v.id,v.capacity,v.rooms)).toList();
+            var profile=new PoolProfile(Map.copyOf(rooms),sources);profiles.put(pool,profile);
+            if(!profile.equals(s.furnacePools.put(pool,profile)))s.furnacePolicy.resetPool(pool);
+        }
+        s.furnacePools.keySet().retainAll(pools);
+        long now=l.getGameTime();boolean vacuum=CombustionAtmosphere.isVacuum(l);
+        var poolAir=new HashMap<Long,Boolean>();
+        for(var e:budget.entrySet())poolAir.merge(e.getValue().pool(),
+                !RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells()),(a,b)->a&&b);
+        for(long pool:pools){
+            var b=budget.values().stream().filter(v->v.pool()==pool).findFirst().orElseThrow();
+            boolean ready=complete.getOrDefault(pool,false)&&vacuum&&poolAir.getOrDefault(pool,false);
+            if(!s.furnacePolicy.shouldShed(pool,now,ready,b.demand()>b.supply()+1e-8))continue;
+            // Only the existing indexed burners are candidates; no room-cell scan or chunk load.
+            var candidate=s.burners.stream().filter(v->{
+                var room=v.rooms().stream().filter(budget::containsKey).min(Long::compare).orElse(null);
+                return room!=null&&budget.get(room).pool()==pool&&l.isLoaded(BlockPos.of(v.id()))
+                        &&VacuumFlames.isOrdinaryFlame(l.getBlockState(BlockPos.of(v.id())));
+            }).sorted(Comparator.comparingDouble(OxygenPools.Burner::demand).reversed().thenComparingLong(OxygenPools.Burner::id)).findFirst();
+            if(candidate.isPresent()){
+                var burner=candidate.get();var pos=BlockPos.of(burner.id());
+                var state=l.getBlockState(pos);
+                if(vanillaFurnace(state)&&l.getBlockEntity(pos) instanceof OxygenControlledFurnace furnace){
+                    furnace.frozendawn$starveForOxygen();s.starvedFurnaces.add(pos);
+                    adjustBudget(budget,pool,burner.rooms(),-burner.demand());
+                    FrozenDawn.LOGGER.info("[RoomO2] Furnace paused at {} | pool {} supply {} demand {} -> {}",pos,pool,b.supply(),b.demand(),b.demand()-burner.demand());
+                } else if(!vanillaFurnace(state)&&VacuumFlames.extinguishForOxygen(l,pos)){
+                    adjustBudget(budget,pool,burner.rooms(),-burner.demand());
+                    FrozenDawn.LOGGER.info("[RoomO2] Flame snuffed {} at {} | pool {} supply {} demand {} -> {}",
+                            net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()),pos,pool,b.supply(),b.demand(),b.demand()-burner.demand());
+                }
+            }
+        }
+        // Admission includes each restart immediately, so multiple sleepers cannot claim the same spare supply.
+        for(var pos:s.starvedFurnaces.stream().sorted(Comparator.comparingLong(BlockPos::asLong)).toList()){
+            if(!l.isLoaded(pos)||!vanillaFurnace(l.getBlockState(pos))
+                    ||!(l.getBlockEntity(pos) instanceof OxygenControlledFurnace furnace)||!furnace.frozendawn$isOxygenStarved()){
+                s.starvedFurnaces.remove(pos);s.furnacePolicy.canResume(pos.asLong(),now,false);continue;
+            }
+            var rooms=s.intakes.getOrDefault(pos,Set.of());
+            var room=rooms.stream().filter(budget::containsKey).min(Long::compare).orElse(null);
+            var b=room==null?null:budget.get(room);
+            var profile=b==null?null:profiles.get(b.pool());
+            if(!Objects.equals(profile,s.furnaceRecoveryProfiles.put(pos.asLong(),profile)))
+                s.furnacePolicy.resetRecovery(pos.asLong());
+            boolean supported=!vacuum || b!=null&&complete.getOrDefault(b.pool(),false)&&poolAir.getOrDefault(b.pool(),false)
+                    &&b.demand()+3<=b.supply()+1e-8;
+            if(!s.furnacePolicy.canResume(pos.asLong(),now,supported))continue;
+            // Legacy air authority must also permit combustion; never restart into a breach/vacuum.
+            if(!CombustionAtmosphere.canBurnAt(l,pos))continue;
+            furnace.frozendawn$resumeForOxygen();
+            s.starvedFurnaces.remove(pos);
+            if(b!=null)adjustBudget(budget,b.pool(),rooms,3);
+            FrozenDawn.LOGGER.info("[RoomO2] Furnace resumed at {} after stable O2 support",pos);
+        }
+        var sleepers=s.starvedFurnaces.stream().map(BlockPos::asLong).collect(java.util.stream.Collectors.toSet());
+        s.furnacePolicy.retain(pools,sleepers);s.furnaceRecoveryProfiles.keySet().retainAll(sleepers);
+        return budget;
+    }
+    private static void adjustBudget(Map<Long,OxygenPools.Budget> budget,long pool,Set<Long> touched,double delta) {
+        var owner=touched.stream().filter(budget::containsKey).min(Long::compare).orElseThrow();
+        budget.replaceAll((room,b)->b.pool()!=pool?b:new OxygenPools.Budget(b.pool(),b.supply(),b.demand()+delta,
+                b.localDemand()+(room.equals(owner)?delta:0),b.sources(),b.rooms()));
     }
     /** One cue per nearby listener, even when several gauges report the same pool. */
     private static void warnListeners(ServerLevel l,State s) {

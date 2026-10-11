@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Room Air Monitor",
-      "text": "An always-visible wall screen. Place it inside a sealed room; no menu is needed. Supply and demand use breathing-rate units: one Survival or Adventure player draws 1 unit. Creative and spectator players draw none.$(br2)This first release measures load. Overload does not yet shut down burners or deplete room oxygen."
+      "text": "An always-visible wall screen. Place it inside a sealed room; no menu is needed. Supply and demand use breathing-rate units: one Survival or Adventure player draws 1 unit. Creative and spectator players draw none.$(br2)In vacuum, sustained overload sheds ordinary flames, highest demand first after a ten-second warning grace. Room O2 shortage does not yet cause breathing suffocation in this release."
     },
     {
       "type": "patchouli:text",
       "title": "Shared Supply",
-      "text": "SUPPLY and DEMAND describe the whole shared pool. LOCAL is this room\u2019s demand. A Core touching two rooms shares one 8-unit output; it does not produce 8 for each room. Overlapping sources add once.$(br2)Sources must be inside or directly touch the room. Range alone cannot deliver air through unrelated walls."
+      "text": "SUPPLY and DEMAND describe the whole shared pool. LOCAL is this room’s demand. A Core touching two rooms shares one 8-unit output; it does not produce 8 for each room. Overlapping sources add once.$(br2)Sources must be inside or directly touch the room. Range alone cannot deliver air through unrelated walls."
     },
     {
       "type": "patchouli:text",
@@ -31,8 +31,18 @@
     },
     {
       "type": "patchouli:text",
+      "title": "Furnace Air Supply",
+      "text": "Furnaces, smokers and blast furnaces each draw 3 units. In vacuum, after ten continuous seconds of overload, one furnace pauses per second until demand fits.$(br2)A paused furnace uses no new fuel and holds prepaid burn time and cooking progress, even after a reload. It restarts automatically after spare O2 capacity can support its full demand for two seconds. Add supply or reduce other demand.$(br2)The room remains pressurized; a fuel pause does not cause a breach. Early ambient air needs no Core. Changing the input still resets recipe progress normally."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lights Out",
+      "text": "After ten continuous seconds of overload in vacuum, one ordinary flame block goes out per second, highest demand first. Furnaces draw 3 units; fire, campfires and MiteAway draw 1; each candle draws 0.25. Multi-candle blocks count all their lit candles together.$(br2)Torches remain as spent torches. Lanterns remain mounted but dark. Candles and campfires stay in place, unlit. Soul flames remain exempt.$(br2)Restored supply automatically restarts supported furnaces; other flames need relighting by hand. MiteAway retains unspent charge. Starvation preserves sealed gas and heat; it does not cause a breach."
+    },
+    {
+      "type": "patchouli:text",
       "title": "Warning Cues",
-      "text": "A short chime warns when a nearby gauge enters STRAINED. The klaxon sounds only when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL and NO AIR remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat at most every ten seconds; there is no speech.$(br2)Near-capacity yellow alone is quiet. This first accounting build reports overload; automatic combustion starvation and overload suffocation follow in the next stage."
+      "text": "A short chime warns when a nearby gauge enters STRAINED. The klaxon sounds only when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL and NO AIR remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat at most every ten seconds; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Overload suffocation is planned."
     }
   ]
 }

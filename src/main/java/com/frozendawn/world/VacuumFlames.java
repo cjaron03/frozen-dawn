@@ -68,6 +68,22 @@ public final class VacuumFlames {
         return requested.setValue(BlockStateProperties.LIT, false);
     }
 
+    /** Scarcity snuffs one loaded consumer; it never changes room gas or furnace fuel. */
+    public static boolean extinguishForOxygen(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return false;
+        var state = level.getBlockState(pos);
+        if (!isOrdinaryFlame(state) || state.is(Blocks.FURNACE) || state.is(Blocks.SMOKER)
+                || state.is(Blocks.BLAST_FURNACE)) return false;
+        if (state.is(ModBlocks.MITEAWAY.get()) && level.getBlockEntity(pos) instanceof com.frozendawn.block.MiteAwayBlockEntity burner) {
+            if (!burner.extinguish()) return false; // Retain charge and unregister repellent coverage immediately.
+        } else if (!level.setBlock(pos, extinguishedState(state), 3)) return false;
+        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
+                net.minecraft.sounds.SoundSource.BLOCKS, .6f, 1.1f);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE,
+                pos.getX() + .5, pos.getY() + .6, pos.getZ() + .5, 6, .15, .1, .15, .01);
+        return true;
+    }
+
     public static void extinguishRoom(ServerLevel level, Set<BlockPos> cells, Set<BlockPos> walls) {
         var positions = new HashSet<BlockPos>(cells); positions.addAll(walls);
         for (var pos : positions) {

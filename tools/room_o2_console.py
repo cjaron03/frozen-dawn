@@ -9,8 +9,8 @@ from pathlib import Path
 
 from lab_client import ROOT, read_status
 
-HEADER = re.compile(r'\[[^\]]*?(\d{2}:\d{2}:\d{2})(?:\.\d+)?\].*\[CHAT\] Room O2 accounting: (\d+) cached rooms;')
-ROW = re.compile(r'\[CHAT\]\s+Room (\d+): pool (\d+) \| (\w+) \| supply ([0-9.]+) / demand ([0-9.]+) \| local ([0-9.]+) \| (\d+) sources / (\d+) rooms')
+HEADER = re.compile(r'\[[^\]]*?(\d{2}:\d{2}:\d{2})(?:\.\d+)?\].*(?:\[CHAT\]|\[RoomO2\]) Room O2 accounting: (\d+) cached rooms;')
+ROW = re.compile(r'(?:\[CHAT\]|\[RoomO2\])\s+Room (\d+): pool (\d+) \| (\w+) \| supply ([0-9.]+) / demand ([0-9.]+) \| local ([0-9.]+) \| (\d+) sources / (\d+) rooms')
 LABELS = {'SUPPLIED': 'SUPPORTED', 'LOW': 'NEAR CAPACITY', 'STRAINED': 'STRAINED',
           'TRAPPED_AIR': 'TRAPPED AIR / NO SUPPLY', 'NO_AIR': 'NO AIR',
           'NO_SEAL': 'NO SEAL', 'OPEN_AIR': 'OPEN AIR', 'WAITING': 'WAITING'}
@@ -50,7 +50,7 @@ def number(value):
 
 def render(sample, world):
     lines = [world.upper(), 'Last logged budget: ' + sample['time'],
-             '1 unit = one player breathing. This build reports overload only.', '']
+             '1 unit = one player breathing. Flames shed after 10s overload. Furnaces auto-restart; other flames need relighting.', '']
     pools = defaultdict(list)
     for row in sample['rows']:
         pools[row['pool']].append(row)
@@ -69,7 +69,7 @@ def render(sample, world):
         lines.append('No cached room budgets yet.')
     if sample['count'] > 32:
         lines.append(f'{sample["count"] - 32} additional rooms omitted by the game diagnostic.')
-    lines.append('Refresh values: click Read budgets in Minecraft.')
+    lines.append('Refresh values: click Read in Minecraft.')
     return '\n'.join(lines)
 
 
@@ -100,7 +100,7 @@ def main():
             session = status['session']
             sample = latest_budget(read_log(args.log))
             output = render(sample, status['worldName']) if sample else (
-                status['worldName'].upper() + '\nWaiting for a budget sample. Click Read budgets in Minecraft.')
+                status['worldName'].upper() + '\nWaiting for a budget sample. Click Read in Minecraft.')
             if output != last:
                 if args.watch and sys.stdout.isatty():
                     print('\033[2J\033[H', end='')

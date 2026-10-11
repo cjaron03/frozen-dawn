@@ -140,7 +140,19 @@ public final class RoomChangeGameTest {
         var l=h.getLevel();var a=ApocalypseState.get(l.getServer());long phase=a.getApocalypseTicks();
         var identities=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());
         var oldAir=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());
-        var events=new ArrayList<RoomChangeEvent>();Consumer<RoomChangeEvent> capture=e->{if(e.level()==l)events.add(e);};
+        var fixtureCell=h.absolutePos(new BlockPos(10,3,10));
+        var events=new ArrayList<RoomChangeEvent>();Consumer<RoomChangeEvent> capture=e->{
+            // Pressure maintenance can discover other fixtures in this shared test level.
+            // Assert every transition for this room, without treating a neighbor as its geometry edit.
+            boolean ours=switch(e.change()) {
+                case RoomChangeEvent.AirStateChange air -> air.cells().contains(fixtureCell);
+                case RoomChangeEvent.WallMaterialChange wall -> wall.rooms().stream().anyMatch(r->r.geometry().cells().contains(fixtureCell));
+                case RoomChangeEvent.GeometryChange geometry -> geometry.previousRooms().stream().anyMatch(r->r.geometry().cells().contains(fixtureCell))
+                        ||geometry.currentRooms().stream().anyMatch(r->r.geometry().cells().contains(fixtureCell))
+                        ||geometry.previousMemberships().stream().anyMatch(r->r.cells().contains(fixtureCell));
+            };
+            if(e.level()==l&&ours)events.add(e);
+        };
         var core=h.absolutePos(new BlockPos(9,3,10));
         Runnable cleanup=()->{
             NeoForge.EVENT_BUS.unregister(capture);l.setBlock(core,Blocks.AIR.defaultBlockState(),2);
