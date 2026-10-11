@@ -54,6 +54,10 @@
     {
       "type": "patchouli:text",
       "text": "$(italic)ORSA structural assessment: Subject dismantled a reinforced shelter in 4 minutes. Used appropriate tools for each material. Paused to build cover when fired upon. This was not instinct. This was engineering.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(italic)ORSA Threat Analysis, unconfirmed: Architects encountered later in the event wasted fewer strikes and chose better approach routes. Each variant appears to keep something the last one learned. The Architect was the last variant observed before evacuation. ORSA does not believe it is the last variant.$()"
     }
   ]
 }
