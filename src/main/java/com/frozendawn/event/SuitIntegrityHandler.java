@@ -286,7 +286,8 @@ public final class SuitIntegrityHandler {
         ApocalypseState apocalypse = ApocalypseState.get(player.getServer());
         return PhaseManager.isVacuumActive(
                         apocalypse.getPhase(), apocalypse.getProgress())
-                && !PlayerTickHandler.isPlayerBreathable(player);
+                && !com.frozendawn.world.RoomAtmosphere.hasAir(player.level(),
+                        net.minecraft.core.BlockPos.containing(player.getX(),player.getEyeY(),player.getZ()));
     }
 
     private static boolean isPunctureEligible(DamageSource source) {

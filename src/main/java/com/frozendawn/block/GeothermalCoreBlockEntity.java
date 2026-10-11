@@ -78,6 +78,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     }
 
     public void serverTick() {
+        if(level!=null&&level.getGameTime()%20==0) com.frozendawn.world.RoomAtmosphere.keepAlive(this);
         boolean changed = false;
 
         // Slot 0: Range upgrade — obsidian (+1), diamond block (+4)

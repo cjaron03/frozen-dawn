@@ -26,7 +26,8 @@ public final class AirStatusTelemetry {
     public enum State {
         BREATHABLE("BREATHABLE", 0xFF4C968C, 0xFFD5EFE9, 0xFF82C8BC),
         EVA_SUPPLY("EVA SUPPLY", 0xFF4C92B8, 0xFFD9F0FF, 0xFF88CBEA),
-        VACUUM("VACUUM", 0xFFC85757, 0xFFFFD7D7, 0xFFE38F8F);
+        VACUUM("VACUUM", 0xFFC85757, 0xFFFFD7D7, 0xFFE38F8F),
+        NO_OXYGEN("NO O2", 0xFFC85757, 0xFFFFD7D7, 0xFFE38F8F);
 
         private final String label;
         private final int accentColor;
@@ -55,6 +56,10 @@ public final class AirStatusTelemetry {
         public int badgeColor() {
             return badgeColor;
         }
+    }
+
+    public static State unsupportedAmbientState() {
+        return ApocalypseClientData.isPressurized()?State.NO_OXYGEN:State.VACUUM;
     }
 
     public record TankTelemetry(int totalO2, int maxO2, int bestTier) {
@@ -100,7 +105,7 @@ public final class AirStatusTelemetry {
         } else if (ApocalypseClientData.isBreathable()) {
             state = State.BREATHABLE;
         } else {
-            state = tankTelemetry.hasUsableO2() ? State.EVA_SUPPLY : State.VACUUM;
+            state = tankTelemetry.hasUsableO2() ? State.EVA_SUPPLY : unsupportedAmbientState();
         }
 
         return new Reading(state, tankTelemetry);

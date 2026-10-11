@@ -81,7 +81,7 @@ public final class AirStatusHud {
             renderReading(graphics, mc, new AirStatusTelemetry.Reading(
                     breathable ? AirStatusTelemetry.State.BREATHABLE
                             : EmergencyEvaHandler.hasThermalSupport(mc.player) && AirStatusTelemetry.hasUsableO2Tank(mc.player)
-                                    ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.State.VACUUM,
+                                    ? AirStatusTelemetry.State.EVA_SUPPLY : AirStatusTelemetry.unsupportedAmbientState(),
                     new AirStatusTelemetry.TankTelemetry(reserve, EmergencyEvaState.OXYGEN_TICKS, 1)), null);
             ContinuityRecoveryHud.render(graphics);
             return;

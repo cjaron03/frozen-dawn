@@ -77,9 +77,9 @@ final class FrozenDawnWorldCommand {
         var rooms=com.frozendawn.world.RoomThermalManager.snapshots(context.getSource().getLevel());
         FrozenDawnCommandOutput.line(context.getSource(),"Room heat",rooms.size()+" loaded thermal records; air / structure model");
         for(var room:rooms.stream().limit(16).toList()) FrozenDawnCommandOutput.detail(context.getSource(),"Room "+room.id(),
-                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | power %.0f | fins %d/%.2f | %s",
+                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | heater %.0f + passive %.0f | fins %d/%.2f | %s",
                         room.airPresent()?String.format(Locale.ROOT,"%.1fC",room.airTemperature()):"depleted",room.structureTemperature(),
-                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.coolingVents(),room.coolingConductance(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
+                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.passivePower(),room.coolingVents(),room.coolingConductance(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
         return 1;
     }
 
@@ -96,7 +96,7 @@ final class FrozenDawnWorldCommand {
         var r=com.frozendawn.world.RoomOxygenManager.readingAt(source.getLevel(),BlockPos.containing(source.getPosition()));
         String state=switch(r.mode()) {
             case SUPPLIED -> "SUPPORTED"; case LOW -> "NEAR CAPACITY";
-            case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
+            case NO_OXYGEN -> "NO O2"; case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
             case NO_SEAL -> "NO SEAL"; case OPEN_AIR -> "OPEN AIR";
             default -> r.mode().name();
         };

@@ -1168,6 +1168,7 @@
   "gauge.frozendawn.oxygen.no_air": "NO AIR",
   "gauge.frozendawn.oxygen.no_seal": "NO SEAL",
   "gauge.frozendawn.oxygen.open_air": "OPEN AIR",
+  "gauge.frozendawn.oxygen.no_oxygen": "NO O2",
   "subtitles.frozendawn.oxygen_gauge.strained": "Room atmosphere strained",
   "subtitles.frozendawn.oxygen_gauge.critical": "Suffocation warning klaxon"
 }

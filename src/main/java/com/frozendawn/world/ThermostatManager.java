@@ -4,7 +4,7 @@ import com.frozendawn.data.ApocalypseState;
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-/** Loaded-only room controllers. A local sensor includes Core warmth without adding a new heat source. */
+/** Loaded-only room controllers sharing the same modeled room temperature as player exposure. */
 public final class ThermostatManager {
     public static final int WAITING=0,SEALED=1,OPEN=2,OVERRIDDEN=3,NO_SEAL=4;
     public record Reading(int mode,double sensed,double base,int heaters,double duty) {
@@ -30,7 +30,11 @@ public final class ThermostatManager {
     public static OptionalDouble openDuty(ServerLevel l,BlockPos p){var s=LEVELS.get(l);return s==null||!s.openDuties.containsKey(p)?OptionalDouble.empty():OptionalDouble.of(s.openDuties.get(p));}
     public static int openTarget(ServerLevel l,BlockPos p){var s=LEVELS.get(l);return s==null?20:s.openTargets.getOrDefault(p,20);}
     private static boolean valid(ServerLevel l,Control c){var p=c.panel().getBlockPos();return l.isLoaded(p)&&l.getBlockEntity(p)==c.panel()&&!c.panel().isRemoved();}
-    public static double roomTarget(ServerLevel l,long id){var c=roomControl(l,id);return c!=null&&valid(l,c)?c.baseTarget():com.frozendawn.thermal.HeaterControl.DEFAULT_TARGET;}
+    public static double roomTarget(ServerLevel l,long id,Set<BlockPos> cells){
+        var c=roomControl(l,id);boolean controlled=c!=null&&valid(l,c);
+        double target=controlled?c.panel().target():com.frozendawn.thermal.HeaterControl.DEFAULT_TARGET;
+        return controlled?c.baseTarget():target;
+    }
     private static List<ThermalHeaterBlockEntity> connected(ServerLevel l,RoomAtmosphere.Geometry geometry) {
         var positions=new HashSet<>(geometry.cells());positions.addAll(geometry.walls());var heaters=new ArrayList<ThermalHeaterBlockEntity>();
         for(var p:positions)if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof ThermalHeaterBlockEntity heater)heaters.add(heater);

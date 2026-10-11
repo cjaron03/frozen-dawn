@@ -65,13 +65,38 @@ def scripts():
         'load': 'scoreboard objectives add roxygen dummy\nexecute unless score #built roxygen matches 1 run scoreboard players set #built roxygen 0\n'+f'execute if score #built roxygen matches 1 as @a run function {NS}:controls',
         'tick': f'execute if score #built roxygen matches 0 as @a[limit=1] at @s run function {NS}:setup',
         'setup': '\n'.join(setup),
-        'controls': '\n'.join([GUARD,
+        'flame_controls': '\n'.join([GUARD,
             tell('FLAME CHECK'),
             row([('[1 Load]', 'flames'), ('[2 Read]', '/fd world oxygen here')]),
             tell('Wait 25s. Ordinary flames go out; soul flames stay lit.'),
             row([('[3 Restore O2]', 'flame_support'), ('[Lights]', 'flame_read')]),
             tell('Wait 3s. Furnaces restart. Relight other flames by hand.'),
             row([('[Low O2]', 'flame_low'), ('[Furnaces]', 'read_furnaces'), ('[More]', 'more')])]),
+        'controls': '\n'.join([GUARD,
+            tell('BREATHING CHECK'),
+            row([('[1 Low O2]', 'flame_low'), ('[2 Read]', '/fd world oxygen here')]),
+            tell('Wait 15s in Creative. Sealed room: red NO O2.'),
+            row([('[3 Restore O2]', 'flame_support'), ('[Creative]', 'safe')]),
+            tell('Remove EVA armor, then Survival to test warnings. Restore or Creative before dying.'),
+            row([('[Survival]', 'survival'), ('[EVA]', 'eva'), ('[Flame test]', 'flame_controls'), ('[More]', 'more')])]),
+        'repair_cows': '''execute unless score #built roxygen matches 1 run return 0
+execute unless block -5 64 0 minecraft:stone run return 0
+execute unless block 5 64 0 minecraft:stone run return 0
+execute unless entity @e[type=minecraft:cow,tag=room_oxygen_qa] run summon minecraft:cow -1.5 65 1.5 {Tags:["room_oxygen_qa"],Invulnerable:1b,NoAI:1b,PersistenceRequired:1b}
+execute unless entity @e[type=minecraft:cow,tag=room_oxygen_qa_flames] run summon minecraft:cow 3.5 65 1.5 {Tags:["room_oxygen_qa_flames"],Invulnerable:1b,NoAI:1b,PersistenceRequired:1b}
+execute as @e[type=minecraft:cow,tag=room_oxygen_qa] run data merge entity @s {Invulnerable:1b,NoAI:1b,PersistenceRequired:1b,Health:10.0f,Motion:[0.0d,0.0d,0.0d]}
+execute as @e[type=minecraft:cow,tag=room_oxygen_qa_flames] run data merge entity @s {Invulnerable:1b,NoAI:1b,PersistenceRequired:1b,Health:10.0f,Motion:[0.0d,0.0d,0.0d]}
+tp @e[type=minecraft:cow,tag=room_oxygen_qa,limit=1,sort=nearest] -1.5 65 1.5
+tp @e[type=minecraft:cow,tag=room_oxygen_qa_flames,limit=1,sort=nearest] 3.5 65 1.5
+scoreboard players set #cow roxygen 1
+scoreboard players set #flame_cow roxygen 1
+scoreboard players set #cows_inside roxygen 0
+execute as @e[type=minecraft:cow,x=-4,y=65,z=-2,dx=8,dy=3,dz=4] run scoreboard players add #cows_inside roxygen 1
+tellraw @s [{"text": "Left QA cow: health="}, {"nbt": "Health", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa,limit=1,sort=nearest]"}, {"text": " | invulnerable="}, {"nbt": "Invulnerable", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa,limit=1,sort=nearest]"}, {"text": " | NoAI="}, {"nbt": "NoAI", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa,limit=1,sort=nearest]"}, {"text": " | position="}, {"nbt": "Pos", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa,limit=1,sort=nearest]"}]
+tellraw @s [{"text": "Right QA cow: health="}, {"nbt": "Health", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa_flames,limit=1,sort=nearest]"}, {"text": " | invulnerable="}, {"nbt": "Invulnerable", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa_flames,limit=1,sort=nearest]"}, {"text": " | NoAI="}, {"nbt": "NoAI", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa_flames,limit=1,sort=nearest]"}, {"text": " | position="}, {"nbt": "Pos", "entity": "@e[type=minecraft:cow,tag=room_oxygen_qa_flames,limit=1,sort=nearest]"}]
+tellraw @s [{"text": "Room cows: "}, {"score": {"name": "#cows_inside", "objective": "roxygen"}}, {"text": " (target 2)."}]
+return 1''',
+        'survival': action(['gamemode survival @s'], 'Survival. Creative is the safety button.'),
         'more': '\n'.join([GUARD,
             tell('EXTRA CONTROLS'),
             row([('[Left room]', 'left'), ('[Right room]', 'right')]),

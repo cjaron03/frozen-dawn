@@ -27,7 +27,7 @@ public final class RoomThermalManager {
     private record Face(BlockPos outside,int boundaryY,double conductance,boolean ground,boolean interior) {}
     private record Profile(Set<BlockPos> structure,Set<BlockPos> watched,List<Face> faces,Set<BlockPos> vents) {}
     private static final class Binding {
-        RoomThermalState.Room room; Profile profile; boolean dirty,geometryDirty,suspended;
+        RoomThermalState.Room room; Profile profile; boolean dirty,geometryDirty,suspended; double passivePower;
         Binding(RoomThermalState.Room room,Profile profile){this.room=room;this.profile=profile;}
     }
     private static final class Runtime {
@@ -311,6 +311,10 @@ public final class RoomThermalManager {
         var rt = LEVELS.get(level);
         return rt != null && rt.rooms.values().stream().anyMatch(binding -> connects(binding.room, pos));
     }
+    /** Known room membership, including suspended geometry, without discovery or leases. */
+    public static boolean hasManagedRoomAt(ServerLevel level,BlockPos pos) {
+        var rt=LEVELS.get(level);return rt!=null&&!rt.cells.getOrDefault(pos,Set.of()).isEmpty();
+    }
     private static Map<ThermalHeaterBlockEntity, Double> heaterShares(ServerLevel level, Binding binding, List<Binding> loaded) {
         var shares = new LinkedHashMap<ThermalHeaterBlockEntity, Double>();
         for (var pos : HeaterRegistry.getHeaters(level)) if (level.isLoaded(pos) && connects(binding.room, pos)
@@ -386,8 +390,20 @@ public final class RoomThermalManager {
         var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();var coolers=new HashMap<Long,List<Cooling>>();
         var sourceShares = new HashMap<Long, Map<ThermalHeaterBlockEntity,Double>>();
         var suppliedByRoom = new HashMap<Long,Double>();
+        var targets = new HashMap<Long,Double>();
+        var passive = new HashMap<Long,List<RoomHeatSources.Source>>();
+        var connected = new HashMap<Long,List<RoomHeatSources.Source>>();
+        var sourceOwners = new HashMap<BlockPos,Long>();
+        for(var binding:loaded) {
+            var sources=RoomHeatSources.connected(level,binding.room.cells,binding.room.faces);
+            connected.put(binding.room.id,sources);
+            for(var source:sources)sourceOwners.merge(source.pos(),1L,Long::sum);
+            binding.passivePower=0;
+        }
         for(var binding:loaded) {
             coolers.put(binding.room.id,cooling(level,binding));
+            targets.put(binding.room.id,binding.room.sealed?ThermostatManager.roomTarget(level,binding.room.id,binding.room.cells):HeaterControl.DEFAULT_TARGET);
+            passive.put(binding.room.id,connected.get(binding.room.id).stream().map(source->source.share(sourceOwners.get(source.pos()))).toList());
             var shares = heaterShares(level,binding,loaded);
             sourceShares.put(binding.room.id,shares);
             powers.put(binding.room.id,shares.entrySet().stream().mapToDouble(entry -> entry.getValue() * entry.getKey().availableRoomFraction()).sum());
@@ -397,11 +413,20 @@ public final class RoomThermalManager {
         }
         for(int step=0;step<SUBSTEPS;step++)for(var binding:loaded) {
             var room=binding.room;double capacity=capacity(rt.state,room,owners);if(capacity<=0)continue;
+            // Actual passive heat enters first. Heater admission sees it before spending fuel.
+            // Each physical source has one budget, shared between all connected loaded volumes.
+            for(var source:passive.get(room.id)) {
+                double c=room.airPresent?room.airCapacity():capacity;
+                double energy=room.airPresent?room.airEnergy:structureEnergy(rt.state,room,owners);
+                double q=source.grant(c,RoomHeatMath.temperature(c,energy),dt,room.airPresent);
+                if(room.airPresent)room.airEnergy+=q;else q=addStructure(rt.state,room,owners,q);
+                rt.state.ledger.passive+=q;binding.passivePower+=q;
+            }
             double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
             double supplied = room.airPresent
                     ? HeaterControl.airGrant(powers.get(room.id)*dt,room.airCapacity(),capacity,
-                            RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),wallsBefore,room.faces.size()*4.0,dt,room.sealed?ThermostatManager.roomTarget(level,room.id):HeaterControl.DEFAULT_TARGET)
-                    : HeaterControl.wallGrant(powers.get(room.id)*dt,capacity,wallsBefore,wallTarget(level,room,binding.profile));
+                            RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),wallsBefore,room.faces.size()*4.0,dt,targets.get(room.id))
+                    : HeaterControl.wallGrant(powers.get(room.id)*dt,capacity,wallsBefore,targets.get(room.id));
             suppliedByRoom.merge(room.id,supplied,Double::sum);
             if(room.airPresent)room.airEnergy+=supplied;
             else supplied=addStructure(rt.state,room,owners,supplied*RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
@@ -446,18 +471,15 @@ public final class RoomThermalManager {
         ThermostatManager.publish(level);
         if(!loaded.isEmpty())rt.state.setDirty();
     }
-    private static double wallTarget(ServerLevel level,RoomThermalState.Room room,Profile profile) {
-        var control=room.sealed?ThermostatManager.roomControl(level,room.id):null;
-        if(control==null)return HeaterControl.DEFAULT_TARGET;
-        double outside=outsideAverage(level,profile);
-        return outside+(ThermostatManager.roomTarget(level,room.id)-outside)/RoomHeatMath.RADIANT_FEEL_WEIGHT;
-    }
+    // Airless heater control caps the physical wall reservoir at the same
+    // room target. Passive supply temperatures also cap their actual heat transfer. Inverting the vacuum felt-temperature blend would bank
+    // hundreds of degrees in walls and overheat gas when the room refills.
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         var level=event.getServer().overworld();if(level.getGameTime()%20==0)tickLevel(level);
     }
     public record Snapshot(long id,int cells,boolean sealed,boolean suspended,boolean airPresent,double airTemperature,
             double structureTemperature,double feltTemperature,double airCapacity,double structureCapacity,double conductance,
-            double heaterPower,long profileBuilds,double totalEnergy,double ledgerNet,int coolingVents,double coolingConductance) {}
+            double heaterPower,double passivePower,long profileBuilds,double totalEnergy,double ledgerNet,int coolingVents,double coolingConductance) {}
     private static Snapshot snapshot(ServerLevel level,Runtime rt,Binding binding,Map<BlockPos,Integer> owners) {
         var room=binding.room;double capacity=capacity(rt.state,room,owners);
         double structure=RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
@@ -468,7 +490,7 @@ public final class RoomThermalManager {
         return new Snapshot(room.id,room.cells.size(),room.sealed,binding.suspended,room.airPresent,air,structure,felt,
                 room.airCapacity(),capacity,binding.profile.faces.stream().mapToDouble(face->faceK(level,face)).sum(),
                 power(level,binding,rt.rooms.values().stream().filter(other->!other.suspended&&loaded(level,other)).toList()),
-                rt.profileBuilds,rt.state.totalEnergy(),rt.state.ledger.net(),outlets.size(),outlets.stream().mapToDouble(Cooling::conductance).sum());
+                binding.passivePower,rt.profileBuilds,rt.state.totalEnergy(),rt.state.ledger.net(),outlets.size(),outlets.stream().mapToDouble(Cooling::conductance).sum());
     }
     /** Non-querying diagnostics; never initialize a saved room, simulate time, or extend pressure activity. */
     public static List<Snapshot> snapshots(ServerLevel level) {

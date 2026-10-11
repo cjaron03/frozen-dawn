@@ -58,6 +58,10 @@ public final class ClientHandlers {
         TemperatureHud.setTemperature(payload.temperature());
     }
 
+    public static void handleRoomPressureState(RoomPressureStatePayload payload) {
+        ApocalypseClientData.setPressurized(payload.pressurized());
+    }
+
     public static void handleBreathableState(BreathableStatePayload payload) {
         ApocalypseClientData.setBreathable(payload.breathable());
     }

@@ -7,17 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Room Air Monitor",
-      "text": "An always-visible wall screen. Place it inside a sealed room; no menu is needed. Supply and demand use breathing-rate units: one Survival or Adventure player draws 1 unit. Creative and spectator players draw none.$(br2)In vacuum, sustained overload sheds ordinary flames, highest demand first after a ten-second warning grace. Room O2 shortage does not yet cause breathing suffocation in this release."
+      "text": "An always-visible wall screen. Place it inside a sealed room; no menu is needed. Supply and demand use breathing-rate units: one Survival or Adventure player draws 1 unit. Creative and spectator players draw none.$(br2)In vacuum, sustained overload sheds ordinary flames, highest demand first after a ten-second warning grace. If breathing demand still exceeds supply after the flames are out, the room loses breathable oxygen while retaining gas, pressure and heat."
     },
     {
       "type": "patchouli:text",
       "title": "Shared Supply",
-      "text": "SUPPLY and DEMAND describe the whole shared pool. LOCAL is this room’s demand. A Core touching two rooms shares one 8-unit output; it does not produce 8 for each room. Overlapping sources add once.$(br2)Sources must be inside or directly touch the room. Range alone cannot deliver air through unrelated walls."
+      "text": "SUPPLY and DEMAND describe the whole shared pool. LOCAL is this room\u2019s demand. A Core touching two rooms shares one 8-unit output; it does not produce 8 for each room. Overlapping sources add once.$(br2)Sources must be inside or directly touch the room. Range alone cannot deliver air through unrelated walls."
     },
     {
       "type": "patchouli:text",
       "title": "Reading the Screen",
-      "text": "Green: supported. Flashing yellow: at least 80% capacity, overloaded, or trapped air without production. Red: no air or no seal in vacuum. Gray WAITING: geometry or consumer indexing is incomplete.$(br2)These are status and rate readings, not an O2 percentage. Room tanks and reserve-time readings are planned."
+      "text": "Green: supported. Flashing yellow: at least 80% capacity, overloaded, or trapped air without production. Red: NO O2, no air or no seal in vacuum. NO O2 means sealed gas remains but oxygen is unavailable. Gray WAITING: geometry or consumer indexing is incomplete.$(br2)These are status and rate readings, not an O2 percentage. Room tanks and reserve-time readings are planned."
     },
     {
       "type": "patchouli:text",
@@ -41,8 +41,13 @@
     },
     {
       "type": "patchouli:text",
+      "title": "Breathing O2",
+      "text": "Flames shed before people lose oxygen. If breathing alone still exceeds the shared supply after the ten-second warning grace, the whole pool shows red NO O2. This is oxygen shortage, not a breach: gas, pressure and stored room heat remain.$(br2)Your existing lightheadedness, nausea and suffocation warnings apply. A working EVA tank or Emergency EVA reserve protects you. Add supply or reduce the crowd; support must stay adequate for two seconds to restore room oxygen. Saving and reopening cannot create oxygen. Early atmospheric air is unrestricted."
+    },
+    {
+      "type": "patchouli:text",
       "title": "Warning Cues",
-      "text": "A short chime warns when a nearby gauge enters STRAINED. The klaxon sounds only when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL and NO AIR remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat at most every ten seconds; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Overload suffocation is planned."
+      "text": "A short chime warns when a nearby gauge enters STRAINED. The klaxon sounds only when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL and NO AIR remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat at most every ten seconds; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; room tanks and charging allocation are planned."
     }
   ]
 }

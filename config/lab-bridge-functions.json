@@ -367,6 +367,10 @@
       "world": "Room O2 Check",
       "scores": [{"objective": "roxygen", "holder": "#built", "equals": 1}]
     },
+    "room_oxygen_check:repair_cows": {
+      "world": "Room O2 Check",
+      "scores": [{"objective": "roxygen", "holder": "#built", "equals": 1}]
+    },
     "room_oxygen_check:read_furnaces": {
       "world": "Room O2 Check",
       "scores": [

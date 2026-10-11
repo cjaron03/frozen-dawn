@@ -390,7 +390,7 @@ public final class RoomThermalGameTest {
                 var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(10000);heater.installCapacitor();heaters.add(heater);
             }
             RoomAtmosphere.view(s.l,panelPos);ThermostatManager.refresh(s.l);
-            var terms=TemperatureManager.thermostatTerms(s.l,panelPos);h.assertTrue(terms.warmth()>0,"Real registered Core contributes local warmth");
+            var terms=TemperatureManager.thermostatTerms(s.l,panelPos);h.assertTrue(terms.warmth()==0,"Connected Core contributes reservoir heat, not a second sensor bonus");
             // Finish dirty wall profiles before importing controlled thermal fixture energy.
             RoomThermalManager.tickLevel(s.l);
             double base=terms.baseTarget(30);
@@ -400,11 +400,11 @@ public final class RoomThermalGameTest {
             var time=s.l.getGameTime();((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time+20);
             try {RoomThermalManager.tickLevel(s.l);}finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time);}
             var value=RoomThermalManager.snapshots(s.l).getFirst();
-            near(h,panel.reading().sensed(),30,"Core-aware sensor reaches its selected target rather than air target plus Core");
-            near(h,value.airTemperature(),base,"Core remains an additive local term, not duplicated in gas energy");
-            near(h,TemperatureManager.getTemperatureAt(s.l,panelPos,ApocalypseState.get(s.l.getServer()).getCurrentDay(),ApocalypseState.get(s.l.getServer()).getTotalDays()),30,"Player environmental reading agrees at sensor");
-            h.assertTrue(panel.reading().heaters()==2&&heaters.stream().allMatch(heater->heater.getBurnFraction()>0&&heater.getBurnFraction()<1),"Mixed upgraded tiers link and throttle");
-            h.assertTrue(s.heat().ledger.heater>before,"Actual grant is accounted");budget(h,s);
+            near(h,panel.reading().sensed(),value.airTemperature(),"Controller senses the actual mixed-source room temperature");
+            h.assertTrue(value.airTemperature()>=base-1&&value.airTemperature()<=50,"Passive heat warms toward its supply temperature without an instant Core bonus");
+            near(h,TemperatureManager.getTemperatureAt(s.l,panelPos,ApocalypseState.get(s.l.getServer()).getCurrentDay(),ApocalypseState.get(s.l.getServer()).getTotalDays()),value.airTemperature(),"Player environmental reading agrees at sensor");
+            h.assertTrue(panel.reading().heaters()==2&&heaters.stream().allMatch(heater->heater.getBurnFraction()<1),"Mixed upgraded tiers link and throttle against passive heat");
+            h.assertTrue(s.heat().ledger.passive>0,"Actual Core heat is accounted independently from fuel-burning heaters");budget(h,s);
             var player=h.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);player.setPos(panelPos.getX()+.5,panelPos.getY(),panelPos.getZ()+.5);
             var menu=new com.frozendawn.block.ThermostatMenu(1,player.getInventory(),panel);
             h.assertTrue(!menu.clickMenuButton(player,9),"Invalid network button cannot change target");
@@ -541,6 +541,234 @@ public final class RoomThermalGameTest {
             h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().profileBuilds()==profile,"Cosmetic light reuses material profile");budget(h,s);
         });
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void coreAwareDefaultHeaterCapsFeltHeatWithStackedCores(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();var corePositions=List.of(s.c.east(5),s.c.east(5).above(),s.c.east(5).above(2));
+            try {
+                for(var pos:corePositions){s.l.setBlock(pos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,pos);}
+                var heaterPos=s.c.west(2);s.l.setBlock(heaterPos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(heaterPos);heater.onLoad();heater.addFuel(10000);
+                RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);
+                var probe=s.c.east(4);var a=ApocalypseState.get(s.l.getServer());
+                double target=TemperatureManager.thermostatTerms(s.l,probe).baseTarget(20);
+                near(h,target,20,"Built-in target uses shared room temperature without subtracting a Core aura");hot(s,target-.1,target-.1);
+                advanceHeat(s);
+                double felt=TemperatureManager.getTemperatureAt(s.l,probe,a.getCurrentDay(),a.getTotalDays());
+                h.assertTrue(felt<=50.000001,"Stacked passive Cores cannot exceed their physical supply temperature: "+felt);
+                h.assertTrue(heater.getBurnFraction()<1,"Core contribution throttles actual heater fuel");budget(h,s);
+            } finally {for(var pos:corePositions){s.l.setBlock(pos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,pos);}ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void coreHotspotLimitsDistantThermostatAndPartitionChanges(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();var cores=List.of(s.c.east(5),s.c.east(5).above(),s.c.east(5).above(2));
+            var panelPos=s.c.west(4);var heaterPos=s.c.west(2);var probe=s.c.east(4);
+            try {
+                for(var pos:cores){s.l.setBlock(pos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,pos);}
+                s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+                var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();panel.setTarget(20);
+                s.l.setBlock(heaterPos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(heaterPos);heater.onLoad();heater.addFuel(10000);
+                // A right-room heater remains active when this volume splits.
+                var rightPos=s.c.east(2);s.l.setBlock(rightPos,ModBlocks.DIAMOND_THERMAL_HEATER.get().defaultBlockState(),3);
+                var right=(ThermalHeaterBlockEntity)s.l.getBlockEntity(rightPos);right.onLoad();right.addFuel(10000);
+                RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);var a=ApocalypseState.get(s.l.getServer());
+                h.assertTrue(TemperatureManager.thermostatTerms(s.l,panelPos).warmth()==0,"Distant panel misses Core aura in the old position-only control");
+                double base=TemperatureManager.thermostatTerms(s.l,probe).baseTarget(20);hot(s,base-.1,base-.1);
+                for(int cycle=0;cycle<3;cycle++) {
+                    partition(s,true);RoomAtmosphere.view(s.l,s.c.west(3));RoomAtmosphere.view(s.l,s.c.east(3));advanceHeat(s);
+                    h.assertTrue(TemperatureManager.getTemperatureAt(s.l,probe,a.getCurrentDay(),a.getTotalDays())<=50.000001,"Resealed Core side stays bounded by its real passive supply temperature");budget(h,s);
+                    partition(s,false);RoomAtmosphere.view(s.l,s.c);advanceHeat(s);
+                    h.assertTrue(TemperatureManager.getTemperatureAt(s.l,probe,a.getCurrentDay(),a.getTotalDays())<=50.000001,"Merged room cannot double-count Core heat as a local bonus");budget(h,s);
+                }
+                hot(s,20,20);double imports=s.heat().ledger.heater;advanceHeat(s);
+                near(h,s.heat().ledger.heater,imports,"Already-hot Core room stops adding heater heat; it does not erase stored heat");
+                budget(h,s);s.l.setBlock(rightPos,Blocks.AIR.defaultBlockState(),2);
+            } finally {s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(s.c.east(2),Blocks.AIR.defaultBlockState(),2);for(var pos:cores){s.l.setBlock(pos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,pos);}ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void coreBreachRefillDoesNotBankHotWalls(GameTestHelper h) {
+        coreWallCycle(h,false);
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void coreSealedEvacuationRefillDoesNotBankHotWalls(GameTestHelper h) {
+        coreWallCycle(h,true);
+    }
+    private static void coreWallCycle(GameTestHelper h,boolean evacuateOnly) {
+        scene(h,104,s->{
+            ThermostatManager.reset();var cores=List.of(s.c.east(5),s.c.east(5).above(),s.c.east(5).above(2));
+            var panelPos=s.c.west(4);var heaterPos=s.c.west(2);var other=s.c.east(2);var probe=s.c.east(4);var breach=s.c.west(5);
+            try {
+                for(var pos:cores){s.l.setBlock(pos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,pos);}
+                s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+                var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();panel.setTarget(20);
+                for(var pos:List.of(heaterPos,other)) {
+                    s.l.setBlock(pos,(pos.equals(heaterPos)?ModBlocks.THERMAL_HEATER.get():ModBlocks.DIAMOND_THERMAL_HEATER.get()).defaultBlockState(),3);
+                    var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(100000);
+                }
+                var view=RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);
+                double base=TemperatureManager.thermostatTerms(s.l,probe).baseTarget(20);hot(s,base,base);
+                var a=ApocalypseState.get(s.l.getServer());
+                for(int cycle=0;cycle<3;cycle++) {
+                    if(evacuateOnly)RoomAirState.get(s.l).evacuate(view.geometry().cells());
+                    else {s.l.setBlock(breach,Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.view(s.l,s.c);}
+                    h.assertTrue(RoomThermalManager.snapshots(s.l).stream().noneMatch(r->r.airPresent()),"Evacuation or actual breach removes gas");
+                    for(int i=0;i<10;i++)advanceHeat(s);
+                    for(var snap:RoomThermalManager.snapshots(s.l))h.assertTrue(snap.structureTemperature()<=50+1e-6,
+                        "Airless heat cannot bank walls above heater or passive source supply temperatures: "+snap.structureTemperature());
+                    budget(h,s);
+                    if(!evacuateOnly){s.l.setBlock(breach,Blocks.GLASS.defaultBlockState(),3);view=RoomAtmosphere.view(s.l,s.c);}
+                    RoomAirState.get(s.l).refill(view.geometry().cells());
+                    for(int i=0;i<10;i++)advanceHeat(s);
+                    h.assertTrue(TemperatureManager.getTemperatureAt(s.l,probe,a.getCurrentDay(),a.getTotalDays())<=50.00001,
+                        "Refill cannot create temperatures above actual source temperatures");budget(h,s);
+                }
+            } finally {s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(other,Blocks.AIR.defaultBlockState(),2);
+                for(var pos:cores){s.l.setBlock(pos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,pos);}ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void unknownRoomCannotRestoreLegacyManagedHeaterBonuses(GameTestHelper h) {
+        scene(h,s->{
+            var heaterPos=s.c.west(2);s.l.setBlock(heaterPos,ModBlocks.DIAMOND_THERMAL_HEATER.get().defaultBlockState(),3);
+            var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(heaterPos);heater.onLoad();heater.addFuel(100000);
+            RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);heater.consumeRoomHeating(1,20,true);
+            for(int y=3;y<=35;y++)for(int x=-1;x<=1;x++)for(int z=-1;z<=1;z++)
+                s.l.setBlock(s.c.offset(x,y,z),(Math.abs(x)==1||Math.abs(z)==1||y==35?Blocks.STONE:Blocks.AIR).defaultBlockState(),3);
+            h.assertTrue(RoomAtmosphere.view(s.l,s.c)==null,"Oversized closed extension is genuinely UNKNOWN");
+            h.assertTrue(RoomThermalManager.managesHeater(s.l,heaterPos),"Managed heater remains suspended with its room");
+            var a=ApocalypseState.get(s.l.getServer());double with=TemperatureManager.getTemperatureAt(s.l,s.c,a.getCurrentDay(),a.getTotalDays());
+            heater.extinguish();double without=TemperatureManager.getTemperatureAt(s.l,s.c,a.getCurrentDay(),a.getTotalDays());
+            near(h,with,without,"Suspended room heater cannot reappear as an unthrottled legacy aura");budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomHeatSourcesRespectWallsAndLegacyOutdoorWarmth(GameTestHelper h) {
+        scene(h,104,s->{
+            var core=s.c.east(7);var inside=s.c.west(3);var outside=s.c.east(6);
+            try {
+                s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,core);
+                RoomAtmosphere.view(s.l,s.c);hot(s,20,20);
+                var a=ApocalypseState.get(s.l.getServer());
+                near(h,TemperatureManager.getTemperatureAt(s.l,inside,a.getCurrentDay(),a.getTotalDays()),20,"Unconnected outside Core cannot add heat through a sealed wall");
+                h.assertTrue(TemperatureManager.thermostatTerms(s.l,outside).warmth()>0,"Unmanaged outside Core retains its ordinary outdoor warmth");
+                near(h,RoomHeatSources.connected(s.l,RoomAtmosphere.view(s.l,s.c).geometry().cells(),RoomAtmosphere.view(s.l,s.c).geometry().boundaryFaces()).size(),0,"Only in-volume or directly adjoining sources supply room heat");budget(h,s);
+            }finally{s.l.setBlock(core,Blocks.AIR.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomConnectedHeatUsesOneTemperatureAcrossSourceEdges(GameTestHelper h) {
+        scene(h,104,s->{
+            var core=s.c.east(5);var fire=s.c.east(3);var panelPos=s.c.west(4);
+            try {
+                s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,core);
+                s.l.setBlock(fire,Blocks.SOUL_CAMPFIRE.defaultBlockState(),3);
+                s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+                var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();
+                var view=RoomAtmosphere.view(s.l,s.c);hot(s,20,20);ThermostatManager.refresh(s.l);ThermostatManager.publish(s.l);
+                var apocalypse=ApocalypseState.get(s.l.getServer());
+                for(var cell:view.geometry().cells())near(h,TemperatureManager.getTemperatureAt(s.l,cell,apocalypse.getCurrentDay(),apocalypse.getTotalDays()),20,
+                    "Every sealed-room cell uses actual room temperature across Core and soul-campfire range edges");
+                near(h,panel.reading().sensed(),20,"Thermostat agrees with the same room-wide player reading");budget(h,s);
+            }finally{s.l.setBlock(fire,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),2);
+                s.l.setBlock(core,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomPassiveSourcesImportRealHeatWithoutInstantAura(GameTestHelper h) {
+        scene(h,104,s->{
+            var core=s.c.east(5);var fire=s.c.east(3);
+            try {
+                s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,core);
+                s.l.setBlock(fire,Blocks.SOUL_CAMPFIRE.defaultBlockState(),3);
+                RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);hot(s,-40,-40);
+                double old=s.heat().totalEnergy(),loss=s.heat().ledger.environmentLoss;advanceHeat(s);
+                double supplied=s.heat().totalEnergy()-old+s.heat().ledger.environmentLoss-loss;
+                h.assertTrue(supplied>100,"Connected Core and fire actually supply conserved reservoir heat without a heater: "+supplied);
+                budget(h,s);
+                var a=ApocalypseState.get(s.l.getServer());var base=RoomThermalManager.cachedTemperatureAt(s.l,s.c).orElseThrow();
+                near(h,TemperatureManager.getTemperatureAt(s.l,s.c,a.getCurrentDay(),a.getTotalDays()),base,"Imported passive heat is not added a second time as an aura");
+            }finally{s.l.setBlock(fire,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(core,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomSharedCorePowerIsNotDuplicatedBySplitOrReload(GameTestHelper h) {
+        scene(h,104,s->{
+            var core=s.c.above();
+            try {
+                s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,core);
+                RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);hot(s,-40,-40);
+                double original=s.heat().ledger.passive;advanceHeat(s);double one=s.heat().ledger.passive-original;
+                h.assertTrue(one>0,"One real Core delivers finite heat");
+                partition(s,true);s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+                RoomAtmosphere.view(s.l,s.c.west(2));RoomAtmosphere.view(s.l,s.c.east(2));hot(s,-40,-40);
+                double previous=s.heat().ledger.passive;advanceHeat(s);
+                near(h,s.heat().ledger.passive-previous,one,"Two rooms sharing one boundary Core share one heat budget");budget(h,s);
+                var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());double energy=s.heat().totalEnergy(),passive=s.heat().ledger.passive;
+                RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));
+                RoomThermalManager.temperatureAt(s.l,s.c.west(2));RoomThermalManager.temperatureAt(s.l,s.c.east(2));
+                near(h,s.heat().totalEnergy(),energy,"Reload retains existing Core heat rather than importing it again");
+                near(h,s.heat().ledger.passive,passive,"Reload persists the new passive-source ledger");budget(h,s);
+                advanceHeat(s);near(h,s.heat().ledger.passive-passive,one,"Reloaded shared source still has one budget");budget(h,s);
+            }finally{s.l.setBlock(core,Blocks.AIR.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomPassiveTransferHonorsUpgradesLitStateAndVacuum(GameTestHelper h) {
+        scene(h,104,s->{
+            var corePos=s.c.east(5);var fire=s.c.east(3);
+            try {
+                s.l.setBlock(corePos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+                var original=RoomHeatSources.at(s.l,corePos).orElseThrow();
+                var core=(com.frozendawn.block.GeothermalCoreBlockEntity)s.l.getBlockEntity(corePos);
+                var data=core.saveWithFullMetadata(s.l.registryAccess());data.putInt("TempLevel",10);
+                core.loadWithComponents(data,s.l.registryAccess());var upgraded=RoomHeatSources.at(s.l,corePos).orElseThrow();
+                near(h,upgraded.power(),original.power()*2,"Core temperature upgrade doubles available heat transfer");
+                near(h,upgraded.temperature(),original.temperature()*2,"Core supply temperature respects upgrade and surface penalty");
+                near(h,upgraded.grant(100,upgraded.temperature()+1,1,true),0,"Core cannot refrigerate a hotter room");
+                near(h,upgraded.grant(1,upgraded.temperature()-.25,1,true),.25,"Finite source heat cannot overshoot supply temperature");
+                near(h,upgraded.grant(10000,-200,1,false),upgraded.power()*.25,"Vacuum transfers only reduced power into walls");
+                s.l.setBlock(fire,Blocks.SOUL_CAMPFIRE.defaultBlockState(),3);
+                h.assertTrue(RoomHeatSources.at(s.l,fire).isPresent(),"Lit soul campfire supplies heat");
+                s.l.setBlock(fire,Blocks.SOUL_CAMPFIRE.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT,false),3);
+                h.assertTrue(RoomHeatSources.at(s.l,fire).isEmpty(),"Unlit campfire supplies no stored heat");
+                s.l.setBlock(fire,Blocks.FURNACE.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT,true),3);
+                h.assertTrue(RoomHeatSources.at(s.l,fire).isPresent(),"Lit furnace supplies room heat");
+                s.l.setBlock(fire,Blocks.FURNACE.defaultBlockState(),3);
+                h.assertTrue(RoomHeatSources.at(s.l,fire).isEmpty(),"Paused unlit furnace supplies no heat");
+                var far=s.c.offset(100000,0,100000);h.assertTrue(!s.l.isLoaded(far),"Probe chunk starts unloaded");
+                h.assertTrue(RoomHeatSources.at(s.l,far).isEmpty()&&!s.l.isLoaded(far),"Source scan never forces a chunk load");
+            }finally{s.l.setBlock(fire,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(corePos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,corePos);}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomUnknownCannotRestoreCoreOrFireAuras(GameTestHelper h) {
+        scene(h,s->{
+            var core=s.c.east(5);var fire=s.c.east(2);
+            try {
+                s.l.setBlock(core,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,core);
+                s.l.setBlock(fire,Blocks.SOUL_CAMPFIRE.defaultBlockState(),3);RoomAtmosphere.view(s.l,s.c);RoomThermalManager.tickLevel(s.l);
+                for(int y=3;y<=35;y++)for(int x=-1;x<=1;x++)for(int z=-1;z<=1;z++)
+                    s.l.setBlock(s.c.offset(x,y,z),(Math.abs(x)==1||Math.abs(z)==1||y==35?Blocks.STONE:Blocks.AIR).defaultBlockState(),3);
+                h.assertTrue(RoomAtmosphere.view(s.l,s.c)==null,"Extension makes room geometry UNKNOWN");
+                h.assertTrue(RoomThermalManager.hasManagedRoomAt(s.l,s.c),"Suspended room retains its known membership");
+                var a=ApocalypseState.get(s.l.getServer());
+                h.assertTrue(TemperatureManager.getHeatSourceModifier(s.l,s.c,a.getCurrentDay(),a.getTotalDays(),false)>0,"Real nearby sources remain present");
+                near(h,TemperatureManager.thermostatTerms(s.l,s.c).warmth(),0,"Suspended Core/fire cannot reappear as additive local heat");
+                near(h,TemperatureManager.getTemperatureAt(s.l,s.c,a.getCurrentDay(),a.getTotalDays()),
+                    TemperatureManager.getBackgroundTemperature(s.c.getY(),a.getCurrentDay(),a.getTotalDays())+TemperatureManager.getShelterModifier(s.l,s.c),
+                    "UNKNOWN fallback excludes duplicate source heat");budget(h,s);
+            }finally{s.l.setBlock(fire,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(core,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);}
+        });
+    }
+    private static void advanceHeat(Scene s) {
+        var time=s.l.getGameTime();s.integrationTime=Math.max(time,s.integrationTime)+20;
+        ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(s.integrationTime);
+        try {RoomThermalManager.tickLevel(s.l);}finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(time);}
+    }
     private static double ventStep(Scene s,CompoundTag saved,net.minecraft.world.level.block.state.BlockState state) {
         RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));
         s.l.setBlock(s.c.east(5),state,3);RoomThermalManager.temperatureAt(s.l,s.c);RoomThermalManager.tickLevel(s.l);budgetForStep(s);
@@ -566,7 +794,7 @@ public final class RoomThermalGameTest {
     private static void scene(GameTestHelper h,Consumer<Scene> test){scene(h,3,test);}
     private static void scene(GameTestHelper h,int height,Consumer<Scene> test){var s=new Scene(h,height);try{test.accept(s);h.succeed();}finally{s.close();}}
     private static final class Scene {
-        final ServerLevel l;final BlockPos c;final long phase;final CompoundTag identities,air,heat;
+        final ServerLevel l;final BlockPos c;final long phase;final CompoundTag identities,air,heat;long integrationTime;
         Scene(GameTestHelper h) {this(h,3);}
         Scene(GameTestHelper h,int height) {
             l=h.getLevel();c=h.absolutePos(new BlockPos(10,height,10));var a=ApocalypseState.get(l.getServer());phase=a.getApocalypseTicks();

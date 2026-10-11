@@ -72,7 +72,7 @@ public final class TemperatureManager {
         var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
                 ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
         float shelterTemp = roomTemperature.isPresent() ? 0 : getShelterModifier(level, pos);
-        var terms=localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,roomTemperature.isEmpty());
+        var terms=(roomTemperature.isPresent()||level instanceof ServerLevel serverLevel&&RoomThermalManager.hasManagedRoomAt(serverLevel,pos))?environmentalTerms(level,pos,0):localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
         return (float)terms.apply((roomTemperature.isPresent()?roomTemperature.getAsDouble():backgroundTemp)+shelterTemp);
     }
 
@@ -83,10 +83,14 @@ public final class TemperatureManager {
     }
     public static LocalThermalTerms thermostatTerms(ServerLevel level,BlockPos pos) {
         var state=com.frozendawn.data.ApocalypseState.get(level.getServer());
-        return localTerms(level,pos,state.getCurrentDay(),state.getTotalDays(),false,true,false);
+        return (RoomThermalManager.cachedTemperatureAt(level,pos).isPresent()||RoomThermalManager.hasManagedRoomAt(level,pos))?environmentalTerms(level,pos,0)
+                :localTerms(level,pos,state.getCurrentDay(),state.getTotalDays(),false,true,false);
     }
     private static LocalThermalTerms localTerms(Level level,BlockPos pos,int day,int total,boolean quick,boolean loadedOnly,boolean heaters) {
         double warmth=getHeatSourceModifier(level,pos,day,total,quick,loadedOnly,heaters)*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        return environmentalTerms(level,pos,warmth);
+    }
+    private static LocalThermalTerms environmentalTerms(Level level,BlockPos pos,double warmth) {
         if(BlastPitWarmZoneRegistry.isInsideWarmZone(level,pos))return new LocalThermalTerms(warmth,24,0);
         return new LocalThermalTerms(warmth,ThermalVentRegistry.getWarmthFloor(level,pos),
                 ThermalVentRegistry.getOverheatBonus(level,pos)+com.frozendawn.homo.HearthMasterArchitectWeatherManager.temperatureOffset(level,pos));
@@ -165,13 +169,13 @@ public final class TemperatureManager {
      */
     public static boolean hasBreathableAir(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        return RoomAtmosphere.hasAir(level, pos);
+        return RoomAtmosphere.hasAir(level, pos) && RoomOxygenManager.allowsBreathingAt(level,pos);
     }
 
     /** Active infrastructure that can repressurize an intact EVA suit. */
     public static boolean hasOxygenSupport(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        if (CombustionAtmosphere.isVacuum(level)) return RoomAtmosphere.hasOxygenSupport(level, pos);
+        if (CombustionAtmosphere.isVacuum(level)) return RoomAtmosphere.hasOxygenSupport(level, pos) && RoomOxygenManager.allowsBreathingAt(level,pos);
         return BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 || isInsideGeothermalO2Range(level, pos);
     }
@@ -228,6 +232,9 @@ public final class TemperatureManager {
             float heatPenalty = 0.0f;
             BlockEntity heaterBE = level.getBlockEntity(heaterPos);
             if (heaterBE instanceof ThermalHeaterBlockEntity thbe) {
+                // UNKNOWN geometry suspends managed heating; losing a room sample must not
+                // resurrect that same heater through the old additive camp-aura path.
+                if(level instanceof ServerLevel serverLevel&&RoomThermalManager.managesHeater(serverLevel,heaterPos))continue;
                 sheltered = thbe.getCachedSheltered();
                 hasCapacitor = thbe.hasCapacitor();
                 radiusPenalty = FrostmiteEntity.getHeaterRadiusPenalty(level, heaterPos);

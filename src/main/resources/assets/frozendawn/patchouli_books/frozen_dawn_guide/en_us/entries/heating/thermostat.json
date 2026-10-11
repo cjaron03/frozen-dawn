@@ -12,12 +12,12 @@
     {
       "type": "patchouli:text",
       "title": "Sensed and Room Air",
-      "text": "Sensed temperature includes local Core warmth, vents and environmental heat at the panel. Personal equipment effects are excluded. Room base shows gas temperature, or the radiant baseline when air is depleted.$(br2)The thermostat reduces heater demand to account for local warmth. Temperature can vary across a large room: place the sensor where you live. It keeps a loaded room active without a fueled heater. It does not load chunks or supply oxygen."
+      "text": "Temperature is the shared room reading used by the HUD before personal equipment and status effects. Connected Core, campfire and furnace heat enters the same stored air-and-wall model as heater heat; it is not added again near the source.$(br2)The panel keeps a loaded room active without a fueled heater. It does not load chunks or supply oxygen."
     },
     {
       "type": "patchouli:text",
       "title": "Independent Heat",
-      "text": "A +25°C Core bonus and a sensed target of 20°C can leave room air near -5°C. This follows the Core’s local warmth model; both readings are shown.$(br2)Above target means reduce independent heat or provide cooling. The controller throttles heaters. It cannot cool, disable Core oxygen or erase stored wall heat.$(br2)Burn percentage is a short average. Redstone on a heater still shuts that heater down."
+      "text": "The controller throttles every linked heater toward the selected room temperature. Core and other passive heat reduce the fuel needed. Independent sources can still raise the room above target: the thermostat cannot switch off a Core, extinguish a fire or actively cool.$(br2)Use a heat vent to reject excess heat. Existing wall heat remains after a breach or restart. Burn percentage is a short average; redstone still shuts down a heater."
     },
     {
       "type": "patchouli:text",

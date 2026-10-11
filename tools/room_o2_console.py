@@ -13,7 +13,7 @@ HEADER = re.compile(r'\[[^\]]*?(\d{2}:\d{2}:\d{2})(?:\.\d+)?\].*(?:\[CHAT\]|\[Ro
 ROW = re.compile(r'(?:\[CHAT\]|\[RoomO2\])\s+Room (\d+): pool (\d+) \| (\w+) \| supply ([0-9.]+) / demand ([0-9.]+) \| local ([0-9.]+) \| (\d+) sources / (\d+) rooms')
 LABELS = {'SUPPLIED': 'SUPPORTED', 'LOW': 'NEAR CAPACITY', 'STRAINED': 'STRAINED',
           'TRAPPED_AIR': 'TRAPPED AIR / NO SUPPLY', 'NO_AIR': 'NO AIR',
-          'NO_SEAL': 'NO SEAL', 'OPEN_AIR': 'OPEN AIR', 'WAITING': 'WAITING'}
+          'NO_OXYGEN': 'NO O2 / GAS RETAINED', 'NO_SEAL': 'NO SEAL', 'OPEN_AIR': 'OPEN AIR', 'WAITING': 'WAITING'}
 
 
 def latest_budget(text):

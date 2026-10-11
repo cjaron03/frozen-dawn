@@ -2,6 +2,7 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.*;
 import com.frozendawn.data.RoomAirState;
+import com.frozendawn.data.RoomOxygenState;
 import com.frozendawn.oxygen.*;
 import java.util.*;
 import net.minecraft.core.*;
@@ -32,6 +33,8 @@ public final class RoomOxygenManager {
         final Set<BlockPos> gauges=new HashSet<>();final Set<BlockPos> exposed=new HashSet<>();
         final Set<BlockPos> starvedFurnaces=new HashSet<>();
         final FurnaceOxygenPolicy furnacePolicy=new FurnaceOxygenPolicy();
+        final BreathingOxygenPolicy breathingPolicy=new BreathingOxygenPolicy();
+        final Set<Long> oxygenDirtyPools=new HashSet<>(), unavailablePools=new HashSet<>();
         final Map<Long,PoolProfile> furnacePools=new HashMap<>(), furnaceRecoveryProfiles=new HashMap<>();
         final Map<Long,Topology> topology=new HashMap<>();
         final Map<UUID,OxygenAlarmPolicy> alarms=new HashMap<>();
@@ -51,7 +54,7 @@ public final class RoomOxygenManager {
     }
     public static void reset(){LEVELS.clear();}
     /** A cleared geometry cache invalidates telemetry, while loaded gauges retain registration. */
-    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;s.furnacePolicy.reset();s.furnacePools.clear();s.furnaceRecoveryProfiles.clear();}}
+    public static void atmosphereReset(){for(var s:LEVELS.values()){s.exposed.clear();s.readings=Map.of();s.topology.clear();s.cells.clear();s.intakes.clear();s.dirty=true;s.furnacePolicy.reset();s.furnacePools.clear();s.furnaceRecoveryProfiles.clear();s.breathingPolicy.reset();s.oxygenDirtyPools.clear();s.unavailablePools.clear();}}
     @SubscribeEvent public static void changed(RoomChangeEvent e){var s=LEVELS.get(e.level());if(s!=null){s.dirty=true;s.readings=Map.of();
         if(e.change() instanceof RoomChangeEvent.GeometryChange g&&g.complete())for(var p:s.gauges){
             if(g.currentRooms().stream().anyMatch(r->r.geometry().cells().contains(p)))s.exposed.remove(p);
@@ -141,9 +144,11 @@ public final class RoomOxygenManager {
         var poolComplete=new HashMap<Long,Boolean>();for(var e:budget.entrySet())poolComplete.merge(e.getValue().pool(),complete.get(e.getKey()),(a,b)->a&&b);
         for(var source:s.supplies)if(!source.ready)for(long room:source.rooms){var b=budget.get(room);if(b!=null)poolComplete.put(b.pool(),false);}
         budget=controlCombustion(l,s,budget,poolComplete);
+        controlBreathing(l,s,budget,poolComplete,breathing);
         var readings=new TreeMap<Long,Reading>();
         for(var e:budget.entrySet()){var b=e.getValue();boolean air=!CombustionAtmosphere.isVacuum(l)||!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells());
-            var mode=OxygenStatus.room(poolComplete.get(b.pool()),air,b.supply(),b.demand());readings.put(e.getKey(),new Reading(mode,e.getKey(),b.pool(),b.supply(),b.demand(),b.localDemand(),b.sources(),b.rooms()));}
+            var mode=OxygenStatus.room(poolComplete.get(b.pool()),air,b.supply(),b.demand());
+            if(air&&poolComplete.get(b.pool())&&CombustionAtmosphere.isVacuum(l)&&s.unavailablePools.contains(b.pool()))mode=OxygenStatus.Mode.NO_OXYGEN;readings.put(e.getKey(),new Reading(mode,e.getKey(),b.pool(),b.supply(),b.demand(),b.localDemand(),b.sources(),b.rooms()));}
         s.readings=Map.copyOf(readings);
         for(var p:List.copyOf(s.gauges))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof OxygenGaugeBlockEntity gauge)gauge.publish(readingAt(l,p));
         warnListeners(l,s);
@@ -162,7 +167,9 @@ public final class RoomOxygenManager {
             var sources=s.supplies.stream().filter(v->!Collections.disjoint(v.rooms,rooms.keySet()))
                     .map(v->new OxygenPools.Source(v.id,v.capacity,v.rooms)).toList();
             var profile=new PoolProfile(Map.copyOf(rooms),sources);profiles.put(pool,profile);
-            if(!profile.equals(s.furnacePools.put(pool,profile)))s.furnacePolicy.resetPool(pool);
+            if(!profile.equals(s.furnacePools.put(pool,profile))){
+                s.furnacePolicy.resetPool(pool);s.breathingPolicy.resetPool(pool);s.oxygenDirtyPools.add(pool);
+            }
         }
         s.furnacePools.keySet().retainAll(pools);
         long now=l.getGameTime();boolean vacuum=CombustionAtmosphere.isVacuum(l);
@@ -219,6 +226,45 @@ public final class RoomOxygenManager {
         s.furnacePolicy.retain(pools,sleepers);s.furnaceRecoveryProfiles.keySet().retainAll(sleepers);
         return budget;
     }
+    /** Separate binary O2 latch. No pressure transitions, gas refills or thermal mutations. */
+    private static void controlBreathing(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,
+            Map<Long,Boolean> complete,Map<Long,Double> breathing) {
+        var saved=RoomOxygenState.get(l);var pools=new TreeSet<Long>();
+        for(var b:budget.values())pools.add(b.pool());
+        var rates=new HashMap<Long,Double>();
+        for(var e:breathing.entrySet())if(budget.containsKey(e.getKey()))rates.merge(budget.get(e.getKey()).pool(),e.getValue(),Double::sum);
+        for(long pool:pools){
+            var profile=s.furnacePools.get(pool);boolean changed=s.oxygenDirtyPools.remove(pool);
+            // Load persisted cell membership only when topology/source profile changes.
+            if(changed){
+                boolean unavailable=profile.rooms.values().stream().anyMatch(g->saved.isUnavailable(g.cells()));
+                if(unavailable)s.unavailablePools.add(pool);else s.unavailablePools.remove(pool);
+            }
+            var b=budget.values().stream().filter(v->v.pool()==pool).findFirst().orElseThrow();
+            boolean old=s.unavailablePools.contains(pool);
+            boolean ready=CombustionAtmosphere.isVacuum(l)&&complete.getOrDefault(pool,false)
+                    &&profile.rooms.values().stream().noneMatch(g->RoomAirState.get(l).isDepleted(g.cells()));
+            boolean flames=s.burners.stream().anyMatch(v->{
+                var room=v.rooms().stream().filter(budget::containsKey).min(Long::compare).orElse(null);
+                return room!=null&&budget.get(room).pool()==pool&&l.isLoaded(BlockPos.of(v.id()))
+                        &&VacuumFlames.isOrdinaryFlame(l.getBlockState(BlockPos.of(v.id())));
+            });
+            boolean unavailable=s.breathingPolicy.update(pool,l.getGameTime(),ready,
+                    rates.getOrDefault(pool,0.0)>b.supply()+1e-8,flames,b.demand()<=b.supply()+1e-8,old);
+            if(unavailable)s.unavailablePools.add(pool);else s.unavailablePools.remove(pool);
+            if(ready&&(unavailable!=old||changed&&unavailable)){
+                for(var g:profile.rooms.values())saved.setUnavailable(g.cells(),unavailable);
+                CombustionAtmosphere.reset();
+            }
+            if(unavailable!=old)FrozenDawn.LOGGER.info("[RoomO2] Breathing O2 {} | pool {} supply {} breathing {} demand {} | gas retained",
+                    unavailable?"unavailable":"restored",pool,b.supply(),rates.getOrDefault(pool,0.0),b.demand());
+        }
+        s.breathingPolicy.retain(pools);s.unavailablePools.retainAll(pools);s.oxygenDirtyPools.retainAll(pools);
+    }
+    /** Cached persisted authority; never discovers a room or changes gas. Early atmosphere bypasses scarcity. */
+    public static boolean allowsBreathingAt(Level level,BlockPos pos) {
+        return !CombustionAtmosphere.isVacuum(level)||!(level instanceof ServerLevel l)||!RoomOxygenState.get(l).unavailableAt(pos);
+    }
     private static void adjustBudget(Map<Long,OxygenPools.Budget> budget,long pool,Set<Long> touched,double delta) {
         var owner=touched.stream().filter(budget::containsKey).min(Long::compare).orElseThrow();
         budget.replaceAll((room,b)->b.pool()!=pool?b:new OxygenPools.Budget(b.pool(),b.supply(),b.demand()+delta,
@@ -232,7 +278,7 @@ public final class RoomOxygenManager {
             var mode=OxygenStatus.Mode.OPEN_AIR;int severity=0;
             for(var p:s.gauges)if(l.isLoaded(p)&&p.distSqr(player.blockPosition())<=256){
                 var candidate=readingAt(l,p).mode();
-                int rank=switch(candidate){case NO_AIR,NO_SEAL->3;case STRAINED->2;case WAITING->1;default->0;};
+                int rank=switch(candidate){case NO_AIR,NO_SEAL,NO_OXYGEN->3;case STRAINED->2;case WAITING->1;default->0;};
                 if(rank>severity){severity=rank;mode=candidate;}
             }
             var cue=s.alarms.computeIfAbsent(id,k->new OxygenAlarmPolicy()).update(mode,

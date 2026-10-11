@@ -127,6 +127,8 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
         out.addProperty("session", session); out.addProperty("world", world);
         out.addProperty("worldName", server.getWorldData().getLevelName());
         out.addProperty("gameTime", server.overworld().getGameTime());
+        out.addProperty("apocalypseTicks", com.frozendawn.data.ApocalypseState.get(server).getApocalypseTicks());
+        out.addProperty("progressionPaused", com.frozendawn.config.FrozenDawnConfig.PAUSE_PROGRESSION.get());
         out.addProperty("paused", server.isPaused());
         out.addProperty("frozen", server.tickRateManager().isFrozen());
         out.addProperty("sprinting", server.tickRateManager().isSprinting());
@@ -186,6 +188,28 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
         row.addProperty("name", entity.getName().getString()); row.addProperty("dimension", entity.level().dimension().location().toString());
         row.addProperty("x", entity.getX()); row.addProperty("y", entity.getY()); row.addProperty("z", entity.getZ());
         JsonArray tags = new JsonArray(); entity.getTags().stream().sorted().limit(64).forEach(tags::add); row.add("tags", tags);
+        if(entity instanceof ServerPlayer player) {
+            row.addProperty("gameMode",player.gameMode.getGameModeForPlayer().getName());
+            row.addProperty("health",player.getHealth());
+            row.addProperty("foodLevel",player.getFoodData().getFoodLevel());
+            row.addProperty("saturation",player.getFoodData().getSaturationLevel());
+            row.addProperty("exhaustion",player.getFoodData().getExhaustionLevel());
+            row.addProperty("armorTier",com.frozendawn.event.MobFreezeHandler.getFullSetTier(player));
+            row.addProperty("punctures",player.getData(com.frozendawn.init.ModAttachments.SUIT_INTEGRITY).punctures());
+            var breathable=com.frozendawn.event.PlayerTickHandler.cachedBreathableState(player.getUUID());
+            if(breathable!=null)row.addProperty("cachedBreathable",breathable);
+            var eye=net.minecraft.core.BlockPos.containing(player.getX(),player.getEyeY(),player.getZ());
+            row.add("eyePos",blockPos(eye));row.addProperty("cachedEyeSeal",com.frozendawn.world.RoomAtmosphere.cachedSealAt(player.serverLevel(),eye).name());
+            int oxygen=0,capacity=0;
+            for(var stack:player.getInventory().items)if(stack.getItem() instanceof com.frozendawn.item.O2TankItem tank){
+                oxygen+=stack.getOrDefault(com.frozendawn.init.ModDataComponents.O2_LEVEL.get(),0);capacity+=tank.getMaxO2();
+            }
+            row.addProperty("tankO2",oxygen);row.addProperty("tankCapacity",capacity);
+            var terms=com.frozendawn.world.TemperatureManager.thermostatTerms(player.serverLevel(),player.blockPosition());
+            row.addProperty("localWarmth",terms.warmth());if(Double.isFinite(terms.floor()))row.addProperty("localHeatFloor",terms.floor());row.addProperty("localHeatOffset",terms.offset());
+            var base=com.frozendawn.world.RoomThermalManager.cachedTemperatureAt(player.serverLevel(),player.blockPosition());
+            if(base.isPresent()) {row.addProperty("roomThermalBase",base.getAsDouble());row.addProperty("environmentalTemperature",terms.apply(base.getAsDouble()));}
+        }
         return row;
     }
     private JsonObject command(String command, ServerPlayer player) {

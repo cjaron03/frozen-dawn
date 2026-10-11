@@ -232,7 +232,7 @@ public final class RoomOxygenGameTest {
     public static void roomOxygenFurnaceReplayFunctionsLoad(GameTestHelper h){
         var server=h.getLevel().getServer();
         var functions=server.getResourceManager().listResources("function",id->id.getNamespace().equals("room_oxygen_check")&&id.getPath().endsWith(".mcfunction"));
-        h.assertTrue(functions.size()==21,"All authored O2 test functions present, including read-only furnace checkpoints");
+        h.assertTrue(functions.size()==24,"All authored O2 test functions present, including read-only furnace checkpoints and cow repair");
         functions.forEach((file,res)->{
             var id=net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("room_oxygen_check",file.getPath().substring("function/".length()).replace(".mcfunction",""));
             h.assertTrue(server.getFunctions().get(id).isPresent(),"Native command parser loads "+id);
@@ -361,17 +361,72 @@ public final class RoomOxygenGameTest {
             } finally {second.discard();}
         } finally {cow.discard();((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
     });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenBreathingScarcityPreservesGasAndRecoversAcrossReload(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();var cows=new ArrayList<Cow>();
+        try {
+            l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);((GeothermalCoreBlockEntity)l.getBlockEntity(s.c)).onLoad();s.sources.add(s.c);
+            for(var p:List.of(s.c.west(2).above(),s.c.east(2).above())){var cow=new Cow(EntityType.COW,l);cow.setPos(p.getCenter());l.addFreshEntity(cow);cows.add(cow);}
+            var left=s.c.west().above();var right=s.c.east().above();
+            RoomAtmosphere.view(l,left);RoomAtmosphere.view(l,right);for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());
+            for(int t=0;t<200;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(TemperatureManager.hasBreathableAir(l,left),"Room stays breathable through warning grace");
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+200);RoomAtmosphere.tickLevel(l);RoomThermalManager.tickLevel(l);
+            var heat=RoomThermalManager.snapshots(l);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(heat.equals(RoomThermalManager.snapshots(l)),"O2 loss cannot remove the air reservoir or alter thermal energy");
+            h.assertTrue(!TemperatureManager.hasBreathableAir(l,left)&&!TemperatureManager.hasBreathableAir(l,right),"Breathing overload removes O2 from the shared pool after grace");
+            h.assertTrue(RoomOxygenManager.readingAt(l,left).mode().name().equals("NO_OXYGEN"),"Sealed gas with unavailable oxygen shows NO O2");
+            h.assertTrue(air.equals(RoomAirState.get(l).save(new CompoundTag(),l.registryAccess()))&&RoomAtmosphere.hasAir(l,left),"O2 scarcity preserves gas and pressure");
+            h.assertTrue(!TemperatureManager.hasOxygenSupport(l,left)&&!CombustionAtmosphere.canBurnAt(l,left),"Core cannot bypass depleted O2 for suit refill or relighting");
+            var saved=RoomOxygenState.get(l).save(new CompoundTag(),l.registryAccess());RoomOxygenManager.reset();RoomAtmosphere.reset();
+            l.getDataStorage().set(RoomOxygenState.NAME,RoomOxygenState.load(saved,l.registryAccess()));
+            h.assertTrue(!TemperatureManager.hasBreathableAir(l,left),"Reload cannot restore unavailable room oxygen");
+            RoomAtmosphere.view(l,right);for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            var extra=s.c.above(2);l.setBlock(extra,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);((GeothermalCoreBlockEntity)l.getBlockEntity(extra)).onLoad();s.sources.add(extra);
+            for(int t=220;t<=240;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(!TemperatureManager.hasBreathableAir(l,left),"New source does not immediately restore oxygen");
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+260);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(TemperatureManager.hasBreathableAir(l,left)&&TemperatureManager.hasBreathableAir(l,right),"Two stable seconds restore shared room O2");
+            h.assertTrue(air.equals(RoomAirState.get(l).save(new CompoundTag(),l.registryAccess())),"Recovery does not refill or vent pressure cells");
+        } finally {cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenBreathingWaitsForFlamesAndIgnoresEarlyUnknownData(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();var cows=new ArrayList<Cow>();
+        try {
+            var left=s.c.west().above();var right=s.c.east().above();
+            l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);((GeothermalCoreBlockEntity)l.getBlockEntity(s.c)).onLoad();s.sources.add(s.c);
+            var torches=List.of(s.c.west(2),s.c.east(2));for(var p:torches)l.setBlock(p,Blocks.TORCH.defaultBlockState(),3);
+            for(var p:List.of(left,right)){var cow=new Cow(EntityType.COW,l);cow.setPos(p.getCenter());l.addFreshEntity(cow);cows.add(cow);}
+            RoomAtmosphere.view(l,left);RoomAtmosphere.view(l,right);for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            for(int t=0;t<=240;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(TemperatureManager.hasBreathableAir(l,left),"Early atmosphere ignores capacity shortage");
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            for(int t=260;t<=460;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(TemperatureManager.hasBreathableAir(l,left)&&torches.stream().filter(p->l.getBlockState(p).is(Blocks.TORCH)).count()==1,"People still breathe while one last ordinary flame remains");
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+480);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(!TemperatureManager.hasBreathableAir(l,left)&&torches.stream().noneMatch(p->l.getBlockState(p).is(Blocks.TORCH)),"Flames finish shedding before room O2 becomes unavailable");
+            RoomAtmosphere.reset();
+            for(int t=500;t<=760;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(RoomOxygenState.get(l).unavailableAt(left),"Unknown geometry never restores saved unavailable oxygen");
+        } finally {cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
     private record Scene(ServerLevel l,BlockPos c,List<BlockPos> sources,List<BlockPos> pits,List<BlockPos> gauges) {}
     private static void scene(GameTestHelper h,java.util.function.Consumer<Scene> test){
-        var l=h.getLevel();var phase=ApocalypseState.get(l.getServer());long ticks=phase.getApocalypseTicks();var identity=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());
+        var l=h.getLevel();var phase=ApocalypseState.get(l.getServer());long ticks=phase.getApocalypseTicks();var identity=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());var oxygen=RoomOxygenState.get(l).save(new CompoundTag(),l.registryAccess());var heat=com.frozendawn.data.RoomThermalState.get(l).save(new CompoundTag(),l.registryAccess());
         var s=new Scene(l,h.absolutePos(new BlockPos(10,3,10)),new ArrayList<>(),new ArrayList<>(),new ArrayList<>());
-        try {phase.setApocalypseTicks(0,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();CombustionAtmosphere.reset();
-            l.getDataStorage().set(RoomIdentityState.NAME,new RoomIdentityState());l.getDataStorage().set(RoomAirState.NAME,new RoomAirState());
+        try {phase.setApocalypseTicks(0,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();CombustionAtmosphere.reset();RoomThermalManager.reset();
+            l.getDataStorage().set(RoomIdentityState.NAME,new RoomIdentityState());l.getDataStorage().set(RoomAirState.NAME,new RoomAirState());l.getDataStorage().set(RoomOxygenState.NAME,new RoomOxygenState());
+            // These fixtures own their thermal save too: background rebind must not inspect
+            // rooms inherited from another GameTest and mutate global pressure cells.
+            l.getDataStorage().set(com.frozendawn.data.RoomThermalState.NAME,new com.frozendawn.data.RoomThermalState());
             for(int x=-4;x<=4;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)l.setBlock(s.c.offset(x,y,z),(Math.abs(x)==4||y==-1||y==3||Math.abs(z)==2||x==0?Blocks.STONE:Blocks.AIR).defaultBlockState(),2);
             test.accept(s);h.succeed();
         } finally {for(var p:s.gauges)l.setBlock(p,Blocks.AIR.defaultBlockState(),2);for(var p:s.sources)l.setBlock(p,Blocks.AIR.defaultBlockState(),2);for(var p:s.pits)BlastPitWarmZoneRegistry.unregister(l,p);
             phase.setApocalypseTicks(ticks,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();CombustionAtmosphere.reset();AtmosphericBreach.reset();RoomThermalManager.reset();
-            l.getDataStorage().set(RoomIdentityState.NAME,RoomIdentityState.load(identity,l.registryAccess()));l.getDataStorage().set(RoomAirState.NAME,RoomAirState.load(air,l.registryAccess()));}
+            l.getDataStorage().set(RoomIdentityState.NAME,RoomIdentityState.load(identity,l.registryAccess()));l.getDataStorage().set(RoomAirState.NAME,RoomAirState.load(air,l.registryAccess()));l.getDataStorage().set(RoomOxygenState.NAME,RoomOxygenState.load(oxygen,l.registryAccess()));l.getDataStorage().set(com.frozendawn.data.RoomThermalState.NAME,com.frozendawn.data.RoomThermalState.load(heat,l.registryAccess()));}
     }
     private static void near(GameTestHelper h,double a,double b,String why){h.assertTrue(Math.abs(a-b)<1e-8,why+": "+a+" vs "+b);}
 }
