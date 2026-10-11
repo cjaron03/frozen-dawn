@@ -1,5 +1,14 @@
 # Remaining Blind Architect tests
 
+## Integration delivery: PR 106 (2026-10-11)
+
+The owner authorized integration review and merging BA into the existing `feat/maeve-director` branch. A fresh fetch confirmed that its tested baseline is still `2b1aebd`. Review retained the newer Scribe layers, admission exclusions and ordinary-controller behavior; no production source change was needed. The final reviewed snapshot is on `feat/blind-architect-integration` in [PR 106](https://github.com/cjaron03/frozen-dawn/pull/106). The PR's current merge state and required statuses are the authoritative delivery record.
+
+GitHub push protection detected an unrelated site-embedded Mapbox token in three archived Freesound pages. Only those token values were redacted in tracked copies. Original pages and before/after hashes remain locally preserved under `build/blind-integration-evidence/delivery-20261011/original-site-evidence/`; license text, creator/recording metadata, source audio and shipped assets are unchanged. All original accepted packages and saves remain immutable.
+
+Required `architectVerify` and `architectMonkey` gates are bound to the final PR head before merging, with local report, source, exact commit, jar and required-case evidence retained under `build/blind-integration-evidence/delivery-20261011/`. Branch protection is respected. Owner acceptance and the separate-computer LAN limitation are recorded in the preceding history; this integration does not add a new player-facing replay or release to main. No owning client is active.
+
+
 ## Current: combined candidate packaged and production startup accepted (2026-10-10)
 
 The owner accepted appearance, corrected bell retreat and Scribe slate/writing presentation. After Save and Quit, the complete Scribe save was archived and all 101 original files verified under the exclusive POSIX lock. Accepted appearance and bell archives contain 56 and 64 files respectively. The original saves and all failed attempts remain preserved. Scribe beliefs are explicitly LAB_SEEDED for presentation; no natural-learning acceptance is inferred.
