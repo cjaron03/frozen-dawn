@@ -218,16 +218,17 @@ Values from the code on this base:
 ## Behavior issues (report only)
 
 - **Locked entries.** 27 entries are advancement-locked (24 of 26 in ORSA Intelligence,
-  plus Acheronite Compass, Fuel Processing Silo, Rocket Assembly). The chapter list shows
-  them as "(Locked)" with a lock icon, but nothing says documents unlock them or where
-  to find them.
-- **Manual not re-issued.** `WorldTickHandler.onPlayerJoin` gives the manual once, gated
-  by the `frozendawn:received_books` persistent flag. No respawn or clone handler gives
-  it back, so it is lost with the inventory on death.
-- **ORSA Document does not open.** `OrsaDocumentItem.use` grants the per-document
-  advancement, consumes the item and prints "Document archived in your ORSA Field
-  Survival Manual". The book is named "ORSA Field Manual", the message does not say which
-  entry unlocked, and the item never opens the book. An empty `doc_type` does nothing.
+  plus Acheronite Compass, Fuel Processing Silo, Rocket Assembly). Resolved: the ORSA
+  Intelligence, ORSA Equipment and Endgame category pages now say what unlocks their
+  locked files, and Field Documents explains "(Locked)" and the Phase 4 recall file.
+- **Manual lost on death.** `WorldTickHandler.onPlayerJoin` gives the manual once. It is
+  craftable (Book + Ice Shard, `recipe/frozen_dawn_guide.json`), so no re-issue is
+  needed; nothing in game mentions the recipe yet.
+- **ORSA Document does not open.** Resolved: `OrsaDocumentItem` maps each `doc_type` to
+  its entry, names it in chat ("Archived in your ORSA Field Manual: <entry>") and opens
+  the manual on it through `FieldManual.openEntry`, which flushes the new advancement
+  first because Patchouli will not open a locked entry. The Board and Mars packets keep
+  their own reader and now use the same message. An unknown `doc_type` still does nothing.
 
 ## Rewrite after merge
 

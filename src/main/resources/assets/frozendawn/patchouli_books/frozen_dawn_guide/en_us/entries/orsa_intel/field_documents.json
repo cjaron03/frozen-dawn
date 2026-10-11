@@ -14,7 +14,11 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Right-click a document to archive it. The document is consumed and its entry in this chapter unlocks.$(br2)Entries marked (Locked) are documents you have not found yet.$(br2)$(italic)Archived material remains ORSA property. So do you.$()"
+      "text": "Right-click a document to archive it. The document is consumed, its entry in this chapter unlocks and this manual opens on it."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Entries marked (Locked) are documents you have not found yet. One file arrives on its own later in the event.$(br2)$(italic)Archived material remains ORSA property. So do you.$()"
     }
   ]
 }
