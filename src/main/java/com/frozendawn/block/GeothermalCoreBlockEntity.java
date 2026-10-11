@@ -78,6 +78,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     }
 
     public void serverTick() {
+        if (level instanceof net.minecraft.server.level.ServerLevel server) com.frozendawn.event.BlindArchitectEvents.machine(server, worldPosition);
         boolean changed = false;
 
         // Slot 0: Range upgrade — obsidian (+1), diamond block (+4)

@@ -1,7 +1,6 @@
 {
   "message.frozendawn.pawn_presentiment": "A sudden feeling of presentiment hits you...",
   "itemGroup.frozendawn": "Frozen Dawn",
-
   "block.frozendawn.dead_grass_block": "Dead Grass Block",
   "block.frozendawn.frozen_dirt": "Frozen Dirt",
   "block.frozendawn.frozen_sand": "Frozen Sand",
@@ -23,7 +22,7 @@
   "block.frozendawn.frozen_coal_ore": "Frozen Coal Ore",
   "block.frozendawn.geothermal_core": "Geothermal Core",
   "block.frozendawn.fuel_processing_silo_controller": "Fuel Processing Silo Controller",
-  "block.frozendawn.scorched_ground": "Cinders",
+  "block.frozendawn.scorched_ground": "Scorched Ground",
   "block.frozendawn.sulfur_crust": "Sulfur Crust",
   "block.frozendawn.sulfur_ore": "Sulfur Ore",
   "block.frozendawn.hydrothermal_rock": "Volcanic Tuff",
@@ -64,7 +63,6 @@
   "subtitle.frozendawn.entity.bloom_spore.growth_start": "Growth takes root",
   "subtitle.frozendawn.entity.bloom_spore.corpse_strike": "Rooted crystal fractures",
   "subtitle.frozendawn.entity.bloom_spore.corpse_break": "The relay shatters",
-
   "item.frozendawn.ice_shard": "Ice Shard",
   "item.frozendawn.impure_sulfur": "Impure Sulfur",
   "item.frozendawn.sulfur": "Sulfur",
@@ -100,7 +98,6 @@
   "tooltip.frozendawn.suit_patch.channel": "Hold use to patch. External damage interrupts.",
   "item.frozendawn.sulfur_lava_bucket": "Sulfur Lava Bucket",
   "container.frozendawn.fuel_processing_silo": "Fuel Processing Silo",
-
   "item.frozendawn.insulated_helmet": "Insulated Hood",
   "item.frozendawn.insulated_chestplate": "Insulated Jacket",
   "item.frozendawn.insulated_leggings": "Insulated Trousers",
@@ -115,13 +112,11 @@
   "item.frozendawn.eva_boots": "EVA Boots",
   "item.frozendawn.snowshoes": "Snowshoes",
   "item.frozendawn.ice_claws": "Ice Claws",
-
   "message.frozendawn.freeze.cold": "The air grows dangerously cold...",
   "message.frozendawn.freeze.biting": "The cold is biting into you...",
   "message.frozendawn.freeze.extreme": "Extreme cold! Find shelter or warmth!",
   "message.frozendawn.freeze.deadly": "You are freezing to death!",
   "message.frozendawn.architect_watched": "You feel eyes on you...",
-
   "message.frozendawn.suffocate.lightheaded": "You feel lightheaded... the air is thinning.",
   "message.frozendawn.suffocate.nausea": "Your vision swims. You can't breathe.",
   "message.frozendawn.suffocate.fading": "Your limbs go numb. Everything is fading...",
@@ -150,7 +145,6 @@
   "subtitle.frozendawn.ui.suit.leak_hiss": "Air hisses from the suit",
   "subtitle.frozendawn.ui.suit.emergency_reserve": "Emergency oxygen reserve engages",
   "subtitle.frozendawn.ui.suit.biological_activity_warning": "Anomalous biological activity detected across all survey bands. Recommend elevated caution.",
-
   "command.frozendawn.status.header": "--- Frozen Dawn Status ---",
   "command.frozendawn.status.day": "  Day: %s / %s",
   "command.frozendawn.status.phase": "  Phase: %s (%s)",
@@ -169,7 +163,6 @@
   "command.frozendawn.preset.applied": "Preset '%s' applied (days: %s, phase5 temp: %s\u00b0C)",
   "command.frozendawn.preset.unknown": "Unknown preset: %s (valid: default, cinematic, brutal)",
   "command.frozendawn.preset.locked": "World difficulty is locked. Use operator access to override it.",
-
   "message.frozendawn.difficulty.locked": "This world's difficulty is already locked.",
   "message.frozendawn.difficulty.brutal_good_luck": "Good luck...",
   "screen.frozendawn.difficulty.title": "FROZEN DAWN DIFFICULTY",
@@ -197,7 +190,6 @@
   "screen.frozendawn.phase_barometer.warning": "WARNING",
   "screen.frozendawn.phase_barometer.severity": "SEVERITY TREND",
   "screen.frozendawn.phase_barometer.none": "None",
-
   "advancement.frozendawn.root.title": "The Sun Grows Cold",
   "advancement.frozendawn.root.description": "The apocalypse has begun. Earth drifts from its star.",
   "advancement.frozendawn.phase2.title": "A Dying World",
@@ -220,53 +212,41 @@
   "advancement.frozendawn.classified_information.description": "Discover an ORSA document. What did they do?",
   "advancement.frozendawn.found_board_packet.title": "Returned Clean",
   "advancement.frozendawn.found_board_packet.description": "Read an ORSA board packet that should have stayed in Records.",
-
   "advancement.frozendawn.insulated_clothing.title": "No Frostbite For Me!",
   "advancement.frozendawn.insulated_clothing.description": "Equip a full set of insulated clothing. Fashion? No. Survival? Barely.",
   "advancement.frozendawn.heavy_insulation.title": "Won't Sweat Too Much",
   "advancement.frozendawn.heavy_insulation.description": "Equip a full set of heated insulation. You're basically a walking furnace.",
   "advancement.frozendawn.eva_suit.title": "One Small Step",
   "advancement.frozendawn.eva_suit.description": "Equip a full EVA suit. Space called. You answered.",
-
   "subtitle.frozendawn.ambient.wind_light": "Wind howls softly",
   "subtitle.frozendawn.ambient.wind_strong": "Blizzard winds roar",
   "subtitle.frozendawn.ambient.shelter_creak": "Shelter creaks",
   "subtitle.frozendawn.ambient.flag_flutter": "Flag flaps",
   "subtitle.frozendawn.blocks.alarm_beacon": "Alarm blares",
   "subtitle.frozendawn.blocks.town_pa": "Emergency message echoes",
-
   "death.attack.frozendawn.atmospheric_suffocation": "%1$s suffocated in the void",
-
   "message.frozendawn.nether_severed": "The dimensional link is dead. The Nether is unreachable.",
-
   "advancement.frozendawn.nether_severed.title": "Huh. Thought That Works",
   "advancement.frozendawn.nether_severed.description": "Attempt to light a portal after Phase 5. No way out now.",
-
   "subtitle.frozendawn.ambient.geothermal": "Deep earth rumbles",
   "subtitle.frozendawn.ambient.geothermal_tremor": "Suit frame vibrates",
   "subtitle.frozendawn.ambient.geothermal_quake": "Ground convulses",
   "subtitle.frozendawn.ambient.eva_breathing": "Suit breathing",
   "subtitle.frozendawn.ambient.eva_suffocate": "Gasping for air",
-
   "message.frozendawn.frostbite.cold": "Your fingers are going numb...",
   "message.frozendawn.frostbite.spreading": "The cold is spreading up your arms!",
   "message.frozendawn.frostbite.severe": "Frostbite! You can barely hold anything!",
   "message.frozendawn.frostbite.inventory": "There's something very cold in your inventory...",
   "message.frozendawn.frostbite.inventory_spreading": "Your pack is radiating cold. It's seeping through.",
   "message.frozendawn.frostbite.inventory_severe": "The cold from your pack is unbearable!",
-
   "message.frozendawn.heat.sweating": "You're sweating... in a frozen apocalypse. Really?",
   "message.frozendawn.heat.unbearable": "The heat is unbearable! Maybe fewer heaters?",
   "message.frozendawn.heat.cooking": "You are literally cooking alive. In an ice age.",
-
   "death.attack.frozendawn.hyperthermia": "%1$s thermally overloaded",
-
   "advancement.frozendawn.too_hot_to_handle.title": "Too Hot to Handle",
   "advancement.frozendawn.too_hot_to_handle.description": "Overheat in a world that's freezing to death. The irony is not lost on you.",
-
   "advancement.frozendawn.insulation_both_ways.title": "Insulation Works Both Ways",
   "advancement.frozendawn.insulation_both_ways.description": "Overheat while wearing insulated armor near your own heaters. You marinated yourself.",
-
   "advancement.frozendawn.found_villager_journal.title": "A Voice from the Past",
   "advancement.frozendawn.found_villager_journal.description": "Find a villager's journal in the ruins.",
   "advancement.frozendawn.found_orsa_bulletin.title": "Public Service Announcement",
@@ -275,7 +255,6 @@
   "advancement.frozendawn.found_vasik_log.description": "Find Dr. Vasik's personal research log.",
   "advancement.frozendawn.found_incident_report.title": "The Whole Truth",
   "advancement.frozendawn.found_incident_report.description": "Uncover ORSA Technical Incident Report TIR-2042-1171. Now you know everything.",
-
   "advancement.frozendawn.food_spoiled.title": "Ice Cold Disappointment",
   "advancement.frozendawn.food_spoiled.description": "Watch helplessly as your food freezes beyond recovery. Should've packed a lunchbox.",
   "advancement.frozendawn.hot_wings.title": "My DoorDash is Here",
@@ -284,9 +263,7 @@
   "advancement.frozendawn.claw_your_way_up.description": "The cold never bothered you anyway. (It did.)",
   "advancement.frozendawn.thermal_container.title": "Meal Prep Champion",
   "advancement.frozendawn.thermal_container.description": "Craft a Thermal Container. Your lunch is now rated for deep space.",
-
   "container.frozendawn.thermal_container": "Thermal Container",
-
   "advancement.frozendawn.first_shard.title": "Cold to the Touch",
   "advancement.frozendawn.first_shard.description": "Pick up an Acheronite Shard. Your fingers regret this already.",
   "advancement.frozendawn.acheron_forge_crafted.title": "Forged in the Deep",
@@ -297,11 +274,9 @@
   "advancement.frozendawn.lined_eva.description": "Craft an Acheronite-Lined EVA Suit. Space-rated AND frostbite-proof. ORSA engineers wept.",
   "advancement.frozendawn.frostbitten.title": "Should've Worn Gloves",
   "advancement.frozendawn.frostbitten.description": "Take frostbite damage from holding an Acheronite Shard. The warning was right there.",
-
   "block.frozendawn.acheronite_crystal": "Acheronite Crystal",
   "block.frozendawn.acheron_forge": "Acheron Forge",
   "block.frozendawn.acheronite_block": "Acheronite Block",
-
   "item.frozendawn.acheronite_shard": "Acheronite Shard",
   "item.frozendawn.refined_acheronite": "Refined Acheronite",
   "item.frozendawn.acheronite_sword": "Acheronite Blade",
@@ -313,9 +288,7 @@
   "item.frozendawn.acheronite_leggings": "Acheronite Leggings",
   "item.frozendawn.acheronite_boots": "Acheronite Boots",
   "item.frozendawn.lined_eva_chestplate": "Acheronite-Lined EVA Suit",
-
   "container.frozendawn.acheron_forge": "Acheron Forge",
-
   "block.frozendawn.frozen_atmosphere": "Frozen Atmosphere",
   "item.frozendawn.frozen_atmosphere_shard": "Frozen Atmosphere Shard",
   "block.frozendawn.rocket_engine": "Rocket Engine",
@@ -333,14 +306,12 @@
   "tooltip.frozendawn.ice_claws": "Acheronite grips for climbing frozen walls the sensible way.",
   "tooltip.frozendawn.ice_claws.use": "Wear in a Curios hands slot. Hold Jump to climb tagged frozen surfaces and Sneak to hold.",
   "curios.identifier.feet": "Feet",
-
   "item.frozendawn.acheronite_compass": "Acheronite Compass",
   "item.frozendawn.transponder_schematic": "ORSA Transponder Schematic",
   "item.frozendawn.satellite_log": "ORSA Satellite System Log",
   "item.frozendawn.martian_command_packet": "Martian Command Packet",
   "advancement.frozendawn.found_acheronite_compass.title": "Recovered Tracking Hardware",
   "advancement.frozendawn.found_acheronite_compass.description": "Recover an Acheronite Compass from an ORSA tower. Directions sold separately.",
-
   "advancement.frozendawn.found_satellite_log.title": "Sputnik?!",
   "advancement.frozendawn.found_satellite_log.description": "Find the crashed ORSA relay satellite. It came down hard.",
   "advancement.frozendawn.found_martian_command_packet.title": "Someone Answered",
@@ -349,19 +320,15 @@
   "advancement.frozendawn.found_cargo_drop_manifest.title": "Return to Sender",
   "advancement.frozendawn.found_cargo_drop_manifest.description": "Archive a failed ORSA cargo manifest. Some drops carried hope. Some carried paperwork.",
   "advancement.frozendawn.found_launch_manifest.description": "Archive the ORSA launch manifest from the blast pit. The numbers do not add up.",
-  "block.frozendawn.scorched_ground": "Scorched Ground",
   "advancement.frozendawn.found_transponder_schematic.title": "The Blueprint",
   "advancement.frozendawn.found_transponder_schematic.description": "Archive the ORSA Transponder Schematic. Now build the damn thing.",
-
   "block.frozendawn.transponder": "ORSA Transponder",
-
   "advancement.frozendawn.broadcast_complete.title": "Signal Sent",
   "advancement.frozendawn.broadcast_complete.description": "Complete the transponder broadcast. Someone out there heard you.",
-
   "message.frozendawn.transponder.activated": "Transponder online. Broadcasting signal... ETA: %s minutes.",
   "message.frozendawn.transponder.broadcasting": "Signal broadcasting... approximately %s minutes remaining.",
-  "message.frozendawn.transponder.paused_core": "PAUSED — No Geothermal Core detected. %s minutes remaining.",
-  "message.frozendawn.transponder.paused_shaft": "PAUSED — Shaft blocked. Clear the path to the sky. %s minutes remaining.",
+  "message.frozendawn.transponder.paused_core": "PAUSED \u2014 No Geothermal Core detected. %s minutes remaining.",
+  "message.frozendawn.transponder.paused_shaft": "PAUSED \u2014 Shaft blocked. Clear the path to the sky. %s minutes remaining.",
   "message.frozendawn.transponder.complete": "Broadcast complete. The signal has been sent.",
   "message.frozendawn.transponder.too_high": "The transponder must be placed below Y=0 to reach the deep relay network.",
   "message.frozendawn.transponder.no_schematic": "You haven't found the transponder schematic yet.",
@@ -389,7 +356,6 @@
   "message.frozendawn.mars_command.subtitle8": "Good luck, and godspeed.",
   "subtitle.frozendawn.radio.martian_command": "[Martian Command transmission]",
   "subtitle.frozendawn.terminal.blackglass_audio": "[BLACKGLASS recovered audio]",
-
   "screen.frozendawn.ending.title": "Minecraft: Frozen Dawn",
   "screen.frozendawn.ending.mars_colony": "ORSA Mars Colony -- Active",
   "screen.frozendawn.ending.terminal.arrival": "ARRIVAL TELEMETRY",
@@ -450,7 +416,6 @@
   "screen.frozendawn.ending.vector.gravity": "Mars gravity well: captured",
   "screen.frozendawn.ending.vector.corridor": "Entry corridor: locked",
   "screen.frozendawn.ending.vector.capture": "0.38g capture",
-
   "item.frozendawn.stuffed_penguin": "Stuffed Penguin",
   "item.frozendawn.stuffed_capybara": "Stuffed Capybara",
   "item.frozendawn.stuffed_hyrax": "Stuffed Hyrax",
@@ -468,19 +433,15 @@
   "advancement.frozendawn.architect_noticed.description": "You have been noticed",
   "advancement.frozendawn.architect_singleplayer.title": "I thought I was in singleplayer",
   "advancement.frozendawn.architect_singleplayer.description": "Whats that sound?",
-
   "message.frozendawn.sanity.watched": "You feel like you are being watched...",
-
   "subtitle.frozendawn.ambient.sanity_whisper": "Something whispers",
   "subtitle.frozendawn.ambient.sanity_footstep": "Distant footsteps",
   "subtitle.frozendawn.ambient.sanity_thud": "Something shifts",
-
   "entity.frozendawn.frostbitten": "Frostbitten",
   "entity.frozendawn.heavy_snowball": "Heavy Snowball",
   "item.frozendawn.frozen_meat": "Frozen Meat",
   "item.frozendawn.hot_wings": "Hot Wings",
   "item.frozendawn.frostbitten_core": "Frostbitten Core",
-
   "subtitle.frozendawn.entity.frostbitten.ambient": "Frostbitten groans",
   "subtitle.frozendawn.entity.frostbitten.hurt": "Frostbitten hurts",
   "subtitle.frozendawn.entity.frostbitten.death": "Frostbitten shatters",
@@ -490,9 +451,7 @@
   "subtitle.frozendawn.entity.frostmite.hurt": "Frostmite cracks",
   "subtitle.frozendawn.entity.frostmite.death": "Frostmite shatters",
   "subtitle.frozendawn.entity.frostmite.step": "Tiny claws scrape",
-
   "death.attack.frozendawn.frostbitten": "%1$s was frozen solid by a Frostbitten",
-
   "entity.frozendawn.hollow": "Hollow",
   "item.frozendawn.frozen_breath": "Frozen Breath",
   "subtitle.frozendawn.entity.hollow.ambient": "Hollow breathes",
@@ -502,24 +461,19 @@
   "subtitle.frozendawn.entity.hollow.entomb": "Ice entombs",
   "death.attack.hollow": "%1$s was entombed by the cold",
   "death.attack.frozendawn.hollow_freeze": "%1$s was frozen by a Hollow",
-
   "item.frozendawn.cryo_fuel": "Cryo Fuel",
   "block.frozendawn.frost_ward_torch": "Frost Ward Torch",
   "item.frozendawn.thermal_capacitor": "Thermal Capacitor",
-
   "message.frozendawn.capacitor.installed": "Thermal Capacitor installed! Warmth radius doubled.",
   "message.frozendawn.capacitor.already_installed": "This heater already has a Thermal Capacitor.",
-
   "item.frozendawn.frostbitten_spawn_egg": "Frostbitten Spawn Egg",
   "entity.frozendawn.frostmite": "Frostmite",
   "item.frozendawn.frostmite_spawn_egg": "Frostmite Spawn Egg",
   "item.frozendawn.hollow_spawn_egg": "Hollow Spawn Egg",
-
   "advancement.frozendawn.later_casper.title": "Later, Casper",
   "advancement.frozendawn.later_casper.description": "Cause a Hollow to flee from a Frost Ward Torch. Who's haunting who now?",
   "advancement.frozendawn.cryo_fuel_heater.title": "How Does This Even Work?",
   "advancement.frozendawn.cryo_fuel_heater.description": "Burn frozen ghost breath to heat your base. ORSA Thermodynamics Division has concerns.",
-
   "entity.frozendawn.returned": "Returned Hunter",
   "entity.frozendawn.undone": "The Undone",
   "entity.frozendawn.bloombound_undone": "The Bloombound",
@@ -528,12 +482,9 @@
   "item.frozendawn.tattered_clothing_scrap": "Tattered Clothing Scrap",
   "item.frozendawn.orsa_id_badge": "ORSA ID Badge",
   "item.frozendawn.returned_spawn_egg": "Returned Hunter Spawn Egg",
-
   "tooltip.frozendawn.remnant_ember": "Hold in offhand for warmth.",
   "tooltip.frozendawn.remnant_ember.warmth": "Warmth: %1$d:%2$02d remaining",
-
   "message.frozendawn.remnant_ember.burned_out": "Your Remnant Ember has burned out.",
-
   "subtitle.frozendawn.entity.returned.ambient": "Returned murmurs",
   "subtitle.frozendawn.entity.returned.hurt": "Returned cries out",
   "subtitle.frozendawn.entity.returned.death": "Returned collapses",
@@ -554,14 +505,11 @@
   "ui.frozendawn.suit.undone_contact": "Contact. Signature does not match known profiles.",
   "subtitle.frozendawn.ui.suit.undone_contact": "Contact. Signature does not match known profiles.",
   "message.frozendawn.surveyor_lens.post_maeve": "UNCLASSIFIED RETURN // weak bearing %s",
-
   "death.attack.frozendawn.returned": "%1$s was killed by a Returned",
-
   "advancement.frozendawn.they_remember.title": "They Remember",
   "advancement.frozendawn.they_remember.description": "A Returned extinguished your heater. They still know what fire does.",
   "advancement.frozendawn.returned_killed.title": "Rest Now",
   "advancement.frozendawn.returned_killed.description": "Kill one of the Returned. Whatever they were, they're at peace now.",
-
   "entity.frozendawn.mimic": "Returned Mimic",
   "item.frozendawn.mirrored_fragment": "Mirrored Fragment",
   "item.frozendawn.mimic_spawn_egg": "Returned Mimic Spawn Egg",
@@ -570,17 +518,13 @@
   "tooltip.frozendawn.mirrored_fragment.use": "Right-click to restore sanity.",
   "message.frozendawn.mirrored_fragment.used": "The fragment shatters. Your mind clears.",
   "message.frozendawn.mirrored_fragment.no_effect": "Your mind is already clear.",
-
   "subtitle.frozendawn.entity.mimic.hurt": "Something wails",
   "subtitle.frozendawn.entity.mimic.death": "Something dissolves",
   "subtitle.frozendawn.entity.mimic.attack": "Something shrieks",
   "subtitle.frozendawn.entity.mimic.stare": "You feel watched",
-
   "death.attack.frozendawn.mimic": "%1$s was killed by a Returned Mimic",
-
   "advancement.frozendawn.not_a_shadow.title": "Not a Shadow",
   "advancement.frozendawn.not_a_shadow.description": "You've learned to stop ignoring the shapes in the dark.",
-
   "entity.frozendawn.architect": "Returned Architect",
   "item.frozendawn.architect_soul": "Architect Soul",
   "item.frozendawn.master_architect_staff": "Thaeven Wand",
@@ -630,7 +574,6 @@
   "message.frozendawn.surveyor_lens.hearth.catalogued_chat": "ORSA SURVEY ARCHIVE: %1$s Hearth signature stored. Last lock: %2$s blocks %3$s.",
   "message.frozendawn.surveyor_lens.hearth.type.major": "Major",
   "message.frozendawn.surveyor_lens.hearth.type.minor": "Minor",
-
   "subtitle.frozendawn.entity.architect.mine": "Something is mining",
   "subtitle.frozendawn.entity.architect.shoot": "Architect shoots arrow",
   "subtitle.frozendawn.entity.architect.ambient": "Something creaks nearby",
@@ -673,13 +616,10 @@
   "subtitle.frozendawn.entity.master_architect.thermal_cancel": "Thermal Sever loses its hold",
   "subtitle.frozendawn.entity.hearth.boundary_warning": "The collective draws breath.",
   "subtitle.frozendawn.entity.hearth.orsathae": "The collective screams.",
-
   "subtitle.frozendawn.radio.static": "Radio static crackles",
   "subtitle.frozendawn.radio.signal_lock": "Radio signal acquired",
-
   "death.attack.frozendawn.architect": "%1$s was disassembled by a Returned Architect",
   "death.attack.frozendawn.thermal_sever": "%1$s's thermal loop was severed",
-
   "advancement.frozendawn.pacifist_launch.title": "A Pacifist in This World",
   "advancement.frozendawn.pacifist_launch.description": "Do not answer! Do not answer!! Do not answer!!!\nLeave Earth without killing any of the Returned or their descendants.",
   "advancement.frozendawn.disassembled.title": "Disassembled",
@@ -692,7 +632,6 @@
   "advancement.frozendawn.host_has_joined_the_game.description": "It wasn't looking at your character.",
   "overlay.frozendawn.thaeven.host_found": "There you are",
   "bossbar.frozendawn.master_architect": "The Master Architect",
-
   "advancement.frozendawn.found_newspaper_cannibal.title": "Local News",
   "advancement.frozendawn.found_newspaper_cannibal.description": "Find a tattered newspaper clipping. Some stories age poorly.",
   "advancement.frozendawn.found_newspaper_conspiracy.title": "He Was Right",
@@ -701,7 +640,6 @@
   "advancement.frozendawn.found_newspaper_weather.description": "Find a faded weather page. She went with the European model.",
   "advancement.frozendawn.found_newspaper_missing.title": "4,200 People",
   "advancement.frozendawn.found_newspaper_missing.description": "Find a torn community board flyer. 26 names on the board.",
-
   "advancement.frozendawn.et_tu_frosty.title": "Et Tu, Frosty?",
   "advancement.frozendawn.et_tu_frosty.description": "He was never on your side.",
   "advancement.frozendawn.edge_of_space.title": "Edge of Space",
@@ -714,7 +652,6 @@
   "advancement.frozendawn.stubborn.description": "The simulation didn't account for this.",
   "advancement.frozendawn.how.title": "How.",
   "advancement.frozendawn.how.description": "No, seriously. How.",
-
   "advancement.frozendawn.found_camp_field_report.title": "Field Report",
   "advancement.frozendawn.found_camp_field_report.description": "Find an ORSA field report. They were here. They left in a hurry.",
   "advancement.frozendawn.found_station_upload_log.title": "Ghost Uploads",
@@ -737,7 +674,6 @@
   "advancement.frozendawn.found_vehicle_transcript_breakdown.description": "Archive a recorded evac-vehicle transcript that ends in engine trouble and static.",
   "advancement.frozendawn.found_vehicle_transcript_failed.title": "Camp Never Sent Anyone",
   "advancement.frozendawn.found_vehicle_transcript_failed.description": "Archive a recorded evac-vehicle transcript. The transfer failed before it arrived.",
-
   "message.frozendawn.ee.fridge": "At least the beer's cold.",
   "message.frozendawn.ee.torch": "That's not going to help.",
   "message.frozendawn.ee.this_is_fine": "This is fine.",
@@ -748,7 +684,6 @@
   "message.frozendawn.ee.fire_safety": "ORSA Fire Safety Division would like a word.",
   "message.frozendawn.ee.lovecraft": "Ph'nglui mglw'nafh.",
   "message.frozendawn.ee.eyes_up": "Eyes up.",
-
   "overlay.frozendawn.thaeven.label": "THAE IVEN",
   "overlay.frozendawn.thaeven.neutral.presence": "[presence - awareness - the feeling of not being alone]",
   "overlay.frozendawn.thaeven.neutral.word": "Vel-thae.",
@@ -1122,5 +1057,8 @@
   "hud.frozendawn.emergency_eva.reserve": "Reserve oxygen: %s",
   "tooltip.frozendawn.emergency_eva.service": "ORSA Continuity Protocol // Fifteen-minute equipped service life.",
   "tooltip.frozendawn.emergency_eva.remaining": "Emergency service remaining: %s",
-  "tooltip.frozendawn.emergency_eva.disposable": "Retires on primary EVA verification, service expiry or death."
+  "tooltip.frozendawn.emergency_eva.disposable": "Retires on primary EVA verification, service expiry or death.",
+  "subtitles.frozendawn.blind_architect.click": "Something clicks in the dark.",
+  "message.frozendawn.blind_architect.found": "Something has found you.",
+  "subtitles.frozendawn.blind_architect.hurt": "Blind Architect hurts"
 }

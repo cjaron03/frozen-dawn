@@ -10,6 +10,8 @@ For local Minecraft iteration, always launch through Gradle from the owning chec
 
 The owner authorized agents to collect Maeve/Architect dumps and diagnostic state. The owner performs visual playtests and reports perceived behavior. Preserve their unprompted description before revealing a diagnostic explanation. Mutating test steps must match the agreed replay and active world. Never automatically retry a timed-out request, erase history, run a reset, or advance a visible encounter merely to collect evidence.
 
+Generated playtest worlds must suppress advancement popups and chat awards, and preselect the agreed test difficulty before the first player joins so the difficulty picker does not interrupt the view. Keep these settings inside the generated test save and its datapack; do not change ordinary worlds or global client preferences. The Blind world generator uses a world-local advancement filter and fresh default-difficulty state with the choice locked. Its filter pack must follow NeoForge's combined `mod_data` pack in the selected order; verify the actual loader-selected stack, since listing individual mod IDs can put mod data above the filter. Preserve existing saves when preparing a revised fixture.
+
 ## Current MACS work
 
 Read the latest sections of [docs/macs-pawn-checkpoint.md](docs/macs-pawn-checkpoint.md) before resuming Pawn Convergence. They identify the owning worktree, active save, actor UUIDs, evidence, remaining acceptance and branch/PR status. The checkpoint is historical evidence: verify current files and runtime before using it. Do not infer merge approval from a successful replay.

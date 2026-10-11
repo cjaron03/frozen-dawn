@@ -2201,5 +2201,86 @@
   "ui.suit.stillpoint_field": {
     "category": "voice", "subtitle": "subtitle.frozendawn.ui.suit.stillpoint_field",
     "sounds": [{"name":"frozendawn:ui/suit/stillpoint_field","stream":true}]
+  },
+  "entity.blind_architect.click": {
+    "subtitle": "subtitles.frozendawn.blind_architect.click",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_1",
+        "stream": false
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_2",
+        "stream": false
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_3",
+        "stream": false
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_4",
+        "stream": false
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_5",
+        "stream": false
+      },
+      {
+        "name": "frozendawn:entity/blind_architect/throat_click_6",
+        "stream": false
+      }
+    ]
+  },
+  "entity.blind_architect.idle": {
+    "subtitle": "subtitles.frozendawn.blind_architect.click",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/blind_architect/throat_idle_1",
+        "stream": false
+      }
+    ]
+  },
+  "entity.blind_architect.search": {
+    "subtitle": "subtitles.frozendawn.blind_architect.click",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/blind_architect/throat_search_1",
+        "stream": false
+      }
+    ]
+  },
+  "entity.blind_architect.lock": {
+    "subtitle": "subtitles.frozendawn.blind_architect.click",
+    "sounds": [
+      {
+        "name": "frozendawn:entity/blind_architect/throat_lock_1",
+        "stream": false
+      }
+    ]
+  },
+  "entity.blind_architect.hurt": {
+    "subtitle": "subtitles.frozendawn.blind_architect.hurt",
+    "sounds": [
+      {
+        "name": "minecraft:mob/warden/hurt_1",
+        "volume": 0.6,
+        "stream": true
+      },
+      {
+        "name": "minecraft:mob/warden/hurt_2",
+        "volume": 0.6,
+        "stream": true
+      },
+      {
+        "name": "minecraft:mob/phantom/hurt1",
+        "volume": 0.375,
+        "stream": true
+      },
+      {
+        "name": "minecraft:mob/phantom/hurt2",
+        "volume": 0.375,
+        "stream": true
+      }
+    ]
   }
 }

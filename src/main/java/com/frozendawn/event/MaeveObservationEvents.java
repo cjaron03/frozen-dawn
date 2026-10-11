@@ -32,10 +32,12 @@ public final class MaeveObservationEvents {
     @SubscribeEvent
     public static void onDamage(LivingDamageEvent.Post event) {
         if (event.getEntity() instanceof ArchitectEntity observer) {
+            if (observer.isBlindArchitect()) return;
             MaeveDirector.observeDamage(observer, event.getSource(), event.getNewDamage());
             observer.onEffectiveCombatDamage(event.getSource(), event.getNewDamage());
         } else if (event.getEntity() instanceof ServerPlayer player
                 && event.getSource().getEntity() instanceof ArchitectEntity actor) {
+            if (actor.isBlindArchitect()) return;
             MaeveDirector.observeCounterDamage(actor, player, event.getNewDamage(), true);
             if (event.getNewDamage() > 0) MaeveDirector.beginLocalCombat(actor, player);
         }

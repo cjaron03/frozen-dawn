@@ -54,6 +54,9 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
         this.addLayer(this.masterAdornmentLayer);
         this.reconnaissanceEyes = new ArchitectReconnaissanceEyesLayer(this);
         this.addLayer(reconnaissanceEyes);
+        this.addLayer(new ArchitectBlindFaceLayer(this));
+        this.addLayer(new ArchitectBlindHelmetLayer(this,
+                new HumanoidArmorModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR))));
         this.layers.replaceAll(layer -> layer.getClass() == net.minecraft.client.renderer.entity.layers.ItemInHandLayer.class
                 ? new ScribeSlateItemLayer(this, context.getItemInHandRenderer()) : layer);
     }
@@ -62,6 +65,9 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     public static ResourceLocation baseTexture() {
         return TEXTURE;
     }
+
+    @Override
+    protected boolean shouldShowName(ArchitectEntity entity) { return !entity.isBlindArchitect() && super.shouldShowName(entity); }
 
     @Override
     public ResourceLocation getTextureLocation(ArchitectEntity entity) {
@@ -78,6 +84,8 @@ public class ArchitectRenderer extends HumanoidMobRenderer<ArchitectEntity, Arch
     public void render(ArchitectEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         int deathTicks = entity.getDeathTicks();
+        // Keep the opaque eye mask on the Blind corpse as well as its living rig.
+        if (entity.isBlindArchitect() && deathTicks > 0) { super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight); return; }
         if (entity.getReconnaissanceDissolve() != 0) {
             renderScoutDissolve(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
             return;
