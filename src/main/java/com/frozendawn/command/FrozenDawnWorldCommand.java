@@ -45,6 +45,7 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.literal("verbose")
                                 .executes(context -> status(context, true))))
                 .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
+                .then(Commands.literal("oxygen").executes(FrozenDawnWorldCommand::oxygenDiagnostics))
                 .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))
                 .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
                 .then(Commands.literal("set")
@@ -80,6 +81,13 @@ final class FrozenDawnWorldCommand {
         return 1;
     }
 
+    private static int oxygenDiagnostics(CommandContext<CommandSourceStack> context) {
+        var level=context.getSource().getLevel();var rooms=com.frozendawn.world.RoomOxygenManager.snapshots(level);
+        FrozenDawnCommandOutput.line(context.getSource(),"Room O2 accounting",rooms.size()+" cached rooms; observation only; one unit = one player's breathing rate");
+        for(var r:rooms.stream().limit(32).toList())FrozenDawnCommandOutput.detail(context.getSource(),"Room "+r.room(),String.format(Locale.ROOT,
+                "pool %d | %s | supply %.2f / demand %.2f | local %.2f | %d sources / %d rooms",r.pool(),r.mode(),r.supply(),r.demand(),r.localDemand(),r.sources(),r.rooms()));
+        if(rooms.size()>32)FrozenDawnCommandOutput.detail(context.getSource(),"Remaining",(rooms.size()-32)+" rooms omitted");return 1;
+    }
     private static int roomDiagnostics(CommandContext<CommandSourceStack> context) {
         var level = context.getSource().getLevel();
         var rooms = com.frozendawn.world.RoomAtmosphere.cachedRoomDiagnostics(level);

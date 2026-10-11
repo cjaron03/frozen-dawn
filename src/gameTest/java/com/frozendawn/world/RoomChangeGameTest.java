@@ -169,7 +169,7 @@ public final class RoomChangeGameTest {
                     h.assertTrue(airEvents.size()==2&&((RoomChangeEvent.AirStateChange)airEvents.getFirst().change()).depleted()
                             &&!((RoomChangeEvent.AirStateChange)airEvents.getLast().change()).depleted(),"One evacuation and one completed Core refill transition");
                     h.assertTrue(events.stream().filter(e->e.type()==RoomChangeEvent.Type.WALL_MATERIAL).count()==1
-                            &&events.stream().noneMatch(e->e.type()==RoomChangeEvent.Type.GEOMETRY),"Material-only edit leaves air geometry stable throughout recovery");
+                            &&events.stream().noneMatch(e->e.type()==RoomChangeEvent.Type.GEOMETRY),"Material-only edit leaves air geometry stable throughout recovery: "+events.stream().map(e->e.change() instanceof RoomChangeEvent.GeometryChange g?"GEOMETRY "+g.currentRooms().stream().map(r->r.id()+":"+r.geometry().cells().iterator().next()).toList():e.type().toString()).toList());
                     h.succeed();
                 } finally {cleanup.run();}
             });

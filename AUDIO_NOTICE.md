@@ -54,6 +54,8 @@ CC0 recordings do not legally require attribution, but Frozen Dawn preserves att
 
 ## Required and Retained Credits
 
+- Room oxygen critical klaxon: “Klaxon” by [InfamousLazure](https://freesound.org/people/InfamousLazure/sounds/584001/), [creator profile](https://bsky.app/profile/infamouslazure.bsky.social), CC0 1.0 Universal. Mono/normalized/faded derivative of the official HQ MP3 preview; source, individual license evidence and hashes are preserved in [the room oxygen ledger](tools/audio_sources/room_oxygen/SOURCES.md). The softer strained chime is original procedural audio from that ledger.
+
 - "Scream woman pain 4" by Valerie-Vivegnis, used in the Archivist terminal
   scream, licensed under CC BY 4.0:
   https://freesound.org/people/Valerie-Vivegnis/sounds/767890/ and

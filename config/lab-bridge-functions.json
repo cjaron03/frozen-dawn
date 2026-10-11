@@ -342,6 +342,26 @@
           "equals": 1
         }
       ]
+    },
+    "room_oxygen_check:safe": {
+      "world": "Room O2 Check",
+      "scores": [
+        {
+          "objective": "roxygen",
+          "holder": "#built",
+          "equals": 1
+        }
+      ]
+    },
+    "room_oxygen_check:left": {
+      "world": "Room O2 Check",
+      "scores": [
+        {
+          "objective": "roxygen",
+          "holder": "#built",
+          "equals": 1
+        }
+      ]
     }
   }
 }

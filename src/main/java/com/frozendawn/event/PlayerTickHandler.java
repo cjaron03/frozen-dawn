@@ -42,7 +42,7 @@ import java.util.UUID;
  * atmospheric suffocation, and armor advancement grants.
  * Called from WorldTickHandler each server tick.
  */
-final class PlayerTickHandler {
+public final class PlayerTickHandler {
 
     private PlayerTickHandler() {}
 
@@ -450,6 +450,12 @@ final class PlayerTickHandler {
             player.hurt(source, SUFFOCATION_DAMAGE);
             player.setDeltaMovement(motion);
         }
+    }
+
+    /** Read-only danger signal for room alarms; suit/tank protection is already applied. */
+    public static boolean isSuffocationImminent(UUID playerId) {
+        var stage=suffocationStages.getOrDefault(playerId,SuffocationStage.NONE);
+        return stage==SuffocationStage.FADING||stage==SuffocationStage.DYING;
     }
 
     private static void syncSuffocationStage(ServerPlayer player, SuffocationStage stage) {

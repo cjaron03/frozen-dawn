@@ -27,6 +27,7 @@
     "frozendawn:airlock_door",
     "frozendawn:airlock_controller",
     "frozendawn:manual_vent_valve",
-    "frozendawn:heat_vent"
+    "frozendawn:heat_vent",
+    "frozendawn:oxygen_gauge"
   ]
 }
