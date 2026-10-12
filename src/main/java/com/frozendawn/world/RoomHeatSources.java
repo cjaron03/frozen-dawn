@@ -24,7 +24,7 @@ public final class RoomHeatSources {
             double temperature=GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(core.getEffectiveTemp(),pos);
             // Base Core:450 units/s underground,225 at the surface; temperature upgrades increase transfer.
             // A passive Core supplies heat only below its supply temperature; it never refrigerates the room.
-            double power=RoomThermalManager.BASE_HEATER_POWER*.25*temperature/GeothermalCoreBlockEntity.BASE_TEMP*multiplier;
+            double power=core.getHeatOutput();
             return power>0?Optional.of(new Source(pos.immutable(),power,temperature)):Optional.empty();
         }
         double signature=TemperatureManager.getAmbientSignatureHeat(level.getBlockState(pos));

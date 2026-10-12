@@ -104,8 +104,8 @@ public final class RoomOxygenManager {
     }
     private static List<Supply> supplies(ServerLevel l,State s,Set<Long> valid) {
         var result=new ArrayList<Supply>();int[] discoveryBudget={2};
-        for(var p:GeothermalCoreRegistry.getCores(l).stream().sorted(Comparator.comparingLong(BlockPos::asLong)).toList())if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof GeothermalCoreBlockEntity core){
-            var rooms=served(s,p,valid);if(!rooms.isEmpty())result.add(new Supply("core:"+p.asLong(),CORE_CAPACITY,rooms,sourceReady(l,s,p,discoveryBudget)));}
+        for(var p:GeothermalCoreRegistry.getCores(l).stream().sorted(Comparator.comparingLong(BlockPos::asLong)).toList())if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof GeothermalCoreBlockEntity core&&core.getOxygenSupply()>0){
+            var rooms=served(s,p,valid);if(!rooms.isEmpty())result.add(new Supply("core:"+p.asLong(),core.getOxygenSupply(),rooms,sourceReady(l,s,p,discoveryBudget)));}
         for(var p:BlastPitWarmZoneRegistry.getWarmZones(l))if(l.isLoaded(p)){var rooms=served(s,p,valid);if(!rooms.isEmpty())result.add(new Supply("blast_pit:"+p.asLong(),BLAST_PIT_CAPACITY,rooms,sourceReady(l,s,p,discoveryBudget)));}
         result.sort(Comparator.comparing(Supply::id));return List.copyOf(result);
     }

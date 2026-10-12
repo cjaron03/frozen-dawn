@@ -187,6 +187,7 @@ public final class TemperatureManager {
             int o2Range;
             BlockEntity be = level.getBlockEntity(corePos);
             if (be instanceof GeothermalCoreBlockEntity core) {
+                if(core.getOxygenSupply()<=0)continue;
                 o2Range = core.getEffectiveO2Range();
             } else {
                 o2Range = GeothermalCoreBlockEntity.BASE_O2_RANGE;
@@ -279,8 +280,9 @@ public final class TemperatureManager {
 
             BlockEntity be = level.getBlockEntity(corePos);
             if (be instanceof GeothermalCoreBlockEntity core) {
+                if(core.getHeatShare()==0)continue;
                 coreRange = core.getEffectiveRange();
-                coreTemp = core.getEffectiveTemp();
+                coreTemp = (float)(core.getEffectiveTemp()*core.getHeatMultiplier());
             } else {
                 coreRange = GeothermalCoreBlockEntity.BASE_RANGE;
                 coreTemp = GeothermalCoreBlockEntity.BASE_TEMP;

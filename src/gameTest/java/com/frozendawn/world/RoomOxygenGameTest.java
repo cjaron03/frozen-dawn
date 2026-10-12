@@ -530,6 +530,58 @@ public final class RoomOxygenGameTest {
             h.assertTrue(RoomOxygenManager.readingAt(l,s.c.west()).mode()!=OxygenStatus.Mode.ON_RESERVE&&RoomOxygenManager.storageAt(l,s.c.west()).secondsRemaining()<0,"Rate-limited storage cannot report full support or a false reserve countdown");
         }finally{cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
     });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void coreSplitLegacyUpgradeMigrationAndMenuPersistence(GameTestHelper h){scene(h,s->{
+        var l=s.l;l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+        var core=(GeothermalCoreBlockEntity)l.getBlockEntity(s.c);s.sources.add(s.c);core.onLoad();
+        var old=core.saveWithFullMetadata(l.registryAccess());old.remove("HeatShare");
+        old.putInt("RangeLevel",12);old.putInt("TempLevel",6);old.putInt("O2Level",2);
+        core.loadWithComponents(old,l.registryAccess());
+        h.assertTrue(core.getHeatShare()==60&&core.getOxygenShare()==40&&core.getEffectiveRange()==24&&core.getEffectiveTemp()==80&&core.getEffectiveO2Range()==26,"Old saves retain the default and all upgrades");
+        near(h,core.getHeatOutput(),RoomThermalManager.BASE_HEATER_POWER*.25*GeothermalCoreBlockEntity.applySurfaceWarmthPenalty(80,s.c)/50*com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get(),"Default upgraded heat exactly matches prior output");
+        near(h,core.getOxygenSupply(),8,"O2 upgrade changes reach, not default capacity");
+        var player=new net.neoforged.neoforge.common.util.FakePlayer(l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"core_split_menu"));player.setPos(s.c.east(2).getCenter());
+        var menu=new GeothermalCoreMenu(1,player.getInventory(),core);
+        h.assertTrue(menu.clickMenuButton(player,80)&&core.getHeatShare()==80,"Real menu changes server-authoritative share");
+        h.assertTrue(!menu.clickMenuButton(player,-1)&&!menu.clickMenuButton(player,101)&&core.getHeatShare()==80,"Invalid button shares cannot change allocation");
+        var saved=core.saveWithFullMetadata(l.registryAccess());var copy=new GeothermalCoreBlockEntity(s.c,core.getBlockState());copy.loadWithComponents(saved,l.registryAccess());
+        h.assertTrue(copy.getHeatShare()==80&&copy.getEffectiveTemp()==80&&copy.getEffectiveO2Range()==26,"Reload retains share and upgrades");
+        var replica=new GeothermalCoreBlockEntity(s.c,core.getBlockState());replica.loadWithComponents(core.getUpdateTag(l.registryAccess()),l.registryAccess());
+        h.assertTrue(replica.getHeatShare()==80&&replica.getOxygenSupply()==4&&core.getData().get(3)==80&&core.getData().get(5)==400,"Client tag and menu report actual allocation and supply");
+        player.setPos(s.c.east(12).getCenter());h.assertTrue(!menu.clickMenuButton(player,60),"Remote player cannot alter the Core");
+        player.setPos(s.c.east(2).getCenter());l.setBlock(s.c,Blocks.STONE.defaultBlockState(),3);l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+        h.assertTrue(!menu.clickMenuButton(player,60),"Stale menu cannot change a replacement Core");
+        saved.putInt("HeatShare",999);copy.loadWithComponents(saved,l.registryAccess());h.assertTrue(copy.getHeatShare()==100&&copy.getOxygenSupply()==0,"Corrupt saved shares are bounded");
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void coreSplitSharedOxygenAndZeroFeedRecovery(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();
+        try{
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);var core=(GeothermalCoreBlockEntity)l.getBlockEntity(s.c);core.onLoad();s.sources.add(s.c);
+            var left=s.c.west(2);var right=s.c.east(2);RoomAtmosphere.view(l,left);RoomAtmosphere.view(l,right);
+            for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            for(var r:RoomOxygenManager.snapshots(l))near(h,r.supply(),8,"Default physical source is shared once");
+            core.setHeatShare(80);RoomOxygenManager.tickLevel(l);
+            for(var r:RoomOxygenManager.snapshots(l)){near(h,r.supply(),4,"20% O2 means four units total across both rooms");h.assertTrue(r.rooms()==2&&r.sources()==1,"Allocation does not duplicate source topology");}
+            core.setHeatShare(100);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(!RoomAtmosphere.hasOxygenSupport(l,left)&&!RoomAtmosphere.hasOxygenSupport(l,right),"Zero O2 cannot grant range-only oxygen protection");
+            h.assertTrue(RoomAtmosphere.hasAir(l,left),"Turning off O2 does not evacuate trapped gas");
+            for(var p:List.of(left,right))RoomAirState.get(l).evacuate(RoomAtmosphere.view(l,p).geometry().cells());
+            for(int t=20;t<=300;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(!RoomAtmosphere.hasAir(l,left)&&!RoomAtmosphere.hasAir(l,right),"Zero-O2 Core cannot refill an evacuated room after the recovery delay");
+            core.setHeatShare(60);
+            for(int t=320;t<=480;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(RoomAtmosphere.hasOxygenSupport(l,left)&&RoomAtmosphere.hasOxygenSupport(l,right),"Restoring O2 recovers both connected volumes normally");
+        }finally{((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void coreSplitReplayFunctionsParse(GameTestHelper h){
+        var functions=h.getLevel().getServer().getFunctions();
+        for(var name:List.of("load","tick","setup","controls","left","right","read","breach","seal"))
+            h.assertTrue(functions.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("core_split_check",name)).isPresent(),"Native parser loads Core trade-off replay "+name);
+        h.succeed();
+    }
     private static OxygenReservoirBlockEntity reservoir(Scene s,BlockPos p,long stored){s.l.setBlock(p,ModBlocks.OXYGEN_RESERVOIR.get().defaultBlockState(),3);var tank=(OxygenReservoirBlockEntity)s.l.getBlockEntity(p);var tag=new CompoundTag();tag.putLong("StoredOxygen",stored);tank.loadWithComponents(tag,s.l.registryAccess());tank.onLoad();s.gauges.add(p);return tank;}
     private record Scene(ServerLevel l,BlockPos c,List<BlockPos> sources,List<BlockPos> pits,List<BlockPos> gauges) {}
     private static void scene(GameTestHelper h,java.util.function.Consumer<Scene> test){

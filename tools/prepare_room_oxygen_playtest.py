@@ -137,6 +137,8 @@ return 1''',
 def pack_only(destination, hooks=False):
     import prepare_room_oxygen_storage_playtest as storage
     storage.pack_only(destination)
+    import prepare_core_split_playtest as core
+    core.pack_only(destination)
     for name, body in scripts().items():
         p=destination/f'data/{NS}/function/{name}.mcfunction';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(body+'\n')
     if hooks:

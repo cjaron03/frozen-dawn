@@ -764,6 +764,23 @@ public final class RoomThermalGameTest {
             }finally{s.l.setBlock(fire,Blocks.AIR.defaultBlockState(),2);s.l.setBlock(core,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,core);}
         });
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void coreSplitHeatImportsScaleAndRetainStoredEnergy(GameTestHelper h){scene(h,s->{
+        var pos=s.c.east(5);
+        try{
+            s.l.setBlock(pos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);GeothermalCoreRegistry.register(s.l,pos);
+            var core=(com.frozendawn.block.GeothermalCoreBlockEntity)s.l.getBlockEntity(pos);
+            RoomThermalManager.temperatureAt(s.l,s.c);hot(s,-50,-50);
+            double before=s.heat().ledger.passive;advanceHeat(s);double normal=s.heat().ledger.passive-before;
+            h.assertTrue(normal>0,"Default Core imports real thermal energy");budget(h,s);
+            hot(s,-50,-50);core.setHeatShare(30);before=s.heat().ledger.passive;advanceHeat(s);
+            near(h,s.heat().ledger.passive-before,normal*.5,"30% heat transfers half the default 60% at identical reservoir temperatures");budget(h,s);
+            double retained=s.heat().totalEnergy();core.setHeatShare(0);near(h,s.heat().totalEnergy(),retained,"Turning down the Core never deletes stored warmth");
+            before=s.heat().ledger.passive;advanceHeat(s);near(h,s.heat().ledger.passive,before,"Zero heat supplies no reservoir energy");budget(h,s);
+            near(h,core.getOxygenSupply(),20,"All-O2 setting exchanges heat for oxygen capacity");
+        }finally{s.l.setBlock(pos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,pos);}
+    });}
+
     private static void advanceHeat(Scene s) {
         var time=s.l.getGameTime();s.integrationTime=Math.max(time,s.integrationTime)+20;
         ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(s.integrationTime);

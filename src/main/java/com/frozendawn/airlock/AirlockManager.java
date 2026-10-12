@@ -202,7 +202,7 @@ public final class AirlockManager {
         if(base.seal()!=RoomAtmosphere.Seal.SEALED)return false;
         for(var pos:GeothermalCoreRegistry.getCores(level)) {
             if(!level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof GeothermalCoreBlockEntity core)
-                    ||c.base.distSqr(pos)>(long)core.getEffectiveO2Range()*core.getEffectiveO2Range())continue;
+                    ||core.getOxygenSupply()<=0||c.base.distSqr(pos)>(long)core.getEffectiveO2Range()*core.getEffectiveO2Range())continue;
             if(base.cells().contains(pos))return true;
             for(var dir:Direction.values())if(base.cells().contains(pos.relative(dir)))return true;
         }

@@ -133,7 +133,7 @@ public final class RoomAtmosphere {
     private static boolean hasSupply(ServerLevel level, Geometry geometry, BlockPos pos) {
         for (var corePos : GeothermalCoreRegistry.getCores(level)) {
             if (!level.isLoaded(corePos) || !(level.getBlockEntity(corePos) instanceof GeothermalCoreBlockEntity core)) continue;
-            if (pos.distSqr(corePos) <= (long)core.getEffectiveO2Range() * core.getEffectiveO2Range()
+            if (core.getOxygenSupply()>0 && pos.distSqr(corePos) <= (long)core.getEffectiveO2Range() * core.getEffectiveO2Range()
                     && connectedSource(geometry, corePos)) return true;
         }
         for (var anchor : BlastPitWarmZoneRegistry.getWarmZones(level)) {

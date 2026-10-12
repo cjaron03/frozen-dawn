@@ -7,12 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Geothermal Core",
-      "text": "A permanent, fuel-free heat source. In a sealed room, put the Core inside or directly on its boundary: it supplies heat to the shared air-and-wall model over time. A Core shared by two rooms splits its heat output.$(br2)Deep underground (below Y=0) gives full output. At Y=0 or above, heat transfer and supply temperature are halved. In open terrain the normal 12-block, +50°C warmth field remains, with the surface penalty.$(br2)Right-click to open the upgrade interface."
+      "text": "A permanent, fuel-free heat source. In a sealed room, put the Core inside or directly on its boundary: it supplies heat to the shared air-and-wall model over time. A Core shared by two rooms splits its heat output.$(br2)Deep underground (below Y=0) gives full output. At Y=0 or above, heat transfer and supply temperature are halved. In open terrain the 12-block, +50°C warmth field remains at the default allocation; changing heat share scales its warmth, with the surface penalty.$(br2)Right-click to open the upgrade interface."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:geothermal_core",
       "text": "Frozen Heart at center, Thermal Cores, diamond blocks, and obsidian. Expensive? Yes. Worth it? Ask yourself that while your heater runs out of coal at 3 AM."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat / O2 Allocation",
+      "text": "One Core, one output allocation. Use the slider to trade heat for oxygen. Default: $(bold)60% heat / 40% O2$(), preserving existing upgrade output.$(br2)40% O2 supplies 8 room units; 20% supplies 4; 0% supplies none. O2 upgrades increase reach, not production. Breathing and flames draw first; only spare production charges storage, canisters, suits and airlocks.$(br2)Heat share scales heat transfer, keeping the upgraded supply temperature and surface penalty. A room cools gradually when heat is reduced; its stored warmth is retained. A thermostat still controls fuel heaters. Allocation is saved and never shifts itself. Electricity is deferred."
     },
     {
       "type": "patchouli:text",

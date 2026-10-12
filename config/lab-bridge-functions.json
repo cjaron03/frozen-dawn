@@ -382,6 +382,10 @@
       ]
     },
     "o2_storage_check:controls": {"world": "Room O2 Storage Check", "scores": [{"objective":"roxygen","holder":"#built","equals":1}]},
-    "o2_storage_check:read": {"world": "Room O2 Storage Check", "scores": [{"objective":"ostore","holder":"#ready","equals":1}]}
+    "o2_storage_check:read": {"world": "Room O2 Storage Check", "scores": [{"objective":"ostore","holder":"#ready","equals":1}]},
+    "core_split_check:controls": {"world": "Core Heat O2 Check", "scores": [{"objective":"csplit","holder":"#built","equals":1}]},
+    "core_split_check:read": {"world": "Core Heat O2 Check", "scores": [{"objective":"csplit","holder":"#built","equals":1}]},
+    "core_split_check:finish_fixture": {"world": "Core Heat O2 Check", "scores": [{"objective":"csplit","holder":"#built","equals":1}]},
+    "core_split_check:finish_panels": {"world": "Core Heat O2 Check", "scores": [{"objective":"csplit","holder":"#built","equals":1}]}
   }
 }
