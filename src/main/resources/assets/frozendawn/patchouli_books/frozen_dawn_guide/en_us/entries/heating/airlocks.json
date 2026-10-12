@@ -1,0 +1,41 @@
+{
+  "name": "Player-Built Airlocks",
+  "icon": "frozendawn:airlock_controller",
+  "category": "frozendawn:heating",
+  "sortnum": 19,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Keep Air Inside",
+      "text": "Build a sealed entry chamber between your base and vacuum. It needs two complete Airlock Doors and at most $(bold)32 passable interior blocks$(). A 3x3x3 interior is 27; walls do not count. Full glass works. Place a controller in a wall facing the chamber.$(br2)Close both doors before cycling. With unequal pressure, a door hisses and reports $(bold)Pressure differential$(). Breaking a wall or door still breaches the room."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:airlock_door",
+      "title": "Airlock Doors",
+      "text": "Makes two sealed doors. At full chamber pressure, use the inner door. At vacuum, use the outer door. Both remain locked during a cycle or partial pressure. Close the door behind you."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:airlock_controller",
+      "title": "Cycle Controller",
+      "text": "Right-click to cycle; crouch-click for reserve and chamber O2. Red blinks slowly when evacuated, amber blinks quickly during the four-second cycle, and green gives a ready heartbeat.$(br2)Short status updates appear in your suit HUD without speech, or above the hotbar without a helmet. Optional panels share storage and cycling; face them toward a walkable path within four blocks of a chamber door."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Oxygen Is Measured",
+      "text": "Each interior block holds 100 O2 units. The controller reserve holds 6,400. A connected, breathable base with a Geothermal Core replenishes 40 units per second. Units match canister inventory; they are not physical liters.$(br2)Use an O2 canister on a panel to transfer only what fits. Leftovers remain in the canister. Stored O2 works without the Core.$(br2)Pressurization spends the chamber requirement. Depressurization recovers 90%; the remaining 10% is vented. If the reserve is full, overflow is also lost."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:manual_vent_valve",
+      "title": "Emergency Vent",
+      "text": "Mount facing the chamber. Right-click to dump its air instantly, with no recovery or pump requirement. Ordinary flames go out; torches stay mounted as Spent Torches. Soul lights remain.$(br2)$(bold)If the inner door is open, the connected base vents too.$() Use EVA oxygen before venting."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recovery and Repairs",
+      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)No electrical grid is required; a missing Core stops reserve replenishment.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()"
+    }
+  ]
+}

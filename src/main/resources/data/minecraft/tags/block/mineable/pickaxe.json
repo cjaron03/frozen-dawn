@@ -23,6 +23,9 @@
     "frozendawn:bloom_mass",
     "frozendawn:bloom_core",
     "frozendawn:inert_acheronite",
-    "frozendawn:sealed_lattice"
+    "frozendawn:sealed_lattice",
+    "frozendawn:airlock_door",
+    "frozendawn:airlock_controller",
+    "frozendawn:manual_vent_valve"
   ]
 }

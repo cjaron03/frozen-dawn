@@ -1,0 +1,10 @@
+{
+  "tools/texture_sources/airlock/approved-atlas.png": "3cc1ee352454acf82729ff913ff70f1fa3cf8f777a3c3cc1aeeec1357071ffe3",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_casing.png": "116b42ea26ed1f1a3d6a624b00ae202f6f4547a65acbd66b090732fc979ab9e2",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_controller_amber.png": "0fa74830a46ca957b7165a39860f0a8d27a1bf6d5d2bfa7f6b21f2d8d7efd22b",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_controller_green.png": "0cb3b742a5f324c32f6ec55fd730e9990e198819340af93d9b55c4cd13ca5686",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_controller_red.png": "009a33a4c1d4fed6130b619b6bd07ea3c98eb4c99ec8536fb67fb14e12f77d2b",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_door_bottom.png": "798947985aecc8d71f3c563441adce4392818eec0536074d3d826dbacba3a394",
+  "src/main/resources/assets/frozendawn/textures/block/airlock_door_top.png": "5f3c86730ca7ccf2c0128f3dd55d14218ec91f6aa121f2ab4b0674a781b31873",
+  "src/main/resources/assets/frozendawn/textures/block/manual_vent_valve.png": "acc4009f33776d6ca13071048ed0b4373d894e6519f63f27f17ed5eae87b1af0"
+}
