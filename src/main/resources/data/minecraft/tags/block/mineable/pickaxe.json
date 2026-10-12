@@ -26,6 +26,7 @@
     "frozendawn:sealed_lattice",
     "frozendawn:airlock_door",
     "frozendawn:airlock_controller",
-    "frozendawn:manual_vent_valve"
+    "frozendawn:manual_vent_valve",
+    "frozendawn:heat_vent"
   ]
 }

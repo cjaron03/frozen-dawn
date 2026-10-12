@@ -4,6 +4,7 @@ import com.frozendawn.airlock.AirlockSavedState.Chamber;
 import com.frozendawn.block.*;
 import com.frozendawn.data.RoomAirState;
 import com.frozendawn.init.ModDataComponents;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.item.O2TankItem;
 import com.frozendawn.network.AirlockStatusPayload;
 import com.frozendawn.network.AirlockStatusPayload.Status;
@@ -12,7 +13,7 @@ import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -188,7 +189,7 @@ public final class AirlockManager {
     }
     public static void refuse(ServerLevel level,BlockPos pos,Player player) {
         notify(player,Status.DIFFERENTIAL,null,0);
-        level.playSound(null,pos,SoundEvents.FIRE_EXTINGUISH,SoundSource.BLOCKS,0.25F,1.5F);
+        level.playSound(null,pos,ModSounds.AIRLOCK_REFUSE.get(),SoundSource.BLOCKS,.65f,1f);
     }
     private static boolean closed(ServerLevel level,Chamber c) {
         for(var door:c.doors)if(!completeDoor(level,door)||level.getBlockState(door).getValue(DoorBlock.OPEN)
@@ -223,7 +224,7 @@ public final class AirlockManager {
         AirlockSavedState.get(level).setDirty();CombustionAtmosphere.reset();
         if(!pressurize) {
             RoomAirState.get(level).evacuate(c.cells);snuff(level,c.cells);
-            level.playSound(null,c.cells.iterator().next(),SoundEvents.FIRE_EXTINGUISH,SoundSource.BLOCKS,0.45F,0.8F);
+
         }
         return pressurize?"pressurizing":"depressurizing";
     }
@@ -235,8 +236,8 @@ public final class AirlockManager {
         if(actual!=null&&actual.seal()==RoomAtmosphere.Seal.OPEN&&c.gas.air()>0) {invalidate(level,c,null);return;}
         if(level.getGameTime()%20==0&&hasCoreFeed(level,c)&&c.gas.fill(40)>0)AirlockSavedState.get(level).setDirty();
         if(c.gas.cycling()) {
-            if(!closed(level,c)) {c.gas.interrupt();AirlockSavedState.get(level).setDirty();broadcast(level,c,Status.INTERRUPTED,0);return;}
-            if(c.gas.elapsed()%20==0)level.playSound(null,c.cells.iterator().next(),SoundEvents.PISTON_EXTEND,SoundSource.BLOCKS,0.22F,0.7F);
+            if(!closed(level,c)) {c.gas.interrupt();AirlockSavedState.get(level).setDirty();broadcast(level,c,Status.INTERRUPTED,0);machinery(level,c,ModSounds.AIRLOCK_INTERRUPTED.get());return;}
+            if(c.gas.elapsed()%20==0)machinery(level,c,c.gas.mode()==AirlockCycle.Mode.PRESSURIZING?ModSounds.AIRLOCK_PUMP_FILL.get():ModSounds.AIRLOCK_PUMP_RECOVER.get());
             boolean done=c.gas.tick();AirlockSavedState.get(level).setDirty();
             if(!done&&c.gas.elapsed()%20==0)broadcast(level,c,c.gas.mode()==AirlockCycle.Mode.PRESSURIZING?Status.PRESSURIZING:Status.DEPRESSURIZING,0);
             if(done) {
@@ -246,7 +247,7 @@ public final class AirlockManager {
                 }
                 if(!c.gas.breathable())broadcast(level,c,Status.EVACUATED,c.gas.lost());
                 CombustionAtmosphere.reset();
-                level.playSound(null,c.cells.iterator().next(),SoundEvents.IRON_DOOR_CLOSE,SoundSource.BLOCKS,0.3F,1.3F);
+                machinery(level,c,c.gas.breathable()?ModSounds.AIRLOCK_READY.get():ModSounds.AIRLOCK_EVACUATED.get());
             }
         }
         int indicator=c.gas.cycling()?1:c.gas.breathable()?2:0;
@@ -257,11 +258,18 @@ public final class AirlockManager {
             if(state.getValue(AirlockControllerBlock.INDICATOR)!=indicator)level.setBlock(pos,state.setValue(AirlockControllerBlock.INDICATOR,indicator),3);
         }
     }
+    private static void machinery(ServerLevel level,Chamber c,SoundEvent sound) {
+        // One anchor and one event per chamber, regardless of optional panel count.
+        var anchor=c.panels.stream().filter(level::isLoaded).sorted(Comparator.comparingLong(BlockPos::asLong)).findFirst()
+                .orElseGet(()->c.cells.stream().min(Comparator.comparingLong(BlockPos::asLong)).orElseThrow());
+        level.playSound(null,anchor,sound,SoundSource.BLOCKS,.7f,1f);
+    }
     private static void snuff(ServerLevel level,Set<BlockPos> cells) {
         var walls=new HashSet<BlockPos>();for(var pos:cells)for(var dir:Direction.values())if(!cells.contains(pos.relative(dir)))walls.add(pos.relative(dir));
         VacuumFlames.extinguishRoom(level,cells,walls);
     }
     private static void invalidate(ServerLevel level,Chamber c,BlockPos hole) {
+        if(c.gas.cycling())machinery(level,c,ModSounds.AIRLOCK_INTERRUPTED.get());
         boolean hadAir=c.gas.air()>0;c.gas.vent();RoomAirState.get(level).evacuate(c.cells);snuff(level,c.cells);
         AirlockSavedState.get(level).setDirty();CombustionAtmosphere.reset();
         if(hadAir&&hole!=null&&RoomAtmosphere.isPassage(level,hole,level.getBlockState(hole)))AtmosphericBreach.start(level,c.cells,hole);
@@ -286,7 +294,8 @@ public final class AirlockManager {
         boolean hadAir=c.gas.air()>0;c.gas.vent();RoomAirState.get(level).evacuate(cells);snuff(level,cells);
         AirlockSavedState.get(level).setDirty();CombustionAtmosphere.reset();
         if(hadAir)AtmosphericBreach.start(level,cells,valve);
-        level.playSound(null,valve,SoundEvents.FIRE_EXTINGUISH,SoundSource.BLOCKS,0.8F,0.6F);
+        // AtmosphericBreach owns the escaping-air whoosh; this is only the valve mechanism.
+        level.playSound(null,valve,ModSounds.AIRLOCK_VALVE.get(),SoundSource.BLOCKS,.8f,1f);
         return true;
     }
 }

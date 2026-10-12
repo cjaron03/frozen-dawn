@@ -56,7 +56,9 @@ public final class EmergencyEvaGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
     public static void emergencyEvaColdAndVacuumProtectionEndsAtExpiry(GameTestHelper helper) {
-        var preparedCenter = helper.absolutePos(new BlockPos(3, 2, 3));
+        // Deep ground is now a refuge; this protection/expiry contract needs genuine surface cold.
+        var originalCenter = helper.absolutePos(new BlockPos(3, 2, 3));
+        var preparedCenter = new BlockPos(originalCenter.getX(), 64, originalCenter.getZ());
         for (int x = -2; x <= 2; x++) for (int y = -1; y <= 3; y++) for (int z = -2; z <= 2; z++) {
             boolean wall = Math.abs(x) == 2 || Math.abs(z) == 2 || y == -1 || y == 3;
             helper.getLevel().setBlockAndUpdate(preparedCenter.offset(x, y, z),
@@ -65,10 +67,13 @@ public final class EmergencyEvaGameTest {
         var heaterPos = preparedCenter.west();
         helper.getLevel().setBlockAndUpdate(heaterPos,
                 com.frozendawn.init.ModBlocks.THERMAL_HEATER.get().defaultBlockState());
-        ((com.frozendawn.block.ThermalHeaterBlockEntity) helper.getLevel().getBlockEntity(heaterPos)).addFuel(24000);
         // The sealed-air authority uses actual sky light; wait for roof lighting to propagate.
         helper.runAfterDelay(20, () -> scene(helper, player -> {
+            player.setPos(preparedCenter.getCenter());
             setProgress(player, 1.0F);
+            // Discover this cold room only after selecting endgame. Pre-fueling during the lighting
+            // wait would legitimately retain Phase-0 room warmth across the artificial phase jump.
+            ((com.frozendawn.block.ThermalHeaterBlockEntity) helper.getLevel().getBlockEntity(heaterPos)).addFuel(24000);
             var center = player.blockPosition();
             PlayerTickHandler.syncBreathableState(player);
             helper.assertTrue(PlayerTickHandler.isPlayerBreathable(player),
@@ -345,12 +350,15 @@ public final class EmergencyEvaGameTest {
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, timeoutTicks = 100)
     public static void emergencyEvaAmbientIsolatesOxygenWithoutExtendingThermalService(GameTestHelper helper) {
-        var center = helper.absolutePos(new BlockPos(3, 2, 3));
+        // Keep the oxygen/service contract in lethal cold, independent of the deep-refuge balance.
+        var originalCenter = helper.absolutePos(new BlockPos(3, 2, 3));
+        var center = new BlockPos(originalCenter.getX(), 64, originalCenter.getZ());
         for (int x = -2; x <= 2; x++) for (int y = -1; y <= 3; y++) for (int z = -2; z <= 2; z++) {
             boolean wall = Math.abs(x) == 2 || Math.abs(z) == 2 || y == -1 || y == 3;
             helper.getLevel().setBlockAndUpdate(center.offset(x, y, z), (wall ? Blocks.STONE : Blocks.AIR).defaultBlockState());
         }
         helper.runAfterDelay(20, () -> scene(helper, player -> {
+            player.setPos(center.getCenter());
             setProgress(player, 1.0F);
             EmergencyEvaHandler.issueKit(player);
             PlayerTickHandler.syncBreathableState(player);

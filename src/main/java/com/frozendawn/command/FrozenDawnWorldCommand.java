@@ -44,6 +44,8 @@ final class FrozenDawnWorldCommand {
                         .executes(context -> status(context, false))
                         .then(Commands.literal("verbose")
                                 .executes(context -> status(context, true))))
+                .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
+                .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))
                 .then(Commands.literal("catchup").executes(FrozenDawnWorldCommand::catchupStatus))
                 .then(Commands.literal("set")
                         .then(Commands.literal("day")
@@ -66,6 +68,32 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests(PRESET_SUGGESTIONS)
                                 .executes(FrozenDawnWorldCommand::applyPreset)));
+    }
+
+    private static int thermalDiagnostics(CommandContext<CommandSourceStack> context) {
+        var rooms=com.frozendawn.world.RoomThermalManager.snapshots(context.getSource().getLevel());
+        FrozenDawnCommandOutput.line(context.getSource(),"Room heat",rooms.size()+" loaded thermal records; air / structure model");
+        for(var room:rooms.stream().limit(16).toList()) FrozenDawnCommandOutput.detail(context.getSource(),"Room "+room.id(),
+                String.format(Locale.ROOT,"air %s | walls %.1fC | felt %.1fC | K %.2f | power %.0f | fins %d/%.2f | %s",
+                        room.airPresent()?String.format(Locale.ROOT,"%.1fC",room.airTemperature()):"depleted",room.structureTemperature(),
+                        room.feltTemperature(),room.conductance(),room.heaterPower(),room.coolingVents(),room.coolingConductance(),room.suspended()?"suspended":room.sealed()?"sealed":"open"));
+        return 1;
+    }
+
+    private static int roomDiagnostics(CommandContext<CommandSourceStack> context) {
+        var level = context.getSource().getLevel();
+        var rooms = com.frozendawn.world.RoomAtmosphere.cachedRoomDiagnostics(level);
+        FrozenDawnCommandOutput.line(context.getSource(), "Cached rooms", rooms.size() + " records (inspection does not renew them)");
+        for (var room : rooms.stream().limit(32).toList()) {
+            var first = room.geometry().cells().stream().min(java.util.Comparator.comparingLong(BlockPos::asLong)).orElseThrow();
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room " + room.id(),
+                    room.geometry().cells().size() + " cells | anchor " + first.toShortString()
+                    + " | " + (room.uncertain() ? "unknown" : room.active() ? "infrastructure-active" : "passive")
+                    + " | idle " + room.idleTicks() + "t | last query " + room.lastQueryReason()
+                    + " " + room.lastQueryAge() + "t ago");
+        }
+        if (rooms.size() > 32) FrozenDawnCommandOutput.detail(context.getSource(), "Remaining", (rooms.size()-32) + " records omitted");
+        return 1;
     }
 
     private static int status(CommandContext<CommandSourceStack> context, boolean verbose) {
@@ -107,6 +135,27 @@ final class FrozenDawnWorldCommand {
                 String.format(Locale.ROOT, "%.2f", state.getSunScale()));
         FrozenDawnCommandOutput.detail(context.getSource(), "Sky light",
                 String.format(Locale.ROOT, "%.0f%%", state.getSkyLight() * 100));
+        if (context.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            var room = com.frozendawn.world.RoomAtmosphere.view(player.serverLevel(), player.blockPosition());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Pressure room", room == null
+                    ? "Unsealed or unknown" : "ID " + room.id() + " | " + room.geometry().cells().size() + " air cells"
+                    + " | " + room.geometry().boundaryFaces().size() + " boundary faces");
+            var changes = com.frozendawn.world.RoomAtmosphere.changeStats(player.serverLevel());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room changes (runtime total)",
+                    "geometry " + changes.geometry() + " | material " + changes.material() + " | air " + changes.air()
+                    + " | last " + (changes.last() == null ? "none" : changes.last().name()));
+            var activity = com.frozendawn.world.RoomAtmosphere.activityStats(player.serverLevel());
+            FrozenDawnCommandOutput.detail(context.getSource(), "Room activity (runtime total)",
+                    activity.tracked() + " tracked | " + activity.active() + " infrastructure-active");
+        }
+        FrozenDawnCommandOutput.detail(context.getSource(), "Ground cold front",
+                String.format(Locale.ROOT, "diffusivity %.0f", FrozenDawnConfig.GROUND_DIFFUSIVITY.get()));
+        for (int y : new int[]{64, 32, 0, -32, -64}) {
+            FrozenDawnCommandOutput.detail(context.getSource(), "Background Y=" + y,
+                    String.format(Locale.ROOT, "%.1fC (before shelter and heat sources)",
+                            com.frozendawn.world.TemperatureManager.getBackgroundTemperature(y,
+                                    state.getCurrentDay(), state.getTotalDays())));
+        }
         if (winEnabled) {
             WinConditionState winState = WinConditionState.get(server);
             FrozenDawnCommandOutput.detail(context.getSource(), "Win state",

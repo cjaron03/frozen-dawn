@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Geothermal Core",
-      "text": "The ultimate heat source. Warms a 12-block radius with +50\u00b0C and no fuel required \u2014 permanent, infinite heat.$(br2)Place deep underground (below Y=0) for full effectiveness. Above Y=0, range and temperature are halved.$(br2)Right-click to open the upgrade interface.$(br2)$(italic)ORSA calls this \"career progression.\" You call it \"why didn't you give me this earlier.\"$()"
+      "text": "The ultimate heat source. Warms a 12-block radius with +50°C and no fuel required — permanent, infinite heat.$(br2)Place deep underground (below Y=0) for full effectiveness. At Y=0 or above, range and temperature are halved.$(br2)Right-click to open the upgrade interface.$(br2)$(italic)ORSA calls this \"career progression.\" You call it \"why didn't you give me this earlier.\"$()"
     },
     {
       "type": "patchouli:crafting",
@@ -17,17 +17,22 @@
     {
       "type": "patchouli:text",
       "title": "Upgrading the Core",
-      "text": "Three upgradeable stats. Place materials in upgrade slots \u2014 consumed permanently. No refunds.$(br2)$(bold)Range$() (max 32 blocks):$(br)$(li)Obsidian: +1 block per$(br)$(li)Diamond Block: +4 blocks per$(br2)$(bold)Temperature$() (max +100\u00b0C):$(br)$(li)Blaze Powder: +5\u00b0C per$(br)$(li)Thermal Core: +10\u00b0C per"
+      "text": "Three upgradeable stats. Place materials in upgrade slots — consumed permanently. No refunds.$(br2)$(bold)Range$() (max 32 blocks):$(br)$(li)Obsidian: +1 block per$(br)$(li)Diamond Block: +4 blocks per$(br2)$(bold)Temperature$() (max +100°C):$(br)$(li)Blaze Powder: +5°C per$(br)$(li)Thermal Core: +10°C per"
     },
     {
       "type": "patchouli:text",
-      "title": "O\u2082 Production & Refill",
-      "text": "$(bold)O\u2082 Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 \u2192 20 \u2192 26 \u2192 32 block radius$(br2)$(bold)O\u2082 Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Refills at +10 O2/tick.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
+      "title": "O₂ Production & Refill",
+      "text": "$(bold)O₂ Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(bold)O₂ Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Refills at +10 O2/tick.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Oxygen Needs a Seal",
       "text": "$(bold)Heat reaches through walls. Oxygen needs containment.$() In late Phase 6, enclose the core within, or directly adjoining the air of, a sealed room. A core separated by a solid wall cannot supply that room. Heat keeps its normal range.$(br2)Opening the room to vacuum vents its air and stops ambient oxygen protection. Repair every opening, then allow about five seconds with a connected oxygen source to restore breathable air. A full EVA rig and usable tank bridge the gap.$(br2)$(l:heating/atmospheric_breach)Atmospheric Breaches$(/l) explains construction, warnings and recovery."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Local Warmth and Control",
+      "text": "Core warmth remains a local environmental bonus, separate from stored room-air heat. It reaches through walls in its normal range.$(br2)Without a thermostat, heater target 20°C can feel warmer near a Core. An $(l:heating/thermostat)ORSA Thermostat$(/l) includes that bonus at its sensor and reduces heater demand. It does not regulate Core output or oxygen. See $(l:heating/room_climate)Room Heating & Insulation$(/l)."
     }
   ]
 }

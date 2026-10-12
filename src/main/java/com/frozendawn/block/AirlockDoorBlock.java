@@ -1,6 +1,10 @@
 package com.frozendawn.block;
 
 import com.frozendawn.airlock.AirlockManager;
+import com.frozendawn.init.ModSounds;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
@@ -29,7 +33,26 @@ public final class AirlockDoorBlock extends DoorBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     @Override public void setOpen(Entity entity,Level level,BlockState state,BlockPos pos,boolean open) {
-        if(open&&level instanceof ServerLevel server&&!AirlockManager.canOpen(server,pos))return;
-        super.setOpen(entity,level,state,pos,open);
+        if(!(level instanceof ServerLevel server)||!state.is(this))return;
+        var lower=AirlockManager.lower(pos,state);var current=level.getBlockState(lower);
+        if(!current.is(this)||current.getValue(OPEN)==open||open&&!AirlockManager.canOpen(server,lower))return;
+        if(!level.setBlock(lower,current.setValue(OPEN,open),10)||level.getBlockState(lower).getValue(OPEN)!=open)return;
+        // The click is server-authoritative: include its actor in the broadcast, once.
+        level.playSound(null,lower,open?ModSounds.AIRLOCK_DOOR_OPEN.get():ModSounds.AIRLOCK_DOOR_CLOSE.get(),SoundSource.BLOCKS,.8f,1f);
+        level.gameEvent(entity,open?GameEvent.BLOCK_OPEN:GameEvent.BLOCK_CLOSE,lower);
+    }
+    @Override protected void neighborChanged(BlockState state,Level level,BlockPos pos,Block block,BlockPos from,boolean moving) {
+        if(!(level instanceof ServerLevel server)||block==this)return;
+        var lower=AirlockManager.lower(pos,state);var current=level.getBlockState(lower);
+        if(!current.is(this))return;
+        boolean powered=level.hasNeighborSignal(lower)||level.hasNeighborSignal(lower.above());
+        if(powered==current.getValue(POWERED))return;
+        boolean open=powered&&AirlockManager.canOpen(server,lower);
+        // Publish power and movement together: neighbor callbacks must not see stale power.
+        if(!level.setBlock(lower,current.setValue(POWERED,powered).setValue(OPEN,open),10))return;
+        boolean actual=level.getBlockState(lower).getValue(OPEN);
+        if(actual==current.getValue(OPEN))return;
+        level.playSound(null,lower,actual?ModSounds.AIRLOCK_DOOR_OPEN.get():ModSounds.AIRLOCK_DOOR_CLOSE.get(),SoundSource.BLOCKS,.8f,1f);
+        level.gameEvent(null,actual?GameEvent.BLOCK_OPEN:GameEvent.BLOCK_CLOSE,lower);
     }
 }
