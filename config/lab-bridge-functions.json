@@ -380,6 +380,8 @@
           "equals": 1
         }
       ]
-    }
+    },
+    "o2_storage_check:controls": {"world": "Room O2 Storage Check", "scores": [{"objective":"roxygen","holder":"#built","equals":1}]},
+    "o2_storage_check:read": {"world": "Room O2 Storage Check", "scores": [{"objective":"ostore","holder":"#ready","equals":1}]}
   }
 }

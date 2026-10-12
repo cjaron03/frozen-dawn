@@ -119,16 +119,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             }
         }
 
-        // Slot 3: O2 tank refill — +10 O2/tick (~6 seconds to fill tier 1)
-        ItemStack tankStack = items.get(3);
-        if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
-            int o2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-            int cap = tankItem.getMaxO2();
-            if (o2 < cap) {
-                tankStack.set(ModDataComponents.O2_LEVEL.get(), Math.min(o2 + 10, cap));
-                changed = true;
-            }
-        }
+        // Slot 3 is replenished by the shared RoomOxygenManager allocation.
 
         if (changed) {
             setChanged();
@@ -167,6 +158,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         return value * getWarmthMultiplier(pos);
     }
 
+    public int oxygenChargeRequest(){var stack=items.get(3);return stack.getItem() instanceof O2TankItem t?Math.clamp(t.getMaxO2()-stack.getOrDefault(ModDataComponents.O2_LEVEL.get(),0),0,200):0;}
+    public int chargeOxygen(int amount){int n=Math.min(Math.max(0,amount),oxygenChargeRequest());if(n>0){var stack=items.get(3);stack.set(ModDataComponents.O2_LEVEL.get(),stack.getOrDefault(ModDataComponents.O2_LEVEL.get(),0)+n);setChanged();if(level!=null)level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);}return n;}
     public NonNullList<ItemStack> getItems() {
         return items;
     }

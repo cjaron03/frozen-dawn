@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Portable O2 System",
-      "text": "$(bold)ORSA Mk.I-III Compressed Oxygen Canisters$()$(br2)When the atmosphere freezes (Phase 6 late), your $(l:orsa_equipment/eva_suit)EVA suit$(/l) alone can't save you — it needs breathable air.$(br2)Carry an O2 Canister in your inventory while wearing a full EVA suit. One tick of breathing, one tick of O2 consumed.$(br2)$(italic)ORSA Safety Tip: Hyperventilating does not conserve oxygen. We checked.$()"
+      "text": "$(bold)ORSA Mk.I-III Compressed Oxygen Canisters$()$(br2)When the atmosphere freezes (Phase 6 late), your $(l:orsa_equipment/eva_suit)EVA suit$(/l) alone can't save you — it needs breathable air.$(br2)Carry an O2 Canister in your inventory while wearing a full EVA suit. Ten canister units provide one second of normal breathing.$(br2)$(italic)ORSA Safety Tip: Hyperventilating does not conserve oxygen. We checked.$()"
     },
     {
       "type": "patchouli:text",
       "title": "How It Works",
-      "text": "$(bold)Automatic:$() The EVA suit detects the canister and draws from it. No button-pressing required.$(br2)$(bold)Multiple tanks:$() Consumed sequentially. Your O2 HUD shows $(bold)combined$() remaining air across all tanks.$(br2)$(bold)Refilling:$() Place any canister in a $(l:advanced/geothermal_core)Geothermal Core's$(/l) O2 slot. Refills at +10 O2/tick. Higher-tier tanks take longer."
+      "text": "$(bold)Automatic:$() The EVA suit detects the canister and draws from it. No button-pressing required.$(br2)$(bold)Multiple tanks:$() Consumed sequentially. Your O2 HUD shows $(bold)combined$() remaining air across all tanks.$(br2)$(bold)Refilling:$() Place any canister in a $(l:advanced/geothermal_core)Geothermal Core's$(/l) O2 slot. Refilling shares spare room production with reservoirs, intact EVA suits and airlock reserves. An intact suit also refills carried canisters from that shared spare supply while you are in supported breathable air. Higher-tier tanks take longer; room demand has priority."
     },
     {
       "type": "patchouli:text",

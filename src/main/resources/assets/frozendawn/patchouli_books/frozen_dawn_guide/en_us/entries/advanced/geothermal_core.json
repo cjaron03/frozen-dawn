@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "O₂ Production & Refill",
-      "text": "$(bold)O₂ Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(bold)O₂ Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Refills at +10 O2/tick.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
+      "text": "$(bold)O₂ Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(bold)O₂ Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Only spare room production refills the slot, shared with reservoir filling, automatic EVA refill and airlock reserves. Breathing and active combustion draw first. Add O2 supply or reduce demand to speed charging.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
     },
     {
       "type": "patchouli:text",

@@ -1172,5 +1172,8 @@
   "gauge.frozendawn.oxygen.breathing_shortage": "O2 SHORTAGE",
   "ui.frozendawn.room.oxygen_shortage": "O2 SHORTAGE — restore supply",
   "subtitles.frozendawn.oxygen_gauge.strained": "Room atmosphere strained",
-  "subtitles.frozendawn.oxygen_gauge.critical": "Suffocation warning beeps"
+  "subtitles.frozendawn.oxygen_gauge.critical": "Suffocation warning beeps",
+  "block.frozendawn.oxygen_reservoir": "ORSA O2 Reservoir",
+  "tooltip.frozendawn.oxygen_reservoir": "Stored O2: %s player-seconds",
+  "gauge.frozendawn.oxygen.on_reserve": "ON RESERVE"
 }

@@ -11,7 +11,8 @@ from lab_client import ROOT, read_status
 
 HEADER = re.compile(r'\[[^\]]*?(\d{2}:\d{2}:\d{2})(?:\.\d+)?\].*(?:\[CHAT\]|\[RoomO2\]) Room O2 accounting: (\d+) cached rooms;')
 ROW = re.compile(r'(?:\[CHAT\]|\[RoomO2\])\s+Room (\d+): pool (\d+) \| (\w+) \| supply ([0-9.]+) / demand ([0-9.]+) \| local ([0-9.]+) \| (\d+) sources / (\d+) rooms')
-LABELS = {'SUPPLIED': 'SUPPORTED', 'LOW': 'NEAR CAPACITY', 'STRAINED': 'STRAINED',
+STORAGE = re.compile(r'\[RoomO2\] Storage pool (\d+) \| stored ([0-9.]+) / ([0-9.]+) player-seconds \| output ([0-9.]+) / charging ([0-9.]+) \| (\d+) tanks \| connected (true|false) \| remaining (-?[0-9.]+)s')
+LABELS = {'ON_RESERVE': 'ON RESERVE', 'SUPPLIED': 'SUPPORTED', 'LOW': 'NEAR CAPACITY', 'STRAINED': 'STRAINED',
           'TRAPPED_AIR': 'TRAPPED AIR / NO SUPPLY', 'NO_AIR': 'NO AIR',
           'BREATHING_SHORTAGE': 'O2 SHORTAGE / RESTORE SUPPLY', 'NO_OXYGEN': 'NO O2 / GAS RETAINED', 'NO_SEAL': 'NO SEAL', 'OPEN_AIR': 'OPEN AIR', 'WAITING': 'WAITING'}
 
@@ -30,6 +31,12 @@ def latest_budget(text):
                 complete = pending
                 pending = None
             continue
+        storage = STORAGE.search(line)
+        if storage and complete and any(row['pool'] == int(storage[1]) for row in complete['rows']):
+            # Only attach telemetry from the same immediate read; never reuse an older tank sample.
+            stamp = re.search(r'\[(\d{2}:\d{2}:\d{2})', line)
+            if stamp and stamp[1] == complete['time']:
+                complete.setdefault('storage', {})[int(storage[1])] = dict(stored=float(storage[2]), capacity=float(storage[3]), output=float(storage[4]), charging=float(storage[5]), tanks=int(storage[6]), connected=storage[7]=='true', remaining=float(storage[8]))
         if pending is None:
             continue
         match = ROW.search(line)
@@ -61,6 +68,14 @@ def render(sample, world):
                    else f'Spare {number(-shortfall)}')
         lines.append(f'Pool {pool}   Supply {number(r["supply"])} | Demand {number(r["demand"])} | {balance}')
         lines.append(f'  {r["sources"]} source(s), shared across {r["rooms"]} room(s)')
+        reserve = sample.get('storage', {}).get(pool)
+        if reserve:
+            lines.append(f'  Stored {number(reserve["stored"])} / {number(reserve["capacity"])} player-seconds | Output {number(reserve["output"])} | Tank charging {number(reserve["charging"])}')
+            if not reserve['connected']:
+                lines.append('  VALVE CLOSED: contents retained; no input or output.')
+            elif reserve['output'] > 0:
+                duration = f'{number(reserve["remaining"])}s estimated' if reserve['remaining'] >= 0 else 'Output limited; deficit unsupported'
+                lines.append('  ON RESERVE: ' + duration)
         for row in sorted(rows, key=lambda r: r['room']):
             label = LABELS.get(row['mode'], row['mode'])
             lines.append(f'  Room {row["room"]:<4} {label:<25} Local demand {number(row["local"])}')

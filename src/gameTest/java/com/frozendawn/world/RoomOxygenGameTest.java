@@ -415,11 +415,128 @@ public final class RoomOxygenGameTest {
             h.assertTrue(RoomOxygenState.get(l).unavailableAt(left),"Unknown geometry never restores saved unavailable oxygen");
         } finally {cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
     });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenReservoirsAndCoreCanisterShareSpareProductionOnce(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();
+        l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);var core=(GeothermalCoreBlockEntity)l.getBlockEntity(s.c);core.onLoad();s.sources.add(s.c);
+        var canister=new ItemStack(com.frozendawn.init.ModItems.O2_TANK.get());canister.set(com.frozendawn.init.ModDataComponents.O2_LEVEL.get(),0);core.getItems().set(3,canister);
+        var a=reservoir(s,s.c.west(2),0);var b=reservoir(s,s.c.east(2),0);
+        RoomAtmosphere.view(l,s.c.west());RoomAtmosphere.view(l,s.c.east());for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+        try{
+            long before=a.storedMicro()+b.storedMicro()+canister.get(com.frozendawn.init.ModDataComponents.O2_LEVEL.get())*1000L;
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+20);RoomOxygenManager.tickLevel(l);
+            long stored=a.storedMicro()+b.storedMicro()+canister.get(com.frozendawn.init.ModDataComponents.O2_LEVEL.get())*1000L;
+            h.assertTrue(stored-before==80000,"Exactly 8 production units allocated across both rooms, two tanks and one Core canister: "+stored);
+            h.assertTrue(Math.abs(a.storedMicro()-b.storedMicro())<=1000,"Equal tanks share surplus fairly");
+            var replica=new OxygenReservoirBlockEntity(a.getBlockPos(),a.getBlockState());
+            replica.loadWithComponents(a.getUpdateTag(l.registryAccess()),l.registryAccess());
+            h.assertTrue(a.storedMicro()>0&&replica.storedMicro()==a.storedMicro(),"Client update carries actual charged tank contents");
+            h.assertTrue(replica.connected()==a.connected()&&replica.output()==a.output()&&replica.charging()==a.charging(),"Client update carries valve and transfer telemetry");
+            RoomOxygenManager.tickLevel(l);core.serverTick();h.assertTrue(stored==a.storedMicro()+b.storedMicro()+canister.get(com.frozendawn.init.ModDataComponents.O2_LEVEL.get())*1000L,"Repeated diagnostic/native ticks cannot mint a second transfer");
+            var saved=OxygenTransferState.get(l).save(new CompoundTag(),l.registryAccess());l.getDataStorage().set(OxygenTransferState.NAME,OxygenTransferState.load(saved,l.registryAccess()));RoomOxygenManager.reset();a.onLoad();b.onLoad();RoomOxygenManager.tickLevel(l);
+            h.assertTrue(stored==a.storedMicro()+b.storedMicro()+canister.get(com.frozendawn.init.ModDataComponents.O2_LEVEL.get())*1000L,"Cache/save reconstruction retains same-second transfer guard");
+            RoomAtmosphere.reset();((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+40);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(stored==a.storedMicro()+b.storedMicro()+canister.get(com.frozendawn.init.ModDataComponents.O2_LEVEL.get())*1000L,"Unknown room geometry suspends all transfers");
+        }finally{((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenStoredSupportShutsOffOnBreachWithoutLosingContents(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();var cows=new ArrayList<Cow>();
+        try{
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);l.getBlockEntity(s.c).onLoad();s.sources.add(s.c);
+            var tank=reservoir(s,s.c.west(2),600000);
+            for(var p:List.of(s.c.west(),s.c.east())){var cow=new Cow(EntityType.COW,l);cow.setPos(p.getCenter());l.addFreshEntity(cow);cows.add(cow);}
+            RoomAtmosphere.view(l,s.c.west());RoomAtmosphere.view(l,s.c.east());for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            long before=tank.storedMicro();((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+20);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(before-tank.storedMicro()==20000,"8 production plus 2 stored oxygen support demand 10 exactly");
+            var r=RoomOxygenManager.readingAt(l,s.c.west());h.assertTrue(r.mode()==OxygenStatus.Mode.ON_RESERVE&&r.supply()==8&&r.demand()==10,"Gauge separates actual production from stored support");
+            h.assertTrue(TemperatureManager.hasBreathableAir(l,s.c.west()),"Stored oxygen prevents breathing loss without changing gas");
+            var breach=s.c.west(4).above();l.setBlock(breach,Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.view(l,s.c.west());long retained=tank.storedMicro();
+            for(int t=40;t<=160;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(tank.storedMicro()==retained&&!tank.connected(),"Breach closes input/output and preserves reserve");
+            h.assertTrue(!RoomAtmosphere.hasAir(l,s.c.west()),"Tank cannot fill an open room with gas");
+            l.setBlock(breach,Blocks.STONE.defaultBlockState(),3);RoomAtmosphere.view(l,s.c.west());RoomAtmosphere.view(l,s.c.east());
+            for(int t=180;t<=360;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomAtmosphere.tickLevel(l);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(tank.connected()&&tank.storedMicro()<retained,"Normal Core gas recovery reopens the valve and only then resumes deficit output");
+        }finally{cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenTankCannotConnectUnrelatedRoomsOrRechargeFromDischarge(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();var cows=new ArrayList<Cow>();
+        try{
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            var tank=reservoir(s,s.c.west(2),1000000);var empty=reservoir(s,s.c.west(3),0);
+            for(var p:List.of(s.c.west(),s.c.east())){var cow=new Cow(EntityType.COW,l);cow.setPos(p.getCenter());l.addFreshEntity(cow);cows.add(cow);}
+            RoomAtmosphere.view(l,s.c.west());RoomAtmosphere.view(l,s.c.east());for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            for(int t=20;t<=220;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomOxygenManager.tickLevel(l);}
+            var left=RoomOxygenManager.readingAt(l,s.c.west());var right=RoomOxygenManager.readingAt(l,s.c.east());
+            h.assertTrue(left.pool()!=right.pool()&&left.supply()==0&&right.supply()==0,"Tank adds no production and cannot union sealed rooms");
+            h.assertTrue(left.mode()==OxygenStatus.Mode.ON_RESERVE&&right.mode()==OxygenStatus.Mode.NO_OXYGEN,"Only the connected room receives stored support");
+            h.assertTrue(empty.storedMicro()==0,"Discharge never charges another reservoir");
+            var saved=tank.saveWithFullMetadata(l.registryAccess());long exact=tank.storedMicro();l.setBlock(tank.getBlockPos(),Blocks.AIR.defaultBlockState(),3);l.setBlock(tank.getBlockPos(),ModBlocks.OXYGEN_RESERVOIR.get().defaultBlockState(),3);
+            var loaded=(OxygenReservoirBlockEntity)l.getBlockEntity(tank.getBlockPos());loaded.loadWithComponents(saved,l.registryAccess());loaded.onLoad();h.assertTrue(loaded.storedMicro()==exact,"Native block-entity save retains exact remaining contents");
+            for(int t=240;t<=660;t+=20){((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+t);RoomOxygenManager.tickLevel(l);}
+            h.assertTrue(loaded.storedMicro()==0&&RoomOxygenManager.readingAt(l,s.c.west()).mode()==OxygenStatus.Mode.NO_OXYGEN,"After the finite stored reserve empties, normal breathing-shortage grace ends in NO O2");
+            h.assertTrue(RoomAtmosphere.hasAir(l,s.c.west()),"Empty reserve loses breathable O2 without evacuating pressure");
+        }finally{cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenReservoirHarvestPlacementAndExplosionPreserveConservation(GameTestHelper h){scene(h,s->{
+        var l=s.l;
+        var iron=new ItemStack(Items.IRON_INGOT);var copper=new ItemStack(Items.COPPER_INGOT);var glass=new ItemStack(Items.GLASS);
+        var input=net.minecraft.world.item.crafting.CraftingInput.of(3,3,List.of(iron,copper,iron,iron,glass,iron,iron,copper,iron));
+        var recipe=l.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING,input,l).orElseThrow();var crafted=recipe.value().assemble(input,l.registryAccess());
+        h.assertTrue(crafted.is(com.frozendawn.init.ModItems.OXYGEN_RESERVOIR.get())&&crafted.getCount()==1&&crafted.getOrDefault(com.frozendawn.init.ModDataComponents.RESERVOIR_OXYGEN.get(),0L)==0,"Real six-iron/two-copper/glass recipe yields exactly one empty vessel");
+        var tank=reservoir(s,s.c.west(2),1234567);var pos=tank.getBlockPos();var state=l.getBlockState(pos);
+        var drops=Block.getDrops(state,l,pos,tank);h.assertTrue(drops.size()==1&&drops.getFirst().getOrDefault(com.frozendawn.init.ModDataComponents.RESERVOIR_OXYGEN.get(),0L)==1234567,"Loot copies exact stored component");
+        var item=ItemStack.parseOptional(l.registryAccess(),(CompoundTag)drops.getFirst().save(l.registryAccess()));
+        l.setBlock(pos,Blocks.AIR.defaultBlockState(),3);
+        var player=new net.neoforged.neoforge.common.util.FakePlayer(l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"tank_placement"));player.setPos(s.c.east().getCenter());
+        var context=new net.minecraft.world.item.context.BlockPlaceContext(l,player,net.minecraft.world.InteractionHand.MAIN_HAND,item,new net.minecraft.world.phys.BlockHitResult(pos.below().getCenter().add(0,.5,0),Direction.UP,pos.below(),false));
+        h.assertTrue(((net.minecraft.world.item.BlockItem)item.getItem()).place(context).consumesAction(),"Actual BlockItem placement succeeds");
+        var placed=(OxygenReservoirBlockEntity)l.getBlockEntity(pos);h.assertTrue(placed!=null&&placed.storedMicro()==1234567,"Placement restores preserved contents without duplication");
+        h.assertTrue(new ItemStack(com.frozendawn.init.ModItems.OXYGEN_RESERVOIR.get()).getOrDefault(com.frozendawn.init.ModDataComponents.RESERVOIR_OXYGEN.get(),0L)==0,"Crafted/creative default vessel is empty");
+        for(var interaction:List.of(net.minecraft.world.level.Explosion.BlockInteraction.DESTROY,net.minecraft.world.level.Explosion.BlockInteraction.DESTROY_WITH_DECAY)){
+            if(l.getBlockEntity(pos)==null)reservoir(s,pos,1234567);
+            var explosion=new net.minecraft.world.level.Explosion(l,null,pos.getX(),pos.getY(),pos.getZ(),4,false,interaction);var exploded=new ArrayList<ItemStack>();
+            l.getBlockState(pos).onExplosionHit(l,pos,explosion,(stack,p)->exploded.add(stack));
+            h.assertTrue(exploded.isEmpty()&&l.getBlockEntity(pos)==null,"Both explosion destruction modes lose vessel and reserve");
+        }
+    });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenStorageReplayFunctionsLoad(GameTestHelper h){
+        var functions=h.getLevel().getServer().getFunctions();
+        for(var name:List.of("load","controls","prepare","support","low","breach","seal","suit","second","left","airlock","read"))
+            h.assertTrue(functions.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("o2_storage_check",name)).isPresent(),"Storage replay function parses: "+name);
+        h.succeed();
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_oxygen",timeoutTicks=100)
+    public static void roomOxygenIdleReserveDoesNotMaskProductionStrainAndOutputIsCapped(GameTestHelper h){scene(h,s->{
+        var l=s.l;long clock=l.getGameTime();var cows=new ArrayList<Cow>();
+        try{
+            ApocalypseState.get(l.getServer()).setApocalypseTicks((long)(ApocalypseState.get(l.getServer()).getTotalDays()*24000L*.90),l.getServer());
+            l.setBlock(s.c,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);l.getBlockEntity(s.c).onLoad();s.sources.add(s.c);
+            var tank=reservoir(s,s.c.west(2),OxygenReservoirBlockEntity.capacityMicro());
+            for(var p:List.of(s.c.west().north(),s.c.west().south()))l.setBlock(p,Blocks.CAMPFIRE.defaultBlockState(),3);
+            var cow=new Cow(EntityType.COW,l);cow.setPos(s.c.west().above().getCenter());l.addFreshEntity(cow);cows.add(cow);
+            RoomAtmosphere.view(l,s.c.west());RoomAtmosphere.view(l,s.c.east());for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+20);RoomOxygenManager.tickLevel(l);
+            var r=RoomOxygenManager.readingAt(l,s.c.west());h.assertTrue(r.mode()==OxygenStatus.Mode.LOW&&r.supply()==8&&r.demand()==7,"Unused reserve cannot hide near-capacity production warning");
+            h.assertTrue(tank.storedMicro()==OxygenReservoirBlockEntity.capacityMicro()&&tank.output()==0,"Idle full reservoir neither discharges nor overfills");
+            l.setBlock(s.c,Blocks.STONE.defaultBlockState(),3);var second=new Cow(EntityType.COW,l);second.setPos(s.c.west(3).above().getCenter());l.addFreshEntity(second);cows.add(second);RoomAtmosphere.view(l,s.c.west());
+            long before=tank.storedMicro();((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+40);RoomOxygenManager.tickLevel(l);
+            h.assertTrue(before-tank.storedMicro()==80000&&tank.output()==8,"A full vessel outputs only 8, even when demand is 12");
+            h.assertTrue(RoomOxygenManager.readingAt(l,s.c.west()).mode()!=OxygenStatus.Mode.ON_RESERVE&&RoomOxygenManager.storageAt(l,s.c.west()).secondsRemaining()<0,"Rate-limited storage cannot report full support or a false reserve countdown");
+        }finally{cows.forEach(Cow::discard);((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);}
+    });}
+    private static OxygenReservoirBlockEntity reservoir(Scene s,BlockPos p,long stored){s.l.setBlock(p,ModBlocks.OXYGEN_RESERVOIR.get().defaultBlockState(),3);var tank=(OxygenReservoirBlockEntity)s.l.getBlockEntity(p);var tag=new CompoundTag();tag.putLong("StoredOxygen",stored);tank.loadWithComponents(tag,s.l.registryAccess());tank.onLoad();s.gauges.add(p);return tank;}
     private record Scene(ServerLevel l,BlockPos c,List<BlockPos> sources,List<BlockPos> pits,List<BlockPos> gauges) {}
     private static void scene(GameTestHelper h,java.util.function.Consumer<Scene> test){
-        var l=h.getLevel();var phase=ApocalypseState.get(l.getServer());long ticks=phase.getApocalypseTicks();var identity=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());var oxygen=RoomOxygenState.get(l).save(new CompoundTag(),l.registryAccess());var heat=com.frozendawn.data.RoomThermalState.get(l).save(new CompoundTag(),l.registryAccess());
+        var l=h.getLevel();var phase=ApocalypseState.get(l.getServer());long ticks=phase.getApocalypseTicks();var identity=RoomIdentityState.get(l).save(new CompoundTag(),l.registryAccess());var air=RoomAirState.get(l).save(new CompoundTag(),l.registryAccess());var oxygen=RoomOxygenState.get(l).save(new CompoundTag(),l.registryAccess());var heat=com.frozendawn.data.RoomThermalState.get(l).save(new CompoundTag(),l.registryAccess());var transfers=OxygenTransferState.get(l).save(new CompoundTag(),l.registryAccess());
         var s=new Scene(l,h.absolutePos(new BlockPos(10,3,10)),new ArrayList<>(),new ArrayList<>(),new ArrayList<>());
         try {phase.setApocalypseTicks(0,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();CombustionAtmosphere.reset();RoomThermalManager.reset();
+            l.getDataStorage().set(OxygenTransferState.NAME,new OxygenTransferState());
             l.getDataStorage().set(RoomIdentityState.NAME,new RoomIdentityState());l.getDataStorage().set(RoomAirState.NAME,new RoomAirState());l.getDataStorage().set(RoomOxygenState.NAME,new RoomOxygenState());
             // These fixtures own their thermal save too: background rebind must not inspect
             // rooms inherited from another GameTest and mutate global pressure cells.
@@ -428,7 +545,7 @@ public final class RoomOxygenGameTest {
             test.accept(s);h.succeed();
         } finally {for(var p:s.gauges)l.setBlock(p,Blocks.AIR.defaultBlockState(),2);for(var p:s.sources)l.setBlock(p,Blocks.AIR.defaultBlockState(),2);for(var p:s.pits)BlastPitWarmZoneRegistry.unregister(l,p);
             phase.setApocalypseTicks(ticks,l.getServer());RoomAtmosphere.reset();RoomOxygenManager.reset();CombustionAtmosphere.reset();AtmosphericBreach.reset();RoomThermalManager.reset();
-            l.getDataStorage().set(RoomIdentityState.NAME,RoomIdentityState.load(identity,l.registryAccess()));l.getDataStorage().set(RoomAirState.NAME,RoomAirState.load(air,l.registryAccess()));l.getDataStorage().set(RoomOxygenState.NAME,RoomOxygenState.load(oxygen,l.registryAccess()));l.getDataStorage().set(com.frozendawn.data.RoomThermalState.NAME,com.frozendawn.data.RoomThermalState.load(heat,l.registryAccess()));}
+            l.getDataStorage().set(OxygenTransferState.NAME,OxygenTransferState.load(transfers,l.registryAccess()));l.getDataStorage().set(RoomIdentityState.NAME,RoomIdentityState.load(identity,l.registryAccess()));l.getDataStorage().set(RoomAirState.NAME,RoomAirState.load(air,l.registryAccess()));l.getDataStorage().set(RoomOxygenState.NAME,RoomOxygenState.load(oxygen,l.registryAccess()));l.getDataStorage().set(com.frozendawn.data.RoomThermalState.NAME,com.frozendawn.data.RoomThermalState.load(heat,l.registryAccess()));}
     }
     private static void near(GameTestHelper h,double a,double b,String why){h.assertTrue(Math.abs(a-b)<1e-8,why+": "+a+" vs "+b);}
 }

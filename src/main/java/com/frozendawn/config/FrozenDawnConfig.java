@@ -5,6 +5,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class FrozenDawnConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.IntValue O2_RESERVOIR_CAPACITY;
+    public static final ModConfigSpec.DoubleValue O2_RESERVOIR_FILL_RATE, O2_RESERVOIR_OUTPUT_RATE;
+
     // General
     public static final ModConfigSpec.IntValue TOTAL_DAYS;
     public static final ModConfigSpec.IntValue STARTING_DAY;
@@ -128,6 +131,11 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec SPEC;
 
     static {
+        BUILDER.push("roomOxygenStorage");
+        O2_RESERVOIR_CAPACITY=BUILDER.comment("Reservoir capacity in player-seconds (ten item units each).").defineInRange("capacity",1200,1,86400);
+        O2_RESERVOIR_FILL_RATE=BUILDER.comment("Maximum spare production stored per second, in player breathing rates.").defineInRange("fillRate",4.0,0.0,64.0);
+        O2_RESERVOIR_OUTPUT_RATE=BUILDER.comment("Maximum reservoir discharge per second, in player breathing rates.").defineInRange("outputRate",8.0,0.0,64.0);
+        BUILDER.pop();
         BUILDER.push("general");
         TOTAL_DAYS = BUILDER
                 .comment("Total in-game days until phase 6 atmospheric collapse is complete.",

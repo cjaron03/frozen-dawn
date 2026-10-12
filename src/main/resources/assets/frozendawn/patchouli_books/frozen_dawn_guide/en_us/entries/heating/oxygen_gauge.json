@@ -17,7 +17,7 @@
     {
       "type": "patchouli:text",
       "title": "Reading the Screen",
-      "text": "Green: supported. Flashing yellow: at least 80% capacity, overloaded, or trapped air without production. Red: NO O2, no air or no seal in vacuum. NO O2 means sealed gas remains but oxygen is unavailable. Gray WAITING: geometry or consumer indexing is incomplete.$(br2)These are status and rate readings, not an O2 percentage. Room tanks and reserve-time readings are planned."
+      "text": "Green: supported. Flashing yellow: at least 80% capacity, overloaded, or trapped air without production. Red: NO O2, no air or no seal in vacuum. NO O2 means sealed gas remains but oxygen is unavailable. Gray WAITING: geometry or consumer indexing is incomplete.$(br2)These are status and rate readings, not an O2 percentage. Connected reservoirs show stored player-seconds and output. ON RESERVE means storage is covering the production deficit; the time estimate uses that deficit. LIMITED means output cannot sustain it."
     },
     {
       "type": "patchouli:text",
@@ -47,7 +47,7 @@
     {
       "type": "patchouli:text",
       "title": "Warning Cues",
-      "text": "A short chime warns when a nearby gauge enters STRAINED. O2 SHORTAGE flashes yellow and sounds a double beep while known breathing demand exceeds supply, before the ten-second shortage grace expires. Restore supply or prepare EVA now. The same beep warns when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL, NO AIR and NO O2 alone remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat every two seconds while suffocation is imminent and stop when breathing protection returns; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; room tanks and charging allocation are planned."
+      "text": "A short chime warns when a nearby gauge enters STRAINED. O2 SHORTAGE flashes yellow and sounds a double beep while known breathing demand exceeds supply, before the ten-second shortage grace expires. Restore supply or prepare EVA now. The same beep warns when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL, NO AIR and NO O2 alone remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat every two seconds while suffocation is imminent and stop when breathing protection returns; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; reservoirs and shared charging are active."
     }
   ]
 }

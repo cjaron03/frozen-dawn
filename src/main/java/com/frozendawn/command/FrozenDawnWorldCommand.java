@@ -95,7 +95,7 @@ final class FrozenDawnWorldCommand {
         var source=context.getSource();
         var r=com.frozendawn.world.RoomOxygenManager.readingAt(source.getLevel(),BlockPos.containing(source.getPosition()));
         String state=switch(r.mode()) {
-            case SUPPLIED -> "SUPPORTED"; case LOW -> "NEAR CAPACITY";
+            case ON_RESERVE -> "ON RESERVE"; case SUPPLIED -> "SUPPORTED"; case LOW -> "NEAR CAPACITY";
             case BREATHING_SHORTAGE -> "O2 SHORTAGE"; case NO_OXYGEN -> "NO O2"; case TRAPPED_AIR -> "NO SUPPLY"; case NO_AIR -> "NO AIR";
             case NO_SEAL -> "NO SEAL"; case OPEN_AIR -> "OPEN AIR";
             default -> r.mode().name();
@@ -105,6 +105,8 @@ final class FrozenDawnWorldCommand {
         if(r.room()>0)FrozenDawn.LOGGER.info(String.format(Locale.ROOT,
                 "[RoomO2]   Room %d: pool %d | %s | supply %.2f / demand %.2f | local %.2f | %d sources / %d rooms",
                 r.room(),r.pool(),r.mode(),r.supply(),r.demand(),r.localDemand(),r.sources(),r.rooms()));
+        var reserve=com.frozendawn.world.RoomOxygenManager.storageAt(source.getLevel(),BlockPos.containing(source.getPosition()));
+        if(reserve.tanks()>0){FrozenDawnCommandOutput.detail(source,"Reserve",String.format(Locale.ROOT,"%.1fs stored | output %.2f | charging %.2f",reserve.stored(),reserve.output(),reserve.charging()));FrozenDawn.LOGGER.info(String.format(Locale.ROOT,"[RoomO2] Storage pool %d | stored %.3f / %.0f player-seconds | output %.3f / charging %.3f | %d tanks | connected %s | remaining %.1fs",r.pool(),reserve.stored(),reserve.capacity(),reserve.output(),reserve.charging(),reserve.tanks(),reserve.connected(),reserve.secondsRemaining()));}
         return 1;
     }
 

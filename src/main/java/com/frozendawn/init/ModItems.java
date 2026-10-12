@@ -74,6 +74,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> AIRLOCK_CONTROLLER = ITEMS.registerSimpleBlockItem("airlock_controller",ModBlocks.AIRLOCK_CONTROLLER);
     public static final DeferredItem<BlockItem> MANUAL_VENT_VALVE = ITEMS.registerSimpleBlockItem("manual_vent_valve",ModBlocks.MANUAL_VENT_VALVE);
 
+    public static final DeferredItem<com.frozendawn.item.OxygenReservoirItem> OXYGEN_RESERVOIR=ITEMS.register("oxygen_reservoir",com.frozendawn.item.OxygenReservoirItem::new);
     public static final DeferredItem<BlockItem> OXYGEN_GAUGE=ITEMS.registerSimpleBlockItem("oxygen_gauge",ModBlocks.OXYGEN_GAUGE);
     public static final DeferredItem<BlockItem> HEAT_VENT=ITEMS.registerSimpleBlockItem("heat_vent",ModBlocks.HEAT_VENT);
     public static final DeferredItem<BlockItem> THERMOSTAT=ITEMS.registerSimpleBlockItem("thermostat",ModBlocks.THERMOSTAT);
@@ -480,6 +481,7 @@ public class ModItems {
                         output.accept(THERMOSTAT.get());
                         output.accept(HEAT_VENT.get());
                         output.accept(OXYGEN_GAUGE.get());
+                        output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());

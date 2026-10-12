@@ -21,8 +21,9 @@ public final class OxygenGaugeRenderer implements BlockEntityRenderer<OxygenGaug
         boolean measured=r.room()!=0&&r.mode()!=OxygenStatus.Mode.WAITING;
         draw(Component.literal(measured?"SUPPLY "+number(r.supply()):"SUPPLY --"),-6,color,pose,buffers);
         draw(Component.literal(measured?"DEMAND "+number(r.demand()):"DEMAND --"),6,color,pose,buffers);
-        draw(Component.literal(measured?"LOCAL "+number(r.localDemand()):"LOCAL --"),18,0xB2C7D0,pose,buffers);
-        draw(Component.literal(measured?r.rooms()+" ROOM"+(r.rooms()==1?"":"S")+" / "+r.sources()+" SOURCE"+(r.sources()==1?"":"S"):"RATE / PLAYER"),30,0x8299A5,pose,buffers);
+        var reserve=entity.storage();
+        draw(Component.literal(reserve.tanks()>0?"STORED "+Math.round(reserve.stored())+"s":measured?"LOCAL "+number(r.localDemand()):"LOCAL --"),18,0xB2C7D0,pose,buffers);
+        draw(Component.literal(reserve.tanks()>0?(!reserve.connected()?"VALVE CLOSED":reserve.output()>0?"OUT "+number(reserve.output())+(reserve.secondsRemaining()>=0?" / "+Math.round(reserve.secondsRemaining())+"s":" / LIMITED"):reserve.stored()>=reserve.capacity()?"FULL":"CHARGING "+number(reserve.charging())):measured?r.rooms()+" ROOM"+(r.rooms()==1?"":"S")+" / "+r.sources()+" SOURCE"+(r.sources()==1?"":"S"):"RATE / PLAYER"),30,0x8299A5,pose,buffers);
         pose.popPose();
     }
     private String number(double v){return v>9999?"9999+":String.format(Locale.ROOT,"%.2f",v);}

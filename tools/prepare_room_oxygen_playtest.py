@@ -135,6 +135,8 @@ return 1''',
         'breach': action(['setblock -5 66 0 minecraft:air'], 'Left room breached.'),
         'patch': action(['setblock -5 66 0 minecraft:glass'], 'Sealed. Wait 5 seconds.')}
 def pack_only(destination, hooks=False):
+    import prepare_room_oxygen_storage_playtest as storage
+    storage.pack_only(destination)
     for name, body in scripts().items():
         p=destination/f'data/{NS}/function/{name}.mcfunction';p.parent.mkdir(parents=True,exist_ok=True);p.write_text(body+'\n')
     if hooks:

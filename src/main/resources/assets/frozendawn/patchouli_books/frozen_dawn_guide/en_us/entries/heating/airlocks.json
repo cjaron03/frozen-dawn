@@ -24,7 +24,7 @@
     {
       "type": "patchouli:text",
       "title": "Oxygen Is Measured",
-      "text": "Each interior block holds 100 O2 units. The controller reserve holds 6,400. A connected, breathable base with a Geothermal Core replenishes 40 units per second. Units match canister inventory; they are not physical liters.$(br2)Use an O2 canister on a panel to transfer only what fits. Leftovers remain in the canister. Stored O2 works without the Core.$(br2)Pressurization spends the chamber requirement. Depressurization recovers 90%; the remaining 10% is vented. If the reserve is full, overflow is also lost."
+      "text": "Each interior block holds 100 O2 units. The controller reserve holds 6,400. A connected, breathable base with a Geothermal Core replenishes up to 40 units per second from spare production, shared fairly with reservoirs, Core canisters and intact EVA refill. Breathing and active combustion are served first. Ten item units equal one player-second. Units match canister inventory; they are not physical liters.$(br2)Use an O2 canister on a panel to transfer only what fits. Leftovers remain in the canister. Stored O2 works without the Core.$(br2)Pressurization spends the chamber requirement. Depressurization recovers 90%; the remaining 10% is vented. If the reserve is full, overflow is also lost."
     },
     {
       "type": "patchouli:crafting",

@@ -208,6 +208,7 @@ public final class AirlockManager {
         }
         return false;
     }
+    public static boolean canReceiveSharedFeed(ServerLevel level,Chamber c){return layout(level,c)==Layout.VALID&&hasCoreFeed(level,c);}
     public static int charge(ServerLevel level,Chamber c,ItemStack tank) {
         if(!(tank.getItem() instanceof O2TankItem item))return 0;
         int offered=Math.clamp(tank.getOrDefault(ModDataComponents.O2_LEVEL.get(),item.getMaxO2()),0,item.getMaxO2());
@@ -234,7 +235,7 @@ public final class AirlockManager {
         if(layout==Layout.INVALID) {invalidate(level,c,null);return;}
         var actual=level.getGameTime()%20==0?RoomAtmosphere.inspect(level,c.cells.iterator().next()):null;
         if(actual!=null&&actual.seal()==RoomAtmosphere.Seal.OPEN&&c.gas.air()>0) {invalidate(level,c,null);return;}
-        if(level.getGameTime()%20==0&&hasCoreFeed(level,c)&&c.gas.fill(40)>0)AirlockSavedState.get(level).setDirty();
+        // Core feed is allocated from the same room production as every other charger.
         if(c.gas.cycling()) {
             if(!closed(level,c)) {c.gas.interrupt();AirlockSavedState.get(level).setDirty();broadcast(level,c,Status.INTERRUPTED,0);machinery(level,c,ModSounds.AIRLOCK_INTERRUPTED.get());return;}
             if(c.gas.elapsed()%20==0)machinery(level,c,c.gas.mode()==AirlockCycle.Mode.PRESSURIZING?ModSounds.AIRLOCK_PUMP_FILL.get():ModSounds.AIRLOCK_PUMP_RECOVER.get());
