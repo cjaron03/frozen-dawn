@@ -1,0 +1,46 @@
+{
+  "name": "Airlock Oxygen",
+  "category": "frozendawn:life_support",
+  "icon": "frozendawn:o2_tank",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "An airlock spends real oxygen every cycle. The controller keeps a reserve."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Units",
+      "text": "Each interior block holds $(bold)100$() O2 units; the reserve holds $(bold)6,400$().$(br2)Units match canisters, ten per player-second. They aren't liters."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Refilling",
+      "text": "A breathable base with a Geothermal Core refills the reserve at up to $(bold)40 units/s$(), from spare production only."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Breathing and flames come first; reservoirs, Core canisters and EVA refill share the rest fairly.$(br2)Stored O2 works without the Core, but won't refill without one."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cycle Costs",
+      "text": "Pressurizing spends the chamber's fill. Depressurizing recovers $(bold)90%$(); 10% vents.$(br2)Anything past a full reserve is lost."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Canisters",
+      "text": "Use an O2 canister on a panel to transfer what fits. The rest stays in the canister."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Recovery",
+      "text": "The Core can't refill an evacuated airlock; cycle the controller.$(br2)Reserve and partial transfers survive reloads. Unloaded chambers pause; they don't load chunks."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Repairs",
+      "text": "$(danger)Breaking the last panel loses its reserve.$() Rebuilding or resizing creates no free air and may lose it.$(br2)Relight torches only after pressure returns. No power grid needed."
+    }
+  ]
+}

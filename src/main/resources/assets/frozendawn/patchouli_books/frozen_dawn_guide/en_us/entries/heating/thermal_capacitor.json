@@ -5,19 +5,24 @@
   "sortnum": 3,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_capacitor",
+      "text": "Permanently boosts one Thermal Heater."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Thermal Capacitor",
-      "text": "Right-click any $(l:heating/thermal_heater)Thermal Heater$(/l) to install. One per heater; consumed on use. The upgrade persists through reloads and cannot be removed.$(br2)Output increases by 50%, with whole-number room output. Open-camp warmth radius doubles. Inside sealed rooms, coverage follows room geometry; a capacitor adds power, not an instant room-temperature bonus."
+      "title": "Install",
+      "text": "Right-click a $(l:heating/thermal_heater)Thermal Heater$(/l).$(br2)One per heater. It is consumed and can't be removed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Effect",
+      "text": "$(li)$(bold)+50%$() output$(li)Faster warm-up, same target$(li)Double open-camp radius: basic 14 blocks, Diamond 28, before exposure or frostmite penalties$(li)Thermostats work as normal"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_capacitor",
-      "text": "Refined Acheronite (top/bottom), Thermal Cores (sides), and a Frostbitten Core (center). It costs an arm and a leg. But your arms won't have frostbite anymore, so there's that."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Power and Control",
-      "text": "More power speeds warm-up. It does not raise the shared target. Automatic control and an $(l:heating/thermostat)ORSA Thermostat$(/l) regulate upgraded heaters normally.$(br2)In open camps, a basic heater reaches 14 blocks and a Diamond Heater 28 before exposure or frostmite penalties.$(br2)$(italic)Engineering proposed “Thermal Amplitude Redistribution Device.” Marketing won.$()"
+      "text": "Refined Acheronite top and bottom, Thermal Cores on the sides, a $(l:threats/frostbitten)Frostbitten Core$(/l) center.$(br2)$(flavor)Costs an arm and a leg. The arms won't have frostbite.$()"
     }
   ]
 }

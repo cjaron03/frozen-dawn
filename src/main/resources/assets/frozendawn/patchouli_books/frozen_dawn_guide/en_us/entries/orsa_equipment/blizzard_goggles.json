@@ -2,16 +2,22 @@
   "name": "Blizzard Goggles",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:blizzard_goggles",
-  "sortnum": 6,
+  "sortnum": 9,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:blizzard_goggles",
+      "text": "See through the whiteout. Wear in a Curios $(thing)head$() slot."
+    },
+    {
       "type": "patchouli:text",
-      "text": "Wear in a Curios $(thing)head$() slot.$(li)See about 32 blocks through Phase 5 and early Phase 6 whiteout$(li)Keeps blown ice off your face$(li)No help once the air starts thinning$(br2)With an ORSA Thermal Visor also worn: $(thing)V$() for thermal, $(thing)B$() for blizzard optics."
+      "title": "Effect",
+      "text": "$(li)About $(bold)32 blocks$() of sight in Phase 5 and early Phase 6 whiteout$(li)Keeps blown ice off your face$(li)No help once the air thins$(br2)With an ORSA Thermal Visor: $(thing)V$() thermal, $(thing)B$() blizzard optics."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:blizzard_goggles",
-      "text": "Standard goggles shattered at -80°C. Field teams wrapped salvage cloth and leather around glass. Ugly, functional."
+      "text": "Salvage cloth and leather around glass.$(br2)$(flavor)Standard goggles shattered at -80°C. Ugly, functional.$()"
     }
   ]
 }

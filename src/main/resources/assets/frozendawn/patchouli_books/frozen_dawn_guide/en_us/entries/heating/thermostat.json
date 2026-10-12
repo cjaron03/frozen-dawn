@@ -5,29 +5,49 @@
   "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "Room Control",
-      "text": "Place this panel inside a sealed room and right-click. Set 10-30°C in 5°C steps. It controls every heater in that room, including all tiers and Thermal Capacitors. Higher output speeds warm-up; insulation reduces fuel demand.$(br2)The newest placed thermostat wins when rooms merge; others show Overridden. Splitting restores independent control. Removing the winner restores the next newest. Targets and placement priority survive reloads."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermostat",
+      "text": "Sets the temperature of a sealed room."
     },
     {
       "type": "patchouli:text",
-      "title": "Sensed and Room Air",
-      "text": "Temperature is the shared room reading used by the HUD before personal equipment and status effects. Connected Core, campfire and furnace heat enters the same stored air-and-wall model as heater heat; it is not added again near the source.$(br2)The panel keeps a loaded room active without a fueled heater. It does not load chunks or supply oxygen."
+      "title": "Use",
+      "text": "Place it inside a sealed room and right-click.$(br2)$(bold)10-30°C$(), in 5°C steps, for every heater in the room."
     },
     {
       "type": "patchouli:text",
-      "title": "Independent Heat",
-      "text": "The controller throttles every linked heater toward the selected room temperature. Core and other passive heat reduce the fuel needed. Independent sources can still raise the room above target: the thermostat cannot switch off a Core, extinguish a fire or actively cool.$(br2)Use a heat vent to reject excess heat. Existing wall heat remains after a breach or restart. Burn percentage is a short average; redstone still shuts down a heater."
+      "title": "Merged Rooms",
+      "text": "The newest thermostat wins; others show $(bold)Overridden$(). Splitting restores them. Removing the winner hands control to the next newest.$(br2)All of it survives reloads."
     },
     {
       "type": "patchouli:text",
-      "title": "Seal and Signals",
-      "text": "An indoor thermostat shows No seal after a breach; heaters use their own 20°C defaults until repaired. Unknown or unloaded geometry suspends room simulation.$(br2)A new outdoor controller in Phases 1-4 regulates camp heaters within 8 blocks. Once bound to a room it remains an indoor controller; move/re-place it for a camp.$(br2)Comparator output follows sensed temperature: 0 at 0°C or colder, 15 at 30°C or warmer."
+      "title": "Room Reading",
+      "text": "It reads the shared room temperature the HUD uses, before your gear and effects.$(br2)Core, campfire and furnace heat is part of that reading."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Limits",
+      "text": "It throttles heaters only. It can't switch off a Core, put out a fire or cool.$(br2)If those overshoot, use a $(l:heating/heat_vent)Heat Vent$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "After a Breach",
+      "text": "It shows $(bold)No seal$(); heaters fall back to 20°C until you repair. Unknown or unloaded rooms pause.$(br2)Wall heat survives a breach or restart."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Camps",
+      "text": "Placed outdoors in Phases 1-4, a new thermostat runs camp heaters within $(bold)8 blocks$().$(br2)Once bound to a room it stays indoor. Re-place it for a camp."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermostat",
-      "text": "Four iron ingots, two copper ingots, two redstone dust and one glass. ORSA recommends placing the sensor near the occupant. The occupant is usually you."
+      "text": "Four iron, two copper, two redstone, one glass.$(br2)$(flavor)Place the sensor near the occupant. The occupant is usually you.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Specs",
+      "text": "$(li)10-30°C in 5°C steps$(li)Comparator: 0 at 0°C or colder, 15 at 30°C or warmer$(li)Keeps a loaded room simulated without a fueled heater$(li)Loads no chunks, supplies no oxygen$(li)Burn % is a short average"
     }
   ]
 }

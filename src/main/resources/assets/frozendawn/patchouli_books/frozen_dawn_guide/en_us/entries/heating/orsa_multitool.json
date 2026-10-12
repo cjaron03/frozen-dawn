@@ -1,21 +1,23 @@
 {
   "name": "ORSA MultiTool",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:orsa_multitool",
-  "sortnum": 7,
+  "sortnum": 6,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "Right-click a supported device for a status readout.$(li)$(bold)Thermal Heater:$() heat output, radius, fuel ETA, shelter status$(li)$(bold)Transponder:$() broadcast state, progress, signal depth$(li)$(bold)Geothermal Core:$() status, coordinates"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:orsa_multitool",
+      "text": "Right-click a supported device for a status readout."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Orbital command used to monitor this remotely. Now you have a stick. Progress.$()"
+      "title": "Readouts",
+      "text": "$(li)$(bold)Thermal Heater$(): output, radius, fuel time, shelter$(li)$(bold)Transponder$(): broadcast state, progress, signal depth$(li)$(bold)Geothermal Core$(): status, coordinates"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:orsa_multitool",
-      "text": "Iron tip, redstone sensor, stick handle. The original cost $14,000 and had Bluetooth. This one works better."
+      "text": "Iron tip, redstone sensor, stick handle.$(br2)$(flavor)The original cost 14,000 credits and had Bluetooth. This one works better.$()"
     }
   ]
 }

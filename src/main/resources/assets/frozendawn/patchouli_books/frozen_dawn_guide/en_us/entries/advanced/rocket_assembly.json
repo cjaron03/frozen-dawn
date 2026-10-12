@@ -2,27 +2,82 @@
   "name": "Rocket Assembly",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:rocket_engine",
-  "sortnum": 6,
+  "sortnum": 7,
   "advancement": "frozendawn:broadcast_complete",
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:rocket_engine",
+      "title": "Rocket Assembly",
+      "text": "Mars sent the component plan, not a finished vehicle. Build it on the $(bold)ORSA blast pit$(); nowhere else works."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Rocket Stack",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "   ",
+            " N ",
+            "   "
+          ],
+          [
+            "   ",
+            " H ",
+            "   "
+          ],
+          [
+            "   ",
+            " H ",
+            "   "
+          ],
+          [
+            "   ",
+            " H ",
+            "   "
+          ],
+          [
+            "   ",
+            " H ",
+            "   "
+          ],
+          [
+            " F ",
+            "FEF",
+            " F "
+          ],
+          [
+            "PPP",
+            "P0P",
+            "PPP"
+          ]
+        ],
+        "mapping": {
+          "N": "frozendawn:rocket_nose_cone",
+          "H": "frozendawn:rocket_hull",
+          "F": "frozendawn:rocket_fin",
+          "E": "frozendawn:rocket_engine",
+          "P": "frozendawn:launch_pad",
+          "0": "frozendawn:launch_pad"
+        }
+      },
+      "text": "Pad, engine, four fins, four hull, nose. Centered or it won't lock."
+    },
+    {
       "type": "patchouli:text",
-      "text": "Mars sent the component plan, not a finished vehicle.$(br2)Everything here is built on the $(bold)ORSA blast pit$(). Nowhere else works."
+      "title": "Stack Order",
+      "text": "$(li)Full 3x3 pad on the blast-pit mount$(li)Engine one block above the pad center$(li)4 fins on its north, south, east and west$(li)4 hull blocks straight up$(li)Nose cone on top"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(danger)Off-center, the structure will not lock.$() Keep the blast trench under the center plate intact."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:launch_pad",
       "title": "ORSA Launch Pad",
-      "text": "Yields $(bold)9$(): one full 3x3 pad. Lay all of it on the blast-pit mount before stacking parts."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Stack Order",
-      "text": "$(li)Engine one block above the pad center$(li)4 fins on its north, south, east and west sides$(li)4 hull blocks straight above the engine$(li)Nose cone on top"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Off-center, the structure will not lock. Keep the blast trench under the center plate intact."
+      "text": "Yields $(bold)9$(): one full 3x3 pad."
     },
     {
       "type": "patchouli:crafting",
@@ -46,7 +101,7 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:rocket_nose_cone",
       "title": "Rocket Nose Cone",
-      "text": "Consumes the Acheronite Compass. ORSA considered that an acceptable trade."
+      "text": "Consumes the Acheronite Compass.$(br2)$(flavor)ORSA considered that an acceptable trade.$()"
     },
     {
       "type": "patchouli:text",

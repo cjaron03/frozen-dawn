@@ -2,30 +2,77 @@
   "name": "ORSA Transponder",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:transponder",
-  "sortnum": 4,
+  "sortnum": 5,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "ORSA's last-resort beacon. It broadcasts to surviving relay satellites.$(br2)Building one needs the $(bold)ORSA Transponder Schematic$(), a classified document in ORSA wreckage."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:transponder",
+      "title": "ORSA Transponder",
+      "text": "ORSA's last-resort beacon. It broadcasts to surviving relay satellites."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)\"We hid the escape plan in a random structure. Also the cafeteria key.\" -- ORSA Security$()"
+      "title": "Schematic",
+      "text": "Building one needs the $(bold)ORSA Transponder Schematic$(), a classified document in ORSA wreckage. Archive it first.$(br2)$(flavor)\"We hid the escape plan in a random structure. Also the cafeteria key.\" ORSA Security$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:transponder",
-      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, a Frozen Heart and a Frozen Atmosphere Shard. A phone call to space. Long distance rates apply."
+      "text": "4 Refined Acheronite, 2 Diamond Blocks, a Thermal Core, a Frozen Heart and an Atmosphere Shard.$(br2)$(flavor)A phone call to space. Long distance rates apply.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Activation",
-      "text": "$(li)$(bold)Depth:$() below Y=0$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky:$() an open shaft straight up, no solid blocks$(li)$(bold)Schematic:$() archived first$(br2)Right-click to start. The broadcast takes about $(bold)100 minutes$()."
+      "text": "$(li)$(bold)Depth:$() below Y=0$(li)$(bold)Power:$() Geothermal Core within 12 blocks$(li)$(bold)Sky:$() an open shaft straight up, no solid blocks$(li)$(bold)Schematic:$() archived$(br2)Right-click to start."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Broadcast Site",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SS SS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "S 0GS",
+            "SSSSS"
+          ],
+          [
+            "SSSSS",
+            "SSSSS",
+            "SSSSS"
+          ]
+        ],
+        "mapping": {
+          "S": "minecraft:deepslate",
+          "0": "frozendawn:transponder",
+          "G": "frozendawn:geothermal_core"
+        }
+      },
+      "text": "Below Y=0, Core beside it, shaft open all the way to the sky."
     },
     {
       "type": "patchouli:text",
       "title": "Broadcast",
-      "text": "A beam rises through the shaft. Pause and resume it from the interface.$(br2)If a condition fails, it pauses with a warning and resumes once fixed.$(br2)The signal clears snow from the shaft. ORSA's most practical feature, designed by accident."
+      "text": "It takes about $(bold)100 minutes$(). A beam rises through the shaft; pause and resume from the interface.$(br2)If a condition fails it pauses with a warning, and resumes once fixed."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The signal clears snow from the shaft.$(br2)$(flavor)ORSA's most practical feature, designed by accident.$()"
     }
   ]
 }

@@ -2,20 +2,27 @@
   "name": "Ice Claws",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:ice_claws",
-  "sortnum": 7,
+  "sortnum": 10,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "Wear in a Curios $(thing)hands$() slot to climb frozen surfaces: snow blocks, ice, packed ice, blue ice, frozen obsidian, frozen dirt and frozen sand.$(li)Hold $(thing)Jump$() at a wall to climb$(li)Hold $(thing)Sneak$() to stay put$(li)Let go to drop"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:ice_claws",
+      "text": "Climb frozen surfaces. Wear in a Curios $(thing)hands$() slot."
     },
     {
       "type": "patchouli:text",
-      "text": "Hollows still win any argument about movement."
+      "title": "Climbing",
+      "text": "$(li)Hold $(thing)Jump$() at a wall to climb$(li)Hold $(thing)Sneak$() to stay put$(li)Let go to drop$(br2)$(flavor)Hollows still win any argument about movement.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Surfaces",
+      "text": "Snow blocks, ice, packed ice, blue ice, frozen obsidian, frozen dirt and frozen sand."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:ice_claws",
-      "text": "Acheronite shards, iron and leather. Dr. Vasik's notes: three teams lost fingers before someone added grips. ORSA classified the design, then lost the file."
+      "text": "Acheronite shards, iron and leather.$(br2)$(flavor)Dr. Vasik: three teams lost fingers before someone added grips. ORSA classified the design, then lost the file.$()"
     }
   ]
 }

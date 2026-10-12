@@ -2,46 +2,49 @@
   "name": "O2 Canisters",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:o2_tank",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "When the atmosphere freezes in late Phase 6, your $(l:orsa_equipment/eva_suit)EVA suit$(/l) needs a canister.$(br2)Carry one in your inventory while wearing the full suit. It draws automatically: ten units per second of normal breathing."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:o2_tank",
+      "text": "Air for your EVA suit once the atmosphere freezes."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Hyperventilating does not conserve oxygen. We checked.$()"
+      "title": "Use",
+      "text": "Carry one while wearing the full $(l:orsa_equipment/eva_suit)EVA suit$(/l). It draws automatically: $(bold)10 units$() per second of breathing.$(br2)$(flavor)Hyperventilating does not conserve oxygen. We checked.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Tanks",
-      "text": "$(li)Multiple tanks drain one at a time$(li)The O2 HUD shows combined air across all tanks$(li)Refill in a $(l:advanced/geothermal_core)Geothermal Core$(/l) O2 slot; bigger tanks take longer"
+      "text": "$(bold)Mk.I$(): 120 s, cyan bar$(br)$(bold)Mk.II$(): 240 s, blue bar$(br)$(bold)Mk.III$(): 360 s, purple bar$(br2)Tanks drain one at a time. The HUD shows the total."
     },
     {
       "type": "patchouli:text",
-      "text": "The Core refills from spare oxygen. Rooms are served first; canisters, reservoirs, intact EVA suits and airlock reserves share the rest.$(br2)An intact suit also tops up the canisters you carry while you stand in supported breathable air."
+      "title": "Refilling",
+      "text": "Put a canister in a $(l:advanced/geothermal_core)Geothermal Core$(/l) O2 slot. Bigger tanks take longer.$(br2)The Core refills from spare oxygen only; rooms come first."
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Mk.I:$() 120s, cyan bar$(br)$(bold)Mk.II:$() 240s, blue bar$(br)$(bold)Mk.III:$() 360s, purple bar"
+      "text": "Canisters, reservoirs, intact EVA suits and airlock reserves share the spare.$(br2)An intact suit also tops up carried canisters while you stand in supported breathable air."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank",
       "title": "O2 Canister Mk.I",
-      "text": "Iron, glass and a Thermal Core to regulate pressure. Two minutes: ORSA assumed you would have airlocks. Kevin spent the airlock budget on an espresso machine."
+      "text": "Iron, glass and a Thermal Core.$(br2)$(flavor)ORSA assumed you'd have airlocks. Kevin spent the airlock budget on an espresso machine.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank_mk2",
       "title": "O2 Canister Mk.II",
-      "text": "Diamonds around a Mk.I canister. Enough air to leave shelter, finish a real task and get back. The most expensive air you will ever breathe, until the Mk.III."
+      "text": "Diamonds around the first canister. Enough air to leave shelter, finish a job and get back.$(br2)$(flavor)The priciest air you'll ever breathe, until the Mk.III.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:o2_tank_mk3",
       "title": "O2 Canister Mk.III",
-      "text": "$(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l), blue ice and a Mk.II. Cold to the touch. You are bottling the sky."
+      "text": "$(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l), blue ice and a Mk.II.$(br2)$(flavor)You are bottling the sky.$()"
     }
   ]
 }

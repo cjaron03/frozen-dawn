@@ -5,17 +5,20 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Threat level:$() moderate$(br2)Humanoids of packed ice and flash-frozen tissue. Origin unknown. Not here before Phase 4.$(br2)$(italic)Exhibit A: 200+ heat signatures that should not exist. Exhibit B: our confused faces.$()"
+      "type": "patchouli:entity",
+      "entity": "frozendawn:frostbitten",
+      "name": "Frostbitten",
+      "text": "$(bold)Threat:$() moderate. Ice and flash-frozen tissue. Not here before Phase 4."
     },
     {
       "type": "patchouli:text",
       "title": "Field Notes",
-      "text": "$(li)Spawns on the surface, Phase 4+$(li)Throws heavy snowballs$(li)Melee applies freeze$(li)Avoids light level 10+$(br2)$(bold)Weak to:$() fire, Acheronite weapons"
+      "text": "$(li)Spawns on the surface, Phase 4+$(li)Throws heavy snowballs$(li)Melee applies freeze$(li)Avoids light level 10+$(br2)$(flavor)Exhibit A: 200+ heat signatures that should not exist. Exhibit B: our confused faces.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Drops:$() Frozen Meat, $(l:heating/thermal_capacitor)Frostbitten Core$(/l)$(br2)$(italic)Avoid melee unless you enjoy hypothermia.$()"
+      "title": "Fighting",
+      "text": "$(bold)Weak to:$() fire, Acheronite weapons$(br2)$(bold)Drops:$() Frozen Meat, $(l:heating/thermal_capacitor)Frostbitten Core$(/l)$(br2)$(flavor)Avoid melee unless you enjoy hypothermia.$()"
     }
   ]
 }

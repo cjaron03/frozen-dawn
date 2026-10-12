@@ -5,32 +5,35 @@
   "sortnum": 0,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)ORSA Mk.I Thermal Undersuit$()$(br2)Wool and leather, designed by ORSA's finest interns.$(li)+6.25°C cold resistance per piece$(li)Full set: $(bold)+25°C$()$(li)Rated for Phase 1-3 (-25°C)$(li)Not rated for Phase 4+, lava or bear hugs"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:insulated_chestplate",
+      "title": "Insulated Gear",
+      "text": "ORSA Mk.I Thermal Undersuit. Wool and leather, designed by ORSA's finest interns."
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Care:$() do not machine wash. Do not expose to temperatures below -25°C. $(italic)We see the irony.$()$(br2)$(italic)ORSA property. Loss, damage or unauthorized bedazzling: fines up to 500 credits.$()"
+      "title": "Specs",
+      "text": "$(li)$(bold)+6.25°C$() cold resistance per piece$(li)Full set: $(bold)+25°C$()$(li)Rated for Phase 1-3, down to -25°C$(li)$(danger)Not rated for Phase 4+$()$(br2)$(flavor)Or lava. Or bear hugs.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_chestplate",
-      "text": "Wool and leather. Your grandmother could make this. She probably should have."
+      "text": "Wool and leather.$(br2)$(flavor)Do not machine wash. Do not expose below -25°C. We see the irony.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_helmet",
-      "text": "Keeps your ears warm and your dignity... debatable."
+      "text": "$(flavor)Keeps your ears warm. Your dignity is debatable.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_leggings",
-      "text": "Wool-lined trousers for survivors who prefer their knees unfrozen."
+      "text": "$(flavor)For survivors who prefer their knees unfrozen.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:insulated_boots",
-      "text": "Cold feet end expeditions fast. These help you keep walking."
+      "text": "$(flavor)ORSA property. Unauthorized bedazzling: fines up to 500 credits.$()"
     }
   ]
 }

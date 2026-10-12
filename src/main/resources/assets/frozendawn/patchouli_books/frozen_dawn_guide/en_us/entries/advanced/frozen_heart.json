@@ -5,13 +5,19 @@
   "sortnum": 1,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:frozen_heart",
+      "text": "The power component of the $(l:advanced/geothermal_core)Geothermal Core$(/l), the EVA chestplate and the Transponder."
+    },
+    {
       "type": "patchouli:text",
-      "text": "The power component at the center of the $(l:advanced/geothermal_core)Geothermal Core$(/l), your endgame heat source.$(br2)$(bold)Needs:$() a diamond, blue ice, $(l:advanced/ice_shards)ice shards$(/l) and frozen obsidian, which forms on the surface from Phase 4.$(br2)$(italic)\"Cryogenic Thermal Inversion Matrix\" did not fit on the label.$()"
+      "title": "Needs",
+      "text": "A diamond, blue ice, $(l:advanced/ice_shards)ice shards$(/l) and frozen obsidian, which forms on the surface from Phase 4.$(br2)$(flavor)\"Cryogenic Thermal Inversion Matrix\" did not fit on the label.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:frozen_heart",
-      "text": "Cold things around a diamond somehow make heat. ORSA Physics wrote \"it works\" and stopped."
+      "text": "Cold things around a diamond somehow make heat.$(br2)$(flavor)ORSA Physics wrote \"it works\" and stopped.$()"
     }
   ]
 }

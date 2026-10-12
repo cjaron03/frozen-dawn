@@ -2,25 +2,32 @@
   "name": "Atmosphere Shard",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:frozen_atmosphere_shard",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "In Phase 6 the air freezes onto the surface as thin crystalline sheets. Mine them for $(bold)Frozen Atmosphere Shards$().$(br2)$(bold)Used in:$() the $(l:advanced/transponder)Transponder$(/l) and the $(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l). You will need several."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:frozen_atmosphere_shard",
+      "title": "Atmosphere Shard",
+      "text": "Frozen air, mined from thin crystalline sheets on the Phase 6 surface."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)You are holding the sky. ORSA recommends not thinking about it.$()"
+      "title": "Used In",
+      "text": "$(li)The $(l:advanced/transponder)Transponder$(/l)$(li)$(l:orsa_equipment/o2_canisters)O2 Canister Mk.III$(/l)$(li)Rocket fuel$(br2)You'll need several."
     },
     {
       "type": "patchouli:text",
       "title": "Sublimation",
-      "text": "If your body temperature is above $(bold)-150°C$(), a carried shard sublimates. It shimmers and sheds snowflakes, then vanishes after about $(bold)7.5 seconds$().$(br2)A $(l:heating/thermal_container)Thermal Container$(/l) stops the timer. Stored shards keep indefinitely."
+      "text": "Above $(bold)-150°C$() body temperature, a carried shard $(danger)vanishes in about 7.5 s$(). It shimmers and sheds snowflakes first."
     },
     {
       "type": "patchouli:text",
-      "title": "Procedure",
-      "text": "$(li)Mine the shard$(li)Open your Thermal Container$(li)Put the shard inside$(li)Do not panic$(li)If you panicked, see step 4$(br2)$(italic)\"A rescue beacon that needs frozen sky. In hindsight, copper wire would have worked.\" -- Dr. Vasquez$()"
+      "title": "Storage",
+      "text": "A $(l:heating/thermal_container)Thermal Container$(/l) stops the timer; stored shards keep forever.$(li)Mine it$(li)Open the container$(li)Put it inside$(li)Do not panic$(br2)$(flavor)If you panicked, see step 4.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(flavor)You are holding the sky. ORSA recommends not thinking about it.$()$(br2)$(flavor)\"A rescue beacon that needs frozen sky. In hindsight, copper wire would have worked.\" Dr. Vasquez$()"
     }
   ]
 }

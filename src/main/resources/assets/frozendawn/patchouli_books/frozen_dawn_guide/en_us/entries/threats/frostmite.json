@@ -5,22 +5,25 @@
   "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Threat level:$() variable$(br2)One is an irritation with legs. Ten is a thermal failure event. They do not stop once they find a warm body or a working heater.$(br2)$(italic)Do not call them ice silverfish. That phrase has preceded several deaths.$()"
+      "type": "patchouli:entity",
+      "entity": "frozendawn:frostmite",
+      "name": "Frostmite",
+      "text": "$(bold)Threat:$() variable. One is an irritation. $(danger)Ten is a thermal failure event.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Field Notes",
-      "text": "$(li)Latch on and drag your temperature down; drain stacks to a severe cap$(li)Swarm lit Thermal Heaters: less warmth, dimmer glow, faster fuel burn$(li)Spawn in later phases and burst from infested cold blocks when mined$(li)Fast, erratic movement"
+      "text": "$(li)Latch on and drag your temperature down; drain stacks to a severe cap$(li)Swarm lit heaters: less warmth, faster fuel burn$(li)Spawn late and burst from infested cold blocks when mined$(li)Fast, erratic, relentless"
     },
     {
       "type": "patchouli:text",
       "title": "Counters",
-      "text": "$(li)Do not let them stack$(li)A lit heater draws them off you, but then you must guard it$(li)A full EVA suit blocks the heat drain on you$(li)Expect them in packed or blue ice you mine late$(li)$(l:heating/miteaway)MiteAway$(/l) smoke keeps them out of a room"
+      "text": "$(li)Don't let them stack$(li)A lit heater draws them off you; then guard it$(li)A full EVA suit blocks the drain on you$(li)Expect them in late packed or blue ice$(li)$(l:heating/miteaway)MiteAway$(/l) smoke keeps them out of a room"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Drops:$() Snowball$(br2)$(italic)If your heater seems weaker and is covered in tiny moving frost, you are now operating a communal buffet.$()"
+      "title": "Drops",
+      "text": "Snowball.$(br2)$(flavor)Do not call them ice silverfish. That phrase has preceded several deaths.$()"
     }
   ]
 }

@@ -5,24 +5,26 @@
   "sortnum": 6,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0084$()$(br2)Nine Refined Acheronite in one block.$(li)$(bold)+10°C warmth$() within 3 blocks$(li)Compact storage$(br2)It will not replace a heater, but it keeps your toes attached."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheronite_block",
+      "text": "Nine Refined Acheronite in one block. $(bold)+10°C$() within 3 blocks."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)\"That doesn't make sense.\" \"Neither does the sun abandoning you.\"$()"
+      "title": "Use",
+      "text": "$(bold)Orbital Scan #0084$()$(br2)Compact storage that keeps your toes attached. It won't replace a heater. Returned Architects can't break it.$(br2)$(flavor)\"That doesn't make sense.\" \"Neither does the sun abandoning you.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_block",
       "title": "Acheronite Block",
-      "text": "9 ingots in a grid. An expensive, cold brick that somehow radiates warmth. ORSA physics at its finest."
+      "text": "Nine ingots in a grid.$(br2)$(flavor)An expensive cold brick that somehow radiates warmth.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:refined_acheronite_from_block",
       "title": "Back to Ingots",
-      "text": "Place in a crafting grid for 9 ingots back. No refunds on the existential dread."
+      "text": "Nine ingots back.$(br2)$(flavor)No refunds on the existential dread.$()"
     }
   ]
 }

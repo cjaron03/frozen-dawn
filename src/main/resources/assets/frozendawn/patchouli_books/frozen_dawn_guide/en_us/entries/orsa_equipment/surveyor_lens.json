@@ -2,7 +2,7 @@
   "name": "Surveyor Lens",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:surveyor_lens",
-  "sortnum": 8,
+  "sortnum": 11,
   "pages": [
     {
       "type": "patchouli:text",
@@ -16,15 +16,12 @@
     {
       "type": "patchouli:text",
       "title": "Field Use",
-      "text": "$(bold)Acquisition:$() Returned Architects occasionally drop one.$(br2)$(bold)Passive:$() hold it in either hand for a thermal wash over your visor. Nearby heat infrastructure is marked."
+      "text": "$(bold)Found:$() Returned Architects sometimes drop one.$(br2)$(bold)Passive:$() hold it in either hand. A thermal wash marks nearby heat infrastructure.$(br2)$(flavor)The base model ignores lava, candles and Kevin from Logistics.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Ping:$() right-click to pulse for $(l:advanced/geothermal_core)Geothermal Cores$(/l), lit Thermal Heaters, surfaced $(l:heating/geothermal_vents)vents$(/l), $(l:orsa_rd/acheron_forge)Acheron Forges$(/l) and Transponders."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)The base model ignores lava, candles and Kevin from Logistics.$()"
+      "title": "Ping",
+      "text": "Right-click to pulse for:$(li)$(l:advanced/geothermal_core)Geothermal Cores$(/l)$(li)Lit Thermal Heaters$(li)Surfaced $(l:heating/geothermal_vents)vents$(/l)$(li)$(l:orsa_rd/acheron_forge)Acheron Forges$(/l)$(li)Transponders"
     },
     {
       "type": "patchouli:text",
@@ -39,17 +36,18 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:calibrated_surveyor_lens",
       "title": "Calibrated Array",
-      "text": "Lens, $(l:orsa_rd/soul_harvesting)Architect Soul$(/l), 4 Refined Acheronite and a diamond. Longer range, more markers, and it filters out torch and lava clutter."
+      "text": "Lens, $(l:orsa_rd/soul_harvesting)Architect Soul$(/l), 4 Refined Acheronite and a diamond.$(br2)Longer range, more markers, no torch or lava clutter."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:orsa_thermal_visor",
       "title": "ORSA Thermal Visor",
-      "text": "Two calibrated lenses, insulated cloth and an iron housing. Worn on the head:$(li)Hands-free thermal overlay$(li)+20°C cold resistance$(li)A brief air buffer in vacuum"
+      "text": "Two calibrated lenses, insulated cloth and an iron housing. Worn on the head."
     },
     {
       "type": "patchouli:text",
-      "text": "With an EVA body rig and oxygen, the visor stretches tank life noticeably.$(br2)$(italic)ORSA calls the rebreather \"field sufficient.\" Legal made them remove \"probably.\"$()"
+      "title": "Thermal Visor",
+      "text": "$(li)Hands-free thermal overlay$(li)$(bold)+20°C$() cold resistance$(li)A brief air buffer in vacuum$(li)With an EVA body rig and oxygen, tanks last noticeably longer$(br2)$(flavor)Legal removed \"probably\" from \"field sufficient.\"$()"
     }
   ]
 }

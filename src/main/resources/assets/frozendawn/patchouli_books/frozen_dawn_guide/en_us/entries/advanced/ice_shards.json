@@ -5,8 +5,14 @@
   "sortnum": 0,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:ice_shard",
+      "text": "Dropped by Frozen Coal Ore, which forms on the surface from Phase 4."
+    },
+    {
       "type": "patchouli:text",
-      "text": "Dropped by Frozen Coal Ore, which forms on the surface from Phase 4.$(br2)$(bold)Used for:$() packed ice, blue ice and the $(l:advanced/frozen_heart)Frozen Heart$(/l).$(br2)$(italic)Your fuel froze into the opposite of fuel. ORSA does not find this funny.$()"
+      "title": "Used For",
+      "text": "$(li)Packed ice$(li)Blue ice$(li)The $(l:advanced/frozen_heart)Frozen Heart$(/l)$(li)A replacement copy of this manual$(br2)$(flavor)Your fuel froze into the opposite of fuel. ORSA does not find this funny.$()"
     },
     {
       "type": "patchouli:crafting",
@@ -19,6 +25,12 @@
       "recipe": "frozendawn:blue_ice_from_shards",
       "title": "Blue Ice",
       "text": "9 ice shards fill the grid."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:frozen_dawn_guide",
+      "title": "Replacement Manual",
+      "text": "A book and an ice shard. Lost manuals are replaceable. You are not."
     }
   ]
 }

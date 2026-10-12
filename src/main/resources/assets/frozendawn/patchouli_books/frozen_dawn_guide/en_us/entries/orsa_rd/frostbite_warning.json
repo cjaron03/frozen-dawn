@@ -2,29 +2,25 @@
   "name": "Frostbite Warning",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:powder_snow_bucket",
-  "sortnum": 4,
+  "sortnum": 3,
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "$(bold)SAFETY BULLETIN #41$()$(br)$(bold)RE: STOP TOUCHING THE CRYSTALS$()$(br2)Raw $(l:orsa_rd/acheronite_crystals)Acheronite Shards$(/l) are $(bold)-189°C$(). Carrying them gives you frostbite. This is not a suggestion. This is thermodynamics."
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(italic)We can see your temperature dropping from orbit. Please stop.$()"
+      "text": "$(bold)SAFETY BULLETIN #41$()$(br)$(bold)RE: STOP TOUCHING THE CRYSTALS$()$(br2)Raw $(l:orsa_rd/acheronite_crystals)Acheronite Shards$(/l) are $(danger)-189°C$(). Carrying them gives you frostbite.$(br2)$(flavor)This is not a suggestion. This is thermodynamics.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Stages",
-      "text": "$(bold)Holding a shard:$()$(li)$(bold)Numb:$() Slowness I$(li)$(bold)Spreading:$() Slowness II$(li)$(bold)Tissue damage:$() Slowness II and damage$(li)$(bold)After 30s:$() Mining Fatigue II$(br2)$(bold)In your pack:$() the same stages, three times slower."
+      "text": "$(bold)Holding a shard:$()$(li)Numb: Slowness I$(li)Spreading: Slowness II$(li)Tissue damage: Slowness II, $(danger)damage$()$(li)After 30 s: Mining Fatigue II$(br2)$(bold)In your pack:$() same stages, three times slower."
     },
     {
       "type": "patchouli:text",
       "title": "Grace Period",
-      "text": "Time before stages begin, by armor:$(li)None: 10s$(li)Tier 1 Insulated: 25s$(li)Tier 2 Heated: 45s$(li)Tier 3 EVA: 90s$(li)Acheronite or Lined EVA: $(bold)immune$()$(br2)$(bold)Recovery:$() put the shard down. The cold fades slowly."
+      "text": "Time before stages begin:$(li)No armor: 10 s$(li)Insulated: 25 s$(li)Heated: 45 s$(li)EVA: 90 s$(li)Acheronite or Lined EVA: $(bold)immune$()$(br2)Put the shard down to recover. The cold fades slowly."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)You are the only person on the planet. No one can help if you lose your fingers.$()"
+      "text": "$(flavor)We can see your temperature dropping from orbit. Please stop.$()$(br2)$(flavor)You are the only person on the planet. No one can help if you lose your fingers.$()"
     }
   ]
 }

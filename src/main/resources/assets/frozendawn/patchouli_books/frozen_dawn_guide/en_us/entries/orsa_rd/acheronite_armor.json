@@ -5,36 +5,39 @@
   "sortnum": 3,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0079$()$(br2)Full set:$(li)Netherite-tier defense and toughness$(li)$(bold)Frostbite immunity$(): carry shards freely"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheronite_chestplate",
+      "title": "Acheronite Armor",
+      "text": "$(bold)Orbital Scan #0079$()$(li)Netherite-tier defense and toughness$(li)$(bold)Frostbite immunity$(): carry shards freely"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)No atmospheric protection.$() Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) keeps you breathing.$(br2)$(italic)Looking cool does not prevent suffocation.$()"
+      "title": "Limits",
+      "text": "$(danger)No atmospheric protection.$() Only the $(l:orsa_equipment/eva_suit)EVA Suit$(/l) keeps you breathing.$(br2)$(flavor)Looking cool does not prevent suffocation.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_chestplate",
       "title": "Acheronite Chestplate",
-      "text": "Standard crafting pattern. The ingots are cold. The chestplate is warm. Science is weird."
+      "text": "$(flavor)The ingots are cold. The chestplate is warm. Science is weird.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_helmet",
       "title": "Acheronite Helmet",
-      "text": "Protects your head and your dignity. At least one of those matters."
+      "text": "$(flavor)Protects your head and your dignity. At least one of those matters.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_leggings",
       "title": "Acheronite Leggings",
-      "text": "Your legs called. They want to stop being frozen. This helps."
+      "text": "$(flavor)Your legs called. They want to stop being frozen.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_boots",
       "title": "Acheronite Boots",
-      "text": "Walk on frozen everything without losing toes. Revolutionary."
+      "text": "$(flavor)Walk on frozen everything without losing toes.$()"
     }
   ]
 }

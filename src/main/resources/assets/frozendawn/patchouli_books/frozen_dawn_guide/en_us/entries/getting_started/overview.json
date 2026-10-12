@@ -6,18 +6,22 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "Orbital Destabilization",
-      "text": "Earth has been knocked from its orbit and is drifting into deep space. The sun is shrinking in the sky. Temperatures are dropping.$(br2)This manual will help you survive what ORSA scientists have termed a \"Frozen Dawn\" — the slow death of a world losing its star.$(br2)$(italic)If you're reading this, congratulations — you're alive. The bar is low and you've cleared it. Let's keep that streak going.$()"
+      "text": "Earth has been knocked out of orbit into deep space. The sun shrinks and the cold deepens: the $(bold)Frozen Dawn$().$(br2)This manual keeps you alive.$(br2)$(flavor)The bar is low and you cleared it.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Key Survival Rules",
-      "text": "$(li)$(bold)Go underground.$() Deeper = warmer. Below Y=0 is safest.$(li)$(bold)Secure heat early.$() Build Thermal Heaters before Phase 3.$(li)$(bold)Late Phase 6 needs real shelter.$() A single roof is not enough. You need a sealed room with trapped air; a Geothermal Core or Blast Pit supplies replacement oxygen only within a connected sealed room.$(li)$(bold)Stockpile fuel.$() Surface coal ore freezes in Phase 4.$(br2)$(italic)ORSA Wellness Division has rated your current survival odds at \"non-zero.\" That's the nicest thing they've said about anyone on this planet.$()"
+      "title": "Key Rules",
+      "text": "$(li)$(bold)Go underground.$() Below Y=0 is warmest.$(li)$(bold)Heat early.$() Heaters before Phase 3.$(li)$(bold)Stockpile fuel.$() Surface coal freezes in Phase 4.$(li)$(bold)Seal a room$() before late Phase 6."
     },
     {
       "type": "patchouli:text",
-      "title": "Build for the New Climate",
-      "text": "Deep ground cools more slowly than the surface. A sealed, insulated base saves heating fuel; even a warm deep refuge still needs oxygen in late Phase 6.$(br2)Start with $(l:heating/thermal_heater)Thermal Heaters$(/l), then read $(l:heating/room_climate)Room Heating & Insulation$(/l). An optional $(l:heating/thermostat)ORSA Thermostat$(/l) sets the target and accounts for Core warmth."
+      "title": "Late Phase 6",
+      "text": "$(danger)The surface becomes vacuum.$() A roof won't save you. You need trapped air, or Core or Blast Pit oxygen in a sealed room.$(br2)See $(l:heating/atmospheric_breach)Room Breaches$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Where to Start",
+      "text": "Deep ground cools slowest. A sealed, insulated base saves fuel.$(br2)Read $(l:heating/thermal_heater)Thermal Heater$(/l), then $(l:heating/room_climate)Insulation$(/l)."
     }
   ]
 }

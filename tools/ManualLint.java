@@ -314,6 +314,16 @@ public final class ManualLint {
                             lintBlock(r, where, i, text, 0, 4 + 78 - 23, left);
                         }
                     }
+                    case "patchouli:spotlight" -> {
+                        if (text != null) {
+                            lintBlock(r, where, i, text, 0, 4 + 40 - 23, left);
+                        }
+                    }
+                    case "patchouli:multiblock", "patchouli:entity" -> {
+                        if (text != null) {
+                            lintBlock(r, where, i, text, 0, 4 + 115 - 23, left);
+                        }
+                    }
                     case "patchouli:image" -> {
                         if (text != null) {
                             lintBlock(r, where, i, text, 0, 120, left);

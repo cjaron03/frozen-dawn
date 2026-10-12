@@ -5,32 +5,38 @@
   "sortnum": 2,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheronite_pickaxe",
+      "title": "Acheronite Tools",
+      "text": "$(bold)Netherite-tier durability.$() Standard patterns with Refined Acheronite and sticks."
+    },
+    {
       "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0076$()$(br2)Refined Acheronite tools have $(bold)netherite-tier durability$(). Standard patterns, with Refined Acheronite and sticks.$(br2)$(italic)\"Does the blade cauterize on contact?\"$(br)\"Send someone down to check.\"$()"
+      "text": "$(bold)Orbital Scan #0076$()$(br2)$(flavor)\"Does the blade cauterize on contact?\"$(br)\"Send someone down to check.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_pickaxe",
       "title": "Acheronite Pickaxe",
-      "text": "Mines through frozen obsidian like butter. Very cold butter."
+      "text": "Mines frozen obsidian like butter.$(br2)$(flavor)Very cold butter.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_sword",
       "title": "Acheronite Blade",
-      "text": "Enemies shatter on impact. Morale also shatters. Mostly morale.$(br2)Recovered $(l:orsa_rd/soul_harvesting)Architect Souls$(/l) can be fused into the blade later, if your ethics have fully frozen over."
+      "text": "Enemies shatter on impact.$(br2)Recovered $(l:orsa_rd/soul_harvesting)Architect Souls$(/l) can be fused into the blade later, if your ethics have fully frozen over."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_axe",
       "title": "Acheronite Axe",
-      "text": "For chopping dead trees. And anything else that looks at you wrong."
+      "text": "$(flavor)For dead trees, and anything that looks at you wrong.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_shovel",
       "title": "Acheronite Shovel",
-      "text": "Digs through permafrost. A shovel that matches the terrain's hostility."
+      "text": "Digs through permafrost."
     }
   ]
 }

@@ -2,29 +2,35 @@
   "name": "Geothermal Vents",
   "category": "frozendawn:heating",
   "icon": "frozendawn:hydrothermal_rock",
-  "sortnum": 9,
+  "sortnum": 10,
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "$(italic)From an ORSA orbital geology brief.$()$(br2)The ice sheet loads the crust. Along old geothermal seams, that pressure forces hot brine, steam and sulfur melt back to the surface."
+      "text": "$(flavor)From an ORSA orbital geology brief.$()$(br2)The ice sheet loads the crust. Along old seams it forces hot brine, steam and sulfur melt back up."
     },
     {
       "type": "patchouli:text",
-      "text": "Satellites saw new heat blooms most often under snow belts, taiga and glacial basins."
+      "title": "Where",
+      "text": "Satellites saw new heat blooms most under snow belts, taiga and glacial basins.$(br2)They are natural ground features, not structures."
     },
     {
       "type": "patchouli:text",
       "title": "Vent Classes",
-      "text": "$(bold)Dormant:$() mineral basin, faint bleed, no shelter value.$(br)$(bold)Warm:$() brief warmth once Phase 6 begins.$(br)$(bold)Active:$() stable heat pocket, geyser bursts.$(br)$(bold)Rupture:$() growing cone, sulfur lava, ejecta, ashfall.$(br2)Natural ground features, not structures."
+      "text": "$(bold)Dormant$(): mineral basin, faint bleed$(br)$(bold)Warm$(): brief warmth from Phase 6$(br)$(bold)Active$(): stable heat, geysers$(br)$(bold)Rupture$(): $(danger)growing cone, sulfur lava, ejecta, ashfall$()"
     },
     {
       "type": "patchouli:text",
       "title": "Field Guidance",
-      "text": "$(li)Warm vents: temporary refuge$(li)Active vents: risky shelter$(li)Rupture vents: landmarks to survive around, not on$(br2)A $(l:orsa_equipment/surveyor_lens)Surveyor Lens$(/l) sees only exposed heat, steam and hot crust. Buried vents stay hidden until the ground opens."
+      "text": "$(li)Warm: temporary refuge$(li)Active: risky shelter$(li)Rupture: survive around it, $(danger)not on it$()"
     },
     {
       "type": "patchouli:text",
-      "text": "Mature rupture mouths carry sulfur crust, friable tuff and heavy yellow deposits. The basin interior was too unstable for routine extraction.$(br2)If the ground vibrates in vacuum, the pressure column is about to move."
+      "title": "Spotting Vents",
+      "text": "A $(l:orsa_equipment/surveyor_lens)Surveyor Lens$(/l) sees only exposed heat, steam and hot crust.$(br2)Buried vents stay hidden until the ground opens."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Mature rupture mouths carry sulfur crust, friable tuff and heavy yellow deposits. The basin was too unstable to mine routinely.$(br2)$(danger)If the ground shakes in vacuum, the pressure column is about to move.$()"
     }
   ]
 }

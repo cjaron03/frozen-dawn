@@ -1,21 +1,23 @@
 {
   "name": "Thermal Container",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:getting_started",
   "icon": "frozendawn:thermal_container",
   "sortnum": 6,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "An insulated box. Food inside stops spoiling for as long as the container stays intact.$(br2)It also stops $(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l) from sublimating.$(br2)Craft one early and stock it before farming fails."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_container",
+      "text": "An insulated box for $(bold)8 food items$(). Food inside never spoils while it's intact."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)The most important lunchbox in history. Every other lunchbox is frozen solid.$()"
+      "title": "Details",
+      "text": "It doesn't stack.$(br2)It also stops $(l:advanced/frozen_atmosphere_shard)Atmosphere Shards$(/l) sublimating.$(br2)Stock one before farming fails."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_container",
-      "text": "Iron corners, leather sides, a glass bottle center for the vacuum seal. The locking mechanism budget went to Kevin's search-and-rescue fund."
+      "text": "Iron corners, leather sides, a glass bottle for the seal.$(br2)$(flavor)The most important lunchbox in history.$()"
     }
   ]
 }

@@ -1,0 +1,46 @@
+{
+  "name": "Core Upgrades",
+  "category": "frozendawn:advanced",
+  "icon": "minecraft:nether_star",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The Geothermal Core's interface splits its output and takes permanent upgrades."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat / O2 Split",
+      "text": "One output, set by a slider. Default $(bold)60% heat / 40% O2$(), which keeps existing upgrade output.$(br2)40% O2 supplies $(bold)8$() room units, 20% supplies 4, 0% none."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Breathing and flames draw first. Only spare production charges reservoirs, canisters, suits and airlocks.$(br2)The split is saved and never drifts."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat Share",
+      "text": "It scales heat transfer; supply temperature and surface penalty stay. Less heat cools the room gradually.$(br2)A thermostat still runs fuel heaters. Electricity is not wired in yet."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Upgrades",
+      "text": "Consumed. No refunds.$(br2)$(bold)Range$(), max 32 blocks$(li)Obsidian: +1$(li)Diamond Block: +4$(br2)$(bold)Temperature$(), max +100°C$(li)Blaze Powder: +5°C$(li)Thermal Core: +10°C"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Upgrade Effects",
+      "text": "Temperature upgrades raise supply temperature and output. Range upgrades extend outdoor warmth. O2 upgrades are separate."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "O2 Upgrade",
+      "text": "Nether Stars, up to 3 levels. Each adds $(bold)reach, not output$(): 16, 20, 26, 32 blocks.$(br2)$(flavor)We designed this before the Nether collapsed.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Canister Slot",
+      "text": "The fourth slot refills an $(l:orsa_equipment/o2_canisters)O2 Canister$(/l) from spare production, shared with reservoirs, EVA refill and airlocks."
+    }
+  ]
+}

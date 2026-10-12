@@ -5,17 +5,20 @@
   "sortnum": 0,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0071$()$(br2)Crystals that grow on frozen dirt, sand and obsidian below $(bold)-60°C$().$(li)$(bold)Phase 5:$() rare$(li)$(bold)Phase 6:$() common, faster growing"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheronite_shard",
+      "title": "Acheronite Crystal",
+      "text": "Crystals that grow on frozen dirt, sand and obsidian below $(bold)-60°C$()."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Named after the Acheron, river of the dead. Naming things after doom is how orbital command copes.$()"
+      "title": "Where",
+      "text": "$(bold)Orbital Scan #0071$()$(li)Phase 5: rare$(li)Phase 6: common, faster growing$(br2)$(flavor)Named after the river of the dead. Naming things after doom is how orbital command copes.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Growth",
-      "text": "Four stages: bud, medium, large cluster, full crystal.$(br2)$(bold)Only the full crystal drops shards.$() Earlier stages shatter.$(br2)Mine with any pickaxe. Fortune adds shards.$(br2)Do not hold shards bare-handed. See $(l:orsa_rd/frostbite_warning)Frostbite Warning$(/l)."
+      "text": "Bud, medium, large cluster, full crystal.$(br2)$(bold)Only full crystals drop shards$(); earlier stages shatter. Any pickaxe; Fortune adds shards.$(br2)$(danger)Don't hold shards bare-handed.$() See $(l:orsa_rd/frostbite_warning)Frostbite$(/l)."
     }
   ]
 }

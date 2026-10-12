@@ -2,37 +2,42 @@
   "name": "ORSA Ration Warmer",
   "category": "frozendawn:getting_started",
   "icon": "frozendawn:ration_warmer",
-  "sortnum": 5,
+  "sortnum": 7,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:ration_warmer",
+      "text": "Thaws a whole food stack in $(bold)10 seconds$(), anywhere."
+    },
+    {
       "type": "patchouli:text",
-      "title": "A Meal on the Move",
-      "text": "Food in your $(bold)offhand.$() Warmer in your $(bold)main hand.$() Right-click once and wait.$(br2)One charge thaws the $(bold)entire stack in 10 seconds$(), regardless of ambient temperature. You can keep moving and put the warmer away. Keep the original food stack in your offhand. Progress appears above the hotbar.$(br2)ORSA advises against using the device as a pillow."
+      "title": "How to Use",
+      "text": "Food in your $(bold)offhand$(), warmer in your $(bold)main hand$(), right-click.$(br2)Progress shows above the hotbar. Walk, switch slots or stow the warmer; it keeps going."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Results",
+      "text": "$(bold)Chilled, Frozen$(): fresh again$(br)$(bold)Frost-Ruined$(): damaged Frozen at best$(br)$(bold)Fresh, frost-resistant$(): no charge used$(br2)Thawed food gets a $(bold)30 s$() warm window, shown in its tooltip."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cancelling",
+      "text": "Keep the same full stack in your offhand until it finishes.$(br2)Removing, replacing, eating or splitting it, dying, changing dimension or leaving cancels with $(danger)no refund$()."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:ration_warmer",
-      "text": "Four iron corners, four copper edges and redstone in the center. One reusable warmer, crafted $(bold)empty.$() No Nether ingredients required."
+      "text": "Four iron corners, four copper edges, redstone center. Crafted $(bold)empty$(). No Nether parts."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:ration_warmer_charging",
-      "text": "Craft the existing warmer with $(bold)1–4 redstone dust$() to add up to four charges. Dust can be stacked in one slot or spread across slots. One dust per charge, maximum $(bold)four.$() Only the missing charges are filled; excess dust stays in the grid. Device data is preserved."
+      "text": "$(bold)1-4 redstone$() anywhere in the grid: one charge each, four max. Extra dust stays put; device data is kept."
     },
     {
       "type": "patchouli:text",
-      "title": "Recovery Limits",
-      "text": "$(bold)Chilled and Frozen$() food returns to fresh. $(bold)Frost-Ruined$() food only recovers to damaged Frozen: permanent damage, slower eating and reduced nutrition remain.$(br2)Fresh and frost-resistant food use $(bold)no charge.$() Keep the same complete food stack in your offhand until completion; the warmer can be put away."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "The Warm Window",
-      "text": "Completed food gets $(bold)30 seconds$() before frost accumulation resumes. Its tooltip shows the remaining warm window.$(br2)The warmer heats $(bold)food only.$() It provides no body warmth or frostbite protection. Four charges, 10-second thawing and the 30-second window are first-pass field values."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Interrupted Service",
-      "text": "The charge is spent $(bold)when you activate.$() You can switch hotbar slots or put the warmer away; thawing continues.$(br2)Removing, replacing, eating or splitting the offhand food, dying, changing dimension or leaving the world cancels service. $(bold)No refund.$() Nothing is thawed until completion; a cancelled job cannot transfer to another stack."
+      "title": "Specs",
+      "text": "$(li)4 charges, spent at the start$(li)10 s per thaw$(li)30 s warm window$(li)Food only: no body warmth or frostbite protection$(li)Nothing thaws early; a job can't move to another stack$(br2)$(flavor)Not a pillow.$()"
     }
   ]
 }

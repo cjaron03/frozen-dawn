@@ -1,31 +1,28 @@
 {
   "name": "Phase Barometer",
-  "category": "frozendawn:heating",
+  "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:phase_barometer",
-  "sortnum": 8,
+  "sortnum": 7,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "A block that reads the current collapse phase and estimates how close the next escalation is. It gives no day count.$(br2)Place it in a shelter or workroom."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:phase_barometer",
+      "text": "Reads the current phase and how close the next one is. No day count."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)ORSA stopped promising dates when the models started missing reality by the hour.$()"
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Forecast Bands",
-      "text": "$(bold)Stable:$() holding.$(br)$(bold)Deteriorating:$() sliding.$(br)$(bold)Transition Likely Soon:$() plan for the next phase.$(br)$(bold)Imminent:$() stop pretending you have time.$(br)$(bold)Collapse Underway:$() the final atmospheric failure."
+      "title": "Forecast",
+      "text": "$(bold)Stable$(): holding$(br)$(bold)Deteriorating$(): sliding$(br)$(bold)Transition Likely Soon$(): plan ahead$(br)$(bold)Imminent$(): $(danger)no time left$()$(br)$(bold)Collapse Underway$(): final failure"
     },
     {
       "type": "patchouli:text",
       "title": "Phase 6",
-      "text": "The barometer tracks each Phase 6 sub-stage:$(li)$(bold)Early:$() extreme blizzard$(li)$(bold)Mid:$() air thins, wind drops, fog lifts$(li)$(bold)Late:$() vacuum$(br2)It warns of whiteout intensification, atmospheric thinning and vacuum onset."
+      "text": "It tracks each sub-stage and warns of whiteout, thinning air and $(danger)vacuum onset$().$(br2)Place it in a shelter or workroom."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:phase_barometer",
-      "text": "Copper and glass. Damaged weather instrumentation doing its best."
+      "text": "Copper and glass.$(br2)$(flavor)ORSA stopped promising dates when the models started missing by the hour.$()"
     }
   ]
 }

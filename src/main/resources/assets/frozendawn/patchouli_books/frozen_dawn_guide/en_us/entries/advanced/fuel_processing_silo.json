@@ -2,42 +2,88 @@
   "name": "Fuel Silo",
   "category": "frozendawn:advanced",
   "icon": "frozendawn:fuel_processing_silo_controller",
-  "sortnum": 5,
+  "sortnum": 6,
   "advancement": "frozendawn:broadcast_complete",
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:fuel_processing_silo_controller",
+      "title": "Fuel Silo",
+      "text": "Turns caldera sulfur and frozen atmosphere into $(bold)Rocket Fuel Cells$(). The rocket needs 6."
+    },
+    {
       "type": "patchouli:text",
-      "text": "Mars sent a launch package, not a rocket.$(br2)The $(bold)Fuel Processing Silo$() turns caldera sulfur and frozen atmosphere into $(bold)Rocket Fuel Cells$(). The rocket needs 6.$(br2)$(italic)ORSA calls this field expedient launch readiness.$()"
+      "text": "Mars sent a launch package, not a rocket.$(br2)$(flavor)ORSA calls this field expedient launch readiness.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shell",
+      "text": "$(li)3x3 iron shell, 4 tall$(li)Solid iron floor$(li)Hollow center above the floor$(li)Controller in the middle of one outside face$(li)Any $(l:heating/thermal_heater)Thermal Heater$(/l) attached outside"
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Fuel Silo",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "III ",
+            "I I ",
+            "III "
+          ],
+          [
+            "III ",
+            "I I ",
+            "III "
+          ],
+          [
+            "ICI ",
+            "I IH",
+            "III "
+          ],
+          [
+            "III ",
+            "I0I ",
+            "III "
+          ]
+        ],
+        "mapping": {
+          "I": "minecraft:iron_block",
+          "0": "minecraft:iron_block",
+          "C": "frozendawn:fuel_processing_silo_controller[facing=north]",
+          "H": "frozendawn:thermal_heater"
+        }
+      },
+      "text": "Higher heater tiers run faster; capacitors faster still."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:fuel_processing_silo_controller",
       "title": "Controller",
-      "text": "Craft the controller first; it holds the processing interface. The shell is plain iron blocks. Of course it is."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Shell",
-      "text": "$(li)A 3x3 iron shell, 4 blocks tall$(li)The whole floor is solid iron$(li)The center column is hollow above the floor$(li)The controller replaces the center block of one outside face$(li)Any $(l:heating/thermal_heater)Thermal Heater$(/l) attached outside"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "Higher heater tiers run faster. Capacitors faster still."
+      "text": "Craft the controller first; it holds the interface.$(br2)$(flavor)The shell is plain iron blocks. Of course it is.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Feedstock",
-      "text": "$(bold)Sulfur:$() mine sulfur ore in mature rupture calderas. Smelt or blast the Impure Sulfur it drops.$(br2)$(bold)Atmosphere Shards:$() Phase 6. Carry them in a $(l:heating/thermal_container)Thermal Container$(/l).$(br2)$(bold)Backup:$() the silo also turns a sulfur lava bucket into impure sulfur."
+      "text": "$(bold)Sulfur:$() mine sulfur ore in mature rupture calderas; smelt the Impure Sulfur it drops.$(br2)$(bold)Atmosphere Shards:$() Phase 6, carried in a $(l:heating/thermal_container)Thermal Container$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Backup:$() the silo turns a sulfur lava bucket into impure sulfur."
     },
     {
       "type": "patchouli:text",
       "title": "Processing",
-      "text": "Each makes one, base time:$(li)$(bold)Solid Propellant:$() 4 Sulfur, 2 Coal, 60s$(li)$(bold)Liquid Oxidizer:$() 4 Atmosphere Shards, 90s$(li)$(bold)Fuel Cell:$() 2 Propellant, 2 Oxidizer, 1 Acheronite Shard, 120s$(li)$(bold)Reduction:$() 1 Sulfur Lava Bucket to 2 Impure Sulfur, 90s"
+      "text": "Each makes one, base time:$(li)$(bold)Propellant:$() 4 Sulfur, 2 Coal, 60 s$(li)$(bold)Oxidizer:$() 4 Atmosphere Shards, 90 s$(li)$(bold)Reduction:$() 1 Sulfur Lava Bucket to 2 Impure Sulfur, 90 s"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(bold)Fuel Cell:$() 2 Propellant, 2 Oxidizer, 1 Acheronite Shard, 120 s."
     },
     {
       "type": "patchouli:text",
       "title": "Fueling",
-      "text": "Carry the 6 cells to the blast pit and right-click the assembled rocket to load them by hand.$(br2)The silo is the slow part. Budget time, heater fuel and a second sulfur run."
+      "text": "Carry the 6 cells to the blast pit and right-click the assembled rocket to load them by hand.$(br2)$(danger)The silo is the slow part.$() Budget time, heater fuel and a second sulfur run."
     }
   ]
 }

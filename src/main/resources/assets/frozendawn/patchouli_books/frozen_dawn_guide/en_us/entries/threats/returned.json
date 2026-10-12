@@ -5,34 +5,36 @@
   "sortnum": 3,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Threat level:$() severe$(br2)Former ORSA staff, civilians, anyone who froze and did not stay dead. Three variants.$(br2)$(italic)HR asked us to stop calling them colleagues. Denied: the paperwork is still valid.$()"
+      "type": "patchouli:entity",
+      "entity": "frozendawn:returned",
+      "name": "The Returned",
+      "text": "$(bold)Threat:$() $(danger)severe$(). Former staff and civilians who froze and didn't stay dead. Three variants."
     },
     {
       "type": "patchouli:text",
       "title": "Variant A: Hunter",
-      "text": "Intelligent stalkers. Rare, but they invade bases.$(li)Opens and breaks wooden doors$(li)Puts out lit Thermal Heaters$(li)Breaks torches and lights$(li)Sees through invisibility"
+      "text": "Rare, intelligent stalkers that invade bases.$(li)Opens and breaks wooden doors$(li)Puts out lit heaters$(li)Breaks torches and lights$(li)Sees through invisibility"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Drops:$() Remnant Ember, Tattered Clothing Scrap, ORSA ID Badge (rare)"
+      "text": "$(bold)Counters:$()$(li)Seal entrances with blocks, not doors$(li)Hide backup heaters$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) can't be broken$(li)Fire and Acheronite weapons work"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Counters:$()$(li)Seal entrances with blocks, not doors$(li)Hide backup heaters$(li)$(l:heating/frost_ward_torch)Frost Ward Torches$(/l) cannot be broken$(li)Fire and Acheronite weapons work$(br2)$(italic)Do not read the ID badges. You might know the name.$()"
+      "text": "$(bold)Drops:$() Remnant Ember, Tattered Clothing Scrap, ORSA ID Badge (rare)$(br2)$(flavor)Do not read the ID badges. You might know the name.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Variant B: Mimic",
-      "text": "Looks like a still, watching shadow figure. Within 16 blocks it copies your movement, then attacks.$(li)First sprint hit deals bonus damage$(li)Strafes instead of trading blows$(li)Retreats to darkness when hurt$(li)Resets after 15s out of sight"
+      "text": "A still, watching shadow figure. Within 16 blocks it copies your movement, then attacks.$(li)Bonus damage on its first sprint hit$(li)Strafes instead of trading blows"
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Counters:$()$(li)Fire: +50% damage$(li)A shadow figure still there after 10s is not one$(li)Shadows have no health bar$(br2)$(bold)Drops:$() Tattered Clothing Scrap, Mirrored Fragment (rare)"
+      "text": "$(li)Retreats to darkness when hurt$(li)Resets after 15 s out of sight$(br2)$(bold)Counters:$()$(li)Fire: +50% damage$(li)A figure still there after 10 s is not a shadow$(li)Shadows have no health bar"
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Agent Torres reported a shadow figure that followed her for three minutes before attacking. Torres survived. Her partner, who she assumed was the figure, did not.$()"
+      "text": "$(bold)Drops:$() Tattered Clothing Scrap, Mirrored Fragment (rare)$(br2)$(flavor)Agent Torres was followed by a shadow figure for three minutes. Torres survived. Her partner, who she assumed was the figure, did not.$()"
     },
     {
       "type": "patchouli:text",

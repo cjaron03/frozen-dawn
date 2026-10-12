@@ -230,7 +230,7 @@ Values from the code on this base:
   first because Patchouli will not open a locked entry. The Board and Mars packets keep
   their own reader and now use the same message. An unknown `doc_type` still does nothing.
 
-## Rewrite after merge
+## Rewrite after merge (done, see "Thermal and air pass")
 
 `origin/thermal-2.0` (7d4648d, includes the atmospheric breach work) rewrites 12 entries
 and adds 6. These will be rewritten when the thermal model, ground temperature and
@@ -368,3 +368,61 @@ origin and low-band carrier pages, the Architect Soul line on the Acheronite Bla
 
 Not visually checked yet. Owner pass: Getting Started through Endgame, especially
 Continuity Protocol, O2 Canisters, The Returned and the Fuel Silo.
+
+## Thermal and air pass (after #107, #108, #109)
+
+`feat/maeve-director` at d3e10cd (atmospheric breach and airlocks, thermal model and
+service controls, room oxygen and Core allocation) is merged into this branch. One
+conflict, O2 Canisters, took upstream's facts: ten canister units per second of
+breathing, refills from spare Core production shared with reservoirs, suits and
+airlocks, and an intact suit topping up carried canisters in breathable air.
+
+- **Scope.** The 12 entries held back above plus the 9 new ones: Ration Warmer,
+  Thermostat, Room Heating, Heat Vent, O2 Gauge, O2 Reservoir, Atmospheric Breaches,
+  Airlocks, Flames in a Vacuum.
+- **New category, Air & Pressure** (`life_support`, after Heating). Room Breaches, O2
+  Gauge, O2 Reservoir, Airlocks and Flames in a Vacuum move there; entry ids and links
+  are unchanged. Later categories shift down one sortnum.
+- **Order.** Getting Started: What's Happening, Phase Timeline, Hypothermia,
+  Frostbite, Hyperthermia, Food Spoilage, Ration Warmer, Hot Wings. Heating: Thermal
+  Core, Thermal Heater, Upgrades, Capacitor, Thermostat, Room Heating, Insulated Glass,
+  Heat Vent, then fuel, storage and tools.
+- **Renames for the chapter list.** "Room Heating & Insulation" is "Room Heating",
+  "Player-Built Airlocks" is "Airlocks", "Atmospheric Breaches" is "Room Breaches",
+  "EVA Suit (Tier 3)" is "EVA Suit"; heater recipe titles are "Iron/Gold/Diamond Heater".
+- **Duplicates removed.** Food Spoilage no longer repeats the Ration Warmer and Thermal
+  Container pages; it links them. Thermal Container now states its 8 slots.
+- **Wording.** About 6,300 words down to about 4,250 across the 21 entries. Dropped
+  only filler, repeated jokes and two developer notes ("first-pass field values",
+  "combustion starvation is active").
+- **Linter.** 0 errors in the whole book; 25 warnings, all `$(li)` continuation starts.
+
+Not visually checked yet. Owner pass: Air & Pressure, O2 Gauge, Airlocks, Geothermal
+Core, Room Heating.
+
+## Readability template
+
+Every guide entry now follows one layout, so pages read as short, separate points
+instead of a wall of text.
+
+- **Item entries.** A spotlight page (the item, large, with one line), short use pages
+  with a title each and about 25 visible words, the recipe, then a Specs list. Mob
+  entries open with a rendered entity page instead.
+- **Color roles.** `book.json` defines `$(danger)` (dark red, things that hurt or kill)
+  and `$(flavor)` (gray italic, the ORSA joke, always last). Bold is for numbers and
+  key terms; blue stays links only.
+- **Diagrams** (`patchouli:multiblock`, no visualize button): Airlock, Heat Vent in a
+  wall, Layered Wall (Insulation), Core on a Room's Edge, Transponder Broadcast Site,
+  Fuel Silo shell, Rocket Stack.
+- **Splits.** O2 Gauge + Running Out of Air, Airlocks + Airlock Oxygen, Geothermal Core
+  + Core Upgrades, Room Heating into Insulation + Room Temperature, EVA Suit + Suit
+  Breaches. The first half keeps the original id.
+- **Moves.** Thermal Container to Getting Started; MultiTool and Phase Barometer to
+  Equipment. Heating is renamed "Heating".
+- **Hover tooltips** were tried and dropped: Patchouli scales the book, so vanilla
+  tooltip placement runs them off screen on the right-hand page.
+- **Kept verbatim:** Returned Variant C pages and the Architect note, the Surveyor Lens
+  origin and low-band carrier pages, the Architect Soul line on the blade and the patch
+  kit's Hearth line. What is ORSA?, Soul Harvesting and the found documents are untouched.
+- Ice Shards now shows the replacement manual recipe (Book + Ice Shard).
+- `ManualLint` measures spotlight, multiblock and entity page text. 0 errors.

@@ -5,32 +5,35 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)ORSA Mk.II Heated Survival Suit$()$(br2)Tier 1 gear with blaze powder heating.$(li)+11.25°C cold resistance per piece$(li)Full set: $(bold)+45°C$()$(li)Rated for Phase 1-4 (-45°C)$(li)Halves Phase 5+ wind chill"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:reinforced_chestplate",
+      "title": "Heavy Gear",
+      "text": "ORSA Mk.II Heated Survival Suit: Tier 1 gear with blaze powder heating."
     },
     {
       "type": "patchouli:text",
-      "text": "$(bold)Requires:$() Tier 1 gear. Each piece is crafted around its Tier 1 piece. Fashion is dead. Warmth is not.$(br2)$(italic)Blaze powder is flammable. Do not hug creepers. Warranty void if used as a sleeping bag, oven mitt or romantic gift.$()"
+      "title": "Specs",
+      "text": "$(li)$(bold)+11.25°C$() per piece$(li)Full set: $(bold)+45°C$()$(li)Rated for Phase 1-4, down to -45°C$(li)Halves Phase 5+ wind chill$(br2)Each piece is crafted around its Tier 1 piece."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_chestplate",
-      "text": "Surround your Tier 1 gear with blaze powder. What could go wrong?"
+      "text": "Tier 1 gear surrounded by blaze powder.$(br2)$(flavor)Fashion is dead. Warmth is not.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_helmet",
-      "text": "Your head is now a portable furnace. You're welcome."
+      "text": "$(flavor)Your head is now a portable furnace. You're welcome.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_leggings",
-      "text": "More blaze powder, more heat, fewer regrets about leaving your legs exposed."
+      "text": "$(flavor)Blaze powder is flammable. Do not hug creepers.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_boots",
-      "text": "For when ordinary boots are no longer enough and the snow wants your toes."
+      "text": "$(flavor)Warranty void if used as a sleeping bag or oven mitt.$()"
     }
   ]
 }

@@ -5,17 +5,19 @@
   "sortnum": 0,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "The heat cell inside every ORSA heating device.$(br2)$(bold)Used in:$() Thermal Heater, Geothermal Core, O2 Canister, Acheron Forge, Transponder."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:thermal_core",
+      "text": "The heat cell inside every ORSA heating device."
     },
     {
       "type": "patchouli:text",
-      "text": "Needs blaze powder. Get blaze rods from the Nether early; you will not want to go back later.$(br2)$(italic)Designed as a hand warmer. Then it heated a room. Engineering calls this \"scope creep.\"$()"
+      "title": "Used In",
+      "text": "$(li)Thermal Heater$(li)Geothermal Core$(li)O2 Canister$(li)Acheron Forge$(li)Transponder$(br2)$(danger)Needs blaze powder.$() Get blaze rods early; the Nether won't last."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_core",
-      "text": "Iron ingot, blaze powder on three sides, magma cream below. Do not taste the magma cream. Kevin tasted the magma cream."
+      "text": "Iron ingot, blaze powder on three sides, magma cream below.$(br2)$(flavor)Designed as a hand warmer. Engineering calls the rest \"scope creep.\"$()"
     }
   ]
 }

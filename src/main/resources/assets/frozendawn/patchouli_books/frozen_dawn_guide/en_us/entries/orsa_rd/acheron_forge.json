@@ -5,18 +5,20 @@
   "sortnum": 1,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0074$()$(br2)Refines raw Acheronite Shards into $(bold)Refined Acheronite$(), the workable form.$(li)Place below $(bold)Y=0$()$(li)Needs a $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)Put a shard in the input slot. It refines in a few seconds."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheron_forge",
+      "text": "Refines raw Acheronite Shards into $(bold)Refined Acheronite$()."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Theoretical. You are the field test.$()"
+      "title": "Setup",
+      "text": "$(bold)Orbital Scan #0074$()$(li)Place below $(bold)Y=0$()$(li)Needs a $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)Put a shard in the input slot. It refines in a few seconds."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheron_forge",
       "title": "Acheron Forge",
-      "text": "Obsidian frame, raw shards for the reaction matrix, a Thermal Core for heat. Do not lick the forge."
+      "text": "Obsidian frame, raw shards, a Thermal Core.$(br2)$(flavor)Theoretical. You are the field test. Do not lick the forge.$()"
     }
   ]
 }

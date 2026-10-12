@@ -1,18 +1,32 @@
 {
   "name": "Flames in a Vacuum",
   "icon": "minecraft:soul_torch",
-  "category": "frozendawn:heating",
-  "sortnum": 16,
+  "category": "frozendawn:life_support",
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",
-      "title": "No air, no flame",
-      "text": "Late Phase 6 brings vacuum. Ordinary fire, torches, lanterns, candles, campfires, MiteAway burners and fuel-burning furnaces need breathable air. Exposed flames go out. Geometric room seals and enclosed oxygen supply use the same air rules as your suit diagnostics. Full glass roofs seal; open doors, open trapdoors and porous fences do not. Warmth alone does not supply oxygen."
+      "text": "Late Phase 6 is vacuum. $(danger)Exposed flames go out.$()"
     },
     {
       "type": "patchouli:text",
-      "title": "Recovery and exceptions",
-      "text": "Spent torches and extinguished lanterns stay in place and drop their normal items. Use flint and steel to relight them where breathable air is available. Campfires and candles use their normal relighting controls. Furnaces preserve unspent fuel and resume when air is restored. Soul fire, soul torches, soul lanterns and soul campfires are supernatural exceptions: they keep working, but supply no oxygen. Lava and powered or geothermal heat are not ordinary flames."
+      "title": "Needs Air",
+      "text": "$(li)Fire and campfires$(li)Torches and lanterns$(li)Candles$(li)MiteAway burners$(li)Fuel furnaces"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seals",
+      "text": "Rooms seal and get oxygen by the same rules as your suit readout.$(br2)Full glass roofs seal. Open doors, open trapdoors and fences don't. Warmth is not air."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Relighting",
+      "text": "Spent torches and dark lanterns stay put and drop their normal items. Relight with flint and steel in breathable air.$(br2)Campfires and candles relight normally. Furnaces keep their fuel and resume."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Exceptions",
+      "text": "Soul fire, torches, lanterns and campfires keep burning but supply no oxygen.$(br2)Lava and powered or geothermal heat aren't flames."
     }
   ]
 }

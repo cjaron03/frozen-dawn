@@ -2,20 +2,22 @@
   "name": "Hot Wings",
   "category": "frozendawn:getting_started",
   "icon": "frozendawn:hot_wings",
-  "sortnum": 6,
+  "sortnum": 8,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Premium field ration.$() Cooked chicken coated in Blaze extract.$(li)Never frosts over in your inventory$(li)Restores serious hunger, but does not replace other food$(li)Stockpile before the Nether severs in Phase 5"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:hot_wings",
+      "text": "Cooked chicken coated in Blaze extract. $(bold)Never frosts.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Nutritional Services rates it \"technically edible.\"$()"
+      "title": "Field Notes",
+      "text": "Restores serious hunger but doesn't replace other food.$(br2)$(danger)Stockpile before the Nether severs in Phase 5.$()$(br2)$(flavor)Nutritional Services rates it \"technically edible.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:hot_wings",
-      "text": "One cooked chicken, one pinch of Blaze powder. Tastes like regret and capsaicin. Keep water nearby."
+      "text": "One cooked chicken, one pinch of Blaze powder.$(br2)$(flavor)Tastes like regret and capsaicin.$()"
     }
   ]
 }

@@ -10,5 +10,9 @@
   "nameplate_color": "F2E7C8",
   "header_color": "2C3336",
   "show_progress": false,
-  "use_resource_pack": true
+  "use_resource_pack": true,
+  "macros": {
+    "$(danger)": "$(#9b1c1c)",
+    "$(flavor)": "$(italic)$(#5f6b6d)"
+  }
 }

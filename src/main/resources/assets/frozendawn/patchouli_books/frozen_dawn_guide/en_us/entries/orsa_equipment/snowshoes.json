@@ -2,20 +2,22 @@
   "name": "Snowshoes",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:snowshoes",
-  "sortnum": 5,
+  "sortnum": 8,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "Wear in a Curios $(thing)feet$() slot.$(li)Speed boost on snow layers, scaling with depth$(li)Cross powder snow without sinking$(li)No change on ice or snow blocks"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:snowshoes",
+      "text": "Fast, safe travel over snow. Wear in a Curios $(thing)feet$() slot."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)ORSA requisitioned 200 pairs. Whoever ordered skis instead was reassigned to Xenobiology.$()"
+      "title": "Effect",
+      "text": "$(li)Faster on snow layers, more with depth$(li)Walk on powder snow without sinking$(li)No change on ice or snow blocks$(br2)$(flavor)ORSA requisitioned 200 pairs. Whoever ordered skis was reassigned to Xenobiology.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:snowshoes",
-      "text": "Leather, sticks and string. Cheap, permanent, and somehow still not standard issue."
+      "text": "Leather, sticks and string.$(br2)$(flavor)Cheap, permanent, and somehow still not standard issue.$()"
     }
   ]
 }

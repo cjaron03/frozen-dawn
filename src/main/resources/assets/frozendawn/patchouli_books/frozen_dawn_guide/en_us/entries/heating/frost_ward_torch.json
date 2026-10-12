@@ -5,17 +5,19 @@
   "sortnum": 5,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "A torch burning $(l:threats/hollow)Hollow$(/l) Frozen Breath.$(li)Light level 15, snowflake particles$(li)$(bold)Hollows within 16 blocks flee$(), fast$(li)Returned Hunters cannot break it$(br2)Normal torches only keep Hollows off at close range. Ring your base with these."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:frost_ward_torch",
+      "text": "A torch burning $(l:threats/hollow)Hollow$(/l) Frozen Breath. $(bold)Hollows within 16 blocks flee.$()"
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)Why a ghost's own breath repels it is unknown. Working theory: spite.$()"
+      "title": "Use",
+      "text": "$(li)Light level 15, snowflake particles$(li)Hollows flee fast$(li)Returned Hunters can't break it$(br2)Normal torches only keep Hollows off at close range. Ring your base with these."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:frost_ward_torch",
-      "text": "Frozen Breath over a Stick. Yields 4. Getting the Frozen Breath is the hard part, on account of the ghost."
+      "text": "Frozen Breath over a Stick. Yields 4.$(br2)$(flavor)Why a ghost's own breath repels it is unknown. Working theory: spite.$()"
     }
   ]
 }

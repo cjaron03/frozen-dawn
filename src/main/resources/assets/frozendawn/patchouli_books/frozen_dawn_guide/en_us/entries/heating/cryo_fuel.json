@@ -2,20 +2,22 @@
   "name": "Cryo Fuel",
   "category": "frozendawn:heating",
   "icon": "frozendawn:cryo_fuel",
-  "sortnum": 5,
+  "sortnum": 9,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "Coal infused with $(l:threats/hollow)Hollow$(/l) Frozen Breath. Burns in Thermal Heaters $(bold)four times longer than coal$(): 96,000 ticks against 24,000.$(br2)Fourteen ORSA memos explain why this should not work. It works."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:cryo_fuel",
+      "text": "Coal infused with $(l:threats/hollow)Hollow$(/l) Frozen Breath. Burns $(bold)4x longer$() than coal."
     },
     {
       "type": "patchouli:text",
-      "text": "$(italic)\"Recommend immediate investigation.\" -- Dr. Vasik$(br)\"Budget redirected to evacuation shuttles.\" -- Finance$()"
+      "title": "Specs",
+      "text": "$(li)96,000 ticks, against coal's 24,000$(li)Burns in Thermal Heaters$(br2)$(flavor)\"Recommend immediate investigation.\" Dr. Vasik$()$(br)$(flavor)\"Budget redirected to evacuation shuttles.\" Finance$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:cryo_fuel",
-      "text": "Frozen Breath over Coal. One ghost encounter fuels a heater for hours. ORSA calls it a risk-reward loop. Survivors call it Tuesday."
+      "text": "Frozen Breath over Coal.$(br2)$(flavor)Fourteen ORSA memos explain why this shouldn't work. It works.$()"
     }
   ]
 }

@@ -1,0 +1,50 @@
+{
+  "name": "Room Temperature",
+  "category": "frozendawn:heating",
+  "icon": "minecraft:campfire",
+  "sortnum": 6,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A sealed room has $(bold)one temperature$(). Heaters, connected Cores and fires all warm the same air and walls."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "One Reading",
+      "text": "The thermostat and HUD use that reading. Walking toward a Core or campfire adds nothing.$(br2)Your gear and effects still adjust your HUD."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Air and Walls",
+      "text": "Heaters warm the air, the air warms the walls, the walls lose heat outward.$(br2)After shutdown, stored heat cools gradually."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warm-up",
+      "text": "Warm-up takes far more power than Holding.$(br2)More or stronger heaters speed it up, at the same target."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Target",
+      "text": "Heaters default to $(bold)20°C$(); a $(l:heating/thermostat)Thermostat$(/l) picks 10-30°C.$(br2)Passive heat can overshoot. Cut it or open a $(l:heating/heat_vent)Heat Vent$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Fuel Estimates",
+      "text": "Holding 8% means about 8% of full burn rate, averaged over a few seconds. Time left is an estimate."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Warm-up, target, insulation, weather and breaches change demand; machinery and frostmites add cost.$(br2)Judge by the fuel you load. There is no fixed wool-to-glass ratio."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "After a Breach",
+      "text": "A $(l:heating/atmospheric_breach)breach$(/l) removes the air; the walls keep their heat.$(br2)Reseal and restore oxygen, and the new air warms from them."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Without air, burners heat walls less, and radiant warmth only partly protects you.$(br2)Atmosphere restored means air, not warmth. A thermostat cuts heating; it can't cool."
+    }
+  ]
+}

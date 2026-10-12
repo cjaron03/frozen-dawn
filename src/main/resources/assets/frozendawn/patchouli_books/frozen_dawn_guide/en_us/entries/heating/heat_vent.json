@@ -2,37 +2,77 @@
   "name": "ORSA Heat Vent",
   "icon": "frozendawn:heat_vent",
   "category": "frozendawn:heating",
-  "sortnum": 22,
+  "sortnum": 8,
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:heat_vent",
+      "text": "Dumps excess heat from a sealed room without letting air out."
+    },
+    {
       "type": "patchouli:text",
-      "title": "Heat Out, Air In",
-      "text": "The ORSA Heat Vent is a sealed heat exchanger. Opening its shutter exposes cooling fins; it never opens a passage through your pressure wall. It uses no fuel and consumes no O2. In vacuum, it rejects heat by radiation. Close it when you want to retain warmth."
+      "title": "How It Works",
+      "text": "Opening the shutter exposes cooling fins. It makes no hole in your pressure wall and uses no fuel or O2.$(br2)In vacuum it radiates heat away."
+    },
+    {
+      "type": "patchouli:multiblock",
+      "name": "Heat Vent in a Wall",
+      "enable_visualize": false,
+      "multiblock": {
+        "pattern": [
+          [
+            "WWW",
+            "   ",
+            "   "
+          ],
+          [
+            "WHW",
+            "   ",
+            "   "
+          ],
+          [
+            "FFF",
+            "F0F",
+            "FFF"
+          ]
+        ],
+        "mapping": {
+          "W": "minecraft:stone_bricks",
+          "F": "minecraft:polished_andesite",
+          "0": "minecraft:polished_andesite",
+          "H": "frozendawn:heat_vent[facing=north,open=true]"
+        }
+      },
+      "text": "Room on the floor side. Fins face out, under open sky."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Placement",
+      "text": "Place it facing from the room outward. The back must touch the room.$(br2)The outdoor face needs $(bold)open sky straight up$(). Blocks, roofs or neighboring rooms stop it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shutter",
+      "text": "Right-click toggles it. Redstone holds it open.$(br2)Grille light: $(bold)dim$() closed, $(bold)green$() venting, $(bold)amber$() waiting or blocked. Updates each second."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Limits",
+      "text": "Heat only flows to a colder outside, so it can't cool below that.$(br2)Larger rooms cool slower; more vents cool faster."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "It cools the air first while the walls keep warming it. A room without air loses wall heat instead.$(br2)The slats don't leak oxygen."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Save Fuel",
+      "text": "Heaters fight an open vent. Lower the $(l:heating/thermostat)Thermostat$(/l) or stop heaters first. Core warmth still counts.$(br2)A $(l:heating/airlocks)Manual Vent Valve$(/l) dumps air. This doesn't."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:heat_vent",
-      "text": "Six iron ingots, two copper ingots and one lever. Installs as a full wall or roof block."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Placement & Controls",
-      "text": "Place it while looking from your room toward the outdoors: the fin face points away from you. Its opposite face must touch the room. The outdoor face needs an unobstructed sky column; blocks, roofs and neighboring rooms prevent cooling. Right-click toggles the shutter. Redstone holds it open until the signal is removed."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "ORSA Service Grille",
-      "text": "The indoor service grille has a shutter lever and a status light. Dim means closed. Green means heat can leave to colder outdoors. Amber means open but waiting or obstructed. The light updates once per second. Slats in the grille do not let oxygen escape."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Cooling Has Limits",
-      "text": "Heat flows only toward a colder exterior. The vent cannot cool below that exterior temperature. It cools room air first; stored wall heat continues warming the air. A depleted room loses wall heat instead. Larger rooms cool more slowly; several vents add cooling capacity."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Avoid Wasting Fuel",
-      "text": "Heaters will work harder against an open vent while trying to hold their target. Lower your $(l:heating/thermostat)thermostat$(/l), or turn heaters off before dumping excess heat. Existing Core warmth still contributes to your sensed temperature. An open heat vent preserves oxygen; a $(l:heating/airlocks)manual vent valve$(/l) dumps it."
+      "text": "Six iron, two copper and a lever. A full wall or roof block."
     }
   ]
 }

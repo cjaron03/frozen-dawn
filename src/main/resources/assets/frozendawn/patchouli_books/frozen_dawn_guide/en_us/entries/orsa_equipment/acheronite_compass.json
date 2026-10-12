@@ -2,18 +2,24 @@
   "name": "Acheronite Compass",
   "category": "frozendawn:orsa_equipment",
   "icon": "frozendawn:acheronite_compass",
-  "sortnum": 9,
+  "sortnum": 12,
   "advancement": "frozendawn:found_acheronite_compass",
   "pages": [
     {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:acheronite_compass",
+      "text": "Points to the crashed ORSA relay satellite, which carries the transponder lead."
+    },
+    {
       "type": "patchouli:text",
-      "text": "Points to the crashed ORSA relay satellite in the Overworld, which carries the transponder lead.$(br2)The tower issues the first one. Hold it like a normal compass.$(br2)$(italic)If it spins, the satellite is unresolved, or ORSA has lost another orbiting asset.$()"
+      "title": "Use",
+      "text": "The tower issues the first one. Hold it like a normal compass; it works in the Overworld.$(br2)$(flavor)If it spins, the satellite is unresolved, or ORSA has lost another orbiting asset.$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:acheronite_compass",
       "title": "Recovery Assembly",
-      "text": "Unlocks after your first issue, for when the original is lost to a blizzard, a ravine or an exploding backpack.$(br2)$(italic)ORSA calls it a recovery build. Finance calls it a training fee.$()"
+      "text": "Unlocks after your first issue, for when the original is lost.$(br2)$(flavor)ORSA calls it a recovery build. Finance calls it a training fee.$()"
     }
   ]
 }

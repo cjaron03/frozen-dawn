@@ -5,22 +5,25 @@
   "sortnum": 2,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Threat level:$() high$(br2)Translucent, smoke-like entities that drift through solid blocks. They do not attack. They $(italic)grab you and freeze you.$()$(br2)$(italic)If you hear breathing behind you and nobody is there: run.$()"
+      "type": "patchouli:entity",
+      "entity": "frozendawn:hollow",
+      "name": "Hollow",
+      "text": "$(bold)Threat:$() $(danger)high$(). Smoke-like entities that drift through walls and grab you."
     },
     {
       "type": "patchouli:text",
       "title": "Field Notes",
-      "text": "$(li)Phases through all blocks$(li)Grab: Slowness IV, freeze buildup, then a packed-ice tomb$(li)Immune to projectiles and freezing$(li)Half damage from non-Acheronite melee"
-    },
-    {
-      "type": "patchouli:text",
-      "text": "$(bold)Drops:$() Frozen Breath, for $(l:heating/cryo_fuel)Cryo Fuel$(/l) and $(l:heating/frost_ward_torch)Frost Ward Torches$(/l)"
+      "text": "$(li)Phases through all blocks$(li)Grab: Slowness IV, freeze buildup, then a $(danger)packed-ice tomb$()$(li)Immune to projectiles and freezing$(li)Half damage from non-Acheronite melee"
     },
     {
       "type": "patchouli:text",
       "title": "Counters",
       "text": "$(li)Swing while grabbed to break free$(li)Fire and Acheronite weapons: full damage$(li)$(l:heating/frost_ward_torch)Frost Ward Torch$(/l): flee within 16 blocks$(li)Lit heaters burn them within 8 blocks"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Drops",
+      "text": "Frozen Breath, for $(l:heating/cryo_fuel)Cryo Fuel$(/l) and $(l:heating/frost_ward_torch)Frost Ward Torches$(/l).$(br2)$(flavor)If you hear breathing behind you and nobody is there: run.$()"
     }
   ]
 }

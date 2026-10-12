@@ -5,18 +5,25 @@
   "sortnum": 4,
   "pages": [
     {
-      "type": "patchouli:text",
-      "text": "$(bold)Orbital Scan #0082$()$(br2)An EVA chestplate lined with Refined Acheronite.$(li)Keeps EVA breathable-air and O2 use$(li)Adds frostbite immunity$(li)Maximum cold resistance"
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:lined_eva_chestplate",
+      "text": "An EVA chestplate lined with Refined Acheronite."
     },
     {
       "type": "patchouli:text",
-      "text": "Only the chestplate is lined. You still need the rest of the EVA rig, and air or O2 in late Phase 6.$(br2)$(italic)\"Better than the orbital stabilizer?\" \"The one that caused the apocalypse? Yes.\"$()"
+      "title": "Effect",
+      "text": "$(bold)Orbital Scan #0082$()$(li)Keeps EVA air and O2 use$(li)Adds frostbite immunity$(li)Maximum cold resistance"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Limits",
+      "text": "Only the chestplate is lined. You still need the rest of the EVA rig, and $(danger)air or O2 in late Phase 6$().$(br2)$(flavor)\"Better than the orbital stabilizer?\" \"The one that caused the apocalypse? Yes.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:lined_eva_chestplate",
       "title": "Lined EVA Suit",
-      "text": "Surround an EVA chestplate with Refined Acheronite. The suit will resist. Push harder."
+      "text": "Refined Acheronite around an EVA chestplate.$(br2)$(flavor)The suit will resist. Push harder.$()"
     }
   ]
 }
