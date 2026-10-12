@@ -31,16 +31,16 @@ final class ConvergenceCoordinator {
     private long now() { return server.overworld().getGameTime(); }
     private boolean enabled() { return ConvergenceLifecycle.enabled(server, data); }
     static boolean ordinary(ArchitectEntity actor) {
-        return !actor.isMasterArchitectVisual() && !actor.isHearthAssessor() && !actor.isHearthPopulationResident()
+        return !actor.isBlindArchitect() && !actor.isMasterArchitectVisual() && !actor.isHearthAssessor() && !actor.isHearthPopulationResident()
                 && !AggregateReinforcementManager.isChild(actor);
     }
     static boolean assigned(ArchitectEntity actor) { return actor.getPersistentData().hasUUID(DISPATCH); }
     void observe(ArchitectEntity actor) {
         if (!enabled() || actor.isRemoved()) return;
         var memory = data.convergence();
-        if (!ordinary(actor)) { if (memory.population.destroyed(actor.getUUID())) data.setDirty(); return; }
+        if (!ordinary(actor) && !actor.isBlindArchitect()) { if (memory.population.destroyed(actor.getUUID())) data.setDirty(); return; }
         if (actor.isAlive() && memory.population.register(actor.getUUID(), dimension(actor), actor.blockPosition())) data.setDirty();
-        if (!actor.isAlive() || actor.isNoAi() || assigned(actor)) return;
+        if (actor.isBlindArchitect() || !actor.isAlive() || actor.isNoAi() || assigned(actor)) return;
         if (actor.getTarget() instanceof ServerPlayer player) localContact(actor, player);
     }
     void localContact(ArchitectEntity actor, ServerPlayer player) {
@@ -56,7 +56,7 @@ final class ConvergenceCoordinator {
         if (data.convergence() != null && data.convergence().population.destroyed(actor.getUUID())) data.setDirty();
     }
     void death(ArchitectEntity actor) {
-        if (!enabled() || !ordinary(actor) || actor.isNoAi() || actor.getPersistentData().getBoolean(DEATH_RECORDED)) return;
+        if (!enabled() || (!ordinary(actor) && !actor.isBlindArchitect()) || actor.isNoAi() || actor.getPersistentData().getBoolean(DEATH_RECORDED)) return;
         actor.getPersistentData().putBoolean(DEATH_RECORDED, true);
         var memory = data.convergence();
         memory.population.destroyed(actor.getUUID());

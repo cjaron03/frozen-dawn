@@ -204,7 +204,7 @@ public class SoundMuffler {
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isPressurized()) {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;

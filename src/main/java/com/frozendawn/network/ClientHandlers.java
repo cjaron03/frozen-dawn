@@ -58,6 +58,14 @@ public final class ClientHandlers {
         TemperatureHud.setTemperature(payload.temperature());
     }
 
+    public static void handleRoomOxygenWarning(RoomOxygenWarningPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveOxygenWarning(payload.shortage());
+    }
+
+    public static void handleRoomPressureState(RoomPressureStatePayload payload) {
+        ApocalypseClientData.setPressurized(payload.pressurized());
+    }
+
     public static void handleBreathableState(BreathableStatePayload payload) {
         ApocalypseClientData.setBreathable(payload.breathable());
     }
@@ -81,6 +89,22 @@ public final class ClientHandlers {
             record.deserializeNBT(player.registryAccess(), payload.record());
             player.setData(com.frozendawn.init.ModAttachments.CONTINUITY_RECOVERY, record);
         }
+    }
+
+    public static void handleSuffocationState(SuffocationStatePayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveSuffocation(payload.stage());
+    }
+
+    public static void handleAirlockStatus(AirlockStatusPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveAirlock(payload);
+    }
+
+    public static void handleRoomRecovery(RoomRecoveryPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receiveRecovery(payload.stage());
+    }
+
+    public static void handleAtmosphericBreach(AtmosphericBreachPayload payload) {
+        com.frozendawn.client.AtmosphericBreachClient.receive();
     }
 
     public static void handleSuitIntegrity(SuitIntegrityPayload payload) {

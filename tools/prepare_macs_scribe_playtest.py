@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare the MACS Scribe Check world (section 9.4b) from a closed superflat world.
+"""Prepare the above-zero MACS Scribe Check arena (section 9.4b) from a closed superflat world.
 
 Every step uses real play. Beliefs are earned in four witnessed practice rounds (Causal law);
 the Scribe is the next natural Architect spawn once the gate is met. Nothing is injected.
@@ -96,30 +96,34 @@ scoreboard objectives remove msc_seen
 scoreboard objectives add msc_seen dummy''',
     'cleanup': '''execute as @e[tag=msc_witness] run data merge entity @s {NoAI:1b}
 kill @e[tag=msc_witness]''',
-    # Flat ground: grass at y=-61, standing height y=-60. Shelter roof 394..406, east opening at x=407.
+    # Above-zero pad: floor at y=63, standing height y=64. Shelter roof 394..406, east opening at x=407.
     'build': '''forceload add 336 336 463 463
-fill 386 -61 386 414 -61 414 minecraft:smooth_stone
-fill 386 -60 386 414 -50 414 minecraft:air
-fill 394 -56 394 406 -56 406 minecraft:stone
-fill 394 -60 394 394 -57 394 minecraft:oak_log
-fill 406 -60 394 406 -57 394 minecraft:oak_log
-fill 394 -60 406 394 -57 406 minecraft:oak_log
-fill 406 -60 406 406 -57 406 minecraft:oak_log
-setblock 400 -61 400 minecraft:lapis_block
-fill 407 -61 399 410 -61 401 minecraft:gold_block
-setblock 390 -60 400 frozendawn:thermal_heater[lit=true]{BurnTime:1000000}
-setblock 360 -61 400 minecraft:emerald_block
+fill 336 63 336 463 63 463 minecraft:smooth_stone
+fill 336 64 336 399 70 399 minecraft:air
+fill 336 64 400 399 70 463 minecraft:air
+fill 400 64 336 463 70 399 minecraft:air
+fill 400 64 400 463 70 463 minecraft:air
+fill 386 64 386 414 74 414 minecraft:air
+fill 394 68 394 406 68 406 minecraft:stone
+fill 394 64 394 394 67 394 minecraft:oak_log
+fill 406 64 394 406 67 394 minecraft:oak_log
+fill 394 64 406 394 67 406 minecraft:oak_log
+fill 406 64 406 406 67 406 minecraft:oak_log
+setblock 400 63 400 minecraft:lapis_block
+fill 407 63 399 410 63 401 minecraft:gold_block
+setblock 390 64 400 frozendawn:thermal_heater[lit=true]{BurnTime:1000000}
+setblock 360 63 400 minecraft:emerald_block
 function macs_scribe:clear_snow
 function macs_scribe:booth''',
     # Drifts left by an earlier wait: snow falls within 64 blocks of the player. Quarters stay below the fill limit.
-    'clear_snow': '\n'.join(f'fill {x} -60 {z} {x + 63} -55 {z + 63} minecraft:air replace minecraft:{block}'
+    'clear_snow': '\n'.join(f'fill {x} 64 {z} {x + 63} 69 {z + 63} minecraft:air replace minecraft:{block}'
                              for x in (336, 400) for z in (336, 400) for block in ('snow', 'snow_block')),
     # Bedrock cage with a head-height slit: the witness sees the shelter, heater and east crossing.
     # Bedrock floor too: an attacked witness otherwise digs down and tunnels out of the cage.
-    'booth': '''fill 403 -61 402 405 -61 404 minecraft:bedrock
-fill 403 -60 402 405 -58 404 minecraft:bedrock
-fill 403 -59 402 405 -59 404 minecraft:air
-setblock 404 -60 403 minecraft:air''',
+    'booth': '''fill 403 63 402 405 63 404 minecraft:bedrock
+fill 403 64 402 405 66 404 minecraft:bedrock
+fill 403 65 402 405 65 404 minecraft:air
+setblock 404 64 403 minecraft:air''',
     'setup': '''function macs_scribe:load
 function macs_scribe:cleanup
 tag @s add msc
@@ -136,7 +140,7 @@ gamerule keepInventory true
 weather clear
 time set noon
 function macs_scribe:build
-spawnpoint @s 360 -60 400
+spawnpoint @s 360 64 400
 gamemode survival @s
 clear @s
 effect give @s minecraft:resistance infinite 4 true
@@ -156,15 +160,15 @@ scoreboard players set @s msc_hit 0
 clear @s
 item replace entity @s hotbar.0 with ''' + SWORD + '''
 item replace entity @s hotbar.1 with ''' + POTION + '''
-tp @s 400.5 -60 400.5 -90 0
-summon frozendawn:architect 404.5 -60 403.5 {Tags:["msc_witness"],PersistenceRequired:1b}
+tp @s 400.5 64 400.5 -90 0
+summon frozendawn:architect 404.5 64 403.5 {Tags:["msc_witness"],PersistenceRequired:1b}
 fd architect approach @e[tag=msc_witness,limit=1] @s
 ''' + prompt(10),
     'round_done': '''scoreboard players add #rounds msc 1
 function macs_scribe:cleanup
 scoreboard players set #stage msc 20
 scoreboard players set #timer msc 0
-tp @s 360.5 -60 400.5 90 0
+tp @s 360.5 64 400.5 90 0
 ''' + prompt(20),
     'ready': 'scoreboard players set #stage msc 21\n' + prompt(21),
     'next': guard(21) + f'''
@@ -181,7 +185,7 @@ function {NS}:practice''',
     'await': guard(22) + '''
 scoreboard players set #stage msc 30
 scoreboard players set #timer msc 0
-tp @s 400.5 -60 400.5 -90 0
+tp @s 400.5 64 400.5 -90 0
 clear @s
 item replace entity @s hotbar.0 with ''' + SWORD + '\n' + EVA + '''
 effect give @s minecraft:regeneration infinite 1 true
@@ -234,7 +238,7 @@ execute unless entity @s[tag=msc] run ''' + tell('MACS Scribe Check: click to se
 SCRIPTS.update({f'prompt_{stage}': text for stage, text in PROMPTS.items()})
 SCRIPTS['tick'] = f'''execute as @a unless score @s msc_seen matches 40.. run scoreboard players add @s msc_seen 1
 execute as @a if score @s msc_seen matches 40 run function {NS}:rejoin
-execute if score #stage msc matches 10 as @a[tag=msc,x=407,y=-60,z=399,dx=3,dy=2,dz=2] if score @s msc_drink matches 1.. if score @s msc_hit matches 1.. run scoreboard players add #stood msc 1
+execute if score #stage msc matches 10 as @a[tag=msc,x=407,y=64,z=399,dx=3,dy=2,dz=2] if score @s msc_drink matches 1.. if score @s msc_hit matches 1.. run scoreboard players add #stood msc 1
 execute if score #stage msc matches 10 if score #stood msc matches 20.. as @a[tag=msc,limit=1] run function {NS}:round_done
 execute if score #stage msc matches 20 run scoreboard players add #timer msc 1
 execute if score #stage msc matches 20 if score #timer msc matches 630.. as @a[tag=msc,limit=1] run function {NS}:ready
@@ -281,7 +285,7 @@ def prepare(source, destination):
         raise SystemExit('Source is not a closed world')
     raw = gzip.decompress((source / 'level.dat').read_bytes())
     if b'minecraft:flat' not in raw:
-        raise SystemExit('Source must be a superflat world: the arena is built on flat ground at y=-61')
+        raise SystemExit('Source must be a superflat world: the arena is built on flat ground at y=63')
     raw = enable_commands(splice_string(raw, b'LevelName', TITLE))
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns('session.lock'))
     (destination / 'level.dat').write_bytes(gzip.compress(raw))

@@ -76,6 +76,16 @@ final class AttentionCoordinator {
         return true;
     }
 
+    boolean blind(ArchitectEntity actor, BlockPos estimate) {
+        if (!actor.isBlindArchitect() || data.store() == null || !actor.isAlive() || actor.isNoAi()) return false;
+        resize(); var key = new AttentionManager.Key(AttentionManager.Kind.ACTIVE_COMMITMENT, actor.getUUID());
+        if (!manager.request(key, now(), this::evict).admitted()) return false;
+        executors.computeIfAbsent(key, unused -> new LinkedHashMap<>()).put(actor.getUUID(),
+                new Executor(actor.getUUID(), actor.getUUID(), actor.level().dimension().location().toString(), estimate.immutable(), now()));
+        return true;
+    }
+    void releaseBlind(ArchitectEntity actor) { releaseCommitment(actor); }
+
     void releaseCommitment(ArchitectEntity actor) {
         var key = new AttentionManager.Key(AttentionManager.Kind.ACTIVE_COMMITMENT, actor.getUUID());
         executors.remove(key); manager.release(key, now());
@@ -126,7 +136,7 @@ final class AttentionCoordinator {
                 ArchitectEntity actor = actor(ref);
                 if (actor == null || !actor.isAlive() || actor.isNoAi() || actor.isMasterArchitectVisual()) return true;
                 return switch (key.kind()) {
-                    case ACTIVE_COMMITMENT -> CommitmentCoordinator.directive(data, actor) == null;
+                    case ACTIVE_COMMITMENT -> actor.isBlindArchitect() ? actor.blindController().signal() == null : CommitmentCoordinator.directive(data, actor) == null;
                     case PASSIVE_TRACKING -> actor.getCurrentAction() != ArchitectEntity.ACTION_OBSERVE
                             || actor.isMaeveDisengaging() || now() - ref.lastSeen() > 100;
                     case RECONNAISSANCE -> missions == null || missions.packet(actor) == null;
@@ -145,6 +155,7 @@ final class AttentionCoordinator {
         for (var ref : members.values()) {
             ArchitectEntity actor = actor(ref);
             if (actor == null || !actor.isAlive() || actor.isMasterArchitectVisual()) continue;
+            if (actor.isBlindArchitect()) { actor.blindController().evicted(ref.observed()); continue; }
             if (key.kind() == AttentionManager.Kind.ACTIVE_COMMITMENT) CommitmentCoordinator.release(data, actor, "ATTENTION_EVICTED");
             if (key.kind() == AttentionManager.Kind.RECONNAISSANCE && missions != null) missions.evicted(actor);
             depart(actor, ref.player(), ref.observed(), key.kind().name());
@@ -168,9 +179,9 @@ final class AttentionCoordinator {
 
     void clear() {
         for (var members : executors.values()) for (var ref : members.values()) {
-            var actor = actor(ref); if (actor != null) actor.clearMaeveAttention();
+            var actor = actor(ref); if (actor != null) { if (actor.isBlindArchitect()) actor.blindController().clearLocal(); else actor.clearMaeveAttention(); }
         }
-        for (var ref : departing.values()) { var actor = actor(ref); if (actor != null) actor.clearMaeveAttention(); }
+        for (var ref : departing.values()) { var actor = actor(ref); if (actor != null) { if (actor.isBlindArchitect()) actor.blindController().clearLocal(); else actor.clearMaeveAttention(); } }
         departing.clear(); executors.clear(); sieges.clear(); manager.clear();
     }
 

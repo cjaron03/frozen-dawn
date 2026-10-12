@@ -18,6 +18,20 @@ public class ModSounds {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
     }
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_CLICK = register("entity.blind_architect.click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_IDLE = register("entity.blind_architect.idle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_SEARCH = register("entity.blind_architect.search");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_LOCK = register("entity.blind_architect.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_OPEN = register("block.airlock.door_open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_CLOSE = register("block.airlock.door_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_FILL = register("block.airlock.pump_fill");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_RECOVER = register("block.airlock.pump_recover");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_READY = register("block.airlock.ready");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_EVACUATED = register("block.airlock.evacuated");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_REFUSE = register("block.airlock.refuse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));
@@ -88,6 +102,11 @@ public class ModSounds {
             register("ui.suit.puncture_warning");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_CRITICAL =
             register("ui.suit.oxygen_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_STRAINED = register("block.oxygen_gauge.strained");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_CRITICAL = register("block.oxygen_gauge.critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_ATMOSPHERIC_BREACH = register("ui.suit.atmospheric_breach");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_ALARM = register("ui.suit.atmospheric_breach_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_WHOOSH = register("ui.suit.atmospheric_breach_whoosh");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_BEEP =
             register("ui.suit.oxygen_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
@@ -611,6 +630,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_DRINK = SOUNDS.register("entity.architect.drink",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.drink")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_HURT = register("entity.blind_architect.hurt");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_HURT = SOUNDS.register("entity.architect.hurt",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.hurt")));

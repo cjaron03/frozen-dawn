@@ -38,6 +38,7 @@ import com.frozendawn.item.SurveyorLensItem;
 import com.frozendawn.item.SurveyorLensScanner;
 import com.frozendawn.item.SuitPatchItem;
 import com.frozendawn.item.ThermalContainerItem;
+import com.frozendawn.item.RationWarmerItem;
 import com.frozendawn.item.ThaevenCarrierItem;
 import com.frozendawn.item.ThaevenTranslatorItem;
 import com.frozendawn.lore.ThaevenRecordId;
@@ -68,6 +69,15 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FROZEN_LEAVES = ITEMS.registerSimpleBlockItem("frozen_leaves", ModBlocks.FROZEN_LEAVES);
     public static final DeferredItem<BlockItem> ICICLE = ITEMS.registerSimpleBlockItem("icicle", ModBlocks.ICICLE);
     public static final DeferredItem<BlockItem> FROZEN_OBSIDIAN = ITEMS.registerSimpleBlockItem("frozen_obsidian", ModBlocks.FROZEN_OBSIDIAN);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> AIRLOCK_DOOR = ITEMS.register("airlock_door",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.AIRLOCK_DOOR.get(),new Item.Properties()));
+    public static final DeferredItem<BlockItem> AIRLOCK_CONTROLLER = ITEMS.registerSimpleBlockItem("airlock_controller",ModBlocks.AIRLOCK_CONTROLLER);
+    public static final DeferredItem<BlockItem> MANUAL_VENT_VALVE = ITEMS.registerSimpleBlockItem("manual_vent_valve",ModBlocks.MANUAL_VENT_VALVE);
+
+    public static final DeferredItem<com.frozendawn.item.OxygenReservoirItem> OXYGEN_RESERVOIR=ITEMS.register("oxygen_reservoir",com.frozendawn.item.OxygenReservoirItem::new);
+    public static final DeferredItem<BlockItem> OXYGEN_GAUGE=ITEMS.registerSimpleBlockItem("oxygen_gauge",ModBlocks.OXYGEN_GAUGE);
+    public static final DeferredItem<BlockItem> HEAT_VENT=ITEMS.registerSimpleBlockItem("heat_vent",ModBlocks.HEAT_VENT);
+    public static final DeferredItem<BlockItem> THERMOSTAT=ITEMS.registerSimpleBlockItem("thermostat",ModBlocks.THERMOSTAT);
     public static final DeferredItem<BlockItem> THERMAL_HEATER = ITEMS.registerSimpleBlockItem("thermal_heater", ModBlocks.THERMAL_HEATER);
     public static final DeferredItem<BlockItem> IRON_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("iron_thermal_heater", ModBlocks.IRON_THERMAL_HEATER);
     public static final DeferredItem<BlockItem> GOLD_THERMAL_HEATER = ITEMS.registerSimpleBlockItem("gold_thermal_heater", ModBlocks.GOLD_THERMAL_HEATER);
@@ -132,6 +142,10 @@ public class ModItems {
             () -> new OrsaDocumentItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<MeteorologistJournalItem> METEOROLOGIST_JOURNAL = ITEMS.register("meteorologist_journal",
             () -> new MeteorologistJournalItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<RationWarmerItem> RATION_WARMER = ITEMS.register("ration_warmer",
+            () -> new RationWarmerItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.RATION_WARMER_CHARGES.get(), 0)));
+
     public static final DeferredItem<ThermalContainerItem> THERMAL_CONTAINER = ITEMS.register("thermal_container",
             () -> new ThermalContainerItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<OrsaMultiToolItem> ORSA_MULTITOOL = ITEMS.register("orsa_multitool",
@@ -464,6 +478,13 @@ public class ModItems {
                         output.accept(INERT_ACHERONITE.get());
                         output.accept(SEALED_LATTICE.get());
                         // Player agency
+                        output.accept(AIRLOCK_DOOR.get());
+                        output.accept(AIRLOCK_CONTROLLER.get());
+                        output.accept(MANUAL_VENT_VALVE.get());
+                        output.accept(THERMOSTAT.get());
+                        output.accept(HEAT_VENT.get());
+                        output.accept(OXYGEN_GAUGE.get());
+                        output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());
                         output.accept(IRON_THERMAL_HEATER.get());
                         output.accept(GOLD_THERMAL_HEATER.get());
@@ -500,6 +521,7 @@ public class ModItems {
                         output.accept(MARTIAN_COMMAND_PACKET.get());
                         output.accept(METEOROLOGIST_JOURNAL.get());
                         output.accept(THERMAL_CONTAINER.get());
+                        output.accept(RATION_WARMER.get());
                         output.accept(ORSA_MULTITOOL.get());
                         output.accept(THAEVEN_TRANSLATOR.get());
                         ItemStack guideBook = StarterBooks.createGuideBook();

@@ -1,0 +1,2 @@
+{"event":"SPRINT_STARTED","phase":"WAITING","reason":"","gameTime":6546,"armedAt":6506,"sprintAt":6546,"limit":24000,"participant":"380df991-f603-344c-a090-369bad2a924a","candidate":"","frozen":false,"sprinting":true,"stepping":false,"tickRate":20.0}
+{"event":"OTHER_ARCHITECT_ARRIVAL","phase":"HELD","reason":"OTHER_ARCHITECT_ARRIVAL","gameTime":10200,"armedAt":6506,"sprintAt":6546,"limit":24000,"participant":"380df991-f603-344c-a090-369bad2a924a","candidate":"40ac5be1-6be8-48dd-903a-a58e96f963b3","frozen":true,"sprinting":false,"stepping":false,"tickRate":20.0}

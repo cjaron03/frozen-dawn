@@ -6,7 +6,7 @@
   "pages": [
     {
       "type": "patchouli:text",
-      "text": "When the atmosphere freezes in late Phase 6, your $(l:orsa_equipment/eva_suit)EVA suit$(/l) needs a canister.$(br2)Carry one in your inventory while wearing the full suit. It draws automatically: one tick of O2 per tick of breathing."
+      "text": "When the atmosphere freezes in late Phase 6, your $(l:orsa_equipment/eva_suit)EVA suit$(/l) needs a canister.$(br2)Carry one in your inventory while wearing the full suit. It draws automatically: ten units per second of normal breathing."
     },
     {
       "type": "patchouli:text",
@@ -15,7 +15,11 @@
     {
       "type": "patchouli:text",
       "title": "Tanks",
-      "text": "$(li)Multiple tanks drain one at a time$(li)The O2 HUD shows combined air across all tanks$(li)Refill in a $(l:advanced/geothermal_core)Geothermal Core$(/l) O2 slot at +10 O2 per tick; bigger tanks take longer"
+      "text": "$(li)Multiple tanks drain one at a time$(li)The O2 HUD shows combined air across all tanks$(li)Refill in a $(l:advanced/geothermal_core)Geothermal Core$(/l) O2 slot; bigger tanks take longer"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The Core refills from spare oxygen. Rooms are served first; canisters, reservoirs, intact EVA suits and airlock reserves share the rest.$(br2)An intact suit also tops up the canisters you carry while you stand in supported breathable air."
     },
     {
       "type": "patchouli:text",

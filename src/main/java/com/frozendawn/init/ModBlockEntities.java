@@ -29,6 +29,19 @@ public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.AirlockControllerBlockEntity>> AIRLOCK_CONTROLLER =
+            BLOCK_ENTITIES.register("airlock_controller", () -> BlockEntityType.Builder.of(
+                    com.frozendawn.block.AirlockControllerBlockEntity::new, ModBlocks.AIRLOCK_CONTROLLER.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenReservoirBlockEntity>> OXYGEN_RESERVOIR=BLOCK_ENTITIES.register("oxygen_reservoir",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenReservoirBlockEntity::new,ModBlocks.OXYGEN_RESERVOIR.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenGaugeBlockEntity>> OXYGEN_GAUGE=
+            BLOCK_ENTITIES.register("oxygen_gauge",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenGaugeBlockEntity::new,ModBlocks.OXYGEN_GAUGE.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.HeatVentBlockEntity>> HEAT_VENT=
+            BLOCK_ENTITIES.register("heat_vent",()->BlockEntityType.Builder.of(com.frozendawn.block.HeatVentBlockEntity::new,ModBlocks.HEAT_VENT.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ThermostatBlockEntity>> THERMOSTAT=
+            BLOCK_ENTITIES.register("thermostat",()->BlockEntityType.Builder.of(com.frozendawn.block.ThermostatBlockEntity::new,ModBlocks.THERMOSTAT.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ThermalHeaterBlockEntity>> THERMAL_HEATER =
             BLOCK_ENTITIES.register("thermal_heater",
                     () -> BlockEntityType.Builder.of(ThermalHeaterBlockEntity::new,

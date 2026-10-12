@@ -105,6 +105,11 @@ public class ArchitectEntity extends Monster {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    private static final EntityDataAccessor<Boolean> DATA_BLIND = SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+
+    private static final EntityDataAccessor<Boolean> DATA_BLIND_NOISE_STUN = SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.BOOLEAN);
+    private float blindNoisePose, blindNoisePoseOld;
+
     // --- Synched Data ---
     private static final EntityDataAccessor<Integer> DATA_TEXTURE_VARIANT =
             SynchedEntityData.defineId(ArchitectEntity.class, EntityDataSerializers.INT);
@@ -241,6 +246,7 @@ public class ArchitectEntity extends Monster {
     @Nullable private MeleeDebugObservation meleeDebugObservation;
 
     private final ArchitectBlockBreaker blockBreaker = new ArchitectBlockBreaker(this, this::onApproachBreakAttemptFinished);
+    private final BlindArchitectController blindController = new BlindArchitectController(this, blockBreaker);
     private final ArchitectCommitmentController maeveCommitment = new ArchitectCommitmentController(this, blockBreaker);
     private final ArchitectPawnController maevePawn = new ArchitectPawnController(this);
     private final ArchitectAttentionController maeveAttention = new ArchitectAttentionController(this);
@@ -370,6 +376,8 @@ public class ArchitectEntity extends Monster {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
+        builder.define(DATA_BLIND, false);
+        builder.define(DATA_BLIND_NOISE_STUN, false);
         builder.define(DATA_TEXTURE_VARIANT, 0);
         builder.define(DATA_DEATH_TICKS, 0);
         builder.define(DATA_ACTION, ACTION_OBSERVE);
@@ -399,6 +407,21 @@ public class ArchitectEntity extends Monster {
     protected void registerGoals() {
         // No goals: all behavior driven by utility AI in aiStep()
     }
+
+    public boolean isBlindArchitect() { return entityData.get(DATA_BLIND); }
+    public BlindArchitectController blindController() { return blindController; }
+    public void setBlindArchitect(boolean blind) {
+        entityData.set(DATA_BLIND, blind);
+        if (level() instanceof ServerLevel server && server.getEntity(getUUID()) == this) com.frozendawn.entity.blind.BlindArchitectRegistry.loaded(this);
+        if (blind) { setCustomNameVisible(false); setTarget(null); clearMaevePositioning(); clearMaeveReconnaissance(); clearPawnConvergence(); }
+    }
+    void blindNoiseStunned(boolean stunned) { entityData.set(DATA_BLIND_NOISE_STUN, isBlindArchitect() && stunned); }
+    public boolean isBlindNoiseStunned() { return isBlindArchitect() && entityData.get(DATA_BLIND_NOISE_STUN); }
+    public float getBlindNoisePose(float partialTick) {
+        if (!isBlindArchitect() || !isAlive() || isNoAi() || getDeathTicks() > 0) return 0.0F;
+        return net.minecraft.util.Mth.lerp(net.minecraft.util.Mth.clamp(partialTick, 0.0F, 1.0F), blindNoisePoseOld, blindNoisePose);
+    }
+    void blindAction(int action) { setBrainAction(action); }
 
     public int getBrainAction() {
         return brainState.getCurrentAction();
@@ -480,7 +503,7 @@ public class ArchitectEntity extends Monster {
     }
 
     public boolean isHoldingRangedCover() { return isHoldingMaevePosition() && entityData.get(DATA_RANGED_COVER_HOLD); }
-    public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isMasterArchitectVisual(); }
+    public boolean hasReconnaissanceEyes() { return entityData.get(DATA_RECON_EYES) && !isBlindArchitect() && !isMasterArchitectVisual(); }
     void setReconnaissanceEyes(boolean active) {
         entityData.set(DATA_RECON_EYES, active);
         if (!active) {
@@ -626,6 +649,7 @@ public class ArchitectEntity extends Monster {
      * Gives partial knowledge so even short encounters show purposeful behavior.
      */
     public void preSeedObservation(ServerLevel level, Player nearestPlayer) {
+        if (isBlindArchitect()) return;
         BlockPos playerPos = nearestPlayer.blockPosition();
         observationMemory.setLastObservedPos(playerPos);
         scanEntrances(level, playerPos);
@@ -648,6 +672,9 @@ public class ArchitectEntity extends Monster {
         }
         if (level().isClientSide()) {
             com.frozendawn.entity.architect.ArchitectReconnaissanceFx.tick(this);
+            blindNoisePoseOld = blindNoisePose;
+            blindNoisePose = net.minecraft.util.Mth.approach(blindNoisePose,
+                    isBlindNoiseStunned() && isAlive() && !isNoAi() && getDeathTicks() == 0 ? 1.0F : 0.0F, 0.34F);
             scribeWritingOld = scribeWriting;
             scribeWriting = net.minecraft.util.Mth.approach(scribeWriting, isScribeWriting() ? 1.0F : 0.0F, 0.08F);
             if (scribeWriting > 0.9F && ScribeWriting.strokeStarts(tickCount, getId())) {
@@ -668,6 +695,7 @@ public class ArchitectEntity extends Monster {
         } else if (isNoAi() || tickCount < 40 || !isAlive() || getDeathTicks() > 0
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || AggregateReinforcementManager.isChild(this)) {
+            blindNoiseStunned(false);
             if (maeveCommitment.shield().active()) maeveCommitment.shield().stop("OBSERVER_UNAVAILABLE");
             if (maeveCommitment.archer().active()) maeveCommitment.archer().stop("OBSERVER_UNAVAILABLE");
             entityData.set(DATA_PURSUIT_POSE, 0);
@@ -738,6 +766,8 @@ public class ArchitectEntity extends Monster {
             return;
         }
         if (level().isClientSide()) return;
+
+        if (isBlindArchitect()) { blindController.tick(); syncRenderState(); return; }
 
         if (maeveAttention.tick()) {
             updateReconnaissancePose(true);
@@ -1144,6 +1174,7 @@ public class ArchitectEntity extends Monster {
 
     /** Final damage has already been recorded by Maeve before execution is released. */
     public void onEffectiveCombatDamage(DamageSource source, float damage) {
+        if (isBlindArchitect()) return;
         if (level().isClientSide() || !(damage > 0) || !Float.isFinite(damage)
                 || isMasterArchitectVisual() || isHearthAssessor() || isHearthPopulationResident()
                 || AggregateReinforcementManager.isChild(this)) return;
@@ -1451,6 +1482,7 @@ public class ArchitectEntity extends Monster {
                 + " reinits=" + approachState.unstickReinitAttempts + " destroyed=" + successfulBreakCount()
                 + " recording=" + decisionJournal.enabled() + " retained=" + decisionJournal.entries().size()
                 + " dropped=" + decisionJournal.dropped() + " seed=" + debugSeed
+                + " " + (isBlindArchitect() ? blindController.diagnostics() : "")
                 + " targetLock=" + debugForcedTargetId + " " + maeveCommitment.archer().describe();
     }
 
@@ -1756,6 +1788,7 @@ public class ArchitectEntity extends Monster {
             maeveShieldDamageInProgress = previousShieldDamage;
             suppressMasterHurtSound = false;
         }
+        if (hurt && !level().isClientSide() && isBlindArchitect()) { blindController.hurt(source); return true; }
         if (hurt && !level().isClientSide()) {
             recordDecision("DAMAGE", blockBreaker.getChoice(),
                     "type=" + source.getMsgId() + " amount=" + amount + " health=" + getHealth());
@@ -1807,6 +1840,7 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void die(DamageSource source) {
+        if (isBlindArchitect() && !level().isClientSide()) blindController.clear();
         if (!level().isClientSide() && maeveCommitment.shield().active()) maeveCommitment.shield().stop("OWNER_KILLED");
         if (!level().isClientSide() && maeveCommitment.archer().active()) maeveCommitment.archer().stop("OWNER_KILLED");
         if (isMasterMindCopy()) {
@@ -2083,12 +2117,14 @@ public class ArchitectEntity extends Monster {
 
     @Nullable
     private LivingEntity findTarget() {
+        if (isBlindArchitect()) return null;
         LivingEntity candidate = findTargetIgnoringApproachCooldown();
         return candidate != null && isApproachTargetSuppressed(candidate) ? null : candidate;
     }
 
     @Nullable
     private LivingEntity findTargetIgnoringApproachCooldown() {
+        if (isBlindArchitect()) return null;
         if (debugForcedTargetId != null && level() instanceof ServerLevel lockLevel) {
             net.minecraft.world.entity.Entity locked = lockLevel.getEntity(debugForcedTargetId);
             if (locked instanceof LivingEntity lockedLiving && lockedLiving.isAlive()) {
@@ -2768,6 +2804,7 @@ public class ArchitectEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
+        if (isBlindArchitect()) return null;
         if (level() instanceof ServerLevel serverLevel
                 && isPostMaeveHearthResident(serverLevel)) {
             return null;
@@ -2785,6 +2822,7 @@ public class ArchitectEntity extends Monster {
     @Nullable
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
+        if (isBlindArchitect()) return ModSounds.BLIND_ARCHITECT_HURT.get();
         if (isMasterArchitectVisual()
                 && (suppressMasterHurtSound
                 || clientMasterTetherHurtSuppressionTicks > 0)) {
@@ -2820,6 +2858,8 @@ public class ArchitectEntity extends Monster {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
+        tag.putBoolean("BlindArchitect", isBlindArchitect());
+        if (isBlindArchitect()) blindController.save(tag);
         tag.putLong("LocalCombatUntil", localCombatUntil);
         ArchitectPersistence.writeCoreState(
                 tag,
@@ -2944,6 +2984,8 @@ public class ArchitectEntity extends Monster {
                 ? tag.getUUID("MasterDeathKillerId") : null;
         if (approachState.surfaceY == 0) approachState.surfaceY = blockPosition().getY(); // migration for existing entities
         syncRenderState();
+        setBlindArchitect(tag.getBoolean("BlindArchitect"));
+        if (isBlindArchitect()) blindController.load(tag);
     }
 
     // ========================
@@ -2988,6 +3030,8 @@ public class ArchitectEntity extends Monster {
 
     @Override
     public void remove(RemovalReason reason) {
+        com.frozendawn.entity.blind.BlindArchitectRegistry.removed(this);
+        if (isBlindArchitect() && !level().isClientSide()) blindController.clear();
         if (!level().isClientSide() && getServer() != null) {
             com.frozendawn.maeve.MaeveDirector.releaseCommitment(this, reason == RemovalReason.KILLED ? "OWNER_KILLED" : "OWNER_UNAVAILABLE");
             MaeveDirector.finishMission(this, "OWNER_REMOVED", false);

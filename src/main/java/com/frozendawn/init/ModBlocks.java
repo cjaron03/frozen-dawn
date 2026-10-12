@@ -62,10 +62,37 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FrozenDawn.MOD_ID);
 
+    public static final DeferredBlock<com.frozendawn.block.AirlockDoorBlock> AIRLOCK_DOOR = BLOCKS.register("airlock_door",
+            () -> new com.frozendawn.block.AirlockDoorBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR)
+                    .pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.AirlockControllerBlock> AIRLOCK_CONTROLLER = BLOCKS.register("airlock_controller",
+            () -> new com.frozendawn.block.AirlockControllerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(4,6).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK).lightLevel(s -> 3)));
+    public static final DeferredBlock<com.frozendawn.block.ManualVentValveBlock> MANUAL_VENT_VALVE = BLOCKS.register("manual_vent_valve",
+            () -> new com.frozendawn.block.ManualVentValveBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(4,6).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
+
     private static int heaterLight(net.minecraft.world.level.block.state.BlockState state, int maxLight) {
         if (!state.getValue(ThermalHeaterBlock.LIT)) return 0;
         int glowStage = state.getValue(ThermalHeaterBlock.GLOW_STAGE);
         return Math.max(1, Math.round(maxLight * ((glowStage + 1) / 5.0f)));
+    }
+
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedTorchBlock> SPENT_TORCH = BLOCKS.register("spent_torch",
+            () -> new com.frozendawn.block.ExtinguishedTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedWallTorchBlock> SPENT_WALL_TORCH = BLOCKS.register("spent_wall_torch",
+            () -> new com.frozendawn.block.ExtinguishedWallTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WALL_TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LanternBlock> EXTINGUISHED_LANTERN = BLOCKS.register("extinguished_lantern",
+            () -> new net.minecraft.world.level.block.LanternBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.LANTERN)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.LANTERN)));
+
+    static {
+        BLOCKS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "extinguished_torch"),
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "spent_torch"));
+        BLOCKS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "extinguished_wall_torch"),
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "spent_wall_torch"));
     }
 
     // Grass Block -> Dead Grass Block (phase 2+). Drops dirt.
@@ -317,7 +344,16 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
+    public static final DeferredBlock<com.frozendawn.block.OxygenReservoirBlock> OXYGEN_RESERVOIR=BLOCKS.register("oxygen_reservoir",()->new com.frozendawn.block.OxygenReservoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().pushReaction(PushReaction.BLOCK)));
+
     // --- Player Agency blocks ---
+    public static final DeferredBlock<com.frozendawn.block.OxygenGaugeBlock> OXYGEN_GAUGE=BLOCKS.register("oxygen_gauge",
+            ()->new com.frozendawn.block.OxygenGaugeBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.block.HeatVentBlock> HEAT_VENT=BLOCKS.register("heat_vent",
+            ()->new com.frozendawn.block.HeatVentBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
+
+    public static final DeferredBlock<com.frozendawn.block.ThermostatBlock> THERMOSTAT=BLOCKS.register("thermostat",
+            ()->new com.frozendawn.block.ThermostatBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
 
     // Thermal Heater: right-click fuel, radius 7, +35C when lit
     public static final DeferredBlock<ThermalHeaterBlock> THERMAL_HEATER = BLOCKS.register("thermal_heater",

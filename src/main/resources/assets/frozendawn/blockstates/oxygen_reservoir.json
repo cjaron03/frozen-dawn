@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/oxygen_reservoir"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/oxygen_reservoir",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/oxygen_reservoir",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/oxygen_reservoir",
+      "y": 270
+    }
+  }
+}

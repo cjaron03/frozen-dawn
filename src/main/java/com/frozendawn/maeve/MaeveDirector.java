@@ -17,17 +17,21 @@ public final class MaeveDirector {
     private MaeveDirector() { }
     private static DirectorRuntime current(MinecraftServer server) { return DirectorRuntime.current(server); }
     public static void tick(MinecraftServer server) { current(server).tick(); }
+    public static boolean focusBlind(ArchitectEntity actor, BlockPos estimate) { return current(actor.getServer()).attention.blind(actor, estimate); }
+    public static void releaseBlind(ArchitectEntity actor) { if (actor.getServer() != null) current(actor.getServer()).attention.releaseBlind(actor); }
+    public static void reportBlind(ArchitectEntity actor, com.frozendawn.entity.blind.BlindSignalMemory.Signal signal) { BlindObservations.report(current(actor.getServer()).data, actor, signal); }
+
 
     public static void observeDamage(ArchitectEntity observer, DamageSource source, float actualDamage) {
         MinecraftServer server = observer.getServer();
-        if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
+        if (server == null || observer.level().isClientSide() || observer.isMasterArchitectVisual() || observer.isBlindArchitect()) return;
         var director = current(server);
         if (director.data.store() == null) return;
         CombatObservation.record(director.data, director.missions, director.learning, observer, source, actualDamage, false);
     }
 
     public static void observeShieldBlock(ArchitectEntity observer, DamageSource source, float blocked) {
-        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
+        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual() || observer.isBlindArchitect()) return;
         var director = current(observer.getServer());
         CombatObservation.record(director.data, director.missions, director.learning, observer, source, blocked, true);
     }
@@ -137,7 +141,7 @@ public final class MaeveDirector {
         if (observer.getTarget() instanceof ServerPlayer player) observePresence(observer, player);
     }
     public static void observePresence(ArchitectEntity observer, ServerPlayer player) {
-        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual()) return;
+        if (observer.getServer() == null || observer.level().isClientSide() || observer.isMasterArchitectVisual() || observer.isBlindArchitect()) return;
         var director = current(observer.getServer());
         if (director.data.store() != null) {
             director.convergence.localContact(observer, player);

@@ -1,6 +1,6 @@
 # Generated Voice Asset Attribution and License
 
-The 57 processed voice performances listed in `polly_manifest.tsv` were
+The 58 processed voice performances listed in `polly_manifest.tsv` were
 generated locally with Piper's `en_US-amy-medium` voice model and modified by
 Frozen Dawn through dialogue authoring, timing, pitch treatment, filtering,
 compression, distortion, arrangement, and mixing.
@@ -20,7 +20,7 @@ compression, distortion, arrangement, and mixing.
 ## License
 
 To the extent the processed performances are adaptations of the voice model or
-its licensed dataset, those 57 OGG files are distributed under Creative Commons
+its licensed dataset, those 58 OGG files are distributed under Creative Commons
 Attribution-ShareAlike 4.0 International. This asset license applies to those
 voice files, not to Frozen Dawn's LGPL-licensed code or separately licensed
 assets. No endorsement by Piper, Rhasspy, Mycroft AI, or the recorded speaker is

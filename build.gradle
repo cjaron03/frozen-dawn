@@ -89,13 +89,19 @@ neoForge {
         clientLab {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
             systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
             systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
-            systemProperty 'frozendawn.debug.architectSeed', '1'
+            if (!project.hasProperty('labNatural')) {
+                systemProperty 'frozendawn.debug.architectSeed', '1'
+            }
             systemProperty 'frozendawn.labCommands', 'true'
             if (labQuickPlayWorld) {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
@@ -107,7 +113,10 @@ neoForge {
         clientLabGuest {
             client()
             gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
-            programArguments.addAll '--username', 'ArchitectGuest'
+            programArguments.addAll '--username', 'ArchitectGuest', '--uuid', '347c4be4-4dda-3d32-a649-477c0bff527c'
+            systemProperty 'frozendawn.labLanGuest', 'true'
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
@@ -529,6 +538,37 @@ tasks.register('generateMacsSignalQa', Exec) {
 sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
 
+// Parse the disposable Blind first-view functions using the native command dispatcher.
+def blindQaResources = layout.buildDirectory.dir('generated/blind-architect-qa')
+tasks.register('generateBlindArchitectQa', Exec) {
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_playtest.py', '--pack-only', blindQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindArchitectQa') }
+
+def blindNaturalQaResources = layout.buildDirectory.dir('generated/blind-natural-qa')
+tasks.register('generateBlindNaturalQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_natural.py', 'tools/prepare_blind_architect_playtest.py')
+    inputs.files(fileTree('src/test/resources/blind-natural-stopped-wait'))
+    inputs.files(fileTree('src/test/resources/blind-natural-same-tick-arrivals'))
+    outputs.dir(blindNaturalQaResources)
+    doFirst { delete blindNaturalQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_natural.py', '--pack-only', blindNaturalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindNaturalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindNaturalQa') }
+
+def blindErasedQaResources = layout.buildDirectory.dir('generated/blind-erased-qa')
+tasks.register('generateBlindErasedQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_erased.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindErasedQaResources)
+    doFirst { delete blindErasedQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_erased.py', '--pack-only', blindErasedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindErasedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindErasedQa') }
 // The Scribe Check world uses the same parsed functions as its required native gate.
 def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
 tasks.register('generateMacsScribeQa', Exec) {
@@ -548,3 +588,32 @@ tasks.register('generateMacsScribeBaseQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }
+// Ration Warmer's disposable-world commands use the same native parser as GameTest.
+def rationWarmerQaResources = layout.buildDirectory.dir('generated/ration-warmer-qa')
+tasks.register('generateRationWarmerQa', Exec) {
+    inputs.files('tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(rationWarmerQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_ration_warmer_playtest.py', '--pack-only', rationWarmerQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rationWarmerQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRationWarmerQa') }
+
+// Validate the actual airlock playtest functions with Minecraft's native parser.
+def airlockQaResources = layout.buildDirectory.dir('generated/airlock-qa')
+tasks.register('generateAirlockQa', Exec) {
+    inputs.files('tools/prepare_airlock_playtest.py', 'tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(airlockQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_airlock_playtest.py', '--pack-only', airlockQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(airlockQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateAirlockQa') }
+
+// Validate the same O2/furnace replay commands used by the owner with Minecraft's parser.
+def roomOxygenQaResources = layout.buildDirectory.dir('generated/roomOxygenQa')
+tasks.register('generateRoomOxygenQa', Exec) {
+    inputs.files('tools/prepare_room_oxygen_playtest.py', 'tools/prepare_room_oxygen_storage_playtest.py', 'tools/prepare_core_split_playtest.py', 'tools/prepare_thermal_ground_playtest.py')
+    outputs.dir(roomOxygenQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_room_oxygen_playtest.py', '--pack-only', roomOxygenQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }

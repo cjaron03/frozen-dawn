@@ -1,0 +1,38 @@
+{
+  "name": "ORSA Heat Vent",
+  "icon": "frozendawn:heat_vent",
+  "category": "frozendawn:heating",
+  "sortnum": 22,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Heat Out, Air In",
+      "text": "The ORSA Heat Vent is a sealed heat exchanger. Opening its shutter exposes cooling fins; it never opens a passage through your pressure wall. It uses no fuel and consumes no O2. In vacuum, it rejects heat by radiation. Close it when you want to retain warmth."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:heat_vent",
+      "text": "Six iron ingots, two copper ingots and one lever. Installs as a full wall or roof block."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Placement & Controls",
+      "text": "Place it while looking from your room toward the outdoors: the fin face points away from you. Its opposite face must touch the room. The outdoor face needs an unobstructed sky column; blocks, roofs and neighboring rooms prevent cooling. Right-click toggles the shutter. Redstone holds it open until the signal is removed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "ORSA Service Grille",
+      "text": "The indoor service grille has a shutter lever and a status light. Dim means closed. Green means heat can leave to colder outdoors. Amber means open but waiting or obstructed. The light updates once per second. Slats in the grille do not let oxygen escape."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cooling Has Limits",
+      "text": "Heat flows only toward a colder exterior. The vent cannot cool below that exterior temperature. It cools room air first; stored wall heat continues warming the air. A depleted room loses wall heat instead. Larger rooms cool more slowly; several vents add cooling capacity."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Avoid Wasting Fuel",
+      "text": "Heaters will work harder against an open vent while trying to hold their target. Lower your $(l:heating/thermostat)thermostat$(/l), or turn heaters off before dumping excess heat. Existing Core warmth still contributes to your sensed temperature. An open heat vent preserves oxygen; a $(l:heating/airlocks)manual vent valve$(/l) dumps it."
+    }
+  ]
+}

@@ -27,12 +27,12 @@
     {
       "type": "patchouli:text",
       "title": "Phase 6",
-      "text": "$(bold)Phase 6: \"Atmospheric Collapse\"$()$(br)Final stage. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum conditions. Stars visible. No sound on surface. Ice sublimates. Breathing fails outside sealed rooms or habitable oxygen zones."
+      "text": "$(bold)Phase 6: \"Atmospheric Collapse\"$()$(br)Final stage. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum conditions. Stars visible. No sound on surface. Ice sublimates. Breathing fails outside sealed, breathable rooms. Core and Blast Pit oxygen requires a closed room."
     },
     {
       "type": "patchouli:text",
       "title": "Survival Recommendations",
-      "text": "$(li)Establish underground base below Y=0$(li)Secure heat sources BEFORE Phase 3$(li)Build a Geothermal Core for late-game heat and oxygen support$(li)Late Phase 6 requires a sealed room or a habitable zone from a Geothermal Core or Blast Pit$(li)Deeper = warmer$(br2)Good luck. You are statistically the unluckiest person alive. But also the luckiest, because you $(italic)are$() alive.$(br2)$(italic)— ORSA Science Division$(br)(We're rooting for you. Quietly. From Mars.)$()"
+      "text": "$(li)Establish underground base below Y=0$(li)Secure heat sources BEFORE Phase 3$(li)Build a Geothermal Core for late-game heat and oxygen support$(li)Late Phase 6 requires a sealed room; Core and Blast Pit oxygen must reach its connected interior$(li)Deeper = warmer$(br2)Good luck. You are statistically the unluckiest person alive. But also the luckiest, because you $(italic)are$() alive.$(br2)$(italic)— ORSA Science Division$(br)(We're rooting for you. Quietly. From Mars.)$()"
     }
   ]
 }

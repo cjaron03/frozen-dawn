@@ -142,6 +142,7 @@ public class FuelProcessingSiloBlockEntity extends BlockEntity implements MenuPr
 
         progressUnits += heaterSpeedUnits;
         processing = true;
+        if (level instanceof net.minecraft.server.level.ServerLevel server) com.frozendawn.event.BlindArchitectEvents.machine(server, worldPosition);
         updateControllerLit(true);
         if (level instanceof ServerLevel serverLevel
                 && serverLevel.getGameTime() % 20L == 0L) {

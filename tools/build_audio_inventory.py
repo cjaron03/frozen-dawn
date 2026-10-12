@@ -40,6 +40,8 @@ def classify(path: str) -> tuple[str, str, str]:
         )
     if path in {"ambient/eva_emergency_fan.ogg", "ui/suit/emergency_regulator.ogg", "ui/suit/emergency_shutdown.ogg"}:
         return ("emergency_eva_hardware_procedural", "tools/audio_sources/emergency_eva/HARDWARE.md", "Frozen Dawn original")
+    if path in {"ui/suit/atmospheric_breach_whoosh.ogg", "ui/suit/atmospheric_breach_alarm.ogg"}:
+        return ("atmospheric_breach_procedural", "tools/audio_sources/atmospheric_breach/SOURCES.md", "Frozen Dawn original")
     if path in VOICE_PATHS:
         return (
             "generated_voice",
@@ -60,6 +62,7 @@ def classify(path: str) -> tuple[str, str, str]:
         )
 
     prefix_groups = (
+        (("entity/blind_architect/",), "blind_architect_cc0", "tools/audio_sources/blind_architect/SOURCES.md", "CC0-derived"),
         (("entity/architect/",), "architect_procedural", "tools/audio_sources/architect/SOURCES.md", "Frozen Dawn original"),
         (("entity/rimebound/",), "rimebound_procedural", "tools/audio_sources/rimebound/SOURCES.md", "Frozen Dawn original"),
         (("block/stillpoint_core/",), "stillpoint_procedural", "tools/audio_sources/stillpoint_core/SOURCES.md", "Frozen Dawn original"),
@@ -79,6 +82,10 @@ def classify(path: str) -> tuple[str, str, str]:
         if path.startswith(prefixes):
             return group, evidence, license_name
 
+    if path.startswith("block/oxygen_gauge/"):
+        return "room_oxygen_warnings", "tools/audio_sources/room_oxygen/SOURCES.md", "CC0-derived" if path.endswith("critical.ogg") else "Frozen Dawn original"
+    if path.startswith("block/airlock/"):
+        return "airlock_machinery_procedural", "tools/audio_sources/airlock/SOURCES.md", "Frozen Dawn original"
     original_prefixes = (
         "ambient/",
         "blocks/",

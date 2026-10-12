@@ -151,7 +151,7 @@ public final class SuitIntegrityHandler {
                 && TemperatureManager.hasOxygenSupport(
                         player.level(), player.blockPosition())
                 && FrozenDawnConfig.SUIT_REPRESSURIZE_PER_TICK.get() > 0) {
-            refillO2(player, FrozenDawnConfig.SUIT_REPRESSURIZE_PER_TICK.get());
+            // Automatic refill is granted once per second from shared spare production.
             state.setVentAccumulator(0.0D);
         } else if (!vacuum || state.punctures() <= 0) {
             state.setVentAccumulator(0.0D);
@@ -286,7 +286,8 @@ public final class SuitIntegrityHandler {
         ApocalypseState apocalypse = ApocalypseState.get(player.getServer());
         return PhaseManager.isVacuumActive(
                         apocalypse.getPhase(), apocalypse.getProgress())
-                && !PlayerTickHandler.isPlayerBreathable(player);
+                && !com.frozendawn.world.RoomAtmosphere.hasAir(player.level(),
+                        net.minecraft.core.BlockPos.containing(player.getX(),player.getEyeY(),player.getZ()));
     }
 
     private static boolean isPunctureEligible(DamageSource source) {
@@ -440,6 +441,11 @@ public final class SuitIntegrityHandler {
         }
     }
 
+    public static int oxygenChargeRequest(ServerPlayer player){
+        if(player.isSpectator()||!isWearingSealedSuit(player)||EmergencyEvaHandler.isWearingIssuedPiece(player)||hasPuncture(player)||isVacuumExposure(player)||!TemperatureManager.hasOxygenSupport(player.level(),player.blockPosition()))return 0;
+        return Math.clamp(getTotalMaxO2(player)-getTotalO2(player),0,20*FrozenDawnConfig.SUIT_REPRESSURIZE_PER_TICK.get());
+    }
+    public static int chargeOxygen(ServerPlayer player,int offered){int n=Math.min(Math.max(0,offered),oxygenChargeRequest(player));refillO2(player,n);return n;}
     private static void refillO2(Player player, int amount) {
         int remaining = Math.max(0, amount);
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
