@@ -4283,5 +4283,7 @@
         "attenuation_distance": 16
       }
     ]
-  }
+  },
+  "block.oxygen_gauge.strained": {"subtitle": "subtitles.frozendawn.oxygen_gauge.strained", "sounds": ["frozendawn:block/oxygen_gauge/strained"]},
+  "block.oxygen_gauge.critical": {"subtitle": "subtitles.frozendawn.oxygen_gauge.critical", "sounds": ["frozendawn:block/oxygen_gauge/critical"]}
 }

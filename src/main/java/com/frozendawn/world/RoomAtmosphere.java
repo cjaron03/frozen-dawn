@@ -133,7 +133,7 @@ public final class RoomAtmosphere {
     private static boolean hasSupply(ServerLevel level, Geometry geometry, BlockPos pos) {
         for (var corePos : GeothermalCoreRegistry.getCores(level)) {
             if (!level.isLoaded(corePos) || !(level.getBlockEntity(corePos) instanceof GeothermalCoreBlockEntity core)) continue;
-            if (pos.distSqr(corePos) <= (long)core.getEffectiveO2Range() * core.getEffectiveO2Range()
+            if (core.getOxygenSupply()>0 && pos.distSqr(corePos) <= (long)core.getEffectiveO2Range() * core.getEffectiveO2Range()
                     && connectedSource(geometry, corePos)) return true;
         }
         for (var anchor : BlastPitWarmZoneRegistry.getWarmZones(level)) {
@@ -194,6 +194,24 @@ public final class RoomAtmosphere {
     public static RoomView view(ServerLevel level, BlockPos pos) {
         var room = roomAt(level, pos, "OPERATOR_VIEW");
         return room == null ? null : new RoomView(room.id, room.geometry);
+    }
+    /** Cached seal only, including dirty geometry. Never inspect, renew, refill or load chunks. */
+    public static Seal cachedSealAt(ServerLevel level,BlockPos pos) {
+        var index=LEVELS.get(level);if(index==null)return Seal.UNKNOWN;
+        var room=index.cells.get(pos);if(room!=null)return room.uncertain||room.changed!=null?Seal.UNKNOWN:room.geometry.seal;
+        var negative=index.negative.get(pos);return negative==null?Seal.UNKNOWN:negative.seal;
+    }
+    /** Bounded source discovery. An outdoor sample never evacuates air merely to account rates. */
+    public static void discoverSealedSourceIntake(ServerLevel level,BlockPos pos) {
+        var geometry=inspect(level,pos);
+        if(geometry.seal==Seal.SEALED){view(level,pos);return;}
+        if(geometry.seal==Seal.OPEN){var index=LEVELS.computeIfAbsent(level,k->new Index());
+            if(index.negative.size()>1024)index.negative.clear();
+            index.negative.put(pos.immutable(),new Negative(level.getGameTime(),Seal.OPEN));}
+    }
+    /** All cached memberships, including suspended rooms; accounting must validate their seal/load. */
+    public static List<RoomView> cachedRoomViews(ServerLevel level) {
+        var index=LEVELS.get(level);return index==null?List.of():index.rooms.stream().map(room->new RoomView(room.id,room.geometry)).toList();
     }
     public static List<RoomView> trackedRooms(ServerLevel level) {
         var index = LEVELS.get(level);
@@ -498,5 +516,5 @@ public final class RoomAtmosphere {
     }
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) { for (var level : event.getServer().getAllLevels()) tickLevel(level); }
     @SubscribeEvent public static void stop(ServerStoppedEvent event) { reset(); }
-    public static void reset() { LEVELS.clear(); }
+    public static void reset() { LEVELS.clear(); RoomOxygenManager.atmosphereReset(); }
 }

@@ -24,7 +24,7 @@ public final class AtmosphericBreachClient {
     private static SimpleSoundInstance speech;
     private static String noticeKey = "ui.frozendawn.suit.atmospheric_breach";
     private static ChatFormatting noticeColor = ChatFormatting.RED;
-    private static boolean atmosphericLoss, deviceNotice;
+    private static boolean atmosphericLoss, deviceNotice, oxygenShortage;
     private static Object[] noticeArgs = new Object[0];
     private static Boolean lastSuitHud;
     private static SuffocationStage suffocationStage = SuffocationStage.NONE;
@@ -85,15 +85,20 @@ public final class AtmosphericBreachClient {
         warningTicks = 60; lastSuitHud = null;
         routeNotice();
     }
+    public static void receiveOxygenWarning(boolean shortage) {
+        if(oxygenShortage==shortage)return;oxygenShortage=shortage;lastSuitHud=null;routeNotice();
+    }
     private static String activeNoticeKey() {
-        return warningTicks > 0 && (!deviceNotice || suffocationStage == SuffocationStage.NONE) ? noticeKey : null;
+        if(warningTicks > 0 && (!deviceNotice || suffocationStage == SuffocationStage.NONE))return noticeKey;
+        return oxygenShortage&&suffocationStage==SuffocationStage.NONE?"ui.frozendawn.room.oxygen_shortage":null;
     }
     private static void routeNotice() {
         var mc = Minecraft.getInstance(); if (mc.player == null) return;
         boolean suitHud = usesSuitHud(mc.player);
         if (lastSuitHud == null || lastSuitHud != suitHud) {
             if (suitHud && activeNoticeKey() != null) {
-                if (deviceNotice) MasterArchitectFloodClient.showAirlockSuitStatus(Component.translatable(noticeKey,noticeArgs),noticeColor.getColor());
+                if(activeNoticeKey().equals("ui.frozendawn.room.oxygen_shortage"))MasterArchitectFloodClient.showAirlockSuitStatus(Component.translatable(activeNoticeKey()),ChatFormatting.YELLOW.getColor());
+                else if (deviceNotice) MasterArchitectFloodClient.showAirlockSuitStatus(Component.translatable(noticeKey,noticeArgs),noticeColor.getColor());
                 else MasterArchitectFloodClient.showAtmosphericSuitDialogue(noticeKey, atmosphericLoss);
             } else MasterArchitectFloodClient.clearAtmosphericSuitDialogue();
             lastSuitHud = suitHud;
@@ -104,7 +109,7 @@ public final class AtmosphericBreachClient {
             message = Component.translatable(notice.primaryKey(), notice.primaryKey().equals(noticeKey) ? noticeArgs : new Object[0]);
             if (notice.secondaryKey() != null) message = Component.translatable(
                     "ui.frozendawn.room.combined_warning", message, Component.translatable(notice.secondaryKey()));
-            message = message.copy().withStyle(notice.danger() ? ChatFormatting.RED : noticeColor);
+            message = message.copy().withStyle(notice.danger() ? ChatFormatting.RED : "ui.frozendawn.room.oxygen_shortage".equals(notice.primaryKey())?ChatFormatting.YELLOW:noticeColor);
         }
         if (message != null) {
             writeActionBar(message);
@@ -130,6 +135,7 @@ public final class AtmosphericBreachClient {
     }
 
     public static void receiveSuffocation(SuffocationStage stage) {
+        if(suffocationStage!=stage)lastSuitHud=null;
         suffocationStage = stage;
         if (deviceNotice && stage != SuffocationStage.NONE) {MasterArchitectFloodClient.clearAtmosphericSuitDialogue();lastSuitHud=null;}
         routeNotice();
@@ -152,7 +158,7 @@ public final class AtmosphericBreachClient {
         if (speech != null) Minecraft.getInstance().getSoundManager().stop(speech);
         MasterArchitectFloodClient.clearAtmosphericSuitDialogue();
         speech = null; speechDelay = -1; warningTicks = 0; lastSuitHud = null;
-        deviceNotice=false;noticeArgs=new Object[0];
+        deviceNotice=false;oxygenShortage=false;noticeArgs=new Object[0];
         suffocationStage = SuffocationStage.NONE; lastActionBar = null; writingActionBar = false;
     }
 }

@@ -48,6 +48,8 @@ public class ModDataComponents {
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> RESERVOIR_OXYGEN = DATA_COMPONENTS.register("reservoir_oxygen", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> O2_LEVEL =
             DATA_COMPONENTS.register("o2_level", () ->
                     DataComponentType.<Integer>builder()

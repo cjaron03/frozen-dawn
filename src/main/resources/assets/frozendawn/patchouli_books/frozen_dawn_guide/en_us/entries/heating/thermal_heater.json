@@ -17,12 +17,17 @@
     {
       "type": "patchouli:text",
       "title": "Automatic Control",
-      "text": "Heaters use a shared 20°C room-air target and throttle as the room warms. Extra heaters speed warm-up; they do not raise that shared target.$(br2)Redstone stops heating and holds ordinary fuel use. Stored heat cools naturally.$(br2)An $(l:heating/thermostat)ORSA Thermostat$(/l) sets 10-30°C and includes local Core warmth in its sensed target."
+      "text": "Heaters share a 20°C room target and throttle as the room warms. Connected Core and fire heat contributes to that same temperature. Extra heaters speed warm-up; they do not raise the target.$(br2)Redstone stops heating and holds ordinary fuel use. Stored heat cools naturally.$(br2)An $(l:heating/thermostat)ORSA Thermostat$(/l) sets 10-30°C for every linked heater."
     },
     {
       "type": "patchouli:text",
       "title": "Fuel and Companionship",
       "text": "The status panel shows Heating or Holding, burn percentage and estimated fuel time. Better insulation reduces holding demand. Frostmites and machinery can add separate fuel costs.$(br2)$(italic)ORSA FAQ: “Can I name the heater?” We cannot stop you. Please seek companionship elsewhere.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Airless Rooms",
+      "text": "With no air, heaters and passive sources deliver reduced heat to the walls. Heater wall heating stops at its room target; passive sources cannot heat a reservoir above their supply temperature. Refilling cannot create heat.$(br2)Vacuum can still feel cold while walls are warm. A heater does not replace EVA. Unknown or unloaded room geometry suspends heating without restoring local source bonuses.$(br2)Already-hot walls cool naturally or through a heat vent; resealing does not reset them."
     }
   ]
 }

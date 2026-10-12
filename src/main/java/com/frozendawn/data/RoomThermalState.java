@@ -36,8 +36,8 @@ public final class RoomThermalState extends SavedData {
         }
     }
     public static final class Ledger {
-        public double heater, environmentLoss, airIn, airOut, materialIn, materialOut;
-        public double net() { return heater - environmentLoss + airIn - airOut + materialIn - materialOut; }
+        public double heater, passive, environmentLoss, airIn, airOut, materialIn, materialOut;
+        public double net() { return heater + passive - environmentLoss + airIn - airOut + materialIn - materialOut; }
     }
     public final Map<Long, Room> rooms = new TreeMap<>();
     public final Map<BlockPos, Material> materials = new HashMap<>();
@@ -77,13 +77,14 @@ public final class RoomThermalState extends SavedData {
         }
         var ledger = tag.getCompound("ledger");
         result.ledger.heater=finite(ledger.getDouble("heater"));
+        result.ledger.passive=finite(ledger.getDouble("passive"));
         result.ledger.environmentLoss=Double.isFinite(ledger.getDouble("environmentLoss"))?ledger.getDouble("environmentLoss"):0;
         result.ledger.airIn=finite(ledger.getDouble("airIn")); result.ledger.airOut=finite(ledger.getDouble("airOut"));
         result.ledger.materialIn=finite(ledger.getDouble("materialIn")); result.ledger.materialOut=finite(ledger.getDouble("materialOut"));
         return result;
     }
     @Override public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putInt("version",1); var roomsTag=new ListTag();
+        tag.putInt("version",2); var roomsTag=new ListTag();
         for(var room:rooms.values()) {
             var entry=new CompoundTag();entry.putLong("id",room.id);entry.putLongArray("cells",positions(room.cells));
             entry.putLongArray("structure",positions(room.structure));entry.putDouble("airEnergy",room.airEnergy);
@@ -99,7 +100,7 @@ public final class RoomThermalState extends SavedData {
             var material=materials.get(pos);var entry=new CompoundTag();entry.putLong("pos",pos.asLong());entry.putString("block",material.block);
             entry.putDouble("capacity",material.capacity);entry.putDouble("energy",material.energy);materialsTag.add(entry);
         }
-        tag.put("materials",materialsTag);var budget=new CompoundTag();budget.putDouble("heater",ledger.heater);
+        tag.put("materials",materialsTag);var budget=new CompoundTag();budget.putDouble("heater",ledger.heater);budget.putDouble("passive",ledger.passive);
         budget.putDouble("environmentLoss",ledger.environmentLoss);budget.putDouble("airIn",ledger.airIn);budget.putDouble("airOut",ledger.airOut);
         budget.putDouble("materialIn",ledger.materialIn);budget.putDouble("materialOut",ledger.materialOut);tag.put("ledger",budget);return tag;
     }

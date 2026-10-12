@@ -225,7 +225,7 @@ public class WorldTickHandler {
         }
 
         // Sync apocalypse data to all clients every 20 ticks (~1 second)
-        if (state.getApocalypseTicks() % 20 == 0) {
+        if (server.overworld().getGameTime() % 20 == 0) {
             PacketDistributor.sendToAllPlayers(createPayload(state, winState));
         }
 

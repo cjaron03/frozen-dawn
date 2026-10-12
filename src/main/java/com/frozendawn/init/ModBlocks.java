@@ -344,7 +344,11 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
+    public static final DeferredBlock<com.frozendawn.block.OxygenReservoirBlock> OXYGEN_RESERVOIR=BLOCKS.register("oxygen_reservoir",()->new com.frozendawn.block.OxygenReservoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().pushReaction(PushReaction.BLOCK)));
+
     // --- Player Agency blocks ---
+    public static final DeferredBlock<com.frozendawn.block.OxygenGaugeBlock> OXYGEN_GAUGE=BLOCKS.register("oxygen_gauge",
+            ()->new com.frozendawn.block.OxygenGaugeBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<com.frozendawn.block.HeatVentBlock> HEAT_VENT=BLOCKS.register("heat_vent",
             ()->new com.frozendawn.block.HeatVentBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
 
