@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/thermostat"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/thermostat",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/thermostat",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/thermostat",
+      "y": 270
+    }
+  }
+}

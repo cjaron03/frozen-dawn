@@ -9,6 +9,7 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Calculates temperature at any world position.
  *
- * finalTemp = phaseModifier + depthModifier + shelterModifier + heatSourceModifier
+ * finalTemp = backgroundTemperature + shelterModifier + heatSourceModifier
  *
  * Used by PlayerTickHandler for exposure damage.
  */
@@ -67,25 +68,46 @@ public final class TemperatureManager {
         // Clamp inputs to prevent bad interpolation from corrupted world data
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
-        float phaseTemp = PhaseManager.getTemperatureOffset(currentDay, totalDays);
-        float depthTemp = PhaseManager.getDepthModifier(pos.getY())
-                * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
-        float shelterTemp = getShelterModifier(level, pos);
-        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly)
-                * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
-        float finalTemp = phaseTemp + depthTemp + shelterTemp + heatTemp;
+        float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
+        var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
+        float shelterTemp = roomTemperature.isPresent() ? 0 : getShelterModifier(level, pos);
+        var terms=localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,roomTemperature.isEmpty());
+        return (float)terms.apply((roomTemperature.isPresent()?roomTemperature.getAsDouble():backgroundTemp)+shelterTemp);
+    }
 
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
-            return Math.max(finalTemp, 24.0f);
+    /** Local environmental terms, shared with thermostat sensing; excludes personal armor/Ember effects. */
+    public record LocalThermalTerms(double warmth,double floor,double offset) {
+        public double apply(double base){return Math.max(base+warmth,floor)+offset;}
+        public double baseTarget(double target){return target<floor+offset?Double.NEGATIVE_INFINITY:target-warmth-offset;}
+    }
+    public static LocalThermalTerms thermostatTerms(ServerLevel level,BlockPos pos) {
+        var state=com.frozendawn.data.ApocalypseState.get(level.getServer());
+        return localTerms(level,pos,state.getCurrentDay(),state.getTotalDays(),false,true,false);
+    }
+    private static LocalThermalTerms localTerms(Level level,BlockPos pos,int day,int total,boolean quick,boolean loadedOnly,boolean heaters) {
+        double warmth=getHeatSourceModifier(level,pos,day,total,quick,loadedOnly,heaters)*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        if(BlastPitWarmZoneRegistry.isInsideWarmZone(level,pos))return new LocalThermalTerms(warmth,24,0);
+        return new LocalThermalTerms(warmth,ThermalVentRegistry.getWarmthFloor(level,pos),
+                ThermalVentRegistry.getOverheatBonus(level,pos)+com.frozendawn.homo.HearthMasterArchitectWeatherManager.temperatureOffset(level,pos));
+    }
+    public static double fullHeaterWarmth(ServerLevel level,ThermalHeaterBlockEntity heater,BlockPos sensor) {
+        var phase=com.frozendawn.data.ApocalypseState.get(level.getServer());
+        return getHeaterHeat(heater.getBlockState(),(int)sensor.distSqr(heater.getBlockPos()),phase.getPhase(),heater.getCachedSheltered(),
+                heater.hasCapacitor(),FrostmiteEntity.getHeaterRadiusPenalty(level,heater.getBlockPos()),heater.getFrostmiteHeatPenalty())*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+    }
+
+    /** Shared background for players, food, mobs, catch-up and future room boundary faces. */
+    public static float getBackgroundTemperature(int y, int currentDay, int totalDays) {
+        currentDay = Math.max(0, currentDay);
+        totalDays = Math.max(1, totalDays);
+        if (y >= GroundTemperatureModel.SURFACE_Y) {
+            return PhaseManager.getTemperatureOffset(currentDay, totalDays)
+                    + PhaseManager.getDepthModifier(y) * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
         }
-        float ventFloor = ThermalVentRegistry.getWarmthFloor(level, pos);
-        if (ventFloor > Float.NEGATIVE_INFINITY) {
-            finalTemp = Math.max(finalTemp, ventFloor);
-        }
-        finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
-        finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
-                .temperatureOffset(level, pos);
-        return finalTemp;
+        return (float) GroundTemperatureModel.temperature(y, PhaseManager.getProgress(currentDay, totalDays),
+                FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f,
+                FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
     }
 
     /**
@@ -185,11 +207,16 @@ public final class TemperatureManager {
 
     private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
                                                boolean quickScan, boolean loadedOnly) {
+        return getHeatSourceModifier(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
+    }
+
+    private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
+            boolean quickScan, boolean loadedOnly, boolean includeHeaters) {
         float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
 
         // --- Registered thermal heaters (no block scan needed) ---
-        for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
+        if(includeHeaters) for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
             if (loadedOnly && !level.isLoaded(heaterPos)) {
                 continue;
             }
@@ -207,6 +234,7 @@ public final class TemperatureManager {
                 heatPenalty = thbe.getFrostmiteHeatPenalty();
             }
             float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty);
+            if (heaterBE instanceof ThermalHeaterBlockEntity heater) warmth *= (float)heater.getBurnFraction();
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;

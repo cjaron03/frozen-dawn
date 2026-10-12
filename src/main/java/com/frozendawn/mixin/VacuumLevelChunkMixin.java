@@ -24,6 +24,7 @@ public abstract class VacuumLevelChunkMixin {
                 && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
             var current = chunk.getBlockState(pos);
             com.frozendawn.world.RoomAtmosphere.blockChanged(level, pos, ci.getReturnValue(), current);
+            com.frozendawn.world.RoomThermalManager.blockChanged(level,pos,ci.getReturnValue(),current);
             VacuumFlames.blockChanged(level, pos, current);
             com.frozendawn.airlock.AirlockManager.blockChanged(level,pos,ci.getReturnValue(),current);
         }

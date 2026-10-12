@@ -1,0 +1,33 @@
+{
+  "name": "ORSA Thermostat",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermostat",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Room Control",
+      "text": "Place this panel inside a sealed room and right-click. Set 10-30°C in 5°C steps. It controls every heater in that room, including all tiers and Thermal Capacitors. Higher output speeds warm-up; insulation reduces fuel demand.$(br2)The newest placed thermostat wins when rooms merge; others show Overridden. Splitting restores independent control. Removing the winner restores the next newest. Targets and placement priority survive reloads."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sensed and Room Air",
+      "text": "Sensed temperature includes local Core warmth, vents and environmental heat at the panel. Personal equipment effects are excluded. Room base shows gas temperature, or the radiant baseline when air is depleted.$(br2)The thermostat reduces heater demand to account for local warmth. Temperature can vary across a large room: place the sensor where you live. It keeps a loaded room active without a fueled heater. It does not load chunks or supply oxygen."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Independent Heat",
+      "text": "A +25°C Core bonus and a sensed target of 20°C can leave room air near -5°C. This follows the Core’s local warmth model; both readings are shown.$(br2)Above target means reduce independent heat or provide cooling. The controller throttles heaters. It cannot cool, disable Core oxygen or erase stored wall heat.$(br2)Burn percentage is a short average. Redstone on a heater still shuts that heater down."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seal and Signals",
+      "text": "An indoor thermostat shows No seal after a breach; heaters use their own 20°C defaults until repaired. Unknown or unloaded geometry suspends room simulation.$(br2)A new outdoor controller in Phases 1-4 regulates camp heaters within 8 blocks. Once bound to a room it remains an indoor controller; move/re-place it for a camp.$(br2)Comparator output follows sensed temperature: 0 at 0°C or colder, 15 at 30°C or warmer."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermostat",
+      "text": "Four iron ingots, two copper ingots, two redstone dust and one glass. ORSA recommends placing the sensor near the occupant. The occupant is usually you."
+    }
+  ]
+}

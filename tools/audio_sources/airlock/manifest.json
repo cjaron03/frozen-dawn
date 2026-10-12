@@ -1,0 +1,65 @@
+{
+  "door_open": {
+    "sha256": "56162c17778a377bd4350a95b7f82936624d2786ceb7723db1005d21c2313721",
+    "duration": 0.93,
+    "peak": 0.6726096752339141,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "door_close": {
+    "sha256": "ec19533bd5bea644253549faf9c027d624e0ee965445cee238242ee342aa8e61",
+    "duration": 0.92,
+    "peak": 0.9232017465313027,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "pump_fill": {
+    "sha256": "f0d2ba927ffe47330495da6ff9824457b0d0033c17544895921067beb7ba6143",
+    "duration": 0.94,
+    "peak": 0.5093681903208797,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "pump_recover": {
+    "sha256": "0645ef22bcb3642fa28ecae07bbcc420a34b59e7ce14dd78146f52afbf6a9e9a",
+    "duration": 0.94,
+    "peak": 0.3296299765889559,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "ready": {
+    "sha256": "a7436f79175c7936b9ae3ee8c7f4ba5b6a37ea0cd9dd4dd44681de7d315fd3ae",
+    "duration": 0.79,
+    "peak": 0.18674749378395517,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "evacuated": {
+    "sha256": "2df54ac7199131169ad04f5ae0eca9b0b6c8fd2929b74a4975873c9bddefc21c",
+    "duration": 0.79,
+    "peak": 0.6756155953242949,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "refuse": {
+    "sha256": "a1152697419b0c78cd8def9f7d5529c30e6f3fcea9dd3a30b5b95135440d3d39",
+    "duration": 0.39,
+    "peak": 0.4215103189809464,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "interrupted": {
+    "sha256": "9a85f1a15e5e4c190ab64e5473b1038465098d981cbe7abaf491e5529edeeaad",
+    "duration": 0.5,
+    "peak": 0.32634694114759843,
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "valve": {
+    "sha256": "9cc86678e42f17f9cf06a27efe751788cc25c85fd92b84b9331a5448a1a085d4",
+    "duration": 0.42,
+    "peak": 0.5509872580023955,
+    "sample_rate": 24000,
+    "channels": 1
+  }
+}
