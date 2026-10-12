@@ -1116,5 +1116,22 @@
   "subtitles.frozendawn.airlock.evacuated": "Airlock vents remainder",
   "subtitles.frozendawn.airlock.refuse": "Airlock lock holds",
   "subtitles.frozendawn.airlock.interrupted": "Airlock pump stops",
-  "subtitles.frozendawn.airlock.valve": "Vent valve opens"
+  "subtitles.frozendawn.airlock.valve": "Vent valve opens",
+  "block.frozendawn.oxygen_gauge": "ORSA O2 Gauge",
+  "gauge.frozendawn.oxygen.waiting": "WAITING",
+  "gauge.frozendawn.oxygen.supplied": "SUPPORTED",
+  "gauge.frozendawn.oxygen.low": "NEAR CAPACITY",
+  "gauge.frozendawn.oxygen.strained": "STRAINED",
+  "gauge.frozendawn.oxygen.trapped_air": "NO SUPPLY",
+  "gauge.frozendawn.oxygen.no_air": "NO AIR",
+  "gauge.frozendawn.oxygen.no_seal": "NO SEAL",
+  "gauge.frozendawn.oxygen.open_air": "OPEN AIR",
+  "gauge.frozendawn.oxygen.no_oxygen": "NO O2",
+  "gauge.frozendawn.oxygen.breathing_shortage": "O2 SHORTAGE",
+  "ui.frozendawn.room.oxygen_shortage": "O2 SHORTAGE — restore supply",
+  "subtitles.frozendawn.oxygen_gauge.strained": "Room atmosphere strained",
+  "subtitles.frozendawn.oxygen_gauge.critical": "Suffocation warning beeps",
+  "block.frozendawn.oxygen_reservoir": "ORSA O2 Reservoir",
+  "tooltip.frozendawn.oxygen_reservoir": "Stored O2: %s player-seconds",
+  "gauge.frozendawn.oxygen.on_reserve": "ON RESERVE"
 }

@@ -156,6 +156,28 @@ public final class AirlockGameTest {
             sounds.clear();c.lastTick=Long.MIN_VALUE;AirlockManager.tick(l,c);h.assertTrue(sounds.isEmpty(),"Invalid chamber cannot keep pumping");
         } finally {removeListener(l,listener);}
     });}
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockSharesCoreProductionWithTankCanisterAndSuitWithoutMinting(GameTestHelper h){check(h,()->{
+        var l=h.getLevel();long clock=l.getGameTime();var ledger=OxygenTransferState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess());var chambers=AirlockSavedState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess());
+        l.getDataStorage().set(OxygenTransferState.NAME,new OxygenTransferState());l.getDataStorage().set("frozendawn_airlocks",new AirlockSavedState());RoomOxygenManager.reset();
+        var s=scene(h);var pos=s.base.west();l.setBlock(pos,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);var core=(GeothermalCoreBlockEntity)l.getBlockEntity(pos);core.onLoad();
+        var canister=new ItemStack(ModItems.O2_TANK.get());canister.set(ModDataComponents.O2_LEVEL.get(),0);core.getItems().set(3,canister);
+        var vessel=s.base.south();l.setBlock(vessel,ModBlocks.OXYGEN_RESERVOIR.get().defaultBlockState(),3);var tank=(OxygenReservoirBlockEntity)l.getBlockEntity(vessel);tank.onLoad();
+        var profile=new com.mojang.authlib.GameProfile(UUID.randomUUID(),"shared_charge");var transport=new net.neoforged.neoforge.common.util.FakePlayer(l,profile);
+        var player=new net.minecraft.server.level.ServerPlayer(l.getServer(),l,profile,net.minecraft.server.level.ClientInformation.createDefault());player.connection=transport.connection;player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);player.setPos(s.base.getCenter());
+        player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,new ItemStack(ModItems.EVA_HELMET.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,new ItemStack(ModItems.EVA_CHESTPLATE.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS,new ItemStack(ModItems.EVA_LEGGINGS.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET,new ItemStack(ModItems.EVA_BOOTS.get()));
+        var suitTank=new ItemStack(ModItems.O2_TANK.get());suitTank.set(ModDataComponents.O2_LEVEL.get(),0);player.getInventory().setItem(0,suitTank);l.addNewPlayer(player);
+        try{
+            RoomAtmosphere.view(l,s.base);RoomAtmosphere.view(l,s.center);for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            long before=tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve());
+            ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+20);RoomOxygenManager.tickLevel(l);
+            long after=tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve());
+            h.assertTrue(after-before==70000,"8 production minus 1 breathing grants exactly 7 units across four charging paths: "+(after-before));
+            h.assertTrue(tank.storedMicro()>0&&canister.get(ModDataComponents.O2_LEVEL.get())>0&&suitTank.get(ModDataComponents.O2_LEVEL.get())>0&&s.chamber.gas.reserve()>0,"All four receive a fair grant");
+            AirlockManager.tick(l,s.chamber);core.serverTick();com.frozendawn.event.SuitIntegrityHandler.onPlayerTick(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(player));RoomOxygenManager.tickLevel(l);
+            h.assertTrue(after==tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve()),"Legacy Core/suit/controller ticks cannot independently mint refill");
+        }finally{player.discard();l.setBlock(vessel,Blocks.AIR.defaultBlockState(),3);l.setBlock(pos,Blocks.AIR.defaultBlockState(),3);l.setBlock(s.panel,Blocks.AIR.defaultBlockState(),3);RoomOxygenManager.reset();((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock);l.getDataStorage().set(OxygenTransferState.NAME,OxygenTransferState.load(ledger,l.registryAccess()));l.getDataStorage().set("frozendawn_airlocks",AirlockSavedState.load(chambers,l.registryAccess()));}
+    });}
     record Scene(BlockPos base,BlockPos center,BlockPos inner,BlockPos outer,BlockPos panel,AirlockSavedState.Chamber chamber) {}
     static Scene scene(GameTestHelper h) {
         var l=h.getLevel();var base=h.absolutePos(new BlockPos(9,3,10));var center=base.east(5);

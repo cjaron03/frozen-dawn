@@ -35,6 +35,7 @@ public final class VacuumFlames {
         Scan(int x, int z) { this.x = x; this.z = z; }
     }
     private static final class Index {
+        long revision;
         final Set<BlockPos> active = new HashSet<>();
         final Set<BlockPos> queued = new HashSet<>();
         final ArrayDeque<BlockPos> lights = new ArrayDeque<>();
@@ -67,6 +68,22 @@ public final class VacuumFlames {
         return requested.setValue(BlockStateProperties.LIT, false);
     }
 
+    /** Scarcity snuffs one loaded consumer; it never changes room gas or furnace fuel. */
+    public static boolean extinguishForOxygen(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return false;
+        var state = level.getBlockState(pos);
+        if (!isOrdinaryFlame(state) || state.is(Blocks.FURNACE) || state.is(Blocks.SMOKER)
+                || state.is(Blocks.BLAST_FURNACE)) return false;
+        if (state.is(ModBlocks.MITEAWAY.get()) && level.getBlockEntity(pos) instanceof com.frozendawn.block.MiteAwayBlockEntity burner) {
+            if (!burner.extinguish()) return false; // Retain charge and unregister repellent coverage immediately.
+        } else if (!level.setBlock(pos, extinguishedState(state), 3)) return false;
+        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
+                net.minecraft.sounds.SoundSource.BLOCKS, .6f, 1.1f);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE,
+                pos.getX() + .5, pos.getY() + .6, pos.getZ() + .5, 6, .15, .1, .15, .01);
+        return true;
+    }
+
     public static void extinguishRoom(ServerLevel level, Set<BlockPos> cells, Set<BlockPos> walls) {
         var positions = new HashSet<BlockPos>(cells); positions.addAll(walls);
         for (var pos : positions) {
@@ -85,6 +102,7 @@ public final class VacuumFlames {
             index = new Index(); INDEX.put(level, index);
         }
         BlockPos key = pos.immutable();
+        if (isOrdinaryFlame(current) || index.active.contains(key)) index.revision++;
         if (isOrdinaryFlame(current)) {
             index.active.add(key);
             if (index.queued.add(key)) index.lights.add(key);
@@ -104,6 +122,7 @@ public final class VacuumFlames {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         var index = INDEX.get(level); if (index == null) return;
         var chunk = event.getChunk().getPos();
+        index.revision++;
         index.active.removeIf(pos -> (pos.getX() >> 4) == chunk.x && (pos.getZ() >> 4) == chunk.z);
         index.queued.removeIf(pos -> (pos.getX() >> 4) == chunk.x && (pos.getZ() >> 4) == chunk.z);
         index.lights.removeIf(pos -> (pos.getX() >> 4) == chunk.x && (pos.getZ() >> 4) == chunk.z);
@@ -150,6 +169,14 @@ public final class VacuumFlames {
             }
             if (scan.cell == 4096) { scan.cell = 0; scan.section++; }
         }
+    }
+
+    public record FlameSnapshot(long revision,Set<BlockPos> positions,Set<Long> pendingChunks) {}
+    /** Loaded indexed consumers; bounded chunk bootstrap may still be pending. No world scan. */
+    public static FlameSnapshot snapshot(ServerLevel level) {
+        var index=INDEX.get(level);if(index==null)return new FlameSnapshot(0,Set.of(),Set.of());
+        var pending=new HashSet<Long>();for(var scan:index.scans)pending.add(net.minecraft.world.level.ChunkPos.asLong(scan.x,scan.z));
+        return new FlameSnapshot(index.revision,Set.copyOf(index.active),Set.copyOf(pending));
     }
 
     @SubscribeEvent

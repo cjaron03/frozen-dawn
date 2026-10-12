@@ -1,0 +1,53 @@
+{
+  "name": "ORSA O2 Gauge",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:oxygen_gauge",
+  "sortnum": 5,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Room Air Monitor",
+      "text": "An always-visible wall screen. Place it inside a sealed room; no menu is needed. Supply and demand use breathing-rate units: one Survival or Adventure player draws 1 unit. Creative and spectator players draw none.$(br2)In vacuum, sustained overload sheds ordinary flames, highest demand first after a ten-second warning grace. If breathing demand still exceeds supply after the flames are out, the room loses breathable oxygen while retaining gas, pressure and heat."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shared Supply",
+      "text": "SUPPLY and DEMAND describe the whole shared pool. LOCAL is this room\u2019s demand. A Core touching two rooms shares one 8-unit output; it does not produce 8 for each room. Overlapping sources add once.$(br2)Sources must be inside or directly touch the room. Range alone cannot deliver air through unrelated walls."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Reading the Screen",
+      "text": "Green: supported. Flashing yellow: at least 80% capacity, overloaded, or trapped air without production. Red: NO O2, no air or no seal in vacuum. NO O2 means sealed gas remains but oxygen is unavailable. Gray WAITING: geometry or consumer indexing is incomplete.$(br2)These are status and rate readings, not an O2 percentage. Connected reservoirs show stored player-seconds and output. ON RESERVE means storage is covering the production deficit; the time estimate uses that deficit. LIMITED means output cannot sustain it."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Consumers",
+      "text": "Torch or lantern: 0.25. Each lit candle: 0.25. Fire or campfire: 1. Furnace, smoker or blast furnace: 3. Animals add demand.$(br2)Soul flames, Thermal Heaters, Returned and Architects draw none. Airlock reserves remain dedicated to cycling.$(br2)Comparator: 8 for strain/near capacity, 15 for no air/seal, 4 for no supply, otherwise 0."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:oxygen_gauge",
+      "text": "Four iron, two copper, two redstone and one glass. The panel observes air; it does not manufacture it. ORSA advises against arguing with the numbers."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Furnace Air Supply",
+      "text": "Furnaces, smokers and blast furnaces each draw 3 units. In vacuum, after ten continuous seconds of overload, one furnace pauses per second until demand fits.$(br2)A paused furnace uses no new fuel and holds prepaid burn time and cooking progress, even after a reload. It restarts automatically after spare O2 capacity can support its full demand for two seconds. Add supply or reduce other demand.$(br2)The room remains pressurized; a fuel pause does not cause a breach. Early ambient air needs no Core. Changing the input still resets recipe progress normally."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lights Out",
+      "text": "After ten continuous seconds of overload in vacuum, one ordinary flame block goes out per second, highest demand first. Furnaces draw 3 units; fire, campfires and MiteAway draw 1; each candle draws 0.25. Multi-candle blocks count all their lit candles together.$(br2)Torches remain as spent torches. Lanterns remain mounted but dark. Candles and campfires stay in place, unlit. Soul flames remain exempt.$(br2)Restored supply automatically restarts supported furnaces; other flames need relighting by hand. MiteAway retains unspent charge. Starvation preserves sealed gas and heat; it does not cause a breach."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Breathing O2",
+      "text": "Flames shed before people lose oxygen. If breathing alone still exceeds the shared supply after the ten-second warning grace, the whole pool shows red NO O2. This is oxygen shortage, not a breach: gas, pressure and stored room heat remain.$(br2)Your existing lightheadedness, nausea and suffocation warnings apply. A working EVA tank or Emergency EVA reserve protects you. Add supply or reduce the crowd; support must stay adequate for two seconds to restore room oxygen. Saving and reopening cannot create oxygen. Early atmospheric air is unrestricted."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Warning Cues",
+      "text": "A short chime warns when a nearby gauge enters STRAINED. O2 SHORTAGE flashes yellow and sounds a double beep while known breathing demand exceeds supply, before the ten-second shortage grace expires. Restore supply or prepare EVA now. The same beep warns when you are approaching suffocation, after suit and tank protection are checked, even without a gauge. NO SEAL, NO AIR and NO O2 alone remain red visual warnings. Several nearby panels produce one warning per listener. Critical warnings repeat every two seconds while suffocation is imminent and stop when breathing protection returns; there is no speech.$(br2)Near-capacity yellow alone is quiet. Combustion starvation is active. Breathing scarcity is active; reservoirs and shared charging are active."
+    }
+  ]
+}

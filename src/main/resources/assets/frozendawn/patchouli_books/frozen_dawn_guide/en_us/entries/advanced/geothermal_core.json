@@ -7,12 +7,17 @@
     {
       "type": "patchouli:text",
       "title": "Geothermal Core",
-      "text": "The ultimate heat source. Warms a 12-block radius with +50°C and no fuel required — permanent, infinite heat.$(br2)Place deep underground (below Y=0) for full effectiveness. At Y=0 or above, range and temperature are halved.$(br2)Right-click to open the upgrade interface.$(br2)$(italic)ORSA calls this \"career progression.\" You call it \"why didn't you give me this earlier.\"$()"
+      "text": "A permanent, fuel-free heat source. In a sealed room, put the Core inside or directly on its boundary: it supplies heat to the shared air-and-wall model over time. A Core shared by two rooms splits its heat output.$(br2)Deep underground (below Y=0) gives full output. At Y=0 or above, heat transfer and supply temperature are halved. In open terrain the 12-block, +50°C warmth field remains at the default allocation; changing heat share scales its warmth, with the surface penalty.$(br2)Right-click to open the upgrade interface."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:geothermal_core",
       "text": "Frozen Heart at center, Thermal Cores, diamond blocks, and obsidian. Expensive? Yes. Worth it? Ask yourself that while your heater runs out of coal at 3 AM."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat / O2 Allocation",
+      "text": "One Core, one output allocation. Use the slider to trade heat for oxygen. Default: $(bold)60% heat / 40% O2$(), preserving existing upgrade output.$(br2)40% O2 supplies 8 room units; 20% supplies 4; 0% supplies none. O2 upgrades increase reach, not production. Breathing and flames draw first; only spare production charges storage, canisters, suits and airlocks.$(br2)Heat share scales heat transfer, keeping the upgraded supply temperature and surface penalty. A room cools gradually when heat is reduced; its stored warmth is retained. A thermostat still controls fuel heaters. Allocation is saved and never shifts itself. Electricity is deferred."
     },
     {
       "type": "patchouli:text",
@@ -22,17 +27,17 @@
     {
       "type": "patchouli:text",
       "title": "O₂ Production & Refill",
-      "text": "$(bold)O₂ Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(bold)O₂ Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Refills at +10 O2/tick.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
+      "text": "$(bold)O₂ Production$() (3 levels):$(br)$(li)Nether Star: +1 level per$(br)Levels: 16 → 20 → 26 → 32 block radius$(br2)$(bold)O₂ Tank Refill:$() The fourth slot accepts any $(l:orsa_equipment/o2_canisters)O2 Canister$(/l). Only spare room production refills the slot, shared with reservoir filling, automatic EVA refill and airlock reserves. Breathing and active combustion draw first. Add O2 supply or reduce demand to speed charging.$(br2)$(italic)Yes, that's Nether Stars for oxygen. We designed this before the Nether collapsed. In hindsight, perhaps we should have used something more accessible.$()"
     },
     {
       "type": "patchouli:text",
       "title": "Oxygen Needs a Seal",
-      "text": "$(bold)Heat reaches through walls. Oxygen needs containment.$() In late Phase 6, enclose the core within, or directly adjoining the air of, a sealed room. A core separated by a solid wall cannot supply that room. Heat keeps its normal range.$(br2)Opening the room to vacuum vents its air and stops ambient oxygen protection. Repair every opening, then allow about five seconds with a connected oxygen source to restore breathable air. A full EVA rig and usable tank bridge the gap.$(br2)$(l:heating/atmospheric_breach)Atmospheric Breaches$(/l) explains construction, warnings and recovery."
+      "text": "$(bold)Room heat and oxygen require a connection.$() Place the Core within, or directly adjoining the air of, a sealed room. A Core separated by another solid wall cannot supply that room. Outdoor warmth keeps its normal range.$(br2)Opening the room to vacuum vents its air and stops ambient oxygen protection. Repair every opening, then allow about five seconds with a connected oxygen source to restore breathable air. EVA bridges the gap.$(br2)$(l:heating/atmospheric_breach)Atmospheric Breaches$(/l) explains construction and warnings."
     },
     {
       "type": "patchouli:text",
       "title": "Local Warmth and Control",
-      "text": "Core warmth remains a local environmental bonus, separate from stored room-air heat. It reaches through walls in its normal range.$(br2)Without a thermostat, heater target 20°C can feel warmer near a Core. An $(l:heating/thermostat)ORSA Thermostat$(/l) includes that bonus at its sensor and reduces heater demand. It does not regulate Core output or oxygen. See $(l:heating/room_climate)Room Heating & Insulation$(/l)."
+      "text": "Inside a modeled room, Core heat is stored once in the air and structure. Walking toward it does not add a second temperature bonus. The thermostat and HUD use that shared room reading before personal effects.$(br2)First-pass Core supply temperature is 50°C below Y=0, or 25°C at the surface before temperature upgrades. The Core transfers heat only to a cooler reservoir; it cannot refrigerate hot walls. Temperature upgrades raise supply temperature and output; range upgrades retain their outdoor role. O2 upgrades remain independent.$(br2)A thermostat reduces heater fuel; it cannot switch off Core heat. Use a heat vent if independent heat exceeds your target."
     }
   ]
 }

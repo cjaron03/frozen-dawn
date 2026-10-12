@@ -102,6 +102,8 @@ public class ModSounds {
             register("ui.suit.puncture_warning");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_CRITICAL =
             register("ui.suit.oxygen_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_STRAINED = register("block.oxygen_gauge.strained");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_CRITICAL = register("block.oxygen_gauge.critical");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_ATMOSPHERIC_BREACH = register("ui.suit.atmospheric_breach");
     public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_ALARM = register("ui.suit.atmospheric_breach_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_WHOOSH = register("ui.suit.atmospheric_breach_whoosh");

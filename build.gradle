@@ -607,3 +607,13 @@ tasks.register('generateAirlockQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(airlockQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateAirlockQa') }
+
+// Validate the same O2/furnace replay commands used by the owner with Minecraft's parser.
+def roomOxygenQaResources = layout.buildDirectory.dir('generated/roomOxygenQa')
+tasks.register('generateRoomOxygenQa', Exec) {
+    inputs.files('tools/prepare_room_oxygen_playtest.py', 'tools/prepare_room_oxygen_storage_playtest.py', 'tools/prepare_core_split_playtest.py', 'tools/prepare_thermal_ground_playtest.py')
+    outputs.dir(roomOxygenQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_room_oxygen_playtest.py', '--pack-only', roomOxygenQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }

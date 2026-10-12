@@ -31,8 +31,8 @@
     },
     {
       "type": "patchouli:text",
-      "title": "Core-aware Sensing",
-      "text": "Without a thermostat, 20°C is the heater’s room-air target; Core and other local environmental warmth add on top.$(br2)A $(l:heating/thermostat)thermostat$(/l) targets Sensed at its panel. With a +25°C Core bonus, Sensed 20°C can mean Room base -5°C. Both readings are valid. Place the sensor where you live; local warmth can vary within a room. Personal equipment effects are excluded."
+      "title": "One Room Temperature",
+      "text": "Heaters, connected Cores and connected fires warm the same stored room air and structure. The thermostat and HUD start from one room temperature, without additional heat bonuses when you walk toward a Core or campfire.$(br2)The heater default is 20°C; a $(l:heating/thermostat)thermostat$(/l) selects 10-30°C. Passive sources can exceed that target, so reduce independent heat or open a heat vent. Personal equipment and status effects can still change your HUD reading."
     },
     {
       "type": "patchouli:text",

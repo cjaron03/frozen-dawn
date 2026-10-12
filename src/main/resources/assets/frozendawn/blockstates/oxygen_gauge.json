@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "frozendawn:block/oxygen_gauge"
+    },
+    "facing=east": {
+      "model": "frozendawn:block/oxygen_gauge",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "frozendawn:block/oxygen_gauge",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "frozendawn:block/oxygen_gauge",
+      "y": 270
+    }
+  }
+}

@@ -44,6 +44,9 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     private int rangeLevel = 0;
     private int tempLevel = 0;
     private int o2Level = 0;
+    public static final int DEFAULT_HEAT_SHARE = 60;
+    private int heatShare = DEFAULT_HEAT_SHARE;
+
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
 
@@ -54,6 +57,9 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
                 case 0 -> rangeLevel;
                 case 1 -> tempLevel;
                 case 2 -> o2Level;
+                case 3 -> heatShare;
+                case 4 -> (int)Math.round(getHeatOutput());
+                case 5 -> (int)Math.round(getOxygenSupply()*100);
                 default -> 0;
             };
         }
@@ -64,12 +70,13 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
                 case 0 -> rangeLevel = value;
                 case 1 -> tempLevel = value;
                 case 2 -> o2Level = value;
+                case 3 -> heatShare = Math.clamp(value, 0, 100);
             }
         }
 
         @Override
         public int getCount() {
-            return 3;
+            return 6;
         }
     };
 
@@ -79,6 +86,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
 
     public void serverTick() {
         if (level instanceof net.minecraft.server.level.ServerLevel server) com.frozendawn.event.BlindArchitectEvents.machine(server, worldPosition);
+        if(level!=null&&level.getGameTime()%20==0) com.frozendawn.world.RoomAtmosphere.keepAlive(this);
         boolean changed = false;
 
         // Slot 0: Range upgrade — obsidian (+1), diamond block (+4)
@@ -119,16 +127,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
             }
         }
 
-        // Slot 3: O2 tank refill — +10 O2/tick (~6 seconds to fill tier 1)
-        ItemStack tankStack = items.get(3);
-        if (!tankStack.isEmpty() && tankStack.getItem() instanceof O2TankItem tankItem) {
-            int o2 = tankStack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-            int cap = tankItem.getMaxO2();
-            if (o2 < cap) {
-                tankStack.set(ModDataComponents.O2_LEVEL.get(), Math.min(o2 + 10, cap));
-                changed = true;
-            }
-        }
+        // Slot 3 is replenished by the shared RoomOxygenManager allocation.
 
         if (changed) {
             setChanged();
@@ -144,6 +143,23 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
 
     public float getEffectiveTemp() {
         return BASE_TEMP + tempLevel * 5.0f;
+    }
+
+    public int getHeatShare() { return heatShare; }
+    public int getOxygenShare() { return 100-heatShare; }
+    public double getHeatMultiplier() { return heatShare/(double)DEFAULT_HEAT_SHARE; }
+    public double getOxygenSupply() { return 8.0*getOxygenShare()/40.0; }
+    /** Calibrated game heat units/s, preserving every upgrade and surface penalty at 60/40. */
+    public double getHeatOutput() {
+        double temperature=applySurfaceWarmthPenalty(getEffectiveTemp(),worldPosition);
+        return com.frozendawn.world.RoomThermalManager.BASE_HEATER_POWER*.25*temperature/BASE_TEMP
+                *com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get()*getHeatMultiplier();
+    }
+    public void setHeatShare(int value) {
+        int next=Math.clamp(value,0,100);
+        if(next==heatShare)return;
+        heatShare=next;setChanged();
+        if(level!=null)level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);
     }
 
     public int getEffectiveO2Range() {
@@ -167,6 +183,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         return value * getWarmthMultiplier(pos);
     }
 
+    public int oxygenChargeRequest(){var stack=items.get(3);return stack.getItem() instanceof O2TankItem t?Math.clamp(t.getMaxO2()-stack.getOrDefault(ModDataComponents.O2_LEVEL.get(),0),0,200):0;}
+    public int chargeOxygen(int amount){int n=Math.min(Math.max(0,amount),oxygenChargeRequest());if(n>0){var stack=items.get(3);stack.set(ModDataComponents.O2_LEVEL.get(),stack.getOrDefault(ModDataComponents.O2_LEVEL.get(),0)+n);setChanged();if(level!=null)level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);}return n;}
     public NonNullList<ItemStack> getItems() {
         return items;
     }
@@ -208,6 +226,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tag.putInt("RangeLevel", rangeLevel);
         tag.putInt("TempLevel", tempLevel);
         tag.putInt("O2Level", o2Level);
+        tag.putInt("HeatShare", heatShare);
         ContainerHelper.saveAllItems(tag, items, registries);
     }
 
@@ -217,6 +236,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         rangeLevel = tag.getInt("RangeLevel");
         tempLevel = tag.getInt("TempLevel");
         o2Level = tag.getInt("O2Level");
+        heatShare = tag.contains("HeatShare",net.minecraft.nbt.Tag.TAG_INT)
+                ? Math.clamp(tag.getInt("HeatShare"),0,100) : DEFAULT_HEAT_SHARE;
         ContainerHelper.loadAllItems(tag, items, registries);
     }
 
@@ -226,6 +247,7 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tag.putInt("RangeLevel", rangeLevel);
         tag.putInt("TempLevel", tempLevel);
         tag.putInt("O2Level", o2Level);
+        tag.putInt("HeatShare", heatShare);
         return tag;
     }
 
