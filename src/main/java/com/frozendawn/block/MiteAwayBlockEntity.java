@@ -25,6 +25,8 @@ public class MiteAwayBlockEntity extends BlockEntity {
     }
 
     public void serverTick() {
+        if (level != null && getBlockState().getValue(MiteAwayBlock.LIT)
+                && !com.frozendawn.world.CombustionAtmosphere.canBurnAt(level, worldPosition)) extinguish();
         if (burnTimeRemaining > 0 && getBlockState().getValue(MiteAwayBlock.LIT)) {
             burnTimeRemaining = Math.max(0, burnTimeRemaining - 1);
             if (burnTimeRemaining == 0 || (level != null && level.getGameTime() % 200L == 0L)) {
@@ -39,7 +41,8 @@ public class MiteAwayBlockEntity extends BlockEntity {
             return false;
         }
         Level level = getLevel();
-        if (level == null || level.isClientSide()) {
+        if (level == null || level.isClientSide()
+                || !com.frozendawn.world.CombustionAtmosphere.canBurnAt(level, worldPosition)) {
             return false;
         }
         BlockState current = getBlockState();

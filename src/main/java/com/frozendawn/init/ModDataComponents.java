@@ -31,6 +31,16 @@ public class ModDataComponents {
                             .networkSynchronized(ByteBufCodecs.INT)
                             .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> RATION_WARMER_CHARGES =
+            DATA_COMPONENTS.register("ration_warmer_charges", () ->
+                    DataComponentType.<Integer>builder().persistent(Codec.intRange(0, 4))
+                            .networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> FOOD_WARM_UNTIL =
+            DATA_COMPONENTS.register("food_warm_until", () ->
+                    DataComponentType.<Long>builder().persistent(Codec.LONG)
+                            .networkSynchronized(ByteBufCodecs.VAR_LONG).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUBLIMATION_TICKS =
             DATA_COMPONENTS.register("sublimation_ticks", () ->
                     DataComponentType.<Integer>builder()

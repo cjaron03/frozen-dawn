@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,indicator=0": {
+      "model": "frozendawn:block/airlock_controller_red"
+    },
+    "facing=north,indicator=1": {
+      "model": "frozendawn:block/airlock_controller_amber"
+    },
+    "facing=north,indicator=2": {
+      "model": "frozendawn:block/airlock_controller_green"
+    },
+    "facing=east,indicator=0": {
+      "model": "frozendawn:block/airlock_controller_red",
+      "y": 90
+    },
+    "facing=east,indicator=1": {
+      "model": "frozendawn:block/airlock_controller_amber",
+      "y": 90
+    },
+    "facing=east,indicator=2": {
+      "model": "frozendawn:block/airlock_controller_green",
+      "y": 90
+    },
+    "facing=south,indicator=0": {
+      "model": "frozendawn:block/airlock_controller_red",
+      "y": 180
+    },
+    "facing=south,indicator=1": {
+      "model": "frozendawn:block/airlock_controller_amber",
+      "y": 180
+    },
+    "facing=south,indicator=2": {
+      "model": "frozendawn:block/airlock_controller_green",
+      "y": 180
+    },
+    "facing=west,indicator=0": {
+      "model": "frozendawn:block/airlock_controller_red",
+      "y": 270
+    },
+    "facing=west,indicator=1": {
+      "model": "frozendawn:block/airlock_controller_amber",
+      "y": 270
+    },
+    "facing=west,indicator=2": {
+      "model": "frozendawn:block/airlock_controller_green",
+      "y": 270
+    }
+  }
+}

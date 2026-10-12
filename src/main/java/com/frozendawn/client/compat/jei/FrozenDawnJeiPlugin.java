@@ -7,6 +7,12 @@ import com.frozendawn.block.GeothermalCoreMenu;
 import com.frozendawn.client.FuelProcessingSiloScreen;
 import com.frozendawn.client.GeothermalCoreScreen;
 import com.frozendawn.init.ModItems;
+import com.frozendawn.item.RationWarmerItem;
+import com.frozendawn.recipe.RationWarmerChargingRecipe;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.UidContext;
+import mezz.jei.api.registration.ISubtypeRegistration;
+import mezz.jei.api.registration.IVanillaCategoryExtensionRegistration;
 import com.frozendawn.init.ModMenuTypes;
 import com.frozendawn.recipe.FuelProcessingSiloRecipes;
 import mezz.jei.api.IModPlugin;
@@ -29,6 +35,23 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
     @Override
     public ResourceLocation getPluginUid() {
         return ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "jei_plugin");
+    }
+
+    @Override
+    public void registerItemSubtypes(ISubtypeRegistration registration) {
+        registration.registerSubtypeInterpreter(ModItems.RATION_WARMER.get(), new ISubtypeInterpreter<ItemStack>() {
+            @Override public Object getSubtypeData(ItemStack ingredient, UidContext context) {
+                return RationWarmerItem.charges(ingredient);
+            }
+            @Override public String getLegacyStringSubtypeInfo(ItemStack ingredient, UidContext context) {
+                return Integer.toString(RationWarmerItem.charges(ingredient));
+            }
+        });
+    }
+
+    @Override
+    public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
+        registration.getCraftingCategory().addExtension(RationWarmerChargingRecipe.class, new RationWarmerJeiExtension());
     }
 
     @Override

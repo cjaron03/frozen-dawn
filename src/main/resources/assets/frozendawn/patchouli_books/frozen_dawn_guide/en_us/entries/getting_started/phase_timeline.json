@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "Phase 6",
-      "text": "$(bold)Phase 6: Atmospheric Collapse$()$(br)Final stage. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum. Stars visible. No sound on surface. Ice sublimates. Breathing fails outside sealed rooms or habitable oxygen zones."
+      "text": "$(bold)Phase 6: Atmospheric Collapse$()$(br)Final stage. Temp: -120°C to -273°C$(br2)$(italic)Early:$() Extreme blizzard.$(br)$(italic)Mid:$() Atmosphere thins, wind dies, fog lifts.$(br)$(italic)Late:$() Vacuum. Stars visible. No sound on surface. Ice sublimates. Breathing fails outside sealed, breathable rooms. Core and Blast Pit oxygen requires a closed room."
     }
   ]
 }

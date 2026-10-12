@@ -12,9 +12,15 @@
     "LivingEntityMixin",
     "ServerPlayerContinuityMixin",
     "ItemEntityContinuityMixin",
-    "ServerPlayerGameModeMixin"
+    "ServerPlayerGameModeMixin",
+    "RationWarmerCraftingMixin",
+    "VacuumLevelChunkMixin",
+    "VacuumFurnaceMixin",
+    "VacuumFireMixin"
   ],
   "client": [
+    "GuiAccessor",
+    "AtmosphericActionBarMixin",
     "DisplayWindowMixin",
     "GenericMessageScreenMixin",
     "LevelRendererMixin",
@@ -30,7 +36,8 @@
     "ChannelAccessor",
     "SoundEngineAccessor",
     "SoundManagerAccessor",
-    "NeoForgeLoadingOverlayMixin"
+    "NeoForgeLoadingOverlayMixin",
+    "FoodFrostReequipMixin"
   ],
   "injectors": {
     "defaultRequire": 1
