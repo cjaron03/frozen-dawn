@@ -634,3 +634,13 @@ tasks.register('preparePowerFlowQaResources', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(powerFlowQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerFlowQaResources') }
+
+// Native parser coverage for removable power storage replay.
+def powerStorageQaResources = layout.buildDirectory.dir('generated/powerStorageQa')
+tasks.register('preparePowerStorageQaResources', Exec) {
+    inputs.files('tools/prepare_power_storage_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerStorageQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_storage_playtest.py', '--pack-only', powerStorageQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerStorageQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerStorageQaResources') }

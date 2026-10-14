@@ -57,6 +57,10 @@ public class ModBlockEntities {
                             ModBlocks.MITEAWAY.get()
                     ).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerStorageBlockEntity>> POWER_STORAGE =
+            BLOCK_ENTITIES.register("power_storage", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerStorageBlockEntity::new,
+                    ModBlocks.BATTERY_BANK.get(), ModBlocks.CELL_DOCK.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GeothermalCoreBlockEntity>> GEOTHERMAL_CORE =
             BLOCK_ENTITIES.register("geothermal_core",
                     () -> BlockEntityType.Builder.of(GeothermalCoreBlockEntity::new,

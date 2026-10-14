@@ -28,11 +28,15 @@ public final class PowerNetworks {
         Map<BlockPos, Budget> budgets = Map.of();
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
+        final Set<BlockPos> stores = new TreeSet<>();
+        long energyTick = Long.MIN_VALUE;
     }
-    private record Budget(int supplyWatts, int demandWatts) {}
+    private record Budget(int supplyWatts, int demandWatts, long storedJoules) {}
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
+    public static void storageLoaded(ServerLevel level, BlockPos pos) { runtime(level).stores.add(pos.immutable()); }
+    public static void storageRemoved(ServerLevel level, BlockPos pos) { runtime(level).stores.remove(pos); }
     public static PowerLinkRules.Result link(ServerLevel level, BlockPos a, BlockPos b) {
         var result = PowerLinkRules.validate(level, a, b);
         if (result != PowerLinkRules.Result.OK) return result;
@@ -97,13 +101,16 @@ public final class PowerNetworks {
         int links = (int) rt.active.stream().filter(link -> cells.contains(link.a())).count();
         int inactive = (int) PowerNetworkSavedData.get(level).links().stream()
                 .filter(link -> (cells.contains(link.a()) || cells.contains(link.b())) && !rt.active.contains(link)).count();
-        var budget = rt.budgets.getOrDefault(node, new Budget(supplyWatts(level, node), demandWatts(level, node)));
-        return new Reading(cells.size(), links, inactive, budget.supplyWatts() / 1000.0, budget.demandWatts() / 1000.0, 0);
+        var budget = rt.budgets.getOrDefault(node, new Budget(supplyWatts(level, node), demandWatts(level, node), storedJoules(level, node)));
+        return new Reading(cells.size(), links, inactive, budget.supplyWatts() / 1000.0, budget.demandWatts() / 1000.0, budget.storedJoules() / 1000.0);
     }
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
+    }
+    private static int storedJoules(ServerLevel level, BlockPos pos) {
+        return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity store ? store.storedJoules() : 0;
     }
     private static int demandWatts(ServerLevel level, BlockPos pos) {
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
@@ -117,6 +124,11 @@ public final class PowerNetworks {
             if (level.isLoaded(link.a())) nodes.add(link.a());
             if (level.isLoaded(link.b())) nodes.add(link.b());
         }
+        rt.stores.removeIf(pos -> !level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
+        nodes.addAll(rt.stores);
+        // Duplicate diagnostics/accounts at the same game tick never move another second of energy.
+        boolean energyStep = rt.energyTick != level.getGameTime();
+        rt.energyTick = level.getGameTime();
         var visited = new HashSet<BlockPos>(); var budgets = new HashMap<BlockPos, Budget>();
         var powered = new HashSet<BlockPos>(); var lamps = new HashSet<BlockPos>();
         for (var node : nodes) {
@@ -128,14 +140,33 @@ public final class PowerNetworks {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
                 if (watts > 0) { loads.add(cell); lamps.add(cell); }
             }
-            // Lights are discretionary loads. Shed whole lights in stable position order, never dim
-            // them or change a Core's heat/O2/power allocation. Life-support consumers are a later slice.
-            int remaining = supply;
+            var stores = cells.stream().sorted().filter(p -> level.isLoaded(p))
+                    .map(level::getBlockEntity).filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
+                    .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
+            // Stored joules fund the next one-second interval. Saturate large networks safely.
+            long stored = stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum();
+            if (!energyStep && !stores.isEmpty()) {
+                // Keep the already committed interval, including its served-light decision.
+                for (var load : loads) if (rt.powered.contains(load)) powered.add(load);
+                for (var cell : cells) budgets.put(cell, rt.budgets.getOrDefault(cell,
+                        new Budget(supply, demand, stored)));
+                continue;
+            }
+            long remaining = supply + stored; int served = 0;
             for (var load : loads) {
                 int watts = demandWatts(level, load);
-                if (watts <= remaining) { powered.add(load); remaining -= watts; }
+                if (watts <= remaining) { powered.add(load); remaining -= watts; served += watts; }
             }
-            var budget = new Budget(supply, demand); for (var cell : cells) budgets.put(cell, budget);
+            int shortage = Math.max(0, served - supply), surplus = Math.max(0, supply - served);
+            int discharged = shortage;
+            for (var store : stores) {
+                int drawn = store.draw(shortage); shortage -= drawn;
+                int charged = store.isBank() ? store.charge(surplus) : 0; surplus -= charged;
+                store.publish(charged, drawn);
+            }
+            long after = stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum();
+            var budget = new Budget(supply + discharged, demand, after);
+            for (var cell : cells) budgets.put(cell, budget);
         }
         var affected = new HashSet<>(rt.lamps); affected.addAll(lamps);
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);

@@ -36,7 +36,7 @@ public final class PowerBinderHud {
     public static int color(PowerBinderPayload payload) {
         return switch (payload.status()) {
             case READY -> GREEN;
-            case RANGE, FEEDTHROUGH, LIMIT -> RED;
+            case RANGE, FEEDTHROUGH, LIMIT, DOCK_CONNECTION -> RED;
             case WAITING, UNAVAILABLE -> AMBER;
             default -> CYAN;
         };
@@ -58,7 +58,7 @@ public final class PowerBinderHud {
         if (notice != null && System.nanoTime() - noticeAt < 1_600_000_000L) {
             instruction = Component.translatable("hud.frozendawn.binder.notice." + notice.key(), notice.count());
             color = switch (notice.key()) { case "ok" -> GREEN;
-                case "range", "feedthrough", "limit", "not_node" -> RED; default -> CYAN; };
+                case "range", "feedthrough", "limit", "not_node", "dock_connection" -> RED; default -> CYAN; };
         }
         Component detail = Component.translatable("hud.frozendawn.binder.start_hint");
         if (payload != null) {

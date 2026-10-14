@@ -56,6 +56,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
 
+    public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
+    public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
+    public static final DeferredItem<BlockItem> CELL_DOCK = ITEMS.registerSimpleBlockItem("cell_dock", ModBlocks.CELL_DOCK);
+
     public static final DeferredItem<com.frozendawn.item.ConduitBinderItem> CONDUIT_BINDER = ITEMS.register("conduit_binder",
             () -> new com.frozendawn.item.ConduitBinderItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
@@ -490,6 +494,9 @@ public class ModItems {
                         output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMOSTAT.get());
                         output.accept(HEAT_VENT.get());
+                        output.accept(POWER_CELL.get());
+                        output.accept(BATTERY_BANK.get());
+                        output.accept(CELL_DOCK.get());
                         output.accept(CONDUIT_BINDER.get());
                         output.accept(POWER_RELAY.get());
                         output.accept(LARGE_POWER_RELAY.get());

@@ -56,6 +56,7 @@ public final class PowerBinderFeedback {
                         : data.links().size() >= PowerNetworkSavedData.MAX_LINKS
                         || data.degree(source) >= PowerNetworkSavedData.MAX_NODE_LINKS
                         || data.degree(target) >= PowerNetworkSavedData.MAX_NODE_LINKS ? Status.LIMIT : Status.READY;
+                case DOCK_CONNECTION -> Status.DOCK_CONNECTION;
                 case RANGE -> Status.RANGE;
                 case FEEDTHROUGH -> Status.FEEDTHROUGH;
                 case UNKNOWN_SEAL -> Status.WAITING;

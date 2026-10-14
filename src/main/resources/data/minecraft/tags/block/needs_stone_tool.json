@@ -5,6 +5,8 @@
     "frozendawn:power_relay",
     "frozendawn:large_power_relay",
     "frozendawn:bulkhead_feedthrough",
-    "frozendawn:panel_light"
+    "frozendawn:panel_light",
+    "frozendawn:battery_bank",
+    "frozendawn:cell_dock"
   ]
 }

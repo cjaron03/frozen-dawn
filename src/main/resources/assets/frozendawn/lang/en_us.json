@@ -1178,5 +1178,12 @@
   "hud.frozendawn.binder.notice.feedthrough": "Sealed wall: add a feedthrough",
   "hud.frozendawn.binder.notice.duplicate": "Already connected",
   "hud.frozendawn.binder.notice.limit": "No free links",
-  "block.frozendawn.panel_light": "ORSA Panel Light"
+  "block.frozendawn.panel_light": "ORSA Panel Light",
+  "item.frozendawn.power_cell": "ORSA Power Cell",
+  "item.frozendawn.power_cell.hint": "Charge in a Battery Bank; carry to a Cell Dock.",
+  "block.frozendawn.battery_bank": "ORSA Battery Bank",
+  "block.frozendawn.cell_dock": "ORSA Cell Dock",
+  "hud.frozendawn.binder.dock_connection": "Dock: link devices only",
+  "hud.frozendawn.binder.notice.dock_connection": "Dock: link devices only",
+  "message.frozendawn.conduit.dock_connection": "A Cell Dock powers devices directly; it cannot join a pylon or Core network."
 }
