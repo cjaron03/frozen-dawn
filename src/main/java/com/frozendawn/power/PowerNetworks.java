@@ -26,6 +26,7 @@ public final class PowerNetworks {
         Map<BlockPos, Set<BlockPos>> components = Map.of();
         boolean graphDirty = true;
         Map<BlockPos, Budget> budgets = Map.of();
+        Map<BlockPos, PowerMonitorReading> monitorReadings = Map.of();
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
         final Set<BlockPos> stores = new TreeSet<>();
@@ -128,6 +129,11 @@ public final class PowerNetworks {
         var budget = rt.budgets.getOrDefault(node, new Budget(supplyWatts(level, node), demandWatts(level, node), storedJoules(level, node)));
         return new Reading(cells.size(), links, inactive, budget.supplyWatts() / 1000.0, budget.demandWatts() / 1000.0, budget.storedJoules() / 1000.0);
     }
+    public static PowerMonitorReading monitorReading(ServerLevel level, BlockPos pos) {
+        var rt=runtime(level);
+        if(!level.isLoaded(pos)||!rt.components.containsKey(pos))return PowerMonitorReading.EMPTY;
+        return rt.monitorReadings.getOrDefault(pos,PowerMonitorReading.EMPTY);
+    }
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
@@ -160,6 +166,7 @@ public final class PowerNetworks {
         // receives its first allocation even after another component was queried this tick.
         rt.storeEnergyTicks.keySet().removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         var visited = new HashSet<BlockPos>(); var budgets = new HashMap<BlockPos, Budget>();
+        var monitorReadings=new HashMap<BlockPos,PowerMonitorReading>();
         var powered = new HashSet<BlockPos>(); var lamps = new HashSet<BlockPos>();
         for (var node : nodes) {
             if (visited.contains(node)) continue;
@@ -182,8 +189,10 @@ public final class PowerNetworks {
                 for (var load : loads) if (rt.powered.contains(load)) {
                     powered.add(load);if(rt.machineGrants.containsKey(load))machineGrants.put(load,rt.machineGrants.get(load));
                 }
-                for (var cell : cells) budgets.put(cell, rt.budgets.getOrDefault(cell,
-                        new Budget(supply, demand, stored)));
+                for (var cell : cells) {
+                    budgets.put(cell,rt.budgets.getOrDefault(cell,new Budget(supply,demand,stored)));
+                    monitorReadings.put(cell,rt.monitorReadings.getOrDefault(cell,PowerMonitorReading.EMPTY));
+                }
                 continue;
             }
             for(var store:stores)rt.storeEnergyTicks.put(store.getBlockPos(),level.getGameTime());
@@ -208,11 +217,16 @@ public final class PowerNetworks {
             }
             long after = stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum();
             var budget = new Budget(supply + discharged, demand, after);
-            for (var cell : cells) budgets.put(cell, budget);
+            long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
+            var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
+                    level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
+            var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
+            for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }
         var affected = new HashSet<>(rt.lamps); affected.addAll(lamps);
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);
         rt.machineGrants=Map.copyOf(machineGrants);
+        rt.monitorReadings=Map.copyOf(monitorReadings);
         for (var lamp : affected) com.frozendawn.block.PanelLightBlock.setPowered(level, lamp, powered.contains(lamp));
     }
     public static boolean powered(ServerLevel level, BlockPos pos) {

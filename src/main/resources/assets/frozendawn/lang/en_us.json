@@ -1191,5 +1191,20 @@
   "screen.frozendawn.induction_furnace.no_power": "Waiting for power",
   "screen.frozendawn.induction_furnace.smelting": "Smelting · 2 kW",
   "screen.frozendawn.induction_furnace.no_recipe": "No furnace recipe",
-  "screen.frozendawn.induction_furnace.output_full": "Output blocked"
+  "screen.frozendawn.induction_furnace.output_full": "Output blocked",
+  "block.frozendawn.power_monitor": "ORSA Power Monitor",
+  "screen.frozendawn.power_monitor.normal": "Normal",
+  "screen.frozendawn.power_monitor.backup": "Battery backup",
+  "screen.frozendawn.power_monitor.brownout": "Brownout",
+  "screen.frozendawn.power_monitor.no_power": "No power",
+  "screen.frozendawn.power_monitor.unlinked": "Not linked",
+  "screen.frozendawn.power_monitor.supply": "Supply: %s kW",
+  "screen.frozendawn.power_monitor.demand": "Demand: %s kW",
+  "screen.frozendawn.power_monitor.battery": "Battery: %s / %s kJ",
+  "screen.frozendawn.power_monitor.none": "None",
+  "screen.frozendawn.power_monitor.link_hint": "Link to your network with the Binder.",
+  "screen.frozendawn.power_monitor.furnace": "Furnace",
+  "screen.frozendawn.power_monitor.light": "Panel light",
+  "screen.frozendawn.power_monitor.waiting": "Waiting for power: %s",
+  "screen.frozendawn.power_monitor.shed": "Waiting for power: %s"
 }

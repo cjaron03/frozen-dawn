@@ -36,6 +36,7 @@
     "frozendawn:panel_light",
     "frozendawn:battery_bank",
     "frozendawn:cell_dock",
-    "frozendawn:induction_furnace"
+    "frozendawn:induction_furnace",
+    "frozendawn:power_monitor"
   ]
 }

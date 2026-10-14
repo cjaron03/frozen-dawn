@@ -353,6 +353,7 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
         event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);
         event.register(ModMenuTypes.POWER_STORAGE.get(), PowerStorageScreen::new);
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);

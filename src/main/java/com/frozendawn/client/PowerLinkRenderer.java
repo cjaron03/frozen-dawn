@@ -66,9 +66,19 @@ public final class PowerLinkRenderer {
                 new AABB(pos).inflate(0.035).move(-camera.x, -camera.y, -camera.z),
                 (color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f, 1f);
     }
+    /** A wall monitor occupies the back three model pixels, not the block centre. */
+    private static Vec3 linkPoint(BlockPos pos) {
+        var centre=Vec3.atCenterOf(pos);var level=Minecraft.getInstance().level;
+        if(level==null||!level.hasChunkAt(pos))return centre;
+        var state=level.getBlockState(pos);
+        if(!(state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock))return centre;
+        var face=state.getValue(com.frozendawn.block.PowerMonitorBlock.FACING);
+        double offset=-5.0/16.0+0.001; // End just outside the actual screen plane.
+        return centre.add(face.getStepX()*offset,0,face.getStepZ()*offset);
+    }
     private static void ribbon(BufferBuilder buffer, org.joml.Matrix4f matrix, Vec3 camera,
             BlockPos from, BlockPos to, int color, double width, int alpha) {
-        var a = Vec3.atCenterOf(from).subtract(camera); var b = Vec3.atCenterOf(to).subtract(camera);
+        var a = linkPoint(from).subtract(camera); var b = linkPoint(to).subtract(camera);
         var axis = b.subtract(a).normalize(); var side = axis.cross(a.add(b).scale(-0.5)).normalize();
         if (side.lengthSqr() < 0.001) side = axis.cross(new Vec3(0, 1, 0)).normalize();
         if (side.lengthSqr() < 0.001) side = new Vec3(1, 0, 0);

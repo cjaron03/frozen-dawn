@@ -654,3 +654,13 @@ tasks.register('prepareInductionFurnaceQaResources', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(inductionFurnaceQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('prepareInductionFurnaceQaResources') }
+
+// Native parser coverage for the passive power monitor replay.
+def powerMonitorQaResources = layout.buildDirectory.dir('generated/powerMonitorQa')
+tasks.register('preparePowerMonitorQaResources', Exec) {
+    inputs.files('tools/prepare_power_monitor_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerMonitorQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_monitor_playtest.py', '--pack-only', powerMonitorQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerMonitorQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerMonitorQaResources') }

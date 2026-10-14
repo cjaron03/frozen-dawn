@@ -57,6 +57,9 @@ public class ModBlockEntities {
                             ModBlocks.MITEAWAY.get()
                     ).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerMonitorBlockEntity>> POWER_MONITOR =
+            BLOCK_ENTITIES.register("power_monitor", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerMonitorBlockEntity::new,ModBlocks.POWER_MONITOR.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.InductionFurnaceBlockEntity>> INDUCTION_FURNACE =
             BLOCK_ENTITIES.register("induction_furnace", () -> BlockEntityType.Builder.of(com.frozendawn.block.InductionFurnaceBlockEntity::new,ModBlocks.INDUCTION_FURNACE.get()).build(null));
 
