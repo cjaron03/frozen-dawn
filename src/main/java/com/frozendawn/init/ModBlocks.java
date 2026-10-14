@@ -62,6 +62,18 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FrozenDawn.MOD_ID);
 
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> POWER_RELAY = BLOCKS.register("power_relay",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(3f).sound(SoundType.METAL).noOcclusion(), 16, false));
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> LARGE_POWER_RELAY = BLOCKS.register("large_power_relay",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(4f).sound(SoundType.METAL).noOcclusion(), 32, false));
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> BULKHEAD_FEEDTHROUGH = BLOCKS.register("bulkhead_feedthrough",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(4f).sound(SoundType.METAL), 16, true));
+
+    public static final DeferredBlock<com.frozendawn.block.PanelLightBlock> PANEL_LIGHT = BLOCKS.register("panel_light",
+            () -> new com.frozendawn.block.PanelLightBlock(BlockBehaviour.Properties.of()
+                    .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.PanelLightBlock.LIT) ? 15 : 0)));
+
     public static final DeferredBlock<com.frozendawn.block.AirlockDoorBlock> AIRLOCK_DOOR = BLOCKS.register("airlock_door",
             () -> new com.frozendawn.block.AirlockDoorBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR)
                     .pushReaction(PushReaction.BLOCK)));

@@ -103,9 +103,6 @@ neoForge {
                 systemProperty 'frozendawn.debug.architectSeed', '1'
             }
             systemProperty 'frozendawn.labCommands', 'true'
-            if (labQuickPlayWorld) {
-                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
-            }
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,
@@ -617,3 +614,23 @@ tasks.register('generateRoomOxygenQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }
+
+// Native parser coverage for the isolated power topology replay.
+def powerNetworkQaResources = layout.buildDirectory.dir('generated/powerNetworkQa')
+tasks.register('preparePowerNetworkQaResources', Exec) {
+    inputs.file('tools/prepare_power_network_playtest.py')
+    outputs.dir(powerNetworkQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_network_playtest.py', '--pack-only', powerNetworkQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerNetworkQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerNetworkQaResources') }
+
+// Native parser coverage for the Core-to-relay electrical replay.
+def powerFlowQaResources = layout.buildDirectory.dir('generated/powerFlowQa')
+tasks.register('preparePowerFlowQaResources', Exec) {
+    inputs.files('tools/prepare_power_flow_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerFlowQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_flow_playtest.py', '--pack-only', powerFlowQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerFlowQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerFlowQaResources') }

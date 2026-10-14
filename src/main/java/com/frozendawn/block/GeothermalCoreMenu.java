@@ -19,7 +19,7 @@ import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 public class GeothermalCoreMenu extends AbstractContainerMenu {
-    public static final int UI_WIDTH = 256;
+    public static final int UI_WIDTH = 320;
     public static final int UI_HEIGHT = 236;
 
     private final Container container;
@@ -29,7 +29,7 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     /** Client constructor (from network). */
     public GeothermalCoreMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
-        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(6),
+        this(containerId, playerInv, new SimpleContainer(4), new SimpleContainerData(9),
                 buf != null ? buf.readBlockPos() : null);
     }
 
@@ -46,23 +46,23 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         this.corePos = corePos;
 
         // 3 upgrade slots + 1 O2 tank refill slot
-        addSlot(new UpgradeSlot(container, 0, 174, 26));   // Range
-        addSlot(new UpgradeSlot(container, 1, 174, 50));   // Temp
-        addSlot(new UpgradeSlot(container, 2, 174, 74));   // O2
+        addSlot(new UpgradeSlot(container, 0, 238, 26));   // Range
+        addSlot(new UpgradeSlot(container, 1, 238, 50));   // Temp
+        addSlot(new UpgradeSlot(container, 2, 238, 74));   // O2
         addSlot(new O2TankSlot(container, 3, 9, 128));    // O2 Tank Refill
 
         // Player inventory (3 rows) — shifted down for refill row
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInv, col + row * 9 + 9, 48 + col * 18, 158 + row * 18));
+                addSlot(new Slot(playerInv, col + row * 9 + 9, 80 + col * 18, 158 + row * 18));
             }
         }
         // Hotbar
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInv, col, 48 + col * 18, 216));
+            addSlot(new Slot(playerInv, col, 80 + col * 18, 216));
         }
 
-        if(!(container instanceof CoreContainer))data.set(3,GeothermalCoreBlockEntity.DEFAULT_HEAT_SHARE);
+        if (!(container instanceof CoreContainer)) { data.set(3, GeothermalCoreBlockEntity.DEFAULT_HEAT_SHARE); data.set(8, 6000); }
         addDataSlots(data);
     }
 
@@ -77,10 +77,15 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
 
     @Override
     public boolean clickMenuButton(Player player,int id) {
-        if(id<0||id>100||player.isSpectator()||!stillValid(player)
-                ||!(container instanceof CoreContainer core)
-                ||player.level().getBlockEntity(corePos)!=core.entity)return false;
-        core.entity.setHeatShare(id);
+        if (player.isSpectator() || !stillValid(player)
+                || !(container instanceof CoreContainer core)
+                || player.level().getBlockEntity(corePos) != core.entity) return false;
+        if (id >= 0 && id <= 100) {
+            if (id > 100 - core.entity.getPowerShare()) return false;
+            core.entity.setHeatShare(id);
+        } else if (id >= 200 && id <= 300) core.entity.setPowerShare(id - 200);
+        else if (id == 400) core.entity.resetAllocation();
+        else return false;
         return true;
     }
 

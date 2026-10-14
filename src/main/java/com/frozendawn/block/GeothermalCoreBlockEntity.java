@@ -46,6 +46,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     private int o2Level = 0;
     public static final int DEFAULT_HEAT_SHARE = 60;
     private int heatShare = DEFAULT_HEAT_SHARE;
+    private int powerShare = 0;
+    private double heatBalance = 0.6;
 
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(4, ItemStack.EMPTY);
@@ -60,6 +62,9 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
                 case 3 -> heatShare;
                 case 4 -> (int)Math.round(getHeatOutput());
                 case 5 -> (int)Math.round(getOxygenSupply()*100);
+                case 6 -> powerShare;
+                case 7 -> (int)Math.round(getPowerOutputKw()*100);
+                case 8 -> (int)Math.round(heatBalance*10000);
                 default -> 0;
             };
         }
@@ -70,13 +75,15 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
                 case 0 -> rangeLevel = value;
                 case 1 -> tempLevel = value;
                 case 2 -> o2Level = value;
-                case 3 -> heatShare = Math.clamp(value, 0, 100);
+                case 3 -> heatShare = Math.clamp(value, 0, 100 - powerShare);
+                case 6 -> powerShare = Math.clamp(value, 0, 100 - heatShare);
+                case 8 -> heatBalance = Math.clamp(value, 0, 10000) / 10000.0;
             }
         }
 
         @Override
         public int getCount() {
-            return 6;
+            return 9;
         }
     };
 
@@ -146,7 +153,10 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
     }
 
     public int getHeatShare() { return heatShare; }
-    public int getOxygenShare() { return 100-heatShare; }
+    public int getOxygenShare() { return 100 - heatShare - powerShare; }
+    public int getPowerShare() { return powerShare; }
+    /** Fixed electrical rating; upgrades and the surface warmth penalty affect heat, not electricity. */
+    public double getPowerOutputKw() { return powerShare * 0.2; }
     public double getHeatMultiplier() { return heatShare/(double)DEFAULT_HEAT_SHARE; }
     public double getOxygenSupply() { return 8.0*getOxygenShare()/40.0; }
     /** Calibrated game heat units/s, preserving every upgrade and surface penalty at 60/40. */
@@ -155,11 +165,26 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         return com.frozendawn.world.RoomThermalManager.BASE_HEATER_POWER*.25*temperature/BASE_TEMP
                 *com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get()*getHeatMultiplier();
     }
+    /** Adjusts heat within the remaining budget; oxygen receives the remainder. */
     public void setHeatShare(int value) {
-        int next=Math.clamp(value,0,100);
-        if(next==heatShare)return;
-        heatShare=next;setChanged();
-        if(level!=null)level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),2);
+        int remaining = 100 - powerShare; int next = Math.clamp(value, 0, remaining);
+        setAllocation(next, powerShare, remaining > 0 ? next / (double)remaining : heatBalance);
+    }
+
+    /** Preserve the player's heat/O2 balance when reserving or releasing electrical output. */
+    public void setPowerShare(int value) {
+        int next = Math.clamp(value, 0, 100);
+        // Retain the chosen balance independently of rounded integer shares. A dragged slider
+        // sends intermediate values; repeatedly deriving a ratio from rounded shares would drift.
+        setAllocation((int)Math.round((100 - next) * heatBalance), next, heatBalance);
+    }
+
+    public void resetAllocation() { setAllocation(DEFAULT_HEAT_SHARE, 0, 0.6); }
+
+    private void setAllocation(int heat, int power, double balance) {
+        if (heat == heatShare && power == powerShare && balance == heatBalance) return;
+        heatShare = heat; powerShare = power; heatBalance = balance; setChanged();
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
     }
 
     public int getEffectiveO2Range() {
@@ -227,6 +252,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tag.putInt("TempLevel", tempLevel);
         tag.putInt("O2Level", o2Level);
         tag.putInt("HeatShare", heatShare);
+        tag.putInt("PowerShare", powerShare);
+        tag.putDouble("HeatBalance", heatBalance);
         ContainerHelper.saveAllItems(tag, items, registries);
     }
 
@@ -236,8 +263,14 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         rangeLevel = tag.getInt("RangeLevel");
         tempLevel = tag.getInt("TempLevel");
         o2Level = tag.getInt("O2Level");
+        powerShare = tag.contains("PowerShare", net.minecraft.nbt.Tag.TAG_INT)
+                ? Math.clamp(tag.getInt("PowerShare"), 0, 100) : 0;
         heatShare = tag.contains("HeatShare",net.minecraft.nbt.Tag.TAG_INT)
-                ? Math.clamp(tag.getInt("HeatShare"),0,100) : DEFAULT_HEAT_SHARE;
+                ? Math.clamp(tag.getInt("HeatShare"), 0, 100 - powerShare)
+                : Math.min(DEFAULT_HEAT_SHARE, 100 - powerShare);
+        double storedBalance = tag.contains("HeatBalance", net.minecraft.nbt.Tag.TAG_DOUBLE)
+                ? tag.getDouble("HeatBalance") : powerShare < 100 ? heatShare / (double)(100 - powerShare) : 0.6;
+        heatBalance = Double.isFinite(storedBalance) ? Math.clamp(storedBalance, 0.0, 1.0) : 0.6;
         ContainerHelper.loadAllItems(tag, items, registries);
     }
 
@@ -248,6 +281,8 @@ public class GeothermalCoreBlockEntity extends BlockEntity implements MenuProvid
         tag.putInt("TempLevel", tempLevel);
         tag.putInt("O2Level", o2Level);
         tag.putInt("HeatShare", heatShare);
+        tag.putInt("PowerShare", powerShare);
+        tag.putDouble("HeatBalance", heatBalance);
         return tag;
     }
 

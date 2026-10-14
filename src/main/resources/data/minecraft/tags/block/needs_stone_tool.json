@@ -1,6 +1,10 @@
 {
   "replace": false,
   "values": [
-    "frozendawn:oxygen_reservoir"
+    "frozendawn:oxygen_reservoir",
+    "frozendawn:power_relay",
+    "frozendawn:large_power_relay",
+    "frozendawn:bulkhead_feedthrough",
+    "frozendawn:panel_light"
   ]
 }

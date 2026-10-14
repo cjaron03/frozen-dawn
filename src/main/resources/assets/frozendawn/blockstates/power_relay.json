@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "frozendawn:block/power_relay"
+    }
+  }
+}

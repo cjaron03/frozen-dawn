@@ -12,6 +12,10 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.core.GlobalPos>> CONDUIT_ANCHOR =
+            DATA_COMPONENTS.register("conduit_anchor", () -> DataComponentType.<net.minecraft.core.GlobalPos>builder()
+                    .persistent(net.minecraft.core.GlobalPos.CODEC).networkSynchronized(net.minecraft.core.GlobalPos.STREAM_CODEC).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> EMERGENCY_EVA_SERVICE =
             DATA_COMPONENTS.register("emergency_eva_service", () ->
                     DataComponentType.<Integer>builder().persistent(Codec.INT)

@@ -84,7 +84,13 @@ public final class AtmosphericBreachGameTest {
         });
     }
 
-    @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="atmospheric_breach", timeoutTicks=160)
+    // This delayed recovery check must not share a batch with scenes that reset pressure caches.
+    @net.minecraft.gametest.framework.BeforeBatch(batch="atmospheric_recovery")
+    public static void reportDelayedRecovery(net.minecraft.server.level.ServerLevel level) {
+        com.frozendawn.gametest.GameTestReporting.installReporter(level);
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="atmospheric_recovery", timeoutTicks=160)
     public static void atmosphericBreachNeedsRecoveryAndPersistsDepletion(GameTestHelper h) {
         var level=h.getLevel();var apocalypse=ApocalypseState.get(level.getServer());long previous=apocalypse.getApocalypseTicks();
         phase(h);RoomAtmosphere.reset();AtmosphericBreach.reset();
