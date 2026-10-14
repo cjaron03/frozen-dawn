@@ -15,7 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 /** The cells are the only store: no duplicated bank-level energy or charge on empty slots. */
 public final class PowerStorageBlockEntity extends BlockEntity implements Container, MenuProvider {
     private final NonNullList<ItemStack> items;
-    private int charging, feeding;
+    private int charging, feeding, machineFeeding;
+    private long machineDrawTick=Long.MIN_VALUE;
     public PowerStorageBlockEntity(BlockPos p, BlockState s) {
         super(ModBlockEntities.POWER_STORAGE.get(), p, s);
         items = NonNullList.withSize(isBank() ? 4 : 1, ItemStack.EMPTY);
@@ -40,9 +41,14 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
         if (moved > 0) setChanged();
         return moved;
     }
+    public void publishMachineDraw(int joules) {
+        if(joules<=0||level==null)return;
+        if(machineDrawTick!=level.getGameTime())machineFeeding=0;
+        machineDrawTick=level.getGameTime();machineFeeding+=joules*20;
+    }
     public void publish(int charged, int drawn) { charging = charged; feeding = drawn; }
     public ContainerData data() { return new ContainerData() {
-        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> feeding/100; default -> 0; }; }
+        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> (feeding+(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0))/100; default -> 0; }; }
         public void set(int i, int v) {} public int getCount() { return 3; }
     }; }
     @Override public Component getDisplayName() { return Component.translatable(isBank() ? "block.frozendawn.battery_bank" : "block.frozendawn.cell_dock"); }

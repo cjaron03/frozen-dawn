@@ -644,3 +644,13 @@ tasks.register('preparePowerStorageQaResources', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(powerStorageQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerStorageQaResources') }
+
+// Native parser coverage for the isolated induction furnace replay.
+def inductionFurnaceQaResources = layout.buildDirectory.dir('generated/inductionFurnaceQa')
+tasks.register('prepareInductionFurnaceQaResources', Exec) {
+    inputs.files('tools/prepare_induction_furnace_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(inductionFurnaceQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_induction_furnace_playtest.py', '--pack-only', inductionFurnaceQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(inductionFurnaceQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareInductionFurnaceQaResources') }

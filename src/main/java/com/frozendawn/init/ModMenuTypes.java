@@ -18,6 +18,9 @@ public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
             DeferredRegister.create(Registries.MENU, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.InductionFurnaceMenu>> INDUCTION_FURNACE =
+            MENU_TYPES.register("induction_furnace", () -> IMenuTypeExtension.create(com.frozendawn.block.InductionFurnaceMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerStorageMenu>> POWER_STORAGE =
             MENU_TYPES.register("power_storage", () -> IMenuTypeExtension.create(com.frozendawn.block.PowerStorageMenu::new));
 

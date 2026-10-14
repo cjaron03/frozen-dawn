@@ -52,7 +52,8 @@ public final class PowerStorageGameTest {
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="power_storage",timeoutTicks=100)
     public static void powerBankSurplusDeficitCyclesAndDuplicateAccounting(GameTestHelper h) {
         h.runAfterDelay(1,()->{
-            var l=h.getLevel();var core=place(h,2,2,4,ModBlocks.GEOTHERMAL_CORE.get());var p=place(h,6,2,4,ModBlocks.BATTERY_BANK.get());
+            var l=h.getLevel();PowerNetworks.account(l); // Unrelated components may already have been accounted this tick.
+            var core=place(h,2,2,4,ModBlocks.GEOTHERMAL_CORE.get());var p=place(h,6,2,4,ModBlocks.BATTERY_BANK.get());
             var q=place(h,6,2,8,ModBlocks.BATTERY_BANK.get());var lamp=place(h,10,2,4,ModBlocks.PANEL_LIGHT.get());
             var bank=store(l,p);var second=store(l,q);bank.setItem(0,PowerCellItem.charged(0));second.setItem(0,PowerCellItem.charged(0));
             ((GeothermalCoreBlockEntity)l.getBlockEntity(core)).setPowerShare(1);

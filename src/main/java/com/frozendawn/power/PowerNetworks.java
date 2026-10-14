@@ -29,14 +29,38 @@ public final class PowerNetworks {
         Set<BlockPos> powered = Set.of();
         Set<BlockPos> lamps = Set.of();
         final Set<BlockPos> stores = new TreeSet<>();
-        long energyTick = Long.MIN_VALUE;
+        final Map<BlockPos,Long> storeEnergyTicks = new HashMap<>();
+        final Set<BlockPos> machines = new TreeSet<>();
+        Map<BlockPos, MachineGrant> machineGrants = Map.of();
+        final Map<BlockPos, Long> machineTicks = new HashMap<>();
     }
+    private record MachineGrant(int generationWatts, List<BlockPos> stores, long expires) {}
     private record Budget(int supplyWatts, int demandWatts, long storedJoules) {}
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
     public static void storageLoaded(ServerLevel level, BlockPos pos) { runtime(level).stores.add(pos.immutable()); }
-    public static void storageRemoved(ServerLevel level, BlockPos pos) { runtime(level).stores.remove(pos); }
+    public static void storageRemoved(ServerLevel level, BlockPos pos) { var rt=runtime(level);rt.stores.remove(pos);rt.storeEnergyTicks.remove(pos); }
+    public static void machineLoaded(ServerLevel level, BlockPos pos) { runtime(level).machines.add(pos.immutable()); }
+    public static void machineRemoved(ServerLevel level, BlockPos pos) {
+        var rt=runtime(level);rt.machines.remove(pos);rt.machineTicks.remove(pos);
+        var grants=new HashMap<>(rt.machineGrants);grants.remove(pos);rt.machineGrants=Map.copyOf(grants);
+    }
+    /** Allocation reserves capacity once per second; cells pay only for actual processing ticks.
+     * A partial/blocked job never burns its unused battery reservation. No prepaid energy is saved. */
+    public static boolean consumeMachineTick(ServerLevel level, BlockPos pos) {
+        var rt=runtime(level);var grant=rt.machineGrants.get(pos);long tick=level.getGameTime();
+        if(grant==null||tick>grant.expires()||!level.isLoaded(pos)
+                ||rt.machineTicks.getOrDefault(pos,Long.MIN_VALUE)==tick)return false;
+        if(!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)||!furnace.wantsPower())return false;
+        int needed=(com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS-grant.generationWatts())/20;
+        var stores=grant.stores().stream().filter(level::isLoaded).map(level::getBlockEntity)
+                .filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
+                .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
+        if(stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum()<needed)return false;
+        for(var store:stores){int drawn=store.draw(needed);needed-=drawn;store.publishMachineDraw(drawn);if(needed==0)break;}
+        rt.machineTicks.put(pos,tick);return true;
+    }
     public static PowerLinkRules.Result link(ServerLevel level, BlockPos a, BlockPos b) {
         var result = PowerLinkRules.validate(level, a, b);
         if (result != PowerLinkRules.Result.OK) return result;
@@ -113,6 +137,8 @@ public final class PowerNetworks {
         return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity store ? store.storedJoules() : 0;
     }
     private static int demandWatts(ServerLevel level, BlockPos pos) {
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
+            return furnace.wantsPower()?com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS:0;
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
                 ? com.frozendawn.block.PanelLightBlock.DEMAND_WATTS : 0;
     }
@@ -126,9 +152,13 @@ public final class PowerNetworks {
         }
         rt.stores.removeIf(pos -> !level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         nodes.addAll(rt.stores);
-        // Duplicate diagnostics/accounts at the same game tick never move another second of energy.
-        boolean energyStep = rt.energyTick != level.getGameTime();
-        rt.energyTick = level.getGameTime();
+        rt.machines.removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity));
+        nodes.addAll(rt.machines);
+        rt.machineTicks.keySet().retainAll(rt.machines);
+        var machineGrants=new HashMap<BlockPos,MachineGrant>();
+        // The duplicate guard belongs to physical stores, so an unrelated freshly linked network
+        // receives its first allocation even after another component was queried this tick.
+        rt.storeEnergyTicks.keySet().removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         var visited = new HashSet<BlockPos>(); var budgets = new HashMap<BlockPos, Budget>();
         var powered = new HashSet<BlockPos>(); var lamps = new HashSet<BlockPos>();
         for (var node : nodes) {
@@ -138,29 +168,41 @@ public final class PowerNetworks {
             var loads = new TreeSet<BlockPos>();
             for (var cell : cells) {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
-                if (watts > 0) { loads.add(cell); lamps.add(cell); }
+                if (watts > 0) loads.add(cell);
+                if(level.isLoaded(cell)&&level.getBlockState(cell).getBlock() instanceof com.frozendawn.block.PanelLightBlock) lamps.add(cell);
             }
             var stores = cells.stream().sorted().filter(p -> level.isLoaded(p))
                     .map(level::getBlockEntity).filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
                     .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
             // Stored joules fund the next one-second interval. Saturate large networks safely.
             long stored = stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum();
+            boolean energyStep=stores.stream().allMatch(store -> rt.storeEnergyTicks.getOrDefault(store.getBlockPos(),Long.MIN_VALUE)!=level.getGameTime());
             if (!energyStep && !stores.isEmpty()) {
                 // Keep the already committed interval, including its served-light decision.
-                for (var load : loads) if (rt.powered.contains(load)) powered.add(load);
+                for (var load : loads) if (rt.powered.contains(load)) {
+                    powered.add(load);if(rt.machineGrants.containsKey(load))machineGrants.put(load,rt.machineGrants.get(load));
+                }
                 for (var cell : cells) budgets.put(cell, rt.budgets.getOrDefault(cell,
                         new Budget(supply, demand, stored)));
                 continue;
             }
+            for(var store:stores)rt.storeEnergyTicks.put(store.getBlockPos(),level.getGameTime());
             long remaining = supply + stored; int served = 0;
             for (var load : loads) {
                 int watts = demandWatts(level, load);
                 if (watts <= remaining) { powered.add(load); remaining -= watts; served += watts; }
             }
-            int shortage = Math.max(0, served - supply), surplus = Math.max(0, supply - served);
-            int discharged = shortage;
+            int generation=supply, lampShortage=0;
+            var storePositions=stores.stream().map(com.frozendawn.block.PowerStorageBlockEntity::getBlockPos).toList();
+            for(var load:loads) if(powered.contains(load)) {
+                int watts=demandWatts(level,load),fromCore=Math.min(watts,generation);generation-=fromCore;
+                if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
+                    machineGrants.put(load,new MachineGrant(fromCore,storePositions,level.getGameTime()+20));
+                else lampShortage+=watts-fromCore;
+            }
+            int discharged=Math.max(0,served-supply),surplus=generation;
             for (var store : stores) {
-                int drawn = store.draw(shortage); shortage -= drawn;
+                int drawn = store.draw(lampShortage); lampShortage -= drawn;
                 int charged = store.isBank() ? store.charge(surplus) : 0; surplus -= charged;
                 store.publish(charged, drawn);
             }
@@ -170,6 +212,7 @@ public final class PowerNetworks {
         }
         var affected = new HashSet<>(rt.lamps); affected.addAll(lamps);
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);
+        rt.machineGrants=Map.copyOf(machineGrants);
         for (var lamp : affected) com.frozendawn.block.PanelLightBlock.setPowered(level, lamp, powered.contains(lamp));
     }
     public static boolean powered(ServerLevel level, BlockPos pos) {

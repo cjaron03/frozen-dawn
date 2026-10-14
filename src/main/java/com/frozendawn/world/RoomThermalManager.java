@@ -38,6 +38,7 @@ public final class RoomThermalManager {
         final ArrayDeque<Long> saved=new ArrayDeque<>();
         Map<BlockPos,Integer> owners=Map.of(); boolean reconciling;
         long lastTick=-1,profileBuilds;
+        final Map<BlockPos,Double> machineHeat=new HashMap<>();
         Runtime(RoomThermalState state){this.state=state;saved.addAll(state.rooms.keySet());}
     }
     private static final Map<ServerLevel,Runtime> LEVELS=new WeakHashMap<>();
@@ -351,6 +352,12 @@ public final class RoomThermalManager {
             if(rt.state.rooms.containsKey(id)&&!rt.rooms.containsKey(id))rt.saved.addLast(id);
         }
     }
+    /** Actual paid machine heat, in the thermal model's calibrated energy units. No chunk discovery. */
+    public static void addMachineHeat(ServerLevel level,BlockPos source,double energy) {
+        var rt=LEVELS.get(level);
+        if(rt==null||!Double.isFinite(energy)||energy<=0||!level.isLoaded(source))return;
+        if(rt.rooms.values().stream().anyMatch(b->connects(b.room,source)))rt.machineHeat.merge(source.immutable(),energy,Double::sum);
+    }
     public static void tickLevel(ServerLevel level) {
         if(level.dimension()!=Level.OVERWORLD)return;var rt=runtime(level);if(rt.lastTick==level.getGameTime())return;rt.lastTick=level.getGameTime();
         rebindSaved(level,rt);
@@ -386,6 +393,12 @@ public final class RoomThermalManager {
         if(changed){releaseUnused(rt);index(rt);}
         ThermostatManager.refresh(level);
         var loaded=rt.rooms.values().stream().filter(binding->!binding.suspended&&loaded(level,binding)).toList();
+        var machineEnergy=new HashMap<Long,Double>();
+        for(var entry:rt.machineHeat.entrySet()) {
+            var recipients=loaded.stream().filter(b->connects(b.room,entry.getKey())).toList();
+            if(!recipients.isEmpty())for(var b:recipients)machineEnergy.merge(b.room.id,entry.getValue()/recipients.size(),Double::sum);
+        }
+        rt.machineHeat.clear();
         var owners=rt.owners;double dt=1.0/SUBSTEPS;
         var powers=new HashMap<Long,Double>();var losses=new HashMap<Long,double[]>();var coolers=new HashMap<Long,List<Cooling>>();
         var sourceShares = new HashMap<Long, Map<ThermalHeaterBlockEntity,Double>>();
@@ -422,6 +435,10 @@ public final class RoomThermalManager {
                 if(room.airPresent)room.airEnergy+=q;else q=addStructure(rt.state,room,owners,q);
                 rt.state.ledger.passive+=q;binding.passivePower+=q;
             }
+            double machine=machineEnergy.getOrDefault(room.id,0.0)/SUBSTEPS
+                    *(room.airPresent?1:RoomHeatMath.VACUUM_HEATER_EFFICIENCY);
+            if(room.airPresent)room.airEnergy+=machine;else machine=addStructure(rt.state,room,owners,machine);
+            rt.state.ledger.passive+=machine;binding.passivePower+=machine;
             double wallsBefore = RoomHeatMath.temperature(capacity,structureEnergy(rt.state,room,owners));
             double supplied = room.airPresent
                     ? HeaterControl.airGrant(powers.get(room.id)*dt,room.airCapacity(),capacity,

@@ -1185,5 +1185,11 @@
   "block.frozendawn.cell_dock": "ORSA Cell Dock",
   "hud.frozendawn.binder.dock_connection": "Dock: link devices only",
   "hud.frozendawn.binder.notice.dock_connection": "Dock: link devices only",
-  "message.frozendawn.conduit.dock_connection": "A Cell Dock powers devices directly; it cannot join a pylon or Core network."
+  "message.frozendawn.conduit.dock_connection": "A Cell Dock powers devices directly; it cannot join a pylon or Core network.",
+  "block.frozendawn.induction_furnace": "ORSA Induction Furnace",
+  "screen.frozendawn.induction_furnace.idle": "Idle",
+  "screen.frozendawn.induction_furnace.no_power": "Waiting for power",
+  "screen.frozendawn.induction_furnace.smelting": "Smelting · 2 kW",
+  "screen.frozendawn.induction_furnace.no_recipe": "No furnace recipe",
+  "screen.frozendawn.induction_furnace.output_full": "Output blocked"
 }

@@ -7,6 +7,7 @@
     "frozendawn:bulkhead_feedthrough",
     "frozendawn:panel_light",
     "frozendawn:battery_bank",
-    "frozendawn:cell_dock"
+    "frozendawn:cell_dock",
+    "frozendawn:induction_furnace"
   ]
 }
