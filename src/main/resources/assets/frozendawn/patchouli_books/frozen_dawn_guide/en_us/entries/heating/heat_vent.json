@@ -22,7 +22,7 @@
     {
       "type": "patchouli:text",
       "title": "ORSA Service Grille",
-      "text": "The indoor service grille has a shutter lever and a status light. Dim means closed. Green means heat can leave to colder outdoors. Amber means open but waiting or obstructed. The light updates once per second. Slats in the grille do not let oxygen escape."
+      "text": "The indoor service grille has a shutter lever and a status light. Dim means closed. Green means heat can leave to colder outdoors. Amber means open but waiting or obstructed. The outdoor fins glow orange while heat is actually leaving, and return to metal when idle or blocked. Indicators update once per second. The opaque casing behind the slats keeps oxygen in."
     },
     {
       "type": "patchouli:text",

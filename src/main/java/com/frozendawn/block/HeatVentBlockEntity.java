@@ -15,7 +15,8 @@ public final class HeatVentBlockEntity extends BlockEntity {
         RoomAtmosphere.keepAlive(this);
         boolean open=RoomThermalManager.ventOpen(server,worldPosition);
         int indicator=RoomThermalManager.ventIndicator(server,worldPosition);
-        if(state.getValue(HeatVentBlock.INDICATOR)!=indicator||state.getValue(HeatVentBlock.VENTING)!=open)
-            server.setBlock(worldPosition,state.setValue(HeatVentBlock.INDICATOR,indicator).setValue(HeatVentBlock.VENTING,open),3);
+        boolean radiating=RoomThermalManager.ventRejectingHeat(server,worldPosition);
+        if(state.getValue(HeatVentBlock.INDICATOR)!=indicator||state.getValue(HeatVentBlock.VENTING)!=open||state.getValue(HeatVentBlock.RADIATING)!=radiating)
+            server.setBlock(worldPosition,state.setValue(HeatVentBlock.INDICATOR,indicator).setValue(HeatVentBlock.VENTING,open).setValue(HeatVentBlock.RADIATING,radiating),3);
     }
 }

@@ -682,6 +682,39 @@ public final class RoomThermalGameTest {
         });
     }
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void heatVentGlowRequiresActualRejectionAndPreservesAirAndHeat(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();var vent=s.c.east(5);var panelPos=s.c.west(2);
+            var closed=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            s.l.setBlock(vent,closed,3);var view=RoomAtmosphere.view(s.l,s.c);hot(s,40,40);advanceHeat(s);ventVisualTick(s,vent);
+            h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Closed exchanger cannot glow without heat rejection");
+            s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);advanceHeat(s);
+            double energy=s.heat().totalEnergy(),airOut=s.heat().ledger.airOut;long profiles=RoomThermalManager.snapshots(s.l).getFirst().profileBuilds();ventVisualTick(s,vent);
+            h.assertTrue(s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Actual manual heat rejection lights the outdoor fins");
+            near(h,s.heat().totalEnergy(),energy,"Changing the glow state supplies or removes no heat");
+            near(h,s.heat().ledger.airOut,airOut,"Glowing fins export no room gas");
+            h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry()&&RoomThermalManager.snapshots(s.l).getFirst().profileBuilds()==profiles,"Glow preserves exact seal geometry and physical material profile");
+            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);advanceHeat(s);ventVisualTick(s,vent);
+            h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Open but blocked radiator has no glow");
+            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);hot(s,-273.14,-273.14);advanceHeat(s);ventVisualTick(s,vent);
+            h.assertTrue(!RoomThermalManager.ventRejectingHeat(s.l,vent),"Open shutter against a warmer exterior cannot falsely report heat rejection");
+            s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+            var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();
+            try {
+                hot(s,19,19);advanceHeat(s);ventVisualTick(s,vent);
+                h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Thermostat closes cooling below target even with a manual-open setting");
+                hot(s,40,40);advanceHeat(s);ventVisualTick(s,vent);
+                h.assertTrue(s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Automatic actual cooling also lights the fins");
+                RoomAirState.get(s.l).evacuate(view.geometry().cells());hot(s,80,80);advanceHeat(s);ventVisualTick(s,vent);
+                h.assertTrue(s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING)&&!s.heat().rooms.get(view.id()).airPresent,"Real airless wall heat rejection glows without refilling gas");budget(h,s);
+                var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));ventVisualTick(s,vent);
+                h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Saved glowing state clears until the new session actually rejects heat");
+                advanceHeat(s);ventVisualTick(s,vent);
+                h.assertTrue(s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Loaded heat rejection reconstructs the glow on the next real thermal second");budget(h,s);
+            }finally{s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),3);ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
     public static void heatVentIndicatorTracksRealOutletAndKeepsPressureGeometry(GameTestHelper h) {
         scene(h,104,s->{
             var vent=s.c.east(5);var closed=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
@@ -945,6 +978,11 @@ public final class RoomThermalGameTest {
         for(int x=-5;x<=5;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)s.l.setBlock(s.c.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
         for(int x=-2;x<=2;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)
             s.l.setBlock(s.c.offset(x,y,z),(Math.abs(x)==2||Math.abs(z)==2||y==-1||y==3?Blocks.WHITE_WOOL:Blocks.AIR).defaultBlockState(),2);
+    }
+    private static void ventVisualTick(Scene s,BlockPos vent) {
+        long time=s.l.getGameTime();var clock=(net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData();
+        clock.setGameTime(Math.floorDiv(time,20)*20);
+        try{((com.frozendawn.block.HeatVentBlockEntity)s.l.getBlockEntity(vent)).serverTick();}finally{clock.setGameTime(time);}
     }
     private static void advanceHeat(Scene s) {
         var time=s.l.getGameTime();s.integrationTime=Math.max(time,s.integrationTime)+20;

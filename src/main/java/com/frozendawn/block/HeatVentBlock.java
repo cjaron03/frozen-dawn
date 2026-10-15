@@ -16,13 +16,13 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /** The shutter exposes a radiator, never a hole through the pressure wall. FACING points outdoors. */
 public final class HeatVentBlock extends Block implements EntityBlock {
-    public static final BooleanProperty VENTING=BooleanProperty.create("venting");
+    public static final BooleanProperty VENTING=BooleanProperty.create("venting"), RADIATING=BooleanProperty.create("radiating");
     public static final IntegerProperty INDICATOR=IntegerProperty.create("indicator",0,2);
     public static final DirectionProperty FACING=BlockStateProperties.FACING;
     public static final BooleanProperty OPEN=BlockStateProperties.OPEN, POWERED=BlockStateProperties.POWERED;
-    public HeatVentBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(OPEN,false).setValue(POWERED,false).setValue(INDICATOR,0).setValue(VENTING,false));}
+    public HeatVentBlock(Properties p){super(p);registerDefaultState(stateDefinition.any().setValue(FACING,Direction.NORTH).setValue(OPEN,false).setValue(POWERED,false).setValue(INDICATOR,0).setValue(VENTING,false).setValue(RADIATING,false));}
     public static boolean active(BlockState s){return s.getValue(OPEN)||s.getValue(POWERED);}
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING,OPEN,POWERED,INDICATOR,VENTING);}
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState> b){b.add(FACING,OPEN,POWERED,INDICATOR,VENTING,RADIATING);}
     @Override public BlockState getStateForPlacement(BlockPlaceContext c){return defaultBlockState().setValue(FACING,c.getNearestLookingDirection()).setValue(POWERED,c.getLevel().hasNeighborSignal(c.getClickedPos()));}
     @Override protected BlockState rotate(BlockState s,Rotation r){return s.setValue(FACING,r.rotate(s.getValue(FACING)));}
     @Override protected BlockState mirror(BlockState s,Mirror m){return s.rotate(m.getRotation(s.getValue(FACING)));}

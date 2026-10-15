@@ -29,6 +29,7 @@ public final class RoomThermalManager {
     private static final class Binding {
         RoomThermalState.Room room; Profile profile; boolean dirty,geometryDirty,suspended; double passivePower;
         boolean coolingDemand; double coolingPower; BlockPos coolingController; double coolingTarget=Double.NaN;
+        final Map<BlockPos,Double> ventRejection=new HashMap<>();
         Binding(RoomThermalState.Room room,Profile profile){this.room=room;this.profile=profile;}
     }
     private static final class Runtime {
@@ -119,6 +120,14 @@ public final class RoomThermalManager {
             return ventOpen(level,b,state);
         return HeatVentBlock.active(state);
     }
+    /** Actual heat removed during the last loaded second. Transient visual telemetry only. */
+    public static boolean ventRejectingHeat(ServerLevel level,BlockPos pos) {
+        var rt=LEVELS.get(level);if(rt==null)return false;
+        for(var b:rt.rooms.values())if(b.profile!=null&&!b.suspended&&loaded(level,b)
+                &&b.ventRejection.getOrDefault(pos,0.0)>1e-9&&ventOpen(level,pos)
+                &&cooling(level,b).stream().anyMatch(outlet->outlet.pos.equals(pos)))return true;
+        return false;
+    }
     public static int coolingVentCount(ServerLevel level,long id) {
         var rt=LEVELS.get(level);var b=rt==null?null:rt.rooms.get(id);
         return b==null||b.suspended||!loaded(level,b)||b.coolingPower<=0||!controlled(level,b)?0:cooling(level,b).size();
@@ -181,6 +190,11 @@ public final class RoomThermalManager {
         if(automatic)q=Math.min(q,Math.max(0,energy-RoomHeatMath.energy(c,target)));
         if(room.airPresent){room.airEnergy-=q;state.ledger.environmentLoss+=q;}
         else {q=-addStructure(state,room,owners,-q);state.ledger.environmentLoss+=q;}
+        // Attribute the already-debited total to each parallel outlet by its flux.
+        // This changes no energy budget; blocked/warmer fins receive no glow.
+        double flux=k*temperature-weighted;
+        if(q>0&&flux>0)for(var outlet:outlets)if(outlet.outside<temperature)
+            binding.ventRejection.merge(outlet.pos,q*outlet.conductance*(temperature-outlet.outside)/flux,Double::sum);
         if(automatic)binding.coolingPower+=q;
         if(automatic&&q>=energy-RoomHeatMath.energy(c,target)-1e-9)binding.coolingDemand=false;
     }
@@ -459,7 +473,7 @@ public final class RoomThermalManager {
             var sources=RoomHeatSources.connected(level,binding.room.cells,binding.room.faces);
             connected.put(binding.room.id,sources);
             for(var source:sources)sourceOwners.merge(source.pos(),1L,Long::sum);
-            binding.passivePower=0;binding.coolingPower=0;
+            binding.passivePower=0;binding.coolingPower=0;binding.ventRejection.clear();
         }
         for(var binding:loaded) {
             coolers.put(binding.room.id,cooling(level,binding));
