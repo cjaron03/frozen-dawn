@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Heat Out, Air In",
-      "text": "The ORSA Heat Vent is a sealed heat exchanger. Opening its shutter exposes cooling fins; it never opens a passage through your pressure wall. It uses no fuel and consumes no O2. In vacuum, it rejects heat by radiation. Close it when you want to retain warmth."
+      "text": "The ORSA Heat Vent is an airtight radiator. It removes heat without losing oxygen or using fuel. A thermostat in the same sealed room opens the shutters above target and closes them at target. More vents add cooling capacity without cooling past the target."
     },
     {
       "type": "patchouli:crafting",
@@ -17,7 +17,7 @@
     {
       "type": "patchouli:text",
       "title": "Placement & Controls",
-      "text": "Place it while looking from your room toward the outdoors: the fin face points away from you. Its opposite face must touch the room. The outdoor face needs an unobstructed sky column; blocks, roofs and neighboring rooms prevent cooling. Right-click toggles the shutter. Redstone holds it open until the signal is removed."
+      "text": "Place it while looking toward the outdoors: the fins point away from you. The opposite face must touch the room. Every vent needs its own unobstructed outdoor sky column; roofs, blocks and neighboring rooms prevent cooling. Without a thermostat, right-click toggles the shutter and redstone holds it open. A thermostat takes control of both."
     },
     {
       "type": "patchouli:text",
@@ -32,7 +32,7 @@
     {
       "type": "patchouli:text",
       "title": "Avoid Wasting Fuel",
-      "text": "Heaters will work harder against an open vent while trying to hold their target. Lower your $(l:heating/thermostat)thermostat$(/l), or turn heaters off before dumping excess heat. Existing Core warmth still contributes to your sensed temperature. An open heat vent preserves oxygen; a $(l:heating/airlocks)manual vent valve$(/l) dumps it."
+      "text": "Install a $(l:heating/thermostat)thermostat$(/l) to control heating and cooling together. Heaters save fuel when machines supply enough warmth. One vent has conductance18 before the vacuum factor; two give36. Cooling depends on the temperature difference, so hot exterior conditions reduce its output. A manual open vent can waste heater fuel; thermostat control closes it when cool."
     }
   ]
 }

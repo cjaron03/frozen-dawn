@@ -3,6 +3,8 @@ package com.frozendawn.thermal;
 /** Heat units are deliberately game-scaled. Energy uses Kelvin so vent/removal budgets remain explicit. */
 public final class RoomHeatMath {
     public static final double ABSOLUTE_ZERO = -273.15;
+    // Original game calibration: fast cold starts, with most stored heat in walls.
+    // Excess machine heat is rejected by controlled vents rather than hidden in extra mass.
     public static final double AIR_CAPACITY = 1.0;
     public static final double MATERIAL_CAPACITY = 12.0;
     public static final double VACUUM_HEATER_EFFICIENCY = 0.25;

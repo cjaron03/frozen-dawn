@@ -1,278 +1,140 @@
 {
   "variants": {
-    "facing=north,open=false,powered=false,indicator=0": {
+    "facing=north,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed"
     },
-    "facing=north,open=false,powered=false,indicator=1": {
+    "facing=north,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1"
     },
-    "facing=north,open=false,powered=false,indicator=2": {
+    "facing=north,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2"
     },
-    "facing=north,open=false,powered=true,indicator=0": {
+    "facing=north,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open"
     },
-    "facing=north,open=false,powered=true,indicator=1": {
+    "facing=north,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1"
     },
-    "facing=north,open=false,powered=true,indicator=2": {
+    "facing=north,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2"
     },
-    "facing=north,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open"
-    },
-    "facing=north,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1"
-    },
-    "facing=north,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2"
-    },
-    "facing=north,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open"
-    },
-    "facing=north,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1"
-    },
-    "facing=north,open=true,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2"
-    },
-    "facing=east,open=false,powered=false,indicator=0": {
+    "facing=east,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed",
       "y": 90
     },
-    "facing=east,open=false,powered=false,indicator=1": {
+    "facing=east,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1",
       "y": 90
     },
-    "facing=east,open=false,powered=false,indicator=2": {
+    "facing=east,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2",
       "y": 90
     },
-    "facing=east,open=false,powered=true,indicator=0": {
+    "facing=east,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open",
       "y": 90
     },
-    "facing=east,open=false,powered=true,indicator=1": {
+    "facing=east,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1",
       "y": 90
     },
-    "facing=east,open=false,powered=true,indicator=2": {
+    "facing=east,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2",
       "y": 90
     },
-    "facing=east,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 90
-    },
-    "facing=east,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 90
-    },
-    "facing=east,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 90
-    },
-    "facing=east,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 90
-    },
-    "facing=east,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 90
-    },
-    "facing=east,open=true,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 90
-    },
-    "facing=south,open=false,powered=false,indicator=0": {
+    "facing=south,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed",
       "y": 180
     },
-    "facing=south,open=false,powered=false,indicator=1": {
+    "facing=south,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1",
       "y": 180
     },
-    "facing=south,open=false,powered=false,indicator=2": {
+    "facing=south,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2",
       "y": 180
     },
-    "facing=south,open=false,powered=true,indicator=0": {
+    "facing=south,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open",
       "y": 180
     },
-    "facing=south,open=false,powered=true,indicator=1": {
+    "facing=south,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1",
       "y": 180
     },
-    "facing=south,open=false,powered=true,indicator=2": {
+    "facing=south,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2",
       "y": 180
     },
-    "facing=south,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 180
-    },
-    "facing=south,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 180
-    },
-    "facing=south,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 180
-    },
-    "facing=south,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 180
-    },
-    "facing=south,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 180
-    },
-    "facing=south,open=true,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 180
-    },
-    "facing=west,open=false,powered=false,indicator=0": {
+    "facing=west,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed",
       "y": 270
     },
-    "facing=west,open=false,powered=false,indicator=1": {
+    "facing=west,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1",
       "y": 270
     },
-    "facing=west,open=false,powered=false,indicator=2": {
+    "facing=west,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2",
       "y": 270
     },
-    "facing=west,open=false,powered=true,indicator=0": {
+    "facing=west,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open",
       "y": 270
     },
-    "facing=west,open=false,powered=true,indicator=1": {
+    "facing=west,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1",
       "y": 270
     },
-    "facing=west,open=false,powered=true,indicator=2": {
+    "facing=west,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2",
       "y": 270
     },
-    "facing=west,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 270
-    },
-    "facing=west,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 270
-    },
-    "facing=west,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 270
-    },
-    "facing=west,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "y": 270
-    },
-    "facing=west,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "y": 270
-    },
-    "facing=west,open=true,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "y": 270
-    },
-    "facing=up,open=false,powered=false,indicator=0": {
+    "facing=up,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed",
       "x": 270
     },
-    "facing=up,open=false,powered=false,indicator=1": {
+    "facing=up,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1",
       "x": 270
     },
-    "facing=up,open=false,powered=false,indicator=2": {
+    "facing=up,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2",
       "x": 270
     },
-    "facing=up,open=false,powered=true,indicator=0": {
+    "facing=up,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open",
       "x": 270
     },
-    "facing=up,open=false,powered=true,indicator=1": {
+    "facing=up,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1",
       "x": 270
     },
-    "facing=up,open=false,powered=true,indicator=2": {
+    "facing=up,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2",
       "x": 270
     },
-    "facing=up,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "x": 270
-    },
-    "facing=up,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "x": 270
-    },
-    "facing=up,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "x": 270
-    },
-    "facing=up,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "x": 270
-    },
-    "facing=up,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "x": 270
-    },
-    "facing=up,open=true,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "x": 270
-    },
-    "facing=down,open=false,powered=false,indicator=0": {
+    "facing=down,venting=false,indicator=0": {
       "model": "frozendawn:block/heat_vent_closed",
       "x": 90
     },
-    "facing=down,open=false,powered=false,indicator=1": {
+    "facing=down,venting=false,indicator=1": {
       "model": "frozendawn:block/heat_vent_closed_1",
       "x": 90
     },
-    "facing=down,open=false,powered=false,indicator=2": {
+    "facing=down,venting=false,indicator=2": {
       "model": "frozendawn:block/heat_vent_closed_2",
       "x": 90
     },
-    "facing=down,open=false,powered=true,indicator=0": {
+    "facing=down,venting=true,indicator=0": {
       "model": "frozendawn:block/heat_vent_open",
       "x": 90
     },
-    "facing=down,open=false,powered=true,indicator=1": {
+    "facing=down,venting=true,indicator=1": {
       "model": "frozendawn:block/heat_vent_open_1",
       "x": 90
     },
-    "facing=down,open=false,powered=true,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "x": 90
-    },
-    "facing=down,open=true,powered=false,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "x": 90
-    },
-    "facing=down,open=true,powered=false,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "x": 90
-    },
-    "facing=down,open=true,powered=false,indicator=2": {
-      "model": "frozendawn:block/heat_vent_open_2",
-      "x": 90
-    },
-    "facing=down,open=true,powered=true,indicator=0": {
-      "model": "frozendawn:block/heat_vent_open",
-      "x": 90
-    },
-    "facing=down,open=true,powered=true,indicator=1": {
-      "model": "frozendawn:block/heat_vent_open_1",
-      "x": 90
-    },
-    "facing=down,open=true,powered=true,indicator=2": {
+    "facing=down,venting=true,indicator=2": {
       "model": "frozendawn:block/heat_vent_open_2",
       "x": 90
     }

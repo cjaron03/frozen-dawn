@@ -35,6 +35,7 @@ public final class RoomOxygenManager {
     private record PoolProfile(Map<Long,RoomAtmosphere.Geometry> rooms,List<OxygenPools.Source> sources) {}
     private static final class State {
         final Set<BlockPos> reservoirs=new HashSet<>();
+        final Set<BlockPos> pixies=new TreeSet<>();
         Map<Long,StorageReading> storage=Map.of();
         final Set<BlockPos> gauges=new HashSet<>();final Set<BlockPos> exposed=new HashSet<>();
         final Set<BlockPos> starvedFurnaces=new HashSet<>();
@@ -59,6 +60,15 @@ public final class RoomOxygenManager {
         if(l.getGameTime()%20==0&&l.getBlockEntity(p) instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity furnace)
             RoomAtmosphere.keepAlive(furnace);
     }
+    /** Paid loaded production may support the existing sealed-room pressure recovery, never an airlock chamber. */
+    public static boolean hasPixieSupply(ServerLevel l,RoomAtmosphere.Geometry geometry){
+        var s=LEVELS.get(l);if(s==null)return false;
+        for(var source:s.supplies)if(source.id.startsWith("pixie:")&&source.capacity>0&&source.ready)
+            for(long room:source.rooms){var t=s.topology.get(room);if(t!=null&&t.geometry.equals(geometry)&&loaded(l,t)&&RoomAtmosphere.cachedSealAt(l,t.anchor)==RoomAtmosphere.Seal.SEALED)return true;}
+        return false;
+    }
+    public static void registerPixie(ServerLevel l,BlockPos p){LEVELS.computeIfAbsent(l,k->new State()).pixies.add(p.immutable());}
+    public static void removePixie(ServerLevel l,BlockPos p){var s=LEVELS.get(l);if(s!=null)s.pixies.remove(p);}
     public static void registerReservoir(ServerLevel l,BlockPos p){LEVELS.computeIfAbsent(l,k->new State()).reservoirs.add(p.immutable());}
     public static void removeReservoir(ServerLevel l,BlockPos p){var s=LEVELS.get(l);if(s!=null)s.reservoirs.remove(p);}
     public static void reset(){LEVELS.clear();}
@@ -107,6 +117,12 @@ public final class RoomOxygenManager {
         for(var p:GeothermalCoreRegistry.getCores(l).stream().sorted(Comparator.comparingLong(BlockPos::asLong)).toList())if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof GeothermalCoreBlockEntity core&&core.getOxygenSupply()>0){
             var rooms=served(s,p,valid);if(!rooms.isEmpty())result.add(new Supply("core:"+p.asLong(),core.getOxygenSupply(),rooms,sourceReady(l,s,p,discoveryBudget)));}
         for(var p:BlastPitWarmZoneRegistry.getWarmZones(l))if(l.isLoaded(p)){var rooms=served(s,p,valid);if(!rooms.isEmpty())result.add(new Supply("blast_pit:"+p.asLong(),BLAST_PIT_CAPACITY,rooms,sourceReady(l,s,p,discoveryBudget)));}
+        for(var p:List.copyOf(s.pixies)) {
+            if(!l.isLoaded(p)||!(l.getBlockEntity(p) instanceof PixieBlockEntity)){s.pixies.remove(p);continue;}
+            // One physical intake belongs to one canonical room, never bridges unrelated seals.
+            var room=served(s,p,valid).stream().min(Long::compare).orElse(null);
+            if(room!=null)result.add(new Supply("pixie:"+p.asLong(),0,Set.of(room),true));
+        }
         result.sort(Comparator.comparing(Supply::id));return List.copyOf(result);
     }
     /** Inspect at most two unknown loaded intakes per accounting update. Known/open cells are cached.
@@ -157,15 +173,23 @@ public final class RoomOxygenManager {
         var connected=new HashMap<Long,Boolean>();
         for(var e:budget.entrySet()){var b=e.getValue();connected.merge(b.pool(),poolComplete.getOrDefault(b.pool(),false)
                 &&!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells()),(a,c)->a&&c);}
+        var directFills=producePixies(l,s,budget,poolComplete,connected,tanks);
+        // Only paid output joins the existing pool. The electrical graph is never an O2 topology edge.
+        budget=new TreeMap<>(OxygenPools.calculate(known,s.supplies.stream().map(v->new OxygenPools.Source(v.id,v.capacity,v.rooms)).toList(),s.burners,breathing));
+        production.clear();for(var b:budget.values())production.put(b.pool(),b.supply());
         var support=new HashMap<Long,Double>();
         if(CombustionAtmosphere.isVacuum(l))for(var e:tanks.entrySet())if(connected.getOrDefault(e.getKey(),false))support.put(e.getKey(),e.getValue().stream().mapToDouble(t->Math.min(t.storedSeconds(),com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_OUTPUT_RATE.get())).sum());
         budget.replaceAll((room,b)->new OxygenPools.Budget(b.pool(),b.supply()+support.getOrDefault(b.pool(),0.0),b.demand(),b.localDemand(),b.sources(),b.rooms()));
         budget=new TreeMap<>(controlCombustion(l,s,budget,poolComplete));
         controlBreathing(l,s,budget,poolComplete,breathing);
         transfer(l,s,budget,production,tanks,connected);
+        directFills.forEach((tank,fill)->tank.publish(false,0,fill/10.0));
         var readings=new TreeMap<Long,Reading>();
         for(var e:budget.entrySet()){var b=e.getValue();boolean air=!CombustionAtmosphere.isVacuum(l)||!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells());
             var mode=OxygenStatus.room(poolComplete.get(b.pool()),air,production.getOrDefault(b.pool(),0.0),b.demand());
+            // Matching demand is normal throttling. Spare paid-capable capacity only informs the warning;
+            // actual supply, scarcity budgets, pressure and resource debits stay based on paid output.
+            if(mode==OxygenStatus.Mode.LOW)mode=OxygenStatus.room(true,true,production.getOrDefault(b.pool(),0.0)+pixieRecoveryHeadroom(l,s,budget,b.pool()),b.demand());
             if(air&&poolComplete.get(b.pool())&&CombustionAtmosphere.isVacuum(l)&&s.unavailablePools.contains(b.pool()))mode=OxygenStatus.Mode.NO_OXYGEN;
             else if(air&&poolComplete.get(b.pool())&&s.shortagePools.contains(b.pool()))mode=OxygenStatus.Mode.BREATHING_SHORTAGE;
             else if(air&&poolComplete.get(b.pool())&&s.storage.getOrDefault(b.pool(),StorageReading.empty()).output()>0&&b.demand()<=b.supply()+1e-8)mode=OxygenStatus.Mode.ON_RESERVE;
@@ -173,6 +197,77 @@ public final class RoomOxygenManager {
         s.readings=Map.copyOf(readings);
         for(var p:List.copyOf(s.gauges))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof OxygenGaugeBlockEntity gauge)gauge.publish(readingAt(l,p),storageAt(l,p));
         warnListeners(l,s);
+    }
+    /** Request only current breathing/combustion and real charging room in the existing shared pool.
+     * Frozen, unknown, unloaded and breached intakes contribute no room supply. */
+    private static Map<OxygenReservoirBlockEntity,Integer> producePixies(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,
+            Map<Long,Boolean> complete,Map<Long,Boolean> connected,Map<Long,List<OxygenReservoirBlockEntity>> tanks){
+        var fills=new HashMap<OxygenReservoirBlockEntity,Integer>();if(s.pixies.isEmpty())return fills;
+        com.frozendawn.power.PowerNetworks.update(l);
+        var needs=new HashMap<Long,Integer>();
+        for(var b:budget.values())if(!needs.containsKey(b.pool())) {
+            var requests=connected.getOrDefault(b.pool(),false)?chargers(l,s,budget,b.pool(),tanks.getOrDefault(b.pool(),List.of()),Map.of(),new HashMap<>()):List.<Charger>of();
+            long charging=requests.stream().mapToLong(Charger::request).sum()*100L;
+            needs.put(b.pool(),connected.getOrDefault(b.pool(),false)?(int)Math.min(Integer.MAX_VALUE,Math.max(0,Math.ceil((b.demand()-b.supply())*1000)+charging)):1000);
+        }
+        var direct=new LinkedHashMap<PixieBlockEntity,List<OxygenReservoirBlockEntity>>();
+        var reserved=new HashMap<OxygenReservoirBlockEntity,Integer>();
+        var phase=com.frozendawn.data.ApocalypseState.get(l.getServer());
+        int discoveryBudget=2;var plannedPower=new HashMap<Set<BlockPos>,Long>();
+        for(var p:List.copyOf(s.pixies))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof PixieBlockEntity pixie){
+            if(!pixie.newSecond())continue;
+            var room=served(s,p,budget.keySet()).stream().min(Long::compare).orElse(null);
+            var b=room==null?null:budget.get(room);
+            var probe=Arrays.stream(Direction.values()).map(p::relative).filter(q->l.isLoaded(q)&&RoomAtmosphere.cachedSealAt(l,q)==RoomAtmosphere.Seal.OPEN).findFirst().orElse(p.above());
+            if((b==null||!complete.getOrDefault(b.pool(),false))&&RoomAtmosphere.cachedSealAt(l,probe)==RoomAtmosphere.Seal.UNKNOWN&&discoveryBudget>0&&l.isLoaded(probe)){
+                discoveryBudget--;RoomAtmosphere.discoverSealedSourceIntake(l,probe);
+            }
+            var component=com.frozendawn.power.PowerNetworks.component(l,p);
+            long available=plannedPower.computeIfAbsent(component,k->com.frozendawn.power.PowerNetworks.priorityBudget(l,p));
+            if(b!=null&&RoomAtmosphere.cachedSealAt(l,probe)!=RoomAtmosphere.Seal.OPEN){
+                boolean ready=complete.getOrDefault(b.pool(),false);
+                boolean priming=ready&&!connected.getOrDefault(b.pool(),false)&&!com.frozendawn.airlock.AirlockManager.blocksAutomaticAir(l,s.topology.get(room).geometry.cells());
+                var temperature=RoomThermalManager.machineryTemperatureAt(l,s.topology.get(room).anchor);
+                pixie.roomFeel(RoomThermalManager.cachedTemperatureAt(l,s.topology.get(room).anchor).orElse(Double.NaN));
+                pixie.prepare(ready,false,temperature.orElse(Double.NaN),ready?(priming?Math.min(1000,needs.getOrDefault(b.pool(),0)):connected.getOrDefault(b.pool(),false)?needs.getOrDefault(b.pool(),0):0):0);
+                int planned=(int)Math.min(available,pixie.requestWatts());
+                needs.merge(b.pool(),-planned,Integer::sum);plannedPower.put(component,available-planned);
+            } else {
+                // Explicit links fill only closed vessels; open air is never given room production.
+                boolean open=RoomAtmosphere.cachedSealAt(l,probe)==RoomAtmosphere.Seal.OPEN;
+                var targets=com.frozendawn.power.PowerNetworks.linkedOxygenTanks(l,p).stream().filter(t->{
+                    var id=s.cells.get(t.getBlockPos());return id==null||!budget.containsKey(id)||!connected.getOrDefault(budget.get(id).pool(),false);
+                }).toList();
+                int wanted=0;var eligible=new ArrayList<OxygenReservoirBlockEntity>();
+                for(var tank:targets){int roomLeft=(int)Math.min((int)Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10),(OxygenReservoirBlockEntity.capacityMicro()-tank.storedMicro())/OxygenAllocation.MICRO_PER_ITEM);
+                    int want=Math.max(0,roomLeft-reserved.getOrDefault(tank,0));if(want>0){eligible.add(tank);wanted+=want;}}
+                double feel=RoomThermalManager.cachedTemperatureAt(l,probe).orElseGet(()->TemperatureManager.getLoadedTemperatureAt(l,probe,phase.getCurrentDay(),phase.getTotalDays()));
+                double temperature=RoomThermalManager.cachedMachineryTemperatureAt(l,probe).orElse(feel);pixie.roomFeel(feel);
+                pixie.prepare(open,true,temperature,wanted*100);direct.put(pixie,eligible);
+                int planned=(int)(Math.min(available,pixie.requestWatts())/100);plannedPower.put(component,available-planned*100L);
+                for(var tank:eligible){int tankSpace=Math.max(0,(int)Math.min((int)Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10),(OxygenReservoirBlockEntity.capacityMicro()-tank.storedMicro())/OxygenAllocation.MICRO_PER_ITEM)-reserved.getOrDefault(tank,0));int n=Math.min(planned,tankSpace);reserved.merge(tank,n,Integer::sum);planned-=n;}
+            }
+        }
+        com.frozendawn.power.PowerNetworks.accountLifeSupport(l);
+        var actual=new ArrayList<Supply>();
+        for(var source:s.supplies){if(source.id.startsWith("pixie:")){var p=BlockPos.of(Long.parseLong(source.id.substring(6)));var be=l.getBlockEntity(p);actual.add(new Supply(source.id,be instanceof PixieBlockEntity pixie&&!pixie.tankOnly()?pixie.outputWatts()/1000.0:0,source.rooms,source.ready));}else actual.add(source);}
+        s.supplies=List.copyOf(actual);
+        for(var e:direct.entrySet()){
+            int items=e.getKey().outputWatts()/100;
+            for(var tank:e.getValue()){int offer=Math.min(items,Math.max(0,(int)Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10)-fills.getOrDefault(tank,0)));int used=tank.charge(offer);items-=used;fills.merge(tank,used,Integer::sum);}
+        }
+        return fills;
+    }
+    /** Capacity admission for a sleeping vanilla furnace; no water/power is consumed by this query.
+     * A successful restart becomes current demand at the next ordinary one-second allocation. */
+    private static double pixieRecoveryHeadroom(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,long pool){
+        var remaining=new HashMap<Set<BlockPos>,Integer>();int watts=0;
+        for(var p:s.pixies)if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof PixieBlockEntity pixie&&!pixie.tankOnly()&&pixie.status()!=PixieBlockEntity.FROZEN&&pixie.status()!=PixieBlockEntity.WAITING){
+            var room=served(s,p,budget.keySet()).stream().min(Long::compare).orElse(null);if(room==null||budget.get(room).pool()!=pool)continue;
+            var component=com.frozendawn.power.PowerNetworks.component(l,p);int power=remaining.computeIfAbsent(component,k->com.frozendawn.power.PowerNetworks.priorityHeadroom(l,p));
+            int capacity=(int)Math.min(4000-pixie.outputWatts(),pixie.availableWater()/10);int grant=Math.min(power,capacity);watts+=grant;remaining.put(component,power-grant);
+        }
+        return watts/1000.0;
     }
     /** A vessel belongs to one existing pool; it never creates topology/source edges. */
     private static Map<Long,List<OxygenReservoirBlockEntity>> reservoirPools(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget){
@@ -182,6 +277,24 @@ public final class RoomOxygenManager {
             else tank.publish(false,0,0);
         }
         return result;
+    }
+    private static List<Charger> chargers(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,long pool,
+            List<OxygenReservoirBlockEntity> vessels,Map<OxygenReservoirBlockEntity,Double> outputs,Map<OxygenReservoirBlockEntity,Integer> fills){
+        var chargers=new ArrayList<Charger>();
+                for(var tank:vessels)if(outputs.getOrDefault(tank,0.0)==0){int request=(int)Math.min((OxygenReservoirBlockEntity.capacityMicro()-tank.storedMicro())/OxygenAllocation.MICRO_PER_ITEM,
+                        Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10));
+                    chargers.add(new Charger("reservoir:"+tank.getBlockPos().asLong(),request,n->{int accepted=tank.charge(n);fills.put(tank,accepted);return accepted;}));}
+                for(var p:GeothermalCoreRegistry.getCores(l))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof GeothermalCoreBlockEntity core){
+                    var room=s.intakes.getOrDefault(p,Set.of()).stream().filter(budget::containsKey).min(Long::compare).orElse(null);
+                    if(room!=null&&budget.get(room).pool()==pool)chargers.add(new Charger("core:"+p.asLong(),core.oxygenChargeRequest(),core::chargeOxygen));}
+                for(var player:l.players()){var room=s.cells.get(player.blockPosition());if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool)
+                    chargers.add(new Charger("suit:"+player.getUUID(),com.frozendawn.event.SuitIntegrityHandler.oxygenChargeRequest(player),n->com.frozendawn.event.SuitIntegrityHandler.chargeOxygen(player,n)));}
+                for(var chamber:com.frozendawn.airlock.AirlockSavedState.get(l).chambers()){
+                    var room=s.cells.get(chamber.base);
+                    if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool&&com.frozendawn.airlock.AirlockManager.canReceiveSharedFeed(l,chamber))
+                        chargers.add(new Charger("airlock:"+chamber.id,Math.min(40,com.frozendawn.airlock.AirlockCycle.RESERVE_CAPACITY-chamber.gas.reserve()),n->{int accepted=chamber.gas.fill(n);if(accepted>0)com.frozendawn.airlock.AirlockSavedState.get(l).setDirty();return accepted;}));
+                }
+        return chargers;
     }
     /** One loaded second, no catch-up. All recipients compete for spare production, never discharged storage. */
     private static void transfer(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,Map<Long,Double> production,
@@ -198,25 +311,15 @@ public final class RoomOxygenManager {
             for(var tank:vessels){long offer=ready?Math.min(remaining,Math.min(tank.storedMicro(),OxygenAllocation.micro(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_OUTPUT_RATE.get()))):0;
                 long used=advance?tank.draw(offer):offer;remaining-=used;drawn+=used;outputs.put(tank,(double)used/OxygenAllocation.MICRO_PER_SECOND);}
             var chargers=new ArrayList<Charger>();var fills=new HashMap<OxygenReservoirBlockEntity,Integer>();
-            if(ready){
-                for(var tank:vessels)if(outputs.get(tank)==0){int request=(int)Math.min((OxygenReservoirBlockEntity.capacityMicro()-tank.storedMicro())/OxygenAllocation.MICRO_PER_ITEM,
-                        Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10));
-                    chargers.add(new Charger("reservoir:"+tank.getBlockPos().asLong(),request,n->{int accepted=tank.charge(n);fills.put(tank,accepted);return accepted;}));}
-                for(var p:GeothermalCoreRegistry.getCores(l))if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof GeothermalCoreBlockEntity core){
-                    var room=s.intakes.getOrDefault(p,Set.of()).stream().filter(budget::containsKey).min(Long::compare).orElse(null);
-                    if(room!=null&&budget.get(room).pool()==pool)chargers.add(new Charger("core:"+p.asLong(),core.oxygenChargeRequest(),core::chargeOxygen));}
-                for(var player:l.players()){var room=s.cells.get(player.blockPosition());if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool)
-                    chargers.add(new Charger("suit:"+player.getUUID(),com.frozendawn.event.SuitIntegrityHandler.oxygenChargeRequest(player),n->com.frozendawn.event.SuitIntegrityHandler.chargeOxygen(player,n)));}
-                for(var chamber:com.frozendawn.airlock.AirlockSavedState.get(l).chambers()){
-                    var room=s.cells.get(chamber.base);
-                    if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool&&com.frozendawn.airlock.AirlockManager.canReceiveSharedFeed(l,chamber))
-                        chargers.add(new Charger("airlock:"+chamber.id,Math.min(40,com.frozendawn.airlock.AirlockCycle.RESERVE_CAPACITY-chamber.gas.reserve()),n->{int accepted=chamber.gas.fill(n);if(accepted>0)com.frozendawn.airlock.AirlockSavedState.get(l).setDirty();return accepted;}));
-                }
-            }
+            if(ready)chargers.addAll(chargers(l,s,budget,pool,vessels,outputs,fills));
             double charging=0;
             if(advance&&ready){int spare=(int)Math.floor(Math.max(0,production.get(pool)-b.demand())*10+1e-8);var requests=new TreeMap<String,Integer>();for(var c:chargers)requests.put(c.id,c.request);
                 var grants=OxygenAllocation.allocate(spare,requests,l.getGameTime()/20);
-                for(var c:chargers)c.accept.applyAsInt(grants.getOrDefault(c.id,0));
+                int filled=0;for(var c:chargers)filled+=c.accept.applyAsInt(grants.getOrDefault(c.id,0));
+                for(var p:s.pixies)if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof PixieBlockEntity pixie&&!pixie.tankOnly()){
+                    var room=served(s,p,budget.keySet()).stream().min(Long::compare).orElse(null);
+                    if(room!=null&&budget.get(room).pool()==pool)pixie.publishActivity(b.demand()>0,filled>0);
+                }
                 charging=fills.values().stream().mapToInt(Integer::intValue).sum()/10.0;}
             for(var tank:vessels)tank.publish(ready,outputs.get(tank),fills.getOrDefault(tank,0)/10.0);
             double stored=vessels.stream().mapToDouble(OxygenReservoirBlockEntity::storedSeconds).sum();
@@ -239,7 +342,7 @@ public final class RoomOxygenManager {
             var rooms=new TreeMap<Long,RoomAtmosphere.Geometry>();
             for(var e:budget.entrySet())if(e.getValue().pool()==pool)rooms.put(e.getKey(),s.topology.get(e.getKey()).geometry);
             var sources=s.supplies.stream().filter(v->!Collections.disjoint(v.rooms,rooms.keySet()))
-                    .map(v->new OxygenPools.Source(v.id,v.capacity,v.rooms)).toList();
+                    .map(v->new OxygenPools.Source(v.id,v.id.startsWith("pixie:")?4:v.capacity,v.rooms)).toList();
             var profile=new PoolProfile(Map.copyOf(rooms),sources);profiles.put(pool,profile);
             if(!profile.equals(s.furnacePools.put(pool,profile))){
                 s.furnacePolicy.resetPool(pool);s.breathingPolicy.resetPool(pool);s.oxygenDirtyPools.add(pool);
@@ -287,7 +390,7 @@ public final class RoomOxygenManager {
             if(!Objects.equals(profile,s.furnaceRecoveryProfiles.put(pos.asLong(),profile)))
                 s.furnacePolicy.resetRecovery(pos.asLong());
             boolean supported=!vacuum || b!=null&&complete.getOrDefault(b.pool(),false)&&poolAir.getOrDefault(b.pool(),false)
-                    &&b.demand()+3<=b.supply()+1e-8;
+                    &&b.demand()+3<=b.supply()+pixieRecoveryHeadroom(l,s,budget,b.pool())+1e-8;
             if(!s.furnacePolicy.canResume(pos.asLong(),now,supported))continue;
             // Legacy air authority must also permit combustion; never restart into a breach/vacuum.
             if(!CombustionAtmosphere.canBurnAt(l,pos))continue;
@@ -378,6 +481,6 @@ public final class RoomOxygenManager {
     }
     public static List<Reading> snapshots(ServerLevel l){var s=LEVELS.get(l);return s==null?List.of():s.readings.values().stream().sorted(Comparator.comparingLong(Reading::room)).toList();}
     public static long profileBuilds(ServerLevel l){var s=LEVELS.get(l);return s==null?0:s.profileBuilds;}
-    @SubscribeEvent public static void tick(ServerTickEvent.Post e){if(e.getServer().overworld().getGameTime()%20==0)tickLevel(e.getServer().overworld());}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void tick(ServerTickEvent.Post e){if(e.getServer().overworld().getGameTime()%20==0)tickLevel(e.getServer().overworld());}
     @SubscribeEvent public static void stopped(ServerStoppedEvent e){reset();}
 }

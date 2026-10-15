@@ -19,7 +19,9 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.PanelLightBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerStorageBlock
                 || state.getBlock() instanceof com.frozendawn.block.InductionFurnaceBlock
-                || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock ? 16 : 0;
+                || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock
+                || state.getBlock() instanceof com.frozendawn.block.PixieBlock
+                || state.getBlock() instanceof com.frozendawn.block.OxygenReservoirBlock ? 16 : 0;
     }
     private static boolean feedthrough(ServerLevel level, BlockPos pos) {
         return level.getBlockState(pos).getBlock() instanceof PowerRelayBlock relay && relay.isFeedthrough();
@@ -74,7 +76,7 @@ public final class PowerLinkRules {
             if(level.isLoaded(p)) {
                 var block=level.getBlockState(p).getBlock();
                 if(block instanceof com.frozendawn.block.PowerStorageBlock storage && !storage.isBank())dock=true;
-                else if(!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock))infrastructure=true;
+                else if(!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
             } else infrastructure=true;
             if(dock && infrastructure)return false;
             queue.addAll(neighbors.getOrDefault(p,Set.of()));

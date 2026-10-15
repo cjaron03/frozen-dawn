@@ -69,6 +69,8 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> BULKHEAD_FEEDTHROUGH = BLOCKS.register("bulkhead_feedthrough",
             () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(4f).sound(SoundType.METAL), 16, true));
 
+    public static final DeferredBlock<com.frozendawn.block.PixieBlock> PIXIE = BLOCKS.register("pixie", () -> new com.frozendawn.block.PixieBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+
     public static final DeferredBlock<com.frozendawn.block.PowerMonitorBlock> POWER_MONITOR = BLOCKS.register("power_monitor",
             () -> new com.frozendawn.block.PowerMonitorBlock(BlockBehaviour.Properties.of().strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
 

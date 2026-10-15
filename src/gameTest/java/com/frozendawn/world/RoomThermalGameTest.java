@@ -82,6 +82,166 @@ public final class RoomThermalGameTest {
         });
     }
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomHeatColdMaterialCannotBlockHotWallTransferAfterReload(GameTestHelper h) {
+        scene(h,65-h.absolutePos(BlockPos.ZERO).getY(),s->{
+            var pos=s.c.west(2);s.l.setBlock(pos,ModBlocks.IRON_THERMAL_HEATER.get().defaultBlockState(),3);
+            var view=RoomAtmosphere.view(s.l,s.c);hot(s,-64,191);
+            var empty=s.heat().materials.get(pos);
+            h.assertTrue(empty!=null,"Physical heater casing belongs to the room structure");
+            s.heat().ledger.environmentLoss+=empty.energy;empty.energy=0;
+            var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());
+            RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));
+            double gas=s.heat().rooms.get(view.id()).airEnergy;
+            double walls=s.heat().materials.values().stream().mapToDouble(m->m.energy).sum();
+            advanceHeat(s);
+            var first=RoomThermalManager.snapshots(s.l).stream().filter(r->r.id()==view.id()).findFirst().orElseThrow();
+            h.assertTrue(first.airTemperature()>-63,"Hot walls start warming cold air after reload even with an empty casing: "+first.airTemperature());
+            h.assertTrue(s.heat().rooms.get(view.id()).airEnergy>gas,"Air gains actual energy from the hot structure");
+            h.assertTrue(s.heat().materials.values().stream().mapToDouble(m->m.energy).sum()<walls,"Wall energy pays for warming and exterior loss");
+            h.assertTrue(first.heaterPower()==0&&first.passivePower()==0,"No fueled or passive source conceals the stored-wall transfer");
+            for(int i=0;i<11;i++)advanceHeat(s);
+            h.assertTrue(s.heat().materials.values().stream().allMatch(m->Double.isFinite(m.energy)&&m.energy>=0),"Repeated transfers never overdraw a cold physical block");
+            h.assertTrue(RoomThermalManager.cachedMachineryTemperatureAt(s.l,s.c).orElseThrow()>1,"Machinery remains thawed on later real thermal seconds");budget(h,s);
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomHeatOriginalCapacityColdStartAndQuickBreachRecovery(GameTestHelper h) {
+        scene(h,65-h.absolutePos(BlockPos.ZERO).getY(),s->{
+            smallRoom(s);ThermostatManager.reset();
+            var phase=ApocalypseState.get(s.l.getServer());long lo=0,hi=phase.getTotalDays()*24000L;
+            while(lo<hi){long mid=(lo+hi)/2;phase.setApocalypseTicks(mid,s.l.getServer());
+                double outside=TemperatureManager.getBackgroundTemperature(s.c.getY(),phase.getCurrentDay(),phase.getTotalDays());
+                if(outside>-150)lo=mid+1;else hi=mid;}
+            phase.setApocalypseTicks(lo,s.l.getServer());CombustionAtmosphere.reset();
+            var pos=s.c.west();s.l.setBlock(pos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+            try {
+            var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(pos);heater.onLoad();heater.addFuel(40000);
+            RoomAtmosphere.view(s.l,s.c);hot(s,-150,-150);
+            int seconds=0;while(seconds<120&&RoomThermalManager.cachedMachineryTemperatureAt(s.l,s.c).orElseThrow()<19){advanceHeat(s);seconds++;}
+            double temperature=RoomThermalManager.cachedMachineryTemperatureAt(s.l,s.c).orElseThrow();
+            h.assertTrue(seconds>=50&&temperature>=19,"One basic heater warms the original-capacity cold room in about1-2min: "+seconds+"s, "+temperature+"C");budget(h,s);
+            FrozenDawn.LOGGER.info("[VentCalibration]coldStart={}s at{}C with one base heater",seconds,temperature);
+            hot(s,20,20);
+            double walls=RoomThermalManager.snapshots(s.l).getFirst().structureTemperature();
+            var retainedWall=s.c.west(2);double wallBefore=s.heat().materials.get(retainedWall).energy;
+            var breach=s.c.east(2);s.l.setBlock(breach,Blocks.AIR.defaultBlockState(),3);RoomAtmosphere.inspect(s.l,s.c);advanceHeat(s);
+            var material=s.heat().materials.get(retainedWall);
+            h.assertTrue(RoomHeatMath.temperature(material.capacity,material.energy)>RoomHeatMath.temperature(material.capacity,wallBefore)-1,"Surviving walls barely cool during a quick breach");
+            s.l.setBlock(breach,Blocks.WHITE_WOOL.defaultBlockState(),3);RoomAtmosphere.view(s.l,s.c);
+            // Invoke the authoritative refill transition after patching; controller timing
+            // is independently covered by pressure recovery tests.
+            RoomAirState.get(s.l).refill(RoomAtmosphere.view(s.l,s.c).geometry().cells());
+            RoomThermalManager.temperatureAt(s.l,s.c);for(int i=0;i<5;i++)advanceHeat(s);
+            var recovered=RoomThermalManager.snapshots(s.l).getFirst();
+            h.assertTrue(recovered.structureTemperature()>walls-5,"Retained walls and the running heater recover after a quick patch: "+recovered.structureTemperature());
+            h.assertTrue(recovered.airPresent()&&recovered.airTemperature()>=19,"Warm walls and the existing heater rapidly restore resealed incoming air: "+recovered.airTemperature());budget(h,s);
+            FrozenDawn.LOGGER.info("[VentCalibration]coldStart={}s at{}C; reseal air={}C walls={}C",seconds,temperature,recovered.airTemperature(),recovered.structureTemperature());
+            }finally{s.l.setBlock(pos,Blocks.AIR.defaultBlockState(),3);}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void thermostatVentHandlesPixieAndTwoFurnacesInDeepVacuum(GameTestHelper h) {
+        scene(h,65-h.absolutePos(BlockPos.ZERO).getY(),s->{
+            smallRoom(s);ThermostatManager.reset();
+            var phase=ApocalypseState.get(s.l.getServer());phase.setApocalypseTicks(phase.getTotalDays()*24000L,s.l.getServer());CombustionAtmosphere.reset();
+            var vent=s.c.east(2);s.l.setBlock(vent,ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST),3);
+            s.l.setBlock(s.c.west(),ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+            var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(s.c.west());panel.onLoad();
+            try {
+                var geometry=RoomAtmosphere.view(s.l,s.c).geometry();hot(s,20,20);double before=s.heat().ledger.passive;
+                for(int second=0;second<300;second++){RoomThermalManager.addMachineHeat(s.l,s.c,1000);advanceHeat(s);}
+                var pixie=RoomThermalManager.snapshots(s.l).getFirst();
+                h.assertTrue(panel.reading().coolingVents()>0&&panel.data().get(6)>0,"Thermostat menu reports actual cooling even when a substep closes at target");
+                h.assertTrue(pixie.airTemperature()>=19.5&&pixie.airTemperature()<21,"One vent holds thermostat target with full PIXIE heat: "+pixie.airTemperature());
+                for(int second=0;second<600;second++){
+                    RoomThermalManager.addMachineHeat(s.l,s.c,1000+2*com.frozendawn.block.InductionFurnaceBlockEntity.WASTE_HEAT_WATTS);advanceHeat(s);
+                    h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().airTemperature()<35,"One vent plus envelope loss handles full PIXIE and two furnaces in deep vacuum");
+                }
+                var busy=RoomThermalManager.snapshots(s.l).getFirst();
+                near(h,s.heat().ledger.passive-before,1500000,"All machine waste heat is retained in accounting before real rejection");
+                h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==geometry&&busy.airPresent(),"Automatic shutters retain the same sealed gas volume");budget(h,s);
+                FrozenDawn.LOGGER.info("[VentCalibration]full PIXIE={}C; PIXIE+two furnaces={}C; exterior={}C",pixie.airTemperature(),busy.airTemperature(),TemperatureManager.getBackgroundTemperature(s.c.getY(),phase.getCurrentDay(),phase.getTotalDays()));
+            }finally{s.l.setBlock(s.c.west(),Blocks.AIR.defaultBlockState(),3);ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void thermostatVentsStackAndCloseWithoutOvercoolingAcrossReload(GameTestHelper h) {
+        scene(h,104,s->{
+            ThermostatManager.reset();
+            // Insulated walls keep ordinary exterior loss below one basic heater's output.
+            for(int x=-5;x<=5;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)
+                if(Math.abs(x)==5||Math.abs(z)==2||y==-1||y==3)s.l.setBlock(s.c.offset(x,y,z),Blocks.WHITE_WOOL.defaultBlockState(),3);
+            var panelPos=s.c.west(2);
+            s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
+            var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();
+            var heaterPos=s.c.east(2);s.l.setBlock(heaterPos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+            var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(heaterPos);heater.onLoad();heater.addFuel(10000);
+            var vents=List.of(s.c.east(5),s.c.east(5).above(),s.c.east(5).south());
+            var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
+            try {
+                s.l.setBlock(vents.getFirst(),state,3);RoomAtmosphere.view(s.l,s.c);hot(s,80,80);advanceHeat(s);
+                var one=RoomThermalManager.snapshots(s.l).getFirst();h.assertTrue(one.coolingVents()==1,"Hot controlled room opens a manually closed vent");
+                for(var vent:vents)s.l.setBlock(vent,state,3);
+                RoomAtmosphere.view(s.l,s.c);hot(s,80,80);advanceHeat(s);
+                var three=RoomThermalManager.snapshots(s.l).getFirst();
+                h.assertTrue(three.coolingVents()==3,"Every exposed radiator participates");near(h,three.coolingConductance(),3*one.coolingConductance(),"Three independent outdoor faces give exactly triple conductance");
+                var roof=vents.getLast().east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);hot(s,80,80);advanceHeat(s);
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==2,"A transparent roof blocks only its own radiator");
+                s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);
+                s.l.setBlock(vents.getLast(),state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
+                hot(s,19.9,19.9);advanceHeat(s);
+                for(var vent:vents)h.assertTrue(!RoomThermalManager.ventOpen(s.l,vent),"All automatic vents close below target");
+                hot(s,20.4,20.4);advanceHeat(s);h.assertTrue(!RoomThermalManager.ventOpen(s.l,vents.getFirst()),"Closed control stays closed inside the hysteresis band");
+                hot(s,30,30);advanceHeat(s);h.assertTrue(RoomThermalManager.ventOpen(s.l,vents.getFirst()),"Cooling starts above the upper threshold");
+                var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(saved,s.l.registryAccess()));
+                hot(s,30,30);RoomThermalManager.temperatureAt(s.l,s.c);advanceHeat(s);
+                h.assertTrue(RoomThermalManager.ventThermostatControlled(s.l,vents.getFirst())&&RoomThermalManager.ventOpen(s.l,vents.getFirst()),"Reload reconstructs same-room cooling without a saved open latch");
+                for(int i=0;i<60;i++){advanceHeat(s);var snap=RoomThermalManager.snapshots(s.l).getFirst();h.assertTrue(snap.airTemperature()>=19.5,"Oversized cooling cannot drag air below target; only normal envelope loss remains: "+snap.airTemperature());}
+                h.assertTrue(panel.data().getCount()==7,"Cooling status is synchronized with the simple thermostat menu");budget(h,s);
+                s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),3);advanceHeat(s);
+                h.assertTrue(!RoomThermalManager.ventThermostatControlled(s.l,vents.getFirst())&&!RoomThermalManager.ventOpen(s.l,vents.getFirst()),"Removing controller restores the original manual setting");
+                h.assertTrue(RoomThermalManager.ventOpen(s.l,vents.getLast()),"Removing controller also restores a saved manual-open setting");
+            }finally{s.l.setBlock(panelPos,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(heaterPos,Blocks.AIR.defaultBlockState(),3);ThermostatManager.reset();}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomHeatCapacityUpgradePreservesTemperaturesAndMigratesOnlyOnce(GameTestHelper h) {
+        scene(h,s->{
+            var view=RoomAtmosphere.view(s.l,s.c);hot(s,-64,191);
+            var cold=s.heat().materials.values().iterator().next();s.heat().ledger.environmentLoss+=cold.energy;cold.energy=0;
+            var temperatures=new java.util.HashMap<BlockPos,Double>();
+            s.heat().materials.forEach((pos,material)->temperatures.put(pos,RoomHeatMath.temperature(material.capacity,material.energy)));
+            for(int version:new int[]{2,3}) {
+                var legacy=s.heat().save(new CompoundTag(),s.l.registryAccess());legacy.putInt("version",version);
+                double oldAir=version==3?1200.0/72.0:1,oldWall=version==3?18000.0/72.0:12,oldTotal=0;
+                for(var item:legacy.getList("rooms",net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                    var room=(CompoundTag)item;double energy=room.getDouble("airEnergy")*oldAir/RoomHeatMath.AIR_CAPACITY;
+                    room.putDouble("airEnergy",energy);oldTotal+=energy;
+                }
+                for(var item:legacy.getList("materials",net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                    var material=(CompoundTag)item;double energy=material.getDouble("energy")*oldWall/material.getDouble("capacity");
+                    material.putDouble("capacity",oldWall);material.putDouble("energy",energy);oldTotal+=energy;
+                }
+                var oldLedger=new CompoundTag();oldLedger.putDouble("heater",123);oldLedger.putDouble("passive",456);
+                oldLedger.putDouble("materialIn",oldTotal-579);legacy.put("ledger",oldLedger);
+                var migrated=RoomThermalState.load(legacy,s.l.registryAccess());var room=migrated.rooms.get(view.id());
+                near(h,RoomHeatMath.temperature(room.airCapacity(),room.airEnergy),-64,"Migration preserves gas temperature from version"+version);
+                for(var entry:migrated.materials.entrySet())near(h,RoomHeatMath.temperature(entry.getValue().capacity,entry.getValue().energy),temperatures.get(entry.getKey()),"Migration preserves each hot or empty wall");
+                near(h,migrated.ledger.heater,123,"Migration preserves historical fuel heat");near(h,migrated.ledger.passive,456,"Migration preserves historical machine heat");
+                near(h,migrated.totalEnergy(),migrated.ledger.net(),"Signed calibration adjustment balances energy");
+                h.assertTrue(room.cells.equals(view.geometry().cells())&&room.airPresent&&room.sealed&&migrated.isDirty(),"Migration retains geometry/air and schedules converted save");
+                if(version==3)h.assertTrue(migrated.ledger.capacityAdjustment<0,"Reverting increased capacities uses an explicit negative rebase");
+                var again=RoomThermalState.load(migrated.save(new CompoundTag(),s.l.registryAccess()),s.l.registryAccess());
+                near(h,again.totalEnergy(),migrated.totalEnergy(),"Reload cannot convert capacity twice");near(h,again.ledger.capacityAdjustment,migrated.ledger.capacityAdjustment,"One-time adjustment persists");
+                var depleted=legacy.copy();var entry=depleted.getList("rooms",net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0);
+                double exported=entry.getDouble("airEnergy");entry.putBoolean("airPresent",false);entry.putDouble("airEnergy",0);
+                depleted.getCompound("ledger").putDouble("airOut",exported);var vacuum=RoomThermalState.load(depleted,s.l.registryAccess());
+                var empty=vacuum.rooms.get(view.id());h.assertTrue(!empty.airPresent&&empty.airEnergy==0&&empty.airCapacity()==0,"Migration cannot refill depleted gas");
+                near(h,vacuum.totalEnergy(),vacuum.ledger.net(),"Depleted conversion balances without fabricated air");
+            }
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
     public static void roomHeatOuterLayerChangesInsulationWithoutChangingAirGeometry(GameTestHelper h) {
         scene(h,s->{
             var outer=s.c.offset(6,0,0);s.l.setBlock(outer,Blocks.WHITE_WOOL.defaultBlockState(),3);
@@ -465,7 +625,7 @@ public final class RoomThermalGameTest {
             s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
             h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry(),"Shutter movement reuses the exact sealed pressure geometry");
             RoomThermalManager.temperatureAt(s.l,s.c);RoomThermalManager.tickLevel(s.l);var active=RoomThermalManager.snapshots(s.l).getFirst();
-            h.assertTrue(active.airTemperature()<passive.airTemperature()-1,"Exposed fins cool faster than the identical closed room");
+            h.assertTrue((passive.airTemperature()-active.airTemperature())*active.airCapacity()>100,"Exposed fins remove additional air heat");
             h.assertTrue(active.totalEnergy()<passive.totalEnergy()&&active.airPresent()&&active.sealed(),"Heat leaves while the room keeps its trapped gas");
             near(h,s.heat().ledger.airOut,airOut,"Opening fins exports no air energy");h.assertTrue(!RoomAirState.get(s.l).isDepleted(view.geometry().cells()),"Cooling never evacuates oxygen");budget(h,s);
             var saved=s.heat().save(new CompoundTag(),s.l.registryAccess());double energy=s.heat().totalEnergy();RoomThermalManager.reset();
@@ -781,6 +941,11 @@ public final class RoomThermalGameTest {
         }finally{s.l.setBlock(pos,Blocks.GLASS.defaultBlockState(),2);GeothermalCoreRegistry.unregister(s.l,pos);}
     });}
 
+    private static void smallRoom(Scene s) {
+        for(int x=-5;x<=5;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)s.l.setBlock(s.c.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+        for(int x=-2;x<=2;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)
+            s.l.setBlock(s.c.offset(x,y,z),(Math.abs(x)==2||Math.abs(z)==2||y==-1||y==3?Blocks.WHITE_WOOL:Blocks.AIR).defaultBlockState(),2);
+    }
     private static void advanceHeat(Scene s) {
         var time=s.l.getGameTime();s.integrationTime=Math.max(time,s.integrationTime)+20;
         ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(s.integrationTime);

@@ -56,6 +56,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
 
+    public static final DeferredItem<com.frozendawn.item.PixieItem> PIXIE = ITEMS.register("pixie",com.frozendawn.item.PixieItem::new);
+
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
@@ -498,6 +500,7 @@ public class ModItems {
                         output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMOSTAT.get());
                         output.accept(HEAT_VENT.get());
+                        output.accept(PIXIE.get());
                         output.accept(POWER_MONITOR.get());
                         output.accept(INDUCTION_FURNACE.get());
                         output.accept(POWER_CELL.get());

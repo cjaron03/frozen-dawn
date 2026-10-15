@@ -21,7 +21,9 @@ public final class PowerNetworks {
     private static final class Runtime {
         long revision = -1;
         long geometryRevision;
+        long coordinatedTick=Long.MIN_VALUE;
         final ArrayDeque<PowerLink> pending = new ArrayDeque<>();
+        final Set<PowerLink> pendingSet = new HashSet<>();
         final Set<PowerLink> active = new TreeSet<>();
         Map<BlockPos, Set<BlockPos>> components = Map.of();
         boolean graphDirty = true;
@@ -32,6 +34,8 @@ public final class PowerNetworks {
         final Set<BlockPos> stores = new TreeSet<>();
         final Map<BlockPos,Long> storeEnergyTicks = new HashMap<>();
         final Set<BlockPos> machines = new TreeSet<>();
+        final Set<BlockPos> lifeSupport = new TreeSet<>();
+        Map<BlockPos,Integer> priorityRemaining = Map.of();
         Map<BlockPos, MachineGrant> machineGrants = Map.of();
         final Map<BlockPos, Long> machineTicks = new HashMap<>();
     }
@@ -40,6 +44,19 @@ public final class PowerNetworks {
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
+    public static void pixieLoaded(ServerLevel l,BlockPos p){runtime(l).lifeSupport.add(p.immutable());}
+    public static void pixieRemoved(ServerLevel l,BlockPos p){runtime(l).lifeSupport.remove(p);}
+    /** Cached active neighbors only. Oxygen plumbing is an explicit PIXIE-to-tank Binder link. */
+    public static List<com.frozendawn.block.OxygenReservoirBlockEntity> linkedOxygenTanks(ServerLevel l,BlockPos p){
+        return runtime(l).active.stream().filter(link->link.touches(p)).map(link->link.a().equals(p)?link.b():link.a())
+                .sorted().filter(l::isLoaded).map(l::getBlockEntity).filter(com.frozendawn.block.OxygenReservoirBlockEntity.class::isInstance)
+                .map(com.frozendawn.block.OxygenReservoirBlockEntity.class::cast).toList();
+    }
+    public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
+    public static void accountLifeSupport(ServerLevel l){account(l);runtime(l).coordinatedTick=l.getGameTime();}
+    /** Physical loaded supply and stored energy for planning; no energy transfer or forced chunks. */
+    public static long priorityBudget(ServerLevel l,BlockPos p){return component(l,p).stream().mapToLong(node->(long)supplyWatts(l,node)+storedJoules(l,node)).sum();}
+    public static int priorityHeadroom(ServerLevel l,BlockPos p){return runtime(l).priorityRemaining.getOrDefault(p,0);}
     public static void storageLoaded(ServerLevel level, BlockPos pos) { runtime(level).stores.add(pos.immutable()); }
     public static void storageRemoved(ServerLevel level, BlockPos pos) { var rt=runtime(level);rt.stores.remove(pos);rt.storeEnergyTicks.remove(pos); }
     public static void machineLoaded(ServerLevel level, BlockPos pos) { runtime(level).machines.add(pos.immutable()); }
@@ -76,30 +93,61 @@ public final class PowerNetworks {
         var rt = runtime(level); rt.active.removeIf(link -> link.touches(pos)); rt.graphDirty = true;
         return removed;
     }
-    /** Invoked after all real block mutations, including commands, explosions and pistons. */
+    /** Physical node removal clears saved links. Ordinary solid material changes do not
+     * change beam legality. Geometry edits suspend only affected connections. */
     public static void blockChanged(ServerLevel level, BlockPos pos, BlockState before, BlockState after) {
-        if (before.getBlock() != after.getBlock() && PowerLinkRules.range(before) > 0) clear(level, pos);
-        var rt = LEVELS.get(level);
-        if (rt != null && (before.getBlock() != after.getBlock()
-                || com.frozendawn.world.RoomAtmosphere.isPassage(level, pos, before)
-                != com.frozendawn.world.RoomAtmosphere.isPassage(level, pos, after))) invalidate(rt);
+        boolean node=before.getBlock()!=after.getBlock()&&(PowerLinkRules.range(before)>0||PowerLinkRules.range(after)>0);
+        if(before.getBlock()!=after.getBlock()&&PowerLinkRules.range(before)>0)clear(level,pos);
+        var rt=LEVELS.get(level);if(rt==null)return;
+        boolean passage=com.frozendawn.world.RoomAtmosphere.isPassage(level,pos,before)!=com.frozendawn.world.RoomAtmosphere.isPassage(level,pos,after);
+        boolean port=before.getBlock()!=after.getBlock()&&(isFeedthrough(before)||isFeedthrough(after));
+        if(!node&&!passage&&!port)return;
+        var rooms=com.frozendawn.world.RoomAtmosphere.cachedRoomViews(level).stream().map(com.frozendawn.world.RoomAtmosphere.RoomView::geometry).toList();
+        var touched=rooms.stream().filter(g->g.cells().contains(pos)||g.walls().contains(pos)).toList();
+        invalidate(level,rt,link->{var path=PowerLinkRules.path(link.a(),link.b());
+            return path.contains(pos)||touched.stream().anyMatch(g->touches(g,path))
+                    ||!protectedRoom(rooms,path)&&near(link,pos);
+        });
     }
-    private static void invalidate(Runtime rt) { rt.geometryRevision++; rt.revision = -1; rt.active.clear(); rt.graphDirty = true; }
-    @SubscribeEvent public static void chunkLoad(ChunkEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level && LEVELS.containsKey(level)) invalidate(LEVELS.get(level));
+    private static boolean isFeedthrough(BlockState s){return s.getBlock() instanceof com.frozendawn.block.PowerRelayBlock relay&&relay.isFeedthrough();}
+    private static boolean near(PowerLink link,BlockPos p){return near(link.a(),p)||near(link.b(),p);}
+    private static boolean near(BlockPos a,BlockPos b){return Math.abs(a.getX()-b.getX())<=80&&Math.abs(a.getZ()-b.getZ())<=80&&Math.abs(a.getY()-b.getY())<=48;}
+    private static boolean touches(com.frozendawn.world.RoomAtmosphere.Geometry g,List<BlockPos> path){return path.stream().anyMatch(p->g.cells().contains(p)||g.walls().contains(p));}
+    private static boolean protectedRoom(List<com.frozendawn.world.RoomAtmosphere.Geometry> rooms,List<BlockPos> path){
+        return rooms.stream().anyMatch(g->(g.cells().contains(path.getFirst())||g.walls().contains(path.getFirst()))
+                &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
+                &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
-    @SubscribeEvent public static void chunkUnload(ChunkEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level && LEVELS.containsKey(level)) invalidate(LEVELS.get(level));
+    private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
+    private static void invalidate(ServerLevel l,Runtime rt,java.util.function.Predicate<PowerLink> affected){
+        rt.geometryRevision++;
+        for(var link:PowerNetworkSavedData.get(l).links())if(affected.test(link)){
+            if(rt.active.remove(link))rt.graphDirty=true;enqueue(rt,link);
+        }
     }
+    private static void chunkChanged(ServerLevel l,net.minecraft.world.level.chunk.ChunkAccess chunk){
+        var rt=LEVELS.get(l);if(rt==null)return;var cp=chunk.getPos();
+        var rooms=com.frozendawn.world.RoomAtmosphere.cachedRoomViews(l).stream().map(com.frozendawn.world.RoomAtmosphere.RoomView::geometry).toList();
+        var touched=rooms.stream().filter(g->java.util.stream.Stream.concat(g.cells().stream(),g.walls().stream()).anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(cp))).toList();
+        invalidate(l,rt,link->{var path=PowerLinkRules.path(link.a(),link.b());
+            boolean close=List.of(link.a(),link.b()).stream().anyMatch(p->Math.abs((p.getX()>>4)-cp.x)<=5&&Math.abs((p.getZ()>>4)-cp.z)<=5);
+            return path.stream().anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(cp))
+                    ||touched.stream().anyMatch(g->touches(g,path))||!protectedRoom(rooms,path)&&close;
+        });
+    }
+    @SubscribeEvent public static void chunkLoad(ChunkEvent.Load event){if(event.getLevel() instanceof ServerLevel l)chunkChanged(l,event.getChunk());}
+    @SubscribeEvent public static void chunkUnload(ChunkEvent.Unload event){if(event.getLevel() instanceof ServerLevel l)chunkChanged(l,event.getChunk());}
     public static void update(ServerLevel level) {
         var data = PowerNetworkSavedData.get(level); var rt = runtime(level);
         if (rt.revision != data.revision()) {
-            rt.pending.clear(); rt.pending.addAll(data.links()); rt.active.retainAll(data.links());
+            rt.pendingSet.retainAll(data.links());rt.pending.removeIf(link->!rt.pendingSet.contains(link));
+            rt.active.retainAll(data.links());
+            for(var link:data.links())if(!rt.active.contains(link))enqueue(rt,link);
             rt.revision = data.revision(); rt.graphDirty = true;
         }
         // Never force chunks, and never perform an unbounded flood-fill loop in a server tick.
         for (int budget = 0; budget < 8 && !rt.pending.isEmpty(); budget++) {
-            var link = rt.pending.removeFirst();
+            var link = rt.pending.removeFirst();rt.pendingSet.remove(link);
             if (PowerLinkRules.validate(level, link.a(), link.b()) == PowerLinkRules.Result.OK) {
                 if (rt.active.add(link)) rt.graphDirty = true;
             } else if (rt.active.remove(link)) rt.graphDirty = true;
@@ -143,6 +191,7 @@ public final class PowerNetworks {
         return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity store ? store.storedJoules() : 0;
     }
     private static int demandWatts(ServerLevel level, BlockPos pos) {
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
             return furnace.wantsPower()?com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS:0;
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
@@ -160,6 +209,9 @@ public final class PowerNetworks {
         nodes.addAll(rt.stores);
         rt.machines.removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity));
         nodes.addAll(rt.machines);
+        rt.lifeSupport.removeIf(p->!level.isLoaded(p)||!(level.getBlockEntity(p) instanceof com.frozendawn.block.PixieBlockEntity));
+        nodes.addAll(rt.lifeSupport);
+        var priorityRemaining=new HashMap<BlockPos,Integer>();
         rt.machineTicks.keySet().retainAll(rt.machines);
         var machineGrants=new HashMap<BlockPos,MachineGrant>();
         // The duplicate guard belongs to physical stores, so an unrelated freshly linked network
@@ -172,7 +224,7 @@ public final class PowerNetworks {
             if (visited.contains(node)) continue;
             var cells = rt.components.getOrDefault(node, Set.of(node)); visited.addAll(cells);
             int supply = 0, demand = 0;
-            var loads = new TreeSet<BlockPos>();
+            var loads = new TreeSet<BlockPos>(Comparator.comparingInt((BlockPos p)->level.getBlockEntity(p) instanceof com.frozendawn.block.PixieBlockEntity?0:1).thenComparing(Comparator.naturalOrder()));
             for (var cell : cells) {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
                 if (watts > 0) loads.add(cell);
@@ -192,19 +244,26 @@ public final class PowerNetworks {
                 for (var cell : cells) {
                     budgets.put(cell,rt.budgets.getOrDefault(cell,new Budget(supply,demand,stored)));
                     monitorReadings.put(cell,rt.monitorReadings.getOrDefault(cell,PowerMonitorReading.EMPTY));
+                    priorityRemaining.put(cell,rt.priorityRemaining.getOrDefault(cell,0));
                 }
                 continue;
             }
             for(var store:stores)rt.storeEnergyTicks.put(store.getBlockPos(),level.getGameTime());
             long remaining = supply + stored; int served = 0;
+            var pixieGrants=new HashMap<BlockPos,Integer>();
             for (var load : loads) {
                 int watts = demandWatts(level, load);
-                if (watts <= remaining) { powered.add(load); remaining -= watts; served += watts; }
+                if(level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity pixie){
+                    int grant=(int)Math.min(watts,remaining)/pixie.powerQuantum()*pixie.powerQuantum();pixieGrants.put(load,grant);remaining-=grant;served+=grant;
+                    if(grant==watts)powered.add(load);
+                } else if (watts <= remaining) { powered.add(load); remaining -= watts; served += watts; }
             }
+            int lifeWatts=pixieGrants.values().stream().mapToInt(Integer::intValue).sum();
+            for(var cell:cells)priorityRemaining.put(cell,(int)Math.min(Integer.MAX_VALUE,supply+stored-lifeWatts));
             int generation=supply, lampShortage=0;
             var storePositions=stores.stream().map(com.frozendawn.block.PowerStorageBlockEntity::getBlockPos).toList();
-            for(var load:loads) if(powered.contains(load)) {
-                int watts=demandWatts(level,load),fromCore=Math.min(watts,generation);generation-=fromCore;
+            for(var load:loads) if(powered.contains(load)||pixieGrants.containsKey(load)) {
+                int watts=pixieGrants.getOrDefault(load,demandWatts(level,load)),fromCore=Math.min(watts,generation);generation-=fromCore;
                 if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
                     machineGrants.put(load,new MachineGrant(fromCore,storePositions,level.getGameTime()+20));
                 else lampShortage+=watts-fromCore;
@@ -215,11 +274,13 @@ public final class PowerNetworks {
                 int charged = store.isBank() ? store.charge(surplus) : 0; surplus -= charged;
                 store.publish(charged, drawn);
             }
+            for(var cell:cells)if(level.isLoaded(cell)&&level.getBlockEntity(cell) instanceof com.frozendawn.block.PixieBlockEntity pixie)
+                pixie.produce(pixieGrants.getOrDefault(cell,0));
             long after = stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum();
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
+                    level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }
@@ -227,6 +288,7 @@ public final class PowerNetworks {
         rt.budgets = Map.copyOf(budgets); rt.powered = Set.copyOf(powered); rt.lamps = Set.copyOf(lamps);
         rt.machineGrants=Map.copyOf(machineGrants);
         rt.monitorReadings=Map.copyOf(monitorReadings);
+        rt.priorityRemaining=Map.copyOf(priorityRemaining);
         for (var lamp : affected) com.frozendawn.block.PanelLightBlock.setPowered(level, lamp, powered.contains(lamp));
     }
     public static boolean powered(ServerLevel level, BlockPos pos) {
@@ -241,8 +303,10 @@ public final class PowerNetworks {
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) {
         for (var level : event.getServer().getAllLevels()) {
             if (!LEVELS.containsKey(level) && level.players().isEmpty()) continue;
-            update(level);
-            if (level.getGameTime() % 20 == 0) account(level);
+            if(runtime(level).coordinatedTick!=level.getGameTime()) {
+                update(level);
+                if (level.getGameTime() % 20 == 0) account(level);
+            }
             for (var player : level.players()) {
                 if (level.getGameTime() % 20 == 0)
                     PacketDistributor.sendToPlayer(player, new PowerLinksPayload(level.dimension().location().toString(), nearby(level, player.blockPosition())));

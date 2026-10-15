@@ -12,6 +12,8 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> PIXIE_WATER = DATA_COMPONENTS.register("pixie_water", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CELL_JOULES =
             DATA_COMPONENTS.register("cell_joules", () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 500_000)).networkSynchronized(ByteBufCodecs.VAR_INT).build());

@@ -26,10 +26,9 @@ def main():
             (R/f'models/block/{name}.json').write_text(json.dumps(model(opened,light),indent=2)+'\n')
     for direction,rotation in rotations.items():
         for opened in (False,True):
-            for powered in (False,True):
-                for light in range(3):
-                    active=opened or powered;name=f'heat_vent_{"open" if active else "closed"}'+('' if light==0 else f'_{light}')
-                    key=f'facing={direction},open={str(opened).lower()},powered={str(powered).lower()},indicator={light}'
-                    variants[key]={'model':'frozendawn:block/'+name,**rotation}
+            for light in range(3):
+                name=f'heat_vent_{"open" if opened else "closed"}'+('' if light==0 else f'_{light}')
+                key=f'facing={direction},venting={str(opened).lower()},indicator={light}'
+                variants[key]={'model':'frozendawn:block/'+name,**rotation}
     (R/'blockstates/heat_vent.json').write_text(json.dumps({'variants':variants},indent=2)+'\n')
 if __name__=='__main__':main()

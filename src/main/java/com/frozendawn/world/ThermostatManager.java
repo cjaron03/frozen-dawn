@@ -7,8 +7,8 @@ import net.minecraft.server.level.ServerLevel;
 /** Loaded-only room controllers sharing the same modeled room temperature as player exposure. */
 public final class ThermostatManager {
     public static final int WAITING=0,SEALED=1,OPEN=2,OVERRIDDEN=3,NO_SEAL=4;
-    public record Reading(int mode,double sensed,double base,int heaters,double duty) {
-        public static Reading waiting(){return new Reading(WAITING,Double.NaN,Double.NaN,0,0);}
+    public record Reading(int mode,double sensed,double base,int heaters,double duty,int coolingVents) {
+        public static Reading waiting(){return new Reading(WAITING,Double.NaN,Double.NaN,0,0,0);}
     }
     public record Control(ThermostatBlockEntity panel,TemperatureManager.LocalThermalTerms terms) {
         public double baseTarget(){return terms.baseTarget(panel.target());}
@@ -29,7 +29,7 @@ public final class ThermostatManager {
     public static Control roomControl(ServerLevel l,long id){var s=LEVELS.get(l);return s==null?null:s.rooms.get(id);}
     public static OptionalDouble openDuty(ServerLevel l,BlockPos p){var s=LEVELS.get(l);return s==null||!s.openDuties.containsKey(p)?OptionalDouble.empty():OptionalDouble.of(s.openDuties.get(p));}
     public static int openTarget(ServerLevel l,BlockPos p){var s=LEVELS.get(l);return s==null?20:s.openTargets.getOrDefault(p,20);}
-    private static boolean valid(ServerLevel l,Control c){var p=c.panel().getBlockPos();return l.isLoaded(p)&&l.getBlockEntity(p)==c.panel()&&!c.panel().isRemoved();}
+    public static boolean valid(ServerLevel l,Control c){var p=c.panel().getBlockPos();return l.isLoaded(p)&&l.getBlockEntity(p)==c.panel()&&!c.panel().isRemoved();}
     public static double roomTarget(ServerLevel l,long id,Set<BlockPos> cells){
         var c=roomControl(l,id);boolean controlled=c!=null&&valid(l,c);
         double target=controlled?c.panel().target():com.frozendawn.thermal.HeaterControl.DEFAULT_TARGET;
@@ -97,7 +97,8 @@ public final class ThermostatManager {
                 if(heaters.isEmpty()&&s.views.stream().anyMatch(other->other.open&&other.panel!=panel&&p.distSqr(other.panel.getBlockPos())<=256&&PRIORITY.compare(other.panel,panel)>0))mode=OVERRIDDEN;
             }
             double weight=0,power=0;for(var heater:heaters)if(heater.isLit()){double w=Math.max(0,heater.getPublicHeatOutput()-heater.getFrostmiteHeatPenalty());weight+=w;power+=w*heater.getBurnFraction();}
-            panel.publish(new Reading(mode,sensed,base,heaters.size(),weight>0?power/weight:0));
+            panel.publish(new Reading(mode,sensed,base,heaters.size(),weight>0?power/weight:0,
+                    mode==SEALED&&view.room!=null?RoomThermalManager.coolingVentCount(l,view.room.id()):0));
         }
     }
 }

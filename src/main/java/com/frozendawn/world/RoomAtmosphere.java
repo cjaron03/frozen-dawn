@@ -141,7 +141,7 @@ public final class RoomAtmosphere {
                     && Math.pow(pos.getX()-anchor.getX(), 2) + Math.pow(pos.getZ()-anchor.getZ(), 2) <= 18 * 18
                     && connectedSource(geometry, anchor)) return true;
         }
-        return false;
+        return RoomOxygenManager.hasPixieSupply(level,geometry);
     }
 
     private static boolean connectedSource(Geometry geometry, BlockPos pos) {
@@ -166,6 +166,7 @@ public final class RoomAtmosphere {
             if (connectedSource(room.geometry, core) && hasSupply(level, room.geometry, core)) { supply = true; break; }
         if (!supply) for (var anchor : BlastPitWarmZoneRegistry.getWarmZones(level))
             if (connectedSource(room.geometry, anchor) && hasSupply(level, room.geometry, anchor)) { supply = true; break; }
+        if(!supply)supply=RoomOxygenManager.hasPixieSupply(level,room.geometry);
         if (!supply) {
             room.refillStart = -1;
             announceRecovery(level, room, com.frozendawn.network.RoomRecoveryPayload.Stage.WAITING_FOR_OXYGEN);

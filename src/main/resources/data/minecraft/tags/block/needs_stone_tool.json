@@ -9,6 +9,7 @@
     "frozendawn:battery_bank",
     "frozendawn:cell_dock",
     "frozendawn:induction_furnace",
-    "frozendawn:power_monitor"
+    "frozendawn:power_monitor",
+    "frozendawn:pixie"
   ]
 }
