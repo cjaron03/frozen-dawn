@@ -34,16 +34,37 @@ public final class PowerNetworks {
         final Set<BlockPos> stores = new TreeSet<>();
         final Map<BlockPos,Long> storeEnergyTicks = new HashMap<>();
         final Set<BlockPos> machines = new TreeSet<>();
+        final Set<BlockPos> heaters = new TreeSet<>();
+        final Map<BlockPos,HeaterGrant> heaterGrants = new HashMap<>();
         final Set<BlockPos> lifeSupport = new TreeSet<>();
         Map<BlockPos,Integer> priorityRemaining = Map.of();
         Map<BlockPos, MachineGrant> machineGrants = Map.of();
         final Map<BlockPos, Long> machineTicks = new HashMap<>();
+    }
+    private static final class HeaterGrant {
+        final int watts,generation;final long tick;final List<BlockPos> stores;double used;int batteryPaid;
+        HeaterGrant(int watts,int generation,long tick,List<BlockPos> stores){this.watts=watts;this.generation=generation;this.tick=tick;this.stores=stores;}
     }
     private record MachineGrant(int generationWatts, List<BlockPos> stores, long expires) {}
     private record Budget(int supplyWatts, int demandWatts, long storedJoules) {}
     public record Reading(int nodes, int links, int inactiveLinks, double supplyKw, double demandKw, double storedKj) {}
     private PowerNetworks() {}
     private static Runtime runtime(ServerLevel level) { return LEVELS.computeIfAbsent(level, unused -> new Runtime()); }
+    public static void heaterLoaded(ServerLevel l,BlockPos p){runtime(l).heaters.add(p.immutable());}
+    public static void heaterRemoved(ServerLevel l,BlockPos p){var r=runtime(l);r.heaters.remove(p);r.heaterGrants.remove(p);}
+    public static List<BlockPos> heaters(ServerLevel l){var r=runtime(l);r.heaters.removeIf(p->!l.isLoaded(p)||!(l.getBlockEntity(p) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity));return List.copyOf(r.heaters);}
+    public static int heaterGrant(ServerLevel l,BlockPos p){var g=runtime(l).heaterGrants.get(p);return g!=null&&g.tick==l.getGameTime()?g.watts:0;}
+    /** Pay before delivery. Fractional joules round up cumulatively, at most one joule per heater-second. */
+    public static double consumeHeaterEnergy(ServerLevel l,BlockPos p,double joules){
+        var g=runtime(l).heaterGrants.get(p);
+        if(g==null||g.tick!=l.getGameTime()||!Double.isFinite(joules)||joules<=0||!l.isLoaded(p)||!(l.getBlockEntity(p) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity h))return 0;
+        double q=Math.min(joules,Math.max(0,g.watts-g.used));
+        int debt=(int)Math.ceil(Math.max(0,g.used+q-g.generation)-1e-9)-g.batteryPaid;
+        var stores=g.stores.stream().filter(l::isLoaded).map(l::getBlockEntity).filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance).map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
+        if(stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::storedJoules).sum()<debt)return 0;
+        int needed=debt;for(var store:stores){int drawn=store.draw(needed);needed-=drawn;store.publishHeaterDraw(drawn);if(needed==0)break;}
+        g.batteryPaid+=debt;g.used+=q;h.paid(q);return q;
+    }
     public static void pixieLoaded(ServerLevel l,BlockPos p){runtime(l).lifeSupport.add(p.immutable());}
     public static void pixieRemoved(ServerLevel l,BlockPos p){runtime(l).lifeSupport.remove(p);}
     /** Cached active neighbors only. Oxygen plumbing is an explicit PIXIE-to-tank Binder link. */
@@ -53,6 +74,7 @@ public final class PowerNetworks {
                 .map(com.frozendawn.block.OxygenReservoirBlockEntity.class::cast).toList();
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
+    public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}
     public static void accountLifeSupport(ServerLevel l){account(l);runtime(l).coordinatedTick=l.getGameTime();}
     /** Physical loaded supply and stored energy for planning; no energy transfer or forced chunks. */
     public static long priorityBudget(ServerLevel l,BlockPos p){return component(l,p).stream().mapToLong(node->(long)supplyWatts(l,node)+storedJoules(l,node)).sum();}
@@ -191,6 +213,7 @@ public final class PowerNetworks {
         return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity store ? store.storedJoules() : 0;
     }
     private static int demandWatts(ServerLevel level, BlockPos pos) {
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity heater)return heater.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
             return furnace.wantsPower()?com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS:0;
@@ -200,7 +223,10 @@ public final class PowerNetworks {
     /** One-second allocation, in integer watts. Each unique node contributes once, including in cycles. */
     public static void account(ServerLevel level) {
         var rt = runtime(level);
+        com.frozendawn.world.RoomThermalManager.prepareElectricHeating(level);
+        rt.heaterGrants.entrySet().removeIf(e->e.getValue().tick!=level.getGameTime()||!rt.heaters.contains(e.getKey()));
         var nodes = new TreeSet<BlockPos>();
+        nodes.addAll(heaters(level));
         for (var link : PowerNetworkSavedData.get(level).links()) {
             if (level.isLoaded(link.a())) nodes.add(link.a());
             if (level.isLoaded(link.b())) nodes.add(link.b());
@@ -224,7 +250,7 @@ public final class PowerNetworks {
             if (visited.contains(node)) continue;
             var cells = rt.components.getOrDefault(node, Set.of(node)); visited.addAll(cells);
             int supply = 0, demand = 0;
-            var loads = new TreeSet<BlockPos>(Comparator.comparingInt((BlockPos p)->level.getBlockEntity(p) instanceof com.frozendawn.block.PixieBlockEntity?0:1).thenComparing(Comparator.naturalOrder()));
+            var loads = new TreeSet<BlockPos>(Comparator.comparingInt((BlockPos p)->level.getBlockEntity(p) instanceof com.frozendawn.block.PixieBlockEntity?0:level.getBlockEntity(p) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?1:2).thenComparing(Comparator.naturalOrder()));
             for (var cell : cells) {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
                 if (watts > 0) loads.add(cell);
@@ -251,20 +277,25 @@ public final class PowerNetworks {
             for(var store:stores)rt.storeEnergyTicks.put(store.getBlockPos(),level.getGameTime());
             long remaining = supply + stored; int served = 0;
             var pixieGrants=new HashMap<BlockPos,Integer>();
+            var heaterWatts=new HashMap<BlockPos,Integer>();
             for (var load : loads) {
                 int watts = demandWatts(level, load);
                 if(level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity pixie){
                     int grant=(int)Math.min(watts,remaining)/pixie.powerQuantum()*pixie.powerQuantum();pixieGrants.put(load,grant);remaining-=grant;served+=grant;
                     if(grant==watts)powered.add(load);
+                } else if(level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity){
+                    int grant=(int)Math.min(watts,remaining);heaterWatts.put(load,grant);remaining-=grant;served+=grant;if(grant==watts)powered.add(load);
                 } else if (watts <= remaining) { powered.add(load); remaining -= watts; served += watts; }
             }
             int lifeWatts=pixieGrants.values().stream().mapToInt(Integer::intValue).sum();
             for(var cell:cells)priorityRemaining.put(cell,(int)Math.min(Integer.MAX_VALUE,supply+stored-lifeWatts));
             int generation=supply, lampShortage=0;
             var storePositions=stores.stream().map(com.frozendawn.block.PowerStorageBlockEntity::getBlockPos).toList();
-            for(var load:loads) if(powered.contains(load)||pixieGrants.containsKey(load)) {
-                int watts=pixieGrants.getOrDefault(load,demandWatts(level,load)),fromCore=Math.min(watts,generation);generation-=fromCore;
-                if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
+            for(var load:loads) if(powered.contains(load)||pixieGrants.containsKey(load)||heaterWatts.containsKey(load)) {
+                int watts=heaterWatts.getOrDefault(load,pixieGrants.getOrDefault(load,demandWatts(level,load))),fromCore=Math.min(watts,generation);generation-=fromCore;
+                if(level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity)
+                    rt.heaterGrants.putIfAbsent(load,new HeaterGrant(watts,fromCore,level.getGameTime(),storePositions));
+                else if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
                     machineGrants.put(load,new MachineGrant(fromCore,storePositions,level.getGameTime()+20));
                 else lampShortage+=watts-fromCore;
             }
@@ -280,7 +311,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
+                    level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }

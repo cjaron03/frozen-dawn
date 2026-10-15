@@ -71,9 +71,8 @@ public final class TemperatureManager {
         float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
         var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
                 ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
-        float shelterTemp = roomTemperature.isPresent() ? 0 : getShelterModifier(level, pos);
         var terms=(roomTemperature.isPresent()||level instanceof ServerLevel serverLevel&&RoomThermalManager.hasManagedRoomAt(serverLevel,pos))?environmentalTerms(level,pos,0):localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
-        return (float)terms.apply((roomTemperature.isPresent()?roomTemperature.getAsDouble():backgroundTemp)+shelterTemp);
+        return (float)terms.apply(roomTemperature.isPresent()?roomTemperature.getAsDouble():backgroundTemp);
     }
 
     /** Local environmental terms, shared with thermostat sensing; excludes personal armor/Ember effects. */
@@ -112,21 +111,6 @@ public final class TemperatureManager {
         return (float) GroundTemperatureModel.temperature(y, PhaseManager.getProgress(currentDay, totalDays),
                 FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f,
                 FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
-    }
-
-    /**
-     * Shelter modifier: +5C if there's a solid block or insulated glass overhead (roof).
-     * Simple check: scan upward up to 4 blocks for a solid block or insulated glass.
-     */
-    public static float getShelterModifier(Level level, BlockPos pos) {
-        for (int dy = 1; dy <= 4; dy++) {
-            BlockPos above = pos.above(dy);
-            BlockState aboveState = level.getBlockState(above);
-            if (aboveState.isSolidRender(level, above) || aboveState.is(ModBlocks.INSULATED_GLASS.get())) {
-                return 5.0f;
-            }
-        }
-        return 0.0f;
     }
 
     /**
@@ -275,6 +259,10 @@ public final class TemperatureManager {
             if (loadedOnly && !level.isLoaded(corePos)) {
                 continue;
             }
+            // A connected Core already supplies finite heat through its room.
+            // Keep that ownership during breaches/UNKNOWN so stepping outside
+            // cannot reactivate the old wall-blind camp aura.
+            if (level instanceof ServerLevel serverLevel && RoomThermalManager.managesHeater(serverLevel, corePos)) continue;
             double distSq = pos.distSqr(corePos);
             float coreRange, coreTemp;
 

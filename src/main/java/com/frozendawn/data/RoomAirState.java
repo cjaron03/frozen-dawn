@@ -1,6 +1,9 @@
 package com.frozendawn.data;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -25,6 +28,19 @@ public final class RoomAirState extends SavedData {
     }
     public boolean isDepleted(Set<BlockPos> cells) {
         return cells.stream().anyMatch(pos -> depleted.contains(pos.asLong()));
+    }
+    /** Rebase cell history after a validated topology edit, not a gas transition.
+     * Snapshot parent pressure first so split/merge iteration order cannot change the result. */
+    public void reconcileMemberships(Collection<RoomIdentityState.Membership> parents, List<Set<BlockPos>> volumes) {
+        var emptyParents = parents.stream().filter(parent -> isDepleted(parent.cells())).toList();
+        boolean changed = false;
+        for (var volume : volumes) {
+            boolean inherited = parents.stream().anyMatch(parent -> !Collections.disjoint(parent.cells(), volume));
+            boolean empty = inherited ? emptyParents.stream().anyMatch(parent -> !Collections.disjoint(parent.cells(), volume)) : isDepleted(volume);
+            for (var cell : volume)
+                changed |= empty ? depleted.add(cell.asLong()) : depleted.remove(cell.asLong());
+        }
+        if (changed) setDirty(); // The geometry event carries this remap; no fake air/refill notification.
     }
     public void evacuate(Set<BlockPos> cells) { change(cells, true); }
     public void refill(Set<BlockPos> cells) { change(cells, false); }

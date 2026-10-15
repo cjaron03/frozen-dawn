@@ -18,6 +18,8 @@ public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
             DeferredRegister.create(Registries.MENU, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ResistiveHeaterMenu>> RESISTIVE_HEATER = MENU_TYPES.register("resistive_heater", () -> IMenuTypeExtension.create(com.frozendawn.block.ResistiveHeaterMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PixieMenu>> PIXIE = MENU_TYPES.register("pixie", () -> IMenuTypeExtension.create(com.frozendawn.block.PixieMenu::new));
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerMonitorMenu>> POWER_MONITOR =

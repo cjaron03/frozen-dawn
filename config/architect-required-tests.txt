@@ -421,7 +421,7 @@ airlockplaytestfunctionsload xml
 airlocksilentstatususestypedpacketsandroundtrips xml
 
 # Thermal 2.0 ground baseline
-thermalgroundqueriespreserveshelterandloadedonlypath xml
+thermalgroundqueriesrejectroofbonusandpreserveloadedonlypath xml
 thermalsurfacealtitudeandphasecurveremainunchanged xml
 thermalpresetdiffusivityisappliedandpersisted xml
 
@@ -605,3 +605,25 @@ roomheatcapacityupgradepreservestemperaturesandmigratesonlyonce xml
 
 # Heat vent visual telemetry
 heatventglowrequiresactualrejectionandpreservesairandheat xml
+
+# RH-5 resistive heating
+rh5batterypaysexactheatandidleduplicateticksarefree xml
+rh5thermostatelectricfirstandfuelbackup xml
+rh5brownoutprioritizesairthenheatandreportsfriendlydevice xml
+rh5vacuumquartercouplingfinitecellswapandsavesecurity xml
+rh5replayfunctionsparse xml
+rh5ordinarytickswarmwithoutpixieormanualaccounting xml
+
+# Room-managed Core aura regression
+roommanagedcorecannotleakauraoutsideoracrossbreach xml
+
+# Roofs insulate without adding free exposure warmth
+overheadblocksdonotcreatewarmthandstoredroomheatremains xml
+
+# Airless thermostat physical versus felt readings and refill transport
+thermostatairlessreadingsdistinguishstructurefeelandrefill xml
+
+# Interior block edits preserve room pressure and recovery notices
+roompressuresparsedepletionsurvivesinteriorblockplacementremoval xml
+roompressurerefillclearscoveredcornerhistoryonremoval xml
+roompressureinterioreditsdonotrepeatsealnotice xml

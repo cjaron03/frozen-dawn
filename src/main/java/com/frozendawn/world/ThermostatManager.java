@@ -7,8 +7,8 @@ import net.minecraft.server.level.ServerLevel;
 /** Loaded-only room controllers sharing the same modeled room temperature as player exposure. */
 public final class ThermostatManager {
     public static final int WAITING=0,SEALED=1,OPEN=2,OVERRIDDEN=3,NO_SEAL=4;
-    public record Reading(int mode,double sensed,double base,int heaters,double duty,int coolingVents) {
-        public static Reading waiting(){return new Reading(WAITING,Double.NaN,Double.NaN,0,0,0);}
+    public record Reading(int mode,double sensed,double base,int heaters,double duty,int coolingVents,double structureTemperature) {
+        public static Reading waiting(){return new Reading(WAITING,Double.NaN,Double.NaN,0,0,0,Double.NaN);}
     }
     public record Control(ThermostatBlockEntity panel,TemperatureManager.LocalThermalTerms terms) {
         public double baseTarget(){return terms.baseTarget(panel.target());}
@@ -73,7 +73,7 @@ public final class ThermostatManager {
             for(var heater:openHeaters.values())if(openWinner(views,heater.getBlockPos())==panel&&heater.isLit())full+=TemperatureManager.fullHeaterWarmth(l,heater,sensor);
             for(var pos:HeaterRegistry.getHeaters(l))if(l.isLoaded(pos)&&l.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater&&openWinner(views,pos)!=panel)
                 otherHeat+=TemperatureManager.fullHeaterWarmth(l,heater,sensor)*heater.getBurnFraction();
-            double baseline=TemperatureManager.getBackgroundTemperature(sensor.getY(),phase.getCurrentDay(),phase.getTotalDays())+TemperatureManager.getShelterModifier(l,sensor)+otherHeat;
+            double baseline=TemperatureManager.getBackgroundTemperature(sensor.getY(),phase.getCurrentDay(),phase.getTotalDays())+otherHeat;
             double target=TemperatureManager.thermostatTerms(l,sensor).baseTarget(panel.target());
             double duty=full>0?Math.clamp((target-baseline)/full,0,1):0;
             for(var heater:openHeaters.values())if(openWinner(views,heater.getBlockPos())==panel){s.openDuties.put(heater.getBlockPos(),duty);s.openTargets.put(heater.getBlockPos(),panel.target());}
@@ -85,20 +85,24 @@ public final class ThermostatManager {
         for(var view:s.views) {
             var panel=view.panel;var p=panel.getBlockPos();if(!l.isLoaded(p)||l.getBlockEntity(p)!=panel)continue;
             int mode=view.mode;List<ThermalHeaterBlockEntity> heaters=new ArrayList<>();
-            double base=Double.NaN,sensed=Double.NaN;
-            if(view.room!=null){var value=RoomThermalManager.cachedTemperatureAt(l,p);if(value.isPresent())base=value.getAsDouble();else mode=WAITING;
+            double base=Double.NaN,sensed=Double.NaN,structure=Double.NaN;
+            if(view.room!=null){var value=RoomThermalManager.cachedTemperatureAt(l,p);if(value.isPresent()){base=value.getAsDouble();structure=RoomThermalManager.cachedAirlessStructureTemperatureAt(l,p).orElse(Double.NaN);}else mode=WAITING;
                 var winner=s.rooms.get(view.room.id());if(winner!=null&&winner.panel!=panel)mode=OVERRIDDEN;
                 heaters=connected(l,view.room.geometry());
                 if(Double.isFinite(base))sensed=TemperatureManager.thermostatTerms(l,p).apply(base);
-            }else if(view.open){base=TemperatureManager.getBackgroundTemperature(p.getY(),phase.getCurrentDay(),phase.getTotalDays())+TemperatureManager.getShelterModifier(l,p);double heat=0;
+            }else if(view.open){base=TemperatureManager.getBackgroundTemperature(p.getY(),phase.getCurrentDay(),phase.getTotalDays());double heat=0;
                 for(var pos:HeaterRegistry.getHeaters(l))if(l.isLoaded(pos)&&l.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater){heat+=TemperatureManager.fullHeaterWarmth(l,heater,p)*heater.getBurnFraction();}
                 for(var heater:s.installedOpen.values())if(l.isLoaded(heater.getBlockPos())&&l.getBlockEntity(heater.getBlockPos())==heater&&openWinner(s.views,heater.getBlockPos())==panel)heaters.add(heater);
                 sensed=TemperatureManager.thermostatTerms(l,p).apply(base+heat);
                 if(heaters.isEmpty()&&s.views.stream().anyMatch(other->other.open&&other.panel!=panel&&p.distSqr(other.panel.getBlockPos())<=256&&PRIORITY.compare(other.panel,panel)>0))mode=OVERRIDDEN;
             }
             double weight=0,power=0;for(var heater:heaters)if(heater.isLit()){double w=Math.max(0,heater.getPublicHeatOutput()-heater.getFrostmiteHeatPenalty());weight+=w;power+=w*heater.getBurnFraction();}
-            panel.publish(new Reading(mode,sensed,base,heaters.size(),weight>0?power/weight:0,
-                    mode==SEALED&&view.room!=null?RoomThermalManager.coolingVentCount(l,view.room.id()):0));
+            int electricCount=0;
+            if(view.room!=null)for(var pos:com.frozendawn.power.PowerNetworks.heaters(l))if(view.room.geometry().cells().contains(pos)||view.room.geometry().walls().contains(pos)){
+                var heater=(ResistiveHeaterBlockEntity)l.getBlockEntity(pos);electricCount++;weight+=50;power+=50*heater.drawWatts()/5000.0;
+            }
+            panel.publish(new Reading(mode,sensed,base,heaters.size()+electricCount,weight>0?power/weight:0,
+                    mode==SEALED&&view.room!=null?RoomThermalManager.coolingVentCount(l,view.room.id()):0,structure));
         }
     }
 }

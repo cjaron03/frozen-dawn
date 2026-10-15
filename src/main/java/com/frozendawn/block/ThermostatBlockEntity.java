@@ -33,8 +33,8 @@ public final class ThermostatBlockEntity extends BlockEntity implements MenuProv
     public ContainerData data(){return new ContainerData(){
         private final HeaterDemandDisplay display=new HeaterDemandDisplay();
         public int get(int i){double fraction=display.sample(level==null?0:level.getGameTime(),reading.duty(),reading.mode()==ThermostatManager.SEALED||reading.mode()==ThermostatManager.OPEN,reading.mode());return switch(i){
-            case 0->target;case 1->tenths(reading.sensed());case 2->tenths(reading.base());case 3->reading.heaters();case 4->(int)Math.round(fraction*100);case 5->reading.mode();case 6->reading.coolingVents();default->0;};}
-        public void set(int i,int v){}public int getCount(){return 7;}};}
+            case 0->target;case 1->tenths(reading.sensed());case 2->tenths(reading.base());case 3->reading.heaters();case 4->(int)Math.round(fraction*100);case 5->reading.mode();case 6->reading.coolingVents();case 7->tenths(reading.structureTemperature());default->0;};}
+        public void set(int i,int v){}public int getCount(){return ThermostatMenu.DATA_COUNT;}};}
     private static int tenths(double x){return Double.isFinite(x)?(int)Math.clamp(Math.round(x*10),-32767,32767):-32768;}
     @Override public Component getDisplayName(){return Component.translatable("block.frozendawn.thermostat");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inv,Player p){return new ThermostatMenu(id,inv,this);}

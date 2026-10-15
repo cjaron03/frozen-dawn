@@ -1,0 +1,23 @@
+{
+  "name": "ORSA RH-5 Electric Heat",
+  "icon": "frozendawn:resistive_heater",
+  "category": "frozendawn:heating",
+  "sortnum": 7,
+  "pages": [
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:resistive_heater",
+      "text": "Link the RH-5 to a power network with the Conduit Binder. No fuel, oxygen or Thermal Core is needed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat on Demand",
+      "text": "Each RH-5 draws up to 5 kW, matching an Iron Thermal Heater at full output. It draws only the heat needed for the default 20\u00b0C target or the room thermostat. Orange coils mean electrical heat is being delivered. Its screen shows room air, or structure temperature when no air is present."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Backup and Brownouts",
+      "text": "Electrical heat runs before fuel heaters in the same modeled room; fuel covers any shortfall. PIXIE oxygen has priority over the heater. Lights and furnaces wait before heat does. A battery bank or isolated Cell Dock can keep it running until its cells drain. In vacuum, only 25% of paid heat couples into the structure. Insulation reduces steady demand."
+    }
+  ]
+}

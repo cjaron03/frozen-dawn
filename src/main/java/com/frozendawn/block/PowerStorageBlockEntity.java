@@ -41,6 +41,9 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
         if (moved > 0) setChanged();
         return moved;
     }
+    private int heaterFeeding;
+    private long heaterDrawTick=Long.MIN_VALUE;
+    public void publishHeaterDraw(int joules){if(joules<=0||level==null)return;if(heaterDrawTick!=level.getGameTime())heaterFeeding=0;heaterDrawTick=level.getGameTime();heaterFeeding+=joules;}
     public void publishMachineDraw(int joules) {
         if(joules<=0||level==null)return;
         if(machineDrawTick!=level.getGameTime())machineFeeding=0;
@@ -48,7 +51,7 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
     }
     public void publish(int charged, int drawn) { charging = charged; feeding = drawn; }
     public ContainerData data() { return new ContainerData() {
-        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> (feeding+(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0))/100; default -> 0; }; }
+        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> (feeding+(level!=null&&level.getGameTime()>=heaterDrawTick&&level.getGameTime()-heaterDrawTick<20?heaterFeeding:0)+(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0))/100; default -> 0; }; }
         public void set(int i, int v) {} public int getCount() { return 3; }
     }; }
     @Override public Component getDisplayName() { return Component.translatable(isBank() ? "block.frozendawn.battery_bank" : "block.frozendawn.cell_dock"); }

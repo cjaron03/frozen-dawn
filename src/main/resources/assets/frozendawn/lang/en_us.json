@@ -1227,5 +1227,16 @@
   "screen.frozendawn.pixie.machine_temperature": "Machine temp: %s",
   "screen.frozendawn.pixie.room_feel": "Room feel: %s",
   "screen.frozendawn.pixie.machine_temperature_hint": "Freezes below1°C. Uses air, or walls without air.",
-  "screen.frozendawn.pixie.room_feel_hint": "Player warmth; vacuum reduces felt temperature."
+  "screen.frozendawn.pixie.room_feel_hint": "Player warmth; vacuum reduces felt temperature.",
+  "block.frozendawn.resistive_heater": "ORSA RH-5 Resistive Heater",
+  "screen.frozendawn.rh5.no_power": "Waiting for power",
+  "screen.frozendawn.rh5.heating": "Heating room",
+  "screen.frozendawn.rh5.structure": "Warming structure (no air)",
+  "screen.frozendawn.rh5.target": "At target - idle",
+  "screen.frozendawn.rh5.waiting": "Checking room",
+  "screen.frozendawn.rh5.air": "Room air: %s°C",
+  "screen.frozendawn.rh5.walls": "Structure: %s°C",
+  "screen.frozendawn.rh5.setpoint": "Target: %s°C",
+  "screen.frozendawn.rh5.draw": "Power: %s / 5.00 kW",
+  "screen.frozendawn.rh5.hint": "Set target with a thermostat."
 }

@@ -674,3 +674,13 @@ tasks.register('preparePixieQaResources', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(pixieQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('preparePixieQaResources') }
+
+// Parse exactly the disposable RH-5 replay functions used by the owner.
+def rh5QaResources = layout.buildDirectory.dir('generated/rh5Qa')
+tasks.register('prepareRh5QaResources', Exec) {
+    inputs.files('tools/prepare_rh5_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(rh5QaResources)
+    commandLine 'python3', '-B', 'tools/prepare_rh5_playtest.py', '--pack-only', rh5QaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rh5QaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareRh5QaResources') }

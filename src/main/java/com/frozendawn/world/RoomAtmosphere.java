@@ -301,13 +301,17 @@ public final class RoomAtmosphere {
             return true;
         }
         geometries.sort(Comparator.comparingLong(g -> g.cells.stream().mapToLong(BlockPos::asLong).min().orElseThrow()));
-        var records = saved.reconcile(parents, geometries.stream().map(Geometry::cells).toList());
+        var volumes = geometries.stream().map(Geometry::cells).toList();
+        if (CombustionAtmosphere.isVacuum(level)) RoomAirState.get(level).reconcileMemberships(parents, volumes);
+        var records = saved.reconcile(parents, volumes);
         var current = new ArrayList<Room>();
         for (int i = 0; i < geometries.size(); i++) {
             var geometry = geometries.get(i); long id = records.get(i).id();
-            var room = previous.get(id);
-            if (room == null || !room.geometry.cells.equals(geometry.cells))
+            var prior = previous.get(id); var room = prior;
+            if (room == null || !room.geometry.cells.equals(geometry.cells)) {
                 room = new Room(id, geometry, level.getGameTime()); // Geometry edits restart refill; do not copy it to siblings.
+                if (prior != null) room.recoveryNotice = prior.recoveryNotice; // Same room/stage stays quiet; a real breach removes the prior.
+            }
             room.geometry = geometry; room.changed = null; room.uncertain = false; room.checked = level.getGameTime();
             if (index.rooms.size() >= MAX_ROOMS) {
                 // Active infrastructure takes priority over the ordinary cache ceiling.
