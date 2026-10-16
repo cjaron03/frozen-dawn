@@ -64,6 +64,15 @@ class ReactorPhysicsTest {
         assertEquals(ReactorPhysics.State.MELTDOWN, core.step(manual(4, 12)).state());
     }
 
+    @Test void excursionCoversTheLastTwentyDegreesInSeconds() {
+        var core = new ReactorPhysics(); core.setAutoScram(false); core.setInsertion(1); core.setCoreC(ReactorPhysics.EXCURSION_C);
+        int seconds = 0; while (!core.meltdown() && seconds < 60) { core.step(manual(4, 0)); seconds++; }
+        assertTrue(core.meltdown() && seconds <= 3, "Prompt excursion: " + seconds + " s");
+        var safe = new ReactorPhysics(); safe.setInsertion(1); safe.setCoreC(ReactorPhysics.EXCURSION_C);
+        safe.step(manual(4, 0));
+        assertTrue(safe.scrammed() && !safe.meltdown(), "With automatic SCRAM on there is no excursion");
+    }
+
     @Test void manualScramAlwaysSavesTheCoreBeforeEightHundred() {
         var core = new ReactorPhysics(); core.setAutoScram(false); core.setInsertion(1); core.setCoreC(ReactorPhysics.LOSS_OF_COOLANT_C);
         var out = run(core, manual(4, 0), 40);

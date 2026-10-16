@@ -79,6 +79,12 @@ public class ModBlocks {
                     .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 10 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
     public static final DeferredBlock<com.frozendawn.block.CoriumBlock> CORIUM = BLOCKS.register("corium",
             () -> new com.frozendawn.block.CoriumBlock(BlockBehaviour.Properties.of().strength(50f, 1200f).requiresCorrectToolForDrops().sound(SoundType.ANCIENT_DEBRIS).lightLevel(state -> 7).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.FalloutBlock> FALLOUT = BLOCKS.register("fallout",
+            () -> new com.frozendawn.block.FalloutBlock(BlockBehaviour.Properties.of().strength(0.4f).sound(SoundType.SAND).noCollission().noOcclusion()
+                    .pushReaction(PushReaction.DESTROY).mapColor(net.minecraft.world.level.material.MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.block.ReactorDebrisBlock> REACTOR_DEBRIS = BLOCKS.register("reactor_debris",
+            () -> new com.frozendawn.block.ReactorDebrisBlock(BlockBehaviour.Properties.of().strength(3f, 6f).requiresCorrectToolForDrops().sound(SoundType.ANCIENT_DEBRIS)
+                    .lightLevel(state -> 4).noOcclusion().pushReaction(PushReaction.DESTROY)));
     public static final DeferredBlock<com.frozendawn.block.MoltenCoriumBlock> MOLTEN_CORIUM = BLOCKS.register("molten_corium",
             () -> new com.frozendawn.block.MoltenCoriumBlock(BlockBehaviour.Properties.of().strength(-1f, 3600000f).noLootTable().sound(SoundType.ANCIENT_DEBRIS)
                     .lightLevel(state -> 15).emissiveRendering((state, level, pos) -> true).pushReaction(PushReaction.BLOCK)));

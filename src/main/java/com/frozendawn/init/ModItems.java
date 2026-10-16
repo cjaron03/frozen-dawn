@@ -64,6 +64,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> REACTOR_CONTROLLER = ITEMS.registerSimpleBlockItem("reactor_controller", ModBlocks.REACTOR_CONTROLLER);
     public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
     public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
+    public static final DeferredItem<BlockItem> REACTOR_DEBRIS = ITEMS.registerSimpleBlockItem("reactor_debris", ModBlocks.REACTOR_DEBRIS);
     public static final DeferredItem<BlockItem> DEEPSLATE_URANIUM_ORE = ITEMS.registerSimpleBlockItem("deepslate_uranium_ore", ModBlocks.DEEPSLATE_URANIUM_ORE);
     public static final DeferredItem<Item> RAW_URANIUM = ITEMS.registerSimpleItem("raw_uranium");
     public static final DeferredItem<Item> URANIUM_CONCENTRATE = ITEMS.registerSimpleItem("uranium_concentrate");
@@ -71,6 +72,13 @@ public class ModItems {
     public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
             () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
     public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.ShieldedCaskItem> SHIELDED_CASK = ITEMS.register("shielded_cask",
+            () -> new com.frozendawn.item.ShieldedCaskItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> RADIOACTIVE_ASH = ITEMS.registerSimpleItem("radioactive_ash");
+    public static final DeferredItem<com.frozendawn.item.RadAidItem> RAD_AID = ITEMS.register("rad_aid",
+            () -> new com.frozendawn.item.RadAidItem(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.GeigerCounterItem> GEIGER_COUNTER = ITEMS.register("geiger_counter",
+            () -> new com.frozendawn.item.GeigerCounterItem(new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<BlockItem> RESISTIVE_HEATER = ITEMS.registerSimpleBlockItem("resistive_heater", ModBlocks.RESISTIVE_HEATER);
 
@@ -541,7 +549,12 @@ public class ModItems {
                         output.accept(URANIUM_PELLET.get());
                         output.accept(FUEL_ROD.get());
                         output.accept(SPENT_FUEL_ROD.get());
+                        output.accept(SHIELDED_CASK.get());
+                        output.accept(RADIOACTIVE_ASH.get());
+                        output.accept(RAD_AID.get());
+                        output.accept(GEIGER_COUNTER.get());
                         output.accept(CORIUM.get());
+                        output.accept(REACTOR_DEBRIS.get());
                         output.accept(PANEL_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

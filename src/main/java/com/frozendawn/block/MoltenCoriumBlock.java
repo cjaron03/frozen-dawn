@@ -36,6 +36,12 @@ public final class MoltenCoriumBlock extends Block {
 
     @Override protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean moving) {
         if (!level.isClientSide() && !old.is(this)) level.scheduleTick(pos, this, STEP_TICKS);
+        if (level instanceof ServerLevel l && !old.is(this))
+            com.frozendawn.radiation.RadiationSourceData.get(l).put(pos, com.frozendawn.radiation.RadiationSourceData.Kind.MOLTEN_CORIUM);
+    }
+    @Override protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState next, boolean moving) {
+        if (level instanceof ServerLevel l && !next.is(this)) com.frozendawn.radiation.RadiationSourceData.get(l).remove(pos);
+        super.onRemove(state, level, pos, next, moving);
     }
     @Override protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (step(level, pos)) level.scheduleTick(pos, this, STEP_TICKS);
@@ -105,6 +111,8 @@ public final class MoltenCoriumBlock extends Block {
             level.sendParticles(ParticleTypes.CLOUD, c.x, c.y + 1, c.z, 60, 1.5, 1, 1.5, .08);
             // Detonate in the flashed steam just above the melt; rays starting inside the blast-proof melt would be absorbed.
             level.explode(null, c.x, c.y + 1, c.z, (float) Math.min(6, 2 + mass / 3), false, Level.ExplosionInteraction.BLOCK);
+            // The blast throws contamination out, through any walls it broke.
+            com.frozendawn.radiation.Contamination.spread(level, java.util.List.of(pos.above()), pos, com.frozendawn.radiation.Contamination.BLAST_RADIUS, true);
             return;
         }
         boolean hissed = false;

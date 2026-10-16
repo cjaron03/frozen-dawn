@@ -28,6 +28,9 @@ public final class ReactorPhysics {
     /** While operating, coolant flow is throttled to hold the core in its working band: closed below 200C, full
      * above 280C. Oversized radiators therefore never chill a running core. After a SCRAM pumps run full to cool down. */
     public static final double HOLD_LOW_C = 200, HOLD_HIGH_C = 280;
+    /** Prompt power excursion (Chernobyl): with automatic SCRAM disabled, a running core above 780C surges to
+     * about twelve times its fission heat, covering the last 20C in a second or two. */
+    public static final double EXCURSION_C = 780, EXCURSION_GAIN = 12;
 
     public enum State { NOMINAL, WARNING, SCRAM, DAMAGE, LOSS_OF_COOLANT, MELTDOWN }
     public enum Coolant { FLOWING, IDLE, FROZEN, LOST, WARMING }
@@ -90,6 +93,8 @@ public final class ReactorPhysics {
             insertion += Math.clamp(goal - insertion, -LOAD_FOLLOW_SLEW, LOAD_FOLLOW_SLEW);
         }
         double fission = scram || frozen ? 0 : ratedKw * insertion;
+        boolean excursion = !autoScram && fission > 0 && coreC >= EXCURSION_C;
+        if (excursion) fission *= EXCURSION_GAIN;
         residualKw = Math.max(residualKw * DECAY_PER_SECOND, DECAY_SHARE * fission);
         if (residualKw < 0.01) residualKw = 0;
         double heatIn = Math.max(fission, residualKw);

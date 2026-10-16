@@ -12,6 +12,14 @@ import net.minecraft.world.level.block.state.BlockState;
 /** What is left of a CFU-7 core after a meltdown. Hot to the touch, permanently. */
 public final class CoriumBlock extends Block {
     public CoriumBlock(Properties p) { super(p); }
+    @Override protected void onPlace(BlockState s, Level level, BlockPos pos, BlockState old, boolean moving) {
+        if (level instanceof net.minecraft.server.level.ServerLevel l && !old.is(this))
+            com.frozendawn.radiation.RadiationSourceData.get(l).put(pos, com.frozendawn.radiation.RadiationSourceData.Kind.CORIUM);
+    }
+    @Override protected void onRemove(BlockState s, Level level, BlockPos pos, BlockState next, boolean moving) {
+        if (level instanceof net.minecraft.server.level.ServerLevel l && !next.is(this)) com.frozendawn.radiation.RadiationSourceData.get(l).remove(pos);
+        super.onRemove(s, level, pos, next, moving);
+    }
     @Override public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         if (entity instanceof LivingEntity living && !living.fireImmune()) entity.hurt(level.damageSources().hotFloor(), 4f);
         super.stepOn(level, pos, state, entity);

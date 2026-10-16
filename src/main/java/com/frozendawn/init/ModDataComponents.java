@@ -14,6 +14,10 @@ public class ModDataComponents {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> PIXIE_WATER = DATA_COMPONENTS.register("pixie_water", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASK_RODS =
+            DATA_COMPONENTS.register("cask_rods", () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.intRange(0, 4)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CELL_JOULES =
             DATA_COMPONENTS.register("cell_joules", () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 500_000)).networkSynchronized(ByteBufCodecs.VAR_INT).build());

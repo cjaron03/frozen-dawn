@@ -72,6 +72,10 @@ public class ModSounds {
 
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_KLAXON = register("blocks.reactor_klaxon");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_HUM = register("blocks.reactor_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_CLICK = register("ui.geiger_click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_DENSE = register("ui.geiger_dense");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_CHIRP = register("ui.dosimeter_chirp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
     public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
 

@@ -47,7 +47,7 @@ public final class ReactorControllerBlock extends Block implements EntityBlock {
     @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new ReactorControllerBlockEntity(p, s); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
         if (t != ModBlockEntities.REACTOR_CONTROLLER.get()) return null;
-        return l.isClientSide() ? (w, pos, state, be) -> com.frozendawn.client.ReactorHumSound.tick((ReactorControllerBlockEntity) be)
+        return l.isClientSide() ? (w, pos, state, be) -> { com.frozendawn.client.ReactorHumSound.tick((ReactorControllerBlockEntity) be); com.frozendawn.client.ReactorAlarmSound.tick((ReactorControllerBlockEntity) be); }
                 : (w, pos, state, be) -> ((ReactorControllerBlockEntity) be).serverTick();
     }
 }

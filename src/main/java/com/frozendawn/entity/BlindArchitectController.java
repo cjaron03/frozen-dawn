@@ -153,6 +153,8 @@ public final class BlindArchitectController {
         nextClick = now() + BlindArchitectPolicy.cadence(pursuit, selected != null, distance, actor.getRandom().nextInt(100));
         level().playSound(null, actor.getX(), actor.getY() + actor.getEyeHeight(), actor.getZ(),
                 ModSounds.BLIND_ARCHITECT_CLICK.get(), SoundSource.HOSTILE, 1.5F, .96F + actor.getRandom().nextFloat() * .08F);
+        if (level() instanceof net.minecraft.server.level.ServerLevel server)
+            com.frozendawn.radiation.ReactorAdvancements.blindArchitectClicked(server, actor.position());
         if (now() - lastVocal > (pursuit ? 140 : 240)) {
             lastVocal = now();
             var sound = pursuit ? ModSounds.BLIND_ARCHITECT_SEARCH : ModSounds.BLIND_ARCHITECT_IDLE;

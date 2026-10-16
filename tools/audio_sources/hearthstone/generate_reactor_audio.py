@@ -73,7 +73,35 @@ def meltdown_alert():
     return buf
 
 
+ALARM_HZ = 1100
+
+
+def dosimeter_tone(seconds, warble=0.0):
+    """Dosimeter alarm voice: a 1.1 kHz tone, mostly sine with a soft third harmonic, optional 8 Hz warble.
+    Owner found 3 kHz far too shrill; this sits in the range of a smoke-alarm-style buzzer but rounder."""
+    n = int(RATE * seconds); out = []
+    for i in range(n):
+        t = i / RATE
+        ph = 2 * math.pi * ALARM_HZ * t - (warble * ALARM_HZ / 8) * math.cos(2 * math.pi * 8 * t)
+        out.append(math.sin(ph) + 0.25 * math.sin(3 * ph))
+    return out
+
+
+def dosimeter_chirp():
+    """One 70 ms alarm chirp with a click-free envelope."""
+    tone = dosimeter_tone(0.07)
+    return [v * min(1, i / 60, (len(tone) - i) / 200) for i, v in enumerate(tone)]
+
+
+def dosimeter_alarm():
+    """1 s seamless loop of the continuous alarm (whole cycles of the tone and the 8 Hz warble)."""
+    return dosimeter_tone(1.0, warble=0.04)
+
+
 if __name__ == "__main__":
     for name, make in (("hum", hum), ("overheat_warning", overheat_warning), ("scram", scram), ("meltdown_alert", meltdown_alert)):
         save(name, make())
         print(OUT / f"{name}.ogg")
+    # Geiger clicks and the dense loop are cut from a real CC0 recording by extract_geiger.py.
+    save("dosimeter_chirp", dosimeter_chirp()); print(OUT / "dosimeter_chirp.ogg")
+    save("dosimeter_alarm", dosimeter_alarm()); print(OUT / "dosimeter_alarm.ogg")

@@ -232,6 +232,131 @@ def rod(spent):
     return im
 
 
+def trefoil_icon():
+    """18x18 status-effect icon: black radiation trefoil on a yellow disc."""
+    im = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+    import math as m
+    for x in range(18):
+        for y in range(18):
+            hits = {"disc": 0, "black": 0, "rim": 0}
+            for sx in range(4):
+                for sy in range(4):
+                    px, py = x + (sx + .5) / 4 - 9, 9 - (y + (sy + .5) / 4)
+                    r = m.hypot(px, py); a = m.degrees(m.atan2(py, px)) % 360
+                    if r > 8.6: continue
+                    if r > 7.6: hits["rim"] += 1; continue
+                    blade = any(abs(((a - c + 180) % 360) - 180) <= 30 for c in (90, 210, 330)) and 2.5 <= r <= 6.6
+                    if r <= 1.5 or blade: hits["black"] += 1
+                    else: hits["disc"] += 1
+            best = max(hits, key=hits.get)
+            if hits[best] >= 6:
+                im.putpixel((x, y), {"disc": (240, 196, 40, 255), "black": (20, 18, 14, 255), "rim": (20, 18, 14, 255)}[best])
+    return im
+
+
+def contaminated_icon():
+    """18x18 status icon: a grey-black soot smear with ash flecks inside a pale ring."""
+    r = random.Random(53); im = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+    import math as m
+    for x in range(18):
+        for y in range(18):
+            d = m.hypot(x - 8.5, y - 8.5)
+            if 7.2 < d <= 8.4: im.putpixel((x, y), (150, 146, 138, 255))
+            elif d <= 7.2:
+                v = r.random()
+                im.putpixel((x, y), (40, 38, 36, 255) if v < .45 else (66, 64, 60, 255) if v < .8 else (110, 106, 98, 255) if v < .95 else (130, 84, 56, 255))
+    return im
+
+
+def shielded_cask():
+    """Squat lead-grey cask with bolted lid, yellow-black hazard band and trefoil dot."""
+    return pixel_map([
+        "................", "....oooooooo....", "...oLLLLLLLLo...", "...oBlBlBlBlo...", "..oooooooooooo..",
+        "..oMMMMMMMMMMo..", "..oMHHHHHHHHMo..", "..oYKYKYKYKYKo..", "..oMHHHttHHHMo..", "..oMHHHttHHHMo..",
+        "..oMHHHHHHHHMo..", "..oKYKYKYKYKYo..", "..oMMMMMMMMMMo..", "..oddddddddddo..", "...oooooooooo...", "................"],
+        {"o": (24, 26, 30), "L": (150, 156, 160), "B": (90, 96, 100), "l": (180, 186, 190), "M": (92, 98, 104),
+         "H": (120, 128, 134), "Y": (232, 190, 40), "K": (30, 28, 24), "t": (232, 190, 40), "d": (60, 64, 68)})
+
+
+def radioactive_ash():
+    """A handful of grey-black fallout ash with pale and rust flecks. No glow: contamination looks like dirt."""
+    return pixel_map([
+        "................", "................", "................", "................", "................",
+        "................", "......aa........", "....aAbaAa......", "...abAaabbaa....", "..aAbaawaAbaa...",
+        ".abaaAbaarbAaba.", ".aaAbbaaabaaAba.", "..bbaabbaabbbb..", "................", "................", "................"],
+        {"a": (70, 70, 68), "A": (98, 96, 92), "b": (42, 42, 40), "w": (170, 168, 160), "r": (120, 76, 50)})
+
+
+def rad_aid():
+    """ORSA RadAid: orange IV drip bag with a hanger tab, fluid line and a small yellow trefoil label."""
+    return pixel_map([
+        ".......hh.......", "......h..h......", "....oooooooo....", "...oOOOOOOOOo...", "...oOooOOOOOo...",
+        "...oOOOOOOOOo...", "...oOOYYYYOOo...", "...oOOYKKYOOo...", "...oOOYYYYOOo...", "...oDOOOOOODo...",
+        "....oDDDDDDo....", ".....oooooo.....", ".......tt.......", ".......tt.......", "........t.......", "........t......."],
+        {"h": (150, 156, 160), "o": (110, 50, 16), "O": (240, 132, 40), "D": (200, 96, 24), "Y": (240, 200, 50),
+         "K": (30, 28, 24), "t": (210, 200, 180)})
+
+
+def geiger(reading):
+    """ORSA Geiger Counter: grey body, probe on a cable, analog dial. reading 0-4 sweeps the needle; 4 pegs it."""
+    im = pixel_map([
+        "................", "..oooooooooo....", ".oBBBBBBBBBBo...", ".oBwwwwwwwwBo...", ".oBwwwwwwwwBo...",
+        ".oBwwwwwwwwBo...", ".oBwwwwwwwwBo...", ".oBBBBBBBBBBo.c.", ".oBGGrrGGyyBo.c.", ".oBBBBBBBBBBoc..",
+        ".oBBkkBBkkBBc...", "..oooooooooc....", "...........ppp..", "..........pPPPp.", "...........ppp..", "................"],
+        {"o": (30, 32, 34), "B": (120, 126, 130), "w": (230, 222, 196), "G": (90, 160, 70), "r": (200, 60, 50),
+         "y": (230, 190, 50), "k": (40, 42, 44), "c": (40, 40, 40), "p": (60, 64, 68), "P": (170, 176, 180)})
+    # Needle pivots at the bottom centre of the dial and sweeps left to right.
+    import math as m
+    angle = m.radians(160 - reading * 35)
+    for t in range(1, 6):
+        x = 6.5 + m.cos(angle) * t * 0.9; y = 6.5 - m.sin(angle) * t * 0.8
+        if 3 <= round(x) <= 10 and 3 <= round(y) <= 6: im.putpixel((round(x), round(y)), (190, 30, 30, 255))
+    return im
+
+
+def fallout():
+    """Settled fallout: grey-black ash and grit with pale flecks and a little rust, tiling like a carpet layer."""
+    r = random.Random(41)
+    im = img()
+    for x in range(16):
+        for y in range(16):
+            v = r.random()
+            c = (56, 56, 54) if v < .4 else (76, 75, 72) if v < .75 else (40, 40, 39) if v < .9 else (110, 108, 102) if v < .97 else (118, 80, 56)
+            im.putpixel((x, y), c + (255,))
+    return im
+
+
+def fallout_severe():
+    """Heavy fallout from a blast: darker, coarser grit with scorched fuel fragments and rust."""
+    r = random.Random(43)
+    im = img()
+    for x in range(16):
+        for y in range(16):
+            v = r.random()
+            c = (34, 33, 32) if v < .45 else (50, 48, 46) if v < .75 else (22, 22, 22) if v < .88 else (96, 92, 86) if v < .95 else (128, 74, 44)
+            im.putpixel((x, y), c + (255,))
+    for _ in range(4):
+        x, y = r.randrange(15), r.randrange(15)
+        im.putpixel((x, y), (70, 82, 60, 255)); im.putpixel((x + 1, y), (52, 60, 46, 255))
+    return im
+
+
+def reactor_debris():
+    """Torn scorched casing plate and graphite, with fuel fragments glowing through the cracks."""
+    r = random.Random(53)
+    im = casing(True)
+    for x in range(16):
+        for y in range(16):
+            if r.random() < .3:
+                im.putpixel((x, y), (24, 22, 21, 255) if r.random() < .6 else (40, 36, 33, 255))
+    for _ in range(3):
+        x, y = r.randrange(16), r.randrange(16)
+        for _ in range(6):
+            im.putpixel((x % 16, y % 16), (255, 140, 40, 255) if r.random() > .4 else (190, 255, 150, 255))
+            x += r.choice((-1, 0, 1)); y += r.choice((-1, 0, 1))
+    return im
+
+
 if __name__ == "__main__":
     save(casing(), "block/reactor_casing.png")
     save(casing(True), "block/reactor_casing_scorched.png")
@@ -250,5 +375,15 @@ if __name__ == "__main__":
     save(raw_uranium(), "item/raw_uranium.png")
     save(pellet(), "item/uranium_pellet.png")
     save(concentrate(), "item/uranium_concentrate.png")
+    save(trefoil_icon(), "mob_effect/radiation_sickness.png")
+    save(contaminated_icon(), "mob_effect/contaminated.png")
+    save(shielded_cask(), "item/shielded_cask.png")
+    save(radioactive_ash(), "item/radioactive_ash.png")
+    save(rad_aid(), "item/rad_aid.png")
+    for n in range(5):
+        save(geiger(n), f"item/geiger_counter_{n}.png")
+    save(fallout(), "block/fallout.png")
+    save(fallout_severe(), "block/fallout_severe.png")
+    save(reactor_debris(), "block/reactor_debris.png")
     save(rod(False), "item/fuel_rod.png")
     save(rod(True), "item/spent_fuel_rod.png")

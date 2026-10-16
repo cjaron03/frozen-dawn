@@ -4325,5 +4325,31 @@
         "volume": 1.0
       }
     ]
+  },
+  "ui.geiger_click": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.geiger_click",
+    "sounds": [
+      {"name": "frozendawn:blocks/reactor/geiger_1"},
+      {"name": "frozendawn:blocks/reactor/geiger_2"},
+      {"name": "frozendawn:blocks/reactor/geiger_3"},
+      {"name": "frozendawn:blocks/reactor/geiger_4"},
+      {"name": "frozendawn:blocks/reactor/geiger_5"}
+    ]
+  },
+  "ui.geiger_dense": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.geiger_dense",
+    "sounds": [{"name": "frozendawn:blocks/reactor/geiger_dense"}]
+  },
+  "ui.dosimeter_chirp": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.dosimeter_alarm",
+    "sounds": [{"name": "frozendawn:blocks/reactor/dosimeter_chirp"}]
+  },
+  "ui.dosimeter_alarm": {
+    "category": "master",
+    "subtitle": "subtitle.frozendawn.ui.dosimeter_alarm",
+    "sounds": [{"name": "frozendawn:blocks/reactor/dosimeter_alarm"}]
   }
 }

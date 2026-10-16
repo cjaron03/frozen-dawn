@@ -47,7 +47,8 @@ public final class ReactorControllerMenu extends AbstractContainerMenu {
         if (entity == null || player.isSpectator() || !stillValid(player)) return false;
         if (id >= INSERTION && id <= INSERTION + 100) { entity.setInsertion((id - INSERTION) / 100.0); return true; }
         switch (id) {
-            case SCRAM -> entity.manualScram();
+            case SCRAM -> { if (!entity.physics().scrammed() && player instanceof net.minecraft.server.level.ServerPlayer sp)
+                    com.frozendawn.radiation.ReactorAdvancements.grant(sp, "az_5"); entity.manualScram(); }
             case RESET -> { return entity.reset(); }
             case LOAD_FOLLOW -> entity.toggleLoadFollow();
             case AUTO_ON -> entity.enableAutoScram();
@@ -76,7 +77,9 @@ public final class ReactorControllerMenu extends AbstractContainerMenu {
     }
     private static final class OutputSlot extends Slot {
         OutputSlot(Container c, int i, int x, int y) { super(c, i, x, y); }
-        @Override public boolean mayPlace(ItemStack s) { return false; }
+        /** Take-only for spent rods; a Shielded Cask can sit here to catch them. */
+        @Override public boolean mayPlace(ItemStack s) { return s.is(ModItems.SHIELDED_CASK.get()) && !hasItem(); }
+        @Override public int getMaxStackSize(ItemStack s) { return s.is(ModItems.SHIELDED_CASK.get()) ? 1 : super.getMaxStackSize(s); }
     }
     private record Wrapper(ReactorControllerBlockEntity entity) implements Container {
         @Override public int getContainerSize() { return ReactorControllerBlockEntity.SLOTS; }

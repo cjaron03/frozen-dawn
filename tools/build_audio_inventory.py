@@ -77,6 +77,7 @@ def classify(path: str) -> tuple[str, str, str]:
         (("entity/archivist/",), "archivist_mixed", "tools/audio_sources/archivist/SOURCES.md", "CC0, CC BY 4.0, and original"),
         (("entity/undone/",), "undone_owner_audio", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
         (("ambient/wind_post_maeve_",), "post_maeve_wind_procedural", "tools/audio_sources/post_maeve_wind/SOURCES.md", "Frozen Dawn original"),
+        (("blocks/reactor/geiger_",), "hearthstone_geiger_cc0", "tools/audio_sources/hearthstone/SOURCES.md", "CC0-derived"),
         (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:

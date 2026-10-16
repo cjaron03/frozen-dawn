@@ -49,6 +49,9 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     private String scramLog = "";
     /** Synced 0..1 share of full fission heat; drives the client hum. */
     private float hum;
+    /** Synced alarm loop: none, overheat klaxon (350C) or failure siren (700C). */
+    public static final int ALARM_NONE = 0, ALARM_OVERHEAT = 1, ALARM_FAILURE = 2;
+    private int alarm;
     /** Last SCRAM state heard, so each trip sounds once (button, redstone or automatic). */
     private boolean scramHeard;
 
@@ -61,6 +64,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     public int powerWatts() { return shell.valid() ? (int) Math.round(readout.powerKw() * 1000) : 0; }
     public boolean rodsLocked() { return core.rodsLocked(); }
     public float hum() { return hum; }
+    public int alarm() { return alarm; }
     public int comparator() { return (int) Math.clamp(Math.round(core.coreC() / ReactorPhysics.MELTDOWN_C * 15), 0, 15); }
     public static boolean fuel(ItemStack s) { return s.is(ModItems.FUEL_ROD.get()) && s.getDamageValue() < s.getMaxDamage(); }
     public int loadedRods() { int n = 0; for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) if (fuel(items.get(i))) n++; return n; }
@@ -74,10 +78,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         if (!(level instanceof ServerLevel l)) return;
         long t = l.getGameTime();
         if (t % 20 == 0) second(l);
-        if (core.meltdown()) return;
-        // Overheat klaxon from 350C; the faster failure siren takes over at LOSS OF COOLANT.
-        if (core.coreC() >= ReactorPhysics.LOSS_OF_COOLANT_C) { if (t % 20 == 0) l.playSound(null, worldPosition, ModSounds.REACTOR_MELTDOWN_ALERT.get(), SoundSource.BLOCKS, 2.5f, 1f); }
-        else if (t % 40 == 0 && core.coreC() >= ReactorPhysics.WARNING_C) l.playSound(null, worldPosition, ModSounds.REACTOR_KLAXON.get(), SoundSource.BLOCKS, 2f, 1f);
+        // Klaxon (350C) and failure siren (700C) loop on the client (ReactorAlarmSound) from the synced alarm level.
     }
 
     /** One second of reactor time. Also public for GameTests, which drive it directly. */
@@ -92,7 +93,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         int rods = shell.valid() ? loadedRods() : 0;
         rated = rods * ReactorPhysics.ROD_KW;
         target = core.loadFollow() ? PowerNetworks.loadFollowTargetWatts(l, worldPosition, powerWatts()) / 1000.0 : Double.NaN;
-        boolean wasMelted = core.meltdown();
+        boolean wasMelted = core.meltdown(), wasFrozen = core.frozen();
         readout = core.step(new ReactorPhysics.Inputs(rods, sinks, roomC(l, facing), l.hasNeighborSignal(worldPosition), target));
         announceScram(l);
         burn(readout.burn());
@@ -105,9 +106,13 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         if (readout.roomHeatKw() > 0) RoomThermalManager.addMachineHeat(l, worldPosition, readout.roomHeatKw() * 1000 * ResistiveHeaterBlockEntity.HEAT_PER_JOULE);
         if (readout.coolant() == ReactorPhysics.Coolant.FLOWING) com.frozendawn.event.BlindArchitectEvents.machine(l, worldPosition);
         RoomAtmosphere.keepAlive(this);
-        if (core.meltdown() && !wasMelted) meltdown(l);
+        if (core.meltdown() && !wasMelted) { meltdown(l); if (l.getBlockEntity(worldPosition) != this) return; }
+        if (wasFrozen && !core.frozen()) com.frozendawn.radiation.ReactorAdvancements.grantNear(l, worldPosition, 32, "even_the_reactor_gets_cold");
+        if (readout.efficiency() > 0.85 && readout.powerKw() > 1) com.frozendawn.radiation.ReactorAdvancements.grantNear(l, worldPosition, 32, "carnot_would_be_proud");
         float nextHum = core.meltdown() ? 0 : Math.round((float) Math.clamp(readout.heatInKw() / (ReactorPhysics.ROD_SLOTS * ReactorPhysics.ROD_KW), 0, 1) * 40) / 40f;
-        if (nextHum != hum) { hum = nextHum; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3); }
+        int nextAlarm = core.meltdown() ? ALARM_NONE : core.coreC() >= ReactorPhysics.LOSS_OF_COOLANT_C ? ALARM_FAILURE
+                : core.coreC() >= ReactorPhysics.WARNING_C ? ALARM_OVERHEAT : ALARM_NONE;
+        if (nextHum != hum || nextAlarm != alarm) { hum = nextHum; alarm = nextAlarm; l.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3); }
         int alarm = core.meltdown() ? 3 : core.coreC() >= ReactorPhysics.DAMAGE_C ? 3 : core.coreC() >= ReactorPhysics.WARNING_C ? 2
                 : readout.heatInKw() > 0.05 || readout.coolant() == ReactorPhysics.Coolant.FLOWING ? 1 : 0;
         var state = getBlockState();
@@ -138,7 +143,8 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
             var rod = items.get(i);
             if (!rod.is(ModItems.FUEL_ROD.get()) || fuel(rod)) continue;
             var out = items.get(OUTPUT);
-            if (out.isEmpty()) items.set(OUTPUT, new ItemStack(ModItems.SPENT_FUEL_ROD.get()));
+            if (out.is(ModItems.SHIELDED_CASK.get())) { if (!com.frozendawn.item.ShieldedCaskItem.add(out)) continue; }
+            else if (out.isEmpty()) items.set(OUTPUT, new ItemStack(ModItems.SPENT_FUEL_ROD.get()));
             else if (out.is(ModItems.SPENT_FUEL_ROD.get()) && out.getCount() < out.getMaxStackSize()) out.grow(1);
             else continue;
             items.set(i, ItemStack.EMPTY);
@@ -146,18 +152,59 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     }
     /** Core becomes molten Corium that melts down through the casing and floor; the rest of the casing scorches.
      * Contamination arrives with the radiation slice. */
+    public static final float HYDROGEN_BLAST = 6f;
+    public static final int DEBRIS_COUNT = 8, DEBRIS_MIN = 6, DEBRIS_MAX = 18, FLASH_RANGE = 64;
+
+    /** Meltdown. A prompt excursion flashes nearby players. Where there is air, hydrogen from hot cladding and steam
+     * ignites (Fukushima): the blast breaks open the casing and room and throws core debris (Chernobyl). In vacuum the
+     * hydrogen just vents. Either way the core becomes molten Corium, the casing scorches and severe fallout settles
+     * through open space: about 12 blocks with air, 3 in vacuum. */
     private void meltdown(ServerLevel l) {
-        var coreAt = shell.core().equals(BlockPos.ZERO) ? ReactorMultiblock.core(worldPosition, getBlockState().getValue(ReactorControllerBlock.FACING)) : shell.core();
-        if (l.getBlockState(coreAt).is(ModBlocks.REACTOR_CORE.get())) l.setBlock(coreAt, ModBlocks.MOLTEN_CORIUM.get().defaultBlockState(), 3);
+        var facing = getBlockState().getValue(ReactorControllerBlock.FACING);
+        var coreAt = shell.core().equals(BlockPos.ZERO) ? ReactorMultiblock.core(worldPosition, facing) : shell.core();
+        boolean air = com.frozendawn.world.CombustionAtmosphere.canBurnAt(l, worldPosition.relative(facing));
+        for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) items.set(i, ItemStack.EMPTY);
+        var center = coreAt.getCenter();
+        for (var player : l.players()) if (player.position().distanceTo(center) <= FLASH_RANGE)
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.frozendawn.network.ReactorFlashPayload(center.x, center.y, center.z));
         for (var p : BlockPos.betweenClosed(coreAt.offset(-1, -1, -1), coreAt.offset(1, 1, 1))) {
             var s = l.getBlockState(p);
             if (s.getBlock() instanceof ReactorCasingBlock) l.setBlock(p, s.setValue(ReactorCasingBlock.SCORCHED, true), 3);
         }
-        for (int i = 0; i < ReactorPhysics.ROD_SLOTS; i++) items.set(i, ItemStack.EMPTY);
-        l.playSound(null, coreAt, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 0.6f);
+        if (air) {
+            // Open the core first: rays starting inside a blast-resistant block would be absorbed.
+            if (l.getBlockState(coreAt).is(ModBlocks.REACTOR_CORE.get())) l.setBlock(coreAt, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            l.explode(null, center.x, center.y, center.z, HYDROGEN_BLAST, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
+            ejectDebris(l, coreAt, DEBRIS_COUNT);
+        } else l.playSound(null, coreAt, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 3f, 0.6f);
+        var here = l.getBlockState(coreAt);
+        if (here.isAir() || here.canBeReplaced() || here.is(ModBlocks.REACTOR_CORE.get())) l.setBlock(coreAt, ModBlocks.MOLTEN_CORIUM.get().defaultBlockState(), 3);
+        var vents = new java.util.ArrayList<BlockPos>();
+        for (var p : BlockPos.betweenClosed(coreAt.offset(-2, -1, -2), coreAt.offset(2, 2, 2))) vents.add(p.immutable());
+        com.frozendawn.radiation.Contamination.spread(l, vents, coreAt, air ? com.frozendawn.radiation.Contamination.AIR_RADIUS : com.frozendawn.radiation.Contamination.VACUUM_RADIUS, true);
         var line = Component.translatable("message.frozendawn.reactor.meltdown").withStyle(ChatFormatting.GOLD);
         for (var player : l.players()) if (player.blockPosition().closerThan(worldPosition, 96)) player.sendSystemMessage(line);
-        FrozenDawn.LOGGER.warn("CFU-7 meltdown at {} (automatic SCRAM disabled: {})", worldPosition, scramLog);
+        com.frozendawn.radiation.ReactorAdvancements.grantNear(l, worldPosition, 96, "elephants_foot");
+        FrozenDawn.LOGGER.warn("CFU-7 meltdown at {} (air {}, automatic SCRAM disabled: {})", worldPosition, air, scramLog);
+    }
+
+    /** Scatter core fragments onto open floor 6 to 18 blocks out. Loaded chunks only. Public for GameTests. */
+    public static int ejectDebris(ServerLevel l, BlockPos coreAt, int count) {
+        var random = l.getRandom(); int placed = 0;
+        for (int tries = 0; tries < count * 6 && placed < count; tries++) {
+            double angle = random.nextDouble() * Math.PI * 2, dist = DEBRIS_MIN + random.nextDouble() * (DEBRIS_MAX - DEBRIS_MIN);
+            var top = BlockPos.containing(coreAt.getX() + Math.cos(angle) * dist, coreAt.getY() + 4, coreAt.getZ() + Math.sin(angle) * dist);
+            for (int dy = 0; dy < 12; dy++) {
+                var p = top.below(dy);
+                if (!l.isLoaded(p)) break;
+                var s = l.getBlockState(p);
+                if ((s.isAir() || s.canBeReplaced()) && s.getFluidState().isEmpty()
+                        && l.getBlockState(p.below()).isFaceSturdy(l, p.below(), net.minecraft.core.Direction.UP)) {
+                    l.setBlock(p, ModBlocks.REACTOR_DEBRIS.get().defaultBlockState(), 3); placed++; break;
+                }
+            }
+        }
+        return placed;
     }
 
     public void setInsertion(double value) { if (!core.meltdown()) { core.setLoadFollow(false); core.setInsertion(value); setChanged(); } }
@@ -220,12 +267,12 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider r) {
         super.loadAdditional(tag, r); items.clear(); ContainerHelper.loadAllItems(tag, items, r);
         core.load(tag.getCompound("Core")); burnDebt = Math.clamp(tag.getDouble("BurnDebt"), 0, 1); scramLog = tag.getString("ScramLog");
-        readout = IDLE; hum = tag.getFloat("Hum"); scramHeard = core.scrammed();
+        readout = IDLE; hum = tag.getFloat("Hum"); alarm = tag.getInt("Alarm"); scramHeard = core.scrammed();
     }
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) { var tag = new CompoundTag(); tag.putFloat("Hum", hum); return tag; }
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider r) { var tag = new CompoundTag(); tag.putFloat("Hum", hum); tag.putInt("Alarm", alarm); return tag; }
     @Override public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() { return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this); }
-    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider r) { hum = tag.getFloat("Hum"); }
-    @Override public void onDataPacket(net.minecraft.network.Connection c, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { hum = p.getTag().getFloat("Hum"); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider r) { hum = tag.getFloat("Hum"); alarm = tag.getInt("Alarm"); }
+    @Override public void onDataPacket(net.minecraft.network.Connection c, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket p, HolderLookup.Provider r) { hum = p.getTag().getFloat("Hum"); alarm = p.getTag().getInt("Alarm"); }
     public boolean stillValid(Player p) { return !p.isSpectator() && level != null && level.getBlockEntity(worldPosition) == this && p.distanceToSqr(worldPosition.getCenter()) <= 64; }
     @Override public Component getDisplayName() { return Component.translatable("block.frozendawn.reactor_controller"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) { return new ReactorControllerMenu(id, inv, this); }

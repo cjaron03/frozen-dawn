@@ -141,26 +141,68 @@ public final class ReactorGameTest {
         });
     }
 
-    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor", timeoutTicks = 100)
-    public static void reactorMeltdownLeavesCoriumAndScorchedCasing(GameTestHelper h) {
+    /** Own batch: the hydrogen blast and thrown debris reach past this structure. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor_meltdown_air", timeoutTicks = 100)
+    public static void reactorMeltdownInAirBlowsTheShellAndThrowsDebris(GameTestHelper h) {
         scene(h, () -> {
             var level = h.getLevel(); var controller = build(h); var be = controller(h, controller);
             for (int i = 0; i < 4; i++) be.items().set(i, new ItemStack(ModItems.FUEL_ROD.get()));
             be.physics().setAutoScram(true); be.physics().setInsertion(1); be.physics().setCoreC(ReactorPhysics.MELTDOWN_C - 0.5);
             be.second(level);
             h.assertTrue(!be.physics().meltdown() && be.physics().scrammed(), "With automatic SCRAM on, the core never melts");
-            // Clear the latch the way an operator cannot: disabled auto-SCRAM, core just under 800C.
-            var tag = new net.minecraft.nbt.CompoundTag(); be.physics().save(tag);
-            tag.putBoolean("Scram", false); tag.putBoolean("AutoScram", false); tag.putDouble("CoreC", ReactorPhysics.MELTDOWN_C - 0.5);
-            be.physics().load(tag);
-            var live = be;
-            live.second(level);
-            h.assertTrue(live.physics().meltdown(), "Disabled auto-SCRAM lets the core reach 800C");
-            h.assertTrue(level.getBlockState(h.absolutePos(new BlockPos(CX, CY, CZ))).is(ModBlocks.MOLTEN_CORIUM.get()), "Core becomes molten Corium");
-            h.assertTrue(level.getBlockState(h.absolutePos(new BlockPos(CX - 1, CY - 1, CZ - 1))).getValue(ReactorCasingBlock.SCORCHED), "Casing survives, scorched");
-            h.assertTrue(live.items().subList(0, 4).stream().allMatch(ItemStack::isEmpty), "Fuel is lost in the melt");
-            h.assertTrue(level.getBlockState(controller).getValue(ReactorControllerBlock.ALARM) == 3, "Controller shows red");
+            h.assertTrue(com.frozendawn.world.CombustionAtmosphere.canBurnAt(level, controller.north()), "Test world has air");
+            meltdown(be, level);
+            var core = h.absolutePos(new BlockPos(CX, CY, CZ));
+            h.assertTrue(be.physics().meltdown() && be.items().subList(0, 4).stream().allMatch(ItemStack::isEmpty), "Melts and the fuel is lost");
+            h.assertTrue(level.getBlockState(core).is(ModBlocks.MOLTEN_CORIUM.get()), "Core becomes molten Corium");
+            int shell = 0;
+            for (var p : BlockPos.betweenClosed(core.offset(-1, -1, -1), core.offset(1, 1, 1))) if (!p.equals(core) && !level.getBlockState(p).isAir()) shell++;
+            h.assertTrue(shell < 26, "With air, the hydrogen explosion tears the shell open: " + shell + " of 26 cells left");
+            int debris = 0, severe = 0;
+            for (var p : BlockPos.betweenClosed(core.offset(-20, -6, -20), core.offset(20, 8, 20))) {
+                var s = level.getBlockState(p);
+                if (s.is(ModBlocks.REACTOR_DEBRIS.get())) { debris++; level.removeBlock(p, false); }
+                else if (s.getBlock() instanceof FalloutBlock) { if (s.getValue(FalloutBlock.SEVERE)) severe++; level.removeBlock(p, false); }
+            }
+            h.assertTrue(debris > 0 && debris <= ReactorControllerBlockEntity.DEBRIS_COUNT, "Reactor Debris is thrown clear: " + debris);
+            h.assertTrue(severe > 20, "Heavy fallout settles around the blast: " + severe);
         });
+    }
+
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor_meltdown_vacuum", timeoutTicks = 100)
+    public static void reactorMeltdownInVacuumLeavesTheShellScorched(GameTestHelper h) {
+        var level = h.getLevel(); var apocalypse = com.frozendawn.data.ApocalypseState.get(level.getServer());
+        long original = apocalypse.getApocalypseTicks();
+        scene(h, () -> {
+            try {
+                apocalypse.setApocalypseTicks((long) (apocalypse.getTotalDays() * 24000L * 0.90), level.getServer());
+                com.frozendawn.world.CombustionAtmosphere.reset();
+                var controller = build(h); var be = controller(h, controller);
+                h.assertTrue(!com.frozendawn.world.CombustionAtmosphere.canBurnAt(level, controller.north()), "Fixture is open vacuum");
+                meltdown(be, level);
+                var core = h.absolutePos(new BlockPos(CX, CY, CZ));
+                h.assertTrue(be.physics().meltdown(), "Disabled auto-SCRAM lets the core reach 800C: " + be.physics().coreC());
+                h.assertTrue(level.getBlockState(core).is(ModBlocks.MOLTEN_CORIUM.get()), "Core becomes molten Corium");
+                h.assertTrue(level.getBlockState(h.absolutePos(new BlockPos(CX - 1, CY - 1, CZ - 1))).getValue(ReactorCasingBlock.SCORCHED), "No oxygen, no hydrogen blast: casing survives, scorched");
+                h.assertTrue(level.getBlockState(controller).getValue(ReactorControllerBlock.ALARM) == 3, "Controller shows red");
+                int debris = 0, far = 0;
+                for (var p : BlockPos.betweenClosed(core.offset(-20, -6, -20), core.offset(20, 8, 20))) {
+                    var s = level.getBlockState(p);
+                    if (s.is(ModBlocks.REACTOR_DEBRIS.get())) debris++;
+                    if (s.getBlock() instanceof FalloutBlock) { if (p.distManhattan(core) > com.frozendawn.radiation.Contamination.VACUUM_RADIUS + 4) far++; level.removeBlock(p, false); }
+                }
+                h.assertTrue(debris == 0 && far == 0, "Nothing is thrown and fallout stays close: debris " + debris + ", far " + far);
+            } finally { apocalypse.setApocalypseTicks(original, level.getServer()); com.frozendawn.world.CombustionAtmosphere.reset(); }
+        });
+    }
+
+    /** Clear the SCRAM latch the way an operator cannot: disabled auto-SCRAM, core just under 800C. */
+    private static void meltdown(ReactorControllerBlockEntity be, ServerLevel level) {
+        for (int i = 0; i < 4; i++) be.items().set(i, new ItemStack(ModItems.FUEL_ROD.get()));
+        var tag = new net.minecraft.nbt.CompoundTag(); be.physics().save(tag);
+        tag.putBoolean("Scram", false); tag.putBoolean("AutoScram", false); tag.putDouble("CoreC", ReactorPhysics.MELTDOWN_C - 0.5);
+        be.physics().load(tag); be.physics().setInsertion(1);
+        be.second(level);
     }
 
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor", timeoutTicks = 100)

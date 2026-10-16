@@ -8,6 +8,7 @@
     "frozendawn:coolant_port",
     "frozendawn:reactor_controller",
     "frozendawn:reactor_radiator",
-    "frozendawn:deepslate_uranium_ore"
+    "frozendawn:deepslate_uranium_ore",
+    "frozendawn:reactor_debris"
   ]
 }

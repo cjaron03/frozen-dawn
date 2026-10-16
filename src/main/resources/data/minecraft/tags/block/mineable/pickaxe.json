@@ -47,6 +47,7 @@
     "frozendawn:reactor_controller",
     "frozendawn:reactor_radiator",
     "frozendawn:corium",
-    "frozendawn:deepslate_uranium_ore"
+    "frozendawn:deepslate_uranium_ore",
+    "frozendawn:reactor_debris"
   ]
 }
