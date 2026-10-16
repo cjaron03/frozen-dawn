@@ -697,3 +697,12 @@ tasks.register('preparePoweredAirlockQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(poweredAirlockQa)
 tasks.named('processGameTestResources') { dependsOn tasks.named('preparePoweredAirlockQa') }
+
+def chargedCellQa = layout.buildDirectory.dir('generated/chargedCellQa')
+tasks.register('prepareChargedCellQa', Exec) {
+    inputs.files('tools/prepare_charged_cell_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(chargedCellQa)
+    commandLine 'python3', '-B', 'tools/prepare_charged_cell_playtest.py', '--pack-only', chargedCellQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(chargedCellQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareChargedCellQa') }

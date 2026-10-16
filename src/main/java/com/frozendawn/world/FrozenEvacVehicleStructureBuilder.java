@@ -227,7 +227,7 @@ public final class FrozenEvacVehicleStructureBuilder {
             return;
         }
 
-        List<ItemStack> loot = buildLoot(campCenter, variant);
+        List<ItemStack> loot = buildLoot(campCenter, variant, level.getSeed() ^ cratePos.asLong());
         for (int i = 0; i < crate.getContainerSize(); i++) {
             crate.setItem(i, ItemStack.EMPTY);
         }
@@ -237,7 +237,7 @@ public final class FrozenEvacVehicleStructureBuilder {
         crate.setChanged();
     }
 
-    private static List<ItemStack> buildLoot(BlockPos campCenter, FrozenEvacVehiclePlacement.VehicleVariant variant) {
+    static List<ItemStack> buildLoot(BlockPos campCenter, FrozenEvacVehiclePlacement.VehicleVariant variant, long salvageSeed) {
         List<ItemStack> loot = new ArrayList<>();
         loot.add(createTranscriptDocument(variant));
         loot.add(createTransferOrder(campCenter));
@@ -266,6 +266,7 @@ public final class FrozenEvacVehicleStructureBuilder {
             }
         }
 
+        loot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed));
         return loot;
     }
 
