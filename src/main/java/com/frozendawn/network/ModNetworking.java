@@ -41,6 +41,19 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(PowerBinderPayload.TYPE, PowerBinderPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinder(payload)));
+        registrar.playToClient(PowerBinderNoticePayload.TYPE, PowerBinderNoticePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinderNotice(payload)));
+
+        registrar.playToClient(ReactorFlashPayload.TYPE, ReactorFlashPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
+        registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
+
+        registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));
+
         registrar.playToClient(RoomOxygenWarningPayload.TYPE, RoomOxygenWarningPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRoomOxygenWarning(payload)));
 

@@ -2,7 +2,7 @@
   "name": "Flames in a Vacuum",
   "icon": "minecraft:soul_torch",
   "category": "frozendawn:life_support",
-  "sortnum": 6,
+  "sortnum": 7,
   "pages": [
     {
       "type": "patchouli:text",

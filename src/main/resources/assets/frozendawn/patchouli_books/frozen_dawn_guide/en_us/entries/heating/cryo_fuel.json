@@ -2,7 +2,7 @@
   "name": "Cryo Fuel",
   "category": "frozendawn:heating",
   "icon": "frozendawn:cryo_fuel",
-  "sortnum": 9,
+  "sortnum": 10,
   "pages": [
     {
       "type": "patchouli:spotlight",

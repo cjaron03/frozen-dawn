@@ -2,17 +2,17 @@
   "name": "ORSA Heat Vent",
   "icon": "frozendawn:heat_vent",
   "category": "frozendawn:heating",
-  "sortnum": 8,
+  "sortnum": 9,
   "pages": [
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:heat_vent",
-      "text": "Dumps excess heat from a sealed room without letting air out."
+      "text": "An airtight radiator. Dumps excess heat without losing oxygen or using fuel."
     },
     {
       "type": "patchouli:text",
-      "title": "How It Works",
-      "text": "Opening the shutter exposes cooling fins. It makes no hole in your pressure wall and uses no fuel or O2.$(br2)In vacuum it radiates heat away."
+      "title": "Automatic",
+      "text": "A $(l:heating/thermostat)Thermostat$(/l) in the same room opens it above target and closes it at target.$(br2)More vents cool faster, but never past the target."
     },
     {
       "type": "patchouli:multiblock",
@@ -43,31 +43,32 @@
           "H": "frozendawn:heat_vent[facing=north,open=true]"
         }
       },
-      "text": "Room on the floor side. Fins face out, under open sky."
+      "text": "Room on the floor side. Fins face out; keep the block in front of them clear."
     },
     {
       "type": "patchouli:text",
       "title": "Placement",
-      "text": "Place it facing from the room outward. The back must touch the room.$(br2)The outdoor face needs $(bold)open sky straight up$(). Blocks, roofs or neighboring rooms stop it."
+      "text": "Place it facing outdoors: fins away from you, back touching the room.$(br2)Keep $(bold)one block$() in front of the fins clear. Cave roofs and overhead glass are fine; a block or water there stops it."
     },
     {
       "type": "patchouli:text",
-      "title": "Shutter",
-      "text": "Right-click toggles it. Redstone holds it open.$(br2)Grille light: $(bold)dim$() closed, $(bold)green$() venting, $(bold)amber$() waiting or blocked. Updates each second."
+      "title": "Manual Use",
+      "text": "Without a thermostat, right-click toggles the shutter and redstone holds it open.$(br2)$(danger)An open vent wastes heater fuel.$()"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Lights",
+      "text": "Grille: $(bold)dim$() closed, $(bold)green$() venting, $(bold)amber$() waiting or blocked.$(br2)The fins glow orange while heat is actually leaving. Updates each second."
     },
     {
       "type": "patchouli:text",
       "title": "Limits",
-      "text": "Heat only flows to a colder outside, so it can't cool below that.$(br2)Larger rooms cool slower; more vents cool faster."
+      "text": "Heat only flows to a colder outside, and a warm exterior cuts its output.$(br2)It cools the air first while the walls keep warming it."
     },
     {
       "type": "patchouli:text",
-      "text": "It cools the air first while the walls keep warming it. A room without air loses wall heat instead.$(br2)The slats don't leak oxygen."
-    },
-    {
-      "type": "patchouli:text",
-      "title": "Save Fuel",
-      "text": "Heaters fight an open vent. Lower the $(l:heating/thermostat)Thermostat$(/l) or stop heaters first. Core warmth still counts.$(br2)A $(l:heating/airlocks)Manual Vent Valve$(/l) dumps air. This doesn't."
+      "title": "Specs",
+      "text": "$(li)Conductance 18 per vent, before the vacuum factor$(li)No fuel, no O2; the casing keeps air in$(li)A $(l:heating/airlocks)Manual Vent Valve$(/l) dumps air; this doesn't"
     },
     {
       "type": "patchouli:crafting",

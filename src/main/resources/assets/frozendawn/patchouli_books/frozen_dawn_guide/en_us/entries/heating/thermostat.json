@@ -2,7 +2,7 @@
   "name": "ORSA Thermostat",
   "category": "frozendawn:heating",
   "icon": "frozendawn:thermostat",
-  "sortnum": 4,
+  "sortnum": 5,
   "pages": [
     {
       "type": "patchouli:spotlight",
@@ -22,12 +22,12 @@
     {
       "type": "patchouli:text",
       "title": "Room Reading",
-      "text": "It reads the shared room temperature the HUD uses, before your gear and effects.$(br2)Core, campfire and furnace heat is part of that reading."
+      "text": "It reads the shared room temperature the HUD uses, before your gear and effects.$(br2)Core, fire and machine warmth are part of that reading."
     },
     {
       "type": "patchouli:text",
-      "title": "Limits",
-      "text": "It throttles heaters only. It can't switch off a Core, put out a fire or cool.$(br2)If those overshoot, use a $(l:heating/heat_vent)Heat Vent$(/l)."
+      "title": "Heating and Cooling",
+      "text": "It throttles heaters and runs same-room $(l:heating/heat_vent)Heat Vents$(/l): open above target +0.5°C, closed at target. The screen shows $(bold)Cooling$() while venting.$(br2)It can't switch off a Core or put out a fire."
     },
     {
       "type": "patchouli:text",

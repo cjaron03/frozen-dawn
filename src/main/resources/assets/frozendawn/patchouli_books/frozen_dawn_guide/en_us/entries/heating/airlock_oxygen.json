@@ -2,7 +2,7 @@
   "name": "Airlock Oxygen",
   "category": "frozendawn:life_support",
   "icon": "frozendawn:o2_tank",
-  "sortnum": 5,
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",
@@ -20,7 +20,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Breathing and flames come first; reservoirs, Core canisters and EVA refill share the rest fairly.$(br2)Stored O2 works without the Core, but won't refill without one."
+      "text": "Breathing and flames come first; reservoirs, Core canisters and EVA refill share the rest fairly.$(br2)Stored O2 works without the Core. A charged O2 canister supplies backup gas."
     },
     {
       "type": "patchouli:text",

@@ -1,0 +1,37 @@
+{
+  "name": "Running It",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:reactor_core",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "The controller screen shows core temperature, state, heat, power, efficiency, radiators, rods and $(danger)time to core failure$()."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rods",
+      "text": "Load up to $(bold)4 fuel rods$(). Each makes $(bold)35 kW$() of heat at full insertion.$(br2)Rod slots lock above 350°C."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Insertion",
+      "text": "The slider sets rod insertion. $(bold)Follow$() matches network demand plus 5 kW to charge batteries, minus other generators, capped at what the radiators can shed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Cold Start",
+      "text": "$(danger)Below 0°C for a day, the coolant freezes$(): no fission, no radiators.$(br2)Keep the room at 5°C or warmer for 3 minutes to thaw it. A cold core warms at full insertion first."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Idle",
+      "text": "Pumps stop when the core is idle and below 40°C, so it settles to room temperature.$(br2)The casing leaks a little heat into the room."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Redstone",
+      "text": "A redstone signal trips SCRAM. A comparator reads core temperature."
+    }
+  ]
+}

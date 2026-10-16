@@ -20,6 +20,8 @@ public abstract class VacuumLevelChunkMixin {
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void frozendawn$indexFlame(BlockPos pos, BlockState state, boolean moving, CallbackInfoReturnable<BlockState> ci) {
         var chunk = (LevelChunk)(Object)this;
+        if (ci.getReturnValue() != null && chunk.getLevel() instanceof ServerLevel powerLevel)
+            com.frozendawn.power.PowerNetworks.blockChanged(powerLevel, pos, ci.getReturnValue(), chunk.getBlockState(pos));
         if (ci.getReturnValue() != null && chunk.getLevel() instanceof ServerLevel level
                 && level.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
             var current = chunk.getBlockState(pos);

@@ -10,17 +10,23 @@
     },
     {
       "type": "patchouli:text",
-      "title": "Heat / O2 Split",
-      "text": "One output, set by a slider. Default $(bold)60% heat / 40% O2$(), which keeps existing upgrade output.$(br2)40% O2 supplies $(bold)8$() room units, 20% supplies 4, 0% none."
+      "title": "Output Split",
+      "text": "Three shares that add up to 100%: $(bold)heat$(), $(bold)oxygen$() and $(bold)power$().$(br2)Default: 60% heat, 40% O2, 0% power."
     },
     {
       "type": "patchouli:text",
-      "text": "Breathing and flames draw first. Only spare production charges reservoirs, canisters, suits and airlocks.$(br2)The split is saved and never drifts."
+      "title": "Power",
+      "text": "Each 1% of power share gives $(bold)0.2 kW$(): 20 kW at 100%.$(br2)Set power first; the heat/O2 slider splits what's left. See $(l:power/basics)Power Basics$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Oxygen",
+      "text": "40% O2 supplies $(bold)8$() room units, 20% supplies 4, 0% none.$(br2)Breathing and flames draw first. Only spare production charges reservoirs, canisters, suits and airlocks."
     },
     {
       "type": "patchouli:text",
       "title": "Heat Share",
-      "text": "It scales heat transfer; supply temperature and surface penalty stay. Less heat cools the room gradually.$(br2)A thermostat still runs fuel heaters. Electricity is not wired in yet."
+      "text": "It scales heat transfer; supply temperature and surface penalty stay. Less heat cools the room gradually.$(br2)The split is saved and never drifts."
     },
     {
       "type": "patchouli:text",

@@ -2,7 +2,7 @@
   "name": "Insulation",
   "category": "frozendawn:heating",
   "icon": "minecraft:white_wool",
-  "sortnum": 5,
+  "sortnum": 6,
   "pages": [
     {
       "type": "patchouli:text",

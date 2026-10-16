@@ -12,14 +12,30 @@ public record AirlockStatusPayload(Status status, int reserve, int air, int capa
         implements CustomPacketPayload {
     public enum Status {
         DIFFERENTIAL, INVALID, CLOSE_DOORS, INSUFFICIENT, PRESSURIZING, DEPRESSURIZING,
-        CYCLING, STATUS, CHARGED, VENTED, EVACUATED, READY, INTERRUPTED;
+        CYCLING, STATUS, CHARGED, VENTED, EVACUATED, READY, INTERRUPTED, WAITING_FOR_POWER,
+        WAITING_TO_FILL, WAITING_TO_VENT, INNER_DIFFERENTIAL, CHAMBER_VACUUM, BASE_VACUUM,
+        VACUUM_DIFFERENCE, PRESSURE_UNKNOWN, CYCLE_LOCKED, VALVE_INNER_ONLY, BASE_UNSEALED,
+        VALVE_EQUALIZED, DOOR_OPEN_VACUUM, DOOR_OPEN_MATCHED;
+        public boolean opensDoor() { return this == DOOR_OPEN_VACUUM || this == DOOR_OPEN_MATCHED; }
+        public boolean success() { return opensDoor() || this == VALVE_EQUALIZED || this == READY; }
+        public boolean doorNotice() {
+            return switch(this) {
+                case DIFFERENTIAL, CLOSE_DOORS, INNER_DIFFERENTIAL, CHAMBER_VACUUM, BASE_VACUUM,
+                    VACUUM_DIFFERENCE, PRESSURE_UNKNOWN, CYCLE_LOCKED, VALVE_INNER_ONLY, BASE_UNSEALED,
+                    VALVE_EQUALIZED, DOOR_OPEN_VACUUM, DOOR_OPEN_MATCHED -> true;
+                default -> false;
+            };
+        }
         public String key() { return "message.frozendawn.airlock." + name().toLowerCase(java.util.Locale.ROOT); }
         public boolean warning() { return this == DIFFERENTIAL || this == INVALID || this == CLOSE_DOORS
-                || this == INSUFFICIENT || this == VENTED || this == INTERRUPTED; }
+                || this == WAITING_FOR_POWER || this == WAITING_TO_FILL || this == WAITING_TO_VENT || this == INSUFFICIENT || this == VENTED || this == INTERRUPTED
+                || this == INNER_DIFFERENTIAL || this == CHAMBER_VACUUM || this == BASE_VACUUM
+                || this == VACUUM_DIFFERENCE || this == PRESSURE_UNKNOWN || this == CYCLE_LOCKED
+                || this == VALVE_INNER_ONLY || this == BASE_UNSEALED; }
     }
     public AirlockStatusPayload {
         if (status == null || reserve < 0 || reserve > 6400 || capacity < 0 || capacity > 3200
-                || air < 0 || air > capacity || percent < 0 || percent > 100 || amount < 0)
+                || air < 0 || capacity == 0 && air != 0 || percent < 0 || percent > 100 || amount < 0)
             throw new IllegalArgumentException("Invalid airlock status");
     }
     public static final Type<AirlockStatusPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,"airlock_status"));

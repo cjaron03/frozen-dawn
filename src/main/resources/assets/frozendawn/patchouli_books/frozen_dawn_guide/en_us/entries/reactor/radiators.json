@@ -1,0 +1,37 @@
+{
+  "name": "Radiators & Coolant",
+  "category": "frozendawn:reactor",
+  "icon": "frozendawn:reactor_radiator",
+  "sortnum": 3,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:reactor_radiator",
+      "text": "Sheds core heat outdoors. The heat it sheds becomes power."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Linking",
+      "text": "Link each Coolant Port to its radiators with the $(l:power/binder)Binder$(/l), up to $(bold)16 blocks$().$(br2)Coolant links are blue and never carry power."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Placement",
+      "text": "Each radiator needs $(bold)one uncovered outdoor face$(). Snow on that face covers it.$(br2)$(danger)Running radiators glow and burn whatever stands on them.$() They melt nearby snow."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Output",
+      "text": "One radiator sheds about $(bold)12 kW$() from a 300°C core against -200°C outside. Colder outside sheds more."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Power out is the heat shed times the efficiency, which also rises as the outside gets colder.$(br2)While running, the coolant holds the core between 200°C and 280°C."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:reactor_radiator",
+      "text": "Iron bars, copper blocks and a Coolant Port."
+    }
+  ]
+}

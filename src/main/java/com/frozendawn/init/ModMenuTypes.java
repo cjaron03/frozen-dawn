@@ -18,6 +18,21 @@ public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
             DeferredRegister.create(Registries.MENU, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ResistiveHeaterMenu>> RESISTIVE_HEATER = MENU_TYPES.register("resistive_heater", () -> IMenuTypeExtension.create(com.frozendawn.block.ResistiveHeaterMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.ReactorControllerMenu>> REACTOR_CONTROLLER = MENU_TYPES.register("reactor_controller", () -> IMenuTypeExtension.create(com.frozendawn.block.ReactorControllerMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PixieMenu>> PIXIE = MENU_TYPES.register("pixie", () -> IMenuTypeExtension.create(com.frozendawn.block.PixieMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerMonitorMenu>> POWER_MONITOR =
+            MENU_TYPES.register("power_monitor", () -> IMenuTypeExtension.create(com.frozendawn.block.PowerMonitorMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.InductionFurnaceMenu>> INDUCTION_FURNACE =
+            MENU_TYPES.register("induction_furnace", () -> IMenuTypeExtension.create(com.frozendawn.block.InductionFurnaceMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerStorageMenu>> POWER_STORAGE =
+            MENU_TYPES.register("power_storage", () -> IMenuTypeExtension.create(com.frozendawn.block.PowerStorageMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<GeothermalCoreMenu>> GEOTHERMAL_CORE =
             MENU_TYPES.register("geothermal_core",
                     () -> IMenuTypeExtension.create(GeothermalCoreMenu::new));

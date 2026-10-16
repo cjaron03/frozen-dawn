@@ -2,5 +2,5 @@
   "name": "ORSA Intelligence",
   "description": "Classified ORSA-UN joint assessment of projected Earth conditions. Read carefully.$(br2)Locked files open when you archive the matching document. See $(l:orsa_intel/field_documents)Field Documents$().",
   "icon": "minecraft:writable_book",
-  "sortnum": 7
+  "sortnum": 10
 }

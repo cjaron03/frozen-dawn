@@ -2,7 +2,7 @@
   "name": "ORSA O2 Reservoir",
   "category": "frozendawn:life_support",
   "icon": "frozendawn:oxygen_reservoir",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
       "type": "patchouli:spotlight",

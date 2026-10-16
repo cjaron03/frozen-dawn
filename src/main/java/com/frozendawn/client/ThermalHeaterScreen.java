@@ -114,6 +114,7 @@ public class ThermalHeaterScreen extends AbstractContainerScreen<ThermalHeaterMe
         graphics.drawString(font, shelterText, x + 22, indicatorY, sheltered ? 0xFFAABBAA : 0xFFCC6644, false);
 
         String status = redstoneOff ? "Paused by redstone" : !isLit ? "Off" :
+                burnPercent == 0 && (mode == 0 || temperature < target*10-5) ? "Waiting for warmth" :
                 (mode != 0 && temperature >= target*10-5 ? "Holding " : "Heating ") + burnPercent + "%";
         graphics.drawString(font, status, x + 10, y + 58, 0xFFE0C090, false);
         String reading = mode == 0 || temperature == -32768 ? "Open camp | Target "+target+"C" :

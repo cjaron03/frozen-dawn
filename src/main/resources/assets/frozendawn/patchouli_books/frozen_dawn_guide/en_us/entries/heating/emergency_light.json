@@ -1,0 +1,39 @@
+{
+  "name": "Lights",
+  "icon": "frozendawn:panel_light",
+  "category": "frozendawn:power",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:panel_light",
+      "title": "Lights",
+      "text": "$(bold)Panel Light:$() light level 15 for 0.1 kW. Silent; no heat or oxygen."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Emergency Light",
+      "text": "Off while the grid is healthy, charging its own battery for free. When normal lighting loses power, it glows dim red, level 6, for up to $(bold)10 minutes$()."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Right-click to read the time left. Reconnect a healthy grid to recharge it; new or replaced lights start empty.$(br2)Mounts on a floor, wall or ceiling. It can't seal a hole."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "No heat, no sound. It isn't the flickering light found in ruins."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:panel_light",
+      "title": "Panel Light",
+      "text": "Iron, glass and redstone. Makes two."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_emergency_light",
+      "title": "Emergency Light",
+      "text": "Iron, red glass, redstone and copper."
+    }
+  ],
+  "sortnum": 7
+}

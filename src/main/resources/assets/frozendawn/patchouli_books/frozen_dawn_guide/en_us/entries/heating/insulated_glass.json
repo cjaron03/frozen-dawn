@@ -2,7 +2,7 @@
   "name": "Insulated Glass",
   "category": "frozendawn:heating",
   "icon": "frozendawn:insulated_glass",
-  "sortnum": 7,
+  "sortnum": 8,
   "pages": [
     {
       "type": "patchouli:spotlight",

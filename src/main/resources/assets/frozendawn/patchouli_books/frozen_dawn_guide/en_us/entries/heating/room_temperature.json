@@ -2,7 +2,7 @@
   "name": "Room Temperature",
   "category": "frozendawn:heating",
   "icon": "minecraft:campfire",
-  "sortnum": 6,
+  "sortnum": 7,
   "pages": [
     {
       "type": "patchouli:text",
@@ -25,8 +25,13 @@
     },
     {
       "type": "patchouli:text",
+      "title": "Machine Heat",
+      "text": "Machines warm the room too:$(li)Induction Furnace: 0.5 kW$(li)PIXIE-2: a quarter of its draw$(li)RH-5: all of it, a quarter in vacuum$(br2)Heaters burn less fuel when machines cover the target."
+    },
+    {
+      "type": "patchouli:text",
       "title": "Target",
-      "text": "Heaters default to $(bold)20°C$(); a $(l:heating/thermostat)Thermostat$(/l) picks 10-30°C.$(br2)Passive heat can overshoot. Cut it or open a $(l:heating/heat_vent)Heat Vent$(/l)."
+      "text": "Heaters default to $(bold)20°C$(); a $(l:heating/thermostat)Thermostat$(/l) picks 10-30°C.$(br2)If other heat overshoots, the thermostat opens same-room $(l:heating/heat_vent)Heat Vents$(/l)."
     },
     {
       "type": "patchouli:text",
@@ -44,7 +49,7 @@
     },
     {
       "type": "patchouli:text",
-      "text": "Without air, burners heat walls less, and radiant warmth only partly protects you.$(br2)Atmosphere restored means air, not warmth. A thermostat cuts heating; it can't cool."
+      "text": "Without air, burners heat walls less, and radiant warmth only partly protects you.$(br2)Atmosphere restored means air, not warmth. Vents need clear outdoor faces to shed heat."
     }
   ]
 }

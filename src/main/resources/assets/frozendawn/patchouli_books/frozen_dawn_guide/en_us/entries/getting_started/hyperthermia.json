@@ -20,7 +20,7 @@
     {
       "type": "patchouli:text",
       "title": "Causes",
-      "text": "Heaters share a target; more heaters add power, not heat.$(br2)Core warmth, campfires, lava and nearby open-camp heaters still heat you. A thermostat can't cool or switch those off."
+      "text": "Heaters share a target; more heaters add power, not heat.$(br2)Core warmth, campfires, lava and nearby open-camp heaters still heat you. A thermostat opens same-room Heat Vents, but can't switch those off."
     },
     {
       "type": "patchouli:text",
@@ -30,7 +30,7 @@
     {
       "type": "patchouli:text",
       "title": "Cooling Down",
-      "text": "$(li)Lower the $(l:heating/thermostat)Thermostat$(/l) or stop heaters with redstone$(li)Move away from Core, lava or fire$(li)Wall heat cools slowly; a $(l:heating/heat_vent)Heat Vent$(/l) helps$(li)Keep EVA protection in vacuum"
+      "text": "$(li)Fit a $(l:heating/thermostat)Thermostat$(/l) and $(l:heating/heat_vent)Heat Vents$(/l)$(li)Move away from Core, lava or fire$(li)Wall heat cools slowly$(li)Keep EVA protection in vacuum"
     },
     {
       "type": "patchouli:text",

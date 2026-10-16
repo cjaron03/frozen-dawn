@@ -1,5 +1,7 @@
 package com.frozendawn.data;
 
+import com.frozendawn.world.RoomSets;
+
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -13,7 +15,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 public final class RoomIdentityState extends SavedData {
     public static final String NAME = "frozendawn_room_identities";
     public record Membership(long id, Set<BlockPos> cells) {
-        public Membership { cells = Set.copyOf(cells); }
+        public Membership { cells = RoomSets.freeze(cells); }
     }
     private record Claim(long parent, int child, int overlap, long firstCell) {}
     private final Map<Long, Membership> rooms = new TreeMap<>();

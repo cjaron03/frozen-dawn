@@ -77,6 +77,8 @@ def classify(path: str) -> tuple[str, str, str]:
         (("entity/archivist/",), "archivist_mixed", "tools/audio_sources/archivist/SOURCES.md", "CC0, CC BY 4.0, and original"),
         (("entity/undone/",), "undone_owner_audio", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
         (("ambient/wind_post_maeve_",), "post_maeve_wind_procedural", "tools/audio_sources/post_maeve_wind/SOURCES.md", "Frozen Dawn original"),
+        (("blocks/reactor/geiger_",), "hearthstone_geiger_cc0", "tools/audio_sources/hearthstone/SOURCES.md", "CC0-derived"),
+        (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:
         if path.startswith(prefixes):
@@ -85,7 +87,7 @@ def classify(path: str) -> tuple[str, str, str]:
     if path.startswith("block/oxygen_gauge/"):
         return "room_oxygen_warnings", "tools/audio_sources/room_oxygen/SOURCES.md", "CC0-derived" if path.endswith("critical.ogg") else "Frozen Dawn original"
     if path.startswith("block/airlock/"):
-        return "airlock_machinery_procedural", "tools/audio_sources/airlock/SOURCES.md", "Frozen Dawn original"
+        return "airlock_machinery_recorded", "tools/audio_sources/airlock/SOURCES.md", "CC0-derived"
     original_prefixes = (
         "ambient/",
         "blocks/",

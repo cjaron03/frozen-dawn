@@ -4,6 +4,23 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RoomHeatMathTest {
+    @Test void originalMassKeepsColdStartAffordableAndLargerRoomsNeedMoreEnergy() {
+        double small=25*RoomHeatMath.AIR_CAPACITY+54*RoomHeatMath.MATERIAL_CAPACITY;
+        double large=100*RoomHeatMath.AIR_CAPACITY+120*RoomHeatMath.MATERIAL_CAPACITY;
+        double minimumSeconds=small*(19-(-150))/1800;
+        assertTrue(minimumSeconds>60&&minimumSeconds<120,"Original capacities fit a small-room cold start with one base heater before losses");
+        assertTrue(large>2*small,"Larger rooms need more heat for the same temperature rise");
+        assertTrue(RoomHeatMath.MATERIAL_CAPACITY>10*RoomHeatMath.AIR_CAPACITY,"Walls still hold most room heat");
+    }
+    @Test void coolingHysteresisRetainsStateBetweenThresholdsAndClosesAtTarget() {
+        for(double target:new double[]{10,20,30}) {
+            assertFalse(VentControl.demand(false,target+.4,target));
+            assertTrue(VentControl.demand(true,target+.4,target));
+            assertTrue(VentControl.demand(false,target+.6,target));
+            assertFalse(VentControl.demand(true,target,target));
+            assertFalse(VentControl.demand(true,target-10,target));
+        }
+    }
     @Test void exchangeConservesEnergyAndNeverCrossesEquilibriumEvenWithHugeSteps() {
         for(double ca:new double[]{1,35,12000})for(double cs:new double[]{12,900,100000})
             for(double air:new double[]{-273.15,-200,20,500})for(double wall:new double[]{-273.15,-150,40,1000})

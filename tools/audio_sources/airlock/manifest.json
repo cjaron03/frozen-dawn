@@ -1,65 +1,308 @@
 {
   "door_open": {
-    "sha256": "56162c17778a377bd4350a95b7f82936624d2786ceb7723db1005d21c2313721",
-    "duration": 0.93,
-    "peak": 0.6726096752339141,
+    "sha256": "4df07a9b20d6bd5c53dc0526a3d7ed099a4bc29df47794c750f2b9a7809147fa",
+    "duration": 1.5,
+    "peak": 0.680755615234375,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "mechanical2.wav",
+      "rattle1.wav",
+      "squeakyclick1.wav"
+    ],
+    "parts": [
+      {
+        "file": "squeakyclick1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0,
+        "gain": 0.7,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "mechanical2.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0.25,
+        "gain": 0.8,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "rattle1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0.62,
+        "gain": 0.55,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      }
+    ]
   },
   "door_close": {
-    "sha256": "ec19533bd5bea644253549faf9c027d624e0ee965445cee238242ee342aa8e61",
-    "duration": 0.92,
-    "peak": 0.9232017465313027,
+    "sha256": "8d46d988c7a91ab0ccf1b71af93c2adef1b5e9961872324744133e7ef0214259",
+    "duration": 1.5,
+    "peak": 0.70379638671875,
     "sample_rate": 24000,
-    "channels": 1
-  },
-  "pump_fill": {
-    "sha256": "f0d2ba927ffe47330495da6ff9824457b0d0033c17544895921067beb7ba6143",
-    "duration": 0.94,
-    "peak": 0.5093681903208797,
-    "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "clank1.wav",
+      "rattle1.wav",
+      "squeakyclick2.wav"
+    ],
+    "parts": [
+      {
+        "file": "squeakyclick2.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0,
+        "gain": 0.5,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "rattle1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0.3,
+        "gain": 0.55,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "clank1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0.77,
+        "gain": 0.8,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      }
+    ]
   },
   "pump_recover": {
-    "sha256": "0645ef22bcb3642fa28ecae07bbcc420a34b59e7ce14dd78146f52afbf6a9e9a",
+    "sha256": "d02e1673425423eace55648722491a98df73f52cd9d6df2c9c9db61b76e1d3b3",
     "duration": 0.94,
-    "peak": 0.3296299765889559,
+    "peak": 0.477783203125,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "air_long.mp3",
+      "squeakyclick1.wav"
+    ],
+    "parts": [
+      {
+        "file": "air_long.mp3",
+        "start": 0.4,
+        "duration": 0.94,
+        "at": 0,
+        "gain": 0.85,
+        "low": 50,
+        "high": 6500,
+        "loop": null
+      },
+      {
+        "file": "squeakyclick1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0,
+        "gain": 0.2,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      }
+    ]
+  },
+  "pump_fill": {
+    "sha256": "4f84ce1a6fc55838ef588fa07b8659614ce141cabb6de83cc668bd05ca106e35",
+    "duration": 0.94,
+    "peak": 0.29095458984375,
+    "sample_rate": 24000,
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "foley100/machine_03.ogg",
+      "rattle1.wav"
+    ],
+    "parts": [
+      {
+        "file": "foley100/machine_03.ogg",
+        "start": 0,
+        "duration": null,
+        "at": 0,
+        "gain": 0.65,
+        "low": 50,
+        "high": 5000,
+        "loop": 0.94
+      },
+      {
+        "file": "rattle1.wav",
+        "start": 0,
+        "duration": null,
+        "at": 0.1,
+        "gain": 0.2,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      }
+    ]
   },
   "ready": {
-    "sha256": "a7436f79175c7936b9ae3ee8c7f4ba5b6a37ea0cd9dd4dd44681de7d315fd3ae",
+    "sha256": "4b32825c4a108b681bbf87264e032a1d721b74942278a11135af4ab9e6ad799d",
     "duration": 0.79,
-    "peak": 0.18674749378395517,
+    "peak": 0.568115234375,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "foley100/bell_01.ogg"
+    ],
+    "parts": [
+      {
+        "file": "foley100/bell_01.ogg",
+        "start": 0,
+        "duration": 0.65,
+        "at": 0,
+        "gain": 0.6,
+        "low": 50,
+        "high": 5000,
+        "loop": null
+      }
+    ]
   },
   "evacuated": {
-    "sha256": "2df54ac7199131169ad04f5ae0eca9b0b6c8fd2929b74a4975873c9bddefc21c",
+    "sha256": "d9a0a0f139cae71cd7d371027e6f4155090640956d14ab8ea89c64357a59f22c",
     "duration": 0.79,
-    "peak": 0.6756155953242949,
+    "peak": 0.5301513671875,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "air_short.mp3",
+      "foley100/bell_02.ogg"
+    ],
+    "parts": [
+      {
+        "file": "foley100/bell_02.ogg",
+        "start": 0,
+        "duration": null,
+        "at": 0,
+        "gain": 0.6,
+        "low": 50,
+        "high": 3800,
+        "loop": null
+      },
+      {
+        "file": "air_short.mp3",
+        "start": 0.1,
+        "duration": 0.32,
+        "at": 0.12,
+        "gain": 0.12,
+        "low": 50,
+        "high": 5000,
+        "loop": null
+      }
+    ]
   },
   "refuse": {
-    "sha256": "a1152697419b0c78cd8def9f7d5529c30e6f3fcea9dd3a30b5b95135440d3d39",
+    "sha256": "d7a9adafd7aeb66fa9c07f798d507af2cb078ced79de5c7427d3e39b1e42dcbe",
     "duration": 0.39,
-    "peak": 0.4215103189809464,
+    "peak": 0.6273193359375,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "clank1.wav"
+    ],
+    "parts": [
+      {
+        "file": "clank1.wav",
+        "start": 0,
+        "duration": 0.35,
+        "at": 0,
+        "gain": 0.55,
+        "low": 50,
+        "high": 4000,
+        "loop": null
+      }
+    ]
   },
   "interrupted": {
-    "sha256": "9a85f1a15e5e4c190ab64e5473b1038465098d981cbe7abaf491e5529edeeaad",
+    "sha256": "3b47c10260985ecbd5412a0aecf8276d7eef6b9f5135a96a7f56301757adfd49",
     "duration": 0.5,
-    "peak": 0.32634694114759843,
+    "peak": 0.561065673828125,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "mechanical2.wav",
+      "rattle1.wav"
+    ],
+    "parts": [
+      {
+        "file": "rattle1.wav",
+        "start": 0,
+        "duration": 0.22,
+        "at": 0,
+        "gain": 0.35,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "mechanical2.wav",
+        "start": 0,
+        "duration": 0.28,
+        "at": 0.18,
+        "gain": 0.55,
+        "low": 50,
+        "high": 4500,
+        "loop": null
+      }
+    ]
   },
   "valve": {
-    "sha256": "9cc86678e42f17f9cf06a27efe751788cc25c85fd92b84b9331a5448a1a085d4",
+    "sha256": "20de7dae4710d0949d1af542cc80f1f1b149d7a17db4bac7a539bbcde70d161d",
     "duration": 0.42,
-    "peak": 0.5509872580023955,
+    "peak": 0.715789794921875,
     "sample_rate": 24000,
-    "channels": 1
+    "channels": 1,
+    "provenance": "CC0 recordings; selected concept 4 worn mechanism",
+    "source_recordings": [
+      "air_short.mp3",
+      "squeakyclick1.wav"
+    ],
+    "parts": [
+      {
+        "file": "squeakyclick1.wav",
+        "start": 0,
+        "duration": 0.3,
+        "at": 0,
+        "gain": 0.6,
+        "low": 50,
+        "high": 8000,
+        "loop": null
+      },
+      {
+        "file": "air_short.mp3",
+        "start": 0.12,
+        "duration": 0.2,
+        "at": 0.12,
+        "gain": 0.14,
+        "low": 50,
+        "high": 5000,
+        "loop": null
+      }
+    ]
   }
 }

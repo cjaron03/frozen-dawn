@@ -1,6 +1,14 @@
 {
   "replace": false,
   "values": [
-    "frozendawn:phase_barometer"
+    "frozendawn:phase_barometer",
+    "frozendawn:reactor_casing",
+    "frozendawn:reactor_core",
+    "frozendawn:control_rod_drive",
+    "frozendawn:coolant_port",
+    "frozendawn:reactor_controller",
+    "frozendawn:reactor_radiator",
+    "frozendawn:deepslate_uranium_ore",
+    "frozendawn:reactor_debris"
   ]
 }

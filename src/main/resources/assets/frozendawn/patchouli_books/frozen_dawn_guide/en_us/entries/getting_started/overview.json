@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "Where to Start",
-      "text": "Deep ground cools slowest. A sealed, insulated base saves fuel.$(br2)Read $(l:heating/thermal_heater)Thermal Heater$(/l), then $(l:heating/room_climate)Insulation$(/l)."
+      "text": "Deep ground cools slowest. A sealed, insulated base saves fuel.$(br2)Read $(l:heating/thermal_heater)Thermal Heater$(/l), then $(l:heating/room_climate)Insulation$(/l). Later, $(l:power/basics)Power Basics$(/l)."
     }
   ]
 }

@@ -1,0 +1,43 @@
+{
+  "name": "ORSA RH-5",
+  "icon": "frozendawn:resistive_heater",
+  "category": "frozendawn:heating",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:resistive_heater",
+      "title": "ORSA RH-5",
+      "text": "Electric room heat. No fuel, oxygen or Thermal Core."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Power Limit",
+      "text": "Starts at $(bold)5 kW$(); the slider sets 0 (off) to $(bold)50 kW$(). Higher limits warm faster and need more power.$(br2)It only draws what the target needs: 20°C, or the thermostat's."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "With Fuel Heaters",
+      "text": "Electric heat runs first; fuel heaters cover any shortfall.$(br2)PIXIE oxygen outranks it. Lights and furnaces are cut before it is."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rapid Heating",
+      "text": "A Diamond Heater with a capacitor makes about $(bold)12 kW$(). An RH-5 at 50 kW gives about $(bold)4.2x$() that."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(danger)It drains cells fast:$() one full cell lasts 10 s at 50 kW; four last 40 s.$(br2)Power limited means the grid can't supply what you asked for."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Vacuum",
+      "text": "In vacuum only 25% of the heat you pay for reaches the walls. Insulation lowers steady demand.$(br2)The screen shows air and structure temperature separately."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:resistive_heater",
+      "text": "Iron, copper, glass and a redstone block. Link it with the Binder."
+    }
+  ]
+}

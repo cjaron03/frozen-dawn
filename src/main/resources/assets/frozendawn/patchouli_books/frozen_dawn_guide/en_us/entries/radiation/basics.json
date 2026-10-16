@@ -1,0 +1,31 @@
+{
+  "name": "Radiation Basics",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:geiger_counter",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Radiation builds up as a $(bold)dose$() in RU. The rate is RU per second from every source within 16 blocks.$(br2)Carry a $(l:radiation/geiger)Geiger Counter$(/l)."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sickness",
+      "text": "$(bold)100 RU$(): hunger, nausea$(br)$(bold)300$(): weakness, mining fatigue, half healing$(br)$(danger)600$(): 4 hearts lost, no healing$(br)$(danger)1,000$(): steady lethal damage"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Symptoms lag the real dose by about 30 s. Milk doesn't help.$(br2)Away from radiation you recover about 1 RU every 10 s. Death resets the dose."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sources",
+      "text": "$(li)Running cores and spent rods$(li)Corium, fallout, Radioactive Ash, Reactor Debris$(li)Uranium ore$(li)Contaminated items and players"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seeing It",
+      "text": "Above about 60 RU/s you see white-blue specks. Above 400 RU/s, $(danger)full blue flashes$()."
+    }
+  ]
+}

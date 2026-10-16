@@ -1,0 +1,22 @@
+{
+  "name": "Shielding",
+  "category": "frozendawn:radiation",
+  "icon": "frozendawn:lead_block",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Radiation falls off with distance squared. Every block in between cuts it further."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Block Factors",
+      "text": "$(li)Block of Lead: x0.1$(li)Concrete, obsidian, reactor casing: x0.4$(li)Water, ice, stone, most solids: x0.5$(li)Chests: no shielding$(br2)Factors multiply: two stone blocks leave a quarter."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Carrying",
+      "text": "Items in your inventory aren't shielded. Use a $(l:reactor/spent_fuel)Shielded Cask$(/l) or the $(l:radiation/lead)Lead-Lined EVA Module$(/l)."
+    }
+  ]
+}

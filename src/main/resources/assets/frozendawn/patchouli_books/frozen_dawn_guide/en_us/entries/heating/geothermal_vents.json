@@ -2,7 +2,7 @@
   "name": "Geothermal Vents",
   "category": "frozendawn:heating",
   "icon": "frozendawn:hydrothermal_rock",
-  "sortnum": 10,
+  "sortnum": 11,
   "pages": [
     {
       "type": "patchouli:text",

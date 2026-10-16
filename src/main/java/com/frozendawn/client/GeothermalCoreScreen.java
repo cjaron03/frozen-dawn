@@ -24,26 +24,31 @@ import java.util.Optional;
 public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCoreMenu> {
     private static final int HEAT = 0xFFE5A064;
     private static final int OXYGEN = 0xFF64C9CC;
+    private static final int POWER = 0xFF9CD5A5;
     private static final int TEXT = 0xFFE0E6E8;
     private static final int MUTED = 0xFF9BAAB1;
     private AllocationSlider allocation;
+    private AllocationSlider powerAllocation;
 
     public GeothermalCoreScreen(GeothermalCoreMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         imageWidth = GeothermalCoreMenu.UI_WIDTH;
         imageHeight = GeothermalCoreMenu.UI_HEIGHT;
-        inventoryLabelX = 48;
+        inventoryLabelX = 80;
         inventoryLabelY = 147;
     }
 
     @Override
     protected void init() {
         super.init();
-        allocation = addRenderableWidget(new AllocationSlider(leftPos + 8, topPos + 108));
-        Button reset = addRenderableWidget(Button.builder(Component.literal("60 / 40"),
-                button -> allocation.select(GeothermalCoreBlockEntity.DEFAULT_HEAT_SHARE))
-                .bounds(leftPos + 190, topPos + 105, 58, 20).build());
-        reset.setTooltip(Tooltip.create(Component.literal("Default: 60% heat / 40% O2")));
+        powerAllocation = addRenderableWidget(new AllocationSlider(leftPos + 168, topPos + 108, true));
+        allocation = addRenderableWidget(new AllocationSlider(leftPos + 8, topPos + 108, false));
+        Button reset = addRenderableWidget(Button.builder(Component.literal("Default"), button -> {
+            powerAllocation.preview(0); allocation.preview(0.6);
+            if (minecraft != null && minecraft.gameMode != null)
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, 400);
+        }).bounds(leftPos + 264, topPos + 129, 48, 20).build());
+        reset.setTooltip(Tooltip.create(Component.literal("60% heat / 40% O2 / 0% power")));
     }
 
     /** All widgets now fit within JEI's ordinary container rectangle. */
@@ -65,15 +70,17 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         var data = menu.getData();
 
         // Recessed display reports server-authoritative production, not stored gas or room temperature.
-        well(graphics, x + 8, y + 20, 154, 68);
+        well(graphics, x + 8, y + 20, 216, 68);
         graphics.drawString(font, "CORE OUTPUT", x + 14, y + 25, MUTED, false);
-        graphics.drawString(font, "Heat", x + 14, y + 41, HEAT, false);
-        right(graphics, data.get(4) + " units/s", x + 154, y + 41, TEXT);
-        graphics.drawString(font, "O2", x + 14, y + 55, OXYGEN, false);
-        right(graphics, String.format(Locale.ROOT, "%.1f supply", data.get(5) / 100.0), x + 154, y + 55, TEXT);
+        graphics.drawString(font, "Heat", x + 14, y + 39, HEAT, false);
+        right(graphics, data.get(4) + " units/s", x + 218, y + 39, TEXT);
+        graphics.drawString(font, "O2", x + 14, y + 51, OXYGEN, false);
+        right(graphics, String.format(Locale.ROOT, "%.1f supply", data.get(5) / 100.0), x + 218, y + 51, TEXT);
+        graphics.drawString(font, "Power", x + 14, y + 63, POWER, false);
+        right(graphics, String.format(Locale.ROOT, "%.2f kW", data.get(7) / 100.0), x + 218, y + 63, TEXT);
         boolean surface = menu.getCorePos() != null
                 && GeothermalCoreBlockEntity.hasSurfaceWarmthPenalty(menu.getCorePos());
-        graphics.drawString(font, surface ? "Surface heat: 50%" : "Underground: full heat", x + 14, y + 73, MUTED, false);
+        graphics.drawString(font, surface ? "Surface heat: 50%" : "Underground: full heat", x + 14, y + 76, MUTED, false);
 
         float range = GeothermalCoreBlockEntity.BASE_RANGE + data.get(0);
         float supply = GeothermalCoreBlockEntity.BASE_TEMP + data.get(1) * 5.0f;
@@ -94,9 +101,12 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         upgrade(graphics, menu.slots.get(2), "O2 reach", reach + " blk", data.get(2),
                 GeothermalCoreBlockEntity.MAX_O2_LEVEL, OXYGEN);
 
-        int heat = allocation == null ? data.get(3) : allocation.selectedHeat();
+        int power = powerAllocation == null ? data.get(6) : powerAllocation.percent();
+        int heat = allocation == null ? data.get(3) : allocation.heatAt(power);
+        graphics.drawString(font, "Power " + power + "%", x + 168, y + 95, POWER, false);
+        right(graphics, String.format(Locale.ROOT, "%.2f kW", power * 0.2), x + 312, y + 95, POWER);
         graphics.drawString(font, "Heat " + heat + "%", x + 8, y + 95, HEAT, false);
-        right(graphics, "O2 " + (100 - heat) + "%", x + 182, y + 95, OXYGEN);
+        right(graphics, "O2 " + (100 - power - heat) + "%", x + 152, y + 95, OXYGEN);
         drawRefill(graphics);
         graphics.drawString(font, playerInventoryTitle, x + inventoryLabelX, y + inventoryLabelY, MUTED, false);
         for (int i = 4; i < menu.slots.size(); i++) {
@@ -126,10 +136,10 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
         boolean canister = !stack.isEmpty() && stack.getItem() instanceof O2TankItem;
         int percent = canister ? Math.clamp(Math.round(100f * stack.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0)
                 / ((O2TankItem) stack.getItem()).getMaxO2()), 0, 100) : 0;
-        graphics.fill(leftPos + 36, topPos + 138, leftPos + 176, topPos + 143, 0xFF29353C);
-        if (percent > 0) graphics.fill(leftPos + 36, topPos + 138, leftPos + 36 + 140 * percent / 100,
+        graphics.fill(leftPos + 36, topPos + 138, leftPos + 220, topPos + 143, 0xFF29353C);
+        if (percent > 0) graphics.fill(leftPos + 36, topPos + 138, leftPos + 36 + 184 * percent / 100,
                 topPos + 143, OXYGEN);
-        right(graphics, canister ? percent + "%" : "Empty slot", leftPos + 248, topPos + 131, MUTED);
+        right(graphics, canister ? percent + "%" : "Empty slot", leftPos + 256, topPos + 131, MUTED);
     }
 
     private void right(GuiGraphics graphics, String value, int x, int y, int color) {
@@ -161,6 +171,7 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        powerAllocation.synchronize();
         allocation.synchronize();
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
@@ -181,12 +192,19 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
             return;
         }
         Slot refill = menu.slots.get(3);
-        if (inside(mouseX, mouseY, 8, 126, 240, 20)
+        if (inside(mouseX, mouseY, 8, 126, 248, 20)
                 && (!inside(mouseX, mouseY, refill.x - 1, refill.y - 1, 18, 18) || !refill.hasItem())) {
             graphics.renderTooltip(font, List.of(Component.literal("O2 canister refill"),
                     Component.literal("Place a canister in the slot. Only spare room production charges it."),
                     Component.literal("Refill shares O2 with reservoirs, suits and airlocks.")), Optional.empty(), mouseX, mouseY);
-        } else if (inside(mouseX, mouseY, 8, 20, 154, 68)) {
+        } else if (inside(mouseX, mouseY, 168, 92, 144, 32)) {
+            graphics.renderTooltip(font, List.of(Component.literal("Reserve part of the fixed Core budget for electricity."),
+                    Component.literal("100% power = 20 kW. Heat and O2 share what remains."),
+                    Component.literal("Network load never changes these settings.")), Optional.empty(), mouseX, mouseY);
+        } else if (inside(mouseX, mouseY, 8, 92, 144, 32)) {
+            graphics.renderTooltip(font, List.of(Component.literal("Balance the remaining budget between heat and O2.")),
+                    Optional.empty(), mouseX, mouseY);
+        } else if (inside(mouseX, mouseY, 8, 20, 216, 68)) {
             graphics.renderTooltip(font, List.of(Component.literal("Core production at the current allocation"),
                     Component.literal("One O2 supply unit sustains one player's breathing rate."),
                     Component.literal("Heat is calibrated game energy; stored warmth changes gradually.")), Optional.empty(), mouseX, mouseY);
@@ -195,96 +213,76 @@ public class GeothermalCoreScreen extends AbstractContainerScreen<GeothermalCore
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        // Container screens handle item drags directly rather than forwarding to child widgets.
-        if (button == 0 && allocation != null && allocation.dragging) {
-            return allocation.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-        }
+        if (button == 0) for (var slider : List.of(powerAllocation, allocation))
+            if (slider.dragging) return slider.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && allocation != null && allocation.dragging) {
-            allocation.mouseReleased(mouseX, mouseY, button);
-            setDragging(false);
-            return true;
+        if (button == 0) for (var slider : List.of(powerAllocation, allocation)) if (slider.dragging) {
+            slider.mouseReleased(mouseX, mouseY, button); setDragging(false); return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
+    private double heatBalance() {
+        return menu.getData().get(8) / 10000.0;
+    }
+
     private final class AllocationSlider extends AbstractSliderButton {
+        private final boolean power;
         private boolean dragging;
         private int submitted = -1;
         private long submittedAt;
-
-        AllocationSlider(int x, int y) {
-            super(x, y, 174, 14, Component.empty(), menu.getData().get(3) / 100.0);
+        AllocationSlider(int x, int y, boolean power) {
+            super(x, y, 144, 14, Component.empty(), power ? menu.getData().get(6) / 100.0 : heatBalance());
+            this.power = power; updateMessage();
+        }
+        int percent() { return (int)Math.round(value * 100); }
+        int heatAt(int powerShare) { return (int)Math.round(value * (100 - powerShare)); }
+        void preview(double value) {
+            this.value = value; submitted = power ? percent() : heatAt(0);
+            submittedAt = net.minecraft.Util.getMillis(); updateMessage();
+        }
+        @Override protected void updateMessage() {
+            setMessage(Component.literal(power ? "Power " + percent() + "%"
+                    : "Heat " + heatAt(menu.getData().get(6)) + "% / O2 "
+                    + (100 - menu.getData().get(6) - heatAt(menu.getData().get(6))) + "%"));
+        }
+        @Override protected void applyValue() {
+            value = Math.round(value * 100) / 100.0;
+            int share = power ? percent() : heatAt(menu.getData().get(6));
             updateMessage();
-        }
-
-        int selectedHeat() { return (int) Math.round(value * 100); }
-
-        void select(int heat) {
-            value = Math.clamp(heat, 0, 100) / 100.0;
-            updateMessage();
-            applyValue();
-        }
-
-        @Override
-        protected void updateMessage() {
-            setMessage(Component.literal("Heat " + selectedHeat() + "% / O2 " + (100 - selectedHeat()) + "%"));
-        }
-
-        @Override
-        protected void applyValue() {
-            value = Math.round(value * 10) / 10.0;
-            int heat = selectedHeat();
-            if (heat != submitted && minecraft != null && minecraft.gameMode != null) {
-                submitted = heat;
-                submittedAt = net.minecraft.Util.getMillis();
-                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, heat);
+            if (share != submitted && minecraft != null && minecraft.gameMode != null) {
+                submitted = share; submittedAt = net.minecraft.Util.getMillis();
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, power ? 200 + share : share);
             }
         }
-
-        @Override
-        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            int x = getX();
-            int y = getY();
-            well(graphics, x, y, width, height);
-            int split = Math.round((width - 4) * selectedHeat() / 100f);
-            graphics.fill(x + 2, y + 4, x + 2 + split, y + 10, HEAT);
-            graphics.fill(x + 2 + split, y + 4, x + width - 2, y + 10, OXYGEN);
-            int thumb = x + 1 + Math.round((width - 6) * selectedHeat() / 100f);
-            graphics.fill(thumb, y + 1, thumb + 4, y + height - 1, isHoveredOrFocused() ? TEXT : 0xFF9BAAB1);
+        @Override public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            int x = getX(), y = getY(); well(graphics, x, y, width, height);
+            int split = Math.round((width - 4) * (float)value);
+            graphics.fill(x + 2, y + 4, x + 2 + split, y + 10, power ? POWER : HEAT);
+            graphics.fill(x + 2 + split, y + 4, x + width - 2, y + 10, power ? 0xFF29353C : OXYGEN);
+            int thumb = x + 1 + Math.round((width - 6) * (float)value);
+            graphics.fill(thumb, y + 1, thumb + 4, y + height - 1, isHoveredOrFocused() ? TEXT : MUTED);
         }
-
-        @Override
-        public void onClick(double x, double y) { dragging = true; super.onClick(x, y); }
-
-        @Override
-        public boolean mouseReleased(double x, double y, int button) {
-            boolean result = super.mouseReleased(x, y, button);
-            dragging = false;
-            return result;
+        @Override public void onClick(double x, double y) { dragging = true; super.onClick(x, y); }
+        @Override public boolean mouseReleased(double x, double y, int button) {
+            boolean result = super.mouseReleased(x, y, button); dragging = false; return result;
         }
-
-        @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
+        @Override public boolean keyPressed(int key, int scanCode, int modifiers) {
             if (key == GLFW.GLFW_KEY_LEFT || key == GLFW.GLFW_KEY_RIGHT) {
-                select(selectedHeat() + (key == GLFW.GLFW_KEY_LEFT ? -10 : 10));
-                return true;
+                value = Math.clamp(value + (key == GLFW.GLFW_KEY_LEFT ? -0.01 : 0.01), 0, 1);
+                applyValue(); return true;
             }
             return super.keyPressed(key, scanCode, modifiers);
         }
-
         void synchronize() {
-            // Menu drags end on mouseReleased; gameplay button state is false while a screen is open.
             if (dragging) return;
-            int heat = menu.getData().get(3);
-            if (submitted >= 0 && heat != submitted && net.minecraft.Util.getMillis() - submittedAt < 1000) return;
-            value = heat / 100.0;
-            submitted = -1;
-            updateMessage();
+            int share = menu.getData().get(power ? 6 : 3);
+            if (submitted >= 0 && share != submitted && net.minecraft.Util.getMillis() - submittedAt < 1000) return;
+            value = power ? share / 100.0 : heatBalance(); submitted = -1; updateMessage();
         }
     }
 

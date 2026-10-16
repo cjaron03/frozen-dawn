@@ -56,6 +56,58 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
 
+    // ORSA CFU-7 Hearthstone Reactor
+    public static final DeferredItem<BlockItem> REACTOR_CASING = ITEMS.registerSimpleBlockItem("reactor_casing", ModBlocks.REACTOR_CASING);
+    public static final DeferredItem<BlockItem> REACTOR_CORE = ITEMS.registerSimpleBlockItem("reactor_core", ModBlocks.REACTOR_CORE);
+    public static final DeferredItem<BlockItem> CONTROL_ROD_DRIVE = ITEMS.registerSimpleBlockItem("control_rod_drive", ModBlocks.CONTROL_ROD_DRIVE);
+    public static final DeferredItem<BlockItem> COOLANT_PORT = ITEMS.registerSimpleBlockItem("coolant_port", ModBlocks.COOLANT_PORT);
+    public static final DeferredItem<BlockItem> REACTOR_CONTROLLER = ITEMS.registerSimpleBlockItem("reactor_controller", ModBlocks.REACTOR_CONTROLLER);
+    public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
+    public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
+    public static final DeferredItem<BlockItem> REACTOR_DEBRIS = ITEMS.registerSimpleBlockItem("reactor_debris", ModBlocks.REACTOR_DEBRIS);
+    public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
+    public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
+    public static final DeferredItem<BlockItem> DECON_SHOWER = ITEMS.registerSimpleBlockItem("decon_shower", ModBlocks.DECON_SHOWER);
+    public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
+    public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
+    public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
+            () -> new com.frozendawn.item.LeadLiningModuleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<BlockItem> DEEPSLATE_URANIUM_ORE = ITEMS.registerSimpleBlockItem("deepslate_uranium_ore", ModBlocks.DEEPSLATE_URANIUM_ORE);
+    public static final DeferredItem<Item> RAW_URANIUM = ITEMS.registerSimpleItem("raw_uranium");
+    public static final DeferredItem<Item> URANIUM_CONCENTRATE = ITEMS.registerSimpleItem("uranium_concentrate");
+    public static final DeferredItem<Item> URANIUM_PELLET = ITEMS.registerSimpleItem("uranium_pellet");
+    public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
+            () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
+    public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.ShieldedCaskItem> SHIELDED_CASK = ITEMS.register("shielded_cask",
+            () -> new com.frozendawn.item.ShieldedCaskItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> RADIOACTIVE_ASH = ITEMS.registerSimpleItem("radioactive_ash");
+    public static final DeferredItem<com.frozendawn.item.RadAidItem> RAD_AID = ITEMS.register("rad_aid",
+            () -> new com.frozendawn.item.RadAidItem(new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<com.frozendawn.item.GeigerCounterItem> GEIGER_COUNTER = ITEMS.register("geiger_counter",
+            () -> new com.frozendawn.item.GeigerCounterItem(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<BlockItem> RESISTIVE_HEATER = ITEMS.registerSimpleBlockItem("resistive_heater", ModBlocks.RESISTIVE_HEATER);
+
+    public static final DeferredItem<com.frozendawn.item.PixieItem> PIXIE = ITEMS.register("pixie",com.frozendawn.item.PixieItem::new);
+
+    public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
+
+    public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+
+    public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
+    public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
+    public static final DeferredItem<BlockItem> CELL_DOCK = ITEMS.registerSimpleBlockItem("cell_dock", ModBlocks.CELL_DOCK);
+
+    public static final DeferredItem<com.frozendawn.item.ConduitBinderItem> CONDUIT_BINDER = ITEMS.register("conduit_binder",
+            () -> new com.frozendawn.item.ConduitBinderItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
+    public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
+    public static final DeferredItem<BlockItem> ORSA_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("orsa_emergency_light", ModBlocks.ORSA_EMERGENCY_LIGHT);
+    public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
+    public static final DeferredItem<BlockItem> BULKHEAD_FEEDTHROUGH = ITEMS.registerSimpleBlockItem("bulkhead_feedthrough", ModBlocks.BULKHEAD_FEEDTHROUGH);
+
     // --- Block Items ---
     public static final DeferredItem<BlockItem> DEAD_GRASS_BLOCK = ITEMS.registerSimpleBlockItem("dead_grass_block", ModBlocks.DEAD_GRASS_BLOCK);
     public static final DeferredItem<BlockItem> FROZEN_DIRT = ITEMS.registerSimpleBlockItem("frozen_dirt", ModBlocks.FROZEN_DIRT);
@@ -483,6 +535,44 @@ public class ModItems {
                         output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMOSTAT.get());
                         output.accept(HEAT_VENT.get());
+                        output.accept(RESISTIVE_HEATER.get());
+                        output.accept(PIXIE.get());
+                        output.accept(POWER_MONITOR.get());
+                        output.accept(INDUCTION_FURNACE.get());
+                        output.accept(POWER_CELL.get());
+                        output.accept(BATTERY_BANK.get());
+                        output.accept(CELL_DOCK.get());
+                        output.accept(CONDUIT_BINDER.get());
+                        output.accept(POWER_RELAY.get());
+                        output.accept(LARGE_POWER_RELAY.get());
+                        output.accept(BULKHEAD_FEEDTHROUGH.get());
+                        output.accept(REACTOR_CONTROLLER.get());
+                        output.accept(REACTOR_CASING.get());
+                        output.accept(REACTOR_CORE.get());
+                        output.accept(CONTROL_ROD_DRIVE.get());
+                        output.accept(COOLANT_PORT.get());
+                        output.accept(REACTOR_RADIATOR.get());
+                        output.accept(DEEPSLATE_URANIUM_ORE.get());
+                        output.accept(RAW_URANIUM.get());
+                        output.accept(URANIUM_CONCENTRATE.get());
+                        output.accept(URANIUM_PELLET.get());
+                        output.accept(FUEL_ROD.get());
+                        output.accept(SPENT_FUEL_ROD.get());
+                        output.accept(SHIELDED_CASK.get());
+                        output.accept(RADIOACTIVE_ASH.get());
+                        output.accept(RAD_AID.get());
+                        output.accept(GEIGER_COUNTER.get());
+                        output.accept(CORIUM.get());
+                        output.accept(REACTOR_DEBRIS.get());
+                        output.accept(GALENA_ORE.get());
+                        output.accept(DEEPSLATE_GALENA_ORE.get());
+                        output.accept(RAW_GALENA.get());
+                        output.accept(LEAD_INGOT.get());
+                        output.accept(LEAD_BLOCK.get());
+                        output.accept(LEAD_LINING_MODULE.get());
+                        output.accept(DECON_SHOWER.get());
+                        output.accept(PANEL_LIGHT.get());
+                        output.accept(ORSA_EMERGENCY_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());

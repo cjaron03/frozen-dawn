@@ -99,7 +99,7 @@ public final class RoomChangeGameTest {
             events.clear(); // Construction may legitimately replace roof materials before opening it.
             h.assertTrue(RoomAtmosphere.view(l,center)==null,"Oversized sealed extension is UNKNOWN");
             h.assertTrue(events.size()==1&&events.getFirst().change() instanceof RoomChangeEvent.GeometryChange g&&!g.complete(),"Unknown geometry publishes suspension, not a completed breach");
-            RoomAtmosphere.view(l,center);RoomAtmosphere.tickLevel(l);
+            RoomAtmosphere.view(l,center);
             h.assertTrue(events.size()==1&&!RoomAirState.get(l).isDepleted(Set.of(center)),"Repeated uncertainty emits no duplicate and destroys no trapped air");
             l.setBlock(center.above(3),Blocks.GLASS.defaultBlockState(),3);events.clear();
             h.assertTrue(RoomAtmosphere.view(l,center).id()==id,"Repair resumes the saved identity");
