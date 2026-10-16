@@ -341,7 +341,6 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
-        event.registerBlockEntityRenderer(ModBlockEntities.AIRLOCK_CONTROLLER.get(), com.frozendawn.client.renderer.AirlockControllerRenderer::new);
     }
 
     @SubscribeEvent

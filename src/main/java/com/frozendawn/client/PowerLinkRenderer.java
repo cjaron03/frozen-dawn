@@ -41,7 +41,8 @@ public final class PowerLinkRenderer {
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { links = List.of(); dimension = ""; }
     @SubscribeEvent public static void render(RenderLevelStageEvent event) {
         var mc = Minecraft.getInstance();
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || mc.level == null) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS
+                || mc.level == null || !PowerBinderHud.holding()) return;
         var camera = event.getCamera().getPosition(); var matrix = event.getPoseStack().last().pose();
         var editing = !mc.options.hideGui && mc.screen == null ? PowerBinderHud.state() : null;
         boolean showLinks = !links.isEmpty() && dimension.equals(mc.level.dimension().location().toString())

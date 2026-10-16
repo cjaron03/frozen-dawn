@@ -41,9 +41,10 @@ public final class AirlockControllerBlock extends Block implements EntityBlock {
         return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit) {
+        if(player.getMainHandItem().is(com.frozendawn.init.ModItems.CONDUIT_BINDER)||player.getOffhandItem().is(com.frozendawn.init.ModItems.CONDUIT_BINDER))return InteractionResult.PASS;
         if(level instanceof ServerLevel server) {
             var c=chamber(server,pos);
-            String result=c==null?"invalid":player.isShiftKeyDown()?"status":AirlockManager.start(server,c);
+            String result=c==null?"invalid":player.isShiftKeyDown()?AirlockManager.status(c):AirlockManager.start(server,c);
             AirlockManager.notify(player,com.frozendawn.network.AirlockStatusPayload.Status.valueOf(result.toUpperCase(java.util.Locale.ROOT)),c,0);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

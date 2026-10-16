@@ -87,7 +87,7 @@ def classify(path: str) -> tuple[str, str, str]:
     if path.startswith("block/oxygen_gauge/"):
         return "room_oxygen_warnings", "tools/audio_sources/room_oxygen/SOURCES.md", "CC0-derived" if path.endswith("critical.ogg") else "Frozen Dawn original"
     if path.startswith("block/airlock/"):
-        return "airlock_machinery_procedural", "tools/audio_sources/airlock/SOURCES.md", "Frozen Dawn original"
+        return "airlock_machinery_recorded", "tools/audio_sources/airlock/SOURCES.md", "CC0-derived"
     original_prefixes = (
         "ambient/",
         "blocks/",

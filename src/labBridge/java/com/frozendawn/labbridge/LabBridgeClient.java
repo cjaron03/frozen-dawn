@@ -15,6 +15,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 public final class LabBridgeClient {
     private static LabInbox inbox;
     private static volatile MinecraftLabRuntime runtime;
+    private static volatile LabPerformanceTrace performance;
     private static boolean attempted;
     private LabBridgeClient() { }
     private static synchronized void initialize() {
@@ -75,20 +76,43 @@ public final class LabBridgeClient {
         var row = inputHeader(current, mc); row.addProperty("key", key); row.addProperty("action", event.getAction());
         current.inputClient(row, true);
     }
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    public static void tickStarted(net.neoforged.neoforge.event.tick.ServerTickEvent.Pre event) {
+        var trace = performance;
+        if (trace != null) trace.begin(event.getServer().getTickCount());
+    }
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void tickFinished(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        var trace = performance;
+        if (trace != null) trace.end();
+    }
     @SubscribeEvent
     public static void serverTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         var current = runtime;
         if (current != null) current.serverTick(event.getServer());
+        if (current != null) LabAirlockWatch.tick(event.getServer(), performance);
     }
     @SubscribeEvent
     public static synchronized void started(ServerStartedEvent event) {
         initialize();
         if (inbox == null || event.getServer().isDedicatedServer()) return;
         runtime = new MinecraftLabRuntime(event.getServer(), Path.of(System.getProperty("frozendawn.labBridge.policy")));
+        try {
+            performance = LabPerformanceTrace.start(Minecraft.getInstance().gameDirectory.toPath()
+                    .resolve("lab-bridge/performance"), runtime.session(), runtime.world());
+            runtime.performance(performance);
+            System.out.println("[LabPerformance] Slow-tick capture enabled: " + performance.status());
+        } catch (Exception error) { System.err.println("[LabPerformance] Disabled: " + error); }
         inbox.bind(runtime);
+    }
+    static void airlockEvent(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos, String kind) {
+        if (runtime != null) LabAirlockWatch.event(level, pos, kind, performance);
     }
     @SubscribeEvent
     public static synchronized void stopping(ServerStoppingEvent event) {
+        LabAirlockWatch.reset();
+        var trace = performance; performance = null;
+        if (trace != null) trace.close();
         if (runtime != null) { LabBlindLan.stopping(event.getServer()); LabBlindAttention.stopping(event.getServer()); LabBlindReconnect.stopping(event.getServer()); runtime.close(); runtime = null; }
         if (inbox != null) inbox.bind(null);
     }

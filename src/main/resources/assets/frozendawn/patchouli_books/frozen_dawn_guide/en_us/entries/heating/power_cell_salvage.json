@@ -1,0 +1,18 @@
+{
+  "name": "Salvaged Power Cells",
+  "icon": "frozendawn:power_cell",
+  "category": "frozendawn:heating",
+  "sortnum": 24,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:power_cell",
+      "text": "ORSA supply sites may hold partially charged Power Cells. Check useful cargo, accessible monitoring-station supplies, abandoned evacuation vehicles and surviving camp equipment crates.$(br2)Each salvaged cell holds 100–300 kJ of its 500 kJ capacity. The charge bar and tooltip show what remains."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:cell_dock",
+      "text": "Put a salvaged cell in a Cell Dock and use the Conduit Binder to link a lamp or machine. This works without a Geothermal Core.$(br2)A cell is finite: an isolated dock cannot recharge it. To recharge, put the cell in a Battery Bank on a network with spare generation. An empty cell remains useful; carry it home.$(br2)Existing looted caches stay looted. Search newly discovered ORSA sites for salvage."
+    }
+  ]
+}

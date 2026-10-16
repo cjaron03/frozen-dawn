@@ -22,6 +22,7 @@ public final class PowerLinkRules {
                 || state.getBlock() instanceof com.frozendawn.block.PowerStorageBlock
                 || state.getBlock() instanceof com.frozendawn.block.InductionFurnaceBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock
+                || state.getBlock() instanceof com.frozendawn.block.AirlockControllerBlock
                 || state.getBlock() instanceof com.frozendawn.block.ResistiveHeaterBlock
                 || state.getBlock() instanceof com.frozendawn.block.PixieBlock
                 || state.getBlock() instanceof com.frozendawn.block.ReactorControllerBlock
@@ -91,7 +92,7 @@ public final class PowerLinkRules {
             if(level.isLoaded(p)) {
                 var block=level.getBlockState(p).getBlock();
                 if(block instanceof com.frozendawn.block.PowerStorageBlock storage && !storage.isBank())dock=true;
-                else if(!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
+                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
             } else infrastructure=true;
             if(dock && infrastructure)return false;
             queue.addAll(neighbors.getOrDefault(p,Set.of()));

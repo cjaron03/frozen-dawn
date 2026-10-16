@@ -192,7 +192,10 @@ public final class RoomThermalGameTest {
                 var three=RoomThermalManager.snapshots(s.l).getFirst();
                 h.assertTrue(three.coolingVents()==3,"Every exposed radiator participates");near(h,three.coolingConductance(),3*one.coolingConductance(),"Three independent outdoor faces give exactly triple conductance");
                 var roof=vents.getLast().east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);hot(s,80,80);advanceHeat(s);
-                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==2,"A transparent roof blocks only its own radiator");
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==3,"An overhead roof leaves all three clear outlets working");
+                s.l.setBlock(vents.getLast().east(),Blocks.GLASS.defaultBlockState(),3);hot(s,80,80);advanceHeat(s);
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==2,"Glass directly against one outlet blocks only that vent");
+                s.l.setBlock(vents.getLast().east(),Blocks.AIR.defaultBlockState(),3);
                 s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);
                 s.l.setBlock(vents.getLast(),state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
                 hot(s,19.9,19.9);advanceHeat(s);
@@ -650,7 +653,7 @@ public final class RoomThermalGameTest {
         });
     }
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
-    public static void heatVentBlockedRoofWrongFacingAndWarmExteriorCannotCool(GameTestHelper h) {
+    public static void heatVentCoveredClearanceObstructionWrongFacingAndWarmExterior(GameTestHelper h) {
         scene(h,104,s->{
             var vent=s.c.east(5);var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
             s.l.setBlock(vent,state,3);RoomAtmosphere.view(s.l,s.c);hot(s,40,40);
@@ -658,10 +661,21 @@ public final class RoomThermalGameTest {
             double closed=ventStep(s,seed,state);double open=ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true));
             h.assertTrue(open<closed,"Guard: exterior in this fixture is colder and exposed");
             near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true).setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.WEST)),closed,"Reversed radiator cannot cool through its indoor face");
-            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
-            double roofClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),roofClosed,"Even a transparent roof obstructs the exposed radiator");
-            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
-            double blockedClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),blockedClosed,"A blocked exterior face disables heat rejection");
+            var roof=vent.east().above();
+            for(var cover:List.of(Blocks.GLASS,Blocks.STONE)) {
+                s.l.setBlock(roof,cover.defaultBlockState(),3);
+                double roofClosed=ventStep(s,seed,state);
+                h.assertTrue(ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true))<roofClosed,"One clear outlet works directly beneath glass or cave stone");budget(h,s);
+            }
+            for(var obstruction:List.of(Blocks.STONE,Blocks.GLASS,Blocks.WATER)) {
+                s.l.setBlock(vent.east(),obstruction.defaultBlockState(),3);
+                double blockedClosed=ventStep(s,seed,state);
+                near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),blockedClosed,"Solid, glass or water directly against the outlet disables cooling");
+            }
+            s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);
+            double clearClosed=ventStep(s,seed,state);
+            h.assertTrue(ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true))<clearClosed,"Removing the obstruction resumes cooling under the same roof");budget(h,s);
+            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);
             s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent,state,3);
             RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(seed,s.l.registryAccess()));RoomThermalManager.temperatureAt(s.l,s.c);
             hot(s,-273.14,-273.14);var cold=s.heat().save(new CompoundTag(),s.l.registryAccess());
@@ -710,9 +724,9 @@ public final class RoomThermalGameTest {
             near(h,s.heat().totalEnergy(),energy,"Changing the glow state supplies or removes no heat");
             near(h,s.heat().ledger.airOut,airOut,"Glowing fins export no room gas");
             h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry()&&RoomThermalManager.snapshots(s.l).getFirst().profileBuilds()==profiles,"Glow preserves exact seal geometry and physical material profile");
-            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);advanceHeat(s);ventVisualTick(s,vent);
+            var obstruction=vent.east();s.l.setBlock(obstruction,Blocks.GLASS.defaultBlockState(),3);advanceHeat(s);ventVisualTick(s,vent);
             h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Open but blocked radiator has no glow");
-            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);hot(s,-273.14,-273.14);advanceHeat(s);ventVisualTick(s,vent);
+            s.l.setBlock(obstruction,Blocks.AIR.defaultBlockState(),3);hot(s,-273.14,-273.14);advanceHeat(s);ventVisualTick(s,vent);
             h.assertTrue(!RoomThermalManager.ventRejectingHeat(s.l,vent),"Open shutter against a warmer exterior cannot falsely report heat rejection");
             s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
             var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();
@@ -739,7 +753,7 @@ public final class RoomThermalGameTest {
             s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
             h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==2,"Open exposed radiator shows actual heat rejection");
             var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
-            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Open but roof-blocked radiator is amber");
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==2,"A covered clear outlet stays green");
             s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
             h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Solid obstruction is amber");
             s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);
@@ -1040,7 +1054,7 @@ public final class RoomThermalGameTest {
         var saved=heater.saveWithFullMetadata(s.l.registryAccess());var reconstructed=new ResistiveHeaterBlockEntity(s.c,heater.getBlockState());reconstructed.loadWithComponents(saved,s.l.registryAccess());h.assertTrue(reconstructed.drawWatts()==0&&reconstructed.status()==0,"Save never restores a prepaid electrical grant or stale UI draw");
         var links=PowerNetworkSavedData.get(s.l).save(new CompoundTag(),s.l.registryAccess());PowerNetworks.stopped(null);s.l.getDataStorage().set(PowerNetworkSavedData.NAME,PowerNetworkSavedData.load(links,s.l.registryAccess()));heater.onLoad();dock.onLoad();advanceHeat(s);h.assertTrue(heater.drawWatts()>0,"Saved Binder topology reconstructs paid heating");
         var player=new net.neoforged.neoforge.common.util.FakePlayer(s.l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"rh5_menu"));player.setPos(s.c.getCenter());var menu=new ResistiveHeaterMenu(1,player.getInventory(),heater);
-        h.assertTrue(menu.stillValid(player)&&menu.slots.isEmpty()&&!menu.clickMenuButton(player,0),"Read-only heater menu has no fuel, inventory or setting buttons");
+        h.assertTrue(menu.stillValid(player)&&menu.slots.isEmpty()&&!menu.clickMenuButton(player,0),"Heater menu has no inventory slots and refuses an invalid power-limit button");
         var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());buf.writeBlockPos(s.c);var client=new ResistiveHeaterMenu(1,player.getInventory(),buf);
         for(int i=0;i<5;i++){buf.clear();buf.writeShort(menu.data().get(i));client.data().set(i,buf.readShort());}buf.release();h.assertTrue(client.data().get(1)<0&&client.data().get(3)==heater.drawWatts(),"Native signed-short transport preserves cold temperatures and full 5 kW");
         player.setPos(s.c.east(12).getCenter());h.assertTrue(!menu.stillValid(player),"Remote heater screen invalidates");player.setPos(s.c.getCenter());PowerNetworks.clear(s.l,s.c);advanceHeat(s);h.assertTrue(heater.drawWatts()==0,"Unlink stops heat");rh5Link(h,s,dockPos,s.c);advanceHeat(s);h.assertTrue(heater.drawWatts()>0,"Rebind restores paid heat");s.l.destroyBlock(s.c,false);h.assertTrue(!menu.stillValid(player),"Destroyed heater invalidates stale menu");
@@ -1055,6 +1069,77 @@ public final class RoomThermalGameTest {
             h.assertTrue(heater.drawWatts()>0&&store.storedJoules()<500000&&s.heat().ledger.heater>before,"Normal BE/server ticks allocate, pay and deliver heat without PIXIE or a manual tick");budget(h,s);h.succeed();
         }finally{s.l.setBlock(s.c,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(s.c.east(3),Blocks.AIR.defaultBlockState(),3);PowerNetworks.stopped(null);s.l.getDataStorage().set(PowerNetworkSavedData.NAME,PowerNetworkSavedData.load(saved,s.l.registryAccess()));s.close();}});
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostBeatsMaxedDiamondAndPaysForEveryJoule(GameTestHelper h){electricScene(h,s->{
+        var electric=rh5Place(s,s.c);var bank=rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));
+        var diamondPos=s.c.west(2);s.l.setBlock(diamondPos,ModBlocks.DIAMOND_THERMAL_HEATER.get().defaultBlockState(),3);
+        var diamond=(ThermalHeaterBlockEntity)s.l.getBlockEntity(diamondPos);diamond.installCapacitor();diamond.addFuel(20000);
+        double multiplier=com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        try {
+            com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.set(1.0);
+            h.assertTrue(diamond.getPublicHeatOutput()==120,"Fully upgraded Diamond heater has 12 kW equivalent output at Default settings");
+            electric.setPowerLimitWatts(0);RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);
+            double before=s.heat().ledger.heater;advanceHeat(s);double diamondHeat=s.heat().ledger.heater-before;
+            near(h,diamondHeat,RoomThermalManager.BASE_HEATER_POWER*120/35.0,"Real Diamond plus capacitor delivers its full rated heat");
+            diamond.extinguish();electric.setPowerLimitWatts(50000);hot(s,-150,-150);
+            before=s.heat().ledger.heater;advanceHeat(s);double boostHeat=s.heat().ledger.heater-before;
+            h.assertTrue(electric.drawWatts()==50000&&bank.storedJoules()==450000,"50 kW boost spends exactly 50 kJ from its real cell");
+            near(h,boostHeat,50000*ResistiveHeaterBlockEntity.HEAT_PER_JOULE,"Boost keeps the existing electricity-to-heat conversion");
+            near(h,boostHeat/diamondHeat,50.0/12,"Boost is 4.17 times the maxed Diamond heater output");budget(h,s);
+            hot(s,19.9,19.9);advanceHeat(s);
+            h.assertTrue(electric.drawWatts()>0&&electric.drawWatts()<50000,"Boost still throttles near the target");
+            hot(s,50,50);int stored=bank.storedJoules();advanceHeat(s);
+            h.assertTrue(electric.drawWatts()==0&&bank.storedJoules()==stored,"Boost cannot spend energy above target");
+            electric.setPowerLimitWatts(0);hot(s,-150,-150);advanceHeat(s);
+            h.assertTrue(electric.drawWatts()==0&&electric.requestWatts()==0&&electric.status()==6&&bank.storedJoules()==stored,"Zero limit disables heat without draining or deleting stored warmth");budget(h,s);
+        } finally {com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.set(multiplier);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostLimitMenuAndLegacySaveAreSafeAtFiftyKilowatts(GameTestHelper h){electricScene(h,s->{
+        var heater=rh5Place(s,s.c);rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));
+        var legacy=heater.saveWithFullMetadata(s.l.registryAccess());legacy.remove("PowerLimitWatts");
+        var restored=new ResistiveHeaterBlockEntity(s.c,heater.getBlockState());restored.loadWithComponents(legacy,s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==5000,"Legacy heater saves preserve the original 5 kW setting");
+        var player=new net.neoforged.neoforge.common.util.FakePlayer(s.l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"rh5_limit"));player.setPos(s.c.getCenter());
+        var server=new ResistiveHeaterMenu(1,player.getInventory(),heater);
+        h.assertTrue(server.clickMenuButton(player,150)&&heater.powerLimitWatts()==50000,"Actual server menu selects the 50 kW limit");
+        for(int id:new int[]{-1,0,99,151,Integer.MAX_VALUE})h.assertTrue(!server.clickMenuButton(player,id)&&heater.powerLimitWatts()==50000,"Out-of-range setting cannot mutate the heater");
+        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);h.assertTrue(!server.clickMenuButton(player,100),"Spectator cannot disable heater");player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        player.setPos(s.c.east(12).getCenter());h.assertTrue(!server.clickMenuButton(player,100),"Remote menu cannot change power limit");player.setPos(s.c.getCenter());
+        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);server.broadcastChanges();
+        var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());buf.writeBlockPos(s.c);
+        var client=new ResistiveHeaterMenu(1,player.getInventory(),buf);
+        try {
+            for(int i=0;i<ResistiveHeaterMenu.DATA_COUNT;i++){buf.clear();buf.writeShort(server.data().get(i));client.data().set(i,buf.readShort());}
+            h.assertTrue(client.data().get(3)<0&&client.drawWatts()==50000&&client.powerLimitKw()==50,"Real signed-short wire transport displays 50 kW without overflow");
+        } finally {buf.release();}
+        restored.loadWithComponents(heater.saveWithFullMetadata(s.l.registryAccess()),s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==50000&&restored.drawWatts()==0&&restored.requestWatts()==0,"Save retains slider but never restores a prepaid heat grant");
+        var corrupt=legacy.copy();corrupt.putInt("PowerLimitWatts",Integer.MAX_VALUE);restored.loadWithComponents(corrupt,s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==50000,"Corrupt high saved limits are clamped");
+        corrupt.putInt("PowerLimitWatts",-1);restored.loadWithComponents(corrupt,s.l.registryAccess());h.assertTrue(restored.powerLimitWatts()==0,"Negative saved limits cannot create power");
+        s.l.destroyBlock(s.c,false);h.assertTrue(!server.clickMenuButton(player,100),"Replaced/destroyed heater refuses a stale slider menu");
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostUsesIndividualCapsAndLeavesOxygenPriorityIntact(GameTestHelper h){electricScene(h,s->{
+        var first=rh5Place(s,s.c);first.setPowerLimitWatts(1000);var second=rh5Place(s,s.c.north());second.setPowerLimitWatts(12000);
+        rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));rh5Link(h,s,s.c,s.c.north());
+        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);
+        h.assertTrue(first.drawWatts()==1000&&second.drawWatts()==12000,"Mixed heaters each respect their own 1/12 kW cap");budget(h,s);
+        PowerNetworks.clear(s.l,s.c.east(3));PowerNetworks.clear(s.l,s.c.north());first.setPowerLimitWatts(50000);
+        var cp=s.c.east(3).above();s.l.setBlock(cp,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+        var core=(GeothermalCoreBlockEntity)s.l.getBlockEntity(cp);core.setPowerShare(30);core.setHeatShare(0);
+        var pp=s.c.west(2);s.l.setBlock(pp,ModBlocks.PIXIE.get().defaultBlockState(),3);var pixie=(PixieBlockEntity)s.l.getBlockEntity(pp);pixie.onLoad();pixie.setItem(0,new ItemStack(Items.ICE,64));
+        rh5Link(h,s,cp,s.c);rh5Link(h,s,cp,pp);RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);
+        long clock=s.l.getGameTime();s.integrationTime=Math.max(clock,s.integrationTime)+20;((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(s.integrationTime);
+        try {
+            pixie.prepare(true,false,20,4000);PowerNetworks.update(s.l);PowerNetworks.accountLifeSupport(s.l);RoomThermalManager.tickLevel(s.l);
+            h.assertTrue(pixie.outputWatts()==4000&&first.drawWatts()==2000&&first.status()==5,"Boost takes only 2 kW left after oxygen and reports Power limited");budget(h,s);
+        } finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);}
+    });}
+
     private static ResistiveHeaterBlockEntity rh5Place(Scene s,BlockPos p){s.l.setBlock(p,ModBlocks.RESISTIVE_HEATER.get().defaultBlockState(),3);var heater=(ResistiveHeaterBlockEntity)s.l.getBlockEntity(p);heater.onLoad();return heater;}
     private static PowerStorageBlockEntity rh5Bank(Scene s,BlockPos p,int joules){s.l.setBlock(p,ModBlocks.BATTERY_BANK.get().defaultBlockState(),3);var store=(PowerStorageBlockEntity)s.l.getBlockEntity(p);store.onLoad();var cell=new ItemStack(ModItems.POWER_CELL.get());PowerCellItem.setEnergy(cell,joules);store.setItem(0,cell);return store;}
     private static void rh5Link(GameTestHelper h,Scene s,BlockPos a,BlockPos b){var result=PowerNetworks.link(s.l,a,b);h.assertTrue(result==PowerLinkRules.Result.OK,"RH-5 fixture link "+a+" -> "+b+" must be legal: "+result);PowerNetworks.update(s.l);}

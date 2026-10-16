@@ -12,12 +12,17 @@
     {
       "type": "patchouli:text",
       "title": "Heat on Demand",
-      "text": "Each RH-5 draws up to 5 kW, matching an Iron Thermal Heater at full output. It draws only the heat needed for the default 20\u00b0C target or the room thermostat. Orange coils mean electrical heat is being delivered. Its screen shows room air, or structure temperature when no air is present."
+      "text": "Each RH-5 starts with a 5 kW power limit. Its slider adjusts that limit from 0 (off) to 50 kW. Higher limits warm cold rooms faster, but need proportionally more power. It still draws only the heat needed for 20°C or the room thermostat target. The screen distinguishes air and structure temperature."
     },
     {
       "type": "patchouli:text",
       "title": "Backup and Brownouts",
       "text": "Electrical heat runs before fuel heaters in the same modeled room; fuel covers any shortfall. PIXIE oxygen has priority over the heater. Lights and furnaces wait before heat does. A battery bank or isolated Cell Dock can keep it running until its cells drain. In vacuum, only 25% of paid heat couples into the structure. Insulation reduces steady demand."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Rapid Heating",
+      "text": "At Default settings, a Diamond Thermal Heater with its capacitor produces about 12 kW of heat. A fully supplied RH-5 at 50 kW delivers about 4.2 times that output.$(br2)A full 500 kJ cell lasts only 10 seconds at continuous 50 kW; four full cells last 40 seconds. The slider setting survives saving. Power limited means the grid cannot supply the requested heat."
     }
   ]
 }

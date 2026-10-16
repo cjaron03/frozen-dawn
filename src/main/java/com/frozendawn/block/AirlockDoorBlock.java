@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.airlock.AirlockManager;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.AirlockStatusPayload.Status;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.block.Block;
@@ -27,7 +28,9 @@ public final class AirlockDoorBlock extends DoorBlock {
     }
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit) {
         if(level instanceof ServerLevel server) {
-            if(!state.getValue(OPEN)&&!AirlockManager.canOpen(server,pos))AirlockManager.refuse(server,pos,player);
+            var reason=state.getValue(OPEN)?null:AirlockManager.doorStatus(server,pos);
+            if(reason==Status.INNER_DIFFERENTIAL)AirlockManager.equalizeInnerDoor(server,pos,player);
+            else if(reason!=null&&!reason.opensDoor())AirlockManager.refuse(server,pos,player,reason);
             else setOpen(player,level,state,pos,!state.getValue(OPEN));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -35,11 +38,14 @@ public final class AirlockDoorBlock extends DoorBlock {
     @Override public void setOpen(Entity entity,Level level,BlockState state,BlockPos pos,boolean open) {
         if(!(level instanceof ServerLevel server)||!state.is(this))return;
         var lower=AirlockManager.lower(pos,state);var current=level.getBlockState(lower);
-        if(!current.is(this)||current.getValue(OPEN)==open||open&&!AirlockManager.canOpen(server,lower))return;
+        if(!current.is(this)||current.getValue(OPEN)==open)return;
+        var reason=open?AirlockManager.doorStatus(server,lower):null;
+        if(open&&!reason.opensDoor())return;
         if(!level.setBlock(lower,current.setValue(OPEN,open),10)||level.getBlockState(lower).getValue(OPEN)!=open)return;
         // The click is server-authoritative: include its actor in the broadcast, once.
         level.playSound(null,lower,open?ModSounds.AIRLOCK_DOOR_OPEN.get():ModSounds.AIRLOCK_DOOR_CLOSE.get(),SoundSource.BLOCKS,.8f,1f);
         level.gameEvent(entity,open?GameEvent.BLOCK_OPEN:GameEvent.BLOCK_CLOSE,lower);
+        if(open&&entity instanceof Player player)AirlockManager.notify(player,reason,null,0);
     }
     @Override protected void neighborChanged(BlockState state,Level level,BlockPos pos,Block block,BlockPos from,boolean moving) {
         if(!(level instanceof ServerLevel server)||block==this)return;

@@ -3,7 +3,6 @@ package com.frozendawn.world;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.block.ThermalHeaterBlockEntity;
 import com.frozendawn.block.HeatVentBlock;
-import net.minecraft.world.level.levelgen.Heightmap;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.data.*;
 import com.frozendawn.thermal.*;
@@ -80,7 +79,7 @@ public final class RoomThermalManager {
             boolean ground=!RoomAtmosphere.isPassage(level,pos,level.getBlockState(pos));
             result.add(new Face(pos.immutable(),face.wallCell().getY(),resistance>0?FACE_LOSS_SCALE/resistance:0,ground,interior));
         }
-        return new Profile(Set.copyOf(structure),Set.copyOf(watched),List.copyOf(result),Set.copyOf(vents));
+        return new Profile(RoomSets.freeze(structure),RoomSets.freeze(watched),List.copyOf(result),RoomSets.freeze(vents));
     }
     private static Set<BlockPos> knownCells(Runtime rt,Collection<RoomAtmosphere.RoomView> current) {
         var cells=new HashSet<BlockPos>();for(var room:rt.state.rooms.values())if(room.sealed)cells.addAll(room.cells);
@@ -142,9 +141,9 @@ public final class RoomThermalManager {
             var facing=state.getValue(HeatVentBlock.FACING);var inside=pos.relative(facing.getOpposite());var outlet=pos.relative(facing);
             if(!binding.room.cells.contains(inside)||!level.isLoaded(outlet)
                     ||!RoomAtmosphere.isPassage(level,outlet,level.getBlockState(outlet)))continue;
-            // An uncovered outdoor face is required. Glass roofs also obstruct radiation.
-            // This loaded-only heightmap check cannot dump heat into an undiscovered neighboring room.
-            if(outlet.getY()<level.getHeight(Heightmap.Types.MOTION_BLOCKING,outlet.getX(),outlet.getZ()))continue;
+            // One clear outward cell is sufficient, including under a cave roof.
+            // Do not reject heat back into this same room or scan the exterior here.
+            if(binding.room.cells.contains(outlet))continue;
             var a=ApocalypseState.get(level.getServer());
             double outside=TemperatureManager.getBackgroundTemperature(outlet.getY(),a.getCurrentDay(),a.getTotalDays());
             double k=HEAT_VENT_CONDUCTANCE*(CombustionAtmosphere.isVacuum(level)?VACUUM_RADIATION_SCALE:1);
@@ -408,18 +407,18 @@ public final class RoomThermalManager {
             double walls=RoomHeatMath.temperature(c,structureEnergy(rt.state,room,rt.owners));
             double sensed=room.airPresent?RoomHeatMath.temperature(room.airCapacity(),room.airEnergy):walls;
             double target=room.sealed?ThermostatManager.roomTarget(level,room.id,room.cells):HeaterControl.DEFAULT_TARGET;
-            double max=connected.size()*com.frozendawn.block.ResistiveHeaterBlockEntity.MAX_WATTS*com.frozendawn.block.ResistiveHeaterBlockEntity.HEAT_PER_JOULE;
+            double max=connected.stream().mapToInt(p->((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).powerLimitWatts()).sum()*com.frozendawn.block.ResistiveHeaterBlockEntity.HEAT_PER_JOULE;
             double q=electricDemand(level,b,rt,c,max,target);
             int needed=(int)Math.ceil(q/com.frozendawn.block.ResistiveHeaterBlockEntity.HEAT_PER_JOULE);
             // Prefer reachable supply before assigning unmet demand. An unlinked or
             // empty heater cannot steal a working neighbor's share of the room target.
             for(var p:connected){
                 var component=com.frozendawn.power.PowerNetworks.component(level,p);
-                long free=headroom.computeIfAbsent(component,key->Math.max(0,com.frozendawn.power.PowerNetworks.priorityBudget(level,p)-key.stream().filter(level::isLoaded).map(level::getBlockEntity).filter(com.frozendawn.block.PixieBlockEntity.class::isInstance).map(com.frozendawn.block.PixieBlockEntity.class::cast).mapToLong(com.frozendawn.block.PixieBlockEntity::requestWatts).sum()));
-                int want=(int)Math.min(Math.min(needed,free),Math.max(0,5000-requests.getOrDefault(p,0)));
+                long free=headroom.computeIfAbsent(component,key->Math.max(0,com.frozendawn.power.PowerNetworks.priorityBudget(level,p)-com.frozendawn.power.PowerNetworks.airlockDemand(level,key)-key.stream().filter(level::isLoaded).map(level::getBlockEntity).filter(com.frozendawn.block.PixieBlockEntity.class::isInstance).map(com.frozendawn.block.PixieBlockEntity.class::cast).mapToLong(com.frozendawn.block.PixieBlockEntity::requestWatts).sum()));
+                int want=(int)Math.min(Math.min(needed,free),Math.max(0,((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).powerLimitWatts()-requests.getOrDefault(p,0)));
                 requests.merge(p,want,Integer::sum);headroom.put(component,free-want);needed-=want;
             }
-            for(var p:connected){int want=Math.min(needed,Math.max(0,5000-requests.getOrDefault(p,0)));requests.merge(p,want,Integer::sum);needed-=want;}
+            for(var p:connected){int want=Math.min(needed,Math.max(0,((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).powerLimitWatts()-requests.getOrDefault(p,0)));requests.merge(p,want,Integer::sum);needed-=want;}
             for(var p:connected)((com.frozendawn.block.ResistiveHeaterBlockEntity)level.getBlockEntity(p)).prepare(level.getGameTime(),requests.get(p),sensed,target,room.airPresent);
         }
     }

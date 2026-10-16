@@ -182,7 +182,7 @@ public final class RoomOxygenManager {
         budget.replaceAll((room,b)->new OxygenPools.Budget(b.pool(),b.supply()+support.getOrDefault(b.pool(),0.0),b.demand(),b.localDemand(),b.sources(),b.rooms()));
         budget=new TreeMap<>(controlCombustion(l,s,budget,poolComplete));
         controlBreathing(l,s,budget,poolComplete,breathing);
-        transfer(l,s,budget,production,tanks,connected);
+        transfer(l,s,budget,production,tanks,connected,poolComplete);
         directFills.forEach((tank,fill)->tank.publish(false,0,fill/10.0));
         var readings=new TreeMap<Long,Reading>();
         for(var e:budget.entrySet()){var b=e.getValue();boolean air=!CombustionAtmosphere.isVacuum(l)||!RoomAirState.get(l).isDepleted(s.topology.get(e.getKey()).geometry.cells());
@@ -206,9 +206,11 @@ public final class RoomOxygenManager {
         com.frozendawn.power.PowerNetworks.update(l);
         var needs=new HashMap<Long,Integer>();
         for(var b:budget.values())if(!needs.containsKey(b.pool())) {
-            var requests=connected.getOrDefault(b.pool(),false)?chargers(l,s,budget,b.pool(),tanks.getOrDefault(b.pool(),List.of()),Map.of(),new HashMap<>()):List.<Charger>of();
+            var requests=connected.getOrDefault(b.pool(),false)?chargers(l,s,budget,b.pool(),tanks.getOrDefault(b.pool(),List.of()),Map.of(),new HashMap<>()):joinedChamberChargers(l,s,budget,b.pool());
             long charging=requests.stream().mapToLong(Charger::request).sum()*100L;
-            needs.put(b.pool(),connected.getOrDefault(b.pool(),false)?(int)Math.min(Integer.MAX_VALUE,Math.max(0,Math.ceil((b.demand()-b.supply())*1000)+charging)):1000);
+            long needed=(long)Math.ceil((b.demand()-b.supply())*1000)+charging;
+            needs.put(b.pool(),connected.getOrDefault(b.pool(),false)||!requests.isEmpty()
+                    ?(int)Math.min(Integer.MAX_VALUE,Math.max(0,needed)):1000);
         }
         var direct=new LinkedHashMap<PixieBlockEntity,List<OxygenReservoirBlockEntity>>();
         var reserved=new HashMap<OxygenReservoirBlockEntity,Integer>();
@@ -229,7 +231,7 @@ public final class RoomOxygenManager {
                 boolean priming=ready&&!connected.getOrDefault(b.pool(),false)&&!com.frozendawn.airlock.AirlockManager.blocksAutomaticAir(l,s.topology.get(room).geometry.cells());
                 var temperature=RoomThermalManager.machineryTemperatureAt(l,s.topology.get(room).anchor);
                 pixie.roomFeel(RoomThermalManager.cachedTemperatureAt(l,s.topology.get(room).anchor).orElse(Double.NaN));
-                pixie.prepare(ready,false,temperature.orElse(Double.NaN),ready?(priming?Math.min(1000,needs.getOrDefault(b.pool(),0)):connected.getOrDefault(b.pool(),false)?needs.getOrDefault(b.pool(),0):0):0);
+                pixie.prepare(ready,false,temperature.orElse(Double.NaN),ready?(priming?needs.getOrDefault(b.pool(),1000):connected.getOrDefault(b.pool(),false)?needs.getOrDefault(b.pool(),0):0):0);
                 int planned=(int)Math.min(available,pixie.requestWatts());
                 needs.merge(b.pool(),-planned,Integer::sum);plannedPower.put(component,available-planned);
             } else {
@@ -278,9 +280,21 @@ public final class RoomOxygenManager {
         }
         return result;
     }
+    private static List<Charger> joinedChamberChargers(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,long pool) {
+        var result=new ArrayList<Charger>();var gas=com.frozendawn.airlock.AirlockSavedState.get(l);
+        for(var entry:budget.entrySet())if(entry.getValue().pool()==pool) {
+            var cells=s.topology.get(entry.getKey()).geometry.cells();
+            // The ordinary base retains its measured deficit after the partition is repaired.
+            // Isolated controlled chambers have no ordinary-cell ledger and still need their pump.
+            if(!gas.hasRoomGas(cells))continue;
+            int request=gas.roomAirRequest(l,cells);
+            if(request>0)result.add(new Charger("roomair:"+entry.getKey(),request,n->gas.receiveRoomAir(l,cells,n)));
+        }
+        return result;
+    }
     private static List<Charger> chargers(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,long pool,
             List<OxygenReservoirBlockEntity> vessels,Map<OxygenReservoirBlockEntity,Double> outputs,Map<OxygenReservoirBlockEntity,Integer> fills){
-        var chargers=new ArrayList<Charger>();
+        var chargers=new ArrayList<Charger>(joinedChamberChargers(l,s,budget,pool));
                 for(var tank:vessels)if(outputs.getOrDefault(tank,0.0)==0){int request=(int)Math.min((OxygenReservoirBlockEntity.capacityMicro()-tank.storedMicro())/OxygenAllocation.MICRO_PER_ITEM,
                         Math.floor(com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_FILL_RATE.get()*10));
                     chargers.add(new Charger("reservoir:"+tank.getBlockPos().asLong(),request,n->{int accepted=tank.charge(n);fills.put(tank,accepted);return accepted;}));}
@@ -291,14 +305,14 @@ public final class RoomOxygenManager {
                     chargers.add(new Charger("suit:"+player.getUUID(),com.frozendawn.event.SuitIntegrityHandler.oxygenChargeRequest(player),n->com.frozendawn.event.SuitIntegrityHandler.chargeOxygen(player,n)));}
                 for(var chamber:com.frozendawn.airlock.AirlockSavedState.get(l).chambers()){
                     var room=s.cells.get(chamber.base);
-                    if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool&&com.frozendawn.airlock.AirlockManager.canReceiveSharedFeed(l,chamber))
+                    if(room!=null&&budget.containsKey(room)&&budget.get(room).pool()==pool&&com.frozendawn.airlock.AirlockManager.roomAirRequest(l,chamber,s.topology.get(room).geometry.cells())==0&&com.frozendawn.airlock.AirlockManager.canReceiveSharedFeed(l,chamber))
                         chargers.add(new Charger("airlock:"+chamber.id,Math.min(40,com.frozendawn.airlock.AirlockCycle.RESERVE_CAPACITY-chamber.gas.reserve()),n->{int accepted=chamber.gas.fill(n);if(accepted>0)com.frozendawn.airlock.AirlockSavedState.get(l).setDirty();return accepted;}));
                 }
         return chargers;
     }
     /** One loaded second, no catch-up. All recipients compete for spare production, never discharged storage. */
     private static void transfer(ServerLevel l,State s,Map<Long,OxygenPools.Budget> budget,Map<Long,Double> production,
-            Map<Long,List<OxygenReservoirBlockEntity>> tanks,Map<Long,Boolean> connected){
+            Map<Long,List<OxygenReservoirBlockEntity>> tanks,Map<Long,Boolean> connected,Map<Long,Boolean> complete){
         boolean advance=com.frozendawn.data.OxygenTransferState.get(l).claim(l.getGameTime());
         var pools=new TreeMap<Long,OxygenPools.Budget>();for(var b:budget.values())pools.put(b.pool(),b);
         var telemetry=new HashMap<Long,StorageReading>();
@@ -312,13 +326,14 @@ public final class RoomOxygenManager {
                 long used=advance?tank.draw(offer):offer;remaining-=used;drawn+=used;outputs.put(tank,(double)used/OxygenAllocation.MICRO_PER_SECOND);}
             var chargers=new ArrayList<Charger>();var fills=new HashMap<OxygenReservoirBlockEntity,Integer>();
             if(ready)chargers.addAll(chargers(l,s,budget,pool,vessels,outputs,fills));
+            else if(complete.getOrDefault(pool,false))chargers.addAll(joinedChamberChargers(l,s,budget,pool));
             double charging=0;
-            if(advance&&ready){int spare=(int)Math.floor(Math.max(0,production.get(pool)-b.demand())*10+1e-8);var requests=new TreeMap<String,Integer>();for(var c:chargers)requests.put(c.id,c.request);
+            if(advance&&(ready||!chargers.isEmpty())){int spare=(int)Math.floor(Math.max(0,production.get(pool)-b.demand())*10+1e-8);var requests=new TreeMap<String,Integer>();for(var c:chargers)requests.put(c.id,c.request);
                 var grants=OxygenAllocation.allocate(spare,requests,l.getGameTime()/20);
-                int filled=0;for(var c:chargers)filled+=c.accept.applyAsInt(grants.getOrDefault(c.id,0));
+                int filled=0,roomFilled=0;for(var c:chargers){int n=c.accept.applyAsInt(grants.getOrDefault(c.id,0));filled+=n;if(c.id.startsWith("roomair:"))roomFilled+=n;}
                 for(var p:s.pixies)if(l.isLoaded(p)&&l.getBlockEntity(p) instanceof PixieBlockEntity pixie&&!pixie.tankOnly()){
                     var room=served(s,p,budget.keySet()).stream().min(Long::compare).orElse(null);
-                    if(room!=null&&budget.get(room).pool()==pool)pixie.publishActivity(b.demand()>0,filled>0);
+                    if(room!=null&&budget.get(room).pool()==pool)pixie.publishActivity(b.demand()>0||roomFilled>0||!ready&&filled>0,ready&&filled>roomFilled);
                 }
                 charging=fills.values().stream().mapToInt(Integer::intValue).sum()/10.0;}
             for(var tank:vessels)tank.publish(ready,outputs.get(tank),fills.getOrDefault(tank,0)/10.0);
