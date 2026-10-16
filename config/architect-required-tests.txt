@@ -720,3 +720,6 @@ radaidflushesdoseandadvancementsload xml
 leadshieldsandlininghalvessealedsuitdose xml
 deconshowerneedspowerandwaterthenwashes xml
 ruinedreactorsiteholdscoriumrodsandfallout xml
+
+# Merge: door geometry changes keep power links live
+powerlinksstaylivewhileadoorchangestheroom xml

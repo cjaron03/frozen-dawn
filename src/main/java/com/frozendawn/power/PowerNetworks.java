@@ -202,6 +202,9 @@ public final class PowerNetworks {
                 &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
                 &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
+    private static boolean coolantLink(ServerLevel l,PowerLink link){
+        return l.isLoaded(link.a())&&l.isLoaded(link.b())&&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
+    }
     private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
     private static void revokePumpGrants(Runtime rt,BlockPos node) {
         var component=rt.components.getOrDefault(node,Set.of(node));
@@ -213,11 +216,15 @@ public final class PowerNetworks {
     private static void invalidate(ServerLevel l,Runtime rt,java.util.function.Predicate<PowerLink> affected,net.minecraft.world.level.ChunkPos unloadedChunk){
         rt.geometryRevision++;
         for(var link:PowerNetworkSavedData.get(l).links())if(affected.test(link)){
-            // An unloaded power path revokes immediately. Other refreshes retain
-            // the grant provisionally until its component has been validated again.
+            // Coolant pipes are legal by type and range alone; geometry cannot break a live one.
+            if(coolantLink(l,link)&&rt.active.contains(link))continue;
+            // An unloaded power path drops immediately. Other refreshes keep the link and its
+            // grant live until the re-check actually fails, so a door never splits a network.
             if(unloadedChunk!=null&&PowerLinkRules.path(link.a(),link.b()).stream()
-                    .anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(unloadedChunk)))revokePumpGrants(rt,link);
-            if(rt.active.remove(link))rt.graphDirty=true;enqueue(rt,link);
+                    .anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(unloadedChunk))){
+                revokePumpGrants(rt,link);if(rt.active.remove(link))rt.graphDirty=true;
+            }
+            enqueue(rt,link);
         }
     }
     private static void chunkChanged(ServerLevel l,net.minecraft.world.level.chunk.ChunkAccess chunk,boolean unloaded){
