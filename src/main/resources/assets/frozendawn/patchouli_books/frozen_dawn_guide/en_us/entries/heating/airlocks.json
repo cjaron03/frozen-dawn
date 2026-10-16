@@ -35,7 +35,7 @@
     {
       "type": "patchouli:text",
       "title": "Recovery and Repairs",
-      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)No electrical grid is required; a missing Core stops reserve replenishment.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()"
+      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)Link a controller to power with the Conduit Binder. Cycling draws 2 kW for four powered seconds (8 kJ); idle draws zero. A bank or isolated Cell Dock can power it. During an outage, both doors stay interlocked and partial progress pauses, then resumes when power returns. A missing Core stops reserve replenishment; a charged O2 canister supplies backup gas.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()"
     }
   ]
 }

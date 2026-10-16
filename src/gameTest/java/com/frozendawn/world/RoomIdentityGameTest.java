@@ -131,7 +131,7 @@ public final class RoomIdentityGameTest {
             }
             h.assertTrue(RoomAtmosphere.inspect(level,center).seal()==RoomAtmosphere.Seal.UNKNOWN,"Fixture exceeds geometry bound");
             h.assertTrue(RoomAtmosphere.view(level,center)==null,"Unknown geometry suspends canonical queries");
-            h.assertFalse(RoomAtmosphere.hasAir(level,center),"Suspended room cannot serve stale pressure on subsequent queries");
+            h.assertTrue(RoomAtmosphere.hasAir(level,center),"A scan budget preserves the last confirmed pressure while geometry is unverified");
             h.assertTrue(RoomAtmosphere.trackedRooms(level).isEmpty(),"Suspended cache records are not advertised as live volumes");
             h.assertTrue(RoomIdentityState.get(level).at(center).id()==id,"Uncertain topology preserves saved membership");
             level.setBlock(center.above(3),Blocks.GLASS.defaultBlockState(),3);

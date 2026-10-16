@@ -15,6 +15,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 public final class LabBridgeClient {
     private static LabInbox inbox;
     private static volatile MinecraftLabRuntime runtime;
+    private static volatile LabPerformanceTrace performance;
     private static boolean attempted;
     private LabBridgeClient() { }
     private static synchronized void initialize() {
@@ -75,6 +76,16 @@ public final class LabBridgeClient {
         var row = inputHeader(current, mc); row.addProperty("key", key); row.addProperty("action", event.getAction());
         current.inputClient(row, true);
     }
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    public static void tickStarted(net.neoforged.neoforge.event.tick.ServerTickEvent.Pre event) {
+        var trace = performance;
+        if (trace != null) trace.begin(event.getServer().getTickCount());
+    }
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void tickFinished(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        var trace = performance;
+        if (trace != null) trace.end();
+    }
     @SubscribeEvent
     public static void serverTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         var current = runtime;
@@ -85,10 +96,18 @@ public final class LabBridgeClient {
         initialize();
         if (inbox == null || event.getServer().isDedicatedServer()) return;
         runtime = new MinecraftLabRuntime(event.getServer(), Path.of(System.getProperty("frozendawn.labBridge.policy")));
+        try {
+            performance = LabPerformanceTrace.start(Minecraft.getInstance().gameDirectory.toPath()
+                    .resolve("lab-bridge/performance"), runtime.session(), runtime.world());
+            runtime.performance(performance);
+            System.out.println("[LabPerformance] Slow-tick capture enabled: " + performance.status());
+        } catch (Exception error) { System.err.println("[LabPerformance] Disabled: " + error); }
         inbox.bind(runtime);
     }
     @SubscribeEvent
     public static synchronized void stopping(ServerStoppingEvent event) {
+        var trace = performance; performance = null;
+        if (trace != null) trace.close();
         if (runtime != null) { LabBlindLan.stopping(event.getServer()); LabBlindAttention.stopping(event.getServer()); LabBlindReconnect.stopping(event.getServer()); runtime.close(); runtime = null; }
         if (inbox != null) inbox.bind(null);
     }

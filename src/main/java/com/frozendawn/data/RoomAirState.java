@@ -33,10 +33,16 @@ public final class RoomAirState extends SavedData {
      * Snapshot parent pressure first so split/merge iteration order cannot change the result. */
     public void reconcileMemberships(Collection<RoomIdentityState.Membership> parents, List<Set<BlockPos>> volumes) {
         var emptyParents = parents.stream().filter(parent -> isDepleted(parent.cells())).toList();
+        var mixed=owner==null?java.util.Map.<Set<BlockPos>,Integer>of():com.frozendawn.airlock.AirlockSavedState.get(owner).reconcileRoomGas(owner,parents,volumes);
         boolean changed = false;
         for (var volume : volumes) {
             boolean inherited = parents.stream().anyMatch(parent -> !Collections.disjoint(parent.cells(), volume));
             boolean empty = inherited ? emptyParents.stream().anyMatch(parent -> !Collections.disjoint(parent.cells(), volume)) : isDepleted(volume);
+            if(mixed.containsKey(volume)) {
+                boolean retainedAir=parents.stream().anyMatch(parent->!emptyParents.contains(parent)&&!Collections.disjoint(parent.cells(),volume));
+                int gas=mixed.get(volume);
+                empty=gas==0||!retainedAir&&gas<(long)volume.size()*com.frozendawn.airlock.AirlockCycle.UNITS_PER_CELL;
+            }
             for (var cell : volume)
                 changed |= empty ? depleted.add(cell.asLong()) : depleted.remove(cell.asLong());
         }

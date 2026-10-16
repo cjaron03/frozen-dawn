@@ -13,13 +13,16 @@ Encoding differences across ffmpeg versions may change hashes; preserve shipped 
 
 - door_open: latch impact, seal hiss, short motor, travel stop.
 - door_close: motor, heavy housing impact, locking bolt, seal compression.
-- pump_fill / pump_recover: 0.94-second segments; distinct fill/recovery hiss.
+- pump_fill / pump_recover: 0.94-second segments; higher motor for filling,
+  lower motor with stronger escaping-air hiss for recovery (clarified October 15).
   One segment per chamber at elapsed 0/20/40/60; no infinite client sound loop.
-- ready: wind-down and restrained two-note confirmation.
-- evacuated: residual vent hiss and restrained two-note confirmation.
+- ready: wind-down and clear rising 660/880 Hz confirmation.
+- evacuated: residual vent hiss and distinct rising 440/660 Hz confirmation.
 - refuse: locking impact and short restrained hiss.
 - interrupted: motor stop and mechanical lock.
 - valve: valve mechanism only; existing AtmosphericBreach owns escaping-air whoosh.
 
 Three MP3 concept sequences are generated into the ignored build evidence folder.
 They assemble the same cues used by the mod; they contain no TTS or music.
+
+For a targeted update use `--only pump_fill pump_recover ready evacuated`; other shipped encodings and their manifest records remain intact. Nearby airlock machinery (within four blocks) retains quieter positional feedback in vacuum. Normal room audio follows synchronized room pressure, including Creative/Spectator transitions.

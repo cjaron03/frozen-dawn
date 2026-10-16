@@ -22,6 +22,8 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
     private final String session = UUID.randomUUID().toString();
     private final String world;
     private volatile boolean active = true;
+    private LabPerformanceTrace performance;
+    public void performance(LabPerformanceTrace trace) { performance = trace; }
     private volatile LabInputCapture input;
     private UUID inputPlayer, inputActor;
     private boolean inputView;
@@ -350,6 +352,7 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
         out.addProperty("session", session); out.addProperty("world", world);
         out.addProperty("worldName", server.getWorldData().getLevelName());
         out.addProperty("gameTime", server.overworld().getGameTime());
+        if (performance != null) out.add("performance", performance.status());
         out.addProperty("sampledAtMillis", System.currentTimeMillis());
         if (crouchCheck != null) out.add("crouchCheck", crouchStatus());
         out.addProperty("apocalypseTicks", com.frozendawn.data.ApocalypseState.get(server).getApocalypseTicks());
@@ -386,6 +389,9 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
                             ? level.getBlockState(room.lastQueryPos()).toString() : "unloaded");
                 }
                 var cells = room.geometry().cells();
+                row.addProperty("gasUnits",com.frozendawn.airlock.AirlockSavedState.get(level).roomGas(level,cells));
+                row.addProperty("nominalGasUnits",(long)cells.size()*com.frozendawn.airlock.AirlockCycle.UNITS_PER_CELL);
+                row.addProperty("airPresent",!com.frozendawn.data.RoomAirState.get(level).isDepleted(cells));
                 row.add("min", blockPos(new net.minecraft.core.BlockPos(cells.stream().mapToInt(net.minecraft.core.BlockPos::getX).min().orElseThrow(),
                         cells.stream().mapToInt(net.minecraft.core.BlockPos::getY).min().orElseThrow(),
                         cells.stream().mapToInt(net.minecraft.core.BlockPos::getZ).min().orElseThrow())));
@@ -402,6 +408,20 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
                 row.addProperty("dimension",level.dimension().location().toString());heat.add(row);
             }
             out.add("roomThermal",heat);
+            JsonArray chambers=new JsonArray(),oxygen=new JsonArray();
+            for(var level:server.getAllLevels()) {
+                for(var c:com.frozendawn.airlock.AirlockSavedState.get(level).chambers()) {
+                    JsonObject row=new JsonObject();row.addProperty("dimension",level.dimension().location().toString());
+                    row.addProperty("id",c.id);row.addProperty("cells",c.cells.size());row.addProperty("air",c.gas.air());
+                    row.addProperty("capacity",c.gas.capacity());row.addProperty("reserve",c.gas.reserve());row.addProperty("mode",c.gas.mode().name());
+                    row.add("base",blockPos(c.base));row.add("outside",blockPos(c.outside));chambers.add(row);
+                }
+                for(var reading:com.frozendawn.world.RoomOxygenManager.snapshots(level)) {
+                    JsonObject row=new com.google.gson.Gson().toJsonTree(reading).getAsJsonObject();
+                    row.addProperty("dimension",level.dimension().location().toString());oxygen.add(row);
+                }
+            }
+            out.add("airlockGas",chambers);out.add("roomOxygen",oxygen);
         }
         return out;
     }

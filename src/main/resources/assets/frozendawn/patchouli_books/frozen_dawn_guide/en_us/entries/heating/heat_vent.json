@@ -17,7 +17,7 @@
     {
       "type": "patchouli:text",
       "title": "Placement & Controls",
-      "text": "Place it while looking toward the outdoors: the fins point away from you. The opposite face must touch the room. Every vent needs its own unobstructed outdoor sky column; roofs, blocks and neighboring rooms prevent cooling. Without a thermostat, right-click toggles the shutter and redstone holds it open. A thermostat takes control of both."
+      "text": "Place it while looking toward the outdoors: the fins point away from you. The opposite face must touch the room. Leave one clear block directly in front of the outward fins. Cave roofs and overhead glass are fine; a block or water against the outlet prevents cooling. Without a thermostat, right-click toggles the shutter and redstone holds it open. A thermostat takes control of both."
     },
     {
       "type": "patchouli:text",

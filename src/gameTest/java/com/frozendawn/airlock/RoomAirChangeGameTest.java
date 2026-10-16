@@ -24,11 +24,11 @@ public final class RoomAirChangeGameTest {
             var events=new ArrayList<RoomChangeEvent>();Consumer<RoomChangeEvent> capture=e->{if(e.level()==l)events.add(e);};
             NeoForge.EVENT_BUS.addListener(capture);
             try {
-                h.assertTrue(AirlockManager.start(l,c).equals("depressurizing"),"Real controller starts closed-chamber evacuation");
+                h.assertTrue(AirlockManager.start(l,c).equals("waiting_to_vent")&&c.gas.cycling(),"Real controller starts closed-chamber evacuation");
                 assertAir(h,events,true,c.cells,initial.id());
                 h.assertTrue(RoomAirState.get(l).isDepleted(c.cells),"Authority is depleted before subscribers run");
                 AirlockGameTest.finish(l,c);events.clear();c.gas.fill(c.gas.capacity());
-                h.assertTrue(AirlockManager.start(l,c).equals("pressurizing"),"Measured reserve starts refill");
+                h.assertTrue(AirlockManager.start(l,c).equals("waiting_to_fill")&&c.gas.cycling(),"Measured reserve starts refill");
                 h.assertTrue(events.isEmpty(),"Starting pump does not invent completed air recovery");
                 AirlockGameTest.finish(l,c);assertAir(h,events,false,c.cells,initial.id());
                 h.assertTrue(RoomAtmosphere.hasAir(l,s.center()),"Completed pump restores actual air");

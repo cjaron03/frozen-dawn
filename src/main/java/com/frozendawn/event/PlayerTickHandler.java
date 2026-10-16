@@ -379,6 +379,11 @@ public final class PlayerTickHandler {
 
     /** The same per-player atmospheric path used by the server loop and native hazard fixtures. */
     static void tickPlayerSuffocation(ServerPlayer player, ApocalypseState state, boolean refreshCache) {
+        // Pressure and breathing telemetry also drive world audio and the HUD.
+        // Creative/spectator skip damage, but must still follow room transitions.
+        if (refreshCache || !breathableCache.containsKey(player.getUUID())) {
+            refreshBreathableState(player);
+        }
         if (player.isCreative() || player.isSpectator()) {
             suffocationTimer.remove(player.getUUID());
             syncSuffocationStage(player, SuffocationStage.NONE);
@@ -391,9 +396,6 @@ public final class PlayerTickHandler {
         }
 
         UUID id = player.getUUID();
-        if (refreshCache || !breathableCache.containsKey(id)) {
-            refreshBreathableState(player);
-        }
         if (Boolean.TRUE.equals(breathableCache.get(id))) {
             suffocationTimer.put(id, 0);
             syncSuffocationStage(player, SuffocationStage.NONE);

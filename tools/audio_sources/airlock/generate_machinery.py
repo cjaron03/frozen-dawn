@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Original deterministic ORSA hardware synthesis. No sampled recordings or voices."""
-import hashlib,json,math,random,struct,subprocess,wave
+import argparse,hashlib,json,math,random,struct,subprocess,wave
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'src/main/resources/assets/frozendawn/sounds/block/airlock'
@@ -26,9 +26,9 @@ def hiss(length,seed,gain=.4):
     n=noise(length,seed,2700)
     return [gain*n[i]*min(1,t/.035)*min(1,(length-t)/.1) for i in range(len(n)) for t in [i/SR]]
 
-def motor(length,recover=False):
+def motor(length,recover=False,frequency=83):
     n=noise(length,49 if recover else 41,1000)
-    return [(min(1,t/.025)*min(1,(length-t)/.055))*(.10*math.sin(2*math.pi*83*t)+.06*math.sin(2*math.pi*166*t)+.04*math.sin(2*math.pi*249*t)+.09*n[i])*(.8+.2*math.cos(2*math.pi*11*t)) for i in range(len(n)) for t in [i/SR]]
+    return [(min(1,t/.025)*min(1,(length-t)/.055))*(.10*math.sin(2*math.pi*frequency*t)+.06*math.sin(2*math.pi*frequency*2*t)+.04*math.sin(2*math.pi*frequency*3*t)+.09*n[i])*(.8+.2*math.cos(2*math.pi*11*t)) for i in range(len(n)) for t in [i/SR]]
 
 def sound(name,length):
     a=[0.]*round(length*SR)
@@ -37,12 +37,15 @@ def sound(name,length):
     elif name=='door_close':
         mix(a,0,motor(.36),.6);mix(a,.29,clack(.4,4,1.5),1.25);mix(a,.44,clack(.22,5,.65),.52);mix(a,.52,hiss(.19,6,.20))
     elif name.startswith('pump_'):
-        mix(a,0,motor(.94,name=='pump_recover'));mix(a,0,hiss(.94,8 if name=='pump_recover' else 9,.38 if name=='pump_fill' else .22))
+        recover=name=='pump_recover'
+        mix(a,0,motor(.94,recover,72 if recover else 108),.8 if recover else 1.2)
+        mix(a,0,hiss(.94,8 if recover else 9,.68 if recover else .42))
     elif name in ('ready','evacuated'):
         mix(a,0,motor(.25),.5);mix(a,.13,clack(.2,10,.55),.3)
-        if name=='evacuated':mix(a,.17,hiss(.42,11,.75))
-        for onset,freq in [(.38,660),(.53,880)]:
-            mix(a,onset,[.055*math.sin(2*math.pi*freq*i/SR)*math.sin(math.pi*i/(.13*SR))**2 for i in range(round(.13*SR))])
+        if name=='evacuated':mix(a,.17,hiss(.42,11,.38))
+        notes=(660,880) if name=='ready' else (440,660)
+        for onset,freq in zip((.38,.53),notes):
+            mix(a,onset,[.18*math.sin(2*math.pi*freq*i/SR)*math.sin(math.pi*i/(.13*SR))**2 for i in range(round(.13*SR))])
     elif name=='refuse':mix(a,0,clack(.20,12,.6),.7);mix(a,.075,hiss(.22,13,.3))
     elif name=='interrupted':mix(a,0,motor(.18),.6);mix(a,.14,clack(.28,14,.8),.55)
     elif name=='valve':mix(a,0,clack(.25,15,.8),.8);mix(a,.12,hiss(.16,16,.28))
@@ -62,8 +65,13 @@ def encode(src,dst):
 def main():
     OUT.mkdir(parents=True,exist_ok=True);PREVIEW.mkdir(parents=True,exist_ok=True)
     lengths={'door_open':.93,'door_close':.92,'pump_fill':.94,'pump_recover':.94,'ready':.79,'evacuated':.79,'refuse':.39,'interrupted':.5,'valve':.42}
-    sounds={name:sound(name,length) for name,length in lengths.items()};manifest={}
+    parser=argparse.ArgumentParser();parser.add_argument('--only',nargs='+',choices=lengths)
+    selected=parser.parse_args().only
+    manifest_path=Path(__file__).parent/'manifest.json'
+    sounds={name:sound(name,length) for name,length in lengths.items()}
+    manifest=json.loads(manifest_path.read_text()) if selected else {}
     for name,data in sounds.items():
+        if selected and name not in selected:continue
         src=PREVIEW/(name+'.wav');dst=OUT/(name+'.ogg');wav(src,data);encode(src,dst)
         manifest[name]={'sha256':hashlib.sha256(dst.read_bytes()).hexdigest(),'duration':len(data)/SR,'peak':max(map(abs,data)),'sample_rate':SR,'channels':1}
     for title,parts in {'01-heavy-hatch':[(0,'door_open'),(1.8,'door_close')], '02-refill-cycle':[(i,'pump_fill') for i in range(4)]+[(4,'ready')], '03-recovery-cycle':[(i,'pump_recover') for i in range(4)]+[(4,'evacuated'),(5.4,'refuse')]}.items():

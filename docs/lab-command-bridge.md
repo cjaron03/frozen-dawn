@@ -1,5 +1,24 @@
 # Gradle lab command bridge
 
+## Lab-only slow-tick capture (2026-10-15)
+
+`runClientLab` now starts a read-only slow-tick recorder for each integrated-server world session. Ordinary clients and the release jar exclude this source set. It does not open a world, issue commands or change simulation speed.
+
+Files: `run-lab/lab-bridge/performance/<session UUID>.jsonl`. Each session creates a new file and refuses to overwrite an existing one. The bridge status/snapshot includes `performance` with the file path, tick counts, slow count, mean/max observed window, dropped events and any disabled reason. When the bridge stalls, read the file directly; `tail -n 20 run-lab/lab-bridge/performance/<session UUID>.jsonl` requires no server command.
+
+The measured window runs from NeoForge ServerTick Pre at HIGHEST priority through Post at LOWEST. It excludes work outside those events and is not full-frame time or exact overall MSPT. Completed windows of at least 100 ms produce `slow_tick` events. A separate daemon checks every 100 ms and records up to 128 server stack frames for an active window lasting at least 250 ms, at most once per second. A stack sample identifies observed work, not its total cost or proven cause. Five-second cumulative summaries and final closed totals keep fast-tick/idle context visible. Paused/idle time after Post cannot become a stalled tick.
+
+Tick handlers only update timing/counters and offer slow events to a bounded 256-entry queue. Disk writes and stack sampling happen on the daemon; overflow increments `droppedEvents` instead of blocking gameplay. Each log is capped at 16 MiB; the hook disables itself on cap/I/O failure, reports the reason in status and the client log, and leaves the game running. World close schedules a final flush without waiting on diagnostic I/O. No background world/chunk/player reads occur.
+
+After a hitch, preserve the session JSONL, client log and first owner account before interpreting the samples. No timed-out command is retried automatically. The recorder is diagnostic evidence; it does not itself fix lag. The owner-requested Powered Airlock Check launch on October15 confirmed session JSONL and live counters with zero drops. Owner vent acceptance and diagnosis of the intermittent door/cycle hitch remain pending.
+
+
+## Disposable archived room-snapshot load proof
+
+For the opt-in room snapshot regression only, `runClientLab -PfdLabWorld='Power Airlock Archive Load 1' -PfdRoomArchiveReplay=<spec.json>` loads an exact archived copy. `LabRoomArchiveReplay` requires the exact canonical path, the dedicated folder-name prefix and matching marker token before doing anything. It compares server-loaded identity, thermal, airlock and air SavedData with separate frozen baseline files at server tick zero, checks Guava membership storage, writes the result and stops that disposable server before gameplay. The result also records memberships and all nine chamber state integers for comparison with the baseline JSON. The normal lab launch omits this property; ordinary worlds cannot pass the exact-copy guard. All proof code is excluded from the release jar.
+
+The completed zero-tick load/save proof and full disposable world are preserved under `build/power-network-evidence/powered-airlock/immutable-room-sets/archive-load-1/`. The original owner world was unchanged before its separate Gradle monkey-test launch. This compatibility check is distinct from ordinary gameplay and the owner's mixed replay. The double controller layout scan and additional scan instrumentation remain follow-ups.
+
 ## Current: final BA code/package review passed; integration reconciliation next (2026-10-10)
 
 Final Java 21 architectVerify, architectMonkey and verifyLabBridgePackaging completed successfully: 691 unit, 295 native/all 290 required, and 795 combined server cases/all 500 required seeded stress cases; zero failures/errors/skips. Existing required parser control verifies 176 generated functions. The first combined run had 500 passing stress cases but failed the real Y=0 control's darkness precondition. Its entire closed world, report, log and original source are preserved. The existing native helper now waits for all edited chunks and neighboring lighting queues. Seed, geometry, assertions and production spawn rules remain unchanged. The corrected native control passed both server runs. Production classes/assets, including approved sound C/ear pose and nine throat clips, remain byte-identical to the owner-tested build; only fixture code and build metadata changed.

@@ -62,6 +62,8 @@ public final class AtmosphericBreachClient {
             case WAITING_FOR_OXYGEN -> "ui.frozendawn.room.sealed_no_supply";
             case RESTORING_AIR -> "ui.frozendawn.room.sealed_restoring";
             case AIR_RESTORED -> "ui.frozendawn.room.air_restored";
+            case SEAL_UNVERIFIED -> "ui.frozendawn.room.seal_unverified";
+            case SEAL_VERIFIED -> "ui.frozendawn.room.seal_verified";
         };
         noticeColor = stage == RoomRecoveryPayload.Stage.AIR_RESTORED ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
         atmosphericLoss = false;

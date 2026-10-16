@@ -192,7 +192,10 @@ public final class RoomThermalGameTest {
                 var three=RoomThermalManager.snapshots(s.l).getFirst();
                 h.assertTrue(three.coolingVents()==3,"Every exposed radiator participates");near(h,three.coolingConductance(),3*one.coolingConductance(),"Three independent outdoor faces give exactly triple conductance");
                 var roof=vents.getLast().east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);hot(s,80,80);advanceHeat(s);
-                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==2,"A transparent roof blocks only its own radiator");
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==3,"An overhead roof leaves all three clear outlets working");
+                s.l.setBlock(vents.getLast().east(),Blocks.GLASS.defaultBlockState(),3);hot(s,80,80);advanceHeat(s);
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().coolingVents()==2,"Glass directly against one outlet blocks only that vent");
+                s.l.setBlock(vents.getLast().east(),Blocks.AIR.defaultBlockState(),3);
                 s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);
                 s.l.setBlock(vents.getLast(),state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
                 hot(s,19.9,19.9);advanceHeat(s);
@@ -650,7 +653,7 @@ public final class RoomThermalGameTest {
         });
     }
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
-    public static void heatVentBlockedRoofWrongFacingAndWarmExteriorCannotCool(GameTestHelper h) {
+    public static void heatVentCoveredClearanceObstructionWrongFacingAndWarmExterior(GameTestHelper h) {
         scene(h,104,s->{
             var vent=s.c.east(5);var state=ModBlocks.HEAT_VENT.get().defaultBlockState().setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.EAST);
             s.l.setBlock(vent,state,3);RoomAtmosphere.view(s.l,s.c);hot(s,40,40);
@@ -658,10 +661,21 @@ public final class RoomThermalGameTest {
             double closed=ventStep(s,seed,state);double open=ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true));
             h.assertTrue(open<closed,"Guard: exterior in this fixture is colder and exposed");
             near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true).setValue(com.frozendawn.block.HeatVentBlock.FACING,net.minecraft.core.Direction.WEST)),closed,"Reversed radiator cannot cool through its indoor face");
-            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
-            double roofClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),roofClosed,"Even a transparent roof obstructs the exposed radiator");
-            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
-            double blockedClosed=ventStep(s,seed,state);near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),blockedClosed,"A blocked exterior face disables heat rejection");
+            var roof=vent.east().above();
+            for(var cover:List.of(Blocks.GLASS,Blocks.STONE)) {
+                s.l.setBlock(roof,cover.defaultBlockState(),3);
+                double roofClosed=ventStep(s,seed,state);
+                h.assertTrue(ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true))<roofClosed,"One clear outlet works directly beneath glass or cave stone");budget(h,s);
+            }
+            for(var obstruction:List.of(Blocks.STONE,Blocks.GLASS,Blocks.WATER)) {
+                s.l.setBlock(vent.east(),obstruction.defaultBlockState(),3);
+                double blockedClosed=ventStep(s,seed,state);
+                near(h,ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true)),blockedClosed,"Solid, glass or water directly against the outlet disables cooling");
+            }
+            s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);
+            double clearClosed=ventStep(s,seed,state);
+            h.assertTrue(ventStep(s,seed,state.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true))<clearClosed,"Removing the obstruction resumes cooling under the same roof");budget(h,s);
+            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);
             s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent,state,3);
             RoomThermalManager.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(seed,s.l.registryAccess()));RoomThermalManager.temperatureAt(s.l,s.c);
             hot(s,-273.14,-273.14);var cold=s.heat().save(new CompoundTag(),s.l.registryAccess());
@@ -710,9 +724,9 @@ public final class RoomThermalGameTest {
             near(h,s.heat().totalEnergy(),energy,"Changing the glow state supplies or removes no heat");
             near(h,s.heat().ledger.airOut,airOut,"Glowing fins export no room gas");
             h.assertTrue(RoomAtmosphere.view(s.l,s.c).geometry()==view.geometry()&&RoomThermalManager.snapshots(s.l).getFirst().profileBuilds()==profiles,"Glow preserves exact seal geometry and physical material profile");
-            var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);advanceHeat(s);ventVisualTick(s,vent);
+            var obstruction=vent.east();s.l.setBlock(obstruction,Blocks.GLASS.defaultBlockState(),3);advanceHeat(s);ventVisualTick(s,vent);
             h.assertTrue(!s.l.getBlockState(vent).getValue(com.frozendawn.block.HeatVentBlock.RADIATING),"Open but blocked radiator has no glow");
-            s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);hot(s,-273.14,-273.14);advanceHeat(s);ventVisualTick(s,vent);
+            s.l.setBlock(obstruction,Blocks.AIR.defaultBlockState(),3);hot(s,-273.14,-273.14);advanceHeat(s);ventVisualTick(s,vent);
             h.assertTrue(!RoomThermalManager.ventRejectingHeat(s.l,vent),"Open shutter against a warmer exterior cannot falsely report heat rejection");
             s.l.setBlock(panelPos,ModBlocks.THERMOSTAT.get().defaultBlockState(),3);
             var panel=(com.frozendawn.block.ThermostatBlockEntity)s.l.getBlockEntity(panelPos);panel.onLoad();
@@ -739,7 +753,7 @@ public final class RoomThermalGameTest {
             s.l.setBlock(vent,closed.setValue(com.frozendawn.block.HeatVentBlock.OPEN,true),3);
             h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==2,"Open exposed radiator shows actual heat rejection");
             var roof=vent.east().above(2);s.l.setBlock(roof,Blocks.GLASS.defaultBlockState(),3);
-            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Open but roof-blocked radiator is amber");
+            h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==2,"A covered clear outlet stays green");
             s.l.setBlock(roof,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(vent.east(),Blocks.STONE.defaultBlockState(),3);
             h.assertTrue(RoomThermalManager.ventIndicator(s.l,vent)==1,"Solid obstruction is amber");
             s.l.setBlock(vent.east(),Blocks.AIR.defaultBlockState(),3);

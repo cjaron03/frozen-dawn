@@ -12,14 +12,15 @@ public record AirlockStatusPayload(Status status, int reserve, int air, int capa
         implements CustomPacketPayload {
     public enum Status {
         DIFFERENTIAL, INVALID, CLOSE_DOORS, INSUFFICIENT, PRESSURIZING, DEPRESSURIZING,
-        CYCLING, STATUS, CHARGED, VENTED, EVACUATED, READY, INTERRUPTED;
+        CYCLING, STATUS, CHARGED, VENTED, EVACUATED, READY, INTERRUPTED, WAITING_FOR_POWER,
+        WAITING_TO_FILL, WAITING_TO_VENT;
         public String key() { return "message.frozendawn.airlock." + name().toLowerCase(java.util.Locale.ROOT); }
         public boolean warning() { return this == DIFFERENTIAL || this == INVALID || this == CLOSE_DOORS
-                || this == INSUFFICIENT || this == VENTED || this == INTERRUPTED; }
+                || this == WAITING_FOR_POWER || this == WAITING_TO_FILL || this == WAITING_TO_VENT || this == INSUFFICIENT || this == VENTED || this == INTERRUPTED; }
     }
     public AirlockStatusPayload {
         if (status == null || reserve < 0 || reserve > 6400 || capacity < 0 || capacity > 3200
-                || air < 0 || air > capacity || percent < 0 || percent > 100 || amount < 0)
+                || air < 0 || capacity == 0 && air != 0 || percent < 0 || percent > 100 || amount < 0)
             throw new IllegalArgumentException("Invalid airlock status");
     }
     public static final Type<AirlockStatusPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,"airlock_status"));

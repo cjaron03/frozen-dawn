@@ -128,6 +128,40 @@ public final class AtmosphericBreathingGameTest {
             }
         });
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="atmospheric_breathing",timeoutTicks=100)
+    public static void atmosphericCreativeAndSpectatorFollowRoomPressureForAudio(GameTestHelper h) {
+        EmergencyEvaGameTest.scene(h,player->{
+            var l=player.serverLevel();var a=ApocalypseState.get(player.getServer());
+            var c=h.absolutePos(new net.minecraft.core.BlockPos(10,3,10));
+            for(int x=-2;x<=2;x++)for(int y=-1;y<=3;y++)for(int z=-2;z<=2;z++)
+                l.setBlock(c.offset(x,y,z),(Math.abs(x)==2||y==-1||y==3||Math.abs(z)==2
+                        ?net.minecraft.world.level.block.Blocks.STONE:net.minecraft.world.level.block.Blocks.AIR).defaultBlockState(),3);
+            player.setPos(c.getCenter());RoomAtmosphere.reset();
+            EmergencyEvaGameTest.setProgress(player,0);RoomAtmosphere.hasAir(l,c);
+            EmergencyEvaGameTest.setProgress(player,.90F);
+            var stages=new java.util.ArrayList<SuffocationStage>();var pressures=new java.util.ArrayList<Boolean>();
+            int[] bars={0};captureWarnings(player,stages,bars,pressures);float health=player.getHealth();
+            for(var mode:new net.minecraft.world.level.GameType[]{net.minecraft.world.level.GameType.CREATIVE,net.minecraft.world.level.GameType.SPECTATOR}) {
+                player.setGameMode(mode);
+                h.assertTrue(RoomAtmosphere.hasAir(l,c),"Fixture starts with actual trapped chamber air");
+                PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                h.assertTrue(pressures.getLast(),"Pressurized room restores carried sound in "+mode);
+                int count=pressures.size();PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                h.assertTrue(pressures.size()==count,"Unchanged pressure does not spam packets");
+                l.setBlock(c.above(3),net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(),3);
+                h.assertFalse(RoomAtmosphere.hasAir(l,c),"A real roof breach exposes the chamber");
+                PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                h.assertFalse(pressures.getLast(),"Real vacuum mutes carried sound in "+mode);
+                l.setBlock(c.above(3),net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(),3);
+                var geometry=RoomAtmosphere.inspect(l,c);
+                com.frozendawn.data.RoomAirState.get(l).refill(geometry.cells());
+                PlayerTickHandler.tickPlayerSuffocation(player,a,true);
+                h.assertTrue(pressures.getLast(),"Refill restores audio without reconnecting in "+mode);
+            }
+            h.assertTrue(player.getHealth()==health&&stages.stream().allMatch(stage->stage==SuffocationStage.NONE),
+                    "Creative and spectator keep hazard immunity while telemetry changes");
+        });
+    }
     private static void advanceSuffocation(net.minecraft.server.level.ServerPlayer player, ApocalypseState state) {
         var level=player.serverLevel();
         ((net.minecraft.world.level.storage.ServerLevelData)level.getLevelData()).setGameTime(level.getGameTime()+1);

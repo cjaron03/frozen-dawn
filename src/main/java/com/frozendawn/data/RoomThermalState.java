@@ -1,5 +1,7 @@
 package com.frozendawn.data;
 
+import com.frozendawn.world.RoomSets;
+
 import com.frozendawn.thermal.RoomHeatMath;
 import com.frozendawn.world.RoomAtmosphere;
 import java.util.*;
@@ -24,7 +26,7 @@ public final class RoomThermalState extends SavedData {
         public double airEnergy;
         public boolean airPresent, sealed = true;
         public Room(long id, Set<BlockPos> cells, Set<RoomAtmosphere.BoundaryFace> faces) {
-            this.id = id; this.cells = Set.copyOf(cells); this.faces = Set.copyOf(faces);
+            this.id = id; this.cells = RoomSets.freeze(cells); this.faces = RoomSets.freeze(faces);
         }
         public double airCapacity() { return airPresent ? cells.size() * RoomHeatMath.AIR_CAPACITY : 0; }
     }
@@ -51,7 +53,7 @@ public final class RoomThermalState extends SavedData {
                 + materials.values().stream().mapToDouble(material -> material.energy).sum();
     }
     private static Set<BlockPos> positions(long[] values) {
-        var result = new HashSet<BlockPos>(); for (long value : values) result.add(BlockPos.of(value)); return Set.copyOf(result);
+        var result = new HashSet<BlockPos>(); for (long value : values) result.add(BlockPos.of(value)); return RoomSets.freeze(result);
     }
     private static long[] positions(Set<BlockPos> values) { return values.stream().mapToLong(BlockPos::asLong).sorted().toArray(); }
     private static double finite(double value) { return Double.isFinite(value) ? Math.max(0, value) : 0; }
