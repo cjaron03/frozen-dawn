@@ -1174,6 +1174,23 @@ public final class AirlockGameTest {
         h.assertTrue(AirlockManager.canOpen(l,s.inner),"A completed refill allows return to the recovered base after the owner's full breach sequence");
     });}
     private static void independentBaseRecovery(GameTestHelper h,Scene s,boolean pixieSource,boolean emptyChamber) {
+        independentBaseRecovery(h,s,pixieSource,emptyChamber,false);
+    }
+    private static void completeRecoveryFixtureIndex(GameTestHelper h,Scene s) {
+        var l=h.getLevel();var geometry=RoomAtmosphere.view(l,s.base).geometry();
+        var chunks=new HashSet<Long>();
+        for(var pos:geometry.cells())chunks.add(new net.minecraft.world.level.ChunkPos(pos).toLong());
+        for(var pos:geometry.walls())chunks.add(new net.minecraft.world.level.ChunkPos(pos).toLong());
+        var pending=new HashSet<>(VacuumFlames.snapshot(l).pendingChunks());pending.retainAll(chunks);
+        int bootstrap=0;
+        while(bootstrap<256&&!Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks())) {
+            VacuumFlames.tick(new net.neoforged.neoforge.event.tick.ServerTickEvent.Post(()->true,l.getServer()));bootstrap++;
+        }
+        h.assertTrue(Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks()),
+                "Recovery fixture indexes both cells and wall chunks before timing paid production");
+        System.out.println("AIRLOCK_RECOVERY_FIXTURE base="+s.base+" pending="+pending.size()+" bootstrap="+bootstrap);
+    }
+    private static void independentBaseRecovery(GameTestHelper h,Scene s,boolean pixieSource,boolean emptyChamber,boolean reindex) {
         var l=h.getLevel();var hole=joinEmptyChamber(h,s,false);var c=s.chamber;
         l.setBlock(hole,Blocks.GLASS.defaultBlockState(),3);RoomAtmosphere.view(l,s.base);RoomAtmosphere.view(l,s.center);
         if(emptyChamber){AirlockManager.start(l,c);finish(l,c);}
@@ -1193,12 +1210,28 @@ public final class AirlockGameTest {
         for(int i=0;i<6;i++)refillSecond(h,s,pixieSource);
         h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==0&&c.gas.air()==chamberGas&&c.gas.reserve()==reserve,
                 "Zero actual output cannot restore the repaired base or borrow chamber/reserve gas");
+        if(reindex) {
+            // A real chunk-load notification makes output legitimately wait, even with a working Core.
+            var chunk=l.getChunkAt(s.base);
+            VacuumFlames.loaded(new net.neoforged.neoforge.event.level.ChunkEvent.Load(chunk,false));
+            h.assertTrue(VacuumFlames.snapshot(l).pendingChunks().contains(chunk.getPos().toLong()),"Control starts with a genuinely pending chunk");
+            core.setPowerShare(0);core.setHeatShare(0);
+            for(int i=0;i<2;i++)refillSecond(h,s,false);
+            var reading=RoomOxygenManager.readingAt(l,s.base);
+            h.assertTrue(VacuumFlames.snapshot(l).pendingChunks().contains(chunk.getPos().toLong())
+                    &&!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==0,
+                    "Unindexed fixture cannot claim two funded seconds: gas="+saved.roomGas(l,base)+" reading="+reading);
+            core.setPowerShare(100);
+        }
+        // This synchronous fixture advances O2 manually, so it must also finish ordinary chunk indexing.
+        // Otherwise its first production seconds depend on the preceding test batch's chunk queue.
+        completeRecoveryFixtureIndex(h,s);
         long water=pixie==null?0:pixie.availableWater();
         if(pixieSource) {
             h.assertTrue(PowerNetworks.link(l,source,intake)==PowerLinkRules.Result.OK,"Only a real powered PIXIE can produce the base's recovery gas");PowerNetworks.update(l);
         } else {core.setPowerShare(0);core.setHeatShare(0);}
         for(int i=0;i<2;i++)refillSecond(h,s,pixieSource);
-        h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==80,"Two seconds cannot bypass the normal delay, despite actual funded gas");
+        h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==80,"Two seconds cannot bypass the normal delay, despite actual funded gas: gas="+saved.roomGas(l,base)+" air="+RoomAtmosphere.hasAir(l,s.base)+" reading="+RoomOxygenManager.readingAt(l,s.base));
         var probe=s.base.above(2);l.setBlock(probe,Blocks.STONE.defaultBlockState(),3);RoomAtmosphere.view(l,s.base);
         l.setBlock(probe,Blocks.AIR.defaultBlockState(),3);base=RoomAtmosphere.view(l,s.base).geometry().cells();
         h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==80,"Placing/removing a block cannot create gas or prematurely restore the base");
@@ -1220,6 +1253,8 @@ public final class AirlockGameTest {
         l.setBlock(probe,Blocks.AIR.defaultBlockState(),3);base=RoomAtmosphere.view(l,s.base).geometry().cells();
         h.assertTrue(RoomAtmosphere.hasAir(l,s.base)&&saved.roomGas(l,base)==360,"Later block updates retain recovery and exact gas without requiring the chamber to fill");
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockBaseRecoveryHonorsPendingChunkIndexBeforeGasTiming(GameTestHelper h){connectedRefillCheck(h,s->independentBaseRecovery(h,s,false,false,true));}
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
     public static void coreRestoresBaseWithPressurizedAirlockIndependently(GameTestHelper h){connectedRefillCheck(h,s->independentBaseRecovery(h,s,false,false));}
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
