@@ -1257,5 +1257,17 @@
   "message.frozendawn.airlock.base_unsealed": "Base open to outside — seal it before equalizing",
   "message.frozendawn.airlock.valve_equalized": "Pressure equalized",
   "message.frozendawn.airlock.door_open_vacuum": "Door open",
-  "message.frozendawn.airlock.door_open_matched": "Door open"
+  "message.frozendawn.airlock.door_open_matched": "Door open",
+  "advancement.frozendawn.in_space_no_one_can_hear_you_brown_out.title": "In Space, No One Can Hear You Brown Out",
+  "advancement.frozendawn.in_space_no_one_can_hear_you_brown_out.description": "The lights knew before you did.",
+  "advancement.frozendawn.unlimited_power.title": "Unlimited Power!",
+  "advancement.frozendawn.unlimited_power.description": "Your heater would like a word.",
+  "advancement.frozendawn.canary_in_the_furnace.title": "Canary in the Furnace",
+  "advancement.frozendawn.canary_in_the_furnace.description": "It went out. You didn't. Yet.",
+  "advancement.frozendawn.holy_cow.title": "Holy Cow",
+  "advancement.frozendawn.holy_cow.description": "She breathes for five.",
+  "block.frozendawn.orsa_emergency_light": "ORSA Emergency Light",
+  "message.frozendawn.emergency_light.ready": "Emergency Light: ready | %s backup",
+  "message.frozendawn.emergency_light.backup": "Emergency Light: backup | %s left",
+  "message.frozendawn.emergency_light.empty": "Emergency Light: empty — connect to a powered grid"
 }

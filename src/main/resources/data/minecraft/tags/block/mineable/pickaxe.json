@@ -39,6 +39,7 @@
     "frozendawn:induction_furnace",
     "frozendawn:power_monitor",
     "frozendawn:pixie",
-    "frozendawn:resistive_heater"
+    "frozendawn:resistive_heater",
+    "frozendawn:orsa_emergency_light"
   ]
 }
