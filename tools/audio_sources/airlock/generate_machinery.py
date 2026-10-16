@@ -1,83 +1,119 @@
 #!/usr/bin/env python3
-"""Original deterministic ORSA hardware synthesis. No sampled recordings or voices."""
-import argparse,hashlib,json,math,random,struct,subprocess,wave
+"""Render owner-selected #4 worn-mechanism recordings. No synthesized layers.
+
+Requires Python 3, ffmpeg and oggenc. Source originals and licenses are retained
+beside this script; output is mono 24 kHz Vorbis. --only updates selected cues.
+"""
 from pathlib import Path
+import argparse, array, hashlib, json, math, subprocess, wave
 ROOT=Path(__file__).resolve().parents[3]
+HERE=Path(__file__).resolve().parent
+SRC=HERE/'recordings'
 OUT=ROOT/'src/main/resources/assets/frozendawn/sounds/block/airlock'
-PREVIEW=ROOT/'build/thermal-evidence/airlock-service/audio-previews'
-SR=24000
+PREVIEW=ROOT/'build/power-network-evidence/airlock-recorded-sounds/rendered'
+SR=44100
+cache={}
+def read(name,start=0,dur=None,low=50,high=8000):
+    key=(name,start,dur,low,high)
+    if key not in cache:
+        cmd=['ffmpeg','-v','error','-i',str(SRC/name),'-ss',str(start)]
+        if dur is not None:cmd+=['-t',str(dur)]
+        cmd+=['-ac','1','-ar',str(SR),'-af',f'highpass=f={low},lowpass=f={high}','-f','f32le','-']
+        raw=subprocess.check_output(cmd);a=array.array('f');a.frombytes(raw);out=list(a)
+        # Trim only edge silence, then smooth the cuts. No pitch/speed shifts.
+        threshold=max(abs(x) for x in out)*.006
+        active=[i for i,x in enumerate(out) if abs(x)>threshold]
+        if active:out=out[max(0,active[0]-220):min(len(out),active[-1]+440)]
+        n=len(out)
+        for i in range(n):out[i]*=min(1,i/180,(n-1-i)/440)
+        cache[key]=out
+    return cache[key]
+def part(file,start=0,dur=None,at=0,gain=1,low=50,high=8000,loop=None):
+    return dict(file=file,start=start,duration=dur,at=at,gain=gain,low=low,high=high,loop=loop)
+def mix(parts,duration,target=.09,peak=.72):
+    out=[0.0]*round(duration*SR)
+    for p in parts:
+        a=read(p['file'],p['start'],p['duration'],p['low'],p['high']);r=math.sqrt(sum(x*x for x in a)/len(a)) or 1
+        # Normalize source layers so a distant recording does not disappear in a close-mic mix.
+        gain=p['gain']*.1/r;offset=round(p['at']*SR)
+        if p['loop']:
+            total=round(p['loop']*SR);step=max(1,len(a)-round(.04*SR));starts=range(0,total,step)
+        else:starts=[0];total=len(a)
+        for s in starts:
+            for i,x in enumerate(a):
+                j=offset+s+i
+                if s+i>=total or j>=len(out):break
+                weight=1
+                if p['loop']:weight=min(1,i/(.04*SR),(len(a)-1-i)/(.04*SR),(total-s-i-1)/(.035*SR))
+                out[j]+=x*gain*weight
+    rms=math.sqrt(sum(x*x for x in out)/len(out)) or 1;mx=max(abs(x) for x in out) or 1;scale=min(target/rms,peak/mx)
+    # Fade the final cut too, especially the one-second pump segments.
+    return [x*scale*min(1, i/(.004*SR), (len(out)-1-i)/(.012*SR))
+            for i,x in enumerate(out)]
+def save(p,a):
+    pcm=array.array('h',(round(x*32767) for x in a));assert max(abs(x) for x in a)<.9
+    with wave.open(str(p),'wb') as w:w.setnchannels(1);w.setsampwidth(2);w.setframerate(SR);w.writeframes(pcm.tobytes())
 
-def noise(length,seed,cutoff):
-    rng=random.Random(seed);v=0;alpha=1-math.exp(-2*math.pi*cutoff/SR);out=[]
-    for _ in range(int(length*SR)):
-        v+=alpha*(rng.uniform(-1,1)-v);out.append(v)
-    return out
+P=part;F='foley100/'
+# Selected concept 4: same recorded latch/rattle/stop and bell palette.
+# The two pump mixes fit the existing once-per-20-ticks event cadence.
+CUES={
+ 'door_open':(1.50,.09,[P('squeakyclick1.wav',gain=.7),P('mechanical2.wav',at=.25,gain=.8),P('rattle1.wav',at=.62,gain=.55)]),
+ 'door_close':(1.50,.09,[P('squeakyclick2.wav',gain=.5),P('rattle1.wav',at=.3,gain=.55),P('clank1.wav',at=.77,gain=.8)]),
+ 'pump_recover':(.94,.065,[P('air_long.mp3',.4,.94,gain=.85,high=6500),P('squeakyclick1.wav',gain=.2)]),
+ 'pump_fill':(.94,.065,[P(F+'machine_03.ogg',gain=.65,loop=.94,high=5000),P('rattle1.wav',at=.1,gain=.2)]),
+ 'ready':(.79,.055,[P(F+'bell_01.ogg',0,.65,gain=.6,high=5000)]),
+ 'evacuated':(.79,.055,[P(F+'bell_02.ogg',gain=.6,high=3800),P('air_short.mp3',.1,.32,at=.12,gain=.12,high=5000)]),
+ 'refuse':(.39,.065,[P('clank1.wav',0,.35,gain=.55,high=4000)]),
+ 'interrupted':(.50,.065,[P('rattle1.wav',0,.22,gain=.35),P('mechanical2.wav',0,.28,at=.18,gain=.55,high=4500)]),
+ 'valve':(.42,.065,[P('squeakyclick1.wav',0,.3,gain=.6),P('air_short.mp3',.12,.2,at=.12,gain=.14,high=5000)]),
+}
 
-def mix(out,start,data,gain=1):
-    offset=round(start*SR)
-    for i,v in enumerate(data):
-        if 0<=offset+i<len(out):out[offset+i]+=v*gain
-
-def clack(length=.3,seed=7,heavy=1):
-    n=noise(length,seed,4800)
-    return [math.exp(-t/(.075*heavy))*(.33*n[i]+sum(a*math.sin(2*math.pi*f*t)*math.exp(-t/d) for f,a,d in [(132,.36,.065*heavy),(286,.18,.1),(721,.12,.035)])) for i in range(len(n)) for t in [i/SR]]
-
-def hiss(length,seed,gain=.4):
-    n=noise(length,seed,2700)
-    return [gain*n[i]*min(1,t/.035)*min(1,(length-t)/.1) for i in range(len(n)) for t in [i/SR]]
-
-def motor(length,recover=False,frequency=83):
-    n=noise(length,49 if recover else 41,1000)
-    return [(min(1,t/.025)*min(1,(length-t)/.055))*(.10*math.sin(2*math.pi*frequency*t)+.06*math.sin(2*math.pi*frequency*2*t)+.04*math.sin(2*math.pi*frequency*3*t)+.09*n[i])*(.8+.2*math.cos(2*math.pi*11*t)) for i in range(len(n)) for t in [i/SR]]
-
-def sound(name,length):
-    a=[0.]*round(length*SR)
-    if name=='door_open':
-        mix(a,0,clack(.22,1,.7));mix(a,.10,hiss(.35,2,.42));mix(a,.19,motor(.53));mix(a,.63,clack(.23,3,.45),.35)
-    elif name=='door_close':
-        mix(a,0,motor(.36),.6);mix(a,.29,clack(.4,4,1.5),1.25);mix(a,.44,clack(.22,5,.65),.52);mix(a,.52,hiss(.19,6,.20))
-    elif name.startswith('pump_'):
-        recover=name=='pump_recover'
-        mix(a,0,motor(.94,recover,72 if recover else 108),.8 if recover else 1.2)
-        mix(a,0,hiss(.94,8 if recover else 9,.68 if recover else .42))
-    elif name in ('ready','evacuated'):
-        mix(a,0,motor(.25),.5);mix(a,.13,clack(.2,10,.55),.3)
-        if name=='evacuated':mix(a,.17,hiss(.42,11,.38))
-        notes=(660,880) if name=='ready' else (440,660)
-        for onset,freq in zip((.38,.53),notes):
-            mix(a,onset,[.18*math.sin(2*math.pi*freq*i/SR)*math.sin(math.pi*i/(.13*SR))**2 for i in range(round(.13*SR))])
-    elif name=='refuse':mix(a,0,clack(.20,12,.6),.7);mix(a,.075,hiss(.22,13,.3))
-    elif name=='interrupted':mix(a,0,motor(.18),.6);mix(a,.14,clack(.28,14,.8),.55)
-    elif name=='valve':mix(a,0,clack(.25,15,.8),.8);mix(a,.12,hiss(.16,16,.28))
-    return a
-
-def wav(path,data):
-    assert max(map(abs,data),default=0)<.99,'Clipping'
-    with wave.open(str(path),'wb') as w:
-        w.setparams((1,2,SR,0,'NONE','not compressed'));w.writeframes(b''.join(struct.pack('<h',round(v*32767)) for v in data))
-
-def encode(src,dst):
-    if dst.suffix=='.ogg':
-        subprocess.run(['oggenc','--quiet','-q','5','-o',str(dst),str(src)],check=True)
-    else:
-        subprocess.run(['ffmpeg','-v','error','-y','-i',str(src),'-c:a','libmp3lame','-q:a','5',str(dst)],check=True)
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 def main():
-    OUT.mkdir(parents=True,exist_ok=True);PREVIEW.mkdir(parents=True,exist_ok=True)
-    lengths={'door_open':.93,'door_close':.92,'pump_fill':.94,'pump_recover':.94,'ready':.79,'evacuated':.79,'refuse':.39,'interrupted':.5,'valve':.42}
-    parser=argparse.ArgumentParser();parser.add_argument('--only',nargs='+',choices=lengths)
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--only',nargs='+',choices=CUES)
     selected=parser.parse_args().only
-    manifest_path=Path(__file__).parent/'manifest.json'
-    sounds={name:sound(name,length) for name,length in lengths.items()}
+    ledger={r['key']:r for r in json.loads((HERE/'source-ledger.json').read_text())}
+    for name,rec in ledger.items():
+        if sha(SRC/name)!=rec['sha256']:
+            raise ValueError('Source recording hash mismatch: '+name)
+    OUT.mkdir(parents=True,exist_ok=True);PREVIEW.mkdir(parents=True,exist_ok=True)
+    manifest_path=HERE/'manifest.json'
     manifest=json.loads(manifest_path.read_text()) if selected else {}
-    for name,data in sounds.items():
+    for name,(duration,target,parts) in CUES.items():
         if selected and name not in selected:continue
-        src=PREVIEW/(name+'.wav');dst=OUT/(name+'.ogg');wav(src,data);encode(src,dst)
-        manifest[name]={'sha256':hashlib.sha256(dst.read_bytes()).hexdigest(),'duration':len(data)/SR,'peak':max(map(abs,data)),'sample_rate':SR,'channels':1}
-    for title,parts in {'01-heavy-hatch':[(0,'door_open'),(1.8,'door_close')], '02-refill-cycle':[(i,'pump_fill') for i in range(4)]+[(4,'ready')], '03-recovery-cycle':[(i,'pump_recover') for i in range(4)]+[(4,'evacuated'),(5.4,'refuse')]}.items():
-        a=[0.]*round((parts[-1][0]+len(sounds[parts[-1][1]])/SR+.25)*SR)
-        for t,name in parts:mix(a,t,sounds[name])
-        src=PREVIEW/(title+'.wav');wav(src,a);encode(src,PREVIEW/(title+'.mp3'))
-    (Path(__file__).parent/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-    print(json.dumps({'previews':str(PREVIEW),'assets':manifest},indent=2))
+        data=mix(parts,duration,target)
+        high=PREVIEW/(name+'-44100.wav');wav=PREVIEW/(name+'.wav');ogg=OUT/(name+'.ogg')
+        save(high,data)
+        subprocess.run(['ffmpeg','-v','error','-y','-i',str(high),'-ar','24000','-ac','1',str(wav)],check=True)
+        subprocess.run(['oggenc','--quiet','-q','5','-c','LICENSE=CC0 1.0 Universal','-o',str(ogg),str(wav)],check=True)
+        with wave.open(str(wav),'rb') as w:
+            n=w.getnframes();pcm=array.array('h');pcm.frombytes(w.readframes(n))
+        manifest[name]={'sha256':sha(ogg),'duration':n/24000,'peak':max(abs(x) for x in pcm)/32768,
+                        'sample_rate':24000,'channels':1,'provenance':'CC0 recordings; selected concept 4 worn mechanism',
+                        'source_recordings':sorted({p['file'] for p in parts}),'parts':parts}
+    manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
+    timelines={
+      '01-doors':[(0,'door_open'),(2,'door_close'),(4,'refuse'),(4.8,'valve')],
+      '02-refill-cycle':[(i,'pump_fill') for i in range(4)]+[(4,'ready')],
+      '03-recovery-cycle':[(i,'pump_recover') for i in range(4)]+[(4,'evacuated')],
+    }
+    for title,events in timelines.items():
+        if any(not (PREVIEW/(name+'.wav')).exists() for _,name in events):continue
+        with wave.open(str(PREVIEW/(events[-1][1]+'.wav')),'rb') as w:tail=w.getnframes()/24000
+        out=[0.] * round((events[-1][0]+tail+.25)*24000)
+        for at,name in events:
+            with wave.open(str(PREVIEW/(name+'.wav')),'rb') as w:
+                pcm=array.array('h');pcm.frombytes(w.readframes(w.getnframes()))
+            for i,x in enumerate(pcm):out[round(at*24000)+i]+=x/32768
+        wav=PREVIEW/(title+'.wav')
+        with wave.open(str(wav),'wb') as w:
+            w.setparams((1,2,24000,0,'NONE','not compressed'))
+            w.writeframes(array.array('h',(round(x*32767) for x in out)).tobytes())
+        subprocess.run(['ffmpeg','-v','error','-y','-i',str(wav),'-c:a','libmp3lame','-q:a','3',str(PREVIEW/(title+'.mp3'))],check=True)
+    print(json.dumps({'updated':selected or list(CUES),'previews':str(PREVIEW)},indent=2))
+
 if __name__=='__main__':main()
