@@ -1054,7 +1054,7 @@ public final class RoomThermalGameTest {
         var saved=heater.saveWithFullMetadata(s.l.registryAccess());var reconstructed=new ResistiveHeaterBlockEntity(s.c,heater.getBlockState());reconstructed.loadWithComponents(saved,s.l.registryAccess());h.assertTrue(reconstructed.drawWatts()==0&&reconstructed.status()==0,"Save never restores a prepaid electrical grant or stale UI draw");
         var links=PowerNetworkSavedData.get(s.l).save(new CompoundTag(),s.l.registryAccess());PowerNetworks.stopped(null);s.l.getDataStorage().set(PowerNetworkSavedData.NAME,PowerNetworkSavedData.load(links,s.l.registryAccess()));heater.onLoad();dock.onLoad();advanceHeat(s);h.assertTrue(heater.drawWatts()>0,"Saved Binder topology reconstructs paid heating");
         var player=new net.neoforged.neoforge.common.util.FakePlayer(s.l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"rh5_menu"));player.setPos(s.c.getCenter());var menu=new ResistiveHeaterMenu(1,player.getInventory(),heater);
-        h.assertTrue(menu.stillValid(player)&&menu.slots.isEmpty()&&!menu.clickMenuButton(player,0),"Read-only heater menu has no fuel, inventory or setting buttons");
+        h.assertTrue(menu.stillValid(player)&&menu.slots.isEmpty()&&!menu.clickMenuButton(player,0),"Heater menu has no inventory slots and refuses an invalid power-limit button");
         var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());buf.writeBlockPos(s.c);var client=new ResistiveHeaterMenu(1,player.getInventory(),buf);
         for(int i=0;i<5;i++){buf.clear();buf.writeShort(menu.data().get(i));client.data().set(i,buf.readShort());}buf.release();h.assertTrue(client.data().get(1)<0&&client.data().get(3)==heater.drawWatts(),"Native signed-short transport preserves cold temperatures and full 5 kW");
         player.setPos(s.c.east(12).getCenter());h.assertTrue(!menu.stillValid(player),"Remote heater screen invalidates");player.setPos(s.c.getCenter());PowerNetworks.clear(s.l,s.c);advanceHeat(s);h.assertTrue(heater.drawWatts()==0,"Unlink stops heat");rh5Link(h,s,dockPos,s.c);advanceHeat(s);h.assertTrue(heater.drawWatts()>0,"Rebind restores paid heat");s.l.destroyBlock(s.c,false);h.assertTrue(!menu.stillValid(player),"Destroyed heater invalidates stale menu");
@@ -1069,6 +1069,77 @@ public final class RoomThermalGameTest {
             h.assertTrue(heater.drawWatts()>0&&store.storedJoules()<500000&&s.heat().ledger.heater>before,"Normal BE/server ticks allocate, pay and deliver heat without PIXIE or a manual tick");budget(h,s);h.succeed();
         }finally{s.l.setBlock(s.c,Blocks.AIR.defaultBlockState(),3);s.l.setBlock(s.c.east(3),Blocks.AIR.defaultBlockState(),3);PowerNetworks.stopped(null);s.l.getDataStorage().set(PowerNetworkSavedData.NAME,PowerNetworkSavedData.load(saved,s.l.registryAccess()));s.close();}});
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostBeatsMaxedDiamondAndPaysForEveryJoule(GameTestHelper h){electricScene(h,s->{
+        var electric=rh5Place(s,s.c);var bank=rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));
+        var diamondPos=s.c.west(2);s.l.setBlock(diamondPos,ModBlocks.DIAMOND_THERMAL_HEATER.get().defaultBlockState(),3);
+        var diamond=(ThermalHeaterBlockEntity)s.l.getBlockEntity(diamondPos);diamond.installCapacitor();diamond.addFuel(20000);
+        double multiplier=com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        try {
+            com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.set(1.0);
+            h.assertTrue(diamond.getPublicHeatOutput()==120,"Fully upgraded Diamond heater has 12 kW equivalent output at Default settings");
+            electric.setPowerLimitWatts(0);RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);
+            double before=s.heat().ledger.heater;advanceHeat(s);double diamondHeat=s.heat().ledger.heater-before;
+            near(h,diamondHeat,RoomThermalManager.BASE_HEATER_POWER*120/35.0,"Real Diamond plus capacitor delivers its full rated heat");
+            diamond.extinguish();electric.setPowerLimitWatts(50000);hot(s,-150,-150);
+            before=s.heat().ledger.heater;advanceHeat(s);double boostHeat=s.heat().ledger.heater-before;
+            h.assertTrue(electric.drawWatts()==50000&&bank.storedJoules()==450000,"50 kW boost spends exactly 50 kJ from its real cell");
+            near(h,boostHeat,50000*ResistiveHeaterBlockEntity.HEAT_PER_JOULE,"Boost keeps the existing electricity-to-heat conversion");
+            near(h,boostHeat/diamondHeat,50.0/12,"Boost is 4.17 times the maxed Diamond heater output");budget(h,s);
+            hot(s,19.9,19.9);advanceHeat(s);
+            h.assertTrue(electric.drawWatts()>0&&electric.drawWatts()<50000,"Boost still throttles near the target");
+            hot(s,50,50);int stored=bank.storedJoules();advanceHeat(s);
+            h.assertTrue(electric.drawWatts()==0&&bank.storedJoules()==stored,"Boost cannot spend energy above target");
+            electric.setPowerLimitWatts(0);hot(s,-150,-150);advanceHeat(s);
+            h.assertTrue(electric.drawWatts()==0&&electric.requestWatts()==0&&electric.status()==6&&bank.storedJoules()==stored,"Zero limit disables heat without draining or deleting stored warmth");budget(h,s);
+        } finally {com.frozendawn.config.FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.set(multiplier);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostLimitMenuAndLegacySaveAreSafeAtFiftyKilowatts(GameTestHelper h){electricScene(h,s->{
+        var heater=rh5Place(s,s.c);rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));
+        var legacy=heater.saveWithFullMetadata(s.l.registryAccess());legacy.remove("PowerLimitWatts");
+        var restored=new ResistiveHeaterBlockEntity(s.c,heater.getBlockState());restored.loadWithComponents(legacy,s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==5000,"Legacy heater saves preserve the original 5 kW setting");
+        var player=new net.neoforged.neoforge.common.util.FakePlayer(s.l,new com.mojang.authlib.GameProfile(UUID.randomUUID(),"rh5_limit"));player.setPos(s.c.getCenter());
+        var server=new ResistiveHeaterMenu(1,player.getInventory(),heater);
+        h.assertTrue(server.clickMenuButton(player,150)&&heater.powerLimitWatts()==50000,"Actual server menu selects the 50 kW limit");
+        for(int id:new int[]{-1,0,99,151,Integer.MAX_VALUE})h.assertTrue(!server.clickMenuButton(player,id)&&heater.powerLimitWatts()==50000,"Out-of-range setting cannot mutate the heater");
+        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);h.assertTrue(!server.clickMenuButton(player,100),"Spectator cannot disable heater");player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        player.setPos(s.c.east(12).getCenter());h.assertTrue(!server.clickMenuButton(player,100),"Remote menu cannot change power limit");player.setPos(s.c.getCenter());
+        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);server.broadcastChanges();
+        var buf=new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());buf.writeBlockPos(s.c);
+        var client=new ResistiveHeaterMenu(1,player.getInventory(),buf);
+        try {
+            for(int i=0;i<ResistiveHeaterMenu.DATA_COUNT;i++){buf.clear();buf.writeShort(server.data().get(i));client.data().set(i,buf.readShort());}
+            h.assertTrue(client.data().get(3)<0&&client.drawWatts()==50000&&client.powerLimitKw()==50,"Real signed-short wire transport displays 50 kW without overflow");
+        } finally {buf.release();}
+        restored.loadWithComponents(heater.saveWithFullMetadata(s.l.registryAccess()),s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==50000&&restored.drawWatts()==0&&restored.requestWatts()==0,"Save retains slider but never restores a prepaid heat grant");
+        var corrupt=legacy.copy();corrupt.putInt("PowerLimitWatts",Integer.MAX_VALUE);restored.loadWithComponents(corrupt,s.l.registryAccess());
+        h.assertTrue(restored.powerLimitWatts()==50000,"Corrupt high saved limits are clamped");
+        corrupt.putInt("PowerLimitWatts",-1);restored.loadWithComponents(corrupt,s.l.registryAccess());h.assertTrue(restored.powerLimitWatts()==0,"Negative saved limits cannot create power");
+        s.l.destroyBlock(s.c,false);h.assertTrue(!server.clickMenuButton(player,100),"Replaced/destroyed heater refuses a stale slider menu");
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void rh5BoostUsesIndividualCapsAndLeavesOxygenPriorityIntact(GameTestHelper h){electricScene(h,s->{
+        var first=rh5Place(s,s.c);first.setPowerLimitWatts(1000);var second=rh5Place(s,s.c.north());second.setPowerLimitWatts(12000);
+        rh5Bank(s,s.c.east(3),500000);rh5Link(h,s,s.c,s.c.east(3));rh5Link(h,s,s.c,s.c.north());
+        RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);advanceHeat(s);
+        h.assertTrue(first.drawWatts()==1000&&second.drawWatts()==12000,"Mixed heaters each respect their own 1/12 kW cap");budget(h,s);
+        PowerNetworks.clear(s.l,s.c.east(3));PowerNetworks.clear(s.l,s.c.north());first.setPowerLimitWatts(50000);
+        var cp=s.c.east(3).above();s.l.setBlock(cp,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
+        var core=(GeothermalCoreBlockEntity)s.l.getBlockEntity(cp);core.setPowerShare(30);core.setHeatShare(0);
+        var pp=s.c.west(2);s.l.setBlock(pp,ModBlocks.PIXIE.get().defaultBlockState(),3);var pixie=(PixieBlockEntity)s.l.getBlockEntity(pp);pixie.onLoad();pixie.setItem(0,new ItemStack(Items.ICE,64));
+        rh5Link(h,s,cp,s.c);rh5Link(h,s,cp,pp);RoomAtmosphere.view(s.l,s.c.above());hot(s,-150,-150);
+        long clock=s.l.getGameTime();s.integrationTime=Math.max(clock,s.integrationTime)+20;((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(s.integrationTime);
+        try {
+            pixie.prepare(true,false,20,4000);PowerNetworks.update(s.l);PowerNetworks.accountLifeSupport(s.l);RoomThermalManager.tickLevel(s.l);
+            h.assertTrue(pixie.outputWatts()==4000&&first.drawWatts()==2000&&first.status()==5,"Boost takes only 2 kW left after oxygen and reports Power limited");budget(h,s);
+        } finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);}
+    });}
+
     private static ResistiveHeaterBlockEntity rh5Place(Scene s,BlockPos p){s.l.setBlock(p,ModBlocks.RESISTIVE_HEATER.get().defaultBlockState(),3);var heater=(ResistiveHeaterBlockEntity)s.l.getBlockEntity(p);heater.onLoad();return heater;}
     private static PowerStorageBlockEntity rh5Bank(Scene s,BlockPos p,int joules){s.l.setBlock(p,ModBlocks.BATTERY_BANK.get().defaultBlockState(),3);var store=(PowerStorageBlockEntity)s.l.getBlockEntity(p);store.onLoad();var cell=new ItemStack(ModItems.POWER_CELL.get());PowerCellItem.setEnergy(cell,joules);store.setItem(0,cell);return store;}
     private static void rh5Link(GameTestHelper h,Scene s,BlockPos a,BlockPos b){var result=PowerNetworks.link(s.l,a,b);h.assertTrue(result==PowerLinkRules.Result.OK,"RH-5 fixture link "+a+" -> "+b+" must be legal: "+result);PowerNetworks.update(s.l);}

@@ -362,8 +362,10 @@ public final class PowerNetworks {
                 int watts=heaterWatts.getOrDefault(load,pixieGrants.getOrDefault(load,demandWatts(level,load))),fromCore=Math.min(watts,generation);generation-=fromCore;
                 if(rt.airlockInputs.containsValue(load))
                     rt.pumpGrants.put(load,new PumpGrant(fromCore,level.getGameTime()+20,storePositions,cells));
-                else if(level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity)
+                else if(level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity heater) {
                     rt.heaterGrants.putIfAbsent(load,new HeaterGrant(watts,fromCore,level.getGameTime(),storePositions));
+                    heater.allocation(rt.heaterGrants.get(load).watts);
+                }
                 else if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
                     machineGrants.put(load,new MachineGrant(fromCore,storePositions,level.getGameTime()+20));
                 else lampShortage+=watts-fromCore;

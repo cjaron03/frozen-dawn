@@ -680,3 +680,8 @@ salvagecellpowersisolateddockandretainsfinitechargeondropandreload xml
 # Six-face relay mounting, saved palette compatibility and graph preservation
 relayplacementmountsbothsizesonallsixfaces xml
 relaylegacystatesandrotatedlinksremaincompatible xml
+
+# Adjustable RH-5 boost: real Diamond comparison, payment, limits, saves and wire safety
+rh5boostbeatsmaxeddiamondandpaysforeveryjoule xml
+rh5boostlimitmenuandlegacysavearesafeatfiftykilowatts xml
+rh5boostusesindividualcapsandleavesoxygenpriorityintact xml
