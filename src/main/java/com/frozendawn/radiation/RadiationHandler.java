@@ -41,12 +41,13 @@ public final class RadiationHandler {
     }
 
     @SubscribeEvent public static void tick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer p && (p.tickCount + p.getId()) % 20 == 0 && !p.isSpectator()) second(p);
+        if (event.getEntity() instanceof ServerPlayer p && (p.tickCount + p.getId()) % 20 == 0) second(p);
     }
 
     /** One second of exposure. Public for GameTests. */
     public static void second(ServerPlayer p) {
         var state = p.getData(ModAttachments.RADIATION.get());
+        if (immune(p)) { exempt(p, state); return; }
         boolean onFallout = FalloutBlock.at(p.level(), p.blockPosition()) || FalloutBlock.at(p.level(), p.blockPosition().below())
                 || airborneFallout(p) >= AIRBORNE_LAYERS;
         if (p.isInWater() || com.frozendawn.block.DeconShowerBlock.washing(p)) { state.contamination = 0; state.contaminationWarned = false; }
@@ -71,6 +72,18 @@ public final class RadiationHandler {
         state.felt = Math.min(state.dose, RadiationMath.nextFelt(state.felt, state.dose));
         symptoms(p, RadiationMath.stage(state.felt));
         PacketDistributor.sendToPlayer(p, new RadiationPayload((float) state.rate, (float) state.dose, (byte) RadiationMath.stage(state.felt), (float) state.contamination));
+    }
+
+    /** Creative and Spectator players take no dose, contamination or symptoms, like the mod's other hazards, but the
+     * Geiger Counter still reads the field so a site can be scouted. Dose already taken keeps decaying normally. */
+    public static boolean immune(ServerPlayer p) { return p.isCreative() || p.isSpectator(); }
+    private static void exempt(ServerPlayer p, com.frozendawn.data.RadiationState state) {
+        state.contamination = 0; state.contaminationWarned = false; p.removeEffect(ModEffects.CONTAMINATED);
+        state.rate = RadiationField.rate(p);
+        state.dose = RadiationMath.nextDose(state.dose, 0, 0);
+        state.felt = Math.min(state.dose, RadiationMath.nextFelt(state.felt, state.dose));
+        symptoms(p, 0);
+        PacketDistributor.sendToPlayer(p, new RadiationPayload((float) state.rate, (float) state.dose, (byte) 0, 0f));
     }
 
     private static void symptoms(ServerPlayer p, int stage) {

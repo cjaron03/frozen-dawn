@@ -40,6 +40,12 @@ class RadiationMathTest {
         assertEquals(1000, felt, 1);
     }
 
+    @Test void visorGrimeShowsOnlyWithTheVisorOn() {
+        assertEquals(0.6f, RadiationMath.soot(0.6f, true, 0), 1e-6);
+        assertEquals(0f, RadiationMath.soot(0.6f, false, 0), 1e-6, "helmet off: no visor grime on screen");
+        assertEquals(0.5f, RadiationMath.soot(0.6f, false, 1f), 1e-6, "skin contamination still shows");
+        assertEquals(1f, RadiationMath.soot(0.2f, true, 5f), 1e-6, "contamination soot caps at full");
+    }
     @Test void geigerIsSilentAtBackgroundAndSaturates() {
         assertEquals(0, RadiationMath.clicksPerSecond(0.01));
         assertTrue(RadiationMath.clicksPerSecond(0.1) > 1);

@@ -189,6 +189,38 @@ public final class RadiationGameTest {
             h.assertTrue(com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(shower)) == 0, "Empty, it draws nothing");
         });
     }
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "radiation", timeoutTicks = 100)
+    public static void creativeAndSpectatorTakeNoDoseButTheCounterReads(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel();
+            for (int x = 3; x <= 7; x++) for (int z = 3; z <= 7; z++) h.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            h.setBlock(new BlockPos(5, 2, 5), ModBlocks.FALLOUT.get());
+            var p = player(h, "creative_scout"); p.setPos(h.absolutePos(new BlockPos(5, 2, 5)).getBottomCenter());
+            var corium = BlockPos.containing(p.getEyePosition()).east(3);
+            level.setBlock(corium, ModBlocks.CORIUM.get().defaultBlockState(), 3);
+            var state = p.getData(ModAttachments.RADIATION.get());
+            state.dose = 700; state.felt = 700;
+            RadiationHandler.second(p);
+            h.assertTrue(p.hasEffect(ModEffects.RADIATION_SICKNESS) && p.getMaxHealth() < 20, "Survival at 700 RU: Sickness III and lost hearts");
+            p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            double before = state.dose;
+            for (int i = 0; i < 3; i++) RadiationHandler.second(p);
+            h.assertTrue(state.dose < before && state.contamination == 0, "Creative standing in fallout by Corium: no new dose, no contamination: " + state.dose);
+            h.assertTrue(!p.hasEffect(ModEffects.RADIATION_SICKNESS) && !p.hasEffect(ModEffects.CONTAMINATED) && p.getMaxHealth() == 20,
+                    "Creative clears sickness, contamination and the max-health loss");
+            h.assertTrue(state.rate > 1, "The counter still reads the field in Creative: " + state.rate);
+            state.dose = 0; state.felt = 0;
+            p.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+            RadiationHandler.second(p);
+            h.assertTrue(state.dose == 0 && state.rate > 1, "Spectator: reading but no dose");
+            p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            RadiationHandler.second(p);
+            h.assertTrue(state.dose > 0 && state.contamination > 0, "Back in Survival the same spot doses and contaminates");
+            level.setBlock(corium, Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(h.absolutePos(new BlockPos(5, 2, 5)), Blocks.AIR.defaultBlockState(), 3);
+        });
+    }
+
     /** Own batch: the site grades and contaminates well past this structure. */
     @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor_site", timeoutTicks = 100)
     public static void ruinedReactorSiteHoldsCoriumRodsAndFallout(GameTestHelper h) {

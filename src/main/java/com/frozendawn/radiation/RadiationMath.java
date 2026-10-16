@@ -33,6 +33,10 @@ public final class RadiationMath {
         return felt + (dose - felt) * (1 - Math.exp(-1 / LATENT_SECONDS));
     }
     /** Geiger click rate for a dose rate: silent at background, saturating near 40 clicks per second. */
+    /** Soot shown over the view: visor grime only while a sealed suit's visor is on, or skin contamination. */
+    public static float soot(float grime, boolean sealed, float contamination) {
+        return Math.max(sealed ? grime : 0f, Math.min(1f, contamination / 2f));
+    }
     public static double clicksPerSecond(double rate) {
         return rate < 0.02 ? 0 : Math.min(40, 1.5 + 6 * Math.sqrt(rate));
     }

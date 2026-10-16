@@ -81,6 +81,10 @@ public final class RadiationClient {
     /** Needle position 0..1 on a logarithmic dial; 1 is pegged off scale. */
     public static float needle() { return (float) Math.clamp(Math.log10(1 + rate()) / Math.log10(1 + OFF_SCALE), 0, 1); }
     public static double cpm() { return (RadiationMath.clicksPerSecond(rate()) + BACKGROUND_CPS) * 60; }
+    /** Respawning is a fresh body and a clean visor. */
+    @SubscribeEvent public static void respawn(ClientPlayerNetworkEvent.Clone event) {
+        if (event.getOldPlayer().isDeadOrDying()) { grime = 0; sootShown = 0; whiteFlash = 0; contamination = 0; }
+    }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { rate = 0; dose = 0; FLASHES.clear(); dense = null; alarm = null; chirpCooldown = 0; contamination = 0; sootShown = 0; whiteFlash = 0; airborne = 0; grime = 0; }
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
@@ -160,7 +164,8 @@ public final class RadiationClient {
     public static void renderSoot(GuiGraphics g, DeltaTracker delta) {
         var mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui) return;
-        float target = Math.max(grime, System.currentTimeMillis() - receivedAt < 3000 ? Math.min(1f, contamination / 2f) : 0f);
+        float target = RadiationMath.soot(grime, com.frozendawn.event.SuitIntegrityHandler.isWearingSealedSuit(mc.player),
+                System.currentTimeMillis() - receivedAt < 3000 ? contamination : 0f);
         sootShown += (target - sootShown) * 0.05f;
         if (sootShown < 0.01f) return;
         int w = g.guiWidth(), h = g.guiHeight();
