@@ -66,22 +66,23 @@ class AtmosphericActionBarPolicyTest {
                 com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_VACUUM,
                 com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_MATCHED}) {
             var fallback=AtmosphericActionBarPolicy.select(status.key(),false,SuffocationStage.NONE);
-            if(status.opensDoor())assertNull(fallback,"Successful opening is helmet-only");
+            if(status.opensDoor())assertNull(fallback,"Successful opening stays silent");
             else {assertEquals(status.key(),fallback.primaryKey());assertNull(fallback.secondaryKey());}
             assertNull(AtmosphericActionBarPolicy.select(status.key(),true,SuffocationStage.NONE),"Helmet receives the same typed reason without a duplicate action bar");
             assertFalse(AtmosphericActionBarPolicy.allowsDeviceNotice(false,SuffocationStage.FADING),"Door feedback never replaces suffocation danger");
         }
     }
 
-    @Test void removingHelmetHidesDoorSuccessAndRetainsEveryOxygenWarning() {
+    @Test void doorOpeningStaysSilentWithEitherHelmetStateAndRetainsEveryOxygenWarning() {
         for(var status:new com.frozendawn.network.AirlockStatusPayload.Status[]{
                 com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_VACUUM,
                 com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_MATCHED}) {
-            assertNull(AtmosphericActionBarPolicy.select(status.key(),true,SuffocationStage.NONE));
-            assertNull(AtmosphericActionBarPolicy.select(status.key(),false,SuffocationStage.NONE),"Removing the helmet cannot expose a recent success in the action bar");
-            for(var stage:SuffocationStage.values())if(stage!=SuffocationStage.NONE) {
-                var notice=AtmosphericActionBarPolicy.select(status.key(),false,stage);
-                assertEquals(stage.translationKey(),notice.primaryKey());assertTrue(notice.danger());
+            for(boolean helmet:new boolean[]{false,true}) {
+                assertNull(AtmosphericActionBarPolicy.select(status.key(),helmet,SuffocationStage.NONE),"Opening feedback stays silent when wearing, adding or removing the helmet");
+                for(var stage:SuffocationStage.values())if(stage!=SuffocationStage.NONE) {
+                    var notice=AtmosphericActionBarPolicy.select(status.key(),helmet,stage);
+                    assertEquals(stage.translationKey(),notice.primaryKey());assertTrue(notice.danger());
+                }
             }
         }
     }

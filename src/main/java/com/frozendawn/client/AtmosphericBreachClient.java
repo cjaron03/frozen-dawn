@@ -77,7 +77,7 @@ public final class AtmosphericBreachClient {
 
     public static void receiveAirlock(com.frozendawn.network.AirlockStatusPayload payload) {
         var player=Minecraft.getInstance().player;if(player==null)return;
-        if(payload.status().opensDoor()&&!usesSuitHud(player))return;
+        if(payload.status().opensDoor())return;
         boolean activeRoomNotice=warningTicks>0&&!deviceNotice;
         boolean allowed=payload.status().doorNotice()
                 ?AtmosphericActionBarPolicy.allowsDoorNotice(activeRoomNotice?noticeKey:null,suffocationStage)
