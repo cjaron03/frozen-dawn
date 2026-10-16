@@ -74,11 +74,15 @@ public final class PowerLinkRenderer {
                 new AABB(pos).inflate(0.035).move(-camera.x, -camera.y, -camera.z),
                 (color >> 16 & 255) / 255f, (color >> 8 & 255) / 255f, (color & 255) / 255f, 1f);
     }
-    /** A wall monitor occupies the back three model pixels, not the block centre. */
+    /** End beams on the actual fixture surface for compact lamps and wall monitors. */
     private static Vec3 linkPoint(BlockPos pos) {
         var centre=Vec3.atCenterOf(pos);var level=Minecraft.getInstance().level;
         if(level==null||!level.hasChunkAt(pos))return centre;
         var state=level.getBlockState(pos);
+        if(state.getBlock() instanceof com.frozendawn.block.OrsaEmergencyLightBlock){
+            var face=state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.FACING);
+            return centre.relative(face,5.5/16.0-0.5+0.001);
+        }
         if(!(state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock))return centre;
         var face=state.getValue(com.frozendawn.block.PowerMonitorBlock.FACING);
         double offset=-5.0/16.0+0.001; // End just outside the actual screen plane.

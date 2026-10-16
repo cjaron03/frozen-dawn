@@ -158,11 +158,12 @@ public final class RoomOxygenManager {
             for(var p:flames.positions())if(l.isLoaded(p)){double rate=combustionDemand(l.getBlockState(p));var rooms=served(s,p,known);
                 if(rate>0&&!rooms.isEmpty())burners.add(new OxygenPools.Burner(p.asLong(),rate,rooms));}
             s.burners=List.copyOf(burners);s.flameRevision=flames.revision();}
-        var breathing=new HashMap<Long,Double>();int checked=0;boolean entitiesComplete=true;
+        var breathing=new HashMap<Long,Double>();var cows=new HashMap<Long,Double>();int checked=0;boolean entitiesComplete=true;
         for(var entity:l.getAllEntities()){if(++checked>16384){entitiesComplete=false;break;}if(!entity.isAlive())continue;
             var room=s.cells.get(entity.blockPosition());if(room==null||!valid.contains(room))continue;
             double rate=entity instanceof Player p?(!p.isCreative()&&!p.isSpectator()?1:0):entity instanceof Animal a?animalDemand(a):0;
-            if(rate>0)breathing.merge(room,rate,Double::sum);}
+            if(rate>0)breathing.merge(room,rate,Double::sum);
+            if(rate>0&&entity instanceof net.minecraft.world.entity.animal.Cow)cows.merge(room,rate,Double::sum);}
         var budget=new TreeMap<>(OxygenPools.calculate(known,s.supplies.stream().map(v->new OxygenPools.Source(v.id,v.capacity,v.rooms)).toList(),s.burners,breathing));
         var complete=new HashMap<Long,Boolean>();for(long id:known){var t=s.topology.get(id);complete.put(id,valid.contains(id)&&entitiesComplete&&Collections.disjoint(t.chunks,flames.pendingChunks()));}
         // Every room of a shared pool must be ready before any panel calls the pool safe.
@@ -180,6 +181,16 @@ public final class RoomOxygenManager {
         var support=new HashMap<Long,Double>();
         if(CombustionAtmosphere.isVacuum(l))for(var e:tanks.entrySet())if(connected.getOrDefault(e.getKey(),false))support.put(e.getKey(),e.getValue().stream().mapToDouble(t->Math.min(t.storedSeconds(),com.frozendawn.config.FrozenDawnConfig.O2_RESERVOIR_OUTPUT_RATE.get())).sum());
         budget.replaceAll((room,b)->new OxygenPools.Budget(b.pool(),b.supply()+support.getOrDefault(b.pool(),0.0),b.demand(),b.localDemand(),b.sources(),b.rooms()));
+        if(CombustionAtmosphere.isVacuum(l)){
+            var cowPools=new HashMap<Long,Double>();
+            for(var entry:cows.entrySet())if(budget.containsKey(entry.getKey()))cowPools.merge(budget.get(entry.getKey()).pool(),entry.getValue(),Double::sum);
+            for(var entry:cowPools.entrySet()){
+                var b=budget.values().stream().filter(value->value.pool()==entry.getKey()).findFirst().orElseThrow();
+                if(poolComplete.getOrDefault(b.pool(),false)&&connected.getOrDefault(b.pool(),false)&&b.supply()>0
+                        &&b.demand()>b.supply()+1e-8&&b.demand()-entry.getValue()<=b.supply()+1e-8)
+                    grantPool(l,s,budget,b.pool(),PowerAirAdvancements.COW);
+            }
+        }
         budget=new TreeMap<>(controlCombustion(l,s,budget,poolComplete));
         controlBreathing(l,s,budget,poolComplete,breathing);
         transfer(l,s,budget,production,tanks,connected,poolComplete);
@@ -345,6 +356,12 @@ public final class RoomOxygenManager {
         s.storage=Map.copyOf(telemetry);
     }
     public static StorageReading storageAt(ServerLevel l,BlockPos p){var s=LEVELS.get(l);var r=readingAt(l,p);return s==null||r.room()==0||r.mode()==OxygenStatus.Mode.WAITING?StorageReading.empty():s.storage.getOrDefault(r.pool(),StorageReading.empty());}
+    private static void grantPool(ServerLevel level,State state,Map<Long,OxygenPools.Budget> budget,long pool,String advancement){
+        for(var player:level.players()){
+            var room=state.cells.get(player.blockPosition());var reading=room==null?null:budget.get(room);
+            if(reading!=null&&reading.pool()==pool)PowerAirAdvancements.grant(player,advancement);
+        }
+    }
     private static boolean vanillaFurnace(BlockState state) {
         return state.is(Blocks.FURNACE)||state.is(Blocks.BLAST_FURNACE)||state.is(Blocks.SMOKER);
     }
@@ -383,6 +400,7 @@ public final class RoomOxygenManager {
                 var state=l.getBlockState(pos);
                 if(vanillaFurnace(state)&&l.getBlockEntity(pos) instanceof OxygenControlledFurnace furnace){
                     furnace.frozendawn$starveForOxygen();s.starvedFurnaces.add(pos);
+                    grantPool(l,s,budget,pool,PowerAirAdvancements.CANARY);
                     adjustBudget(budget,pool,burner.rooms(),-burner.demand());
                     FrozenDawn.LOGGER.info("[RoomO2] Furnace paused at {} | pool {} supply {} demand {} -> {}",pos,pool,b.supply(),b.demand(),b.demand()-burner.demand());
                 } else if(!vanillaFurnace(state)&&VacuumFlames.extinguishForOxygen(l,pos)){

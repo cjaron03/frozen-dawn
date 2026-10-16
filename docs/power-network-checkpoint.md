@@ -1275,3 +1275,95 @@ Owner explicitly authorizes merging completed power-network into feat/maeve-dire
 Exact330cd60b architectVerify passes804unit/580native/all571required. The subsequent architectMonkey run completes1080cases with1079pass and one failure: coreRestoresBaseWithPressurizedAirlockIndependently exact two-second80gas assertion. Full failed disposable world, XML, log and context retained under first-failure/; its architectMonkey status is red, and merge remains blocked. No production defect is inferred from that message alone.
 
 The synchronous recovery fixture manually advances O2 but does not tick the ordinary chunk/flame-index bootstrap. Production correctly suspends a pool while any cell or wall chunk is unindexed. Added bounded ordinary indexing completion before measuring exact funded recovery seconds (same precondition already used by the shared-O2 fixture); all existing delay,80/360gas, isolation, payment and persistence assertions remain. Added required native airlockBaseRecoveryHonorsPendingChunkIndexBeforeGasTiming: explicit real chunk-load notification keeps Core gas transfer at zero for two manually advanced seconds; completing the ordinary index then exercises the unchanged exact recovery sequence. Fixture logs pending counts/bootstrap work and failed assertion now reports actual gas/air/reading. Production code unchanged. Commit this test-only correction, then run both required gates on its exact head; do not merge on the first partial pass.
+
+
+## Separate Power and Air advancement slice — October 16, 2026
+
+Completed power work is merged through PR110 into feat/maeve-director3b4e096f, whose tree matches the passing16e97ae6source. PR104 remains open against main and includes that integration. Owner now requests the four approved Power and Air advancements on a separate branch and explicitly includes the previously planned Emergency Light. New managed checkout /Users/jaroncabral/.codex/worktrees/power-air-advancements/minecraft-mod, branch feat/power-air-advancements, starts clean at3b4e096f. Original power checkout/live save, unrelated source work and GPR remain untouched.
+
+Implementation and exact trigger scope: docs/power-air-advancements.md. Existing decorative ruin Emergency Light IDs/behavior are preserved; new craftable ORSA variant uses a finite saved 12,000-loaded-tick internal reserve, level-6 red lens and normal Binder links. All four approved hidden advancements have actual server triggers and spectator/affected-room guards. Six required native cases added. Java21 architectVerify PASS: 804 unit, 587 native, all 578 required and fixture/packaging checks; zero failures/errors/skips. Final executable-source fingerprint5454a70486d120e557914a3c8f01e182ad1530cfbe3fe0ae854f414f9c761f8b; jar SHA256ba71a6d8a2f51d9a7d31d2a942548f7bab572949032a9124780ba4c81a94991c. Initial compile-only test error and first strengthened partial-brownout fixture failure are retained in build/power-air-advancement-evidence/; corrected test proves no credit or geometry discovery while unknown, then credit after ordinary verification. Final source remains uncommitted. No client launch, live-world command/save edit, push or merge performed for this slice. Visual acceptance pending; existing original RH-5 Check remains untouched, and GPR stays paused.
+
+
+### Power & Air owner replay; compact emergency lamp
+
+Owner requested Gradle launch. Fresh Power & Air Check was generated in feat/power-air-advancements with exact four allowed advancement definitions and one silent parent; other advancement noise filtered locally. All68 original RH-5 files unchanged; Java21 runClientLab terminal49229 loaded the fresh world, owner confirmed in-world. Local pause-toggle correction verified progressionPaused=true and unchanged2448000 apocalypse ticks. Owner then rejected the full-block lamp and requested a small typical red light. Owner closed the client; all66 current replay files archived/hash-verified under exclusive lock at build/power-air-advancement-evidence/compact-lamp/owner-save-before.zip. New8x8 base/5.5pixel dome supports six mounting faces, matching small hitbox, non-sealing collision and Binder endpoint. Existing charge/links/positions stay intact; legacy facing defaultsUP. Added native actual-placement/palette/passability regression. Full gate and same-world Gradle relaunch pending; prior804/587 pass applies to the earlier full-block implementation only. No commit/push/merge; GPR remains paused.
+
+
+Compact lamp final gate PASS: Java21 architectVerify804unit/588native/all579required, zero failures/errors/skips. Actual six-face placement, small selection/non-sealing shape and lit-only legacy palette regression passes alongside all original advancement/reserve cases. Exact source1d0090b56e9bae3a66d7b1272242fcd42570cc2ab2730b4544430d35b2bc4b40; jar SHA256fe34b773a69889eed9f45eae44554d56c856bca76a4008d0244eaa2811d0f094. Receipt/report/log: build/power-air-advancement-evidence/compact-lamp/. All66 owner-save files match archived original immediately before same-world Java21runClientLab relaunch terminal82169. No save geometry/position/resource changes; old unsupported lamp placement remains upright, owner can inspect spare on a surface. Runtime loading and visual acceptance pending. Source remains uncommitted; original RH-5 and GPR preserved.
+
+
+Compact-lamp runtime confirmed: same Power & Air Check loaded in fresh bridge session220789ff-c635-460b-b89f-1609783982d2, terminal82169; progressionPaused=true, apocalypseTicks2448000, original Dev position retained. No model/function-loading errors observed. Owner appearance/advancement replay pending; read-only live status and launch receipt preserved in compact-lamp evidence.
+
+
+## Deeper crimson lens; power replay accepted
+
+Owner first account: both advancements popped, white light went out and the red
+light came on; reserve counts down. Fresh owning log records both normal server
+awards. Unlimited Power! and Brown Out plus panel-to-emergency switchover are
+accepted. Owner asks for a much deeper red. Only ClientEvents tint registration
+and the two lamp models change: neutral native material receives a deep crimson
+lens tint and subdued red highlight, for block and item. Metal remains untinted;
+level6, reserve, geometry, links and advancement logic are unchanged. Minecraft
+illumination remains uncolored; this tunes the visible lens.
+
+Java21 full Gradle build PASS,804unit/0failures/errors/skips, existing fixture,
+gate-script and packaging checks. No new mirroring tests. Prior588native/all579
+required remains the compact-lamp gameplay gate; not rerun for this visual-only
+change. Substituting exactly those three prior files recreates the prior passing
+source fingerprint, proving other executable/gameplay/test inputs are unchanged.
+Current source5c25da18f27adccbb3b32a0580464b3b6319500388b879c74711782c4c73d6d4;
+jar SHA256921ece2184d17657aeb4dbe8cbef850571ab730071cb4d4a5f52ea5c6d834374.
+Only existing Gradle/deprecated event-bus warnings. Exact jar/model/class equality
+and test/lab exclusion verified. Shared smoke profile remains preserved.
+
+Closed original save70files ZIP/hash-verified under exclusive POSIX lock, including
+both earned advancements. Evidence is under
+build/power-air-advancement-evidence/crimson-lens/. Same world relaunched with
+Java21runClientLab terminal85682. Runtime loading/color acceptance pending.
+Canary in the Furnace and Holy Cow remain the next owner replay steps. No award
+revocation/reset, resource/geometry edits, commit/push/merge or GPR work.
+
+Crimson runtime confirmed: same Power & Air Check in fresh session66b23198-d59a-4c78-8504-bc27daf38515, terminal85682; progression paused at2448000, same Dev position. Client loaded3 visible tree entries (silent parent plus both earned awards); no model/function-load errors. Current lens appearance and two O2 advancements remain owner acceptance.
+
+
+Owner requested client relaunch: closed70-file Power & Air Check saved state archived and ZIP/hash-verified unchanged under exclusive lock at build/power-air-advancement-evidence/relaunch-20261016T094808Z/closed-world.zip. Relaunched same save through owning Java21runClientLab terminal54572; fresh sessiond85403cd-2d7e-4110-af69-6ce4454499a2 confirms loaded, same Dev position, progression paused at2448000. No source/resource/world commands or resets. Current deeper-crimson build unchanged; Canary/Holy Cow owner replay remains pending.
+
+
+## Missing Holy Cow station repaired live
+
+Owner accepted Canary: one fueled furnace paused and advancement popped. Fresh
+owning log confirms the real server award. Owner then reported Holy Cow structure
+missing. Read-only scoped audit returned20: expected far shell corner absent,
+although target chunks are now loaded. Original setup had no readiness guards and
+unconditionally marked built after commands; commands for the distant station
+could fail while its chunks were unavailable. This is a lab fixture defect.
+
+Preserved original datapack and owner account in
+build/power-air-advancement-evidence/holy-cow-fixture/. A one-use world/built-stage
+repair required all target chunks loaded, refused unfamiliar boundary/device
+blocks, filled only the missing shell, and added only absent Core/gauge/furnaces.
+It never cleared the interior, replaced existing inventories, adjusted power/gas,
+spawned the cow, awarded/revoked advancements, teleported the owner or reset the
+other stations. Repair returned1 through the live block audit; repeated read-only
+audit after reload also returns1. Native command parser reports no function errors.
+
+Fresh-world generator now requests12bounded chunk tickets, waits across ticks for
+all required chunks before editing, verifies the far station before ready and
+releases its temporary tickets. Profile pause is set idempotently instead of a
+setup toggle. Exact updated functions loaded into this already-built world with
+built=1 guards; no setup rerun occurs. Production source/resources/jar unchanged;
+no redundant feature gate rerun. Cow award still waits for the owner to run both
+furnaces and Add cow. The existing bridge policy exceeded its reader's64KiB limit;
+original bytes were archived, JSON temporarily compacted without rule changes for
+scoped diagnostics/repair, then restored byte-for-byte after proof. No unrelated
+policy/source/save changes retained. No commit/push/merge; GPR remains paused.
+
+
+Owner confirms all four live Power/Air advancements: Holy Cow popped at demand11/supply8, following accepted Canary furnace pause, Unlimited Power menu and Brown Out backup lighting. Fresh owning sessiond85403cd-2d7e-4110-af69-6ce4454499a2 log confirms both O2 server awards; status shows owner in the repaired sealed cow room, Creative, progression paused. Account/status/log proof: build/power-air-advancement-evidence/owner-four-advancements/. Next owner check is healthy-grid re-arm, outage reserve persistence across normal Save/Quit/reopen, and a fresh unlinked lamp staying empty. Automated exact loaded-ten-minute depletion and reserve codec already pass; no need require an idle ten-minute human wait. No review/commit/push/merge requested yet; source remains uncommitted.
+
+
+## Power/Air slice accepted; final review and commit — October16,2026
+
+Owner first account: recharge works, reserve stayed after reopening and kept counting down; fresh unlinked light stays empty and off. This completes owner acceptance of all four advancement triggers and Emergency Light switchover/countdown/recharge/persistence/empty placement. Fresh saved progress contains all four completed awards; current Gradle session86e50bc8-1396-4759-b303-c27f7b816ed5 has original Dev in the sealed power room, progression paused at2448000. Acceptance/status/progress/review manifest: build/power-air-advancement-evidence/commit-review/. World remains open; no world commands, resource repair, save edits or restart during review.
+
+Reviewed the complete feat/power-air-advancements slice: craftable compact crimson Emergency Light, six mounting faces/selection/passability, saved finite reserve and zero demand, exact hidden definitions/translations, actual menu/combustion/cow/brownout eligibility, Binder endpoint, recipe/loot/guide, native coverage and fresh-lab readiness/pause fixes. No blocking findings. Current executable source and jar match owner-tested crimson build exactly: source5c25da18f27adccbb3b32a0580464b3b6319500388b879c74711782c4c73d6d4; jar SHA256921ece2184d17657aeb4dbe8cbef850571ab730071cb4d4a5f52ea5c6d834374. Full current build804unit plus fixture/packaging checks passes; prior588native/all579required gate remains applicable to unchanged gameplay/native inputs, with exact three-file palette scope proof. No redundant rerun for documentation/fixture review. Compact-lamp/native-report.xml contains all seven new cases exactly once. Legacy ruin light/audio, original policy and all unrelated checkouts/saves preserved; ignored evidence/saves excluded from commit. Owner authorizes commit only; branch has no upstream and push requires a separate decision. GPR remains paused.

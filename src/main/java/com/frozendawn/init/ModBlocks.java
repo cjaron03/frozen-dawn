@@ -126,6 +126,10 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.PowerStorageBlock> CELL_DOCK = BLOCKS.register("cell_dock",
             () -> new com.frozendawn.block.PowerStorageBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK), false));
 
+    public static final DeferredBlock<com.frozendawn.block.OrsaEmergencyLightBlock> ORSA_EMERGENCY_LIGHT = BLOCKS.register("orsa_emergency_light",
+            () -> new com.frozendawn.block.OrsaEmergencyLightBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED)
+                    .strength(3,6).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().noCollission().lightLevel(state -> state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT)?6:0)));
+
     public static final DeferredBlock<com.frozendawn.block.PanelLightBlock> PANEL_LIGHT = BLOCKS.register("panel_light",
             () -> new com.frozendawn.block.PanelLightBlock(BlockBehaviour.Properties.of()
                     .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL)

@@ -373,12 +373,29 @@ public class ClientEvents {
         event.register(ModMenuTypes.THERMOSTAT.get(), ThermostatScreen::new);
     }
 
+    /** Deep crimson glass palette; only the lens/highlight faces carry these tint indices. */
+    private static int emergencyLensTint(boolean lit,int tintIndex) {
+        return switch(tintIndex) {
+            case 0 -> lit ? 0xFFD20B23 : 0xFF700B18;
+            case 1 -> lit ? 0xFFE52236 : 0xFF8B1525;
+            default -> -1;
+        };
+    }
+
+    @SubscribeEvent
+    public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
+        event.register((state,level,pos,tintIndex) -> emergencyLensTint(
+                state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT),tintIndex),
+                ModBlocks.ORSA_EMERGENCY_LIGHT.get());
+    }
+
     /**
      * Tint food item textures based on frost level.
      * Affects rendering everywhere: inventory, hand, ground, item frames.
      */
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack,tintIndex) -> emergencyLensTint(false,tintIndex),ModBlocks.ORSA_EMERGENCY_LIGHT.get().asItem());
         ItemColor frostTint = (stack, tintIndex) -> {
             if (tintIndex != 0) return -1;
             Integer frost = stack.get(ModDataComponents.FROST_TICKS.get());

@@ -724,3 +724,12 @@ creativeandspectatortakenodosebutthecounterreads xml
 
 # Merge: door geometry changes keep power links live
 powerlinksstaylivewhileadoorchangestheroom xml
+
+# Hidden Power/Air advancements and finite ORSA backup lighting
+powerairdefinitionsloadasfourhiddenjokes xml
+unlimitedpowerrequiresvalidcoremenuaction xml
+emergencylightbacksupfortenminutesandkeepsitsreserve xml
+emergencybrownoutawardsonlyaffectedbaseplayers xml
+canaryawardsonlyforrealoxygenstarvation xml
+holycowrequirescowtocausetheshortage xml
+compactemergencylightmountswithoutsealingrooms xml

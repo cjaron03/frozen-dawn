@@ -104,6 +104,7 @@ public class ModItems {
             () -> new com.frozendawn.item.ConduitBinderItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
     public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
+    public static final DeferredItem<BlockItem> ORSA_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("orsa_emergency_light", ModBlocks.ORSA_EMERGENCY_LIGHT);
     public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
     public static final DeferredItem<BlockItem> BULKHEAD_FEEDTHROUGH = ITEMS.registerSimpleBlockItem("bulkhead_feedthrough", ModBlocks.BULKHEAD_FEEDTHROUGH);
 
@@ -571,6 +572,7 @@ public class ModItems {
                         output.accept(LEAD_LINING_MODULE.get());
                         output.accept(DECON_SHOWER.get());
                         output.accept(PANEL_LIGHT.get());
+                        output.accept(ORSA_EMERGENCY_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());
