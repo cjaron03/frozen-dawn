@@ -1,0 +1,19 @@
+{
+  "name": "ORSA Emergency Light",
+  "icon": "frozendawn:orsa_emergency_light",
+  "category": "frozendawn:heating",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "Connect with the Conduit Binder. A healthy grid arms its internal battery with zero measured grid draw. It stays off during normal operation. When normal lighting loses power, it emits dim red light (level 6) for up to ten minutes of loaded time. It makes no heat or sound."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "The reserve persists through save/reload. Right-click to read the time left; reconnect a healthy grid to re-arm it. A new or broken-and-replaced light starts empty. This ORSA version is separate from the old flickering lights in ruins. Mount the compact lens on a floor, wall or ceiling. The small fixture cannot seal a hole in a room."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:orsa_emergency_light"
+    }
+  ]
+}

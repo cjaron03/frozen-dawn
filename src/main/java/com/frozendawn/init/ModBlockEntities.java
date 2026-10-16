@@ -33,6 +33,9 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("airlock_controller", () -> BlockEntityType.Builder.of(
                     com.frozendawn.block.AirlockControllerBlockEntity::new, ModBlocks.AIRLOCK_CONTROLLER.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OrsaEmergencyLightBlockEntity>> ORSA_EMERGENCY_LIGHT =
+            BLOCK_ENTITIES.register("orsa_emergency_light",()->BlockEntityType.Builder.of(com.frozendawn.block.OrsaEmergencyLightBlockEntity::new,ModBlocks.ORSA_EMERGENCY_LIGHT.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenReservoirBlockEntity>> OXYGEN_RESERVOIR=BLOCK_ENTITIES.register("oxygen_reservoir",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenReservoirBlockEntity::new,ModBlocks.OXYGEN_RESERVOIR.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenGaugeBlockEntity>> OXYGEN_GAUGE=
             BLOCK_ENTITIES.register("oxygen_gauge",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenGaugeBlockEntity::new,ModBlocks.OXYGEN_GAUGE.get()).build(null));

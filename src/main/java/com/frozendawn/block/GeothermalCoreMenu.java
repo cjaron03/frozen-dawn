@@ -83,7 +83,11 @@ public class GeothermalCoreMenu extends AbstractContainerMenu {
         if (id >= 0 && id <= 100) {
             if (id > 100 - core.entity.getPowerShare()) return false;
             core.entity.setHeatShare(id);
-        } else if (id >= 200 && id <= 300) core.entity.setPowerShare(id - 200);
+        } else if (id >= 200 && id <= 300) {
+            core.entity.setPowerShare(id - 200);
+            if(id==300&&player instanceof net.minecraft.server.level.ServerPlayer server)
+                com.frozendawn.world.PowerAirAdvancements.grant(server,com.frozendawn.world.PowerAirAdvancements.UNLIMITED);
+        }
         else if (id == 400) core.entity.resetAllocation();
         else return false;
         return true;
