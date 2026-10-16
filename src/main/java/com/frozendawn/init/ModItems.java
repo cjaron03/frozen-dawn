@@ -56,6 +56,22 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
 
+    // ORSA CFU-7 Hearthstone Reactor
+    public static final DeferredItem<BlockItem> REACTOR_CASING = ITEMS.registerSimpleBlockItem("reactor_casing", ModBlocks.REACTOR_CASING);
+    public static final DeferredItem<BlockItem> REACTOR_CORE = ITEMS.registerSimpleBlockItem("reactor_core", ModBlocks.REACTOR_CORE);
+    public static final DeferredItem<BlockItem> CONTROL_ROD_DRIVE = ITEMS.registerSimpleBlockItem("control_rod_drive", ModBlocks.CONTROL_ROD_DRIVE);
+    public static final DeferredItem<BlockItem> COOLANT_PORT = ITEMS.registerSimpleBlockItem("coolant_port", ModBlocks.COOLANT_PORT);
+    public static final DeferredItem<BlockItem> REACTOR_CONTROLLER = ITEMS.registerSimpleBlockItem("reactor_controller", ModBlocks.REACTOR_CONTROLLER);
+    public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
+    public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
+    public static final DeferredItem<BlockItem> DEEPSLATE_URANIUM_ORE = ITEMS.registerSimpleBlockItem("deepslate_uranium_ore", ModBlocks.DEEPSLATE_URANIUM_ORE);
+    public static final DeferredItem<Item> RAW_URANIUM = ITEMS.registerSimpleItem("raw_uranium");
+    public static final DeferredItem<Item> URANIUM_CONCENTRATE = ITEMS.registerSimpleItem("uranium_concentrate");
+    public static final DeferredItem<Item> URANIUM_PELLET = ITEMS.registerSimpleItem("uranium_pellet");
+    public static final DeferredItem<com.frozendawn.item.FuelRodItem> FUEL_ROD = ITEMS.register("fuel_rod",
+            () -> new com.frozendawn.item.FuelRodItem(new Item.Properties().durability(com.frozendawn.power.ReactorPhysics.ROD_LIFE_SECONDS)));
+    public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod", () -> new Item(new Item.Properties().stacksTo(4)));
+
     public static final DeferredItem<BlockItem> RESISTIVE_HEATER = ITEMS.registerSimpleBlockItem("resistive_heater", ModBlocks.RESISTIVE_HEATER);
 
     public static final DeferredItem<com.frozendawn.item.PixieItem> PIXIE = ITEMS.register("pixie",com.frozendawn.item.PixieItem::new);
@@ -513,6 +529,19 @@ public class ModItems {
                         output.accept(POWER_RELAY.get());
                         output.accept(LARGE_POWER_RELAY.get());
                         output.accept(BULKHEAD_FEEDTHROUGH.get());
+                        output.accept(REACTOR_CONTROLLER.get());
+                        output.accept(REACTOR_CASING.get());
+                        output.accept(REACTOR_CORE.get());
+                        output.accept(CONTROL_ROD_DRIVE.get());
+                        output.accept(COOLANT_PORT.get());
+                        output.accept(REACTOR_RADIATOR.get());
+                        output.accept(DEEPSLATE_URANIUM_ORE.get());
+                        output.accept(RAW_URANIUM.get());
+                        output.accept(URANIUM_CONCENTRATE.get());
+                        output.accept(URANIUM_PELLET.get());
+                        output.accept(FUEL_ROD.get());
+                        output.accept(SPENT_FUEL_ROD.get());
+                        output.accept(CORIUM.get());
                         output.accept(PANEL_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

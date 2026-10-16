@@ -62,6 +62,30 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FrozenDawn.MOD_ID);
 
+    // ORSA CFU-7 Hearthstone Reactor
+    public static final DeferredBlock<com.frozendawn.block.ReactorCasingBlock> REACTOR_CASING = BLOCKS.register("reactor_casing",
+            () -> new com.frozendawn.block.ReactorCasingBlock(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> REACTOR_CORE = BLOCKS.register("reactor_core",
+            () -> new Block(BlockBehaviour.Properties.of().strength(8f, 20f).requiresCorrectToolForDrops().sound(SoundType.NETHERITE_BLOCK).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> CONTROL_ROD_DRIVE = BLOCKS.register("control_rod_drive",
+            () -> new Block(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.CoolantPortBlock> COOLANT_PORT = BLOCKS.register("coolant_port",
+            () -> new com.frozendawn.block.CoolantPortBlock(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.ReactorControllerBlock> REACTOR_CONTROLLER = BLOCKS.register("reactor_controller",
+            () -> new com.frozendawn.block.ReactorControllerBlock(BlockBehaviour.Properties.of().strength(5f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> switch (state.getValue(com.frozendawn.block.ReactorControllerBlock.ALARM)) { case 1 -> 4; case 2 -> 9; case 3 -> 12; default -> 0; })));
+    public static final DeferredBlock<com.frozendawn.block.ReactorRadiatorBlock> REACTOR_RADIATOR = BLOCKS.register("reactor_radiator",
+            () -> new com.frozendawn.block.ReactorRadiatorBlock(BlockBehaviour.Properties.of().strength(4f, 8f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 10 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
+    public static final DeferredBlock<com.frozendawn.block.CoriumBlock> CORIUM = BLOCKS.register("corium",
+            () -> new com.frozendawn.block.CoriumBlock(BlockBehaviour.Properties.of().strength(50f, 1200f).requiresCorrectToolForDrops().sound(SoundType.ANCIENT_DEBRIS).lightLevel(state -> 7).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.MoltenCoriumBlock> MOLTEN_CORIUM = BLOCKS.register("molten_corium",
+            () -> new com.frozendawn.block.MoltenCoriumBlock(BlockBehaviour.Properties.of().strength(-1f, 3600000f).noLootTable().sound(SoundType.ANCIENT_DEBRIS)
+                    .lightLevel(state -> 15).emissiveRendering((state, level, pos) -> true).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_URANIUM_ORE = BLOCKS.register("deepslate_uranium_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.UniformInt.of(1, 3),
+                    BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));
+
     public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> POWER_RELAY = BLOCKS.register("power_relay",
             () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(3f).sound(SoundType.METAL).noOcclusion(), 16, false));
     public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> LARGE_POWER_RELAY = BLOCKS.register("large_power_relay",

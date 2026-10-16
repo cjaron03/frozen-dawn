@@ -27,7 +27,14 @@ public final class PowerLinkRenderer {
     private static String dimension = "";
     private static long receivedAt;
     private static final MultiBufferSource.BufferSource OUTLINES = MultiBufferSource.immediate(new ByteBufferBuilder(4096));
+    /** Coolant pipes render blue; electrical links keep the accepted cyan. */
+    public static final int COOLANT_BLUE = 0x3A6DF0;
     private PowerLinkRenderer() {}
+    private static boolean coolant(PowerLink link) {
+        var level = Minecraft.getInstance().level;
+        return level != null && level.hasChunkAt(link.a()) && level.hasChunkAt(link.b())
+                && (com.frozendawn.power.PowerLinkRules.coolant(level.getBlockState(link.a())) || com.frozendawn.power.PowerLinkRules.coolant(level.getBlockState(link.b())));
+    }
     public static void receive(PowerLinksPayload payload) {
         dimension = payload.dimension(); links = payload.links(); receivedAt = System.nanoTime();
     }
@@ -48,7 +55,7 @@ public final class PowerLinkRenderer {
             var buffer = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
             if (showLinks) for (var link : links) {
                 boolean highlighted = editing != null && editing.target() != null && link.touches(editing.target());
-                ribbon(buffer, matrix, camera, link.a(), link.b(), PowerBinderHud.CYAN, highlighted ? 0.05 : 0.025, highlighted ? 230 : 140);
+                ribbon(buffer, matrix, camera, link.a(), link.b(), coolant(link) ? COOLANT_BLUE : PowerBinderHud.CYAN, highlighted ? 0.05 : 0.025, highlighted ? 230 : 140);
             }
             if (preview) ribbon(buffer, matrix, camera, editing.source(), editing.target(), PowerBinderHud.color(editing), 0.04, 200);
             BufferUploader.drawWithShader(buffer.buildOrThrow());

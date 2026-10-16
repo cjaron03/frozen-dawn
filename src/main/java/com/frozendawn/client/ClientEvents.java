@@ -354,6 +354,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
+        event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
         event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
         event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
         event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);

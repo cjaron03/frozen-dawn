@@ -39,6 +39,14 @@
     "frozendawn:induction_furnace",
     "frozendawn:power_monitor",
     "frozendawn:pixie",
-    "frozendawn:resistive_heater"
+    "frozendawn:resistive_heater",
+    "frozendawn:reactor_casing",
+    "frozendawn:reactor_core",
+    "frozendawn:control_rod_drive",
+    "frozendawn:coolant_port",
+    "frozendawn:reactor_controller",
+    "frozendawn:reactor_radiator",
+    "frozendawn:corium",
+    "frozendawn:deepslate_uranium_ore"
   ]
 }

@@ -73,6 +73,21 @@ public final class PowerNetworks {
                 .sorted().filter(l::isLoaded).map(l::getBlockEntity).filter(com.frozendawn.block.OxygenReservoirBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.OxygenReservoirBlockEntity.class::cast).toList();
     }
+    /** Loaded radiators on saved coolant links of one port. Coolant legality is only type and range, so these
+     * links are read directly and never flicker while unrelated geometry edits revalidate electrical paths. */
+    public static List<BlockPos> coolantRadiators(ServerLevel l,BlockPos port){
+        if(!l.isLoaded(port)||!(l.getBlockState(port).getBlock() instanceof com.frozendawn.block.CoolantPortBlock))return List.of();
+        return PowerNetworkSavedData.get(l).links().stream().filter(link->link.touches(port)).map(link->link.a().equals(port)?link.b():link.a())
+                .filter(p->p.distSqr(port)<=com.frozendawn.block.CoolantPortBlock.LINK_RANGE*com.frozendawn.block.CoolantPortBlock.LINK_RANGE)
+                .sorted().filter(l::isLoaded).filter(p->l.getBlockState(p).getBlock() instanceof com.frozendawn.block.ReactorRadiatorBlock).toList();
+    }
+    /** Load-follow target from the last allocation: demand, plus a charging margin while banks are below
+     * capacity, minus what other generators already supply. Unlinked reactors are asked for nothing. */
+    public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
+        var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
+        long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
+        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge-Math.max(0,m.generationWatts()-ownWatts)));
+    }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
     public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}
     public static void accountLifeSupport(ServerLevel l){account(l);runtime(l).coordinatedTick=l.getGameTime();}
@@ -93,7 +108,7 @@ public final class PowerNetworks {
         if(grant==null||tick>grant.expires()||!level.isLoaded(pos)
                 ||rt.machineTicks.getOrDefault(pos,Long.MIN_VALUE)==tick)return false;
         if(!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)||!furnace.wantsPower())return false;
-        int needed=(com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS-grant.generationWatts())/20;
+        int needed=(furnace.demandWatts()-grant.generationWatts())/20;
         var stores=grant.stores().stream().filter(level::isLoaded).map(level::getBlockEntity)
                 .filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
@@ -206,6 +221,7 @@ public final class PowerNetworks {
     }
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }
@@ -216,7 +232,7 @@ public final class PowerNetworks {
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity heater)return heater.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
-            return furnace.wantsPower()?com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS:0;
+            return furnace.wantsPower()?furnace.demandWatts():0;
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
                 ? com.frozendawn.block.PanelLightBlock.DEMAND_WATTS : 0;
     }

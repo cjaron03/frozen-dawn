@@ -36,7 +36,7 @@ public final class PowerBinderHud {
     public static int color(PowerBinderPayload payload) {
         return switch (payload.status()) {
             case READY -> GREEN;
-            case RANGE, FEEDTHROUGH, LIMIT, DOCK_CONNECTION -> RED;
+            case RANGE, FEEDTHROUGH, LIMIT, DOCK_CONNECTION, COOLANT -> RED;
             case WAITING, UNAVAILABLE -> AMBER;
             default -> CYAN;
         };

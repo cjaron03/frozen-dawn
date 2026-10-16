@@ -4285,5 +4285,45 @@
     ]
   },
   "block.oxygen_gauge.strained": {"subtitle": "subtitles.frozendawn.oxygen_gauge.strained", "sounds": ["frozendawn:block/oxygen_gauge/strained"]},
-  "block.oxygen_gauge.critical": {"subtitle": "subtitles.frozendawn.oxygen_gauge.critical", "sounds": ["frozendawn:block/oxygen_gauge/critical"]}
+  "block.oxygen_gauge.critical": {"subtitle": "subtitles.frozendawn.oxygen_gauge.critical", "sounds": ["frozendawn:block/oxygen_gauge/critical"]},
+  "blocks.reactor_klaxon": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_klaxon",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/overheat_warning",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.reactor_hum": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_hum",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/hum",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.reactor_scram": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_scram",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/scram",
+        "volume": 1.0
+      }
+    ]
+  },
+  "blocks.reactor_meltdown_alert": {
+    "category": "blocks",
+    "subtitle": "subtitle.frozendawn.blocks.reactor_meltdown_alert",
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/meltdown_alert",
+        "volume": 1.0
+      }
+    ]
+  }
 }

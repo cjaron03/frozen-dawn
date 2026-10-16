@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 public record PowerBinderPayload(String dimension, @Nullable BlockPos source, @Nullable BlockPos target,
         Status status, int reach, double distance, int nodes, int links,
         double supplyKw, double demandKw, double storedKj) implements CustomPacketPayload {
-    public enum Status { CHOOSE, TARGET, READY, ALREADY_LINKED, CANCEL, RANGE, FEEDTHROUGH, WAITING, UNAVAILABLE, LIMIT, DOCK_CONNECTION }
+    public enum Status { CHOOSE, TARGET, READY, ALREADY_LINKED, CANCEL, RANGE, FEEDTHROUGH, WAITING, UNAVAILABLE, LIMIT, DOCK_CONNECTION, COOLANT }
     public PowerBinderPayload {
         if (source != null) source = source.immutable();
         if (target != null) target = target.immutable();
