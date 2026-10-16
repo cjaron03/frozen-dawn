@@ -232,15 +232,57 @@ public final class AirlockManager {
         RoomAtmosphere.view(level,pos); // Bind the actual base membership before a doorway joins it.
         return (double)AirlockSavedState.get(level).roomGas(level,g.cells())/(g.cells().size()*AirlockCycle.UNITS_PER_CELL);
     }
-    public static boolean canOpen(ServerLevel level,BlockPos pos) {
-        var block=level.getBlockState(pos);if(!(block.getBlock() instanceof AirlockDoorBlock))return false;
+    private static boolean innerDoor(ServerLevel level,Chamber c,BlockPos door) {
+        var normal=level.getBlockState(door).getValue(DoorBlock.FACING);
+        for(int dy=0;dy<2;dy++)for(var side:new Direction[]{normal,normal.getOpposite()})
+            if(door.above(dy).relative(side).equals(c.base))return true;
+        return false;
+    }
+    /** One reason feeds both the physical interlock and the existing single-line HUD. */
+    public static Status doorStatus(ServerLevel level,BlockPos pos) {
+        var block=level.getBlockState(pos);if(!(block.getBlock() instanceof AirlockDoorBlock))return Status.INVALID;
         var door=lower(pos,block);
-        for(var c:List.copyOf(AirlockSavedState.get(level).atDoor(door)))if(refresh(level,c).gas.cycling())return false;
-        if(!CombustionAtmosphere.isVacuum(level))return true;
-        if(!completeDoor(level,door))return false;
+        for(var c:List.copyOf(AirlockSavedState.get(level).atDoor(door)))
+            if(refresh(level,c).gas.cycling())return Status.CYCLE_LOCKED;
+        if(!CombustionAtmosphere.isVacuum(level))return Status.DOOR_OPEN_MATCHED;
+        if(!completeDoor(level,door))return Status.PRESSURE_UNKNOWN;
         var normal=level.getBlockState(door).getValue(DoorBlock.FACING);
         double a=pressure(level,door.relative(normal)),b=pressure(level,door.relative(normal.getOpposite()));
-        return matchingPressure(a,b);
+        if(a<0||b<0)return Status.PRESSURE_UNKNOWN;
+        if(matchingPressure(a,b))return a==0&&b==0?Status.DOOR_OPEN_VACUUM:Status.DOOR_OPEN_MATCHED;
+        var chamber=AirlockSavedState.get(level).atDoor(door).stream().filter(c->innerDoor(level,c,door)).findFirst().orElse(null);
+        if(a==0||b==0)return chamber==null?Status.VACUUM_DIFFERENCE:chamber.gas.air()==0?Status.CHAMBER_VACUUM:Status.BASE_VACUUM;
+        return chamber==null?Status.DIFFERENTIAL:Status.INNER_DIFFERENTIAL;
+    }
+    public static boolean canOpen(ServerLevel level,BlockPos pos) { return doorStatus(level,pos).opensDoor(); }
+
+    /** The manual inner-hatch valve connects two verified finite volumes, without opening either door. */
+    public static void equalizeInnerDoor(ServerLevel level,BlockPos pos,Player player) {
+        var block=level.getBlockState(pos);if(!(block.getBlock() instanceof AirlockDoorBlock))return;
+        var door=lower(pos,block);if(!completeDoor(level,door)){notify(player,Status.PRESSURE_UNKNOWN,null,0);return;}
+        var matches=List.copyOf(AirlockSavedState.get(level).atDoor(door)).stream()
+                .map(c->refresh(level,c)).filter(c->innerDoor(level,c,door)).toList();
+        if(matches.size()!=1){notify(player,Status.VALVE_INNER_ONLY,null,0);return;}
+        var c=matches.getFirst();
+        if(layout(level,c)!=Layout.VALID){notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
+        if(!closed(level,c)){notify(player,Status.CLOSE_DOORS,c,0);return;}
+        var side=otherSide(level,door,c.cells);
+        var g=side==null?null:RoomAtmosphere.inspect(level,side);
+        if(g==null||g.seal()==RoomAtmosphere.Seal.UNKNOWN){notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
+        if(g.seal()!=RoomAtmosphere.Seal.SEALED){notify(player,Status.BASE_UNSEALED,c,0);return;}
+        if(!g.cells().contains(c.base)||!Collections.disjoint(g.cells(),c.cells)) {notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
+        var view=RoomAtmosphere.view(level,side);
+        if(view==null||!view.geometry().cells().equals(g.cells())){notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
+        // Use measured pressure, as the door interlock does: a partly pumped volume
+        // still contains gas even while its breathable-air flag is suspended.
+        int baseGas=AirlockSavedState.get(level).roomGas(level,g.cells());
+        if(c.gas.air()==0||baseGas==0) {
+            notify(player,c.gas.air()==0?(baseGas==0?Status.VACUUM_DIFFERENCE:Status.CHAMBER_VACUUM):Status.BASE_VACUUM,c,0);return;
+        }
+        if(!AirlockSavedState.get(level).equalizeWithBase(level,c,g.cells())){notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
+        CombustionAtmosphere.reset();indicate(level,c);
+        level.playSound(null,door,ModSounds.AIRLOCK_VALVE.get(),SoundSource.BLOCKS,.65f,1.15f);
+        notify(player,Status.VALVE_EQUALIZED,c,0);
     }
     private static boolean matchingPressure(double a,double b) {
         return a>=0&&b>=0&&Math.abs(a-b)<=.05*Math.max(1,Math.max(a,b));
@@ -267,8 +309,8 @@ public final class AirlockManager {
             if(nearby)notify(player,status,chamber,amount);
         }
     }
-    public static void refuse(ServerLevel level,BlockPos pos,Player player) {
-        notify(player,Status.DIFFERENTIAL,null,0);
+    public static void refuse(ServerLevel level,BlockPos pos,Player player,Status reason) {
+        notify(player,reason,null,0);
         level.playSound(null,pos,ModSounds.AIRLOCK_REFUSE.get(),SoundSource.BLOCKS,.65f,1f);
     }
     private static boolean closed(ServerLevel level,Chamber c) {

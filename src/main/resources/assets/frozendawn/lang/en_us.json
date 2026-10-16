@@ -1070,7 +1070,7 @@
   "block.frozendawn.manual_vent_valve": "Manual Vent Valve",
   "message.frozendawn.airlock.differential": "Pressure differs — cycle the controller",
   "message.frozendawn.airlock.invalid": "Airlock invalid",
-  "message.frozendawn.airlock.close_doors": "Close doors",
+  "message.frozendawn.airlock.close_doors": "Close both doors",
   "message.frozendawn.airlock.insufficient": "Low O2",
   "message.frozendawn.airlock.pressurizing": "Filling chamber %5$s%% | 2 kW",
   "message.frozendawn.airlock.depressurizing": "Venting chamber %5$s%% | 2 kW",
@@ -1243,5 +1243,16 @@
   "screen.frozendawn.rh5.hint": "Set target with a thermostat.",
   "message.frozendawn.airlock.waiting_for_power": "Cycle %5$s%% | Waiting for power",
   "message.frozendawn.airlock.waiting_to_fill": "Filling chamber %5$s%% | Waiting for power",
-  "message.frozendawn.airlock.waiting_to_vent": "Venting chamber %5$s%% | Waiting for power"
+  "message.frozendawn.airlock.waiting_to_vent": "Venting chamber %5$s%% | Waiting for power",
+  "message.frozendawn.airlock.inner_differential": "Pressure differs — Shift-right-click to equalize",
+  "message.frozendawn.airlock.chamber_vacuum": "Chamber is vacuum — use the controller",
+  "message.frozendawn.airlock.base_vacuum": "Base is vacuum — use the controller",
+  "message.frozendawn.airlock.vacuum_difference": "Vacuum across door — cycle the controller",
+  "message.frozendawn.airlock.pressure_unknown": "Pressure unverified — check room seal",
+  "message.frozendawn.airlock.cycle_locked": "Cycle active — wait or use the inner door valve",
+  "message.frozendawn.airlock.valve_inner_only": "Equalization valve is on the inner door",
+  "message.frozendawn.airlock.base_unsealed": "Base open to outside — seal it before equalizing",
+  "message.frozendawn.airlock.valve_equalized": "Pressure equalized — open inner door",
+  "message.frozendawn.airlock.door_open_vacuum": "Door open",
+  "message.frozendawn.airlock.door_open_matched": "Door open"
 }

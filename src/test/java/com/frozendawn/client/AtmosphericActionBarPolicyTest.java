@@ -56,4 +56,44 @@ class AtmosphericActionBarPolicyTest {
         assertNull(AtmosphericActionBarPolicy.select(key,true,SuffocationStage.NONE));
         assertEquals(key,AtmosphericActionBarPolicy.select(key,false,SuffocationStage.NONE).primaryKey());
     }
+    @Test void doorReasonsShareOneHelmetOrActionBarSlotAndPreserveOxygenDanger() {
+        for(var status:new com.frozendawn.network.AirlockStatusPayload.Status[]{
+                com.frozendawn.network.AirlockStatusPayload.Status.INNER_DIFFERENTIAL,
+                com.frozendawn.network.AirlockStatusPayload.Status.CHAMBER_VACUUM,
+                com.frozendawn.network.AirlockStatusPayload.Status.BASE_VACUUM,
+                com.frozendawn.network.AirlockStatusPayload.Status.PRESSURE_UNKNOWN,
+                com.frozendawn.network.AirlockStatusPayload.Status.VALVE_EQUALIZED,
+                com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_VACUUM,
+                com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_MATCHED}) {
+            var fallback=AtmosphericActionBarPolicy.select(status.key(),false,SuffocationStage.NONE);
+            if(status.opensDoor())assertNull(fallback,"Successful opening is helmet-only");
+            else {assertEquals(status.key(),fallback.primaryKey());assertNull(fallback.secondaryKey());}
+            assertNull(AtmosphericActionBarPolicy.select(status.key(),true,SuffocationStage.NONE),"Helmet receives the same typed reason without a duplicate action bar");
+            assertFalse(AtmosphericActionBarPolicy.allowsDeviceNotice(false,SuffocationStage.FADING),"Door feedback never replaces suffocation danger");
+        }
+    }
+
+    @Test void removingHelmetHidesDoorSuccessAndRetainsEveryOxygenWarning() {
+        for(var status:new com.frozendawn.network.AirlockStatusPayload.Status[]{
+                com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_VACUUM,
+                com.frozendawn.network.AirlockStatusPayload.Status.DOOR_OPEN_MATCHED}) {
+            assertNull(AtmosphericActionBarPolicy.select(status.key(),true,SuffocationStage.NONE));
+            assertNull(AtmosphericActionBarPolicy.select(status.key(),false,SuffocationStage.NONE),"Removing the helmet cannot expose a recent success in the action bar");
+            for(var stage:SuffocationStage.values())if(stage!=SuffocationStage.NONE) {
+                var notice=AtmosphericActionBarPolicy.select(status.key(),false,stage);
+                assertEquals(stage.translationKey(),notice.primaryKey());assertTrue(notice.danger());
+            }
+        }
+    }
+
+    @Test void interactiveDoorReasonReplacesOnlyCompletedRoomNotice() {
+        assertTrue(AtmosphericActionBarPolicy.allowsDoorNotice(RESTORED,SuffocationStage.NONE));
+        assertTrue(AtmosphericActionBarPolicy.allowsDoorNotice("ui.frozendawn.room.seal_verified",SuffocationStage.NONE));
+        assertFalse(AtmosphericActionBarPolicy.allowsDeviceNotice(true,SuffocationStage.NONE));
+        for(String key:new String[]{RESTORING,"ui.frozendawn.room.sealed_no_supply","ui.frozendawn.suit.atmospheric_breach"})
+            assertFalse(AtmosphericActionBarPolicy.allowsDoorNotice(key,SuffocationStage.NONE));
+        for(var stage:SuffocationStage.values())if(stage!=SuffocationStage.NONE)
+            assertFalse(AtmosphericActionBarPolicy.allowsDoorNotice(RESTORED,stage));
+    }
+
 }

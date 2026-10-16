@@ -13,13 +13,13 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:airlock_door",
       "title": "Airlock Doors",
-      "text": "Makes two sealed doors. At full chamber pressure, use the inner door. At vacuum, use the outer door. Both remain locked during a cycle or partial pressure. Close the door behind you."
+      "text": "Closed doors compare the actual pressure on both sides. Matching pressure allows opening, including equal overpressure or vacuum on both sides. A refused door explains vacuum, pressure mismatch or an active cycle.$(br2)$(bold)Shift-right-click the inner door from either side$() to use its manual equalization valve. Close both doors first. Both sides must already contain air; if either side is vacuum, use the controller instead. It shares existing air between the base and chamber, using no electricity or reserve O2. The door stays closed; open it normally after the short valve hiss."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:airlock_controller",
       "title": "Cycle Controller",
-      "text": "Right-click to cycle; crouch-click for reserve and chamber O2. Red blinks slowly when evacuated, amber blinks quickly during the four-second cycle, and green gives a ready heartbeat.$(br2)Short status updates appear in your suit HUD without speech, or above the hotbar without a helmet. Optional panels share storage and cycling; face them toward a walkable path within four blocks of a chamber door."
+      "text": "Right-click to cycle; crouch-click for reserve and chamber O2. The single lamp is red when empty, amber during a cycle and green with air present.$(br2)One short status line appears in your suit HUD, or above the hotbar without a helmet. Optional panels share gas and cycling. One controller inside the chamber is enough: the inner door valve remains accessible from either side."
     },
     {
       "type": "patchouli:text",
@@ -35,7 +35,7 @@
     {
       "type": "patchouli:text",
       "title": "Recovery and Repairs",
-      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)Link a controller to power with the Conduit Binder. Cycling draws 2 kW for four powered seconds (8 kJ); idle draws zero. A bank or isolated Cell Dock can power it. During an outage, both doors stay interlocked and partial progress pauses, then resumes when power returns. A missing Core stops reserve replenishment; a charged O2 canister supplies backup gas.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()"
+      "text": "The Core cannot bypass an evacuated airlock: cycle the controller to refill it. Reserve and partial transfers survive reloads. Unloaded chambers pause rather than loading chunks.$(br2)Breaking the final panel discards stored reserve. Rebuilding or resizing a chamber does not generate free air and may discard its reserve. Relight spent torches only after pressure returns.$(br2)Link a controller to power with the Conduit Binder. Cycling draws 2 kW for four powered seconds (8 kJ); idle draws zero. A bank or isolated Cell Dock can power it. During an outage, both doors stay interlocked and partial progress pauses, then resumes when power returns. A missing Core stops reserve replenishment; a charged O2 canister supplies backup gas.$(br2)$(italic)ORSA recommends opening one atmosphere at a time.$()$(br2)The inner door valve can cancel an unfinished pump cycle and share its remaining gas with the sealed base during an outage. Both doors must be closed and both sides must already contain gas. If either side is vacuum, use the controller instead. The valve conserves existing gas. The separate red-wheel Emergency Vent still dumps air outside."
     }
   ]
 }

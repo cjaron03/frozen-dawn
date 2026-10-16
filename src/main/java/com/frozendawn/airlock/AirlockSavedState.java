@@ -138,6 +138,23 @@ public final class AirlockSavedState extends SavedData {
         }
         return total;
     }
+    /** A deliberately opened manual valve shares existing gas; it never spends reserve or energy.
+     * Both volumes must contain gas; callers first verify closed doors and sealed base geometry. */
+    boolean equalizeWithBase(ServerLevel level,Chamber chamber,Set<BlockPos> baseCells) {
+        if(baseCells.isEmpty()||!Collections.disjoint(baseCells,chamber.cells))return false;
+        for(var other:chambers.values())if(other!=chamber&&other.gas.cycling()&&!Collections.disjoint(baseCells,other.cells))return false;
+        int baseGas=roomGas(level,baseCells);
+        if(baseGas==0||chamber.gas.air()==0)return false;
+        long total=(long)baseGas+chamber.gas.air();
+        if(total>Integer.MAX_VALUE)return false;
+        var combined=new HashSet<BlockPos>(baseCells);combined.addAll(chamber.cells);
+        // Deliberate manual operation ends an unfinished pump before redistributing its paid gas.
+        chamber.gas.interrupt();chamber.waitingForPower=false;
+        distributeRoomGas(combined,(int)total);
+        syncAir(level,baseCells,roomGas(level,baseCells)>0);
+        syncAir(level,chamber.cells,chamber.gas.air()>0);
+        setDirty();return true;
+    }
     public boolean hasRoomGas(Set<BlockPos> cells){return !Collections.disjoint(cells,roomGas.keySet());}
     public int roomAirRequest(ServerLevel level,Set<BlockPos> cells) {
         return Math.min(40,Math.max(0,cells.size()*AirlockCycle.UNITS_PER_CELL-roomGas(level,cells)));
