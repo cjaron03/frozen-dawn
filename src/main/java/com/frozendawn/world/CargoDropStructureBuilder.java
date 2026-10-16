@@ -317,7 +317,7 @@ public final class CargoDropStructureBuilder {
 
         List<ItemStack> firstCrateLoot = new ArrayList<>();
         List<ItemStack> secondCrateLoot = new ArrayList<>();
-        buildLoot(lootProfile, random, firstCrateLoot, secondCrateLoot);
+        buildLoot(lootProfile, random, firstCrateLoot, secondCrateLoot, level.getSeed() ^ center.asLong());
 
         ItemStack manifest = createManifest(lootProfile.manifestTitle());
 
@@ -330,8 +330,8 @@ public final class CargoDropStructureBuilder {
         }
     }
 
-    private static void buildLoot(LootProfile lootProfile, RandomSource random,
-                                  List<ItemStack> firstCrateLoot, List<ItemStack> secondCrateLoot) {
+    static void buildLoot(LootProfile lootProfile, RandomSource random,
+                                  List<ItemStack> firstCrateLoot, List<ItemStack> secondCrateLoot, long salvageSeed) {
         switch (lootProfile) {
             case JACKPOT -> {
                 firstCrateLoot.add(new ItemStack(ModItems.THERMAL_CORE.get(), 1 + random.nextInt(2)));
@@ -384,6 +384,8 @@ public final class CargoDropStructureBuilder {
                 ));
             }
         }
+        if (lootProfile != LootProfile.BUREAUCRATIC)
+            secondCrateLoot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed));
     }
 
     private static void placeParachute(ServerLevel level, BlockPos center, Direction facing,

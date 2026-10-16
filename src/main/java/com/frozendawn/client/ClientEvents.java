@@ -336,7 +336,6 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
-        event.registerBlockEntityRenderer(ModBlockEntities.AIRLOCK_CONTROLLER.get(), com.frozendawn.client.renderer.AirlockControllerRenderer::new);
     }
 
     @SubscribeEvent
@@ -353,6 +352,11 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
+        event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
+        event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
+        event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);
+        event.register(ModMenuTypes.POWER_STORAGE.get(), PowerStorageScreen::new);
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);
         event.register(ModMenuTypes.FUEL_PROCESSING_SILO.get(), FuelProcessingSiloScreen::new);
         event.register(ModMenuTypes.THERMAL_CONTAINER.get(), ThermalContainerScreen::new);

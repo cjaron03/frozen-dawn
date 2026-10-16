@@ -37,7 +37,7 @@
     {
       "type": "patchouli:text",
       "title": "Breach and Recovery",
-      "text": "A $(l:heating/atmospheric_breach)vacuum breach$(/l) removes room air, while surviving walls keep their heat. Seal every opening and restore oxygen; incoming cold air warms from those walls.$(br2)Without air, sealed burners heat the structure less efficiently. Radiant warmth is only partial protection. Atmosphere restored confirms air, not a warm room. A thermostat can reduce heat input, but cannot actively cool."
+      "text": "A $(l:heating/atmospheric_breach)vacuum breach$(/l) removes room air, while surviving walls keep their heat. Seal every opening and restore oxygen; incoming cold air warms from those walls.$(br2)Without air, sealed burners heat the structure less efficiently. Radiant warmth is only partial protection. Atmosphere restored confirms air, not a warm room. A thermostat controls heaters and same-room heat vents together. Vents need uncovered outdoor faces to reject excess heat."
     }
   ]
 }

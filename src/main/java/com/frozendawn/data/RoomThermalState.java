@@ -1,5 +1,7 @@
 package com.frozendawn.data;
 
+import com.frozendawn.world.RoomSets;
+
 import com.frozendawn.thermal.RoomHeatMath;
 import com.frozendawn.world.RoomAtmosphere;
 import java.util.*;
@@ -15,6 +17,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** Full cell membership plus one heat reservoir per physical material block. No offline integration. */
 public final class RoomThermalState extends SavedData {
     public static final String NAME = "frozendawn_room_heat";
+    private static final int VERSION = 4;
     public static final class Room {
         public final long id;
         public final Set<BlockPos> cells;
@@ -23,7 +26,7 @@ public final class RoomThermalState extends SavedData {
         public double airEnergy;
         public boolean airPresent, sealed = true;
         public Room(long id, Set<BlockPos> cells, Set<RoomAtmosphere.BoundaryFace> faces) {
-            this.id = id; this.cells = Set.copyOf(cells); this.faces = Set.copyOf(faces);
+            this.id = id; this.cells = RoomSets.freeze(cells); this.faces = RoomSets.freeze(faces);
         }
         public double airCapacity() { return airPresent ? cells.size() * RoomHeatMath.AIR_CAPACITY : 0; }
     }
@@ -36,8 +39,8 @@ public final class RoomThermalState extends SavedData {
         }
     }
     public static final class Ledger {
-        public double heater, passive, environmentLoss, airIn, airOut, materialIn, materialOut;
-        public double net() { return heater + passive - environmentLoss + airIn - airOut + materialIn - materialOut; }
+        public double heater, passive, environmentLoss, airIn, airOut, materialIn, materialOut, capacityAdjustment;
+        public double net() { return heater + passive - environmentLoss + airIn - airOut + materialIn - materialOut + capacityAdjustment; }
     }
     public final Map<Long, Room> rooms = new TreeMap<>();
     public final Map<BlockPos, Material> materials = new HashMap<>();
@@ -50,7 +53,7 @@ public final class RoomThermalState extends SavedData {
                 + materials.values().stream().mapToDouble(material -> material.energy).sum();
     }
     private static Set<BlockPos> positions(long[] values) {
-        var result = new HashSet<BlockPos>(); for (long value : values) result.add(BlockPos.of(value)); return Set.copyOf(result);
+        var result = new HashSet<BlockPos>(); for (long value : values) result.add(BlockPos.of(value)); return RoomSets.freeze(result);
     }
     private static long[] positions(Set<BlockPos> values) { return values.stream().mapToLong(BlockPos::asLong).sorted().toArray(); }
     private static double finite(double value) { return Double.isFinite(value) ? Math.max(0, value) : 0; }
@@ -81,10 +84,23 @@ public final class RoomThermalState extends SavedData {
         result.ledger.environmentLoss=Double.isFinite(ledger.getDouble("environmentLoss"))?ledger.getDouble("environmentLoss"):0;
         result.ledger.airIn=finite(ledger.getDouble("airIn")); result.ledger.airOut=finite(ledger.getDouble("airOut"));
         result.ledger.materialIn=finite(ledger.getDouble("materialIn")); result.ledger.materialOut=finite(ledger.getDouble("materialOut"));
+        result.ledger.capacityAdjustment=Double.isFinite(ledger.getDouble("capacityAdjustment"))?ledger.getDouble("capacityAdjustment"):0;
+        if(tag.getInt("version")<VERSION) {
+            // Version3 used increased mass (air1200/72, material18000/72).
+            // Earlier saves already used the original calibration. Preserve temperatures
+            // and record the signed energy rebase without rewriting historical heat input.
+            double before=result.totalEnergy();
+            double oldAirCapacity=tag.getInt("version")==3?1200.0/72.0:1.0;
+            for(var room:result.rooms.values())room.airEnergy*=RoomHeatMath.AIR_CAPACITY/oldAirCapacity;
+            result.materials.replaceAll((pos,old)->new Material(old.block,RoomHeatMath.MATERIAL_CAPACITY,
+                    old.energy*(RoomHeatMath.MATERIAL_CAPACITY/old.capacity)));
+            result.ledger.capacityAdjustment+=result.totalEnergy()-before;
+            result.setDirty();
+        }
         return result;
     }
     @Override public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putInt("version",2); var roomsTag=new ListTag();
+        tag.putInt("version",VERSION); var roomsTag=new ListTag();
         for(var room:rooms.values()) {
             var entry=new CompoundTag();entry.putLong("id",room.id);entry.putLongArray("cells",positions(room.cells));
             entry.putLongArray("structure",positions(room.structure));entry.putDouble("airEnergy",room.airEnergy);
@@ -102,6 +118,7 @@ public final class RoomThermalState extends SavedData {
         }
         tag.put("materials",materialsTag);var budget=new CompoundTag();budget.putDouble("heater",ledger.heater);budget.putDouble("passive",ledger.passive);
         budget.putDouble("environmentLoss",ledger.environmentLoss);budget.putDouble("airIn",ledger.airIn);budget.putDouble("airOut",ledger.airOut);
-        budget.putDouble("materialIn",ledger.materialIn);budget.putDouble("materialOut",ledger.materialOut);tag.put("ledger",budget);return tag;
+        budget.putDouble("materialIn",ledger.materialIn);budget.putDouble("materialOut",ledger.materialOut);
+        budget.putDouble("capacityAdjustment",ledger.capacityAdjustment);tag.put("ledger",budget);return tag;
     }
 }

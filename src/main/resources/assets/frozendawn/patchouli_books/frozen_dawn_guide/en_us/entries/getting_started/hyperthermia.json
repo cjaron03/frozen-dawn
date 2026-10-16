@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "How Did We Get Here?",
-      "text": "Modeled room heaters share a target and throttle. Adding more increases available power; it does not endlessly stack room temperature.$(br2)Core warmth, campfires, lava and other local sources can still raise exposure temperature. Open-camp heater warmth remains a proximity effect. Armor can amplify heat exposure too.$(br2)A thermostat reduces heater demand. It cannot cool a room or turn off independent heat sources."
+      "text": "Modeled room heaters share a target and throttle. Adding more increases available power; it does not endlessly stack room temperature.$(br2)Core warmth, campfires, lava and other local sources can still raise exposure temperature. Open-camp heater warmth remains a proximity effect. Armor can amplify heat exposure too.$(br2)A thermostat reduces heater demand and automatically controls same-room heat vents. Fit enough exposed vents to reject excess heat; independent heat sources keep running."
     },
     {
       "type": "patchouli:text",

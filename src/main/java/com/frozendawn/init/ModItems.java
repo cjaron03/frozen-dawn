@@ -56,6 +56,25 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(FrozenDawn.MOD_ID);
 
+    public static final DeferredItem<BlockItem> RESISTIVE_HEATER = ITEMS.registerSimpleBlockItem("resistive_heater", ModBlocks.RESISTIVE_HEATER);
+
+    public static final DeferredItem<com.frozendawn.item.PixieItem> PIXIE = ITEMS.register("pixie",com.frozendawn.item.PixieItem::new);
+
+    public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
+
+    public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
+
+    public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
+    public static final DeferredItem<BlockItem> BATTERY_BANK = ITEMS.registerSimpleBlockItem("battery_bank", ModBlocks.BATTERY_BANK);
+    public static final DeferredItem<BlockItem> CELL_DOCK = ITEMS.registerSimpleBlockItem("cell_dock", ModBlocks.CELL_DOCK);
+
+    public static final DeferredItem<com.frozendawn.item.ConduitBinderItem> CONDUIT_BINDER = ITEMS.register("conduit_binder",
+            () -> new com.frozendawn.item.ConduitBinderItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
+    public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
+    public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
+    public static final DeferredItem<BlockItem> BULKHEAD_FEEDTHROUGH = ITEMS.registerSimpleBlockItem("bulkhead_feedthrough", ModBlocks.BULKHEAD_FEEDTHROUGH);
+
     // --- Block Items ---
     public static final DeferredItem<BlockItem> DEAD_GRASS_BLOCK = ITEMS.registerSimpleBlockItem("dead_grass_block", ModBlocks.DEAD_GRASS_BLOCK);
     public static final DeferredItem<BlockItem> FROZEN_DIRT = ITEMS.registerSimpleBlockItem("frozen_dirt", ModBlocks.FROZEN_DIRT);
@@ -483,6 +502,18 @@ public class ModItems {
                         output.accept(MANUAL_VENT_VALVE.get());
                         output.accept(THERMOSTAT.get());
                         output.accept(HEAT_VENT.get());
+                        output.accept(RESISTIVE_HEATER.get());
+                        output.accept(PIXIE.get());
+                        output.accept(POWER_MONITOR.get());
+                        output.accept(INDUCTION_FURNACE.get());
+                        output.accept(POWER_CELL.get());
+                        output.accept(BATTERY_BANK.get());
+                        output.accept(CELL_DOCK.get());
+                        output.accept(CONDUIT_BINDER.get());
+                        output.accept(POWER_RELAY.get());
+                        output.accept(LARGE_POWER_RELAY.get());
+                        output.accept(BULKHEAD_FEEDTHROUGH.get());
+                        output.accept(PANEL_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());
                         output.accept(THERMAL_HEATER.get());

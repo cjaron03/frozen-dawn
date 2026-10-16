@@ -1,0 +1,162 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "frame": "minecraft:block/iron_block",
+    "panel": "minecraft:block/sea_lantern",
+    "particle": "#frame"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#frame",
+          "cullface": "up"
+        },
+        "down": {
+          "texture": "#frame",
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#frame",
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#frame",
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#frame",
+          "cullface": "east"
+        },
+        "west": {
+          "texture": "#frame",
+          "cullface": "west"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        16.01,
+        2
+      ],
+      "to": [
+        14,
+        16.01,
+        14
+      ],
+      "shade": false,
+      "faces": {
+        "up": {
+          "texture": "#panel",
+          "cullface": "up"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        -0.01,
+        2
+      ],
+      "to": [
+        14,
+        -0.01,
+        14
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#panel",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        2,
+        -0.01
+      ],
+      "to": [
+        14,
+        14,
+        -0.01
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "texture": "#panel",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        2,
+        16.01
+      ],
+      "to": [
+        14,
+        14,
+        16.01
+      ],
+      "shade": false,
+      "faces": {
+        "south": {
+          "texture": "#panel",
+          "cullface": "south"
+        }
+      }
+    },
+    {
+      "from": [
+        16.01,
+        2,
+        2
+      ],
+      "to": [
+        16.01,
+        14,
+        14
+      ],
+      "shade": false,
+      "faces": {
+        "east": {
+          "texture": "#panel",
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.01,
+        2,
+        2
+      ],
+      "to": [
+        -0.01,
+        14,
+        14
+      ],
+      "shade": false,
+      "faces": {
+        "west": {
+          "texture": "#panel",
+          "cullface": "west"
+        }
+      }
+    }
+  ]
+}

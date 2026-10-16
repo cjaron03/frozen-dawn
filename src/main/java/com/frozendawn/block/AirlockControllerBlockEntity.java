@@ -17,6 +17,8 @@ public final class AirlockControllerBlockEntity extends BlockEntity {
     public boolean assigned() {return assigned;}
     public long chamberId() {return chamberId;}
     public void assign(long id) {assigned=true;chamberId=id;setChanged();}
+    @Override public void onLoad(){super.onLoad();if(level instanceof ServerLevel l)com.frozendawn.power.PowerNetworks.airlockLoaded(l,worldPosition);}
+    @Override public void setRemoved(){if(level instanceof ServerLevel l)com.frozendawn.power.PowerNetworks.airlockRemoved(l,worldPosition);super.setRemoved();}
     public void serverTick() {
         if(!(level instanceof ServerLevel server))return;
         var saved=AirlockSavedState.get(server);

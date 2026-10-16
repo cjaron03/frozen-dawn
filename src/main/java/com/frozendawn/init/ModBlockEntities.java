@@ -57,6 +57,20 @@ public class ModBlockEntities {
                             ModBlocks.MITEAWAY.get()
                     ).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.ResistiveHeaterBlockEntity>> RESISTIVE_HEATER = BLOCK_ENTITIES.register("resistive_heater", () -> BlockEntityType.Builder.of(com.frozendawn.block.ResistiveHeaterBlockEntity::new,ModBlocks.RESISTIVE_HEATER.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PixieBlockEntity>> PIXIE = BLOCK_ENTITIES.register("pixie", () -> BlockEntityType.Builder.of(com.frozendawn.block.PixieBlockEntity::new,ModBlocks.PIXIE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerMonitorBlockEntity>> POWER_MONITOR =
+            BLOCK_ENTITIES.register("power_monitor", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerMonitorBlockEntity::new,ModBlocks.POWER_MONITOR.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.InductionFurnaceBlockEntity>> INDUCTION_FURNACE =
+            BLOCK_ENTITIES.register("induction_furnace", () -> BlockEntityType.Builder.of(com.frozendawn.block.InductionFurnaceBlockEntity::new,ModBlocks.INDUCTION_FURNACE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerStorageBlockEntity>> POWER_STORAGE =
+            BLOCK_ENTITIES.register("power_storage", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerStorageBlockEntity::new,
+                    ModBlocks.BATTERY_BANK.get(), ModBlocks.CELL_DOCK.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GeothermalCoreBlockEntity>> GEOTHERMAL_CORE =
             BLOCK_ENTITIES.register("geothermal_core",
                     () -> BlockEntityType.Builder.of(GeothermalCoreBlockEntity::new,

@@ -93,6 +93,10 @@ neoForge {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
             }
             systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labAirlockWatch', providers.gradleProperty('fdLabAirlockWatch').getOrElse('false')
+            if (providers.gradleProperty('fdRoomArchiveReplay').isPresent()) {
+                systemProperty 'frozendawn.labRoomArchiveReplay', file(providers.gradleProperty('fdRoomArchiveReplay').get()).absolutePath
+            }
             systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
             systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
@@ -103,9 +107,6 @@ neoForge {
                 systemProperty 'frozendawn.debug.architectSeed', '1'
             }
             systemProperty 'frozendawn.labCommands', 'true'
-            if (labQuickPlayWorld) {
-                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
-            }
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,
@@ -617,3 +618,92 @@ tasks.register('generateRoomOxygenQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
 tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }
+
+// Native parser coverage for the isolated power topology replay.
+def powerNetworkQaResources = layout.buildDirectory.dir('generated/powerNetworkQa')
+tasks.register('preparePowerNetworkQaResources', Exec) {
+    inputs.file('tools/prepare_power_network_playtest.py')
+    outputs.dir(powerNetworkQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_network_playtest.py', '--pack-only', powerNetworkQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerNetworkQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerNetworkQaResources') }
+
+// Native parser coverage for the Core-to-relay electrical replay.
+def powerFlowQaResources = layout.buildDirectory.dir('generated/powerFlowQa')
+tasks.register('preparePowerFlowQaResources', Exec) {
+    inputs.files('tools/prepare_power_flow_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerFlowQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_flow_playtest.py', '--pack-only', powerFlowQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerFlowQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerFlowQaResources') }
+
+// Native parser coverage for removable power storage replay.
+def powerStorageQaResources = layout.buildDirectory.dir('generated/powerStorageQa')
+tasks.register('preparePowerStorageQaResources', Exec) {
+    inputs.files('tools/prepare_power_storage_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerStorageQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_storage_playtest.py', '--pack-only', powerStorageQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerStorageQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerStorageQaResources') }
+
+// Native parser coverage for the isolated induction furnace replay.
+def inductionFurnaceQaResources = layout.buildDirectory.dir('generated/inductionFurnaceQa')
+tasks.register('prepareInductionFurnaceQaResources', Exec) {
+    inputs.files('tools/prepare_induction_furnace_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(inductionFurnaceQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_induction_furnace_playtest.py', '--pack-only', inductionFurnaceQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(inductionFurnaceQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareInductionFurnaceQaResources') }
+
+// Native parser coverage for the passive power monitor replay.
+def powerMonitorQaResources = layout.buildDirectory.dir('generated/powerMonitorQa')
+tasks.register('preparePowerMonitorQaResources', Exec) {
+    inputs.files('tools/prepare_power_monitor_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerMonitorQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_monitor_playtest.py', '--pack-only', powerMonitorQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerMonitorQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerMonitorQaResources') }
+
+// Native parser coverage for the one-time PIXIE oxygen/power replay.
+def pixieQaResources = layout.buildDirectory.dir('generated/pixieQa')
+tasks.register('preparePixieQaResources', Exec) {
+    inputs.files('tools/prepare_pixie_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(pixieQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_pixie_playtest.py', '--pack-only', pixieQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(pixieQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePixieQaResources') }
+
+// Parse exactly the disposable RH-5 replay functions used by the owner.
+def rh5QaResources = layout.buildDirectory.dir('generated/rh5Qa')
+tasks.register('prepareRh5QaResources', Exec) {
+    inputs.files('tools/prepare_rh5_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(rh5QaResources)
+    commandLine 'python3', '-B', 'tools/prepare_rh5_playtest.py', '--pack-only', rh5QaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rh5QaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareRh5QaResources') }
+
+// Parse the exact one-use two-base powered airlock replay pack.
+def poweredAirlockQa = layout.buildDirectory.dir('generated/poweredAirlockQa')
+tasks.register('preparePoweredAirlockQa', Exec) {
+    inputs.files('tools/prepare_powered_airlock_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(poweredAirlockQa)
+    commandLine 'python3', '-B', 'tools/prepare_powered_airlock_playtest.py', '--pack-only', poweredAirlockQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(poweredAirlockQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePoweredAirlockQa') }
+
+def chargedCellQa = layout.buildDirectory.dir('generated/chargedCellQa')
+tasks.register('prepareChargedCellQa', Exec) {
+    inputs.files('tools/prepare_charged_cell_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(chargedCellQa)
+    commandLine 'python3', '-B', 'tools/prepare_charged_cell_playtest.py', '--pack-only', chargedCellQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(chargedCellQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareChargedCellQa') }

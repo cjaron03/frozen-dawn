@@ -25,6 +25,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 public final class RoomAtmosphere {
     public static final int REFILL_TICKS = 100;
     private static final int MAX_CELLS = 12_000, MAX_ROOMS = 256;
+    private static final int SCAN_HARD_CAP = 131_072, SCAN_WORK_PER_TICK = 2_048, MAX_SCANS = 8;
     private static final int ACTIVITY_LEASE_TICKS = 40, SOURCE_RETRY_TICKS = 200;
     public enum Seal { SEALED, OPEN, UNKNOWN }
     /** One oriented air-to-wall contact. Several faces may share a physical wall block. */
@@ -36,16 +37,18 @@ public final class RoomAtmosphere {
         public BlockPos wallCell() { return airCell.relative(outwardDirection); }
     }
     /** Complete boundary faces are exposed only for SEALED geometry, never a partial flood fill. */
-    public record Geometry(Seal seal, Set<BlockPos> cells, Set<BlockPos> walls, Set<BoundaryFace> boundaryFaces) {
+    public record Geometry(Seal seal, Set<BlockPos> cells, Set<BlockPos> walls, Set<BoundaryFace> boundaryFaces, boolean exceededBounds, boolean scanning) {
+        public Geometry(Seal seal,Set<BlockPos> cells,Set<BlockPos> walls,Set<BoundaryFace> faces){this(seal,cells,walls,faces,false,false);}
+        public Geometry(Seal seal,Set<BlockPos> cells,Set<BlockPos> walls,Set<BoundaryFace> faces,boolean exceededBounds){this(seal,cells,walls,faces,exceededBounds,false);}
         public Geometry {
-            cells = Set.copyOf(cells); walls = Set.copyOf(walls); boundaryFaces = Set.copyOf(boundaryFaces);
+            cells = RoomSets.freeze(cells); walls = RoomSets.freeze(walls); boundaryFaces = RoomSets.freeze(boundaryFaces);
         }
     }
     private static final Map<ServerLevel, Index> LEVELS = new WeakHashMap<>();
     private static final class Room {
         Geometry geometry; final long id; long refillStart = -1, lastUsed, checked;
-        BlockPos changed; boolean uncertain; long activeUntil = -1;
-        BlockPos lastQueryPos; long lastQueryTick = -1; String lastQueryReason = "none";
+        BlockPos changed; boolean uncertain, budgetPending; long activeUntil = -1;
+        BlockPos lastQueryPos; long lastQueryTick = -1, verificationNoticeTick=Long.MIN_VALUE; String lastQueryReason = "none";
         com.frozendawn.network.RoomRecoveryPayload.Stage recoveryNotice;
         Room(long id, Geometry geometry, long tick) {
             this.id = id; this.geometry = geometry; lastUsed = checked = tick;
@@ -64,6 +67,10 @@ public final class RoomAtmosphere {
         final Map<BlockPos, Set<Room>> walls = new HashMap<>();
         final Map<BlockPos, Negative> negative = new HashMap<>();
         final ArrayDeque<Room> work = new ArrayDeque<>();
+        final ArrayDeque<RoomScan> scans=new ArrayDeque<>();
+        final Set<BlockPos> exteriorSamples=new HashSet<>();
+        final Map<Long,Boolean> boundaryOpenings=new HashMap<>();
+        long scanTick=Long.MIN_VALUE;
         final Map<BlockPos, Activity> activity = new HashMap<>();
         final ArrayDeque<BlockPos> sourceWork = new ArrayDeque<>();
         long geometryChanges, materialChanges, airChanges; RoomChangeEvent.Type lastChange;
@@ -86,34 +93,94 @@ public final class RoomAtmosphere {
     public static Geometry inspectAirlockPartition(ServerLevel level, BlockPos origin, int limit) {
         return inspect(level,origin,true,limit);
     }
+    private static RoomScan.Access access(ServerLevel level,boolean partition) {
+        return new RoomScan.Access() {
+            public boolean loaded(BlockPos p){return level.isLoaded(p);}
+            public boolean passage(BlockPos p){var state=level.getBlockState(p);return !(partition&&state.getBlock() instanceof com.frozendawn.block.AirlockDoorBlock)&&isPassage(level,p,state);}
+            public boolean sky(BlockPos p){return p.getY()>=level.getHeight(Heightmap.Types.MOTION_BLOCKING,p.getX(),p.getZ());}
+        };
+    }
     private static Geometry inspect(ServerLevel level, BlockPos origin, boolean partitionDoors, int limit) {
-        if (!level.isLoaded(origin) || !isPassage(level, origin, level.getBlockState(origin)))
-            return new Geometry(Seal.UNKNOWN, Set.of(), Set.of(), Set.of());
-        var queue = new ArrayDeque<BlockPos>(); var cells = new HashSet<BlockPos>(); var walls = new HashSet<BlockPos>();
-        var faces = new HashSet<BoundaryFace>();
-        queue.add(origin.immutable()); cells.add(origin.immutable());
-        while (!queue.isEmpty()) {
-            var pos = queue.removeFirst();
-            // Motion height includes full glass roofs, unlike canSeeSky().
-            if (pos.getY() >= level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ()))
-                return new Geometry(Seal.OPEN, cells, walls, Set.of());
-            for (var direction : Direction.values()) {
-                var next = pos.relative(direction);
-                if (cells.contains(next)) continue;
-                if (walls.contains(next)) { faces.add(new BoundaryFace(pos, direction)); continue; }
-                if (!level.isLoaded(next)) return new Geometry(Seal.UNKNOWN, cells, walls, Set.of());
-                var state = level.getBlockState(next);
-                if ((partitionDoors && state.getBlock() instanceof com.frozendawn.block.AirlockDoorBlock)
-                        || !isPassage(level, next, state)) {
-                    walls.add(next.immutable()); faces.add(new BoundaryFace(pos, direction)); continue;
-                }
-                if (Math.abs(next.getX() - origin.getX()) > 48 || Math.abs(next.getZ() - origin.getZ()) > 48
-                        || Math.abs(next.getY() - origin.getY()) > 24 || cells.size() >= limit)
-                    return new Geometry(Seal.UNKNOWN, cells, walls, Set.of());
-                cells.add(next.immutable()); queue.addLast(next.immutable());
+        if(!level.isLoaded(origin)||!isPassage(level,origin,level.getBlockState(origin)))
+            return new Geometry(Seal.UNKNOWN,Set.of(),Set.of(),Set.of());
+        if(limit!=MAX_CELLS) {
+            var scan=new RoomScan(origin,partitionDoors,limit);scan.advance(access(level,partitionDoors),limit,false);
+            return scan.geometry();
+        }
+        var index=LEVELS.computeIfAbsent(level,k->new Index());
+        for(var scan:List.copyOf(index.scans))if(scan.partition==partitionDoors&&scan.cells.contains(origin)) {
+            if(scan.end==RoomScan.End.UNLOADED||scan.end!=RoomScan.End.RUNNING&&(scan.cells.stream().anyMatch(p->!level.isLoaded(p))||scan.walls.stream().anyMatch(p->!level.isLoaded(p)))) {index.scans.remove(scan);continue;}
+            scan.lastUsed=level.getGameTime();observeScan(level,index,origin,scan);return evidenced(level,origin,scan.geometry());
+        }
+        var scan=new RoomScan(origin,partitionDoors,SCAN_HARD_CAP);scan.lastUsed=level.getGameTime();
+        scan.advance(access(level,partitionDoors),MAX_CELLS,true);
+        if(scan.end==RoomScan.End.RUNNING) {
+            if(index.scans.size()>=MAX_SCANS)index.scans.removeFirst();
+            index.scans.addLast(scan);
+        }
+        observeScan(level,index,origin,scan);return evidenced(level,origin,scan.geometry());
+    }
+    private static void observeScan(ServerLevel level,Index index,BlockPos origin,RoomScan scan) {
+        if(scan.end==RoomScan.End.OPEN)recordExterior(level,origin);
+        else if(scan.end==RoomScan.End.SEALED)index.exteriorSamples.removeAll(scan.cells);
+    }
+    /** An explicit exterior witness, also used by disposable lab fixture initial conditions. No gas mutation. */
+    public static void recordExterior(ServerLevel level,BlockPos pos) {
+        var samples=LEVELS.computeIfAbsent(level,k->new Index()).exteriorSamples;
+        if(samples.size()>=1024)samples.clear();samples.add(pos.immutable());
+    }
+    private static void tickScans(ServerLevel level,Index index) {
+        if(index.scanTick==level.getGameTime())return;index.scanTick=level.getGameTime();
+        int work=SCAN_WORK_PER_TICK;
+        for(var scan:List.copyOf(index.scans)) {
+            if(level.getGameTime()-scan.lastUsed>600){index.scans.remove(scan);continue;}
+            if(work>0&&scan.end==RoomScan.End.RUNNING){int share=Math.min(512,work);scan.advance(access(level,scan.partition),share,false);work-=share;}
+        }
+    }
+    /** A passable former boundary plus a loaded far-side passage is evidence of a new connection. */
+    public static boolean hasBoundaryOpening(ServerLevel level,Set<BlockPos> previous) {
+        for(var cell:previous)for(var dir:Direction.values()) {
+            var hole=cell.relative(dir);if(previous.contains(hole)||!level.isLoaded(hole)||!isPassage(level,hole,level.getBlockState(hole)))continue;
+            for(var out:Direction.values()) {
+                var far=hole.relative(out);
+                if(!previous.contains(far)&&!far.equals(cell)&&level.isLoaded(far)&&isPassage(level,far,level.getBlockState(far)))return true;
             }
         }
-        return new Geometry(Seal.SEALED, cells, walls, faces);
+        return false;
+    }
+    private static boolean knownExterior(ServerLevel level,Geometry g) {
+        var identities=RoomIdentityState.get(level);var saved=com.frozendawn.airlock.AirlockSavedState.get(level);
+        var samples=new HashSet<>(LEVELS.get(level).exteriorSamples);
+        for(var c:saved.chambers())samples.add(c.outside);
+        return samples.stream().anyMatch(p->g.cells.contains(p)&&identities.at(p)==null&&saved.at(p)==null);
+    }
+    private static boolean lowBackgroundConnection(ServerLevel level,Set<BlockPos> previous) {
+        // Known rooms retain their own pressure; unmodeled reservoirs use the current atmosphere.
+        if(!CombustionAtmosphere.isVacuum(level))return false;
+        for(var cell:previous)for(var dir:Direction.values()) {
+            var hole=cell.relative(dir);if(previous.contains(hole)||!level.isLoaded(hole)||!isPassage(level,hole,level.getBlockState(hole)))continue;
+            // Follow the boundary normal. Another newly opened doorway cell is not the far reservoir.
+            var far=hole.relative(dir);
+            if(previous.contains(far)||!level.isLoaded(far)||!isPassage(level,far,level.getBlockState(far)))continue;
+            var known=RoomIdentityState.get(level).at(far);
+            if(known==null||RoomAirState.get(level).isDepleted(known.cells()))return true;
+        }
+        return false;
+    }
+    private static Geometry evidenced(ServerLevel level,BlockPos origin,Geometry g) {
+        if(g.seal!=Seal.UNKNOWN||!g.exceededBounds)return g;
+        var previous=RoomIdentityState.get(level).at(origin);
+        if(previous!=null&&LEVELS.get(level).boundaryOpenings.computeIfAbsent(previous.id(),id->hasBoundaryOpening(level,previous.cells()))
+                &&(knownExterior(level,g)||!g.scanning&&lowBackgroundConnection(level,previous.cells())))
+            return new Geometry(Seal.OPEN,g.cells,g.walls,Set.of());
+        return g;
+    }
+    /** Exterior witnesses are positive sky observations or registered airlock exterior endpoints, never arbitrary empty pockets. */
+    public static boolean knownExteriorAt(ServerLevel level,BlockPos pos) {
+        if(!level.isLoaded(pos)||RoomIdentityState.get(level).at(pos)!=null)return false;
+        var saved=com.frozendawn.airlock.AirlockSavedState.get(level);if(saved.at(pos)!=null)return false;
+        var index=LEVELS.get(level);
+        return index!=null&&index.exteriorSamples.contains(pos)||saved.chambers().stream().anyMatch(c->c.outside.equals(pos));
     }
 
     public static boolean hasAir(Level level, BlockPos pos) {
@@ -121,13 +188,15 @@ public final class RoomAtmosphere {
         Room room = roomAt(serverLevel, pos, "AIR_QUERY");
         if (room == null) return false;
         if (!CombustionAtmosphere.isVacuum(level)) return true;
+        if(room.budgetPending)return !RoomAirState.get(serverLevel).isDepleted(room.geometry.cells)
+                &&!com.frozendawn.airlock.AirlockManager.blocksAutomaticAir(serverLevel,room.geometry.cells);
         return recover(serverLevel, room);
     }
 
     public static boolean hasOxygenSupport(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel serverLevel)) return false;
         Room room = roomAt(serverLevel, pos, "OXYGEN_SUPPORT");
-        return room != null && hasSupply(serverLevel, room.geometry, pos) && recover(serverLevel, room);
+        return room != null && !room.uncertain && hasSupply(serverLevel, room.geometry, pos) && recover(serverLevel, room);
     }
 
     private static boolean hasSupply(ServerLevel level, Geometry geometry, BlockPos pos) {
@@ -141,7 +210,7 @@ public final class RoomAtmosphere {
                     && Math.pow(pos.getX()-anchor.getX(), 2) + Math.pow(pos.getZ()-anchor.getZ(), 2) <= 18 * 18
                     && connectedSource(geometry, anchor)) return true;
         }
-        return false;
+        return RoomOxygenManager.hasPixieSupply(level,geometry);
     }
 
     private static boolean connectedSource(Geometry geometry, BlockPos pos) {
@@ -151,13 +220,14 @@ public final class RoomAtmosphere {
     }
 
     private static boolean recover(ServerLevel level, Room room) {
-        // Controlled chambers cannot borrow the Core's automatic room refill.
+        // Isolated controlled chambers require their pump; an internal opening joins the room.
         if (com.frozendawn.airlock.AirlockManager.blocksAutomaticAir(level,room.geometry.cells)) return false;
         var saved = RoomAirState.get(level);
         // Existing sealed saves retain their trapped air; exposed/breached cells do not.
         if (!saved.isDepleted(room.geometry.cells)) {
             room.refillStart = -1;
-            if (room.recoveryNotice != null) announceRecovery(level, room,
+            if (room.recoveryNotice == com.frozendawn.network.RoomRecoveryPayload.Stage.WAITING_FOR_OXYGEN
+                    || room.recoveryNotice == com.frozendawn.network.RoomRecoveryPayload.Stage.RESTORING_AIR) announceRecovery(level, room,
                     com.frozendawn.network.RoomRecoveryPayload.Stage.AIR_RESTORED);
             return true;
         }
@@ -166,6 +236,7 @@ public final class RoomAtmosphere {
             if (connectedSource(room.geometry, core) && hasSupply(level, room.geometry, core)) { supply = true; break; }
         if (!supply) for (var anchor : BlastPitWarmZoneRegistry.getWarmZones(level))
             if (connectedSource(room.geometry, anchor) && hasSupply(level, room.geometry, anchor)) { supply = true; break; }
+        if(!supply)supply=RoomOxygenManager.hasPixieSupply(level,room.geometry);
         if (!supply) {
             room.refillStart = -1;
             announceRecovery(level, room, com.frozendawn.network.RoomRecoveryPayload.Stage.WAITING_FOR_OXYGEN);
@@ -174,7 +245,10 @@ public final class RoomAtmosphere {
         announceRecovery(level, room, com.frozendawn.network.RoomRecoveryPayload.Stage.RESTORING_AIR);
         if (room.refillStart < 0) room.refillStart = level.getGameTime();
         if (level.getGameTime() - room.refillStart < REFILL_TICKS) return false;
-        saved.refill(room.geometry.cells); room.refillStart = -1;
+        // Ordinary atmosphere recovery is independent of nominal airlock inventory.
+        // Keep measured gas exact: changing the presence flag must not fill its ledger for free.
+        if(!com.frozendawn.airlock.AirlockSavedState.get(level).restoreProducedRoomAir(level,room.geometry.cells))return false;
+        room.refillStart = -1;
         announceRecovery(level, room, com.frozendawn.network.RoomRecoveryPayload.Stage.AIR_RESTORED);
         return true;
     }
@@ -193,7 +267,7 @@ public final class RoomAtmosphere {
     /** Canonical identity is per dimension and persists beyond cache eviction and server reload. */
     public static RoomView view(ServerLevel level, BlockPos pos) {
         var room = roomAt(level, pos, "OPERATOR_VIEW");
-        return room == null ? null : new RoomView(room.id, room.geometry);
+        return room == null || room.uncertain ? null : new RoomView(room.id, room.geometry);
     }
     /** Cached seal only, including dirty geometry. Never inspect, renew, refill or load chunks. */
     public static Seal cachedSealAt(ServerLevel level,BlockPos pos) {
@@ -223,13 +297,21 @@ public final class RoomAtmosphere {
         Index index = LEVELS.computeIfAbsent(level, ignored -> new Index());
         var room = index.cells.get(pos);
         if (room != null && (room.changed != null || room.uncertain)) {
-            if (!rebuild(level, index, room.geometry.cells)) return null;
+            if (!rebuild(level, index, room.geometry.cells)) {
+                room=index.cells.get(pos);
+                if(room!=null&&room.budgetPending){queried(level,room,pos,reason);return room;}
+                return null;
+            }
             room = index.cells.get(pos); // A split may put the query in a different child.
         }
         if (room != null) { queried(level, room, pos, reason); return room; }
         var negative = index.negative.get(pos);
         if (negative != null && level.getGameTime() - negative.tick < 10) return null;
-        if (!rebuild(level, index, Set.of(pos.immutable()))) return null;
+        if (!rebuild(level, index, Set.of(pos.immutable()))) {
+            room=index.cells.get(pos);
+            if(room!=null&&room.budgetPending){queried(level,room,pos,reason);return room;}
+            return null;
+        }
         room = index.cells.get(pos);
         if (room != null) queried(level, room, pos, reason);
         return room;
@@ -256,7 +338,7 @@ public final class RoomAtmosphere {
             if (!level.isLoaded(start)) return defer(level, index, parents); // Keep history and retry; never load chunks or trust stale air.
             if (!isPassage(level, start, level.getBlockState(start))) { covered.add(start); continue; }
             var geometry = inspect(level, start);
-            if (geometry.seal == Seal.UNKNOWN) return defer(level, index, parents);
+            if (geometry.seal == Seal.UNKNOWN) return defer(level, index, parents,geometry.exceededBounds);
             if (geometry.seal == Seal.SEALED) {
                 geometries.add(geometry); covered.addAll(geometry.cells);
                 for (var parent : saved.overlapping(geometry.cells))
@@ -300,14 +382,19 @@ public final class RoomAtmosphere {
             return true;
         }
         geometries.sort(Comparator.comparingLong(g -> g.cells.stream().mapToLong(BlockPos::asLong).min().orElseThrow()));
-        var records = saved.reconcile(parents, geometries.stream().map(Geometry::cells).toList());
+        var volumes = geometries.stream().map(Geometry::cells).toList();
+        if (CombustionAtmosphere.isVacuum(level)) RoomAirState.get(level).reconcileMemberships(parents, volumes);
+        var records = saved.reconcile(parents, volumes);
         var current = new ArrayList<Room>();
         for (int i = 0; i < geometries.size(); i++) {
             var geometry = geometries.get(i); long id = records.get(i).id();
-            var room = previous.get(id);
-            if (room == null || !room.geometry.cells.equals(geometry.cells))
+            var prior = previous.get(id); var room = prior;
+            if (room == null || !room.geometry.cells.equals(geometry.cells)) {
                 room = new Room(id, geometry, level.getGameTime()); // Geometry edits restart refill; do not copy it to siblings.
-            room.geometry = geometry; room.changed = null; room.uncertain = false; room.checked = level.getGameTime();
+                if (prior != null) room.recoveryNotice = prior.recoveryNotice; // Same room/stage stays quiet; a real breach removes the prior.
+            }
+            if(prior!=null&&prior.budgetPending)announceRecovery(level,room,com.frozendawn.network.RoomRecoveryPayload.Stage.SEAL_VERIFIED);
+            room.geometry = geometry; room.changed = null; room.uncertain = false; room.budgetPending=false; room.checked = level.getGameTime();
             if (index.rooms.size() >= MAX_ROOMS) {
                 // Active infrastructure takes priority over the ordinary cache ceiling.
                 index.rooms.stream().filter(candidate -> candidate.activeUntil < level.getGameTime())
@@ -321,12 +408,22 @@ public final class RoomAtmosphere {
         return true;
     }
 
-    private static boolean defer(ServerLevel level, Index index, Set<RoomIdentityState.Membership> parents) {
-        var affected = index.rooms.stream().filter(room -> parents.stream().anyMatch(parent -> parent.id() == room.id)).toList();
-        boolean newlyUncertain = affected.stream().anyMatch(room -> !room.uncertain);
-        var before = snapshots(affected);
-        for (var room : affected) room.uncertain = true;
-        if (newlyUncertain) publish(level, new RoomChangeEvent.GeometryChange(before, List.of(), parents, false));
+    private static boolean defer(ServerLevel level,Index index,Set<RoomIdentityState.Membership> parents) {return defer(level,index,parents,false);}
+    private static boolean defer(ServerLevel level,Index index,Set<RoomIdentityState.Membership> parents,boolean budget) {
+        if(budget)for(var parent:parents)if(index.rooms.stream().noneMatch(r->r.id==parent.id())) {
+            var walls=new HashSet<BlockPos>();var faces=new HashSet<BoundaryFace>();
+            for(var cell:parent.cells())for(var dir:Direction.values())if(!parent.cells().contains(cell.relative(dir))) {walls.add(cell.relative(dir));faces.add(new BoundaryFace(cell,dir));}
+            add(index,new Room(parent.id(),new Geometry(Seal.SEALED,parent.cells(),walls,faces),level.getGameTime()));
+        }
+        var affected=index.rooms.stream().filter(room->parents.stream().anyMatch(parent->parent.id()==room.id)).toList();
+        boolean newlyUncertain=affected.stream().anyMatch(room->!room.uncertain);
+        var before=snapshots(affected);
+        for(var room:affected){room.uncertain=true;room.budgetPending=budget;
+            if(budget&&(room.recoveryNotice!=com.frozendawn.network.RoomRecoveryPayload.Stage.SEAL_UNVERIFIED||level.getGameTime()-room.verificationNoticeTick>=60)) {
+                room.verificationNoticeTick=level.getGameTime();room.recoveryNotice=null;announceRecovery(level,room,com.frozendawn.network.RoomRecoveryPayload.Stage.SEAL_UNVERIFIED);
+            }
+        }
+        if(newlyUncertain)publish(level,new RoomChangeEvent.GeometryChange(before,List.of(),parents,false));
         return false;
     }
 
@@ -354,6 +451,7 @@ public final class RoomAtmosphere {
     /** Called by the persisted cell-air authority after mutation; no geometry query or chunk loading. */
     public static void airChanged(ServerLevel level, Set<BlockPos> cells, boolean depleted) {
         if (cells.isEmpty()) return;
+        com.frozendawn.airlock.AirlockSavedState.get(level).pocketAirChanged(cells,depleted);
         var ids = new HashSet<Long>();
         for (var membership : RoomIdentityState.get(level).overlapping(cells)) ids.add(membership.id());
         CombustionAtmosphere.reset();
@@ -396,6 +494,7 @@ public final class RoomAtmosphere {
         var index = LEVELS.get(level); if (index == null) return;
         var impacted = new HashSet<Room>(index.walls.getOrDefault(pos, Set.of()));
         if (beforePassage != afterPassage) {
+            index.scans.clear();index.boundaryOpenings.clear();
             index.negative.clear();
             for (var activity : index.activity.values()) activity.retryAt = 0;
             var inside = index.cells.get(pos); if (inside != null) impacted.add(inside);
@@ -497,6 +596,7 @@ public final class RoomAtmosphere {
 
     public static void tickLevel(ServerLevel level) {
         var index = LEVELS.get(level); if (index == null) return;
+        tickScans(level,index);
         tickActivity(level, index);
         int count = Math.min(8, index.work.size());
         for (int i = 0; i < count; i++) {
@@ -511,7 +611,7 @@ public final class RoomAtmosphere {
                 room = index.rooms.stream().filter(candidate -> candidate.id == id).findFirst().orElse(null);
                 if (room == null) continue;
             } else index.work.addLast(room);
-            if (CombustionAtmosphere.isVacuum(level)) recover(level, room);
+            if (!room.uncertain&&CombustionAtmosphere.isVacuum(level)) recover(level, room);
         }
     }
     @SubscribeEvent public static void tick(ServerTickEvent.Post event) { for (var level : event.getServer().getAllLevels()) tickLevel(level); }

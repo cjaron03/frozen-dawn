@@ -10,9 +10,17 @@ public final class AtmosphericActionBarPolicy {
         return !activeRoomNotice && stage == SuffocationStage.NONE;
     }
 
+    /** Direct hatch feedback may replace a completed room notice, never an oxygen warning. */
+    public static boolean allowsDoorNotice(String roomKey,SuffocationStage stage) {
+        return stage==SuffocationStage.NONE && (roomKey==null
+                ||roomKey.equals("ui.frozendawn.room.air_restored")||roomKey.equals("ui.frozendawn.room.seal_verified"));
+    }
     public record Notice(String primaryKey, String secondaryKey, boolean danger) {}
 
     public static Notice select(String roomKey, boolean suitHud, SuffocationStage stage) {
+        // Successful door openings stay silent in both the helmet and action bar.
+        if("message.frozendawn.airlock.door_open_vacuum".equals(roomKey)
+                ||"message.frozendawn.airlock.door_open_matched".equals(roomKey))roomKey=null;
         boolean danger = stage != SuffocationStage.NONE;
         if (suitHud || roomKey == null) {
             return danger ? new Notice(stage.translationKey(), null, true) : null;

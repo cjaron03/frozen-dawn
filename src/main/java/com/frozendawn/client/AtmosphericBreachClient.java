@@ -62,6 +62,8 @@ public final class AtmosphericBreachClient {
             case WAITING_FOR_OXYGEN -> "ui.frozendawn.room.sealed_no_supply";
             case RESTORING_AIR -> "ui.frozendawn.room.sealed_restoring";
             case AIR_RESTORED -> "ui.frozendawn.room.air_restored";
+            case SEAL_UNVERIFIED -> "ui.frozendawn.room.seal_unverified";
+            case SEAL_VERIFIED -> "ui.frozendawn.room.seal_verified";
         };
         noticeColor = stage == RoomRecoveryPayload.Stage.AIR_RESTORED ? ChatFormatting.GREEN : ChatFormatting.YELLOW;
         atmosphericLoss = false;
@@ -74,14 +76,19 @@ public final class AtmosphericBreachClient {
     }
 
     public static void receiveAirlock(com.frozendawn.network.AirlockStatusPayload payload) {
-        if (Minecraft.getInstance().player == null || !AtmosphericActionBarPolicy.allowsDeviceNotice(
-                warningTicks > 0 && !deviceNotice,suffocationStage)) return;
+        var player=Minecraft.getInstance().player;if(player==null)return;
+        if(payload.status().opensDoor())return;
+        boolean activeRoomNotice=warningTicks>0&&!deviceNotice;
+        boolean allowed=payload.status().doorNotice()
+                ?AtmosphericActionBarPolicy.allowsDoorNotice(activeRoomNotice?noticeKey:null,suffocationStage)
+                :AtmosphericActionBarPolicy.allowsDeviceNotice(activeRoomNotice,suffocationStage);
+        if(!allowed)return;
         // No sound or speech is scheduled for routine device messages.
         deviceNotice = true; atmosphericLoss = false;
         noticeKey = payload.status().key();
         noticeArgs = new Object[]{payload.reserve(),6400,payload.air(),payload.capacity(),payload.percent(),payload.amount()};
         noticeColor = payload.status().warning() ? ChatFormatting.RED
-                : payload.status() == com.frozendawn.network.AirlockStatusPayload.Status.READY ? ChatFormatting.GREEN : ChatFormatting.AQUA;
+                : payload.status().success() ? ChatFormatting.GREEN : ChatFormatting.AQUA;
         warningTicks = 60; lastSuitHud = null;
         routeNotice();
     }

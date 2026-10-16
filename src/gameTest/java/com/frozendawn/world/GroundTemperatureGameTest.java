@@ -24,7 +24,7 @@ public final class GroundTemperatureGameTest {
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE, batch="ground_temperature", timeoutTicks=40)
-    public static void thermalGroundQueriesPreserveShelterAndLoadedOnlyPath(GameTestHelper h) {
+    public static void thermalGroundQueriesRejectRoofBonusAndPreserveLoadedOnlyPath(GameTestHelper h) {
         var level = h.getLevel();
         var origin = h.absolutePos(new BlockPos(10, 2, 10));
         var pos = new BlockPos(origin.getX(), 0, origin.getZ());
@@ -38,8 +38,10 @@ public final class GroundTemperatureGameTest {
         h.assertTrue(Math.abs(expected-TemperatureManager.getLoadedTemperatureAt(level,pos,day,total))<.01,
                 "Catch-up samples the same loaded-only background");
         level.setBlock(pos.above(2),Blocks.STONE.defaultBlockState(),2);
-        h.assertTrue(Math.abs(expected+5-TemperatureManager.getTemperatureAt(level,pos,day,total))<.01,
-                "Existing roof shelter adds five degrees to the ground baseline");
+        h.assertTrue(Math.abs(expected-TemperatureManager.getTemperatureAt(level,pos,day,total))<.01,
+                "A roof cannot add free warmth to the ground baseline");
+        h.assertTrue(Math.abs(expected-TemperatureManager.getLoadedTemperatureAt(level,pos,day,total))<.01,
+                "Loaded-only roof sample also preserves the ground baseline");
         level.setBlock(pos.above(2),Blocks.AIR.defaultBlockState(),2);
         h.succeed();
     }

@@ -19,28 +19,38 @@ public final class AirlockCycle {
     public int elapsed() { return elapsed; }
     public int lost() { return lost; }
     public Mode mode() { return mode; }
-    public boolean breathable() { return air == capacity && mode == Mode.IDLE; }
+    public boolean breathable() { return air >= capacity && mode == Mode.IDLE; }
     public boolean cycling() { return mode != Mode.IDLE; }
+    public double density(){return (double)air/capacity;}
+    static AirlockCycle reconfigured(int cells,int air,int reserve) {
+        var gas=new AirlockCycle(cells,0);gas.air=Math.max(0,air);gas.fill(reserve);return gas;
+    }
     public int fill(int offered) {
         int accepted = Math.clamp(offered, 0, RESERVE_CAPACITY-reserve);
         reserve += accepted; return accepted;
     }
     public boolean start(boolean pressurize) {
-        if (cycling()) return false;
-        int amount = pressurize ? capacity-air : air;
-        if (amount <= 0 || pressurize && reserve < amount) return false;
+        if (pressurize && air >= capacity) return false;
+        return startTo(pressurize ? capacity : 0);
+    }
+    /** Match a measured destination density; the existing snapshot retains the remaining transfer. */
+    public boolean startTo(int targetAir) {
+        if (cycling() || targetAir < 0 || targetAir == air) return false;
+        boolean pressurize = targetAir > air;
+        int amount = pressurize ? targetAir-air : air-targetAir;
+        if (pressurize && reserve < amount) return false;
         mode = pressurize ? Mode.PRESSURIZING : Mode.DEPRESSURIZING;
         planned = amount; elapsed = moved = recovered = lost = 0;
         return true;
     }
     public boolean tick() {
         if (!cycling()) return false;
-        int target = planned * ++elapsed / DURATION;
+        int target = (int)((long)planned * ++elapsed / DURATION);
         int delta = target-moved;
         if (mode == Mode.PRESSURIZING) { reserve -= delta; air += delta; }
         else {
             air -= delta;
-            int reclaim = target * 9 / 10 - recovered;
+            int reclaim = (int)((long)target * 9 / 10) - recovered;
             int accepted = fill(reclaim);
             lost += delta-accepted;
             recovered += reclaim;
@@ -57,15 +67,15 @@ public final class AirlockCycle {
     public static AirlockCycle restore(int cells,int[] data) {
         var c = new AirlockCycle(cells,0);
         if (data.length != 9 || data[0] != c.capacity || data[1] < 0 || data[1] > RESERVE_CAPACITY
-                || data[2] < 0 || data[2] > c.capacity || data[3] < 0 || data[3] >= Mode.values().length
-                || data[4] < 0 || data[4] >= DURATION || data[5] < 0 || data[5] > c.capacity
+                || data[2] < 0 || data[3] < 0 || data[3] >= Mode.values().length
+                || data[4] < 0 || data[4] >= DURATION || data[5] < 0
                 || data[6] < 0 || data[6] > data[5] || data[7] < 0 || data[7] > data[6] || data[8] < 0)
             return c;
         c.reserve=data[1];c.air=data[2];c.mode=Mode.values()[data[3]];c.elapsed=data[4];
         c.planned=data[5];c.moved=data[6];c.recovered=data[7];c.lost=data[8];
-        if (c.cycling() && (c.moved != c.planned*c.elapsed/DURATION
+        if (c.cycling() && (c.moved != (long)c.planned*c.elapsed/DURATION
                 || c.mode == Mode.PRESSURIZING && (c.reserve < c.planned-c.moved || c.air < c.moved)
-                || c.mode == Mode.DEPRESSURIZING && (c.air != c.planned-c.moved || c.recovered != c.moved*9/10)))
+                || c.mode == Mode.DEPRESSURIZING && (c.air < c.planned-c.moved || c.recovered != (long)c.moved*9/10)))
             c.interrupt();
         return c;
     }

@@ -209,6 +209,15 @@ public class SoundMuffler {
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
             if (isLocalHearthrotHurtCue) return;
+            if (AirlockAudioPolicy.isMachinery(soundLocation.getNamespace(), soundPath)) {
+                // Nearby panel/door vibration remains useful while the chamber is empty.
+                // Keep its position, BLOCKS slider and short range; distant vacuum stays silent.
+                double distanceSquared = mc.player.getEyePosition().distanceToSqr(
+                        original.getX(), original.getY(), original.getZ());
+                float gain = AirlockAudioPolicy.vacuumGain(distanceSquared);
+                event.setSound(gain == 0 ? null : new MuffledSound(original, gain, 0.95F));
+                return;
+            }
             if (isWindAmbience && (PostMaeveClientState.isMaeveErased()
                     || MasterArchitectWeather.getStrength() > 0.01F)) return;
             if (isGeothermalCue) {
