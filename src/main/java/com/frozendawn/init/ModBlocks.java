@@ -88,6 +88,15 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.MoltenCoriumBlock> MOLTEN_CORIUM = BLOCKS.register("molten_corium",
             () -> new com.frozendawn.block.MoltenCoriumBlock(BlockBehaviour.Properties.of().strength(-1f, 3600000f).noLootTable().sound(SoundType.ANCIENT_DEBRIS)
                     .lightLevel(state -> 15).emissiveRendering((state, level, pos) -> true).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> GALENA_ORE = BLOCKS.register("galena_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
+                    BlockBehaviour.Properties.of().strength(3f, 3f).requiresCorrectToolForDrops().sound(SoundType.STONE).mapColor(net.minecraft.world.level.material.MapColor.STONE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_GALENA_ORE = BLOCKS.register("deepslate_galena_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
+                    BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));
+    /** Dense radiation shielding: x0.1 per block (RadiationField.factor). */
+    public static final DeferredBlock<Block> LEAD_BLOCK = BLOCKS.register("lead_block",
+            () -> new Block(BlockBehaviour.Properties.of().strength(5f, 6f).requiresCorrectToolForDrops().sound(SoundType.METAL).mapColor(net.minecraft.world.level.material.MapColor.COLOR_GRAY)));
     public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_URANIUM_ORE = BLOCKS.register("deepslate_uranium_ore",
             () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.UniformInt.of(1, 3),
                     BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));

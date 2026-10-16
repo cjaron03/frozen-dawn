@@ -85,7 +85,7 @@ public final class RadiationField {
             rate += i < MAX_RAYS ? RadiationMath.rate(s.strength(), d, shielding(level, s.pos(), eye, s.block(), at))
                     : RadiationMath.rate(s.strength(), d, 0.5); // beyond the ray budget: assume one wall
         }
-        return rate + oreRate(player);
+        return (rate + oreRate(player)) * com.frozendawn.item.LeadLiningModuleItem.rateMultiplier(player);
     }
 
     /** Product of per-block factors between source and eye, excluding the source's own block and the eye cell. */
@@ -104,6 +104,7 @@ public final class RadiationField {
     public static double factor(BlockState s) {
         if (!s.getFluidState().isEmpty() && s.getFluidState().is(FluidTags.WATER)) return 0.5;
         if (s.is(Blocks.ICE) || s.is(Blocks.PACKED_ICE) || s.is(Blocks.BLUE_ICE) || s.is(Blocks.SNOW_BLOCK)) return 0.5;
+        if (s.is(com.frozendawn.init.ModBlocks.LEAD_BLOCK.get())) return 0.1;
         if (s.getBlock() instanceof ReactorCasingBlock || s.is(Blocks.OBSIDIAN) || s.is(Blocks.CRYING_OBSIDIAN)
                 || net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getPath().endsWith("_concrete")) return 0.4;
         if (s.isAir()) return 1;

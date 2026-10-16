@@ -65,6 +65,13 @@ public class ModItems {
     public static final DeferredItem<BlockItem> REACTOR_RADIATOR = ITEMS.registerSimpleBlockItem("reactor_radiator", ModBlocks.REACTOR_RADIATOR);
     public static final DeferredItem<BlockItem> CORIUM = ITEMS.registerSimpleBlockItem("corium", ModBlocks.CORIUM);
     public static final DeferredItem<BlockItem> REACTOR_DEBRIS = ITEMS.registerSimpleBlockItem("reactor_debris", ModBlocks.REACTOR_DEBRIS);
+    public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
+    public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
+    public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
+    public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
+    public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
+            () -> new com.frozendawn.item.LeadLiningModuleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<BlockItem> DEEPSLATE_URANIUM_ORE = ITEMS.registerSimpleBlockItem("deepslate_uranium_ore", ModBlocks.DEEPSLATE_URANIUM_ORE);
     public static final DeferredItem<Item> RAW_URANIUM = ITEMS.registerSimpleItem("raw_uranium");
     public static final DeferredItem<Item> URANIUM_CONCENTRATE = ITEMS.registerSimpleItem("uranium_concentrate");
@@ -555,6 +562,12 @@ public class ModItems {
                         output.accept(GEIGER_COUNTER.get());
                         output.accept(CORIUM.get());
                         output.accept(REACTOR_DEBRIS.get());
+                        output.accept(GALENA_ORE.get());
+                        output.accept(DEEPSLATE_GALENA_ORE.get());
+                        output.accept(RAW_GALENA.get());
+                        output.accept(LEAD_INGOT.get());
+                        output.accept(LEAD_BLOCK.get());
+                        output.accept(LEAD_LINING_MODULE.get());
                         output.accept(PANEL_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

@@ -45,13 +45,19 @@ Source: Notion "Radiation" (Power System), with the owner's decisions of 2026-10
   grey haze that thickens to about 10 blocks of visibility at 50 layers. It cakes onto a sealed EVA visor (soot
   overlay) until washed in water, and contaminates an unsealed player standing within three blocks of 10 or more
   layers even off the fallout itself. The haze is client side; contamination is server side from the source index.
+- **Lead** (`ModBlocks.GALENA_ORE`, `LEAD_BLOCK`, `LeadLiningModuleItem`): galena ore (stone and deepslate,
+  y -32 to 64, about as common as iron) drops Raw Galena, which smelts or blasts into Lead Ingots. A Block of Lead
+  shields x0.1, the best per-block shield. The Lead-Lined EVA Module (6 lead, 2 clothing scraps, a suit patch kit)
+  works like the O2 Efficiency Module: carried anywhere, it halves the whole incoming rate, including carried
+  sources, but only under a full sealed EVA suit. It is heavy: Slowness I while carried, suit or not. A real lining
+  that halves fission-product gamma would be several millimetres of lead and far heavier.
 - **Advancements** (hidden, under Phase 6): 3.6 Roentgen, AZ-5, Elephant's Foot, Carnot Would Be Proud, Even the
   Reactor Gets Cold, War Never Changes, Was That the Geiger Counter?
 - **Audio**: original Geiger clicks (`tools/audio_sources/hearthstone/`).
 
 ## Not yet
 
-Lead blocks and the lead-lined EVA module, decontamination shower, RadAid loot placement, a Rad-X-style pill
+Decontamination shower, RadAid loot placement, a Rad-X-style pill
 (offered, not chosen), the ruined ORSA reactor site and salvaged rods.
 
 ## Radiation Check world

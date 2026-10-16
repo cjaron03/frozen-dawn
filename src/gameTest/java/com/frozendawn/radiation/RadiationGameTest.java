@@ -125,6 +125,36 @@ public final class RadiationGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "radiation", timeoutTicks = 100)
+    public static void leadShieldsAndLiningHalvesSealedSuitDose(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel();
+            var a = h.absolutePos(new BlockPos(2, 3, 2)); var b = h.absolutePos(new BlockPos(8, 3, 2));
+            level.setBlock(a.east(3), ModBlocks.LEAD_BLOCK.get().defaultBlockState(), 3);
+            near(h, RadiationField.shielding(level, Vec3.atCenterOf(a), Vec3.atCenterOf(b), a, b), 0.1, "One lead block stops 90%");
+            var p = player(h, "lead_lined");
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(ModItems.EVA_HELMET.get()));
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(ModItems.EVA_CHESTPLATE.get()));
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, new ItemStack(ModItems.EVA_LEGGINGS.get()));
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, new ItemStack(ModItems.EVA_BOOTS.get()));
+            h.assertTrue(com.frozendawn.event.SuitIntegrityHandler.isWearingSealedSuit(p), "Full EVA is a sealed suit");
+            var corium = BlockPos.containing(p.getEyePosition()).east(3);
+            level.setBlock(corium, ModBlocks.CORIUM.get().defaultBlockState(), 3);
+            double bare = RadiationField.rate(p);
+            h.assertTrue(bare > 1, "Corium three blocks away is hot: " + bare);
+            p.getInventory().add(new ItemStack(ModItems.LEAD_LINING_MODULE.get()));
+            h.assertTrue(Math.abs(RadiationField.rate(p) - bare * 0.5) < bare * 1e-6, "The lining halves it under a sealed suit");
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, ItemStack.EMPTY);
+            h.assertTrue(Math.abs(RadiationField.rate(p) - bare) < bare * 1e-6, "Without the full suit the lining does nothing");
+            level.setBlock(corium, Blocks.AIR.defaultBlockState(), 3);
+            var smelted = level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING,
+                    new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(ModItems.RAW_GALENA.get())), level);
+            h.assertTrue(smelted.isPresent() && smelted.get().value().getResultItem(level.registryAccess()).is(ModItems.LEAD_INGOT.get()), "Raw galena smelts to lead");
+            h.assertTrue(level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.PLACED_FEATURE)
+                    .containsKey(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "galena_ore")), "Galena generates");
+        });
+    }
+
     private static FakePlayer player(GameTestHelper h, String name) {
         var p = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), name));
         p.setPos(h.absolutePos(new BlockPos(10, 2, 10)).getBottomCenter());

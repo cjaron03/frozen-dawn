@@ -647,3 +647,4 @@ spentrodcausessicknessmilkcannotcure xml
 contaminationfillsopenspacebutnotsealedrooms xml
 falloutcontaminatesuntilwashed xml
 radaidflushesdoseandadvancementsload xml
+leadshieldsandlininghalvessealedsuitdose xml

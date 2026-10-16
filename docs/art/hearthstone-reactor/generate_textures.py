@@ -357,6 +357,64 @@ def reactor_debris():
     return im
 
 
+GALENA = {"k": (34, 36, 42), "g": (118, 124, 136), "G": (176, 184, 198), "W": (226, 232, 242)}
+LEAD = [(42, 46, 54), (62, 67, 77), (82, 88, 100), (104, 111, 124), (134, 142, 156)]
+
+
+def galena_overlay():
+    """Galena: cubic lead-grey crystals with bright metallic faces, drawn over vanilla stone or deepslate."""
+    return pixel_map([
+        "................", ".kkk............", ".kGWk.......kkk.", ".kggk.......kGWk", "..kk........kggk",
+        "......kkkk...kk.", "......kGGWk.....", "......kgGGk.....", "......kgggk.....", ".......kkk...kk.",
+        ".kkk.........kWk", ".kGWk....kkk..k.", ".kggk....kGWk...", "..kk.....kggk....", "..........kk....", "................"],
+        GALENA)
+
+
+def raw_galena():
+    """Raw galena lump: blocky silver-grey crystal faces with dark cleavage lines."""
+    return pixel_map([
+        "................", "................", "....kkkkk.......", "...kGGWGgkkk....", "...kGGGGgGWGk...",
+        "..kkggggkGGGgk..", "..kGWGgkkggggk..", ".kGGGGgkGWGGgk..", ".kggggkkGGGGgkk.", ".kkkkkGWkggggGWk",
+        "..kGGGGGgkkkkGGk", "..kgggGGgk.kgggk", "...kkkggggkkkkk.", ".....kkkkkk.....", "................", "................"],
+        GALENA)
+
+
+def lead_ingot():
+    """Dull blue-grey ingot, like vanilla's ingot silhouette."""
+    return pixel_map([
+        "................", "................", "................", "................", "................",
+        "......ooooooo...", "....ooLLLLLLLo..", "..ooLLHHHHHLMo..", ".oLLHHHHHHLMMo..", "oMMMMMLLLLMMMo..",
+        "oMMMMMMMMMMMdo..", "oMddMMMMMMMdo...", "odddddddddoo....", ".oooooooooo.....", "................", "................"],
+        {"o": LEAD[0], "d": LEAD[1], "M": LEAD[2], "L": LEAD[3], "H": LEAD[4]})
+
+
+def lead_block():
+    """Cast lead block: soft blue-grey with a faint oxide bloom and pour marks."""
+    import random as _r
+    r = _r.Random(61)
+    im = img()
+    for x in range(16):
+        for y in range(16):
+            v = r.random()
+            c = LEAD[2] if v < .55 else LEAD[3] if v < .85 else LEAD[1] if v < .95 else (150, 156, 160)
+            im.putpixel((x, y), c + (255,))
+    for i in range(16):
+        im.putpixel((i, 0), LEAD[4] + (255,)); im.putpixel((0, i), LEAD[4] + (255,))
+        im.putpixel((i, 15), LEAD[0] + (255,)); im.putpixel((15, i), LEAD[0] + (255,))
+    for x in range(3, 13):
+        im.putpixel((x, 5), LEAD[1] + (255,)); im.putpixel((x, 10), LEAD[1] + (255,))
+    return im
+
+
+def lead_lining_module():
+    """Folded lead-sheet panel with an orange EVA-fabric edge and a trefoil tag."""
+    return pixel_map([
+        "................", "..oooooooooooo..", "..oFFFFFFFFFFo..", "..oLLLLLLLLLLo..", "..oLHHHHHHHHLo..",
+        "..oLHMMMMMMHLo..", "..oLHMMYYMMHLo..", "..oLHMYKKYMHLo..", "..oLHMMYYMMHLo..", "..oLHMMMMMMHLo..",
+        "..oLHHHHHHHHLo..", "..oLLLLLLLLLLo..", "..oFFFFFFFFFFo..", "..oooooooooooo..", "................", "................"],
+        {"o": LEAD[0], "L": LEAD[2], "H": LEAD[3], "M": LEAD[1], "F": (214, 120, 52), "Y": (232, 190, 40), "K": (30, 28, 24)})
+
+
 if __name__ == "__main__":
     save(casing(), "block/reactor_casing.png")
     save(casing(True), "block/reactor_casing_scorched.png")
@@ -385,5 +443,10 @@ if __name__ == "__main__":
     save(fallout(), "block/fallout.png")
     save(fallout_severe(), "block/fallout_severe.png")
     save(reactor_debris(), "block/reactor_debris.png")
+    save(galena_overlay(), "block/galena_ore_overlay.png")
+    save(raw_galena(), "item/raw_galena.png")
+    save(lead_ingot(), "item/lead_ingot.png")
+    save(lead_block(), "block/lead_block.png")
+    save(lead_lining_module(), "item/lead_lining_module.png")
     save(rod(False), "item/fuel_rod.png")
     save(rod(True), "item/spent_fuel_rod.png")
