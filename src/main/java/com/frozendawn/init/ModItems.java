@@ -68,6 +68,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> GALENA_ORE = ITEMS.registerSimpleBlockItem("galena_ore", ModBlocks.GALENA_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_GALENA_ORE = ITEMS.registerSimpleBlockItem("deepslate_galena_ore", ModBlocks.DEEPSLATE_GALENA_ORE);
     public static final DeferredItem<BlockItem> LEAD_BLOCK = ITEMS.registerSimpleBlockItem("lead_block", ModBlocks.LEAD_BLOCK);
+    public static final DeferredItem<BlockItem> DECON_SHOWER = ITEMS.registerSimpleBlockItem("decon_shower", ModBlocks.DECON_SHOWER);
     public static final DeferredItem<Item> RAW_GALENA = ITEMS.registerSimpleItem("raw_galena");
     public static final DeferredItem<Item> LEAD_INGOT = ITEMS.registerSimpleItem("lead_ingot");
     public static final DeferredItem<com.frozendawn.item.LeadLiningModuleItem> LEAD_LINING_MODULE = ITEMS.register("lead_lining_module",
@@ -568,6 +569,7 @@ public class ModItems {
                         output.accept(LEAD_INGOT.get());
                         output.accept(LEAD_BLOCK.get());
                         output.accept(LEAD_LINING_MODULE.get());
+                        output.accept(DECON_SHOWER.get());
                         output.accept(PANEL_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

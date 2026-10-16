@@ -51,13 +51,18 @@ Source: Notion "Radiation" (Power System), with the owner's decisions of 2026-10
   works like the O2 Efficiency Module: carried anywhere, it halves the whole incoming rate, including carried
   sources, but only under a full sealed EVA suit. It is heavy: Slowness I while carried, suit or not. A real lining
   that halves fission-product gamma would be several millimetres of lead and far heavier.
+- **Decontamination shower** (`DeconShowerBlock`): a copper shower head that hangs under a sturdy ceiling and
+  links to the power network with the Conduit Binder. When a player stands within three blocks below it, it asks
+  for 3 kW (pump and heater); once granted, and with a water, ice or snow block beside or above it as its tank,
+  water runs and washes off contamination (server) and visor grime (client) like a swim. It draws nothing when
+  nobody is under it. A starved shower shows by name on the Power Monitor. Recipe: copper, iron and a bucket.
 - **Advancements** (hidden, under Phase 6): 3.6 Roentgen, AZ-5, Elephant's Foot, Carnot Would Be Proud, Even the
   Reactor Gets Cold, War Never Changes, Was That the Geiger Counter?
 - **Audio**: original Geiger clicks (`tools/audio_sources/hearthstone/`).
 
 ## Not yet
 
-Decontamination shower, RadAid loot placement, a Rad-X-style pill
+RadAid loot placement, a Rad-X-style pill
 (offered, not chosen), the ruined ORSA reactor site and salvaged rods.
 
 ## Radiation Check world

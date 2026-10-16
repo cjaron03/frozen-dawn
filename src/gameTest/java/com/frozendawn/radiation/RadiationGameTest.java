@@ -155,6 +155,42 @@ public final class RadiationGameTest {
         });
     }
 
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "radiation", timeoutTicks = 100)
+    public static void deconShowerNeedsPowerAndWaterThenWashes(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel();
+            for (int x = 1; x <= 5; x++) for (int z = 1; z <= 5; z++) h.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            h.setBlock(new BlockPos(3, 5, 3), Blocks.STONE);
+            var shower = h.absolutePos(new BlockPos(3, 4, 3));
+            level.setBlock(shower, ModBlocks.DECON_SHOWER.get().defaultBlockState(), 3);
+            var bank = h.absolutePos(new BlockPos(1, 2, 1));
+            level.setBlock(bank, ModBlocks.BATTERY_BANK.get().defaultBlockState(), 3);
+            var store = (com.frozendawn.block.PowerStorageBlockEntity) level.getBlockEntity(bank);
+            for (int i = 0; i < 4; i++) store.setItem(i, com.frozendawn.item.PowerCellItem.charged(500_000));
+            var p = player(h, "showering"); p.setPos(h.absolutePos(new BlockPos(3, 2, 3)).getBottomCenter());
+            p.getData(ModAttachments.RADIATION.get()).contamination = 1;
+            h.assertTrue(com.frozendawn.block.DeconShowerBlock.spray(shower).intersects(p.getBoundingBox()), "Standing under the head is in its spray");
+            var tank = new BlockPos(4, 4, 3); h.setBlock(tank, Blocks.PACKED_ICE);
+            com.frozendawn.block.DeconShowerBlock.update(level, shower, true);
+            h.assertTrue(com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(shower)) == com.frozendawn.block.DeconShowerBlock.DEMAND_WATTS
+                    && !level.getBlockState(shower).getValue(com.frozendawn.block.DeconShowerBlock.RUNNING), "Occupied, it asks for power; unlinked, no water runs");
+            h.assertTrue(com.frozendawn.power.PowerNetworks.link(level, bank, shower) == com.frozendawn.power.PowerLinkRules.Result.OK, "The Binder links a shower");
+            allocate(level);
+            com.frozendawn.block.DeconShowerBlock.update(level, shower, true);
+            h.assertTrue(level.getBlockState(shower).getValue(com.frozendawn.block.DeconShowerBlock.RUNNING) && com.frozendawn.block.DeconShowerBlock.washing(p),
+                    "With an ice tank and power it runs and sprays the player");
+            RadiationHandler.second(p);
+            h.assertTrue(p.getData(ModAttachments.RADIATION.get()).contamination == 0 && !p.hasEffect(ModEffects.CONTAMINATED), "The shower washes contamination off");
+            h.setBlock(tank, Blocks.AIR);
+            com.frozendawn.block.DeconShowerBlock.update(level, shower, true);
+            h.assertTrue(!level.getBlockState(shower).getValue(com.frozendawn.block.DeconShowerBlock.RUNNING) && !com.frozendawn.block.DeconShowerBlock.washing(p),
+                    "Powered but with no tank, it stays dry");
+            com.frozendawn.block.DeconShowerBlock.update(level, shower, false);
+            h.assertTrue(com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(shower)) == 0, "Empty, it draws nothing");
+        });
+    }
+    private static void allocate(ServerLevel level) { for (int i = 0; i < 128; i++) com.frozendawn.power.PowerNetworks.update(level); com.frozendawn.power.PowerNetworks.account(level); }
+
     private static FakePlayer player(GameTestHelper h, String name) {
         var p = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), name));
         p.setPos(h.absolutePos(new BlockPos(10, 2, 10)).getBottomCenter());

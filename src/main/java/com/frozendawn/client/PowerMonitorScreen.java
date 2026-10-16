@@ -14,7 +14,7 @@ public final class PowerMonitorScreen extends AbstractContainerScreen<PowerMonit
     public PowerMonitorScreen(PowerMonitorMenu m,Inventory i,Component t){super(m,i,t);imageWidth=252;imageHeight=222;}
     @Override protected void init(){super.init();previous=addRenderableWidget(Button.builder(Component.literal("<"),b->change(0)).bounds(leftPos+8,topPos+192,20,20).build());next=addRenderableWidget(Button.builder(Component.literal(">"),b->change(1)).bounds(leftPos+224,topPos+192,20,20).build());}
     private void change(int id){if(minecraft!=null&&minecraft.gameMode!=null)minecraft.gameMode.handleInventoryButtonClick(menu.containerId,id);}
-    private Component rowText(int row){return Component.translatable(menu.rowKind(row)==4?"block.frozendawn.resistive_heater":menu.rowKind(row)==3?"block.frozendawn.pixie":menu.rowKind(row)==2?"screen.frozendawn.power_monitor.furnace":"screen.frozendawn.power_monitor.light");}
+    private Component rowText(int row){return Component.translatable(menu.rowKind(row)==5?"block.frozendawn.decon_shower":menu.rowKind(row)==4?"block.frozendawn.resistive_heater":menu.rowKind(row)==3?"block.frozendawn.pixie":menu.rowKind(row)==2?"screen.frozendawn.power_monitor.furnace":"screen.frozendawn.power_monitor.light");}
     @Override protected void renderBg(GuiGraphics g,float partial,int mx,int my){
         int x=leftPos,y=topPos;g.fill(x,y,x+252,y+222,0xFF28353D);g.fill(x+7,y+7,x+245,y+215,0xFF152128);
         int status=menu.data().get(12);String key=switch(status){case 1->"normal";case 2->"backup";case 3->"brownout";case 4->"no_power";default->"unlinked";};

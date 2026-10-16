@@ -120,7 +120,7 @@ public final class RadiationClient {
                 if (mc.level.getBlockState(p).getBlock() instanceof com.frozendawn.block.FalloutBlock) count++;
             airborne = (float) Math.clamp((count - HAZE_FROM) / (double) (HAZE_FULL - HAZE_FROM), 0, 1);
         }
-        if (player.isInWater()) grime = 0;
+        if (player.isInWater() || com.frozendawn.block.DeconShowerBlock.washing(player)) grime = 0;
         else if (airborne > 0 && com.frozendawn.event.SuitIntegrityHandler.isWearingSealedSuit(player)) grime = Math.min(1, grime + 0.004f * airborne);
         if (airborne <= 0) return;
         var random = player.getRandom();

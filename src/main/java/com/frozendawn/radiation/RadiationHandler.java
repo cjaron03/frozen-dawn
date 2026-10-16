@@ -49,7 +49,7 @@ public final class RadiationHandler {
         var state = p.getData(ModAttachments.RADIATION.get());
         boolean onFallout = FalloutBlock.at(p.level(), p.blockPosition()) || FalloutBlock.at(p.level(), p.blockPosition().below())
                 || airborneFallout(p) >= AIRBORNE_LAYERS;
-        if (p.isInWater()) { state.contamination = 0; state.contaminationWarned = false; }
+        if (p.isInWater() || com.frozendawn.block.DeconShowerBlock.washing(p)) { state.contamination = 0; state.contaminationWarned = false; }
         else if (onFallout && !SuitIntegrityHandler.isWearingSealedSuit(p)) {
             state.contamination = Math.min(CONTAMINATION_MAX, state.contamination + CONTAMINATION_STEP);
             if (!state.contaminationWarned) { state.contaminationWarned = true;

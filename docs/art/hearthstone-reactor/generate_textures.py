@@ -415,6 +415,23 @@ def lead_lining_module():
         {"o": LEAD[0], "L": LEAD[2], "H": LEAD[3], "M": LEAD[1], "F": (214, 120, 52), "Y": (232, 190, 40), "K": (30, 28, 24)})
 
 
+def decon_shower_head():
+    """Shower rose seen from below: brushed copper plate with a ring of dark nozzle holes."""
+    im = plate(71, COPPER + [(236, 170, 116)], rivets=False)
+    for x, y in ((6, 5), (9, 5), (5, 7), (7, 7), (10, 7), (6, 9), (8, 9), (10, 9), (5, 11), (8, 11), (6, 6), (9, 10)):
+        im.putpixel((x, y), (40, 24, 16, 255))
+    return im
+
+
+def decon_shower_side():
+    """Copper pipe and rim, with a yellow ORSA hazard stripe."""
+    im = plate(73, COPPER + [(236, 170, 116)], rivets=False)
+    for x in range(16):
+        im.putpixel((x, 2), (232, 190, 40, 255) if x % 4 < 2 else (30, 28, 24, 255))
+        im.putpixel((x, 3), (232, 190, 40, 255) if x % 4 < 2 else (30, 28, 24, 255))
+    return im
+
+
 if __name__ == "__main__":
     save(casing(), "block/reactor_casing.png")
     save(casing(True), "block/reactor_casing_scorched.png")
@@ -448,5 +465,7 @@ if __name__ == "__main__":
     save(lead_ingot(), "item/lead_ingot.png")
     save(lead_block(), "block/lead_block.png")
     save(lead_lining_module(), "item/lead_lining_module.png")
+    save(decon_shower_head(), "block/decon_shower_head.png")
+    save(decon_shower_side(), "block/decon_shower_side.png")
     save(rod(False), "item/fuel_rod.png")
     save(rod(True), "item/spent_fuel_rod.png")

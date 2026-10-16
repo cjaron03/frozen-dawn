@@ -1276,6 +1276,7 @@
   "item.frozendawn.raw_galena": "Raw Galena",
   "item.frozendawn.lead_ingot": "Lead Ingot",
   "item.frozendawn.lead_lining_module": "Lead-Lined EVA Module",
+  "block.frozendawn.decon_shower": "ORSA Decontamination Shower",
   "tooltip.frozendawn.lead_lining_module": "Carried module: halves incoming radiation while a full sealed EVA suit is worn.",
   "tooltip.frozendawn.lead_lining_module.weight": "Heavy: Slowness I while carried.",
   "item.frozendawn.raw_uranium": "Raw Uranium",
