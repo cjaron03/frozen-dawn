@@ -56,14 +56,27 @@ Source: Notion "Radiation" (Power System), with the owner's decisions of 2026-10
   for 3 kW (pump and heater); once granted, and with a water, ice or snow block beside or above it as its tank,
   water runs and washes off contamination (server) and visor grime (client) like a swim. It draws nothing when
   nobody is under it. A starved shower shows by name on the Power Monitor. Recipe: copper, iron and a bucket.
+- **Ruined ORSA reactor site** (`ReactorSitePlacement`, `ReactorSiteBuilder`, `ReactorSiteState`): a code-built
+  landmark placed like Monitoring Stations. One candidate chunk per 96x96-chunk region (about 1,500 blocks), 60%
+  of regions roll one, at least 600 blocks from spawn, in newly loaded chunks only. Any land biome except
+  oceans, rivers, swamps and peaks, with at most 8 blocks of slope; if the candidate spot fails, spots up to 32
+  blocks away are tried, and a rejected candidate logs its reason. Sites keep 32 blocks clear of towns,
+  villages and other surface structures and 64 blocks clear of built ORSA landmarks. A
+  15x15 concrete hall with the roof blown open over a torn, scorched CFU-7 shell; the core melted a hole through
+  the floor into a sealed basement where two Corium blocks form an elephant's foot (deadly if you stand over the
+  hole). A frozen spent-fuel pool holds a barrel rack: 2-4 salvaged fuel rods, 40-80% burned, beside 2 spent rods,
+  under four layers of packed ice. The control room has a Geiger Counter, RadAid, a part-charged Power Cell, a
+  shift log (automatic SCRAM was disabled to keep the dorms warm) and an empty Shielded Cask. Heavy fallout inside
+  and within 10 blocks, thin fallout to 16, thrown Reactor Debris, dead ground. Find one with
+  `/frozendawn locate orsa`; operators can build one 24 blocks ahead with `/fd world reactorsite`.
 - **Advancements** (hidden, under Phase 6): 3.6 Roentgen, AZ-5, Elephant's Foot, Carnot Would Be Proud, Even the
   Reactor Gets Cold, War Never Changes, Was That the Geiger Counter?
 - **Audio**: original Geiger clicks (`tools/audio_sources/hearthstone/`).
 
 ## Not yet
 
-RadAid loot placement, a Rad-X-style pill
-(offered, not chosen), the ruined ORSA reactor site and salvaged rods.
+A Rad-X-style pill (offered, not chosen). Partly burned rods still emit like fresh ones (strength does not
+scale with burn-up); making them hotter would also change routine rod handling at the Controller.
 
 ## Radiation Check world
 

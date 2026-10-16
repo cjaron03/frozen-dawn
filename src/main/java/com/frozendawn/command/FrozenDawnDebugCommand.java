@@ -55,6 +55,7 @@ final class FrozenDawnDebugCommand {
         List<String> lines = switch (category) {
             case "world" -> List.of(
                     "/fd world status [verbose] | catchup | pause | preset <name>",
+                    "/fd world reactorsite (builds a ruined ORSA reactor 24 blocks ahead)",
                     "/fd world set day <day>",
                     "/fd world set phase <phase> [early|mid|late]",
                     "/fd world reset confirm");

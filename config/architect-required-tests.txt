@@ -649,3 +649,4 @@ falloutcontaminatesuntilwashed xml
 radaidflushesdoseandadvancementsload xml
 leadshieldsandlininghalvessealedsuitdose xml
 deconshowerneedspowerandwaterthenwashes xml
+ruinedreactorsiteholdscoriumrodsandfallout xml

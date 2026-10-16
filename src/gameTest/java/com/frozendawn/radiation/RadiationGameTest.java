@@ -189,6 +189,48 @@ public final class RadiationGameTest {
             h.assertTrue(com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(shower)) == 0, "Empty, it draws nothing");
         });
     }
+    /** Own batch: the site grades and contaminates well past this structure. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor_site", timeoutTicks = 100)
+    public static void ruinedReactorSiteHoldsCoriumRodsAndFallout(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var c = h.absolutePos(new BlockPos(10, 10, 10));
+            com.frozendawn.world.ReactorSiteBuilder.place(level, c);
+            for (var p : com.frozendawn.world.ReactorSiteBuilder.CORIUM) h.assertTrue(level.getBlockState(c.offset(p)).is(ModBlocks.CORIUM.get()), "Elephant's foot in the basement");
+            h.assertTrue(level.getBlockState(c.offset(0, -5, 0)).isAir() && (level.getBlockState(c.offset(3, -5, 0)).is(Blocks.GRAY_CONCRETE)
+                    || level.getBlockState(c.offset(3, -5, 0)).is(Blocks.LIGHT_GRAY_CONCRETE)), "Sealed concrete basement");
+            h.assertTrue(level.getBlockState(c.offset(0, -1, 0)).isAir() && level.getBlockState(c.offset(0, -2, 0)).isAir(), "The core melted a hole through the floor");
+            h.assertTrue(level.getBlockState(c.offset(0, com.frozendawn.world.ReactorSiteBuilder.ROOF, 0)).isAir(), "The blast opened the roof");
+            h.assertTrue(level.getBlockState(c.offset(5, -1, -5)).is(Blocks.PACKED_ICE), "The fuel pool is frozen over the rack");
+            var rack = (net.minecraft.world.level.block.entity.BarrelBlockEntity) level.getBlockEntity(c.offset(com.frozendawn.world.ReactorSiteBuilder.RACK));
+            int rods = 0, spent = 0;
+            for (int i = 0; i < rack.getContainerSize(); i++) {
+                var s = rack.getItem(i);
+                if (s.is(ModItems.FUEL_ROD.get())) { rods++; double used = s.getDamageValue() / (double) s.getMaxDamage();
+                    h.assertTrue(used >= .39 && used <= .81, "Salvaged rods are partly burned: " + used); }
+                if (s.is(ModItems.SPENT_FUEL_ROD.get())) spent += s.getCount();
+            }
+            h.assertTrue(rods >= 2 && rods <= 4 && spent == 2, "Rack holds 2-4 salvaged rods and 2 spent: " + rods + ", " + spent);
+            var locker = (net.minecraft.world.level.block.entity.BarrelBlockEntity) level.getBlockEntity(c.offset(com.frozendawn.world.ReactorSiteBuilder.LOCKER));
+            var medical = (net.minecraft.world.level.block.entity.BarrelBlockEntity) level.getBlockEntity(c.offset(com.frozendawn.world.ReactorSiteBuilder.MEDICAL));
+            h.assertTrue(locker.hasAnyMatching(st -> st.is(ModItems.GEIGER_COUNTER.get())) && locker.hasAnyMatching(st -> st.is(ModItems.RAD_AID.get()))
+                    && medical.hasAnyMatching(st -> st.is(ModItems.SHIELDED_CASK.get())), "Control room: counter, RadAid and an empty cask");
+            int heavy = 0, debris = 0;
+            for (var p : BlockPos.betweenClosed(c.offset(-22, -10, -22), c.offset(22, 10, 22))) {
+                var st = level.getBlockState(p);
+                if (st.getBlock() instanceof FalloutBlock) { if (st.getValue(FalloutBlock.SEVERE)) heavy++; level.setBlock(p, Blocks.AIR.defaultBlockState(), 3); }
+                else if (st.is(ModBlocks.REACTOR_DEBRIS.get()) || st.is(ModBlocks.CORIUM.get())) { if (st.is(ModBlocks.REACTOR_DEBRIS.get())) debris++; level.setBlock(p, Blocks.AIR.defaultBlockState(), 3); }
+            }
+            level.setBlock(c.offset(com.frozendawn.world.ReactorSiteBuilder.RACK), Blocks.AIR.defaultBlockState(), 3);
+            h.assertTrue(heavy > 60, "Heavy fallout inside and around: " + heavy);
+            h.assertTrue(debris > 0, "Reactor Debris lies around the hall: " + debris);
+            int sites = 0;
+            for (int x = 0; x < 40; x++) for (int z = 0; z < 25; z++) if (com.frozendawn.world.ReactorSitePlacement.siteChunk(1234L, x, z) != null) sites++;
+            h.assertTrue(sites > 500 && sites < 700, "About 60% of regions roll a site: " + sites);
+            var a1 = com.frozendawn.world.ReactorSitePlacement.siteChunk(99L, 3, -2); var a2 = com.frozendawn.world.ReactorSitePlacement.siteChunk(99L, 3, -2);
+            h.assertTrue(java.util.Arrays.equals(a1, a2), "Placement is deterministic per seed and region");
+        });
+    }
+
     private static void allocate(ServerLevel level) { for (int i = 0; i < 128; i++) com.frozendawn.power.PowerNetworks.update(level); com.frozendawn.power.PowerNetworks.account(level); }
 
     private static FakePlayer player(GameTestHelper h, String name) {
