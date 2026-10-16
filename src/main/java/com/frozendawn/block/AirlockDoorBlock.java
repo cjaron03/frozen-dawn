@@ -2,6 +2,7 @@ package com.frozendawn.block;
 
 import com.frozendawn.airlock.AirlockManager;
 import com.frozendawn.init.ModSounds;
+import com.frozendawn.network.AirlockStatusPayload.Status;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.block.Block;
@@ -28,7 +29,8 @@ public final class AirlockDoorBlock extends DoorBlock {
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit) {
         if(level instanceof ServerLevel server) {
             var reason=state.getValue(OPEN)?null:AirlockManager.doorStatus(server,pos);
-            if(reason!=null&&!reason.opensDoor())AirlockManager.refuse(server,pos,player,reason);
+            if(reason==Status.INNER_DIFFERENTIAL)AirlockManager.equalizeInnerDoor(server,pos,player);
+            else if(reason!=null&&!reason.opensDoor())AirlockManager.refuse(server,pos,player,reason);
             else setOpen(player,level,state,pos,!state.getValue(OPEN));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

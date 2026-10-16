@@ -196,11 +196,21 @@ public final class AirlockGameTest {
         player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,new ItemStack(ModItems.EVA_HELMET.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,new ItemStack(ModItems.EVA_CHESTPLATE.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS,new ItemStack(ModItems.EVA_LEGGINGS.get()));player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET,new ItemStack(ModItems.EVA_BOOTS.get()));
         var suitTank=new ItemStack(ModItems.O2_TANK.get());suitTank.set(ModDataComponents.O2_LEVEL.get(),0);player.getInventory().setItem(0,suitTank);l.addNewPlayer(player);
         try{
-            RoomAtmosphere.view(l,s.base);RoomAtmosphere.view(l,s.center);for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            var geometry=RoomAtmosphere.view(l,s.base).geometry();var baseCells=geometry.cells();RoomAtmosphere.view(l,s.center);
+            var chunks=new HashSet<Long>();for(var p:baseCells)chunks.add(new net.minecraft.world.level.ChunkPos(p).toLong());
+            for(var p:geometry.walls())chunks.add(new net.minecraft.world.level.ChunkPos(p).toLong());
+            // Newly loaded fixture chunks must finish ordinary flame indexing before O2 accounting is complete.
+            int bootstrap=0;var pending=new HashSet<>(VacuumFlames.snapshot(l).pendingChunks());pending.retainAll(chunks);
+            while(bootstrap<256&&!Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks())) {
+                VacuumFlames.tick(new net.neoforged.neoforge.event.tick.ServerTickEvent.Post(()->true,l.getServer()));bootstrap++;
+            }
+            h.assertTrue(Collections.disjoint(chunks,VacuumFlames.snapshot(l).pendingChunks()),"Fixture chunk indexing completes before measuring a full production second");
+            for(int i=0;i<5;i++)RoomOxygenManager.tickLevel(l);
+            System.out.println("AIRLOCK_O2_FIXTURE pending="+pending.size()+" bootstrap="+bootstrap+" reading="+RoomOxygenManager.readingAt(l,s.base));
             long before=tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve());
             ((net.minecraft.world.level.storage.ServerLevelData)l.getLevelData()).setGameTime(clock+20);RoomOxygenManager.tickLevel(l);
             long after=tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve());
-            h.assertTrue(after-before==70000,"8 production minus 1 breathing grants exactly 7 units across four charging paths: "+(after-before));
+            h.assertTrue(after-before==70000,"8 production minus 1 breathing grants exactly 7 units across four charging paths: "+(after-before)+" reading="+RoomOxygenManager.readingAt(l,s.base)+" transfer="+OxygenTransferState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess())+" clock="+l.getGameTime()+" baseSeal="+RoomAtmosphere.cachedSealAt(l,s.base)+" depleted="+RoomAirState.get(l).isDepleted(baseCells));
             h.assertTrue(tank.storedMicro()>0&&canister.get(ModDataComponents.O2_LEVEL.get())>0&&suitTank.get(ModDataComponents.O2_LEVEL.get())>0&&s.chamber.gas.reserve()>0,"All four receive a fair grant");
             AirlockManager.tick(l,s.chamber);core.serverTick();com.frozendawn.event.SuitIntegrityHandler.onPlayerTick(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(player));RoomOxygenManager.tickLevel(l);
             h.assertTrue(after==tank.storedMicro()+1000L*(canister.get(ModDataComponents.O2_LEVEL.get())+suitTank.get(ModDataComponents.O2_LEVEL.get())+s.chamber.gas.reserve()),"Legacy Core/suit/controller ticks cannot independently mint refill");
@@ -639,16 +649,19 @@ public final class AirlockGameTest {
                 actor.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,side==0?new ItemStack(ModItems.EVA_HELMET.get()):ItemStack.EMPTY);
                 statuses.clear();sounds.clear();var hit=side==0?s.inner:s.inner.above();
                 valveClick(l,actor,hit,side==0?Direction.WEST:Direction.EAST);
-                h.assertTrue(statuses.size()==1&&statuses.getLast().status()==com.frozendawn.network.AirlockStatusPayload.Status.VALVE_EQUALIZED,"One typed success with either helmet state and either clicked half/side");
-                h.assertTrue((long)saved.roomGas(l,base)+c.gas.air()==before&&c.gas.reserve()==reserve,"Valve conserves total gas and leaves reserve untouched");
+                h.assertTrue(statuses.stream().filter(p->!p.status().opensDoor()).count()==1&&statuses.getLast().status()==com.frozendawn.network.AirlockStatusPayload.Status.VALVE_EQUALIZED,"One valve confirmation with either helmet state and either clicked half/side");
+                var joined=RoomAtmosphere.view(l,s.base).geometry().cells();
+                h.assertTrue(saved.roomGas(l,joined)==before&&c.gas.reserve()==reserve,"Valve and physical opening conserve total gas and leave reserve untouched");
                 h.assertTrue(side==0?c.gas.air()>air:c.gas.air()<air,"Gas flows from the actual higher-pressure side");
                 h.assertTrue(store.storedJoules()==charge&&actor.getMainHandItem().getCount()==8,"Manual valve spends neither electrical energy nor held cobblestone");
-                h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&!l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"Both doors remain physically closed during valve use");
+                h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&!l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"Valve opens the inner hatch while the outer stays closed");
                 h.assertTrue(AirlockManager.canOpen(l,s.inner),"Equalized inner door unlocks without accessing a controller");
-                h.assertTrue(sounds.equals(List.of(ModSounds.AIRLOCK_VALVE.get())),"One short existing valve cue");
+                h.assertTrue(sounds.equals(List.of(ModSounds.AIRLOCK_VALVE.get(),ModSounds.AIRLOCK_DOOR_OPEN.get())),"One valve cue followed by one physical hatch cue");
                 int count=statuses.size();
                 actor.gameMode.useItemOn(actor,l,actor.getOffhandItem(),net.minecraft.world.InteractionHand.OFF_HAND,new net.minecraft.world.phys.BlockHitResult(hit.getCenter(),Direction.WEST,hit,false));
-                h.assertTrue(statuses.size()==count&&(long)saved.roomGas(l,base)+c.gas.air()==before,"Offhand callback cannot duplicate a transfer or status");
+                h.assertTrue(statuses.size()==count&&saved.roomGas(l,joined)==before,"Offhand callback cannot duplicate a transfer or status");
+                ModBlocks.AIRLOCK_DOOR.get().setOpen(actor,l,l.getBlockState(s.inner),s.inner,false);
+                base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
             }
         } finally {removeListener(l,actor);}
     });}
@@ -663,6 +676,9 @@ public final class AirlockGameTest {
         var statuses=new ArrayList<com.frozendawn.network.AirlockStatusPayload>();var actor=soundListener(l,s.center,"manual_valve_outage",new ArrayList<>(),statuses);
         try {
             valveClick(l,actor,s.inner,Direction.EAST);
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN),"Unpowered valve physically opens the safe inner hatch");
+            ModBlocks.AIRLOCK_DOOR.get().setOpen(actor,l,l.getBlockState(s.inner),s.inner,false);
+            base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
             h.assertTrue(!c.gas.cycling()&&!c.waitingForPower&&AirlockManager.canOpen(l,s.inner),"Deliberate manual operation cancels the unpaid cycle and enables escape");
             h.assertTrue((long)saved.roomGas(l,base)+c.gas.air()==total&&c.gas.reserve()==reserve&&store.storedJoules()==0,"Paid partial gas is shared without consuming reserve or electricity");
             for(int i=0;i<40;i++)paidTick(l,c);
@@ -760,6 +776,159 @@ public final class AirlockGameTest {
                 }
                 h.assertTrue(!saved.equalizeWithBase(l,c,base)&&Arrays.equals(before,c.gas.snapshot()),"Gas-transfer helper also rejects vacuum without interrupting the pump");
             }
+        } finally {removeListener(l,actor);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockChamberBreachProtectsNominalBaseBeforeAndAfterRepair(GameTestHelper h){
+        connectedRefillCheck(h,s->chamberBreachInterlock(h,s,false));
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockChamberBreachProtectsThinBaseWithoutTorchUpdate(GameTestHelper h){
+        connectedRefillCheck(h,s->chamberBreachInterlock(h,s,true));
+    }
+    private static void chamberBreachInterlock(GameTestHelper h,Scene s,boolean thin){
+        var l=h.getLevel();var saved=AirlockSavedState.get(l);var c=s.chamber;
+        var base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
+        if(thin){
+            RoomAirState.get(l).evacuate(base);
+            h.assertTrue(saved.receiveRoomAir(l,base,40)==40&&saved.restoreProducedRoomAir(l,base),"Fixture contains a positive measured base pressure below five percent");
+        }
+        int baseGas=saved.roomGas(l,base),reserve=c.gas.reserve();
+        h.assertTrue(baseGas>0&&(!thin||baseGas<base.size()*5),"Base gas fixture is exact");
+        var hole=s.center.south(2);
+        l.setBlock(hole,Blocks.AIR.defaultBlockState(),3);
+        h.assertTrue(c.gas.air()==0,"Actual shell breach evacuates controlled chamber");
+        for(boolean repaired:new boolean[]{false,true}){
+            if(repaired)l.setBlock(hole,Blocks.GLASS.defaultBlockState(),3);
+            var beforeTorch=AirlockManager.doorStatus(l,s.inner);
+            h.assertTrue(!beforeTorch.opensDoor(),"Inner door must refuse chamber vacuum before torch update, repaired="+repaired+" thin="+thin+" status="+beforeTorch);
+            ModBlocks.AIRLOCK_DOOR.get().setOpen(null,l,l.getBlockState(s.inner),s.inner,true);
+            h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN),"Direct automation cannot bypass refusal");
+            var torch=s.center.west();l.setBlock(torch,Blocks.TORCH.defaultBlockState(),3);
+            h.assertTrue(AirlockManager.doorStatus(l,s.inner)==beforeTorch,"A torch cannot change interlock pressure or permission");
+            l.setBlock(torch,Blocks.AIR.defaultBlockState(),3);
+            h.assertTrue(saved.roomGas(l,base)==baseGas&&c.gas.air()==0&&c.gas.reserve()==reserve,"Breach, repair, torch and denied opens cannot borrow or manufacture gas");
+        }
+    }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockPassiveWatcherCannotRefreshOrChangeBreachedRooms(GameTestHelper h){connectedRefillCheck(h,s->{
+        var l=h.getLevel();var actor=soundListener(l,s.center,"passive_airlock_watch",new ArrayList<>());
+        try{
+            RoomAtmosphere.view(l,s.base);RoomAtmosphere.view(l,s.center);
+            l.setBlock(s.center.south(2),Blocks.AIR.defaultBlockState(),3);
+            var saved=AirlockSavedState.get(l);
+            var gas=saved.save(new net.minecraft.nbt.CompoundTag(),l.registryAccess());
+            var air=RoomAirState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess());
+            var identity=RoomIdentityState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess());
+            var cache=RoomAtmosphere.cachedRoomViews(l);long tick=l.getGameTime();
+            var a=com.frozendawn.labbridge.LabAirlockWatch.capture(l);
+            var b=com.frozendawn.labbridge.LabAirlockWatch.capture(l);
+            h.assertTrue(a.equals(b)&&a.getAsJsonArray("chambers").size()==1,"Watcher repeatedly captures the existing nearby chamber");
+            h.assertTrue(a.getAsJsonArray("chambers").get(0).getAsJsonObject().get("air").getAsInt()==0,"Watcher sees actual evacuation");
+            h.assertTrue(gas.equals(saved.save(new net.minecraft.nbt.CompoundTag(),l.registryAccess()))&&air.equals(RoomAirState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess()))
+                    &&identity.equals(RoomIdentityState.get(l).save(new net.minecraft.nbt.CompoundTag(),l.registryAccess())),"Watching cannot refill, redistribute or change saved gas and memberships");
+            h.assertTrue(cache.equals(RoomAtmosphere.cachedRoomViews(l))&&tick==l.getGameTime(),"Watching cannot refresh geometry or advance simulation");
+        }finally{removeListener(l,actor);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockVentedOuterDoorCannotDrainThinBaseAndRefillRestoresEntry(GameTestHelper h){connectedRefillCheck(h,s->{
+        var l=h.getLevel();var saved=AirlockSavedState.get(l);var c=s.chamber;
+        var base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
+        RoomAirState.get(l).evacuate(base);
+        for(int left=230;left>0;){int accepted=saved.receiveRoomAir(l,base,left);h.assertTrue(accepted>0,"Finite base fixture accepts gas");left-=accepted;}
+        h.assertTrue(saved.restoreProducedRoomAir(l,base),"Fixture has retained base air with measured pressure below five percent");
+        int baseGas=saved.roomGas(l,base);h.assertTrue(baseGas==230&&baseGas<base.size()*5,"Known thin positive base pressure");
+        // First match the chamber to this actual base, then perform the owner's vent cycle.
+        AirlockManager.start(l,c);finish(l,c);
+        h.assertTrue(c.gas.air()>0&&AirlockManager.canOpen(l,s.inner),"Preparation matches actual base pressure");
+        AirlockManager.start(l,c);finish(l,c);
+        h.assertTrue(c.gas.air()==0&&!c.gas.cycling(),"Owner sequence starts with a genuinely vented chamber");
+        var statuses=new ArrayList<com.frozendawn.network.AirlockStatusPayload>();
+        var actor=soundListener(l,s.center,"vent_outer_thin_base",new ArrayList<>(),statuses);
+        try{
+            doorClick(l,actor,s.outer);
+            h.assertTrue(l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"Vented outer door opens to actual exterior vacuum");
+            h.assertTrue(saved.roomGas(l,base)==baseGas,"Opening only the outer door preserves base gas");
+            int reserve=c.gas.reserve();
+            for(var clicked:new BlockPos[]{s.inner,s.inner.above()}){
+                statuses.clear();doorClick(l,actor,clicked);
+                h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&!l.getBlockState(s.inner.above()).getValue(DoorBlock.OPEN),"Inner door must remain shut with empty chamber and open outer door");
+                h.assertTrue(statuses.getLast().status()==com.frozendawn.network.AirlockStatusPayload.Status.CHAMBER_VACUUM,"Refusal explicitly requires the controller");
+            }
+            ModBlocks.AIRLOCK_DOOR.get().setOpen(actor,l,l.getBlockState(s.inner),s.inner,true);
+            h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN),"Automation obeys the same vacuum refusal");
+            RoomAtmosphere.view(l,s.base);
+            h.assertTrue(saved.roomGas(l,base)==baseGas&&c.gas.air()==0&&c.gas.reserve()==reserve,"Denied attempts never vent base or transfer reserve");
+            ModBlocks.AIRLOCK_DOOR.get().setOpen(actor,l,l.getBlockState(s.outer),s.outer,false);
+            AirlockManager.start(l,c);
+            h.assertTrue(c.gas.mode()==AirlockCycle.Mode.PRESSURIZING,"Empty chamber must refill toward thin positive base, rather than treating it as vacuum");
+            finish(l,c);
+            int chamberGas=c.gas.air();
+            h.assertTrue(chamberGas>0&&c.gas.reserve()+chamberGas==reserve&&saved.roomGas(l,base)==baseGas,"Refill conserves paid chamber gas and separate base gas");
+            doorClick(l,actor,s.inner);
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&!l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"Matching real pressure permits return after refill");
+            var joined=RoomAtmosphere.view(l,s.base).geometry().cells();
+            h.assertTrue(saved.roomGas(l,joined)==baseGas+chamberGas,"Safe opening merges existing gas without minting or losing air");
+        }finally{removeListener(l,actor);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockManualValveOpensBeforeThinBaseProductionCanRelock(GameTestHelper h){connectedRefillCheck(h,s->{
+        var l=h.getLevel();var saved=AirlockSavedState.get(l);var c=s.chamber;
+        var base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
+        RoomAirState.get(l).evacuate(base);
+        for(int left=356;left>0;){int accepted=saved.receiveRoomAir(l,base,left);h.assertTrue(accepted>0,"Finite base accepts fixture gas");left-=accepted;}
+        saved.restoreProducedRoomAir(l,base);c.gas=AirlockCycle.reconfigured(c.cells.size(),94,c.gas.reserve());
+        h.assertTrue(!AirlockManager.canOpen(l,s.inner),"Thin positive pressures start outside measured tolerance");
+        var actor=soundListener(l,s.center,"moving_pressure_valve",new ArrayList<>());
+        try {
+            int reserve=c.gas.reserve();
+            valveClick(l,actor,s.inner.above(),Direction.EAST);
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&l.getBlockState(s.inner.above()).getValue(DoorBlock.OPEN),"One valve interaction must equalize and physically open both door halves before production can re-lock entry");
+            h.assertTrue(!l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"Exterior door stays closed");
+            var joined=RoomAtmosphere.view(l,s.base).geometry().cells();
+            h.assertTrue(joined.contains(s.center)&&saved.roomGas(l,joined)==450&&c.gas.reserve()==reserve,"Opening shares exactly existing gas without reserve withdrawal");
+            for(int second=0;second<3;second++) {
+                h.assertTrue(saved.receiveRoomAir(l,joined,20)==20,"Ordinary producer credit enters the connected room");
+                h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&saved.roomGas(l,joined)==450+20*(second+1),"Continued production shares air without another click or pump cycle");
+            }
+            h.assertTrue(!c.gas.cycling()&&c.gas.reserve()==reserve,"Manual entry never starts the electrical pump");
+        } finally {removeListener(l,actor);}
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="airlock_native",timeoutTicks=100)
+    public static void airlockNormalClickEqualizesConservesGasAndStillRefusesVacuum(GameTestHelper h){connectedRefillCheck(h,s->{
+        var l=h.getLevel();var saved=AirlockSavedState.get(l);var c=s.chamber;
+        var base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
+        var statuses=new ArrayList<com.frozendawn.network.AirlockStatusPayload>();
+        var actor=soundListener(l,s.center,"automatic_inner_valve",new ArrayList<>(),statuses);
+        try {
+            int reserve=c.gas.reserve(),baseGas=saved.roomGas(l,base);
+            c.gas.vent();RoomAirState.get(l).evacuate(c.cells);doorClick(l,actor,s.inner);
+            h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&statuses.getLast().status()==com.frozendawn.network.AirlockStatusPayload.Status.CHAMBER_VACUUM
+                    &&saved.roomGas(l,base)==baseGas&&c.gas.air()==0&&c.gas.reserve()==reserve,"Normal click refuses chamber vacuum without transferring gas");
+            RoomAirState.get(l).evacuate(base);c.gas=AirlockCycle.reconfigured(c.cells.size(),94,reserve);doorClick(l,actor,s.inner);
+            h.assertTrue(!l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&statuses.getLast().status()==com.frozendawn.network.AirlockStatusPayload.Status.BASE_VACUUM
+                    &&saved.roomGas(l,base)==0&&c.gas.air()==94&&c.gas.reserve()==reserve,"Normal click also refuses base vacuum without transferring gas");
+            for(int left=356;left>0;){int accepted=saved.receiveRoomAir(l,base,left);h.assertTrue(accepted>0,"Finite base accepts fixture gas");left-=accepted;}
+            saved.restoreProducedRoomAir(l,base);
+            h.assertTrue(!AirlockManager.canOpen(l,s.inner),"Refilling base starts outside five-percent tolerance");
+            PowerNetworks.clear(l,s.panel);var store=(PowerStorageBlockEntity)l.getBlockEntity(s.panel.above(2));int energy=store.storedJoules();
+            statuses.clear();actor.setShiftKeyDown(false);actor.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new ItemStack(net.minecraft.world.item.Items.COBBLESTONE,8));
+            actor.gameMode.useItemOn(actor,l,actor.getMainHandItem(),net.minecraft.world.InteractionHand.MAIN_HAND,
+                    new net.minecraft.world.phys.BlockHitResult(s.inner.above().getCenter(),Direction.EAST,s.inner.above(),false));
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&l.getBlockState(s.inner.above()).getValue(DoorBlock.OPEN)&&!l.getBlockState(s.outer).getValue(DoorBlock.OPEN),"One ordinary upper-half click opens only the inner hatch");
+            var joined=RoomAtmosphere.view(l,s.base).geometry().cells();
+            h.assertTrue(joined.contains(s.center)&&saved.roomGas(l,joined)==450&&c.gas.reserve()==reserve&&store.storedJoules()==energy&&actor.getMainHandItem().getCount()==8,"Automatic valve conserves gas and spends no reserve, electricity or held block");
+            h.assertTrue(statuses.stream().allMatch(p->p.status().opensDoor()),"Ordinary opening stays silent in the HUD: no refusal or manual-valve confirmation");
+            h.assertTrue(saved.receiveRoomAir(l,joined,20)==20&&saved.roomGas(l,joined)==470,"Continued production shares the connected room");
+            doorClick(l,actor,s.inner);base=RoomAtmosphere.view(l,s.base).geometry().cells();RoomAtmosphere.view(l,s.center);
+            h.assertTrue(saved.receiveRoomAir(l,base,40)==40&&!AirlockManager.canOpen(l,s.inner),"Closing and further production recreate a measured pressure mismatch");
+            doorClick(l,actor,s.inner);joined=RoomAtmosphere.view(l,s.base).geometry().cells();
+            h.assertTrue(l.getBlockState(s.inner).getValue(DoorBlock.OPEN)&&saved.roomGas(l,joined)==510&&c.gas.reserve()==reserve&&!c.gas.cycling(),"Next normal click equalizes again without a controller cycle or lost gas");
         } finally {removeListener(l,actor);}
     });}
 

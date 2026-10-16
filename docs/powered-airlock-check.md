@@ -43,6 +43,20 @@ If both base and chamber are initially empty, refill must be paid for the combin
 
 ### Manual inner-door valve replay
 
-Keep the owner's existing placed cobblestone: it compresses base air and provides a real mismatch. With both doors closed, Shift-right-click the inner door from the main-base side; holding cobblestone must operate the valve rather than place a block. One short hiss and “Pressure equalized — open inner door” should appear. The door remains closed until a normal click, which opens silently with or without the EVA helmet. Repeat from the chamber side, including the upper half, with and without an EVA helmet; only one status slot is used.
+Keep the owner's existing placed cobblestone: it compresses base air and provides a real mismatch. With both doors closed, Shift-right-click the inner door from the main-base side; holding cobblestone must operate the valve rather than place a block. One short hiss followed by the hatch sound and “Pressure equalized” should appear. The inner door opens immediately in the same interaction, with or without the EVA helmet. Repeat from the chamber side, including the upper half, with and without an EVA helmet; only one status slot is used.
 
 With gas remaining on both sides, pause a pump with an empty cell and use the inner valve. It ends the unfinished cycle and shares the retained gas; it does not spend reserve or electricity. Both doors must remain shut during transfer. An open outer door or open base refuses the valve; Shift-clicking the outer door reports that the valve is on the inner door. With either side completely evacuated, the inner valve must refuse from both sides with and without an EVA helmet, preserving gas, reserve and any paused cycle; use the controller instead. Normal door openings stay silent in both the suit HUD and action bar; refusal reasons still appear in the appropriate existing slot. Adding or removing a helmet must not expose a success notice. Save/reopen after equalization should preserve both gas amounts. No reset or fixture rebuild is needed.
+
+
+## Thin-pressure vacuum interlock regression
+
+In the owner's existing RH-5 Check airlock, close the inner door, vent the chamber and open the outer door. Attempt the inner door, including its upper half: it must stay closed and explain that the chamber is vacuum. The base must retain its gas even while the exterior door remains open. Close the outer door, refill with the controller, then return through the inner door after pressures match. No torch or room edit is needed. Repeat while the base is recovering at low positive pressure if naturally available; native coverage supplies that exact low-pressure fixture without changing the owner's save.
+
+Vacuum matches only vacuum. Positive pressures match within about five percent of the higher measured pressure, including diluted air and overpressure. Both truly evacuated sides can still open at equal pressure. The controller uses the same comparison to choose refill versus evacuation, so an empty chamber beside a thin positive base must fill rather than treating the base as exterior vacuum.
+
+
+### Entry while the base is refilling
+
+Normal right-click opens when measured pressures match. If both sides contain gas but pressure differs, a normal inner-door click automatically uses its valve to share existing gas and open the hatch in the same action. This avoids another core production step re-locking the hatch between clicks. Once open, production supplies the combined room. The outer door must be closed and the base sealed. If either side is vacuum, use the controller to fill first; the manual valve still refuses. Ordinary opening stays silent, including automatic equalization. Explicit Shift-right-click still uses the manual valve and confirms Pressure equalized.
+
+Replay the original RH-5 custom airlock with a thin recovering base: after the chamber has positive gas, right-click normally, check immediate entry and continued production with outer closed. Close it, let the base keep filling, then right-click normally again; no pressure warning or extra controller cycle should be needed. Recheck chamber-vacuum refusal, outer-open refusal and unpowered valve entry. Agent must preserve the closed save before restarting through Gradle; no fixture reset.

@@ -1507,3 +1507,12 @@ Human sequence remains: unpause and stand still through GROUND CHECK/VIEW STARTE
 ## Scribe check
 
 For **MACS Scribe Check**, follow [the Scribe protocol](macs-scribe-playtest.md). No `macs_scribe` functions are bridge-approved: the owner advances by clicking chat links, and each function only acts at its own `msc #stage`. Agents may read `scores msc`, `maeve-dump` and `architect-dump`. `setup` erases and restores Maeve in this world only; never run it in another save.
+
+
+## Passive airlock watcher
+
+For an owner-led airlock replay, opt in with `./gradlew runClientLab -PfdLabWorld='RH-5 Check' -PfdLabAirlockWatch=true --console=plain` using Java 21. Back up the closed world first. This resumes the existing save; it does not stage or reset anything.
+
+The lab-only watcher writes `airlock_frame`, `airlock_use_before`, `airlock_break_before`, `airlock_place_after` and `airlock_door_moved` records into the session's `lab-bridge/performance/<session>.jsonl`. It captures chamber gas, reserve, pump progress, both door halves, neighboring cached room membership/gas and shell blocks. It deliberately never calls room inspection, air recovery or door permission queries: watching must not heal a stale-cache failure. Cached values are labeled as cached and are not a fresh seal verification.
+
+Capture is limited to eight chambers within 64 blocks of players, 256 shell samples per chamber and gas accounting for memberships of at most 4,096 cells. State changes and one-second heartbeats are retained; action events are capped at 32 per tick with omissions reported. It shares the existing bounded asynchronous writer and 16 MiB session cap; inspect its drop/disabled status before interpreting missing events. Diagnostics disable themselves on a runtime error. The watcher is off by default and excluded from the release jar. Owner performs all breaches, repairs, cycles and door attempts; the agent reads the timeline afterward.

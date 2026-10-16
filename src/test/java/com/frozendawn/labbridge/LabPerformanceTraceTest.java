@@ -24,6 +24,13 @@ class LabPerformanceTraceTest {
     private List<JsonObject> rows() {
         return output.toString().lines().map(s -> JsonParser.parseString(s).getAsJsonObject()).toList();
     }
+    @Test void passiveEvidenceIsOwnedBoundedAndRejectedAfterClose() {
+        var trace=trace(1,100000);var row=new JsonObject();row.addProperty("type","airlock_frame");row.addProperty("gas",79);
+        trace.record(row);row.addProperty("gas",0);trace.record(row);
+        assertEquals(1,trace.status().get("droppedEvents").getAsInt());trace.service();trace.close();trace.record(row);
+        assertEquals(79,rows().getFirst().get("gas").getAsInt());
+        assertEquals(2,rows().size());
+    }
     @Test void fastTicksAndLongIdleNeverBecomeStalls() {
         var trace = trace(256, 100_000);
         trace.begin(1); ms(20); trace.end(); ms(50); trace.begin(2); ms(90); trace.end();

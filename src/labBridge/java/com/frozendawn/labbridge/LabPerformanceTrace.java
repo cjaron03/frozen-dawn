@@ -94,6 +94,11 @@ public final class LabPerformanceTrace implements AutoCloseable {
         row.addProperty("recordedAt", Instant.now().toString()); return row;
     }
     private void offer(JsonObject row) { if (!queue.offer(row)) dropped.incrementAndGet(); }
+    /** Passive lab evidence shares this bounded asynchronous writer; never retain caller-owned JSON. */
+    public void record(JsonObject row) {
+        if (!closed.get() && disabledReason == null) offer(row.deepCopy());
+    }
+
 
     /** Runs on the daemon, independently of the command bridge and server task queue. */
     void service() {

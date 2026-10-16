@@ -256,7 +256,7 @@ public final class AirlockManager {
     }
     public static boolean canOpen(ServerLevel level,BlockPos pos) { return doorStatus(level,pos).opensDoor(); }
 
-    /** The manual inner-hatch valve connects two verified finite volumes, without opening either door. */
+    /** Equalize two verified finite volumes and open the inner hatch in the same server action. */
     public static void equalizeInnerDoor(ServerLevel level,BlockPos pos,Player player) {
         var block=level.getBlockState(pos);if(!(block.getBlock() instanceof AirlockDoorBlock))return;
         var door=lower(pos,block);if(!completeDoor(level,door)){notify(player,Status.PRESSURE_UNKNOWN,null,0);return;}
@@ -282,10 +282,21 @@ public final class AirlockManager {
         if(!AirlockSavedState.get(level).equalizeWithBase(level,c,g.cells())){notify(player,Status.PRESSURE_UNKNOWN,c,0);return;}
         CombustionAtmosphere.reset();indicate(level,c);
         level.playSound(null,door,ModSounds.AIRLOCK_VALVE.get(),SoundSource.BLOCKS,.65f,1.15f);
-        notify(player,Status.VALVE_EQUALIZED,c,0);
+        // A producer can change thin base pressure before a second click. Open now,
+        // through the ordinary interlock, while the measured volumes still match.
+        ((AirlockDoorBlock)block.getBlock()).setOpen(player,level,level.getBlockState(door),door,true);
+        if(!level.getBlockState(door).getValue(DoorBlock.OPEN)) {
+            refuse(level,door,player,doorStatus(level,door));return;
+        }
+        // Keep ordinary door openings silent; explicit manual-valve use keeps its confirmation.
+        if(player.isShiftKeyDown())notify(player,Status.VALVE_EQUALIZED,c,0);
     }
-    private static boolean matchingPressure(double a,double b) {
-        return a>=0&&b>=0&&Math.abs(a-b)<=.05*Math.max(1,Math.max(a,b));
+    static boolean matchingPressure(double a,double b) {
+        if(!Double.isFinite(a)||!Double.isFinite(b)||a<0||b<0)return false;
+        if(a==0||b==0)return a==b; // Vacuum only matches vacuum, never a thin positive atmosphere.
+        double higher=Math.max(a,b);
+        // Five percent of measured pressure; one ULP keeps the exact boundary stable.
+        return Math.abs(a-b)<=.05*higher+Math.ulp(higher);
     }
     public static BlockState normalizeDoor(ServerLevel level,BlockPos pos,BlockState requested) {
         if(requested.getBlock() instanceof AirlockDoorBlock&&requested.getValue(DoorBlock.OPEN)) {

@@ -93,6 +93,7 @@ neoForge {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
             }
             systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labAirlockWatch', providers.gradleProperty('fdLabAirlockWatch').getOrElse('false')
             if (providers.gradleProperty('fdRoomArchiveReplay').isPresent()) {
                 systemProperty 'frozendawn.labRoomArchiveReplay', file(providers.gradleProperty('fdRoomArchiveReplay').get()).absolutePath
             }

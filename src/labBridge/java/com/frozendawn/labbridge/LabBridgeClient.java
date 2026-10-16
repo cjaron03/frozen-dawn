@@ -90,6 +90,7 @@ public final class LabBridgeClient {
     public static void serverTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         var current = runtime;
         if (current != null) current.serverTick(event.getServer());
+        if (current != null) LabAirlockWatch.tick(event.getServer(), performance);
     }
     @SubscribeEvent
     public static synchronized void started(ServerStartedEvent event) {
@@ -104,8 +105,12 @@ public final class LabBridgeClient {
         } catch (Exception error) { System.err.println("[LabPerformance] Disabled: " + error); }
         inbox.bind(runtime);
     }
+    static void airlockEvent(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos, String kind) {
+        if (runtime != null) LabAirlockWatch.event(level, pos, kind, performance);
+    }
     @SubscribeEvent
     public static synchronized void stopping(ServerStoppingEvent event) {
+        LabAirlockWatch.reset();
         var trace = performance; performance = null;
         if (trace != null) trace.close();
         if (runtime != null) { LabBlindLan.stopping(event.getServer()); LabBlindAttention.stopping(event.getServer()); LabBlindReconnect.stopping(event.getServer()); runtime.close(); runtime = null; }

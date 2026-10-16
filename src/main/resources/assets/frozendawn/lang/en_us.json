@@ -1255,7 +1255,7 @@
   "message.frozendawn.airlock.cycle_locked": "Cycle active — wait or use the inner door valve",
   "message.frozendawn.airlock.valve_inner_only": "Equalization valve is on the inner door",
   "message.frozendawn.airlock.base_unsealed": "Base open to outside — seal it before equalizing",
-  "message.frozendawn.airlock.valve_equalized": "Pressure equalized — open inner door",
+  "message.frozendawn.airlock.valve_equalized": "Pressure equalized",
   "message.frozendawn.airlock.door_open_vacuum": "Door open",
   "message.frozendawn.airlock.door_open_matched": "Door open"
 }
