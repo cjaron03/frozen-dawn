@@ -143,6 +143,9 @@ public class ClientEvents {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "frost_overlay"),
                 FrostOverlay::render
         );
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_soot"), RadiationClient::renderSoot);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation_flashes"), RadiationClient::renderFlashes);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "geiger_readout"), RadiationClient::renderReadout);
         event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(
                         FrozenDawn.MOD_ID, "frostwrithe_overrun"),
@@ -243,6 +246,8 @@ public class ClientEvents {
                         return tracker != null ? tracker.target().orElse(null) : null;
                     })
             );
+            ItemProperties.register(ModItems.GEIGER_COUNTER.get(), ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "reading"),
+                    (stack, level, entity, seed) -> entity == net.minecraft.client.Minecraft.getInstance().player ? RadiationClient.needle() : 0);
             CuriosClientCompat.registerRenderers();
         });
     }
@@ -353,6 +358,7 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
+        event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
         event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
         event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
         event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);

@@ -70,6 +70,15 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "blocks.alarm_beacon")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_KLAXON = register("blocks.reactor_klaxon");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_HUM = register("blocks.reactor_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_CLICK = register("ui.geiger_click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_DENSE = register("ui.geiger_dense");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_CHIRP = register("ui.dosimeter_chirp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWN_PA_CLEAR = SOUNDS.register("blocks.town_pa_clear",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "blocks.town_pa_clear")));

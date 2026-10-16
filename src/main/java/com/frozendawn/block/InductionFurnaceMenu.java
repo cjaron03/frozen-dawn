@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 public final class InductionFurnaceMenu extends AbstractContainerMenu {
     private final Container contents;private final BlockPos pos;private final ContainerData data;
-    public InductionFurnaceMenu(int id,Inventory inv,FriendlyByteBuf buf){this(id,inv,new SimpleContainer(2),new SimpleContainerData(3),buf.readBlockPos());}
+    public InductionFurnaceMenu(int id,Inventory inv,FriendlyByteBuf buf){this(id,inv,new SimpleContainer(2),new SimpleContainerData(4),buf.readBlockPos());}
     public InductionFurnaceMenu(int id,Inventory inv,Container c,ContainerData d,BlockPos p){
         super(ModMenuTypes.INDUCTION_FURNACE.get(),id);contents=c;pos=p;data=d;addDataSlots(d);
         addSlot(new Slot(c,0,50,36));addSlot(new FurnaceResultSlot(inv.player,c,1,110,36){

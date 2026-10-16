@@ -11,20 +11,27 @@ import net.minecraft.world.phys.Vec3;
 
 /** Range, chunk availability and sealed boundary crossings; ordinary solid blocks are transparent. */
 public final class PowerLinkRules {
-    public enum Result { OK, SELF, NOT_NODE, RANGE, UNLOADED, UNKNOWN_SEAL, FEEDTHROUGH, DUPLICATE, LIMIT, DOCK_CONNECTION }
+    public enum Result { OK, SELF, NOT_NODE, RANGE, UNLOADED, UNKNOWN_SEAL, FEEDTHROUGH, DUPLICATE, LIMIT, DOCK_CONNECTION, COOLANT }
     private PowerLinkRules() {}
     public static int range(BlockState state) {
         if (state.getBlock() instanceof PowerRelayBlock relay) return relay.linkRange();
+        if (coolant(state)) return 16;
         return state.getBlock() instanceof GeothermalCoreBlock
                 || state.getBlock() instanceof com.frozendawn.block.OrsaEmergencyLightBlock
                 || state.getBlock() instanceof com.frozendawn.block.PanelLightBlock
+                || state.getBlock() instanceof com.frozendawn.block.DeconShowerBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerStorageBlock
                 || state.getBlock() instanceof com.frozendawn.block.InductionFurnaceBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock
                 || state.getBlock() instanceof com.frozendawn.block.AirlockControllerBlock
                 || state.getBlock() instanceof com.frozendawn.block.ResistiveHeaterBlock
                 || state.getBlock() instanceof com.frozendawn.block.PixieBlock
+                || state.getBlock() instanceof com.frozendawn.block.ReactorControllerBlock
                 || state.getBlock() instanceof com.frozendawn.block.OxygenReservoirBlock ? 16 : 0;
+    }
+    /** Coolant plumbing shares the Binder and link store but never joins the electrical graph. */
+    public static boolean coolant(BlockState state) {
+        return state.getBlock() instanceof com.frozendawn.block.CoolantPortBlock || state.getBlock() instanceof com.frozendawn.block.ReactorRadiatorBlock;
     }
     private static boolean feedthrough(ServerLevel level, BlockPos pos) {
         return level.getBlockState(pos).getBlock() instanceof PowerRelayBlock relay && relay.isFeedthrough();
@@ -35,6 +42,13 @@ public final class PowerLinkRules {
         int reach = Math.min(range(level.getBlockState(a)), range(level.getBlockState(b)));
         if (reach == 0) return Result.NOT_NODE;
         if (a.distSqr(b) > reach * reach) return Result.RANGE;
+        var sa = level.getBlockState(a); var sb = level.getBlockState(b);
+        if (coolant(sa) || coolant(sb)) {
+            // Exactly one port and one radiator. Pipes are range-limited only; they do not need a feedthrough.
+            boolean pair = sa.getBlock() instanceof com.frozendawn.block.CoolantPortBlock && sb.getBlock() instanceof com.frozendawn.block.ReactorRadiatorBlock
+                    || sb.getBlock() instanceof com.frozendawn.block.CoolantPortBlock && sa.getBlock() instanceof com.frozendawn.block.ReactorRadiatorBlock;
+            return pair ? Result.OK : Result.COOLANT;
+        }
         if (!dockCompatible(level, a, b)) return Result.DOCK_CONNECTION;
         var path = path(a, b);
         for (var pos : path) if (!level.isLoaded(pos)) return Result.UNLOADED;
@@ -79,7 +93,7 @@ public final class PowerLinkRules {
             if(level.isLoaded(p)) {
                 var block=level.getBlockState(p).getBlock();
                 if(block instanceof com.frozendawn.block.PowerStorageBlock storage && !storage.isBank())dock=true;
-                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
+                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
             } else infrastructure=true;
             if(dock && infrastructure)return false;
             queue.addAll(neighbors.getOrDefault(p,Set.of()));

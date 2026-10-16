@@ -185,6 +185,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.reset();
         CargoDropPlacement.reset();
         MonitoringStationPlacement.reset();
+        com.frozendawn.world.ReactorSitePlacement.reset();
         FrozenTownRuntime.reset();
     }
 
@@ -263,6 +264,7 @@ public class WorldTickHandler {
         FrozenEvacVehiclePlacement.tickPlacement(overworld);
         CargoDropPlacement.tickPlacement(overworld);
         MonitoringStationPlacement.tickPlacement(overworld);
+        com.frozendawn.world.ReactorSitePlacement.tickPlacement(overworld);
         FrozenTownRuntime.tickProcessing(overworld);
         ChunkCatchUpManager.tick(overworld, state);
         BloomGrowthManager.tick(overworld, state);

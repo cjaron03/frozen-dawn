@@ -60,7 +60,8 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(
                 new AcheronForgeCategory(guiHelper),
                 new FuelProcessingSiloCategory(guiHelper),
-                new GeothermalCoreCategory(guiHelper)
+                new GeothermalCoreCategory(guiHelper),
+                new InductionFurnaceCategory(guiHelper)
         );
     }
 
@@ -95,6 +96,8 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                         "O2 Refill", "Refills O2 at +10/tick")
         ));
 
+        registration.addRecipes(InductionFurnaceCategory.RECIPE_TYPE, com.frozendawn.recipe.InductionRecipes.all());
+
         registration.addRecipes(FuelProcessingSiloCategory.RECIPE_TYPE,
                 FuelProcessingSiloRecipes.all().stream()
                         .map(FuelProcessingSiloRecipeDisplay::from)
@@ -107,6 +110,7 @@ public class FrozenDawnJeiPlugin implements IModPlugin {
                 AcheronForgeCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.GEOTHERMAL_CORE.get()),
                 GeothermalCoreCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.INDUCTION_FURNACE.get()), InductionFurnaceCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.FUEL_PROCESSING_SILO_CONTROLLER.get()),
                 FuelProcessingSiloCategory.RECIPE_TYPE);
     }

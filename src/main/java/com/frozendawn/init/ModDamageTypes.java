@@ -20,6 +20,10 @@ public class ModDamageTypes {
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thermal_sever"));
 
+    public static final ResourceKey<DamageType> RADIATION =
+            ResourceKey.create(Registries.DAMAGE_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "radiation"));
+
     public static final ResourceKey<DamageType> THAE_IVEN =
             ResourceKey.create(Registries.DAMAGE_TYPE,
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thae_iven"));

@@ -40,6 +40,19 @@
     "frozendawn:power_monitor",
     "frozendawn:pixie",
     "frozendawn:resistive_heater",
+    "frozendawn:reactor_casing",
+    "frozendawn:reactor_core",
+    "frozendawn:control_rod_drive",
+    "frozendawn:coolant_port",
+    "frozendawn:reactor_controller",
+    "frozendawn:reactor_radiator",
+    "frozendawn:corium",
+    "frozendawn:deepslate_uranium_ore",
+    "frozendawn:reactor_debris",
+    "frozendawn:galena_ore",
+    "frozendawn:deepslate_galena_ore",
+    "frozendawn:lead_block",
+    "frozendawn:decon_shower",
     "frozendawn:orsa_emergency_light"
   ]
 }

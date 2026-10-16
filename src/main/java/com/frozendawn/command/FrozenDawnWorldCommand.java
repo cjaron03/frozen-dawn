@@ -38,6 +38,16 @@ final class FrozenDawnWorldCommand {
     private static final SuggestionProvider<CommandSourceStack> SUBSTAGE_SUGGESTIONS = (context, builder) ->
             SharedSuggestionProvider.suggest(Arrays.asList("early", "mid", "late"), builder);
 
+    /** Builds a ruined ORSA reactor site 24 blocks ahead of the caller, for playtests. */
+    private static int placeReactorSite(CommandContext<CommandSourceStack> context) {
+        var source = context.getSource();
+        var look = net.minecraft.world.phys.Vec3.directionFromRotation(0, source.getRotation().y);
+        var at = source.getPosition().add(look.scale(24));
+        var center = com.frozendawn.world.ReactorSitePlacement.placeNow(source.getLevel(), (int) Math.floor(at.x), (int) Math.floor(at.z));
+        source.sendSuccess(() -> Component.literal("Ruined ORSA reactor site built at (" + center.getX() + ", " + center.getY() + ", " + center.getZ() + ")"), true);
+        return 1;
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> worldCommands() {
         return Commands.literal("world")
                 .executes(context -> status(context, false))
@@ -46,6 +56,7 @@ final class FrozenDawnWorldCommand {
                         .then(Commands.literal("verbose")
                                 .executes(context -> status(context, true))))
                 .then(Commands.literal("rooms").executes(FrozenDawnWorldCommand::roomDiagnostics))
+                .then(Commands.literal("reactorsite").executes(FrozenDawnWorldCommand::placeReactorSite))
                 .then(Commands.literal("oxygen").executes(FrozenDawnWorldCommand::oxygenDiagnostics)
                         .then(Commands.literal("here").executes(FrozenDawnWorldCommand::oxygenHere)))
                 .then(Commands.literal("thermal").executes(FrozenDawnWorldCommand::thermalDiagnostics))

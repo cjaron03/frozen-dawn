@@ -89,7 +89,7 @@ def pack_only(destination, hooks=False, title=TITLE, namespace=NS, build_scripts
             target.write_text(json.dumps({'values':[namespace+':'+name]})+'\n')
 
 
-def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_scripts=scripts, surface=128):
+def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_scripts=scripts, surface=128, structures=True):
     if destination.exists():
         raise SystemExit('Refusing to overwrite existing world: '+str(destination))
     original=template.read_bytes(); source_hash=hashlib.sha256(original).hexdigest()
@@ -104,6 +104,9 @@ def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_s
     dims['minecraft:overworld'][1]['generator']=(10,{'type':(8,'minecraft:flat'), 'settings':(10,{
         'biome':(8,'minecraft:plains'), 'lakes':(1,0), 'features':(1,0),
         'layers':(9,(10,[{'height':(3,1),'block':(8,'minecraft:bedrock')},{'height':(3,surface-1),'block':(8,'minecraft:stone')}]))})})
+    if not structures:
+        # No villages or other flat-world structures on top of lab fixtures.
+        dims['minecraft:overworld'][1]['generator'][1]['settings'][1]['structure_overrides']=(9,(8,[]))
     data.update({'LevelName':(8,title),'GameType':(3,1),'allowCommands':(1,1),'Difficulty':(1,2),
                  'DifficultyLocked':(1,0),'hardcore':(1,0),'initialized':(1,1),'Time':(4,0),'DayTime':(4,6000),
                  'LastPlayed':(4,int(time.time()*1000)),'SpawnX':(3,3),'SpawnY':(3,65),'SpawnZ':(3,4),'WasModded':(1,1),

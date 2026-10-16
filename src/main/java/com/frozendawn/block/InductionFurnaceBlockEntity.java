@@ -29,16 +29,19 @@ public final class InductionFurnaceBlockEntity extends BlockEntity implements Wo
     private ResourceLocation activeRecipe;
     private int progress,total=100;
     public InductionFurnaceBlockEntity(BlockPos p,BlockState s){super(ModBlockEntities.INDUCTION_FURNACE.get(),p,s);}
-    public static boolean smeltable(net.minecraft.world.level.Level l,ItemStack s){return !s.isEmpty()&&l.getRecipeManager().getRecipeFor(RecipeType.SMELTING,new SingleRecipeInput(s),l).isPresent();}
-    private RecipeHolder<SmeltingRecipe> recipe(){return level==null||items.get(0).isEmpty()?null:recipes.getRecipeFor(new SingleRecipeInput(items.get(0)),level).orElse(null);}
+    public static boolean smeltable(net.minecraft.world.level.Level l,ItemStack s){return !s.isEmpty()&&(com.frozendawn.recipe.InductionRecipes.find(s).isPresent()||l.getRecipeManager().getRecipeFor(RecipeType.SMELTING,new SingleRecipeInput(s),l).isPresent());}
+    /** Induction-only refining first, then ordinary smelting. */
+    private RecipeHolder<SmeltingRecipe> recipe(){if(level==null||items.get(0).isEmpty())return null;var own=com.frozendawn.recipe.InductionRecipes.find(items.get(0));return own.isPresent()?own.get():recipes.getRecipeFor(new SingleRecipeInput(items.get(0)),level).orElse(null);}
     private ItemStack result(RecipeHolder<SmeltingRecipe> recipe){return recipe==null?ItemStack.EMPTY:recipe.value().assemble(new SingleRecipeInput(items.get(0)),level.registryAccess());}
     private boolean fits(ItemStack result){var out=items.get(1);return !result.isEmpty()&&(out.isEmpty()?result.getCount()<=result.getMaxStackSize():ItemStack.isSameItemSameComponents(out,result)&&out.getCount()+result.getCount()<=Math.min(out.getMaxStackSize(),getMaxStackSize()));}
     public boolean wantsPower(){return fits(result(recipe()));}
+    /** 2 kW smelting; induction-only refining runs hotter and draws more. */
+    public int demandWatts(){return com.frozendawn.recipe.InductionRecipes.watts(recipe());}
     public int progress(){return progress;}
     public int total(){return total;}
     public boolean working(){return getBlockState().getValue(InductionFurnaceBlock.LIT);}
     public int status(){if(items.get(0).isEmpty())return 0;var recipe=recipe();if(recipe==null)return 3;if(!fits(result(recipe)))return 4;return working()?2:1;}
-    public ContainerData data(){return new ContainerData(){public int get(int i){return switch(i){case 0->progress;case 1->total;case 2->status();default->0;};}public void set(int i,int v){}public int getCount(){return 3;}};}
+    public ContainerData data(){return new ContainerData(){public int get(int i){return switch(i){case 0->progress;case 1->total;case 2->status();case 3->demandWatts()/100;default->0;};}public void set(int i,int v){}public int getCount(){return 4;}};}
     @Override public void onLoad(){super.onLoad();if(level instanceof ServerLevel l)PowerNetworks.machineLoaded(l,worldPosition);}
     @Override public void setRemoved(){if(level instanceof ServerLevel l)PowerNetworks.machineRemoved(l,worldPosition);super.setRemoved();}
     private void working(boolean value){if(working()!=value&&level!=null)level.setBlock(worldPosition,getBlockState().setValue(InductionFurnaceBlock.LIT,value),3);}
@@ -51,7 +54,7 @@ public final class InductionFurnaceBlockEntity extends BlockEntity implements Wo
         var out=result(recipe);
         if(!fits(out)||!PowerNetworks.consumeMachineTick(l,worldPosition)){working(false);return;}
         working(true);progress++;
-        RoomThermalManager.addMachineHeat(l,worldPosition,WASTE_HEAT_WATTS/20.0);
+        RoomThermalManager.addMachineHeat(l,worldPosition,WASTE_HEAT_WATTS*demandWatts()/DEMAND_WATTS/20.0);
         if(l.getGameTime()%20==0)RoomAtmosphere.keepAlive(this);
         if(progress>=total){
             if(items.get(1).isEmpty())items.set(1,out.copy());else items.get(1).grow(out.getCount());
@@ -62,12 +65,13 @@ public final class InductionFurnaceBlockEntity extends BlockEntity implements Wo
     }
     public void awardRecipesAndExperience(ServerPlayer player){
         if(!(level instanceof ServerLevel l))return;var awarded=new ArrayList<RecipeHolder<?>>();
-        for(var entry:used.entrySet())l.getRecipeManager().byKey(entry.getKey()).ifPresent(holder->{
+        for(var entry:used.entrySet())l.getRecipeManager().byKey(entry.getKey()).or(()->com.frozendawn.recipe.InductionRecipes.byId(entry.getKey())).ifPresent(holder->{
             if(holder.value() instanceof SmeltingRecipe recipe){
                 float value=entry.getValue()*recipe.getExperience();int xp=Mth.floor(value);if(l.random.nextFloat()<value-xp)xp++;
                 ExperienceOrb.award(l,player==null?worldPosition.getCenter():player.position(),xp);awarded.add(holder);
             }
         });
+        awarded.removeIf(h->com.frozendawn.recipe.InductionRecipes.byId(h.id()).isPresent());
         if(player!=null)player.awardRecipes(awarded);used.clear();setChanged();
     }
     @Override public Component getDisplayName(){return Component.translatable("block.frozendawn.induction_furnace");}

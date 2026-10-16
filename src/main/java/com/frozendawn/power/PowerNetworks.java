@@ -120,6 +120,21 @@ public final class PowerNetworks {
                 .sorted().filter(l::isLoaded).map(l::getBlockEntity).filter(com.frozendawn.block.OxygenReservoirBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.OxygenReservoirBlockEntity.class::cast).toList();
     }
+    /** Loaded radiators on saved coolant links of one port. Coolant legality is only type and range, so these
+     * links are read directly and never flicker while unrelated geometry edits revalidate electrical paths. */
+    public static List<BlockPos> coolantRadiators(ServerLevel l,BlockPos port){
+        if(!l.isLoaded(port)||!(l.getBlockState(port).getBlock() instanceof com.frozendawn.block.CoolantPortBlock))return List.of();
+        return PowerNetworkSavedData.get(l).links().stream().filter(link->link.touches(port)).map(link->link.a().equals(port)?link.b():link.a())
+                .filter(p->p.distSqr(port)<=com.frozendawn.block.CoolantPortBlock.LINK_RANGE*com.frozendawn.block.CoolantPortBlock.LINK_RANGE)
+                .sorted().filter(l::isLoaded).filter(p->l.getBlockState(p).getBlock() instanceof com.frozendawn.block.ReactorRadiatorBlock).toList();
+    }
+    /** Load-follow target from the last allocation: demand, plus a charging margin while banks are below
+     * capacity, minus what other generators already supply. Unlinked reactors are asked for nothing. */
+    public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
+        var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
+        long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
+        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge-Math.max(0,m.generationWatts()-ownWatts)));
+    }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
     public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}
     public static void accountLifeSupport(ServerLevel l){account(l);runtime(l).coordinatedTick=l.getGameTime();}
@@ -140,7 +155,7 @@ public final class PowerNetworks {
         if(grant==null||tick>grant.expires()||!level.isLoaded(pos)
                 ||rt.machineTicks.getOrDefault(pos,Long.MIN_VALUE)==tick)return false;
         if(!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)||!furnace.wantsPower())return false;
-        int needed=(com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS-grant.generationWatts())/20;
+        int needed=(furnace.demandWatts()-grant.generationWatts())/20;
         var stores=grant.stores().stream().filter(level::isLoaded).map(level::getBlockEntity)
                 .filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
@@ -187,6 +202,9 @@ public final class PowerNetworks {
                 &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
                 &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
+    private static boolean coolantLink(ServerLevel l,PowerLink link){
+        return l.isLoaded(link.a())&&l.isLoaded(link.b())&&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
+    }
     private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
     private static void revokePumpGrants(Runtime rt,BlockPos node) {
         var component=rt.components.getOrDefault(node,Set.of(node));
@@ -198,11 +216,15 @@ public final class PowerNetworks {
     private static void invalidate(ServerLevel l,Runtime rt,java.util.function.Predicate<PowerLink> affected,net.minecraft.world.level.ChunkPos unloadedChunk){
         rt.geometryRevision++;
         for(var link:PowerNetworkSavedData.get(l).links())if(affected.test(link)){
-            // An unloaded power path revokes immediately. Other refreshes retain
-            // the grant provisionally until its component has been validated again.
+            // Coolant pipes are legal by type and range alone; geometry cannot break a live one.
+            if(coolantLink(l,link)&&rt.active.contains(link))continue;
+            // An unloaded power path drops immediately. Other refreshes keep the link and its
+            // grant live until the re-check actually fails, so a door never splits a network.
             if(unloadedChunk!=null&&PowerLinkRules.path(link.a(),link.b()).stream()
-                    .anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(unloadedChunk)))revokePumpGrants(rt,link);
-            if(rt.active.remove(link))rt.graphDirty=true;enqueue(rt,link);
+                    .anyMatch(p->new net.minecraft.world.level.ChunkPos(p).equals(unloadedChunk))){
+                revokePumpGrants(rt,link);if(rt.active.remove(link))rt.graphDirty=true;
+            }
+            enqueue(rt,link);
         }
     }
     private static void chunkChanged(ServerLevel l,net.minecraft.world.level.chunk.ChunkAccess chunk,boolean unloaded){
@@ -265,6 +287,7 @@ public final class PowerNetworks {
     }
     private static int supplyWatts(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos)) return 0;
+        if (level.getBlockEntity(pos) instanceof com.frozendawn.block.ReactorControllerBlockEntity reactor) return reactor.powerWatts();
         return level.getBlockEntity(pos) instanceof com.frozendawn.block.GeothermalCoreBlockEntity core
                 ? core.getPowerShare() * 200 : 0;
     }
@@ -276,7 +299,9 @@ public final class PowerNetworks {
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity heater)return heater.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
-            return furnace.wantsPower()?com.frozendawn.block.InductionFurnaceBlockEntity.DEMAND_WATTS:0;
+            return furnace.wantsPower()?furnace.demandWatts():0;
+        if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.DeconShowerBlock)
+            return com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(pos));
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
                 ? com.frozendawn.block.PanelLightBlock.DEMAND_WATTS : 0;
     }
@@ -382,7 +407,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:1,load)).toList();
+                    rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }

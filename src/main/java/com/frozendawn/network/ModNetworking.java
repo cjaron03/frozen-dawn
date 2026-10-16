@@ -46,6 +46,11 @@ public class ModNetworking {
         registrar.playToClient(PowerBinderNoticePayload.TYPE, PowerBinderNoticePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinderNotice(payload)));
 
+        registrar.playToClient(ReactorFlashPayload.TYPE, ReactorFlashPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
+        registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
+
         registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));
 
