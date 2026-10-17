@@ -64,10 +64,11 @@ public final class OrsaAwakeningIntro {
         blurManaged = false;
     }
 
-    /** Hard cut from the First Boot Epigraph: no extra black lead-in. */
+    /** Straight on from the First Boot Epigraph: its black runs into the intro's own lead-in, and its howl keeps
+     * playing (everything else is already silent) and fades out under the logo by itself. */
     public static void startImmediately() {
         start();
-        pendingDelayTicks = 0;
+        blackoutApplied = true;
     }
 
     public static boolean shouldSuppressSurvivalHud() {
