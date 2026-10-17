@@ -35,7 +35,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     // Menu data, synced as shorts: temperatures and kW x10, fractions x1000.
     public static final int CORE = 0, INSERTION = 1, HEAT_IN = 2, HEAT_OUT = 3, POWER = 4, EFFICIENCY = 5, RADIATORS = 6,
             COOLANT = 7, STATE = 8, FLAGS = 9, CLIMB = 10, FAILURE = 11, DAMAGE = 12, SHELL = 13, SHELL_AT = 14, TARGET = 15,
-            RATED = 16, RADIATOR_KW = 17, DATA = 18;
+            RATED = 16, RADIATOR_KW = 17, RESERVE = 18, DATA = 19;
     public static final int F_SCRAM = 1, F_AUTO = 2, F_FOLLOW = 4, F_SHELL = 8, F_LOCKED = 16, F_FROZEN = 32, F_RODS = 64, F_RESETTABLE = 128;
     private static final ReactorPhysics.Readout IDLE = new ReactorPhysics.Readout(ReactorPhysics.State.NOMINAL,
             ReactorPhysics.Coolant.IDLE, 0, 0, 0, 0, 0, 0, Double.POSITIVE_INFINITY, 0, 0);
@@ -92,7 +92,8 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         radiators = working.size();
         int rods = shell.valid() ? loadedRods() : 0;
         rated = rods * ReactorPhysics.ROD_KW;
-        target = core.loadFollow() ? PowerNetworks.loadFollowTargetWatts(l, worldPosition, powerWatts()) / 1000.0 : Double.NaN;
+        // Load-follow aims at demand plus the operator's spinning reserve; the surplus heat leaves through the radiators.
+        target = core.loadFollow() ? PowerNetworks.loadFollowTargetWatts(l, worldPosition, powerWatts()) / 1000.0 + core.reserveKw() : Double.NaN;
         boolean wasMelted = core.meltdown(), wasFrozen = core.frozen();
         readout = core.step(new ReactorPhysics.Inputs(rods, sinks, roomC(l, facing), l.hasNeighborSignal(worldPosition), target));
         announceScram(l);
@@ -217,6 +218,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
     }
     public boolean reset() { boolean ok = level != null && core.reset(level.hasNeighborSignal(worldPosition)); setChanged(); return ok; }
     public void toggleLoadFollow() { if (!core.meltdown()) { core.setLoadFollow(!core.loadFollow()); setChanged(); } }
+    public void cycleReserve() { if (!core.meltdown()) { core.cycleReserve(); setChanged(); } }
     public void enableAutoScram() { core.setAutoScram(true); scramLog = ""; setChanged(); }
     /** Reached only through the two confirmation screens. The decision is logged. */
     public void disableAutoScram(Player player) {
@@ -252,6 +254,7 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
                     case TARGET -> Double.isFinite(target) ? clampShort(target * 10) : -1;
                     case RATED -> clampShort(rated * 10);
                     case RADIATOR_KW -> clampShort(r.radiatorKw() * 10);
+                    case RESERVE -> core.reserveKw();
                     default -> 0;
                 };
             }

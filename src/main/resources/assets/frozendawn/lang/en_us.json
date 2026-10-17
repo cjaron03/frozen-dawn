@@ -1471,5 +1471,7 @@
   "uplink.frozendawn.archive.3.title": "Relay Archive 3/3: Reply",
   "uplink.frozendawn.archive.3.page1": "CARRIER CHANGE\nNot an automated relay.\n\n\"...hello? Hello. This is Cydonia relay, night desk. You're on the old ORSA handshake. Nobody has used that code since the surface went quiet.\"",
   "uplink.frozendawn.archive.3.page2": "\"I ran your badge. It comes back flagged. There's a protocol on it I don't have clearance to open.\n\nIt doesn't say deceased. It doesn't say evacuated. It just says active.\"",
-  "uplink.frozendawn.archive.3.page3": "\"I'm not supposed to answer this channel. I'm answering.\n\nIf you can hear me: we were told nobody was left down there.\n\nWe were told a lot of things.\"\n\n[Carrier lost.]"
+  "uplink.frozendawn.archive.3.page3": "\"I'm not supposed to answer this channel. I'm answering.\n\nIf you can hear me: we were told nobody was left down there.\n\nWe were told a lot of things.\"\n\n[Carrier lost.]",
+  "screen.frozendawn.reactor.reserve": "Reserve: %s kW",
+  "screen.frozendawn.reactor.target_reserve": "Load-follow target: %s kW (+%s reserve)"
 }
