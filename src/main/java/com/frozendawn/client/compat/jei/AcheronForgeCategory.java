@@ -45,12 +45,12 @@ public class AcheronForgeCategory implements IRecipeCategory<AcheronForgeRecipeD
 
     @Override
     public int getWidth() {
-        return 150;
+        return 190;
     }
 
     @Override
     public int getHeight() {
-        return 61;
+        return 73;
     }
 
     @Override
@@ -72,8 +72,9 @@ public class AcheronForgeCategory implements IRecipeCategory<AcheronForgeRecipeD
         guiGraphics.fill(ax + 20, ay + 7, ax + 24, ay + 9, c);
 
         var font = Minecraft.getInstance().font;
-        guiGraphics.drawString(font, "10s", 52, 28, 0xFF808080, false);
-        guiGraphics.drawString(font, "Below Y=0", 0, 40, 0xFFAAAAAA, false);
-        guiGraphics.drawString(font, "Heat source within 8 blocks", 0, 51, 0xFFAAAAAA, false);
+        guiGraphics.drawString(font, "Heat: 10s | Electric: 6.67s", 0, 28, 0xFF808080, false);
+        guiGraphics.drawString(font, "Heat: Y<0, source within 8 blocks", 0, 40, 0xFFAAAAAA, false);
+        guiGraphics.drawString(font, "Electric: 25 kW, any height", 0, 51, 0xFFAAAAAA, false);
+        guiGraphics.drawString(font, "Electric waste heat: 6.25 kW", 0, 62, 0xFFAAAAAA, false);
     }
 }

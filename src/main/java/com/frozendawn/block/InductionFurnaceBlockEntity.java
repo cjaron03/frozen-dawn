@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** A paid processing tick consumes 100 J and emits 25 units of waste heat. No fuel or air consumer. */
-public final class InductionFurnaceBlockEntity extends BlockEntity implements WorldlyContainer,MenuProvider {
+public final class InductionFurnaceBlockEntity extends BlockEntity implements WorldlyContainer,MenuProvider,com.frozendawn.power.PoweredMachine {
     public static final int DEMAND_WATTS=2000;
     public static final double WASTE_HEAT_WATTS=500;
     private final NonNullList<ItemStack> items=NonNullList.withSize(2,ItemStack.EMPTY);
