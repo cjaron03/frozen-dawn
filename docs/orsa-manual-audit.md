@@ -426,3 +426,15 @@ instead of a wall of text.
   kit's Hearth line. What is ORSA?, Soul Harvesting and the found documents are untouched.
 - Ice Shards now shows the replacement manual recipe (Book + Ice Shard).
 - `ManualLint` measures spotlight, multiblock and entity page text. 0 errors.
+
+## Power, reactor and radiation (after #112)
+
+`feat/maeve-director` at 41c83239 is merged in. New categories in the readability
+template: Power (basics, Binder, relays and feedthroughs, storage, salvaged cells,
+monitor, induction furnace, lights), Hearthstone Reactor (overview with the evacuation
+meltdown history, shell diagram, fuel rods, radiators, operation, alarms and SCRAM,
+spent fuel, meltdown) and Radiation (basics, shielding, Geiger, contamination, decon
+shower, lead, RadAid). Upstream's PIXIE-2 (now Air & Pressure), RH-5, lights and
+salvaged-cell pages are restyled. Heat Vent, Thermostat, Airlocks, Airlock Oxygen,
+Core Upgrades, Room Temperature and Hyperthermia carry upstream's new behavior.
+0 lint errors. Open: RadAid has no recipe and only reactor-site loot.
