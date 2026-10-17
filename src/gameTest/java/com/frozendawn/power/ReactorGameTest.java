@@ -297,6 +297,35 @@ public final class ReactorGameTest {
     }
 
     /** Core at (CX,CY,CZ); Controller on the north face, ports east and south, casing west. */
+    @GameTest(template = GameTestTemplates.EMPTY_LARGE, batch = "reactor", timeoutTicks = 100, skyAccess = true)
+    public static void reactorHotRadiatorsShedFrostSnowAndIceEvenWhenBuried(GameTestHelper h) {
+        scene(h, () -> {
+            var level = h.getLevel(); var controller = build(h); var be = controller(h, controller);
+            var port = h.absolutePos(new BlockPos(CX + 1, CY, CZ));
+            // Two radiators five blocks apart, so covering one never touches the other.
+            var buried = radiators(h, 1).get(0); var open = radiatorsAt(h).get(5);
+            level.setBlock(open, ModBlocks.REACTOR_RADIATOR.get().defaultBlockState(), 3);
+            link(h, port, buried); link(h, port, open);
+            level.setBlock(buried.above(), ModBlocks.FROZEN_ATMOSPHERE.get().defaultBlockState(), 2);
+            level.setBlock(buried.north(), Blocks.SNOW_BLOCK.defaultBlockState(), 2);
+            level.setBlock(buried.south(), Blocks.POWDER_SNOW.defaultBlockState(), 2);
+            level.setBlock(buried.west(), Blocks.ICE.defaultBlockState(), 2);
+            level.setBlock(buried.east(), Blocks.PACKED_ICE.defaultBlockState(), 2);
+            be.physics().setCoreC(120); be.second(level);
+            h.assertTrue(!level.getBlockState(buried).getValue(ReactorRadiatorBlock.HOT) && level.getBlockState(buried.above()).is(ModBlocks.FROZEN_ATMOSPHERE.get())
+                    && be.radiatorCount() == 1, "Below 150C coolant the buried radiator stays cold and covered: count " + be.radiatorCount());
+            h.assertTrue(!ReactorRadiatorBlock.warms(level, buried.above()), "A cold radiator does not repel frost");
+            be.physics().setCoreC(250); be.second(level);
+            h.assertTrue(level.getBlockState(buried).getValue(ReactorRadiatorBlock.HOT), "Warm coolant heats a buried radiator");
+            for (var face : List.of(buried.above(), buried.north(), buried.south(), buried.west(), buried.east()))
+                h.assertTrue(level.getBlockState(face).isAir(), "Hot radiator boiled off its cover at " + face + ": " + level.getBlockState(face));
+            h.assertTrue(ReactorRadiatorBlock.warms(level, buried.above()) && ReactorRadiatorBlock.warms(level, buried.north()),
+                    "Frost formation skips a hot radiator's faces");
+            be.physics().setCoreC(250); be.second(level);
+            h.assertTrue(be.radiatorCount() == 2, "The cleared radiator works again: count " + be.radiatorCount());
+        });
+    }
+
     private static BlockPos build(GameTestHelper h) {
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++) {
             var rel = new BlockPos(CX + dx, CY + dy, CZ + dz);

@@ -98,8 +98,10 @@ public final class ReactorControllerBlockEntity extends BlockEntity implements M
         announceScram(l);
         burn(readout.burn());
         ejectSpent();
-        boolean radiating = readout.radiatorKw() / Math.max(1, radiators) > 0.5;
-        var nowHot = radiating ? new HashSet<>(working) : new HashSet<BlockPos>();
+        // Coolant circulates through every linked radiator, buried or not: warm coolant heats them all.
+        boolean warm = core.coreC() >= ReactorPhysics.RADIATOR_HOT_C && !core.frozen() && !core.meltdown()
+                && readout.coolant() != ReactorPhysics.Coolant.LOST;
+        var nowHot = warm ? new HashSet<>(linked) : new HashSet<BlockPos>();
         for (var p : hot) if (!nowHot.contains(p) && l.isLoaded(p)) ReactorRadiatorBlock.publish(l, p, false);
         for (var p : nowHot) ReactorRadiatorBlock.publish(l, p, true);
         hot.clear(); hot.addAll(nowHot);

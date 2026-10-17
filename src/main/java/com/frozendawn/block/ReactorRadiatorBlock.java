@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /** Rejects reactor heat to the outside. Needs one uncovered outdoor face, the same rule as the heat vent.
- * Running radiators glow, burn what touches them and melt their own snow; idle ones get buried. */
+ * Hot radiators glow, burn what touches them and boil off snow, ice and frozen atmosphere; idle ones get buried. */
 public final class ReactorRadiatorBlock extends Block {
     public static final BooleanProperty HOT = BooleanProperty.create("hot");
     public static final int LINK_RANGE = 16;
@@ -27,9 +27,20 @@ public final class ReactorRadiatorBlock extends Block {
     public ReactorRadiatorBlock(Properties p) { super(p); registerDefaultState(stateDefinition.any().setValue(HOT, false)); }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(HOT); }
 
-    /** Snow and frozen atmosphere bury an idle radiator; a running one sheds both from its faces. */
-    private static boolean meltable(BlockState s) { return s.getBlock() instanceof SnowLayerBlock || s.getBlock() instanceof FrozenAtmosphereBlock; }
-    private static boolean snow(BlockState s) { return meltable(s) || s.is(Blocks.SNOW_BLOCK) || s.is(Blocks.POWDER_SNOW); }
+    /** Snow, ice and frozen atmosphere bury an idle radiator; a hot one boils all of them off its open faces. */
+    private static boolean meltable(BlockState s) {
+        return s.getBlock() instanceof SnowLayerBlock || s.getBlock() instanceof FrozenAtmosphereBlock || s.is(Blocks.SNOW_BLOCK)
+                || s.is(Blocks.POWDER_SNOW) || s.is(net.minecraft.tags.BlockTags.ICE);
+    }
+    /** True when a hot radiator would shed a deposit at this position: frost formation skips it. */
+    public static boolean warms(net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        for (var face : FACES) {
+            var radiator = pos.relative(face.getOpposite());
+            if (level.hasChunkAt(radiator) && level.getBlockState(radiator).getBlock() instanceof ReactorRadiatorBlock
+                    && level.getBlockState(radiator).getValue(HOT)) return true;
+        }
+        return false;
+    }
     /** Outside temperature at the radiator, or empty when every face is covered, roofed or unloaded. */
     public static OptionalDouble sink(ServerLevel level, BlockPos pos) {
         if (!level.isLoaded(pos) || !(level.getBlockState(pos).getBlock() instanceof ReactorRadiatorBlock)) return OptionalDouble.empty();
@@ -37,7 +48,7 @@ public final class ReactorRadiatorBlock extends Block {
             var outlet = pos.relative(face);
             if (!level.isLoaded(outlet)) continue;
             var state = level.getBlockState(outlet);
-            if (snow(state) || !RoomAtmosphere.isPassage(level, outlet, state)) continue;
+            if (meltable(state) || !RoomAtmosphere.isPassage(level, outlet, state)) continue;
             if (outlet.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING, outlet.getX(), outlet.getZ())) continue;
             var a = ApocalypseState.get(level.getServer());
             return OptionalDouble.of(TemperatureManager.getBackgroundTemperature(outlet.getY(), a.getCurrentDay(), a.getTotalDays()));

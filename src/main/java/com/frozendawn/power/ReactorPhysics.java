@@ -25,6 +25,9 @@ public final class ReactorPhysics {
     public static final double THAW_ROOM_C = 5, LOAD_FOLLOW_SLEW = 0.02;
     /** Coolant pumps run while the core makes heat or is above this; an idle core settles to its room. */
     public static final double PUMP_C = 40;
+    /** Linked radiators run hot, glow and shed snow, ice and frozen atmosphere once the coolant reaching them is
+     * this warm. Covered radiators heat too, so frost on an idle plant clears itself before the core needs it. */
+    public static final double RADIATOR_HOT_C = 150;
     /** While operating, coolant flow is throttled to hold the core in its working band: closed below 200C, full
      * above 280C. Oversized radiators therefore never chill a running core. After a SCRAM pumps run full to cool down. */
     public static final double HOLD_LOW_C = 200, HOLD_HIGH_C = 280;
