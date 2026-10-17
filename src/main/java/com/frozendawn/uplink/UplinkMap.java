@@ -21,7 +21,9 @@ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 /**
  * A relay telemetry plot, not a survey: a locked vanilla map with no terrain, a dashed search circle and the
- * console's position. Nothing is loaded or read to draw it, and it never updates after printing.
+ * console's position. Nothing is loaded or read to draw it, and its drawing never updates after printing; vanilla
+ * still shows the holder's own position arrow (and an edge marker when off the plot), since locking stops only
+ * terrain updates.
  */
 public final class UplinkMap {
     private static final int COLOR = 0x2DD4D2;
@@ -35,7 +37,7 @@ public final class UplinkMap {
         var tag = new CompoundTag();
         tag.putString("dimension", level.dimension().location().toString());
         tag.putInt("xCenter", centerX); tag.putInt("zCenter", centerZ); tag.putByte("scale", (byte) scale);
-        tag.putBoolean("trackingPosition", false); tag.putBoolean("unlimitedTracking", false); tag.putBoolean("locked", true);
+        tag.putBoolean("trackingPosition", true); tag.putBoolean("unlimitedTracking", true); tag.putBoolean("locked", true);
         tag.putByteArray("colors", ring(centerX, centerZ, scale, circle, radius));
         tag.put("banners", new ListTag()); // vanilla load parses this unconditionally and warns when it is absent
         var id = level.getFreeMapId();
