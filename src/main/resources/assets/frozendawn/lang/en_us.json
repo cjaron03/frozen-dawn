@@ -1471,9 +1471,10 @@
   "epigraph.frozendawn.line1": "\"I don't know if mankind will endure.",
   "epigraph.frozendawn.line2": "But we've already decided what will continue in its name.\"",
   "epigraph.frozendawn.attribution": "Closing remarks, Continuity Council, session 1",
-  "screen.frozendawn.reactor.reserve": "Reserve: %s kW",
-  "screen.frozendawn.reactor.target_reserve": "Load-follow target: %s kW (+%s reserve)",
+  "screen.frozendawn.reactor.reserve": "Res: %s kW",
+  "screen.frozendawn.reactor.target_reserve": "Target: %s kW (+%s res)",
   "screen.frozendawn.uplink.grid.ready": "Grid ready",
   "screen.frozendawn.uplink.grid.ramping": "Grid ramping up: %s / %s kW",
-  "uplink.frozendawn.log.disarmed": "Transmit prompt lapsed. Scheduled load released."
+  "uplink.frozendawn.log.disarmed": "Transmit prompt lapsed. Scheduled load released.",
+  "screen.frozendawn.reactor.reserve.tooltip": "Spinning reserve. Load-follow holds this much above demand so a sudden load is already covered. Costs rod life. Click to change."
 }

@@ -45,7 +45,8 @@ public final class ReactorControllerScreen extends AbstractContainerScreen<React
         reset = control(Button.builder(Component.translatable("screen.frozendawn.reactor.reset"), b -> send(ReactorControllerMenu.RESET)).bounds(x, y + 23, 62, 20).build());
         follow = control(Button.builder(Component.empty(), b -> send(ReactorControllerMenu.LOAD_FOLLOW)).bounds(x, y + 46, 62, 20).build());
         auto = control(Button.builder(Component.empty(), b -> { if (flag(F_AUTO)) openModal(1); else send(ReactorControllerMenu.AUTO_ON); }).bounds(x, y + 69, 62, 20).build());
-        reserve = control(Button.builder(Component.empty(), b -> send(ReactorControllerMenu.RESERVE)).bounds(x, y + 92, 62, 20).build());
+        reserve = control(Button.builder(Component.empty(), b -> send(ReactorControllerMenu.RESERVE)).bounds(x, y + 92, 62, 20)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("screen.frozendawn.reactor.reserve.tooltip"))).build());
         insertion = control(new InsertionSlider(leftPos + 8, topPos + 126, 160, 14));
         int mx = leftPos + 28, my = topPos + imageHeight - 32;
         keep = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.reactor.confirm.keep"), b -> openModal(0)).bounds(mx, my, 104, 20).build());
