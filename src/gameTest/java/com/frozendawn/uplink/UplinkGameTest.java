@@ -89,8 +89,8 @@ public final class UplinkGameTest {
             var data=UplinkSavedData.get(l.getServer());
             h.assertTrue(data.archiveDelivered()==1&&console.mode()==UplinkPolicy.Mode.LISTEN,"First reward is archive #1; console returns to Listen");
             console.deliverHeld(player);
-            var book=player.getInventory().items.stream().filter(s->s.is(Items.WRITTEN_BOOK)).findFirst().orElse(null);
-            h.assertTrue(book!=null&&book.get(DataComponents.WRITTEN_BOOK_CONTENT).pages().size()==3,"Printed archive #1 reaches the transmitter");
+            var doc=player.getInventory().items.stream().filter(s->s.is(ModItems.ORSA_DOCUMENT)).findFirst().orElse(null);
+            h.assertTrue(doc!=null&&doc.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type").equals("relay_archive_1"),"Printed relay transcript #1 reaches the transmitter");
             console.press(player,2);console.press(player,4);
             h.assertTrue(last(console).endsWith("refuse.cooldown"),"One transmission per in-game day: "+last(console));
         });
@@ -106,9 +106,27 @@ public final class UplinkGameTest {
         data.signal("minecraft:overworld",origin,10,true);
         var saved=data.save(new CompoundTag(),l.registryAccess());
         h.assertTrue(saved.getList("sites",10).size()==1&&saved.getList("drops",10).size()>=1,"Sites and drops persist");
-        for(int i=0;i<3;i++)h.assertTrue(UplinkRewards.archive(i).is(Items.WRITTEN_BOOK),"Archive fragment "+(i+1)+" prints");
+        for(int i=0;i<3;i++){var doc=UplinkRewards.archive(i);h.assertTrue(doc.is(ModItems.ORSA_DOCUMENT)&&doc.get(DataComponents.CUSTOM_DATA).copyTag().getString("doc_type").equals(UplinkRewards.docType(i)),"Fragment "+(i+1)+" prints as a relay transcript");
+            h.assertTrue(l.getServer().getAdvancements().get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID,"relay_archive/"+(i+1)))!=null,"Field Manual unlock exists for fragment "+(i+1));}
         h.succeed();
     }
+
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="uplink_rewards",timeoutTicks=100)
+    public static void uplinkArmedPromptSchedulesLoadFollowRamp(GameTestHelper h){h.runAfterDelay(1,()->{
+        var l=h.getLevel();var core=place(h,2,3,2,ModBlocks.GEOTHERMAL_CORE.get());var c=place(h,6,3,2,ModBlocks.UPLINK_CONSOLE.get());
+        var console=(UplinkConsoleBlockEntity)l.getBlockEntity(c);var player=player(l,c);
+        ((GeothermalCoreBlockEntity)l.getBlockEntity(core)).setPowerShare(10);link(h,core,c);
+        console.press(player,1);account(l);
+        int idle=PowerNetworks.loadFollowTargetWatts(l,core,2000);
+        h.assertTrue(idle==2000,"Listening asks load-follow for the receiver only: "+idle);
+        console.press(player,2);
+        h.assertTrue(console.scheduledWatts()==38000&&PowerNetworks.loadFollowTargetWatts(l,core,2000)==40000,"Armed transmit schedules its extra 38 kW for load-follow");
+        h.assertTrue(PowerNetworks.monitorReading(l,c).demandWatts()==2000&&console.demandWatts()==2000,"Scheduling serves and charges nothing");
+        h.assertTrue(console.availableWatts()==2000,"Console sees 2 kW available, short of the 40 kW it needs");
+        console.press(player,3);h.assertTrue(PowerNetworks.loadFollowTargetWatts(l,core,2000)==60000,"Boost schedules its 60 kW");
+        console.press(player,5);h.assertTrue(console.scheduledWatts()==0&&PowerNetworks.loadFollowTargetWatts(l,core,2000)==2000,"Cancel releases the scheduled load");
+        h.succeed();
+    });}
 
     private static String last(UplinkConsoleBlockEntity c){var log=c.log();return log.isEmpty()?"":log.getLast().key();}
     private static FakePlayer player(ServerLevel l,BlockPos p){var player=new FakePlayer(l,new GameProfile(UUID.randomUUID(),"uplink_user"));player.setPos(p.getCenter());return player;}

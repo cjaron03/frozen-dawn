@@ -3,26 +3,21 @@ package com.frozendawn.uplink;
 import com.frozendawn.data.ApocalypseState;
 import com.frozendawn.data.MonitoringStationState;
 import com.frozendawn.data.ReactorSiteState;
+import com.frozendawn.init.ModItems;
 import com.frozendawn.maeve.MaeveDirector;
 import com.frozendawn.world.MonitoringStationPlacement;
 import com.frozendawn.world.ReactorSitePlacement;
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.network.Filterable;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.WrittenBookContent;
 import org.jetbrains.annotations.Nullable;
 
 /** Turns one completed handshake into its reward: an archive fragment, a supply drop or a station map. */
 public final class UplinkRewards {
-    /** Pages per archive fragment; text lives in lang keys {@code uplink.frozendawn.archive.<n>.page<p>}. */
-    private static final int[] PAGES = {3, 4, 3};
     private UplinkRewards() { }
 
     public record Result(UplinkPolicy.Reward reward, ItemStack item, Component log) { }
@@ -48,16 +43,17 @@ public final class UplinkRewards {
         return result;
     }
 
+    /** Doc type of a relay transcript; archiving it unlocks its pages in the Field Manual's Relay Archive entry. */
+    public static String docType(int index) { return "relay_archive_" + (index + 1); }
+
+    /** A printed relay transcript: an ORSA document the player archives into the Field Manual (text lives there). */
     public static ItemStack archive(int index) {
-        var book = new ItemStack(Items.WRITTEN_BOOK);
-        var pages = new ArrayList<Filterable<Component>>();
-        for (int page = 1; page <= PAGES[index]; page++)
-            pages.add(Filterable.passThrough(Component.translatable("uplink.frozendawn.archive." + (index + 1) + ".page" + page)));
-        var title = Component.translatable("uplink.frozendawn.archive." + (index + 1) + ".title");
-        book.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(Filterable.passThrough("ORSA Relay Archive " + (index + 1)),
-                UplinkPolicy.humanReply(index) ? "Unknown operator" : "ORSA Relay", 0, pages, true));
-        book.set(DataComponents.CUSTOM_NAME, title);
-        return book;
+        var doc = new ItemStack(ModItems.ORSA_DOCUMENT.get());
+        doc.set(DataComponents.CUSTOM_NAME, Component.translatable("item.frozendawn.relay_transcript", index + 1,
+                Component.translatable("uplink.frozendawn.archive." + (index + 1) + ".title")));
+        var tag = new net.minecraft.nbt.CompoundTag(); tag.putString("doc_type", docType(index));
+        doc.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+        return doc;
     }
 
     static Result supplyDrop(ServerLevel level, BlockPos console, RandomSource random) {

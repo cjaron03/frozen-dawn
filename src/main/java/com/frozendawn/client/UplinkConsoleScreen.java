@@ -12,7 +12,8 @@ import net.minecraft.world.entity.player.Inventory;
 /** Mode selector, link/dish/power status, handshake progress and the carrier log. Transmit always asks first. */
 public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkConsoleMenu> {
     private static final int W = 252, H = 238, LOG_TOP = 156, LOG_ROWS = 6;
-    private Button off, listen, transmit, boost, confirm, cancel;
+    private Button off, listen, transmit, boost, confirm, cancel, logTab, archiveTab;
+    private boolean archiveView;
     public UplinkConsoleScreen(UplinkConsoleMenu m, Inventory i, Component t) { super(m, i, t); imageWidth = W; imageHeight = H; }
 
     @Override protected void init() {
@@ -22,12 +23,16 @@ public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkCon
         listen = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.listen"), b -> press(1)).bounds(leftPos + 68, y, 56, 18).build());
         transmit = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.transmit"), b -> press(2)).bounds(leftPos + 128, y, 56, 18).build());
         boost = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.boost"), b -> press(3)).bounds(leftPos + 188, y, 56, 18).build());
-        confirm = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.confirm"), b -> press(4)).bounds(leftPos + 40, topPos + 128, 80, 20).build());
-        cancel = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.cancel"), b -> press(5)).bounds(leftPos + 132, topPos + 128, 80, 20).build());
+        confirm = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.confirm"), b -> press(4)).bounds(leftPos + 40, topPos + 122, 80, 16).build());
+        logTab = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.tab.log"), b -> archiveView = false).bounds(leftPos + W - 108, topPos + 96, 46, 14).build());
+        archiveTab = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.tab.archive"), b -> archiveView = true).bounds(leftPos + W - 58, topPos + 96, 46, 14).build());
+        cancel = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.uplink.cancel"), b -> press(5)).bounds(leftPos + 132, topPos + 122, 80, 16).build());
     }
 
     private void press(int id) { if (minecraft != null && minecraft.gameMode != null) minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id); }
     private int get(int i) { return menu.data().get(i); }
+    private int needKw() { return (get(UplinkConsoleMenu.BOOST) == 1 ? UplinkPolicy.Mode.BOOST : UplinkPolicy.Mode.TRANSMIT).watts / 1000; }
+    private boolean gridReady() { return get(UplinkConsoleMenu.AVAILABLE_KW) >= needKw(); }
 
     @Override public void render(GuiGraphics g, int mx, int my, float partial) {
         int mode = get(UplinkConsoleMenu.MODE), state = get(UplinkConsoleMenu.STATE);
@@ -36,6 +41,8 @@ public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkCon
         listen.active = !busy && mode != UplinkPolicy.Mode.LISTEN.ordinal();
         transmit.active = boost.active = !busy && !armed;
         confirm.visible = cancel.visible = armed;
+        confirm.active = gridReady();
+        logTab.active = archiveView; archiveTab.active = !archiveView;
         super.render(g, mx, my, partial);
         renderTooltip(g, mx, my);
     }
@@ -60,6 +67,10 @@ public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkCon
             g.fill(x + 12, y + 112, x + W - 12, y + 152, 0xFF3A1E1E);
             var warn = Component.translatable("screen.frozendawn.uplink.warning");
             g.drawString(font, warn, x + (W - font.width(warn)) / 2, y + 115, 0xFFE58B83, false);
+            // The armed prompt schedules the load: show the grid ramping toward it.
+            var grid = gridReady() ? Component.translatable("screen.frozendawn.uplink.grid.ready")
+                    : Component.translatable("screen.frozendawn.uplink.grid.ramping", get(UplinkConsoleMenu.AVAILABLE_KW), needKw());
+            g.drawString(font, grid, x + (W - font.width(grid)) / 2, y + 140, gridReady() ? 0xFF9CD5A5 : 0xFFE5A064, false);
         } else if (state == UplinkConsoleBlockEntity.State.TRANSMITTING.ordinal()) {
             int total = Math.max(1, get(UplinkConsoleMenu.TOTAL)), done = Math.min(total, get(UplinkConsoleMenu.ELAPSED));
             line(g, Component.translatable("screen.frozendawn.uplink.handshake", done, total), x + 12, y + 116, 0xFFE5A064);
@@ -67,6 +78,7 @@ public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkCon
             g.fill(x + 12, y + 130, x + 12 + (W - 24) * done / total, y + 136, 0xFFE5A064);
         }
         g.fill(x + 12, y + LOG_TOP - 5, x + W - 12, y + LOG_TOP - 4, 0xFF39464F);
+        if (archiveView) { renderArchive(g, x, y); return; }
         var console = minecraft != null && minecraft.level != null && minecraft.level.getBlockEntity(menu.pos()) instanceof UplinkConsoleBlockEntity c ? c : null;
         if (console == null) return;
         // Entries wrap to the panel width; the newest wrapped rows stay visible, the newest entry brighter.
@@ -81,6 +93,16 @@ public final class UplinkConsoleScreen extends AbstractContainerScreen<UplinkCon
         }
         int first = Math.max(0, rows.size() - LOG_ROWS);
         for (int i = first; i < rows.size(); i++) g.drawString(font, rows.get(i), x + 12, y + LOG_TOP + (i - first) * 11, colors.get(i), false);
+    }
+
+    /** Received relay transcripts by title; their text lives in the Field Manual, so it has one source. */
+    private void renderArchive(GuiGraphics g, int x, int y) {
+        int received = get(UplinkConsoleMenu.ARCHIVE), row = 0;
+        for (int i = 1; i <= UplinkPolicy.ARCHIVE_SIZE; i++, row++)
+            line(g, i <= received ? Component.translatable("screen.frozendawn.uplink.archive.received", i, Component.translatable("uplink.frozendawn.archive." + i + ".title"))
+                    : Component.translatable("screen.frozendawn.uplink.archive.pending", i), x + 12, y + LOG_TOP + row * 11, i <= received ? 0xFFE0E6E8 : 0xFF9BAAB1);
+        var where = font.split(Component.translatable("screen.frozendawn.uplink.archive.where"), W - 24);
+        for (int i = 0; i < where.size() && row < LOG_ROWS; i++, row++) g.drawString(font, where.get(i), x + 12, y + LOG_TOP + 6 + row * 11, 0xFF64C9CC, false);
     }
 
     private void line(GuiGraphics g, Component c, int x, int y, int color) { g.drawString(font, font.plainSubstrByWidth(c.getString(), W - 24), x, y, color, false); }

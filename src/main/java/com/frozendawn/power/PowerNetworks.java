@@ -133,7 +133,12 @@ public final class PowerNetworks {
     public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
         var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
         long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
-        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge-Math.max(0,m.generationWatts()-ownWatts)));
+        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge+scheduledWatts(l,p)-Math.max(0,m.generationWatts()-ownWatts)));
+    }
+    /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
+    static long scheduledWatts(ServerLevel l,BlockPos p){
+        long sum=0;for(var cell:component(l,p))if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.UplinkConsoleBlockEntity c)sum+=c.scheduledWatts();
+        return sum;
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
     public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}

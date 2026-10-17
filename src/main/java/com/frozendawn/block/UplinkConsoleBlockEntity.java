@@ -34,7 +34,9 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     private State state=State.IDLE;
     private boolean boost;
     private int elapsed;
-    private long started, nextBroadcast;
+    private long started, nextBroadcast, armedAt;
+    /** An unanswered transmit prompt lapses after a minute and releases its scheduled load. */
+    public static final int ARM_TIMEOUT_TICKS=1200;
     private int broadcastIndex;
     private UUID transmitter;
     private BlockPos dish, driven;
@@ -57,6 +59,15 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     private Mode transmitMode(){return boost?Mode.BOOST:Mode.TRANSMIT;}
     /** Grid request in watts: the active handshake, otherwise the receiver when listening. */
     public int demandWatts(){return state==State.TRANSMITTING?transmitMode().watts:mode==Mode.LISTEN?Mode.LISTEN.watts:0;}
+    /** While the transmit prompt is up, the extra draw the handshake will need: load-follow ramps toward it. */
+    public int scheduledWatts(){return state==State.ARMED?Math.max(0,transmitMode().watts-demandWatts()):0;}
+    /** One-second funding the grid offers this console now: generation plus stored energy, after every other load. */
+    public long availableWatts(){
+        if(!(level instanceof ServerLevel l))return 0;
+        var r=PowerNetworks.monitorReading(l,worldPosition);
+        if(!r.connected())return 0;
+        return Math.max(0,(long)r.generationWatts()+r.storedJoules()-Math.max(0,(long)r.demandWatts()-demandWatts()));
+    }
     public long cooldownTicks(){return level instanceof ServerLevel l?UplinkPolicy.cooldownRemaining(l.getGameTime(),UplinkSavedData.get(l.getServer()).nextTransmit()):0;}
 
     public void serverTick(){
@@ -66,6 +77,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         if(reloaded){reloaded=false;if(state==State.TRANSMITTING)started=now+20;}
         // Read the allocation made on the previous tick's accounting pass, as the power monitor does.
         if(now%20==1){refreshDish(l);powered=PowerNetworks.powered(l,worldPosition)&&demandWatts()>0;}
+        if(state==State.ARMED&&now-armedAt>=ARM_TIMEOUT_TICKS){state=State.IDLE;add("uplink.frozendawn.log.disarmed");}
         if(state==State.TRANSMITTING){
             elapsed++;
             if(now%20==1&&now>=started+2){
@@ -114,7 +126,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         if(!(level instanceof ServerLevel l))return false;
         switch(id){
             case 0,1->{if(state==State.TRANSMITTING)return false;mode=id==0?Mode.OFF:Mode.LISTEN;state=State.IDLE;if(mode==Mode.LISTEN)nextBroadcast=l.getGameTime()+100;}
-            case 2,3->{if(state==State.TRANSMITTING)return false;boost=id==3;state=State.ARMED;}
+            case 2,3->{if(state==State.TRANSMITTING)return false;boost=id==3;state=State.ARMED;armedAt=l.getGameTime();}
             case 4->{if(state!=State.ARMED)return false;start(l,player);}
             case 5->{if(state!=State.ARMED)return false;state=State.IDLE;}
             default->{return false;}
@@ -145,12 +157,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     }
 
     /** The grid can fund the full draw for the next second: generation plus stored energy, after every other load. */
-    private boolean budget(ServerLevel l){
-        var r=PowerNetworks.monitorReading(l,worldPosition);
-        if(!r.connected())return false;
-        long others=Math.max(0,(long)r.demandWatts()-demandWatts());
-        return (long)r.generationWatts()+r.storedJoules()-others>=transmitMode().watts;
-    }
+    private boolean budget(ServerLevel l){return availableWatts()>=transmitMode().watts;}
 
     private void abort(ServerLevel l,String reason){
         state=State.IDLE;mode=resume;elapsed=0;add(reason);
