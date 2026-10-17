@@ -43,7 +43,7 @@ Each start adds 1.0 (Boost 1.6) to the signal site at the dish. Sites within 32 
 
 - **Plumb Line narrowing** is not implemented because the GPR-4 Plumb Line does not exist yet. Plots narrow only through exploration.
 - **Maeve destroying the dish:** the dish is an ordinary breakable block, and no Architect behavior targets it. Storm wear is implemented: during a blizzard, each linked dish has a 2% chance per minute of being torn away.
-- **Archive text needs owner review** for canon. The drafts avoid explaining Continuity and never call it a mind. The word appears only in the Epigraph's council name and the existing motto. Fragment #3 assumes a Cydonia relay night operator answering, with an ORSA badge flagged by an unnamed active protocol. Please confirm this fits CH-12 (the colony "never looked back") or redirect.
+- **Archive text:** the owner read all three transcripts in play on 2026-10-17 and approved #3, the Cydonia reply ("it hits the lore great"). The canon notes below still apply. The drafts avoid explaining Continuity and never call it a mind. The word appears only in the Epigraph's council name and the existing motto. Fragment #3 assumes a Cydonia relay night operator answering, with an ORSA badge flagged by an unnamed active protocol. Please confirm this fits CH-12 (the colony "never looked back") or redirect.
 - Promised sites skip the biome and slope checks. Spawn-distance limits still apply.
 
 ## Verification
