@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.recipe.BlueprintLockedPatternRecipe;
 import com.frozendawn.recipe.CaloricLinedEvaUpgradeRecipe;
 import com.frozendawn.recipe.ThaevenTranslatorRecipe;
+import com.frozendawn.recipe.RationWarmerChargingRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
@@ -23,6 +24,9 @@ public final class ModRecipeSerializers {
 
     public static final DeferredHolder<RecipeSerializer<?>, ThaevenTranslatorRecipe.Serializer> THAEVEN_TRANSLATOR_SHAPED =
             RECIPE_SERIALIZERS.register("thaeven_translator_shaped", ThaevenTranslatorRecipe.Serializer::new);
+
+    public static final DeferredHolder<RecipeSerializer<?>, RationWarmerChargingRecipe.Serializer> RATION_WARMER_CHARGING =
+            RECIPE_SERIALIZERS.register("ration_warmer_charging", RationWarmerChargingRecipe.Serializer::new);
 
     private ModRecipeSerializers() {
     }

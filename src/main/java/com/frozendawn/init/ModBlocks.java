@@ -62,10 +62,110 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(FrozenDawn.MOD_ID);
 
+    // ORSA CFU-7 Hearthstone Reactor
+    public static final DeferredBlock<com.frozendawn.block.ReactorCasingBlock> REACTOR_CASING = BLOCKS.register("reactor_casing",
+            () -> new com.frozendawn.block.ReactorCasingBlock(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> REACTOR_CORE = BLOCKS.register("reactor_core",
+            () -> new Block(BlockBehaviour.Properties.of().strength(8f, 20f).requiresCorrectToolForDrops().sound(SoundType.NETHERITE_BLOCK).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<Block> CONTROL_ROD_DRIVE = BLOCKS.register("control_rod_drive",
+            () -> new Block(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.CoolantPortBlock> COOLANT_PORT = BLOCKS.register("coolant_port",
+            () -> new com.frozendawn.block.CoolantPortBlock(BlockBehaviour.Properties.of().strength(6f, 12f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.ReactorControllerBlock> REACTOR_CONTROLLER = BLOCKS.register("reactor_controller",
+            () -> new com.frozendawn.block.ReactorControllerBlock(BlockBehaviour.Properties.of().strength(5f, 12f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> switch (state.getValue(com.frozendawn.block.ReactorControllerBlock.ALARM)) { case 1 -> 4; case 2 -> 9; case 3 -> 12; default -> 0; })));
+    public static final DeferredBlock<com.frozendawn.block.ReactorRadiatorBlock> REACTOR_RADIATOR = BLOCKS.register("reactor_radiator",
+            () -> new com.frozendawn.block.ReactorRadiatorBlock(BlockBehaviour.Properties.of().strength(4f, 8f).requiresCorrectToolForDrops().sound(SoundType.COPPER).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT) ? 10 : 0).emissiveRendering((state, level, pos) -> state.getValue(com.frozendawn.block.ReactorRadiatorBlock.HOT))));
+    public static final DeferredBlock<com.frozendawn.block.CoriumBlock> CORIUM = BLOCKS.register("corium",
+            () -> new com.frozendawn.block.CoriumBlock(BlockBehaviour.Properties.of().strength(50f, 1200f).requiresCorrectToolForDrops().sound(SoundType.ANCIENT_DEBRIS).lightLevel(state -> 7).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.FalloutBlock> FALLOUT = BLOCKS.register("fallout",
+            () -> new com.frozendawn.block.FalloutBlock(BlockBehaviour.Properties.of().strength(0.4f).sound(SoundType.SAND).noCollission().noOcclusion()
+                    .pushReaction(PushReaction.DESTROY).mapColor(net.minecraft.world.level.material.MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<com.frozendawn.block.ReactorDebrisBlock> REACTOR_DEBRIS = BLOCKS.register("reactor_debris",
+            () -> new com.frozendawn.block.ReactorDebrisBlock(BlockBehaviour.Properties.of().strength(3f, 6f).requiresCorrectToolForDrops().sound(SoundType.ANCIENT_DEBRIS)
+                    .lightLevel(state -> 4).noOcclusion().pushReaction(PushReaction.DESTROY)));
+    public static final DeferredBlock<com.frozendawn.block.MoltenCoriumBlock> MOLTEN_CORIUM = BLOCKS.register("molten_corium",
+            () -> new com.frozendawn.block.MoltenCoriumBlock(BlockBehaviour.Properties.of().strength(-1f, 3600000f).noLootTable().sound(SoundType.ANCIENT_DEBRIS)
+                    .lightLevel(state -> 15).emissiveRendering((state, level, pos) -> true).pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> GALENA_ORE = BLOCKS.register("galena_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
+                    BlockBehaviour.Properties.of().strength(3f, 3f).requiresCorrectToolForDrops().sound(SoundType.STONE).mapColor(net.minecraft.world.level.material.MapColor.STONE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_GALENA_ORE = BLOCKS.register("deepslate_galena_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0),
+                    BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));
+    public static final DeferredBlock<com.frozendawn.block.DeconShowerBlock> DECON_SHOWER = BLOCKS.register("decon_shower",
+            () -> new com.frozendawn.block.DeconShowerBlock(BlockBehaviour.Properties.of().strength(2f, 6f).requiresCorrectToolForDrops().sound(SoundType.COPPER).noOcclusion()));
+    /** Dense radiation shielding: x0.1 per block (RadiationField.factor). */
+    public static final DeferredBlock<Block> LEAD_BLOCK = BLOCKS.register("lead_block",
+            () -> new Block(BlockBehaviour.Properties.of().strength(5f, 6f).requiresCorrectToolForDrops().sound(SoundType.METAL).mapColor(net.minecraft.world.level.material.MapColor.COLOR_GRAY)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DropExperienceBlock> DEEPSLATE_URANIUM_ORE = BLOCKS.register("deepslate_uranium_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.UniformInt.of(1, 3),
+                    BlockBehaviour.Properties.of().strength(4.5f, 3f).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE).mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)));
+
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> POWER_RELAY = BLOCKS.register("power_relay",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(3f).sound(SoundType.METAL).noOcclusion(), 16, false));
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> LARGE_POWER_RELAY = BLOCKS.register("large_power_relay",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(4f).sound(SoundType.METAL).noOcclusion(), 32, false));
+    public static final DeferredBlock<com.frozendawn.block.PowerRelayBlock> BULKHEAD_FEEDTHROUGH = BLOCKS.register("bulkhead_feedthrough",
+            () -> new com.frozendawn.block.PowerRelayBlock(BlockBehaviour.Properties.of().strength(4f).sound(SoundType.METAL), 16, true));
+
+    public static final DeferredBlock<com.frozendawn.block.ResistiveHeaterBlock> RESISTIVE_HEATER = BLOCKS.register("resistive_heater", () -> new com.frozendawn.block.ResistiveHeaterBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+
+    public static final DeferredBlock<com.frozendawn.block.PixieBlock> PIXIE = BLOCKS.register("pixie", () -> new com.frozendawn.block.PixieBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
+
+    public static final DeferredBlock<com.frozendawn.block.PowerMonitorBlock> POWER_MONITOR = BLOCKS.register("power_monitor",
+            () -> new com.frozendawn.block.PowerMonitorBlock(BlockBehaviour.Properties.of().strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
+
+    public static final DeferredBlock<com.frozendawn.block.InductionFurnaceBlock> INDUCTION_FURNACE = BLOCKS.register("induction_furnace",
+            () -> new com.frozendawn.block.InductionFurnaceBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.InductionFurnaceBlock.LIT) ? 4 : 0)));
+
+    public static final DeferredBlock<com.frozendawn.block.PowerStorageBlock> BATTERY_BANK = BLOCKS.register("battery_bank",
+            () -> new com.frozendawn.block.PowerStorageBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK), true));
+    public static final DeferredBlock<com.frozendawn.block.PowerStorageBlock> CELL_DOCK = BLOCKS.register("cell_dock",
+            () -> new com.frozendawn.block.PowerStorageBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK), false));
+
+    public static final DeferredBlock<com.frozendawn.block.OrsaEmergencyLightBlock> ORSA_EMERGENCY_LIGHT = BLOCKS.register("orsa_emergency_light",
+            () -> new com.frozendawn.block.OrsaEmergencyLightBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED)
+                    .strength(3,6).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().noCollission().lightLevel(state -> state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT)?6:0)));
+
+    public static final DeferredBlock<com.frozendawn.block.PanelLightBlock> PANEL_LIGHT = BLOCKS.register("panel_light",
+            () -> new com.frozendawn.block.PanelLightBlock(BlockBehaviour.Properties.of()
+                    .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.PanelLightBlock.LIT) ? 15 : 0)));
+
+    public static final DeferredBlock<com.frozendawn.block.AirlockDoorBlock> AIRLOCK_DOOR = BLOCKS.register("airlock_door",
+            () -> new com.frozendawn.block.AirlockDoorBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.IRON_DOOR)
+                    .pushReaction(PushReaction.BLOCK)));
+    public static final DeferredBlock<com.frozendawn.block.AirlockControllerBlock> AIRLOCK_CONTROLLER = BLOCKS.register("airlock_controller",
+            () -> new com.frozendawn.block.AirlockControllerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(4,6).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK).lightLevel(s -> 3)));
+    public static final DeferredBlock<com.frozendawn.block.ManualVentValveBlock> MANUAL_VENT_VALVE = BLOCKS.register("manual_vent_valve",
+            () -> new com.frozendawn.block.ManualVentValveBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(4,6).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
+
     private static int heaterLight(net.minecraft.world.level.block.state.BlockState state, int maxLight) {
         if (!state.getValue(ThermalHeaterBlock.LIT)) return 0;
         int glowStage = state.getValue(ThermalHeaterBlock.GLOW_STAGE);
         return Math.max(1, Math.round(maxLight * ((glowStage + 1) / 5.0f)));
+    }
+
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedTorchBlock> SPENT_TORCH = BLOCKS.register("spent_torch",
+            () -> new com.frozendawn.block.ExtinguishedTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<com.frozendawn.block.ExtinguishedWallTorchBlock> SPENT_WALL_TORCH = BLOCKS.register("spent_wall_torch",
+            () -> new com.frozendawn.block.ExtinguishedWallTorchBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WALL_TORCH)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.TORCH)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LanternBlock> EXTINGUISHED_LANTERN = BLOCKS.register("extinguished_lantern",
+            () -> new net.minecraft.world.level.block.LanternBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.LANTERN)
+                    .lightLevel(state -> 0).dropsLike(net.minecraft.world.level.block.Blocks.LANTERN)));
+
+    static {
+        BLOCKS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "extinguished_torch"),
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "spent_torch"));
+        BLOCKS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "extinguished_wall_torch"),
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "spent_wall_torch"));
     }
 
     // Grass Block -> Dead Grass Block (phase 2+). Drops dirt.
@@ -317,7 +417,16 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
+    public static final DeferredBlock<com.frozendawn.block.OxygenReservoirBlock> OXYGEN_RESERVOIR=BLOCKS.register("oxygen_reservoir",()->new com.frozendawn.block.OxygenReservoirBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().pushReaction(PushReaction.BLOCK)));
+
     // --- Player Agency blocks ---
+    public static final DeferredBlock<com.frozendawn.block.OxygenGaugeBlock> OXYGEN_GAUGE=BLOCKS.register("oxygen_gauge",
+            ()->new com.frozendawn.block.OxygenGaugeBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
+    public static final DeferredBlock<com.frozendawn.block.HeatVentBlock> HEAT_VENT=BLOCKS.register("heat_vent",
+            ()->new com.frozendawn.block.HeatVentBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.5F).sound(SoundType.METAL).requiresCorrectToolForDrops().pushReaction(PushReaction.BLOCK)));
+
+    public static final DeferredBlock<com.frozendawn.block.ThermostatBlock> THERMOSTAT=BLOCKS.register("thermostat",
+            ()->new com.frozendawn.block.ThermostatBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.0F).sound(SoundType.METAL).noOcclusion()));
 
     // Thermal Heater: right-click fuel, radius 7, +35C when lit
     public static final DeferredBlock<ThermalHeaterBlock> THERMAL_HEATER = BLOCKS.register("thermal_heater",
@@ -475,6 +584,7 @@ public class ModBlocks {
                     .strength(0.3F)
                     .sound(SoundType.GLASS)
                     .noOcclusion()
+                    .replaceable()
                     .isViewBlocking((state, level, pos) -> false)
                     .isSuffocating((state, level, pos) -> false)
                     .lightLevel(state -> state.getValue(FrozenAtmosphereBlock.DARK) ? 0 : 2)

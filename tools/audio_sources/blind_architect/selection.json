@@ -1,0 +1,86 @@
+{
+  "status": "Owner-approved candidate bank integrated into runtime; in-game mix and behavior acceptance pending",
+  "approved_utc": "2026-10-01T02:57:41.284255+00:00",
+  "owner_feedback": "i like it",
+  "approval_scope": "Throat-comparison audition sound direction; in-game mix and behavior remain untested",
+  "audition": {
+    "path": "build/blind-architect-audio/throat-comparison.wav",
+    "sha256": "26fbc6f15ac199e97142cca9fa298b7e397d2a42d4e3893a856829f373669e32",
+    "order": [
+      "click_1",
+      "click_1",
+      "throat_click_1",
+      "throat_click_2",
+      "throat_click_3",
+      "throat_click_4",
+      "throat_click_5",
+      "throat_click_6",
+      "throat_idle_1",
+      "throat_search_1",
+      "throat_lock_1"
+    ],
+    "note": "Earlier dry click twice, six revised pulses, idle/search/lock vocal accents"
+  },
+  "echo_pulse_bank": [
+    {
+      "name": "throat_click_1",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_1.ogg",
+      "sha256": "e930c50cbea3cb5617c35c3e2f7747fd1c68cf2e7f763f1b67281f8528eb09e8"
+    },
+    {
+      "name": "throat_click_2",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_2.ogg",
+      "sha256": "2d5ccbbef36fb0ed0347043106b01e657fd3520cd014e35bb2622512fa0ca31d"
+    },
+    {
+      "name": "throat_click_3",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_3.ogg",
+      "sha256": "6965b9dbc9b5d674510bc3c23a57896aa9ddd3aa93298c9cb07da21f190d5b02"
+    },
+    {
+      "name": "throat_click_4",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_4.ogg",
+      "sha256": "8b154189da2d8136887795cd7dab9827d188fc282f8aa3c2d6fd2baa4db5f14b"
+    },
+    {
+      "name": "throat_click_5",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_5.ogg",
+      "sha256": "caf0a22af2a8f918d2920597f1496028fb49158329990044ef24cb6a6e04499a"
+    },
+    {
+      "name": "throat_click_6",
+      "path": "tools/audio_sources/blind_architect/processed/throat_click_6.ogg",
+      "sha256": "62f1d0d2d1327f502acf1727a32e429c1b34671ac47d5bf8ab402216a908c10b"
+    }
+  ],
+  "vocal_accents": [
+    {
+      "name": "throat_idle_1",
+      "path": "tools/audio_sources/blind_architect/processed/throat_idle_1.ogg",
+      "sha256": "51c2c95d19452c71b69961078b68e5ffe0ebdead49098b035ed82b15904f86ca"
+    },
+    {
+      "name": "throat_search_1",
+      "path": "tools/audio_sources/blind_architect/processed/throat_search_1.ogg",
+      "sha256": "360885b3ff627f2e777d3e959028e9da54fce860d4b641b96dc5a336af52f2f3"
+    },
+    {
+      "name": "throat_lock_1",
+      "path": "tools/audio_sources/blind_architect/processed/throat_lock_1.ogg",
+      "sha256": "5bf6bd608a0df7ff564587e3d1cea368ad5865b5b5d14d60cc579d86d82d489a"
+    }
+  ],
+  "previous_bank": "click_1 through click_6 retained for comparison",
+  "processing_manifest": "throat-manifest.json",
+  "runtime": {
+    "directory": "src/main/resources/assets/frozendawn/sounds/entity/blind_architect/",
+    "events": [
+      "entity.blind_architect.click",
+      "entity.blind_architect.idle",
+      "entity.blind_architect.search",
+      "entity.blind_architect.lock"
+    ],
+    "asset_policy": "Exact approved output bytes; no regeneration",
+    "human_acceptance": "Audition direction accepted; in-game listening pending"
+  }
+}

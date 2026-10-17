@@ -89,7 +89,7 @@ public class SoundMuffler {
                     || stillpointSource == SoundSource.MUSIC
                     || stillpointSource == SoundSource.VOICE;
             if (isWindAmbience) {
-                event.setSound(new MuffledSound(original, 0.12F, 0.92F));
+                event.setSound(muffled(original, 0.12F, 0.92F));
                 return;
             }
             if (!protectedSource) {
@@ -99,7 +99,7 @@ public class SoundMuffler {
                     return;
                 }
                 float volume = StillpointAudioFilter.useFallback() ? 0.54F : 0.76F;
-                event.setSound(new MuffledSound(original, volume, 0.90F));
+                event.setSound(muffled(original, volume, 0.90F));
                 // Sounds born inside the field form a muffled acoustic pocket. Returning
                 // here keeps Phase 6 vacuum suppression from canceling them below.
                 return;
@@ -123,7 +123,7 @@ public class SoundMuffler {
             if (heartQuiet <= 0.01F) {
                 event.setSound(null);
             } else {
-                event.setSound(new MuffledSound(
+                event.setSound(muffled(
                         original, heartQuiet, 0.96F + heartQuiet * 0.04F));
             }
             return;
@@ -152,7 +152,7 @@ public class SoundMuffler {
                 event.setSound(null);
                 return;
             }
-            event.setSound(new MuffledSound(
+            event.setSound(muffled(
                     original,
                     MasterArchitectFloodClient.audioDuckFactor(),
                     0.94F));
@@ -164,7 +164,7 @@ public class SoundMuffler {
             if (factor <= 0.01F) {
                 event.setSound(null);
             } else {
-                event.setSound(new MuffledSound(original, factor, 0.94F));
+                event.setSound(muffled(original, factor, 0.94F));
             }
             return;
         }
@@ -185,7 +185,7 @@ public class SoundMuffler {
             if (auraSilence >= 0.96F) {
                 event.setSound(null);
             } else {
-                event.setSound(new MuffledSound(
+                event.setSound(muffled(
                         original,
                         1.0F - auraSilence,
                         1.0F - auraSilence * 0.12F));
@@ -197,24 +197,33 @@ public class SoundMuffler {
         // including late-phase vacuum muting.
         if (isFrozenDawnEntitySound(soundLocation, soundPath)) {
             if (ThaevenTransmissionOverlay.isActive()) {
-                event.setSound(new MuffledSound(original, 0.35F, 0.96F));
+                event.setSound(muffled(original, 0.35F, 0.96F));
             }
             return;
         }
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
+        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isPressurized()) {
             if (original.getSource() == SoundSource.MUSIC) return;
             if (original.getSource() == SoundSource.MASTER) return;
             if (soundPath.startsWith("ambient.eva_")) return;
             if (isLocalHearthrotHurtCue) return;
+            if (AirlockAudioPolicy.isMachinery(soundLocation.getNamespace(), soundPath)) {
+                // Nearby panel/door vibration remains useful while the chamber is empty.
+                // Keep its position, BLOCKS slider and short range; distant vacuum stays silent.
+                double distanceSquared = mc.player.getEyePosition().distanceToSqr(
+                        original.getX(), original.getY(), original.getZ());
+                float gain = AirlockAudioPolicy.vacuumGain(distanceSquared);
+                event.setSound(gain == 0 ? null : new MuffledSound(original, gain, 0.95F));
+                return;
+            }
             if (isWindAmbience && (PostMaeveClientState.isMaeveErased()
                     || MasterArchitectWeather.getStrength() > 0.01F)) return;
             if (isGeothermalCue) {
                 // Let geothermal vibration cues survive as near-silent suit/structure transmission
                 // so vanilla subtitles can still track them in vacuum.
-                event.setSound(new MuffledSound(original, 0.08f, 0.90f));
+                event.setSound(muffled(original, 0.08f, 0.90f));
                 return;
             }
             event.setSound(null);
@@ -223,7 +232,7 @@ public class SoundMuffler {
 
         if (ThaevenTransmissionOverlay.isActive()
                 && original.getSource() != SoundSource.MASTER) {
-            event.setSound(new MuffledSound(original, 0.35F, 0.96F));
+            event.setSound(muffled(original, 0.35F, 0.96F));
             return;
         }
 
@@ -253,7 +262,7 @@ public class SoundMuffler {
                 }
                 if (muffleIntensity > 0.01f) {
                     float vol = 1.0f - muffleIntensity;
-                    event.setSound(new MuffledSound(original, vol, 1.0f - muffleIntensity * 0.15f));
+                    event.setSound(muffled(original, vol, 1.0f - muffleIntensity * 0.15f));
                     return;
                 }
             }
@@ -278,7 +287,7 @@ public class SoundMuffler {
         float volumeMult = 1f - (intensity * 0.8f);   // down to 20% volume
         float pitchMult = 1f - (intensity * 0.25f);    // noticeable pitch drop
 
-        event.setSound(new MuffledSound(original, volumeMult, pitchMult));
+        event.setSound(muffled(original, volumeMult, pitchMult));
     }
 
     @SubscribeEvent
@@ -317,6 +326,23 @@ public class SoundMuffler {
     /**
      * Wraps a SoundInstance with modified volume and pitch.
      */
+    /** Tickable sounds stay tickable when muffled, so their owners can still fade and stop them. */
+    private static SoundInstance muffled(SoundInstance original, float volume, float pitch) {
+        return original instanceof net.minecraft.client.resources.sounds.TickableSoundInstance tickable
+                ? new MuffledTickableSound(tickable, volume, pitch) : new MuffledSound(original, volume, pitch);
+    }
+
+    private static final class MuffledTickableSound extends MuffledSound implements net.minecraft.client.resources.sounds.TickableSoundInstance {
+        private final net.minecraft.client.resources.sounds.TickableSoundInstance tickable;
+        MuffledTickableSound(net.minecraft.client.resources.sounds.TickableSoundInstance wrapped, float volumeMult, float pitchMult) {
+            super(wrapped, volumeMult, pitchMult); this.tickable = wrapped;
+        }
+        @Override public boolean isStopped() { return tickable.isStopped(); }
+        @Override public void tick() { tickable.tick(); }
+        @Override public boolean canStartSilent() { return tickable.canStartSilent(); }
+        @Override public boolean canPlaySound() { return tickable.canPlaySound(); }
+    }
+
     private static class MuffledSound implements SoundInstance {
         private final SoundInstance wrapped;
         private final float volumeMult;

@@ -48,7 +48,7 @@ final class ArchitectApproachWalkSupport {
     private static final int WALK_TARGET_SHIFT_VERTICAL = 2;
     private static final int WALK_CORRIDOR_LOOKAHEAD_STEPS = 2;
     private static final int WALK_SPRINT_STRAIGHT_STEPS = 2;
-    private static final double APPROACH_SPRINT_SPEED = 1.15;
+    static final double APPROACH_SPRINT_SPEED = 1.15;
     private static final double DIRECT_APPROACH_PATH_HORIZONTAL_RANGE = 8.0;
     private static final double DIRECT_APPROACH_PATH_VERTICAL_RANGE = 4.0;
 

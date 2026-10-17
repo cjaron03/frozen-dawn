@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/induction_furnace_front",
+    "south": "frozendawn:block/induction_furnace_back",
+    "east": "frozendawn:block/induction_furnace_side",
+    "west": "frozendawn:block/induction_furnace_side",
+    "up": "frozendawn:block/induction_furnace_top",
+    "down": "frozendawn:block/induction_furnace_bottom",
+    "particle": "frozendawn:block/induction_furnace_side"
+  }
+}

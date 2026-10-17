@@ -17,6 +17,8 @@ def enableEnhancedClassRedefinition = providers
         .gradleProperty('fdEnableEnhancedClassRedefinition')
         .map { it.toBoolean() }
         .getOrElse(false)
+// Optional: ./gradlew runClientLab -PfdLabWorld='World Name' opens that existing save directly.
+def labQuickPlayWorld = providers.gradleProperty('fdLabWorld').getOrNull()
 
 repositories {
     maven { url = "https://maven.blamejared.com" }
@@ -50,7 +52,17 @@ def client2RunDirectory = layout.projectDirectory.dir('run2')
 // and off the JUnit classpath, but are registered with the mod below so that NeoForge's
 // annotation scan (ModList#getAllScanData) can find the @GameTestHolder classes.
 sourceSets {
+    labBridge {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
+    }
     gameTest {
+        compileClasspath += sourceSets.labBridge.output
+        runtimeClasspath += sourceSets.labBridge.output
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
@@ -77,10 +89,24 @@ neoForge {
         clientLab {
             client()
             gameDirectory = layout.projectDirectory.dir('run-lab')
+            if (labQuickPlayWorld) {
+                programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
+            }
+            systemProperty 'frozendawn.labBridge', 'true'
+            systemProperty 'frozendawn.labAirlockWatch', providers.gradleProperty('fdLabAirlockWatch').getOrElse('false')
+            if (providers.gradleProperty('fdRoomArchiveReplay').isPresent()) {
+                systemProperty 'frozendawn.labRoomArchiveReplay', file(providers.gradleProperty('fdRoomArchiveReplay').get()).absolutePath
+            }
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
+            systemProperty 'frozendawn.labBridge.policy', file('config/lab-bridge-functions.json').absolutePath
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
-            systemProperty 'frozendawn.debug.architectSeed', '1'
+            if (!project.hasProperty('labNatural')) {
+                systemProperty 'frozendawn.debug.architectSeed', '1'
+            }
+            systemProperty 'frozendawn.labCommands', 'true'
         }
 
         // A second local player for LAN disconnect/reconnect tests. Keep saves,
@@ -88,7 +114,10 @@ neoForge {
         clientLabGuest {
             client()
             gameDirectory = layout.projectDirectory.dir('runs/architect-guest')
-            programArguments.addAll '--username', 'ArchitectGuest'
+            programArguments.addAll '--username', 'ArchitectGuest', '--uuid', '347c4be4-4dda-3d32-a649-477c0bff527c'
+            systemProperty 'frozendawn.labLanGuest', 'true'
+            systemProperty 'frozendawn.labBridge.checkout', projectDir.absolutePath
+            systemProperty 'frozendawn.labLanGate', file('run-lab/lab-bridge/lan-input-gate.json').absolutePath
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.dev.skipOrsaAwakening', 'true'
             systemProperty 'frozendawn.debug.architect', 'true'
@@ -128,6 +157,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', gameTestReport.get().asFile.absolutePath
+            // Lab-only commands must parse where the lab packs are checked.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', architectReports.get().asFile.absolutePath
             // Its own throwaway world, wiped before every run. Sharing run/ with runClient let
             // saved data from one gate run leak into the next, which makes any test that touches
@@ -140,6 +171,8 @@ neoForge {
             sourceSet = sourceSets.gameTest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'frozendawn.gametest.report', monkeyReport.get().asFile.absolutePath
+            // It repeats the regressions, lab-pack parse checks included.
+            systemProperty 'frozendawn.labCommands', 'true'
             systemProperty 'frozendawn.architect.reports', monkeyReports.get().asFile.absolutePath
             systemProperty 'frozendawn.architect.monkey', 'true'
             gameDirectory = monkeyRunDirectory
@@ -160,6 +193,7 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
             sourceSet(sourceSets.gameTest)
+            sourceSet(sourceSets.labBridge)
         }
     }
 
@@ -172,12 +206,17 @@ neoForge {
 // Puts Minecraft and NeoForge on the gameTest compile/runtime classpath. Only the main
 // source set gets these implicitly.
 neoForge.addModdingDependenciesTo(sourceSets.gameTest)
+neoForge.addModdingDependenciesTo(sourceSets.labBridge)
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
     testRuntimeClasspath.extendsFrom localRuntime
+    labBridgeCompileOnly.extendsFrom compileOnly
+    labBridgeImplementation.extendsFrom implementation
+    labBridgeRuntimeOnly.extendsFrom runtimeOnly
+    labBridgeRuntimeClasspath.extendsFrom localRuntime
     gameTestCompileOnly.extendsFrom compileOnly
     gameTestImplementation.extendsFrom implementation
     gameTestRuntimeOnly.extendsFrom runtimeOnly
@@ -247,7 +286,7 @@ tasks.withType(Test).configureEach {
 
 spotless {
     java {
-        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java'
+        target 'src/main/java/**/*.java', 'src/gameTest/java/**/*.java', 'src/labBridge/java/**/*.java'
         trimTrailingWhitespace()
         endWithNewline()
         leadingTabsToSpaces(4)
@@ -297,7 +336,7 @@ tasks.register('gameTestGate', Exec) {
 // Fingerprint the actual source/resources, including uncommitted changes. No git commit needed.
 def architectBuildInfo = layout.buildDirectory.dir('generated/architectBuildInfo')
 tasks.register('generateArchitectBuildInfo') {
-    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'),
+    inputs.files(fileTree('src/main'), fileTree('src/gameTest'), fileTree('src/test'), fileTree('src/labBridge'),
             file('build.gradle'), file('gradle.properties'))
     outputs.dir(architectBuildInfo)
     doLast {
@@ -334,6 +373,18 @@ tasks.register('testArchitectGate', Exec) {
 }
 tasks.named('check') { dependsOn tasks.named('testArchitectGate') }
 
+// Source-of-truth §9.16a: keep the sole Maeve entry point a narrow facade.
+tasks.register('verifyMaeveFacade') {
+    group = 'verification'
+    def facade = file('src/main/java/com/frozendawn/maeve/MaeveDirector.java')
+    inputs.file(facade)
+    doLast {
+        int lines = facade.readLines('UTF-8').size()
+        if (lines > 300) throw new GradleException("MaeveDirector exceeds its 300-line facade budget: ${lines}")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyMaeveFacade') }
+
 // Reproducible exploratory cases. Failures remain failures and keep their traces.
 tasks.named('runArchitectMonkeyServer') {
     doFirst {
@@ -361,3 +412,298 @@ tasks.register('architectMonkeySummary', Exec) {
             '--artifacts', monkeyReports.get().asFile.absolutePath
 }
 tasks.named('runArchitectMonkeyServer') { finalizedBy tasks.named('architectMonkeySummary') }
+
+// Parse the very same disposable-world functions during the mandatory GameTests.
+def maeveWorldQaResources = layout.buildDirectory.dir('generated/maeve-world-qa')
+tasks.register('generateMaeveWorldQa', Exec) {
+    inputs.file('tools/prepare_maeve_world_playtest.py')
+    outputs.dir(maeveWorldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_maeve_world_playtest.py', '--pack-only', maeveWorldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(maeveWorldQaResources)
+
+def maeveAttentionQaResources = layout.buildDirectory.dir('generated/maeve-attention-qa')
+tasks.register('generateMaeveAttentionQa', Exec) {
+    inputs.file('tools/prepare_maeve_attention_playtest.py')
+    inputs.file('tools/prepare_maeve_attention_coop.py')
+    outputs.dir(maeveAttentionQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_maeve_attention_playtest.py', '--pack-only', maeveAttentionQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(maeveAttentionQaResources)
+
+def macsReconQaResources = layout.buildDirectory.dir('generated/macs-recon-qa')
+tasks.register('generateMacsReconQa', Exec) {
+    inputs.file('tools/prepare_macs_recon_playtest.py')
+    outputs.dir(macsReconQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_recon_playtest.py', '--pack-only', macsReconQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsReconQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsReconQa') }
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveAttentionQa') }
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMaeveWorldQa') }
+
+// Slice 7 uses the same native functions in the disposable world and the required parser gate.
+def macsLearningQaResources = layout.buildDirectory.dir('generated/macs-learning-qa')
+tasks.register('generateMacsLearningQa', Exec) {
+    inputs.file('tools/prepare_macs_learning_playtest.py')
+    outputs.dir(macsLearningQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_learning_playtest.py', '--pack-only', macsLearningQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsLearningQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsLearningQa') }
+
+// The combined camp uses native commands, including 1.21 item components.
+def macsIntegratedQaResources = layout.buildDirectory.dir('generated/macs-integrated-qa')
+tasks.register('generateMacsIntegratedQa', Exec) {
+    inputs.file('tools/prepare_macs_integrated_playtest.py')
+    outputs.dir(macsIntegratedQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_integrated_playtest.py', '--pack-only', macsIntegratedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsIntegratedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsIntegratedQa') }
+
+// Sword training and the counterplay handoff share their exact native functions with GameTest.
+def macsShieldQaResources = layout.buildDirectory.dir('generated/macs-shield-qa')
+tasks.register('generateMacsShieldQa', Exec) {
+    inputs.file('tools/prepare_macs_shield_playtest.py')
+    inputs.file('tools/macs_guard_acceptance.py')
+    outputs.dir(macsShieldQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_shield_playtest.py', '--pack-only', macsShieldQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsShieldQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsShieldQa') }
+
+// The mantlet live trial uses these same parsed native functions and hit trigger.
+def macsMantletQaResources = layout.buildDirectory.dir('generated/macs-mantlet-qa')
+tasks.register('generateMacsMantletQa', Exec) {
+    inputs.file('tools/prepare_macs_mantlet_playtest.py')
+    outputs.dir(macsMantletQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_mantlet_playtest.py', '--pack-only', macsMantletQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsMantletQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsMantletQa') }
+
+// The archer live handoff uses the same parsed functions and real sword-hit reward as native QA.
+def macsArcherQaResources = layout.buildDirectory.dir('generated/macs-archer-qa')
+tasks.register('generateMacsArcherQa', Exec) {
+    inputs.files('tools/prepare_macs_archer_playtest.py', 'tools/prepare_macs_shield_playtest.py',
+            'tools/prepare_macs_integrated_playtest.py', 'tools/macs_guard_acceptance.py')
+    outputs.dir(macsArcherQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_archer_playtest.py', '--pack-only', macsArcherQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsArcherQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsArcherQa') }
+
+// The live exit replay uses the same command parser as the required native gate.
+def macsExitQaResources = layout.buildDirectory.dir('generated/macsExitQa')
+tasks.register('generateMacsExitQa', Exec) {
+    inputs.file('tools/prepare_macs_exit_playtest.py')
+    outputs.dir(macsExitQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_exit_playtest.py', '--pack-only', macsExitQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsExitQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsExitQa') }
+
+// Convergence replay functions are parsed at the same permission as the local client.
+def macsPawnQaResources = layout.buildDirectory.dir('generated/macsPawnQa')
+tasks.register('generateMacsPawnQa', Exec) {
+    inputs.files('tools/prepare_macs_pawn_playtest.py', 'tools/macs_base_diversion.py', 'tools/macs_base_idle.py', 'tools/macs_base_focus.py', 'tools/macs_base_return.py')
+    outputs.dir(macsPawnQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_pawn_playtest.py', '--pack-only', macsPawnQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsPawnQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsPawnQa') }
+
+// Local automation must never be part of the distributed mod.
+tasks.register('verifyLabBridgePackaging') {
+    dependsOn tasks.named('jar'), tasks.named('compileLabBridgeJava')
+    doLast {
+        def labClassPaths = sourceSets.labBridge.output.classesDirs.files.collectMany { dir ->
+            fileTree(dir).matching { include '**/*.class' }.files.collect { dir.toPath().relativize(it.toPath()).toString() }
+        }.toSet()
+        def leaked = zipTree(tasks.named('jar').get().archiveFile).matching {
+            include { entry -> labClassPaths.contains(entry.path) }
+        }.files
+        if (!leaked.empty) throw new GradleException("Development command bridge leaked into release jar")
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyLabBridgePackaging') }
+
+// Presentation-only masked replay, kept off the release resource path.
+def macsSignalQaResources = layout.buildDirectory.dir('generated/macsSignalQa')
+tasks.register('generateMacsSignalQa', Exec) {
+    inputs.file('tools/prepare_macs_signal_playtest.py')
+    outputs.dir(macsSignalQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_signal_playtest.py', '--pack-only', macsSignalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsSignalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsSignalQa') }
+
+// Parse the disposable Blind first-view functions using the native command dispatcher.
+def blindQaResources = layout.buildDirectory.dir('generated/blind-architect-qa')
+tasks.register('generateBlindArchitectQa', Exec) {
+    inputs.file('tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_playtest.py', '--pack-only', blindQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindArchitectQa') }
+
+def blindNaturalQaResources = layout.buildDirectory.dir('generated/blind-natural-qa')
+tasks.register('generateBlindNaturalQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_natural.py', 'tools/prepare_blind_architect_playtest.py')
+    inputs.files(fileTree('src/test/resources/blind-natural-stopped-wait'))
+    inputs.files(fileTree('src/test/resources/blind-natural-same-tick-arrivals'))
+    outputs.dir(blindNaturalQaResources)
+    doFirst { delete blindNaturalQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_natural.py', '--pack-only', blindNaturalQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindNaturalQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindNaturalQa') }
+
+def blindErasedQaResources = layout.buildDirectory.dir('generated/blind-erased-qa')
+tasks.register('generateBlindErasedQa', Exec) {
+    inputs.files('tools/prepare_blind_architect_erased.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(blindErasedQaResources)
+    doFirst { delete blindErasedQaResources }
+    commandLine 'python3', '-B', 'tools/prepare_blind_architect_erased.py', '--pack-only', blindErasedQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(blindErasedQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateBlindErasedQa') }
+// The Scribe Check world uses the same parsed functions as its required native gate.
+def macsScribeQaResources = layout.buildDirectory.dir('generated/macsScribeQa')
+tasks.register('generateMacsScribeQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_playtest.py')
+    outputs.dir(macsScribeQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_playtest.py', '--pack-only', macsScribeQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeQa') }
+
+// The natural Scribe Base world is parsed by the same native gate.
+def macsScribeBaseQaResources = layout.buildDirectory.dir('generated/macsScribeBaseQa')
+tasks.register('generateMacsScribeBaseQa', Exec) {
+    inputs.file('tools/prepare_macs_scribe_base.py')
+    outputs.dir(macsScribeBaseQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_macs_scribe_base.py', '--pack-only', macsScribeBaseQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(macsScribeBaseQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateMacsScribeBaseQa') }
+// Ration Warmer's disposable-world commands use the same native parser as GameTest.
+def rationWarmerQaResources = layout.buildDirectory.dir('generated/ration-warmer-qa')
+tasks.register('generateRationWarmerQa', Exec) {
+    inputs.files('tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(rationWarmerQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_ration_warmer_playtest.py', '--pack-only', rationWarmerQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rationWarmerQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRationWarmerQa') }
+
+// Validate the actual airlock playtest functions with Minecraft's native parser.
+def airlockQaResources = layout.buildDirectory.dir('generated/airlock-qa')
+tasks.register('generateAirlockQa', Exec) {
+    inputs.files('tools/prepare_airlock_playtest.py', 'tools/prepare_ration_warmer_playtest.py', 'tools/prepare_emergency_eva_playtest.py')
+    outputs.dir(airlockQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_airlock_playtest.py', '--pack-only', airlockQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(airlockQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateAirlockQa') }
+
+// Validate the same O2/furnace replay commands used by the owner with Minecraft's parser.
+def roomOxygenQaResources = layout.buildDirectory.dir('generated/roomOxygenQa')
+tasks.register('generateRoomOxygenQa', Exec) {
+    inputs.files('tools/prepare_room_oxygen_playtest.py', 'tools/prepare_room_oxygen_storage_playtest.py', 'tools/prepare_core_split_playtest.py', 'tools/prepare_thermal_ground_playtest.py')
+    outputs.dir(roomOxygenQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_room_oxygen_playtest.py', '--pack-only', roomOxygenQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(roomOxygenQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('generateRoomOxygenQa') }
+
+// Native parser coverage for the isolated power topology replay.
+def powerNetworkQaResources = layout.buildDirectory.dir('generated/powerNetworkQa')
+tasks.register('preparePowerNetworkQaResources', Exec) {
+    inputs.file('tools/prepare_power_network_playtest.py')
+    outputs.dir(powerNetworkQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_network_playtest.py', '--pack-only', powerNetworkQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerNetworkQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerNetworkQaResources') }
+
+// Native parser coverage for the Core-to-relay electrical replay.
+def powerFlowQaResources = layout.buildDirectory.dir('generated/powerFlowQa')
+tasks.register('preparePowerFlowQaResources', Exec) {
+    inputs.files('tools/prepare_power_flow_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerFlowQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_flow_playtest.py', '--pack-only', powerFlowQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerFlowQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerFlowQaResources') }
+
+// Native parser coverage for removable power storage replay.
+def powerStorageQaResources = layout.buildDirectory.dir('generated/powerStorageQa')
+tasks.register('preparePowerStorageQaResources', Exec) {
+    inputs.files('tools/prepare_power_storage_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerStorageQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_storage_playtest.py', '--pack-only', powerStorageQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerStorageQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerStorageQaResources') }
+
+// Native parser coverage for the isolated induction furnace replay.
+def inductionFurnaceQaResources = layout.buildDirectory.dir('generated/inductionFurnaceQa')
+tasks.register('prepareInductionFurnaceQaResources', Exec) {
+    inputs.files('tools/prepare_induction_furnace_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(inductionFurnaceQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_induction_furnace_playtest.py', '--pack-only', inductionFurnaceQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(inductionFurnaceQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareInductionFurnaceQaResources') }
+
+// Native parser coverage for the passive power monitor replay.
+def powerMonitorQaResources = layout.buildDirectory.dir('generated/powerMonitorQa')
+tasks.register('preparePowerMonitorQaResources', Exec) {
+    inputs.files('tools/prepare_power_monitor_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(powerMonitorQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_power_monitor_playtest.py', '--pack-only', powerMonitorQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(powerMonitorQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePowerMonitorQaResources') }
+
+// Native parser coverage for the one-time PIXIE oxygen/power replay.
+def pixieQaResources = layout.buildDirectory.dir('generated/pixieQa')
+tasks.register('preparePixieQaResources', Exec) {
+    inputs.files('tools/prepare_pixie_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(pixieQaResources)
+    commandLine 'python3', '-B', 'tools/prepare_pixie_playtest.py', '--pack-only', pixieQaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(pixieQaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePixieQaResources') }
+
+// Parse exactly the disposable RH-5 replay functions used by the owner.
+def rh5QaResources = layout.buildDirectory.dir('generated/rh5Qa')
+tasks.register('prepareRh5QaResources', Exec) {
+    inputs.files('tools/prepare_rh5_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(rh5QaResources)
+    commandLine 'python3', '-B', 'tools/prepare_rh5_playtest.py', '--pack-only', rh5QaResources.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(rh5QaResources)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareRh5QaResources') }
+
+// Parse the exact one-use two-base powered airlock replay pack.
+def poweredAirlockQa = layout.buildDirectory.dir('generated/poweredAirlockQa')
+tasks.register('preparePoweredAirlockQa', Exec) {
+    inputs.files('tools/prepare_powered_airlock_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(poweredAirlockQa)
+    commandLine 'python3', '-B', 'tools/prepare_powered_airlock_playtest.py', '--pack-only', poweredAirlockQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(poweredAirlockQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePoweredAirlockQa') }
+
+def chargedCellQa = layout.buildDirectory.dir('generated/chargedCellQa')
+tasks.register('prepareChargedCellQa', Exec) {
+    inputs.files('tools/prepare_charged_cell_playtest.py', 'tools/prepare_power_network_playtest.py')
+    outputs.dir(chargedCellQa)
+    commandLine 'python3', '-B', 'tools/prepare_charged_cell_playtest.py', '--pack-only', chargedCellQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(chargedCellQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareChargedCellQa') }

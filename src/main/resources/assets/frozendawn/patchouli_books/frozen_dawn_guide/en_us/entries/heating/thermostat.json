@@ -1,0 +1,33 @@
+{
+  "name": "ORSA Thermostat",
+  "category": "frozendawn:heating",
+  "icon": "frozendawn:thermostat",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Room Control",
+      "text": "Place this panel inside a sealed room and right-click. Set 10-30\u00b0C in 5\u00b0C steps. It controls every heater in that room, including all tiers and Thermal Capacitors. Higher output speeds warm-up; insulation reduces fuel demand.$(br2)The newest placed thermostat wins when rooms merge; others show Overridden. Splitting restores independent control. Removing the winner restores the next newest. Targets and placement priority survive reloads."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Sensed and Room Air",
+      "text": "Temperature is the shared room reading used by the HUD before personal equipment and status effects. Connected Core, campfire and furnace heat enters the same stored air-and-wall model as heater heat; it is not added again near the source.$(br2)The panel keeps a loaded room active without a fueled heater. It does not load chunks or supply oxygen."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Independent Heat",
+      "text": "The controller throttles every linked heater toward the selected room temperature. Core, fire and machine warmth reduce the fuel needed. A heat vent in the same room automatically opens above target+0.5C and closes at target. Several exposed vents add cooling capacity; oversized automatic vents cannot cool past target.$(br2)The screen shows Cooling while heat is being rejected. The thermostat cannot switch off independent sources. Existing wall heat remains after a breach or restart. Burn percentage is a short average; redstone still shuts down a heater."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Seal and Signals",
+      "text": "An indoor thermostat shows No seal after a breach; heaters use their own 20\u00b0C defaults until repaired. Unknown or unloaded geometry suspends room simulation.$(br2)A new outdoor controller in Phases 1-4 regulates camp heaters within 8 blocks. Once bound to a room it remains an indoor controller; move/re-place it for a camp.$(br2)Comparator output follows sensed temperature: 0 at 0\u00b0C or colder, 15 at 30\u00b0C or warmer."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermostat",
+      "text": "Four iron ingots, two copper ingots, two redstone dust and one glass. ORSA recommends placing the sensor near the occupant. The occupant is usually you."
+    }
+  ]
+}

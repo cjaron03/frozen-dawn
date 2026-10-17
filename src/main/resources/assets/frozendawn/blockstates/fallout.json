@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "severe=false": {
+      "model": "frozendawn:block/fallout"
+    },
+    "severe=true": {
+      "model": "frozendawn:block/fallout_severe"
+    }
+  }
+}

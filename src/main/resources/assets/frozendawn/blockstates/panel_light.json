@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "frozendawn:block/panel_light"
+    },
+    "lit=true": {
+      "model": "frozendawn:block/panel_light_on"
+    }
+  }
+}

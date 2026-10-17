@@ -1,0 +1,23 @@
+{
+  "parent": "frozendawn:phase6",
+  "display": {
+    "icon": {
+      "id": "frozendawn:reactor_radiator"
+    },
+    "title": {
+      "translate": "advancement.frozendawn.carnot_would_be_proud.title"
+    },
+    "description": {
+      "translate": "advancement.frozendawn.carnot_would_be_proud.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

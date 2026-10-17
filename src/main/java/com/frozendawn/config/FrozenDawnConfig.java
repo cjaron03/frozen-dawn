@@ -5,6 +5,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class FrozenDawnConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.IntValue O2_RESERVOIR_CAPACITY;
+    public static final ModConfigSpec.DoubleValue O2_RESERVOIR_FILL_RATE, O2_RESERVOIR_OUTPUT_RATE;
+
     // General
     public static final ModConfigSpec.IntValue TOTAL_DAYS;
     public static final ModConfigSpec.IntValue STARTING_DAY;
@@ -13,6 +16,7 @@ public class FrozenDawnConfig {
     // Temperature
     public static final ModConfigSpec.IntValue BASE_PHASE5_TEMP;
     public static final ModConfigSpec.DoubleValue GEOTHERMAL_STRENGTH;
+    public static final ModConfigSpec.DoubleValue GROUND_DIFFUSIVITY;
     public static final ModConfigSpec.DoubleValue HEAT_SOURCE_MULTIPLIER;
 
     // Gameplay
@@ -127,6 +131,11 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec SPEC;
 
     static {
+        BUILDER.push("roomOxygenStorage");
+        O2_RESERVOIR_CAPACITY=BUILDER.comment("Reservoir capacity in player-seconds (ten item units each).").defineInRange("capacity",1200,1,86400);
+        O2_RESERVOIR_FILL_RATE=BUILDER.comment("Maximum spare production stored per second, in player breathing rates.").defineInRange("fillRate",4.0,0.0,64.0);
+        O2_RESERVOIR_OUTPUT_RATE=BUILDER.comment("Maximum reservoir discharge per second, in player breathing rates.").defineInRange("outputRate",8.0,0.0,64.0);
+        BUILDER.pop();
         BUILDER.push("general");
         TOTAL_DAYS = BUILDER
                 .comment("Total in-game days until phase 6 atmospheric collapse is complete.",
@@ -151,6 +160,11 @@ public class FrozenDawnConfig {
                         "Preset-managed: overwritten by /frozendawn preset command.",
                         "Higher values = more warmth underground. Affects Geothermal Core effectiveness.")
                 .defineInRange("geothermalStrength", 1.0, 0.0, 5.0);
+        GROUND_DIFFUSIVITY = BUILDER
+                .comment("Ground cold-front diffusivity in blocks squared per unit of apocalypse progress.",
+                        "Larger values cool deep ground faster. Default/Cinematic: 8000; Brutal: 12000.",
+                        "Preset-managed: overwritten by /frozendawn preset command.")
+                .defineInRange("groundDiffusivity", 8000.0, 1.0, 100000.0);
         HEAT_SOURCE_MULTIPLIER = BUILDER
                 .comment("Multiplier for heat source warmth (campfires, furnaces, Thermal Heaters, Geothermal Core).",
                         "Preset-managed: overwritten by /frozendawn preset command.",

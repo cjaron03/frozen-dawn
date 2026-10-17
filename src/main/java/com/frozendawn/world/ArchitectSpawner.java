@@ -13,6 +13,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
 
 public class ArchitectSpawner {
+    static final int MIN_SPAWN_Y = 1;
     private static final float POST_MAEVE_CHANCE = 0.02F;
     private static final float POST_MAEVE_BRUTAL_CHANCE = 0.05F;
     private static final float POST_MAEVE_MAX_LOCAL_CHANCE = 0.075F;
@@ -20,6 +21,7 @@ public class ArchitectSpawner {
     private ArchitectSpawner() {}
 
     public static void tick(ServerLevel level, int currentPhase, float progress) {
+        BlindArchitectSpawner.tick(level);
         boolean maeveErased = PostMaeveWorldState.isErased(level);
         boolean postMaeve = PostMaeveWorldState.isUndoneSpawningReleased(
                 level.getServer());
@@ -60,21 +62,27 @@ public class ArchitectSpawner {
             BlockPos spawnPos = postMaeve
                     ? LateThreatSpawnHelper.findUnrestrictedHybridSpawn(
                             level, player, random, 48, 72, 28,
-                            LateThreatSpawnHelper.NO_LIGHT_LIMIT)
+                            LateThreatSpawnHelper.NO_LIGHT_LIMIT, MIN_SPAWN_Y)
                     : findSpawnPos(level, player, random);
             if (spawnPos == null || (postMaeve
                     && LateThreatSpawnHelper.isInsideHearthBoundary(level, spawnPos))) continue;
+
+            if (!com.frozendawn.maeve.MaeveDirector.allowNaturalPawn(level, spawnPos)) continue;
 
             ArchitectEntity architect = ModEntities.ARCHITECT.get().create(level, null, spawnPos,
                     MobSpawnType.NATURAL, true, false);
             if (architect != null) {
                 // Pre-seed observation data before adding to world
                 architect.preSeedObservation(level, player);
+                // §9.4b: at most one rare natural spawn carries Maeve's notes on this player.
+                if (com.frozendawn.maeve.MaeveDirector.designateScribe(architect, player)) architect.becomeScribe();
                 if (!player.isCreative()) {
                     architect.armSpawnObserveCue(player);
                 }
 
-                level.addFreshEntity(architect);
+                if (!level.addFreshEntity(architect) && architect.isScribe())
+                    com.frozendawn.maeve.MaeveDirector.scribeEnded(architect, "SPAWN_REJECTED");
+                com.frozendawn.maeve.MaeveDirector.observePawn(architect);
                 FrozenDawn.LOGGER.info("[Architect] Spawned near {} at phase {} ({}){}",
                         player.getName().getString(), currentPhase,
                         String.format("%.0f blocks away", Math.sqrt(
@@ -90,7 +98,7 @@ public class ArchitectSpawner {
      */
     private static BlockPos findSpawnPos(ServerLevel level, ServerPlayer player, RandomSource random) {
         return LateThreatSpawnHelper.findHybridSpawn(level, player, random,
-                48, 64, 20, LateThreatSpawnHelper.NO_LIGHT_LIMIT);
+                48, 64, 20, LateThreatSpawnHelper.NO_LIGHT_LIMIT, MIN_SPAWN_Y);
     }
 
     public static void reset() {}

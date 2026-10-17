@@ -9,6 +9,7 @@ import com.frozendawn.init.ModBlocks;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.world.BlastPitWarmZoneRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -24,7 +25,7 @@ import java.util.Set;
 /**
  * Calculates temperature at any world position.
  *
- * finalTemp = phaseModifier + depthModifier + shelterModifier + heatSourceModifier
+ * finalTemp = backgroundTemperature + shelterModifier + heatSourceModifier
  *
  * Used by PlayerTickHandler for exposure damage.
  */
@@ -35,9 +36,6 @@ public final class TemperatureManager {
     /** Max radius for non-heater heat sources (soul campfire = 6). */
     private static final int AMBIENT_HEAT_RADIUS = 6;
     private static final int MOB_HEAT_RADIUS = 3;
-    private static final int BREATHABLE_MAX_VISITED = 12_000;
-    private static final int BREATHABLE_MAX_HORIZONTAL = 48;
-    private static final int BREATHABLE_MAX_VERTICAL = 24;
 
     /**
      * Full-precision temperature check (used for players).
@@ -70,40 +68,49 @@ public final class TemperatureManager {
         // Clamp inputs to prevent bad interpolation from corrupted world data
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
-        float phaseTemp = PhaseManager.getTemperatureOffset(currentDay, totalDays);
-        float depthTemp = PhaseManager.getDepthModifier(pos.getY())
-                * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
-        float shelterTemp = getShelterModifier(level, pos);
-        float heatTemp = getHeatSourceModifier(level, pos, currentDay, totalDays, quickScan, loadedOnly)
-                * FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get().floatValue();
-        float finalTemp = phaseTemp + depthTemp + shelterTemp + heatTemp;
-
-        if (BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)) {
-            return Math.max(finalTemp, 24.0f);
-        }
-        float ventFloor = ThermalVentRegistry.getWarmthFloor(level, pos);
-        if (ventFloor > Float.NEGATIVE_INFINITY) {
-            finalTemp = Math.max(finalTemp, ventFloor);
-        }
-        finalTemp += ThermalVentRegistry.getOverheatBonus(level, pos);
-        finalTemp += com.frozendawn.homo.HearthMasterArchitectWeatherManager
-                .temperatureOffset(level, pos);
-        return finalTemp;
+        float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
+        var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
+        var terms=(roomTemperature.isPresent()||level instanceof ServerLevel serverLevel&&RoomThermalManager.hasManagedRoomAt(serverLevel,pos))?environmentalTerms(level,pos,0):localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
+        return (float)terms.apply(roomTemperature.isPresent()?roomTemperature.getAsDouble():backgroundTemp);
     }
 
-    /**
-     * Shelter modifier: +5C if there's a solid block or insulated glass overhead (roof).
-     * Simple check: scan upward up to 4 blocks for a solid block or insulated glass.
-     */
-    public static float getShelterModifier(Level level, BlockPos pos) {
-        for (int dy = 1; dy <= 4; dy++) {
-            BlockPos above = pos.above(dy);
-            BlockState aboveState = level.getBlockState(above);
-            if (aboveState.isSolidRender(level, above) || aboveState.is(ModBlocks.INSULATED_GLASS.get())) {
-                return 5.0f;
-            }
+    /** Local environmental terms, shared with thermostat sensing; excludes personal armor/Ember effects. */
+    public record LocalThermalTerms(double warmth,double floor,double offset) {
+        public double apply(double base){return Math.max(base+warmth,floor)+offset;}
+        public double baseTarget(double target){return target<floor+offset?Double.NEGATIVE_INFINITY:target-warmth-offset;}
+    }
+    public static LocalThermalTerms thermostatTerms(ServerLevel level,BlockPos pos) {
+        var state=com.frozendawn.data.ApocalypseState.get(level.getServer());
+        return (RoomThermalManager.cachedTemperatureAt(level,pos).isPresent()||RoomThermalManager.hasManagedRoomAt(level,pos))?environmentalTerms(level,pos,0)
+                :localTerms(level,pos,state.getCurrentDay(),state.getTotalDays(),false,true,false);
+    }
+    private static LocalThermalTerms localTerms(Level level,BlockPos pos,int day,int total,boolean quick,boolean loadedOnly,boolean heaters) {
+        double warmth=getHeatSourceModifier(level,pos,day,total,quick,loadedOnly,heaters)*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+        return environmentalTerms(level,pos,warmth);
+    }
+    private static LocalThermalTerms environmentalTerms(Level level,BlockPos pos,double warmth) {
+        if(BlastPitWarmZoneRegistry.isInsideWarmZone(level,pos))return new LocalThermalTerms(warmth,24,0);
+        return new LocalThermalTerms(warmth,ThermalVentRegistry.getWarmthFloor(level,pos),
+                ThermalVentRegistry.getOverheatBonus(level,pos)+com.frozendawn.homo.HearthMasterArchitectWeatherManager.temperatureOffset(level,pos));
+    }
+    public static double fullHeaterWarmth(ServerLevel level,ThermalHeaterBlockEntity heater,BlockPos sensor) {
+        var phase=com.frozendawn.data.ApocalypseState.get(level.getServer());
+        return getHeaterHeat(heater.getBlockState(),(int)sensor.distSqr(heater.getBlockPos()),phase.getPhase(),heater.getCachedSheltered(),
+                heater.hasCapacitor(),FrostmiteEntity.getHeaterRadiusPenalty(level,heater.getBlockPos()),heater.getFrostmiteHeatPenalty())*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+    }
+
+    /** Shared background for players, food, mobs, catch-up and future room boundary faces. */
+    public static float getBackgroundTemperature(int y, int currentDay, int totalDays) {
+        currentDay = Math.max(0, currentDay);
+        totalDays = Math.max(1, totalDays);
+        if (y >= GroundTemperatureModel.SURFACE_Y) {
+            return PhaseManager.getTemperatureOffset(currentDay, totalDays)
+                    + PhaseManager.getDepthModifier(y) * FrozenDawnConfig.GEOTHERMAL_STRENGTH.get().floatValue();
         }
-        return 0.0f;
+        return (float) GroundTemperatureModel.temperature(y, PhaseManager.getProgress(currentDay, totalDays),
+                FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f,
+                FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
     }
 
     /**
@@ -146,22 +153,25 @@ public final class TemperatureManager {
      */
     public static boolean hasBreathableAir(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
-        if (hasOxygenSupport(level, pos)) return true;
-        return isInsideSealedRoom(level, pos);
+        return RoomAtmosphere.hasAir(level, pos) && RoomOxygenManager.allowsBreathingAt(level,pos);
     }
 
     /** Active infrastructure that can repressurize an intact EVA suit. */
     public static boolean hasOxygenSupport(Level level, BlockPos pos) {
         if (level.dimension() != Level.OVERWORLD) return false;
+        if (CombustionAtmosphere.isVacuum(level)) return RoomAtmosphere.hasOxygenSupport(level, pos) && RoomOxygenManager.allowsBreathingAt(level,pos);
         return BlastPitWarmZoneRegistry.isInsideWarmZone(level, pos)
                 || isInsideGeothermalO2Range(level, pos);
     }
 
     private static boolean isInsideGeothermalO2Range(Level level, BlockPos pos) {
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
+            // Air checks must not promote unloaded infrastructure chunks.
+            if (!level.isLoaded(corePos)) continue;
             int o2Range;
             BlockEntity be = level.getBlockEntity(corePos);
             if (be instanceof GeothermalCoreBlockEntity core) {
+                if(core.getOxygenSupply()<=0)continue;
                 o2Range = core.getEffectiveO2Range();
             } else {
                 o2Range = GeothermalCoreBlockEntity.BASE_O2_RANGE;
@@ -171,74 +181,6 @@ public final class TemperatureManager {
             }
         }
         return false;
-    }
-
-    private static boolean isInsideSealedRoom(Level level, BlockPos origin) {
-        if (!level.isLoaded(origin) || !isBreathablePassage(level, origin)) {
-            return false;
-        }
-
-        Queue<BlockPos> open = new ArrayDeque<>();
-        Set<BlockPos> visited = new HashSet<>();
-        BlockPos start = origin.immutable();
-        open.add(start);
-        visited.add(start);
-
-        while (!open.isEmpty()) {
-            BlockPos current = open.remove();
-
-            if (!level.isLoaded(current)) {
-                return false;
-            }
-            if (!isWithinBreathableBounds(origin, current)) {
-                return false;
-            }
-            if (level.canSeeSky(current)) {
-                return false;
-            }
-
-            for (Direction direction : Direction.values()) {
-                BlockPos next = current.relative(direction);
-                if (visited.contains(next)) {
-                    continue;
-                }
-                if (!level.isLoaded(next)) {
-                    return false;
-                }
-                if (!isWithinBreathableBounds(origin, next)) {
-                    return false;
-                }
-                if (!isBreathablePassage(level, next)) {
-                    continue;
-                }
-                if (visited.size() >= BREATHABLE_MAX_VISITED) {
-                    return false;
-                }
-
-                BlockPos immutable = next.immutable();
-                visited.add(immutable);
-                open.add(immutable);
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean isWithinBreathableBounds(BlockPos origin, BlockPos pos) {
-        int dx = Math.abs(pos.getX() - origin.getX());
-        int dy = Math.abs(pos.getY() - origin.getY());
-        int dz = Math.abs(pos.getZ() - origin.getZ());
-        return dx <= BREATHABLE_MAX_HORIZONTAL
-                && dz <= BREATHABLE_MAX_HORIZONTAL
-                && dy <= BREATHABLE_MAX_VERTICAL;
-    }
-
-    private static boolean isBreathablePassage(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (!state.getFluidState().isEmpty()) {
-            return false;
-        }
-        return state.isAir() || !state.blocksMotion() || state.getCollisionShape(level, pos).isEmpty();
     }
 
     /**
@@ -254,11 +196,16 @@ public final class TemperatureManager {
 
     private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
                                                boolean quickScan, boolean loadedOnly) {
+        return getHeatSourceModifier(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
+    }
+
+    private static float getHeatSourceModifier(Level level, BlockPos pos, int currentDay, int totalDays,
+            boolean quickScan, boolean loadedOnly, boolean includeHeaters) {
         float totalWarmth = 0.0f;
         int phase = PhaseManager.getPhase(currentDay, totalDays);
 
         // --- Registered thermal heaters (no block scan needed) ---
-        for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
+        if(includeHeaters) for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
             if (loadedOnly && !level.isLoaded(heaterPos)) {
                 continue;
             }
@@ -270,12 +217,16 @@ public final class TemperatureManager {
             float heatPenalty = 0.0f;
             BlockEntity heaterBE = level.getBlockEntity(heaterPos);
             if (heaterBE instanceof ThermalHeaterBlockEntity thbe) {
+                // UNKNOWN geometry suspends managed heating; losing a room sample must not
+                // resurrect that same heater through the old additive camp-aura path.
+                if(level instanceof ServerLevel serverLevel&&RoomThermalManager.managesHeater(serverLevel,heaterPos))continue;
                 sheltered = thbe.getCachedSheltered();
                 hasCapacitor = thbe.hasCapacitor();
                 radiusPenalty = FrostmiteEntity.getHeaterRadiusPenalty(level, heaterPos);
                 heatPenalty = thbe.getFrostmiteHeatPenalty();
             }
             float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty);
+            if (heaterBE instanceof ThermalHeaterBlockEntity heater) warmth *= (float)heater.getBurnFraction();
             if (warmth > 0) {
                 totalWarmth += warmth;
                 if (quickScan) return totalWarmth;
@@ -308,13 +259,18 @@ public final class TemperatureManager {
             if (loadedOnly && !level.isLoaded(corePos)) {
                 continue;
             }
+            // A connected Core already supplies finite heat through its room.
+            // Keep that ownership during breaches/UNKNOWN so stepping outside
+            // cannot reactivate the old wall-blind camp aura.
+            if (level instanceof ServerLevel serverLevel && RoomThermalManager.managesHeater(serverLevel, corePos)) continue;
             double distSq = pos.distSqr(corePos);
             float coreRange, coreTemp;
 
             BlockEntity be = level.getBlockEntity(corePos);
             if (be instanceof GeothermalCoreBlockEntity core) {
+                if(core.getHeatShare()==0)continue;
                 coreRange = core.getEffectiveRange();
-                coreTemp = core.getEffectiveTemp();
+                coreTemp = (float)(core.getEffectiveTemp()*core.getHeatMultiplier());
             } else {
                 coreRange = GeothermalCoreBlockEntity.BASE_RANGE;
                 coreTemp = GeothermalCoreBlockEntity.BASE_TEMP;

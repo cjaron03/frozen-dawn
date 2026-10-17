@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "frozendawn:lead_block"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:lead_ingot",
+    "count": 9
+  }
+}

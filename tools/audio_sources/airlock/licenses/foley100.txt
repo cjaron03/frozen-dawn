@@ -1,0 +1,185 @@
+Public license-page text snapshot; scripts, forms, styles and session fields omitted.
+Retrieved 2026-10-16 UTC; source URL recorded in ../source-ledger.json.
+
+100 CC0 SFX | OpenGameArt.org
+Skip to main content
+User login
+Register
+Home
+Browse
+2D Art
+3D Art
+Concept Art
+Textures
+Music
+Sound Effects
+Documents
+Featured Tutorials
+Submit Art
+Collect
+My Collections
+Art Collections
+Forums
+FAQ
+Leaderboards
+All Time
+Total Points
+Comments
+Favorites (All)
+Favorites (2D)
+Favorites (3D)
+Favorites (Concept Art)
+Favorites (Music)
+Favorites (Sound)
+Favorites (Textures)
+Weekly
+Total Points
+Comments
+Favorites (All)
+Favorites (2D)
+Favorites (3D)
+Favorites (Concept Art)
+Favorites (Music)
+Favorites (Sound)
+Favorites (Textures)
+[https://www.patreon.com/opengameart] ❤ Donate
+100 CC0 SFX
+Author:
+rubberduck
+Friday, June 29, 2018 - 08:04
+Art Type:
+Sound Effect
+Tags:
+bell
+dish
+dishes
+door
+squeak
+squeaking
+explosion
+glass
+gong
+hit
+key
+machine
+metal
+noise
+misc
+paper
+plop
+pot
+shot
+slam
+splash
+spring
+switch
+toilet
+flush
+flushing
+tool
+tools
+weird
+funny
+Wood
+wooden
+License(s):
+[http://creativecommons.org/publicdomain/zero/1.0/]
+CC0
+Collections:
+Assorted_Audio_Assets_Collection
+BlackCortex
+CC0 Audio - Uploader: rubberduck
+CC0 Sound Effects
+Detective Game
+GDS Assets
+GemRB demo assets
+Impyrean options
+L2D Assets
+Little Spy
+Might use
+MySFX
+Phantom
+RPG::Audio::SFX
+SFX
+Sound Effect
+Sound Effects
+sound fx
+SoundFX Library [CC0]
+Space Commander
+Stendhal Potential
+Tsukurimashyo's Resources
+Untitled Simple3D Engine
+[Airos] [CC0] SFX
+Favorites:
+39
+Preview:
+my first sound effect pack ever including 100 effects, recorded with an android device...
+Note: the preview does not contain all sounds
+includes:
+3x bell
+4x dishes
+2x door squeak
+4x door close
+1x door open
+1x explosion
+5x glass
+2x "gong" sound
+4x hit sound
+2x key open
+3x machine loop
+12x metal
+2x microwave door close / open
+2x noise
+7x other
+4x paper
+2x "plop" sound
+2x pot
+2x shot
+7x slam
+2x splash
+9x spring
+2x switch
+2x toilet flushing
+5x tools
+5x weird
+1x wooden door open
+3x wooden effect
+File(s):
+[https://opengameart.org/sites/default/files/100-CC0-SFX_0.zip] 100-CC0-SFX.zip 2.9 Mb [6975 download(s)]
+Log in or register to post comments
+Comments
+aijikl
+joined 7 years 4 months ago
+06/26/2019 - 01:17
+awesome
+Log in or register to post comments
+HauntedBees
+joined 9 years 3 months ago
+05/05/2020 - 18:54
+I used some of these sounds in my game [https://hauntedbees.itch.io/basesol] Zenn Halsey Basesol '93! Great sound effects; thank you for sharing them!
+Log in or register to post comments
+2DPIXX
+joined 12 years 4 months ago
+03/15/2022 - 15:11
+Thank you. These are great and the variety is amazing :) Helped a lot to get a little bit of atmosphere to some video I created recently.
+[https://youtu.be/sQvfFvw18_8] https://youtu.be/sQvfFvw18_8
+Credits given! Let me know if you got any other profils you would like to be linked.
+Log in or register to post comments
+Liberiton
+joined 6 years 1 month ago
+03/30/2022 - 21:05
+I seem to be having some technical issues. I`ve redownloaded it twice and used different programs to unzip. The folder seems to cause some explorer issues, and the files do not play but instead error out. Any clue what could be causing this?
+Log in or register to post comments
+unitcodes
+joined 3 years 1 month ago
+08/31/2023 - 23:38
+Hi there rubberduck, I have used this in one of my recent videos which is going to be released in a few hours.
+I wanted to say thank you.
+If you're interested in seeing it, below is the link(s).
+Quick Look: instagram.com/p/CwmiMFky_l4/
+Video: youtube.com/watch?v=U61Cq9QQFRc
+If the links dont work, please try copy and paste it manually.
+Regards
+KV
+Unit Codes
+Log in or register to post comments

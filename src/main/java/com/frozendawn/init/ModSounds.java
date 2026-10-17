@@ -18,6 +18,20 @@ public class ModSounds {
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, id)));
     }
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_CLICK = register("entity.blind_architect.click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_IDLE = register("entity.blind_architect.idle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_SEARCH = register("entity.blind_architect.search");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_LOCK = register("entity.blind_architect.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_OPEN = register("block.airlock.door_open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_DOOR_CLOSE = register("block.airlock.door_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_FILL = register("block.airlock.pump_fill");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_PUMP_RECOVER = register("block.airlock.pump_recover");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_READY = register("block.airlock.ready");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_EVACUATED = register("block.airlock.evacuated");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_REFUSE = register("block.airlock.refuse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));
@@ -56,6 +70,15 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "blocks.alarm_beacon")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_KLAXON = register("blocks.reactor_klaxon");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_HUM = register("blocks.reactor_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_CLICK = register("ui.geiger_click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> GEIGER_DENSE = register("ui.geiger_dense");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_CHIRP = register("ui.dosimeter_chirp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DOSIMETER_ALARM = register("ui.dosimeter_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_SCRAM = register("blocks.reactor_scram");
+    public static final DeferredHolder<SoundEvent, SoundEvent> REACTOR_MELTDOWN_ALERT = register("blocks.reactor_meltdown_alert");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWN_PA_CLEAR = SOUNDS.register("blocks.town_pa_clear",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "blocks.town_pa_clear")));
@@ -68,6 +91,19 @@ public class ModSounds {
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_breathing")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING =
+            register("ambient.eva_emergency_breathing");
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_BREATHING_FAST =
+            register("ambient.eva_emergency_breathing_fast");
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_FAN =
+            register("ambient.eva_emergency_fan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_REGULATOR =
+            register("ui.suit.emergency_regulator");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EVA_EMERGENCY_SHUTDOWN =
+            register("ui.suit.emergency_shutdown");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> EVA_SUFFOCATE = SOUNDS.register("ambient.eva_suffocate",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_suffocate")));
@@ -75,10 +111,25 @@ public class ModSounds {
             register("ui.suit.puncture_warning");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_CRITICAL =
             register("ui.suit.oxygen_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_STRAINED = register("block.oxygen_gauge.strained");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OXYGEN_GAUGE_CRITICAL = register("block.oxygen_gauge.critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_ATMOSPHERIC_BREACH = register("ui.suit.atmospheric_breach");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_ALARM = register("ui.suit.atmospheric_breach_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ATMOSPHERIC_BREACH_WHOOSH = register("ui.suit.atmospheric_breach_whoosh");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_OXYGEN_BEEP =
             register("ui.suit.oxygen_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_LEAK_HISS =
             register("ui.suit.leak_hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_ACTIVE =
+            register("ui.suit.emergency_eva_active");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_CONDITION =
+            register("ui.suit.emergency_eva_condition");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_AMBIENT =
+            register("ui.suit.emergency_eva_ambient");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_SERVICE_CRITICAL =
+            register("ui.suit.emergency_eva_service_critical");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_EVA_HANDOFF =
+            register("ui.suit.emergency_eva_handoff");
     public static final DeferredHolder<SoundEvent, SoundEvent> SUIT_EMERGENCY_RESERVE =
             register("ui.suit.emergency_reserve");
     public static final DeferredHolder<SoundEvent, SoundEvent>
@@ -571,6 +622,8 @@ public class ModSounds {
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.mimic.stare")));
 
     // --- Architect Mob ---
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_SHOOT =
+            register("entity.architect.shoot");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_MINE = SOUNDS.register("entity.architect.mine",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.mine")));
@@ -586,6 +639,7 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_DRINK = SOUNDS.register("entity.architect.drink",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.drink")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> BLIND_ARCHITECT_HURT = register("entity.blind_architect.hurt");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARCHITECT_HURT = SOUNDS.register("entity.architect.hurt",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "entity.architect.hurt")));
@@ -788,4 +842,6 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_REPEAT = register("radio.voice.repeat");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_UNABLE = register("radio.voice.unable");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_VOICE_NO_LOCK = register("radio.voice.no_lock");
+    /** The Scribe scratching on its slate; reuses the vanilla cartography scribble. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> SCRIBE_WRITE = register("entity.architect.scribe_write");
 }

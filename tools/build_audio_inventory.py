@@ -32,6 +32,16 @@ OWNER_INTERFACE_PATHS = {
 
 
 def classify(path: str) -> tuple[str, str, str]:
+    if path in {"ambient/eva_emergency_breathing.ogg", "ambient/eva_emergency_breathing_fast.ogg"}:
+        return (
+            "emergency_eva_cc0_mix",
+            "tools/audio_sources/emergency_eva/SOURCES.md",
+            "CC0-derived",
+        )
+    if path in {"ambient/eva_emergency_fan.ogg", "ui/suit/emergency_regulator.ogg", "ui/suit/emergency_shutdown.ogg"}:
+        return ("emergency_eva_hardware_procedural", "tools/audio_sources/emergency_eva/HARDWARE.md", "Frozen Dawn original")
+    if path in {"ui/suit/atmospheric_breach_whoosh.ogg", "ui/suit/atmospheric_breach_alarm.ogg"}:
+        return ("atmospheric_breach_procedural", "tools/audio_sources/atmospheric_breach/SOURCES.md", "Frozen Dawn original")
     if path in VOICE_PATHS:
         return (
             "generated_voice",
@@ -52,6 +62,8 @@ def classify(path: str) -> tuple[str, str, str]:
         )
 
     prefix_groups = (
+        (("entity/blind_architect/",), "blind_architect_cc0", "tools/audio_sources/blind_architect/SOURCES.md", "CC0-derived"),
+        (("entity/architect/",), "architect_procedural", "tools/audio_sources/architect/SOURCES.md", "Frozen Dawn original"),
         (("entity/rimebound/",), "rimebound_procedural", "tools/audio_sources/rimebound/SOURCES.md", "Frozen Dawn original"),
         (("block/stillpoint_core/",), "stillpoint_procedural", "tools/audio_sources/stillpoint_core/SOURCES.md", "Frozen Dawn original"),
         (("entity/master_architect/", "entity/thae_iven_heart/", "entity/hearth/", "music/master_architect/", "music/heart/", "ui/thaeven_"), "master_thae_iven_owner", "tools/audio_sources/master_architect/SOURCES.md", "Frozen Dawn original"),
@@ -65,11 +77,17 @@ def classify(path: str) -> tuple[str, str, str]:
         (("entity/archivist/",), "archivist_mixed", "tools/audio_sources/archivist/SOURCES.md", "CC0, CC BY 4.0, and original"),
         (("entity/undone/",), "undone_owner_audio", "tools/audio_sources/undone/SOURCES.md", "Frozen Dawn original"),
         (("ambient/wind_post_maeve_",), "post_maeve_wind_procedural", "tools/audio_sources/post_maeve_wind/SOURCES.md", "Frozen Dawn original"),
+        (("blocks/reactor/geiger_",), "hearthstone_geiger_cc0", "tools/audio_sources/hearthstone/SOURCES.md", "CC0-derived"),
+        (("blocks/reactor/",), "hearthstone_reactor_procedural", "tools/audio_sources/hearthstone/SOURCES.md", "Frozen Dawn original"),
     )
     for prefixes, group, evidence, license_name in prefix_groups:
         if path.startswith(prefixes):
             return group, evidence, license_name
 
+    if path.startswith("block/oxygen_gauge/"):
+        return "room_oxygen_warnings", "tools/audio_sources/room_oxygen/SOURCES.md", "CC0-derived" if path.endswith("critical.ogg") else "Frozen Dawn original"
+    if path.startswith("block/airlock/"):
+        return "airlock_machinery_recorded", "tools/audio_sources/airlock/SOURCES.md", "CC0-derived"
     original_prefixes = (
         "ambient/",
         "blocks/",

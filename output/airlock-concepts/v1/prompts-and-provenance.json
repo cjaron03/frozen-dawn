@@ -1,0 +1,28 @@
+{
+  "status": "Concept art for review; not installed in the game",
+  "generator": "Built-in image_gen",
+  "date": "2026-10-09",
+  "entries": [
+    {
+      "name": "door",
+      "source": "/Users/jaroncabral/.codex/generated_images/01a1189e-2196-7380-ad53-de134074ff3d/exec-a9f9cda2-0f2d-4efe-bdd7-f908e1ac00b4.png",
+      "filename": "airlock-door-concept.png",
+      "prompt": "Use case: stylized-concept. Asset type: flat Minecraft Java block texture draft for the Frozen Dawn mod. Strict coarse Minecraft pixel art: crisp square pixels, restricted palette, no antialiasing, no gradients, no perspective, no rendered cube, no scene, no illustration backdrop, no text or watermark. Materials: worn charcoal steel, cool gray metal, slight desaturated blue seams matching ORSA survival equipment. Produce an enlarged nearest-neighbor-looking texture sprite sheet on solid neutral dark gray. Keep surfaces readable at Minecraft's native resolution. These are texture design drafts, not a photorealistic presentation. Subject: one industrial airtight door, one block wide and two blocks tall. Show its single straight-on 16-by-32 logical-pixel front face, centered and large; upper 16x16 half contains a small square reinforced cyan glass window with a dark border. Lower 16x16 half has a simple inset solid steel panel. Four restrained rivets, dark rubber seal along the edges, a small right-side mechanical latch. Top and bottom halves align perfectly. Thick steel frame, sturdy vanilla iron-door-compatible silhouette. No extra objects, no labels, no duplicate doors. Flat front texture only, not a physical door render.",
+      "sha256": "0a91c20594077ad4336cda818e63dbf9f157fcf99c9a3b46b473b3147877afbc"
+    },
+    {
+      "name": "controller",
+      "source": "/Users/jaroncabral/.codex/generated_images/01a1189e-2196-7380-ad53-de134074ff3d/exec-901345a2-c177-4ff4-bb16-72bb4c0ff90f.png",
+      "filename": "airlock-controller-concept.png",
+      "prompt": "Use case: stylized-concept. Asset type: flat Minecraft Java block texture draft for the Frozen Dawn mod. Strict coarse Minecraft pixel art: crisp square pixels, restricted palette, no antialiasing, no gradients, no perspective, no rendered cube, no scene, no illustration backdrop, no text or watermark. Materials: worn charcoal steel, cool gray metal, slight desaturated blue seams matching ORSA survival equipment. Produce an enlarged nearest-neighbor-looking texture sprite sheet on solid neutral dark gray. Keep surfaces readable at Minecraft's native resolution. These are texture design drafts, not a photorealistic presentation. Subject: one airlock controller block texture sheet. Four equal square texture tiles arranged horizontally with clear dark space between them. First three are IDENTICAL flat front panels except status lamp color: first red, second amber, third green. Each front uses an exact-looking 16x16 logical pixel grid: steel edge, dark inset control area, tiny oxygen gauge shown by simple cyan squares, small button, and a highly readable small lamp at upper right. Fourth tile is the plain matching steel casing used for side/top/back faces, also 16x16 logical pixels. No words, no numbers, no labeled UI, no door, no valve, no perspective. Make colors the only difference between the three controller fronts.",
+      "sha256": "29f15c79c9a01e6fc5aea5305da420099894be0015e6e0d6916d8bbd7fdb8ac3"
+    },
+    {
+      "name": "vent",
+      "source": "/Users/jaroncabral/.codex/generated_images/01a1189e-2196-7380-ad53-de134074ff3d/exec-e911ff1c-b0b6-404b-a7e8-889172222ab3.png",
+      "filename": "airlock-vent-concept.png",
+      "prompt": "Use case: stylized-concept. Asset type: flat Minecraft Java block texture draft for the Frozen Dawn mod. Strict coarse Minecraft pixel art: crisp square pixels, restricted palette, no antialiasing, no gradients, no perspective, no rendered cube, no scene, no illustration backdrop, no text or watermark. Materials: worn charcoal steel, cool gray metal, slight desaturated blue seams matching ORSA survival equipment. Produce an enlarged nearest-neighbor-looking texture sprite sheet on solid neutral dark gray. Keep surfaces readable at Minecraft's native resolution. These are texture design drafts, not a photorealistic presentation. Subject: one manual emergency vent valve block texture sheet. Two equal 16x16 logical-pixel square tiles side by side with clear space between them. First tile is flat frontal texture: dark recessed vent grille, cool gray steel rim, bold red manual rotary handle in the center, simple plus-shaped grip that reads at low resolution, tiny restrained warning-yellow corner marker. Second is matching plain steel side/top/back casing. No flames, no sci-fi hologram, no words, no numbers, no controller, no door, no perspective. Practical emergency industrial hardware, not a decorative logo.",
+      "sha256": "4b7d4c10fea75922c0c1795a23511277439d4580886198eb7dbe94ac3a383aa3"
+    }
+  ]
+}

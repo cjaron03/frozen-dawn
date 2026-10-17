@@ -1,0 +1,18 @@
+# MACS masked signal check
+
+The owner knows both mechanics and asked for the least leading test possible. This is condition-masked recognition by an informed participant, not first-time blind acceptance of §14.10. Do not relabel a pass as an unbriefed tester pass.
+
+The separate world **MACS Signal Check** is a complete copy of the closed Base Bait save, with a neutral title and replacement QA pack. It preserves the original completed world and history. The new scene is far from its old arena, in protected Creative with ordinary late-phase presentation, no natural spawns and thick footing. No production Java or resources change. Construction synchronously loads only the bounded 5x6 arena columns before `/fill`, preventing a teleport/load race. It retains no forced chunks; this explicit QA setup is not evidence about production chunk-loading behavior.
+
+Four views use a concealed shuffled balanced sequence stored only in `lab-signal-order.json`. Keep its contents out of chat, logs and explanations until all first descriptions have been recorded. Record the file's SHA before play. Neutral view numbers, a shared camera, normal game speed and equal 680-tick windows prevent labels or test duration from revealing the answer. Each view has two seconds to settle, thirty seconds of presentation and a two-second tail. Do not explain or score an individual view before the remaining descriptions; repetition makes later answers less independent.
+
+This is presentation playback. The body fixture uses the actual `ArchitectAttentionController` (200-tick withdrawal, 400-tick dissolve/exchange/reform) and the ordinary client Architect model/particles. It is invulnerable, runs no combat AI, cannot be saved and is discarded without a death at the end. The area fixture calls the actual `ConvergencePresentation.cloud` with a standalone group that is never registered or saved. Its presentiment text is deliberately omitted to assess visual distinction; longer approach presentation persists for thirty seconds. No real dispatch, arrival, new belief or successful strategy is claimed from this check. Production telegraph/arrival and notification behavior have separate evidence.
+
+Operator protocol:
+1. Open the world and pause. Use the bridge to snapshot/freeze; require `msignal #stage=0`.
+2. Run approved `macs_signal:prepare`, inspect safe mode/location and stage 1. Then `macs_signal:next` arms the first view, places the identical fixed camera, sets stage 2 and freezes.
+3. Owner runs `/tick unfreeze`, stays at the camera and turns with the mouse. At automatic pause, ask only what they saw and what they expect next. Preserve the verbatim first report without disclosing its condition.
+4. Read neutral stage/round/timer counters. Stage 3 means the operator can arm `macs_signal:continue` after the report. Stage 4 ends the series. Stage 5 is inconclusive. Leaving the camera, losing Creative protection, disconnecting, or accelerating the view invalidates it.
+5. After all descriptions, preserve reports and progress log, then read the concealed mapping and compare body/area recognition and predictions. Record ambiguity rather than coaching. Closing/reloading mid-series requires operator review; there is no silent reset/resume. The sequence file survives; volatile execution deliberately does not.
+
+The exact-world bridge policy and an additional native `signal_access` guard both reject setup in another world. Packaging verification checks all lab source-set class paths, including adapters in production packages, against the distributed jar. Native verification covers actual departure/pulse/reform timing, absence of combat, unsaveable fixture cleanup, no Maeve SavedData mutation, wrong-world refusal and permission-two parsing.

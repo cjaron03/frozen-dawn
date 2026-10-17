@@ -57,7 +57,14 @@ public final class ArchitectIcePlacement {
             List<BlockPos> tacticalIce,
             int maxTacticalIce
     ) {
-        if (!canPlaceIce(level, pos)) {
+        // Check occupancy before removing vegetation or evicting an older wall.
+        // A rounded retreat offset can still overlap the builder's actual body.
+        if (!(level instanceof ServerLevel server) || !server.hasChunkAt(pos)) return false;
+        var occupants = new java.util.ArrayList<net.minecraft.world.entity.Entity>();
+        server.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(net.minecraft.world.entity.Entity.class),
+                new net.minecraft.world.phys.AABB(pos),
+                entity -> !entity.isRemoved() && !entity.isSpectator() && entity.blocksBuilding, occupants, 1);
+        if (!occupants.isEmpty() || !canPlaceIce(level, pos)) {
             return false;
         }
 

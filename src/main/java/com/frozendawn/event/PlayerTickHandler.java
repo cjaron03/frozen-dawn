@@ -10,6 +10,7 @@ import com.frozendawn.item.O2EfficiencyModuleItem;
 import com.frozendawn.item.RemnantEmberItem;
 import com.frozendawn.hearthrot.HearthrotManager;
 import com.frozendawn.network.BreathableStatePayload;
+import com.frozendawn.network.SuffocationStatePayload;
 import com.frozendawn.network.TemperaturePayload;
 import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.entity.FrostmiteEntity;
@@ -41,12 +42,14 @@ import java.util.UUID;
  * atmospheric suffocation, and armor advancement grants.
  * Called from WorldTickHandler each server tick.
  */
-final class PlayerTickHandler {
+public final class PlayerTickHandler {
 
     private PlayerTickHandler() {}
 
     private static final Map<UUID, Boolean> breathableCache = new HashMap<>();
+    private static final Map<UUID, Boolean> pressureCache = new HashMap<>();
     private static final Map<UUID, Integer> suffocationTimer = new HashMap<>();
+    private static final Map<UUID, SuffocationStage> suffocationStages = new HashMap<>();
     private static final Map<UUID, Float> playerTemperatures = new HashMap<>();
     private static final Map<UUID, Float> frostmiteTemperatureDrain = new HashMap<>();
 
@@ -63,7 +66,9 @@ final class PlayerTickHandler {
 
     static void reset() {
         breathableCache.clear();
+        pressureCache.clear();
         suffocationTimer.clear();
+        suffocationStages.clear();
         playerTemperatures.clear();
         frostmiteTemperatureDrain.clear();
         MasterArchitectThermalSever.reset();
@@ -75,7 +80,9 @@ final class PlayerTickHandler {
     static void onPlayerLogout(ServerPlayer player) {
         UUID playerId = player.getUUID();
         breathableCache.remove(playerId);
+        pressureCache.remove(playerId);
         suffocationTimer.remove(playerId);
+        suffocationStages.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
         MasterArchitectThermalSever.onPlayerLogout(player);
@@ -88,13 +95,17 @@ final class PlayerTickHandler {
     }
 
     static void onPlayerLogin(ServerPlayer player) {
+        suffocationStages.remove(player.getUUID());
+        syncSuffocationStage(player, SuffocationStage.NONE);
         RimeboundEncasement.clear(player);
         FrostbiteHandler.onPlayerLogin(player);
     }
 
     static void stabilizeAfterRescue(ServerPlayer player) {
+        syncSuffocationStage(player, SuffocationStage.NONE);
         UUID playerId = player.getUUID();
         breathableCache.remove(playerId);
+        pressureCache.remove(playerId);
         suffocationTimer.remove(playerId);
         playerTemperatures.remove(playerId);
         frostmiteTemperatureDrain.remove(playerId);
@@ -126,6 +137,7 @@ final class PlayerTickHandler {
     }
 
     static void syncBreathableState(ServerPlayer player) {
+        refreshPressureState(player,true);
         boolean breathable = computeBreathableState(player);
         breathableCache.put(player.getUUID(), breathable);
         PacketDistributor.sendToPlayer(player, new BreathableStatePayload(breathable));
@@ -146,13 +158,15 @@ final class PlayerTickHandler {
      * Called every server tick from WorldTickHandler.
      */
     static void tick(MinecraftServer server, ApocalypseState state, int currentPhase, int currentDay, float progress) {
+        // Game time advances with simulation even when apocalypse/daylight progression is held.
+        long simulationTick = server.overworld().getGameTime();
         MasterArchitectThermalSever.tick(server);
-        if (state.getApocalypseTicks() % FROSTMITE_DRAIN_STEP_INTERVAL == 0) {
+        if (simulationTick % FROSTMITE_DRAIN_STEP_INTERVAL == 0) {
             tickFrostmiteDrain(server);
         }
 
         // Temperature sync (fast enough that Frostmite drain is clearly visible on the HUD)
-        if (state.getApocalypseTicks() % TEMPERATURE_SYNC_INTERVAL == 0) {
+        if (simulationTick % TEMPERATURE_SYNC_INTERVAL == 0) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.level().dimension() == Level.OVERWORLD) {
                     float temp = getDisplayedTemperature(player, state);
@@ -164,14 +178,14 @@ final class PlayerTickHandler {
         }
 
         // Heat damage + armor advancements (every 40 ticks)
-        if (state.getApocalypseTicks() % 40 == 0) {
+        if (simulationTick % 40 == 0) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (player.level().dimension() == Level.OVERWORLD) {
                     applyHeatDamage(player, getDisplayedTemperature(player, state), progress);
                 }
                 // Grant armor tier advancements (acheronite doesn't count for EVA)
                 int armorTier = MobFreezeHandler.getFullSetTier(player);
-                int advCap = armorTier == 4 ? 2 : armorTier; // acheronite caps at tier 2 advancements
+                int advCap = EmergencyEvaHandler.isWearingIssuedPiece(player) ? 0 : armorTier == 4 ? 2 : armorTier; // acheronite caps at tier 2 advancements
                 for (int i = 1; i <= advCap && i < ARMOR_ADVANCEMENTS.length; i++) {
                     if (ARMOR_ADVANCEMENTS[i] != null) {
                         WorldTickHandler.grantAdvancement(player, ARMOR_ADVANCEMENTS[i]);
@@ -194,13 +208,19 @@ final class PlayerTickHandler {
         }
 
         // Wind chill exhaustion (every 20 ticks, phase 5+)
-        if (currentPhase >= 5 && state.getApocalypseTicks() % 20 == 0) {
-            tickWindChill(server, currentPhase);
+        if (currentPhase >= 5) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                tickPlayerWindChill(player, state, currentPhase, progress);
+            }
         }
 
         // Atmospheric suffocation (every tick, phase 6 late)
         if (PhaseManager.isVacuumActive(currentPhase, progress)) {
             tickSuffocation(server, state, progress);
+        } else if (!suffocationStages.isEmpty()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                syncSuffocationStage(player, SuffocationStage.NONE);
+            }
         }
 
         // Sanity/isolation tracking (every tick, phase 3+)
@@ -321,115 +341,149 @@ final class PlayerTickHandler {
         }
     }
 
-    private static void tickWindChill(MinecraftServer server, int currentPhase) {
+    /** Per-player environmental path, also exercised by native fixtures. */
+    static void tickPlayerWindChill(ServerPlayer player, ApocalypseState state, int currentPhase, float progress) {
+        if (currentPhase < 5 || player.serverLevel().getGameTime() % 20 != 0) return;
+        // No atmospheric wind exists in late Phase 6. Cold damage is a separate hazard.
+        if (PhaseManager.isVacuumActive(currentPhase, progress)) return;
         float phaseMult = currentPhase >= 6 ? 1.5f : 1.0f;
+        if (player.isCreative() || player.isSpectator()) return;
+        if (player.level().dimension() != Level.OVERWORLD) return;
+        if (player.blockPosition().getY() < 50) return;
+        if (!player.level().canSeeSky(player.blockPosition().above())) return;
+        // Skylight passes through glass; pressure geometry is the shelter authority.
+        var room = com.frozendawn.world.RoomAtmosphere.view(player.serverLevel(), getBreathableCheckPos(player));
+        if (room != null && room.geometry().seal() == com.frozendawn.world.RoomAtmosphere.Seal.SEALED) return;
 
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD) continue;
-            if (player.blockPosition().getY() < 50) continue;
-            if (!player.level().canSeeSky(player.blockPosition().above())) continue;
+        int armorTier = MobFreezeHandler.getFullSetTier(player);
+        if (armorTier >= 3) return;
+        float armorReduction = armorTier >= 2 ? 0.5f : (armorTier >= 1 ? 0.75f : 1.0f);
 
-            int armorTier = MobFreezeHandler.getFullSetTier(player);
-            if (armorTier >= 3) continue;
-            float armorReduction = armorTier >= 2 ? 0.5f : (armorTier >= 1 ? 0.75f : 1.0f);
-
-            float exhaustion;
-            if (player.isSprinting()) {
-                exhaustion = 1.0f * phaseMult * armorReduction;
-            } else if (player.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
-                exhaustion = 0.4f * phaseMult * armorReduction;
-            } else {
-                exhaustion = 0.2f * phaseMult * armorReduction;
-            }
-            player.getFoodData().addExhaustion(exhaustion);
+        float exhaustion;
+        if (player.isSprinting()) {
+            exhaustion = 1.0f * phaseMult * armorReduction;
+        } else if (player.getDeltaMovement().horizontalDistanceSqr() > 0.001) {
+            exhaustion = 0.4f * phaseMult * armorReduction;
+        } else {
+            exhaustion = 0.2f * phaseMult * armorReduction;
         }
+        player.getFoodData().addExhaustion(exhaustion);
     }
 
     private static void tickSuffocation(MinecraftServer server, ApocalypseState state, float progress) {
-        boolean refreshCache = state.getApocalypseTicks() % 20 == 0;
-
+        boolean refreshCache = server.getTickCount() % 20 == 0;
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player.isCreative() || player.isSpectator()) continue;
-            if (player.level().dimension() != Level.OVERWORLD
-                    && !ThaeIvenMindDimension.isMindLevel(player.level())) {
-                continue;
-            }
+            tickPlayerSuffocation(player, state, refreshCache);
+        }
+    }
 
-            UUID id = player.getUUID();
-            if (refreshCache || !breathableCache.containsKey(id)) {
-                refreshBreathableState(player);
-            }
-            if (Boolean.TRUE.equals(breathableCache.get(id))) {
-                suffocationTimer.put(id, 0);
-                continue;
-            }
+    /** The same per-player atmospheric path used by the server loop and native hazard fixtures. */
+    static void tickPlayerSuffocation(ServerPlayer player, ApocalypseState state, boolean refreshCache) {
+        // Pressure and breathing telemetry also drive world audio and the HUD.
+        // Creative/spectator skip damage, but must still follow room transitions.
+        if (refreshCache || !breathableCache.containsKey(player.getUUID())) {
+            refreshBreathableState(player);
+        }
+        if (player.isCreative() || player.isSpectator()) {
+            suffocationTimer.remove(player.getUUID());
+            syncSuffocationStage(player, SuffocationStage.NONE);
+            return;
+        }
+        if (player.level().dimension() != Level.OVERWORLD
+                && !ThaeIvenMindDimension.isMindLevel(player.level())) {
+            syncSuffocationStage(player, SuffocationStage.NONE);
+            return;
+        }
 
-            boolean thermalVisor = MobFreezeHandler.hasThermalVisor(player);
-            boolean visorRig = MobFreezeHandler.hasThermalVisorRig(player);
+        UUID id = player.getUUID();
+        if (Boolean.TRUE.equals(breathableCache.get(id))) {
+            suffocationTimer.put(id, 0);
+            syncSuffocationStage(player, SuffocationStage.NONE);
+            return;
+        }
 
-            // Full EVA suit or visor-mated EVA rig — check for O2 tank
-            if (MobFreezeHandler.getFullSetTier(player) == 3) {
-                ItemStack tank = findO2Tank(player);
-                if (!tank.isEmpty()) {
-                    int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
-                    if (o2 > 0) {
-                        if (!SuitIntegrityHandler.hasPuncture(player)
-                                && SuitIntegrityPolicy.shouldConsumeBaselineO2(
-                                        state.getApocalypseTicks(),
-                                        visorRig,
-                                        O2EfficiencyModuleItem.isInstalled(player))) {
-                            int consumed = Math.min(
-                                    o2, HearthrotManager.baselineO2Units(player));
-                            tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
-                        }
-                        suffocationTimer.put(id, 0);
-                        continue;
+        if (EmergencyEvaHandler.hasLifeSupport(player)) {
+            suffocationTimer.put(id, 0);
+            syncSuffocationStage(player, SuffocationStage.NONE);
+            return;
+        }
+
+        boolean thermalVisor = MobFreezeHandler.hasThermalVisor(player);
+        boolean visorRig = MobFreezeHandler.hasThermalVisorRig(player);
+
+        // Full EVA suit or visor-mated EVA rig — check for O2 tank
+        if (MobFreezeHandler.getFullSetTier(player) == 3) {
+            ItemStack tank = findO2Tank(player);
+            if (!tank.isEmpty()) {
+                int o2 = tank.getOrDefault(ModDataComponents.O2_LEVEL.get(), 0);
+                if (o2 > 0) {
+                    if ((!SuitIntegrityHandler.hasPuncture(player)||!SuitIntegrityHandler.isVacuumExposure(player))
+                            && SuitIntegrityPolicy.shouldConsumeBaselineO2(
+                                    player.serverLevel().getGameTime(),
+                                    visorRig,
+                                    O2EfficiencyModuleItem.isInstalled(player))) {
+                        int consumed = Math.min(
+                                o2, HearthrotManager.baselineO2Units(player));
+                        tank.set(ModDataComponents.O2_LEVEL.get(), o2 - consumed);
                     }
+                    suffocationTimer.put(id, 0);
+                    syncSuffocationStage(player, SuffocationStage.NONE);
+                    return;
                 }
             }
-
-            int ticks = suffocationTimer.getOrDefault(id, 0);
-            if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
-                ticks = Math.max(ticks, SUFFOCATION_DURATION);
-            }
-            if (!thermalVisor || state.getApocalypseTicks() % 2 == 0) {
-                ticks++;
-            }
-            suffocationTimer.put(id, ticks);
-            float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
-
-            if (suffProgress >= 0.15f) {
-                player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.lightheaded"), true);
-            }
-            if (suffProgress >= 0.40f) {
-                player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, false));
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.nausea"), true);
-            }
-            if (suffProgress >= 0.70f) {
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.fading"), true);
-            }
-
-            if (suffProgress >= 1.0f && ticks % 20 == 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.frozendawn.suffocate.dying"), true);
-                DamageSource source = new DamageSource(
-                        player.serverLevel().registryAccess()
-                                .lookupOrThrow(Registries.DAMAGE_TYPE)
-                                .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
-                Vec3 motion = player.getDeltaMovement();
-                player.hurt(source, SUFFOCATION_DAMAGE);
-                player.setDeltaMovement(motion);
-            }
         }
+
+        int ticks = suffocationTimer.getOrDefault(id, 0);
+        if (SuitIntegrityHandler.hasActiveEmptyPuncture(player)) {
+            ticks = Math.max(ticks, SUFFOCATION_DURATION);
+        }
+        if (!thermalVisor || player.serverLevel().getGameTime() % 2 == 0) {
+            ticks++;
+        }
+        suffocationTimer.put(id, ticks);
+        float suffProgress = Math.min(1.0f, (float) ticks / SUFFOCATION_DURATION);
+        syncSuffocationStage(player, SuffocationStage.fromTicks(ticks));
+
+        if (suffProgress >= 0.15f) {
+            player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0, false, false, false));
+        }
+        if (suffProgress >= 0.40f) {
+            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, false, false, false));
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, false, false));
+        }
+        if (suffProgress >= 0.70f) {
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.MOVEMENT_SLOWDOWN, 60, 4, false, false, false));
+        }
+
+        if (suffProgress >= 1.0f && ticks % 20 == 0) {
+            DamageSource source = new DamageSource(
+                    player.serverLevel().registryAccess()
+                            .lookupOrThrow(Registries.DAMAGE_TYPE)
+                            .getOrThrow(ModDamageTypes.ATMOSPHERIC_SUFFOCATION));
+            Vec3 motion = player.getDeltaMovement();
+            player.hurt(source, SUFFOCATION_DAMAGE);
+            player.setDeltaMovement(motion);
+        }
+    }
+
+    /** Last breathing decision only; diagnostics must not query/refill room state. */
+    public static Boolean cachedBreathableState(UUID playerId) {
+        return breathableCache.get(playerId);
+    }
+
+    /** Read-only danger signal for room alarms; suit/tank protection is already applied. */
+    public static boolean isSuffocationImminent(UUID playerId) {
+        var stage=suffocationStages.getOrDefault(playerId,SuffocationStage.NONE);
+        return stage==SuffocationStage.FADING||stage==SuffocationStage.DYING;
+    }
+
+    private static void syncSuffocationStage(ServerPlayer player, SuffocationStage stage) {
+        SuffocationStage previous = suffocationStages.put(player.getUUID(), stage);
+        // Periodic refresh also covers a replaced client player after respawn.
+        if (previous != stage || (stage != SuffocationStage.NONE && player.server.getTickCount() % 20 == 0))
+            PacketDistributor.sendToPlayer(player, new SuffocationStatePayload(stage));
     }
 
     private static ItemStack findO2Tank(ServerPlayer player) {
@@ -444,11 +498,19 @@ final class PlayerTickHandler {
     }
 
     private static void refreshBreathableState(ServerPlayer player) {
+        refreshPressureState(player,false);
         boolean breathable = computeBreathableState(player);
         Boolean previous = breathableCache.put(player.getUUID(), breathable);
         if (previous == null || previous.booleanValue() != breathable) {
             PacketDistributor.sendToPlayer(player, new BreathableStatePayload(breathable));
         }
+    }
+
+    private static void refreshPressureState(ServerPlayer player,boolean force) {
+        boolean pressure=com.frozendawn.world.RoomAtmosphere.hasAir(player.level(),getBreathableCheckPos(player));
+        Boolean previous=pressureCache.put(player.getUUID(),pressure);
+        if(force||previous==null||previous.booleanValue()!=pressure)PacketDistributor.sendToPlayer(player,
+                new com.frozendawn.network.RoomPressureStatePayload(pressure));
     }
 
     private static boolean computeBreathableState(ServerPlayer player) {

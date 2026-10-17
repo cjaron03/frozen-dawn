@@ -1,0 +1,60 @@
+{
+  "verifiedUtc": "2026-09-24T08:47:28.912168+00:00",
+  "command": "./gradlew architectVerify architectMonkey --console=plain",
+  "sourceSha256": "cf9c76657f8899569ee428aef9b8ae85ce09690bb79812e8ed3dda8065506a69",
+  "jarSha256": "10d800cd7d647cf1a3329530e55bea03b61f78723191d0d9f90cf4e46f0a68f9",
+  "unit": {
+    "tests": 609,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "nativeGameTests": 142,
+  "requiredManifestCases": 137,
+  "stressTotal": 642,
+  "seededStressCases": 500,
+  "scope": "Source and artifact accepted in the final live shield replay. Fresh exact-commit gate results are published on the PR.",
+  "requiredChecks": [
+    "architectVerify",
+    "architectMonkey"
+  ],
+  "facadeLines": 297,
+  "inputsSha256": {
+    "config/architect-required-tests.txt": "d75806ea3743fde3d2728b4d42a19451bd6bc78c4e465690041b8e893cf4a558",
+    "config/architect-monkey-tests.txt": "bf114be8fced69e9a18fa0b640b4a9f77dc07cf9b7ce79f379dac7b0b8759487",
+    "src/gameTest/java/com/frozendawn/entity/ArchitectMonkeyGameTest.java": "efd7709ab3f9f72357e7167d53bfb47e9af9c753055021c9caeb04be9f9c9dff",
+    "tools/architect_fixtures.py": "b40987e56353eaed01918ffab4c162136ad31ef8df59fa95200a3f820605ae80",
+    "tools/prepare_macs_integrated_playtest.py": "ee610bdf03d5131ad3057cad9588ef04abdc38ec8fceeb7909834cbf25d2370f",
+    "tools/prepare_macs_recon_playtest.py": "b8a46e361f5b5b3fa9172987e6573ff79fe080ff3da1d59cea51b37b0df8e506",
+    "tools/prepare_macs_shield_playtest.py": "93f72a936d72ba2a32bc9bce81b13c75f6a5b7841097912ddb9dd1ea3b41df3c"
+  },
+  "unchangedBowFilesSinceShieldBaseline": {
+    "src/main/java/com/frozendawn/entity/architect/ArchitectCoverGeometry.java": "e3154e1b76a94de22e4179a95471e9dc73641fe347d3c96c14f35571e7f46fe4",
+    "src/main/java/com/frozendawn/entity/ArchitectTacticsController.java": "2286fa2989dc96c09529d5cd5d136ce07b197c7abf7e40e91724b1e96ab4b2c7",
+    "src/main/java/com/frozendawn/entity/architect/ArchitectDecisionEngine.java": "2b1c737790d51b435739f5b1ed0b1cd4e2e90089217819c1ebc702ae950c70a9",
+    "src/gameTest/java/com/frozendawn/maeve/MaeveCoverCadenceGameTest.java": "4f95df4efc864889711f21244162a3796ae2b5405ac396b0c6d882889d8d1bde"
+  },
+  "reportSha256": {
+    "native-report.xml": "29b5b087eb37ac2379093b767d87ac177750fe2be2e8c7049ef62eb847c7335e",
+    "stress-report.xml": "6fb70fa12f0a99f3ac1d5e4c9adf9a0783e722add9ad306b5ca0658584aec84e"
+  },
+  "liveShieldReplay": {
+    "recordedUtc": "2026-09-24T08:58:04.936350+00:00",
+    "userFeedback": "better",
+    "trace": "run-60ccc5a6-ad55-45fa-a8a0-7c70aeecc202-6339113462738688375",
+    "swordConfidence": 1.0,
+    "shieldResumedTick": 362,
+    "sameEncounter": "31ca7f74-03bb-4cfb-9aa0-1e176c1e085b",
+    "blocksAfterResume": 4,
+    "preventedDamage": 23.999999,
+    "latestGuardElapsedTicks": 880,
+    "outcome": "UNKNOWN: the QA finish removed the actor; this is not a natural combat loss or win",
+    "validation": "Live shield persistence beyond 400 ticks and resumption after retreat/healing observed; user reported improvement. Broader balance and multiplayer remain separate."
+  },
+  "limitations": [
+    "Earlier camp and pulse replays used their dated builds; the final required suite rechecks their behaviors.",
+    "Informed acceptance is not a new blind combined test.",
+    "Normal versus Brutal, current-build live multiplayer, performance and full survival remain integration work.",
+    "Retreat inWall damage and pursuit removing recent cover remain observations to reproduce and assess."
+  ]
+}
