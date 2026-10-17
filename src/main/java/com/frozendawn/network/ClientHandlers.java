@@ -126,7 +126,9 @@ public final class ClientHandlers {
     }
 
     public static void handleOpenOrsaAwakening() {
-        OrsaAwakeningIntro.start();
+        // The First Boot Epigraph precedes the very first ORSA intro on this client, then hard-cuts into it.
+        if (com.frozendawn.client.FirstBootEpigraph.seen()) OrsaAwakeningIntro.start();
+        else com.frozendawn.client.FirstBootEpigraph.play(true, OrsaAwakeningIntro::startImmediately);
     }
 
     public static void handleOpenTowerTerminal(OpenTowerTerminalPayload payload) {

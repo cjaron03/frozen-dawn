@@ -184,6 +184,10 @@ public class ClientEvents {
                 OrsaAwakeningIntro::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "first_boot_epigraph"),
+                FirstBootEpigraph::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thaeven_transmission"),
                 ThaevenTransmissionOverlay::render
         );

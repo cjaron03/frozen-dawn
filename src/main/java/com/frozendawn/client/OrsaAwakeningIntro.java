@@ -64,11 +64,20 @@ public final class OrsaAwakeningIntro {
         blurManaged = false;
     }
 
+    /** Hard cut from the First Boot Epigraph: no extra black lead-in. */
+    public static void startImmediately() {
+        start();
+        pendingDelayTicks = 0;
+    }
+
     public static boolean shouldSuppressSurvivalHud() {
-        return active && ticks < TEMPERATURE_RETURN_START;
+        return FirstBootEpigraph.active() || active && ticks < TEMPERATURE_RETURN_START;
     }
 
     public static boolean shouldSuppressNonIntroSound(ResourceLocation soundLocation) {
+        if (FirstBootEpigraph.active()) {
+            return FirstBootEpigraph.suppresses(soundLocation);
+        }
         if (!active) {
             return false;
         }
