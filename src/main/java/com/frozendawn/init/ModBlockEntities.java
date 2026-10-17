@@ -67,6 +67,9 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PixieBlockEntity>> PIXIE = BLOCK_ENTITIES.register("pixie", () -> BlockEntityType.Builder.of(com.frozendawn.block.PixieBlockEntity::new,ModBlocks.PIXIE.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PlumbLineBlockEntity>> PLUMB_LINE =
+            BLOCK_ENTITIES.register("plumb_line", () -> BlockEntityType.Builder.of(com.frozendawn.block.PlumbLineBlockEntity::new,ModBlocks.PLUMB_LINE.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkConsoleBlockEntity>> UPLINK_CONSOLE =
             BLOCK_ENTITIES.register("uplink_console", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkConsoleBlockEntity::new,ModBlocks.UPLINK_CONSOLE.get()).build(null));
 

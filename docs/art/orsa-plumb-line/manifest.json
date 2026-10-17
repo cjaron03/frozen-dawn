@@ -1,0 +1,38 @@
+{
+  "created": "2026-10-17",
+  "creator": "Frozen Dawn; authored in code",
+  "script": "make_textures.py",
+  "third_party_pixels": false,
+  "textures": [
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/plumb_line_front.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "9bc57a38db485e73a2c5dc3a4e655d0ed8c091b85a174d4e68c17010d998afd4"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/plumb_line_front_on.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "7693400f2bfcda977b841f2cad1ede829fba065b1c672ae7afc47f86c7cd245b"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/plumb_line_side.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "e6b8d6307438f6a6704929e0654d5111bd8c1eba4b8a6fa439f3b2ac27656a45"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/plumb_line_top.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "1cc5d97888f51b8585d14b49f4050cd02716954c7ee3ea415f5f0313b65a8c40"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/plumb_line_bottom.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "f61dadda6c630def829f78f16f6da59d6a71e0f7b181d2db37aa9c135cc14e2f"
+    }
+  ]
+}

@@ -306,6 +306,7 @@ public final class PowerNetworks {
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
             return furnace.wantsPower()?furnace.demandWatts():0;
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.UplinkConsoleBlockEntity uplink)return uplink.demandWatts();
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PlumbLineBlockEntity gpr)return gpr.demandWatts();
         if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.DeconShowerBlock)
             return com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(pos));
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
@@ -413,7 +414,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?7:1,load)).toList();
+                    rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?7:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?8:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }

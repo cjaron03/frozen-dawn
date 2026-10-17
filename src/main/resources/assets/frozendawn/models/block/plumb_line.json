@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/plumb_line_front",
+    "south": "frozendawn:block/plumb_line_side",
+    "east": "frozendawn:block/plumb_line_side",
+    "west": "frozendawn:block/plumb_line_side",
+    "up": "frozendawn:block/plumb_line_top",
+    "down": "frozendawn:block/plumb_line_bottom",
+    "particle": "frozendawn:block/plumb_line_side"
+  }
+}

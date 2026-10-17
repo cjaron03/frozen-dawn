@@ -94,6 +94,7 @@ public class ModItems {
 
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
+    public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
     public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
     public static final DeferredItem<BlockItem> UPLINK_DISH = ITEMS.registerSimpleBlockItem("uplink_dish", ModBlocks.UPLINK_DISH);
     /** ORSA Uplink salvage parts: found at monitoring stations and ORSA sites, never crafted. */
@@ -544,6 +545,7 @@ public class ModItems {
                         output.accept(RESISTIVE_HEATER.get());
                         output.accept(PIXIE.get());
                         output.accept(POWER_MONITOR.get());
+                        output.accept(PLUMB_LINE.get());
                         output.accept(UPLINK_CONSOLE.get());
                         output.accept(UPLINK_DISH.get());
                         output.accept(SIGNAL_PROCESSOR.get());
