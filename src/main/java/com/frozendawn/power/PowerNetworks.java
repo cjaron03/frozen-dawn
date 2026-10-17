@@ -207,8 +207,10 @@ public final class PowerNetworks {
                 &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
                 &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
-    private static boolean coolantLink(ServerLevel l,PowerLink link){
-        return l.isLoaded(link.a())&&l.isLoaded(link.b())&&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
+    /** Runs inside chunk-load events: it must never wait on a chunk that is still loading, or the server deadlocks. */
+    static boolean coolantLink(ServerLevel l,PowerLink link){
+        return com.frozendawn.world.ReadyChunks.ready(l,link.a())&&com.frozendawn.world.ReadyChunks.ready(l,link.b())
+                &&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
     }
     private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
     private static void revokePumpGrants(Runtime rt,BlockPos node) {
