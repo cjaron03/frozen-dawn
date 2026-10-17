@@ -189,7 +189,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     }
 
     private void broadcast(ServerLevel l){
-        var line=UplinkBroadcasts.next(l,broadcastIndex++);log(line);
+        var line=UplinkBroadcasts.next(l,worldPosition,broadcastIndex++);log(line);
         var text=Component.translatable("uplink.frozendawn.listen.prefix").withStyle(ChatFormatting.DARK_AQUA)
                 .append(Component.translatable(line.key(),line.args().toArray()).withStyle(ChatFormatting.GRAY));
         for(var p:l.players())if(p.distanceToSqr(worldPosition.getCenter())<=UplinkPolicy.LISTEN_RANGE*UplinkPolicy.LISTEN_RANGE)p.sendSystemMessage(text);

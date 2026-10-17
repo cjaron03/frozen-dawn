@@ -21,7 +21,7 @@ Source: [Notion ORSA Uplink](https://app.notion.com/p/3fa7cfaa89018172ac2fc9aa2c
 | Mode | Draw | Duration | Notes |
 | --- | --- | --- | --- |
 | Off | 0 | | |
-| Listen | 2 kW | continuous | One automated broadcast every 90 s while powered with a working dish: phase advisory, relay census, ambient carrier traffic. Shown in the console log and sent to players within 12 blocks. |
+| Listen | 2 kW | continuous | One automated broadcast every 90 s while powered with a working dish: phase advisory, relay census, ambient carrier traffic. The census counts every station the relay knows from the seed within 1024 blocks of the console, built or not (candidates worldgen already rejected excluded). "Answering" counts those whose terminal is unlocked. Shown in the console log and sent to players within 12 blocks. |
 | Transmit | 40 kW | 3 min | One reward on completion |
 | Boost | 60 kW | 90 s | Same reward in half the time; adds 1.6 signal instead of 1.0 |
 
