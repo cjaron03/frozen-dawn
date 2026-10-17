@@ -1483,12 +1483,11 @@
   "screen.frozendawn.plumb_line.deep": "Deep",
   "screen.frozendawn.plumb_line.pulse": "Pulse",
   "screen.frozendawn.plumb_line.setting": "Setting: %s · %s kW · %s blocks",
-  "screen.frozendawn.plumb_line.power": "Grid available: %s / %s kW",
   "screen.frozendawn.plumb_line.pulsing": "Pulsing: %s / 10 s",
   "screen.frozendawn.plumb_line.cooldown": "Recharging: %s s",
   "screen.frozendawn.plumb_line.ready": "Ready to pulse",
-  "screen.frozendawn.plumb_line.last": "Last pulse: %s ore, %s void, %s ORSA, %s metal",
-  "screen.frozendawn.plumb_line.view": "Returns show for 30 s to anyone within 16 blocks.",
+  "screen.frozendawn.plumb_line.last": "Last pulse: %s ore veins, %s caves, %s ORSA sites, %s metal",
+  "screen.frozendawn.plumb_line.view": "Shown for 30 s, through the ground, to anyone within 16 blocks when the pulse ended.",
   "screen.frozendawn.plumb_line.result.2": "Pulse aborted: power fell below the required draw. No scan.",
   "screen.frozendawn.plumb_line.result.3": "Not enough power for this setting.",
   "screen.frozendawn.plumb_line.result.4": "Still recharging.",
@@ -1498,5 +1497,7 @@
   "gpr.frozendawn.orsa.cargo_drop": "ORSA cargo drop",
   "subtitle.frozendawn.block.plumb_line.scan": "Ground radar listens",
   "subtitle.frozendawn.block.plumb_line.complete": "Ground radar finishes",
-  "subtitle.frozendawn.block.plumb_line.abort": "Ground radar loses power"
+  "subtitle.frozendawn.block.plumb_line.abort": "Ground radar loses power",
+  "screen.frozendawn.plumb_line.power.ok": "Power: ready for %s kW",
+  "screen.frozendawn.plumb_line.power.short": "Power: grid cannot supply %s kW"
 }

@@ -38,16 +38,41 @@ public final class PlumbLineOverlay {
     private static MultiBufferSource.BufferSource buffers;
     private PlumbLineOverlay() { }
 
+    private static boolean drawnSinceReceive = true;
+
     public static void receive(PlumbLineReturnsPayload payload) {
         long now = System.currentTimeMillis();
         for (var r : payload.returns()) SHOWN.add(new Shown(r, payload.dimension(), now));
         while (SHOWN.size() > MAX_SHOWN) SHOWN.removeFirst();
+        drawnSinceReceive = false;
+        FrozenDawn.LOGGER.info("[PlumbLine] Overlay received {} returns from {} in {}", payload.returns().size(),
+                payload.scanner().toShortString(), payload.dimension());
+    }
+
+    /** Development check: test returns around the player, so drawing can be verified without a scan. */
+    @SubscribeEvent public static void commands(net.neoforged.neoforge.client.event.RegisterClientCommandsEvent event) {
+        if (net.neoforged.fml.loading.FMLEnvironment.production) return;
+        event.getDispatcher().register(net.minecraft.commands.Commands.literal("fdpreview").then(net.minecraft.commands.Commands.literal("gpr").executes(c -> {
+            var mc = Minecraft.getInstance();
+            if (mc.player == null || mc.level == null) return 0;
+            var p = mc.player.blockPosition();
+            receive(new PlumbLineReturnsPayload(mc.level.dimension().location().toString(), p, java.util.List.of(
+                    new Return(Kind.ORE, "minecraft:coal_ore", p.getX() + 3, p.getY() - 6, p.getZ() - 2, p.getX() + 7, p.getY() - 3, p.getZ() + 2, false),
+                    new Return(Kind.ORE, "minecraft:iron_ore", p.getX() - 6, p.getY() - 9, p.getZ() + 3, p.getX() - 5, p.getY() - 8, p.getZ() + 4, true),
+                    new Return(Kind.VOID, "void", p.getX() - 8, p.getY() - 14, p.getZ() - 8, p.getX() + 2, p.getY() - 10, p.getZ() - 4, false),
+                    new Return(Kind.METAL, "minecraft:iron_block", p.getX() + 1, p.getY() - 2, p.getZ() + 6, p.getX() + 1, p.getY() - 2, p.getZ() + 6, false))));
+            return 1;
+        })));
     }
 
     @SubscribeEvent public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) { SHOWN.clear(); }
 
     @SubscribeEvent public static void render(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || SHOWN.isEmpty()) return;
+        if (!drawnSinceReceive) {
+            drawnSinceReceive = true;
+            FrozenDawn.LOGGER.info("[PlumbLine] Overlay drawing {} returns", SHOWN.size());
+        }
         var mc = Minecraft.getInstance();
         if (mc.level == null) return;
         long now = System.currentTimeMillis(), life = PlumbLinePolicy.OVERLAY_TICKS * 50L;
