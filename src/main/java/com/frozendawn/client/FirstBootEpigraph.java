@@ -26,10 +26,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * First Boot Epigraph (Notion, decided 2026-10-14; staging revised by the owner 2026-10-17): black screen and wind.
  * Each sentence fades in slowly with long pauses, the attribution last. After a hold the words dissolve, the near wind
  * cuts out and only a low howl remains in the dark, which carries under the ORSA logo as the intro fades it in, then
- * dies away. Two owner-chosen beats (2026-10-17): every sound drops out for about a second just before the attribution,
- * which returns with the wind; and faint, uneven breathing rises in the final black and carries under the logo,
- * so the player hears themselves waking before the intro's vitals readout. Once per client: a marker file in the
- * config directory records that it has played.
+ * dies away. Once per client: a marker file in the config directory records that it has played.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public final class FirstBootEpigraph {
@@ -40,15 +37,9 @@ public final class FirstBootEpigraph {
     private static final int TAIL = 150;
     private static final ResourceLocation WIND = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light");
     private static final ResourceLocation HOWL = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_strong");
-    private static final ResourceLocation BREATH = ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.eva_breathing");
-    /** The silent beat: everything drops out this many ticks before the attribution and returns with it. */
-    private static final int HUSH = 26;
-    /** Breathing starts as the words finish dissolving. */
-    private static final int BREATH_START = DISSOLVE + 25;
     private static int ticks, tail;
     private static boolean active, record;
-    private enum Kind { WIND, HOWL, BREATH }
-    private static Layer wind, howl, breath;
+    private static Layer wind, howl;
     private static Runnable then;
 
     private FirstBootEpigraph() { }
@@ -67,26 +58,17 @@ public final class FirstBootEpigraph {
     }
 
     /** During the epigraph only its own wind is heard. */
-    public static boolean suppresses(ResourceLocation sound) { return active && !WIND.equals(sound) && !HOWL.equals(sound) && !BREATH.equals(sound); }
+    public static boolean suppresses(ResourceLocation sound) { return active && !WIND.equals(sound) && !HOWL.equals(sound); }
 
     /** Near wind rises out of silence, softens as the words dissolve, and cuts out in the dark before the logo. */
     private static float windVolume(float t) {
         if (t >= BLACK) return 0;
-        return 0.9f * ease(t / 60f) * (1 - 0.35f * ease((t - DISSOLVE) / (float) DISSOLVE_TICKS)) * hush(t);
-    }
-    /** 1 normally; falls to nothing just before the attribution and comes back with it. */
-    private static float hush(float t) {
-        return Mth.clamp(1 - ease((t - (ATTRIBUTION - HUSH)) / 5f) + ease((t - ATTRIBUTION) / 12f), 0, 1);
-    }
-    /** Faint and uneven: a slow swell with an irregular wobble, never steady enough to feel mechanical. */
-    private static float breathVolume(float t) {
-        float wobble = 0.7f + 0.3f * Mth.sin(t * 0.21f) * Mth.sin(t * 0.047f + 1f);
-        return 0.45f * ease((t - BREATH_START) / 40f) * wobble;
+        return 0.9f * ease(t / 60f) * (1 - 0.35f * ease((t - DISSOLVE) / (float) DISSOLVE_TICKS));
     }
     /** The low howl builds under each sentence and peaks as the words dissolve; after the cut it fades under the logo. */
     private static float howlVolume(float t) {
         float build = 0.15f + 0.25f * ease((t - LINE_TWO) / 120f) + 0.35f * ease((t - ATTRIBUTION) / 120f) + 0.25f * ease((t - DISSOLVE) / 50f);
-        return Math.min(1f, build) * ease(t / 120f) * hush(t);
+        return Math.min(1f, build) * ease(t / 120f);
     }
     private static float ease(float x) { x = Mth.clamp(x, 0, 1); return x * x * (3 - 2 * x); }
 
@@ -116,17 +98,13 @@ public final class FirstBootEpigraph {
 
     @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
         var mc = Minecraft.getInstance();
-        if (!active) { if ((howl != null || breath != null) && ++tail >= TAIL) stopSounds(mc); return; }
+        if (!active) { if (howl != null && ++tail >= TAIL) stopSounds(mc); return; }
         if (mc.player == null) { finish(mc, false); return; }
         mc.options.keyUp.setDown(false); mc.options.keyDown.setDown(false); mc.options.keyLeft.setDown(false);
         mc.options.keyRight.setDown(false); mc.options.keyJump.setDown(false); mc.player.xxa = 0; mc.player.zza = 0;
         if (wind == null) {
-            wind = new Layer(ModSounds.WIND_LIGHT.get(), 1f, Kind.WIND); howl = new Layer(ModSounds.WIND_STRONG.get(), 0.55f, Kind.HOWL);
+            wind = new Layer(ModSounds.WIND_LIGHT.get(), 1f, true); howl = new Layer(ModSounds.WIND_STRONG.get(), 0.55f, false);
             mc.getSoundManager().play(wind); mc.getSoundManager().play(howl);
-        }
-        if (breath == null && ticks >= BREATH_START - 1) {
-            breath = new Layer(ModSounds.EVA_BREATHING.get(), 0.92f, Kind.BREATH);
-            mc.getSoundManager().play(breath);
         }
         if (++ticks >= END) finish(mc, true);
     }
@@ -134,8 +112,7 @@ public final class FirstBootEpigraph {
     private static void stopSounds(Minecraft mc) {
         if (wind != null) mc.getSoundManager().stop(wind);
         if (howl != null) mc.getSoundManager().stop(howl);
-        if (breath != null) mc.getSoundManager().stop(breath);
-        wind = howl = breath = null; tail = 0;
+        wind = howl = null; tail = 0;
     }
 
     /** Development clients skip the ORSA intro; {@code /fdpreview epigraph} replays both without recording. */
@@ -161,23 +138,19 @@ public final class FirstBootEpigraph {
         if (completed && next != null) next.run();
     }
 
-    /** One layer whose volume follows the epigraph's envelope; the howl and breathing then fade out under the logo. */
+    /** One wind layer whose volume follows the epigraph's envelope, then the fade-out tail under the logo. */
     private static final class Layer extends AbstractTickableSoundInstance {
-        private final Kind kind;
-        Layer(SoundEvent sound, float pitch, Kind kind) {
+        private final boolean near;
+        Layer(SoundEvent sound, float pitch, boolean near) {
             super(sound, SoundSource.MASTER, RandomSource.create());
-            this.kind = kind; this.pitch = pitch; this.volume = 0.001f; this.looping = true;
+            this.near = near; this.pitch = pitch; this.volume = 0.001f; this.looping = true;
             this.relative = true; this.attenuation = SoundInstance.Attenuation.NONE; this.x = this.y = this.z = 0;
         }
         @Override public boolean canStartSilent() { return true; }
         @Override public void tick() {
-            if (active) {
-                volume = Math.max(0.001f, switch (kind) { case WIND -> windVolume(ticks); case HOWL -> howlVolume(ticks); case BREATH -> breathVolume(ticks); });
-                return;
-            }
-            if (kind == Kind.WIND) { stop(); return; }
-            float fade = 1 - ease((tail - 40) / (float) (TAIL - 40));
-            volume = Math.max(0.001f, (kind == Kind.HOWL ? howlVolume(END) : breathVolume(END + tail)) * fade);
+            if (active) volume = Math.max(0.001f, near ? windVolume(ticks) : howlVolume(ticks));
+            else if (near) stop();
+            else volume = Math.max(0.001f, howlVolume(END) * (1 - ease((tail - 40) / (float) (TAIL - 40))));
         }
     }
 }

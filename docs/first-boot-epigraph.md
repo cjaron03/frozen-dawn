@@ -17,10 +17,6 @@ The timeline, at 20 ticks per second:
 7. The near wind cuts out, leaving about 3 s of black with only the howl. This combines the epigraph's last beat with the intro's own two-second lead-in.
 8. The ORSA logo fades in and the howl fades away underneath it.
 
-Two further beats, added at the owner's request on 2026-10-17:
-- **Silence:** every sound drops out about 1.3 s before the attribution, then the wind and howl return with it.
-- **Breathing:** as the words finish dissolving, faint and uneven breathing (`ambient.eva_breathing`, pitch 0.92) rises in the black. It carries under the ORSA logo with the howl and fades out with it, so the player hears themselves waking before the intro's vitals readout.
-
 Text lives in lang keys `epigraph.frozendawn.line1`, `line2` and `attribution`.
 
 It plays once per client. On completion it writes the marker file `config/frozendawn-first-boot-epigraph.seen`, and it never repeats in any world. If the player disconnects first, nothing is recorded, sound stops at once, and the epigraph plays again next time.
