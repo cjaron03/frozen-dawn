@@ -50,6 +50,11 @@ public final class ReactorSitePlacement {
                 if (why == null) { center = new BlockPos(sx, y, sz); break; }
                 if (reason == null) reason = why;
             }
+            // A site promised by an ORSA Uplink station map stands at its candidate even on poor ground.
+            if (center == null && com.frozendawn.uplink.UplinkSavedData.get(overworld.getServer()).promised(chunkX, chunkZ)) {
+                int y = overworld.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                if (y > overworld.getMinBuildHeight() + 12) center = new BlockPos(x, y, z);
+            }
             if (center == null) {
                 state.markEvaluated(chunkX, chunkZ);
                 FrozenDawn.LOGGER.info("Ruined ORSA reactor site candidate at ({}, {}) rejected: {}", x, z, reason);

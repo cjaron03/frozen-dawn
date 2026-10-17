@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "I I",
+    "IFI",
+    " B "
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "F": {
+      "item": "frozendawn:feed_horn"
+    },
+    "B": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "frozendawn:uplink_dish",
+    "count": 1
+  }
+}

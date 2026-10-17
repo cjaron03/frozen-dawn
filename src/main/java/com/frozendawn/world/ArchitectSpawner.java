@@ -52,6 +52,9 @@ public class ArchitectSpawner {
                     spawnChance * BloomGrowthManager.pressureMultiplier(
                     level, player.blockPosition()))
                     : spawnChance;
+            // A transmitting ORSA Uplink dish draws Maeve's pawns after a lag (Uplink-local, outside MACS).
+            if (!postMaeve) localChance = (float) Math.min(0.8, localChance
+                    * com.frozendawn.uplink.UplinkEvents.spawnMultiplier(level, player.blockPosition()));
             if (random.nextFloat() > localChance) continue;
 
             // Density cap: max 1 within 96 blocks

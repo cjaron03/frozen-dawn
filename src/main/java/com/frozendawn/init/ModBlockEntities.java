@@ -67,6 +67,12 @@ public class ModBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PixieBlockEntity>> PIXIE = BLOCK_ENTITIES.register("pixie", () -> BlockEntityType.Builder.of(com.frozendawn.block.PixieBlockEntity::new,ModBlocks.PIXIE.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkConsoleBlockEntity>> UPLINK_CONSOLE =
+            BLOCK_ENTITIES.register("uplink_console", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkConsoleBlockEntity::new,ModBlocks.UPLINK_CONSOLE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkDishBlockEntity>> UPLINK_DISH =
+            BLOCK_ENTITIES.register("uplink_dish", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkDishBlockEntity::new,ModBlocks.UPLINK_DISH.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerMonitorBlockEntity>> POWER_MONITOR =
             BLOCK_ENTITIES.register("power_monitor", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerMonitorBlockEntity::new,ModBlocks.POWER_MONITOR.get()).build(null));
 

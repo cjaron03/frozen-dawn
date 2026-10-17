@@ -258,6 +258,9 @@ public final class MonitoringStationStructureBuilder {
         loot.add(createOrsaDocument("Relay Diagnostics Printout", "station_relay_diagnostics"));
         loot.add(createEmployeeRelayNote());
         loot.add(createJournal(center));
+        // ORSA Uplink salvage: the station's relay hardware, behind the terminal lock.
+        loot.add(new ItemStack(ModItems.SIGNAL_PROCESSOR.get()));
+        loot.add(new ItemStack(ModItems.FEED_HORN.get()));
         return loot;
     }
 

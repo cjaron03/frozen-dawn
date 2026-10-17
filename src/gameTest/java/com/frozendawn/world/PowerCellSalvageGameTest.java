@@ -30,7 +30,10 @@ public final class PowerCellSalvageGameTest {
                 var first=new ArrayList<ItemStack>();var second=new ArrayList<ItemStack>();
                 CargoDropStructureBuilder.buildLoot(profile,RandomSource.create(seed),first,second,seed);
                 var all=new ArrayList<>(first);all.addAll(second);
-                if(profile==CargoDropStructureLayout.LootProfile.BUREAUCRATIC)
+                // Uplink resupply is requested, never rolled by worldgen, and carries power cells (plural) by spec.
+                if(profile==CargoDropStructureLayout.LootProfile.UPLINK)
+                    h.assertTrue(cells(all).size()==2&&all.stream().anyMatch(st->st.is(ModItems.EMERGENCY_O2_CARTRIDGE)),"Uplink resupply carries two cells and O2");
+                else if(profile==CargoDropStructureLayout.LootProfile.BUREAUCRATIC)
                     h.assertTrue(cells(all).isEmpty()&&all.stream().anyMatch(s->s.is(Items.PAPER)),"Paper-only cargo keeps its existing joke/profile");
                 else checkCell(h,all);
                 h.assertTrue(!first.isEmpty()&&!second.isEmpty(),"Both original cargo inventories remain populated");

@@ -48,6 +48,8 @@ public final class MaeveDirector {
     /** Called in the authoritative ERASED transition. */
     public static void erase(MinecraftServer server) { DirectorRuntime.erase(server); }
     public static void onServerStopped(MinecraftServer server) { DirectorRuntime.stopped(server); }
+    /** Latched once Maeve has woken in this world, including after a later erasure. Read-only; used for Uplink pacing. */
+    public static boolean hasActivated(MinecraftServer server) { return MaeveSavedData.get(server).activated(); }
 
     /** Immutable diagnostic snapshots; execution receives only bounded historical hints/directives. */
     public static Snapshot snapshot(MinecraftServer server, UUID player) {

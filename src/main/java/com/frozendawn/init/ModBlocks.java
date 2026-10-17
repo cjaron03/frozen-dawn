@@ -114,6 +114,13 @@ public class ModBlocks {
 
     public static final DeferredBlock<com.frozendawn.block.PixieBlock> PIXIE = BLOCKS.register("pixie", () -> new com.frozendawn.block.PixieBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
 
+    public static final DeferredBlock<com.frozendawn.block.UplinkConsoleBlock> UPLINK_CONSOLE = BLOCKS.register("uplink_console",
+            () -> new com.frozendawn.block.UplinkConsoleBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.UplinkConsoleBlock.ACTIVE) * 3)));
+
+    public static final DeferredBlock<com.frozendawn.block.UplinkDishBlock> UPLINK_DISH = BLOCKS.register("uplink_dish",
+            () -> new com.frozendawn.block.UplinkDishBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
+
     public static final DeferredBlock<com.frozendawn.block.PowerMonitorBlock> POWER_MONITOR = BLOCKS.register("power_monitor",
             () -> new com.frozendawn.block.PowerMonitorBlock(BlockBehaviour.Properties.of().strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
 
