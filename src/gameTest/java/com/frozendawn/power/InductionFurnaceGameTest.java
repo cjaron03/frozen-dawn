@@ -59,6 +59,9 @@ public final class InductionFurnaceGameTest {
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="induction_live",timeoutTicks=180)
     public static void inductionRealTicksTwiceSpeedOutputsAndExperience(GameTestHelper h){
         h.runAfterDelay(1,()->{
+            // Own the pressure geometry: links must not depend on the surrounding batch's terrain or scans.
+            for(int x=0;x<=16;x++)for(int y=0;y<=4;y++)for(int z=1;z<=7;z++)
+                h.setBlock(new BlockPos(x,y,z),x==0||x==16||y==0||y==4||z==1||z==7?Blocks.GLASS:Blocks.AIR);
             var l=h.getLevel();var core=place(h,2,2,4,ModBlocks.GEOTHERMAL_CORE.get());((GeothermalCoreBlockEntity)l.getBlockEntity(core)).setPowerShare(100);
             var p=place(h,6,2,4,ModBlocks.INDUCTION_FURNACE.get());var q=place(h,10,2,4,ModBlocks.INDUCTION_FURNACE.get());var s=place(h,14,2,4,ModBlocks.INDUCTION_FURNACE.get());
             furnace(l,p).setItem(0,new ItemStack(Items.RAW_IRON));furnace(l,q).setItem(0,new ItemStack(Items.WET_SPONGE));furnace(l,s).setItem(0,new ItemStack(Items.DIAMOND_ORE));link(h,core,p);link(h,p,q);link(h,q,s);
@@ -126,6 +129,6 @@ public final class InductionFurnaceGameTest {
     public static void inductionReplayFunctionsParse(GameTestHelper h){for(var name:List.of("load","tick","setup","controls","basic","backup","brownout"))h.assertTrue(h.getLevel().getServer().getFunctions().get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("induction_furnace_check",name)).isPresent(),"Native parser loads induction helper "+name);h.succeed();}
     private static InductionFurnaceBlockEntity furnace(ServerLevel l,BlockPos p){return (InductionFurnaceBlockEntity)l.getBlockEntity(p);}
     private static BlockPos place(GameTestHelper h,int x,int y,int z,net.minecraft.world.level.block.Block b){var p=new BlockPos(x,y,z);h.setBlock(p,b);return h.absolutePos(p);}
-    private static void link(GameTestHelper h,BlockPos a,BlockPos b){h.assertTrue(PowerNetworks.link(h.getLevel(),a,b)==PowerLinkRules.Result.OK,"Expected induction link");}
+    private static void link(GameTestHelper h,BlockPos a,BlockPos b){var result=PowerNetworks.link(h.getLevel(),a,b);h.assertTrue(result==PowerLinkRules.Result.OK,"Expected induction link "+a+" -> "+b+", got "+result);}
     private static void account(ServerLevel l){for(int i=0;i<128;i++)PowerNetworks.update(l);PowerNetworks.account(l);}
 }

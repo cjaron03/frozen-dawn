@@ -16,8 +16,8 @@ public final class PowerStorageScreen extends AbstractContainerScreen<PowerStora
         g.drawString(font,String.format(Locale.ROOT,"%.1f / %d kJ",stored/10.0,menu.cellSlots()*500),x+12,y+23,0xFFE0E6E8,false);
         g.fill(x+12,y+38,x+164,y+42,0xFF40515A);g.fill(x+12,y+38,x+12+(int)(152L*stored/capacity),y+42,0xFF64C9CC);
         for(var slot:menu.slots)g.fill(x+slot.x-1,y+slot.y-1,x+slot.x+17,y+slot.y+17,0xFF152128);
-        int charge=menu.data().get(1),draw=menu.data().get(2);
-        String flow=charge>0?String.format(Locale.ROOT,"Charging %.2f kW",charge/10.0):draw>0?String.format(Locale.ROOT,"Feeding %.2f kW",draw/10.0):"Idle";
+        int charge=menu.chargingWatts(),draw=menu.feedingWatts();
+        String flow=charge>0?String.format(Locale.ROOT,"Charging %.2f kW",charge/1000.0):draw>0?String.format(Locale.ROOT,"Feeding %.2f kW",draw/1000.0):"Idle";
         g.drawString(font,flow,x+8,y+77,0xFF9CD5A5,false);
     }
     @Override protected void renderLabels(GuiGraphics g,int mx,int my) { g.drawString(font,title,8,6,0xFFE0E6E8,false);g.drawString(font,playerInventoryTitle,8,89,0xFF9BAAB1,false); }

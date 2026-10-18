@@ -154,6 +154,13 @@ public final class AcheronForgeGameTest {
     public static void acheronAutoFallsBackAndHeatModeConservesPower(GameTestHelper h) {
         h.runAfterDelay(1, () -> {
             var l=h.getLevel();var p=h.absolutePos(new BlockPos(6,3,4)).atY(-16);var a=p.west(4);var b=p.east(4);
+            // The Y<0 fixture is above the GameTest enclosure. Own its pressure geometry
+            // instead of letting random terrain/chunk boundaries decide link admission.
+            var original=new java.util.HashMap<BlockPos,net.minecraft.world.level.block.state.BlockState>();
+            for(int x=-5;x<=5;x++)for(int y=-1;y<=2;y++)for(int z=-2;z<=2;z++) {
+                var q=p.offset(x,y,z);original.put(q,l.getBlockState(q));
+                l.setBlock(q,(Math.abs(x)==5||y==-1||y==2||Math.abs(z)==2?Blocks.GLASS:Blocks.AIR).defaultBlockState(),3);
+            }
             l.setBlock(p,ModBlocks.ACHERON_FORGE.get().defaultBlockState(),3);l.setBlock(a,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);l.setBlock(b,ModBlocks.GEOTHERMAL_CORE.get().defaultBlockState(),3);
             l.getBlockEntity(p).onLoad();l.getBlockEntity(a).onLoad();l.getBlockEntity(b).onLoad();
             var f=forge(l,p);input(f,ModItems.ACHERONITE_SHARD.get(),4);core(l,a).setPowerShare(100);core(l,b).setPowerShare(25);link(h,a,p);account(l);f.serverTick();
@@ -163,7 +170,7 @@ public final class AcheronForgeGameTest {
                 h.assertTrue(f.progress()==5&&f.status()==1,"Auto prefers full electric power without resetting thermal progress");f.setMode(AcheronForgeBlockEntity.Mode.HEAT);
                 h.runAfterDelay(1, () -> {
                     account(l);f.serverTick();h.assertTrue(f.progress()==7&&f.status()==2&&PowerNetworks.reading(l,p).demandKw()==0,"Heat mode retains work and declines available electricity");
-                    l.removeBlock(p,false);l.removeBlock(a,false);l.removeBlock(b,false);h.succeed();
+                    original.forEach((q,state)->l.setBlock(q,state,3));h.succeed();
                 });
             });
         });
@@ -192,6 +199,6 @@ public final class AcheronForgeGameTest {
     private static PowerStorageBlockEntity store(ServerLevel l,BlockPos p) { return (PowerStorageBlockEntity)l.getBlockEntity(p); }
     private static BlockPos place(GameTestHelper h,int x,int y,int z,Block block) { var p=new BlockPos(x,y,z);h.setBlock(p,block);return h.absolutePos(p); }
     private static BlockPos placeAtYZero(GameTestHelper h,int x,int z,Block block) { var p=h.absolutePos(new BlockPos(x,3,z)).atY(0);h.getLevel().setBlock(p,block.defaultBlockState(),3);h.getLevel().getBlockEntity(p).onLoad();return p; }
-    private static void link(GameTestHelper h,BlockPos a,BlockPos b) { h.assertTrue(PowerNetworks.link(h.getLevel(),a,b)==PowerLinkRules.Result.OK,"Expected forge power link"); }
+    private static void link(GameTestHelper h,BlockPos a,BlockPos b) { var result=PowerNetworks.link(h.getLevel(),a,b);h.assertTrue(result==PowerLinkRules.Result.OK,"Expected forge power link "+a+" -> "+b+": "+result); }
     private static void account(ServerLevel l) { for(int i=0;i<128;i++)PowerNetworks.update(l);PowerNetworks.account(l); }
 }

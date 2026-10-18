@@ -141,6 +141,21 @@ public class ModBlocks {
             () -> new com.frozendawn.block.OrsaEmergencyLightBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED)
                     .strength(3,6).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().noCollission().lightLevel(state -> state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT)?6:0)));
 
+    // Internal transient light only: no item, loot, collision, heat or sensory emission.
+    public static final DeferredBlock<com.frozendawn.block.HeldLanternLightBlock> HELD_LANTERN_LIGHT = BLOCKS.register("held_lantern_light",
+            () -> new com.frozendawn.block.HeldLanternLightBlock(BlockBehaviour.Properties.of().replaceable().noCollission().noOcclusion()
+                    .noLootTable().strength(-1).lightLevel(net.minecraft.world.level.block.LightBlock.LIGHT_EMISSION)));
+
+    public static final DeferredBlock<com.frozendawn.block.BatteryLanternBlock> BATTERY_LANTERN = BLOCKS.register("battery_lantern",
+            () -> new com.frozendawn.block.BatteryLanternBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(.3f).sound(SoundType.METAL).noOcclusion().noCollission().pushReaction(PushReaction.DESTROY)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.BatteryLanternBlock.LIT) ? 14 : 0)));
+
+    public static final DeferredBlock<com.frozendawn.block.WorkLampBlock> WORK_LAMP = BLOCKS.register("work_lamp",
+            () -> new com.frozendawn.block.WorkLampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().noCollission()
+                    .pushReaction(PushReaction.DESTROY).lightLevel(state -> state.getValue(com.frozendawn.block.WorkLampBlock.LIT) ? 12 : 0)));
+
     public static final DeferredBlock<com.frozendawn.block.PanelLightBlock> PANEL_LIGHT = BLOCKS.register("panel_light",
             () -> new com.frozendawn.block.PanelLightBlock(BlockBehaviour.Properties.of()
                     .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL)

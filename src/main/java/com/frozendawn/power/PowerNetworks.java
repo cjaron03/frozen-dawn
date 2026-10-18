@@ -318,8 +318,8 @@ public final class PowerNetworks {
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PlumbLineBlockEntity gpr)return gpr.demandWatts();
         if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.DeconShowerBlock)
             return com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(pos));
-        return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
-                ? com.frozendawn.block.PanelLightBlock.DEMAND_WATTS : 0;
+        return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof GridLight light
+                ? light.demandWatts(level.getBlockState(pos)) : 0;
     }
     /** One-second allocation, in integer watts. Each unique node contributes once, including in cycles. */
     public static void account(ServerLevel level) {
@@ -358,7 +358,7 @@ public final class PowerNetworks {
             for (var cell : cells) {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
                 if (watts > 0) loads.add(cell);
-                if(level.isLoaded(cell)&&level.getBlockState(cell).getBlock() instanceof com.frozendawn.block.PanelLightBlock) lamps.add(cell);
+                if(level.isLoaded(cell)&&level.getBlockState(cell).getBlock() instanceof GridLight) lamps.add(cell);
             }
             var stores = cells.stream().sorted().filter(p -> level.isLoaded(p))
                     .map(level::getBlockEntity).filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
@@ -423,7 +423,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
+                    level.getBlockState(load).getBlock() instanceof com.frozendawn.block.WorkLampBlock?10:level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }
@@ -432,7 +432,8 @@ public final class PowerNetworks {
         rt.machineGrants=Map.copyOf(machineGrants);
         rt.monitorReadings=Map.copyOf(monitorReadings);
         rt.priorityRemaining=Map.copyOf(priorityRemaining);
-        for (var lamp : affected) com.frozendawn.block.PanelLightBlock.setPowered(level, lamp, powered.contains(lamp));
+        for (var lamp : affected) if(level.isLoaded(lamp)&&level.getBlockState(lamp).getBlock() instanceof GridLight light)
+            light.setGridPowered(level,lamp,powered.contains(lamp));
     }
     public static boolean powered(ServerLevel level, BlockPos pos) {
         var rt = runtime(level);
