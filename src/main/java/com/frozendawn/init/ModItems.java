@@ -95,6 +95,47 @@ public class ModItems {
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
     public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
+    // Cold Flora: Rimewood wood family (no boats), Frostcap foods, and the Nether cutoff substitutes.
+    public static final DeferredItem<BlockItem> RIMEWOOD_LOG = ITEMS.registerSimpleBlockItem("rimewood_log", ModBlocks.RIMEWOOD_LOG);
+    public static final DeferredItem<BlockItem> RIMEWOOD_WOOD = ITEMS.registerSimpleBlockItem("rimewood_wood", ModBlocks.RIMEWOOD_WOOD);
+    public static final DeferredItem<BlockItem> STRIPPED_RIMEWOOD_LOG = ITEMS.registerSimpleBlockItem("stripped_rimewood_log", ModBlocks.STRIPPED_RIMEWOOD_LOG);
+    public static final DeferredItem<BlockItem> STRIPPED_RIMEWOOD_WOOD = ITEMS.registerSimpleBlockItem("stripped_rimewood_wood", ModBlocks.STRIPPED_RIMEWOOD_WOOD);
+    public static final DeferredItem<BlockItem> RIMEWOOD_PLANKS = ITEMS.registerSimpleBlockItem("rimewood_planks", ModBlocks.RIMEWOOD_PLANKS);
+    public static final DeferredItem<BlockItem> RIMEWOOD_STAIRS = ITEMS.registerSimpleBlockItem("rimewood_stairs", ModBlocks.RIMEWOOD_STAIRS);
+    public static final DeferredItem<BlockItem> RIMEWOOD_SLAB = ITEMS.registerSimpleBlockItem("rimewood_slab", ModBlocks.RIMEWOOD_SLAB);
+    public static final DeferredItem<BlockItem> RIMEWOOD_FENCE = ITEMS.registerSimpleBlockItem("rimewood_fence", ModBlocks.RIMEWOOD_FENCE);
+    public static final DeferredItem<BlockItem> RIMEWOOD_FENCE_GATE = ITEMS.registerSimpleBlockItem("rimewood_fence_gate", ModBlocks.RIMEWOOD_FENCE_GATE);
+    public static final DeferredItem<net.minecraft.world.item.DoubleHighBlockItem> RIMEWOOD_DOOR = ITEMS.register("rimewood_door",
+            () -> new net.minecraft.world.item.DoubleHighBlockItem(ModBlocks.RIMEWOOD_DOOR.get(), new Item.Properties()));
+    public static final DeferredItem<BlockItem> RIMEWOOD_TRAPDOOR = ITEMS.registerSimpleBlockItem("rimewood_trapdoor", ModBlocks.RIMEWOOD_TRAPDOOR);
+    public static final DeferredItem<BlockItem> RIMEWOOD_BUTTON = ITEMS.registerSimpleBlockItem("rimewood_button", ModBlocks.RIMEWOOD_BUTTON);
+    public static final DeferredItem<BlockItem> RIMEWOOD_PRESSURE_PLATE = ITEMS.registerSimpleBlockItem("rimewood_pressure_plate", ModBlocks.RIMEWOOD_PRESSURE_PLATE);
+    public static final DeferredItem<net.minecraft.world.item.SignItem> RIMEWOOD_SIGN = ITEMS.register("rimewood_sign",
+            () -> new net.minecraft.world.item.SignItem(new Item.Properties().stacksTo(16), ModBlocks.RIMEWOOD_SIGN.get(), ModBlocks.RIMEWOOD_WALL_SIGN.get()));
+    public static final DeferredItem<net.minecraft.world.item.HangingSignItem> RIMEWOOD_HANGING_SIGN = ITEMS.register("rimewood_hanging_sign",
+            () -> new net.minecraft.world.item.HangingSignItem(ModBlocks.RIMEWOOD_HANGING_SIGN.get(), ModBlocks.RIMEWOOD_WALL_HANGING_SIGN.get(), new Item.Properties().stacksTo(16)));
+    public static final DeferredItem<BlockItem> RIMEWOOD_LEAVES = ITEMS.registerSimpleBlockItem("rimewood_leaves", ModBlocks.RIMEWOOD_LEAVES);
+    public static final DeferredItem<BlockItem> RIMEWOOD_SAPLING = ITEMS.registerSimpleBlockItem("rimewood_sapling", ModBlocks.RIMEWOOD_SAPLING);
+    /** Stripping a Rimewood log or wood with an axe gives one. */
+    public static final DeferredItem<Item> RIMEWOOD_RESIN = ITEMS.registerSimpleItem("rimewood_resin");
+    public static final DeferredItem<com.frozendawn.flora.FrostcapItem> FROZEN_FROSTCAP = ITEMS.register("frozen_frostcap",
+            () -> new com.frozendawn.flora.FrostcapItem(ModBlocks.FROSTCAP.get(), new Item.Properties()
+                    .food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(2).saturationModifier(0.2f).build())));
+    public static final DeferredItem<com.frozendawn.flora.FrostcapItem.Thawed> THAWED_FROSTCAP = ITEMS.register("thawed_frostcap",
+            () -> new com.frozendawn.flora.FrostcapItem.Thawed(new Item.Properties()
+                    .food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(1).saturationModifier(0.1f).build())));
+    public static final DeferredItem<Item> FROSTCAP_MUSH = ITEMS.register("frostcap_mush",
+            () -> new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(0).saturationModifier(0f).alwaysEdible()
+                    .effect(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 300), 1f).build())));
+    public static final DeferredItem<Item> FROSTCAP_STEW = ITEMS.register("frostcap_stew",
+            () -> new Item(new Item.Properties().stacksTo(1).food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(6).saturationModifier(0.6f)
+                    .usingConvertsTo(net.minecraft.world.item.Items.BOWL).build())));
+    public static final DeferredItem<Item> DRIED_FROSTCAP = ITEMS.register("dried_frostcap",
+            () -> new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(3).saturationModifier(0.4f).build())));
+    /** Nether cutoff substitutes: stand in for blaze powder and magma cream in Frozen Dawn recipes. */
+    public static final DeferredItem<Item> SULFUR_IGNITER = ITEMS.registerSimpleItem("sulfur_igniter");
+    public static final DeferredItem<Item> THERMAL_BINDER = ITEMS.registerSimpleItem("thermal_binder");
+
     /** Printed from a Plumb Line's last pulse; its data and tooltip live in PLUMB_LINE_SURVEY and the client overlay. */
     public static final DeferredItem<Item> PLUMB_LINE_SURVEY = ITEMS.registerSimpleItem("plumb_line_survey", new Item.Properties().stacksTo(1));
     public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
@@ -524,6 +565,23 @@ public class ModItems {
                         output.accept(FROZEN_COBBLESTONE.get());
                         output.accept(FROZEN_STONE_BRICKS.get());
                         output.accept(FROZEN_PLANKS.get());
+                        output.accept(RIMEWOOD_LOG.get());
+                        output.accept(RIMEWOOD_WOOD.get());
+                        output.accept(STRIPPED_RIMEWOOD_LOG.get());
+                        output.accept(STRIPPED_RIMEWOOD_WOOD.get());
+                        output.accept(RIMEWOOD_PLANKS.get());
+                        output.accept(RIMEWOOD_STAIRS.get());
+                        output.accept(RIMEWOOD_SLAB.get());
+                        output.accept(RIMEWOOD_FENCE.get());
+                        output.accept(RIMEWOOD_FENCE_GATE.get());
+                        output.accept(RIMEWOOD_DOOR.get());
+                        output.accept(RIMEWOOD_TRAPDOOR.get());
+                        output.accept(RIMEWOOD_BUTTON.get());
+                        output.accept(RIMEWOOD_PRESSURE_PLATE.get());
+                        output.accept(RIMEWOOD_SIGN.get());
+                        output.accept(RIMEWOOD_HANGING_SIGN.get());
+                        output.accept(RIMEWOOD_LEAVES.get());
+                        output.accept(RIMEWOOD_SAPLING.get());
                         output.accept(DEAD_LOG.get());
                         output.accept(FROZEN_LOG.get());
                         output.accept(DEAD_LEAVES.get());
@@ -615,6 +673,9 @@ public class ModItems {
                         output.accept(ICE_SHARD.get());
                         output.accept(IMPURE_SULFUR.get());
                         output.accept(SULFUR.get());
+                        output.accept(SULFUR_IGNITER.get());
+                        output.accept(RIMEWOOD_RESIN.get());
+                        output.accept(THERMAL_BINDER.get());
                         output.accept(SOLID_PROPELLANT.get());
                         output.accept(LIQUID_OXIDIZER.get());
                         output.accept(ROCKET_FUEL_CELL.get());
@@ -684,6 +745,11 @@ public class ModItems {
                         // Mob Drops
                         output.accept(FROZEN_MEAT.get());
                         output.accept(HOT_WINGS.get());
+                        output.accept(FROZEN_FROSTCAP.get());
+                        output.accept(THAWED_FROSTCAP.get());
+                        output.accept(FROSTCAP_MUSH.get());
+                        output.accept(FROSTCAP_STEW.get());
+                        output.accept(DRIED_FROSTCAP.get());
                         output.accept(FROSTBITTEN_CORE.get());
                         output.accept(FROZEN_BREATH.get());
                         output.accept(REMNANT_EMBER.get());

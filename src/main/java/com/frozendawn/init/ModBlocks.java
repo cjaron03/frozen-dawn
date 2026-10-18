@@ -793,4 +793,54 @@ public class ModBlocks {
                             .noOcclusion().noLootTable(),
                     ThaevenRecordId.THE_UNTHREADING,
                     ThaevenCarrierBlock.Form.RESIDUE));
+
+    // Cold Flora (Notion "Cold Flora: Frostcap and Rimewood"): Rimewood grows only at -20C or colder; Frostcap glows faintly.
+    private static BlockBehaviour.Properties rimewood(net.minecraft.world.level.block.Block like, MapColor color) {
+        return BlockBehaviour.Properties.ofFullCopy(like).mapColor(color);
+    }
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_RIMEWOOD_LOG = BLOCKS.register("stripped_rimewood_log",
+            () -> new RotatedPillarBlock(rimewood(net.minecraft.world.level.block.Blocks.STRIPPED_SPRUCE_LOG, MapColor.COLOR_LIGHT_GRAY)));
+    public static final DeferredBlock<RotatedPillarBlock> STRIPPED_RIMEWOOD_WOOD = BLOCKS.register("stripped_rimewood_wood",
+            () -> new RotatedPillarBlock(rimewood(net.minecraft.world.level.block.Blocks.STRIPPED_SPRUCE_WOOD, MapColor.COLOR_LIGHT_GRAY)));
+    public static final DeferredBlock<com.frozendawn.flora.RimewoodLogBlock> RIMEWOOD_LOG = BLOCKS.register("rimewood_log",
+            () -> new com.frozendawn.flora.RimewoodLogBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_LOG, MapColor.COLOR_GRAY), STRIPPED_RIMEWOOD_LOG));
+    public static final DeferredBlock<com.frozendawn.flora.RimewoodLogBlock> RIMEWOOD_WOOD = BLOCKS.register("rimewood_wood",
+            () -> new com.frozendawn.flora.RimewoodLogBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_WOOD, MapColor.COLOR_GRAY), STRIPPED_RIMEWOOD_WOOD));
+    public static final DeferredBlock<Block> RIMEWOOD_PLANKS = BLOCKS.register("rimewood_planks",
+            () -> new Block(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.StairBlock> RIMEWOOD_STAIRS = BLOCKS.register("rimewood_stairs",
+            () -> new net.minecraft.world.level.block.StairBlock(RIMEWOOD_PLANKS.get().defaultBlockState(), rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_STAIRS, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.SlabBlock> RIMEWOOD_SLAB = BLOCKS.register("rimewood_slab",
+            () -> new net.minecraft.world.level.block.SlabBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_SLAB, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.FenceBlock> RIMEWOOD_FENCE = BLOCKS.register("rimewood_fence",
+            () -> new net.minecraft.world.level.block.FenceBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_FENCE, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.FenceGateBlock> RIMEWOOD_FENCE_GATE = BLOCKS.register("rimewood_fence_gate",
+            () -> new net.minecraft.world.level.block.FenceGateBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_FENCE_GATE, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.DoorBlock> RIMEWOOD_DOOR = BLOCKS.register("rimewood_door",
+            () -> new net.minecraft.world.level.block.DoorBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD_SET, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_DOOR, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.TrapDoorBlock> RIMEWOOD_TRAPDOOR = BLOCKS.register("rimewood_trapdoor",
+            () -> new net.minecraft.world.level.block.TrapDoorBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD_SET, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_TRAPDOOR, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.ButtonBlock> RIMEWOOD_BUTTON = BLOCKS.register("rimewood_button",
+            () -> new net.minecraft.world.level.block.ButtonBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD_SET, 30, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_BUTTON, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.PressurePlateBlock> RIMEWOOD_PRESSURE_PLATE = BLOCKS.register("rimewood_pressure_plate",
+            () -> new net.minecraft.world.level.block.PressurePlateBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD_SET, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_PRESSURE_PLATE, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.StandingSignBlock> RIMEWOOD_SIGN = BLOCKS.register("rimewood_sign",
+            () -> new net.minecraft.world.level.block.StandingSignBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_SIGN, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.WallSignBlock> RIMEWOOD_WALL_SIGN = BLOCKS.register("rimewood_wall_sign",
+            () -> new net.minecraft.world.level.block.WallSignBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_WALL_SIGN, MapColor.COLOR_LIGHT_BLUE).lootFrom(RIMEWOOD_SIGN)));
+    public static final DeferredBlock<net.minecraft.world.level.block.CeilingHangingSignBlock> RIMEWOOD_HANGING_SIGN = BLOCKS.register("rimewood_hanging_sign",
+            () -> new net.minecraft.world.level.block.CeilingHangingSignBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_HANGING_SIGN, MapColor.COLOR_LIGHT_BLUE)));
+    public static final DeferredBlock<net.minecraft.world.level.block.WallHangingSignBlock> RIMEWOOD_WALL_HANGING_SIGN = BLOCKS.register("rimewood_wall_hanging_sign",
+            () -> new net.minecraft.world.level.block.WallHangingSignBlock(com.frozendawn.flora.ColdFlora.RIMEWOOD, rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_WALL_HANGING_SIGN, MapColor.COLOR_LIGHT_BLUE).lootFrom(RIMEWOOD_HANGING_SIGN)));
+    public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> RIMEWOOD_LEAVES = BLOCKS.register("rimewood_leaves",
+            () -> new net.minecraft.world.level.block.LeavesBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_LEAVES, MapColor.COLOR_CYAN)));
+    public static final DeferredBlock<com.frozendawn.flora.RimewoodSaplingBlock> RIMEWOOD_SAPLING = BLOCKS.register("rimewood_sapling",
+            () -> new com.frozendawn.flora.RimewoodSaplingBlock(rimewood(net.minecraft.world.level.block.Blocks.SPRUCE_SAPLING, MapColor.COLOR_CYAN)));
+    public static final DeferredBlock<net.minecraft.world.level.block.FlowerPotBlock> POTTED_RIMEWOOD_SAPLING = BLOCKS.register("potted_rimewood_sapling",
+            () -> new net.minecraft.world.level.block.FlowerPotBlock(() -> (net.minecraft.world.level.block.FlowerPotBlock) net.minecraft.world.level.block.Blocks.FLOWER_POT,
+                    RIMEWOOD_SAPLING, BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.POTTED_SPRUCE_SAPLING)));
+    /** Frostcap: foxfire light 3, no heat, no collision; the crop is dropped by its loot table. */
+    public static final DeferredBlock<com.frozendawn.flora.FrostcapBlock> FROSTCAP = BLOCKS.register("frostcap",
+            () -> new com.frozendawn.flora.FrostcapBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).noCollission().instabreak()
+                    .sound(SoundType.FUNGUS).lightLevel(s -> 3).pushReaction(PushReaction.DESTROY)));
 }

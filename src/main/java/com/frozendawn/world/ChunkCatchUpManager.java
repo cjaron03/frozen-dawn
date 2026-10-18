@@ -1440,6 +1440,7 @@ public final class ChunkCatchUpManager {
     }
 
     private static boolean isVegetationCandidate(BlockState state, int phase) {
+        if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) return false; // Rimewood and Frostcap are cold-hardy
         if (phase < 2) {
             return false;
         }
@@ -1469,6 +1470,7 @@ public final class ChunkCatchUpManager {
     }
 
     private static boolean isTreeRemnant(BlockState state) {
+        if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) return false; // Rimewood and Frostcap are cold-hardy
         return state.is(BlockTags.LEAVES)
                 || state.is(ModBlocks.DEAD_LEAVES.get())
                 || state.is(BlockTags.LOGS)
@@ -1477,6 +1479,7 @@ public final class ChunkCatchUpManager {
     }
 
     private static boolean isTreeClearCandidate(BlockState state, int phase) {
+        if (state.is(com.frozendawn.flora.ColdFlora.COLD_FLORA)) return false; // Rimewood and Frostcap are cold-hardy
         if (phase < 3) {
             return false;
         }

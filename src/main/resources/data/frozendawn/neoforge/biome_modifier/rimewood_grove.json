@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#frozendawn:has_rimewood_grove",
+  "features": "frozendawn:rimewood_grove",
+  "step": "vegetal_decoration"
+}
