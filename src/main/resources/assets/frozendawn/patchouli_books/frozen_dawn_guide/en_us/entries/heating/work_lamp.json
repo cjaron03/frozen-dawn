@@ -1,0 +1,17 @@
+{
+  "name": "ORSA Work Lamp",
+  "icon": "frozendawn:work_lamp",
+  "category": "frozendawn:heating",
+  "sortnum": 23,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A compact, silent work light for walls and ceilings. Emits $(bold)light 12$() while drawing $(bold)50 W$(). Works without oxygen and adds no room heat.$(br2)Link it to your grid or an isolated Cell Dock with the Conduit Binder. Like other ordinary lights, it is shed before life support during a brownout."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:work_lamp",
+      "text": "Empty-hand right-click switches it on or off. Switched-off lamps draw nothing. Binder use selects or clears links instead of toggling.$(br2)Requires a solid mounting face. Removing the support drops the lamp; it does not seal a hole in a room."
+    }
+  ]
+}

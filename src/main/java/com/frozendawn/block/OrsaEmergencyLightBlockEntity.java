@@ -20,8 +20,8 @@ public final class OrsaEmergencyLightBlockEntity extends BlockEntity {
         if(!(level instanceof ServerLevel server)||lastTick==server.getGameTime())return;
         lastTick=server.getGameTime();
         var reading=PowerNetworks.monitorReading(server,worldPosition);
-        boolean shedLighting=reading.shed().stream().anyMatch(load->load.kind()==1
-                &&server.isLoaded(load.pos())&&server.getBlockState(load.pos()).getBlock() instanceof PanelLightBlock);
+        boolean shedLighting=reading.shed().stream().anyMatch(load->server.isLoaded(load.pos())
+                &&server.getBlockState(load.pos()).getBlock() instanceof com.frozendawn.power.GridLight);
         boolean external=reading.connected()&&(reading.supplyWatts()>0||reading.storedJoules()>0)&&!shedLighting;
         int before=backupTicks;
         if(external)backupTicks=BACKUP_TICKS;

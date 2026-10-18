@@ -1567,5 +1567,18 @@
   "screen.frozendawn.plumb_line.print.cost": "1 paper + 1 coal",
   "screen.frozendawn.plumb_line.print.1": "Sheet printed.",
   "screen.frozendawn.plumb_line.print.2": "Needs paper and coal.",
-  "screen.frozendawn.plumb_line.print.3": "No pulse to print."
+  "screen.frozendawn.plumb_line.print.3": "No pulse to print.",
+  "block.frozendawn.work_lamp": "ORSA Work Lamp",
+  "message.frozendawn.work_lamp.on": "Work Lamp ON — needs 50 W",
+  "message.frozendawn.work_lamp.off": "Work Lamp OFF",
+  "tooltip.frozendawn.work_lamp.power": "50 W while on • Light 12 • Works without oxygen",
+  "tooltip.frozendawn.work_lamp.controls": "Wall or ceiling mount. Empty hand: on/off. Binder: link power.",
+  "block.frozendawn.battery_lantern": "ORSA Battery Lantern",
+  "tooltip.frozendawn.battery_lantern.empty": "No cell • %s",
+  "tooltip.frozendawn.battery_lantern.charge": "%s / 500 kJ • %s",
+  "tooltip.frozendawn.battery_lantern.on": "On",
+  "tooltip.frozendawn.battery_lantern.off": "Off",
+  "tooltip.frozendawn.battery_lantern.controls": "Shift-use in air: toggle",
+  "tooltip.frozendawn.battery_lantern.portable": "Light 14 • 50 W • Offhand or placed",
+  "message.frozendawn.battery_lantern.status": "%s • Cell: %s / 500000 J"
 }

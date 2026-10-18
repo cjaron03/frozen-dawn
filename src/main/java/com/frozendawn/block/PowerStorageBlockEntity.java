@@ -50,9 +50,14 @@ public final class PowerStorageBlockEntity extends BlockEntity implements Contai
         machineDrawTick=level.getGameTime();machineFeeding+=joules*20;
     }
     public void publish(int charged, int drawn) { charging = charged; feeding = drawn; }
+    private int feedingWatts() {
+        return feeding+(level!=null&&level.getGameTime()>=heaterDrawTick&&level.getGameTime()-heaterDrawTick<20?heaterFeeding:0)
+                +(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0);
+    }
     public ContainerData data() { return new ContainerData() {
-        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> (feeding+(level!=null&&level.getGameTime()>=heaterDrawTick&&level.getGameTime()-heaterDrawTick<20?heaterFeeding:0)+(level!=null&&level.getGameTime()-machineDrawTick<=1&&level.getGameTime()>=machineDrawTick?machineFeeding:0))/100; default -> 0; }; }
-        public void set(int i, int v) {} public int getCount() { return 3; }
+        // Retain coarse words for the full rack's 2 MW range; remainder words preserve sub-100 W loads.
+        public int get(int i) { return switch(i) { case 0 -> storedJoules()/100; case 1 -> charging/100; case 2 -> feedingWatts()/100; case 3 -> charging%100; case 4 -> feedingWatts()%100; default -> 0; }; }
+        public void set(int i, int v) {} public int getCount() { return PowerStorageMenu.DATA_SIZE; }
     }; }
     @Override public Component getDisplayName() { return Component.translatable(isBank() ? "block.frozendawn.battery_bank" : "block.frozendawn.cell_dock"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new PowerStorageMenu(id, inv, this, data(), worldPosition); }
