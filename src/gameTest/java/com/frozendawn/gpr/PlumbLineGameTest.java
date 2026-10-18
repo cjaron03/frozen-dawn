@@ -37,8 +37,9 @@ public final class PlumbLineGameTest {
         h.setBlock(new BlockPos(10,3,15),Blocks.IRON_BLOCK);
         return h.absolutePos(new BlockPos(10,13,10));
     }
-    private static List<Return> scan(ServerLevel l,BlockPos at,Setting s,java.util.function.Predicate<Return> tri){
-        var scan=new PlumbLineScan(l,at,s);while(!scan.finished())scan.advance(65_536);return scan.results(tri);
+    private static List<Return> scan(ServerLevel l,BlockPos at,Setting s,java.util.function.Predicate<Return> tri){return scan(l,at,s,PlumbLineOres.Target.ALL,tri);}
+    private static List<Return> scan(ServerLevel l,BlockPos at,Setting s,PlumbLineOres.Target target,java.util.function.Predicate<Return> tri){
+        var scan=new PlumbLineScan(l,at,s);while(!scan.finished())scan.advance(65_536);return scan.results(target,tri);
     }
     private static boolean contains(Return r,BlockPos p){return p.getX()>=r.minX()&&p.getX()<=r.maxX()&&p.getY()>=r.minY()&&p.getY()<=r.maxY()&&p.getZ()>=r.minZ()&&p.getZ()<=r.maxZ();}
 
@@ -69,6 +70,21 @@ public final class PlumbLineGameTest {
         h.succeed();
     });}
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="plumb_line",timeoutTicks=100)
+    public static void plumbLineFiltersOreByTarget(GameTestHelper h){h.runAfterDelay(1,()->{
+        var l=h.getLevel();var scanner=geology(h);
+        for(int x=14;x<=16;x++)h.setBlock(new BlockPos(x,7,4),Blocks.IRON_ORE);
+        BlockPos iron=h.absolutePos(new BlockPos(15,7,4)),coal=h.absolutePos(new BlockPos(6,4,10));
+        var all=scan(l,scanner,Setting.SURVEY,v->false);
+        // Test areas are roofed with barriers, so the surface skip can only be checked in a real world.
+        h.assertTrue(all.stream().anyMatch(r->r.kind()==Kind.ORE&&contains(r,coal))&&all.stream().anyMatch(r->r.kind()==Kind.ORE&&contains(r,iron)),"Buried coal and iron both return on All");
+        var metals=scan(l,scanner,Setting.SURVEY,PlumbLineOres.Target.METALS,v->false);
+        h.assertTrue(metals.stream().anyMatch(r->r.kind()==Kind.ORE&&contains(r,iron)),"Metals target keeps iron");
+        h.assertTrue(metals.stream().noneMatch(r->r.kind()==Kind.ORE&&r.label().equals("minecraft:coal_ore")),"Metals target drops coal");
+        h.assertTrue(metals.stream().noneMatch(r->r.kind()==Kind.VOID),"Caves are shown only on All");
+        h.succeed();
+    });}
+
     @GameTest(template=GameTestTemplates.EMPTY,batch="plumb_line",timeoutTicks=100)
     public static void plumbLineReturnsSurviveTheWire(GameTestHelper h){
         var list=List.of(new Return(Kind.ORE,"frozendawn:frozen_coal_ore",-5,-60,3,1,-55,9,false),new Return(Kind.STRUCTURE,"orsa.reactor_site",100,60,-40,144,72,4,true));
@@ -79,7 +95,7 @@ public final class PlumbLineGameTest {
     }
 
     @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="plumb_line_power",timeoutTicks=400)
-    public static void plumbLinePulseDrawsPowerCompletesAndRecharges(GameTestHelper h){h.runAfterDelay(1,()->{
+    public static void plumbLinePulseDrawsPowerCompletesRechargesAndPrints(GameTestHelper h){h.runAfterDelay(1,()->{
         var l=h.getLevel();h.setBlock(new BlockPos(2,3,2),ModBlocks.BATTERY_BANK.get());h.setBlock(new BlockPos(6,3,2),ModBlocks.PLUMB_LINE.get());
         BlockPos bank=h.absolutePos(new BlockPos(2,3,2)),gpr=h.absolutePos(new BlockPos(6,3,2));
         var scanner=(PlumbLineBlockEntity)l.getBlockEntity(gpr);var store=(PowerStorageBlockEntity)l.getBlockEntity(bank);
@@ -97,6 +113,16 @@ public final class PlumbLineGameTest {
                 h.assertTrue(!scanner.pulsing()&&scanner.result()==PlumbLineBlockEntity.RESULT_DONE,"Waiting for the 10 s pulse: elapsed="+scanner.elapsedTicks()+" result="+scanner.result());
                 h.assertTrue(scanner.cooldownTicks()>PlumbLinePolicy.COOLDOWN_TICKS-40&&scanner.demandWatts()==0,"60 s recharge, no draw at rest");
                 scanner.press(player,2);h.assertTrue(scanner.result()==PlumbLineBlockEntity.RESULT_COOLING&&!scanner.pulsing(),"Second pulse refused while recharging");
+                scanner.press(player,4);h.assertTrue(scanner.printNote()==PlumbLineBlockEntity.PRINT_NO_MATERIALS,"A Survey Sheet costs paper and ink");
+                player.getInventory().clearContent();
+                player.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.PAPER));
+                player.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHARCOAL));
+                scanner.press(player,4);
+                var sheet=player.getInventory().items.stream().filter(st->st.is(ModItems.PLUMB_LINE_SURVEY.get())).findFirst().orElse(null);
+                h.assertTrue(scanner.printNote()==PlumbLineBlockEntity.PRINT_DONE&&sheet!=null,"Printed with paper and charcoal");
+                var survey=sheet.get(ModDataComponents.PLUMB_LINE_SURVEY.get());
+                h.assertTrue(survey!=null&&survey.radius()==Setting.DEEP.radius&&survey.scanner().equals(gpr),"The sheet carries the Deep pulse: "+survey);
+                h.assertTrue(player.getInventory().countItem(net.minecraft.world.item.Items.PAPER)==0&&player.getInventory().countItem(net.minecraft.world.item.Items.CHARCOAL)==0,"One paper and one charcoal spent");
             });
         });
     });}

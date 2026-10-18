@@ -33,6 +33,12 @@
       "width": 16,
       "height": 16,
       "sha256": "f61dadda6c630def829f78f16f6da59d6a71e0f7b181d2db37aa9c135cc14e2f"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/item/plumb_line_survey.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "12f7722f81abdff8340e9a87b9ba87b80d6689718d98d1e17c3df8bfa8315af8"
     }
   ]
 }

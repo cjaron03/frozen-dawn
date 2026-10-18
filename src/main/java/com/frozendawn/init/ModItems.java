@@ -95,6 +95,8 @@ public class ModItems {
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
     public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
+    /** Printed from a Plumb Line's last pulse; its data and tooltip live in PLUMB_LINE_SURVEY and the client overlay. */
+    public static final DeferredItem<Item> PLUMB_LINE_SURVEY = ITEMS.registerSimpleItem("plumb_line_survey", new Item.Properties().stacksTo(1));
     public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
     public static final DeferredItem<BlockItem> UPLINK_DISH = ITEMS.registerSimpleBlockItem("uplink_dish", ModBlocks.UPLINK_DISH);
     /** ORSA Uplink salvage parts: found at monitoring stations and ORSA sites, never crafted. */

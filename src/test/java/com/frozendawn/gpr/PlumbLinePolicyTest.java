@@ -38,14 +38,49 @@ class PlumbLinePolicyTest {
         assertTrue(PlumbLinePolicy.pad(20, 0, Setting.DEEP) > PlumbLinePolicy.pad(20, 0, Setting.SURVEY));
     }
 
-    @Test void raysAreUnitAndCoverBothHemispheres() {
-        int up = 0, down = 0, n = 2000;
+    @Test void raysAreUnitAndPointIntoTheGround() {
+        int down = 0, n = 2000;
         for (int i = 0; i < n; i++) {
             var d = PlumbLinePolicy.direction(i, n);
             assertEquals(1, Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]), 1e-9);
-            if (d[1] > 0) up++; else down++;
+            assertTrue(d[1] <= PlumbLinePolicy.CONE_TOP, "No ray climbs above the cone");
+            if (d[1] < 0) down++;
         }
-        assertEquals(n / 2, up, 2); assertEquals(n / 2, down, 2);
+        assertEquals(n / 1.2, down, 3, "Down to straight below, spread evenly");
+    }
+
+    @Test void compassPointsNorthAtMinusZ() {
+        assertEquals(0, PlumbLinePolicy.compass(0, -10));
+        assertEquals(1, PlumbLinePolicy.compass(7, -7));
+        assertEquals(2, PlumbLinePolicy.compass(10, 0));
+        assertEquals(4, PlumbLinePolicy.compass(0, 10));
+        assertEquals(6, PlumbLinePolicy.compass(-10, 0));
+        assertEquals(7, PlumbLinePolicy.compass(-7, -7));
+    }
+
+    @Test void oresShareTypesAcrossVariantsAndFallBackForUnknown() {
+        assertEquals("iron", PlumbLineOres.of("minecraft:deepslate_iron_ore").key());
+        assertEquals("coal", PlumbLineOres.of("frozendawn:frozen_coal_ore").key());
+        assertEquals(PlumbLineOres.Group.METALS, PlumbLineOres.of("frozendawn:deepslate_galena_ore").group());
+        assertEquals(PlumbLineOres.Group.ENERGY, PlumbLineOres.of("frozendawn:deepslate_uranium_ore").group());
+        assertEquals(3, PlumbLineOres.of("minecraft:ancient_debris").tier());
+        var unknown = PlumbLineOres.of("othermod:tin_ore");
+        assertFalse(unknown.known()); assertEquals("tin", unknown.key());
+        assertTrue(PlumbLineOres.Target.ALL.matches(PlumbLineOres.Group.ENERGY));
+        assertFalse(PlumbLineOres.Target.METALS.matches(PlumbLineOres.Group.ENERGY));
+        assertEquals(PlumbLineOres.Target.ALL, PlumbLineOres.Target.MINERALS.next());
+    }
+
+    @Test void surveySheetFadesAfterADayAndDrawsOnlyInRange() {
+        var sheet = new PlumbLineSurvey("minecraft:overworld", new BlockPos(100, 64, 100), 48, 1_000,
+                java.util.List.of(new Return(Kind.ORE, "frozendawn:deepslate_galena_ore", 90, 20, 95, 93, 23, 98, false)));
+        assertFalse(sheet.faded(1_000 + PlumbLineSurvey.INK_TICKS - 1));
+        assertTrue(sheet.faded(1_000 + PlumbLineSurvey.INK_TICKS), "Ink fades one day after printing");
+        assertTrue(sheet.inRange("minecraft:overworld", 100 + 48 + 15, 100));
+        assertFalse(sheet.inRange("minecraft:overworld", 100 + 48 + 17, 100), "Radius plus a 16-block margin");
+        assertFalse(sheet.inRange("minecraft:the_nether", 100, 100));
+        var json = PlumbLineSurvey.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, sheet).getOrThrow();
+        assertEquals(sheet, PlumbLineSurvey.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow(), "Sheet survives saving");
     }
 
     @Test void triangulationNeedsABaseline() {

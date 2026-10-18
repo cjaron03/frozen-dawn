@@ -21,6 +21,12 @@ public final class PlumbLinePolicy {
     /** Returns padded 2 blocks near the scanner, growing with distance and with how much rock the ray crossed. */
     public static final double BASE_PAD = 2, DISTANCE_PAD = 1.0 / 24, ROCK_PAD = 1.0 / 32, DEEP_PAD = 1;
     public static final int MIN_VOID_CELLS = 24, MAX_RETURNS = 96;
+    /** At most 24 ore returns (by value, then distance), 6 caves and 8 metal; veins under 3 blocks are dropped unless rare. */
+    public static final int MAX_ORE_RETURNS = 24, MAX_VOID_RETURNS = 6, MAX_METAL_RETURNS = 8, MIN_VEIN_CELLS = 3;
+    /** Ore within 3 blocks of the surface, or open to the sky, is already visible and is not reported. */
+    public static final int SURFACE_SKIN = 3;
+    /** Rays point into the ground: from just above level (sin of about 11.5 degrees) straight down. */
+    public static final double CONE_TOP = 0.2;
     /** Frozen ground (below 0C in the ground temperature model) lets the signal reach 25% further. */
     public static final double FROZEN_BONUS = 1.25;
 
@@ -46,11 +52,17 @@ public final class PlumbLinePolicy {
         return BASE_PAD + distance * DISTANCE_PAD + rock * ROCK_PAD + (setting == Setting.DEEP ? DEEP_PAD : 0);
     }
 
-    /** Evenly spread unit directions (Fibonacci sphere); {@code i} in [0, n). */
+    /** Evenly spread unit directions over the downward cone (a Fibonacci spiral on the cap); {@code i} in [0, n). */
     public static double[] direction(int i, int n) {
         double golden = Math.PI * (3 - Math.sqrt(5));
-        double y = 1 - (i + 0.5) * 2.0 / n, r = Math.sqrt(Math.max(0, 1 - y * y)), theta = golden * i;
+        double y = CONE_TOP - (i + 0.5) * (CONE_TOP + 1) / n, r = Math.sqrt(Math.max(0, 1 - y * y)), theta = golden * i;
         return new double[] {Math.cos(theta) * r, y, Math.sin(theta) * r};
+    }
+
+    /** Eight-point compass index (0 north, clockwise) for a horizontal offset; north is -Z. */
+    public static int compass(double dx, double dz) {
+        double degrees = Math.toDegrees(Math.atan2(dx, -dz));
+        return Math.floorMod((int) Math.round(degrees / 45), 8);
     }
 
     /** Two scanner positions far enough apart to triangulate. */

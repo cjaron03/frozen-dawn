@@ -14,6 +14,11 @@ public class ModDataComponents {
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> PIXIE_WATER = DATA_COMPONENTS.register("pixie_water", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
 
+    /** A printed Plumb Line Survey Sheet's pulse; synced so the holder's client can draw it. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.gpr.PlumbLineSurvey>> PLUMB_LINE_SURVEY =
+            DATA_COMPONENTS.register("plumb_line_survey", () -> DataComponentType.<com.frozendawn.gpr.PlumbLineSurvey>builder()
+                    .persistent(com.frozendawn.gpr.PlumbLineSurvey.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(com.frozendawn.gpr.PlumbLineSurvey.CODEC)).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASK_RODS =
             DATA_COMPONENTS.register("cask_rods", () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 4)).networkSynchronized(ByteBufCodecs.VAR_INT).build());

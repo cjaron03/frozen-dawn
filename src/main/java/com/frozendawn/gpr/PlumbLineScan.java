@@ -47,7 +47,7 @@ public final class PlumbLineScan {
     /** Ore cells hit, with the nearest distance and rock crossed to reach them. */
     private final Map<Long, double[]> oreCells = new HashMap<>();
     private final Map<Long, String> oreTypes = new HashMap<>();
-    private final Set<Long> voidCells = new HashSet<>(), metalCells = new HashSet<>();
+    private final Set<Long> voidCells = new HashSet<>(), metalCells = new HashSet<>(), visibleOre = new HashSet<>();
     private final Map<Long, String> metalTypes = new HashMap<>();
     private long cachedChunk = Long.MIN_VALUE;
     private LevelChunk chunk;
@@ -85,7 +85,8 @@ public final class PlumbLineScan {
         if (s >= maxSteps || y < level.getMinBuildHeight() || y >= level.getMaxBuildHeight()) { stop(i); return; }
         var state = read(x, y, z);
         if (state == null) { stop(i); return; } // not yet loaded: the scan cannot see there
-        boolean below = y < chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15) - 2;
+        int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
+        boolean below = y < surface - 2;
         Medium medium = medium(state, below);
         long key = BlockPos.asLong(x, y, z);
         switch (medium) {
@@ -94,13 +95,30 @@ public final class PlumbLineScan {
             default -> { }
         }
         if (isOre(state)) {
-            oreTypes.putIfAbsent(key, id(state));
-            var prev = oreCells.get(key);
-            if (prev == null || t < prev[0]) oreCells.put(key, new double[] {t, rock[i]});
+            // Ore the player can already see (the top few blocks, or a face open to the sky) is not a find.
+            if (!visibleOre.contains(key) && !oreCells.containsKey(key)
+                    && (y >= surface - PlumbLinePolicy.SURFACE_SKIN || openToSky(x, y, z))) visibleOre.add(key);
+            else if (!visibleOre.contains(key)) {
+                oreTypes.putIfAbsent(key, id(state));
+                var prev = oreCells.get(key);
+                if (prev == null || t < prev[0]) oreCells.put(key, new double[] {t, rock[i]});
+            }
         } else if (medium == Medium.OPEN && below) voidCells.add(key);
         if (medium == Medium.STONE || medium == Medium.DEEPSLATE) rock[i] += STEP;
         budget[i] -= (float) (PlumbLinePolicy.cost(medium, frozen(y)) * STEP);
         if (budget[i] <= 0) stop(i);
+    }
+
+    private static final int[][] NEIGHBOURS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+
+    /** Any face touching air at or above that column's surface: exposed on a cliff, a hillside or the ground. */
+    private boolean openToSky(int x, int y, int z) {
+        for (var d : NEIGHBOURS) {
+            int nx = x + d[0], ny = y + d[1], nz = z + d[2];
+            var n = read(nx, ny, nz);
+            if (n != null && n.isAir() && ny >= chunk.getHeight(Heightmap.Types.WORLD_SURFACE, nx & 15, nz & 15)) return true;
+        }
+        return false;
     }
 
     private void stop(int i) { if (!done[i]) { done[i] = true; remaining--; } }
@@ -145,34 +163,69 @@ public final class PlumbLineScan {
     private static String id(BlockState s) { return BuiltInRegistries.BLOCK.getKey(s.getBlock()).toString(); }
 
     /**
-     * Clusters hits into returns, nearest first, and adds ORSA structure markers within range. Each vein's exact
-     * bounds go to {@code triangulate}; when it reports a match from another scanner the vein is shown exactly.
+     * Clusters hits into returns and adds ORSA structure markers within range. Only ore matching {@code target} is
+     * reported; veins under three blocks are dropped unless rare, and at most 24 are kept, most valuable then nearest.
+     * Each kept vein's exact bounds go to {@code triangulate}; when it reports a match from another scanner the vein is
+     * shown exactly.
      */
-    public List<Return> results(java.util.function.Predicate<Return> triangulate) {
-        var out = new ArrayList<Return>();
+    public List<Return> results(PlumbLineOres.Target target, java.util.function.Predicate<Return> triangulate) {
+        record Vein(Cluster cluster, PlumbLineOres.Ore ore, double distSq) { }
+        var veins = new ArrayList<Vein>();
         for (var vein : cluster(oreCells.keySet(), oreTypes, 2)) {
-            var exact = new Return(Kind.ORE, vein.label, vein.minX, vein.minY, vein.minZ, vein.maxX, vein.maxY, vein.maxZ, true);
-            if (triangulate.test(exact)) { out.add(exact); continue; }
-            double nearest = Double.MAX_VALUE, rockAt = 0;
-            for (long k : vein.cells) { var info = oreCells.get(k); if (info[0] < nearest) { nearest = info[0]; rockAt = info[1]; } }
-            int pad = (int) Math.round(PlumbLinePolicy.pad(nearest, rockAt, setting));
-            // Shift the blob a little, deterministically, so its centre does not give away the vein's.
-            var r = new Random(BlockPos.asLong(vein.minX, vein.minY, vein.minZ) ^ origin.asLong());
-            int jx = r.nextInt(pad / 2 * 2 + 1) - pad / 2, jy = r.nextInt(pad / 2 * 2 + 1) - pad / 2, jz = r.nextInt(pad / 2 * 2 + 1) - pad / 2;
-            out.add(new Return(Kind.ORE, vein.label, vein.minX - pad + jx, vein.minY - pad + jy, vein.minZ - pad + jz,
-                    vein.maxX + pad + jx, vein.maxY + pad + jy, vein.maxZ + pad + jz, false));
+            var ore = PlumbLineOres.of(vein.label);
+            if (!target.matches(ore.group()) || vein.cells.size() < PlumbLinePolicy.MIN_VEIN_CELLS && ore.tier() < 3) continue;
+            veins.add(new Vein(vein, ore, distSq(vein.minX, vein.minY, vein.minZ, vein.maxX, vein.maxY, vein.maxZ)));
         }
-        for (var cave : cluster(voidCells, null, 1)) if (cave.cells.size() >= PlumbLinePolicy.MIN_VOID_CELLS)
-            out.add(new Return(Kind.VOID, "void", cave.minX, cave.minY, cave.minZ, cave.maxX, cave.maxY, cave.maxZ, false));
-        for (var metal : cluster(metalCells, metalTypes, 1))
-            out.add(new Return(Kind.METAL, metal.label, metal.minX, metal.minY, metal.minZ, metal.maxX, metal.maxY, metal.maxZ, false));
+        veins.sort(Comparator.comparingInt((Vein v) -> -v.ore.tier()).thenComparingDouble(Vein::distSq));
+        var ores = new ArrayList<Return>();
+        for (var v : veins) {
+            if (ores.size() >= PlumbLinePolicy.MAX_ORE_RETURNS) break;
+            var r = blur(v.cluster, triangulate);
+            if (!overlapped(r, ores)) ores.add(r);
+        }
+        var out = new ArrayList<>(ores);
+        if (target == PlumbLineOres.Target.ALL) out.addAll(nearest(cluster(voidCells, null, 1).stream()
+                .filter(c -> c.cells.size() >= PlumbLinePolicy.MIN_VOID_CELLS).map(c -> box(Kind.VOID, c)).toList(), PlumbLinePolicy.MAX_VOID_RETURNS));
+        out.addAll(nearest(cluster(metalCells, metalTypes, 1).stream().map(c -> box(Kind.METAL, c)).toList(), PlumbLinePolicy.MAX_METAL_RETURNS));
         structures(out);
-        out.sort(Comparator.comparingDouble(r -> distSq(r)));
+        out.sort(Comparator.comparingDouble(this::distSq));
         return out.size() > PlumbLinePolicy.MAX_RETURNS ? new ArrayList<>(out.subList(0, PlumbLinePolicy.MAX_RETURNS)) : out;
     }
 
-    private double distSq(Return r) {
-        double cx = (r.minX() + r.maxX()) / 2.0 + .5 - ox, cy = (r.minY() + r.maxY()) / 2.0 + .5 - oy, cz = (r.minZ() + r.maxZ()) / 2.0 + .5 - oz;
+    /** The vein exactly if triangulated, otherwise padded by distance and rock and nudged off-centre deterministically. */
+    private Return blur(Cluster vein, java.util.function.Predicate<Return> triangulate) {
+        var exact = new Return(Kind.ORE, vein.label, vein.minX, vein.minY, vein.minZ, vein.maxX, vein.maxY, vein.maxZ, true);
+        if (triangulate.test(exact)) return exact;
+        double nearest = Double.MAX_VALUE, rockAt = 0;
+        for (long k : vein.cells) { var info = oreCells.get(k); if (info[0] < nearest) { nearest = info[0]; rockAt = info[1]; } }
+        int pad = (int) Math.round(PlumbLinePolicy.pad(nearest, rockAt, setting));
+        var r = new Random(BlockPos.asLong(vein.minX, vein.minY, vein.minZ) ^ origin.asLong());
+        int jx = r.nextInt(pad / 2 * 2 + 1) - pad / 2, jy = r.nextInt(pad / 2 * 2 + 1) - pad / 2, jz = r.nextInt(pad / 2 * 2 + 1) - pad / 2;
+        return new Return(Kind.ORE, vein.label, vein.minX - pad + jx, vein.minY - pad + jy, vein.minZ - pad + jz,
+                vein.maxX + pad + jx, vein.maxY + pad + jy, vein.maxZ + pad + jz, false);
+    }
+
+    private static Return box(Kind kind, Cluster c) { return new Return(kind, c.label, c.minX, c.minY, c.minZ, c.maxX, c.maxY, c.maxZ, false); }
+
+    private List<Return> nearest(List<Return> returns, int limit) {
+        return returns.stream().sorted(Comparator.comparingDouble(this::distSq)).limit(limit).toList();
+    }
+
+    /** An estimate whose centre lies inside a nearer estimate of the same ore adds nothing the player can use. */
+    static boolean overlapped(Return r, List<Return> kept) {
+        if (r.kind() != Kind.ORE || r.precise()) return false;
+        double cx = (r.minX() + r.maxX() + 1) / 2.0, cy = (r.minY() + r.maxY() + 1) / 2.0, cz = (r.minZ() + r.maxZ() + 1) / 2.0;
+        for (var k : kept)
+            if (k.kind() == Kind.ORE && !k.precise() && k.label().equals(r.label())
+                    && cx >= k.minX() && cx <= k.maxX() + 1 && cy >= k.minY() && cy <= k.maxY() + 1 && cz >= k.minZ() && cz <= k.maxZ() + 1)
+                return true;
+        return false;
+    }
+
+    private double distSq(Return r) { return distSq(r.minX(), r.minY(), r.minZ(), r.maxX(), r.maxY(), r.maxZ()); }
+
+    private double distSq(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        double cx = (minX + maxX) / 2.0 + .5 - ox, cy = (minY + maxY) / 2.0 + .5 - oy, cz = (minZ + maxZ) / 2.0 + .5 - oz;
         return cx * cx + cy * cy + cz * cz;
     }
 

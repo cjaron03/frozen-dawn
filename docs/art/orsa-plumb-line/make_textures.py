@@ -13,7 +13,7 @@ ASSETS = ROOT / 'src/main/resources/assets/frozendawn'
 P = {k: tuple(bytes.fromhex(v)) for k, v in dict(
     black='0b0f12', dark='171c21', steel='283039', steel2='2f373f', mid='414950', light='667077', pale='8c969c',
     copper='976344', copper2='c18054', screen='07141c', screen2='153843', cyan='2dd4d2', cyan2='1c7584',
-    amber='e5a064', amber2='8a5a2e').items()}
+    amber='e5a064', amber2='8a5a2e', paper='dcd5c2', paper2='b9b19c', ink='3a3f44').items()}
 
 
 def noise(x, y, salt):
@@ -86,6 +86,21 @@ def bottom():
     return im
 
 
+def survey():
+    """Survey Sheet: a printed return plot with a ground line, an estimate in brackets and an ORSA site mark."""
+    im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    rect(im, 2, 1, 13, 14, 'paper'); rect(im, 13, 3, 13, 14, 'paper2'); rect(im, 2, 14, 13, 14, 'paper2')
+    for x, y in ((12, 1), (13, 1), (13, 2)): im.putpixel((x, y), (0, 0, 0, 0))  # folded corner
+    im.putpixel((12, 2), P['paper2'])
+    rect(im, 4, 3, 9, 3, 'ink'); im.putpixel((11, 3), P['amber'])
+    rect(im, 3, 6, 12, 6, 'ink')
+    for x, y in ((4, 8), (5, 8), (4, 9), (8, 8), (9, 8), (9, 9), (4, 11), (4, 12), (5, 12), (9, 11), (9, 12), (8, 12)):
+        im.putpixel((x, y), P['amber'])
+    rect(im, 6, 10, 7, 10, 'amber2')
+    frame(im, 10, 9, 12, 11, 'cyan2'); im.putpixel((11, 10), P['cyan'])
+    return im
+
+
 def save(im, rel):
     out = ASSETS / 'textures' / rel
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -100,7 +115,8 @@ def write(rel, data):
 
 
 manifest = [save(front(False), 'block/plumb_line_front.png'), save(front(True), 'block/plumb_line_front_on.png'),
-            save(side(), 'block/plumb_line_side.png'), save(top(), 'block/plumb_line_top.png'), save(bottom(), 'block/plumb_line_bottom.png')]
+            save(side(), 'block/plumb_line_side.png'), save(top(), 'block/plumb_line_top.png'), save(bottom(), 'block/plumb_line_bottom.png'),
+            save(survey(), 'item/plumb_line_survey.png')]
 for name, f in (('plumb_line', 'plumb_line_front'), ('plumb_line_on', 'plumb_line_front_on')):
     write(f'models/block/{name}.json', dict(parent='minecraft:block/cube', textures=dict(
         north=f'frozendawn:block/{f}', south='frozendawn:block/plumb_line_side', east='frozendawn:block/plumb_line_side',
@@ -110,6 +126,7 @@ rotations = [('north', 0), ('east', 90), ('south', 180), ('west', 270)]
 write('blockstates/plumb_line.json', dict(variants={f'facing={f},pulsing={str(p).lower()}': dict(model='frozendawn:block/plumb_line' + ('_on' if p else ''), y=r)
                                                     for f, r in rotations for p in (False, True)}))
 write('models/item/plumb_line.json', dict(parent='frozendawn:block/plumb_line'))
+write('models/item/plumb_line_survey.json', dict(parent='minecraft:item/generated', textures=dict(layer0='frozendawn:item/plumb_line_survey')))
 (HERE / 'manifest.json').write_text(json.dumps(dict(created='2026-10-17', creator='Frozen Dawn; authored in code', script='make_textures.py',
                                                     third_party_pixels=False, textures=manifest), indent=2) + '\n')
 sheet = Image.new('RGBA', (len(manifest) * 104, 96), (40, 44, 48, 255))
