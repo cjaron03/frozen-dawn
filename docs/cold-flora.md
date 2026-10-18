@@ -83,6 +83,10 @@ Nothing is placed at world generation.
 
 The Thermal Core, Rocket Engine, the four reinforced armor pieces and Hot Wings now use those tags. Vanilla uses of blaze powder stay Nether-only.
 
+## Dev commands
+
+In development builds only, `/fd flora grove [tries]` and `/fd flora frostcap [tries]` run the natural spawn rules near the player right away. They repeat up to `tries` times (20 by default, at most 200) until one grows, then report where it grew and why each failed try failed. Typical reasons: too warm, wrong ground, no open sky, Rimewood or Frostcap too close, or the ground-patch roll missed. The phase is reported but not required.
+
 ## Handbook
 
 Getting Started gains **Rimewood** and **Frostcap**. The Frostcap entry carries the ORSA note on *Cryomyces*. Advanced gains **Without the Nether**.

@@ -49,14 +49,25 @@ public final class ColdFloraSpawner {
         return null;
     }
 
+    /** A spawn try's outcome: where it grew, or why it did not. */
+    public record Attempt(BlockPos at, String failure, int placed) {
+        static Attempt failed(String why) { return new Attempt(null, why, 0); }
+        public boolean grew() { return failure == null; }
+    }
+
     /** One grove try near a player: cold open ground, and no other Rimewood within 48 blocks. */
-    public static boolean tryGrove(ServerLevel level, BlockPos player) {
+    public static Attempt tryGrove(ServerLevel level, BlockPos player) {
         var spot = around(player, level.random, GROVE_MIN, GROVE_MAX);
-        if (!level.hasChunkAt(spot)) return false;
+        if (!level.hasChunkAt(spot)) return Attempt.failed("chunk not loaded");
         var ground = surface(level, spot.getX(), spot.getZ());
-        if (!ColdFlora.rimewoodSoil(level.getBlockState(ground.below())) || !level.canSeeSky(ground)) return false;
-        if (ColdFlora.temperature(level, ground) > ColdFloraPolicy.GROW_AT_OR_BELOW || rimewoodNear(level, ground, GROVE_SPACING)) return false;
-        return !plantGrove(level, ground, level.random, true).isEmpty();
+        var soil = level.getBlockState(ground.below());
+        if (!ColdFlora.rimewoodSoil(soil)) return Attempt.failed("ground is " + soil.getBlock().getName().getString());
+        if (!level.canSeeSky(ground)) return Attempt.failed("no open sky");
+        float celsius = ColdFlora.temperature(level, ground);
+        if (celsius > ColdFloraPolicy.GROW_AT_OR_BELOW) return Attempt.failed("too warm (" + Math.round(celsius) + "C)");
+        if (rimewoodNear(level, ground, GROVE_SPACING)) return Attempt.failed("Rimewood within " + GROVE_SPACING + " blocks");
+        var trunks = plantGrove(level, ground, level.random, true);
+        return trunks.isEmpty() ? Attempt.failed("no room for a tree") : new Attempt(ground, null, trunks.size());
     }
 
     /** Samples surface columns every three blocks for Rimewood needles or logs. */
@@ -108,19 +119,25 @@ public final class ColdFloraSpawner {
      * One Frostcap try near a player: shelves on a Rimewood trunk near the chosen spot if there is one; otherwise, one
      * time in four, a small patch on snow or ice. Needs -20C or colder and no Frostcap within 16 blocks.
      */
-    public static boolean tryFrostcap(ServerLevel level, BlockPos player) {
+    public static Attempt tryFrostcap(ServerLevel level, BlockPos player) {
         var spot = around(player, level.random, CAP_MIN, CAP_MAX);
-        if (!level.hasChunkAt(spot)) return false;
+        if (!level.hasChunkAt(spot)) return Attempt.failed("chunk not loaded");
         var ground = surface(level, spot.getX(), spot.getZ());
-        if (ColdFlora.temperature(level, ground) > ColdFloraPolicy.GROW_AT_OR_BELOW) return false;
+        float celsius = ColdFlora.temperature(level, ground);
+        if (celsius > ColdFloraPolicy.GROW_AT_OR_BELOW) return Attempt.failed("too warm (" + Math.round(celsius) + "C)");
         for (var p : BlockPos.betweenClosed(ground.offset(-CAP_CLEAR_RADIUS, -6, -CAP_CLEAR_RADIUS), ground.offset(CAP_CLEAR_RADIUS, 10, CAP_CLEAR_RADIUS)))
-            if (level.getBlockState(p).is(ModBlocks.FROSTCAP.get())) return false;
+            if (level.getBlockState(p).is(ModBlocks.FROSTCAP.get())) return Attempt.failed("Frostcap within " + CAP_CLEAR_RADIUS + " blocks");
         var trunk = findTrunk(level, ground, 8);
-        if (trunk != null) return shelve(level, trunk, level.random, 2 + level.random.nextInt(3)) > 0;
-        if (level.random.nextInt(GROUND_PATCH_ONE_IN) != 0) return false;
+        if (trunk != null) {
+            int placed = shelve(level, trunk, level.random, 2 + level.random.nextInt(3));
+            return placed > 0 ? new Attempt(trunk, null, placed) : Attempt.failed("Rimewood trunk has no open side");
+        }
+        if (level.random.nextInt(GROUND_PATCH_ONE_IN) != 0) return Attempt.failed("no Rimewood near, and the 1-in-" + GROUND_PATCH_ONE_IN + " ground roll missed");
         var top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, ground);
-        if (!FrostcapBlock.supported(level, top, Direction.UP) || !level.isEmptyBlock(top)) return false;
-        return ColdFloraEvents.plant(level, top, 3 + level.random.nextInt(4)) > 0;
+        if (!FrostcapBlock.supported(level, top, Direction.UP) || !level.isEmptyBlock(top))
+            return Attempt.failed("no Rimewood near, and the ground is " + level.getBlockState(top.below()).getBlock().getName().getString());
+        int placed = ColdFloraEvents.plant(level, top, 3 + level.random.nextInt(4));
+        return placed > 0 ? new Attempt(top, null, placed) : Attempt.failed("no room on the snow or ice");
     }
 
     /** The base of the nearest standing Rimewood trunk within {@code radius} of {@code center}, if any. */
