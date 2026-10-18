@@ -51,6 +51,9 @@ public class ModNetworking {
         registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
 
+        registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
+
         registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));
 

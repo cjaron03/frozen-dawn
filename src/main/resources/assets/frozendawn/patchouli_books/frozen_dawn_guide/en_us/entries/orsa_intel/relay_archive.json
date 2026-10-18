@@ -1,0 +1,59 @@
+{
+  "name": "Relay Archive",
+  "category": "frozendawn:orsa_intel",
+  "icon": "frozendawn:orsa_document",
+  "sortnum": 30,
+  "advancement": "frozendawn:relay_archive/1",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "ORSA RELAY ARCHIVE$(br)Item 1 of 3$(br2)RECORDS RETENTION SCHEDULE R-1$(br2)Issued on instruction of the Council, session 1.$(br2)Distribution: Council members only.",
+      "title": "Retention Schedule"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Categories designated for continuation:$(br2)- Genetic reference library$(br)- Language corpora$(br)- Orbital correction archive$(br)- Selected persons (see Annex C)$(br2)Annex C is not attached."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Categories not listed above are not designated for continuation.$(br2)Staff receiving inquiries about category placement should not acknowledge them.$(br2)END OF ITEM"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "ORSA RELAY ARCHIVE$(br)Item 2 of 3$(br2)CONTINUITY COUNCIL$(br)Session 1$(br)Minutes (partial)$(br2)Recovered from relay cache. Speaker names withheld at source.",
+      "title": "Council Minutes",
+      "advancement": "frozendawn:relay_archive/2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "MEMBER: The schedule lists libraries, seed stock, the correction archive. Where are the people?$(br2)CHAIR: People are a category.$(br2)MEMBER: Which people?$(br2)CHAIR: Annex C.",
+      "advancement": "frozendawn:relay_archive/2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "MEMBER: Annex C is blank.$(br2)CHAIR: Annex C is not blank. It is not attached.$(br2)[Motion to adopt Schedule R-1. Carried. One abstention, not recorded.]",
+      "advancement": "frozendawn:relay_archive/2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "Closing remarks, the Chair:$(br2)\"I don't know if mankind will endure.$(br)But we've already decided what will continue in its name.\"$(br2)[Session closed.]",
+      "advancement": "frozendawn:relay_archive/2"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "CARRIER CHANGE$(br)Not an automated relay.$(br2)\"...hello? Hello. This is Cydonia relay, night desk. You're on the old ORSA handshake. Nobody has used that code since the surface went quiet.\"",
+      "title": "Reply",
+      "advancement": "frozendawn:relay_archive/3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "\"I ran your badge. It comes back flagged. There's a protocol on it I don't have clearance to open.$(br2)It doesn't say deceased. It doesn't say evacuated. It just says active.\"",
+      "advancement": "frozendawn:relay_archive/3"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "\"I'm not supposed to answer this channel. I'm answering.$(br2)If you can hear me: we were told nobody was left down there.$(br2)We were told a lot of things.\"$(br2)[Carrier lost.]",
+      "advancement": "frozendawn:relay_archive/3"
+    }
+  ]
+}

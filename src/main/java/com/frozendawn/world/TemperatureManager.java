@@ -206,7 +206,7 @@ public final class TemperatureManager {
 
         // --- Registered thermal heaters (no block scan needed) ---
         if(includeHeaters) for (BlockPos heaterPos : HeaterRegistry.getHeaters(level)) {
-            if (loadedOnly && !level.isLoaded(heaterPos)) {
+            if (loadedOnly && !ReadyChunks.ready(level, heaterPos)) {
                 continue;
             }
             int distSq = (int) pos.distSqr(heaterPos);
@@ -241,7 +241,7 @@ public final class TemperatureManager {
                 for (int dz = -radius; dz <= radius; dz++) {
                     int distSq = dx * dx + dy * dy + dz * dz;
                     checkPos.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
-                    if (loadedOnly && !level.isLoaded(checkPos)) {
+                    if (loadedOnly && !ReadyChunks.ready(level, checkPos)) {
                         continue;
                     }
                     BlockState state = level.getBlockState(checkPos);
@@ -256,7 +256,7 @@ public final class TemperatureManager {
 
         // --- Registered geothermal cores (range up to 32, beyond block scan radius) ---
         for (BlockPos corePos : GeothermalCoreRegistry.getCores(level)) {
-            if (loadedOnly && !level.isLoaded(corePos)) {
+            if (loadedOnly && !ReadyChunks.ready(level, corePos)) {
                 continue;
             }
             // A connected Core already supplies finite heat through its room.

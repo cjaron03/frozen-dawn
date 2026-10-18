@@ -14,7 +14,7 @@ import java.util.Locale;
 /** Composes the operator surface without duplicating any gameplay authority. */
 final class FrozenDawnDebugCommand {
     static final List<String> HELP_CATEGORIES = List.of(
-            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "suit", "lore");
+            "world", "hearth", "heart", "postmaeve", "aggregate", "architect", "maeve", "uplink", "suit", "lore");
 
     private static final List<String> HEARTH_CHILDREN = List.of(
             "status", "list", "locate", "force-select", "reconcile", "watcher",
@@ -46,6 +46,7 @@ final class FrozenDawnDebugCommand {
                 .then(AggregateCommand.commands())
                 .then(ArchitectDebugCommand.commands())
                 .then(MaeveDebugCommand.commands())
+                .then(UplinkDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(requiredChild(legacyHearth, "lore"));
     }
@@ -91,6 +92,8 @@ final class FrozenDawnDebugCommand {
                     "/fd maeve dump [player-or-uuid] (yourself by default; console requires a subject)",
                     "/fd maeve explain <pattern> [player-or-uuid] (belief, evidence, contradictions and uncertainty)",
                     "Read-only tactical beliefs, observed evidence, commitment decisions and cooldowns.");
+            case "uplink" -> List.of(
+                    "/fd uplink dump (archive progress, cooldown, signal sites, pressure and supply drops)");
             case "suit" -> List.of(
                     "/fd suit status [verbose] | punctures <0-2>",
                     "/fd suit hearthrot status [verbose] | infect | set-stage ...");

@@ -24,6 +24,12 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PixieMenu>> PIXIE = MENU_TYPES.register("pixie", () -> IMenuTypeExtension.create(com.frozendawn.block.PixieMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PlumbLineMenu>> PLUMB_LINE =
+            MENU_TYPES.register("plumb_line", () -> IMenuTypeExtension.create(com.frozendawn.block.PlumbLineMenu::new));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.UplinkConsoleMenu>> UPLINK_CONSOLE =
+            MENU_TYPES.register("uplink_console", () -> IMenuTypeExtension.create(com.frozendawn.block.UplinkConsoleMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<com.frozendawn.block.PowerMonitorMenu>> POWER_MONITOR =
             MENU_TYPES.register("power_monitor", () -> IMenuTypeExtension.create(com.frozendawn.block.PowerMonitorMenu::new));
 

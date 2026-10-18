@@ -14,6 +14,9 @@
     "frozendawn:resistive_heater",
     "frozendawn:galena_ore",
     "frozendawn:deepslate_galena_ore",
-    "frozendawn:lead_block"
+    "frozendawn:lead_block",
+    "frozendawn:uplink_console",
+    "frozendawn:uplink_dish",
+    "frozendawn:plumb_line"
   ]
 }

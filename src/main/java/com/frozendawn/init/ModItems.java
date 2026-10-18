@@ -94,6 +94,15 @@ public class ModItems {
 
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
+    public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
+    /** Printed from a Plumb Line's last pulse; its data and tooltip live in PLUMB_LINE_SURVEY and the client overlay. */
+    public static final DeferredItem<Item> PLUMB_LINE_SURVEY = ITEMS.registerSimpleItem("plumb_line_survey", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
+    public static final DeferredItem<BlockItem> UPLINK_DISH = ITEMS.registerSimpleBlockItem("uplink_dish", ModBlocks.UPLINK_DISH);
+    /** ORSA Uplink salvage parts: found at monitoring stations and ORSA sites, never crafted. */
+    public static final DeferredItem<Item> SIGNAL_PROCESSOR = ITEMS.registerSimpleItem("signal_processor", new Item.Properties().stacksTo(16));
+    public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
+
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
@@ -538,6 +547,11 @@ public class ModItems {
                         output.accept(RESISTIVE_HEATER.get());
                         output.accept(PIXIE.get());
                         output.accept(POWER_MONITOR.get());
+                        output.accept(PLUMB_LINE.get());
+                        output.accept(UPLINK_CONSOLE.get());
+                        output.accept(UPLINK_DISH.get());
+                        output.accept(SIGNAL_PROCESSOR.get());
+                        output.accept(FEED_HORN.get());
                         output.accept(INDUCTION_FURNACE.get());
                         output.accept(POWER_CELL.get());
                         output.accept(BATTERY_BANK.get());

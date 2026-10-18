@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "frozendawn:block/uplink_console_front_1",
+    "south": "frozendawn:block/uplink_console_back",
+    "east": "frozendawn:block/uplink_console_side",
+    "west": "frozendawn:block/uplink_console_side",
+    "up": "frozendawn:block/uplink_console_top",
+    "down": "frozendawn:block/induction_furnace_bottom",
+    "particle": "frozendawn:block/uplink_console_side"
+  }
+}
