@@ -48,7 +48,7 @@ public final class ColdFloraGameTest {
             h.assertTrue(RimewoodTreeFeature.grow(l,origin,RandomSource.create(at[0]*31L+at[1])),"Tree grows on dirt at "+origin);
             int logs=count(l,origin,ModBlocks.RIMEWOOD_LOG.get()),leaves=count(l,origin,ModBlocks.RIMEWOOD_LEAVES.get());
             h.assertTrue(logs>=7&&logs<=16,"About 8-12 logs per tree: "+logs);
-            h.assertTrue(leaves>=20,"A narrow canopy of needles: "+leaves);
+            h.assertTrue(leaves>=18&&leaves<=50,"A narrow, tiered canopy of needles: "+leaves);
             int trunk=0;while(l.getBlockState(origin.above(trunk)).is(ModBlocks.RIMEWOOD_LOG.get()))trunk++;
             h.assertTrue(trunk>=5&&trunk<=7,"Squat trunk 5-7 tall: "+trunk);
             for(var p:BlockPos.betweenClosed(origin.offset(-3,0,-3),origin.offset(3,9,3))){var s=l.getBlockState(p);

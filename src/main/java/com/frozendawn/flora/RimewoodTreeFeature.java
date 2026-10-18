@@ -22,7 +22,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 
 /**
  * One Rimewood: a squat, wind-shaped conifer 5-7 blocks tall. A straight trunk carries two or three short bent
- * branches (about 10 logs on average, 7 at least) under a narrow, uneven teal canopy with gaps that show the branches.
+ * branches (about 10 logs on average, 7 at least) under a narrow, tiered, ragged teal canopy that tapers to a spire.
  */
 public final class RimewoodTreeFeature extends Feature<NoneFeatureConfiguration> {
     public RimewoodTreeFeature(Codec<NoneFeatureConfiguration> codec) { super(codec); }
@@ -61,13 +61,21 @@ public final class RimewoodTreeFeature extends Feature<NoneFeatureConfiguration>
         }
         var leaves = new HashSet<BlockPos>();
         int top = origin.getY() + height;
-        for (int y = origin.getY() + 2; y <= top + 1; y++) {
-            int fromTop = top - y, radius = fromTop <= 0 ? 0 : fromTop <= 2 ? 1 : 2;
-            for (int dx = -radius; dx <= radius; dx++) for (int dz = -radius; dz <= radius; dz++) {
-                if (radius == 2 && Math.abs(dx) == 2 && Math.abs(dz) == 2) continue; // round the corners
+        // Spruce-like tiers, wide and narrow in turn, tapering to a point: a diamond of radius 2 low down, a plus
+        // shape between, a 3x3 near the top and a single spire. Edge needles go missing at random, so the canopy is
+        // ragged and the branches show through.
+        for (int y = origin.getY() + 1; y <= top + 1; y++) {
+            int fromTop = top - y;
+            for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++) {
+                int manhattan = Math.abs(dx) + Math.abs(dz), chebyshev = Math.max(Math.abs(dx), Math.abs(dz));
+                boolean in = fromTop <= 0 ? manhattan == 0
+                        : fromTop % 2 == 1 ? manhattan <= 1
+                        : fromTop == 2 ? chebyshev <= 1
+                        : manhattan <= 2;
+                if (!in) continue;
                 var p = new BlockPos(origin.getX() + dx, y, origin.getZ() + dz);
-                boolean edge = Math.abs(dx) == radius || Math.abs(dz) == radius;
-                if (edge && radius > 0 && random.nextInt(4) == 0) continue; // uneven, gappy canopy
+                boolean edge = manhattan > 0 && (fromTop % 2 == 1 || fromTop == 2 ? chebyshev == 1 : manhattan == 2);
+                if (edge && random.nextInt(4) == 0) continue;
                 if (!logs.contains(p)) leaves.add(p);
             }
         }

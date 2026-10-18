@@ -22,7 +22,8 @@ P = {k: tuple(bytes.fromhex(v)) for k, v in dict(
     shoot='2a3438', cap0='dcedf4', cap1='bfe2ee', cap2='9fd3e4', glow='eefaff', gill='8db6c9', stem='c8d4da', stem2='a9b7be',
     spot='f6fdff', mush0='8e9a7a', mush1='6f7b5e', mush2='a7b08f', resin0='d9a441', resin1='b07a24', resin2='f1cb6d',
     sulf0='e3d64a', sulf1='b8a92d', coal='26282b', red='c0503a', bowl0='6b4a2f', bowl1='8a6340', stew0='a9c7d3', stew1='88a9b6',
-    metal='7b8389', metal2='a4acb2', frame='4f5b64', glass='a9cfe0').items()}
+    metal='7b8389', metal2='a4acb2', frame='4f5b64', glass='a9cfe0',
+    capline='5d8597', capdark='86aec0', bowlline='3b281a', bowl2='a37a52', shootline='1b2326', teal3='2a6a78', mushline='4f5a40', dryline='5b5148', dry0='9b8f7f', dry1='7d7264').items()}
 CLEAR = (0, 0, 0, 0)
 
 
@@ -46,29 +47,27 @@ def rect(im, x0, y0, x1, y1, c):
 # ---------- Rimewood ----------
 
 def bark(salt='bark'):
+    """Vanilla-style bark: vertical bands of two tones, long dark cracks, and a few short icy-blue seams."""
     im = img()
+    bands = ['bark1', 'bark1', 'bark2', 'bark1', 'bark0', 'bark1', 'bark2', 'bark2', 'bark1', 'bark0', 'bark1', 'bark1', 'bark2', 'bark1', 'bark0', 'bark1']
     for x in range(16):
-        col = 'bark1' if noise(x, 0, salt) < 150 else 'bark2' if noise(x, 0, salt) < 210 else 'bark0'
-        for y in range(16):
-            n = noise(x, y, salt)
-            put(im, x, y, col if n < 200 else 'bark0')
-    for x in (2, 6, 11, 14):  # deep vertical cracks with icy seams
-        for y in range(16):
-            if noise(x, y, salt + 'c') < 215: put(im, x, y, 'crack')
-            if noise(x, y, salt + 's') < 40: put(im, x, y, 'seam' if noise(x, y, 'q') < 160 else 'seam2')
+        for y in range(16): put(im, x, y, bands[x])
+    for x, y0, n in ((2, 0, 7), (2, 10, 5), (6, 3, 9), (9, 0, 4), (11, 6, 8), (14, 1, 6), (14, 11, 4)):
+        for y in range(y0, y0 + n): put(im, x, y % 16, 'crack')
+    for x, y0, n in ((6, 13, 2), (11, 2, 3), (3, 6, 2)):
+        for y in range(y0, y0 + n): put(im, x, y, 'seam')
     return im
 
-
 def rings(stripped=False):
+    """Vanilla-style log end: a bark rim, square growth rings in muted silver-grey, and a small blue heart."""
     im = img()
     for y in range(16):
         for x in range(16):
-            d = math.hypot(x - 7.5, y - 7.5)
-            if d > 7.2 and not stripped: put(im, x, y, 'bark1' if noise(x, y, 'rb') < 170 else 'bark0'); continue
-            if d < 2.2: put(im, x, y, 'heart' if noise(x, y, 'h') < 170 else 'heart2'); continue
-            put(im, x, y, 'ring1' if int(d) % 2 else ('ring0' if noise(x, y, 'r') < 200 else 'ring2'))
+            d = max(abs(x - 7.5), abs(y - 7.5))
+            if d > 7 and not stripped: put(im, x, y, 'bark1' if (x + y) % 3 else 'bark0'); continue
+            ring = int(d)
+            put(im, x, y, 'heart' if d < 1.5 else 'heart2' if d < 2 else 'ring2' if ring % 3 == 0 else 'ring0')
     return im
-
 
 def stripped_side():
     im = img()
@@ -100,25 +99,33 @@ def planks():
 
 
 def leaves():
-    im = img()
-    for y in range(16):
-        for x in range(16):
-            n = noise(x, y, 'lv')
-            if n < 36: continue  # gaps reveal the branches
-            put(im, x, y, 'teal0' if n < 120 else 'teal1' if n < 200 else 'teal2')
-            if noise(x, y, 'tip') < 26 and y < 15: put(im, x, y, 'frost' if n % 2 else 'frost2')
+    """Vanilla-style needles: a dark teal mass of short diagonal needle strokes, small holes, a few frosted tips."""
+    im = img(P['teal0'])
+    strokes = [(1, 1), (5, 0), (9, 2), (13, 1), (3, 4), (7, 5), (11, 4), (0, 7), (14, 6), (4, 9), (8, 8), (12, 10),
+               (1, 12), (6, 12), (10, 13), (14, 13), (2, 15), (9, 15)]
+    for i, (x, y) in enumerate(strokes):
+        c = 'teal2' if i % 3 == 0 else 'teal1'
+        for k in range(3): put(im, (x + k) % 16, (y + k) % 16, c)
+        put(im, (x + 1) % 16, y % 16, 'teal1')
+        if i % 4 == 1: put(im, (x + 3) % 16, (y + 3) % 16, 'frost2')
+        if i % 6 == 2: put(im, (x + 3) % 16, (y + 3) % 16, 'frost')
+    for x, y in ((3, 2), (10, 6), (6, 10), (13, 14), (0, 4), (11, 11), (8, 1), (15, 9)):
+        put(im, x, y, CLEAR); put(im, (x + 1) % 16, y, CLEAR)
     return im
-
 
 def sapling():
+    """A small tiered conifer: three separate teal tiers, each shaded and underlined, frosted tips, a grey stem."""
     im = img()
-    rect(im, 7, 7, 8, 15, 'shoot')
-    for i in range(4):  # two frosted branches
-        put(im, 6 - i, 9 - i, 'teal1'); put(im, 9 + i, 8 - i, 'teal1')
-        put(im, 6 - i, 8 - i, 'frost' if i == 3 else 'teal2'); put(im, 9 + i, 7 - i, 'frost' if i == 3 else 'teal2')
-    rect(im, 7, 3, 8, 6, 'teal2'); put(im, 7, 2, 'frost'); put(im, 8, 2, 'frost2')
+    rect(im, 7, 12, 8, 15, 'shootline'); rect(im, 8, 12, 8, 15, 'bark2')
+    for i, y0 in enumerate((1, 5, 9)):
+        for row in range(3):
+            half = i + row
+            for x in range(8 - half - 1, 8 + half + 1):
+                put(im, x, y0 + row, 'teal3' if row == 0 else 'teal2' if x < 8 else 'teal1')
+        for x in range(8 - i - 3, 8 + i + 3): put(im, x, y0 + 3, 'shootline')
+        put(im, 8 - i - 3, y0 + 2, 'frost'); put(im, 8 + i + 2, y0 + 2, 'frost2')
+    put(im, 7, 0, 'teal3'); put(im, 8, 0, 'teal3')
     return im
-
 
 def door(top):
     im = planks()
@@ -190,23 +197,17 @@ def gui_hanging():
 # ---------- Frostcap ----------
 
 def cap_top():
-    im = img()
-    for y in range(16):
-        for x in range(16):
-            n = noise(x, y, 'ct')
-            put(im, x, y, 'cap0' if n < 140 else 'cap1' if n < 220 else 'cap2')
-            if noise(x, y, 'sp') < 14: put(im, x, y, 'spot')
+    im = img(P['cap1'])
+    for x, y in ((2, 3), (3, 3), (9, 2), (12, 7), (5, 10), (6, 10), (11, 12), (2, 13), (8, 6)): put(im, x, y, 'spot')
+    for x, y in ((7, 1), (1, 8), (14, 4), (10, 9), (4, 14)): put(im, x, y, 'cap2')
     return im
-
 
 def cap_side():
     im = img()
     for y in range(16):
-        for x in range(16):
-            put(im, x, y, 'cap1' if y < 6 else 'gill' if y < 10 else 'cap2')
-            if y < 6 and noise(x, y, 'cs') < 24: put(im, x, y, 'glow')
+        for x in range(16): put(im, x, y, 'cap1' if y < 5 else 'capdark' if y < 6 else 'gill' if y < 10 else 'cap2')
+    for x in (2, 6, 10, 13): put(im, x, 2, 'glow')
     return im
-
 
 def stem():
     im = img()
@@ -216,44 +217,48 @@ def stem():
 
 
 def frostcap_item(kind):
+    """Vanilla mushroom-item style: an outlined domed cap over a short stem, shaded light from the top left."""
     im = img()
     if kind == 'mush':
-        for y in range(8, 14):
-            for x in range(3, 13):
-                if math.hypot((x - 7.5) / 5.5, (y - 11) / 3) < 1: put(im, x, y, 'mush0' if noise(x, y, 'm') < 150 else 'mush1')
-        for x, y in ((5, 10), (9, 11), (7, 12)): put(im, x, y, 'mush2')
+        body = [(4, 11, 7), (3, 12, 9), (2, 13, 11), (3, 14, 9)]
+        for x0, y, w in body:
+            for x in range(x0 + 1, x0 + w + 1): put(im, x, y, 'mush0' if (x + y) % 3 else 'mush1')
+            put(im, x0, y, 'mushline'); put(im, x0 + w + 1, y, 'mushline')
+        rect(im, 5, 10, 9, 10, 'mushline'); rect(im, 4, 15, 12, 15, 'mushline')
+        for x, y in ((5, 12), (8, 13), (10, 12)): put(im, x, y, 'mush2')
         return im
-    if kind == 'dried':
-        for y in range(4, 12):
-            for x in range(3, 13):
-                if math.hypot((x - 7.5) / 5, (y - 8) / 4) < 1: put(im, x, y, 'ring0' if noise(x, y, 'd') < 150 else 'ring2')
-        rect(im, 4, 8, 11, 8, 'gill'); rect(im, 7, 11, 8, 13, 'stem2')
-        return im
-    cap, cap_dark = ('cap0', 'cap2') if kind == 'frozen' else ('gill', 'stem2')
-    rect(im, 7, 9, 8, 14, 'stem'); put(im, 8, 14, 'stem2')
-    for y in range(3, 10):
-        for x in range(2, 14):
-            if math.hypot((x - 7.5) / 6, (y - 8.5) / 5.5) < 1 and y < 9: put(im, x, y, cap if noise(x, y, kind) < 170 else cap_dark)
-    rect(im, 3, 8, 12, 8, 'gill')
+    line, light, mid, dark = {'frozen': ('capline', 'cap0', 'cap1', 'capdark'), 'thawed': ('capline', 'cap2', 'gill', 'stem2'),
+                              'dried': ('dryline', 'dry0', 'dry1', 'dryline')}[kind]
+    rows = [(5, 3, 6), (3, 4, 10), (2, 5, 12), (2, 6, 12), (2, 7, 12), (3, 8, 10)]
+    for x0, y, w in rows:
+        for x in range(x0, x0 + w):
+            put(im, x, y, light if (x < 7 and y < 6) else mid if y < 8 else dark)
+        put(im, x0 - 1, y, line); put(im, x0 + w, y, line)
+    rect(im, 5, 2, 10, 2, line); rect(im, 2, 9, 13, 9, line)
+    rect(im, 6, 10, 9, 13, 'stem' if kind != 'dried' else 'dry0'); rect(im, 9, 10, 9, 13, 'stem2')
+    rect(im, 5, 10, 5, 13, line); rect(im, 10, 10, 10, 13, line); rect(im, 5, 14, 10, 14, line)
     if kind == 'frozen':
-        for x, y in ((4, 5), (7, 4), (10, 6), (6, 7)): put(im, x, y, 'spot')
-        for x in (3, 6, 9, 12): put(im, x, 9, 'frost')  # rime on the gills
+        for x, y in ((5, 4), (8, 5), (11, 6), (4, 7)): put(im, x, y, 'spot')
+        for x in (3, 7, 12): put(im, x, 9, 'frost')
+    elif kind == 'thawed':
+        put(im, 4, 10, 'stew1'); put(im, 4, 11, 'stew1'); put(im, 12, 10, 'stew1')
     else:
-        for x, y in ((5, 6), (9, 5)): put(im, x, y, 'cap1')
-        put(im, 4, 10, 'stew1')  # a melt drip
+        for x, y in ((4, 6), (9, 4), (11, 7)): put(im, x, y, 'dry1')
     return im
-
 
 def stew():
+    """Vanilla stew style: a wooden bowl seen from above the rim, filled with pale broth and Frostcap pieces."""
     im = img()
-    for y in range(6, 14):
-        for x in range(1, 15):
-            if math.hypot((x - 7.5) / 7, (y - 7) / 6.5) < 1 and y >= 8: put(im, x, y, 'bowl0' if (x + y) % 5 else 'bowl1')
-    for x in range(2, 14): put(im, x, 7, 'stew0' if noise(x, 7, 'sw') < 160 else 'stew1')
-    for x in range(3, 13): put(im, x, 8, 'stew1')
-    for x, y in ((4, 6), (8, 6), (10, 7), (6, 7)): put(im, x, y, 'cap0')
+    rows = [(2, 8, 12), (2, 9, 12), (3, 10, 10), (3, 11, 10), (4, 12, 8), (5, 13, 6)]
+    for x0, y, w in rows:
+        for x in range(x0, x0 + w): put(im, x, y, 'bowl2' if x < x0 + 3 and y < 11 else 'bowl1' if y < 12 else 'bowl0')
+        put(im, x0 - 1, y, 'bowlline'); put(im, x0 + w, y, 'bowlline')
+    rect(im, 5, 14, 10, 14, 'bowlline')
+    rect(im, 2, 6, 13, 7, 'stew0'); rect(im, 3, 5, 12, 5, 'stew1'); rect(im, 2, 7, 13, 7, 'stew1')
+    rect(im, 1, 6, 1, 7, 'bowlline'); rect(im, 14, 6, 14, 7, 'bowlline'); rect(im, 2, 4, 13, 4, 'bowlline')
+    put(im, 2, 5, 'bowlline'); put(im, 13, 5, 'bowlline')
+    for x, y, c in ((4, 6, 'cap0'), (5, 6, 'cap1'), (8, 5, 'cap0'), (9, 6, 'cap1'), (11, 6, 'cap0'), (6, 7, 'gill')): put(im, x, y, c)
     return im
-
 
 def resin():
     im = img()
@@ -513,11 +518,11 @@ data('loot_table/blocks/potted_rimewood_sapling.json', dict(type='minecraft:bloc
 SHEARS_OR_SILK = {'condition': 'minecraft:any_of', 'terms': [
     {'condition': 'minecraft:match_tool', 'predicate': {'items': 'minecraft:shears'}},
     {'condition': 'minecraft:match_tool', 'predicate': {'predicates': {'minecraft:enchantments': [{'enchantments': 'minecraft:silk_touch', 'levels': {'min': 1}}]}}}]}
-# About 48 leaves per tree: these chances average roughly two saplings a tree, and Fortune raises them.
+# About 30 needles per tree: these chances average roughly two saplings a tree, and Fortune raises them.
 data('loot_table/blocks/rimewood_leaves.json', dict(type='minecraft:block', random_sequence=f'{NS}:blocks/rimewood_leaves', pools=[
     dict(rolls=1, entries=[dict(type='minecraft:alternatives', children=[
         dict(type='minecraft:item', name=f'{NS}:rimewood_leaves', conditions=[SHEARS_OR_SILK]),
-        dict(type='minecraft:item', name=f'{NS}:rimewood_sapling', conditions=[SURVIVES, dict(condition='minecraft:table_bonus', enchantment='minecraft:fortune', chances=[0.04, 0.05, 0.0625, 0.083])])])]),
+        dict(type='minecraft:item', name=f'{NS}:rimewood_sapling', conditions=[SURVIVES, dict(condition='minecraft:table_bonus', enchantment='minecraft:fortune', chances=[0.065, 0.08, 0.1, 0.13])])])]),
     dict(rolls=1, conditions=[{'condition': 'minecraft:inverted', 'term': SHEARS_OR_SILK}], entries=[dict(type='minecraft:item', name='minecraft:stick', conditions=[
         dict(condition='minecraft:table_bonus', enchantment='minecraft:fortune', chances=[0.02, 0.022222223, 0.025, 0.033333335, 0.1])],
         functions=[dict(function='minecraft:set_count', count=dict(type='minecraft:uniform', min=1, max=2), add=False), dict(function='minecraft:explosion_decay')])])]))

@@ -8,13 +8,13 @@
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_log.png",
       "width": 16,
       "height": 16,
-      "sha256": "d573540f7276e3b2f3e01560d763e4b0e435e1056d50ccbd3bf721be7e5b27d3"
+      "sha256": "702859e3edaa3c46715e99f82526675eda326536951fc23402fb72cb67b956ba"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_log_top.png",
       "width": 16,
       "height": 16,
-      "sha256": "f9d87e656b78fb97bd7c05a713d75ce4688da5c61d5c09b91f884be8e3dedc7e"
+      "sha256": "4fac79cb4f3d2b5e68823d3e774120434d5cdb2c5299cfcfdc646366ea0dad94"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/stripped_rimewood_log.png",
@@ -26,7 +26,7 @@
       "path": "src/main/resources/assets/frozendawn/textures/block/stripped_rimewood_log_top.png",
       "width": 16,
       "height": 16,
-      "sha256": "583ec10344ff18af24f785ed26b905f33f5c2e36906e260e1a0939460ca23a84"
+      "sha256": "da41a34658e0fc71fc7df65ffd083edbb800e8ce1d0f2c0feb5e312c2692f27b"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_planks.png",
@@ -38,13 +38,13 @@
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_leaves.png",
       "width": 16,
       "height": 16,
-      "sha256": "d5d167fee2b6c3dbdec8a2c20e8cadea8646cd0a4f11820d5c37745cb4c3fcc5"
+      "sha256": "1beca16830a96735b7333ace2b5664cc6bf379140811416e32e1d278ff9b143d"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_sapling.png",
       "width": 16,
       "height": 16,
-      "sha256": "3a99d3a96f6d1eb2dafc23c4baa4ccc06187980ffac22910fbd867075405df89"
+      "sha256": "5d4401db96502aedfe5c66af2dc5f6a485b8f36c54a00dfc7411cb2546e21433"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/rimewood_door_top.png",
@@ -68,13 +68,13 @@
       "path": "src/main/resources/assets/frozendawn/textures/block/frostcap_top.png",
       "width": 16,
       "height": 16,
-      "sha256": "9b9740db42ee241dffc6f067e1c557be13778233c3e2f2273f744027daccd6e2"
+      "sha256": "7b167e382f450ee38a3cb9d34910a78d217225ae5585035d4982e8f78969b50b"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/frostcap_side.png",
       "width": 16,
       "height": 16,
-      "sha256": "86c1c0c461ed80b8d475ef6d3ce8dc32e100a6a116b96cf61874e0b741e92bf2"
+      "sha256": "b67ac74a3321e7e4d9b3dd3c4b0404f56c27da730a38805678dc2edb6a3457ab"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/block/frostcap_stem.png",
@@ -104,31 +104,31 @@
       "path": "src/main/resources/assets/frozendawn/textures/item/frozen_frostcap.png",
       "width": 16,
       "height": 16,
-      "sha256": "9cb3cc347951836b1ac338f3520e559d0b157dd085814eebe21c507fd319ccfe"
+      "sha256": "d43f4a8ebb6cc8f6fc9f8f4a25c18fbf46ca2a831f6fe60d081472396b462037"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/thawed_frostcap.png",
       "width": 16,
       "height": 16,
-      "sha256": "5dfe00ae57bb266d132c7c002c87d0dde1e69a4ded0e5a4b94912af710cf65c2"
+      "sha256": "dfedbfb21ad912c00d4aee7b02b546bc519b1161259689fc9d66d07a313700c7"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/frostcap_mush.png",
       "width": 16,
       "height": 16,
-      "sha256": "f83d75bebd42dbbb9063310e79e9af3a01b004e47000dad5d533400cca0c3ecd"
+      "sha256": "fdbb104733765e4d3c73275f1026bbc8c2b5b28e682e076b63c3a8d1203f6895"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/dried_frostcap.png",
       "width": 16,
       "height": 16,
-      "sha256": "a39daccdfde6bf11ff57aa50153e1897511bc930c64895092f38151be3f4db00"
+      "sha256": "fed7baa6d187d48c7236dde875c7d96f079eb00a38f35377b6327c6d0c4f28db"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/frostcap_stew.png",
       "width": 16,
       "height": 16,
-      "sha256": "a51f326d2272a8b5af27484d48b5b5c6d566e3e7e778f0ad667b21881daf0ebf"
+      "sha256": "84c108ef9ecda28949c763b35f4b2905aa5896add244508c03e329565466acf7"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/rimewood_resin.png",
@@ -152,7 +152,7 @@
       "path": "src/main/resources/assets/frozendawn/textures/entity/signs/rimewood.png",
       "width": 64,
       "height": 32,
-      "sha256": "e7e4dcf6969235dda7a37ffa9395439f3d9d1e37231f12add26b8ecf36cdc0c3"
+      "sha256": "53399ce011c97d703ee825a76f9055d36f7be84e22015c033dc851921143becf"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/entity/signs/hanging/rimewood.png",
