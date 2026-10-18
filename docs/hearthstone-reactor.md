@@ -41,6 +41,12 @@ maeve-director first (merge commit, not squash), then this branch.
   stay at or above 5C for 3 minutes to thaw it.
 - **Load-follow**: insertion slews 2%/s toward the heat that yields network demand, plus a 5 kW charging margin
   while banks are below capacity, minus other generators. Capped at what the radiators hold at 300C.
+- **Spinning reserve** (2026-10-17): the controller's Reserve button cycles 0/10/20/40/60 kW, saved with the core.
+  Load-follow aims that far above demand, so a step load (an ORSA Uplink transmission) is already covered; the
+  unused heat leaves through the radiators and rods burn faster. Scheduled loads also count: an armed Uplink
+  transmit prompt adds its extra draw to the target before anything is served.
+- **Radiators and frost** (2026-10-17): every linked radiator runs hot once its coolant is at 150C or more, even
+  when buried, and boils snow, ice and frozen atmosphere off its open faces; frost never forms on a hot one.
 - **Controller UI**: core temperature, state, heat in/removed, power and efficiency, radiators and coolant, climb
   rate, rods and damage, load-follow target, ESTIMATED TIME TO CORE FAILURE, AUTO-SCRAM: DISABLED banner,
   insertion slider, SCRAM/Reset/Follow/Auto buttons, 4 rod slots and a spent-rod output, thermometer bar.

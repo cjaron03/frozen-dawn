@@ -133,7 +133,12 @@ public final class PowerNetworks {
     public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
         var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
         long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
-        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge-Math.max(0,m.generationWatts()-ownWatts)));
+        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge+scheduledWatts(l,p)-Math.max(0,m.generationWatts()-ownWatts)));
+    }
+    /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
+    static long scheduledWatts(ServerLevel l,BlockPos p){
+        long sum=0;for(var cell:component(l,p))if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.UplinkConsoleBlockEntity c)sum+=c.scheduledWatts();
+        return sum;
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
     public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}
@@ -209,8 +214,10 @@ public final class PowerNetworks {
                 &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
                 &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
-    private static boolean coolantLink(ServerLevel l,PowerLink link){
-        return l.isLoaded(link.a())&&l.isLoaded(link.b())&&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
+    /** Runs inside chunk-load events: it must never wait on a chunk that is still loading, or the server deadlocks. */
+    static boolean coolantLink(ServerLevel l,PowerLink link){
+        return com.frozendawn.world.ReadyChunks.ready(l,link.a())&&com.frozendawn.world.ReadyChunks.ready(l,link.b())
+                &&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
     }
     private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
     private static void revokePumpGrants(Runtime rt,BlockPos node) {
@@ -307,6 +314,8 @@ public final class PowerNetworks {
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof PoweredMachine furnace)
             return furnace.wantsPower()?furnace.demandWatts():0;
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.UplinkConsoleBlockEntity uplink)return uplink.demandWatts();
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PlumbLineBlockEntity gpr)return gpr.demandWatts();
         if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.DeconShowerBlock)
             return com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(pos));
         return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
@@ -414,7 +423,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:1,load)).toList();
+                    level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }

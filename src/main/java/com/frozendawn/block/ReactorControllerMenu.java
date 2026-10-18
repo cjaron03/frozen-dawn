@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * 0 SCRAM, 1 reset, 2 load-follow toggle, 3 enable auto-SCRAM, 4 disable auto-SCRAM (after both confirmations),
  * 100-200 manual insertion percent. */
 public final class ReactorControllerMenu extends AbstractContainerMenu {
-    public static final int SCRAM = 0, RESET = 1, LOAD_FOLLOW = 2, AUTO_ON = 3, AUTO_OFF = 4, INSERTION = 100;
+    public static final int SCRAM = 0, RESET = 1, LOAD_FOLLOW = 2, AUTO_ON = 3, AUTO_OFF = 4, RESERVE = 5, INSERTION = 100;
     public static final int WIDTH = 276, HEIGHT = 264, ROD_Y = 150, INV_Y = 182, INV_X = 57;
     private final Container container;
     private final ContainerData data;
@@ -51,6 +51,7 @@ public final class ReactorControllerMenu extends AbstractContainerMenu {
                     com.frozendawn.radiation.ReactorAdvancements.grant(sp, "az_5"); entity.manualScram(); }
             case RESET -> { return entity.reset(); }
             case LOAD_FOLLOW -> entity.toggleLoadFollow();
+            case RESERVE -> entity.cycleReserve();
             case AUTO_ON -> entity.enableAutoScram();
             case AUTO_OFF -> entity.disableAutoScram(player);
             default -> { return false; }

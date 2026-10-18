@@ -78,6 +78,10 @@ public class OrsaDocumentItem extends Item {
                     case "newspaper_conspiracy" -> grantAdvancement(serverPlayer, "found_newspaper_conspiracy");
                     case "newspaper_weather" -> grantAdvancement(serverPlayer, "found_newspaper_weather");
                     case "newspaper_missing" -> grantAdvancement(serverPlayer, "found_newspaper_missing");
+                    // ORSA Uplink transcripts: invisible unlocks for the Relay Archive manual pages.
+                    case "relay_archive_1" -> grantAdvancement(serverPlayer, "relay_archive/1");
+                    case "relay_archive_2" -> grantAdvancement(serverPlayer, "relay_archive/2");
+                    case "relay_archive_3" -> grantAdvancement(serverPlayer, "relay_archive/3");
                 }
 
                 // Grant general classified_information for ORSA-authored docs only

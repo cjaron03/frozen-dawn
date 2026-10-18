@@ -184,6 +184,10 @@ public class ClientEvents {
                 OrsaAwakeningIntro::render
         );
         event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "first_boot_epigraph"),
+                FirstBootEpigraph::render
+        );
+        event.registerAboveAll(
                 ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "thaeven_transmission"),
                 ThaevenTransmissionOverlay::render
         );
@@ -339,6 +343,7 @@ public class ClientEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.ORSA_FLAG.get(), OrsaFlagRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALARM_BEACON.get(), AlarmBeaconRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.PHASE_BAROMETER.get(), PhaseBarometerRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.UPLINK_DISH.get(), com.frozendawn.client.renderer.UplinkDishRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_RESERVOIR.get(),com.frozendawn.client.renderer.OxygenReservoirRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GAUGE.get(), com.frozendawn.client.renderer.OxygenGaugeRenderer::new);
     }
@@ -356,11 +361,18 @@ public class ClientEvents {
     }
 
     @SubscribeEvent
+    public static void onRegisterAdditionalModels(net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
+        event.register(com.frozendawn.client.renderer.UplinkDishRenderer.REFLECTOR);
+    }
+
+    @SubscribeEvent
     public static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenuTypes.RESISTIVE_HEATER.get(), ResistiveHeaterScreen::new);
         event.register(ModMenuTypes.REACTOR_CONTROLLER.get(), ReactorControllerScreen::new);
         event.register(ModMenuTypes.PIXIE.get(), PixieScreen::new);
         event.register(ModMenuTypes.POWER_MONITOR.get(), PowerMonitorScreen::new);
+        event.register(ModMenuTypes.UPLINK_CONSOLE.get(), UplinkConsoleScreen::new);
+        event.register(ModMenuTypes.PLUMB_LINE.get(), PlumbLineScreen::new);
         event.register(ModMenuTypes.INDUCTION_FURNACE.get(), InductionFurnaceScreen::new);
         event.register(ModMenuTypes.POWER_STORAGE.get(), PowerStorageScreen::new);
         event.register(ModMenuTypes.GEOTHERMAL_CORE.get(), GeothermalCoreScreen::new);

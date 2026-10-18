@@ -25,6 +25,9 @@ public final class ReactorPhysics {
     public static final double THAW_ROOM_C = 5, LOAD_FOLLOW_SLEW = 0.02;
     /** Coolant pumps run while the core makes heat or is above this; an idle core settles to its room. */
     public static final double PUMP_C = 40;
+    /** Linked radiators run hot, glow and shed snow, ice and frozen atmosphere once the coolant reaching them is
+     * this warm. Covered radiators heat too, so frost on an idle plant clears itself before the core needs it. */
+    public static final double RADIATOR_HOT_C = 150;
     /** While operating, coolant flow is throttled to hold the core in its working band: closed below 200C, full
      * above 280C. Oversized radiators therefore never chill a running core. After a SCRAM pumps run full to cool down. */
     public static final double HOLD_LOW_C = 200, HOLD_HIGH_C = 280;
@@ -43,6 +46,9 @@ public final class ReactorPhysics {
 
     private double coreC = 20, insertion, residualKw, damage;
     private boolean scram, autoScram = true, loadFollow, frozen, meltdown;
+    /** Spinning reserve: load-follow holds this many kW above demand so a step load is already covered. */
+    public static final int[] RESERVE_STEPS_KW = {0, 10, 20, 40, 60};
+    private int reserveKw;
     private int coldSeconds, thawSeconds;
 
     public double coreC() { return coreC; }
@@ -57,6 +63,13 @@ public final class ReactorPhysics {
     public void setCoreC(double value) { if (Double.isFinite(value)) coreC = value; }
     public void setInsertion(double value) { if (Double.isFinite(value)) insertion = Math.clamp(value, 0, 1); }
     public void setLoadFollow(boolean value) { loadFollow = value; }
+    public int reserveKw() { return reserveKw; }
+    /** Next reserve step, wrapping to zero. */
+    public void cycleReserve() {
+        int next = 0;
+        for (int i = 0; i < RESERVE_STEPS_KW.length; i++) if (RESERVE_STEPS_KW[i] == reserveKw) next = RESERVE_STEPS_KW[(i + 1) % RESERVE_STEPS_KW.length];
+        reserveKw = next;
+    }
     public void setAutoScram(boolean value) { autoScram = value; }
     /** Manual SCRAM works in every state, including with automatic SCRAM disabled. */
     public void scram() { scram = true; }
@@ -133,7 +146,7 @@ public final class ReactorPhysics {
         tag.putDouble("CoreC", coreC); tag.putDouble("Insertion", insertion); tag.putDouble("ResidualKw", residualKw);
         tag.putDouble("Damage", damage); tag.putBoolean("Scram", scram); tag.putBoolean("AutoScram", autoScram);
         tag.putBoolean("LoadFollow", loadFollow); tag.putBoolean("Frozen", frozen); tag.putBoolean("Meltdown", meltdown);
-        tag.putInt("ColdSeconds", coldSeconds); tag.putInt("ThawSeconds", thawSeconds);
+        tag.putInt("ColdSeconds", coldSeconds); tag.putInt("ThawSeconds", thawSeconds); tag.putInt("ReserveKw", reserveKw);
     }
     public void load(CompoundTag tag) {
         coreC = tag.contains("CoreC") ? finite(tag.getDouble("CoreC"), 20) : 20;
@@ -143,6 +156,8 @@ public final class ReactorPhysics {
         scram = tag.getBoolean("Scram"); autoScram = !tag.contains("AutoScram") || tag.getBoolean("AutoScram");
         loadFollow = tag.getBoolean("LoadFollow"); frozen = tag.getBoolean("Frozen"); meltdown = tag.getBoolean("Meltdown");
         coldSeconds = Math.max(0, tag.getInt("ColdSeconds")); thawSeconds = Math.max(0, tag.getInt("ThawSeconds"));
+        int reserve = tag.getInt("ReserveKw");
+        reserveKw = java.util.Arrays.stream(RESERVE_STEPS_KW).anyMatch(k -> k == reserve) ? reserve : 0;
     }
     private static double finite(double value, double fallback) { return Double.isFinite(value) ? value : fallback; }
 }

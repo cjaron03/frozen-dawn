@@ -89,7 +89,7 @@ def pack_only(destination, hooks=False, title=TITLE, namespace=NS, build_scripts
             target.write_text(json.dumps({'values':[namespace+':'+name]})+'\n')
 
 
-def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_scripts=scripts, surface=128, structures=True):
+def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_scripts=scripts, surface=128, structures=True, terrain=False):
     if destination.exists():
         raise SystemExit('Refusing to overwrite existing world: '+str(destination))
     original=template.read_bytes(); source_hash=hashlib.sha256(original).hexdigest()
@@ -101,9 +101,14 @@ def prepare(template, destination, title=TITLE, namespace=NS, pack=PACK, build_s
     data['WorldGenSettings'][1]['seed']=(4,77371337)
     # Flat safe lab, with no copied terrain. Required dimensions retain their generator schemas.
     dims=data['WorldGenSettings'][1]['dimensions'][1]
-    dims['minecraft:overworld'][1]['generator']=(10,{'type':(8,'minecraft:flat'), 'settings':(10,{
-        'biome':(8,'minecraft:plains'), 'lakes':(1,0), 'features':(1,0),
-        'layers':(9,(10,[{'height':(3,1),'block':(8,'minecraft:bedrock')},{'height':(3,surface-1),'block':(8,'minecraft:stone')}]))})})
+    if terrain:
+        # Ordinary Overworld terrain, so worldgen landmarks (stations, reactor sites, drops) appear as in play.
+        dims['minecraft:overworld'][1]['generator']=(10,{'type':(8,'minecraft:noise'),'settings':(8,'minecraft:overworld'),
+            'biome_source':(10,{'type':(8,'minecraft:multi_noise'),'preset':(8,'minecraft:overworld')})})
+    else:
+        dims['minecraft:overworld'][1]['generator']=(10,{'type':(8,'minecraft:flat'), 'settings':(10,{
+            'biome':(8,'minecraft:plains'), 'lakes':(1,0), 'features':(1,0),
+            'layers':(9,(10,[{'height':(3,1),'block':(8,'minecraft:bedrock')},{'height':(3,surface-1),'block':(8,'minecraft:stone')}]))})})
     if not structures:
         # No villages or other flat-world structures on top of lab fixtures.
         dims['minecraft:overworld'][1]['generator'][1]['settings'][1]['structure_overrides']=(9,(8,[]))

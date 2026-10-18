@@ -1,0 +1,95 @@
+{
+  "created": "2026-10-17",
+  "creator": "Frozen Dawn; authored in code",
+  "script": "make_textures.py",
+  "third_party_pixels": false,
+  "palette": {
+    "black": "0b0f12",
+    "dark": "171c21",
+    "steel": "283039",
+    "steel2": "2f373f",
+    "mid": "414950",
+    "light": "667077",
+    "pale": "8c969c",
+    "white": "c9d1d4",
+    "copper": "976344",
+    "copper2": "c18054",
+    "screen": "07141c",
+    "screen2": "153843",
+    "cyan": "2dd4d2",
+    "cyan2": "1c7584",
+    "amber": "e5a064",
+    "red": "e58b83",
+    "pcb": "1f3a2c",
+    "pcb2": "2c5640",
+    "gold": "d9b45a"
+  },
+  "textures": [
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_front_0.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "68db7cc0c4367db1d6a7756c1986c4d69bc8a9bd991d094288eb09a2791748d5"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_front_1.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "88d8d5896011ee9d1a042fe36e095d7766c212231bdd46e53ddd2a5bc6677a03"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_front_2.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "7bb84c8a32ea9f049dda55280069879ac79decaf519f227474be6871b6939085"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_side.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "01b07994109da2dbe955230bef848c13810d27f36ef69db5cb9c45659c5accab"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_top.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "039533d98107721ce747a02edcf97b9b70e3865b8cf6e84d1cdc7f6e1c47cdf9"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_console_back.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "a83e1e6835848b0171c64871103fa6309663c40c476548c9b4cbeeadd273bb18"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_dish_face.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "6f6d8385b56185fce1d41b1b5de5231bd51c770a53a96c12995d70f11f0b3dd0"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_dish_back.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "24f736b29e77daa89f7dcb2c8841285cb4963498353d979e872402e701fc3118"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/block/uplink_dish_mast.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "43855c9c6902ba73da62cddfb110686dfd919ebdf982b9c942c55ece93d8602b"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/item/signal_processor.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "b6270890c82fdab1af2c40c07b619ba3939915745da531b68625027ee8a0179b"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/textures/item/feed_horn.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "fbe8ccf0b4cf806b06a29aa07463157f2121083cf50f25bec0164630387e8d80"
+    }
+  ]
+}

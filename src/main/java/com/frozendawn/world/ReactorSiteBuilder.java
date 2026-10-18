@@ -138,7 +138,8 @@ public final class ReactorSiteBuilder {
         set(l, c, MEDICAL.getX(), MEDICAL.getY(), MEDICAL.getZ(), Blocks.BARREL.defaultBlockState());
         fill(l, c.offset(LOCKER), new ItemStack(ModItems.GEIGER_COUNTER.get()), new ItemStack(ModItems.RAD_AID.get(), 1 + r.nextInt(2)),
                 com.frozendawn.item.PowerCellItem.charged(100_000 + r.nextInt(200_001)), shiftLog());
-        fill(l, c.offset(MEDICAL), new ItemStack(ModItems.SHIELDED_CASK.get()), new ItemStack(ModItems.RAD_AID.get()));
+        // ORSA Uplink salvage: the site's comms feed survived in the medical store.
+        fill(l, c.offset(MEDICAL), new ItemStack(ModItems.SHIELDED_CASK.get()), new ItemStack(ModItems.RAD_AID.get()), new ItemStack(ModItems.FEED_HORN.get()));
         int rods = 2 + r.nextInt(3); var rack = new ItemStack[rods + 1];
         for (int i = 0; i < rods; i++) {
             var rod = new ItemStack(ModItems.FUEL_ROD.get());

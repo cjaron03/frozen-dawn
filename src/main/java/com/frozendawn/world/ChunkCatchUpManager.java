@@ -152,6 +152,7 @@ public final class ChunkCatchUpManager {
         long processNanos = 0;
         CatchUpTrace trace = new CatchUpTrace();
         MutationProtectionContext protectionContext = new MutationProtectionContext(level);
+        java.util.Set<Long> notReady = new java.util.HashSet<>();
 
         long bookkeepingStart = System.nanoTime();
         ChunkEpochState epochState = ChunkEpochState.get(level.getServer());
@@ -162,7 +163,7 @@ public final class ChunkCatchUpManager {
                     && blocks < blockBudget
                     && System.nanoTime() - start < budgetNanos) {
                 long selectStart = System.nanoTime();
-                long key = selectNextChunk(level);
+                long key = selectNextChunk(level, notReady);
                 selectNanos += System.nanoTime() - selectStart;
                 if (key == Long.MIN_VALUE) {
                     break;
@@ -174,6 +175,10 @@ public final class ChunkCatchUpManager {
                 if (!isChunkLoaded(level, chunkX, chunkZ)) {
                     pendingChunks.remove(key);
                     freshChunks.remove(key);
+                    continue;
+                }
+                if (!ReadyChunks.ready(level, chunkX, chunkZ)) {
+                    notReady.add(key);
                     continue;
                 }
 
@@ -372,7 +377,7 @@ public final class ChunkCatchUpManager {
                 int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, columnX, columnZ);
                 int offset = (cursor >> 8) - 8;
                 mutable.set(columnX, surfaceY + offset, columnZ);
-                if (!level.isLoaded(mutable)) {
+                if (!ReadyChunks.ready(level, mutable)) {
                     yield CursorStep.completed();
                 }
                 BlockPos pos = mutable.immutable();
@@ -387,7 +392,7 @@ public final class ChunkCatchUpManager {
                 int sampleZ = (chunkZ << 4) + random.nextInt(16);
                 int y = random.nextIntBetweenInclusive(level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
                 mutable.set(sampleX, y, sampleZ);
-                if (!level.isLoaded(mutable)) {
+                if (!ReadyChunks.ready(level, mutable)) {
                     yield CursorStep.completed();
                 }
                 applyVolumeCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
@@ -400,7 +405,7 @@ public final class ChunkCatchUpManager {
                 int sampleZ = (chunkZ << 4) + random.nextInt(16);
                 int y = random.nextIntBetweenInclusive(Math.max(0, level.getMinBuildHeight()), level.getMaxBuildHeight() - 1);
                 mutable.set(sampleX, y, sampleZ);
-                if (!level.isLoaded(mutable)) {
+                if (!ReadyChunks.ready(level, mutable)) {
                     yield CursorStep.completed();
                 }
                 applyVolumeCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
@@ -509,7 +514,7 @@ public final class ChunkCatchUpManager {
         }
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         mutable.set(x, y, z);
-        if (!level.isLoaded(mutable)) {
+        if (!ReadyChunks.ready(level, mutable)) {
             return CursorStep.completed();
         }
         applyTreeClearCatchUp(level, apocalypse, mutable.immutable(), editBudget, protectionContext);
@@ -537,7 +542,7 @@ public final class ChunkCatchUpManager {
         }
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         mutable.set(x, y, z);
-        if (!level.isLoaded(mutable)) {
+        if (!ReadyChunks.ready(level, mutable)) {
             return CursorStep.completed();
         }
 
@@ -948,7 +953,7 @@ public final class ChunkCatchUpManager {
     }
 
     private static boolean canMutate(ServerLevel level, BlockPos pos, MutationProtectionContext protectionContext) {
-        if (!level.isLoaded(pos)) {
+        if (!ReadyChunks.ready(level, pos)) {
             return false;
         }
         return !protectionContext.isPlayerPlaced(pos)
@@ -1068,17 +1073,23 @@ public final class ChunkCatchUpManager {
         return RandomSource.create(seed);
     }
 
-    private static long selectNextChunk(ServerLevel level) {
+    private static long selectNextChunk(ServerLevel level, Set<Long> skip) {
+        return nearestFirst(pendingChunks, skip, key -> nearestPlayerDistanceSq(level,
+                ChunkEpochState.unpackChunkX(key), ChunkEpochState.unpackChunkZ(key)));
+    }
+
+    /**
+     * Strictly nearest pending chunk to any player, ties broken by key. Freshly generated chunks get no priority:
+     * a bonus for them starved chunks reloaded from disk for as long as the player kept exploring, leaving untouched
+     * terrain beside them. Returns {@link Long#MIN_VALUE} when nothing is eligible.
+     */
+    static long nearestFirst(Iterable<Long> pending, Set<Long> skip, java.util.function.ToDoubleFunction<Long> distanceSq) {
         long bestKey = Long.MIN_VALUE;
         double bestScore = Double.MAX_VALUE;
-        for (long key : pendingChunks) {
-            int chunkX = ChunkEpochState.unpackChunkX(key);
-            int chunkZ = ChunkEpochState.unpackChunkZ(key);
-            double score = nearestPlayerDistanceSq(level, chunkX, chunkZ);
-            if (freshChunks.contains(key)) {
-                score -= 1_000_000.0D;
-            }
-            if (score < bestScore) {
+        for (long key : pending) {
+            if (skip.contains(key)) continue;
+            double score = distanceSq.applyAsDouble(key);
+            if (score < bestScore || score == bestScore && key < bestKey) {
                 bestScore = score;
                 bestKey = key;
             }

@@ -24,7 +24,7 @@ import static com.frozendawn.block.ReactorControllerBlockEntity.*;
 public final class ReactorControllerScreen extends AbstractContainerScreen<ReactorControllerMenu> {
     private static final int BG = 0xFF28353D, PANEL = 0xFF152128, TEXT = 0xFFE0E6E8, MUTED = 0xFF9BAAB1, GREEN = 0xFF9CD5A5,
             AMBER = 0xFFE5A064, RED = 0xFFE5534B, CYAN = 0xFF64C9CC, HOLD_TICKS = 60;
-    private Button scram, reset, follow, auto, keep, understand, cancel, hold;
+    private Button scram, reset, follow, auto, reserve, keep, understand, cancel, hold;
     private InsertionSlider insertion;
     private final List<AbstractWidget> controls = new ArrayList<>();
     private int modal, holdTicks;
@@ -45,6 +45,8 @@ public final class ReactorControllerScreen extends AbstractContainerScreen<React
         reset = control(Button.builder(Component.translatable("screen.frozendawn.reactor.reset"), b -> send(ReactorControllerMenu.RESET)).bounds(x, y + 23, 62, 20).build());
         follow = control(Button.builder(Component.empty(), b -> send(ReactorControllerMenu.LOAD_FOLLOW)).bounds(x, y + 46, 62, 20).build());
         auto = control(Button.builder(Component.empty(), b -> { if (flag(F_AUTO)) openModal(1); else send(ReactorControllerMenu.AUTO_ON); }).bounds(x, y + 69, 62, 20).build());
+        reserve = control(Button.builder(Component.empty(), b -> send(ReactorControllerMenu.RESERVE)).bounds(x, y + 92, 62, 20)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("screen.frozendawn.reactor.reserve.tooltip"))).build());
         insertion = control(new InsertionSlider(leftPos + 8, topPos + 126, 160, 14));
         int mx = leftPos + 28, my = topPos + imageHeight - 32;
         keep = addRenderableWidget(Button.builder(Component.translatable("screen.frozendawn.reactor.confirm.keep"), b -> openModal(0)).bounds(mx, my, 104, 20).build());
@@ -64,7 +66,8 @@ public final class ReactorControllerScreen extends AbstractContainerScreen<React
     @Override protected void containerTick() {
         super.containerTick();
         boolean melted = data(STATE) == ReactorPhysics.State.MELTDOWN.ordinal();
-        reset.active = flag(F_RESETTABLE); insertion.active = follow.active = !melted;
+        reset.active = flag(F_RESETTABLE); insertion.active = follow.active = reserve.active = !melted;
+        reserve.setMessage(Component.translatable("screen.frozendawn.reactor.reserve", data(ReactorControllerBlockEntity.RESERVE)));
         follow.setMessage(Component.translatable(flag(F_FOLLOW) ? "screen.frozendawn.reactor.follow_on" : "screen.frozendawn.reactor.follow_off"));
         auto.setMessage(Component.translatable(flag(F_AUTO) ? "screen.frozendawn.reactor.auto_on" : "screen.frozendawn.reactor.auto_off"));
         insertion.sync(data(INSERTION) / 1000.0);
@@ -139,7 +142,9 @@ public final class ReactorControllerScreen extends AbstractContainerScreen<React
                 .filter(s -> ReactorControllerBlockEntity.fuel(s.getItem())).count(), kw(RATED), data(DAMAGE) / 10), data(DAMAGE) > 0 ? RED : MUTED);
         if (flag(F_SCRAM) && state != ReactorPhysics.State.MELTDOWN)
             line(g, 7, Component.translatable(flag(F_RESETTABLE) ? "screen.frozendawn.reactor.scram_reset" : "screen.frozendawn.reactor.scram_wait"), AMBER);
-        else line(g, 7, data(TARGET) >= 0 ? Component.translatable("screen.frozendawn.reactor.target", kw(TARGET))
+        else line(g, 7, data(TARGET) >= 0 ? (data(ReactorControllerBlockEntity.RESERVE) > 0
+                        ? Component.translatable("screen.frozendawn.reactor.target_reserve", kw(TARGET), data(ReactorControllerBlockEntity.RESERVE))
+                        : Component.translatable("screen.frozendawn.reactor.target", kw(TARGET)))
                 : Component.translatable("screen.frozendawn.reactor.manual"), MUTED);
         if (data(FAILURE) >= 0 && flag(F_AUTO) && !flag(F_SCRAM) && climb > 0 && c < ReactorPhysics.AUTO_SCRAM_C)
             line(g, 8, Component.translatable("screen.frozendawn.reactor.auto_scram_in", (int) Math.ceil((ReactorPhysics.AUTO_SCRAM_C - c) / climb)), AMBER);
