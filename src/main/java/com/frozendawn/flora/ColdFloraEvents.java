@@ -18,15 +18,12 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
- * Frostcap thawing in warm inventories, once a second, and wild Frostcap patches appearing on cold snow and ice near
- * players from Phase 3. Chests are not ticked, so a cap kept in any chest stays as it was.
+ * Frostcap thawing in warm inventories, once a second, and natural Cold Flora near players from Phase 3 (see
+ * {@link ColdFloraSpawner}). Chests are not ticked, so a cap kept in any chest stays as it was.
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID)
 public final class ColdFloraEvents {
     private ColdFloraEvents() { }
-
-    /** Every 10 s, each player has a 1 in 30 chance (about once in five minutes) to seed one patch 24-64 blocks away. */
-    static final int SEED_INTERVAL_TICKS = 200, SEED_ONE_IN = 30, SEED_MIN = 24, SEED_MAX = 64, SEED_CLEAR_RADIUS = 16;
 
     @SubscribeEvent
     public static void tick(ServerTickEvent.Post event) {
@@ -36,10 +33,14 @@ public final class ColdFloraEvents {
             if (player.isCreative() || player.isSpectator()) continue;
             if (WorldTickHandler.getLastTemperature(player.getUUID()) > ColdFloraPolicy.FROSTCAP_DIES_ABOVE) warmInventory(player);
         }
-        if (t % SEED_INTERVAL_TICKS == 0 && ApocalypseState.get(server).getPhase() >= 3) {
+        boolean groves = t % ColdFloraSpawner.GROVE_INTERVAL_TICKS == 0, caps = t % ColdFloraSpawner.CAP_INTERVAL_TICKS == 0;
+        if ((groves || caps) && ApocalypseState.get(server).getPhase() >= 3) {
             var level = server.getLevel(Level.OVERWORLD);
-            if (level != null) for (var player : level.players())
-                if (!player.isSpectator() && level.random.nextInt(SEED_ONE_IN) == 0) seedNear(level, player.blockPosition());
+            if (level != null) for (var player : level.players()) {
+                if (player.isSpectator()) continue;
+                if (groves && level.random.nextInt(ColdFloraSpawner.GROVE_ONE_IN) == 0) ColdFloraSpawner.tryGrove(level, player.blockPosition());
+                if (caps && level.random.nextInt(ColdFloraSpawner.CAP_ONE_IN) == 0) ColdFloraSpawner.tryFrostcap(level, player.blockPosition());
+            }
         }
     }
 
@@ -59,21 +60,6 @@ public final class ColdFloraEvents {
         int warm = stack.getOrDefault(ModDataComponents.FROSTCAP_WARMTH.get(), 0) + 1;
         if (warm < ColdFloraPolicy.THAW_SECONDS) { stack.set(ModDataComponents.FROSTCAP_WARMTH.get(), warm); return null; }
         return new ItemStack(frozen ? ModItems.THAWED_FROSTCAP.get() : ModItems.FROSTCAP_MUSH.get(), stack.getCount());
-    }
-
-    /** A wild patch of three to six caps on open snow or ice that is cold enough, if none grow within 16 blocks. */
-    static boolean seedNear(ServerLevel level, BlockPos around) {
-        var random = level.random;
-        double angle = random.nextDouble() * Math.PI * 2;
-        int distance = SEED_MIN + random.nextInt(SEED_MAX - SEED_MIN + 1);
-        int x = around.getX() + (int) Math.round(Math.cos(angle) * distance), z = around.getZ() + (int) Math.round(Math.sin(angle) * distance);
-        if (!level.hasChunkAt(new BlockPos(x, around.getY(), z))) return false;
-        var top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z));
-        if (!FrostcapBlock.supported(level, top, Direction.UP) || !level.isEmptyBlock(top)) return false;
-        if (ColdFlora.temperature(level, top) > ColdFloraPolicy.GROW_AT_OR_BELOW) return false;
-        for (var p : BlockPos.betweenClosed(top.offset(-SEED_CLEAR_RADIUS, -4, -SEED_CLEAR_RADIUS), top.offset(SEED_CLEAR_RADIUS, 4, SEED_CLEAR_RADIUS)))
-            if (level.getBlockState(p).is(ModBlocks.FROSTCAP.get())) return false;
-        return plant(level, top, 3 + random.nextInt(4)) > 0;
     }
 
     /** Places up to {@code count} caps at varied ages around {@code center} where they can stand. */

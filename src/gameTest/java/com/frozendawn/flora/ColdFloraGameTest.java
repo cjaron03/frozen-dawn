@@ -103,6 +103,44 @@ public final class ColdFloraGameTest {
         h.succeed();
     });}
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="cold_flora",timeoutTicks=100)
+    public static void rimewoodGrovesCarryFrostcapAndSeedingFindsTrunks(GameTestHelper h){h.runAfterDelay(1,()->{
+        var l=h.getLevel();floor(h,GameTestTemplates.EMPTY_LARGE_WIDTH,ModBlocks.DEAD_GRASS_BLOCK.get());
+        var center=h.absolutePos(new BlockPos(10,2,10));
+        h.assertTrue(ModBlocks.RIMEWOOD_SAPLING.get().defaultBlockState().canSurvive(l,center),"Saplings root in dead grass, the Phase 3 ground");
+        var trunks=ColdFloraSpawner.plantGrove(l,center,RandomSource.create(11),false);
+        h.assertTrue(trunks.size()>=2&&trunks.size()<=4,"A grove is two to four trees on dead grass: "+trunks);
+        var trunk=trunks.getFirst();
+        h.assertTrue(ColdFloraSpawner.shelve(l,trunk,RandomSource.create(5),3)==3,"Three Frostcap shelves fit on a trunk");
+        int shelves=0;for(var p:BlockPos.betweenClosed(trunk.offset(-1,0,-1),trunk.offset(1,8,1))){var st=l.getBlockState(p);
+            if(st.is(ModBlocks.FROSTCAP.get())){shelves++;h.assertTrue(st.getValue(FrostcapBlock.FACING)!=Direction.UP&&st.canSurvive(l,p),"Each shelf hangs on the trunk at "+p);}}
+        h.assertTrue(shelves==3,"Shelves placed: "+shelves);
+        var found=ColdFloraSpawner.findTrunk(l,trunk.offset(3,0,2),8);
+        h.assertTrue(found!=null&&trunks.contains(found),"Seeding finds a trunk base nearby: "+found);
+        h.succeed();
+    });}
+
+    @GameTest(template=GameTestTemplates.EMPTY,batch="cold_flora",timeoutTicks=100)
+    public static void frostcapSpreadsMostlyOntoRimewood(GameTestHelper h){h.runAfterDelay(1,()->{
+        var l=h.getLevel();floor(h,GameTestTemplates.EMPTY_WIDTH,Blocks.SNOW_BLOCK);
+        var base=h.absolutePos(new BlockPos(4,2,4));
+        for(int y=0;y<3;y++)l.setBlockAndUpdate(base.above(y),ModBlocks.RIMEWOOD_LOG.get().defaultBlockState());
+        var source=base.above().north();
+        l.setBlockAndUpdate(source,ModBlocks.FROSTCAP.get().defaultBlockState().setValue(FrostcapBlock.FACING,Direction.NORTH).setValue(FrostcapBlock.AGE,2));
+        int onLog=0,onGround=0;var random=RandomSource.create(9);
+        for(int i=0;i<300;i++){
+            FrostcapBlock.spread(l,source,random);
+            for(var p:BlockPos.betweenClosed(base.offset(-3,-1,-3),base.offset(3,3,3))){
+                if(p.equals(source)||!l.getBlockState(p).is(ModBlocks.FROSTCAP.get()))continue;
+                if(l.getBlockState(p).getValue(FrostcapBlock.FACING)==Direction.UP)onGround++;else onLog++;
+                l.removeBlock(p,false);
+            }
+        }
+        h.assertTrue(onLog>0&&onLog>onGround*3,"Spreading heavily prefers Rimewood: log "+onLog+", ground "+onGround);
+        h.assertTrue(ColdFloraPolicy.RIMEWOOD_GROWTH_BONUS>1,"Shelves grow faster than ground clusters");
+        h.succeed();
+    });}
+
     @GameTest(template=GameTestTemplates.EMPTY,batch="cold_flora",timeoutTicks=100)
     public static void strippingRimewoodGivesOneResin(GameTestHelper h){h.runAfterDelay(1,()->{
         var l=h.getLevel();var at=h.absolutePos(new BlockPos(4,2,4));

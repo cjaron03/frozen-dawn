@@ -24,7 +24,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * Frostcap (Gelimyces nivalis): a cluster on snow or ice, or a shelf on the side of a Rimewood log. Needs no light and
  * gives off a faint blue-white glow (light 3) but no heat. At -20C or colder it ripens and spreads, faster the colder
- * it is; between -20C and 0C it stalls; above 0C it dies.
+ * it is and twice as fast on Rimewood, which it prefers; between -20C and 0C it stalls; above 0C it dies.
  */
 public final class FrostcapBlock extends Block {
     public static final DirectionProperty FACING = DirectionProperty.create("facing", d -> d != Direction.DOWN);
@@ -81,23 +81,31 @@ public final class FrostcapBlock extends Block {
     /** One random tick at {@code celsius}: die if warm, stall if cool, otherwise ripen, then spread. */
     public static void grow(ServerLevel level, BlockPos pos, BlockState state, RandomSource random, float celsius) {
         if (celsius > ColdFloraPolicy.FROSTCAP_DIES_ABOVE) { level.removeBlock(pos, false); return; }
-        double growth = ColdFloraPolicy.frostcapGrowth(celsius);
+        double growth = ColdFloraPolicy.frostcapGrowth(celsius) * (state.getValue(FACING) == Direction.UP ? 1 : ColdFloraPolicy.RIMEWOOD_GROWTH_BONUS);
         if (growth == 0) return;
         if (state.getValue(AGE) < 2) {
             if (random.nextDouble() < ColdFloraPolicy.FROSTCAP_RIPEN_CHANCE * growth) level.setBlock(pos, state.cycle(AGE), 2);
         } else if (random.nextDouble() < ColdFloraPolicy.FROSTCAP_SPREAD_CHANCE * growth) spread(level, pos, random);
     }
 
-    /** Like vanilla mushrooms: one try at a nearby open spot, unless the 9x3x9 box around already holds five. */
+    /**
+     * Like vanilla mushrooms, but drawn to Rimewood: up to four nearby open spots are tried for a log-side shelf first;
+     * failing that, the last one may take a ground cluster one time in three. Nothing spreads once five Frostcaps
+     * stand in the 9x3x9 box around this one.
+     */
     public static void spread(ServerLevel level, BlockPos pos, RandomSource random) {
         int r = ColdFloraPolicy.FROSTCAP_AREA_RADIUS, found = 0;
         for (var p : BlockPos.betweenClosed(pos.offset(-r, -1, -r), pos.offset(r, 1, r)))
             if (level.getBlockState(p).getBlock() instanceof FrostcapBlock && ++found >= ColdFloraPolicy.FROSTCAP_AREA_CAP) return;
-        var target = pos.offset(random.nextInt(5) - 2, random.nextInt(3) - 1, random.nextInt(5) - 2);
-        if (!level.isEmptyBlock(target)) return;
         var cap = level.getBlockState(pos).getBlock().defaultBlockState();
-        if (supported(level, target, Direction.UP)) { level.setBlock(target, cap, 2); return; }
-        for (var facing : Direction.Plane.HORIZONTAL.shuffledCopy(random))
-            if (supported(level, target, facing)) { level.setBlock(target, cap.setValue(FACING, facing), 2); return; }
+        BlockPos target = null;
+        for (int attempt = 0; attempt < 4; attempt++) {
+            target = pos.offset(random.nextInt(5) - 2, random.nextInt(3) - 1, random.nextInt(5) - 2);
+            if (!level.isEmptyBlock(target)) continue;
+            for (var facing : Direction.Plane.HORIZONTAL.shuffledCopy(random))
+                if (supported(level, target, facing)) { level.setBlock(target, cap.setValue(FACING, facing), 2); return; }
+        }
+        if (target != null && level.isEmptyBlock(target) && random.nextInt(ColdFloraPolicy.GROUND_SPREAD_ONE_IN) == 0
+                && supported(level, target, Direction.UP)) level.setBlock(target, cap, 2);
     }
 }

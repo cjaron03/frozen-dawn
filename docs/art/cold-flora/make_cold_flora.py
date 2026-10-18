@@ -597,16 +597,11 @@ tagfile(NS, 'item', 'frostcaps', [f'{NS}:frozen_frostcap', f'{NS}:thawed_frostca
 tagfile(NS, 'item', 'frost_resistant', [f'{NS}:frozen_frostcap', f'{NS}:thawed_frostcap', f'{NS}:frostcap_mush', f'{NS}:dried_frostcap'])
 tagfile(NS, 'item', 'igniter', ['minecraft:blaze_powder', f'{NS}:sulfur_igniter'])
 tagfile(NS, 'item', 'thermal_binder', ['minecraft:magma_cream', f'{NS}:thermal_binder'])
-tagfile(NS, 'worldgen/biome', 'has_rimewood_grove', ['minecraft:snowy_plains', 'minecraft:snowy_taiga', 'minecraft:ice_spikes', 'minecraft:grove', 'minecraft:snowy_slopes'])
 
-# Worldgen: configured features, the placed grove (about one chunk in 32 of the cold biomes) and the biome modifier.
+# Worldgen: configured features only, for saplings and /place. Groves are not generated with the world: they appear
+# near players from Phase 3 wherever it is cold enough (ColdFloraSpawner).
 for f in ('rimewood_tree', 'rimewood_grove'):
     data(f'worldgen/configured_feature/{f}.json', dict(type=f'{NS}:{f}', config={}))
-data('worldgen/placed_feature/rimewood_grove.json', dict(feature=f'{NS}:rimewood_grove', placement=[
-    dict(type='minecraft:rarity_filter', chance=32), dict(type='minecraft:in_square'),
-    dict(type='minecraft:heightmap', heightmap='WORLD_SURFACE_WG'), dict(type='minecraft:biome')]))
-data('neoforge/biome_modifier/rimewood_grove.json', {'type': 'neoforge:add_features', 'biomes': f'#{NS}:has_rimewood_grove',
-                                                     'features': f'{NS}:rimewood_grove', 'step': 'vegetal_decoration'})
 
 # Hidden advancement: eat Frostcap Mush.
 data('advancement/fungus_among_us.json', dict(parent=f'{NS}:root', display=dict(

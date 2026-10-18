@@ -764,3 +764,5 @@ frostcapshelveshangonrimewoodandfallwithit xml
 strippingrimewoodgivesoneresin xml
 frostcapthawsonewayfrozenthawedmush xml
 coldfloratagsrecipesandsigns xml
+rimewoodgrovescarryfrostcapandseedingfindstrunks xml
+frostcapspreadsmostlyontorimewood xml

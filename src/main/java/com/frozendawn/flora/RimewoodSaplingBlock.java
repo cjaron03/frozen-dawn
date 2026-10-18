@@ -1,11 +1,9 @@
 package com.frozendawn.flora;
 
-import com.frozendawn.init.ModBlocks;
 import com.frozendawn.init.ModFeatures;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -15,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Grows at -20C or colder with sky access; sunlight is not needed. Warmth pauses it without harming it, and bone meal
- * only works in the cold. Planted on dirt or frozen dirt.
+ * only works in the cold. Planted on dirt, dead grass or frozen dirt.
  */
 public final class RimewoodSaplingBlock extends SaplingBlock {
     public static final TreeGrower GROWER = new TreeGrower("frozendawn_rimewood", Optional.empty(), Optional.of(ModFeatures.RIMEWOOD_TREE), Optional.empty());
@@ -24,7 +22,7 @@ public final class RimewoodSaplingBlock extends SaplingBlock {
 
     @Override
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.is(BlockTags.DIRT) || state.is(ModBlocks.FROZEN_DIRT.get());
+        return ColdFlora.rimewoodSoil(state) && !state.is(net.minecraft.world.level.block.Blocks.SNOW_BLOCK);
     }
 
     /** Cold enough and open to the sky. */

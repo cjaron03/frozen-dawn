@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Rimewood",
-      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer with charcoal bark, icy-blue seams and dark teal needles. It keeps growing long after every other tree has died.$(br2)Look for small $(bold)groves of two to four$() in cold terrain: snowy plains, snowy taiga, ice spikes, groves and snowy slopes. They are rare. There are no Rimewood forests.$(br2)$(italic)Rimewood remains metabolically active at temperatures previously classified as incompatible with forestry. ORSA has revised that classification to 'inconvenient.'$()"
+      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer with charcoal bark, icy-blue seams and dark teal needles. It keeps growing long after every other tree has died.$(br2)From $(bold)Phase 3$(), small $(bold)groves of two to four$() take root wherever the ground is cold enough, in any land. They are rare and far apart. There are no Rimewood forests.$(br2)$(italic)Rimewood remains metabolically active at temperatures previously classified as incompatible with forestry. ORSA has revised that classification to 'inconvenient.'$()"
     },
     {
       "type": "patchouli:text",
       "title": "Cultivation",
-      "text": "Plant a sapling on $(bold)dirt or frozen dirt$() with open sky above. It needs no sunlight, but it only grows at $(bold)-20°C or colder$(), so harvesting means working in the cold.$(br2)$(li)About $(bold)25 minutes$() to maturity, or 4-6 bone meal$(li)Warmth pauses growth without harming the sapling; heaters do not help$(li)A tree gives about $(bold)8-12 logs$() and roughly two saplings$(li)Fortune finds more saplings"
+      "text": "Plant a sapling on $(bold)dirt, dead grass or frozen dirt$() with open sky above. It needs no sunlight, but it only grows at $(bold)-20°C or colder$(), so harvesting means working in the cold.$(br2)$(li)About $(bold)25 minutes$() to maturity, or 4-6 bone meal$(li)Warmth pauses growth without harming the sapling; heaters do not help$(li)A tree gives about $(bold)8-12 logs$() and roughly two saplings$(li)Fortune finds more saplings"
     },
     {
       "type": "patchouli:crafting",

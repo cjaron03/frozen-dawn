@@ -7,12 +7,12 @@
     {
       "type": "patchouli:text",
       "title": "Frostcap",
-      "text": "$(italic)Gelimyces nivalis.$() A pale fungus that glows faintly blue-white. From $(bold)Phase 3$(), wild patches appear on cold snow and ice, and it grows in shelves on the sides of Rimewood logs.$(br2)It needs no light and gives off no heat, so a cold-room farm is invisible to anything that hunts by warmth. The glow (light 3) is enough to find your way in the dark."
+      "text": "$(italic)Gelimyces nivalis.$() A pale fungus that glows faintly blue-white. From $(bold)Phase 3$() it appears in shelves on the trunks of Rimewood, which it strongly prefers, and only rarely on bare snow or ice.$(br2)It needs no light and gives off no heat, so a cold-room farm is invisible to anything that hunts by warmth. The glow (light 3) is enough to find your way in the dark."
     },
     {
       "type": "patchouli:text",
       "title": "Growing It",
-      "text": "Plant a Frozen Frostcap on $(bold)snow, ice or a Rimewood log$().$(br2)$(li)$(bold)-20°C or colder:$() ripens and spreads; twice as fast at -80°C$(li)$(bold)-20°C to 0°C:$() stalls$(li)$(bold)Above 0°C:$() dies$(br2)Like mushrooms, it stops spreading once five grow close together. A ripe cluster gives two or three caps."
+      "text": "Plant a Frozen Frostcap on $(bold)snow, ice or a Rimewood log$(). On Rimewood it grows and spreads $(bold)twice as fast$() and reaches for other log sides first.$(br2)$(li)$(bold)-20°C or colder:$() ripens and spreads; twice as fast again at -80°C$(li)$(bold)-20°C to 0°C:$() stalls$(li)$(bold)Above 0°C:$() dies$(br2)It stops spreading once five grow close together. A ripe cluster gives two or three caps."
     },
     {
       "type": "patchouli:text",

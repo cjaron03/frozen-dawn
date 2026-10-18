@@ -33,6 +33,12 @@ public final class ColdFlora {
     private static TagKey<Block> block(String name) { return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name)); }
     private static TagKey<Item> item(String name) { return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, name)); }
 
+    /** Ground Rimewood roots in: any dirt, dead grass or frozen dirt, and packed snow. */
+    public static boolean rimewoodSoil(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(net.minecraft.tags.BlockTags.DIRT) || state.is(com.frozendawn.init.ModBlocks.DEAD_GRASS_BLOCK.get())
+                || state.is(com.frozendawn.init.ModBlocks.FROZEN_DIRT.get()) || state.is(net.minecraft.world.level.block.Blocks.SNOW_BLOCK);
+    }
+
     /** What a plant at {@code pos} feels: the full local temperature, reading only loaded neighbours. */
     public static float temperature(ServerLevel level, BlockPos pos) {
         var state = ApocalypseState.get(level.getServer());

@@ -32,6 +32,10 @@ public final class ColdFloraPolicy {
 
     /** Per random tick at 1x: ripen one age step (of two) with this chance, then try to spread with the next. */
     public static final double FROSTCAP_RIPEN_CHANCE = 1 / 6.0, FROSTCAP_SPREAD_CHANCE = 1 / 25.0;
+    /** Frostcap prefers Rimewood: shelves on a log ripen and spread twice as fast, and spreading tries log sides first. */
+    public static final double RIMEWOOD_GROWTH_BONUS = 2;
+    /** When no log side is in reach, a spread lands on the ground only one time in this many. */
+    public static final int GROUND_SPREAD_ONE_IN = 3;
     /** Spread is capped like vanilla mushrooms: at most this many Frostcaps in the 9x3x9 box around one. */
     public static final int FROSTCAP_AREA_CAP = 5, FROSTCAP_AREA_RADIUS = 4;
 

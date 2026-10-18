@@ -32,18 +32,13 @@ public final class RimewoodTreeFeature extends Feature<NoneFeatureConfiguration>
         return grow(context.level(), context.origin(), context.random());
     }
 
-    /** Ground a tree can stand on. */
-    static boolean soil(BlockState state) {
-        return state.is(BlockTags.DIRT) || state.is(ModBlocks.FROZEN_DIRT.get()) || state.is(Blocks.SNOW_BLOCK);
-    }
-
     private static boolean open(WorldGenLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         return state.isAir() || state.canBeReplaced() || state.is(BlockTags.LEAVES) || state.is(BlockTags.SAPLINGS);
     }
 
     public static boolean grow(WorldGenLevel level, BlockPos origin, RandomSource random) {
-        if (!soil(level.getBlockState(origin.below()))) return false;
+        if (!ColdFlora.rimewoodSoil(level.getBlockState(origin.below()))) return false;
         int height = 5 + random.nextInt(3);
         for (int y = 0; y <= height + 1; y++) if (!open(level, origin.above(y))) return false;
         var log = ModBlocks.RIMEWOOD_LOG.get().defaultBlockState();
