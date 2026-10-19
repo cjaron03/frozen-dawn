@@ -155,6 +155,7 @@ public class ModItems {
     public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
     public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
     public static final DeferredItem<BlockItem> ORSA_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("orsa_emergency_light", ModBlocks.ORSA_EMERGENCY_LIGHT);
+    public static final DeferredItem<com.frozendawn.item.SuitHeadlampItem> SUIT_HEADLAMP = ITEMS.register("suit_headlamp",com.frozendawn.item.SuitHeadlampItem::new);
     public static final DeferredItem<com.frozendawn.item.BatteryLanternItem> BATTERY_LANTERN = ITEMS.register("battery_lantern",com.frozendawn.item.BatteryLanternItem::new);
     public static final DeferredItem<BlockItem> WORK_LAMP = ITEMS.registerSimpleBlockItem("work_lamp", ModBlocks.WORK_LAMP);
     public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
@@ -648,6 +649,7 @@ public class ModItems {
                         output.accept(PANEL_LIGHT.get());
                         output.accept(WORK_LAMP.get());
                         output.accept(BATTERY_LANTERN.get());
+                        output.accept(SUIT_HEADLAMP.get());
                         output.accept(ORSA_EMERGENCY_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

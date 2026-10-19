@@ -34,7 +34,9 @@ public final class PowerChunkReadinessGameTest {
                 var far=loading.getMiddleBlockPosition(70);var here=h.absolutePos(new BlockPos(1,2,1));
                 h.assertTrue(!PowerNetworks.coolantLink(l,new PowerLink(here,far)),"Coolant check treats a loading endpoint as not a live coolant link");
                 h.assertTrue(PowerLinkRules.validate(l,here,far)==PowerLinkRules.Result.UNLOADED,"Validation reports UNLOADED instead of waiting");
-                h.assertTrue(!ReadyChunks.ready(l,loading.x,loading.z),"Neither check waited for or finished the chunk");
+                h.assertTrue(com.frozendawn.world.HeadlampBeam.project(l,far.getCenter(),new net.minecraft.world.phys.Vec3(1,0,0)).isEmpty(),"Headlamp treats a loading chunk as a wall");
+                com.frozendawn.world.HeldLanternLights.remove(l,far);
+                h.assertTrue(!ReadyChunks.ready(l,loading.x,loading.z),"Link, beam and moving-light cleanup never wait for or finish the loading chunk");
             }finally{for(var c:candidates)l.getChunkSource().removeRegionTicket(TicketType.FORCED,c,0,c);}
             h.succeed();
         });

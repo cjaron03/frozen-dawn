@@ -1,6 +1,10 @@
 {
   "schema": 1,
   "functions": {
+    "headlamp_equipment:controls": {"world":"Headlamp Equipment Check","scores":[{"objective":"hlequip","holder":"#built","equals":1}]},
+    "headlamp_equipment:read": {"world":"Headlamp Equipment Check","scores":[{"objective":"hlequip","holder":"#built","equals":1}]},
+    "headlamp_check:controls": {"world":"Headlamp Aim Check","scores":[{"objective":"hlamp","holder":"#built","equals":1}]},
+    "headlamp_check:read": {"world":"Headlamp Aim Check","scores":[{"objective":"hlamp","holder":"#built","equals":1}]},
     "battery_lantern_check:controls": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
     "battery_lantern_check:read": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
     "battery_lantern_check:cave": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
