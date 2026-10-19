@@ -574,6 +574,7 @@
   "tooltip.frozendawn.soul_harvest_blade": "Soul Harvesting: +3 damage against Frozen Dawn hostiles.",
   "tooltip.frozendawn.soul_harvest_blade.flavor": "The blade remembers what the dead were building.",
   "key.categories.frozendawn": "Frozen Dawn",
+  "key.frozendawn.toggle_headlamp": "Toggle Headlamp",
   "key.frozendawn.toggle_thermal_mode": "Toggle Thermal Imaging",
   "key.frozendawn.toggle_blizzard_mode": "Toggle Blizzard Optics",
   "message.frozendawn.surveyor_lens.none": "No readable heat signatures detected.",
@@ -1580,5 +1581,12 @@
   "tooltip.frozendawn.battery_lantern.off": "Off",
   "tooltip.frozendawn.battery_lantern.controls": "Shift-use in air: toggle",
   "tooltip.frozendawn.battery_lantern.portable": "Light 14 • 50 W • Offhand or placed",
-  "message.frozendawn.battery_lantern.status": "%s • Cell: %s / 500000 J"
+  "message.frozendawn.battery_lantern.status": "%s • Cell: %s / 500000 J",
+  "item.frozendawn.suit_headlamp": "Suit Headlamp",
+  "tooltip.frozendawn.headlamp.on": "Headlamp: ON",
+  "tooltip.frozendawn.headlamp.off": "Headlamp: OFF",
+  "tooltip.frozendawn.headlamp.equipment": "Helmet Mount · EVA Helmet or Thermal Visor",
+  "tooltip.frozendawn.headlamp.power": "50 W · loose Power Cells · Controls: Toggle Headlamp",
+  "message.frozendawn.headlamp.missing": "Equip a Suit Headlamp in Helmet Mount.",
+  "curios.identifier.helmet_mount": "Helmet Mount"
 }

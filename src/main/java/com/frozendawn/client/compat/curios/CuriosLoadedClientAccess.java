@@ -4,6 +4,8 @@ import com.frozendawn.client.renderer.BlizzardGogglesCurioModel;
 import com.frozendawn.client.renderer.BlizzardGogglesCurioRenderer;
 import com.frozendawn.client.renderer.SnowshoesCurioModel;
 import com.frozendawn.client.renderer.SnowshoesCurioRenderer;
+import com.frozendawn.client.renderer.SuitHeadlampCurioModel;
+import com.frozendawn.client.renderer.SuitHeadlampCurioRenderer;
 import com.frozendawn.init.ModItems;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -14,6 +16,9 @@ final class CuriosLoadedClientAccess implements CuriosClientAccess {
     @Override
     public void registerRenderers() {
         CuriosRendererRegistry.register(
+                ModItems.SUIT_HEADLAMP.get(),
+                () -> new SuitHeadlampCurioRenderer(Minecraft.getInstance().getEntityModels()));
+        CuriosRendererRegistry.register(
                 ModItems.BLIZZARD_GOGGLES.get(),
                 () -> new BlizzardGogglesCurioRenderer(Minecraft.getInstance().getEntityModels()));
         CuriosRendererRegistry.register(
@@ -23,6 +28,7 @@ final class CuriosLoadedClientAccess implements CuriosClientAccess {
 
     @Override
     public void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(SuitHeadlampCurioModel.LAYER_LOCATION, SuitHeadlampCurioModel::createBodyLayer);
         event.registerLayerDefinition(BlizzardGogglesCurioModel.LAYER_LOCATION, BlizzardGogglesCurioModel::createBodyLayer);
         event.registerLayerDefinition(SnowshoesCurioModel.LAYER_LOCATION, SnowshoesCurioModel::createBodyLayer);
     }
