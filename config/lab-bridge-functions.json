@@ -1,6 +1,13 @@
 {
   "schema": 1,
   "functions": {
+    "battery_lantern_check:controls": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:read": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:cave": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:mounts": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:water": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:survival": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
+    "battery_lantern_check:creative": {"world":"Battery Lantern Check","scores":[{"objective":"blantern","holder":"#built","equals":1}]},
     "acheron_forge_check:controls": {"world":"Acheron Forge Modes and Heat","scores":[{"objective":"forgecheck","holder":"#built","equals":1}]},
     "acheron_forge_check:read": {"world":"Acheron Forge Modes and Heat","scores":[{"objective":"forgecheck","holder":"#built","equals":1}]},
     "macs_pawn:natural_retry": {"world":"MACS Pawn Natural Supply","scores":[{"objective":"mpc","holder":"#stage","equals":92},{"objective":"mpc","holder":"#nat_count","equals":0}]},
@@ -158,6 +165,8 @@
     "core_split_check:controls": {"world":"Core Heat O2 Check","scores":[{"objective":"csplit","holder":"#built","equals":1}]},
     "core_split_check:read": {"world":"Core Heat O2 Check","scores":[{"objective":"csplit","holder":"#built","equals":1}]},
     "core_split_check:finish_fixture": {"world":"Core Heat O2 Check","scores":[{"objective":"csplit","holder":"#built","equals":1}]},
-    "core_split_check:finish_panels": {"world":"Core Heat O2 Check","scores":[{"objective":"csplit","holder":"#built","equals":1}]}
+    "core_split_check:finish_panels": {"world":"Core Heat O2 Check","scores":[{"objective":"csplit","holder":"#built","equals":1}]},
+    "work_lamp_check:controls": {"world":"Work Lamp Check","scores":[{"objective":"wlamp","holder":"#built","equals":1}]},
+    "work_lamp_check:read": {"world":"Work Lamp Check","scores":[{"objective":"wlamp","holder":"#built","equals":1}]}
   }
 }

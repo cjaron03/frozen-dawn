@@ -1601,5 +1601,18 @@
   "item.frozendawn.thawed_frostcap.spoils": "Turns to mush after %s min above 0°C",
   "item.frozendawn.frozen_frostcap.plant": "Plants on snow, ice or a Rimewood log",
   "advancement.frozendawn.fungus_among_us.title": "Fungus Among Us",
-  "advancement.frozendawn.fungus_among_us.description": "Eat Frostcap Mush. You were warned."
+  "advancement.frozendawn.fungus_among_us.description": "Eat Frostcap Mush. You were warned.",
+  "block.frozendawn.work_lamp": "ORSA Work Lamp",
+  "message.frozendawn.work_lamp.on": "Work Lamp ON — needs 50 W",
+  "message.frozendawn.work_lamp.off": "Work Lamp OFF",
+  "tooltip.frozendawn.work_lamp.power": "50 W while on • Light 12 • Works without oxygen",
+  "tooltip.frozendawn.work_lamp.controls": "Wall or ceiling mount. Empty hand: on/off. Binder: link power.",
+  "block.frozendawn.battery_lantern": "ORSA Battery Lantern",
+  "tooltip.frozendawn.battery_lantern.empty": "No cell • %s",
+  "tooltip.frozendawn.battery_lantern.charge": "%s / 500 kJ • %s",
+  "tooltip.frozendawn.battery_lantern.on": "On",
+  "tooltip.frozendawn.battery_lantern.off": "Off",
+  "tooltip.frozendawn.battery_lantern.controls": "Shift-use in air: toggle",
+  "tooltip.frozendawn.battery_lantern.portable": "Light 14 • 50 W • Offhand or placed",
+  "message.frozendawn.battery_lantern.status": "%s • Cell: %s / 500000 J"
 }

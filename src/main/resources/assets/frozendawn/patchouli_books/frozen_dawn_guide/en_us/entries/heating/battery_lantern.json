@@ -1,0 +1,16 @@
+{
+  "name": "Battery Lantern",
+  "icon": "frozendawn:battery_lantern",
+  "category": "frozendawn:heating",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "A reusable cave light powered by one Power Cell. No grid or oxygen needed. It emits light 14 and draws 50 W while switched on and placed or held in your offhand. Other inventory slots do not light or drain. A full cell lasts about 2 hours 47 minutes of active use."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:battery_lantern",
+      "text": "Crafted empty. Mount on floor, wall or ceiling, including underwater. Empty-hand use toggles; a cell inserts/swaps; Shift-empty removes the cell. Break to carry its cell, charge and switch setting. Press F to move it to your offhand; Shift-use in air toggles it while held. Empty lanterns stack to 16; loaded lanterns occupy one slot."
+    }
+  ]
+}

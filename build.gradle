@@ -707,3 +707,46 @@ tasks.register('prepareChargedCellQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(chargedCellQa)
 tasks.named('processGameTestResources') { dependsOn tasks.named('prepareChargedCellQa') }
+
+def workLampQa = layout.buildDirectory.dir('generated/workLampQa')
+tasks.register('prepareWorkLampQa', Exec) {
+    inputs.files('tools/prepare_work_lamp_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py', 'tools/prepare_hearthstone_playtest.py')
+    outputs.dir(workLampQa)
+    commandLine 'python3', '-B', 'tools/prepare_work_lamp_playtest.py', '--pack-only', workLampQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(workLampQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareWorkLampQa') }
+
+tasks.register('prepareWorkLampPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates the fresh Work Lamp Check world; refuses existing saves. Requires -PfdWorkLampTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdWorkLampTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdWorkLampTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_work_lamp_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Work Lamp Check').absolutePath
+    }
+}
+
+// Parse exactly the disposable Battery Lantern cave replay used by the owner.
+def batteryLanternQa = layout.buildDirectory.dir('generated/batteryLanternQa')
+tasks.register('prepareBatteryLanternQa', Exec) {
+    inputs.files('tools/prepare_battery_lantern_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(batteryLanternQa)
+    commandLine 'python3', '-B', 'tools/prepare_battery_lantern_playtest.py', '--pack-only', batteryLanternQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(batteryLanternQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareBatteryLanternQa') }
+
+tasks.register('prepareBatteryLanternPlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates a fresh Battery Lantern Check world; refuses existing saves. Requires -PfdBatteryLanternTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdBatteryLanternTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdBatteryLanternTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_battery_lantern_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Battery Lantern Check').absolutePath
+    }
+}
