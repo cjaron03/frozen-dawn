@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:block",
+  "random_sequence": "frozendawn:blocks/potted_rimewood_sapling",
+  "pools": [
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:flower_pot"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "frozendawn:rimewood_sapling"
+        }
+      ]
+    }
+  ]
+}

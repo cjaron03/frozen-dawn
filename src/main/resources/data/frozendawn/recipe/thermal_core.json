@@ -8,8 +8,8 @@
   ],
   "key": {
     "I": { "item": "minecraft:iron_ingot" },
-    "B": { "item": "minecraft:blaze_powder" },
-    "M": { "item": "minecraft:magma_cream" }
+    "B": { "tag": "frozendawn:igniter" },
+    "M": { "tag": "frozendawn:thermal_binder" }
   },
   "result": {
     "id": "frozendawn:thermal_core",

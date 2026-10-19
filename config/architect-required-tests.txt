@@ -756,6 +756,17 @@ acheronautofallsbackandheatmodeconservespower xml
 acheronvacuumwasteheatonlyforpaidwork xml
 acheronbinderroutesbothhandswithoutopeningmenu xml
 
+# Cold Flora: Rimewood and Frostcap
+rimewoodtreeisasquatconiferwithabouttenlogs xml
+rimewoodsaplinggrowstheconfiguredtree xml
+frostcapstallsdiesripensandspreadsunderacap xml
+frostcapshelveshangonrimewoodandfallwithit xml
+strippingrimewoodgivesoneresin xml
+frostcapthawsonewayfrozenthawedmush xml
+coldfloratagsrecipesandsigns xml
+rimewoodgrovescarryfrostcapandseedingfindstrunks xml
+frostcapspreadsmostlyontorimewood xml
+
 # Work Lamp: mounting, controls, physical energy, vacuum and replay parser
 worklampplacesonwallsandceilingandlosessupport xml
 worklampdockpaysexactlyandrecoversafterdepletion xml

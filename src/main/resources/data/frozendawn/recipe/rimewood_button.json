@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    {
+      "item": "frozendawn:rimewood_planks"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:rimewood_button",
+    "count": 1
+  }
+}

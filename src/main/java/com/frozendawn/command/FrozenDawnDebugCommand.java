@@ -36,7 +36,7 @@ final class FrozenDawnDebugCommand {
             hearth.then(requiredChild(legacyHearth, child));
         }
 
-        return Commands.literal("debug")
+        LiteralArgumentBuilder<CommandSourceStack> debug = Commands.literal("debug")
                 .requires(source -> source.hasPermission(2))
                 .executes(context -> sendHelp(context.getSource(), "debug"))
                 .then(FrozenDawnWorldCommand.worldCommands())
@@ -49,6 +49,9 @@ final class FrozenDawnDebugCommand {
                 .then(UplinkDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(requiredChild(legacyHearth, "lore"));
+        // Development builds only: force natural Cold Flora spawn tries and report why they fail.
+        if (!net.neoforged.fml.loading.FMLEnvironment.production) debug.then(FloraDebugCommand.commands());
+        return debug;
     }
 
     static int sendHelp(CommandSourceStack source, String requestedCategory) {

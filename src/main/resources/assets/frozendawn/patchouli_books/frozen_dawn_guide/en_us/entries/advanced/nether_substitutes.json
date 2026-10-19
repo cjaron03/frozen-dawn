@@ -1,0 +1,23 @@
+{
+  "name": "Without the Nether",
+  "category": "frozendawn:advanced",
+  "icon": "frozendawn:sulfur_igniter",
+  "sortnum": 20,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title": "Without the Nether",
+      "text": "The Nether is severed in Phase 5. If you never fought a blaze, you can still build a Thermal Core, a rocket engine, reinforced armor and Hot Wings. The substitutes cost more and take you to vents and cold groves instead.$(br2)Frozen Dawn recipes that call for blaze powder accept a $(bold)Sulfur Igniter$(); those that call for magma cream accept a $(bold)Thermal Binder$()."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:sulfur_igniter",
+      "text": "Four sulfur and one coal. Sulfur comes from sulfur ore and from the Fuel Processing Silo."
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "frozendawn:thermal_binder",
+      "text": "Two sulfur and two Rimewood Resin: a deep vent resource and a cold surface one."
+    }
+  ]
+}
