@@ -11,8 +11,28 @@
     },
     {
       "type": "patchouli:text",
-      "title": "Setup",
-      "text": "$(bold)Orbital Scan #0074$()$(li)Place below $(bold)Y=0$()$(li)Needs a $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)Put a shard in the input slot. It refines in a few seconds."
+      "title": "Inputs",
+      "text": "$(li)2 Shards: 1 Refined Acheronite$(li)4 Spent Lattice: 1 Sealed Lattice$(br2)Progress survives outages and mode changes."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Modes",
+      "text": "Click the mode to cycle:$(li)$(bold)Auto$(): power first, then heat$(li)$(bold)Electric$(): power only$(li)$(bold)Heat$(): saves power"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Heat Mode",
+      "text": "$(bold)Orbital Scan #0074$()$(li)Below $(bold)Y=0$()$(li)Lit Thermal Heater or $(l:advanced/geothermal_core)Geothermal Core$(/l) within $(bold)8 blocks$()$(br2)10 s per item."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Electric Mode",
+      "text": "Link it with the $(l:power/binder)Binder$(/l). It works at any height and needs the full $(bold)25 kW$(): about 6.7 s per item.$(br2)One Core's 20 kW isn't enough alone. No idle draw."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Waste Heat",
+      "text": "$(danger)Electric refining dumps 6.25 kW into the room.$() Plan $(l:heating/heat_vent)vents$(/l).$(br2)Refining is loud in either mode. Architects hear it."
     },
     {
       "type": "patchouli:crafting",

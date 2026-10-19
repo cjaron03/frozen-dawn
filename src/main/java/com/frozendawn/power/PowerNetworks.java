@@ -133,7 +133,12 @@ public final class PowerNetworks {
     public static int loadFollowTargetWatts(ServerLevel l,BlockPos p,int ownWatts){
         var m=runtime(l).monitorReadings.get(p);if(m==null||!m.connected())return 0;
         long charge=m.storedJoules()<m.capacityJoules()?com.frozendawn.block.ReactorControllerBlockEntity.CHARGE_MARGIN_WATTS:0;
-        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge-Math.max(0,m.generationWatts()-ownWatts)));
+        return (int)Math.max(0,Math.min(Integer.MAX_VALUE,m.demandWatts()+charge+scheduledWatts(l,p)-Math.max(0,m.generationWatts()-ownWatts)));
+    }
+    /** Scheduled load: an armed Uplink announces its transmit draw so load-follow ramps before it starts. Nothing is served. */
+    static long scheduledWatts(ServerLevel l,BlockPos p){
+        long sum=0;for(var cell:component(l,p))if(l.isLoaded(cell)&&l.getBlockEntity(cell) instanceof com.frozendawn.block.UplinkConsoleBlockEntity c)sum+=c.scheduledWatts();
+        return sum;
     }
     public static Set<BlockPos> component(ServerLevel l,BlockPos p){return runtime(l).components.getOrDefault(p,Set.of(p));}
     public static void accountHeating(ServerLevel l){var r=runtime(l);if(!heaters(l).isEmpty()&&r.coordinatedTick!=l.getGameTime()){update(l);account(l);r.coordinatedTick=l.getGameTime();}}
@@ -154,8 +159,15 @@ public final class PowerNetworks {
         var rt=runtime(level);var grant=rt.machineGrants.get(pos);long tick=level.getGameTime();
         if(grant==null||tick>grant.expires()||!level.isLoaded(pos)
                 ||rt.machineTicks.getOrDefault(pos,Long.MIN_VALUE)==tick)return false;
-        if(!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)||!furnace.wantsPower())return false;
-        int needed=(furnace.demandWatts()-grant.generationWatts())/20;
+        if(!(level.getBlockEntity(pos) instanceof PoweredMachine furnace)||!furnace.wantsPower())return false;
+        // Revalidate the live component before paying: cut links and reduced generation
+        // must not keep a stale processing grant alive until the next allocation.
+        if(rt.graphDirty||rt.revision!=PowerNetworkSavedData.get(level).revision())update(level);
+        var cells=component(level,pos);
+        if(cells.size()<2||!cells.containsAll(grant.stores())
+                ||cells.stream().mapToInt(p->supplyWatts(level,p)).sum()
+                    <rt.monitorReadings.getOrDefault(pos,PowerMonitorReading.EMPTY).generationWatts())return false;
+        int needed=Math.max(0,furnace.demandWatts()-grant.generationWatts())/20;
         var stores=grant.stores().stream().filter(level::isLoaded).map(level::getBlockEntity)
                 .filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
                 .map(com.frozendawn.block.PowerStorageBlockEntity.class::cast).toList();
@@ -202,8 +214,10 @@ public final class PowerNetworks {
                 &&(g.cells().contains(path.getLast())||g.walls().contains(path.getLast()))
                 &&path.stream().allMatch(p->g.cells().contains(p)||g.walls().contains(p)));
     }
-    private static boolean coolantLink(ServerLevel l,PowerLink link){
-        return l.isLoaded(link.a())&&l.isLoaded(link.b())&&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
+    /** Runs inside chunk-load events: it must never wait on a chunk that is still loading, or the server deadlocks. */
+    static boolean coolantLink(ServerLevel l,PowerLink link){
+        return com.frozendawn.world.ReadyChunks.ready(l,link.a())&&com.frozendawn.world.ReadyChunks.ready(l,link.b())
+                &&PowerLinkRules.coolant(l.getBlockState(link.a()))&&PowerLinkRules.coolant(l.getBlockState(link.b()));
     }
     private static void enqueue(Runtime rt,PowerLink link){if(rt.pendingSet.add(link))rt.pending.addLast(link);}
     private static void revokePumpGrants(Runtime rt,BlockPos node) {
@@ -298,12 +312,14 @@ public final class PowerNetworks {
         if(runtime(level).airlockInputs.containsValue(pos))return AIRLOCK_WATTS;
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity heater)return heater.requestWatts();
         if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PixieBlockEntity pixie)return pixie.requestWatts();
-        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity furnace)
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof PoweredMachine furnace)
             return furnace.wantsPower()?furnace.demandWatts():0;
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.UplinkConsoleBlockEntity uplink)return uplink.demandWatts();
+        if(level.isLoaded(pos)&&level.getBlockEntity(pos) instanceof com.frozendawn.block.PlumbLineBlockEntity gpr)return gpr.demandWatts();
         if(level.isLoaded(pos)&&level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.DeconShowerBlock)
             return com.frozendawn.block.DeconShowerBlock.demandWatts(level.getBlockState(pos));
-        return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof com.frozendawn.block.PanelLightBlock
-                ? com.frozendawn.block.PanelLightBlock.DEMAND_WATTS : 0;
+        return level.isLoaded(pos) && level.getBlockState(pos).getBlock() instanceof GridLight light
+                ? light.demandWatts(level.getBlockState(pos)) : 0;
     }
     /** One-second allocation, in integer watts. Each unique node contributes once, including in cycles. */
     public static void account(ServerLevel level) {
@@ -321,7 +337,7 @@ public final class PowerNetworks {
         }
         rt.stores.removeIf(pos -> !level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof com.frozendawn.block.PowerStorageBlockEntity));
         nodes.addAll(rt.stores);
-        rt.machines.removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof com.frozendawn.block.InductionFurnaceBlockEntity));
+        rt.machines.removeIf(pos -> !level.isLoaded(pos)||!(level.getBlockEntity(pos) instanceof PoweredMachine));
         nodes.addAll(rt.machines);
         rt.lifeSupport.removeIf(p->!level.isLoaded(p)||!(level.getBlockEntity(p) instanceof com.frozendawn.block.PixieBlockEntity));
         nodes.addAll(rt.lifeSupport);
@@ -342,7 +358,7 @@ public final class PowerNetworks {
             for (var cell : cells) {
                 supply += supplyWatts(level, cell); int watts = demandWatts(level, cell); demand += watts;
                 if (watts > 0) loads.add(cell);
-                if(level.isLoaded(cell)&&level.getBlockState(cell).getBlock() instanceof com.frozendawn.block.PanelLightBlock) lamps.add(cell);
+                if(level.isLoaded(cell)&&level.getBlockState(cell).getBlock() instanceof GridLight) lamps.add(cell);
             }
             var stores = cells.stream().sorted().filter(p -> level.isLoaded(p))
                     .map(level::getBlockEntity).filter(com.frozendawn.block.PowerStorageBlockEntity.class::isInstance)
@@ -391,7 +407,7 @@ public final class PowerNetworks {
                     rt.heaterGrants.putIfAbsent(load,new HeaterGrant(watts,fromCore,level.getGameTime(),storePositions));
                     heater.allocation(rt.heaterGrants.get(load).watts);
                 }
-                else if(level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity)
+                else if(level.getBlockEntity(load) instanceof PoweredMachine)
                     machineGrants.put(load,new MachineGrant(fromCore,storePositions,level.getGameTime()+20));
                 else lampShortage+=watts-fromCore;
             }
@@ -407,7 +423,7 @@ public final class PowerNetworks {
             var budget = new Budget(supply + discharged, demand, after);
             long capacity=stores.stream().mapToLong(com.frozendawn.block.PowerStorageBlockEntity::capacityJoules).sum();
             var shed=loads.stream().filter(load->!powered.contains(load)).map(load->new PowerMonitorReading.ShedLoad(
-                    rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof com.frozendawn.block.InductionFurnaceBlockEntity?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:1,load)).toList();
+                    level.getBlockState(load).getBlock() instanceof com.frozendawn.block.WorkLampBlock?10:level.getBlockEntity(load) instanceof com.frozendawn.block.AcheronForgeBlockEntity?7:rt.airlockInputs.containsValue(load)?5:level.getBlockEntity(load) instanceof com.frozendawn.block.ResistiveHeaterBlockEntity?4:level.getBlockEntity(load) instanceof com.frozendawn.block.PixieBlockEntity?3:level.getBlockEntity(load) instanceof PoweredMachine?2:level.getBlockState(load).getBlock() instanceof com.frozendawn.block.DeconShowerBlock?6:level.getBlockEntity(load) instanceof com.frozendawn.block.UplinkConsoleBlockEntity?8:level.getBlockEntity(load) instanceof com.frozendawn.block.PlumbLineBlockEntity?9:1,load)).toList();
             var monitor=new PowerMonitorReading(cells.size()>1,budget.supplyWatts(),supply,demand,after,capacity,shed);
             for (var cell : cells) {budgets.put(cell,budget);monitorReadings.put(cell,monitor);}
         }
@@ -416,7 +432,8 @@ public final class PowerNetworks {
         rt.machineGrants=Map.copyOf(machineGrants);
         rt.monitorReadings=Map.copyOf(monitorReadings);
         rt.priorityRemaining=Map.copyOf(priorityRemaining);
-        for (var lamp : affected) com.frozendawn.block.PanelLightBlock.setPowered(level, lamp, powered.contains(lamp));
+        for (var lamp : affected) if(level.isLoaded(lamp)&&level.getBlockState(lamp).getBlock() instanceof GridLight light)
+            light.setGridPowered(level,lamp,powered.contains(lamp));
     }
     public static boolean powered(ServerLevel level, BlockPos pos) {
         var rt = runtime(level);

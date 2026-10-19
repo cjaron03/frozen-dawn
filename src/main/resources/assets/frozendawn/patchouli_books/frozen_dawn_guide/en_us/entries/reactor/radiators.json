@@ -17,7 +17,7 @@
     {
       "type": "patchouli:text",
       "title": "Placement",
-      "text": "Each radiator needs $(bold)one uncovered outdoor face$(). Snow on that face covers it.$(br2)$(danger)Running radiators glow and burn whatever stands on them.$() They melt nearby snow."
+      "text": "Each radiator needs $(bold)one uncovered outdoor face$(). Above 150°C coolant, it boils snow, ice and frozen air off its faces.$(br2)$(danger)Running radiators burn whatever stands on them.$()"
     },
     {
       "type": "patchouli:text",

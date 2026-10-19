@@ -12,7 +12,7 @@
     {
       "type": "patchouli:text",
       "title": "Emergency Light",
-      "text": "Off while the grid is healthy, charging its own battery for free. When normal lighting loses power, it glows dim red, level 6, for up to $(bold)10 minutes$()."
+      "text": "Off while the grid is healthy, charging its own battery for free. When normal lights lose power, it glows dim red, level 6, for up to $(bold)10 minutes$()."
     },
     {
       "type": "patchouli:text",
@@ -32,7 +32,7 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:orsa_emergency_light",
       "title": "Emergency Light",
-      "text": "Iron, red glass, redstone and copper."
+      "text": "Off while the grid is healthy, charging its own battery for free. When normal lights lose power, it glows dim red, level 6, for up to $(bold)10 minutes$()."
     }
   ],
   "sortnum": 7

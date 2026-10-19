@@ -48,7 +48,15 @@ public final class CargoDropStructureBuilder {
     }
 
     public static void place(ServerLevel level, BlockPos center) {
-        CargoDropStructureLayout.Plan plan = CargoDropStructureLayout.createPlan(level, center);
+        place(level, center, CargoDropStructureLayout.createPlan(level, center));
+    }
+
+    /** A drop requested over the ORSA Uplink: the same wreck, with relay resupply in the crates. */
+    public static void placeUplinkResupply(ServerLevel level, BlockPos center) {
+        place(level, center, CargoDropStructureLayout.createPlan(level, center).withLoot(LootProfile.UPLINK));
+    }
+
+    private static void place(ServerLevel level, BlockPos center, CargoDropStructureLayout.Plan plan) {
         long seed = plan.seed();
         RandomSource random = RandomSource.create(seed);
         int phase = plan.phase();
@@ -358,6 +366,16 @@ public final class CargoDropStructureBuilder {
                 if (random.nextFloat() < 0.25F) {
                     firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get()));
                 }
+            }
+            case UPLINK -> {
+                firstCrateLoot.add(com.frozendawn.loot.SalvagedPowerCells.create(salvageSeed ^ 0x55504C494E4BL));
+                firstCrateLoot.add(new ItemStack(ModItems.EMERGENCY_O2_CARTRIDGE.get(), 2));
+                firstCrateLoot.add(new ItemStack(switch (random.nextInt(3)) {
+                    case 0 -> ModItems.SIGNAL_PROCESSOR.get();
+                    case 1 -> ModItems.FEED_HORN.get();
+                    default -> ModItems.THERMAL_CORE.get();
+                }));
+                secondCrateLoot.add(new ItemStack(ModItems.FROZEN_MEAT.get(), 3 + random.nextInt(3)));
             }
             case BUREAUCRATIC -> {
                 firstCrateLoot.add(new ItemStack(Items.PAPER, 32 + random.nextInt(17)));

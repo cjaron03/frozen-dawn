@@ -1,0 +1,6 @@
+{
+  "name": "Signals & Survey",
+  "icon": "frozendawn:uplink_console",
+  "sortnum": 9,
+  "description": "The ORSA Uplink and the GPR-4 ground radar. Both need a strong grid.$(br2)$(flavor)Someone may still be listening.$()"
+}

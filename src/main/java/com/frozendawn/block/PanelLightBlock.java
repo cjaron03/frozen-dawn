@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 /** ORSA Panel Light: 100 W, light level 15. No fuel, oxygen, heat or sensory emissions. */
-public final class PanelLightBlock extends Block {
+public final class PanelLightBlock extends Block implements com.frozendawn.power.GridLight {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public static final int DEMAND_WATTS = 100;
     public PanelLightBlock(Properties properties) {
@@ -31,6 +31,8 @@ public final class PanelLightBlock extends Block {
         setPowered(level, pos, PowerNetworks.powered(level, pos));
         level.scheduleTick(pos, this, 20);
     }
+    @Override public int demandWatts(BlockState state) { return DEMAND_WATTS; }
+    @Override public void setGridPowered(ServerLevel level,BlockPos pos,boolean powered) { setPowered(level,pos,powered); }
     public static void setPowered(ServerLevel level, BlockPos pos, boolean powered) {
         if (!level.isLoaded(pos)) return;
         var state = level.getBlockState(pos);

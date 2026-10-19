@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "Who Gets Power",
-      "text": "Supply is shared out every second, in order:$(li)$(bold)Oxygen$(): PIXIE-2$(li)$(bold)Heat$(): RH-5$(li)$(bold)Everything else$(): lights, furnaces$(br2)Spare power charges batteries."
+      "text": "Supply is shared out every second, in order:$(li)$(bold)Oxygen$(): PIXIE-2$(li)$(bold)Heat$(): RH-5$(li)$(bold)Everything else$(): lights, furnaces, the forge, the Uplink$(br2)Spare power charges batteries."
     },
     {
       "type": "patchouli:text",

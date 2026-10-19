@@ -20,6 +20,11 @@
     },
     {
       "type": "patchouli:text",
+      "title": "Reserve",
+      "text": "The $(bold)Res$() button holds 0, 10, 20, 40 or 60 kW above demand, so a sudden load is already covered.$(br2)Unused heat leaves through the radiators. $(danger)Rods burn faster.$()"
+    },
+    {
+      "type": "patchouli:text",
       "title": "Cold Start",
       "text": "$(danger)Below 0°C for a day, the coolant freezes$(): no fission, no radiators.$(br2)Keep the room at 5°C or warmer for 3 minutes to thaw it. A cold core warms at full insertion first."
     },

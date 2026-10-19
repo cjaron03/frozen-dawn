@@ -814,6 +814,10 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_MEDIUM = register("radio.static_medium");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_AMBIENT = register("radio.static_ambient");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_STATIC_HEAVY = register("radio.static_heavy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLUMB_LINE_PULSE = register("block.plumb_line.pulse");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLUMB_LINE_SCAN = register("block.plumb_line.scan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLUMB_LINE_COMPLETE = register("block.plumb_line.complete");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLUMB_LINE_ABORT = register("block.plumb_line.abort");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_SIGNAL_LOCK = register("radio.signal_lock");
     public static final DeferredHolder<SoundEvent, SoundEvent> SURVEYOR_LENS_TICK = register("item.surveyor_lens.tick");
     public static final DeferredHolder<SoundEvent, SoundEvent> RADIO_MARTIAN_COMMAND_MESSAGE = register("radio.martian_command_message");

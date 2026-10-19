@@ -1,6 +1,7 @@
 package com.frozendawn.block;
 
 import com.frozendawn.init.ModBlockEntities;
+import com.frozendawn.init.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Acheron Forge: processes Acheronite Shards into Refined Acheronite.
- * Must be below Y=0 and near a heat source to operate.
+ * Uses nearby heat below Y=0, or grid power anywhere.
  */
 public class AcheronForgeBlock extends Block implements EntityBlock {
 
@@ -45,6 +46,8 @@ public class AcheronForgeBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                 Player player, BlockHitResult hitResult) {
+        if (player.getMainHandItem().is(ModItems.CONDUIT_BINDER)
+                || player.getOffhandItem().is(ModItems.CONDUIT_BINDER)) return InteractionResult.PASS;
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof AcheronForgeBlockEntity forge) {

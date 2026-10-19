@@ -41,6 +41,11 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) HeadlampTogglePayload.handle(player);
+                }));
+
         registrar.playToClient(PowerBinderPayload.TYPE, PowerBinderPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerBinder(payload)));
         registrar.playToClient(PowerBinderNoticePayload.TYPE, PowerBinderNoticePayload.STREAM_CODEC,
@@ -50,6 +55,9 @@ public class ModNetworking {
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleReactorFlash(payload)));
         registrar.playToClient(RadiationPayload.TYPE, RadiationPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleRadiation(payload)));
+
+        registrar.playToClient(PlumbLineReturnsPayload.TYPE, PlumbLineReturnsPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.frozendawn.client.PlumbLineOverlay.receive(payload)));
 
         registrar.playToClient(PowerLinksPayload.TYPE, PowerLinksPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> ClientHandlers.handlePowerLinks(payload)));

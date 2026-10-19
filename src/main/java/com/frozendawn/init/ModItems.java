@@ -94,6 +94,15 @@ public class ModItems {
 
     public static final DeferredItem<BlockItem> POWER_MONITOR = ITEMS.registerSimpleBlockItem("power_monitor",ModBlocks.POWER_MONITOR);
 
+    public static final DeferredItem<BlockItem> PLUMB_LINE = ITEMS.registerSimpleBlockItem("plumb_line", ModBlocks.PLUMB_LINE);
+    /** Printed from a Plumb Line's last pulse; its data and tooltip live in PLUMB_LINE_SURVEY and the client overlay. */
+    public static final DeferredItem<Item> PLUMB_LINE_SURVEY = ITEMS.registerSimpleItem("plumb_line_survey", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<BlockItem> UPLINK_CONSOLE = ITEMS.registerSimpleBlockItem("uplink_console", ModBlocks.UPLINK_CONSOLE);
+    public static final DeferredItem<BlockItem> UPLINK_DISH = ITEMS.registerSimpleBlockItem("uplink_dish", ModBlocks.UPLINK_DISH);
+    /** ORSA Uplink salvage parts: found at monitoring stations and ORSA sites, never crafted. */
+    public static final DeferredItem<Item> SIGNAL_PROCESSOR = ITEMS.registerSimpleItem("signal_processor", new Item.Properties().stacksTo(16));
+    public static final DeferredItem<Item> FEED_HORN = ITEMS.registerSimpleItem("feed_horn", new Item.Properties().stacksTo(16));
+
     public static final DeferredItem<BlockItem> INDUCTION_FURNACE = ITEMS.registerSimpleBlockItem("induction_furnace", ModBlocks.INDUCTION_FURNACE);
 
     public static final DeferredItem<com.frozendawn.item.PowerCellItem> POWER_CELL = ITEMS.register("power_cell", () -> new com.frozendawn.item.PowerCellItem(new Item.Properties()));
@@ -105,6 +114,9 @@ public class ModItems {
     public static final DeferredItem<BlockItem> POWER_RELAY = ITEMS.registerSimpleBlockItem("power_relay", ModBlocks.POWER_RELAY);
     public static final DeferredItem<BlockItem> LARGE_POWER_RELAY = ITEMS.registerSimpleBlockItem("large_power_relay", ModBlocks.LARGE_POWER_RELAY);
     public static final DeferredItem<BlockItem> ORSA_EMERGENCY_LIGHT = ITEMS.registerSimpleBlockItem("orsa_emergency_light", ModBlocks.ORSA_EMERGENCY_LIGHT);
+    public static final DeferredItem<com.frozendawn.item.SuitHeadlampItem> SUIT_HEADLAMP = ITEMS.register("suit_headlamp",com.frozendawn.item.SuitHeadlampItem::new);
+    public static final DeferredItem<com.frozendawn.item.BatteryLanternItem> BATTERY_LANTERN = ITEMS.register("battery_lantern",com.frozendawn.item.BatteryLanternItem::new);
+    public static final DeferredItem<BlockItem> WORK_LAMP = ITEMS.registerSimpleBlockItem("work_lamp", ModBlocks.WORK_LAMP);
     public static final DeferredItem<BlockItem> PANEL_LIGHT = ITEMS.registerSimpleBlockItem("panel_light", ModBlocks.PANEL_LIGHT);
     public static final DeferredItem<BlockItem> BULKHEAD_FEEDTHROUGH = ITEMS.registerSimpleBlockItem("bulkhead_feedthrough", ModBlocks.BULKHEAD_FEEDTHROUGH);
 
@@ -538,6 +550,11 @@ public class ModItems {
                         output.accept(RESISTIVE_HEATER.get());
                         output.accept(PIXIE.get());
                         output.accept(POWER_MONITOR.get());
+                        output.accept(PLUMB_LINE.get());
+                        output.accept(UPLINK_CONSOLE.get());
+                        output.accept(UPLINK_DISH.get());
+                        output.accept(SIGNAL_PROCESSOR.get());
+                        output.accept(FEED_HORN.get());
                         output.accept(INDUCTION_FURNACE.get());
                         output.accept(POWER_CELL.get());
                         output.accept(BATTERY_BANK.get());
@@ -572,6 +589,9 @@ public class ModItems {
                         output.accept(LEAD_LINING_MODULE.get());
                         output.accept(DECON_SHOWER.get());
                         output.accept(PANEL_LIGHT.get());
+                        output.accept(WORK_LAMP.get());
+                        output.accept(BATTERY_LANTERN.get());
+                        output.accept(SUIT_HEADLAMP.get());
                         output.accept(ORSA_EMERGENCY_LIGHT.get());
                         output.accept(OXYGEN_GAUGE.get());
                         output.accept(OXYGEN_RESERVOIR.get());

@@ -1,0 +1,38 @@
+{
+  "name": "Reading a Scan",
+  "category": "frozendawn:signals",
+  "icon": "frozendawn:plumb_line_survey",
+  "sortnum": 4,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "When a pulse ends, players within 16 blocks see its returns through the ground for $(bold)30 seconds$().$(br2)Labels give where to dig from you, e.g. ~ Galena · 24 down · 15 m NE."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Shapes",
+      "text": "$(li)$(bold)Corner brackets$(): estimated ore area, in the ore's color$(li)$(bold)Solid box$(): pinned vein$(li)$(bold)White$(): metal$(li)$(bold)Cyan$(): ORSA site$(li)$(bold)Faint blue$(): cave"
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Pinning",
+      "text": "A $(bold)~$() means an estimate. Pulse again from at least $(bold)8 blocks$() away within 10 minutes and shared veins become exact boxes."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "What's Skipped",
+      "text": "Ore you can already see, small common veins and anything behind water.$(br2)The screen lists finds by ore, most valuable first."
+    },
+    {
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:plumb_line_survey",
+      "title": "Survey Sheet",
+      "text": "Print the last pulse to carry it while you dig."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Using a Sheet",
+      "text": "Hold it near the pulse to see its returns. Each copy costs 1 paper and 1 coal or charcoal.$(br2)It never updates, and the ink fades after one day."
+    }
+  ]
+}

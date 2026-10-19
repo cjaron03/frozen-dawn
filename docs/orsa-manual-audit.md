@@ -438,3 +438,18 @@ shower, lead, RadAid). Upstream's PIXIE-2 (now Air & Pressure), RH-5, lights and
 salvaged-cell pages are restyled. Heat Vent, Thermostat, Airlocks, Airlock Oxygen,
 Core Upgrades, Room Temperature and Hyperthermia carry upstream's new behavior.
 0 lint errors. Open: RadAid has no recipe and only reactor-site loot.
+
+## Signals, lighting and forge power (after #117)
+
+- **Signals & Survey** is a new category (sortnum 9; Advanced, Intelligence and the UN
+  notice move down one). Entries: ORSA Uplink (console, dish, salvage parts, site diagram),
+  Uplink Modes (Listen, Transmit, Boost, the grid ramp prompt and signal attention),
+  Transmissions (relay transcripts, Resupply and Signal Plots), GPR-4 Plumb Line and
+  Reading a Scan (overlay shapes, pinning, Survey Sheet).
+- **Lighting** joins Power after Lights: Work Lamp and Battery Lantern (moved from Heating,
+  same entry IDs) and a new Suit Headlamp entry.
+- **Acheron Forge** is rebuilt in the template with Auto / Electric / Heat modes, the
+  25 kW draw and the 6.25 kW waste heat. The Orbital Scan #0074 line is kept.
+- **Reactor**: Running It gains a Reserve page; Radiators notes hot radiators shed frost.
+- **Relay Archive** (Intelligence) is upstream lore and left as written. Relay transcripts
+  now go through the archive-and-open path, granting `relay_archive/N` and opening that entry.

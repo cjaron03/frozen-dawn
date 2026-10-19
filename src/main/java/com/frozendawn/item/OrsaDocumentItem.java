@@ -36,10 +36,15 @@ public class OrsaDocumentItem extends Item {
         super(properties);
     }
 
-    /** Manual entry each document is filed under; its discovery advancement is {@code found_<doc_type>}. */
-    private record Doc(String entryPath, String entryName) {
+    /** Discovery advancement and the manual entry each document is filed under. */
+    private record Doc(String advancement, String entryPath, String entryName) {
         static Doc intel(String docType, String entryName) {
-            return new Doc("orsa_intel/" + docType, entryName);
+            return new Doc("found_" + docType, "orsa_intel/" + docType, entryName);
+        }
+
+        /** ORSA Uplink transcripts: invisible unlocks for the Relay Archive manual pages. */
+        static Doc relay(int item) {
+            return new Doc("relay_archive/" + item, "orsa_intel/relay_archive", "Relay Archive");
         }
     }
 
@@ -50,7 +55,7 @@ public class OrsaDocumentItem extends Item {
             Map.entry("incident_report", Doc.intel("incident_report", "Incident TIR-1171")),
             Map.entry("satellite_log", Doc.intel("satellite_log", "Satellite System Log")),
             Map.entry("launch_manifest", Doc.intel("launch_manifest", "Launch Manifest")),
-            Map.entry("transponder_schematic", new Doc("advanced/transponder", "Transponder")),
+            Map.entry("transponder_schematic", new Doc("found_transponder_schematic", "advanced/transponder", "Transponder")),
             Map.entry("camp_field_report", Doc.intel("camp_field_report", "ORSA Field Report")),
             Map.entry("camp_personal_note", Doc.intel("camp_personal_note", "Crumpled Note")),
             Map.entry("camp_transfer_log", Doc.intel("camp_transfer_log", "Camp Transfer Log")),
@@ -66,7 +71,10 @@ public class OrsaDocumentItem extends Item {
             Map.entry("newspaper_cannibal", Doc.intel("newspaper_cannibal", "Grandview Gazette")),
             Map.entry("newspaper_conspiracy", Doc.intel("newspaper_conspiracy", "The Northern Star")),
             Map.entry("newspaper_missing", Doc.intel("newspaper_missing", "Missing Persons")),
-            Map.entry("newspaper_weather", Doc.intel("newspaper_weather", "Channel 9 Weather"))
+            Map.entry("newspaper_weather", Doc.intel("newspaper_weather", "Channel 9 Weather")),
+            Map.entry("relay_archive_1", Doc.relay(1)),
+            Map.entry("relay_archive_2", Doc.relay(2)),
+            Map.entry("relay_archive_3", Doc.relay(3))
     );
 
     @Override
@@ -79,7 +87,7 @@ public class OrsaDocumentItem extends Item {
             Doc doc = DOCS.get(docType);
 
             if (doc != null) {
-                grantAdvancement(serverPlayer, "found_" + docType);
+                grantAdvancement(serverPlayer, doc.advancement());
 
                 if (docType.equals("transponder_schematic")) {
                     // Unlock transponder recipe in Acheron Forge (world-level)

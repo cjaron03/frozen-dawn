@@ -169,4 +169,18 @@ class ReactorPhysicsTest {
         var fresh = new ReactorPhysics(); fresh.load(new CompoundTag());
         assertTrue(fresh.autoScram()); assertEquals(20, fresh.coreC());
     }
+
+    @Test void spinningReserveCyclesAndPersists() {
+        var core = new ReactorPhysics();
+        assertEquals(0, core.reserveKw());
+        int[] seen = new int[ReactorPhysics.RESERVE_STEPS_KW.length];
+        for (int i = 0; i < seen.length; i++) { core.cycleReserve(); seen[i] = core.reserveKw(); }
+        assertArrayEquals(new int[] {10, 20, 40, 60, 0}, seen, "Reserve steps wrap back to zero");
+        core.cycleReserve(); core.cycleReserve();
+        var tag = new CompoundTag(); core.save(tag);
+        var restored = new ReactorPhysics(); restored.load(tag);
+        assertEquals(20, restored.reserveKw(), "Reserve survives save and load");
+        tag.putInt("ReserveKw", 37); restored.load(tag);
+        assertEquals(0, restored.reserveKw(), "An unknown reserve value loads as zero");
+    }
 }

@@ -20,7 +20,7 @@
       "text": "Carry it anywhere. Under a $(bold)full sealed EVA suit$() it halves all incoming radiation, carried sources included.$(br2)$(danger)Heavy:$() Slowness I while carried, suit or not."
     },
     {
-      "type": "patchouli:crafting",
+      "type": "patchouli:smelting",
       "recipe": "frozendawn:lead_ingot_from_raw_galena_smelting",
       "title": "Lead Ingot",
       "text": "Smelt or blast Raw Galena."

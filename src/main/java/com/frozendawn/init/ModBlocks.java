@@ -114,6 +114,17 @@ public class ModBlocks {
 
     public static final DeferredBlock<com.frozendawn.block.PixieBlock> PIXIE = BLOCKS.register("pixie", () -> new com.frozendawn.block.PixieBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)));
 
+    public static final DeferredBlock<com.frozendawn.block.PlumbLineBlock> PLUMB_LINE = BLOCKS.register("plumb_line",
+            () -> new com.frozendawn.block.PlumbLineBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.PlumbLineBlock.PULSING) ? 6 : 0)));
+
+    public static final DeferredBlock<com.frozendawn.block.UplinkConsoleBlock> UPLINK_CONSOLE = BLOCKS.register("uplink_console",
+            () -> new com.frozendawn.block.UplinkConsoleBlock(BlockBehaviour.Properties.of().strength(4f).requiresCorrectToolForDrops().sound(SoundType.METAL).pushReaction(PushReaction.BLOCK)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.UplinkConsoleBlock.ACTIVE) * 3)));
+
+    public static final DeferredBlock<com.frozendawn.block.UplinkDishBlock> UPLINK_DISH = BLOCKS.register("uplink_dish",
+            () -> new com.frozendawn.block.UplinkDishBlock(BlockBehaviour.Properties.of().strength(3f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
+
     public static final DeferredBlock<com.frozendawn.block.PowerMonitorBlock> POWER_MONITOR = BLOCKS.register("power_monitor",
             () -> new com.frozendawn.block.PowerMonitorBlock(BlockBehaviour.Properties.of().strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.DESTROY)));
 
@@ -129,6 +140,21 @@ public class ModBlocks {
     public static final DeferredBlock<com.frozendawn.block.OrsaEmergencyLightBlock> ORSA_EMERGENCY_LIGHT = BLOCKS.register("orsa_emergency_light",
             () -> new com.frozendawn.block.OrsaEmergencyLightBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED)
                     .strength(3,6).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().noCollission().lightLevel(state -> state.getValue(com.frozendawn.block.OrsaEmergencyLightBlock.LIT)?6:0)));
+
+    // Internal transient light only: no item, loot, collision, heat or sensory emission.
+    public static final DeferredBlock<com.frozendawn.block.HeldLanternLightBlock> HELD_LANTERN_LIGHT = BLOCKS.register("held_lantern_light",
+            () -> new com.frozendawn.block.HeldLanternLightBlock(BlockBehaviour.Properties.of().replaceable().noCollission().noOcclusion()
+                    .noLootTable().strength(-1).lightLevel(net.minecraft.world.level.block.LightBlock.LIGHT_EMISSION)));
+
+    public static final DeferredBlock<com.frozendawn.block.BatteryLanternBlock> BATTERY_LANTERN = BLOCKS.register("battery_lantern",
+            () -> new com.frozendawn.block.BatteryLanternBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(.3f).sound(SoundType.METAL).noOcclusion().noCollission().pushReaction(PushReaction.DESTROY)
+                    .lightLevel(state -> state.getValue(com.frozendawn.block.BatteryLanternBlock.LIT) ? 14 : 0)));
+
+    public static final DeferredBlock<com.frozendawn.block.WorkLampBlock> WORK_LAMP = BLOCKS.register("work_lamp",
+            () -> new com.frozendawn.block.WorkLampBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(2f).requiresCorrectToolForDrops().sound(SoundType.METAL).noOcclusion().noCollission()
+                    .pushReaction(PushReaction.DESTROY).lightLevel(state -> state.getValue(com.frozendawn.block.WorkLampBlock.LIT) ? 12 : 0)));
 
     public static final DeferredBlock<com.frozendawn.block.PanelLightBlock> PANEL_LIGHT = BLOCKS.register("panel_light",
             () -> new com.frozendawn.block.PanelLightBlock(BlockBehaviour.Properties.of()

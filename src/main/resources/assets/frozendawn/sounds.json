@@ -1,4 +1,40 @@
 {
+  "block.plumb_line.pulse": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.plumb_line.pulse",
+    "sounds": [
+      {
+        "name": "frozendawn:block/plumb_line/pulse"
+      }
+    ]
+  },
+  "block.plumb_line.scan": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.plumb_line.scan",
+    "sounds": [
+      {
+        "name": "frozendawn:block/plumb_line/scan"
+      }
+    ]
+  },
+  "block.plumb_line.complete": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.plumb_line.complete",
+    "sounds": [
+      {
+        "name": "frozendawn:block/plumb_line/complete"
+      }
+    ]
+  },
+  "block.plumb_line.abort": {
+    "category": "block",
+    "subtitle": "subtitle.frozendawn.block.plumb_line.abort",
+    "sounds": [
+      {
+        "name": "frozendawn:block/plumb_line/abort"
+      }
+    ]
+  },
   "ambient.eva_emergency_breathing_fast": {
     "subtitle": "subtitle.frozendawn.ambient.eva_breathing",
     "sounds": [

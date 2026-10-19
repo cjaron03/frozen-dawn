@@ -162,6 +162,7 @@ public class WorldTickHandler {
         TowerPlacement.reset();
         CampPlacement.reset();
         ChunkCatchUpManager.reset();
+        com.frozendawn.gpr.PlumbLineMemory.clear();
         HearthReconciliationManager.reset();
         HearthArchitectManager.reset();
         HearthPopulationManager.reset();

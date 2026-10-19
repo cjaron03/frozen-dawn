@@ -87,7 +87,9 @@ public final class MonitoringStationPlacement {
                 continue;
             }
 
-            if (!isEligibleStationSite(overworld, blockX, blockZ)) {
+            // A site promised by an ORSA Uplink station map is built even where worldgen would decline it.
+            if (!isEligibleStationSite(overworld, blockX, blockZ)
+                    && !com.frozendawn.uplink.UplinkSavedData.get(overworld.getServer()).promised(chunkX, chunkZ)) {
                 pendingStationPlacements.remove(key);
                 state.markStationEvaluated(chunkX, chunkZ);
                 continue;

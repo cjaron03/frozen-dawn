@@ -12,7 +12,19 @@ public class ModDataComponents {
     public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FrozenDawn.MOD_ID);
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> HEADLAMP_ENABLED = DATA_COMPONENTS.register("headlamp_enabled", () -> DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build());
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HEADLAMP_CREDIT = DATA_COMPONENTS.register("headlamp_credit", () -> DataComponentType.<Integer>builder().persistent(Codec.intRange(0,1)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> LANTERN_ENABLED = DATA_COMPONENTS.register("lantern_enabled", () -> DataComponentType.<Boolean>builder().persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL).build());
+    // A prepaid half-joule travels with the lantern across switches, cell swaps and pickup.
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> LANTERN_CREDIT = DATA_COMPONENTS.register("lantern_credit", () -> DataComponentType.<Integer>builder().persistent(Codec.intRange(0,1)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> PIXIE_WATER = DATA_COMPONENTS.register("pixie_water", () -> DataComponentType.<Long>builder().persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build());
+
+    /** A printed Plumb Line Survey Sheet's pulse; synced so the holder's client can draw it. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.frozendawn.gpr.PlumbLineSurvey>> PLUMB_LINE_SURVEY =
+            DATA_COMPONENTS.register("plumb_line_survey", () -> DataComponentType.<com.frozendawn.gpr.PlumbLineSurvey>builder()
+                    .persistent(com.frozendawn.gpr.PlumbLineSurvey.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(com.frozendawn.gpr.PlumbLineSurvey.CODEC)).build());
 
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASK_RODS =
             DATA_COMPONENTS.register("cask_rods", () -> DataComponentType.<Integer>builder()

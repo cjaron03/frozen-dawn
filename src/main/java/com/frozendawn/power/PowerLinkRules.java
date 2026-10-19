@@ -18,10 +18,13 @@ public final class PowerLinkRules {
         if (coolant(state)) return 16;
         return state.getBlock() instanceof GeothermalCoreBlock
                 || state.getBlock() instanceof com.frozendawn.block.OrsaEmergencyLightBlock
-                || state.getBlock() instanceof com.frozendawn.block.PanelLightBlock
+                || state.getBlock() instanceof GridLight
                 || state.getBlock() instanceof com.frozendawn.block.DeconShowerBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerStorageBlock
+                || state.getBlock() instanceof com.frozendawn.block.AcheronForgeBlock
                 || state.getBlock() instanceof com.frozendawn.block.InductionFurnaceBlock
+                || state.getBlock() instanceof com.frozendawn.block.UplinkConsoleBlock
+                || state.getBlock() instanceof com.frozendawn.block.PlumbLineBlock
                 || state.getBlock() instanceof com.frozendawn.block.PowerMonitorBlock
                 || state.getBlock() instanceof com.frozendawn.block.AirlockControllerBlock
                 || state.getBlock() instanceof com.frozendawn.block.ResistiveHeaterBlock
@@ -38,7 +41,8 @@ public final class PowerLinkRules {
     }
     public static Result validate(ServerLevel level, BlockPos a, BlockPos b) {
         if (a.equals(b)) return Result.SELF;
-        if (!level.isLoaded(a) || !level.isLoaded(b)) return Result.UNLOADED;
+        // A chunk that is still loading reads as unloaded: validation never waits on it, and its load re-queues the link.
+        if (!com.frozendawn.world.ReadyChunks.ready(level, a) || !com.frozendawn.world.ReadyChunks.ready(level, b)) return Result.UNLOADED;
         int reach = Math.min(range(level.getBlockState(a)), range(level.getBlockState(b)));
         if (reach == 0) return Result.NOT_NODE;
         if (a.distSqr(b) > reach * reach) return Result.RANGE;
@@ -51,7 +55,7 @@ public final class PowerLinkRules {
         }
         if (!dockCompatible(level, a, b)) return Result.DOCK_CONNECTION;
         var path = path(a, b);
-        for (var pos : path) if (!level.isLoaded(pos)) return Result.UNLOADED;
+        for (var pos : path) if (!com.frozendawn.world.ReadyChunks.ready(level, pos)) return Result.UNLOADED;
         var inspected = new HashSet<BlockPos>();
         for (int sample = 0; sample < path.size(); sample++) {
             var pos = path.get(sample);
@@ -90,10 +94,10 @@ public final class PowerLinkRules {
         var seen = new HashSet<BlockPos>(); boolean dock=false, infrastructure=false;
         while (!queue.isEmpty()) {
             var p=queue.removeFirst();if(!seen.add(p))continue;
-            if(level.isLoaded(p)) {
+            if(com.frozendawn.world.ReadyChunks.ready(level, p)) {
                 var block=level.getBlockState(p).getBlock();
                 if(block instanceof com.frozendawn.block.PowerStorageBlock storage && !storage.isBank())dock=true;
-                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof com.frozendawn.block.PanelLightBlock)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
+                else if(!(block instanceof com.frozendawn.block.AirlockControllerBlock)&&!(block instanceof com.frozendawn.block.OrsaEmergencyLightBlock)&&!(block instanceof GridLight)&&!(block instanceof com.frozendawn.block.DeconShowerBlock)&&!(block instanceof com.frozendawn.block.AcheronForgeBlock)&&!(block instanceof com.frozendawn.block.InductionFurnaceBlock)&&!(block instanceof com.frozendawn.block.UplinkConsoleBlock)&&!(block instanceof com.frozendawn.block.PlumbLineBlock)&&!(block instanceof com.frozendawn.block.PowerMonitorBlock)&&!(block instanceof com.frozendawn.block.ResistiveHeaterBlock)&&!(block instanceof com.frozendawn.block.PixieBlock)&&!(block instanceof com.frozendawn.block.OxygenReservoirBlock))infrastructure=true;
             } else infrastructure=true;
             if(dock && infrastructure)return false;
             queue.addAll(neighbors.getOrDefault(p,Set.of()));

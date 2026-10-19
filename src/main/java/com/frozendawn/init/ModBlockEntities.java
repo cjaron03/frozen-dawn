@@ -36,6 +36,8 @@ public class ModBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OrsaEmergencyLightBlockEntity>> ORSA_EMERGENCY_LIGHT =
             BLOCK_ENTITIES.register("orsa_emergency_light",()->BlockEntityType.Builder.of(com.frozendawn.block.OrsaEmergencyLightBlockEntity::new,ModBlocks.ORSA_EMERGENCY_LIGHT.get()).build(null));
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.BatteryLanternBlockEntity>> BATTERY_LANTERN = BLOCK_ENTITIES.register("battery_lantern",()->BlockEntityType.Builder.of(com.frozendawn.block.BatteryLanternBlockEntity::new,ModBlocks.BATTERY_LANTERN.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenReservoirBlockEntity>> OXYGEN_RESERVOIR=BLOCK_ENTITIES.register("oxygen_reservoir",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenReservoirBlockEntity::new,ModBlocks.OXYGEN_RESERVOIR.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.OxygenGaugeBlockEntity>> OXYGEN_GAUGE=
             BLOCK_ENTITIES.register("oxygen_gauge",()->BlockEntityType.Builder.of(com.frozendawn.block.OxygenGaugeBlockEntity::new,ModBlocks.OXYGEN_GAUGE.get()).build(null));
@@ -66,6 +68,15 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("reactor_controller", () -> BlockEntityType.Builder.of(com.frozendawn.block.ReactorControllerBlockEntity::new, ModBlocks.REACTOR_CONTROLLER.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PixieBlockEntity>> PIXIE = BLOCK_ENTITIES.register("pixie", () -> BlockEntityType.Builder.of(com.frozendawn.block.PixieBlockEntity::new,ModBlocks.PIXIE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PlumbLineBlockEntity>> PLUMB_LINE =
+            BLOCK_ENTITIES.register("plumb_line", () -> BlockEntityType.Builder.of(com.frozendawn.block.PlumbLineBlockEntity::new,ModBlocks.PLUMB_LINE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkConsoleBlockEntity>> UPLINK_CONSOLE =
+            BLOCK_ENTITIES.register("uplink_console", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkConsoleBlockEntity::new,ModBlocks.UPLINK_CONSOLE.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.UplinkDishBlockEntity>> UPLINK_DISH =
+            BLOCK_ENTITIES.register("uplink_dish", () -> BlockEntityType.Builder.of(com.frozendawn.block.UplinkDishBlockEntity::new,ModBlocks.UPLINK_DISH.get()).build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.frozendawn.block.PowerMonitorBlockEntity>> POWER_MONITOR =
             BLOCK_ENTITIES.register("power_monitor", () -> BlockEntityType.Builder.of(com.frozendawn.block.PowerMonitorBlockEntity::new,ModBlocks.POWER_MONITOR.get()).build(null));
