@@ -1,5 +1,13 @@
 # Work Lamp, Floodlight and later Suit Headlamp planning
 
+## Merged lighting and Headlamp branch handoff (October 18)
+
+[PR #115](https://github.com/cjaron03/frozen-dawn/pull/115) merged into `feat/maeve-director` as `236ce9b187cbd0d35e928ade5fcfe5b0d735d75e`. The merged tree exactly matches tested PR head `1aaac072feed99c974b5e75a5766ac09ea2f7133`. Both protected checks passed: Java 21 build, 848 unit tests, 644 native regressions / 635 required reports, and 500 seeded stress cases plus repeated regressions. Review resolved the shared recipe pattern and the Work Lamp/Uplink monitor-kind collision.
+
+The owner authorized branching for Headlamp next. Branch `feat/suit-headlamp` starts at that merge in `/Users/jaroncabral/Projects/minecraft-mod/.worktrees/suit-headlamp`. No Headlamp gameplay code has been added. The accepted planning baseline below is an inventory module requiring an EVA helmet and its own independently drained inventory Power Cell; implementation should proceed in slices after confirming the intended behavior. The Battery Lantern's existing moving-light lifecycle is available as a foundation.
+
+The lighting checkout `/Users/jaroncabral/Projects/minecraft-mod/.worktrees/power-lighting` retains the accepted Work Lamp and Battery Lantern worlds, open lab client and delivery evidence. Preserve those saves and replay records. Earlier sections below record the design and replay history and may describe a superseded uncommitted or unmerged state.
+
 ## Delivery review (October 18)
 
 The owner accepted the Work Lamp and Battery Lantern replays and authorized review, commit and a PR into `feat/maeve-director`. The lighting branch is based on current Maeve Director `20ac3635339922fc47106d581806a8959cec5264`, including Uplink, Plumb Line and nonblocking power-link checks. Work Lamp monitor kind 10 preserves Uplink kind 8 and Plumb Line kind 9. Both accepted playtest worlds remain preserved; the existing lab client requires a restart to load the updated source.

@@ -41,6 +41,19 @@ public final class BatteryLanternGameTest {
                     &&output.getCount()==(lantern?1:2),"Survival recipe resolves to the intended light and quantity: "+lantern);
             if(lantern)h.assertTrue(BatteryLanternItem.cell(output).isEmpty(),"Crafting supplies no free power cell");
         }
+        // Resolve against the complete recipe manager to catch collisions with the other lights.
+        for(int row:List.of(0,1)) {
+            var stacks=new ArrayList<ItemStack>(Collections.nCopies(9,ItemStack.EMPTY));
+            var ingredients=List.of(Items.IRON_INGOT,Items.GLASS,Items.IRON_INGOT,
+                    Items.COPPER_INGOT,Items.REDSTONE,Items.COPPER_INGOT);
+            for(int i=0;i<ingredients.size();i++)stacks.set(row*3+i,new ItemStack(ingredients.get(i)));
+            var input=net.minecraft.world.item.crafting.CraftingInput.of(3,3,stacks);
+            var output=level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING,input,level)
+                    .orElseThrow().value().assemble(input,level.registryAccess());
+            h.assertTrue(output.is(ModItems.SUIT_HEADLAMP)&&output.getCount()==1
+                    &&!SuitHeadlamp.enabled(output)&&output.getOrDefault(ModDataComponents.HEADLAMP_CREDIT.get(),0)==0,
+                    "Either crafting-grid row resolves to one fresh OFF headlamp without prepaid power");
+        }
         h.succeed();
     }
 
