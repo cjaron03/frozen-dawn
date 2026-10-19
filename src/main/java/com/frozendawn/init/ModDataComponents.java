@@ -26,6 +26,11 @@ public class ModDataComponents {
             DATA_COMPONENTS.register("plumb_line_survey", () -> DataComponentType.<com.frozendawn.gpr.PlumbLineSurvey>builder()
                     .persistent(com.frozendawn.gpr.PlumbLineSurvey.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(com.frozendawn.gpr.PlumbLineSurvey.CODEC)).build());
 
+    /** Seconds a Frostcap stack has spent above 0C toward its next spoil step. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> FROSTCAP_WARMTH =
+            DATA_COMPONENTS.register("frostcap_warmth", () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.intRange(0, 100_000)).networkSynchronized(ByteBufCodecs.VAR_INT).build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASK_RODS =
             DATA_COMPONENTS.register("cask_rods", () -> DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 4)).networkSynchronized(ByteBufCodecs.VAR_INT).build());

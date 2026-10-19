@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "frozendawn:sulfur"
+    },
+    {
+      "item": "minecraft:coal"
+    }
+  ],
+  "result": {
+    "id": "frozendawn:sulfur_igniter",
+    "count": 1
+  }
+}

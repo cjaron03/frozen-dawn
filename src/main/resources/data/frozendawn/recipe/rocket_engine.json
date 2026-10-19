@@ -8,7 +8,7 @@
   ],
   "key": {
     "O": { "item": "minecraft:obsidian" },
-    "B": { "item": "minecraft:blaze_powder" },
+    "B": { "tag": "frozendawn:igniter" },
     "A": { "item": "frozendawn:refined_acheronite" },
     "T": { "item": "frozendawn:thermal_core" },
     "C": { "item": "minecraft:copper_ingot" },
