@@ -23,7 +23,10 @@ P = {k: tuple(bytes.fromhex(v)) for k, v in dict(
     spot='f6fdff', mush0='8e9a7a', mush1='6f7b5e', mush2='a7b08f', resin0='d9a441', resin1='b07a24', resin2='f1cb6d',
     sulf0='e3d64a', sulf1='b8a92d', coal='26282b', red='c0503a', bowl0='6b4a2f', bowl1='8a6340', stew0='a9c7d3', stew1='88a9b6',
     metal='7b8389', metal2='a4acb2', frame='4f5b64', glass='a9cfe0',
-    capline='5d8597', capdark='86aec0', bowlline='3b281a', bowl2='a37a52', shootline='1b2326', teal3='2a6a78', mushline='4f5a40', dryline='5b5148', dry0='9b8f7f', dry1='7d7264').items()}
+    capline='5d8597', capdark='86aec0', bowlline='3b281a', bowl2='a37a52', shootline='1b2326', teal3='2a6a78', mushline='4f5a40', dryline='5b5148', dry0='9b8f7f', dry1='7d7264',
+    resin3='c68a2e', resinhi='fff3c4', resinline='5a3410', binderline='4a2410', heat0='e8692a', heat1='ffb347',
+    sulf2='f4ec8a', coal2='3e4146', red2='8f3526', paper0='d9c39a', paper1='bfa678', paper2='9c845a', igniteline='2e2216',
+    spark0='fff6c8', spark1='ffa53a').items()}
 CLEAR = (0, 0, 0, 0)
 
 
@@ -260,30 +263,68 @@ def stew():
     for x, y, c in ((4, 6, 'cap0'), (5, 6, 'cap1'), (8, 5, 'cap0'), (9, 6, 'cap1'), (11, 6, 'cap0'), (6, 7, 'gill')): put(im, x, y, c)
     return im
 
+def outline(im, line):
+    """Rings every filled pixel with {@code line} on its open sides, as vanilla item art is outlined."""
+    filled = {(x, y) for y in range(im.height) for x in range(im.width) if im.getpixel((x, y))[3]}
+    for x, y in filled:
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if (nx, ny) not in filled: put(im, nx, ny, line)
+    return im
+
+
+def tone(x, y, cx, cy, r, tones):
+    """Picks a tone lit from the top left: lightest toward the upper left of the shape, darkest toward the lower right."""
+    lit = math.hypot(x + .5 - (cx - r * .45), y + .5 - (cy - r * .45)) / (r * 1.6)
+    return tones[min(len(tones) - 1, int(lit * len(tones)))]
+
+
 def resin():
+    """A glossy amber teardrop of sap with a trapped bubble, like a vanilla honey or slime item."""
     im = img()
-    for y in range(3, 14):
-        for x in range(4, 12):
-            if math.hypot((x - 7.5) / 3.5, (y - 9) / 5) < 1: put(im, x, y, 'resin0' if noise(x, y, 'rs') < 160 else 'resin1')
-    put(im, 6, 6, 'resin2'); put(im, 6, 7, 'resin2'); put(im, 7, 5, 'resin2'); rect(im, 7, 2, 8, 3, 'resin1')
+    for y in range(1, 15):
+        cy = y + .5
+        r = 4.6 * math.sqrt(max(0, 1 - ((cy - 10) / 4.6) ** 2)) if cy >= 10 else 4.6 * ((cy - 1.5) / 8.5) ** .8
+        for x in range(16):
+            if abs(x + .5 - 8) < r: put(im, x, y, tone(x, y, 8, 9.5, 4.6, ['resin2', 'resin0', 'resin3', 'resin1']))
+    outline(im, 'resinline')
+    for x, y in ((6, 6), (5, 8), (5, 9), (6, 7)): put(im, x, y, 'resinhi')
+    put(im, 10, 11, 'resin2'); put(im, 9, 12, 'resin3'); put(im, 10, 12, 'resin3')
     return im
 
 
 def igniter():
+    """A paper-wrapped sulfur cartridge, held diagonally like a vanilla rod: coal butt, twine bands, sulfur head, a spark."""
     im = img()
-    rect(im, 5, 2, 10, 13, 'sulf0'); rect(im, 5, 2, 5, 13, 'sulf1'); rect(im, 10, 2, 10, 13, 'sulf1')
-    rect(im, 6, 0, 9, 2, 'red'); put(im, 7, 0, 'resin2'); rect(im, 6, 13, 9, 15, 'coal')
-    for y in (5, 8, 11): rect(im, 6, y, 9, y, 'sulf1')
+    x0, y0 = 3, 12
+    for y in range(16):
+        for x in range(16):
+            t, s = (x - x0) - (y - y0), (x - x0) + (y - y0)
+            if not (0 <= t <= 16 and -2 <= s <= 2): continue
+            side = 0 if s < 0 else 1 if s == 0 else 2
+            if t <= 2: c = ('coal2', 'coal', 'coal')[side]
+            elif t >= 12: c = ('sulf2', 'sulf0', 'sulf1')[side]
+            elif t in (5, 6, 9, 10): c = ('red', 'red', 'red2')[side]
+            else: c = ('paper0', 'paper1', 'paper2')[side]
+            put(im, x, y, c)
+    outline(im, 'igniteline')
+    for x, y, c in ((13, 1, 'spark1'), (12, 2, 'spark1'), (14, 2, 'spark1'), (13, 3, 'spark1'), (13, 2, 'spark0'), (15, 0, 'spark1')):
+        put(im, x, y, c)
     return im
 
 
 def binder():
+    """A warm, sticky glob of resin and sulfur, magma-cream style: amber body, glowing seams, yellow flecks, one drip."""
     im = img()
-    for y in range(3, 14):
-        for x in range(2, 14):
-            d = math.hypot((x - 7.5) / 5.5, (y - 8.5) / 5)
-            if d < 1: put(im, x, y, ('sulf0' if (x + y) % 3 == 0 else 'resin0') if d < .7 else 'resin1')
-    for x, y in ((5, 6), (9, 9), (7, 11)): put(im, x, y, 'resin2')
+    for y in range(2, 15):
+        for x in range(1, 15):
+            d = math.hypot((x + .5 - 8) / 5.6, (y + .5 - 8) / 5.2)
+            drip = x in (9, 10) and 12 <= y <= 13
+            if d < 1 or drip: put(im, x, y, tone(x, y, 8, 8, 5.4, ['resin2', 'resin0', 'resin3', 'resin1']))
+    outline(im, 'binderline')
+    for x, y in ((8, 8), (9, 8), (8, 9), (9, 9)): put(im, x, y, 'heat1')
+    for x, y in ((7, 8), (8, 7), (10, 9), (9, 10), (7, 9), (10, 8)): put(im, x, y, 'heat0')
+    for x, y in ((5, 10), (11, 6), (6, 12)): put(im, x, y, 'sulf0')
+    for x, y in ((4, 5), (5, 4), (4, 6)): put(im, x, y, 'resinhi')
     return im
 
 

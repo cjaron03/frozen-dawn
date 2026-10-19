@@ -134,19 +134,19 @@
       "path": "src/main/resources/assets/frozendawn/textures/item/rimewood_resin.png",
       "width": 16,
       "height": 16,
-      "sha256": "956680bb11bc47a326c035bbedf5e3aac4f263d4dfa224e344844e2f6c7d8c37"
+      "sha256": "0ea74a57a82cb2be86797c113dede73d58a74f33c04f1496f8b563c15d06df5f"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/sulfur_igniter.png",
       "width": 16,
       "height": 16,
-      "sha256": "f27e951c8c759d1b0e0ce8a7024643950ddcbc12fb1937df01fa4a3a8e266a5d"
+      "sha256": "364aa66411f1b633c1c6096301da04621fb02e844611570280f11c6433598fb4"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/item/thermal_binder.png",
       "width": 16,
       "height": 16,
-      "sha256": "e1db04ed43f1cc14d7034d0647fb6bf5fb7d7ad662446594293b94fd8a4664e7"
+      "sha256": "75497a261240e07670c387639a5d033ba6e5f0ba33e1f17d151cbae795178563"
     },
     {
       "path": "src/main/resources/assets/frozendawn/textures/entity/signs/rimewood.png",
