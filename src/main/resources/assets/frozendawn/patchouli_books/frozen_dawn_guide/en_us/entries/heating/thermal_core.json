@@ -12,12 +12,12 @@
     {
       "type": "patchouli:text",
       "title": "Used In",
-      "text": "$(li)Thermal Heater$(li)Geothermal Core$(li)O2 Canister$(li)Acheron Forge$(li)Transponder$(br2)$(danger)Needs blaze powder.$() Get blaze rods early; the Nether won't last."
+      "text": "$(li)Thermal Heater$(li)Geothermal Core$(li)O2 Canister$(li)Acheron Forge$(li)Transponder$(br2)Without the Nether, use $(l:advanced/nether_substitutes)Sulfur Igniters and a Thermal Binder$(/l)."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:thermal_core",
-      "text": "Iron ingot, blaze powder on three sides, magma cream below.$(br2)$(flavor)Designed as a hand warmer. Engineering calls the rest \"scope creep.\"$()"
+      "text": "Iron ingot, blaze powder or igniters on three sides, magma cream or binder below.$(br2)$(flavor)Designed as a hand warmer. Engineering calls the rest \"scope creep.\"$()"
     }
   ]
 }

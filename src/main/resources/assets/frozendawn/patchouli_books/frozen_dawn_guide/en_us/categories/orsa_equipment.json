@@ -2,5 +2,6 @@
   "name": "ORSA Equipment",
   "description": "Standard-issue ORSA survival equipment. All items remain ORSA property. Unauthorized modification voids your warranty and your oxygen privileges.$(br2)The Compass file unlocks when an ORSA tower is back online.",
   "icon": "frozendawn:eva_chestplate",
-  "sortnum": 4
+  "sortnum": 0,
+  "parent": "frozendawn:gear"
 }

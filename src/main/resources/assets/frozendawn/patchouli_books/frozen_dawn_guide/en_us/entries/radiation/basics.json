@@ -27,5 +27,6 @@
       "title": "Seeing It",
       "text": "Above about 60 RU/s you see white-blue specks. Above 400 RU/s, $(danger)full blue flashes$()."
     }
-  ]
+  ],
+  "priority": true
 }

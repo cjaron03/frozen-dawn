@@ -2,7 +2,7 @@
   "name": "Hyperthermia",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:lava_bucket",
-  "sortnum": 4,
+  "sortnum": 5,
   "pages": [
     {
       "type": "patchouli:text",

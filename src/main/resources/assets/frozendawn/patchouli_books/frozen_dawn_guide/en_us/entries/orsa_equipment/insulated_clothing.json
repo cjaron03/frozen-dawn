@@ -35,5 +35,6 @@
       "recipe": "frozendawn:insulated_boots",
       "text": "$(flavor)ORSA property. Unauthorized bedazzling: fines up to 500 credits.$()"
     }
-  ]
+  ],
+  "priority": true
 }

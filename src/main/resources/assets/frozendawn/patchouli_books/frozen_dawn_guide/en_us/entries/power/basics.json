@@ -33,5 +33,6 @@
       "title": "Sealed Walls",
       "text": "A link can't cross a sealed room's wall except through a $(l:power/relays)Bulkhead Feedthrough$(/l).$(br2)Other blocks don't block links."
     }
-  ]
+  ],
+  "priority": true
 }

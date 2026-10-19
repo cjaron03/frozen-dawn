@@ -1,6 +1,7 @@
 {
   "name": "Radiation",
   "icon": "frozendawn:geiger_counter",
-  "sortnum": 8,
-  "description": "Dose, shielding, contamination and how to get clean.$(br2)$(flavor)If the counter screams, leave.$()"
+  "sortnum": 1,
+  "description": "Dose, shielding, contamination and how to get clean.$(br2)$(flavor)If the counter screams, leave.$()",
+  "parent": "frozendawn:industry"
 }

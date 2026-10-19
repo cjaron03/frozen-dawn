@@ -1,0 +1,7 @@
+{
+  "name": "Food & Foraging",
+  "description": "Keeping food edible, and what still grows in the cold.",
+  "icon": "frozendawn:frostcap_stew",
+  "parent": "frozendawn:survival",
+  "sortnum": 1
+}

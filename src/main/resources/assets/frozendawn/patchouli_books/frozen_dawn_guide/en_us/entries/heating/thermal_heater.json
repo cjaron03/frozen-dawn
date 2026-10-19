@@ -49,5 +49,6 @@
       "type": "patchouli:text",
       "text": "Without air, a heater stops at its target and passive sources can't push walls past their own temperature. Refilling air adds no heat. Resealing doesn't reset hot walls.$(br2)$(flavor)Can you name the heater? We cannot stop you.$()"
     }
-  ]
+  ],
+  "priority": true
 }

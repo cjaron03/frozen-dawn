@@ -25,5 +25,6 @@
       "title": "Before You Build",
       "text": "$(li)Uranium, mined deep$(li)A powered $(l:power/induction_furnace)Induction Furnace$(/l)$(li)Radiators with an outdoor face$(li)Distance or lead against $(l:radiation/basics)radiation$(/l)"
     }
-  ]
+  ],
+  "priority": true
 }

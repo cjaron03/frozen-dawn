@@ -2,7 +2,7 @@
   "name": "Phase Timeline",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:paper",
-  "sortnum": 1,
+  "sortnum": 2,
   "pages": [
     {
       "type": "patchouli:text",

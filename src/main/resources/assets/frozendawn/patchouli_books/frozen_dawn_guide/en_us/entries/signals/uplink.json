@@ -73,5 +73,6 @@
       "title": "Dish",
       "text": "Iron and a Feed Horn on an iron block."
     }
-  ]
+  ],
+  "priority": true
 }

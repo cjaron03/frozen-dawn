@@ -55,5 +55,6 @@
       "type": "patchouli:text",
       "text": "Restored means air, not warmth or patched suits.$(br2)Notices show in an EVA helmet HUD, or above the hotbar, never in chat. Loss is red.$(br2)$(flavor)Keep the atmosphere on the inside.$()"
     }
-  ]
+  ],
+  "priority": true
 }

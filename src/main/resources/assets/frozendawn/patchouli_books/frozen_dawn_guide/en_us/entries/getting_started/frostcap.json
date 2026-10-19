@@ -1,33 +1,43 @@
 {
   "name": "Frostcap",
-  "category": "frozendawn:getting_started",
+  "category": "frozendawn:food",
   "icon": "frozendawn:frozen_frostcap",
-  "sortnum": 9,
+  "sortnum": 5,
   "pages": [
     {
-      "type": "patchouli:text",
-      "title": "Frostcap",
-      "text": "$(italic)Gelimyces nivalis.$() A pale fungus that glows faintly blue-white. From $(bold)Phase 3$() it appears in shelves on the trunks of Rimewood, which it strongly prefers, and only rarely on bare snow or ice.$(br2)It needs no light and gives off no heat, so a cold-room farm is invisible to anything that hunts by warmth. The glow (light 3) is enough to find your way in the dark."
+      "type": "patchouli:spotlight",
+      "item": "frozendawn:frozen_frostcap",
+      "text": "$(italic)Gelimyces nivalis.$() A pale fungus with a faint blue-white glow (light 3).$(br2)No heat: a cold-room farm is invisible to anything that hunts by warmth."
     },
     {
       "type": "patchouli:text",
-      "title": "Growing It",
-      "text": "Plant a Frozen Frostcap on $(bold)snow, ice or a Rimewood log$(). On Rimewood it grows and spreads $(bold)twice as fast$() and reaches for other log sides first.$(br2)$(li)$(bold)-20°C or colder:$() ripens and spreads; twice as fast again at -80°C$(li)$(bold)-20°C to 0°C:$() stalls$(li)$(bold)Above 0°C:$() dies$(br2)It stops spreading once five grow close together. A ripe cluster gives two or three caps."
+      "title": "Where It Grows",
+      "text": "From $(bold)Phase 3$(), in shelves on $(bold)Rimewood$() trunks, which it strongly prefers. Rarely on bare snow or ice.$(br2)Plant a cap on snow, ice, a full snow layer or a Rimewood log side. No light needed."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Temperatures",
+      "text": "$(li)$(bold)-20°C or colder$(): ripens and spreads$(li)$(bold)-80°C$(): twice as fast$(li)-20°C to 0°C: stalls$(li)Above 0°C: dies$(br2)On Rimewood, twice as fast again."
+    },
+    {
+      "type": "patchouli:text",
+      "title": "Spreading",
+      "text": "Ripe caps spread up to 2 blocks, trying Rimewood log sides first. They stop at $(bold)five$() close together.$(br2)A ripe cluster gives 2-3 caps."
     },
     {
       "type": "patchouli:text",
       "title": "Keep It Frozen",
-      "text": "Harvested caps are $(bold)Frozen Frostcap$(): raw, safe, 2 hunger.$(br2)Carried above 0°C for about $(bold)5 minutes$(), they become $(bold)Thawed Frostcap$() (1 hunger), and 5 minutes later $(bold)Frostcap Mush$(), which you should not eat. Thawed caps never refreeze.$(br2)Caps in a chest keep as they are. Store the harvest in a cold room."
+      "text": "$(li)$(bold)Frozen$(): 2 hunger$(li)$(bold)Thawed$(): 1 hunger, after 5 min above 0°C$(li)$(bold)Mush$(): 0 hunger and Nausea, 5 min later$(br2)Thawed caps never refreeze. Caps in a chest keep; store the harvest cold."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:frostcap_stew",
-      "text": "Three caps and a bowl: $(bold)6 hunger$(), and stew does not spoil."
+      "text": "Three caps and a bowl: $(bold)6 hunger$(). Stew doesn't spoil."
     },
     {
       "type": "patchouli:smelting",
-      "recipe": "frozendawn:dried_frostcap_from_smoking",
-      "text": "Dry caps in a smoker or furnace for $(bold)Dried Frostcap$(): 3 hunger, stackable, and safe for long trips."
+      "recipe": "frozendawn:dried_frostcap_from_smelting",
+      "text": "Smoker, furnace or campfire: $(bold)3 hunger$(), stackable and frost-resistant. Good for long trips."
     },
     {
       "type": "patchouli:text",

@@ -37,6 +37,16 @@
       "text": "$(bold)Drops:$() Tattered Clothing Scrap, Mirrored Fragment (rare)$(br2)$(flavor)Agent Torres was followed by a shadow figure for three minutes. Torres survived. Her partner, who she assumed was the figure, did not.$()"
     },
     {
+      "type": "patchouli:image",
+      "images": [
+        "frozendawn:textures/gui/patchouli/architect_capture_1.png",
+        "frozendawn:textures/gui/patchouli/architect_capture_2.png",
+        "frozendawn:textures/gui/patchouli/architect_capture_3.png"
+      ],
+      "border": true,
+      "text": "$(flavor)ORSA has no clear image of Variant C. Every capture fails.$()"
+    },
+    {
       "type": "patchouli:text",
       "title": "Variant C: Architect",
       "text": "$(bold)Behavior:$() The rarest and most dangerous variant. The Architect doesn't just attack — it dismantles. It observes your base from a distance, identifies weak points, then systematically mines through walls with the correct tool."

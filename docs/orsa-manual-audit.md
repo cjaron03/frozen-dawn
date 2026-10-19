@@ -453,3 +453,37 @@ Core Upgrades, Room Temperature and Hyperthermia carry upstream's new behavior.
 - **Reactor**: Running It gains a Reserve page; Radiators notes hot radiators shed frost.
 - **Relay Archive** (Intelligence) is upstream lore and left as written. Relay transcripts
   now go through the archive-and-open path, granting `relay_archive/N` and opening that entry.
+
+## Cold flora (#116, unmerged)
+
+`origin/feat/cold-flora` is merged into this branch ahead of its own review, so this
+branch now depends on #116 landing first.
+
+- **Rimewood** (Getting Started, sortnum 9): groves, planting, growth, the ORSA field
+  note, resin, Frostcap host and planks. **Frostcap** (sortnum 10): where it grows,
+  temperatures, spreading, the thaw chain, stew, Dried Frostcap and the ORSA note.
+  Mush is described as edible with Nausea; the hidden advancement is not named.
+- **Without the Nether** moves to Advanced sortnum 8 and lists what the Sulfur Igniter
+  and Thermal Binder replace (Thermal Core, Rocket Engine, Heavy Gear, Hot Wings) and
+  what still takes blaze powder only (Core temperature upgrade, Thermal Heater fuel,
+  Heavy Gear repair).
+- Thermal Core, Heavy Gear and Hot Wings now mention the substitutes; their flavor lines
+  are kept.
+
+## Navigation
+
+The landing page drops from 13 categories to 6 by nesting existing categories under new
+parents (`parent` in the category JSON). Category and entry IDs are unchanged, so links,
+document unlocks and advancement locks still resolve.
+
+- **Survival**: Getting Started, Food & Foraging (new), Threat Assessment
+- **Base Systems**: Heating, Air & Pressure, Power
+- **Gear**: ORSA Equipment, Acheronite
+- **Industry**: Hearthstone Reactor, Radiation, Signals & Survey
+- **Endgame** stays top level.
+- **ORSA Intelligence** holds the UN Emergency Notice as a sub-category (text untouched).
+
+Food & Foraging takes Food Spoilage, Thermal Container, Ration Warmer, Hot Wings,
+Rimewood and Frostcap (category field only; files stay put). A new
+`getting_started/start_here` entry gives a reading route by phase, and What's Happening?
+points to it. `priority` stars the first entry to read in each category.

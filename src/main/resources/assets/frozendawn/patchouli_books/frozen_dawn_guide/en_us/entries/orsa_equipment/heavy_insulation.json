@@ -8,17 +8,17 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:reinforced_chestplate",
       "title": "Heavy Gear",
-      "text": "ORSA Mk.II Heated Survival Suit: Tier 1 gear with blaze powder heating."
+      "text": "ORSA Mk.II Heated Survival Suit: Tier 1 gear with chemical heating."
     },
     {
       "type": "patchouli:text",
       "title": "Specs",
-      "text": "$(li)$(bold)+11.25°C$() per piece$(li)Full set: $(bold)+45°C$()$(li)Rated for Phase 1-4, down to -45°C$(li)Halves Phase 5+ wind chill$(br2)Each piece is crafted around its Tier 1 piece."
+      "text": "$(li)$(bold)+11.25°C$() per piece$(li)Full set: $(bold)+45°C$()$(li)Rated for Phase 1-4, down to -45°C$(li)Halves Phase 5+ wind chill$(br2)Crafted around its Tier 1 piece. Repairs with blaze powder only."
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:reinforced_chestplate",
-      "text": "Tier 1 gear surrounded by blaze powder.$(br2)$(flavor)Fashion is dead. Warmth is not.$()"
+      "text": "Tier 1 gear surrounded by blaze powder or $(l:advanced/nether_substitutes)Sulfur Igniters$(/l).$(br2)$(flavor)Fashion is dead. Warmth is not.$()"
     },
     {
       "type": "patchouli:crafting",

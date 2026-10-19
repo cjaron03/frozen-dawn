@@ -1,8 +1,8 @@
 {
   "name": "Thermal Container",
-  "category": "frozendawn:getting_started",
+  "category": "frozendawn:food",
   "icon": "frozendawn:thermal_container",
-  "sortnum": 6,
+  "sortnum": 1,
   "pages": [
     {
       "type": "patchouli:spotlight",

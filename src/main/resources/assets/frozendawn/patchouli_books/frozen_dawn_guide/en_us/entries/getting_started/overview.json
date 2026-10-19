@@ -2,7 +2,7 @@
   "name": "What's Happening?",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:clock",
-  "sortnum": 0,
+  "sortnum": 1,
   "pages": [
     {
       "type": "patchouli:text",
@@ -21,7 +21,7 @@
     {
       "type": "patchouli:text",
       "title": "Where to Start",
-      "text": "Deep ground cools slowest. A sealed, insulated base saves fuel.$(br2)Read $(l:heating/thermal_heater)Thermal Heater$(/l), then $(l:heating/room_climate)Insulation$(/l). Later, $(l:power/basics)Power Basics$(/l)."
+      "text": "Deep ground cools slowest. A sealed, insulated base saves fuel.$(br2)Read $(l:heating/thermal_heater)Thermal Heater$(/l), then $(l:heating/room_climate)Insulation$(/l). The full route is in $(l:getting_started/start_here)Start Here$(/l)."
     }
   ]
 }

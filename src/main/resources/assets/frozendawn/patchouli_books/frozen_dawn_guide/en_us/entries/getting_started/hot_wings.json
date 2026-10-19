@@ -1,8 +1,8 @@
 {
   "name": "Hot Wings",
-  "category": "frozendawn:getting_started",
+  "category": "frozendawn:food",
   "icon": "frozendawn:hot_wings",
-  "sortnum": 8,
+  "sortnum": 3,
   "pages": [
     {
       "type": "patchouli:spotlight",
@@ -12,12 +12,12 @@
     {
       "type": "patchouli:text",
       "title": "Field Notes",
-      "text": "Restores serious hunger but doesn't replace other food.$(br2)$(danger)Stockpile before the Nether severs in Phase 5.$()$(br2)$(flavor)Nutritional Services rates it \"technically edible.\"$()"
+      "text": "Restores serious hunger but doesn't replace other food.$(br2)After Phase 5, a $(l:advanced/nether_substitutes)Sulfur Igniter$(/l) replaces the blaze powder.$(br2)$(flavor)Nutritional Services rates it \"technically edible.\"$()"
     },
     {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:hot_wings",
-      "text": "One cooked chicken, one pinch of Blaze powder.$(br2)$(flavor)Tastes like regret and capsaicin.$()"
+      "text": "One cooked chicken, one pinch of blaze powder or an igniter.$(br2)$(flavor)Tastes like regret and capsaicin.$()"
     }
   ]
 }

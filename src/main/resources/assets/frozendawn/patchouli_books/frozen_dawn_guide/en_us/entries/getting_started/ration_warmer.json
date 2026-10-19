@@ -1,8 +1,8 @@
 {
   "name": "ORSA Ration Warmer",
-  "category": "frozendawn:getting_started",
+  "category": "frozendawn:food",
   "icon": "frozendawn:ration_warmer",
-  "sortnum": 7,
+  "sortnum": 2,
   "pages": [
     {
       "type": "patchouli:spotlight",

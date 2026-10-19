@@ -2,5 +2,6 @@
   "name": "Getting Started",
   "description": "Essential information about what's happening to Earth and what to expect.",
   "icon": "minecraft:spyglass",
-  "sortnum": 0
+  "sortnum": 0,
+  "parent": "frozendawn:survival"
 }

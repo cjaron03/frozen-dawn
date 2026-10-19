@@ -2,5 +2,6 @@
   "name": "Air & Pressure",
   "description": "Late Phase 6 takes the air. These systems keep it inside, measure it and ration it.$(br2)$(italic)ORSA reminds you that breathing is not optional.$()",
   "icon": "frozendawn:oxygen_gauge",
-  "sortnum": 2
+  "sortnum": 1,
+  "parent": "frozendawn:base_systems"
 }
