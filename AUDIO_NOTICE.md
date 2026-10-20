@@ -26,6 +26,7 @@ The generated Stillpoint ORSA voice line is not included in this procedural clas
 
 The following groups contain CC0 recordings, source-site royalty-free material, project-supplied recordings, generated voices, or combinations of those sources. Preserve each source ledger and its specific terms rather than applying a blanket Frozen Dawn all-rights-reserved claim:
 
+- Phase 1 rainy wind: “Wind-Gusts-late-autumn.wav” by [BudJillett](https://freesound.org/people/BudJillett/sounds/109485/), CC0 1.0 Universal. Two trimmed, filtered, level-matched and faded variants use the official public HQ MP3 preview. Creator/source credit, license evidence, original preview and processing are retained in [the phase 1 wind ledger](tools/audio_sources/phase_one_wind/SOURCES.md).
 - ORSA airlock worn-mechanism cues: CC0 recordings by Brian MacIntosh (BMacZero), rubberduck and wavecal22, trimmed, filtered, layered and resampled for the mod. Voluntary creator credits, individual/pack license evidence, original recordings and exact cue recipes are retained in [the airlock source ledger](tools/audio_sources/airlock/SOURCES.md).
 - Aggregate
 - Archivist
@@ -105,3 +106,6 @@ checks, source encodings, processing instructions and hashes. Creator credit is
 voluntary under CC0. No The Last of Us recording is included.
 
 Blind Architect hurt voice C processes the installed game's referenced Warden/Phantom audio at playback. No extracted vanilla hurt recordings are bundled. The original processing implementation and approved selection are documented in [HURT_C.md](tools/audio_sources/blind_architect/HURT_C.md).
+
+
+- Clear-day forest soft wind: “Soft Wind” by florianreichelt, Freesound https://freesound.org/people/florianreichelt/sounds/459977/, CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/. Derived from the official HQ MP3 preview with excerpting, normalization, peak limiting, mono conversion and 3-second edge fades. Source, license and reproducible processing records: `tools/audio_sources/phase_one_soft_wind/SOURCES.md`.

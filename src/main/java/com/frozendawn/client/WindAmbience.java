@@ -4,6 +4,7 @@ import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.config.FrozenDawnConfig;
 import com.frozendawn.phase.PhaseManager;
+import com.frozendawn.phase.PhaseOneWeatherPolicy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -30,10 +31,14 @@ public class WindAmbience {
     private static final int OVERLAP = 100;          // 5s overlap (matches file fade-out)
 
     private static TickableWindSound currentSound = null;
+    private static TickableWindSound previousSound = null;
     private static int ticksUntilNext = 0;
     private static int creakCooldown = 0;
     private static float currentBasePitch = 1.0f;
+    private static float previousBasePitch = 1.0f;
+    private static final PhaseOneWindExposure PHASE_ONE_EXPOSURE = new PhaseOneWindExposure();
     private static boolean currentPostMaeve;
+    private static boolean currentPhaseOne;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -47,12 +52,13 @@ public class WindAmbience {
         float masterStrength = MasterArchitectWeather.getStrength();
         boolean postMaeve = PostMaeveClientState.isMaeveErased();
 
-        if (currentSound != null && currentPostMaeve != postMaeve) {
+        boolean phaseOneWeather = phase == 1 && !postMaeve && masterStrength <= 0.01F;
+        if (currentSound != null && (currentPostMaeve != postMaeve || currentPhaseOne != phaseOneWeather)) {
             stopAll(mc);
         }
-
+        boolean phaseOneRain = phaseOneWeather && mc.level.getRainLevel(1) > 0.01F;
         boolean shouldStop = shouldStopWind(
-                phase, progress, underground, masterStrength, postMaeve);
+                phase, progress, underground, masterStrength, postMaeve, phaseOneRain);
         if (shouldStop) {
             stopAll(mc);
             return;
@@ -60,10 +66,12 @@ public class WindAmbience {
 
         float targetVolume = postMaeve
                 ? FrozenDawnConfig.POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER.get().floatValue()
-                : Math.max(getTargetWindVolume(phase, progress),
+                : Math.max(phaseOneWeather ? PhaseOneWeatherPolicy.windVolume(progress, mc.level.getRainLevel(1), mc.level.getGameTime())
+                        : getTargetWindVolume(phase, progress),
                         0.9F * masterStrength);
 
-        float exposure = StormExposureController.getExposure();
+        float exposure = phaseOneWeather ? PHASE_ONE_EXPOSURE.tick(ClientStormVisibility.isStormExposed(mc))
+                : StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
         targetVolume *= Mth.lerp(exposure, 0.08f, 1.0f);
         targetVolume *= MasterArchitectFourthWallMoment.weatherAudioMultiplier();
@@ -78,6 +86,12 @@ public class WindAmbience {
             currentSound.setTargetVolume(
                     targetVolume, MasterArchitectSeverTelegraph.windFadeRate());
             currentSound.setTargetPitch(targetPitch);
+        }
+
+        // The outgoing phase-1 clip must follow cover too during its five-second overlap.
+        if (phaseOneWeather && previousSound != null && !previousSound.isStopped()) {
+            previousSound.setTargetVolume(targetVolume, MasterArchitectSeverTelegraph.windFadeRate());
+            previousSound.setTargetPitch(previousBasePitch * Mth.lerp(exposure, 0.82f, 1.0f));
         }
 
         // If target is near-zero and no sound playing, bail
@@ -108,17 +122,21 @@ public class WindAmbience {
 
         // Start next clip — old one still playing for 5s overlap
         boolean strong = phase >= 4 || masterStrength > 0.05F;
+        previousBasePitch = currentBasePitch;
         currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
         targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
         int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
 
+        previousSound = currentSound;
         currentPostMaeve = postMaeve;
+        currentPhaseOne = phaseOneWeather;
         currentSound = new TickableWindSound(
                 postMaeve
                         ? strong ? ModSounds.WIND_POST_MAEVE_STRONG.get()
                                 : ModSounds.WIND_POST_MAEVE_LIGHT.get()
-                        : strong ? ModSounds.WIND_STRONG.get()
-                                : ModSounds.WIND_LIGHT.get(),
+                        : phaseOneWeather ? ModSounds.WIND_PHASE_ONE.get()
+                                : strong ? ModSounds.WIND_STRONG.get()
+                                        : ModSounds.WIND_LIGHT.get(),
                 targetVolume, targetPitch, clipDuration);
         mc.getSoundManager().play(currentSound);
 
@@ -141,17 +159,24 @@ public class WindAmbience {
             mc.getSoundManager().stop(currentSound);
             currentSound = null;
         }
+        if (previousSound != null) {
+            mc.getSoundManager().stop(previousSound);
+            previousSound = null;
+        }
         ticksUntilNext = 0;
         creakCooldown = 0;
         currentBasePitch = 1.0f;
+        previousBasePitch = 1.0f;
+        PHASE_ONE_EXPOSURE.reset();
         currentPostMaeve = false;
+        currentPhaseOne = false;
     }
 
     private static boolean shouldStopWind(
             int phase, float progress, boolean underground, float masterStrength,
-            boolean postMaeve) {
+            boolean postMaeve, boolean phaseOneRain) {
         return underground || (!postMaeve && masterStrength <= 0.01F
-                && (phase < 3 || PhaseManager.isVacuumActive(phase, progress)));
+                && ((!phaseOneRain && phase < 3) || PhaseManager.isVacuumActive(phase, progress)));
     }
 
     private static float getTargetWindVolume(int phase, float progress) {

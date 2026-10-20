@@ -203,6 +203,17 @@
     "aurora_terrain:night": {"world":"Aurora Terrain Check","scores":[{"objective":"aurora","holder":"#built","equals":1}]},
     "aurora_terrain:preview": {"world":"Aurora Terrain Check","scores":[{"objective":"aurora","holder":"#built","equals":1}]},
     "aurora_terrain:natural": {"world":"Aurora Terrain Check","scores":[{"objective":"aurora","holder":"#built","equals":1}]},
-    "aurora_terrain:read": {"world":"Aurora Terrain Check","scores":[{"objective":"aurora","holder":"#built","equals":1}]}
+    "aurora_terrain:read": {"world":"Aurora Terrain Check","scores":[{"objective":"aurora","holder":"#built","equals":1}]},
+    "phase1_check:controls": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:read": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:early": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:middle": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:late": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:clear": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:rain": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:edge": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:natural": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:breath_warm": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]},
+    "phase1_check:breath_cold": {"world":"Phase 1 Weather Check","scores":[{"objective":"phase1","holder":"#built","equals":1}]}
   }
 }

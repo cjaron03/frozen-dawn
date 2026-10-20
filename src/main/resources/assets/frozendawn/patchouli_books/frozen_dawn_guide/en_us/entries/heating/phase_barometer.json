@@ -15,6 +15,11 @@
       "text": "$(bold)Stable$() means the current state is holding.$(br)$(bold)Deteriorating$() means conditions are sliding.$(br)$(bold)Transition Likely Soon$() means plan for the next escalation.$(br)$(bold)Imminent$() means stop pretending you have time.$(br)$(bold)Collapse Underway$() is reserved for the final atmospheric failure window."
     },
     {
+      "type": "patchouli:text",
+      "title": "Early Warning",
+      "text": "During $(bold)Phase 1$(), the instrument first reports a cooling trend, then warns that persistent precipitation is approaching.$(br2)Hover over its $(bold)WARNING$() field for preparation advice: establish reliable heat, stock fuel, protect food production, and prepare warm shelter.$(br2)The warning describes the changing climate. It does not predict the exact minute of the next shower."
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:phase_barometer",
       "text": "A copper-and-glass diagnostic block that shows the current phase, the next expected escalation, and major late-game warnings like whiteout intensification, atmospheric thinning, and vacuum onset."

@@ -1,6 +1,7 @@
 package com.frozendawn.client;
 
 import com.frozendawn.FrozenDawn;
+import com.frozendawn.client.particle.ColdBreathParticle;
 import com.frozendawn.client.compat.curios.CuriosClientCompat;
 import com.frozendawn.client.renderer.FrostbittenRenderer;
 import com.frozendawn.client.renderer.AggregateRenderer;
@@ -97,6 +98,8 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticles.COLD_BREATH.get(),
+                com.frozendawn.client.particle.ColdBreathParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_SPORE_ROOTING.get(),
                 BloomSporeRootParticle.Provider::new);
         event.registerSpriteSet(ModParticles.BLOOM_DRIFT.get(),
@@ -115,6 +118,9 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "cold_breath"),
+                        DefaultVertexFormat.PARTICLE), ColdBreathParticle::setShader);
         event.registerShader(new ShaderInstance(event.getResourceProvider(),
                         ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "aurora"),
                         DefaultVertexFormat.POSITION_TEX_COLOR), AuroraRenderer::setShader);

@@ -240,6 +240,11 @@ public class PhaseBarometerScreen extends AbstractContainerScreen<PhaseBarometer
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
+        String advice = currentSnapshot().warning().preparationAdvice();
+        if (!advice.isEmpty() && mouseX >= leftPos + SECTION_X && mouseX < leftPos + GUI_W - SECTION_X
+                && mouseY >= topPos + 101 && mouseY < topPos + 127) {
+            graphics.renderComponentTooltip(font, List.of(Component.literal(advice)), mouseX, mouseY);
+        }
     }
 
     @Override

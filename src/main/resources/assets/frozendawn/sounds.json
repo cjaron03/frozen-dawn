@@ -81,6 +81,24 @@
       }
     ]
   },
+  "ambient.wind_early_forest": {
+    "subtitle": "subtitle.frozendawn.ambient.wind_early_forest",
+    "sounds": [{"name": "frozendawn:ambient/wind_early_forest", "stream": true}]
+  },
+  "ambient.wind_phase_one": {
+    "category": "ambient",
+    "subtitle": "subtitle.frozendawn.ambient.wind_light",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/wind_phase_one_1",
+        "stream": true
+      },
+      {
+        "name": "frozendawn:ambient/wind_phase_one_2",
+        "stream": true
+      }
+    ]
+  },
   "ambient.wind_strong": {
     "category": "ambient",
     "subtitle": "subtitle.frozendawn.ambient.wind_strong",
