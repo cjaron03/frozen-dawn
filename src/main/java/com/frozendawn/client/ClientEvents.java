@@ -115,6 +115,9 @@ public class ClientEvents {
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        event.registerShader(new ShaderInstance(event.getResourceProvider(),
+                        ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "aurora"),
+                        DefaultVertexFormat.POSITION_TEX_COLOR), AuroraRenderer::setShader);
         event.registerShader(
                 new ShaderInstance(
                         event.getResourceProvider(),
