@@ -9,6 +9,7 @@ import com.frozendawn.phase.PhaseManager;
 import com.frozendawn.vision.VisionMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -17,25 +18,14 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 /**
  * Modifies fog color and distance based on apocalypse progression.
  *
- * Sky color shift: phase-dependent color targets with brightness floors.
+ * Sky color shift: phase-dependent targets with solar lighting through phase 4.
  * Fog: closes in during phases 3-5 (visibility 256 -> 12 blocks at phase 5).
  * Phase 6: sky goes pure black, fog lifts as atmosphere thins (visibility returns).
  */
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class SkyRenderer {
 
-    private static final float[][] PHASE_COLORS = {
-            {0.85f, 0.55f, 0.35f},   // Phase 1: Warm amber
-            {0.60f, 0.62f, 0.65f},   // Phase 2: Pale desaturated
-            {0.25f, 0.35f, 0.55f},   // Phase 3: Cold blue
-            {0.15f, 0.12f, 0.35f},   // Phase 4: Deep blue-purple
-            {0.05f, 0.03f, 0.10f},   // Phase 5: Near-black purple
-            {0.0f,  0.0f,  0.02f}    // Phase 6: Pure black
-    };
-
     private static final float[] PHASE_BLEND = {0.2f, 0.4f, 0.7f, 0.9f, 1.0f, 1.0f};
-    private static final float[] PHASE_FLOOR = {0.15f, 0.15f, 0.10f, 0.08f, 0.04f, 0.01f};
-    private static final float PHASE5_MAX_SKY_BRIGHTNESS = 0.06f;
     private static final float MASTER_ARCHITECT_WHITEOUT_MIX = 0.48F;
     private static final float MASTER_ARCHITECT_VISIBILITY = 14.0F;
     private static final float HEART_WHITEOUT_MIX = 0.30F;
@@ -49,6 +39,7 @@ public class SkyRenderer {
         if (phase < 1) return;
 
         Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
         float exposure = phase >= 3 ? StormExposureController.getExposure() : (ClientStormVisibility.isUndergroundOrCovered(mc) ? 0.0F : 1.0F);
         float skyColorExposure = phase >= 5 ? 1.0F : exposure;
         if (skyColorExposure <= 0.0F) return;
@@ -60,16 +51,13 @@ public class SkyRenderer {
         if (FrozenDawnConfig.ENABLE_SKY_COLOR_SHIFT.get() && phase >= 1) {
             int idx = Math.min(phase - 1, 5);
             float blend = PHASE_BLEND[idx] * skyColorExposure;
-            float floor = PHASE_FLOOR[idx];
-
-            float brightness = Math.max(floor, skyLight * (0.3f + 0.7f * sunBrightness));
-            if (phase == 5) {
-                brightness = Math.min(brightness, PHASE5_MAX_SKY_BRIGHTNESS);
-            }
-
-            float targetR = PHASE_COLORS[idx][0] * brightness;
-            float targetG = PHASE_COLORS[idx][1] * brightness;
-            float targetB = PHASE_COLORS[idx][2] * brightness;
+            // Only the Overworld has this solar day/night cycle.
+            float sunAngle = mc.level.dimension() == Level.OVERWORLD
+                    ? mc.level.getSunAngle((float) event.getPartialTick()) : 0.0F;
+            var target = PhaseFogColorPolicy.target(phase, skyLight, sunBrightness, sunAngle);
+            float targetR = target.red();
+            float targetG = target.green();
+            float targetB = target.blue();
 
             float whiteoutMix = PostMaeveClientState.isMaeveErased()
                     ? 0.0F : getWhiteoutMix(phase, progress) * skyColorExposure;
