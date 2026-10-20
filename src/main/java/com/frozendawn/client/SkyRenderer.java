@@ -126,6 +126,14 @@ public class SkyRenderer {
             targetVisibility = BlizzardGogglesHandler.BLIZZARD_FOG_DISTANCE_BLOCKS;
         }
 
+        var cyclone = CycloneClientState.sampleLocal(0);
+        if (cyclone.stage() != com.frozendawn.cyclone.CycloneStage.NONE) {
+            boolean goggles = SurveyorLensVision.getActiveVisionMode() == VisionMode.BLIZZARD
+                    && BlizzardGogglesLogic.isVisionActive(phase, progress);
+            var severity = CycloneClientState.storm().orElseThrow().severity();
+            targetVisibility = com.frozendawn.cyclone.CycloneVisuals.visibility(cyclone,
+                    CycloneClientState.peakVisibility(severity), severity.gogglesVisibility, targetVisibility, goggles);
+        }
         float currentFar = event.getFarPlaneDistance();
         float visibility = Mth.lerp(exposure, currentFar, targetVisibility);
         float masterStrength = MasterArchitectWeather.getStrength()

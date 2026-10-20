@@ -288,6 +288,7 @@ public class WorldTickHandler {
         SatellitePlacement.tickPlacement(overworld);
         RocketLaunchManager.tick(overworld);
         WeatherHandler.tick(overworld, currentPhase, progress);
+        com.frozendawn.cyclone.CycloneController.tick(overworld, state);
         NetherSeveranceHandler.tick(overworld, currentPhase);
         // Stagger heavy systems on alternating ticks to halve peak load
         if (tick % 2 == 0) {
@@ -514,6 +515,7 @@ public class WorldTickHandler {
             PlayerTickHandler.onPlayerLogin(player);
             PacketDistributor.sendToPlayer(player, createPayload(state, winState));
             PlayerTickHandler.syncBreathableState(player);
+            com.frozendawn.cyclone.CycloneController.syncTo(player);
             RocketLaunchManager.syncLaunchState(player);
             PostMaeveWorldState.sync(player);
             ThaevenLoreManager.sync(player);

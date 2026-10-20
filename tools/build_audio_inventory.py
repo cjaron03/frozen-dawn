@@ -32,6 +32,12 @@ OWNER_INTERFACE_PATHS = {
 
 
 def classify(path: str) -> tuple[str, str, str]:
+    if path.startswith("block/barometer/"):
+        return ("barometer_alarm_procedural", "tools/audio_sources/barometer/SOURCES.md", "Frozen Dawn original")
+    if path.startswith("ambient/cyclone/thunder/"):
+        return ("cyclone_thunder_recorded_cc0", "tools/audio_sources/cyclone_thunder/SOURCES.md", "CC0-derived")
+    if path.startswith("ambient/cyclone/"):
+        return ("cyclone_recorded_cc0", "tools/audio_sources/cyclone/SOURCES.md", "CC0-derived")
     if path in {"ambient/eva_emergency_breathing.ogg", "ambient/eva_emergency_breathing_fast.ogg"}:
         return (
             "emergency_eva_cc0_mix",

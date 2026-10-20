@@ -113,6 +113,55 @@ public final class PlayerEnvironmentalClockGameTest {
         });
     }
 
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="player_clock",timeoutTicks=100)
+    public static void cycloneEvaAndVisorKeepColdAndWindChillImmunity(GameTestHelper h) {
+        prepare(h,false,player->{
+            var l=player.serverLevel();var a=ApocalypseState.get(player.getServer());EmergencyEvaGameTest.setProgress(player,.50F);
+            var old=com.frozendawn.cyclone.CycloneSavedData.get(player.getServer()).save(new CompoundTag(),l.registryAccess());
+            var data=new com.frozendawn.cyclone.CycloneSavedData();l.getDataStorage().set("frozendawn_cyclones",data);
+            try {
+                var storm=com.frozendawn.cyclone.CycloneStorm.roll(44,com.frozendawn.cyclone.CycloneSeverity.CATASTROPHIC,player.getX(),player.getZ(),1000,player.getUUID(),0).atStage(com.frozendawn.cyclone.CycloneStage.PEAK,1000);data.startForced(storm);equip(player);
+                for(int rig=0;rig<2;rig++) {
+                    if(rig==1)player.setItemSlot(EquipmentSlot.HEAD,new ItemStack(ModItems.ORSA_THERMAL_VISOR.get()));
+                    player.getFoodData().setExhaustion(0);player.setHealth(20);
+                    for(int tick=0;tick<400;tick++) {
+                        ((ServerLevelData)l.getLevelData()).setGameTime(1000+tick);player.tickCount++;
+                        PlayerTickHandler.tickPlayerWindChill(player,a,a.getPhase(),a.getProgress());
+                        MobFreezeHandler.onEntityTick(new net.neoforged.neoforge.event.tick.EntityTickEvent.Post(player));
+                    }
+                    h.assertTrue(player.getHealth()==20&&player.getTicksFrozen()==0&&player.getFoodData().getExhaustionLevel()==0,"Full EVA/visor rig keeps actual cold and wind immunity across400 ticks");
+                }
+            } finally {l.getDataStorage().set("frozendawn_cyclones",com.frozendawn.cyclone.CycloneSavedData.load(old,l.registryAccess()));}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="player_clock",timeoutTicks=100)
+    public static void cycloneWindChillUsesUpwindWallsAndPreservesRoofShelter(GameTestHelper h) {
+        prepare(h,false,player->{
+            var l=player.serverLevel();var a=ApocalypseState.get(player.getServer());EmergencyEvaGameTest.setProgress(player,.50F);
+            var old=com.frozendawn.cyclone.CycloneSavedData.get(player.getServer()).save(new CompoundTag(),l.registryAccess());
+            var data=new com.frozendawn.cyclone.CycloneSavedData();l.getDataStorage().set("frozendawn_cyclones",data);
+            try {
+                data.startForced(com.frozendawn.cyclone.CycloneStorm.roll(45,com.frozendawn.cyclone.CycloneSeverity.CATASTROPHIC,player.getX(),player.getZ(),1000,player.getUUID(),0).atStage(com.frozendawn.cyclone.CycloneStage.PEAK,1000));
+                var head=player.blockPosition().above();((ServerLevelData)l.getLevelData()).setGameTime(1000);
+                player.getFoodData().setExhaustion(0);PlayerTickHandler.tickPlayerWindChill(player,a,a.getPhase(),a.getProgress());
+                h.assertTrue(Math.abs(player.getFoodData().getExhaustionLevel()-.64)<1e-5,"Catastrophic wind increases existing idle exhaustion by3.2x");
+                l.setBlock(head.west(2),Blocks.STONE.defaultBlockState(),3);
+                player.getFoodData().setExhaustion(0);PlayerTickHandler.tickPlayerWindChill(player,a,a.getPhase(),a.getProgress());
+                h.assertTrue(Math.abs(player.getFoodData().getExhaustionLevel()-.32)<1e-5,"An actual upwind wall halves wind hunger");
+                l.setBlock(head.west(2),Blocks.AIR.defaultBlockState(),3);l.setBlock(head.east(2),Blocks.STONE.defaultBlockState(),3);
+                player.getFoodData().setExhaustion(0);PlayerTickHandler.tickPlayerWindChill(player,a,a.getPhase(),a.getProgress());
+                h.assertTrue(Math.abs(player.getFoodData().getExhaustionLevel()-.64)<1e-5,"Downwind wall is not an upwind windbreak");
+                // Build a sealed glass shelter; same-tick skylight does not finish relighting an opaque roof.
+                var feet=player.blockPosition();
+                for(int x=-2;x<=2;x++)for(int y=0;y<=3;y++)for(int z=-2;z<=2;z++)
+                    if(Math.abs(x)==2||Math.abs(z)==2||y==3)l.setBlock(feet.offset(x,y,z),Blocks.GLASS.defaultBlockState(),3);
+                RoomAtmosphere.reset();
+                h.assertTrue(RoomAtmosphere.view(l,head).geometry().seal()==RoomAtmosphere.Seal.SEALED,"Shelter fixture is actually sealed");
+                player.getFoodData().setExhaustion(0);PlayerTickHandler.tickPlayerWindChill(player,a,a.getPhase(),a.getProgress());
+                h.assertTrue(player.getFoodData().getExhaustionLevel()==0,"Roof still blocks wind chill");
+            } finally {l.getDataStorage().set("frozendawn_cyclones",com.frozendawn.cyclone.CycloneSavedData.load(old,l.registryAccess()));}
+        });
+    }
     private static void equip(ServerPlayer p) {
         p.setItemSlot(EquipmentSlot.HEAD,new ItemStack(ModItems.EVA_HELMET.get()));
         p.setItemSlot(EquipmentSlot.CHEST,new ItemStack(ModItems.EVA_CHESTPLATE.get()));

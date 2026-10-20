@@ -68,7 +68,7 @@ public final class TemperatureManager {
         // Clamp inputs to prevent bad interpolation from corrupted world data
         currentDay = Math.max(0, currentDay);
         totalDays = Math.max(1, totalDays);
-        float backgroundTemp = getBackgroundTemperature(pos.getY(), currentDay, totalDays);
+        float backgroundTemp = getBackgroundTemperature(level,pos,currentDay,totalDays);
         var roomTemperature = !level.isClientSide() && level instanceof net.minecraft.server.level.ServerLevel serverLevel
                 ? (quickScan||loadedOnly ? RoomThermalManager.cachedTemperatureAt(serverLevel,pos) : RoomThermalManager.temperatureAt(serverLevel,pos)) : java.util.OptionalDouble.empty();
         var terms=(roomTemperature.isPresent()||level instanceof ServerLevel serverLevel&&RoomThermalManager.hasManagedRoomAt(serverLevel,pos))?environmentalTerms(level,pos,0):localTerms(level,pos,currentDay,totalDays,quickScan,loadedOnly,true);
@@ -97,7 +97,7 @@ public final class TemperatureManager {
     public static double fullHeaterWarmth(ServerLevel level,ThermalHeaterBlockEntity heater,BlockPos sensor) {
         var phase=com.frozendawn.data.ApocalypseState.get(level.getServer());
         return getHeaterHeat(heater.getBlockState(),(int)sensor.distSqr(heater.getBlockPos()),phase.getPhase(),heater.getCachedSheltered(),
-                heater.hasCapacitor(),FrostmiteEntity.getHeaterRadiusPenalty(level,heater.getBlockPos()),heater.getFrostmiteHeatPenalty())*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
+                heater.hasCapacitor(),FrostmiteEntity.getHeaterRadiusPenalty(level,heater.getBlockPos()),heater.getFrostmiteHeatPenalty(),com.frozendawn.cyclone.CycloneThermal.exposedHeaterRadiusFactor(level,heater.getBlockPos()))*FrozenDawnConfig.HEAT_SOURCE_MULTIPLIER.get();
     }
 
     /** Shared background for players, food, mobs, catch-up and future room boundary faces. */
@@ -111,6 +111,13 @@ public final class TemperatureManager {
         return (float) GroundTemperatureModel.temperature(y, PhaseManager.getProgress(currentDay, totalDays),
                 FrozenDawnConfig.GEOTHERMAL_STRENGTH.get(), FrozenDawnConfig.BASE_PHASE5_TEMP.get() / -120f,
                 FrozenDawnConfig.GROUND_DIFFUSIVITY.get());
+    }
+
+    /** Point weather for exposed air; managed rooms receive it through their physical boundary. */
+    public static float getBackgroundTemperature(Level level,BlockPos pos,int currentDay,int totalDays) {
+        float base=getBackgroundTemperature(pos.getY(),currentDay,totalDays);
+        var weather=com.frozendawn.cyclone.CycloneThermal.sampleAt(level,pos);
+        return weather.stage()==com.frozendawn.cyclone.CycloneStage.NONE?base:base+weather.temperatureOffset();
     }
 
     /**
@@ -225,7 +232,7 @@ public final class TemperatureManager {
                 radiusPenalty = FrostmiteEntity.getHeaterRadiusPenalty(level, heaterPos);
                 heatPenalty = thbe.getFrostmiteHeatPenalty();
             }
-            float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty);
+            float warmth = getHeaterHeat(state, distSq, phase, sheltered, hasCapacitor, radiusPenalty, heatPenalty,com.frozendawn.cyclone.CycloneThermal.exposedHeaterRadiusFactor(level,heaterPos));
             if (heaterBE instanceof ThermalHeaterBlockEntity heater) warmth *= (float)heater.getBurnFraction();
             if (warmth > 0) {
                 totalWarmth += warmth;
@@ -296,10 +303,10 @@ public final class TemperatureManager {
      * @param sheltered  Cached shelter status from the heater's block entity.
      */
     private static float getHeaterHeat(BlockState state, int distSq, int phase, boolean sheltered, boolean hasCapacitor,
-                                       int radiusPenalty, float heatPenalty) {
+                                       int radiusPenalty, float heatPenalty,float exposedRadiusFactor) {
         if (state.is(ModBlocks.THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int baseRadius = hasCapacitor ? 14 : 7;
-            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * exposedRadiusFactor));
             baseRadius = Math.max(2, baseRadius - radiusPenalty);
             int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 52.5f : 35.0f;
@@ -307,7 +314,7 @@ public final class TemperatureManager {
         }
         if (state.is(ModBlocks.IRON_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int baseRadius = hasCapacitor ? 18 : 9;
-            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * exposedRadiusFactor));
             baseRadius = Math.max(2, baseRadius - radiusPenalty);
             int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 75.0f : 50.0f;
@@ -315,7 +322,7 @@ public final class TemperatureManager {
         }
         if (state.is(ModBlocks.GOLD_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int baseRadius = hasCapacitor ? 22 : 11;
-            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * exposedRadiusFactor));
             baseRadius = Math.max(2, baseRadius - radiusPenalty);
             int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 97.5f : 65.0f;
@@ -323,7 +330,7 @@ public final class TemperatureManager {
         }
         if (state.is(ModBlocks.DIAMOND_THERMAL_HEATER.get()) && state.getValue(ThermalHeaterBlock.LIT)) {
             int baseRadius = hasCapacitor ? 28 : 14;
-            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * 0.6f));
+            if (phase >= 5 && !sheltered) baseRadius = Math.max(2, (int) (baseRadius * exposedRadiusFactor));
             baseRadius = Math.max(2, baseRadius - radiusPenalty);
             int maxDistSq = baseRadius * baseRadius;
             float heat = hasCapacitor ? 120.0f : 80.0f;

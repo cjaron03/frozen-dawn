@@ -1364,6 +1364,54 @@ public final class RoomThermalGameTest {
     private static void budgetForStep(Scene s) {
         if(Math.abs(s.heat().totalEnergy()-s.heat().ledger.net())>1e-5)throw new AssertionError("Vent step must balance energy ledger");
     }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void roomHeatUnchangedOutsideCyclone(GameTestHelper h) {
+        scene(h,65-h.absolutePos(BlockPos.ZERO).getY(),s->{
+            var a=ApocalypseState.get(s.l.getServer());a.setApocalypseTicks(a.getTotalDays()*24000L/2,s.l.getServer());
+            var old=com.frozendawn.cyclone.CycloneSavedData.get(s.l.getServer()).save(new CompoundTag(),s.l.registryAccess());
+            long clock=s.l.getGameTime();var data=new com.frozendawn.cyclone.CycloneSavedData();s.l.getDataStorage().set("frozendawn_cyclones",data);
+            try {
+                var heaterPos=s.c.west(2);s.l.setBlock(heaterPos,ModBlocks.THERMAL_HEATER.get().defaultBlockState(),3);
+                var heater=(ThermalHeaterBlockEntity)s.l.getBlockEntity(heaterPos);heater.onLoad();heater.addFuel(10000);
+                RoomAtmosphere.view(s.l,s.c);hot(s,20,20);
+                var heat=s.heat().save(new CompoundTag(),s.l.registryAccess());var fuel=heater.saveWithFullMetadata(s.l.registryAccess());
+                for(int t=20;t<=200;t+=20){((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock+t);RoomThermalManager.tickLevel(s.l);}
+                double baseline=s.heat().totalEnergy();
+                ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);
+                RoomThermalManager.reset();RoomAtmosphere.reset();s.l.getDataStorage().set(RoomThermalState.NAME,RoomThermalState.load(heat,s.l.registryAccess()));heater.loadWithComponents(fuel,s.l.registryAccess());
+                var far=com.frozendawn.cyclone.CycloneStorm.roll(42,com.frozendawn.cyclone.CycloneSeverity.CATASTROPHIC,s.c.getX(),s.c.getZ()+2000,clock,UUID.randomUUID(),0)
+                        .atStage(com.frozendawn.cyclone.CycloneStage.PEAK,clock);data.startForced(far);
+                RoomAtmosphere.view(s.l,s.c);
+                for(int t=20;t<=200;t+=20){((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock+t);RoomThermalManager.tickLevel(s.l);}
+                near(h,s.heat().totalEnergy(),baseline,"A distant storm preserves the exact heated-room integration");budget(h,s);
+            } finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);
+                s.l.getDataStorage().set("frozendawn_cyclones",com.frozendawn.cyclone.CycloneSavedData.load(old,s.l.registryAccess()));}
+        });
+    }
+    @GameTest(template=GameTestTemplates.EMPTY_LARGE,batch="room_heat",timeoutTicks=100)
+    public static void cycloneRoomBoundaryCoolsGraduallyAndDeepGroundStaysStable(GameTestHelper h) {
+        scene(h,65-h.absolutePos(BlockPos.ZERO).getY(),s->{
+            var a=ApocalypseState.get(s.l.getServer());a.setApocalypseTicks(a.getTotalDays()*24000L/2,s.l.getServer());
+            var old=com.frozendawn.cyclone.CycloneSavedData.get(s.l.getServer()).save(new CompoundTag(),s.l.registryAccess());
+            long clock=s.l.getGameTime();var data=new com.frozendawn.cyclone.CycloneSavedData();s.l.getDataStorage().set("frozendawn_cyclones",data);
+            try {
+                RoomAtmosphere.view(s.l,s.c);hot(s,20,20);
+                double baselineK=RoomThermalManager.snapshots(s.l).getFirst().conductance();
+                var storm=com.frozendawn.cyclone.CycloneStorm.roll(43,com.frozendawn.cyclone.CycloneSeverity.CATASTROPHIC,s.c.getX(),s.c.getZ(),clock,UUID.randomUUID(),0).atStage(com.frozendawn.cyclone.CycloneStage.PEAK,clock,.5f);data.startForced(storm);
+                var outdoor=s.c.east(8);
+                double base=TemperatureManager.getBackgroundTemperature(outdoor.getY(),a.getCurrentDay(),a.getTotalDays());
+                near(h,TemperatureManager.getBackgroundTemperature(s.l,outdoor,a.getCurrentDay(),a.getTotalDays()),base-30,"Peak applies real surface cold");
+                var deep=new BlockPos(outdoor.getX(),20,outdoor.getZ());
+                near(h,TemperatureManager.getBackgroundTemperature(s.l,deep,a.getCurrentDay(),a.getTotalDays()),TemperatureManager.getBackgroundTemperature(20,a.getCurrentDay(),a.getTotalDays()),"Deep ground never receives a transient cyclone offset");
+                near(h,TemperatureManager.getTemperatureAt(s.l,s.c,a.getCurrentDay(),a.getTotalDays()),20,"A managed room does not take an instant duplicate outdoor offset");
+                h.assertTrue(RoomThermalManager.snapshots(s.l).getFirst().conductance()>baselineK,"Wind raises exposed wall conductance");
+                ((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock+20);RoomThermalManager.tickLevel(s.l);
+                double indoor=RoomThermalManager.temperatureAt(s.l,s.c).orElseThrow();
+                h.assertTrue(indoor<20&&indoor>-10,"Cold enters through finite thermal reservoirs, not an immediate30C penalty: "+indoor);budget(h,s);
+            } finally {((net.minecraft.world.level.storage.ServerLevelData)s.l.getLevelData()).setGameTime(clock);
+                s.l.getDataStorage().set("frozendawn_cyclones",com.frozendawn.cyclone.CycloneSavedData.load(old,s.l.registryAccess()));}
+        });
+    }
     private static void hot(Scene s,double air,double walls) {
         for(var r:s.heat().rooms.values())r.airEnergy=RoomHeatMath.energy(r.airCapacity(),air);
         for(var m:s.heat().materials.values())m.energy=RoomHeatMath.energy(m.capacity,walls);
