@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.cyclone.WindAudioPolicy;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -75,16 +76,20 @@ public class WindAmbience {
         boolean strong=phase>=4 || masterStrength>.05f;
         var normal=postMaeve?(strong?ModSounds.WIND_POST_MAEVE_STRONG.get():ModSounds.WIND_POST_MAEVE_LIGHT.get())
                 :(strong?ModSounds.WIND_STRONG.get():ModSounds.WIND_LIGHT.get());
+        // Thermal Sever must clear the wind within its short warning; ordinary mix changes
+        // keep the accepted six-second slew and the recorded clip envelopes.
+        float fadeRate=MasterArchitectSeverTelegraph.isActive()
+                ? MasterArchitectSeverTelegraph.windFadeRate() : 1f/WindAudioPolicy.CROSSFADE_TICKS;
         // Existing beds carry their own edge fades. Fixed pitch keeps their measured duration exact.
-        normalBed.tick(mc,normal,targetVolume,strong?STRONG_DURATION:LIGHT_DURATION,OVERLAP,false);
+        normalBed.tick(mc,normal,targetVolume,strong?STRONG_DURATION:LIGHT_DURATION,OVERLAP,false,fadeRate);
         float environment=audible?heartQuiet*MasterArchitectFourthWallMoment.weatherAudioMultiplier()
                 *MasterArchitectSeverTelegraph.weatherAudioMultiplier()*BloomClientState.windMultiplier():0;
         mobMaskingStrength=Math.clamp(cycloneMix.blend()*exposure*environment
                 *mc.options.getSoundSourceVolume(SoundSource.AMBIENT),0,1);
-        snowBed.tick(mc,ModSounds.CYCLONE_SNOW.get(),cycloneMix.snow()*environment,1280,120,true);
-        roarBed.tick(mc,ModSounds.CYCLONE_ROAR.get(),cycloneMix.roar()*environment,1280,120,true);
-        roomBed.tick(mc,ModSounds.CYCLONE_ROOM.get(),cycloneMix.room()*environment,1280,120,true);
-        buffetBed.tick(mc,ModSounds.CYCLONE_BUFFET.get(),cycloneMix.buffet()*environment,1280,120,true);
+        snowBed.tick(mc,ModSounds.CYCLONE_SNOW.get(),cycloneMix.snow()*environment,1280,120,true,fadeRate);
+        roarBed.tick(mc,ModSounds.CYCLONE_ROAR.get(),cycloneMix.roar()*environment,1280,120,true,fadeRate);
+        roomBed.tick(mc,ModSounds.CYCLONE_ROOM.get(),cycloneMix.room()*environment,1280,120,true,fadeRate);
+        buffetBed.tick(mc,ModSounds.CYCLONE_BUFFET.get(),cycloneMix.buffet()*environment,1280,120,true,fadeRate);
 
         // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
         if (!exposedToStorm && phase >= 4 && heartQuiet > 0.15F) {

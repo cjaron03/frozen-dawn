@@ -13,6 +13,7 @@ final class WindBedSound extends AbstractTickableSoundInstance {
     private final int overlap;
     private int age;
     private float gain,target;
+    private float fadeRate=1f/WindAudioPolicy.CROSSFADE_TICKS;
     private boolean retiring;
     WindBedSound(SoundEvent event,int duration,boolean shaped,int overlap,float initialGain) {
         super(event,SoundSource.AMBIENT,SoundInstance.createUnseededRandom());
@@ -21,13 +22,14 @@ final class WindBedSound extends AbstractTickableSoundInstance {
     }
     @Override public boolean canStartSilent(){return true;}
     void target(float gain){if(!retiring)target=Math.max(0,gain);}
+    void fadeRate(float rate){fadeRate=rate;}
     void retire(){retiring=true;target=0;}
     boolean retired(){return retiring;}
     void resume(){retiring=false;}
     boolean fullyQuiet(){return gain<.0001f && target==0;}
     void stopNow(){stop();}
     @Override public void tick() {
-        gain=WindAudioPolicy.approach(gain,target,1f/WindAudioPolicy.CROSSFADE_TICKS);
+        gain=WindAudioPolicy.approach(gain,target,fadeRate);
         volume=gain*(shaped?WindAudioPolicy.envelope(age,duration,overlap):1);
         age++;
         if(age>=duration || (retiring&&fullyQuiet()))stop();

@@ -10,8 +10,10 @@ final class WindBedLayer {
     private final List<Voice> voices=new ArrayList<>();
     private SoundEvent current;
     private int untilNext;
-    void tick(Minecraft mc,SoundEvent event,float gain,int duration,int overlap,boolean shaped) {
+    void tick(Minecraft mc,SoundEvent event,float gain,int duration,int overlap,boolean shaped,float fadeRate) {
         voices.removeIf(v->v.sound.isStopped());
+        // Retiring source/overlap tails must duck with the active voices during attack cues.
+        for(var v:voices)v.sound.fadeRate(fadeRate);
         if(event!=current) {
             for(var v:voices)v.sound.retire();current=event;untilNext=0;
         }
@@ -29,7 +31,7 @@ final class WindBedLayer {
         // Fast debug-stage changes may leave tails. Bound the live voice count without letting a
         // cancelled source keep playing untracked after logout or a dimension transition.
         if(voices.size()>=4) {var old=voices.removeFirst();mc.getSoundManager().stop(old.sound);old.sound.stopNow();}
-        var sound=new WindBedSound(event,duration,shaped,overlap,gain);sound.target(gain);
+        var sound=new WindBedSound(event,duration,shaped,overlap,gain);sound.target(gain);sound.fadeRate(fadeRate);
         voices.add(new Voice(sound,event));mc.getSoundManager().play(sound);untilNext=duration-overlap-1;
     }
     void stop(Minecraft mc) {
