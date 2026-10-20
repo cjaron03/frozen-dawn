@@ -41,6 +41,9 @@ public class ModNetworking {
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
 
+        registrar.playToClient(AuroraStatePayload.TYPE, AuroraStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAurora(payload)));
+
         registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) HeadlampTogglePayload.handle(player);

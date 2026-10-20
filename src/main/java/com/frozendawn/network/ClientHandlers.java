@@ -44,6 +44,7 @@ import net.minecraft.sounds.SoundSource;
  * through lambdas in {@link ModNetworking} that execute client-side.
  */
 public final class ClientHandlers {
+    public static void handleAurora(AuroraStatePayload payload) { com.frozendawn.client.AuroraRenderer.receive(payload); }
     public static void handlePowerBinder(PowerBinderPayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerBinderNotice(PowerBinderNoticePayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerLinks(PowerLinksPayload payload) { com.frozendawn.client.PowerLinkRenderer.receive(payload); }

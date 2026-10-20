@@ -16,7 +16,8 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 @EventBusSubscriber(modid="frozendawn",value=Dist.CLIENT)
 public final class LabWindowLabels {
     private static long nextReport;
-    private static boolean enabled(){return !FMLEnvironment.production&&(Boolean.getBoolean("frozendawn.labBridge")||Boolean.getBoolean("frozendawn.labLanGuest"));}
+    // Single-player labs have no host/guest roles. Host labels require an explicit LAN-test opt-in.
+    private static boolean enabled(){return !FMLEnvironment.production&&(Boolean.getBoolean("frozendawn.labWindowLabels")||Boolean.getBoolean("frozendawn.labLanGuest"));}
     private static boolean guest(){return Boolean.getBoolean("frozendawn.labLanGuest");}
     private static String title(){return guest()?"Frozen Dawn Lab - GUEST ArchitectGuest":"Frozen Dawn Lab - HOST Dev";}
     private static String banner(){return guest()?"GUEST: ArchitectGuest - PLAY HERE":"HOST: Dev - use the GUEST window";}
