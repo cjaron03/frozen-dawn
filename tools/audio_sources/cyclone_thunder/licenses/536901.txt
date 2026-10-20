@@ -1,0 +1,9 @@
+Frozen Dawn individual-source license record
+Retrieved UTC: 2026-10-20T11:08:47.874688+00:00
+Source: https://freesound.org/people/cognito%20perceptu/sounds/536901/
+Creator: cognito perceptu
+Title: thunder sharp dry crack w rumble.wav
+Individual page license label: Creative Commons 0
+Individual page license link: https://creativecommons.org/publicdomain/zero/1.0/
+Raw source page SHA-256: a397c2a03edf1f2988e88008ed589e0dc019997781427949250dc5302e5e51e4
+Raw HTML retained only under ignored build/cyclone-evidence/thunder-recorded-mix/raw-source-pages; no page scripts/tokens tracked.

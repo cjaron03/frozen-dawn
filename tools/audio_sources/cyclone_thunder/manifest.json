@@ -1,0 +1,404 @@
+{
+  "close1": {
+    "recipe": {
+      "duration": 4.8,
+      "dryStart": 1.977,
+      "closeStart": 0.631,
+      "dry": 0.8,
+      "close": 0.45,
+      "speed": 1.0,
+      "high": 6500,
+      "fadeIn": 0.004,
+      "fadeOut": 0.85,
+      "targetRms": 0.105
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/close1.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "33b20158d414a1031c5b5b24e104f49b60810e33e3c76b05990fc0004b3d1ad0",
+    "durationSeconds": 4.86,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7266373038291931,
+    "decodedRms": 0.0808221169934261,
+    "firstSample": 0.0,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 6.8936170212765955,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "close2": {
+    "recipe": {
+      "duration": 5.6,
+      "dryStart": 1.977,
+      "closeStart": 0.625,
+      "dry": 0.42,
+      "close": 0.86,
+      "speed": 0.96,
+      "high": 6000,
+      "fadeIn": 0.005,
+      "fadeOut": 1.0,
+      "targetRms": 0.105
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/close2.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "3e427a32d4ef138b375c53132410d552d03d0ccdd6a382c9aa67ee5b8f946347",
+    "durationSeconds": 5.66,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7133675813674927,
+    "decodedRms": 0.07548371091932447,
+    "firstSample": 0.0,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.02836879432624,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "close3": {
+    "recipe": {
+      "duration": 4.6,
+      "dryStart": 1.982,
+      "closeStart": 0.64,
+      "dry": 0.68,
+      "close": 0.65,
+      "speed": 1.025,
+      "high": 6200,
+      "fadeIn": 0.004,
+      "fadeOut": 0.9,
+      "targetRms": 0.105
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/close3.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "dcd11a1360a15f8cb14447d45f3bf9a1392ccecef75f8a41d5cc9e13531369d7",
+    "durationSeconds": 4.66,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7186410427093506,
+    "decodedRms": 0.08343266574486005,
+    "firstSample": 0.0,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 6.609929078014184,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "mid1": {
+    "recipe": {
+      "duration": 6.0,
+      "dryStart": 1.975,
+      "closeStart": 0.625,
+      "dry": 0.68,
+      "close": 0.55,
+      "speed": 0.97,
+      "high": 2600,
+      "fadeIn": 0.065,
+      "fadeOut": 1.2,
+      "targetRms": 0.09
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/mid1.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "96039173cf0b5a6e70de239643b4ac3b94b0634e8db6d990850d48360494dd57",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7490567564964294,
+    "decodedRms": 0.07331231113634729,
+    "firstSample": 7.453582889782595e-11,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "mid2": {
+    "recipe": {
+      "duration": 5.8,
+      "dryStart": 1.97,
+      "closeStart": 0.635,
+      "dry": 0.5,
+      "close": 0.8,
+      "speed": 1.01,
+      "high": 2200,
+      "fadeIn": 0.08,
+      "fadeOut": 1.1,
+      "targetRms": 0.09
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/mid2.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "2db41d1323de1047aeaa131a0e52cc9321c35cb98be9bd629d72da44e76f666c",
+    "durationSeconds": 5.86,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7129247784614563,
+    "decodedRms": 0.06589407019434051,
+    "firstSample": 0.0,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.312056737588652,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "distant1": {
+    "recipe": {
+      "duration": 6.0,
+      "dryStart": 2.15,
+      "closeStart": 0.85,
+      "dry": 0.7,
+      "close": 0.55,
+      "speed": 0.97,
+      "high": 850,
+      "fadeIn": 0.28,
+      "fadeOut": 1.6,
+      "targetRms": 0.065
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/distant1.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "12a3b0b72b834c1c83f0e98843600e0cddbad81879a24d6ef0ed4107efb322c9",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.6830866932868958,
+    "decodedRms": 0.06240182992453337,
+    "firstSample": -1.4805533188333442e-10,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "distant2": {
+    "recipe": {
+      "duration": 6.0,
+      "dryStart": 2.3,
+      "closeStart": 1.05,
+      "dry": 0.55,
+      "close": 0.75,
+      "speed": 1.01,
+      "high": 1050,
+      "fadeIn": 0.32,
+      "fadeOut": 1.6,
+      "targetRms": 0.065
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/distant2.ogg",
+    "sourceKeys": [
+      "dry",
+      "close"
+    ],
+    "sha256": "417efa199eb670c6a49c6303f4d9c518f8d05633345ef57896c3ee76ae25c3a9",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7041674256324768,
+    "decodedRms": 0.06145766711838138,
+    "firstSample": 0.0,
+    "lastSample": -2.060640724721452e-07,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Aligned normalized source blends, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "close4": {
+    "recipe": {
+      "duration": 5.4,
+      "layers": [
+        {
+          "key": "clap",
+          "start": 0.697,
+          "weight": 1
+        }
+      ],
+      "speed": 1.0,
+      "high": 6200,
+      "fadeIn": 0.004,
+      "fadeOut": 1.0,
+      "targetRms": 0.105
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/close4.ogg",
+    "sourceKeys": [
+      "clap"
+    ],
+    "sha256": "c5fb5d4c778770a97007d9ef5591e23f211e3f206cc6ff9fe242f8df07eaee5c",
+    "durationSeconds": 5.46,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7048729062080383,
+    "decodedRms": 0.08655159922291505,
+    "firstSample": 0.0,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 7.74468085106383,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "close5": {
+    "recipe": {
+      "duration": 5.8,
+      "layers": [
+        {
+          "key": "bank",
+          "start": 0.567,
+          "weight": 1
+        }
+      ],
+      "speed": 1.0,
+      "high": 6500,
+      "fadeIn": 0.004,
+      "fadeOut": 1.1,
+      "targetRms": 0.105
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/close5.ogg",
+    "sourceKeys": [
+      "bank"
+    ],
+    "sha256": "b2bc532b4ac8eb093a79fbd5a8ebcfb8944a9cfba924cac2f30bf7892c90b742",
+    "durationSeconds": 5.86,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.4750286936759949,
+    "decodedRms": 0.10447288958235096,
+    "firstSample": 0.0,
+    "lastSample": 1.1938226407437469e-08,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.312056737588652,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "mid3": {
+    "recipe": {
+      "duration": 6.0,
+      "layers": [
+        {
+          "key": "clap",
+          "start": 0.69,
+          "weight": 1
+        }
+      ],
+      "speed": 0.98,
+      "high": 2400,
+      "fadeIn": 0.08,
+      "fadeOut": 1.2,
+      "targetRms": 0.09
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/mid3.ogg",
+    "sourceKeys": [
+      "clap"
+    ],
+    "sha256": "9bb1fa93f495e2768e32cd4caaf96d32d780fea808ebe9dabf3a6ba438f0e5f6",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.7574654817581177,
+    "decodedRms": 0.08308493807377632,
+    "firstSample": 0.0,
+    "lastSample": 2.2329128057663183e-07,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "mid4": {
+    "recipe": {
+      "duration": 6.0,
+      "layers": [
+        {
+          "key": "bank",
+          "start": 0.56,
+          "weight": 1
+        }
+      ],
+      "speed": 1.0,
+      "high": 2800,
+      "fadeIn": 0.06,
+      "fadeOut": 1.2,
+      "targetRms": 0.09
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/mid4.ogg",
+    "sourceKeys": [
+      "bank"
+    ],
+    "sha256": "bd084e6345893f447637b420f9cd844a5fbe331c9c065b398040fef4e18696bd",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.39973869919776917,
+    "decodedRms": 0.08968507826965032,
+    "firstSample": 1.1010359290963834e-09,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "distant3": {
+    "recipe": {
+      "duration": 6.0,
+      "layers": [
+        {
+          "key": "clap",
+          "start": 1.1,
+          "weight": 1
+        }
+      ],
+      "speed": 0.97,
+      "high": 1000,
+      "fadeIn": 0.3,
+      "fadeOut": 1.6,
+      "targetRms": 0.065
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/distant3.ogg",
+    "sourceKeys": [
+      "clap"
+    ],
+    "sha256": "00f24ef2a235cac7c00b16e8542281736a61df56d96a7eb2c9830bc35279e599",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.5428441166877747,
+    "decodedRms": 0.06465634070847932,
+    "firstSample": -1.6089243826122868e-10,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  },
+  "distant4": {
+    "recipe": {
+      "duration": 6.0,
+      "layers": [
+        {
+          "key": "bank",
+          "start": 0.9,
+          "weight": 1
+        }
+      ],
+      "speed": 1.0,
+      "high": 800,
+      "fadeIn": 0.3,
+      "fadeOut": 1.6,
+      "targetRms": 0.065
+    },
+    "output": "src/main/resources/assets/frozendawn/sounds/ambient/cyclone/thunder/distant4.ogg",
+    "sourceKeys": [
+      "bank"
+    ],
+    "sha256": "74ec1b57d51aeb3c4dfaf414914ad00db3c67a4be69558da9f14bb620e6889e3",
+    "durationSeconds": 6.06,
+    "sampleRate": 24000,
+    "channels": 1,
+    "decodedPeak": 0.3009031116962433,
+    "decodedRms": 0.06470300402938853,
+    "firstSample": 5.289155780019428e-10,
+    "lastSample": 0.0,
+    "edgePaddingSeconds": 0.03,
+    "worstColdFilteredDurationSeconds": 8.595744680851064,
+    "processing": "Independent normalized recorded strike, highpass35Hz, distance lowpass, gentle compression, sine edge fades, level-match and Vorbis encode"
+  }
+}

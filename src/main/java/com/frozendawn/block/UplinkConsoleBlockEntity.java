@@ -38,6 +38,8 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
     /** An unanswered transmit prompt lapses after a minute and releases its scheduled load. */
     public static final int ARM_TIMEOUT_TICKS=1200;
     private int broadcastIndex;
+    private boolean cycloneAnnounced;
+    private long lastCycloneSeed;
     private UUID transmitter;
     private BlockPos dish, driven;
     private int dishStatus;
@@ -75,6 +77,15 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         long now=l.getGameTime();
         // After a reload the grid rebuilds its links first; give an in-flight handshake one accounting pass.
         if(reloaded){reloaded=false;if(state==State.TRANSMITTING)started=now+20;}
+        if(now%20==2 && mode==Mode.LISTEN && powered && dishStatus==DISH_OK) {
+            var forecast=com.frozendawn.cyclone.CycloneController.forecast(l,worldPosition.getX()+.5,worldPosition.getZ()+.5);
+            var storm=com.frozendawn.cyclone.CycloneSavedData.get(l.getServer()).active();
+            if(forecast.visible() && forecast.etaSeconds()>0 && storm.isPresent()
+                    && (!cycloneAnnounced || lastCycloneSeed!=storm.get().seed())) {
+                cycloneAnnounced=true;lastCycloneSeed=storm.get().seed();setChanged();
+                broadcastIndex+=Math.floorMod(-broadcastIndex,3);nextBroadcast=now;
+            }
+        }
         // Read the allocation made on the previous tick's accounting pass, as the power monitor does.
         if(now%20==1){refreshDish(l);powered=PowerNetworks.powered(l,worldPosition)&&demandWatts()>0;}
         if(state==State.ARMED&&now-armedAt>=ARM_TIMEOUT_TICKS){state=State.IDLE;add("uplink.frozendawn.log.disarmed");}
@@ -238,7 +249,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         }
     }
     @Override protected void saveAdditional(CompoundTag t,HolderLookup.Provider r){
-        super.saveAdditional(t,r);
+        super.saveAdditional(t,r);t.putBoolean("CycloneAnnounced",cycloneAnnounced);t.putLong("LastCycloneSeed",lastCycloneSeed);
         t.putInt("Mode",mode.ordinal());t.putInt("Resume",resume.ordinal());t.putInt("State",state.ordinal());t.putBoolean("Boost",boost);
         t.putInt("Elapsed",elapsed);t.putLong("Started",started);t.putLong("NextBroadcast",nextBroadcast);t.putInt("BroadcastIndex",broadcastIndex);
         if(transmitter!=null)t.putUUID("Transmitter",transmitter);
@@ -246,7 +257,7 @@ public final class UplinkConsoleBlockEntity extends BlockEntity implements MenuP
         t.put("Log",saveLog(log));
     }
     @Override protected void loadAdditional(CompoundTag t,HolderLookup.Provider r){
-        super.loadAdditional(t,r);
+        super.loadAdditional(t,r);cycloneAnnounced=t.getBoolean("CycloneAnnounced");lastCycloneSeed=t.getLong("LastCycloneSeed");
         mode=Mode.byId(t.getInt("Mode"));if(mode.transmitting())mode=Mode.OFF;
         resume=Mode.byId(t.getInt("Resume"));if(resume.transmitting())resume=Mode.OFF;
         int s=t.getInt("State");state=s>=0&&s<State.values().length?State.values()[s]:State.IDLE;

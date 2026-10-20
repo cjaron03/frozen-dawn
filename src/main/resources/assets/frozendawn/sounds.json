@@ -4320,8 +4320,18 @@
       }
     ]
   },
-  "block.oxygen_gauge.strained": {"subtitle": "subtitles.frozendawn.oxygen_gauge.strained", "sounds": ["frozendawn:block/oxygen_gauge/strained"]},
-  "block.oxygen_gauge.critical": {"subtitle": "subtitles.frozendawn.oxygen_gauge.critical", "sounds": ["frozendawn:block/oxygen_gauge/critical"]},
+  "block.oxygen_gauge.strained": {
+    "subtitle": "subtitles.frozendawn.oxygen_gauge.strained",
+    "sounds": [
+      "frozendawn:block/oxygen_gauge/strained"
+    ]
+  },
+  "block.oxygen_gauge.critical": {
+    "subtitle": "subtitles.frozendawn.oxygen_gauge.critical",
+    "sounds": [
+      "frozendawn:block/oxygen_gauge/critical"
+    ]
+  },
   "blocks.reactor_klaxon": {
     "category": "blocks",
     "subtitle": "subtitle.frozendawn.blocks.reactor_klaxon",
@@ -4366,26 +4376,191 @@
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.geiger_click",
     "sounds": [
-      {"name": "frozendawn:blocks/reactor/geiger_1"},
-      {"name": "frozendawn:blocks/reactor/geiger_2"},
-      {"name": "frozendawn:blocks/reactor/geiger_3"},
-      {"name": "frozendawn:blocks/reactor/geiger_4"},
-      {"name": "frozendawn:blocks/reactor/geiger_5"}
+      {
+        "name": "frozendawn:blocks/reactor/geiger_1"
+      },
+      {
+        "name": "frozendawn:blocks/reactor/geiger_2"
+      },
+      {
+        "name": "frozendawn:blocks/reactor/geiger_3"
+      },
+      {
+        "name": "frozendawn:blocks/reactor/geiger_4"
+      },
+      {
+        "name": "frozendawn:blocks/reactor/geiger_5"
+      }
     ]
   },
   "ui.geiger_dense": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.geiger_dense",
-    "sounds": [{"name": "frozendawn:blocks/reactor/geiger_dense"}]
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/geiger_dense"
+      }
+    ]
   },
   "ui.dosimeter_chirp": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.dosimeter_alarm",
-    "sounds": [{"name": "frozendawn:blocks/reactor/dosimeter_chirp"}]
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/dosimeter_chirp"
+      }
+    ]
   },
   "ui.dosimeter_alarm": {
     "category": "master",
     "subtitle": "subtitle.frozendawn.ui.dosimeter_alarm",
-    "sounds": [{"name": "frozendawn:blocks/reactor/dosimeter_alarm"}]
+    "sounds": [
+      {
+        "name": "frozendawn:blocks/reactor/dosimeter_alarm"
+      }
+    ]
+  },
+  "ambient.cyclone.snow": {
+    "subtitle": "subtitle.frozendawn.cyclone.snow",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/snow1",
+        "stream": true,
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/snow2",
+        "stream": true,
+        "weight": 1
+      }
+    ]
+  },
+  "ambient.cyclone.roar": {
+    "subtitle": "subtitle.frozendawn.cyclone.roar",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/roar1",
+        "stream": true,
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/roar2",
+        "stream": true,
+        "weight": 1
+      }
+    ]
+  },
+  "ambient.cyclone.room": {
+    "subtitle": "subtitle.frozendawn.cyclone.room",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/room1",
+        "stream": true,
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/room2",
+        "stream": true,
+        "weight": 1
+      }
+    ]
+  },
+  "ambient.cyclone.buffet": {
+    "subtitle": "subtitle.frozendawn.cyclone.buffet",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/buffet1",
+        "stream": true,
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/buffet2",
+        "stream": true,
+        "weight": 1
+      }
+    ]
+  },
+  "block.barometer.cyclone_warning": {
+    "subtitle": "subtitle.frozendawn.barometer.cyclone_warning",
+    "sounds": [
+      {
+        "name": "frozendawn:block/barometer/cyclone_warning"
+      }
+    ]
+  },
+  "block.barometer.cyclone_catastrophic": {
+    "subtitle": "subtitle.frozendawn.barometer.cyclone_catastrophic",
+    "sounds": [
+      {
+        "name": "frozendawn:block/barometer/cyclone_catastrophic"
+      }
+    ]
+  },
+  "ambient.cyclone.thunder_close": {
+    "subtitle": "subtitle.frozendawn.cyclone.thunder_close",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/close1",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/close2",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/close3",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/close4",
+        "weight": 3
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/close5",
+        "weight": 3
+      }
+    ]
+  },
+  "ambient.cyclone.thunder_mid": {
+    "subtitle": "subtitle.frozendawn.cyclone.thunder_mid",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/mid1",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/mid2",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/mid3",
+        "weight": 2
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/mid4",
+        "weight": 2
+      }
+    ]
+  },
+  "ambient.cyclone.thunder_distant": {
+    "subtitle": "subtitle.frozendawn.cyclone.thunder_distant",
+    "sounds": [
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/distant1",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/distant2",
+        "weight": 1
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/distant3",
+        "weight": 2
+      },
+      {
+        "name": "frozendawn:ambient/cyclone/thunder/distant4",
+        "weight": 2
+      }
+    ]
   }
 }

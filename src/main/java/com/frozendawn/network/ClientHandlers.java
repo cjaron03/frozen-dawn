@@ -55,6 +55,7 @@ public final class ClientHandlers {
         com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());
     }
 
+    public static void handleCyclone(CycloneSyncPayload payload) { com.frozendawn.client.CycloneClientState.update(payload); }
     private ClientHandlers() {}
 
     public static void handleApocalypseData(ApocalypseDataPayload payload) {

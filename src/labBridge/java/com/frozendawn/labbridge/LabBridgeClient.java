@@ -17,6 +17,7 @@ public final class LabBridgeClient {
     private static volatile MinecraftLabRuntime runtime;
     private static volatile LabPerformanceTrace performance;
     private static boolean attempted;
+    private static long nextGraphics;
     private LabBridgeClient() { }
     private static synchronized void initialize() {
         if (attempted || FMLEnvironment.production || !Boolean.getBoolean("frozendawn.labBridge")) return;
@@ -31,6 +32,24 @@ public final class LabBridgeClient {
     public static void clientTick(ClientTickEvent.Post event) {
         initialize();
         var current = runtime; var mc = Minecraft.getInstance();
+        if (current != null && System.currentTimeMillis() >= nextGraphics) {
+            nextGraphics = System.currentTimeMillis() + 1000;
+            var graphics = new com.google.gson.JsonObject();
+            graphics.addProperty("sampledAtMillis", System.currentTimeMillis());
+            graphics.addProperty("fps", mc.getFps());
+            graphics.addProperty("lastRenderCpuMs", mc.getFrameTimeNs() / 1_000_000.0);
+            graphics.addProperty("focused", mc.isWindowActive());
+            graphics.addProperty("paused", mc.isPaused());
+            graphics.addProperty("screenOpen", mc.screen != null);
+            graphics.addProperty("particles", mc.options.particles().get().name());
+            graphics.addProperty("cycloneSnowStrength", com.frozendawn.client.CycloneSnowDetail.strength());
+            graphics.addProperty("cycloneSnowQuality", com.frozendawn.client.CycloneSnowDetail.quality());
+            graphics.addProperty("cycloneFlakeCap", com.frozendawn.client.CycloneSnowDetail.MAX_FLAKES_PER_TICK);
+            graphics.addProperty("cycloneThunderCues", com.frozendawn.client.CycloneThunderClient.cueCount());
+            graphics.addProperty("cycloneThunderLastBand", com.frozendawn.client.CycloneThunderClient.lastBand());
+            graphics.addProperty("cycloneThunderActiveRolls", com.frozendawn.client.CycloneThunderClient.activeRolls());
+            current.clientGraphics(graphics);
+        }
         if (current == null || mc.player == null || mc.level == null || mc.isPaused() || !current.inputActive(mc.getSingleplayerServer())) return;
         var row = inputHeader(current, mc);
         row.addProperty("pose", mc.player.getPose().name()); row.addProperty("sneaking", mc.player.isShiftKeyDown());

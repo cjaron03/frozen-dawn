@@ -86,7 +86,7 @@ public class ThermalHeaterBlockEntity extends BlockEntity implements MenuProvide
                 controlMode = 0;
                 var phase = ApocalypseState.get(level.getServer());
                 double background = com.frozendawn.world.TemperatureManager.getBackgroundTemperature(
-                        worldPosition.getY(), phase.getCurrentDay(), phase.getTotalDays());
+                        level,worldPosition, phase.getCurrentDay(), phase.getTotalDays());
                 controlledTemperature = Double.NaN;
                 controlTarget=com.frozendawn.world.ThermostatManager.openTarget((ServerLevel)level,worldPosition);
                 var thermostatDuty=com.frozendawn.world.ThermostatManager.openDuty((ServerLevel)level,worldPosition);

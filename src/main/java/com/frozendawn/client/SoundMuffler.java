@@ -268,6 +268,11 @@ public class SoundMuffler {
             }
         }
 
+        // The instrument's local warning must keep its selected pitch and clarity in the storm.
+        if(soundLocation.getNamespace().equals(FrozenDawn.MOD_ID)
+                && (soundPath.equals("block.barometer.cyclone_warning")
+                    || soundPath.equals("block.barometer.cyclone_catastrophic")))return;
+
         // Cold-based muffling is a survival mechanic — skip for creative/spectator
         if (mc.player.isCreative() || mc.player.isSpectator()) return;
 
@@ -440,7 +445,8 @@ public class SoundMuffler {
 
     private static boolean isWindAmbienceCue(ResourceLocation location, String path) {
         return location.getNamespace().equals(FrozenDawn.MOD_ID)
-                && (path.equals("ambient.wind_light")
+                && (path.startsWith("ambient.cyclone.")
+                        || path.equals("ambient.wind_light")
                         || path.equals("ambient.wind_strong")
                         || path.startsWith("ambient/wind"));
     }

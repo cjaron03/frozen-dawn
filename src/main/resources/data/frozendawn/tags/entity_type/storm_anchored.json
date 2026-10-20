@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:ender_dragon",
+    "minecraft:wither",
+    "frozendawn:aggregate",
+    "frozendawn:thae_iven_heart",
+    "frozendawn:heart_successor"
+  ]
+}

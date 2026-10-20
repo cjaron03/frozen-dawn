@@ -1154,6 +1154,8 @@ public final class AirlockGameTest {
         h.assertTrue(!RoomAtmosphere.hasAir(l,s.base)&&RoomAtmosphere.hasAir(l,s.center)&&c.gas.air()==chamberGas,
                 "A real exterior breach empties the base while its closed airlock retains its own air");
         l.setBlock(breach,Blocks.GLASS.defaultBlockState(),3);var base=RoomAtmosphere.view(l,s.base).geometry().cells();
+        // Complete the ordinary chunk index before measuring paid Core recovery, as in the sibling recovery fixtures.
+        completeRecoveryFixtureIndex(h,s);
         for(int i=0;i<6;i++)refillSecond(h,s,false);
         var saved=AirlockSavedState.get(l);
         h.assertTrue(saved.roomGas(l,base)==0&&!RoomAtmosphere.hasAir(l,s.base)&&c.gas.air()==chamberGas,
@@ -1164,7 +1166,7 @@ public final class AirlockGameTest {
         for(int i=0;i<6;i++)refillSecond(h,s,false);
         int partial=saved.roomGas(l,base);
         h.assertTrue(partial>0&&partial<base.size()*100&&RoomAtmosphere.hasAir(l,s.base)&&c.gas.air()==chamberGas&&c.gas.reserve()>=reserve,
-                "Normal Core recovery restores the base before nominal inventory, without changing isolated chamber air; reserve may separately receive spare Core output");
+                "Normal Core recovery restores the base before nominal inventory, without changing isolated chamber air; reserve may separately receive spare Core output: gas="+partial+" nominal="+(base.size()*100)+" air="+RoomAtmosphere.hasAir(l,s.base)+" chamber="+c.gas.air()+" expected="+chamberGas+" reserve="+c.gas.reserve()+" previous="+reserve);
         for(int i=0;i<800&&saved.roomAirRequest(l,base)>0;i++)refillSecond(h,s,false);
         refillSecond(h,s,false);
         h.assertTrue(saved.roomAirRequest(l,base)==0&&RoomAtmosphere.hasAir(l,s.base)&&c.gas.air()==chamberGas,

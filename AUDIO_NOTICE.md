@@ -26,6 +26,7 @@ The generated Stillpoint ORSA voice line is not included in this procedural clas
 
 The following groups contain CC0 recordings, source-site royalty-free material, project-supplied recordings, generated voices, or combinations of those sources. Preserve each source ledger and its specific terms rather than applying a blanket Frozen Dawn all-rights-reserved claim:
 
+- Cyclone wind: CC0 sounds by Sandy-Ogilvie (deep wind roar and occasional gusts) and bruno.auzet (indoor wind and window buffeting), filtered, level matched and crossfaded. The rejected first-pass juryduty howling recording is retained as reference and is not used by current shipped recipes. Exact sound links, license evidence, retained downloads and reproducible recipes are in [the cyclone source ledger](tools/audio_sources/cyclone/SOURCES.md).
 - ORSA airlock worn-mechanism cues: CC0 recordings by Brian MacIntosh (BMacZero), rubberduck and wavecal22, trimmed, filtered, layered and resampled for the mod. Voluntary creator credits, individual/pack license evidence, original recordings and exact cue recipes are retained in [the airlock source ledger](tools/audio_sources/airlock/SOURCES.md).
 - Aggregate
 - Archivist
@@ -105,3 +106,15 @@ checks, source encodings, processing instructions and hashes. Creator credit is
 voluntary under CC0. No The Last of Us recording is included.
 
 Blind Architect hurt voice C processes the installed game's referenced Warden/Phantom audio at playback. No extracted vanilla hurt recordings are bundled. The original processing implementation and approved selection are documented in [HURT_C.md](tools/audio_sources/blind_architect/HURT_C.md).
+
+## Barometer cyclone warnings
+
+The normal and catastrophic Panel buzzer warnings are original Frozen Dawn procedural compositions, selected by the owner on October 19, 2026. Reproducible recipes and output hashes are in [the barometer source record](tools/audio_sources/barometer/SOURCES.md). No sampled recordings are incorporated.
+
+
+## Recorded cyclone thundersnow
+
+Cyclone thunder blends CC0 1.0 recordings by [cognito perceptu — thunder sharp dry crack w rumble.wav](https://freesound.org/people/cognito%20perceptu/sounds/536901/) and [loganzsound — Closeup Thunder Strike 01](https://freesound.org/people/loganzsound/sounds/840628/). Both individual pages link to [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). Frozen Dawn aligns, trims, layers, filters, gently compresses, fades, level-matches and encodes the selected recordings, including filtered tails for distance. Creator credit is voluntary under CC0. Retained public HQ MP3 previews (not WAV masters), exact URLs, rights evidence, hashes and reproducible recipes are in [the thunder source ledger](tools/audio_sources/cyclone_thunder/SOURCES.md). The owner's rejected third candidate is not used. Existing Master Architect thunder assets remain unchanged.
+
+
+The expanded cyclone thunder bank also includes [big thunder clap by seth-m](https://freesound.org/people/seth-m/sounds/458015/) and [Thunder #1 by Joseph SARDIN](https://bigsoundbank.com/thunder-s2718.html), each individually listed as CC0. [BigSoundBank’s license page](https://bigsoundbank.com/licenses.html) explicitly links CC0 1.0 Universal. These two independent recordings receive trimming, filtering, gentle compression, fades and encoding for close/mid/distant variants. Voluntary credit: Additional sounds: Joseph SARDIN - BigSoundBank.com. Exact downloads, license evidence and source hashes remain in the same thunder ledger.
