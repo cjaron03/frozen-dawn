@@ -1,0 +1,62 @@
+{
+  "sourceSHA256": "e59c680407030b7209dc14d480040afa2376d1fe57655de7f9217bd26e7aae2d",
+  "filter": "highpass=f=70,lowpass=f=8000,acompressor=threshold=0.02:ratio=2:attack=20:release=350:makeup=1",
+  "sampleRate": 24000,
+  "fadeSeconds": 5,
+  "variants": [
+    {
+      "path": "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_one_1.ogg",
+      "startSeconds": 90,
+      "durationSeconds": 57,
+      "linearGain": 7.61200993258774,
+      "before": {
+        "peak": 0.10509707778692245,
+        "rms": 0.012329631421151569,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "beforeEncoding": {
+        "peak": 0.800000011920929,
+        "rms": 0.08740432358595021,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "decoded": {
+        "peak": 0.8027415871620178,
+        "rms": 0.08842755020364076,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "sha256": "347bf680c696a9564daf851dc3fb3c395d9b2931c27bc0ef16a8553652394e75"
+    },
+    {
+      "path": "src/main/resources/assets/frozendawn/sounds/ambient/wind_phase_one_2.ogg",
+      "startSeconds": 180,
+      "durationSeconds": 57,
+      "linearGain": 13.407786802391756,
+      "before": {
+        "peak": 0.059666819870471954,
+        "rms": 0.006742951365441292,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "beforeEncoding": {
+        "peak": 0.800000011920929,
+        "rms": 0.08655949525756021,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "decoded": {
+        "peak": 0.8080116510391235,
+        "rms": 0.08736426331376176,
+        "samples": 1368000,
+        "durationSeconds": 57.0
+      },
+      "sha256": "6e39ad7433c38d626ee580af9677242dd4f18011588272dbc63a45e9617fba3b"
+    }
+  ],
+  "encoders": {
+    "ffmpeg": "ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers",
+    "oggenc": "oggenc from vorbis-tools 1.4.3"
+  }
+}

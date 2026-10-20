@@ -7,6 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PhaseBarometerForecastsTest {
 
     @Test
+    void phaseOneWarnsAboutCoolingThenPreparationForPersistentRain() {
+        var early=PhaseBarometerForecasts.evaluate(1,.057F);
+        var late=PhaseBarometerForecasts.evaluate(1,.115F);
+        assertEquals(BarometerWarning.COOLING_TREND,early.warning());
+        assertEquals(BarometerWarning.PERSISTENT_PRECIPITATION,late.warning());
+        org.junit.jupiter.api.Assertions.assertTrue(early.warning().preparationAdvice().contains("fuel"));
+        org.junit.jupiter.api.Assertions.assertTrue(late.warning().preparationAdvice().contains("food"));
+        assertEquals(BarometerWarning.NONE,PhaseBarometerForecasts.evaluate(0,.01F).warning());
+        assertEquals(BarometerWarning.NONE,PhaseBarometerForecasts.evaluate(2,.15F).warning());
+    }
+
+    @Test
     void mapsPhaseFourLocalProgressToForecastBands() {
         assertEquals(ForecastBand.STABLE, PhaseBarometerForecasts.evaluate(4, 0.35f).forecastBand());
         assertEquals(ForecastBand.DETERIORATING, PhaseBarometerForecasts.evaluate(4, 0.39f).forecastBand());

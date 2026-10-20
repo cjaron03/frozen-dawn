@@ -5,7 +5,8 @@ import com.frozendawn.event.MobFreezeHandler;
 import com.frozendawn.init.ModEffects;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.particles.ParticleTypes;
+import com.frozendawn.init.ModParticles;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -25,13 +26,20 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 @EventBusSubscriber(modid = FrozenDawn.MOD_ID, value = Dist.CLIENT)
 public class ColdEffects {
 
-    private static int breathCooldown = 0;
+    private static final ColdBreathRhythm BREATH = new ColdBreathRhythm();
+
+    @SubscribeEvent public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        BREATH.reset();
+    }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || mc.isPaused()) return;
-        if (mc.player.isCreative() || mc.player.isSpectator()) return;
+        if (mc.player.isCreative() || mc.player.isSpectator()) {
+            BREATH.reset();
+            return;
+        }
 
         // EVA suit is climate-controlled — suppress vanilla freeze overlay every tick
         if (MobFreezeHandler.getFullSetTier(mc.player) == 3
@@ -42,31 +50,18 @@ public class ColdEffects {
         }
 
         float temp = TemperatureHud.getDisplayedTemp();
-        if (temp >= 0f) {
-            breathCooldown = 0;
-            return;
-        }
-
-        // Phase 6 late without breathable air: no breath particles — no atmosphere to exhale
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
-        if (PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable()) {
-            breathCooldown = 0;
-            return;
-        }
-
-        // Breath particles: small cloud puffs in front of the player's face
-        if (breathCooldown > 0) {
-            breathCooldown--;
-        } else {
-            spawnBreathParticle(mc, temp);
-            // Breathe faster when colder: every 30-60 ticks
-            float coldness = Math.min(1f, -temp / 40f);
-            breathCooldown = (int) Mth.lerp(coldness, 60, 25);
-        }
+        boolean vacuum = PhaseManager.isVacuumActive(phase, progress) && !ApocalypseClientData.isBreathable();
+        boolean visible = ColdBreathPolicy.visible(temp, false,
+                mc.player.isUnderWater() || mc.player.isInLava(), vacuum);
+        boolean running = mc.player.isSprinting() && !mc.player.isPassenger()
+                && !mc.player.isFallFlying()
+                && mc.player.getDeltaMovement().horizontalDistanceSqr() > 0.0025;
+        if (BREATH.tick(temp, visible, running)) spawnBreathParticle(mc);
     }
 
-    private static void spawnBreathParticle(Minecraft mc, float temp) {
+    private static void spawnBreathParticle(Minecraft mc) {
         // Position: in front of player's face at mouth height
         Vec3 look = mc.player.getLookAngle();
         double eyeY = mc.player.getEyeY() - 0.15; // mouth height
@@ -74,21 +69,16 @@ public class ColdEffects {
         double y = eyeY + look.y * 0.5;
         double z = mc.player.getZ() + look.z * 0.5;
 
-        // Push forward in look direction, strong upward to counteract cloud particle gravity
-        double speed = 0.06;
-        double vx = look.x * speed + mc.level.random.nextGaussian() * 0.008;
-        double vy = look.y * speed + 0.08 + mc.level.random.nextGaussian() * 0.005;
-        double vz = look.z * speed + mc.level.random.nextGaussian() * 0.008;
+        // A small forward exhale with gentle buoyancy; the custom wisps have no cloud gravity.
+        double speed = 0.035;
+        double vx = look.x * speed + mc.level.random.nextGaussian() * 0.002;
+        double vy = look.y * speed + 0.008 + mc.level.random.nextGaussian() * 0.002;
+        double vz = look.z * speed + mc.level.random.nextGaussian() * 0.002;
 
-        // More puffs when colder
-        int count = -temp > 20f ? 2 : 1;
-        for (int i = 0; i < count; i++) {
-            mc.level.addParticle(ParticleTypes.CLOUD,
-                    x + mc.level.random.nextGaussian() * 0.05,
-                    y + mc.level.random.nextGaussian() * 0.03,
-                    z + mc.level.random.nextGaussian() * 0.05,
-                    vx, vy, vz);
-        }
+        mc.level.addParticle(ModParticles.COLD_BREATH.get(),
+                x + mc.level.random.nextGaussian() * 0.012,
+                y + mc.level.random.nextGaussian() * 0.008,
+                z + mc.level.random.nextGaussian() * 0.012, vx, vy, vz);
     }
 
     /**

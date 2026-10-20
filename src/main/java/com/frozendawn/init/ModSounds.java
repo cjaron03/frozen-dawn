@@ -32,6 +32,9 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_PHASE_ONE = register("ambient.wind_phase_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_EARLY_FOREST = register("ambient.wind_early_forest");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));

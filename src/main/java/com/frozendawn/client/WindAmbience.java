@@ -37,6 +37,7 @@ public class WindAmbience {
     private static final WindBedLayer buffetBed=new WindBedLayer();
     private static com.frozendawn.cyclone.WindAudioPolicy.Mix cycloneMix=new com.frozendawn.cyclone.WindAudioPolicy.Mix();
     private static com.frozendawn.cyclone.CycloneSeverity lastSeverity=com.frozendawn.cyclone.CycloneSeverity.MODERATE;
+    private static boolean phaseOneActive;
     private static int creakCooldown;
     private static float mobMaskingStrength;
     static float mobMaskingStrength(){return mobMaskingStrength;}
@@ -52,6 +53,14 @@ public class WindAmbience {
         boolean underground = mc.player.blockPosition().getY() < 50;
         float masterStrength = MasterArchitectWeather.getStrength();
         boolean postMaeve = PostMaeveClientState.isMaeveErased();
+
+        // Keep the owner-accepted early rainy mix separate from the later cyclone beds.
+        if (phase == 1 && !postMaeve && masterStrength <= .01F) {
+            if (!phaseOneActive) { stopAll(mc); phaseOneActive = true; }
+            PhaseOneRainWind.tick(mc, progress, masterStrength);
+            return;
+        }
+        if (phaseOneActive) { PhaseOneRainWind.stop(mc); phaseOneActive = false; }
 
         boolean audible=!shouldStopWind(phase,progress,underground,masterStrength,postMaeve);
         var sample=CycloneClientState.sampleLocal(0);
@@ -120,6 +129,8 @@ public class WindAmbience {
     }
 
     private static void stopAll(Minecraft mc) {
+        PhaseOneRainWind.stop(mc);
+        phaseOneActive = false;
         normalBed.stop(mc);snowBed.stop(mc);roarBed.stop(mc);roomBed.stop(mc);buffetBed.stop(mc);
         mobMaskingStrength=0;creakCooldown=0;cycloneMix=new com.frozendawn.cyclone.WindAudioPolicy.Mix();
         lastSeverity=com.frozendawn.cyclone.CycloneSeverity.MODERATE;

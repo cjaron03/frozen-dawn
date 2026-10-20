@@ -927,3 +927,14 @@ tasks.register('prepareAuroraTerrainQa', Exec) {
 }
 sourceSets.gameTest.resources.srcDir(auroraTerrainQa)
 tasks.named('processGameTestResources') { dependsOn tasks.named('prepareAuroraTerrainQa') }
+
+// Parse the exact phase 1 review functions during native verification; keep them out of release jars.
+def phaseOneQa = layout.buildDirectory.dir('generated/phaseOneQa')
+tasks.register('preparePhaseOneQa', Exec) {
+    inputs.files('tools/prepare_phase1_playtest.py', 'tools/prepare_power_network_playtest.py',
+            'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(phaseOneQa)
+    commandLine 'python3', '-B', 'tools/prepare_phase1_playtest.py', '--pack-only', phaseOneQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(phaseOneQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('preparePhaseOneQa') }
