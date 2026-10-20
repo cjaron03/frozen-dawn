@@ -1158,6 +1158,8 @@ public final class AirlockGameTest {
         var saved=AirlockSavedState.get(l);
         h.assertTrue(saved.roomGas(l,base)==0&&!RoomAtmosphere.hasAir(l,s.base)&&c.gas.air()==chamberGas,
                 "Repair with zero production cannot borrow the isolated chamber's gas");
+        // Manual O2 seconds require the same chunk-index readiness as the other recovery fixtures.
+        completeRecoveryFixtureIndex(h,s);
         core.setPowerShare(0);core.setHeatShare(0);
         for(int i=0;i<6;i++)refillSecond(h,s,false);
         int partial=saved.roomGas(l,base);
