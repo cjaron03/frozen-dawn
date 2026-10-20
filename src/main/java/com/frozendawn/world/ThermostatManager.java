@@ -73,7 +73,7 @@ public final class ThermostatManager {
             for(var heater:openHeaters.values())if(openWinner(views,heater.getBlockPos())==panel&&heater.isLit())full+=TemperatureManager.fullHeaterWarmth(l,heater,sensor);
             for(var pos:HeaterRegistry.getHeaters(l))if(l.isLoaded(pos)&&l.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater&&openWinner(views,pos)!=panel)
                 otherHeat+=TemperatureManager.fullHeaterWarmth(l,heater,sensor)*heater.getBurnFraction();
-            double baseline=TemperatureManager.getBackgroundTemperature(sensor.getY(),phase.getCurrentDay(),phase.getTotalDays())+otherHeat;
+            double baseline=TemperatureManager.getBackgroundTemperature(l,sensor,phase.getCurrentDay(),phase.getTotalDays())+otherHeat;
             double target=TemperatureManager.thermostatTerms(l,sensor).baseTarget(panel.target());
             double duty=full>0?Math.clamp((target-baseline)/full,0,1):0;
             for(var heater:openHeaters.values())if(openWinner(views,heater.getBlockPos())==panel){s.openDuties.put(heater.getBlockPos(),duty);s.openTargets.put(heater.getBlockPos(),panel.target());}
@@ -90,7 +90,7 @@ public final class ThermostatManager {
                 var winner=s.rooms.get(view.room.id());if(winner!=null&&winner.panel!=panel)mode=OVERRIDDEN;
                 heaters=connected(l,view.room.geometry());
                 if(Double.isFinite(base))sensed=TemperatureManager.thermostatTerms(l,p).apply(base);
-            }else if(view.open){base=TemperatureManager.getBackgroundTemperature(p.getY(),phase.getCurrentDay(),phase.getTotalDays());double heat=0;
+            }else if(view.open){base=TemperatureManager.getBackgroundTemperature(l,p,phase.getCurrentDay(),phase.getTotalDays());double heat=0;
                 for(var pos:HeaterRegistry.getHeaters(l))if(l.isLoaded(pos)&&l.getBlockEntity(pos) instanceof ThermalHeaterBlockEntity heater){heat+=TemperatureManager.fullHeaterWarmth(l,heater,p)*heater.getBurnFraction();}
                 for(var heater:s.installedOpen.values())if(l.isLoaded(heater.getBlockPos())&&l.getBlockEntity(heater.getBlockPos())==heater&&openWinner(s.views,heater.getBlockPos())==panel)heaters.add(heater);
                 sensed=TemperatureManager.thermostatTerms(l,p).apply(base+heat);

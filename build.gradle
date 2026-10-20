@@ -93,6 +93,10 @@ neoForge {
                 programArguments.addAll '--quickPlaySingleplayer', labQuickPlayWorld
             }
             systemProperty 'frozendawn.labBridge', 'true'
+            if (labQuickPlayWorld == 'Cyclone Drift Check') {
+                programArguments.addAll '--mixin', 'frozendawn.lab.mixins.json'
+                systemProperty 'frozendawn.labCycloneDrift', 'true'
+            }
             systemProperty 'frozendawn.labAirlockWatch', providers.gradleProperty('fdLabAirlockWatch').getOrElse('false')
             if (providers.gradleProperty('fdRoomArchiveReplay').isPresent()) {
                 systemProperty 'frozendawn.labRoomArchiveReplay', file(providers.gradleProperty('fdRoomArchiveReplay').get()).absolutePath
@@ -799,5 +803,105 @@ tasks.register('prepareHeadlampEquipmentPlaytest', Exec) {
         if (!template) throw new GradleException('Supply -PfdHeadlampTemplate=/path/to/closed/level.dat')
         commandLine 'python3', '-B', 'tools/prepare_headlamp_equipment_playtest.py', '--source', template,
                 '--destination', file('run-lab/saves/Headlamp Equipment Check').absolutePath
+    }
+}
+
+// The exact owner replay also passes Minecraft's native function parser in the gate.
+def cycloneQa = layout.buildDirectory.dir('generated/cycloneQa')
+tasks.register('prepareCycloneQa', Exec) {
+    inputs.files('tools/prepare_cyclone_playtest.py', 'tools/prepare_power_network_playtest.py', 'tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneQa)
+    commandLine 'python3', '-B', 'tools/prepare_cyclone_playtest.py', '--pack-only', cycloneQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneQa)
+tasks.named('processGameTestResources') { dependsOn tasks.named('prepareCycloneQa') }
+tasks.register('prepareCyclonePlaytest', Exec) {
+    group = 'verification'
+    description = 'Creates fresh Bomb Cyclone Check; refuses existing saves. Supply -PfdCycloneTemplate=/path/to/closed/level.dat.'
+    doFirst {
+        def template = providers.gradleProperty('fdCycloneTemplate').getOrNull()
+        if (!template) throw new GradleException('Supply -PfdCycloneTemplate=/path/to/closed/level.dat')
+        commandLine 'python3', '-B', 'tools/prepare_cyclone_playtest.py', '--source', template,
+                '--destination', file('run-lab/saves/Bomb Cyclone Check').absolutePath
+    }
+}
+
+// Fresh cyclone thermal comparison, isolated from the accepted presentation save.
+def cycloneThermalQa=layout.buildDirectory.dir('generated/cycloneThermalQa')
+tasks.register('prepareCycloneThermalQa',Exec) {
+    inputs.files('tools/prepare_cyclone_thermal_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneThermalQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_thermal_playtest.py','--pack-only',cycloneThermalQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneThermalQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneThermalQa')}
+tasks.register('prepareCycloneThermalPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Thermal Check from closed metadata; refuses an existing save.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneThermalTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneThermalTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_thermal_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Thermal Check').absolutePath
+    }
+}
+
+// Isolated wind replay; its exact functions also pass the native parser in the gate.
+def cycloneWindQa=layout.buildDirectory.dir('generated/cycloneWindQa')
+tasks.register('prepareCycloneWindQa',Exec) {
+    inputs.files('tools/prepare_cyclone_wind_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneWindQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_wind_playtest.py','--pack-only',cycloneWindQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneWindQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneWindQa')}
+tasks.register('prepareCycloneWindPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Wind Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneWindTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneWindTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_wind_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Wind Check').absolutePath
+    }
+}
+
+// Bounded production drift replay; generated functions also pass the native command parser.
+def cycloneDriftQa=layout.buildDirectory.dir('generated/cycloneDriftQa')
+tasks.register('prepareCycloneDriftQa',Exec) {
+    inputs.files('tools/prepare_cyclone_drift_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneDriftQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_drift_playtest.py','--pack-only',cycloneDriftQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneDriftQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneDriftQa')}
+tasks.register('prepareCycloneDriftPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh Cyclone Drift Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneDriftTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneDriftTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_drift_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Drift Check').absolutePath
+    }
+}
+
+
+def cycloneThunderQa=layout.buildDirectory.dir('generated/cycloneThunderQa')
+tasks.register('prepareCycloneThunderQa',Exec) {
+    inputs.files('tools/prepare_cyclone_thunder_playtest.py','tools/prepare_power_network_playtest.py','tools/prepare_blind_architect_playtest.py')
+    outputs.dir(cycloneThunderQa)
+    commandLine 'python3','-B','tools/prepare_cyclone_thunder_playtest.py','--pack-only',cycloneThunderQa.get().asFile.absolutePath
+}
+sourceSets.gameTest.resources.srcDir(cycloneThunderQa)
+tasks.named('processGameTestResources'){dependsOn tasks.named('prepareCycloneThunderQa')}
+tasks.register('prepareCycloneThunderPlaytest',Exec) {
+    group='verification'
+    description='Creates fresh raised Cyclone Thunder Check from closed metadata; refuses existing saves.'
+    doFirst {
+        def template=providers.gradleProperty('fdCycloneThunderTemplate').getOrNull()
+        if(!template)throw new GradleException('Supply -PfdCycloneThunderTemplate=/path/to/closed/level.dat')
+        commandLine 'python3','-B','tools/prepare_cyclone_thunder_playtest.py','--source',template,
+                '--destination',file('run-lab/saves/Cyclone Thunder Check').absolutePath
     }
 }

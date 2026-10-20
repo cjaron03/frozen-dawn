@@ -36,6 +36,7 @@ public final class SnowAccumulator {
     public static void tick(ServerLevel level, int phase, float progress) {
         tickOrigins(level, phase, progress, level.getServer().getTickCount(), level.getRandom(),
                 level.players().stream().map(ServerPlayer::blockPosition).toList(), RADIUS);
+        com.frozendawn.cyclone.CycloneDrift.tick(level, phase, progress);
     }
 
     /** Same production accumulation rules, with an explicit clock and sampling footprint for labs. */
@@ -152,7 +153,7 @@ public final class SnowAccumulator {
         return mutations;
     }
 
-    private static boolean isOpenToSnow(ServerLevel level, BlockPos snowPos) {
+    public static boolean isOpenToSnow(ServerLevel level, BlockPos snowPos) {
         BlockPos.MutableBlockPos cursor = snowPos.mutable();
         while (true) {
             BlockState state = level.getBlockState(cursor);
@@ -186,7 +187,7 @@ public final class SnowAccumulator {
     }
 
     /** Check if snow can be placed on the block at belowPos. */
-    private static boolean canPlaceSnowOn(ServerLevel level, BlockPos belowPos) {
+    public static boolean canPlaceSnowOn(ServerLevel level, BlockPos belowPos) {
         BlockState below = level.getBlockState(belowPos);
 
         // Skip ice — snow breaks on it

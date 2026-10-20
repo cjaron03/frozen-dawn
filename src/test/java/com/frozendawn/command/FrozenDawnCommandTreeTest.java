@@ -34,7 +34,7 @@ class FrozenDawnCommandTreeTest {
                 .getChild("frozendawn").getChild("debug");
 
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "architect", "maeve", "uplink", "suit", "lore"), childNames(debug));
+                        "aggregate", "architect", "maeve", "uplink", "cyclone", "suit", "lore"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));

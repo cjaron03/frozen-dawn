@@ -21,6 +21,11 @@ public final class UplinkBroadcasts {
     public static final int CENSUS_RADIUS = 1024;
 
     public static Line next(ServerLevel level, BlockPos console, int index) {
+        var forecast = com.frozendawn.cyclone.CycloneController.forecast(level,console.getX()+.5,console.getZ()+.5);
+        if (forecast.visible() && Math.floorMod(index,3)==0) return new Line(forecast.etaSeconds()>0?"uplink.frozendawn.listen.cyclone":
+                forecast.stage()==com.frozendawn.cyclone.CycloneStage.AFTERMATH?"uplink.frozendawn.listen.cyclone_recovery":"uplink.frozendawn.listen.cyclone_active",
+                List.of(forecast.severity().name().toLowerCase(java.util.Locale.ROOT),
+                        String.format(java.util.Locale.ROOT,"%.1f",forecast.etaSeconds()/60f)));
         var server = level.getServer();
         return switch (Math.floorMod(index, 3)) {
             case 0 -> new Line("uplink.frozendawn.listen.phase." + Math.clamp(ApocalypseState.get(server).getPhase(), 0, 6), List.of());

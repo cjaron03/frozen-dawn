@@ -367,6 +367,14 @@ public final class PlayerTickHandler {
         } else {
             exhaustion = 0.2f * phaseMult * armorReduction;
         }
+        var weather=com.frozendawn.cyclone.CycloneThermal.sampleAt(player.level(),player.blockPosition());
+        if(weather.stage()!=com.frozendawn.cyclone.CycloneStage.NONE) {
+            exhaustion*=com.frozendawn.cyclone.CycloneThermal.windChillMultiplier(weather,
+                    com.frozendawn.cyclone.CycloneThermal.severity(player.level()));
+            var storm=com.frozendawn.cyclone.CycloneSavedData.get(player.getServer()).active();
+            if(storm.isPresent()&&weather.intensity()>0)exhaustion*=com.frozendawn.cyclone.CycloneThermal.windbreakFactor(
+                    player.level(),player.blockPosition().above(),Math.cos(storm.get().headingRad()),Math.sin(storm.get().headingRad()));
+        }
         player.getFoodData().addExhaustion(exhaustion);
     }
 

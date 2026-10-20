@@ -1,6 +1,8 @@
 package com.frozendawn.block;
 
 import com.frozendawn.barometer.ForecastBand;
+import com.frozendawn.barometer.CycloneBarometerAlarm;
+import com.frozendawn.init.ModSounds;
 import com.frozendawn.barometer.PhaseBarometerForecasts;
 import com.frozendawn.barometer.PhaseBarometerSnapshot;
 import com.frozendawn.data.ApocalypseState;
@@ -25,6 +27,7 @@ public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvid
 
     private static final long ANNOUNCEMENT_TICK_INTERVAL = 20L;
 
+    private final CycloneBarometerAlarm cycloneAlarm=new CycloneBarometerAlarm();
     private boolean announcementsInitialized;
     private int lastAnnouncedPhase = -1;
     private int lastAnnouncedPhase6Stage = -1;
@@ -39,6 +42,16 @@ public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvid
             return;
         }
 
+        var forecast=com.frozendawn.cyclone.CycloneController.forecast(serverLevel,worldPosition.getX()+.5,worldPosition.getZ()+.5);
+        var storm=com.frozendawn.cyclone.CycloneSavedData.get(serverLevel.getServer()).active();
+        var cue=storm.map(active->cycloneAlarm.poll(forecast,active.seed(),serverLevel.getGameTime()))
+                .orElse(CycloneBarometerAlarm.Cue.NONE);
+        if(cue!=CycloneBarometerAlarm.Cue.NONE) {
+            setChanged();
+            var sound=cue==CycloneBarometerAlarm.Cue.CATASTROPHIC
+                    ?ModSounds.BAROMETER_CYCLONE_CATASTROPHIC.get():ModSounds.BAROMETER_CYCLONE_WARNING.get();
+            serverLevel.playSound(null,worldPosition,sound,SoundSource.BLOCKS,1f,1f);
+        }
         ApocalypseState apocalypseState = ApocalypseState.get(serverLevel.getServer());
         int phase = apocalypseState.getPhase();
         float progress = apocalypseState.getPreciseProgress();
@@ -87,6 +100,7 @@ public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvid
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        cycloneAlarm.save(tag);
         tag.putBoolean("AnnouncementsInitialized", announcementsInitialized);
         tag.putInt("LastAnnouncedPhase", lastAnnouncedPhase);
         tag.putInt("LastAnnouncedPhase6Stage", lastAnnouncedPhase6Stage);
@@ -96,6 +110,7 @@ public class PhaseBarometerBlockEntity extends BlockEntity implements MenuProvid
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        cycloneAlarm.load(tag);
         announcementsInitialized = tag.getBoolean("AnnouncementsInitialized");
         lastAnnouncedPhase = tag.getInt("LastAnnouncedPhase");
         lastAnnouncedPhase6Stage = tag.getInt("LastAnnouncedPhase6Stage");

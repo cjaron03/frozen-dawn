@@ -1,6 +1,15 @@
 {
   "schema": 1,
   "functions": {
+    "cyclone_thunder:controls": {"world":"Cyclone Thunder Check","scores":[{"objective":"cythunder","holder":"#built","equals":1}]},
+    "cyclone_drift:controls": {"world":"Cyclone Drift Check","scores":[{"objective":"cydrift","holder":"#built","equals":1}]},
+    "cyclone_drift:read": {"world":"Cyclone Drift Check","scores":[{"objective":"cydrift","holder":"#built","equals":1}]},
+    "cyclone_wind:controls": {"world":"Cyclone Wind Check","scores":[{"objective":"cywind","holder":"#built","equals":1}]},
+    "cyclone_wind:read": {"world":"Cyclone Wind Check","scores":[{"objective":"cywind","holder":"#built","equals":1}]},
+    "cyclone_thermal:controls": {"world":"Cyclone Thermal Check","scores":[{"objective":"cythermal","holder":"#built","equals":1}]},
+    "cyclone_thermal:read": {"world":"Cyclone Thermal Check","scores":[{"objective":"cythermal","holder":"#built","equals":1}]},
+    "cyclone_check:controls": {"world":"Bomb Cyclone Check","scores":[{"objective":"cycheck","holder":"#built","equals":1}]},
+    "cyclone_check:read": {"world":"Bomb Cyclone Check","scores":[{"objective":"cycheck","holder":"#built","equals":1}]},
     "headlamp_equipment:controls": {"world":"Headlamp Equipment Check","scores":[{"objective":"hlequip","holder":"#built","equals":1}]},
     "headlamp_equipment:read": {"world":"Headlamp Equipment Check","scores":[{"objective":"hlequip","holder":"#built","equals":1}]},
     "headlamp_check:controls": {"world":"Headlamp Aim Check","scores":[{"objective":"hlamp","holder":"#built","equals":1}]},

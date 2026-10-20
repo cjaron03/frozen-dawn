@@ -47,6 +47,7 @@ final class FrozenDawnDebugCommand {
                 .then(ArchitectDebugCommand.commands())
                 .then(MaeveDebugCommand.commands())
                 .then(UplinkDebugCommand.commands())
+                .then(CycloneDebugCommand.commands())
                 .then(FrozenDawnSuitCommand.suitCommands())
                 .then(requiredChild(legacyHearth, "lore"));
     }
@@ -102,6 +103,7 @@ final class FrozenDawnDebugCommand {
                     "/fd lore reset-player <player> confirm",
                     "/fd lore reset-world-semantic confirm");
             case "debug" -> List.of(
+                    "/fd cyclone status|plan|start <severity> [player] [bearing]|stage <stage>|end",
                     "/fd <world|hearth|heart|postmaeve|aggregate|architect|suit|lore> ...",
                     "Destructive reset, purge, resolve, and completion actions require 'confirm'.",
                     "Use /frozendawn help <category> for focused examples.");

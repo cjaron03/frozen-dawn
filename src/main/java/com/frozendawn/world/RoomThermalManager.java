@@ -87,14 +87,24 @@ public final class RoomThermalManager {
     }
     private static double outside(ServerLevel level,Face face) {
         var apocalypse=ApocalypseState.get(level.getServer());
-        return TemperatureManager.getBackgroundTemperature(face.boundaryY,apocalypse.getCurrentDay(),apocalypse.getTotalDays());
+        return face.ground||face.interior?TemperatureManager.getBackgroundTemperature(face.boundaryY,apocalypse.getCurrentDay(),apocalypse.getTotalDays())
+                :TemperatureManager.getBackgroundTemperature(level,new BlockPos(face.outside.getX(),face.boundaryY,face.outside.getZ()),apocalypse.getCurrentDay(),apocalypse.getTotalDays());
     }
     private static double outsideAverage(ServerLevel level,Profile profile) {
         return profile.faces.stream().filter(face->!face.interior).mapToDouble(face->outside(level,face)).average()
                 .orElseGet(()->profile.faces.stream().mapToDouble(face->outside(level,face)).average().orElse(0));
     }
     private static double faceK(ServerLevel level,Face face) {
-        return face.interior?0:face.conductance*(CombustionAtmosphere.isVacuum(level)&&!face.ground?VACUUM_RADIATION_SCALE:1);
+        if(face.interior)return 0;
+        double conductance=face.conductance;
+        if(!face.ground&&!CombustionAtmosphere.isVacuum(level)) {
+            var pos=new BlockPos(face.outside.getX(),face.boundaryY,face.outside.getZ());
+            var sample=com.frozendawn.cyclone.CycloneThermal.sampleAt(level,pos);
+            if(sample.stage()!=com.frozendawn.cyclone.CycloneStage.NONE)
+                conductance=com.frozendawn.cyclone.CycloneThermal.windFilmConductance(conductance,
+                        sample.intensity()*com.frozendawn.cyclone.CycloneThermal.severity(level).windStrength);
+        }
+        return conductance*(CombustionAtmosphere.isVacuum(level)&&!face.ground?VACUUM_RADIATION_SCALE:1);
     }
     // Conductances add directly; vacuum retains the existing radiator scale.
     public static final double HEAT_VENT_CONDUCTANCE=18.0;
@@ -145,7 +155,7 @@ public final class RoomThermalManager {
             // Do not reject heat back into this same room or scan the exterior here.
             if(binding.room.cells.contains(outlet))continue;
             var a=ApocalypseState.get(level.getServer());
-            double outside=TemperatureManager.getBackgroundTemperature(outlet.getY(),a.getCurrentDay(),a.getTotalDays());
+            double outside=TemperatureManager.getBackgroundTemperature(level,outlet,a.getCurrentDay(),a.getTotalDays());
             double k=HEAT_VENT_CONDUCTANCE*(CombustionAtmosphere.isVacuum(level)?VACUUM_RADIATION_SCALE:1);
             result.add(new Cooling(pos,k,outside));
         }

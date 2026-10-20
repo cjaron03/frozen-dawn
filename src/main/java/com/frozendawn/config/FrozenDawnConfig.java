@@ -108,6 +108,8 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.BooleanValue DEBUG_FORCE_MAEVE_ERASED;
 
     // Client
+    public static final ModConfigSpec.DoubleValue CYCLONE_FLASH_INTENSITY;
+    public static final ModConfigSpec.BooleanValue CYCLONE_CAMERA_SHAKE;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_DARKENING;
     public static final ModConfigSpec.BooleanValue ENABLE_FROST_OVERLAY;
     public static final ModConfigSpec.BooleanValue ENABLE_SKY_COLOR_SHIFT;
@@ -128,6 +130,11 @@ public class FrozenDawnConfig {
     public static final ModConfigSpec.DoubleValue POST_MAEVE_DEBRIS_DENSITY;
     public static final ModConfigSpec.BooleanValue ENABLE_SUIT_PUNCTURE_OVERLAY;
 
+    public static final ModConfigSpec.BooleanValue CYCLONES_ENABLED, CYCLONE_CATASTROPHIC_ENABLED;
+    public static final ModConfigSpec.IntValue CYCLONE_MAX_PER_PHASE;
+    public static final ModConfigSpec.DoubleValue CYCLONE_CATASTROPHIC_CHANCE, CYCLONE_PUSH_SCALE;
+    public static final ModConfigSpec.DoubleValue CYCLONE_PEAK_OFFSET_MODERATE, CYCLONE_PEAK_OFFSET_SEVERE, CYCLONE_PEAK_OFFSET_CATASTROPHIC;
+    public static final ModConfigSpec.DoubleValue CYCLONE_VISIBILITY_MODERATE, CYCLONE_VISIBILITY_SEVERE, CYCLONE_VISIBILITY_CATASTROPHIC;
     public static final ModConfigSpec SPEC;
 
     static {
@@ -459,6 +466,12 @@ public class FrozenDawnConfig {
         BUILDER.pop();
 
         BUILDER.push("client");
+        CYCLONE_FLASH_INTENSITY = BUILDER
+                .comment("Cyclone flash strength: 0 disables, values below 1 use reduced atmosphere-only flashes, 1 includes vanilla sky lighting.",
+                        "Also respects Minecraft Hide Lightning Flashes. Thunder audio is preserved.")
+                .defineInRange("cycloneFlashIntensity", 1.0D, 0.0D, 1.0D);
+        CYCLONE_CAMERA_SHAKE = BUILDER.comment("Optional exposed cyclone wind camera movement; off by default.")
+                .define("cycloneCameraShake", false);
         ENABLE_SKY_DARKENING = BUILDER
                 .comment("Enable progressive sky darkening and fog")
                 .define("enableSkyDarkening", true);
@@ -524,6 +537,21 @@ public class FrozenDawnConfig {
                 .define("enableSuitPunctureOverlay", true);
         BUILDER.pop();
 
+        BUILDER.push("cyclone");
+        CYCLONES_ENABLED = BUILDER.comment("Enable regional Phase 5 bomb cyclones.").define("enabled", true);
+        CYCLONE_PUSH_SCALE = BUILDER.comment("Horizontal cyclone drift multiplier; zero disables drift. Headwind resistance still applies.").defineInRange("pushScale", 1.0, 0.0, 2.0);
+        CYCLONE_MAX_PER_PHASE = BUILDER.defineInRange("maxPerPhase", 4, 0, 4);
+        CYCLONE_CATASTROPHIC_ENABLED = BUILDER.define("catastrophicEnabled", true);
+        CYCLONE_CATASTROPHIC_CHANCE = BUILDER.defineInRange("catastrophicChance", .05, 0, 1);
+        CYCLONE_PEAK_OFFSET_MODERATE = BUILDER.comment("Peak surface temperature offset in Celsius; negative values make the storm colder. Applies on the server.")
+                .defineInRange("peakOffsetModerate", -8.0, -100.0, 0.0);
+        CYCLONE_PEAK_OFFSET_SEVERE = BUILDER.defineInRange("peakOffsetSevere", -19.0, -100.0, 0.0);
+        CYCLONE_PEAK_OFFSET_CATASTROPHIC = BUILDER.defineInRange("peakOffsetCatastrophic", -30.0, -100.0, 0.0);
+        CYCLONE_VISIBILITY_MODERATE = BUILDER.comment("Peak outdoor visibility in blocks. Server values are sent to clients; goggles retain at least their normal cyclone reach.")
+                .defineInRange("visibilityModerate", 8.0, 1.0, 128.0);
+        CYCLONE_VISIBILITY_SEVERE = BUILDER.defineInRange("visibilitySevere", 4.0, 1.0, 128.0);
+        CYCLONE_VISIBILITY_CATASTROPHIC = BUILDER.defineInRange("visibilityCatastrophic", 2.0, 1.0, 128.0);
+        BUILDER.pop();
         SPEC = BUILDER.build();
     }
 }
