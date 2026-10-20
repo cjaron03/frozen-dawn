@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "frozendawn:block/stripped_rimewood_log"
+    },
+    "axis=z": {
+      "model": "frozendawn:block/stripped_rimewood_log_horizontal",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "frozendawn:block/stripped_rimewood_log_horizontal",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

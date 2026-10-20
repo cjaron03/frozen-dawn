@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "frozendawn:block/rimewood_wood"
+    },
+    "axis=z": {
+      "model": "frozendawn:block/rimewood_wood",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "frozendawn:block/rimewood_wood",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

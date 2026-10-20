@@ -33,8 +33,9 @@ class FrozenDawnCommandTreeTest {
         CommandNode<CommandSourceStack> debug = dispatcher().getRoot()
                 .getChild("frozendawn").getChild("debug");
 
+        // "flora" is development-only; tests run as a development build.
         assertEquals(Set.of("world", "hearth", "heart", "postmaeve",
-                        "aggregate", "architect", "maeve", "uplink", "cyclone", "suit", "lore"), childNames(debug));
+                        "aggregate", "architect", "maeve", "uplink", "cyclone", "suit", "lore", "flora"), childNames(debug));
         assertNotNull(debug.getChild("postmaeve").getChild("bloom"));
         assertNull(debug.getChild("hearth").getChild("postmaeve"));
         assertNull(debug.getChild("hearth").getChild("heart"));
