@@ -3,6 +3,7 @@ package com.frozendawn.client;
 import com.frozendawn.FrozenDawn;
 import com.frozendawn.init.ModSounds;
 import com.frozendawn.config.FrozenDawnConfig;
+import com.frozendawn.cyclone.WindAudioPolicy;
 import com.frozendawn.phase.PhaseManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundSource;
@@ -15,9 +16,9 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
- * Plays long (~65-70s) ambient wind clips with overlapping crossfade.
- * Uses TickableWindSound for smooth per-frame volume transitions (no hard cuts).
- * Next clip starts 5s before the current one ends for seamless overlap.
+ * Keeps every overlapping wind voice under one owner. Recorded cyclone beds use six-second
+ * equal-power overlaps; stage and shelter changes update both voices without restarting clips.
+ * Ordinary and post-Maeve source files remain unchanged, with their existing five-second overlaps.
  *
  * Phase 6 early: maximum volume (1.0). Mid: wind dies down. Late: silence,
  * except inside a living Master Architect's local Hearth storm.
@@ -29,17 +30,23 @@ public class WindAmbience {
     private static final int STRONG_DURATION = 1260; // 63s in ticks
     private static final int OVERLAP = 100;          // 5s overlap (matches file fade-out)
 
-    private static TickableWindSound currentSound = null;
-    private static int ticksUntilNext = 0;
-    private static int creakCooldown = 0;
-    private static float currentBasePitch = 1.0f;
-    private static boolean currentPostMaeve;
+    private static final WindBedLayer normalBed=new WindBedLayer();
+    private static final WindBedLayer snowBed=new WindBedLayer();
+    private static final WindBedLayer roarBed=new WindBedLayer();
+    private static final WindBedLayer roomBed=new WindBedLayer();
+    private static final WindBedLayer buffetBed=new WindBedLayer();
+    private static com.frozendawn.cyclone.WindAudioPolicy.Mix cycloneMix=new com.frozendawn.cyclone.WindAudioPolicy.Mix();
+    private static com.frozendawn.cyclone.CycloneSeverity lastSeverity=com.frozendawn.cyclone.CycloneSeverity.MODERATE;
+    private static boolean phaseOneActive;
+    private static int creakCooldown;
+    private static float mobMaskingStrength;
+    static float mobMaskingStrength(){return mobMaskingStrength;}
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.isPaused()) return;
-        if (mc.level.dimension() != Level.OVERWORLD) return;
+        if (mc.level == null || mc.player == null || mc.level.dimension() != Level.OVERWORLD) { stopAll(mc); return; }
+        if (mc.isPaused()) return;
 
         int phase = ApocalypseClientData.getPhase();
         float progress = ApocalypseClientData.getProgress();
@@ -47,21 +54,24 @@ public class WindAmbience {
         float masterStrength = MasterArchitectWeather.getStrength();
         boolean postMaeve = PostMaeveClientState.isMaeveErased();
 
-        if (currentSound != null && currentPostMaeve != postMaeve) {
-            stopAll(mc);
-        }
-
-        boolean shouldStop = shouldStopWind(
-                phase, progress, underground, masterStrength, postMaeve);
-        if (shouldStop) {
-            stopAll(mc);
+        // Keep the owner-accepted early rainy mix separate from the later cyclone beds.
+        if (phase == 1 && !postMaeve && masterStrength <= .01F) {
+            if (!phaseOneActive) { stopAll(mc); phaseOneActive = true; }
+            PhaseOneRainWind.tick(mc, progress, masterStrength);
             return;
         }
+        if (phaseOneActive) { PhaseOneRainWind.stop(mc); phaseOneActive = false; }
+
+        boolean audible=!shouldStopWind(phase,progress,underground,masterStrength,postMaeve);
+        var sample=CycloneClientState.sampleLocal(0);
+        CycloneClientState.storm().ifPresent(storm->lastSeverity=storm.severity());
+        cycloneMix.tick(sample,lastSeverity,StormExposureController.getExposure());
 
         float targetVolume = postMaeve
                 ? FrozenDawnConfig.POST_MAEVE_AMBIENT_VOLUME_MULTIPLIER.get().floatValue()
                 : Math.max(getTargetWindVolume(phase, progress),
                         0.9F * masterStrength);
+        targetVolume *= cycloneMix.normal();
 
         float exposure = StormExposureController.getExposure();
         boolean exposedToStorm = ClientStormVisibility.isStormExposed(mc);
@@ -71,20 +81,24 @@ public class WindAmbience {
         float heartQuiet = HeartQuietClient.environmentMultiplier();
         targetVolume *= heartQuiet;
         targetVolume *= BloomClientState.windMultiplier();
-        float targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
-
-        // Update volume on the currently playing sound — it fades smoothly per-frame
-        if (currentSound != null && !currentSound.isStopped()) {
-            currentSound.setTargetVolume(
-                    targetVolume, MasterArchitectSeverTelegraph.windFadeRate());
-            currentSound.setTargetPitch(targetPitch);
-        }
-
-        // If target is near-zero and no sound playing, bail
-        if (targetVolume < 0.01f && (currentSound == null || currentSound.isStopped())) {
-            stopAll(mc);
-            return;
-        }
+        if (!audible) targetVolume=0;
+        boolean strong=phase>=4 || masterStrength>.05f;
+        var normal=postMaeve?(strong?ModSounds.WIND_POST_MAEVE_STRONG.get():ModSounds.WIND_POST_MAEVE_LIGHT.get())
+                :(strong?ModSounds.WIND_STRONG.get():ModSounds.WIND_LIGHT.get());
+        // Thermal Sever must clear the wind within its short warning; ordinary mix changes
+        // keep the accepted six-second slew and the recorded clip envelopes.
+        float fadeRate=MasterArchitectSeverTelegraph.isActive()
+                ? MasterArchitectSeverTelegraph.windFadeRate() : 1f/WindAudioPolicy.CROSSFADE_TICKS;
+        // Existing beds carry their own edge fades. Fixed pitch keeps their measured duration exact.
+        normalBed.tick(mc,normal,targetVolume,strong?STRONG_DURATION:LIGHT_DURATION,OVERLAP,false,fadeRate);
+        float environment=audible?heartQuiet*MasterArchitectFourthWallMoment.weatherAudioMultiplier()
+                *MasterArchitectSeverTelegraph.weatherAudioMultiplier()*BloomClientState.windMultiplier():0;
+        mobMaskingStrength=Math.clamp(cycloneMix.blend()*exposure*environment
+                *mc.options.getSoundSourceVolume(SoundSource.AMBIENT),0,1);
+        snowBed.tick(mc,ModSounds.CYCLONE_SNOW.get(),cycloneMix.snow()*environment,1280,120,true,fadeRate);
+        roarBed.tick(mc,ModSounds.CYCLONE_ROAR.get(),cycloneMix.roar()*environment,1280,120,true,fadeRate);
+        roomBed.tick(mc,ModSounds.CYCLONE_ROOM.get(),cycloneMix.room()*environment,1280,120,true,fadeRate);
+        buffetBed.tick(mc,ModSounds.CYCLONE_BUFFET.get(),cycloneMix.buffet()*environment,1280,120,true,fadeRate);
 
         // Occasional creaking when sheltered in phase 4+ (structure stress from wind/snow)
         if (!exposedToStorm && phase >= 4 && heartQuiet > 0.15F) {
@@ -101,28 +115,6 @@ public class WindAmbience {
             }
         }
 
-        if (ticksUntilNext > 0) {
-            ticksUntilNext--;
-            if (ticksUntilNext > 0) return;
-        }
-
-        // Start next clip — old one still playing for 5s overlap
-        boolean strong = phase >= 4 || masterStrength > 0.05F;
-        currentBasePitch = 0.97f + mc.level.random.nextFloat() * 0.06f;
-        targetPitch = currentBasePitch * Mth.lerp(exposure, 0.82f, 1.0f);
-        int clipDuration = strong ? STRONG_DURATION : LIGHT_DURATION;
-
-        currentPostMaeve = postMaeve;
-        currentSound = new TickableWindSound(
-                postMaeve
-                        ? strong ? ModSounds.WIND_POST_MAEVE_STRONG.get()
-                                : ModSounds.WIND_POST_MAEVE_LIGHT.get()
-                        : strong ? ModSounds.WIND_STRONG.get()
-                                : ModSounds.WIND_LIGHT.get(),
-                targetVolume, targetPitch, clipDuration);
-        mc.getSoundManager().play(currentSound);
-
-        ticksUntilNext = clipDuration - OVERLAP;
     }
 
     @SubscribeEvent
@@ -137,14 +129,11 @@ public class WindAmbience {
     }
 
     private static void stopAll(Minecraft mc) {
-        if (currentSound != null) {
-            mc.getSoundManager().stop(currentSound);
-            currentSound = null;
-        }
-        ticksUntilNext = 0;
-        creakCooldown = 0;
-        currentBasePitch = 1.0f;
-        currentPostMaeve = false;
+        PhaseOneRainWind.stop(mc);
+        phaseOneActive = false;
+        normalBed.stop(mc);snowBed.stop(mc);roarBed.stop(mc);roomBed.stop(mc);buffetBed.stop(mc);
+        mobMaskingStrength=0;creakCooldown=0;cycloneMix=new com.frozendawn.cyclone.WindAudioPolicy.Mix();
+        lastSeverity=com.frozendawn.cyclone.CycloneSeverity.MODERATE;
     }
 
     private static boolean shouldStopWind(

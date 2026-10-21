@@ -32,6 +32,12 @@ OWNER_INTERFACE_PATHS = {
 
 
 def classify(path: str) -> tuple[str, str, str]:
+    if path.startswith("block/barometer/"):
+        return ("barometer_alarm_procedural", "tools/audio_sources/barometer/SOURCES.md", "Frozen Dawn original")
+    if path.startswith("ambient/cyclone/thunder/"):
+        return ("cyclone_thunder_recorded_cc0", "tools/audio_sources/cyclone_thunder/SOURCES.md", "CC0-derived")
+    if path.startswith("ambient/cyclone/"):
+        return ("cyclone_recorded_cc0", "tools/audio_sources/cyclone/SOURCES.md", "CC0-derived")
     if path in {"ambient/eva_emergency_breathing.ogg", "ambient/eva_emergency_breathing_fast.ogg"}:
         return (
             "emergency_eva_cc0_mix",
@@ -62,6 +68,8 @@ def classify(path: str) -> tuple[str, str, str]:
         )
 
     prefix_groups = (
+        (("ambient/wind_early_forest",), "phase_one_soft_wind_cc0", "tools/audio_sources/phase_one_soft_wind/SOURCES.md", "CC0-derived"),
+        (("ambient/wind_phase_one_",), "phase_one_wind_cc0", "tools/audio_sources/phase_one_wind/SOURCES.md", "CC0-derived"),
         (("entity/blind_architect/",), "blind_architect_cc0", "tools/audio_sources/blind_architect/SOURCES.md", "CC0-derived"),
         (("entity/architect/",), "architect_procedural", "tools/audio_sources/architect/SOURCES.md", "Frozen Dawn original"),
         (("entity/rimebound/",), "rimebound_procedural", "tools/audio_sources/rimebound/SOURCES.md", "Frozen Dawn original"),

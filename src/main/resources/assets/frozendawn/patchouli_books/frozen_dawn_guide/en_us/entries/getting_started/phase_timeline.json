@@ -11,7 +11,7 @@
     {
       "type": "patchouli:text",
       "title": "Phase 0-1",
-      "text": "$(bold)Normal:$() no effects. Prepare.$(br2)$(bold)Twilight:$() the sun shrinks, rain is frequent, it cools slightly. Your last clear look at the sun."
+      "text": "$(bold)Normal:$() no effects. Prepare.$(br2)$(bold)Twilight:$() the sun shrinks and it cools slightly. Clear spells shorten, rain lasts longer, thunder is rare. Your last clear look at the sun."
     },
     {
       "type": "patchouli:text",

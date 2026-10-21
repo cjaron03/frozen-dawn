@@ -23,6 +23,8 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
     private final String world;
     private volatile boolean active = true;
     private LabPerformanceTrace performance;
+    private volatile JsonObject clientGraphics;
+    public void clientGraphics(JsonObject value) { clientGraphics = value; }
     public void performance(LabPerformanceTrace trace) { performance = trace; }
     private volatile LabInputCapture input;
     private UUID inputPlayer, inputActor;
@@ -352,7 +354,10 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
         out.addProperty("session", session); out.addProperty("world", world);
         out.addProperty("worldName", server.getWorldData().getLevelName());
         out.addProperty("gameTime", server.overworld().getGameTime());
+        out.addProperty("cyclone", com.frozendawn.cyclone.CycloneController.describe(server.overworld()));
         if (performance != null) out.add("performance", performance.status());
+        var graphics = clientGraphics;
+        if (graphics != null) out.add("clientGraphics", graphics.deepCopy());
         out.addProperty("sampledAtMillis", System.currentTimeMillis());
         if (crouchCheck != null) out.add("crouchCheck", crouchStatus());
         out.addProperty("apocalypseTicks", com.frozendawn.data.ApocalypseState.get(server).getApocalypseTicks());
@@ -460,6 +465,11 @@ public final class MinecraftLabRuntime implements LabInbox.Endpoint {
             }
             row.addProperty("tankO2",oxygen);row.addProperty("tankCapacity",capacity);
             var terms=com.frozendawn.world.TemperatureManager.thermostatTerms(player.serverLevel(),player.blockPosition());
+            var wind=com.frozendawn.cyclone.CycloneController.sampleAt(player.serverLevel(),player.getX(),player.getZ());
+            row.addProperty("cycloneWindIntensity",wind.intensity());
+            var windStorm=com.frozendawn.cyclone.CycloneSavedData.get(player.getServer()).active().orElse(null);
+            row.addProperty("cycloneWindExposure",windStorm==null||wind.intensity()<=0?0:com.frozendawn.cyclone.CycloneWind.exposure(player.level(),player,windStorm.headingRad()));
+            row.addProperty("cycloneWindPlayerEligible",com.frozendawn.cyclone.CycloneWind.eligiblePlayer(player));
             row.addProperty("localWarmth",terms.warmth());if(Double.isFinite(terms.floor()))row.addProperty("localHeatFloor",terms.floor());row.addProperty("localHeatOffset",terms.offset());
             var base=com.frozendawn.world.RoomThermalManager.cachedTemperatureAt(player.serverLevel(),player.blockPosition());
             if(base.isPresent()) {row.addProperty("roomThermalBase",base.getAsDouble());row.addProperty("environmentalTemperature",terms.apply(base.getAsDouble()));}

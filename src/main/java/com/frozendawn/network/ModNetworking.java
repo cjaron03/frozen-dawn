@@ -40,6 +40,11 @@ public class ModNetworking {
     @SubscribeEvent
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(FrozenDawn.MOD_ID);
+        registrar.playToClient(CycloneSyncPayload.TYPE, CycloneSyncPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleCyclone(payload)));
+
+        registrar.playToClient(AuroraStatePayload.TYPE, AuroraStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> ClientHandlers.handleAurora(payload)));
 
         registrar.playToServer(HeadlampTogglePayload.TYPE, HeadlampTogglePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {

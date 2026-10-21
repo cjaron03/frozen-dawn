@@ -32,6 +32,9 @@ public class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_INTERRUPTED = register("block.airlock.interrupted");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIRLOCK_VALVE = register("block.airlock.valve");
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_PHASE_ONE = register("ambient.wind_phase_one");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WIND_EARLY_FOREST = register("ambient.wind_early_forest");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_LIGHT = SOUNDS.register("ambient.wind_light",
             () -> SoundEvent.createVariableRangeEvent(
                     ResourceLocation.fromNamespaceAndPath(FrozenDawn.MOD_ID, "ambient.wind_light")));
@@ -43,6 +46,12 @@ public class ModSounds {
             register("ambient.wind_post_maeve_light");
     public static final DeferredHolder<SoundEvent, SoundEvent> WIND_POST_MAEVE_STRONG =
             register("ambient.wind_post_maeve_strong");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_SNOW = register("ambient.cyclone.snow");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_ROAR = register("ambient.cyclone.roar");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_ROOM = register("ambient.cyclone.room");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_BUFFET = register("ambient.cyclone.buffet");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BAROMETER_CYCLONE_WARNING = register("block.barometer.cyclone_warning");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BAROMETER_CYCLONE_CATASTROPHIC = register("block.barometer.cyclone_catastrophic");
     public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_CHARGE =
             register("block.stillpoint_core.charge");
     public static final DeferredHolder<SoundEvent, SoundEvent> STILLPOINT_FORM =
@@ -712,6 +721,9 @@ public class ModSounds {
             "entity.master_architect.thermal_commit");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THERMAL_CANCEL = register(
             "entity.master_architect.thermal_cancel");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_THUNDER_CLOSE = register("ambient.cyclone.thunder_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_THUNDER_MID = register("ambient.cyclone.thunder_mid");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CYCLONE_THUNDER_DISTANT = register("ambient.cyclone.thunder_distant");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_CLOSE = register(
             "entity.master_architect.thundersnow_close");
     public static final DeferredHolder<SoundEvent, SoundEvent> MASTER_ARCHITECT_THUNDERSNOW_MID = register(

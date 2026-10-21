@@ -20,6 +20,11 @@
       "text": "It tracks each sub-stage and warns of whiteout, thinning air and $(danger)vacuum onset$().$(br2)Place it in a shelter or workroom."
     },
     {
+      "type": "patchouli:text",
+      "title": "Early Warning",
+      "text": "During $(bold)Phase 1$(), the instrument first reports a cooling trend, then warns that persistent precipitation is approaching.$(br2)Hover over its $(bold)WARNING$() field for preparation advice: establish reliable heat, stock fuel, protect food production, and prepare warm shelter.$(br2)The warning describes the changing climate. It does not predict the exact minute of the next shower."
+    },
+    {
       "type": "patchouli:crafting",
       "recipe": "frozendawn:phase_barometer",
       "text": "Copper and glass.$(br2)$(flavor)ORSA stopped promising dates when the models started missing by the hour.$()"

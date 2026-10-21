@@ -92,6 +92,7 @@ public class LevelRendererMixin {
         int phase = FrozenDawnPhaseTracker.getPhase();
         if (phase < 5) return;
 
+        com.frozendawn.client.CycloneFrontRenderer.render(frustumMatrix, partialTick, camera, skyFogSetup);
         float lightningFlash = MasterArchitectAuraClient.getLightningWorldFlash(partialTick);
         if (lightningFlash > 0.0F) {
             renderPhaseSkyFlash(

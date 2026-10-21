@@ -44,6 +44,7 @@ import net.minecraft.sounds.SoundSource;
  * through lambdas in {@link ModNetworking} that execute client-side.
  */
 public final class ClientHandlers {
+    public static void handleAurora(AuroraStatePayload payload) { com.frozendawn.client.AuroraRenderer.receive(payload); }
     public static void handlePowerBinder(PowerBinderPayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerBinderNotice(PowerBinderNoticePayload payload) { com.frozendawn.client.PowerBinderHud.receive(payload); }
     public static void handlePowerLinks(PowerLinksPayload payload) { com.frozendawn.client.PowerLinkRenderer.receive(payload); }
@@ -54,6 +55,7 @@ public final class ClientHandlers {
         com.frozendawn.client.ArchitectDebugRenderer.receive(payload.view());
     }
 
+    public static void handleCyclone(CycloneSyncPayload payload) { com.frozendawn.client.CycloneClientState.update(payload); }
     private ClientHandlers() {}
 
     public static void handleApocalypseData(ApocalypseDataPayload payload) {
