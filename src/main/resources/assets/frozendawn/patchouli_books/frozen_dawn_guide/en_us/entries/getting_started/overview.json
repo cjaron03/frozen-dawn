@@ -2,7 +2,7 @@
   "name": "What's Happening?",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:clock",
-  "sortnum": 1,
+  "sortnum": 2,
   "pages": [
     {
       "type": "patchouli:text",

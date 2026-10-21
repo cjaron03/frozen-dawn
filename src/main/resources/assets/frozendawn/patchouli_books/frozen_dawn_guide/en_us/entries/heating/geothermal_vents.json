@@ -32,5 +32,9 @@
       "type": "patchouli:text",
       "text": "Mature rupture mouths carry sulfur crust, friable tuff and heavy yellow deposits. The basin was too unstable to mine routinely.$(br2)$(danger)If the ground shakes in vacuum, the pressure column is about to move.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:sulfur_crust": 5,
+    "frozendawn:hydrothermal_rock": 0
+  }
 }

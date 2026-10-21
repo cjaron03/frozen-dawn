@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:rimewood_sapling",
-      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer that keeps growing after every other tree has died."
+      "text": "$(italic)Pruinodendron glaciale.$() A squat, wind-shaped conifer that keeps growing after every other tree has died.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -33,7 +34,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:rimewood_resin",
       "title": "Rimewood Resin",
-      "text": "Strip a log or wood with an axe: $(bold)one resin$() per log.$(br2)Resin and sulfur make a $(l:advanced/nether_substitutes)Thermal Binder$(/l)."
+      "text": "Strip a log or wood with an axe: $(bold)one resin$() per log.$(br2)Resin and sulfur make a $(l:advanced/nether_substitutes)Thermal Binder$(/l).",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -45,5 +47,22 @@
       "recipe": "frozendawn:rimewood_planks",
       "text": "Four planks per log. Works in ordinary wood recipes (no boat), burns as fuel and smelts to charcoal. The planks don't freeze."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:rimewood_log": 1,
+    "frozendawn:rimewood_wood": 1,
+    "frozendawn:rimewood_leaves": 3,
+    "frozendawn:stripped_rimewood_log": 5,
+    "frozendawn:stripped_rimewood_wood": 5,
+    "frozendawn:rimewood_stairs": 7,
+    "frozendawn:rimewood_slab": 7,
+    "frozendawn:rimewood_fence": 7,
+    "frozendawn:rimewood_fence_gate": 7,
+    "frozendawn:rimewood_door": 7,
+    "frozendawn:rimewood_trapdoor": 7,
+    "frozendawn:rimewood_button": 7,
+    "frozendawn:rimewood_pressure_plate": 7,
+    "frozendawn:rimewood_sign": 7,
+    "frozendawn:rimewood_hanging_sign": 7
+  }
 }

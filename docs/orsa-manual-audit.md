@@ -454,7 +454,7 @@ Core Upgrades, Room Temperature and Hyperthermia carry upstream's new behavior.
 - **Relay Archive** (Intelligence) is upstream lore and left as written. Relay transcripts
   now go through the archive-and-open path, granting `relay_archive/N` and opening that entry.
 
-## Cold flora (#116, unmerged)
+## Cold flora (#116)
 
 `origin/feat/cold-flora` is merged into this branch ahead of its own review, so this
 branch now depends on #116 landing first.
@@ -487,3 +487,32 @@ Food & Foraging takes Food Spoilage, Thermal Container, Ration Warmer, Hot Wings
 Rimewood and Frostcap (category field only; files stay put). A new
 `getting_started/start_here` entry gives a reading route by phase, and What's Happening?
 points to it. `priority` stars the first entry to read in each category.
+
+The Returned entry shows three degraded "captures" of Variant C
+(`textures/gui/patchouli/architect_capture_*.png`) before its Variant C pages, captioned
+"ORSA has no clear image of Variant C." The Variant C text is unchanged.
+
+## Weather and cyclone merge (after #120)
+
+Phase Timeline and the Phase Barometer take the Phase 1 weather changes: clear spells
+shorten, rain lasts longer, thunder is rare, and the barometer's new Early Warning page.
+The Phase 5 bomb cyclone has no guide entry yet; its design notes leave guide text to the
+owner.
+
+## Item lookups and Quick Reference
+
+With the manual in the hotbar, hovering an item with an entry shows a book icon; Ctrl (Cmd
+on macOS) opens its page. Crafting and smelting pages link their output by default.
+Spotlights now set `link_recipe` for items without another page, and entries carry
+`extra_recipe_mappings` for drops, ores and wood blocks named in their text. The EVA
+retrofit preview no longer claims the Lined EVA chestplate. Maeve, Architect, found
+documents, Soul Harvesting and spawn eggs stay unlinked.
+
+`getting_started/quick_reference` (starred, second in Getting Started) gathers phase cold,
+hypothermia, gear ratings, heat, food, oxygen, power and radiation numbers, each page
+linking to its entry. Start Here points to it.
+
+The Phase Barometer's Phase 1 Early Warning page is templated and moved ahead of Phase 6.
+Returned gains a Mimic photo pair before Variant B (`mimic_capture_1/2.png`, from owner
+screenshots, ten seconds apart). The barometer recipe still needs an Ice Shard, which
+makes the Phase 1 warning hard to use; that recipe change is deferred.

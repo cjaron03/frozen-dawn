@@ -24,6 +24,15 @@
       "text": "$(bold)Drops:$() Remnant Ember, Tattered Clothing Scrap, ORSA ID Badge (rare)$(br2)$(flavor)Do not read the ID badges. You might know the name.$()"
     },
     {
+      "type": "patchouli:image",
+      "images": [
+        "frozendawn:textures/gui/patchouli/mimic_capture_1.png",
+        "frozendawn:textures/gui/patchouli/mimic_capture_2.png"
+      ],
+      "border": true,
+      "text": "$(flavor)Ten seconds apart. Still there. Not a shadow.$()"
+    },
+    {
       "type": "patchouli:text",
       "title": "Variant B: Mimic",
       "text": "A still, watching shadow figure. Within 16 blocks it copies your movement, then attacks.$(li)Bonus damage on its first sprint hit$(li)Strafes instead of trading blows"
@@ -71,5 +80,11 @@
       "type": "patchouli:text",
       "text": "$(italic)ORSA Threat Analysis, unconfirmed: Architects encountered later in the event wasted fewer strikes and chose better approach routes. Each variant appears to keep something the last one learned. The Architect was the last variant observed before evacuation. ORSA does not believe it is the last variant.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:remnant_ember": 3,
+    "frozendawn:orsa_id_badge": 3,
+    "frozendawn:tattered_clothing_scrap": 3,
+    "frozendawn:mirrored_fragment": 7
+  }
 }

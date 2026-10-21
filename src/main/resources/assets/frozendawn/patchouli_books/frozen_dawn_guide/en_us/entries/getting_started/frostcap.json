@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:frozen_frostcap",
-      "text": "$(italic)Gelimyces nivalis.$() A pale fungus with a faint blue-white glow (light 3).$(br2)No heat: a cold-room farm is invisible to anything that hunts by warmth."
+      "text": "$(italic)Gelimyces nivalis.$() A pale fungus with a faint blue-white glow (light 3).$(br2)No heat: a cold-room farm is invisible to anything that hunts by warmth.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -44,5 +45,9 @@
       "title": "ORSA Note",
       "text": "$(italic)Specimen GN-7 is related to the genus Cryomyces, Antarctic rock fungi that survived eighteen months outside the International Space Station. ORSA notes it is not fussy about where it lives. ORSA notes it is not fussy about much at all.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:thawed_frostcap": 4,
+    "frozendawn:frostcap_mush": 4
+  }
 }

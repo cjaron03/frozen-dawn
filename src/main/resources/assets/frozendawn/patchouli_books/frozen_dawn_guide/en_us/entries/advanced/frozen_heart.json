@@ -19,5 +19,8 @@
       "recipe": "frozendawn:frozen_heart",
       "text": "Cold things around a diamond somehow make heat.$(br2)$(flavor)ORSA Physics wrote \"it works\" and stopped.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:frozen_obsidian": 1
+  }
 }

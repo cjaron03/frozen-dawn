@@ -16,13 +16,13 @@
     },
     {
       "type": "patchouli:text",
-      "title": "Phase 6",
-      "text": "It tracks each sub-stage and warns of whiteout, thinning air and $(danger)vacuum onset$().$(br2)Place it in a shelter or workroom."
+      "title": "Early Warning",
+      "text": "In $(bold)Phase 1$() it first reports a cooling trend, then warns that $(bold)persistent rain$() is coming.$(br2)Hover its $(bold)WARNING$() field for advice: heat, fuel, food, warm shelter.$(br2)It reads the climate, not the next shower."
     },
     {
       "type": "patchouli:text",
-      "title": "Early Warning",
-      "text": "During $(bold)Phase 1$(), the instrument first reports a cooling trend, then warns that persistent precipitation is approaching.$(br2)Hover over its $(bold)WARNING$() field for preparation advice: establish reliable heat, stock fuel, protect food production, and prepare warm shelter.$(br2)The warning describes the changing climate. It does not predict the exact minute of the next shower."
+      "title": "Phase 6",
+      "text": "It tracks each sub-stage and warns of whiteout, thinning air and $(danger)vacuum onset$().$(br2)Place it in a shelter or workroom."
     },
     {
       "type": "patchouli:crafting",

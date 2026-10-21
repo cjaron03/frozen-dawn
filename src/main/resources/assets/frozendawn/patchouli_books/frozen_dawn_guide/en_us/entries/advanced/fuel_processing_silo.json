@@ -85,5 +85,10 @@
       "title": "Fueling",
       "text": "Carry the 6 cells to the blast pit and right-click the assembled rocket to load them by hand.$(br2)$(danger)The silo is the slow part.$() Budget time, heater fuel and a second sulfur run."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:sulfur_ore": 5,
+    "frozendawn:sulfur_lava_bucket": 6,
+    "frozendawn:rocket_fuel_cell": 0
+  }
 }

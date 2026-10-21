@@ -58,7 +58,8 @@
       "type": "patchouli:crafting",
       "recipe": "frozendawn:caloric_lined_eva_retrofit_display",
       "title": "Caldera Retrofit",
-      "text": "A Lined EVA Suit plus Sulfur Crust and Volcanic Tuff. The shell reads $(italic)Caldera retrofit installed.$() when it took."
+      "text": "A Lined EVA Suit plus Sulfur Crust and Volcanic Tuff. The shell reads $(italic)Caldera retrofit installed.$() when it took.",
+      "link_recipe": false
     }
   ]
 }

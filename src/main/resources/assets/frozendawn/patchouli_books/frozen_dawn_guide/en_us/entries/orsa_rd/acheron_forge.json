@@ -40,5 +40,9 @@
       "title": "Acheron Forge",
       "text": "Obsidian frame, raw shards, a Thermal Core.$(br2)$(flavor)Theoretical. You are the field test. Do not lick the forge.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:spent_lattice": 1,
+    "frozendawn:sealed_lattice": 1
+  }
 }

@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:emergency_eva_chestplate",
       "title": "Continuity Protocol",
-      "text": "Emergency EVA, issued after you lose your equipment in late Phase 6."
+      "text": "Emergency EVA, issued after you lose your equipment in late Phase 6.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -52,5 +53,10 @@
       "type": "patchouli:text",
       "text": "Removing every issued piece pauses service and life support.$(br2)Repair, cartridges and replacement issues can't refresh old equipment."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:emergency_eva_helmet": 0,
+    "frozendawn:emergency_eva_leggings": 0,
+    "frozendawn:emergency_eva_boots": 0
+  }
 }

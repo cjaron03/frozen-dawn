@@ -25,5 +25,8 @@
       "title": "Drops",
       "text": "Frozen Breath, for $(l:heating/cryo_fuel)Cryo Fuel$(/l) and $(l:heating/frost_ward_torch)Frost Ward Torches$(/l).$(br2)$(flavor)If you hear breathing behind you and nobody is there: run.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:frozen_breath": 3
+  }
 }

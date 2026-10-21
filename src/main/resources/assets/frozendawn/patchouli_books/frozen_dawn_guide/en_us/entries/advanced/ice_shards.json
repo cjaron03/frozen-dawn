@@ -7,7 +7,8 @@
     {
       "type": "patchouli:spotlight",
       "item": "frozendawn:ice_shard",
-      "text": "Dropped by Frozen Coal Ore, which forms on the surface from Phase 4."
+      "text": "Dropped by Frozen Coal Ore, which forms on the surface from Phase 4.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",
@@ -32,5 +33,8 @@
       "title": "Replacement Manual",
       "text": "A book and an ice shard. Lost manuals are replaceable. You are not."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:frozen_coal_ore": 0
+  }
 }

@@ -49,5 +49,8 @@
       "title": "Thermal Visor",
       "text": "$(li)Hands-free thermal overlay$(li)$(bold)+20°C$() cold resistance$(li)A brief air buffer in vacuum$(li)With an EVA body rig and oxygen, tanks last noticeably longer$(br2)$(flavor)Legal removed \"probably\" from \"field sufficient.\"$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:surveyor_lens": 0
+  }
 }

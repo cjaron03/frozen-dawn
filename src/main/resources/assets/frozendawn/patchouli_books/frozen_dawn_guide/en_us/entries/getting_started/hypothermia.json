@@ -2,7 +2,7 @@
   "name": "Hypothermia",
   "category": "frozendawn:getting_started",
   "icon": "minecraft:powder_snow_bucket",
-  "sortnum": 3,
+  "sortnum": 4,
   "pages": [
     {
       "type": "patchouli:text",

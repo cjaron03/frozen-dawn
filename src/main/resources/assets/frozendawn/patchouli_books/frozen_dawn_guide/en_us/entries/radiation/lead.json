@@ -37,5 +37,9 @@
       "title": "Lead-Lined EVA Module",
       "text": "Six lead ingots, two Tattered Clothing Scraps and a Suit Patch Kit."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:galena_ore": 1,
+    "frozendawn:deepslate_galena_ore": 1
+  }
 }

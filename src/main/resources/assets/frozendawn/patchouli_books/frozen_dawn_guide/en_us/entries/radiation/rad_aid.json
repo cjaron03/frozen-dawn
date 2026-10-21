@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:rad_aid",
       "title": "ORSA RadAid",
-      "text": "An IV drip that flushes $(bold)200 RU$() of dose over one minute."
+      "text": "An IV drip that flushes $(bold)200 RU$() of dose over one minute.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

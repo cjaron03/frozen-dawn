@@ -7,7 +7,7 @@
     {
       "type": "patchouli:text",
       "title": "Start Here",
-      "text": "A reading order for the whole manual. Skip what you know.$(br2)Timing varies; the $(l:getting_started/phase_timeline)Phase Timeline$(/l) shows what's coming.$(br2)$(flavor)ORSA recommends reading before freezing.$()"
+      "text": "A reading order for the whole manual. Skip what you know.$(br2)Timing varies; the $(l:getting_started/phase_timeline)Phase Timeline$(/l) shows what's coming. Key numbers: $(l:getting_started/quick_reference)Quick Reference$(/l).$(br2)$(flavor)ORSA recommends reading before freezing.$()"
     },
     {
       "type": "patchouli:text",

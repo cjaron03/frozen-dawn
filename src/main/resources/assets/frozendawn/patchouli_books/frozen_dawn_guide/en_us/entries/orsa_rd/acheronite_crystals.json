@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:acheronite_shard",
       "title": "Acheronite Crystal",
-      "text": "Crystals that grow on frozen dirt, sand and obsidian below $(bold)-60°C$()."
+      "text": "Crystals that grow on frozen dirt, sand and obsidian below $(bold)-60°C$().",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

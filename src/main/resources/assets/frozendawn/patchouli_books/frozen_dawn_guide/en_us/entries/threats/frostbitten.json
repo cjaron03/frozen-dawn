@@ -20,5 +20,9 @@
       "title": "Fighting",
       "text": "$(bold)Weak to:$() fire, Acheronite weapons$(br2)$(bold)Drops:$() Frozen Meat, $(l:heating/thermal_capacitor)Frostbitten Core$(/l)$(br2)$(flavor)Avoid melee unless you enjoy hypothermia.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:frozen_meat": 2,
+    "frozendawn:frostbitten_core": 2
+  }
 }

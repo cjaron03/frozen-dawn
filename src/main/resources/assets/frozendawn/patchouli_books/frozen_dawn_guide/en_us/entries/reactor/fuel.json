@@ -35,5 +35,8 @@
       "title": "Fuel Rod",
       "text": "Four pellets, four iron and a copper ingot."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:deepslate_uranium_ore": 1
+  }
 }

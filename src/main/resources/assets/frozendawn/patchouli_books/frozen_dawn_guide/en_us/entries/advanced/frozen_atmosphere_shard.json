@@ -8,7 +8,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:frozen_atmosphere_shard",
       "title": "Atmosphere Shard",
-      "text": "Frozen air, mined from thin crystalline sheets on the Phase 6 surface."
+      "text": "Frozen air, mined from thin crystalline sheets on the Phase 6 surface.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

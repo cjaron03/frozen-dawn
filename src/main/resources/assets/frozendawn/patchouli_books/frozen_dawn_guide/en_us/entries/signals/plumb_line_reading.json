@@ -27,7 +27,8 @@
       "type": "patchouli:spotlight",
       "item": "frozendawn:plumb_line_survey",
       "title": "Survey Sheet",
-      "text": "Print the last pulse to carry it while you dig."
+      "text": "Print the last pulse to carry it while you dig.",
+      "link_recipe": true
     },
     {
       "type": "patchouli:text",

@@ -28,5 +28,8 @@
       "title": "Fallout",
       "text": "Heavy fallout spreads about $(bold)12 blocks$() in air, 3 in vacuum. See $(l:radiation/contamination)Contamination$(/l)."
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:corium": 2
+  }
 }

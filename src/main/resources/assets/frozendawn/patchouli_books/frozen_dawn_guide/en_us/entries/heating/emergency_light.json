@@ -35,5 +35,9 @@
       "text": "Off while the grid is healthy, charging its own battery for free. When normal lights lose power, it glows dim red, level 6, for up to $(bold)10 minutes$()."
     }
   ],
-  "sortnum": 7
+  "sortnum": 7,
+  "extra_recipe_mappings": {
+    "frozendawn:emergency_light": 1,
+    "frozendawn:wall_emergency_light": 1
+  }
 }

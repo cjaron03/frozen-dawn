@@ -74,5 +74,8 @@
       "type": "patchouli:text",
       "text": "The signal clears snow from the shaft.$(br2)$(flavor)ORSA's most practical feature, designed by accident.$()"
     }
-  ]
+  ],
+  "extra_recipe_mappings": {
+    "frozendawn:transponder_schematic": 1
+  }
 }
